@@ -36,6 +36,7 @@ import {
 import { getProfile } from "@/services/super-admin/character-lab/characterLab.service"
 import { exportProfileWord, saveCsv } from "@/lib/exportCharacterProfile"
 import { exportProfilePdf } from "@/lib/exportCharacterPdf"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
 import { SCORE_TYPES } from "@/types/character-lab"
 import type {
@@ -265,10 +266,10 @@ export default function CharacterLab() {
       })
       toast.success(`Saved ${profiled.name} to the library`)
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        (err instanceof Error ? err.message : "Could not save")
-      toast.error(message)
+      // apiErrorMessage, not `detail` directly: on a 422 `detail` is an ARRAY
+      // OF OBJECTS, and passing that to toast renders an object as a React
+      // child — which crashed the page rather than reporting the failure.
+      toast.error(apiErrorMessage(err, "Could not save"))
     }
   }
 

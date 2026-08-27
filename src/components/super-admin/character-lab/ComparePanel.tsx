@@ -14,6 +14,7 @@ import {
   useStarterQuestions,
 } from "@/hooks/super-admin/useCharacterLab"
 import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import type { StarterQuestion } from "@/types/character-lab"
 
 /** Server cap. Past four it stops being a comparison and becomes a list. */
@@ -81,7 +82,7 @@ export default function ComparePanel() {
       const failed = rest.filter((o) => o.status === "rejected").length
       if (failed) toast.warning(`${failed} of ${first.parts} sections failed`)
     } catch (err) {
-      toast.error(detail(err, "The comparison failed"))
+      toast.error(apiErrorMessage(err, "The comparison failed"))
     }
   }
 
@@ -97,7 +98,7 @@ export default function ComparePanel() {
         toast.warning("No questions came back — try again.")
       }
     } catch (err) {
-      toast.error(detail(err, "Could not fetch questions"))
+      toast.error(apiErrorMessage(err, "Could not fetch questions"))
     }
   }
 
@@ -113,7 +114,7 @@ export default function ComparePanel() {
       const result = await ask.mutateAsync({ profile_ids: selected, question: q })
       setAnswer(result.answer)
     } catch (err) {
-      toast.error(detail(err, "Could not answer that"))
+      toast.error(apiErrorMessage(err, "Could not answer that"))
     }
   }
 
@@ -251,13 +252,5 @@ export default function ComparePanel() {
         </Card>
       )}
     </div>
-  )
-}
-
-/** Prefer the server's own message — it says which id was missing, or why. */
-function detail(err: unknown, fallback: string): string {
-  return (
-    (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-    (err instanceof Error ? err.message : fallback)
   )
 }
