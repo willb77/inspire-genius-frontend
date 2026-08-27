@@ -26,6 +26,7 @@ import {
   useScoreBattery,
 } from "@/hooks/super-admin/useCharacterLab"
 import { exportProfileWord, saveCsv } from "@/lib/exportCharacterProfile"
+import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
 import { SCORE_TYPES } from "@/types/character-lab"
 import type {
   DerivedQuadrant,
@@ -34,6 +35,15 @@ import type {
 } from "@/types/character-lab"
 
 const BEHAVIOUR_GROUP = "Behavior Preferences"
+
+/**
+ * How many analysis parts to have in flight at once.
+ *
+ * 3, from measurement — see {@link mapWithConcurrency}. Batteries are left
+ * unbounded because they are short enough not to contend: eleven parts
+ * completed in 10.2s wall with none close to the cap.
+ */
+const ANALYSIS_CONCURRENCY = 3
 
 /** `partial` = some parts of a split battery returned and some did not. */
 type BatteryState = "idle" | "running" | "done" | "partial" | "error"
@@ -194,10 +204,10 @@ export default function CharacterLab() {
       setAnalysis(first.analysis)
       if (first.parts <= 1) return
 
-      const rest = await Promise.allSettled(
-        Array.from({ length: first.parts - 1 }, (_, i) =>
-          analyse.mutateAsync({ ...req, part: i + 1 }),
-        ),
+      const rest = await mapWithConcurrency(
+        Array.from({ length: first.parts - 1 }, (_, i) => i + 1),
+        ANALYSIS_CONCURRENCY,
+        (part) => analyse.mutateAsync({ ...req, part }),
       )
       const chunks = [first.analysis]
       rest.forEach((outcome, i) => {
