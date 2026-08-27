@@ -1,5 +1,6 @@
 import { agentApi } from '@/lib/agentApi'
 import type {
+  AnalysisPart,
   BatteryResult,
   CharacterRequest,
   GenerateResult,
@@ -41,14 +42,22 @@ export async function scoreBattery(
   return data.data
 }
 
+/**
+ * One slice of the write-up.
+ *
+ * The analysis is split because seven sections of prose over 88 scores exceeded
+ * API Gateway's 30s cap and returned 503. The server owns the section grouping
+ * and reports how many parts there are; callers concatenate in part order.
+ */
 export async function analyseProfile(
   req: CharacterRequest & {
     scores: Record<string, ScoreByType>
     colours: Record<string, number>
+    part?: number
   },
-): Promise<string> {
-  const { data } = await agentApi.post<Envelope<{ analysis: string }>>(`${BASE}/analyse`, req)
-  return data.data.analysis
+): Promise<AnalysisPart> {
+  const { data } = await agentApi.post<Envelope<AnalysisPart>>(`${BASE}/analyse`, req)
+  return data.data
 }
 
 export async function exportProfile(

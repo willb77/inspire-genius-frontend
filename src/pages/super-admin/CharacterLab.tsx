@@ -170,17 +170,46 @@ export default function CharacterLab() {
     }
   }
 
+  /**
+   * Fetch the write-up in parts and stitch them in order.
+   *
+   * Split for the same reason the batteries are: seven sections of prose over 88
+   * scores exceeded API Gateway's 30s cap and returned 503. Part 0 is fetched
+   * first because it reports how many parts there are; the rest then run
+   * concurrently. A part that fails leaves a visible marker rather than a
+   * silently short write-up — a missing section reads as "nothing to say about
+   * derailers", which is the opposite of true.
+   */
   async function onAnalyse() {
     if (!profiled) return
+    const req = {
+      name: profiled.name,
+      source: profiled.source,
+      notes: notes.trim(),
+      scores,
+      colours: colourMap,
+    }
     try {
-      const text = await analyse.mutateAsync({
-        name: profiled.name,
-        source: profiled.source,
-        notes: notes.trim(),
-        scores,
-        colours: colourMap,
+      const first = await analyse.mutateAsync({ ...req, part: 0 })
+      setAnalysis(first.analysis)
+      if (first.parts <= 1) return
+
+      const rest = await Promise.allSettled(
+        Array.from({ length: first.parts - 1 }, (_, i) =>
+          analyse.mutateAsync({ ...req, part: i + 1 }),
+        ),
+      )
+      const chunks = [first.analysis]
+      rest.forEach((outcome, i) => {
+        if (outcome.status === "fulfilled") {
+          chunks.push(outcome.value.analysis)
+        } else {
+          chunks.push(`_Section ${i + 2} of ${first.parts} could not be generated._`)
+        }
       })
-      setAnalysis(text)
+      setAnalysis(chunks.join("\n\n"))
+      const failed = rest.filter((o) => o.status === "rejected").length
+      if (failed) toast.warning(`${failed} of ${first.parts} analysis sections failed`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Analysis failed")
     }

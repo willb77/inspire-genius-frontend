@@ -89,7 +89,11 @@ describe("CharacterLab", () => {
       evidence: {},
       missing: [],
     })
-    analyseMutate.mockReset().mockResolvedValue("## The shape of this profile\nRed-dominant.")
+    analyseMutate.mockReset().mockResolvedValue({
+      notice: RUBRIC.notice, name: "Sonny Corleone", part: 0, parts: 1,
+      sections: ["The shape of this profile"],
+      analysis: "## The shape of this profile\nRed-dominant.",
+    })
   })
 
   it("always states that profiles are synthetic and unstored", () => {
@@ -169,7 +173,7 @@ describe("CharacterLab", () => {
     fireEvent.click(button)
     await waitFor(() => expect(analyseMutate).toHaveBeenCalled())
     expect(analyseMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ colours: { Green: 71.5, Red: 85 } }),
+      expect.objectContaining({ colours: { Green: 71.5, Red: 85 }, part: 0 }),
     )
     expect(await screen.findByText(/Red-dominant/)).toBeInTheDocument()
   })
@@ -216,6 +220,46 @@ describe("CharacterLab", () => {
     expect(await screen.findByText(/partly scored/i)).toBeInTheDocument()
     expect(screen.getByText("90")).toBeInTheDocument()
     expect(screen.getByText(/missing, not zero/i)).toBeInTheDocument()
+  })
+
+  /**
+   * The write-up is split for the same reason the batteries are: seven sections
+   * of prose over 88 scores returned 503 at the 30s cap.
+   */
+  it("fetches every analysis part and stitches them in order", async () => {
+    analyseMutate.mockImplementation(({ part }: { part: number }) =>
+      Promise.resolve({
+        notice: "", name: "Sonny Corleone", part, parts: 3,
+        sections: [`s${part}`], analysis: `## Section ${part}`,
+      }),
+    )
+    render(<CharacterLab />)
+    fillAndSubmit()
+    const button = await screen.findByRole("button", { name: /Read the profile/i })
+    await waitFor(() => expect(button).toBeEnabled())
+    fireEvent.click(button)
+    await waitFor(() => expect(analyseMutate).toHaveBeenCalledTimes(3))
+    expect(analyseMutate.mock.calls.map((c) => c[0].part)).toEqual([0, 1, 2])
+    expect(await screen.findByText(/Section 0[\s\S]*Section 1[\s\S]*Section 2/)).toBeInTheDocument()
+  })
+
+  it("marks a failed analysis section instead of silently shortening the write-up", async () => {
+    // A missing "Derailers" section reads as "nothing to say about derailers",
+    // which is the opposite of true.
+    analyseMutate.mockImplementation(({ part }: { part: number }) =>
+      part === 1
+        ? Promise.reject(new Error("gateway timeout"))
+        : Promise.resolve({
+            notice: "", name: "S", part, parts: 3,
+            sections: [`s${part}`], analysis: `## Section ${part}`,
+          }),
+    )
+    render(<CharacterLab />)
+    fillAndSubmit()
+    const button = await screen.findByRole("button", { name: /Read the profile/i })
+    await waitFor(() => expect(button).toBeEnabled())
+    fireEvent.click(button)
+    expect(await screen.findByText(/Section 2 of 3 could not be generated/i)).toBeInTheDocument()
   })
 
   it("labels a single-value battery as not varying by score type", async () => {
