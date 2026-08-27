@@ -10,6 +10,7 @@ import {
   fetchStarterQuestions,
   generateProfile,
   getProfile,
+  importProfileCsv,
   listProfiles,
   listScenarios,
   patchProfile,
@@ -136,5 +137,14 @@ export function useDeleteScenario() {
   return useMutation({
     mutationFn: deleteScenario,
     onSuccess: () => qc.invalidateQueries({ queryKey: SCENARIOS_KEY }),
+  })
+}
+
+/** Import an authored CSV. Invalidates the recall list like any other save. */
+export function useImportProfileCsv() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: importProfileCsv,
+    onSuccess: () => qc.invalidateQueries({ queryKey: PROFILES_KEY }),
   })
 }
