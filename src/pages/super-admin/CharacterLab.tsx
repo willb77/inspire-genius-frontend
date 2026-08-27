@@ -3,9 +3,12 @@ import { toast } from "sonner"
 import {
   AlertTriangle,
   Drama,
+  FileDown,
   FileSpreadsheet,
   FileText,
+  Library,
   Loader2,
+  Save,
   Sparkles,
 } from "lucide-react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
@@ -14,18 +17,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import BrainMap from "@/components/super-admin/character-lab/BrainMap"
 import ScoreRow from "@/components/super-admin/character-lab/ScoreRow"
+import ProfileMarkdown from "@/components/super-admin/character-lab/ProfileMarkdown"
+import ProfileLibrary from "@/components/super-admin/character-lab/ProfileLibrary"
+import ComparePanel from "@/components/super-admin/character-lab/ComparePanel"
+import ScenarioPanel from "@/components/super-admin/character-lab/ScenarioPanel"
 import {
   useAnalyseProfile,
   useExportProfile,
   useGenerateProfile,
   useRubric,
+  useSaveProfile,
   useScoreBattery,
 } from "@/hooks/super-admin/useCharacterLab"
+import { getProfile } from "@/services/super-admin/character-lab/characterLab.service"
 import { exportProfileWord, saveCsv } from "@/lib/exportCharacterProfile"
+import { exportProfilePdf } from "@/lib/exportCharacterPdf"
 import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
 import { SCORE_TYPES } from "@/types/character-lab"
 import type {
@@ -68,12 +78,15 @@ export default function CharacterLab() {
   const [analysis, setAnalysis] = useState("")
   const [profiled, setProfiled] = useState<{ name: string; source: string } | null>(null)
   const [batteryState, setBatteryState] = useState<Record<string, BatteryState>>({})
+  const [tab, setTab] = useState("build")
+  const [loadingId, setLoadingId] = useState<string | null>(null)
 
   const { data: rubric, isLoading: rubricLoading, error: rubricError } = useRubric()
   const generate = useGenerateProfile()
   const battery = useScoreBattery()
   const analyse = useAnalyseProfile()
   const exporter = useExportProfile()
+  const persist = useSaveProfile()
 
   // `generate` returns behaviour scores only, so the result it hands to the
   // batteries is already the anchor set — no filtering needed.
@@ -225,6 +238,78 @@ export default function CharacterLab() {
     }
   }
 
+  /**
+   * Keep this profile in the library.
+   *
+   * Saving under a name that already exists UPDATES it — the server owns that
+   * rule. Rebuilding a character after improving its notes means "this is the
+   * better version", and two identical names in the recall list is a bug the
+   * operator can see.
+   *
+   * The full per-score-type colours go up, not the flattened map the prose
+   * endpoints take: storing one score type would make a reloaded profile show
+   * the same brain map on all three tabs.
+   */
+  async function onSaveToLibrary() {
+    if (!profiled) return
+    try {
+      await persist.mutateAsync({
+        name: profiled.name,
+        source: profiled.source,
+        notes: notes.trim(),
+        reading,
+        analysis,
+        scores,
+        colours: colours as unknown as Record<string, number>,
+        evidence,
+      })
+      toast.success(`Saved ${profiled.name} to the library`)
+    } catch (err) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        (err instanceof Error ? err.message : "Could not save")
+      toast.error(message)
+    }
+  }
+
+  /**
+   * Load a saved character back onto this tab.
+   *
+   * Batteries are marked `done` rather than left `idle`: the scores are present,
+   * so a spinner or a "not scored" state would misdescribe what is on screen.
+   * A battery that was never scored simply has no rows and renders nothing —
+   * missing, not zero.
+   */
+  async function onLoadProfile(id: string) {
+    setLoadingId(id)
+    try {
+      const saved = await getProfile(id)
+      reset()
+      setName(saved.name)
+      setSource(saved.source)
+      setNotes(saved.notes)
+      setScores(saved.scores)
+      setEvidence(saved.evidence)
+      setColours(saved.colours as Partial<Record<ScoreType, DerivedQuadrant[]>>)
+      setReading(saved.reading)
+      setAnalysis(saved.analysis)
+      setProfiled({ name: saved.name, source: saved.source })
+      setBatteryState(
+        Object.fromEntries(
+          (rubric?.groups ?? [])
+            .filter((g) => g.dimensions.some((d) => saved.scores[d.key]))
+            .map((g) => [g.group, "done" as BatteryState]),
+        ),
+      )
+      setTab("build")
+      toast.success(`Loaded ${saved.name}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not load that profile")
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
   async function onExportCsv(fmt: "wide" | "long") {
     if (!profiled) return
     try {
@@ -263,6 +348,27 @@ export default function CharacterLab() {
     }
   }
 
+  async function onExportPdf() {
+    if (!profiled || !rubric) return
+    try {
+      await exportProfilePdf({
+        name: profiled.name,
+        source: profiled.source,
+        notice: rubric.notice,
+        reading,
+        analysis,
+        colours: currentColours,
+        scores,
+        evidence,
+        rubric,
+        scoreType,
+      })
+      toast.success("Saved the PDF profile")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "PDF export failed")
+    }
+  }
+
   const busy = generate.isPending
   const batteriesRunning = Object.values(batteryState).filter((s) => s === "running").length
 
@@ -296,218 +402,265 @@ export default function CharacterLab() {
           </span>
         </div>
 
-        {rubricError && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
-            The rubric could not be loaded, so scoring is disabled — without it the model would
-            score the <em>names</em> of the scales rather than the constructs.
-          </div>
-        )}
+        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="build">Build</TabsTrigger>
+            <TabsTrigger value="library">
+              <Library className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              Library
+            </TabsTrigger>
+            <TabsTrigger value="compare">Compare</TabsTrigger>
+            <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
+          </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">The character</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="cl-name">Name</Label>
-                <Input
-                  id="cl-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Sonny Corleone"
-                />
+          <TabsContent value="library" className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Characters you have saved. <strong>Load</strong> brings one back onto the Build tab
+              to re-read, re-analyse or export. <strong>Edit</strong> changes the record without
+              re-scoring — add what you know, then load and rebuild.
+            </p>
+            <ProfileLibrary onLoad={onLoadProfile} loadingId={loadingId} />
+          </TabsContent>
+
+          <TabsContent value="compare">
+            <ComparePanel />
+          </TabsContent>
+
+          <TabsContent value="scenarios">
+            <ScenarioPanel />
+          </TabsContent>
+
+          <TabsContent value="build" className="space-y-6">
+          {rubricError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
+              The rubric could not be loaded, so scoring is disabled — without it the model would
+              score the <em>names</em> of the scales rather than the constructs.
+            </div>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">The character</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="cl-name">Name</Label>
+                  <Input
+                    id="cl-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Sonny Corleone"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cl-source">Source</Label>
+                  <Input
+                    id="cl-source"
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                    placeholder="The Godfather (Puzo, 1969)"
+                  />
+                </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="cl-source">Source</Label>
-                <Input
-                  id="cl-source"
-                  value={source}
-                  onChange={(e) => setSource(e.target.value)}
-                  placeholder="The Godfather (Puzo, 1969)"
+                <Label htmlFor="cl-notes">Notes (optional)</Label>
+                <Textarea
+                  id="cl-notes"
+                  rows={3}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Scenes, behaviour or context to ground the reading. Treated as evidence about the character."
                 />
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cl-notes">Notes (optional)</Label>
-              <Textarea
-                id="cl-notes"
-                rows={3}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Scenes, behaviour or context to ground the reading. Treated as evidence about the character."
-              />
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={onGenerate} disabled={busy || rubricLoading || !!rubricError}>
-                {busy ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reading the character…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" /> Build profile
-                  </>
-                )}
-              </Button>
-              {batteriesRunning > 0 && (
-                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {batteriesRunning} batter{batteriesRunning === 1 ? "y" : "ies"} still scoring
-                </span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {rubricLoading && <Skeleton className="h-48 w-full" />}
-
-        {hasProfile && rubric && (
-          <>
-            <Card>
-              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
-                <CardTitle className="text-base">
-                  {profiled?.name}
-                  {profiled?.source ? (
-                    <span className="ml-2 text-sm font-normal text-muted-foreground">
-                      {profiled.source}
-                    </span>
-                  ) : null}
-                </CardTitle>
-                <Tabs value={scoreType} onValueChange={(v) => setScoreType(v as ScoreType)}>
-                  <TabsList>
-                    {SCORE_TYPES.map((t) => (
-                      <TabsTrigger key={t} value={t}>
-                        {t}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  {rubric.score_types[scoreType]}
-                </p>
-                {reading && <p className="text-sm leading-relaxed">{reading}</p>}
-                <BrainMap quadrants={currentColours} />
-                <p className="text-xs text-muted-foreground">
-                  The four colours are derived from the eight behaviour preferences below —
-                  each is the mean of its pair. They are never scored directly.
-                </p>
-              </CardContent>
-            </Card>
-
-            {rubric.groups.map((group) => {
-              const rows = group.dimensions.filter((d) => scores[d.key])
-              const state = group.group === BEHAVIOUR_GROUP ? "done" : batteryState[group.group]
-              if (!rows.length && state !== "running" && state !== "error") return null
-              return (
-                <Card key={group.group}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      {group.group}
-                      {state === "running" && (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                      )}
-                      {state === "error" && (
-                        <span className="text-xs font-normal text-destructive">
-                          could not be scored
-                        </span>
-                      )}
-                      {state === "partial" && (
-                        <span className="text-xs font-normal text-amber-600 dark:text-amber-500">
-                          partly scored — some scales are missing, not zero
-                        </span>
-                      )}
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">{group.definition}</p>
-                  </CardHeader>
-                  <CardContent className="space-y-1.5">
-                    {state === "running" && !rows.length && <Skeleton className="h-24 w-full" />}
-                    {state === "error" && !rows.length && (
-                      <p className="text-sm text-muted-foreground">
-                        This battery returned nothing. The rest of the profile is unaffected —
-                        it is missing, not zero.
-                      </p>
-                    )}
-                    {rows.map((d) => (
-                      <ScoreRow
-                        key={d.key}
-                        dimension={d}
-                        scores={scores[d.key]}
-                        scoreType={group.per_score_type ? scoreType : "Underlying"}
-                        bands={rubric.bands}
-                        evidence={evidence[d.key]}
-                      />
-                    ))}
-                    {!group.per_score_type && rows.length > 0 && (
-                      <p className="pt-1 text-xs text-muted-foreground">
-                        This battery reports one value rather than three — it does not vary by
-                        score type.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })}
-
-            <Card>
-              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
-                <CardTitle className="text-base">Analysis</CardTitle>
-                <Button
-                  variant="secondary"
-                  onClick={onAnalyse}
-                  disabled={analyse.isPending || batteriesRunning > 0}
-                >
-                  {analyse.isPending ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button onClick={onGenerate} disabled={busy || rubricLoading || !!rubricError}>
+                  {busy ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reading the profile…
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reading the character…
                     </>
                   ) : (
-                    "Read the profile"
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" /> Build profile
+                    </>
                   )}
                 </Button>
-              </CardHeader>
-              <CardContent>
-                {batteriesRunning > 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Waiting for the remaining batteries — analysing now would read a partial
-                    profile.
-                  </p>
-                ) : analysis ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-                    {analysis}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Not run yet.
-                  </p>
+                {batteriesRunning > 0 && (
+                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    {batteriesRunning} batter{batteriesRunning === 1 ? "y" : "ies"} still scoring
+                  </span>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Export</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-3">
-                <Button variant="outline" onClick={onExportWord}>
-                  <FileText className="mr-2 h-4 w-4" /> Word profile
-                </Button>
-                <Button variant="outline" onClick={() => onExportCsv("wide")} disabled={exporter.isPending}>
-                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Wide CSV (report layout)
-                </Button>
-                <Button variant="outline" onClick={() => onExportCsv("long")} disabled={exporter.isPending}>
-                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Long CSV (one row per score)
-                </Button>
-                <p className="w-full text-xs text-muted-foreground">
-                  The wide CSV matches the PRISM report export column-for-column, so it can be
-                  reshaped and compared with a real one. Both carry the synthetic-data notice.
-                </p>
-              </CardContent>
-            </Card>
-          </>
-        )}
+          {rubricLoading && <Skeleton className="h-48 w-full" />}
+
+          {hasProfile && rubric && (
+            <>
+              <Card>
+                <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+                  <CardTitle className="text-base">
+                    {profiled?.name}
+                    {profiled?.source ? (
+                      <span className="ml-2 text-sm font-normal text-muted-foreground">
+                        {profiled.source}
+                      </span>
+                    ) : null}
+                  </CardTitle>
+                  <Tabs value={scoreType} onValueChange={(v) => setScoreType(v as ScoreType)}>
+                    <TabsList>
+                      {SCORE_TYPES.map((t) => (
+                        <TabsTrigger key={t} value={t}>
+                          {t}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    {rubric.score_types[scoreType]}
+                  </p>
+                  {reading && <p className="text-sm leading-relaxed">{reading}</p>}
+                  <BrainMap quadrants={currentColours} />
+                  <p className="text-xs text-muted-foreground">
+                    The four colours are derived from the eight behaviour preferences below —
+                    each is the mean of its pair. They are never scored directly.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {rubric.groups.map((group) => {
+                const rows = group.dimensions.filter((d) => scores[d.key])
+                const state = group.group === BEHAVIOUR_GROUP ? "done" : batteryState[group.group]
+                if (!rows.length && state !== "running" && state !== "error") return null
+                return (
+                  <Card key={group.group}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        {group.group}
+                        {state === "running" && (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                        )}
+                        {state === "error" && (
+                          <span className="text-xs font-normal text-destructive">
+                            could not be scored
+                          </span>
+                        )}
+                        {state === "partial" && (
+                          <span className="text-xs font-normal text-amber-600 dark:text-amber-500">
+                            partly scored — some scales are missing, not zero
+                          </span>
+                        )}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">{group.definition}</p>
+                    </CardHeader>
+                    <CardContent className="space-y-1.5">
+                      {state === "running" && !rows.length && <Skeleton className="h-24 w-full" />}
+                      {state === "error" && !rows.length && (
+                        <p className="text-sm text-muted-foreground">
+                          This battery returned nothing. The rest of the profile is unaffected —
+                          it is missing, not zero.
+                        </p>
+                      )}
+                      {rows.map((d) => (
+                        <ScoreRow
+                          key={d.key}
+                          dimension={d}
+                          scores={scores[d.key]}
+                          scoreType={group.per_score_type ? scoreType : "Underlying"}
+                          bands={rubric.bands}
+                          evidence={evidence[d.key]}
+                        />
+                      ))}
+                      {!group.per_score_type && rows.length > 0 && (
+                        <p className="pt-1 text-xs text-muted-foreground">
+                          This battery reports one value rather than three — it does not vary by
+                          score type.
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })}
+
+              <Card>
+                <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+                  <CardTitle className="text-base">Analysis</CardTitle>
+                  <Button
+                    variant="secondary"
+                    onClick={onAnalyse}
+                    disabled={analyse.isPending || batteriesRunning > 0}
+                  >
+                    {analyse.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reading the profile…
+                      </>
+                    ) : (
+                      "Read the profile"
+                    )}
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {batteriesRunning > 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Waiting for the remaining batteries — analysing now would read a partial
+                      profile.
+                    </p>
+                  ) : analysis ? (
+                    // Rendered as markdown. It previously sat in a
+                    // `whitespace-pre-wrap` div under `prose` classes — but
+                    // @tailwindcss/typography is not installed in this build, so
+                    // those styled nothing and the `##` and `**` printed
+                    // literally. Four sections read as one wall of text.
+                    <ProfileMarkdown text={analysis} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Not run yet.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Export</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-wrap gap-3">
+                  <Button onClick={onSaveToLibrary} disabled={persist.isPending}>
+                    {persist.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Save to library
+                  </Button>
+                  <Button variant="outline" onClick={onExportPdf}>
+                    <FileDown className="mr-2 h-4 w-4" /> PDF profile
+                  </Button>
+                  <Button variant="outline" onClick={onExportWord}>
+                    <FileText className="mr-2 h-4 w-4" /> Word profile
+                  </Button>
+                  <Button variant="outline" onClick={() => onExportCsv("wide")} disabled={exporter.isPending}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Wide CSV (report layout)
+                  </Button>
+                  <Button variant="outline" onClick={() => onExportCsv("long")} disabled={exporter.isPending}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Long CSV (one row per score)
+                  </Button>
+                  <p className="w-full text-xs text-muted-foreground">
+                    The wide CSV matches the PRISM report export column-for-column, so it can be
+                    reshaped and compared with a real one. Every format carries the synthetic-data
+                    notice — the PDF prints it in full on page one, because a PDF travels further
+                    than the tab it came from.
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
+          </TabsContent>
+        </Tabs>
       </div>
     </SuperAdminLayout>
   )
