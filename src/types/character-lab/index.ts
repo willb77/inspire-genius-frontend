@@ -75,6 +75,16 @@ export type BatteryResult = {
   missing: string[]
 }
 
+/** One slice of the narrative write-up. See analyseProfile. */
+export type AnalysisPart = {
+  notice: string
+  name: string
+  part: number
+  parts: number
+  sections: string[]
+  analysis: string
+}
+
 export type CharacterRequest = {
   name: string
   source?: string
