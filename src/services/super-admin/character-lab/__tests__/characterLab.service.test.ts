@@ -1,23 +1,39 @@
 import {
   analyseProfile,
+  askAboutProfiles,
+  compareProfiles,
+  deleteProfile,
+  deleteScenario,
   exportProfile,
   fetchRubric,
+  fetchStarterQuestions,
   generateProfile,
+  getProfile,
+  listProfiles,
+  listScenarios,
+  patchProfile,
+  runScenario,
+  saveProfile,
+  saveScenario,
   scoreBattery,
 } from "../characterLab.service"
 import { agentApi } from "@/lib/agentApi"
 
 jest.mock("@/lib/agentApi", () => ({
-  agentApi: { get: jest.fn(), post: jest.fn() },
+  agentApi: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
 }))
 
 const get = agentApi.get as jest.Mock
 const post = agentApi.post as jest.Mock
+const patch = agentApi.patch as jest.Mock
+const del = agentApi.delete as jest.Mock
 
 describe("characterLab.service", () => {
   beforeEach(() => {
     get.mockReset()
     post.mockReset()
+    patch.mockReset()
+    del.mockReset()
   })
 
   /**
@@ -56,6 +72,94 @@ describe("characterLab.service", () => {
       name: "Sonny Corleone",
       source: "The Godfather",
       notes: "hot-headed",
+    })
+  })
+})
+
+// ─── Saved profiles, comparison, scenarios ──────────────────────────────
+
+describe("characterLab.service — library", () => {
+  const get = agentApi.get as jest.Mock
+  const post = agentApi.post as jest.Mock
+  const patch = agentApi.patch as jest.Mock
+  const del = agentApi.delete as jest.Mock
+
+  beforeEach(() => {
+    get.mockReset()
+    post.mockReset()
+    patch.mockReset()
+    del.mockReset()
+  })
+
+  /**
+   * Every one of these must sit under `/v1/agents/`. It is the only prefix with
+   * an API Gateway integration to the agent-engine — anything else deploys
+   * green and 404s in the browser, with every unit test still passing.
+   */
+  it("mounts every library call under /v1/agents/character-lab", async () => {
+    get.mockResolvedValue({ data: { status: true, data: { profiles: [], scenarios: [] } } })
+    post.mockResolvedValue({ data: { status: true, data: {} } })
+    patch.mockResolvedValue({ data: { status: true, data: {} } })
+    del.mockResolvedValue({ data: { status: true, data: {} } })
+
+    await listProfiles()
+    await getProfile("p1")
+    await listScenarios()
+    await saveProfile({ name: "X", scores: {}, colours: {} })
+    await patchProfile("p1", { notes: "n" })
+    await deleteProfile("p1")
+    await compareProfiles({ profile_ids: ["a", "b"], part: 0 })
+    await fetchStarterQuestions({ profile_ids: ["a"] })
+    await askAboutProfiles({ profile_ids: ["a"], question: "q" })
+    await runScenario({ profile_ids: ["a"], situation: "s", focus: "collaborative" })
+    await saveScenario({
+      profile_ids: ["a"],
+      title: "t",
+      situation: "s",
+      character_names: ["A"],
+      result: {},
+    })
+    await deleteScenario("s1")
+
+    const paths = [
+      ...get.mock.calls,
+      ...post.mock.calls,
+      ...patch.mock.calls,
+      ...del.mock.calls,
+    ].map((c) => c[0] as string)
+
+    expect(paths).toHaveLength(12)
+    for (const path of paths) {
+      expect(path.startsWith("/v1/agents/character-lab")).toBe(true)
+    }
+  })
+
+  it("unwraps the envelope rather than handing back the axios body", async () => {
+    get.mockResolvedValue({
+      data: { status: true, data: { profiles: [{ id: "p1", name: "Sonny" }] } },
+    })
+    await expect(listProfiles()).resolves.toEqual([{ id: "p1", name: "Sonny" }])
+  })
+
+  it("sends only the fields being patched", async () => {
+    // The endpoint treats an absent field as "leave alone". A service that
+    // helpfully filled in the rest would blank the write-up on a notes edit.
+    patch.mockResolvedValue({ data: { status: true, data: {} } })
+    await patchProfile("p1", { notes: "just the notes" })
+    expect(patch).toHaveBeenCalledWith("/v1/agents/character-lab/profiles/p1", {
+      notes: "just the notes",
+    })
+  })
+
+  it("passes the scenario focus straight through", async () => {
+    // "collaborative" or a profile id — the server rejects anything else, and a
+    // service that defaulted it would silently produce the wrong read.
+    post.mockResolvedValue({ data: { status: true, data: {} } })
+    await runScenario({ profile_ids: ["a", "b"], situation: "s", focus: "b" })
+    expect(post).toHaveBeenCalledWith("/v1/agents/character-lab/scenario", {
+      profile_ids: ["a", "b"],
+      situation: "s",
+      focus: "b",
     })
   })
 })

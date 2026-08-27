@@ -9,9 +9,48 @@ jest.mock("@/layouts/SuperAdminLayout", () => ({
 
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn(), warning: jest.fn() } }))
 
+// react-markdown ships ESM that Jest does not transform; the platform's other
+// tests stub the wrapper component the same way.
+jest.mock("@/components/super-admin/character-lab/ProfileMarkdown", () => ({
+  __esModule: true,
+  default: ({ text }: { text: string }) => <div>{text}</div>,
+}))
+
+// The three new tabs are exercised by their own suites. Stubbing them here
+// keeps this file about the Build tab and stops an unrelated failure in, say,
+// the scenario panel from reading as a regression in profile generation.
+// Stubbed as a button that calls the page's real `onLoad`. A stub that only
+// rendered a div would let this suite assert that a placeholder appeared, which
+// proves nothing about whether loading a saved character works.
+jest.mock("@/components/super-admin/character-lab/ProfileLibrary", () => ({
+  __esModule: true,
+  default: ({ onLoad }: { onLoad: (id: string) => void }) => (
+    <button onClick={() => onLoad("p1")}>load saved</button>
+  ),
+}))
+jest.mock("@/components/super-admin/character-lab/ComparePanel", () => ({
+  __esModule: true,
+  default: () => <div>compare stub</div>,
+}))
+jest.mock("@/components/super-admin/character-lab/ScenarioPanel", () => ({
+  __esModule: true,
+  default: () => <div>scenario stub</div>,
+}))
+
+const getProfileMock = jest.fn()
+jest.mock("@/services/super-admin/character-lab/characterLab.service", () => ({
+  getProfile: (...args: unknown[]) => getProfileMock(...args),
+}))
+
+const exportPdfMock = jest.fn()
+jest.mock("@/lib/exportCharacterPdf", () => ({
+  exportProfilePdf: (...args: unknown[]) => exportPdfMock(...args),
+}))
+
 const generateMutate = jest.fn()
 const batteryMutate = jest.fn()
 const analyseMutate = jest.fn()
+const saveProfileMutate = jest.fn()
 let rubricResult: { data: Rubric | undefined; isLoading: boolean; error: unknown } = {
   data: undefined,
   isLoading: false,
@@ -24,6 +63,7 @@ jest.mock("@/hooks/super-admin/useCharacterLab", () => ({
   useScoreBattery: () => ({ mutateAsync: batteryMutate, isPending: false }),
   useAnalyseProfile: () => ({ mutateAsync: analyseMutate, isPending: false }),
   useExportProfile: () => ({ mutateAsync: jest.fn(), isPending: false }),
+  useSaveProfile: () => ({ mutateAsync: saveProfileMutate, isPending: false }),
 }))
 
 const RUBRIC: Rubric = {
@@ -287,5 +327,126 @@ describe("CharacterLab", () => {
     render(<CharacterLab />)
     fillAndSubmit()
     expect(await screen.findByText(/does not vary by\s+score type/i)).toBeInTheDocument()
+  })
+})
+
+// ─── Library: saving, loading, and the formats ──────────────────────────
+
+describe("CharacterLab — library and exports", () => {
+  beforeEach(() => {
+    rubricResult = { data: RUBRIC, isLoading: false, error: null }
+    generateMutate.mockReset().mockResolvedValue(GENERATED)
+    batteryMutate.mockReset().mockResolvedValue({
+      group: "Core Traits",
+      part: 0,
+      parts: 1,
+      scores: { decisiveness: { Underlying: 90 } },
+      evidence: {},
+      missing: [],
+    })
+    analyseMutate.mockReset().mockResolvedValue({
+      notice: RUBRIC.notice,
+      name: "Sonny Corleone",
+      part: 0,
+      parts: 1,
+      sections: ["The shape of this profile"],
+      analysis: "## The shape of this profile\nRed-dominant.",
+    })
+    saveProfileMutate.mockReset().mockResolvedValue({})
+    getProfileMock.mockReset()
+    exportPdfMock.mockReset()
+  })
+
+  it("saves the full per-score-type colours, not the flattened map", async () => {
+    // The prose endpoints take a flat {Green: 71.5}. Storing THAT would make a
+    // reloaded profile show the same brain map on all three score-type tabs —
+    // wrong in a way nobody would think to question.
+    render(<CharacterLab />)
+    await act(async () => {
+      fillAndSubmit()
+    })
+    await screen.findByText(/Sonny Corleone/)
+
+    fireEvent.click(screen.getByRole("button", { name: /Save to library/i }))
+    await waitFor(() => expect(saveProfileMutate).toHaveBeenCalled())
+
+    const body = saveProfileMutate.mock.calls[0][0]
+    expect(body.colours).toEqual(GENERATED.colours)
+    expect(body.colours.Underlying).toHaveLength(2)
+    expect(body.scores).toEqual(expect.objectContaining({ initiating: expect.anything() }))
+  })
+
+  it("loads a saved character back onto the Build tab", async () => {
+    getProfileMock.mockResolvedValue({
+      id: "p1",
+      name: "Michael Corleone",
+      source: "The Godfather",
+      notes: "Cold under pressure.",
+      scored: 2,
+      has_analysis: true,
+      created_at: null,
+      updated_at: null,
+      reading: "Watches, then acts.",
+      analysis: "## The shape of this profile\nControlled.",
+      scores: { initiating: { Underlying: 40 }, decisiveness: { Underlying: 95 } },
+      colours: GENERATED.colours,
+      evidence: {},
+      notice: RUBRIC.notice,
+    })
+
+    render(<CharacterLab />)
+    // Radix activates a tab on mousedown, not click — fireEvent.click alone
+    // leaves the panel unmounted and the assertions below would fail for the
+    // wrong reason.
+    await act(async () => {
+      fireEvent.mouseDown(screen.getByRole("tab", { name: /Library/i }))
+    })
+    await act(async () => {
+      fireEvent.click(await screen.findByRole("button", { name: /load saved/i }))
+    })
+
+    expect(getProfileMock).toHaveBeenCalledWith("p1")
+    // The page switched back to Build and is showing the loaded character, not
+    // an empty form — the whole point of a recall list.
+    expect(await screen.findByText("Michael Corleone")).toBeInTheDocument()
+    expect(screen.getByText(/Watches, then acts/)).toBeInTheDocument()
+    expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Michael Corleone")
+    // Scores came back, so the battery reads as scored rather than pending.
+    expect(screen.getByText("Decisiveness")).toBeInTheDocument()
+  })
+
+  it("offers PDF alongside Word and both CSVs", async () => {
+    render(<CharacterLab />)
+    await act(async () => {
+      fillAndSubmit()
+    })
+    await screen.findByText(/Sonny Corleone/)
+
+    fireEvent.click(screen.getByRole("button", { name: /PDF profile/i }))
+    await waitFor(() => expect(exportPdfMock).toHaveBeenCalled())
+
+    // The PDF carries the notice and the same score type the screen shows —
+    // an export that silently switched score type would be unfalsifiable.
+    const payload = exportPdfMock.mock.calls[0][0]
+    expect(payload.notice).toBe(RUBRIC.notice)
+    expect(payload.scoreType).toBe("Underlying")
+    expect(payload.name).toBe("Sonny Corleone")
+  })
+
+  it("renders the write-up as markdown rather than printing the hashes", async () => {
+    // It used to sit in a `whitespace-pre-wrap` div under `prose` classes, but
+    // @tailwindcss/typography is not installed here — so those classes styled
+    // nothing and "## The shape of this profile" printed literally.
+    render(<CharacterLab />)
+    await act(async () => {
+      fillAndSubmit()
+    })
+    await screen.findByText(/Sonny Corleone/)
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Read the profile/i }))
+    })
+    // ProfileMarkdown is stubbed to render its text, so the assertion is that
+    // the analysis reaches it at all rather than being interpolated raw.
+    expect(await screen.findByText(/Red-dominant/)).toBeInTheDocument()
   })
 })

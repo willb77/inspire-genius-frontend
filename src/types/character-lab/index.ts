@@ -90,3 +90,108 @@ export type CharacterRequest = {
   source?: string
   notes?: string
 }
+
+// ─── Saved profiles ─────────────────────────────────────────────────────
+//
+// Profiles persist in two tables owned by the Character Lab alone — never in
+// the PRISM stores, where a synthetic row would be indistinguishable from a
+// real candidate downstream. See
+// `services/agent-engine/app/tools/character_lab/profile_store.py`.
+
+/** The recall-list shape. Deliberately NOT the whole profile. */
+export type ProfileSummary = {
+  id: string
+  name: string
+  source: string
+  notes: string
+  /**
+   * How many scales actually came back — not how many exist. A profile built
+   * from a run where a battery failed says 62, not 88.
+   */
+  scored: number
+  has_analysis: boolean
+  created_at: string | null
+  updated_at: string | null
+}
+
+export type SavedProfile = ProfileSummary & {
+  reading: string
+  analysis: string
+  scores: Record<string, ScoreByType>
+  /**
+   * Either flat (`{Green: 71.5}`) or the per-score-type shape `/generate`
+   * returns. The table holds both because the browser has held both; readers
+   * must handle either rather than assuming the newer one.
+   */
+  colours: Record<string, number> | Partial<Record<ScoreType, DerivedQuadrant[]>>
+  evidence: Record<string, string>
+  notice: string
+}
+
+/** Only the fields being changed. Omitted means "leave alone". */
+export type ProfilePatch = {
+  name?: string
+  source?: string
+  notes?: string
+  analysis?: string
+}
+
+// ─── Comparison, questions, scenarios ───────────────────────────────────
+
+/** One section of a multi-character comparison. */
+export type ComparisonPart = {
+  notice: string
+  part: number
+  parts: number
+  sections: string[]
+  names: string[]
+  comparison: string
+}
+
+export type StarterQuestion = {
+  question: string
+  /** The scores that make it worth asking — this is what stops it being trivia. */
+  why: string
+}
+
+export type StarterQuestions = {
+  notice: string
+  names: string[]
+  questions: StarterQuestion[]
+}
+
+export type AskResult = {
+  notice: string
+  question: string
+  names: string[]
+  answer: string
+}
+
+/**
+ * One character's read of a situation, or the collaborative one.
+ *
+ * `focus` is a profile id or the literal `"collaborative"`. One request per
+ * focus keeps each generation inside API Gateway's 30s cap.
+ */
+export type ScenarioPart = {
+  notice: string
+  focus: string
+  heading: string
+  names: string[]
+  behaviour: string
+}
+
+export type SavedScenario = {
+  id: string
+  title: string
+  situation: string
+  character_ids: string[]
+  /** Names as they were at run time, so a run survives a rename or delete. */
+  character_names: string[]
+  result: { individual?: Record<string, string>; collaborative?: string }
+  notice: string
+  created_at: string | null
+  updated_at: string | null
+}
+
+export const COLLABORATIVE = 'collaborative' as const
