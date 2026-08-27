@@ -450,3 +450,52 @@ describe("CharacterLab — library and exports", () => {
     expect(await screen.findByText(/Red-dominant/)).toBeInTheDocument()
   })
 })
+
+
+// ─── A failed save must report, never crash ─────────────────────────────
+
+describe("CharacterLab — a 422 is reported, not rendered", () => {
+  beforeEach(() => {
+    rubricResult = { data: RUBRIC, isLoading: false, error: null }
+    generateMutate.mockReset().mockResolvedValue(GENERATED)
+    batteryMutate.mockReset().mockResolvedValue({
+      group: "Core Traits", part: 0, parts: 1,
+      scores: { decisiveness: { Underlying: 90 } }, evidence: {}, missing: [],
+    })
+    saveProfileMutate.mockReset()
+  })
+
+  it("survives the exact 422 that crashed the page", async () => {
+    // FastAPI's `detail` is an ARRAY OF OBJECTS for a validation failure. Passed
+    // straight to toast it becomes a React child, React refuses to render an
+    // object (#31), and the ErrorBoundary takes the page down — a failed save
+    // killed the app. The assertion is that a STRING reaches the toast.
+    saveProfileMutate.mockRejectedValue({
+      response: {
+        data: {
+          detail: [
+            { type: "string_type", loc: ["body", "evidence", "sd_score"],
+              msg: "Input should be a valid string", input: 4 },
+          ],
+        },
+      },
+    })
+
+    render(<CharacterLab />)
+    await act(async () => { fillAndSubmit() })
+    await screen.findByText(/Sonny Corleone/)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Save to library/i }))
+    })
+
+    const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } }
+    expect(toast.error).toHaveBeenCalled()
+    const arg = toast.error.mock.calls.at(-1)![0]
+    expect(typeof arg).toBe("string")
+    expect(arg).toContain("evidence.sd_score")
+
+    // And the page is still standing.
+    expect(screen.getByRole("button", { name: /Save to library/i })).toBeInTheDocument()
+  })
+})
