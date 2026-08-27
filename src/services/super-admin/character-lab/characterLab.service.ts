@@ -10,6 +10,7 @@ import type {
   ProfileSummary,
   Rubric,
   SavedProfile,
+  ImportResult,
   SavedScenario,
   ScenarioPart,
   ScoreByType,
@@ -183,4 +184,22 @@ export async function saveScenario(req: {
 
 export async function deleteScenario(id: string): Promise<void> {
   await agentApi.delete(`${BASE}/scenarios/${id}`)
+}
+
+/**
+ * Import one authored wide-format CSV as a saved character.
+ *
+ * Sends the file's TEXT, not a multipart upload: the payload is a few KB, the
+ * agent-engine is reached through API Gateway, and a JSON body avoids a second
+ * content-type path through the proxy for no benefit.
+ */
+export async function importProfileCsv(req: {
+  content: string
+  filename?: string
+  name?: string
+  source?: string
+  notes?: string
+}): Promise<ImportResult> {
+  const { data } = await agentApi.post<Envelope<ImportResult>>(`${BASE}/import`, req)
+  return data.data
 }

@@ -28,6 +28,10 @@ jest.mock("@/components/super-admin/character-lab/ProfileLibrary", () => ({
     <button onClick={() => onLoad("p1")}>load saved</button>
   ),
 }))
+jest.mock("@/components/super-admin/character-lab/ImportCsvButton", () => ({
+  __esModule: true,
+  default: () => <div>import stub</div>,
+}))
 jest.mock("@/components/super-admin/character-lab/ComparePanel", () => ({
   __esModule: true,
   default: () => <div>compare stub</div>,

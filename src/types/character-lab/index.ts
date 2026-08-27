@@ -195,3 +195,15 @@ export type SavedScenario = {
 }
 
 export const COLLABORATIVE = 'collaborative' as const
+
+/**
+ * The result of importing an authored wide-format CSV.
+ *
+ * `imported` vs `expected` is deliberately reported: a half-read file must be
+ * visible as half-read rather than presenting as a complete profile.
+ */
+export type ImportResult = SavedProfile & {
+  imported: number
+  expected: number
+  warnings: string[]
+}
