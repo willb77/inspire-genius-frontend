@@ -17,6 +17,7 @@ import {
   useSavedScenarios,
 } from "@/hooks/super-admin/useCharacterLab"
 import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { COLLABORATIVE } from "@/types/character-lab"
 
 const MAX_CAST = 4
@@ -108,10 +109,7 @@ export default function ScenarioPanel() {
       })
       toast.success("Scenario saved")
     } catch (err) {
-      toast.error(
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-          "Could not save the scenario",
-      )
+      toast.error(apiErrorMessage(err, "Could not save the scenario"))
     }
   }
 
