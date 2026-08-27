@@ -243,6 +243,27 @@ describe("CharacterLab", () => {
     expect(await screen.findByText(/Section 0[\s\S]*Section 1[\s\S]*Section 2/)).toBeInTheDocument()
   })
 
+  it("paces the analysis fan-out instead of firing every part at once", async () => {
+    // Seven concurrent parts contend badly enough that one exceeds the
+    // gateway's 30s cap; measured 1/7 lost at 7-way, 0/7 at 3-way.
+    let inFlight = 0
+    let peak = 0
+    analyseMutate.mockImplementation(async ({ part }: { part: number }) => {
+      inFlight++
+      peak = Math.max(peak, inFlight)
+      await new Promise((r) => setTimeout(r, 5))
+      inFlight--
+      return { notice: "", name: "S", part, parts: 7, sections: [`s${part}`], analysis: `## S${part}` }
+    })
+    render(<CharacterLab />)
+    fillAndSubmit()
+    const button = await screen.findByRole("button", { name: /Read the profile/i })
+    await waitFor(() => expect(button).toBeEnabled())
+    fireEvent.click(button)
+    await waitFor(() => expect(analyseMutate).toHaveBeenCalledTimes(7))
+    expect(peak).toBeLessThanOrEqual(3)
+  })
+
   it("marks a failed analysis section instead of silently shortening the write-up", async () => {
     // A missing "Derailers" section reads as "nothing to say about derailers",
     // which is the opposite of true.
