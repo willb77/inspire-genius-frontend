@@ -30,7 +30,12 @@ export async function generateProfile(req: CharacterRequest): Promise<GenerateRe
 }
 
 export async function scoreBattery(
-  req: CharacterRequest & { group: string; behaviours: Record<string, ScoreByType> },
+  req: CharacterRequest & {
+    group: string
+    behaviours: Record<string, ScoreByType>
+    /** Slice index; groups larger than the server's chunk size need several. */
+    part?: number
+  },
 ): Promise<BatteryResult> {
   const { data } = await agentApi.post<Envelope<BatteryResult>>(`${BASE}/battery`, req)
   return data.data
