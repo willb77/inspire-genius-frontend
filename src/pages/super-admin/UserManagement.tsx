@@ -18,6 +18,7 @@ import type { UserFormValues } from "@/components/shared/forms/userForm.constant
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
 import DestructiveConfirmModal from "@/components/shared/forms/DestructiveConfirmModal";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
+import { UserActivityDialog } from "@/components/super-admin/UserActivityDialog";
 import {
   useUserManagement,
   useInviteUser,
@@ -193,6 +194,11 @@ export default function UserManagement() {
   const changeRoleMutation = useChangeUserRole();
   const deleteMutation = useDeleteUser();
   const resendMutation = useResendInvitation();
+
+  // Activity drawer (User Management → Action → Activity).
+  const [activityUser, setActivityUser] = useState<
+    { id: string; name?: string; email?: string } | null
+  >(null);
 
   const openAdd = () => setAddOpen(true);
   const openView = (row: UserRow) => {
@@ -517,6 +523,7 @@ export default function UserManagement() {
           row={row}
           align="end"
           showView={true}
+          showActivity={true}
           showEdit={row.status !== "Awaiting"}
           showResend={row.status === "Awaiting"}
           showDeactivate={row.status === "Active"}
@@ -525,6 +532,9 @@ export default function UserManagement() {
           showImportPrism={true}
           showPrismPdf={true}
           onView={() => openView(row)}
+          onActivity={() =>
+            setActivityUser({ id: row.id, name: row.name, email: row.email })
+          }
           onEdit={() => openEdit(row)}
           onResend={() => handleResend(row)}
           onDeactivate={() => openDeactivate(row)}
@@ -870,6 +880,11 @@ export default function UserManagement() {
         }
         loading={purgeMutation.isPending}
         onConfirm={handlePurgeInactive}
+      />
+      <UserActivityDialog
+        open={activityUser !== null}
+        onOpenChange={(o) => !o && setActivityUser(null)}
+        user={activityUser}
       />
     </SuperAdminLayout>
   );
