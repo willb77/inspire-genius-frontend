@@ -8,6 +8,14 @@ jest.mock("@/components/super-admin/character-lab/ProfileMarkdown", () => ({
   default: ({ text }: { text: string }) => <div>{text}</div>,
 }))
 
+const wordMock = jest.fn()
+const pdfMock = jest.fn()
+jest.mock("@/lib/exportNarrative", () => ({
+  ...(jest.requireActual("@/lib/exportNarrative") as object),
+  exportNarrativeWord: (...a: unknown[]) => wordMock(...a),
+  exportNarrativePdf: (...a: unknown[]) => pdfMock(...a),
+}))
+
 const compareMutate = jest.fn()
 const questionsMutate = jest.fn()
 const askMutate = jest.fn()
@@ -124,4 +132,78 @@ it("shows the reason the question was worth asking, not just the question", () =
   pick("Sonny", "Michael")
   fireEvent.click(screen.getByRole("button", { name: /Suggest questions/ }))
   return screen.findByText("Red 85 vs Blue 28")
+})
+
+
+// ─── Export ─────────────────────────────────────────────────────────────
+
+describe("ComparePanel — narrative export", () => {
+  beforeEach(() => {
+    wordMock.mockReset().mockResolvedValue(undefined)
+    pdfMock.mockReset().mockResolvedValue(undefined)
+  })
+
+  it("exports the stitched comparison, not just the first section", async () => {
+    compareMutate.mockImplementation(({ part }: { part: number }) =>
+      Promise.resolve({
+        part, parts: 3, comparison: `section-${part}`,
+        names: [], sections: [], notice: "SYNTHETIC NOTICE",
+      }),
+    )
+    render(<ComparePanel />)
+    pick("Sonny", "Michael")
+    fireEvent.click(screen.getByRole("button", { name: /Compare them/ }))
+    await screen.findByText(/section-0[\s\S]*section-2/)
+
+    fireEvent.click(screen.getByRole("button", { name: /^PDF$/ }))
+    await waitFor(() => expect(pdfMock).toHaveBeenCalled())
+
+    const doc = pdfMock.mock.calls[0][0]
+    expect(doc.title).toBe("Sonny vs Michael")
+    expect(doc.notice).toBe("SYNTHETIC NOTICE")
+    expect(doc.sections[0].body).toContain("section-0")
+    expect(doc.sections[0].body).toContain("section-2")
+  })
+
+  it("captions an answer with the question AS ASKED, not the box contents", async () => {
+    // Clicking a second starter question changes the input. A doc built at
+    // render time would caption the first answer with the second question.
+    questionsMutate.mockResolvedValue({
+      notice: "N", names: [],
+      questions: [
+        { question: "Who de-escalates?", why: "a" },
+        { question: "Who escalates?", why: "b" },
+      ],
+    })
+    askMutate.mockResolvedValue({ notice: "N", question: "", names: [], answer: "Michael does." })
+
+    render(<ComparePanel />)
+    pick("Sonny", "Michael")
+    fireEvent.click(screen.getByRole("button", { name: /Suggest questions/ }))
+    fireEvent.click(await screen.findByText("Who de-escalates?"))
+    await screen.findByText("Michael does.")
+
+    // THE DISCRIMINATOR: the operator now types a different question but has
+    // NOT asked it. Without this the input and the asked question hold the same
+    // string, and the test passes whichever one the export reads — which is
+    // exactly how the first version of this test failed to catch anything.
+    fireEvent.change(screen.getByLabelText(/Your question/i), {
+      target: { value: "Something else entirely" },
+    })
+
+    fireEvent.click(screen.getAllByRole("button", { name: /^Word$/ })[0])
+    await waitFor(() => expect(wordMock).toHaveBeenCalled())
+
+    const doc = wordMock.mock.calls[0][0]
+    expect(doc.meta.find((m: { label: string }) => m.label === "Question").value).toBe(
+      "Who de-escalates?",
+    )
+    expect(doc.sections[0].body).toBe("Michael does.")
+  })
+
+  it("offers no export before a comparison exists", () => {
+    render(<ComparePanel />)
+    pick("Sonny", "Michael")
+    expect(screen.queryByRole("button", { name: /^PDF$/ })).not.toBeInTheDocument()
+  })
 })

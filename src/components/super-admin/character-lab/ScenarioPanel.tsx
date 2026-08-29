@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import CastPicker from "@/components/super-admin/character-lab/CastPicker"
 import ProfileMarkdown from "@/components/super-admin/character-lab/ProfileMarkdown"
+import NarrativeExportButtons from "@/components/super-admin/character-lab/NarrativeExportButtons"
 import {
   useDeleteScenario,
   useRunScenario,
@@ -19,6 +20,7 @@ import {
 import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { COLLABORATIVE } from "@/types/character-lab"
+import type { NarrativeDoc } from "@/lib/exportNarrative"
 
 const MAX_CAST = 4
 
@@ -55,6 +57,7 @@ export default function ScenarioPanel() {
   const [title, setTitle] = useState("")
   const [result, setResult] = useState<Result | null>(null)
   const [running, setRunning] = useState(false)
+  const [notice, setNotice] = useState("")
 
   const cast = (profiles ?? []).filter((p) => selected.includes(p.id))
 
@@ -79,6 +82,8 @@ export default function ScenarioPanel() {
 
     const next: Result = { individual: {}, collaborative: "" }
     let failed = 0
+    const firstOk = outcomes.find((o) => o.status === "fulfilled")
+    if (firstOk && firstOk.status === "fulfilled") setNotice(firstOk.value.notice)
     outcomes.forEach((outcome, i) => {
       const focus = focuses[i]
       if (outcome.status === "fulfilled") {
@@ -110,6 +115,31 @@ export default function ScenarioPanel() {
       toast.success("Scenario saved")
     } catch (err) {
       toast.error(apiErrorMessage(err, "Could not save the scenario"))
+    }
+  }
+
+  /**
+   * One section per character, in cast order, then the group read.
+   *
+   * Built on click so it exports what is on screen — including a section that
+   * failed, which carries its own "could not be generated" marker. Dropping
+   * those would make the export read as a complete scene that was simply
+   * shorter, which is the failure this whole surface keeps guarding against.
+   */
+  function scenarioDoc(): NarrativeDoc {
+    const cast_ = cast.length ? cast : []
+    const sections = cast_
+      .map((c) => ({ heading: c.name, body: result?.individual[c.id] ?? "" }))
+      .concat([{ heading: "Together", body: result?.collaborative ?? "" }])
+    return {
+      title: title.trim() || situation.trim().slice(0, 60) || "Scenario",
+      subtitle: "PRISM character scenario",
+      notice,
+      meta: [
+        { label: "Characters", value: cast_.map((c) => c.name).join(", ") || "none selected" },
+        { label: "Situation", value: situation.trim() },
+      ],
+      sections,
     }
   }
 
@@ -200,10 +230,11 @@ export default function ScenarioPanel() {
 
       {result && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-base">
               {title.trim() || "How it plays out"}
             </CardTitle>
+            {!running && <NarrativeExportButtons build={scenarioDoc} label="a scenario" />}
           </CardHeader>
           <CardContent className="space-y-5">
             {cast.map((c) => (
