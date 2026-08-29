@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import CastPicker from "@/components/super-admin/character-lab/CastPicker"
 import ProfileMarkdown from "@/components/super-admin/character-lab/ProfileMarkdown"
+import NarrativeExportButtons from "@/components/super-admin/character-lab/NarrativeExportButtons"
 import {
   useAskAboutProfiles,
   useCompareProfiles,
@@ -15,6 +16,7 @@ import {
 } from "@/hooks/super-admin/useCharacterLab"
 import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
+import type { NarrativeDoc } from "@/lib/exportNarrative"
 import type { StarterQuestion } from "@/types/character-lab"
 
 /** Server cap. Past four it stops being a comparison and becomes a list. */
@@ -42,6 +44,11 @@ export default function ComparePanel() {
   const [starters, setStarters] = useState<StarterQuestion[]>([])
   const [question, setQuestion] = useState("")
   const [answer, setAnswer] = useState("")
+  // The question AS ASKED, captured when the answer arrives. Exporting
+  // `question` would caption the answer with whatever is in the box now, which
+  // after clicking a second starter question is a different question entirely.
+  const [answered, setAnswered] = useState("")
+  const [notice, setNotice] = useState("")
 
   const names = (profiles ?? []).filter((p) => selected.includes(p.id)).map((p) => p.name)
 
@@ -63,6 +70,7 @@ export default function ComparePanel() {
     try {
       const first = await compare.mutateAsync({ profile_ids: selected, part: 0 })
       setComparison(first.comparison)
+      setNotice(first.notice)
       if (first.parts <= 1) return
 
       const rest = await mapWithConcurrency(
@@ -94,6 +102,7 @@ export default function ComparePanel() {
     try {
       const result = await questions.mutateAsync({ profile_ids: selected })
       setStarters(result.questions)
+      setNotice((n) => n || result.notice)
       if (!result.questions.length) {
         toast.warning("No questions came back — try again.")
       }
@@ -113,8 +122,34 @@ export default function ComparePanel() {
     try {
       const result = await ask.mutateAsync({ profile_ids: selected, question: q })
       setAnswer(result.answer)
+      setAnswered(q)
+      setNotice((n) => n || result.notice)
     } catch (err) {
       toast.error(apiErrorMessage(err, "Could not answer that"))
+    }
+  }
+
+  /** Built on click, not at render — see NarrativeExportButtons. */
+  function comparisonDoc(): NarrativeDoc {
+    return {
+      title: names.join(" vs "),
+      subtitle: "PRISM character comparison",
+      notice,
+      meta: [{ label: "Characters", value: names.join(", ") }],
+      sections: [{ body: comparison }],
+    }
+  }
+
+  function answerDoc(): NarrativeDoc {
+    return {
+      title: `${names.join(", ")} — ${answered.slice(0, 60)}`,
+      subtitle: "PRISM character Q&A",
+      notice,
+      meta: [
+        { label: "Characters", value: names.join(", ") },
+        { label: "Question", value: answered },
+      ],
+      sections: [{ heading: "Answer", body: answer }],
     }
   }
 
@@ -200,8 +235,9 @@ export default function ComparePanel() {
       )}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-base">Ask about {names.length ? names.join(" and ") : "the cast"}</CardTitle>
+          {answer && <NarrativeExportButtons build={answerDoc} label="an answer" />}
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
@@ -243,8 +279,9 @@ export default function ComparePanel() {
 
       {comparison && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-base">{names.join(" vs ")}</CardTitle>
+            <NarrativeExportButtons build={comparisonDoc} label="a comparison" />
           </CardHeader>
           <CardContent>
             <ProfileMarkdown text={comparison} />
