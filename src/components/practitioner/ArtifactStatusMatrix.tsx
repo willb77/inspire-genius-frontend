@@ -1,6 +1,7 @@
 import { useRef, useState } from "react"
 import { CheckCircle2, Plus, Upload, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useUploadClientResource } from "@/hooks/practitioner/useCoachClient"
@@ -8,6 +9,13 @@ import { CLIENT_RESOURCES, type ResourceKey } from "@/types/practitioner/coachCl
 
 export type ArtifactStatusMatrixProps = {
   resources: Record<ResourceKey, boolean>
+  /**
+   * Resources whose presence was never determined. These render as "Not
+   * checked" — a dashed neutral state — rather than borrowing the absent
+   * styling, because "we did not look" and "it is not there" are different
+   * facts and only one of them is true here.
+   */
+  unchecked?: ResourceKey[]
   clientId: string
 }
 
@@ -19,7 +27,8 @@ export type ArtifactStatusMatrixProps = {
  * file input (assessment/document kinds) or a textarea (text kind, i.e. goals)
  * and uploads via useUploadClientResource.
  */
-export function ArtifactStatusMatrix({ resources, clientId }: ArtifactStatusMatrixProps) {
+export function ArtifactStatusMatrix({ resources, unchecked = [], clientId }: ArtifactStatusMatrixProps) {
+  const notChecked = new Set(unchecked)
   const upload = useUploadClientResource()
   const [openKey, setOpenKey] = useState<ResourceKey | null>(null)
   const [text, setText] = useState("")
@@ -49,6 +58,12 @@ export function ArtifactStatusMatrix({ resources, clientId }: ArtifactStatusMatr
           toast.success(`${label} added to client file.`)
           reset()
         },
+        // This mutation could not fail while the service was a no-op that
+        // returned `{ ok: true }`. It can now, so the failure has to be visible
+        // — a silent rejection would reproduce the original bug with extra steps.
+        onError: (err: unknown) => {
+          toast.error(err instanceof Error ? err.message : "Upload failed.")
+        },
       },
     )
   }
@@ -57,6 +72,7 @@ export function ArtifactStatusMatrix({ resources, clientId }: ArtifactStatusMatr
     <div className="divide-y divide-[#e5e7eb]">
       {CLIENT_RESOURCES.map((res) => {
         const present = resources[res.key]
+        const isUnknown = notChecked.has(res.key)
         const isOpen = openKey === res.key
         const isPending = upload.isPending && openKey === res.key
         return (
@@ -66,7 +82,12 @@ export function ArtifactStatusMatrix({ resources, clientId }: ArtifactStatusMatr
                 {present ? (
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-[#059669]" />
                 ) : (
-                  <span className="h-4 w-4 shrink-0 rounded-full border border-dashed border-[#d1d5db]" />
+                  <span
+                    className={cn(
+                      "h-4 w-4 shrink-0 rounded-full border border-dashed",
+                      isUnknown ? "border-[#e5e7eb]" : "border-[#d1d5db]",
+                    )}
+                  />
                 )}
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-[#111827] truncate">{res.label}</div>
@@ -77,6 +98,13 @@ export function ArtifactStatusMatrix({ resources, clientId }: ArtifactStatusMatr
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#D1FAE5] px-2.5 py-0.5 text-xs font-medium text-[#065F46]">
                   <CheckCircle2 className="h-3 w-3" />
                   On file
+                </span>
+              ) : isUnknown ? (
+                <span
+                  className="rounded-full bg-[#f3f4f6] px-2.5 py-0.5 text-xs font-medium text-[#6b7280]"
+                  title="Not determined — this resource type cannot be attributed to an uploader."
+                >
+                  Not checked
                 </span>
               ) : isOpen ? (
                 <Button
