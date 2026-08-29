@@ -8,6 +8,14 @@ jest.mock("@/components/super-admin/character-lab/ProfileMarkdown", () => ({
   default: ({ text }: { text: string }) => <div>{text}</div>,
 }))
 
+const wordMock = jest.fn()
+const pdfMock = jest.fn()
+jest.mock("@/lib/exportNarrative", () => ({
+  ...(jest.requireActual("@/lib/exportNarrative") as object),
+  exportNarrativeWord: (...a: unknown[]) => wordMock(...a),
+  exportNarrativePdf: (...a: unknown[]) => pdfMock(...a),
+}))
+
 const runMutate = jest.fn()
 const saveMutate = jest.fn()
 const deleteMutate = jest.fn()
@@ -134,4 +142,59 @@ it("shows a saved run's own cast names even when the profile is gone", () => {
   ]
   render(<ScenarioPanel />)
   expect(screen.getByText("Sonny")).toBeInTheDocument()
+})
+
+
+// ─── Export ─────────────────────────────────────────────────────────────
+
+describe("ScenarioPanel — narrative export", () => {
+  beforeEach(() => {
+    wordMock.mockReset().mockResolvedValue(undefined)
+    pdfMock.mockReset().mockResolvedValue(undefined)
+  })
+
+  it("exports one section per character, in cast order, then the group read", async () => {
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: /Run the scenario/ }))
+    await screen.findByText("read-collaborative")
+
+    fireEvent.click(screen.getByRole("button", { name: /^PDF$/ }))
+    await waitFor(() => expect(pdfMock).toHaveBeenCalled())
+
+    const doc = pdfMock.mock.calls[0][0]
+    expect(doc.sections.map((s: { heading: string }) => s.heading)).toEqual([
+      "Sonny", "Michael", "Together",
+    ])
+    expect(doc.sections[0].body).toBe("read-a")
+    expect(doc.sections[2].body).toBe("read-collaborative")
+    expect(doc.meta.find((m: { label: string }) => m.label === "Situation").value).toBe(
+      "An ambush at a toll booth.",
+    )
+  })
+
+  it("keeps a failed character's marker in the export", async () => {
+    // Dropping it would make the document read as a complete scene that was
+    // simply shorter — the failure this surface keeps guarding against.
+    runMutate.mockImplementation(({ focus }: { focus: string }) =>
+      focus === "b"
+        ? Promise.reject(new Error("503"))
+        : Promise.resolve({ notice: "N", focus, heading: focus, names: [], behaviour: `read-${focus}` }),
+    )
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: /Run the scenario/ }))
+    await screen.findByText(/could not be generated/)
+
+    fireEvent.click(screen.getByRole("button", { name: /^Word$/ }))
+    await waitFor(() => expect(wordMock).toHaveBeenCalled())
+
+    const michael = wordMock.mock.calls[0][0].sections.find(
+      (s: { heading: string }) => s.heading === "Michael",
+    )
+    expect(michael.body).toContain("could not be generated")
+  })
+
+  it("offers no export until a scenario has been run", () => {
+    render(<ScenarioPanel />)
+    expect(screen.queryByRole("button", { name: /^PDF$/ })).not.toBeInTheDocument()
+  })
 })
