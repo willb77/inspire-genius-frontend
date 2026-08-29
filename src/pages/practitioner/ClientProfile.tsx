@@ -194,7 +194,11 @@ export default function PractitionerClientProfile() {
 
         {/* Resources */}
         <DataCard title="Resources">
-          <ArtifactStatusMatrix resources={data.resources} clientId={data.id} />
+          <ArtifactStatusMatrix
+            resources={data.resources}
+            unchecked={data.resourcesUnchecked}
+            clientId={data.id}
+          />
         </DataCard>
 
         {/* Follow-Ups & Topics */}

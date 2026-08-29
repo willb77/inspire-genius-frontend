@@ -64,9 +64,13 @@ describe("coachClient.service", () => {
     expect(result).toEqual({ imported: 2 })
   })
 
-  test("uploadClientResource resolves ok", async () => {
-    const result = await uploadClientResource("cl-1", "resume")
-    expect(result).toEqual({ ok: true })
+  test("uploadClientResource REJECTS in stub mode instead of faking success", async () => {
+    // This test previously asserted `{ ok: true }` — from a call with NO FILE.
+    // It was encoding the defect as the expectation: the implementation
+    // discarded the upload and reported success, so a coach saw a success toast
+    // and the file was gone. The assertion is inverted deliberately; if it ever
+    // reads "resolves ok" again, the data-loss bug is back.
+    await expect(uploadClientResource("cl-1", "resume")).rejects.toThrow()
   })
 
   test("listSchedule returns upcoming entries", async () => {

@@ -68,6 +68,14 @@ export type ClientDetail = ClientSummary & {
   conversations: ConversationRef[]
   /** presence of each of the 10 resources */
   resources: Record<ResourceKey, boolean>
+  /**
+   * Resources whose presence was NOT determined — render as "not checked",
+   * never as "not on file". The coach-scoped artefact query can only answer for
+   * documents the coach uploaded; assessments carry no uploader column and
+   * goals live in the goal store, so asserting those are absent would be a
+   * claim nobody verified.
+   */
+  resourcesUnchecked: ResourceKey[]
   followUps: FollowUp[]
   topics: string[]
 }

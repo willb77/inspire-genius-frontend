@@ -9,6 +9,11 @@
 
 import { agentApi } from "@/lib/agentApi"
 import {
+  initiateUpload,
+  uploadToS3,
+  triggerProcessing,
+} from "@/services/documents/documentService"
+import {
   CLIENT_RESOURCES,
   type ClientSummary,
   type ClientDetail,
@@ -38,6 +43,14 @@ type BeClient = {
   target?: string | null
   cohort?: string | null
   linked_user_sub?: string | null
+}
+type BeArtifacts = {
+  clientId: string
+  /** Resources the backend actually looked for: key -> present. */
+  checked: Record<string, boolean>
+  /** Resources it could not answer under this scope — render as NOT CHECKED. */
+  unchecked: string[]
+  items: { resource: string; documentId: string; filename?: string | null }[]
 }
 type BeSession = {
   session_id: string
@@ -91,6 +104,9 @@ function toDetail(c: BeClient): ClientDetail {
     prismScores: [],
     conversations: [],
     resources: emptyResources(),
+    // Until the artefact fetch resolves, NOTHING has been checked. Defaulting
+    // this to [] would mean "we looked and found nothing", which is the lie.
+    resourcesUnchecked: CLIENT_RESOURCES.map((r) => r.key),
     followUps: [],
     topics: [],
   }
@@ -145,7 +161,25 @@ export function getClient(id: string): Promise<ClientDetail | null> {
   if (USE_COACH_BACKEND) {
     return agentApi
       .get<Envelope<BeClient>>(`/v1/agents/coach/clients/${id}`)
-      .then((r) => (r.data?.data ? toDetail(r.data.data) : null))
+      .then(async (r) => {
+        if (!r.data?.data) return null
+        const detail = toDetail(r.data.data)
+        // Artefacts are fetched separately and folded in. Before this, `resources`
+        // came from `emptyResources()` — every box `false` — so every client
+        // rendered as "nothing on file" whether or not anything had been uploaded.
+        const art = await getClientArtifacts(id)
+        if (!art) return detail
+        const resources = { ...detail.resources }
+        Object.entries(art.checked).forEach(([k, v]) => {
+          if (k in resources) resources[k as ResourceKey] = v
+        })
+        return {
+          ...detail,
+          resources,
+          resourcesUnchecked: (art.unchecked ?? []) as ResourceKey[],
+          resourcesPresent: Object.values(art.checked).filter(Boolean).length,
+        }
+      })
       .catch(() => null) // 403/404 → null, matching the stub contract
   }
   const base = ROSTER.find((c) => c.id === id)
@@ -172,6 +206,8 @@ export function getClient(id: string): Promise<ClientDetail | null> {
       { id: "cv2", date: "2026-06-30", preview: "Reviewed PRISM profile strengths…" },
     ],
     resources: resourcesFor(base.resourcesPresent),
+    // Fixtures fabricate presence for every resource, so nothing is unknown here.
+    resourcesUnchecked: [],
     followUps: [
       { id: "f1", date: "2026-07-22", note: "Send leadership reading list" },
       { id: "f2", date: "2026-07-29", note: "Check progress on delegation goal" },
@@ -221,8 +257,82 @@ export function bulkImportClients(rows: Array<{ name: string; email: string; org
  * the ArtifactStatusMatrix upload affordance stays functional without fabricating
  * a persisted result.
  */
-export function uploadClientResource(_clientId: string, _resource: ResourceKey, _file?: File): Promise<{ ok: true }> {
-  return Promise.resolve({ ok: true })
+/**
+ * doc_kind for the three resources that ARE documents. The other seven are not
+ * document uploads at all: the six assessments go through assessment import and
+ * goals through the goal store, so there is nothing here that could store them.
+ */
+const RESOURCE_DOC_KIND: Partial<Record<ResourceKey, "resume" | "bio" | "personal">> = {
+  resume: "resume",
+  bio: "bio",
+  additional_info: "personal",
+}
+
+/**
+ * Attach a document ABOUT a client.
+ *
+ * This used to be `Promise.resolve({ ok: true })` — it discarded the file and
+ * reported success, so a coach uploaded a résumé, saw a success toast, and the
+ * file was gone. Anything this function cannot actually store now REJECTS.
+ *
+ * Reuses the same presigned three-step as Honor's `uploadFellowDocument`; the
+ * `subject_user_id` override is what attributes the row to the client while the
+ * uploading coach stays `user_id`, which is exactly the scope the read endpoint
+ * enforces. document-service already allows this for `practitioner`.
+ */
+export async function uploadClientResource(
+  clientId: string,
+  resource: ResourceKey,
+  file?: File,
+): Promise<{ ok: true }> {
+  const docKind = RESOURCE_DOC_KIND[resource]
+  if (!docKind) {
+    throw new Error(
+      `${resource} is not a document upload — assessments are added through import, goals through the goal store.`,
+    )
+  }
+  if (!file) throw new Error("Choose a file to upload.")
+  if (!USE_COACH_BACKEND) {
+    throw new Error("Client uploads are not available in this environment.")
+  }
+
+  // The key the coach's uploads about this client are stored under: their linked
+  // IG sub once invited, else the client_id they were imported under. Same
+  // fallback the backend uses, so read and write agree.
+  const subjectUserId = await resolveSubjectKey(clientId)
+
+  const presigned = await initiateUpload({
+    filename: file.name,
+    content_type: file.type || "application/octet-stream",
+    file_size: file.size,
+    doc_kind: docKind,
+    subject_user_id: subjectUserId,
+  })
+  await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
+  await triggerProcessing(presigned.document_id)
+  return { ok: true }
+}
+
+async function resolveSubjectKey(clientId: string): Promise<string> {
+  const r = await agentApi.get<Envelope<BeClient>>(
+    `/v1/agents/coach/clients/${encodeURIComponent(clientId)}`,
+  )
+  return r.data?.data?.linked_user_sub || clientId
+}
+
+/** Artefacts THIS coach uploaded about the client. */
+export async function getClientArtifacts(clientId: string): Promise<BeArtifacts | null> {
+  if (!USE_COACH_BACKEND) return null
+  try {
+    const r = await agentApi.get<Envelope<BeArtifacts>>(
+      `/v1/agents/coach/clients/${encodeURIComponent(clientId)}/artifacts`,
+    )
+    return r.data?.data ?? null
+  } catch {
+    // Null means "not known", which the caller renders as not-checked. It must
+    // never collapse into `false` — that would assert absence off a failed call.
+    return null
+  }
 }
 
 export function listSchedule(): Promise<ScheduleEntry[]> {
