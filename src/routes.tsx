@@ -136,6 +136,7 @@ const ManagerLeadership = React.lazy(() => import("@/pages/manager/Leadership"))
 const DevelopmentStudio = React.lazy(() => import("@/pages/manager/development/DevelopmentStudio"));
 const MemberDevelopmentWorkspace = React.lazy(() => import("@/pages/manager/development/MemberDevelopmentWorkspace"));
 const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
+const StudentRoster = React.lazy(() => import("@/pages/manager/StudentRoster"));
 const ManagerSettings = React.lazy(() => import("@/pages/manager/Settings"));
 const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
 const ManagerBulkImport = React.lazy(() => import("@/pages/manager/BulkImport"));
@@ -570,6 +571,7 @@ export const routes: RouteObject[] = [
       { path: "/manager/team-building", element: withSuspense(<ManagerTeamBuilding />) },
       { path: "/manager/leadership", element: withSuspense(<ManagerLeadership />) },
       { path: "/manager/prism-team", element: withSuspense(<PrismTeam />) },
+      { path: "/manager/students", element: withSuspense(<StudentRoster />) },
       { path: "/manager/settings", element: withSuspense(<ManagerSettings />) },
       { path: "/manager/analytics", element: withSuspense(<ManagerAnalytics />) },
       { path: "/manager/bulk-import", element: withSuspense(<ManagerBulkImport />) },
