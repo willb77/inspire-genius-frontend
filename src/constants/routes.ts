@@ -107,6 +107,11 @@ export const ROUTES = {
     TEAM_BUILDING: "/manager/team-building",
     LEADERSHIP: "/manager/leadership",
     PRISM_TEAM: "/manager/prism-team",
+    /** Student Oversight (Phase 1) — direct reports, gated by each student's
+     *  own consent. Distinct from TEAM: that roster shows everyone with their
+     *  PRISM colour unconditionally, this one shows only what a student has
+     *  agreed to share and says "Not shared" everywhere else. */
+    STUDENTS: "/manager/students",
     ANALYTICS: "/manager/analytics",
     BULK_IMPORT: "/manager/bulk-import",
     /** Approval queue for self-declared organisation membership.
