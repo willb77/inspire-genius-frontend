@@ -46,7 +46,19 @@ export function UserActivityDialog({ open, onOpenChange, user }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      {/* max-h + overflow are load-bearing, not cosmetic.
+        *
+        * Found in the browser on 2026-08-29: for a user with a full activity
+        * list the dialog measured 1514px in a 779px viewport with
+        * `max-height: none` and `overflow: visible`, and the PAGE could not
+        * scroll (scrollHeight === clientHeight). The top 368px — the entire
+        * "Last sign-in" panel, which is the reason this dialog exists — was
+        * rendered above the viewport and unreachable by any means.
+        *
+        * jsdom has no layout, so every unit test passed. Only a real browser
+        * could catch this, and only against a user with enough history to
+        * overflow — the first user I opened had three events and looked fine. */}
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Activity</DialogTitle>
           <DialogDescription>
@@ -89,7 +101,28 @@ export function UserActivityDialog({ open, onOpenChange, user }: Props) {
                   <dd className="flex items-center gap-1.5">
                     <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                     {data.lastLogin.ipAddress ?? (
-                      <span className="text-muted-foreground">Not captured for this sign-in</span>
+                      /* The legacy bare `login` action never records an IP
+                       * (dev: 127 rows, 0 with an address) while
+                       * `auth.user.login` always does (349 of 349). When the
+                       * newest row is a legacy one this said "not captured"
+                       * for someone whose address was on file minutes earlier
+                       * — 8 of 40 users with any login history. We now show
+                       * the address we hold AND the sign-in it belongs to,
+                       * rather than either hiding it or misattributing it. */
+                      <span className="text-muted-foreground">
+                        Not captured for this sign-in
+                        {data.lastKnownIp && (
+                          <>
+                            {" — most recent recorded address "}
+                            <span className="font-medium text-foreground">
+                              {data.lastKnownIp.ipAddress}
+                            </span>
+                            {" ("}
+                            {formatWhen(data.lastKnownIp.at)}
+                            {")"}
+                          </>
+                        )}
+                      </span>
                     )}
                   </dd>
 
