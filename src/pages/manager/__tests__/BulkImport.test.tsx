@@ -56,6 +56,11 @@ jest.mock("@/hooks/useBulkImport", () => ({
     isPending: false,
     data: null,
   }),
+  useBulkDemoInvite: () => ({
+    mutate: jest.fn(),
+    isPending: false,
+    data: undefined,
+  }),
   useSendInvitations: () => ({
     mutate: jest.fn(),
     isPending: false,

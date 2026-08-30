@@ -132,3 +132,34 @@ process.env.VITE_AGENTS_WEBSOCKET_BASE_URL = "wss://fake-websocket.test";
 // Polyfill for TextEncoder/TextDecoder
 globalThis.TextEncoder = TextEncoder as unknown as typeof globalThis.TextEncoder;
 globalThis.TextDecoder = TextDecoder as unknown as typeof globalThis.TextDecoder;
+
+/**
+ * Polyfill `window.matchMedia` — jsdom does not implement it, and shadcn's
+ * `useIsMobile` (via SidebarScaffold) calls it on mount, so ANY test that
+ * renders a page inside the app chrome throws without it.
+ *
+ * Promoted here on 2026-08-06: three test files had already hand-rolled the
+ * same stub, and making the new user surfaces the default pulled the sidebar
+ * into the route-integration tests too. A shared environment gap belongs in the
+ * shared setup rather than being rediscovered per file.
+ *
+ * Guarded for `testEnvironment: node` suites, where `window` is undefined, and
+ * skipped when something has already defined it so a test that needs specific
+ * breakpoint behaviour can still install its own.
+ */
+if (typeof window !== "undefined" && !window.matchMedia) {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {}, // deprecated, still called by some libraries
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}

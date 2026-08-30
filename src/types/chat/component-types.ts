@@ -9,7 +9,22 @@ export interface ChatWindowProps {
   conversationId?: string;
   className?: string;
   onBack?: () => void;
-  onSendText?: (text: string) => void;
+  /**
+   * `text` is what gets sent to the model. `displayText`, when supplied, is
+   * what the user's own message bubble shows instead — for callers that wrap
+   * the question in machine-generated scaffolding (e.g. Lumen appends a
+   * "sources in scope" line) and shouldn't have that rendered as if the user
+   * had typed it.
+   */
+  onSendText?: (text: string, displayText?: string) => void;
+  /**
+   * When set, the composer is prefilled with this text and submitted once on
+   * mount (used by starter questions / the HomeV2 ask box to open the chat on a
+   * live response). Fires a single time per mount.
+   */
+  autoSendText?: string;
+  /** Display-only counterpart to `autoSendText` — see `onSendText`. */
+  autoSendDisplayText?: string;
   onToggleRecording?: () => void;
   isRecording?: boolean;
   onDocumentsSelectionChange?: (ids: string[]) => void;
@@ -43,6 +58,20 @@ export interface ChatWindowProps {
   showAudioPlayer?: boolean;
   // Replay voice for a specific assistant message (TTS at queue tail).
   onReplayMessage?: (text: string) => void;
+  /**
+   * Export a single turn as Word or PDF, from the "Export ▾" link in that
+   * turn's action row. Omitted → the link is not rendered, so every existing
+   * consumer is unchanged.
+   */
+  onExportMessage?: (message: ChatMessage, format: "word" | "pdf") => void;
+  /**
+   * When true, render the new (HomeV2) two-tile layout: a "Compose Prompt"
+   * card on top and a full-height, scrollable "Conversation" card below it —
+   * instead of the classic single card with the composer pinned to the bottom.
+   * Additive and default-off: every existing consumer keeps the classic layout
+   * byte-for-byte. Used by MeridianChatV2 (flag-gated new user surface).
+   */
+  stacked?: boolean;
 }
 
 // ChatHistory component props

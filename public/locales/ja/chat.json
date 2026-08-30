@@ -1,0 +1,335 @@
+{
+  "common": {
+    "copiedToClipboard": "クリップボードにコピーしました",
+    "copyMessage": "メッセージをコピー",
+    "play": "再生",
+    "pause": "一時停止",
+    "close": "閉じる",
+    "delete": "削除",
+    "download": "ダウンロード",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "clear": "クリア",
+    "you": "あなた",
+    "connected": "接続済み",
+    "error": "エラー",
+    "unknownError": "不明なエラー",
+    "hide": "非表示",
+    "show": "表示",
+    "untitledConversation": "無題の会話",
+    "noConversations": "会話はまだありません。メッセージを送信して始めましょう。",
+    "noDocuments": "アップロードされたドキュメントはまだありません。"
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridianが考えています...",
+    "noResponse": "応答がありません。",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "{{agent}}経由",
+    "profileLabel": "プロファイル: {{frameworks}}",
+    "reviewingBanner": "アクティブなチャットとあわせて、追加の{{count}}件の会話を確認しています。",
+    "profileIndicator": {
+      "title": "この会話でMeridianが参照できるフレームワーク"
+    },
+    "newChat": {
+      "title": "新しいチャットを開始",
+      "label": "新規チャット"
+    },
+    "status": {
+      "connected": "Meridianに接続済み"
+    },
+    "error": {
+      "agent": "エージェントエラー",
+      "unreachable": "Meridianに接続できませんでした。もう一度お試しください。",
+      "unreachableShort": "Meridianに接続できません",
+      "newChatFailed": "新しいチャットを開始できませんでした。もう一度お試しください。"
+    },
+    "export": {
+      "aria": "チャットをエクスポート",
+      "label": "エクスポート",
+      "sessionSubject": "Meridianチャットセッション",
+      "assistantDomain": "コーチング",
+      "success": "会話ログと構造化レポートのPDFをエクスポートしました。",
+      "noConversation": "チャットをエクスポートできませんでした — アクティブな会話がありません。",
+      "noData": "チャットをエクスポートできませんでした — バックエンドがデータを返しませんでした。",
+      "noContent": "チャットをエクスポートできませんでした — 選択範囲にコンテンツがありません。",
+      "retry": "チャットをエクスポートできませんでした — もう一度お試しください。"
+    },
+    "voice": {
+      "mute": "Meridianの音声をミュート",
+      "enable": "Meridianの音声を有効化",
+      "onTitle": "音声応答オン — クリックでミュート",
+      "offTitle": "音声応答オフ — クリックで有効化",
+      "notSupported": "このブラウザは音声入力に対応していません",
+      "micDenied": "マイクへのアクセスが拒否されました"
+    },
+    "audio": {
+      "blockedTitle": "ブラウザが音声再生をブロックしました — クリックで有効化",
+      "enable": "音声を有効化",
+      "rewind": "5秒巻き戻す",
+      "resume": "音声を再開",
+      "pause": "音声を一時停止",
+      "fastForward": "5秒早送り",
+      "skip": "次の文へスキップ",
+      "cancel": "ストリームをキャンセル",
+      "queued": "{{count}}件待機中"
+    },
+    "conn": {
+      "availableTitle": "音声ストリーミング利用可能",
+      "connectingTitle": "音声ストリームに接続中...",
+      "unavailableTitle": "音声ストリーミング利用不可",
+      "ready": "音声準備完了",
+      "connecting": "接続中",
+      "off": "音声オフ"
+    },
+    "personalRow": {
+      "aria": "あなたのページ",
+      "selfPortrait": "セルフポートレート",
+      "moments": "モーメント",
+      "coaching": "コーチング",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} はお使いのアカウントでは利用できません"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Agent Eco-System搭載",
+    "back": "戻る",
+    "export": "エクスポート",
+    "documentsButton": "ドキュメント",
+    "tab": {
+      "chat": "チャット",
+      "documents": "ドキュメント"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "ドキュメントサイドパネルを開く",
+      "tooltip": "ドキュメントパネルを開いてチャットに追加するファイルを選択"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "会話とプロジェクト"
+    },
+    "active": {
+      "title": "アクティブなセッション",
+      "empty": "アクティブなセッションはまだありません。",
+      "badge": {
+        "live": "ライブ",
+        "open": "オープン"
+      }
+    },
+    "history": {
+      "title": "履歴"
+    },
+    "last5": {
+      "title": "直近5件のチャット",
+      "empty": "まだ何もありません。"
+    },
+    "projects": {
+      "title": "プロジェクト",
+      "inputPlaceholder": "新しいプロジェクト名…",
+      "inputAria": "新しいプロジェクト名",
+      "addAria": "プロジェクトを追加",
+      "empty": "プロジェクトはまだありません。関連するチャットをプロジェクトにまとめましょう。",
+      "badge": {
+        "active": "アクティブ"
+      }
+    },
+    "knowledge": {
+      "title": "ナレッジ",
+      "badge": {
+        "indexed": "インデックス済み"
+      }
+    }
+  },
+  "history": {
+    "title": "履歴",
+    "newChat": "新規チャット",
+    "newChatTooltip": "新しい会話を開始",
+    "newChatTooltipExisting": "すでに新しい会話があります",
+    "newConversationLabel": "新しい会話",
+    "searchPlaceholder": "検索..",
+    "loadError": "会話履歴を読み込めませんでした。",
+    "loadErrorDetailed": "会話履歴を読み込めませんでした — バックエンドが利用できない可能性があります。更新して再試行してください。",
+    "openActions": "会話の操作を開く",
+    "rename": "名前を変更",
+    "deleteTitle": "会話を削除",
+    "deleteDescription": "この会話を削除してもよろしいですか？この操作は元に戻せません。",
+    "audioWarning": "会話を切り替えると現在の音声が停止します",
+    "renameDialogTitle": "会話の名前を変更",
+    "renamePlaceholder": "会話のタイトル",
+    "renameAnimationTitle": "名前変更アニメーション",
+    "renamePending": "会話のアイデンティティを形作っています… ✨",
+    "renameHint": "会話に名前を付けましょう — 覚えやすい名前にしましょう 🚀",
+    "triggerShown": "履歴（{{count}}件表示）",
+    "triggerCount": "履歴（{{count}}）",
+    "triggerAria": "会話履歴を閲覧",
+    "hint": "会話をクリックしてアクティブにするか、チェックしてレビューに追加します。",
+    "includeAria": "{{title}}をレビューに含める",
+    "activeBadge": "アクティブ",
+    "reviewCount": "レビュー中の追加会話{{count}}件",
+    "clearReview": "レビューをクリア"
+  },
+  "documents": {
+    "triggerLabel": "ドキュメント",
+    "triggerSelected": "ドキュメント（{{count}}件選択中）",
+    "triggerAria": "ドキュメントを選択",
+    "header": "このチャットにドキュメントを添付",
+    "loadError": "ドキュメントを読み込めませんでした。",
+    "uploadLink": "ドキュメントをアップロード",
+    "selectFileAria": "{{filename}}を選択",
+    "autoAttached": "自動添付",
+    "selectedCount": "{{total}}件中{{selected}}件選択",
+    "iframe": {
+      "defaultFileName": "ドキュメント",
+      "loading": "ドキュメントを読み込み中…"
+    },
+    "panel": {
+      "selectedCount": "選択中（{{count}}）",
+      "confirmDeleteTitle": "削除の確認",
+      "confirmDeleteBulkDescription": "選択した{{count}}件のドキュメントを削除してもよろしいですか？この操作は元に戻せません。",
+      "confirmDeleteOneDescription": "このドキュメントを削除してもよろしいですか？この操作は元に戻せません。",
+      "upload": "アップロード",
+      "importToChat": "チャットにインポート",
+      "loading": "ドキュメントを読み込み中...",
+      "empty": "ファイルが見つかりません",
+      "emptyAnimationTitle": "ファイルが見つかりません",
+      "selectItem": "{{name}}を選択",
+      "preview": "プレビュー"
+    },
+    "sidePanel": {
+      "title": "ドキュメント",
+      "close": "ドキュメントを閉じる",
+      "closeOverlay": "ドキュメントパネルを閉じる"
+    },
+    "upload": "ドキュメントをアップロード"
+  },
+  "export": {
+    "title": "チャットをエクスポート",
+    "subtitle": "今後の参照用にチャットのコピーをダウンロードします。",
+    "fromLabel": "チャット開始日",
+    "fromPlaceholder": "開始日",
+    "toLabel": "チャット終了日",
+    "toPlaceholder": "終了日",
+    "formatLabel": "エクスポートファイル",
+    "formatPdf": "PDF",
+    "exporting": "エクスポート中",
+    "exportButton": "エクスポート",
+    "progressLabel": "チャットをエクスポート中... {{progress}}%",
+    "progressSubtitle": "エクスポートを処理中です。リラックスしてお待ちください。",
+    "completeTitle": "エクスポート完了",
+    "completeSubtitle": "チャットのエクスポートに成功しました！",
+    "back": "戻る"
+  },
+  "routing": {
+    "confidence": "信頼度: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}}トークン",
+    "observabilityDetails": "オブザーバビリティの詳細"
+  },
+  "feedback": {
+    "thankYou": "ありがとうございます",
+    "rateThisResponse": "この応答を評価",
+    "correctionPlaceholder": "任意: より良い応答を提案（最大2000文字）",
+    "submitting": "送信中...",
+    "submit": "送信"
+  },
+  "compose": {
+    "sectionLabel": "プロンプトを作成"
+  },
+  "conversation": {
+    "sectionLabel": "会話",
+    "replayVoice": "音声を再生",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "{{agent}}経由",
+    "observabilityUnavailable": "このメッセージのオブザーバビリティは利用できません。",
+    "tableSrLabel": "テーブル",
+    "waiting": {
+      "shortly": "まもなく{{coachName}}が対応します",
+      "oneMoment": "{{coachName}}に確認中です",
+      "pleaseWait": "お待ちください"
+    },
+    "source": {
+      "label": "ソース（{{count}}）",
+      "openTitle": "{{filename}}を開く",
+      "openError": {
+        "noUrl": "\"{{filename}}\"を開けませんでした — バックエンドがURLを返しませんでした。",
+        "notFound": "\"{{filename}}\"を開けませんでした — ドキュメントが見つからないか、アクセスが拒否されました。",
+        "generic": "\"{{filename}}\"を開けませんでした — もう一度お試しください。"
+      }
+    },
+    "collaboration": {
+      "label": "共同応答（{{count}}エージェント）",
+      "synthesizedFrom": "{{summary}}から統合"
+    }
+  },
+  "input": {
+    "placeholder": "何でも聞いてください…  （Enterで送信 · Shift+Enterで改行）",
+    "unmuteCoach": "コーチのミュートを解除",
+    "muteCoach": "コーチをミュート",
+    "stopRecording": "録音を停止",
+    "startRecording": "録音を開始",
+    "sendMessage": "メッセージを送信",
+    "muteTooltip": {
+      "mute": "ミュート",
+      "unmute": "ミュート解除",
+      "disabledDuringPlayback": "再生中はミュートを利用できません"
+    }
+  },
+  "banner": {
+    "selected": "選択中:",
+    "connecting": "接続中...",
+    "successAnimationTitle": "成功アニメーション"
+  },
+  "audio": {
+    "close": "オーディオプレーヤーを閉じる"
+  },
+  "coach": {
+    "defaultName": "コーチ",
+    "authError": "認証エラー",
+    "untitledConversation": "タイトルなし",
+    "previewPlaceholder": "未対応",
+    "conversationsLabel": "会話",
+    "sessionSubject": "{{coachName}}コーチングセッション",
+    "assistantDomain": "コーチング",
+    "exportSuccess": "会話ログと構造化レポートのPDFをエクスポートしました。",
+    "exportNoConversation": "チャットをエクスポートできませんでした — アクティブな会話がありません。",
+    "audioWarning": "会話を切り替えると、新しい会話用に音声がリセットされます。"
+  },
+  "diagnostic": {
+    "title": "診断チャット",
+    "sessionLabel": "セッション: {{sessionId}}...",
+    "statusConnecting": "接続中...",
+    "statusReconnecting": "再接続中...",
+    "statusDisconnected": "切断済み",
+    "newChat": "新規チャット",
+    "newChatTitle": "新しいチャットセッションを開始",
+    "reconnect": "再接続",
+    "clearAllTitle": "すべてクリア",
+    "traceLog": "トレースログ",
+    "dataSourcesLabel": "接続済みデータソース",
+    "emptyTitle": "診断チャットインターフェース",
+    "emptySubtitle": "メッセージを送信してリクエストのライフサイクル全体をトレース",
+    "streaming": "ストリーミング中",
+    "processing": "Meridianが処理中...",
+    "stopRecording": "録音を停止",
+    "startVoiceInput": "音声入力を開始",
+    "inputPlaceholder": "メッセージを入力してパイプライン全体をトレース...",
+    "recordingHint": "録音中 — はっきりと話し、停止して送信します",
+    "latency": "レイテンシ: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "トークン: {{tokenCount}}",
+    "entriesCount": "{{count}}件のエントリ",
+    "errorsCount": "{{count}}件のエラー",
+    "warningsCount": "{{count}}件の警告",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

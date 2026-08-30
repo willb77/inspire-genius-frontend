@@ -1,8 +1,12 @@
 import { api } from "@/lib/axios"
 import type { BaseApiResponse } from "@/types/api"
+import type { ManagerTeamResponse } from "@/types/manager/team"
 
+/** The manager's direct reports. Typed against {@link ManagerTeamResponse} —
+ *  `members: unknown[]` is what let a page render six hardcoded fallback people
+ *  without the compiler noticing they were not this shape. */
 export function getManagerTeam() {
-  return api.get<BaseApiResponse<{ members: unknown[]; total: number }>>("/api/manager/team")
+  return api.get<BaseApiResponse<ManagerTeamResponse>>("/api/manager/team")
 }
 
 export function getManagerHiringStats() {

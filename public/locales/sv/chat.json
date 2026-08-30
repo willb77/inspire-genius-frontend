@@ -1,0 +1,335 @@
+{
+  "common": {
+    "copiedToClipboard": "Kopierat till urklipp",
+    "copyMessage": "Kopiera meddelande",
+    "play": "Spela upp",
+    "pause": "Pausa",
+    "close": "Stäng",
+    "delete": "Ta bort",
+    "download": "Ladda ner",
+    "cancel": "Avbryt",
+    "save": "Spara",
+    "clear": "Rensa",
+    "you": "Du",
+    "connected": "Ansluten",
+    "error": "Fel",
+    "unknownError": "Okänt fel",
+    "hide": "Dölj",
+    "show": "Visa",
+    "untitledConversation": "Namnlös konversation",
+    "noConversations": "Inga konversationer ännu. Skicka ett meddelande för att starta en.",
+    "noDocuments": "Inga dokument uppladdade ännu."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian tänker...",
+    "noResponse": "Inget svar.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "via {{agent}}",
+    "profileLabel": "Profil: {{frameworks}}",
+    "reviewingBanner": "Granskar {{count}} ytterligare konversationer vid sidan av den aktiva chatten.",
+    "profileIndicator": {
+      "title": "Ramverk som Meridian kan hänvisa till i den här konversationen"
+    },
+    "newChat": {
+      "title": "Starta en ny chatt",
+      "label": "Ny chatt"
+    },
+    "status": {
+      "connected": "Ansluten till Meridian"
+    },
+    "error": {
+      "agent": "Agentfel",
+      "unreachable": "Tyvärr, jag kunde inte nå Meridian. Försök igen.",
+      "unreachableShort": "Kunde inte nå Meridian",
+      "newChatFailed": "Kunde inte starta en ny chatt. Försök igen."
+    },
+    "export": {
+      "aria": "Exportera chatt",
+      "label": "Exportera",
+      "sessionSubject": "Meridian chattsession",
+      "assistantDomain": "Coaching",
+      "success": "Exporterade konversationslogg + strukturerade rapport-PDF:er.",
+      "noConversation": "Kunde inte exportera chatten – ingen aktiv konversation.",
+      "noData": "Kunde inte exportera chatten – backend returnerade inga data.",
+      "noContent": "Kunde inte exportera chatten – inget innehåll i det valda intervallet.",
+      "retry": "Kunde inte exportera chatten – försök igen."
+    },
+    "voice": {
+      "mute": "Stäng av Meridians röst",
+      "enable": "Aktivera Meridians röst",
+      "onTitle": "Röstsvar PÅ – klicka för att stänga av",
+      "offTitle": "Röstsvar AV – klicka för att aktivera",
+      "notSupported": "Röstinmatning stöds inte i den här webbläsaren",
+      "micDenied": "Mikrofonåtkomst nekad"
+    },
+    "audio": {
+      "blockedTitle": "Webbläsaren blockerade ljuduppspelning – klicka för att aktivera",
+      "enable": "Aktivera ljud",
+      "rewind": "Spola tillbaka 5 sekunder",
+      "resume": "Återuppta ljud",
+      "pause": "Pausa ljud",
+      "fastForward": "Spola framåt 5 sekunder",
+      "skip": "Hoppa till nästa mening",
+      "cancel": "Avbryt ström",
+      "queued": "{{count}} i kö"
+    },
+    "conn": {
+      "availableTitle": "Röstströmning tillgänglig",
+      "connectingTitle": "Ansluter röstström...",
+      "unavailableTitle": "Röstströmning ej tillgänglig",
+      "ready": "Röst klar",
+      "connecting": "Ansluter",
+      "off": "Röst av"
+    },
+    "personalRow": {
+      "aria": "Dina sidor",
+      "selfPortrait": "Mitt självporträtt",
+      "moments": "Ögonblick",
+      "coaching": "Coachning",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} är inte aktiverat för ditt konto"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Drivs av Agent Eco-System",
+    "back": "Tillbaka",
+    "export": "Exportera",
+    "documentsButton": "Dokument",
+    "tab": {
+      "chat": "Chatt",
+      "documents": "Dokument"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Öppna sidopanel för dokument",
+      "tooltip": "Öppna dokumentpanelen för att välja filer att lägga till i chatten"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Konversationer och projekt"
+    },
+    "active": {
+      "title": "Aktiva sessioner",
+      "empty": "Inga aktiva sessioner ännu.",
+      "badge": {
+        "live": "live",
+        "open": "öppen"
+      }
+    },
+    "history": {
+      "title": "Historik"
+    },
+    "last5": {
+      "title": "Senaste 5 chattarna",
+      "empty": "Inget här ännu."
+    },
+    "projects": {
+      "title": "Projekt",
+      "inputPlaceholder": "Nytt projektnamn…",
+      "inputAria": "Nytt projektnamn",
+      "addAria": "Lägg till projekt",
+      "empty": "Inga projekt ännu. Gruppera relaterade chattar under ett projekt.",
+      "badge": {
+        "active": "aktiv"
+      }
+    },
+    "knowledge": {
+      "title": "Kunskap",
+      "badge": {
+        "indexed": "indexerad"
+      }
+    }
+  },
+  "history": {
+    "title": "Historik",
+    "newChat": "Ny chatt",
+    "newChatTooltip": "Starta en ny konversation",
+    "newChatTooltipExisting": "Du har redan en ny konversation",
+    "newConversationLabel": "Ny konversation",
+    "searchPlaceholder": "Sök..",
+    "loadError": "Kunde inte ladda konversationshistoriken.",
+    "loadErrorDetailed": "Kunde inte ladda konversationshistoriken – backend kan vara otillgänglig. Uppdatera för att försöka igen.",
+    "openActions": "Öppna konversationsåtgärder",
+    "rename": "Byt namn",
+    "deleteTitle": "Ta bort konversation",
+    "deleteDescription": "Är du säker på att du vill ta bort den här konversationen? Denna åtgärd kan inte ångras.",
+    "audioWarning": "Att byta konversation stoppar det aktuella ljudet",
+    "renameDialogTitle": "Byt namn på konversation",
+    "renamePlaceholder": "Konversationstitel",
+    "renameAnimationTitle": "Namnbytesanimation",
+    "renamePending": "Formar din konversations identitet… ✨",
+    "renameHint": "Ge din konversation ett namn – gör det lätt att komma ihåg 🚀",
+    "triggerShown": "Historik ({{count}} visas)",
+    "triggerCount": "Historik ({{count}})",
+    "triggerAria": "Bläddra i konversationshistoriken",
+    "hint": "Klicka på en konversation för att göra den aktiv, eller markera den för att lägga till i granskning.",
+    "includeAria": "Inkludera {{title}} i granskning",
+    "activeBadge": "Aktiv",
+    "reviewCount": "{{count}} ytterligare konversationer i granskning",
+    "clearReview": "Rensa granskning"
+  },
+  "documents": {
+    "triggerLabel": "Dokument",
+    "triggerSelected": "Dokument ({{count}} valda)",
+    "triggerAria": "Välj dokument",
+    "header": "Bifoga dokument till den här chatten",
+    "loadError": "Kunde inte ladda dokument.",
+    "uploadLink": "Ladda upp dokument",
+    "selectFileAria": "Välj {{filename}}",
+    "autoAttached": "Automatiskt bifogad",
+    "selectedCount": "{{selected}} av {{total}} valda",
+    "iframe": {
+      "defaultFileName": "Dokument",
+      "loading": "Laddar dokument…"
+    },
+    "panel": {
+      "selectedCount": "Valda ({{count}})",
+      "confirmDeleteTitle": "Bekräfta borttagning",
+      "confirmDeleteBulkDescription": "Är du säker på att du vill ta bort {{count}} valda dokument? Denna åtgärd kan inte ångras.",
+      "confirmDeleteOneDescription": "Är du säker på att du vill ta bort det här dokumentet? Denna åtgärd kan inte ångras.",
+      "upload": "Ladda upp",
+      "importToChat": "Importera till chatt",
+      "loading": "Laddar dokument...",
+      "empty": "Inga filer hittades",
+      "emptyAnimationTitle": "filen hittades inte",
+      "selectItem": "Välj {{name}}",
+      "preview": "Förhandsvisa"
+    },
+    "sidePanel": {
+      "title": "Dokument",
+      "close": "Stäng dokument",
+      "closeOverlay": "Stäng dokumentpanel"
+    },
+    "upload": "Ladda upp ett dokument"
+  },
+  "export": {
+    "title": "Exportera chatt",
+    "subtitle": "Ladda ner en kopia av din chatt för framtida referens.",
+    "fromLabel": "Chatt från",
+    "fromPlaceholder": "Från datum",
+    "toLabel": "Chatt till",
+    "toPlaceholder": "Till datum",
+    "formatLabel": "Exportfil",
+    "formatPdf": "PDF",
+    "exporting": "Exporterar",
+    "exportButton": "Exportera",
+    "progressLabel": "Exporterar chatt... {{progress}}%",
+    "progressSubtitle": "Luta dig tillbaka och slappna av, vi arbetar på din export.",
+    "completeTitle": "Export slutförd",
+    "completeSubtitle": "Chatten exporterades!",
+    "back": "Tillbaka"
+  },
+  "routing": {
+    "confidence": "Tillförlitlighet: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} tokens",
+    "observabilityDetails": "Observability-detaljer"
+  },
+  "feedback": {
+    "thankYou": "Tack",
+    "rateThisResponse": "Betygsätt detta svar",
+    "correctionPlaceholder": "Valfritt: föreslå ett bättre svar (max 2000 tecken)",
+    "submitting": "Skickar...",
+    "submit": "Skicka"
+  },
+  "compose": {
+    "sectionLabel": "Skriv prompt"
+  },
+  "conversation": {
+    "sectionLabel": "Konversation",
+    "replayVoice": "Spela upp röst igen",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "via {{agent}}",
+    "observabilityUnavailable": "Observability är inte tillgänglig för detta meddelande.",
+    "tableSrLabel": "Tabell",
+    "waiting": {
+      "shortly": "{{coachName}} är strax hos dig",
+      "oneMoment": "Ett ögonblick med {{coachName}}",
+      "pleaseWait": "Vänta"
+    },
+    "source": {
+      "label": "Källor ({{count}})",
+      "openTitle": "Öppna {{filename}}",
+      "openError": {
+        "noUrl": "Kunde inte öppna \"{{filename}}\" – backend returnerade ingen URL.",
+        "notFound": "Kunde inte öppna \"{{filename}}\" – dokumentet hittades inte eller åtkomst nekad.",
+        "generic": "Kunde inte öppna \"{{filename}}\" – försök igen."
+      }
+    },
+    "collaboration": {
+      "label": "Samarbetssvar ({{count}} agenter)",
+      "synthesizedFrom": "Sammanställt från {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Fråga vad som helst…  (Enter för att skicka · Shift+Enter för ny rad)",
+    "unmuteCoach": "Slå på coachens ljud",
+    "muteCoach": "Stäng av coachens ljud",
+    "stopRecording": "Stoppa inspelning",
+    "startRecording": "Starta inspelning",
+    "sendMessage": "Skicka meddelande",
+    "muteTooltip": {
+      "mute": "Ljud av",
+      "unmute": "Ljud på",
+      "disabledDuringPlayback": "Ljud av är inaktiverat under uppspelning"
+    }
+  },
+  "banner": {
+    "selected": "Vald:",
+    "connecting": "Ansluter...",
+    "successAnimationTitle": "Framgångsanimation"
+  },
+  "audio": {
+    "close": "Stäng ljudspelare"
+  },
+  "coach": {
+    "defaultName": "Coach",
+    "authError": "Autentiseringsfel",
+    "untitledConversation": "Ingen titel",
+    "previewPlaceholder": "Att göra",
+    "conversationsLabel": "Konversationer",
+    "sessionSubject": "{{coachName}} coachningssession",
+    "assistantDomain": "Coaching",
+    "exportSuccess": "Exporterade konversationslogg + strukturerade rapport-PDF:er.",
+    "exportNoConversation": "Kunde inte exportera chatten – ingen aktiv konversation.",
+    "audioWarning": "Att byta konversation återställer ljudet för den nya konversationen."
+  },
+  "diagnostic": {
+    "title": "Diagnostisk chatt",
+    "sessionLabel": "Session: {{sessionId}}...",
+    "statusConnecting": "Ansluter...",
+    "statusReconnecting": "Återansluter...",
+    "statusDisconnected": "Frånkopplad",
+    "newChat": "Ny chatt",
+    "newChatTitle": "Starta en ny chattsession",
+    "reconnect": "Återanslut",
+    "clearAllTitle": "Rensa allt",
+    "traceLog": "Spårningslogg",
+    "dataSourcesLabel": "Anslutna datakällor",
+    "emptyTitle": "Diagnostiskt chattgränssnitt",
+    "emptySubtitle": "Skicka ett meddelande för att spåra hela begäranslivscykeln",
+    "streaming": "streaming",
+    "processing": "Meridian bearbetar...",
+    "stopRecording": "Stoppa inspelning",
+    "startVoiceInput": "Starta röstinmatning",
+    "inputPlaceholder": "Skriv ett meddelande för att spåra hela pipelinen...",
+    "recordingHint": "Spelar in – tala tydligt, stoppa sedan för att skicka",
+    "latency": "Latens: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "Tokens: {{tokenCount}}",
+    "entriesCount": "{{count}} poster",
+    "errorsCount": "{{count}} fel",
+    "warningsCount": "{{count}} varningar",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

@@ -1,0 +1,335 @@
+{
+  "common": {
+    "copiedToClipboard": "Copied to clipboard",
+    "copyMessage": "Copy message",
+    "play": "Play",
+    "pause": "Pause",
+    "close": "Close",
+    "delete": "Delete",
+    "download": "Download",
+    "cancel": "Cancel",
+    "save": "Save",
+    "clear": "Clear",
+    "you": "You",
+    "connected": "Connected",
+    "error": "Error",
+    "unknownError": "Unknown error",
+    "hide": "Hide",
+    "show": "Show",
+    "untitledConversation": "Untitled conversation",
+    "noConversations": "No conversations yet. Send a message to start one.",
+    "noDocuments": "No documents uploaded yet."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian is thinking...",
+    "noResponse": "No response.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "via {{agent}}",
+    "profileLabel": "Profile: {{frameworks}}",
+    "reviewingBanner": "Reviewing {{count}} additional conversation{{plural}} alongside the active chat.",
+    "profileIndicator": {
+      "title": "Frameworks Meridian can reference in this conversation"
+    },
+    "newChat": {
+      "title": "Start a new chat",
+      "label": "New Chat"
+    },
+    "status": {
+      "connected": "Connected to Meridian"
+    },
+    "error": {
+      "agent": "Agent error",
+      "unreachable": "Sorry, I couldn't reach Meridian. Please try again.",
+      "unreachableShort": "Couldn't reach Meridian",
+      "newChatFailed": "Couldn't start a new chat. Please try again."
+    },
+    "export": {
+      "aria": "Export chat",
+      "label": "Export",
+      "sessionSubject": "Meridian Chat Session",
+      "assistantDomain": "Coaching",
+      "success": "Exported Conversation Log + Structured Report PDFs.",
+      "noConversation": "Couldn't export chat — no active conversation.",
+      "noData": "Couldn't export chat — the backend returned no data.",
+      "noContent": "Couldn't export chat — no content in the selected range.",
+      "retry": "Couldn't export chat — please try again."
+    },
+    "voice": {
+      "mute": "Mute Meridian's voice",
+      "enable": "Enable Meridian's voice",
+      "onTitle": "Voice responses ON — click to mute",
+      "offTitle": "Voice responses OFF — click to enable",
+      "notSupported": "Voice input not supported in this browser",
+      "micDenied": "Microphone access denied"
+    },
+    "audio": {
+      "blockedTitle": "Browser blocked audio playback — click to enable",
+      "enable": "Enable audio",
+      "rewind": "Rewind 5 seconds",
+      "resume": "Resume audio",
+      "pause": "Pause audio",
+      "fastForward": "Fast-forward 5 seconds",
+      "skip": "Skip to next sentence",
+      "cancel": "Cancel stream",
+      "queued": "{{count}} queued"
+    },
+    "conn": {
+      "availableTitle": "Voice streaming available",
+      "connectingTitle": "Connecting voice stream...",
+      "unavailableTitle": "Voice streaming unavailable",
+      "ready": "Voice ready",
+      "connecting": "Connecting",
+      "off": "Voice off"
+    },
+    "personalRow": {
+      "aria": "Your pages",
+      "selfPortrait": "My Self-Portrait",
+      "moments": "Moments",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} isn't enabled for your account"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Powered by Agent Eco-System",
+    "back": "Back",
+    "export": "Export",
+    "documentsButton": "Documents",
+    "tab": {
+      "chat": "Chat",
+      "documents": "Documents"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Open documents side panel",
+      "tooltip": "Open documents panel to select files to add to chat"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Conversations and projects"
+    },
+    "active": {
+      "title": "Active Sessions",
+      "empty": "No active sessions yet.",
+      "badge": {
+        "live": "live",
+        "open": "open"
+      }
+    },
+    "history": {
+      "title": "History"
+    },
+    "last5": {
+      "title": "Last 5 Chats",
+      "empty": "Nothing here yet."
+    },
+    "projects": {
+      "title": "Projects",
+      "inputPlaceholder": "New project name…",
+      "inputAria": "New project name",
+      "addAria": "Add project",
+      "empty": "No projects yet. Group related chats under a project.",
+      "badge": {
+        "active": "active"
+      }
+    },
+    "knowledge": {
+      "title": "Knowledge",
+      "badge": {
+        "indexed": "indexed"
+      }
+    }
+  },
+  "history": {
+    "title": "History",
+    "newChat": "New Chat",
+    "newChatTooltip": "Start a new conversation",
+    "newChatTooltipExisting": "You already have a new conversation",
+    "newConversationLabel": "New Conversation",
+    "searchPlaceholder": "Search..",
+    "loadError": "Couldn't load conversation history.",
+    "loadErrorDetailed": "Couldn't load conversation history — the backend may be unavailable. Refresh to retry.",
+    "openActions": "Open conversation actions",
+    "rename": "Rename",
+    "deleteTitle": "Delete conversation",
+    "deleteDescription": "Are you sure you want to delete this conversation? This action cannot be undone.",
+    "audioWarning": "Switching conversations will stop current audio",
+    "renameDialogTitle": "Rename conversation",
+    "renamePlaceholder": "Conversation title",
+    "renameAnimationTitle": "Renaming animation",
+    "renamePending": "Shaping your conversation's identity… ✨",
+    "renameHint": "Give your conversation a name — make it easy to remember 🚀",
+    "triggerShown": "History ({{count}} shown)",
+    "triggerCount": "History ({{count}})",
+    "triggerAria": "Browse conversation history",
+    "hint": "Click a conversation to make it active, or check it to add to review.",
+    "includeAria": "Include {{title}} in review",
+    "activeBadge": "Active",
+    "reviewCount": "{{count}} additional conversation{{plural}} in review",
+    "clearReview": "Clear review"
+  },
+  "documents": {
+    "triggerLabel": "Documents",
+    "triggerSelected": "Documents ({{count}} selected)",
+    "triggerAria": "Select documents",
+    "header": "Attach documents to this chat",
+    "loadError": "Couldn't load documents.",
+    "uploadLink": "Upload documents",
+    "selectFileAria": "Select {{filename}}",
+    "autoAttached": "Auto-attached",
+    "selectedCount": "{{selected}} of {{total}} selected",
+    "iframe": {
+      "defaultFileName": "Document",
+      "loading": "Loading document…"
+    },
+    "panel": {
+      "selectedCount": "Selected ({{count}})",
+      "confirmDeleteTitle": "Confirm delete",
+      "confirmDeleteBulkDescription": "Are you sure you want to delete {{count}} selected document(s)? This action cannot be undone.",
+      "confirmDeleteOneDescription": "Are you sure you want to delete this document? This action cannot be undone.",
+      "upload": "Upload",
+      "importToChat": "Import to Chat",
+      "loading": "Loading documents...",
+      "empty": "No files found",
+      "emptyAnimationTitle": "file not found",
+      "selectItem": "Select {{name}}",
+      "preview": "Preview"
+    },
+    "sidePanel": {
+      "title": "Documents",
+      "close": "Close documents",
+      "closeOverlay": "Close documents panel"
+    },
+    "upload": "Upload a document"
+  },
+  "export": {
+    "title": "Export Chat",
+    "subtitle": "Download a copy of your chat for future reference.",
+    "fromLabel": "Chat From",
+    "fromPlaceholder": "From date",
+    "toLabel": "Chat Till",
+    "toPlaceholder": "To date",
+    "formatLabel": "Export File",
+    "formatPdf": "PDF",
+    "exporting": "Exporting",
+    "exportButton": "Export",
+    "progressLabel": "Exporting Chat... {{progress}}%",
+    "progressSubtitle": "Sit back and relax, we're working on your export.",
+    "completeTitle": "Export Complete",
+    "completeSubtitle": "Chat exported successfully!",
+    "back": "Back"
+  },
+  "routing": {
+    "confidence": "Confidence: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} tokens",
+    "observabilityDetails": "Observability details"
+  },
+  "feedback": {
+    "thankYou": "Thank you",
+    "rateThisResponse": "Rate this response",
+    "correctionPlaceholder": "Optional: suggest a better response (max 2000 chars)",
+    "submitting": "Submitting...",
+    "submit": "Submit"
+  },
+  "compose": {
+    "sectionLabel": "Compose Prompt"
+  },
+  "conversation": {
+    "sectionLabel": "Conversation",
+    "replayVoice": "Replay voice",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "via {{agent}}",
+    "observabilityUnavailable": "Observability unavailable for this message.",
+    "tableSrLabel": "Table",
+    "waiting": {
+      "shortly": "{{coachName}} will be with you shortly",
+      "oneMoment": "One moment with {{coachName}}",
+      "pleaseWait": "Please wait"
+    },
+    "source": {
+      "label": "Sources ({{count}})",
+      "openTitle": "Open {{filename}}",
+      "openError": {
+        "noUrl": "Couldn't open \"{{filename}}\" — backend returned no URL.",
+        "notFound": "Couldn't open \"{{filename}}\" — document not found or access denied.",
+        "generic": "Couldn't open \"{{filename}}\" — please try again."
+      }
+    },
+    "collaboration": {
+      "label": "Collaborative response ({{count}} agents)",
+      "synthesizedFrom": "Synthesized from {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Ask Anything…  (Enter to send · Shift+Enter for newline)",
+    "unmuteCoach": "Unmute Coach",
+    "muteCoach": "Mute Coach",
+    "stopRecording": "Stop recording",
+    "startRecording": "Start recording",
+    "sendMessage": "Send message",
+    "muteTooltip": {
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "disabledDuringPlayback": "Mute is disabled during playback"
+    }
+  },
+  "banner": {
+    "selected": "Selected:",
+    "connecting": "Connecting...",
+    "successAnimationTitle": "Success animation"
+  },
+  "audio": {
+    "close": "Close audio player"
+  },
+  "coach": {
+    "defaultName": "Coach",
+    "authError": "Authentication error",
+    "untitledConversation": "No Title",
+    "previewPlaceholder": "To do",
+    "conversationsLabel": "Conversations",
+    "sessionSubject": "{{coachName}} Coaching Session",
+    "assistantDomain": "Coaching",
+    "exportSuccess": "Exported Conversation Log + Structured Report PDFs.",
+    "exportNoConversation": "Couldn't export chat — no active conversation.",
+    "audioWarning": "Switching conversations will reset audio for the new conversation."
+  },
+  "diagnostic": {
+    "title": "Diagnostic Chat",
+    "sessionLabel": "Session: {{sessionId}}...",
+    "statusConnecting": "Connecting...",
+    "statusReconnecting": "Reconnecting...",
+    "statusDisconnected": "Disconnected",
+    "newChat": "New Chat",
+    "newChatTitle": "Start a new chat session",
+    "reconnect": "Reconnect",
+    "clearAllTitle": "Clear all",
+    "traceLog": "Trace Log",
+    "dataSourcesLabel": "Connected Data Sources",
+    "emptyTitle": "Diagnostic Chat Interface",
+    "emptySubtitle": "Send a message to trace the full request lifecycle",
+    "streaming": "streaming",
+    "processing": "Meridian processing...",
+    "stopRecording": "Stop recording",
+    "startVoiceInput": "Start voice input",
+    "inputPlaceholder": "Type a message to trace the full pipeline...",
+    "recordingHint": "Recording — speak clearly, then stop to send",
+    "latency": "Latency: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "Tokens: {{tokenCount}}",
+    "entriesCount": "{{count}} entries",
+    "errorsCount": "{{count}} errors",
+    "warningsCount": "{{count}} warnings",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

@@ -1,0 +1,335 @@
+{
+  "common": {
+    "copiedToClipboard": "Copiado para a área de transferência",
+    "copyMessage": "Copiar mensagem",
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "close": "Fechar",
+    "delete": "Excluir",
+    "download": "Baixar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "clear": "Limpar",
+    "you": "Você",
+    "connected": "Conectado",
+    "error": "Erro",
+    "unknownError": "Erro desconhecido",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "untitledConversation": "Conversa sem título",
+    "noConversations": "Ainda não há conversas. Envie uma mensagem para começar uma.",
+    "noDocuments": "Ainda não há documentos enviados."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian está pensando...",
+    "noResponse": "Sem resposta.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "via {{agent}}",
+    "profileLabel": "Perfil: {{frameworks}}",
+    "reviewingBanner": "Analisando {{count}} conversa adicional junto com o chat ativo.",
+    "profileIndicator": {
+      "title": "Estruturas que o Meridian pode consultar nesta conversa"
+    },
+    "newChat": {
+      "title": "Iniciar um novo chat",
+      "label": "Novo chat"
+    },
+    "status": {
+      "connected": "Conectado ao Meridian"
+    },
+    "error": {
+      "agent": "Erro do agente",
+      "unreachable": "Desculpe, não consegui contatar o Meridian. Tente novamente.",
+      "unreachableShort": "Não foi possível contatar o Meridian",
+      "newChatFailed": "Não foi possível iniciar um novo chat. Tente novamente."
+    },
+    "export": {
+      "aria": "Exportar chat",
+      "label": "Exportar",
+      "sessionSubject": "Sessão de chat do Meridian",
+      "assistantDomain": "Coaching",
+      "success": "Registro da conversa e relatórios estruturados exportados em PDF.",
+      "noConversation": "Não foi possível exportar o chat — nenhuma conversa ativa.",
+      "noData": "Não foi possível exportar o chat — o backend não retornou dados.",
+      "noContent": "Não foi possível exportar o chat — nenhum conteúdo no intervalo selecionado.",
+      "retry": "Não foi possível exportar o chat — tente novamente."
+    },
+    "voice": {
+      "mute": "Silenciar a voz do Meridian",
+      "enable": "Ativar a voz do Meridian",
+      "onTitle": "Respostas por voz ATIVADAS — clique para silenciar",
+      "offTitle": "Respostas por voz DESATIVADAS — clique para ativar",
+      "notSupported": "A entrada de voz não é compatível com este navegador",
+      "micDenied": "Acesso ao microfone negado"
+    },
+    "audio": {
+      "blockedTitle": "O navegador bloqueou a reprodução de áudio — clique para ativar",
+      "enable": "Ativar áudio",
+      "rewind": "Retroceder 5 segundos",
+      "resume": "Retomar áudio",
+      "pause": "Pausar áudio",
+      "fastForward": "Avançar 5 segundos",
+      "skip": "Pular para a próxima frase",
+      "cancel": "Cancelar transmissão",
+      "queued": "{{count}} na fila"
+    },
+    "conn": {
+      "availableTitle": "Transmissão de voz disponível",
+      "connectingTitle": "Conectando a transmissão de voz...",
+      "unavailableTitle": "Transmissão de voz indisponível",
+      "ready": "Voz pronta",
+      "connecting": "Conectando",
+      "off": "Voz desativada"
+    },
+    "personalRow": {
+      "aria": "Suas páginas",
+      "selfPortrait": "Meu autorretrato",
+      "moments": "Momentos",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} não está habilitado na sua conta"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Desenvolvido com Agent Eco-System",
+    "back": "Voltar",
+    "export": "Exportar",
+    "documentsButton": "Documentos",
+    "tab": {
+      "chat": "Chat",
+      "documents": "Documentos"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Abrir painel lateral de documentos",
+      "tooltip": "Abra o painel de documentos para selecionar arquivos a adicionar ao chat"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Conversas e projetos"
+    },
+    "active": {
+      "title": "Sessões ativas",
+      "empty": "Ainda não há sessões ativas.",
+      "badge": {
+        "live": "ao vivo",
+        "open": "aberta"
+      }
+    },
+    "history": {
+      "title": "Histórico"
+    },
+    "last5": {
+      "title": "Últimos 5 chats",
+      "empty": "Ainda não há nada aqui."
+    },
+    "projects": {
+      "title": "Projetos",
+      "inputPlaceholder": "Nome do novo projeto…",
+      "inputAria": "Nome do novo projeto",
+      "addAria": "Adicionar projeto",
+      "empty": "Ainda não há projetos. Agrupe conversas relacionadas em um projeto.",
+      "badge": {
+        "active": "ativo"
+      }
+    },
+    "knowledge": {
+      "title": "Conhecimento",
+      "badge": {
+        "indexed": "indexado"
+      }
+    }
+  },
+  "history": {
+    "title": "Histórico",
+    "newChat": "Novo chat",
+    "newChatTooltip": "Iniciar uma nova conversa",
+    "newChatTooltipExisting": "Você já tem uma nova conversa",
+    "newConversationLabel": "Nova conversa",
+    "searchPlaceholder": "Pesquisar..",
+    "loadError": "Não foi possível carregar o histórico de conversas.",
+    "loadErrorDetailed": "Não foi possível carregar o histórico de conversas — o backend pode estar indisponível. Atualize para tentar novamente.",
+    "openActions": "Abrir ações da conversa",
+    "rename": "Renomear",
+    "deleteTitle": "Excluir conversa",
+    "deleteDescription": "Tem certeza de que deseja excluir esta conversa? Esta ação não pode ser desfeita.",
+    "audioWarning": "Trocar de conversa interromperá o áudio atual",
+    "renameDialogTitle": "Renomear conversa",
+    "renamePlaceholder": "Título da conversa",
+    "renameAnimationTitle": "Animação de renomeação",
+    "renamePending": "Moldando a identidade da sua conversa… ✨",
+    "renameHint": "Dê um nome à sua conversa — deixe-o fácil de lembrar 🚀",
+    "triggerShown": "Histórico ({{count}} exibidas)",
+    "triggerCount": "Histórico ({{count}})",
+    "triggerAria": "Navegar pelo histórico de conversas",
+    "hint": "Clique em uma conversa para torná-la ativa, ou marque-a para adicioná-la à revisão.",
+    "includeAria": "Incluir {{title}} na revisão",
+    "activeBadge": "Ativa",
+    "reviewCount": "{{count}} conversa adicional em revisão",
+    "clearReview": "Limpar revisão"
+  },
+  "documents": {
+    "triggerLabel": "Documentos",
+    "triggerSelected": "Documentos ({{count}} selecionados)",
+    "triggerAria": "Selecionar documentos",
+    "header": "Anexar documentos a este chat",
+    "loadError": "Não foi possível carregar os documentos.",
+    "uploadLink": "Enviar documentos",
+    "selectFileAria": "Selecionar {{filename}}",
+    "autoAttached": "Anexado automaticamente",
+    "selectedCount": "{{selected}} de {{total}} selecionados",
+    "iframe": {
+      "defaultFileName": "Documento",
+      "loading": "Carregando documento…"
+    },
+    "panel": {
+      "selectedCount": "Selecionados ({{count}})",
+      "confirmDeleteTitle": "Confirmar exclusão",
+      "confirmDeleteBulkDescription": "Tem certeza de que deseja excluir {{count}} documento(s) selecionado(s)? Esta ação não pode ser desfeita.",
+      "confirmDeleteOneDescription": "Tem certeza de que deseja excluir este documento? Esta ação não pode ser desfeita.",
+      "upload": "Enviar",
+      "importToChat": "Importar para o chat",
+      "loading": "Carregando documentos...",
+      "empty": "Nenhum arquivo encontrado",
+      "emptyAnimationTitle": "arquivo não encontrado",
+      "selectItem": "Selecionar {{name}}",
+      "preview": "Pré-visualização"
+    },
+    "sidePanel": {
+      "title": "Documentos",
+      "close": "Fechar documentos",
+      "closeOverlay": "Fechar painel de documentos"
+    },
+    "upload": "Enviar um documento"
+  },
+  "export": {
+    "title": "Exportar chat",
+    "subtitle": "Baixe uma cópia do seu chat para consulta futura.",
+    "fromLabel": "Chat de",
+    "fromPlaceholder": "Data inicial",
+    "toLabel": "Chat até",
+    "toPlaceholder": "Data final",
+    "formatLabel": "Arquivo de exportação",
+    "formatPdf": "PDF",
+    "exporting": "Exportando",
+    "exportButton": "Exportar",
+    "progressLabel": "Exportando chat... {{progress}}%",
+    "progressSubtitle": "Relaxe, estamos preparando sua exportação.",
+    "completeTitle": "Exportação concluída",
+    "completeSubtitle": "Chat exportado com sucesso!",
+    "back": "Voltar"
+  },
+  "routing": {
+    "confidence": "Confiança: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} tokens",
+    "observabilityDetails": "Detalhes de observabilidade"
+  },
+  "feedback": {
+    "thankYou": "Obrigado",
+    "rateThisResponse": "Avalie esta resposta",
+    "correctionPlaceholder": "Opcional: sugira uma resposta melhor (máx. 2000 caracteres)",
+    "submitting": "Enviando...",
+    "submit": "Enviar"
+  },
+  "compose": {
+    "sectionLabel": "Redigir mensagem"
+  },
+  "conversation": {
+    "sectionLabel": "Conversa",
+    "replayVoice": "Reproduzir voz novamente",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "via {{agent}}",
+    "observabilityUnavailable": "Observabilidade indisponível para esta mensagem.",
+    "tableSrLabel": "Tabela",
+    "waiting": {
+      "shortly": "{{coachName}} estará com você em breve",
+      "oneMoment": "Um momento com {{coachName}}",
+      "pleaseWait": "Aguarde"
+    },
+    "source": {
+      "label": "Fontes ({{count}})",
+      "openTitle": "Abrir {{filename}}",
+      "openError": {
+        "noUrl": "Não foi possível abrir \"{{filename}}\" — o backend não retornou nenhuma URL.",
+        "notFound": "Não foi possível abrir \"{{filename}}\" — documento não encontrado ou acesso negado.",
+        "generic": "Não foi possível abrir \"{{filename}}\" — tente novamente."
+      }
+    },
+    "collaboration": {
+      "label": "Resposta colaborativa ({{count}} agentes)",
+      "synthesizedFrom": "Sintetizado a partir de {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Pergunte qualquer coisa…  (Enter para enviar · Shift+Enter para nova linha)",
+    "unmuteCoach": "Reativar som do coach",
+    "muteCoach": "Silenciar coach",
+    "stopRecording": "Parar gravação",
+    "startRecording": "Iniciar gravação",
+    "sendMessage": "Enviar mensagem",
+    "muteTooltip": {
+      "mute": "Silenciar",
+      "unmute": "Reativar som",
+      "disabledDuringPlayback": "O silenciamento está desativado durante a reprodução"
+    }
+  },
+  "banner": {
+    "selected": "Selecionado:",
+    "connecting": "Conectando...",
+    "successAnimationTitle": "Animação de sucesso"
+  },
+  "audio": {
+    "close": "Fechar reprodutor de áudio"
+  },
+  "coach": {
+    "defaultName": "Coach",
+    "authError": "Erro de autenticação",
+    "untitledConversation": "Sem título",
+    "previewPlaceholder": "A fazer",
+    "conversationsLabel": "Conversas",
+    "sessionSubject": "Sessão de coaching com {{coachName}}",
+    "assistantDomain": "Coaching",
+    "exportSuccess": "Registro da conversa e relatórios estruturados exportados em PDF.",
+    "exportNoConversation": "Não foi possível exportar o chat — nenhuma conversa ativa.",
+    "audioWarning": "Trocar de conversa redefinirá o áudio para a nova conversa."
+  },
+  "diagnostic": {
+    "title": "Chat de diagnóstico",
+    "sessionLabel": "Sessão: {{sessionId}}...",
+    "statusConnecting": "Conectando...",
+    "statusReconnecting": "Reconectando...",
+    "statusDisconnected": "Desconectado",
+    "newChat": "Novo chat",
+    "newChatTitle": "Iniciar uma nova sessão de chat",
+    "reconnect": "Reconectar",
+    "clearAllTitle": "Limpar tudo",
+    "traceLog": "Registro de rastreamento",
+    "dataSourcesLabel": "Fontes de dados conectadas",
+    "emptyTitle": "Interface de chat de diagnóstico",
+    "emptySubtitle": "Envie uma mensagem para rastrear todo o ciclo de vida da solicitação",
+    "streaming": "transmitindo",
+    "processing": "Meridian processando...",
+    "stopRecording": "Parar gravação",
+    "startVoiceInput": "Iniciar entrada de voz",
+    "inputPlaceholder": "Digite uma mensagem para rastrear todo o pipeline...",
+    "recordingHint": "Gravando — fale com clareza e depois pare para enviar",
+    "latency": "Latência: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "Tokens: {{tokenCount}}",
+    "entriesCount": "{{count}} entradas",
+    "errorsCount": "{{count}} erros",
+    "warningsCount": "{{count}} avisos",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

@@ -13,6 +13,22 @@ import OnboardingDetailsOne from "../OnboardingDetailsOne";
 /* ---------------------------- Mock Dependencies --------------------------- */
 
 /**
+ * The organisation self-declaration block, added to this page 2026-08-26.
+ *
+ * Mocked rather than rendered, following this file's stated approach: it is a
+ * React Query-backed component, so rendering it here would require a
+ * QueryClientProvider around all five renders and would make a form-logic
+ * suite depend on a network shape it does not care about.
+ *
+ * It is additive on the page — it neither blocks the form nor gates
+ * completion — so stubbing it cannot mask a regression in what this file
+ * actually tests. Its own behaviour belongs in its own test.
+ */
+jest.mock("@/components/org/DeclareOrganisation", () => ({
+  DeclareOrganisation: () => <div data-testid="declare-organisation" />,
+}));
+
+/**
  * Mock useCreateProfileMutation so we can intercept mutate()
  * and verify payload + behavior without calling real API.
  */

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Honor Foundation — Coach Workbench User Guide</title>
+<meta name="description" content="Coach-facing, step-by-step guide to the Honor Foundation Coach Workbench: request a PRISM report, build a caseload, run a cited evaluation, write a résumé, and export branded PDFs.">
+<style>
+:root {
+  --navy:#1B2A4A; --orange:#E8792B; --ink:#222831; --muted:#5A6473;
+  --soft:#F4F6F9; --softer:#FBFCFD; --panel:#EEF1F6; --warm:#FDF6EC; --line:#E4E8EF;
+}
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Calibri,Roboto,Helvetica,Arial,sans-serif;
+  color:var(--ink); background:var(--softer); line-height:1.55; text-align:left; }
+a { color:var(--orange); }
+.wrap { display:grid; grid-template-columns:260px 1fr; max-width:1180px; margin:0 auto; }
+/* Cover / masthead */
+.masthead { grid-column:1 / -1; background:var(--navy); color:#fff; padding:34px 40px 30px;
+  border-bottom:6px solid var(--orange); }
+.masthead .brand { font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--orange); font-weight:700; }
+.masthead h1 { margin:6px 0 2px; font-size:34px; letter-spacing:-.01em; }
+.masthead .sub { font-size:18px; color:#fff; font-weight:600; }
+.masthead .meta { margin-top:8px; font-size:13px; color:#C7D0DE; }
+.downloads { margin-top:18px; display:flex; flex-wrap:wrap; gap:10px; }
+.btn { display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-weight:600; font-size:14px;
+  padding:9px 16px; border-radius:8px; border:1px solid transparent; }
+.btn.pptx { background:var(--orange); color:#fff; }
+.btn.docx { background:#fff; color:var(--navy); border-color:#fff; }
+.btn.print { background:transparent; color:#fff; border-color:#5A6C8C; }
+.btn:hover { filter:brightness(1.05); }
+/* TOC */
+nav.toc { position:sticky; top:0; align-self:start; height:100vh; overflow:auto;
+  padding:26px 16px 26px 40px; border-right:1px solid var(--line); background:var(--softer); }
+nav.toc .kicker { font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:8px; }
+nav.toc ol { list-style:none; margin:0; padding:0; counter-reset:toc; }
+nav.toc li { margin:2px 0; }
+nav.toc a { display:block; text-decoration:none; color:var(--navy); font-size:13.5px; padding:5px 8px; border-radius:6px; }
+nav.toc a:hover { background:var(--panel); }
+nav.toc a.active { background:var(--navy); color:#fff; }
+/* Content */
+main { padding:30px 40px 60px; min-width:0; }
+section { scroll-margin-top:12px; margin-bottom:6px; }
+h2 { color:var(--navy); font-size:23px; margin:26px 0 6px; padding-bottom:6px; border-bottom:2px solid var(--navy); }
+h3 { color:var(--navy); font-size:16px; margin:16px 0 4px; }
+p { margin:6px 0; }
+p.lead { color:var(--muted); }
+ol, ul { margin:6px 0 10px; padding-left:22px; }
+li { margin:4px 0; }
+.step { display:flex; align-items:baseline; gap:10px; margin:20px 0 4px; }
+.step-num { color:var(--orange); font-weight:800; font-size:15px; }
+.step-title { color:var(--navy); font-weight:700; font-size:16px; }
+.callout { border-left:5px solid var(--orange); background:var(--warm); padding:12px 16px; border-radius:0 8px 8px 0; margin:12px 0; }
+.callout.cool { border-left-color:var(--navy); background:var(--panel); }
+.callout-title { font-weight:700; color:var(--navy); margin-bottom:4px; }
+.callout ul { margin:4px 0 0; }
+.callout li { font-size:14px; }
+table.grid { width:100%; border-collapse:collapse; margin:10px 0 16px; font-size:14px; }
+table.grid th { background:var(--navy); color:#fff; text-align:left; padding:8px 12px; font-weight:600; }
+table.grid td { padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+table.grid tbody tr:nth-child(even) { background:var(--softer); }
+td.where { font-weight:700; color:var(--navy); white-space:nowrap; }
+td.live { font-weight:700; color:var(--navy); }
+td.soon { font-weight:700; color:var(--orange); }
+.glossary .term { font-weight:700; color:var(--navy); }
+.tips .tip { margin:0 0 10px; }
+.tips .q { font-weight:700; color:var(--navy); margin:0; }
+.tips .a { margin:2px 0 0 12px; }
+footer { grid-column:1 / -1; border-top:1px solid var(--line); padding:18px 40px 40px; color:var(--muted); font-size:12.5px; font-style:italic; }
+@media (max-width: 860px) {
+  .wrap { grid-template-columns:1fr; }
+  nav.toc { position:static; height:auto; border-right:0; border-bottom:1px solid var(--line); padding:16px 20px; }
+  nav.toc ol { columns:2; }
+  main { padding:20px; }
+  .masthead { padding:24px 20px; }
+}
+@media print {
+  nav.toc, .downloads { display:none; }
+  .wrap { grid-template-columns:1fr; max-width:none; }
+  body { background:#fff; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="brand">The Honor Foundation</div>
+    <h1>Coach Workbench — User Guide</h1>
+    <div class="sub">A step-by-step guide for coaches translating elite service into private-sector careers.</div>
+    <div class="meta">Powered by InspiresGenius.com &nbsp;·&nbsp; July 31, 2026</div>
+    <div class="downloads">
+      <a class="btn pptx" href="Honor_Coach_Workbench_User_Guide.pptx" target="_blank" rel="noopener">⬇ Slide deck (PowerPoint)</a>
+      <a class="btn docx" href="Honor_Coach_Workbench_User_Guide.docx" target="_blank" rel="noopener">⬇ Word version (.docx)</a>
+      <a class="btn print" href="javascript:window.print()">🖨 Print this guide</a>
+    </div>
+  </header>
+  <nav class="toc" aria-label="Contents">
+    <div class="kicker">Contents</div>
+    <ol><li><a href="#welcome">Welcome to the Coach Workbench</a></li><li><a href="#before">Before you begin</a></li><li><a href="#glance">The workbench at a glance</a></li><li><a href="#workflow">The step-by-step workflow</a></li><li><a href="#branded">Understanding the branded document</a></li><li><a href="#privacy">Privacy, safety &amp; confidentiality</a></li><li><a href="#status">What's live vs. coming soon</a></li><li><a href="#tips">Tips &amp; troubleshooting</a></li><li><a href="#glossary">Glossary</a></li></ol>
+  </nav>
+  <main><section id="welcome"><h2>Welcome to the Coach Workbench</h2><p>The Coach Workbench is your home base for guiding Honor Foundation Fellows through their transition. From one screen you can build your caseload, review each Fellow's behavioral profile, run an objective, evidence-cited evaluation, compare a pod of Fellows, and draft a private-sector résumé — all framed by The Honor Foundation's safe-translation standards so a Fellow's service is represented powerfully and responsibly.</p>
+<div class="callout cool"><div class="callout-title">What makes this different</div><ul><li>Every insight is cited. The evaluation tells you exactly which data point drove each statement (e.g. “PRISM: Coordinating 90”) — no black-box scoring.</li><li>Deterministic where it matters. Fit scores are computed the same way every time; the AI narrates, it does not invent the numbers.</li><li>Safe by design. Military experience is translated into civilian language; classified or unit-identifying detail is never surfaced.</li><li>You stay in control. The workbench prepares drafts; you review and decide before anything reaches a Fellow.</li></ul></div>
+<div class="callout warm"><div class="callout-title">New in this release</div><ul><li>Request a PRISM report — enroll a Fellow for PRISM straight from the workbench, no separate portal (Step 5).</li><li>Target position description on the Résumé Writer — paste or upload a specific job posting and the résumé is tailored to it (Step 11).</li><li>Import a Cohort — the bulk-add flow is now labelled clearly on Onboarding (Step 2).</li><li>Cleaner formatting — every report is left-justified, and any plan you ask for comes back as a numbered, step-by-step list.</li></ul></div></section><section id="before"><h2>Before you begin</h2><h3>What you need</h3>
+<ul><li>A coach account with the Honor vertical enabled (your administrator grants this).</li><li>For each Fellow you evaluate: their PRISM results, and ideally their résumé and bio.</li><li>A modern browser (Chrome, Edge, or Safari). No install required.</li></ul>
+<h3>A quick word on roles</h3>
+<p>You only ever see the Fellows on your own caseload. The workbench is ownership-gated: a coach cannot view, evaluate, or export a Fellow they do not own. This protects every Fellow's privacy and keeps your workspace focused.</p></section><section id="glance"><h2>The workbench at a glance</h2><p>The left sidebar is your map. Here is what each area does:</p>
+<table class="grid"><thead><tr><th>Where</th><th>What it's for</th></tr></thead><tbody><tr><td class="where">Dashboard</td><td>Your landing page — caseload counts, recent activity, and what needs attention.</td></tr><tr><td class="where">My Fellows</td><td>Your caseload roster. Open a Fellow to see their profile and documents.</td></tr><tr><td class="where">Onboarding</td><td>Add new Fellows to your caseload — one at a time, or in bulk via Import a Cohort.</td></tr><tr><td class="where">Evaluate Fellow</td><td>Run a cited, deterministic evaluation of one Fellow — or compare a pod.</td></tr><tr><td class="where">Résumé Writer</td><td>Draft a private-sector résumé for a Fellow, safely translated from their service.</td></tr><tr><td class="where">Activity</td><td>A running log of what has happened across your caseload.</td></tr><tr><td class="where">Schedule</td><td>Upcoming sessions and events.</td></tr><tr><td class="where">Help / Support</td><td>Opens this guide, the slide deck, and the Word version (bottom of the menu).</td></tr></tbody></table></section><section id="workflow"><h2>The step-by-step workflow</h2><p>A typical engagement moves through the steps below. You will not need all of them for every Fellow, but this is the natural order.</p>
+<div class="step"><span class="step-num">Step 1</span><span class="step-title">Sign in</span></div>
+<ol><li>Open the Coach Workbench link from your invitation email, or go to your organization's sign-in page.</li><li>Sign in. If you use a magic link, click the link in your email — no password to remember.</li><li>You land on your Dashboard. If you don't see Honor in the sidebar, ask your administrator to enable the Honor vertical for your account.</li></ol>
+<div class="step"><span class="step-num">Step 2</span><span class="step-title">Build your caseload</span></div>
+<p>Add the Fellows you are coaching so the workbench can hold their profile and documents.</p>
+<ol><li>Go to Onboarding (or the “Add Fellow” action on My Fellows).</li><li>Enter the Fellow's name, email, service background, and target direction. Save.</li><li>To add several at once, click Import a Cohort and upload a spreadsheet of Fellows.</li></ol>
+<div class="callout warm"><div class="callout-title">Managed vs. invited Fellows</div><ul><li>A Fellow you add is “managed” — on your roster, but without their own account yet.</li><li>Managed Fellows can hold notes and a target, but you must invite them before you can attach assessments or run a full evaluation.</li></ul></div>
+<div class="step"><span class="step-num">Step 3</span><span class="step-title">Invite a Fellow</span></div>
+<p>Inviting turns a managed roster entry into a real account so their assessments and documents attach to them.</p>
+<ol><li>On My Fellows, open the Fellow and choose Invite (or select several and use “Send invitations to selected”).</li><li>Decide whether to notify the Fellow now. If you toggle notification off, the account is still created — you can send the intake email later.</li><li>The Fellow receives a secure magic-link intake email and completes their onboarding.</li></ol>
+<div class="step"><span class="step-num">Step 4</span><span class="step-title">Add a Fellow's assessments</span></div>
+<p>The richer the profile, the sharper the evaluation. Import what you have.</p>
+<ol><li>Open the Fellow and choose to import an assessment.</li><li>Upload their PRISM results. You can also add other assessments (DISC, CliftonStrengths, Big Five, Hogan) and their résumé and bio.</li><li>Preview the parsed scores before saving so you can confirm they read correctly.</li></ol>
+<div class="callout cool"><div class="callout-title">What the profile is built from</div><ul><li>Behavioral profile = PRISM + résumé + bio + any additional assessments.</li><li>The evaluation and the résumé writer both ground their output in this profile — and cite it.</li></ul></div>
+<div class="step"><span class="step-num">Step 5</span><span class="step-title">Request a PRISM report (if the Fellow hasn't taken it)</span></div>
+<p>PRISM is the assessment that anchors every evaluation. If a Fellow has not completed one yet, you can request it directly from the workbench — no need to leave the app or email a separate portal. This creates the Fellow's PRISM survey request under The Honor Foundation and starts them on the assessment.</p>
+<ol><li>On My Fellows (or the Fellow's profile), click Request a PRISM report. A short form opens.</li><li>Enter the Fellow's First name, Last name, and Email.</li><li>Confirm the two pre-filled fields — Role is set to “user” and Organization is set to “The Honor Foundation.” These are fixed for you; you don't need to change them.</li><li>Click Request report. The Fellow is enrolled for PRISM and will receive their survey; their scores flow back into the workbench automatically once completed.</li></ol>
+<div class="callout warm"><div class="callout-title">Good to know</div><ul><li>One request per Fellow per day — if you click again within 24 hours the workbench reuses the existing request instead of creating a duplicate.</li><li>You only need the name and email; Role and Organization are always “user” and “The Honor Foundation,” so every request is correctly attributed to your program.</li><li>Already have the Fellow's PRISM CSV or PDF? Skip this step and import it directly (Step 4).</li></ul></div>
+<div class="step"><span class="step-num">Step 6</span><span class="step-title">Evaluate a Fellow</span></div>
+<p>This is the heart of the workbench. Open Evaluate Fellow.</p>
+<ol><li>Select the Fellow you want to evaluate. They become the subject of the report.</li><li>Optionally type the Fellow's goals and objectives, one per line (e.g. “Operations program management role”).</li><li>Click Run evaluation. In a moment you get a structured, cited report with four sections: Objective Evaluation (cited strengths), Development Areas (cited), Goals &amp; Objectives Fit (each goal scored with a verdict), and Career / Position Fit (areas ranked 0–100 with drivers and gaps).</li></ol>
+<div class="callout cool"><div class="callout-title">Reading the scores</div><ul><li>Every number is computed the same way every time — the AI does not invent or change a score.</li><li>A source tag like “PRISM: Coordinating 90” after a statement tells you exactly which data point drove it.</li><li>If a Fellow has no scored assessment yet, the report says so and shows imputed-neutral scores — import or request a PRISM report for a real evaluation.</li></ul></div>
+<div class="step"><span class="step-num">Step 7</span><span class="step-title">Compare a pod (optional)</span></div>
+<p>Select more than one Fellow on the Evaluate screen to turn on comparison.</p>
+<ol><li>Select two or more owned Fellows. The first is the subject; the rest are the comparison set.</li><li>Choose a target career area for the team read.</li><li>Run the evaluation. You now also get a fit-by-area matrix across the pod and a team read: what's Covered, the Gaps, who's Complementary, and where the pod is Redundant.</li></ol>
+<div class="step"><span class="step-num">Step 8</span><span class="step-title">Attach a position description (optional)</span></div>
+<p>Tailor the fit ranking to a specific job.</p>
+<ol><li>On the Evaluate screen, choose Attach position description and upload the job posting (PDF, Word, or text).</li><li>Run the evaluation — the ranking now considers that specific role for the Fellow.</li></ol>
+<div class="step"><span class="step-num">Step 9</span><span class="step-title">Narrate with Meridian (optional)</span></div>
+<p>Meridian is the platform's coaching voice. After an evaluation you can click Narrate with Meridian to turn the cited sections into a direct, dignified paragraph you can read aloud or paste into your notes. Meridian never changes a score — it only puts the findings into prose.</p>
+<div class="callout cool"><div class="callout-title">How your report reads</div><ul><li>Every response is left-justified — plain, left-aligned paragraphs, bullet lists, and tables. Nothing is centered or right-aligned, so a report reads cleanly on screen and in the exported PDF.</li><li>Ask for a plan and you get a plan — whenever you ask Meridian for a plan (a transition plan, a 90-day ramp, an interview-prep plan), it always answers with a numbered, step-by-step list you can act on in order.</li></ul></div>
+<div class="step"><span class="step-num">Step 10</span><span class="step-title">Export the evaluation</span></div>
+<p>Turn any evaluation into a branded, confidential document.</p>
+<ol><li>Click Download PDF for a branded report with a Honor Foundation title page and a confidentiality notice on every page.</li><li>Click Print to send it straight to your printer or save as PDF from the print dialog.</li><li>Email to fellow is coming soon. Until then, download and share through your own secure channel.</li></ol>
+<div class="step"><span class="step-num">Step 11</span><span class="step-title">Write a résumé</span></div>
+<p>Open Résumé Writer to draft a private-sector résumé for a Fellow.</p>
+<ol><li>Select the Fellow.</li><li>Optionally set a target role or a career area to aim the draft.</li><li>Target position description — tailor the résumé to a specific job. You can either paste the job posting into the text box, or click Upload a job description and attach the posting as a file (PDF, Word, or text). If you do both, the pasted text wins.</li><li>Click Generate résumé. You get a structured draft — headline, professional summary, core competencies, experience (translated into civilian language), education, and certifications — aligned to the target position you provided.</li></ol>
+<div class="callout warm"><div class="callout-title">Target position description — how it's used</div><ul><li>Upload a job description attaches the posting to this Fellow and pulls its text into the draft so the résumé speaks to that specific role.</li><li>Pasting text and uploading a file do the same job — pick whichever is easier; if both are present, the pasted text is used.</li><li>No target position? Leave it blank and the résumé is written to the target role / career area instead.</li></ul></div>
+<div class="step"><span class="step-num">Step 12</span><span class="step-title">Export the résumé</span></div>
+<p>Use Download PDF or Print, exactly like the evaluation. The résumé PDF carries the same Honor Foundation branding and confidentiality footer.</p></section><section id="branded"><h2>Understanding the branded document</h2><p>Every exported evaluation and résumé is a polished, print-ready PDF:</p>
+<ul><li>a title page with “The Honor Foundation” and “Powered by InspiresGenius.com”.</li><li>“Prepared for” the Fellow (name, title, email) and “By” you (name, title, email), with the date.</li><li>the cited sections, formatted for an executive reader.</li><li>a confidentiality notice on every page: “Confidential Data. Distribution to others only by permission of {Fellow}.”</li></ul></section><section id="privacy"><h2>Privacy, safety &amp; confidentiality</h2><div class="callout cool"><div class="callout-title">The standards that govern every output</div><ul><li>Ownership-gated. You only ever see and act on your own Fellows.</li><li>Safe translation. SOF experience is rendered as leadership scope, team size, budget/asset responsibility, risk decisions, and outcomes — never classified, operationally sensitive, or unit-identifying detail.</li><li>Grounded, not invented. Evaluations and résumés draw only from the Fellow's own profile and documents.</li><li>Coach-reviewed. Treat every AI draft as a starting point you review before it reaches a Fellow or a third party.</li><li>Confidential by default. Exports are marked confidential; share them only with the Fellow's permission.</li></ul></div></section><section id="status"><h2>What's live vs. coming soon</h2><table class="grid"><thead><tr><th>Feature</th><th>Status</th></tr></thead><tbody><tr><td>Request a PRISM report for a Fellow</td><td class="live">Live</td></tr><tr><td>Import a Cohort (bulk-add Fellows)</td><td class="live">Live</td></tr><tr><td>Evaluate a Fellow (cited, ranked report)</td><td class="live">Live</td></tr><tr><td>Compare a pod + team read</td><td class="live">Live</td></tr><tr><td>Upload a target position description (résumé + fit)</td><td class="live">Live</td></tr><tr><td>Branded PDF export, Print, Download</td><td class="live">Live</td></tr><tr><td>Email the report/résumé to the Fellow</td><td class="soon">Coming soon</td></tr><tr><td>Live résumé generation</td><td class="soon">Activating</td></tr></tbody></table></section><section id="tips"><h2>Tips &amp; troubleshooting</h2><div class="tips"><div class="tip"><p class="q">“This fellow has no IG profile yet.”</p><p class="a">You tried to evaluate a managed Fellow. Invite them first, then import assessments.</p></div><div class="tip"><p class="q">Fit scores look imputed-neutral.</p><p class="a">The Fellow has no scored assessment on file. Import their PRISM report (or request one, Step 5) and re-run.</p></div><div class="tip"><p class="q">I can't see a Fellow I expect.</p><p class="a">You only see your own caseload. If a Fellow belongs to another coach, ask your administrator.</p></div><div class="tip"><p class="q">Export didn't download.</p><p class="a">Check your browser's pop-up/download settings, then try Download PDF again.</p></div></div></section><section id="glossary"><h2>Glossary</h2><div class="glossary"><p><span class="term">Fellow.</span> A Special-Operations veteran in transition, on your caseload.</p><p><span class="term">Behavioral profile.</span> The combined picture from PRISM + résumé + bio + any other assessments.</p><p><span class="term">PRISM.</span> The behavioral assessment that anchors the profile.</p><p><span class="term">PRISM request.</span> An in-app request that enrolls a Fellow for the PRISM assessment under The Honor Foundation.</p><p><span class="term">Cohort.</span> A group of Fellows added together in one spreadsheet upload via Import a Cohort.</p><p><span class="term">Target position description.</span> A specific job posting — pasted or uploaded — that the résumé and fit ranking are tailored to.</p><p><span class="term">Cited / source tag.</span> The data point behind a statement, e.g. “PRISM: Coordinating 90”.</p><p><span class="term">Deterministic.</span> Computed the same way every time — the AI narrates, it doesn't invent scores.</p><p><span class="term">Meridian.</span> The platform's unified coaching voice that narrates results into prose.</p><p><span class="term">Safe translation.</span> Rendering military experience in civilian terms without any sensitive detail.</p><p><span class="term">Team read.</span> The pod-level view of what's covered, the gaps, and complementary strengths.</p></div></section></main>
+  <footer>The Honor Foundation — Coach Workbench &nbsp;·&nbsp; Powered by InspiresGenius.com &nbsp;·&nbsp; Confidential coach reference.</footer>
+</div>
+<script>
+// Highlight the current section in the table of contents as you scroll.
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        links.forEach(function (l) { l.classList.remove('active'); });
+        var a = map[e.target.id];
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '0px 0px -75% 0px', threshold: 0 });
+  document.querySelectorAll('main section').forEach(function (s) { obs.observe(s); });
+})();
+</script>
+</body>
+</html>

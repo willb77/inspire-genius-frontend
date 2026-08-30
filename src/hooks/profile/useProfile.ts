@@ -15,17 +15,23 @@ import {
 } from "@tanstack/react-query";
 
 import {
+  confirmImportAssessment,
   createAssessment,
   createFact,
   deleteFact,
   getLoadedFrameworks,
   getMyProfile,
   getTrend,
+  importAssessment,
   listAssessments,
+  previewImportAssessment,
 } from "@/services/profile/profile";
 import type {
   Assessment,
+  AssessmentCreated,
   AssessmentHistoryResponse,
+  AssessmentImportConfirm,
+  AssessmentImportPreview,
   CreateAssessmentRequest,
   CreateFactRequest,
   LoadedFramework,
@@ -102,6 +108,67 @@ export function useCreateFact(
     mutationFn: createFact,
     ...options,
     onSuccess: (data, vars, ctx) => {
+      qc.invalidateQueries({ queryKey: profileKeys.me() });
+      options?.onSuccess?.(data, vars, ctx);
+    },
+  });
+}
+
+/**
+ * Import an assessment report FILE (multipart) → server adapter parse → store.
+ * On success, refresh the loaded-frameworks list so the HomeV2 completeness
+ * indicator flips the item to "done".
+ */
+export function useImportAssessment(
+  options?: UseMutationOptions<
+    AssessmentCreated,
+    unknown,
+    { framework: string; file: File }
+  >,
+) {
+  const qc = useQueryClient();
+  return useMutation<AssessmentCreated, unknown, { framework: string; file: File }>({
+    mutationFn: ({ framework, file }) => importAssessment(framework, file),
+    ...options,
+    onSuccess: (data, vars, ctx) => {
+      qc.invalidateQueries({ queryKey: profileKeys.loadedFrameworks() });
+      qc.invalidateQueries({ queryKey: profileKeys.me() });
+      options?.onSuccess?.(data, vars, ctx);
+    },
+  });
+}
+
+/**
+ * Confirm-before-save step 1 — parse a report and return the scores WITHOUT
+ * saving. No cache invalidation (nothing changed).
+ */
+export function usePreviewImportAssessment(
+  options?: UseMutationOptions<
+    AssessmentImportPreview,
+    unknown,
+    { framework: string; file: File }
+  >,
+) {
+  return useMutation<
+    AssessmentImportPreview,
+    unknown,
+    { framework: string; file: File }
+  >({
+    mutationFn: ({ framework, file }) => previewImportAssessment(framework, file),
+    ...options,
+  });
+}
+
+/** Confirm-before-save step 2 — save the reviewed scores. */
+export function useConfirmImportAssessment(
+  options?: UseMutationOptions<AssessmentCreated, unknown, AssessmentImportConfirm>,
+) {
+  const qc = useQueryClient();
+  return useMutation<AssessmentCreated, unknown, AssessmentImportConfirm>({
+    mutationFn: confirmImportAssessment,
+    ...options,
+    onSuccess: (data, vars, ctx) => {
+      qc.invalidateQueries({ queryKey: profileKeys.loadedFrameworks() });
       qc.invalidateQueries({ queryKey: profileKeys.me() });
       options?.onSuccess?.(data, vars, ctx);
     },

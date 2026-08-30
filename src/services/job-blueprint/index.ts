@@ -1,4 +1,5 @@
 export { jobDnaService } from './job-dna.service'
+export { draftService } from './draft.service'
 export { triageService } from './triage.service'
 export { assessmentService } from './assessment.service'
 export { scorecardService } from './scorecard.service'

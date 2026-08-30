@@ -1,0 +1,335 @@
+{
+  "common": {
+    "copiedToClipboard": "Gekopieerd naar klembord",
+    "copyMessage": "Bericht kopiëren",
+    "play": "Afspelen",
+    "pause": "Pauzeren",
+    "close": "Sluiten",
+    "delete": "Verwijderen",
+    "download": "Downloaden",
+    "cancel": "Annuleren",
+    "save": "Opslaan",
+    "clear": "Wissen",
+    "you": "Jij",
+    "connected": "Verbonden",
+    "error": "Fout",
+    "unknownError": "Onbekende fout",
+    "hide": "Verbergen",
+    "show": "Tonen",
+    "untitledConversation": "Naamloos gesprek",
+    "noConversations": "Nog geen gesprekken. Stuur een bericht om er een te starten.",
+    "noDocuments": "Nog geen documenten geüpload."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian denkt na...",
+    "noResponse": "Geen reactie.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "via {{agent}}",
+    "profileLabel": "Profiel: {{frameworks}}",
+    "reviewingBanner": "{{count}} extra gesprekken worden naast de actieve chat bekeken.",
+    "profileIndicator": {
+      "title": "Frameworks waarnaar Meridian in dit gesprek kan verwijzen"
+    },
+    "newChat": {
+      "title": "Een nieuwe chat starten",
+      "label": "Nieuwe chat"
+    },
+    "status": {
+      "connected": "Verbonden met Meridian"
+    },
+    "error": {
+      "agent": "Agentfout",
+      "unreachable": "Sorry, ik kon Meridian niet bereiken. Probeer het opnieuw.",
+      "unreachableShort": "Meridian niet bereikbaar",
+      "newChatFailed": "Kon geen nieuwe chat starten. Probeer het opnieuw."
+    },
+    "export": {
+      "aria": "Chat exporteren",
+      "label": "Exporteren",
+      "sessionSubject": "Meridian chatsessie",
+      "assistantDomain": "Coaching",
+      "success": "Gespreklog + gestructureerde rapport-PDF's geëxporteerd.",
+      "noConversation": "Kon chat niet exporteren – geen actief gesprek.",
+      "noData": "Kon chat niet exporteren – de backend gaf geen gegevens terug.",
+      "noContent": "Kon chat niet exporteren – geen inhoud in het geselecteerde bereik.",
+      "retry": "Kon chat niet exporteren – probeer het opnieuw."
+    },
+    "voice": {
+      "mute": "Meridians stem dempen",
+      "enable": "Meridians stem inschakelen",
+      "onTitle": "Spraakreacties AAN – klik om te dempen",
+      "offTitle": "Spraakreacties UIT – klik om in te schakelen",
+      "notSupported": "Spraakinvoer wordt niet ondersteund in deze browser",
+      "micDenied": "Microfoontoegang geweigerd"
+    },
+    "audio": {
+      "blockedTitle": "Browser blokkeerde audioweergave – klik om in te schakelen",
+      "enable": "Audio inschakelen",
+      "rewind": "5 seconden terugspoelen",
+      "resume": "Audio hervatten",
+      "pause": "Audio pauzeren",
+      "fastForward": "5 seconden vooruitspoelen",
+      "skip": "Naar volgende zin springen",
+      "cancel": "Stream annuleren",
+      "queued": "{{count}} in wachtrij"
+    },
+    "conn": {
+      "availableTitle": "Spraakstreaming beschikbaar",
+      "connectingTitle": "Spraakstream verbinden...",
+      "unavailableTitle": "Spraakstreaming niet beschikbaar",
+      "ready": "Spraak gereed",
+      "connecting": "Verbinden",
+      "off": "Spraak uit"
+    },
+    "personalRow": {
+      "aria": "Jouw pagina's",
+      "selfPortrait": "Mijn zelfportret",
+      "moments": "Momenten",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} is niet ingeschakeld voor je account"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Mogelijk gemaakt door Agent Eco-System",
+    "back": "Terug",
+    "export": "Exporteren",
+    "documentsButton": "Documenten",
+    "tab": {
+      "chat": "Chat",
+      "documents": "Documenten"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Zijpaneel met documenten openen",
+      "tooltip": "Documentenpaneel openen om bestanden aan de chat toe te voegen"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Gesprekken en projecten"
+    },
+    "active": {
+      "title": "Actieve sessies",
+      "empty": "Nog geen actieve sessies.",
+      "badge": {
+        "live": "live",
+        "open": "open"
+      }
+    },
+    "history": {
+      "title": "Geschiedenis"
+    },
+    "last5": {
+      "title": "Laatste 5 chats",
+      "empty": "Hier nog niets."
+    },
+    "projects": {
+      "title": "Projecten",
+      "inputPlaceholder": "Nieuwe projectnaam…",
+      "inputAria": "Nieuwe projectnaam",
+      "addAria": "Project toevoegen",
+      "empty": "Nog geen projecten. Groepeer gerelateerde chats onder een project.",
+      "badge": {
+        "active": "actief"
+      }
+    },
+    "knowledge": {
+      "title": "Kennis",
+      "badge": {
+        "indexed": "geïndexeerd"
+      }
+    }
+  },
+  "history": {
+    "title": "Geschiedenis",
+    "newChat": "Nieuwe chat",
+    "newChatTooltip": "Een nieuw gesprek starten",
+    "newChatTooltipExisting": "Je hebt al een nieuw gesprek",
+    "newConversationLabel": "Nieuw gesprek",
+    "searchPlaceholder": "Zoeken..",
+    "loadError": "Kon gespreksgeschiedenis niet laden.",
+    "loadErrorDetailed": "Kon gespreksgeschiedenis niet laden – de backend is mogelijk niet beschikbaar. Vernieuw om het opnieuw te proberen.",
+    "openActions": "Gespreksacties openen",
+    "rename": "Naam wijzigen",
+    "deleteTitle": "Gesprek verwijderen",
+    "deleteDescription": "Weet je zeker dat je dit gesprek wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    "audioWarning": "Van gesprek wisselen stopt de huidige audio",
+    "renameDialogTitle": "Gesprek hernoemen",
+    "renamePlaceholder": "Gesprekstitel",
+    "renameAnimationTitle": "Hernoem-animatie",
+    "renamePending": "De identiteit van je gesprek vormgeven… ✨",
+    "renameHint": "Geef je gesprek een naam – maak het makkelijk te onthouden 🚀",
+    "triggerShown": "Geschiedenis ({{count}} getoond)",
+    "triggerCount": "Geschiedenis ({{count}})",
+    "triggerAria": "Gespreksgeschiedenis doorbladeren",
+    "hint": "Klik op een gesprek om het actief te maken, of vink het aan om aan de review toe te voegen.",
+    "includeAria": "{{title}} opnemen in review",
+    "activeBadge": "Actief",
+    "reviewCount": "{{count}} extra gesprekken in review",
+    "clearReview": "Review wissen"
+  },
+  "documents": {
+    "triggerLabel": "Documenten",
+    "triggerSelected": "Documenten ({{count}} geselecteerd)",
+    "triggerAria": "Documenten selecteren",
+    "header": "Documenten aan deze chat toevoegen",
+    "loadError": "Kon documenten niet laden.",
+    "uploadLink": "Documenten uploaden",
+    "selectFileAria": "{{filename}} selecteren",
+    "autoAttached": "Automatisch toegevoegd",
+    "selectedCount": "{{selected}} van {{total}} geselecteerd",
+    "iframe": {
+      "defaultFileName": "Document",
+      "loading": "Document laden…"
+    },
+    "panel": {
+      "selectedCount": "Geselecteerd ({{count}})",
+      "confirmDeleteTitle": "Verwijderen bevestigen",
+      "confirmDeleteBulkDescription": "Weet je zeker dat je {{count}} geselecteerd(e) document(en) wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+      "confirmDeleteOneDescription": "Weet je zeker dat je dit document wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+      "upload": "Uploaden",
+      "importToChat": "Importeren naar chat",
+      "loading": "Documenten laden...",
+      "empty": "Geen bestanden gevonden",
+      "emptyAnimationTitle": "bestand niet gevonden",
+      "selectItem": "{{name}} selecteren",
+      "preview": "Voorbeeld"
+    },
+    "sidePanel": {
+      "title": "Documenten",
+      "close": "Documenten sluiten",
+      "closeOverlay": "Documentenpaneel sluiten"
+    },
+    "upload": "Een document uploaden"
+  },
+  "export": {
+    "title": "Chat exporteren",
+    "subtitle": "Download een kopie van je chat voor later gebruik.",
+    "fromLabel": "Chat vanaf",
+    "fromPlaceholder": "Vanaf datum",
+    "toLabel": "Chat tot",
+    "toPlaceholder": "Tot datum",
+    "formatLabel": "Exportbestand",
+    "formatPdf": "PDF",
+    "exporting": "Exporteren",
+    "exportButton": "Exporteren",
+    "progressLabel": "Chat exporteren... {{progress}}%",
+    "progressSubtitle": "Leun achterover en ontspan, we werken aan je export.",
+    "completeTitle": "Export voltooid",
+    "completeSubtitle": "Chat succesvol geëxporteerd!",
+    "back": "Terug"
+  },
+  "routing": {
+    "confidence": "Betrouwbaarheid: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} tokens",
+    "observabilityDetails": "Observability-details"
+  },
+  "feedback": {
+    "thankYou": "Bedankt",
+    "rateThisResponse": "Beoordeel deze reactie",
+    "correctionPlaceholder": "Optioneel: stel een betere reactie voor (max. 2000 tekens)",
+    "submitting": "Verzenden...",
+    "submit": "Verzenden"
+  },
+  "compose": {
+    "sectionLabel": "Prompt opstellen"
+  },
+  "conversation": {
+    "sectionLabel": "Gesprek",
+    "replayVoice": "Stem opnieuw afspelen",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "via {{agent}}",
+    "observabilityUnavailable": "Observability niet beschikbaar voor dit bericht.",
+    "tableSrLabel": "Tabel",
+    "waiting": {
+      "shortly": "{{coachName}} is zo bij je",
+      "oneMoment": "Een moment met {{coachName}}",
+      "pleaseWait": "Even geduld"
+    },
+    "source": {
+      "label": "Bronnen ({{count}})",
+      "openTitle": "{{filename}} openen",
+      "openError": {
+        "noUrl": "Kon \"{{filename}}\" niet openen – backend gaf geen URL terug.",
+        "notFound": "Kon \"{{filename}}\" niet openen – document niet gevonden of toegang geweigerd.",
+        "generic": "Kon \"{{filename}}\" niet openen – probeer het opnieuw."
+      }
+    },
+    "collaboration": {
+      "label": "Gezamenlijke reactie ({{count}} agenten)",
+      "synthesizedFrom": "Samengevoegd uit {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Vraag maar raak…  (Enter om te verzenden · Shift+Enter voor nieuwe regel)",
+    "unmuteCoach": "Coach dempen opheffen",
+    "muteCoach": "Coach dempen",
+    "stopRecording": "Opname stoppen",
+    "startRecording": "Opname starten",
+    "sendMessage": "Bericht verzenden",
+    "muteTooltip": {
+      "mute": "Dempen",
+      "unmute": "Dempen opheffen",
+      "disabledDuringPlayback": "Dempen is uitgeschakeld tijdens afspelen"
+    }
+  },
+  "banner": {
+    "selected": "Geselecteerd:",
+    "connecting": "Verbinden...",
+    "successAnimationTitle": "Succes-animatie"
+  },
+  "audio": {
+    "close": "Audiospeler sluiten"
+  },
+  "coach": {
+    "defaultName": "Coach",
+    "authError": "Authenticatiefout",
+    "untitledConversation": "Geen titel",
+    "previewPlaceholder": "Te doen",
+    "conversationsLabel": "Gesprekken",
+    "sessionSubject": "{{coachName}} coachingssessie",
+    "assistantDomain": "Coaching",
+    "exportSuccess": "Gespreklog + gestructureerde rapport-PDF's geëxporteerd.",
+    "exportNoConversation": "Kon chat niet exporteren – geen actief gesprek.",
+    "audioWarning": "Van gesprek wisselen reset de audio voor het nieuwe gesprek."
+  },
+  "diagnostic": {
+    "title": "Diagnostische chat",
+    "sessionLabel": "Sessie: {{sessionId}}...",
+    "statusConnecting": "Verbinden...",
+    "statusReconnecting": "Opnieuw verbinden...",
+    "statusDisconnected": "Verbinding verbroken",
+    "newChat": "Nieuwe chat",
+    "newChatTitle": "Een nieuwe chatsessie starten",
+    "reconnect": "Opnieuw verbinden",
+    "clearAllTitle": "Alles wissen",
+    "traceLog": "Tracelog",
+    "dataSourcesLabel": "Verbonden gegevensbronnen",
+    "emptyTitle": "Diagnostische chatinterface",
+    "emptySubtitle": "Stuur een bericht om de volledige aanvraaglevenscyclus te traceren",
+    "streaming": "streaming",
+    "processing": "Meridian verwerkt...",
+    "stopRecording": "Opname stoppen",
+    "startVoiceInput": "Spraakinvoer starten",
+    "inputPlaceholder": "Typ een bericht om de volledige pipeline te traceren...",
+    "recordingHint": "Opname – spreek duidelijk, stop dan om te verzenden",
+    "latency": "Latentie: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "Tokens: {{tokenCount}}",
+    "entriesCount": "{{count}} vermeldingen",
+    "errorsCount": "{{count}} fouten",
+    "warningsCount": "{{count}} waarschuwingen",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

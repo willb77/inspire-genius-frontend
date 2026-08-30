@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft, FileText, Upload } from "lucide-react";
 import SessionObservabilityDrawer from "@/components/observability/SessionObservabilityDrawer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useTranslation } from "react-i18next";
 
 type ChatWindowTab = "chat" | "documents";
 
@@ -30,6 +31,7 @@ export default function ChatWindowHeader({
   onOpenExport,
   conversationId,
 }: ChatWindowHeaderProps) {
+  const { t } = useTranslation("chat");
   const chatTabClass = cn(
     "cursor-pointer px-2 py-1 border-b-2 text-sm",
     activeTab === "chat"
@@ -48,7 +50,7 @@ export default function ChatWindowHeader({
     <div className="flex items-center justify-between border-b px-4 py-3">
       <div className="flex items-center gap-2">
         <button
-          aria-label="Back"
+          aria-label={t("header.back", { defaultValue: "Back" })}
           onClick={onBack}
           className="cursor-pointer p-1 rounded-md hover:bg-gray-100"
         >
@@ -59,14 +61,14 @@ export default function ChatWindowHeader({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-4">
           <button className={chatTabClass} onClick={() => onTabChange("chat")}>
-            Chat
+            {t("header.tab.chat", { defaultValue: "Chat" })}
           </button>
           <button
             disabled={false}
             className={docsTabClass}
             onClick={() => onTabChange("documents")}
           >
-            Documents
+            {t("header.tab.documents", { defaultValue: "Documents" })}
           </button>
         </div>
 
@@ -77,14 +79,14 @@ export default function ChatWindowHeader({
               variant="secondary"
               className="h-9 bg-transparent px-3 rounded-lg text-sm font-normal"
               onClick={onOpenDocsSidePanel}
-              aria-label="Open documents side panel"
+              aria-label={t("header.openDocsPanel.ariaLabel", { defaultValue: "Open documents side panel" })}
             >
               <FileText className="size-4 mr-1" />
-              Documents
+              {t("header.documentsButton", { defaultValue: "Documents" })}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
-            Open documents panel to select files to add to chat
+            {t("header.openDocsPanel.tooltip", { defaultValue: "Open documents panel to select files to add to chat" })}
           </TooltipContent>
         </Tooltip>
 
@@ -101,7 +103,7 @@ export default function ChatWindowHeader({
           onClick={onOpenExport}
         >
           <Upload className="size-4 mr-2" />
-          Export
+          {t("header.export", { defaultValue: "Export" })}
         </Button>
       </div>
     </div>

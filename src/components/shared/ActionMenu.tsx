@@ -7,6 +7,8 @@ import {
   UserCheck,
   Mail,
   Bot,
+  FileUp,
+  Activity,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,6 +31,7 @@ export type ActionMenuProps<Row = unknown> = {
   // Toggles for actions
   showResend?: boolean;
   showView?: boolean;
+  showActivity?: boolean;
   showEdit?: boolean;
   showDeactivate?: boolean;
   showActivate?: boolean;
@@ -38,6 +41,7 @@ export type ActionMenuProps<Row = unknown> = {
   editOptions?: ReadonlyArray<MenuOption>;
   // Callbacks (row and optional option value)
   onView?: (row?: Row, option?: string) => void;
+  onActivity?: (row?: Row) => void;
   onEdit?: (row?: Row, option?: string) => void;
   onResend?: (row?: Row) => void;
   onDeactivate?: (row?: Row) => void;
@@ -45,6 +49,10 @@ export type ActionMenuProps<Row = unknown> = {
   onDelete?: (row?: Row) => void;
   showCoaches?: boolean;
   onCoaches?: (row?: Row) => void;
+  showImportPrism?: boolean;
+  onImportPrism?: (row?: Row) => void;
+  showPrismPdf?: boolean;
+  onPrismPdf?: (row?: Row) => void;
 };
 
 export default function ActionMenu<Row = unknown>({
@@ -53,6 +61,7 @@ export default function ActionMenu<Row = unknown>({
   align = "end",
   showResend = true,
   showView = true,
+  showActivity = false,
   showEdit = true,
   showDeactivate = true,
   showActivate = false,
@@ -60,6 +69,7 @@ export default function ActionMenu<Row = unknown>({
   viewOptions,
   editOptions,
   onView,
+  onActivity,
   onEdit,
   onResend,
   onDeactivate,
@@ -67,6 +77,10 @@ export default function ActionMenu<Row = unknown>({
   onDelete,
   showCoaches = false,
   onCoaches,
+  showImportPrism = false,
+  onImportPrism,
+  showPrismPdf = false,
+  onPrismPdf,
 }: ActionMenuProps<Row>) {
   return (
     <DropdownMenu>
@@ -144,9 +158,26 @@ export default function ActionMenu<Row = unknown>({
           </DropdownMenuItem>
         )}
 
+        {showActivity && (
+          <DropdownMenuItem onClick={() => onActivity?.(row)}>
+            <Activity className="w-4 h-4 mr-2 text-sky-600" /> Activity
+          </DropdownMenuItem>
+        )}
+
         {showCoaches && (
           <DropdownMenuItem onClick={() => onCoaches?.(row)}>
             <Bot className="w-4 h-4 mr-2" /> Coaches
+          </DropdownMenuItem>
+        )}
+
+        {showPrismPdf && (
+          <DropdownMenuItem onClick={() => onPrismPdf?.(row)}>
+            <FileUp className="w-4 h-4 mr-2 text-teal-600" /> Upload / Delete PRISM PDF
+          </DropdownMenuItem>
+        )}
+        {showImportPrism && (
+          <DropdownMenuItem onClick={() => onImportPrism?.(row)}>
+            <FileUp className="w-4 h-4 mr-2 text-indigo-500" /> Upload PRISM CSV
           </DropdownMenuItem>
         )}
 

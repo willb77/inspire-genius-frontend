@@ -15,7 +15,10 @@
 import { agentApi } from "@/lib/agentApi";
 import type {
   Assessment,
+  AssessmentCreated,
   AssessmentHistoryResponse,
+  AssessmentImportConfirm,
+  AssessmentImportPreview,
   CreateAssessmentRequest,
   CreateFactRequest,
   LoadedFramework,
@@ -65,6 +68,59 @@ export async function getLoadedFrameworks(): Promise<LoadedFramework[]> {
   // Backend may return `{ frameworks: [...] }` envelope or bare list.
   if (Array.isArray(data)) return data;
   return data?.frameworks ?? [];
+}
+
+/**
+ * POST /v1/profile/me/assessments/import — upload a report FILE for a
+ * framework; the server runs the framework adapter on the bytes and stores
+ * the assessment. Multipart; the browser cannot run the adapters.
+ */
+export async function importAssessment(
+  framework: string,
+  file: File,
+): Promise<AssessmentCreated> {
+  const form = new FormData();
+  form.append("framework", framework);
+  form.append("file", file);
+  const { data } = await agentApi.post<AssessmentCreated>(
+    `${BASE}/assessments/import`,
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return data;
+}
+
+/**
+ * POST /v1/profile/me/assessments/import/preview — parse a report and return
+ * the scores WITHOUT saving (confirm-before-save step 1).
+ */
+export async function previewImportAssessment(
+  framework: string,
+  file: File,
+): Promise<AssessmentImportPreview> {
+  const form = new FormData();
+  form.append("framework", framework);
+  form.append("file", file);
+  const { data } = await agentApi.post<AssessmentImportPreview>(
+    `${BASE}/assessments/import/preview`,
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return data;
+}
+
+/**
+ * POST /v1/profile/me/assessments/import/confirm — save the reviewed scores
+ * from a preview (confirm-before-save step 2).
+ */
+export async function confirmImportAssessment(
+  body: AssessmentImportConfirm,
+): Promise<AssessmentCreated> {
+  const { data } = await agentApi.post<AssessmentCreated>(
+    `${BASE}/assessments/import/confirm`,
+    body,
+  );
+  return data;
 }
 
 /** POST /v1/profile/me/facts — append a single user-supplied fact. */

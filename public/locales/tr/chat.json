@@ -1,0 +1,335 @@
+{
+  "common": {
+    "copiedToClipboard": "Panoya kopyalandı",
+    "copyMessage": "Mesajı kopyala",
+    "play": "Oynat",
+    "pause": "Duraklat",
+    "close": "Kapat",
+    "delete": "Sil",
+    "download": "İndir",
+    "cancel": "İptal",
+    "save": "Kaydet",
+    "clear": "Temizle",
+    "you": "Siz",
+    "connected": "Bağlandı",
+    "error": "Hata",
+    "unknownError": "Bilinmeyen hata",
+    "hide": "Gizle",
+    "show": "Göster",
+    "untitledConversation": "Başlıksız görüşme",
+    "noConversations": "Henüz görüşme yok. Başlamak için bir mesaj gönderin.",
+    "noDocuments": "Henüz belge yüklenmedi."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian düşünüyor...",
+    "noResponse": "Yanıt yok.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "{{agent}} aracılığıyla",
+    "profileLabel": "Profil: {{frameworks}}",
+    "reviewingBanner": "Aktif sohbetin yanında ek görüşmeler ({{count}}) inceleniyor.",
+    "profileIndicator": {
+      "title": "Meridian'ın bu görüşmede başvurabileceği çerçeveler"
+    },
+    "newChat": {
+      "title": "Yeni bir sohbet başlat",
+      "label": "Yeni Sohbet"
+    },
+    "status": {
+      "connected": "Meridian'a bağlanıldı"
+    },
+    "error": {
+      "agent": "Aracı hatası",
+      "unreachable": "Üzgünüz, Meridian'a ulaşılamadı. Lütfen tekrar deneyin.",
+      "unreachableShort": "Meridian'a ulaşılamadı",
+      "newChatFailed": "Yeni sohbet başlatılamadı. Lütfen tekrar deneyin."
+    },
+    "export": {
+      "aria": "Sohbeti dışa aktar",
+      "label": "Dışa Aktar",
+      "sessionSubject": "Meridian Sohbet Oturumu",
+      "assistantDomain": "Koçluk",
+      "success": "Görüşme Günlüğü + Yapılandırılmış Rapor PDF'leri dışa aktarıldı.",
+      "noConversation": "Sohbet dışa aktarılamadı — aktif görüşme yok.",
+      "noData": "Sohbet dışa aktarılamadı — sunucu veri döndürmedi.",
+      "noContent": "Sohbet dışa aktarılamadı — seçili aralıkta içerik yok.",
+      "retry": "Sohbet dışa aktarılamadı — lütfen tekrar deneyin."
+    },
+    "voice": {
+      "mute": "Meridian'ın sesini kapat",
+      "enable": "Meridian'ın sesini aç",
+      "onTitle": "Sesli yanıtlar AÇIK — kapatmak için tıklayın",
+      "offTitle": "Sesli yanıtlar KAPALI — açmak için tıklayın",
+      "notSupported": "Sesli giriş bu tarayıcıda desteklenmiyor",
+      "micDenied": "Mikrofon erişimi reddedildi"
+    },
+    "audio": {
+      "blockedTitle": "Tarayıcı ses oynatmayı engelledi — açmak için tıklayın",
+      "enable": "Sesi etkinleştir",
+      "rewind": "5 saniye geri sar",
+      "resume": "Sesi devam ettir",
+      "pause": "Sesi duraklat",
+      "fastForward": "5 saniye ileri sar",
+      "skip": "Sonraki cümleye atla",
+      "cancel": "Akışı iptal et",
+      "queued": "{{count}} sırada"
+    },
+    "conn": {
+      "availableTitle": "Sesli akış kullanılabilir",
+      "connectingTitle": "Sesli akışa bağlanılıyor...",
+      "unavailableTitle": "Sesli akış kullanılamıyor",
+      "ready": "Ses hazır",
+      "connecting": "Bağlanıyor",
+      "off": "Ses kapalı"
+    },
+    "personalRow": {
+      "aria": "Sayfaların",
+      "selfPortrait": "Öz Portrem",
+      "moments": "Anlar",
+      "coaching": "Koçluk",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} hesabınız için etkin değil"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Agent Eco-System ile güçlendirilmiştir",
+    "back": "Geri",
+    "export": "Dışa Aktar",
+    "documentsButton": "Belgeler",
+    "tab": {
+      "chat": "Sohbet",
+      "documents": "Belgeler"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Belge yan panelini aç",
+      "tooltip": "Sohbete eklenecek dosyaları seçmek için belge panelini açın"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Görüşmeler ve projeler"
+    },
+    "active": {
+      "title": "Etkin Oturumlar",
+      "empty": "Henüz etkin oturum yok.",
+      "badge": {
+        "live": "canlı",
+        "open": "açık"
+      }
+    },
+    "history": {
+      "title": "Geçmiş"
+    },
+    "last5": {
+      "title": "Son 5 Sohbet",
+      "empty": "Burada henüz bir şey yok."
+    },
+    "projects": {
+      "title": "Projeler",
+      "inputPlaceholder": "Yeni proje adı…",
+      "inputAria": "Yeni proje adı",
+      "addAria": "Proje ekle",
+      "empty": "Henüz proje yok. İlgili sohbetleri bir proje altında gruplayın.",
+      "badge": {
+        "active": "etkin"
+      }
+    },
+    "knowledge": {
+      "title": "Bilgi",
+      "badge": {
+        "indexed": "dizinlendi"
+      }
+    }
+  },
+  "history": {
+    "title": "Geçmiş",
+    "newChat": "Yeni Sohbet",
+    "newChatTooltip": "Yeni bir görüşme başlat",
+    "newChatTooltipExisting": "Zaten yeni bir görüşmeniz var",
+    "newConversationLabel": "Yeni Görüşme",
+    "searchPlaceholder": "Ara..",
+    "loadError": "Görüşme geçmişi yüklenemedi.",
+    "loadErrorDetailed": "Görüşme geçmişi yüklenemedi — sunucu kullanılamıyor olabilir. Tekrar denemek için yenileyin.",
+    "openActions": "Görüşme eylemlerini aç",
+    "rename": "Yeniden adlandır",
+    "deleteTitle": "Görüşmeyi sil",
+    "deleteDescription": "Bu görüşmeyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+    "audioWarning": "Görüşmeler arasında geçiş yapmak mevcut sesi durduracak",
+    "renameDialogTitle": "Görüşmeyi yeniden adlandır",
+    "renamePlaceholder": "Görüşme başlığı",
+    "renameAnimationTitle": "Yeniden adlandırma animasyonu",
+    "renamePending": "Görüşmenizin kimliği şekillendiriliyor… ✨",
+    "renameHint": "Görüşmenize bir ad verin — hatırlaması kolay olsun 🚀",
+    "triggerShown": "Geçmiş ({{count}} gösteriliyor)",
+    "triggerCount": "Geçmiş ({{count}})",
+    "triggerAria": "Görüşme geçmişine göz at",
+    "hint": "Etkin hâle getirmek için bir görüşmeye tıklayın veya incelemeye eklemek için işaretleyin.",
+    "includeAria": "{{title}} öğesini incelemeye dahil et",
+    "activeBadge": "Etkin",
+    "reviewCount": "İncelemede ek görüşme: {{count}}",
+    "clearReview": "İncelemeyi temizle"
+  },
+  "documents": {
+    "triggerLabel": "Belgeler",
+    "triggerSelected": "Belgeler ({{count}} seçili)",
+    "triggerAria": "Belgeleri seç",
+    "header": "Bu sohbete belge ekleyin",
+    "loadError": "Belgeler yüklenemedi.",
+    "uploadLink": "Belge yükle",
+    "selectFileAria": "{{filename}} öğesini seç",
+    "autoAttached": "Otomatik eklendi",
+    "selectedCount": "{{total}} öğeden {{selected}} seçili",
+    "iframe": {
+      "defaultFileName": "Belge",
+      "loading": "Belge yükleniyor…"
+    },
+    "panel": {
+      "selectedCount": "Seçili ({{count}})",
+      "confirmDeleteTitle": "Silmeyi onayla",
+      "confirmDeleteBulkDescription": "Seçili belgeleri ({{count}}) silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+      "confirmDeleteOneDescription": "Bu belgeyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+      "upload": "Yükle",
+      "importToChat": "Sohbete Aktar",
+      "loading": "Belgeler yükleniyor...",
+      "empty": "Dosya bulunamadı",
+      "emptyAnimationTitle": "dosya bulunamadı",
+      "selectItem": "{{name}} öğesini seç",
+      "preview": "Önizleme"
+    },
+    "sidePanel": {
+      "title": "Belgeler",
+      "close": "Belgeleri kapat",
+      "closeOverlay": "Belge panelini kapat"
+    },
+    "upload": "Belge yükle"
+  },
+  "export": {
+    "title": "Sohbeti Dışa Aktar",
+    "subtitle": "İleride başvurmak için sohbetinizin bir kopyasını indirin.",
+    "fromLabel": "Sohbet Başlangıcı",
+    "fromPlaceholder": "Başlangıç tarihi",
+    "toLabel": "Sohbet Bitişi",
+    "toPlaceholder": "Bitiş tarihi",
+    "formatLabel": "Dışa Aktarma Dosyası",
+    "formatPdf": "PDF",
+    "exporting": "Dışa aktarılıyor",
+    "exportButton": "Dışa Aktar",
+    "progressLabel": "Sohbet dışa aktarılıyor... %{{progress}}",
+    "progressSubtitle": "Rahatlayın, dışa aktarma işleminiz üzerinde çalışıyoruz.",
+    "completeTitle": "Dışa Aktarma Tamamlandı",
+    "completeSubtitle": "Sohbet başarıyla dışa aktarıldı!",
+    "back": "Geri"
+  },
+  "routing": {
+    "confidence": "Güven: %{{confidencePct}}",
+    "latency": "{{latencyMs}} ms",
+    "tokens": "{{tokenCount}} jeton",
+    "observabilityDetails": "Gözlemlenebilirlik ayrıntıları"
+  },
+  "feedback": {
+    "thankYou": "Teşekkürler",
+    "rateThisResponse": "Bu yanıtı değerlendirin",
+    "correctionPlaceholder": "İsteğe bağlı: daha iyi bir yanıt önerin (en fazla 2000 karakter)",
+    "submitting": "Gönderiliyor...",
+    "submit": "Gönder"
+  },
+  "compose": {
+    "sectionLabel": "İstem Oluştur"
+  },
+  "conversation": {
+    "sectionLabel": "Görüşme",
+    "replayVoice": "Sesi yeniden oynat",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "{{agent}} aracılığıyla",
+    "observabilityUnavailable": "Bu mesaj için gözlemlenebilirlik verileri kullanılamıyor.",
+    "tableSrLabel": "Tablo",
+    "waiting": {
+      "shortly": "{{coachName}} kısa süre içinde sizinle ilgilenecek",
+      "oneMoment": "{{coachName}} için bir dakika",
+      "pleaseWait": "Lütfen bekleyin"
+    },
+    "source": {
+      "label": "Kaynaklar ({{count}})",
+      "openTitle": "{{filename}} öğesini aç",
+      "openError": {
+        "noUrl": "\"{{filename}}\" açılamadı — sunucu URL döndürmedi.",
+        "notFound": "\"{{filename}}\" açılamadı — belge bulunamadı veya erişim reddedildi.",
+        "generic": "\"{{filename}}\" açılamadı — lütfen tekrar deneyin."
+      }
+    },
+    "collaboration": {
+      "label": "İş birliğiyle oluşturulan yanıt ({{count}} aracı)",
+      "synthesizedFrom": "{{summary}} kaynağından sentezlendi"
+    }
+  },
+  "input": {
+    "placeholder": "Her şeyi sorun…  (Göndermek için Enter · Yeni satır için Shift+Enter)",
+    "unmuteCoach": "Koçun sesini aç",
+    "muteCoach": "Koçun sesini kapat",
+    "stopRecording": "Kaydı durdur",
+    "startRecording": "Kaydı başlat",
+    "sendMessage": "Mesaj gönder",
+    "muteTooltip": {
+      "mute": "Sesi kapat",
+      "unmute": "Sesi aç",
+      "disabledDuringPlayback": "Oynatma sırasında ses kapatma devre dışıdır"
+    }
+  },
+  "banner": {
+    "selected": "Seçili:",
+    "connecting": "Bağlanıyor...",
+    "successAnimationTitle": "Başarı animasyonu"
+  },
+  "audio": {
+    "close": "Ses oynatıcıyı kapat"
+  },
+  "coach": {
+    "defaultName": "Koç",
+    "authError": "Kimlik doğrulama hatası",
+    "untitledConversation": "Başlık Yok",
+    "previewPlaceholder": "Yapılacak",
+    "conversationsLabel": "Görüşmeler",
+    "sessionSubject": "{{coachName}} Koçluk Oturumu",
+    "assistantDomain": "Koçluk",
+    "exportSuccess": "Görüşme Günlüğü + Yapılandırılmış Rapor PDF'leri dışa aktarıldı.",
+    "exportNoConversation": "Sohbet dışa aktarılamadı — aktif görüşme yok.",
+    "audioWarning": "Görüşmeler arasında geçiş yapmak yeni görüşme için sesi sıfırlayacak."
+  },
+  "diagnostic": {
+    "title": "Tanılama Sohbeti",
+    "sessionLabel": "Oturum: {{sessionId}}...",
+    "statusConnecting": "Bağlanıyor...",
+    "statusReconnecting": "Yeniden bağlanıyor...",
+    "statusDisconnected": "Bağlantı kesildi",
+    "newChat": "Yeni Sohbet",
+    "newChatTitle": "Yeni bir sohbet oturumu başlat",
+    "reconnect": "Yeniden bağlan",
+    "clearAllTitle": "Tümünü temizle",
+    "traceLog": "İzleme Günlüğü",
+    "dataSourcesLabel": "Bağlı Veri Kaynakları",
+    "emptyTitle": "Tanılama Sohbeti Arayüzü",
+    "emptySubtitle": "İsteğin tüm yaşam döngüsünü izlemek için bir mesaj gönderin",
+    "streaming": "akış",
+    "processing": "Meridian işliyor...",
+    "stopRecording": "Kaydı durdur",
+    "startVoiceInput": "Sesli girişi başlat",
+    "inputPlaceholder": "Tüm işlem hattını izlemek için bir mesaj yazın...",
+    "recordingHint": "Kayıt — net konuşun, ardından göndermek için durdurun",
+    "latency": "Gecikme: {{latencyMs}} ms",
+    "ttft": "TTFT: {{ttftMs}} ms",
+    "tokens": "Jetonlar: {{tokenCount}}",
+    "entriesCount": "{{count}} giriş",
+    "errorsCount": "{{count}} hata",
+    "warningsCount": "{{count}} uyarı",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

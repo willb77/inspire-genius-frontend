@@ -5,6 +5,7 @@
  * and onboarding redirect behavior.
  */
 import { render, screen, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useRoutes } from "react-router-dom";
 import { routes } from "@/routes";
 import { AuthContext } from "@/context/auth-context";
@@ -84,13 +85,29 @@ const pageModules: Record<string, string> = {
   "@/pages/onboarding/OnboardingFive": "OnboardingFivePage",
   "@/pages/onboarding/OnboardingDetailsOne": "OnboardingDetailsOnePage",
   "@/pages/onboarding/OnboardingDetailsTwo": "OnboardingDetailsTwoPage",
+  // /home resolves to HomeV2 by DEFAULT as of 2026-08-01 (`isNewHomeEnabled`),
+  // so the V2 mock is what these route tests land on. The classic page is still
+  // mocked — it is what /home/classic renders, and what /home falls back to when
+  // the user explicitly opts out via the on-page toggle.
   "@/pages/user/Home": "UserHomePage",
+  "@/pages/user/HomeV2": "UserHomeV2Page",
   "@/pages/user/Dashboard": "UserDashboardPage",
   "@/pages/user/Coaches": "UserCoachesPage",
+  // V2 stubs. The Wave-1 surfaces became the DEFAULT on 2026-08-06, so /dashboard,
+  // /coaches, /documents and /help now land on these rather than the classic
+  // pages above. Without stubs the real components mount and drag their whole
+  // data layer into a routing test.
+  "@/pages/user/DashboardV2": "UserDashboardV2Page",
+  "@/pages/user/CoachesV2": "UserCoachesV2Page",
+  "@/pages/user/DocumentsV2": "UserDocumentsV2Page",
+  "@/pages/user/HelpV2": "UserHelpV2Page",
   "@/pages/user/CoachChat": "UserCoachChatPage",
   "@/pages/user/Documents": "UserDocumentsPage",
   "@/pages/user/Settings": "UserSettingsPage",
   "@/pages/user/Help": "UserHelpPage",
+  // /help now renders the support-request surface; the previous Help page (and
+  // its V2 re-skin) live at /help/classic.
+  "@/pages/user/Support": "UserSupportPage",
   "@/pages/user/PrismAssessment": "PrismAssessmentPage",
   "@/pages/user/FeedbackHistory": "FeedbackHistoryPage",
   "@/pages/user/Analytics": "UserAnalyticsPage",
@@ -141,6 +158,12 @@ const pageModules: Record<string, string> = {
   "@/pages/company-admin/Settings": "CompanyAdminSettingsPage",
   "@/pages/company-admin/Analytics": "CompanyAdminAnalyticsPage",
   "@/pages/company-admin/BulkImport": "CompanyAdminBulkImportPage",
+  "@/pages/practitioner/Home": "PractitionerHomePage",
+  "@/pages/practitioner/MeridianChat": "PractitionerMeridianChatPage",
+  "@/pages/practitioner/ComingSoon": "PractitionerComingSoonPage",
+  "@/pages/practitioner/ClientProfile": "PractitionerClientProfilePage",
+  "@/pages/practitioner/Schedule": "PractitionerSchedulePage",
+  "@/pages/practitioner/Meeting": "PractitionerMeetingPage",
   "@/pages/practitioner/Dashboard": "PractitionerDashboardPage",
   "@/pages/practitioner/Clients": "PractitionerClientsPage",
   "@/pages/practitioner/Credits": "PractitionerCreditsPage",
@@ -222,12 +245,24 @@ function renderWithRouter(
   initialPath: string,
   authCtx: AuthContextValue,
 ) {
+  // QueryClientProvider mirrors App.tsx, which wraps the whole tree in one.
+  // Needed here since 2026-08-06: the new user surfaces became the default, and
+  // several of them (DashboardV2, CoachesV2, DocumentsV2) call useQuery on
+  // mount. Without a client this harness threw "No QueryClient set" — a gap in
+  // the harness rather than in the app, which has always had the provider.
+  // A fresh client per render keeps tests isolated; retries off so a failed
+  // fetch surfaces immediately instead of stalling the test.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <AuthContext.Provider value={authCtx}>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <AppRoutes />
-      </MemoryRouter>
-    </AuthContext.Provider>,
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider value={authCtx}>
+        <MemoryRouter initialEntries={[initialPath]}>
+          <AppRoutes />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    </QueryClientProvider>,
   );
 }
 
@@ -320,12 +355,18 @@ describe("Route Integration Tests", () => {
 
   describe("Role-based access: user role", () => {
     const userAccessible = [
-      { path: "/home", testId: "UserHomePage" },
-      { path: "/dashboard", testId: "UserDashboardPage" },
-      { path: "/coaches", testId: "UserCoachesPage" },
-      { path: "/documents", testId: "UserDocumentsPage" },
+      { path: "/home", testId: "UserHomeV2Page" },
+      { path: "/home/classic", testId: "UserHomePage" },
+      { path: "/dashboard", testId: "UserDashboardV2Page" },
+      { path: "/coaches", testId: "UserCoachesV2Page" },
+      { path: "/documents", testId: "UserDocumentsV2Page" },
       { path: "/settings", testId: "UserSettingsPage" },
-      { path: "/help", testId: "UserHelpPage" },
+      { path: "/help", testId: "UserSupportPage" },
+      // /help/classic is where the Help PAGE lives (/help is the support-request
+      // surface), and it resolves V2 like any other Wave-1 surface — so with new
+      // as the default since 2026-08-06 it lands on HelpV2, not the classic page.
+      { path: "/help/classic", testId: "UserHelpV2Page" },
+      { path: "/support", testId: "UserSupportPage" },
     ];
 
     it.each(userAccessible)(
@@ -355,7 +396,7 @@ describe("Route Integration Tests", () => {
         renderWithRouter(path, ctx);
         await advancePastBoot();
         // User should be redirected to /home
-        expect(await screen.findByTestId("UserHomePage")).toBeInTheDocument();
+        expect(await screen.findByTestId("UserHomeV2Page")).toBeInTheDocument();
       },
     );
   });
@@ -415,12 +456,12 @@ describe("Route Integration Tests", () => {
   });
 
   describe("Role-based access: practitioner role", () => {
-    it("practitioner can access /practitioner/dashboard", async () => {
+    it("practitioner /practitioner/dashboard redirects to Home (old mock retired)", async () => {
       const user = makeAuthUser({ role: "practitioner" });
       const ctx = makeAuthContext({ user });
       renderWithRouter("/practitioner/dashboard", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("PractitionerDashboardPage")).toBeInTheDocument();
+      expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
     });
 
     it("practitioner CANNOT access /super-admin/dashboard", async () => {
@@ -428,7 +469,8 @@ describe("Route Integration Tests", () => {
       const ctx = makeAuthContext({ user });
       renderWithRouter("/super-admin/dashboard", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("PractitionerDashboardPage")).toBeInTheDocument();
+      // Redirected to the practitioner home route (now /practitioner/home).
+      expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
     });
   });
 
@@ -500,7 +542,7 @@ describe("Route Integration Tests", () => {
   // ── 5. Onboarding redirect when incomplete ──────────────────────────
 
   describe("Onboarding redirect", () => {
-    it("redirects to /onboarding/one when onboarding is incomplete", async () => {
+    it("does NOT force onboarding when incomplete — lands on /home (forced onboarding disabled 2026-07-21)", async () => {
       const user = makeAuthUser({
         role: "user",
         isOnboardingCompleted: false,
@@ -508,7 +550,8 @@ describe("Route Integration Tests", () => {
       const ctx = makeAuthContext({ user });
       renderWithRouter("/home", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("OnboardingOnePage")).toBeInTheDocument();
+      expect(await screen.findByTestId("UserHomeV2Page")).toBeInTheDocument();
+      expect(screen.queryByTestId("OnboardingOnePage")).not.toBeInTheDocument();
     });
 
     it("allows access to onboarding routes when onboarding incomplete", async () => {
@@ -530,7 +573,42 @@ describe("Route Integration Tests", () => {
       const ctx = makeAuthContext({ user });
       renderWithRouter("/home", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("UserHomePage")).toBeInTheDocument();
+      expect(await screen.findByTestId("UserHomeV2Page")).toBeInTheDocument();
+    });
+  });
+
+  describe("Retired routes", () => {
+    // Lumen's Personal coaching was deleted 2026-08-12 — page, hook and
+    // question bank. Asserted structurally rather than by rendering because
+    // Lumen is entitlement-gated: an unentitled render redirects to /home and
+    // would pass whether or not the route still existed.
+    function findRoute(path: string) {
+      const walk = (list: typeof routes): (typeof routes)[number] | undefined => {
+        for (const route of list) {
+          if (route.path === path) return route;
+          const hit = route.children && walk(route.children);
+          if (hit) return hit;
+        }
+        return undefined;
+      };
+      return walk(routes);
+    }
+
+    it("keeps /vertical/lumen/coaching resolvable, but only as a redirect", () => {
+      // The global "*" catch-all sends unmatched paths to /login. Without this
+      // redirect an old bookmark would bounce a signed-in user to a login
+      // screen, which reads as "you are logged out", not "this page is gone".
+      const coaching = findRoute("coaching");
+      expect(coaching).toBeDefined();
+
+      const element = coaching?.element as React.ReactElement<{ to: string }>;
+      expect(element?.props?.to).toBe("/vertical/lumen/dashboard");
+    });
+
+    it("no longer exposes a Lumen coaching page component", () => {
+      // A redirect has no children and no lazy element to load. If someone
+      // reinstates the page by hanging it back on this path, this fails.
+      expect(findRoute("coaching")?.children).toBeUndefined();
     });
   });
 });

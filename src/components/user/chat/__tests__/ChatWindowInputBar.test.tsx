@@ -13,9 +13,11 @@ import ChatWindowInputBar from "../ChatWindowInputBar";
 function Harness({
   onSend,
   initial = "",
+  expandable,
 }: {
   onSend: jest.Mock;
   initial?: string;
+  expandable?: boolean;
 }) {
   const [text, setText] = useState(initial);
   return (
@@ -26,6 +28,7 @@ function Harness({
         onSend(text);
       }}
       muteTooltipText="Mute"
+      expandable={expandable}
     />
   );
 }
@@ -126,5 +129,53 @@ describe("ChatWindowInputBar (T7)", () => {
     const sendBtn = screen.getByRole("button", { name: /send message/i });
     expect(sendBtn).toHaveClass("h-10");
     expect(sendBtn).toHaveClass("w-10");
+  });
+
+  // ── expandable (V2 Compose Prompt card, 2026-08-05) ───────────────────
+  describe("expandable", () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it("shows no resize handle unless asked for — classic layout is unchanged", () => {
+      render(<Harness onSend={jest.fn()} />);
+      expect(screen.queryByTestId("composer-resize-handle")).toBeNull();
+    });
+
+    it("offers a resize handle when expandable", () => {
+      render(<Harness onSend={jest.fn()} expandable />);
+      expect(screen.getByTestId("composer-resize-handle")).toBeInTheDocument();
+    });
+
+    it("applies a previously chosen height and lets auto-grow stand down", () => {
+      // A stored height means the user has already expressed a preference; it
+      // must win over the content-derived size, otherwise typing would yank
+      // the box back to the auto-grow ceiling on every keystroke.
+      localStorage.setItem("meridian-composer-height", "380");
+      render(<Harness onSend={jest.fn()} expandable />);
+      const textarea = screen.getByPlaceholderText(/ask anything/i) as HTMLTextAreaElement;
+
+      Object.defineProperty(textarea, "scrollHeight", {
+        configurable: true,
+        value: 500,
+      });
+      fireEvent.change(textarea, { target: { value: "x".repeat(2000) } });
+
+      expect(textarea.style.height).toBe("380px");
+      expect(textarea).not.toHaveClass("max-h-60");
+    });
+
+    it("keeps auto-grow while no manual height has been set", () => {
+      render(<Harness onSend={jest.fn()} expandable />);
+      const textarea = screen.getByPlaceholderText(/ask anything/i) as HTMLTextAreaElement;
+
+      Object.defineProperty(textarea, "scrollHeight", {
+        configurable: true,
+        value: 500,
+      });
+      fireEvent.change(textarea, { target: { value: "x".repeat(2000) } });
+
+      expect(textarea.style.height).toBe("240px");
+    });
   });
 });

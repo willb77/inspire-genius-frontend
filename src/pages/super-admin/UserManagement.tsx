@@ -18,6 +18,7 @@ import type { UserFormValues } from "@/components/shared/forms/userForm.constant
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
 import DestructiveConfirmModal from "@/components/shared/forms/DestructiveConfirmModal";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
+import { UserActivityDialog } from "@/components/super-admin/UserActivityDialog";
 import {
   useUserManagement,
   useInviteUser,
@@ -34,7 +35,7 @@ import { toast } from "sonner";
 import type { UserRow } from "@/types/super-admin/user-management";
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
 import { ROLE_LABELS } from "@/types/roles";
-import { Search, Trash2, UserX, UserCheck, X } from "lucide-react";
+import { Search, Trash2, UserX, UserCheck, X, FileUp } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import PrismIngestDialog, {
+  type PrismIngestTarget,
+} from "@/components/super-admin/user-management/PrismIngestDialog";
+import PrismPdfAdminDialog, {
+  type PrismPdfTarget,
+} from "@/components/super-admin/user-management/PrismPdfAdminDialog";
 
 export default function UserManagement() {
   const pageSize = 10;
@@ -121,7 +128,6 @@ export default function UserManagement() {
   const [viewOpen, setViewOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [activateOpen, setActivateOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   // Force-delete (typed-confirmation friction) — used when removing an already
   // soft-deleted user, since the Aurora row + Cognito account go away for good.
   const [forceDeleteOpen, setForceDeleteOpen] = useState(false);
@@ -133,6 +139,21 @@ export default function UserManagement() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkActivateOpen, setBulkActivateOpen] = useState(false);
   const [bulkActivating, setBulkActivating] = useState(false);
+
+  // PRISM CSV ingest (per-user via Action menu, or bulk via selection)
+  const [prismPdfOpen, setPrismPdfOpen] = useState(false);
+  const [prismPdfTarget, setPrismPdfTarget] = useState<PrismPdfTarget | null>(null);
+  const openPrismPdf = useCallback((target: PrismPdfTarget) => {
+    setPrismPdfTarget(target);
+    setPrismPdfOpen(true);
+  }, []);
+  const [prismIngestOpen, setPrismIngestOpen] = useState(false);
+  const [prismTargets, setPrismTargets] = useState<PrismIngestTarget[]>([]);
+  const openPrismIngest = useCallback((targets: PrismIngestTarget[]) => {
+    if (targets.length === 0) return;
+    setPrismTargets(targets);
+    setPrismIngestOpen(true);
+  }, []);
 
   // Purge inactive users state
   const [purgeOpen, setPurgeOpen] = useState(false);
@@ -174,6 +195,11 @@ export default function UserManagement() {
   const deleteMutation = useDeleteUser();
   const resendMutation = useResendInvitation();
 
+  // Activity drawer (User Management → Action → Activity).
+  const [activityUser, setActivityUser] = useState<
+    { id: string; name?: string; email?: string } | null
+  >(null);
+
   const openAdd = () => setAddOpen(true);
   const openView = (row: UserRow) => {
     setSelected(row);
@@ -189,15 +215,15 @@ export default function UserManagement() {
   };
   const openDelete = (row: UserRow) => {
     setSelected(row);
-    // Deactivated users are already soft-deleted; deleting them again is the
-    // irreversible hard-delete (Aurora + Cognito). Route those to the
-    // typed-confirmation modal. Everything else (Active, Awaiting) is reversible
-    // and uses the lighter ConfirmActionModal.
-    if (row.status === "Deactivated") {
-      setForceDeleteOpen(true);
-    } else {
-      setDeleteOpen(true);
-    }
+    // Delete is PERMANENT for every status as of 2026-08-14 — it removes the
+    // Aurora rows, the owned data (PRISM assessments and results) and the
+    // Cognito user. It used to soft-delete Active rows, which is why the light
+    // ConfirmActionModal was acceptable for them. It no longer is: everything
+    // routes to the typed-confirmation modal.
+    //
+    // To take someone's access away WITHOUT destroying their data, use
+    // Deactivate — that is still reversible and is a different action.
+    setForceDeleteOpen(true);
   };
   const openActivate = (row: UserRow) => {
     setSelected(row);
@@ -219,6 +245,9 @@ export default function UserManagement() {
       last_name: values.last_name,
       email: values.email,
       role: values.role,
+      // "Skip onboarding" checkbox → auth-service demo_account. Only sent when
+      // ticked so normal invites keep the default password-setup + onboarding.
+      ...(values.skip_onboarding ? { demo_account: true } : {}),
     };
 
     await inviteMutation.mutateAsync(body);
@@ -287,19 +316,6 @@ export default function UserManagement() {
     setActivateOpen(false);
   };
 
-  const handleDelete = async () => {
-    if (!selected) return;
-
-    // This modal is now only opened for non-Deactivated rows (Active or
-    // Awaiting) — the Deactivated branch routes through handleForceDelete.
-    // force=false: backend takes the soft-delete branch for Active users.
-    try {
-      await deleteMutation.mutateAsync({ email: selected.email, force: false });
-      setDeleteOpen(false);
-    } catch {
-      // Error toast already shown by mutation onError callback
-    }
-  };
 
   const handleForceDelete = async () => {
     if (!selected) return;
@@ -328,14 +344,11 @@ export default function UserManagement() {
     setBulkDeleting(true);
     const emails = Array.from(selectedEmails);
 
-    // Force-delete is required per-row when the user is already deactivated;
-    // backend refuses a plain DELETE on is_deleted=True rows.
+    // `force` is vestigial — every delete is permanent server-side as of
+    // 2026-08-14, and a previously deactivated row no longer needs a second
+    // opt-in. Sent as true so behaviour is identical against an older backend.
     const results = await Promise.allSettled(
-      emails.map((email) => {
-        const row = rows.find((r) => r.email === email);
-        const force = row?.status === "Deactivated";
-        return deleteUserByEmail(email, force);
-      })
+      emails.map((email) => deleteUserByEmail(email, true))
     );
 
     const succeeded: string[] = [];
@@ -510,17 +523,29 @@ export default function UserManagement() {
           row={row}
           align="end"
           showView={true}
+          showActivity={true}
           showEdit={row.status !== "Awaiting"}
           showResend={row.status === "Awaiting"}
           showDeactivate={row.status === "Active"}
           showActivate={row.status === "Deactivated"}
           showDelete={true}
+          showImportPrism={true}
+          showPrismPdf={true}
           onView={() => openView(row)}
+          onActivity={() =>
+            setActivityUser({ id: row.id, name: row.name, email: row.email })
+          }
           onEdit={() => openEdit(row)}
           onResend={() => handleResend(row)}
           onDeactivate={() => openDeactivate(row)}
           onActivate={() => openActivate(row)}
           onDelete={() => openDelete(row)}
+          onImportPrism={() =>
+            openPrismIngest([{ id: row.id, email: row.email, name: row.name }])
+          }
+          onPrismPdf={() =>
+            openPrismPdf({ id: row.id, email: row.email, name: row.name })
+          }
         />
       ),
     },
@@ -545,6 +570,20 @@ export default function UserManagement() {
               </Button>
               {selectedEmails.size > 0 && (
                 <>
+                  <Button
+                    variant="outline"
+                    className="border-indigo-500 text-indigo-700 hover:bg-indigo-50"
+                    onClick={() =>
+                      openPrismIngest(
+                        rows
+                          .filter((r) => selectedEmails.has(r.email))
+                          .map((r) => ({ id: r.id, email: r.email, name: r.name })),
+                      )
+                    }
+                  >
+                    <FileUp className="size-4" />
+                    Ingest PRISM CSV ({rows.filter((r) => selectedEmails.has(r.email)).length})
+                  </Button>
                   <Button
                     variant="outline"
                     className="border-emerald-500 text-emerald-700 hover:bg-emerald-50"
@@ -661,6 +700,19 @@ export default function UserManagement() {
         </DialogContent>
       </Dialog>
 
+      {/* PRISM CSV ingest (per-user or bulk) */}
+      <PrismPdfAdminDialog
+        open={prismPdfOpen}
+        onOpenChange={setPrismPdfOpen}
+        target={prismPdfTarget}
+      />
+
+      <PrismIngestDialog
+        open={prismIngestOpen}
+        onOpenChange={setPrismIngestOpen}
+        targets={prismTargets}
+      />
+
       {/* Add User Modal */}
       <UserFormModal
         open={addOpen}
@@ -736,26 +788,7 @@ export default function UserManagement() {
         confirmLoading={updateMutation.isPending}
       />
 
-      {/* Delete Confirmation — soft-delete path (Active / Awaiting rows).
-          Deactivated rows route to the DestructiveConfirmModal below. */}
-      <ConfirmActionModal
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Delete User"
-        description={
-          selected?.status === "Active"
-            ? "This will deactivate the user (soft delete). Their record is retained for audit; they will no longer be able to log in. You can purge them later from the Deactivated list."
-            : "Are you sure you want to delete this user?"
-        }
-        fields={[
-          { label: "Name", value: selected?.name ?? "" },
-          { label: "Email", value: selected?.email ?? "" },
-        ]}
-        confirmLabel="Delete"
-        confirmVariant="destructive"
-        onConfirm={handleDelete}
-        confirmLoading={deleteMutation.isPending}
-      />
+
 
       {/* Force-Delete Confirmation — hard-delete path for already-deactivated
           rows. Requires the operator to type the user's email verbatim. */}
@@ -769,8 +802,14 @@ export default function UserManagement() {
             <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
               {selected?.email ?? ""}
             </code>{" "}
-            from the database and Cognito, along with all related records
-            (conversations, files, feedback) via cascade. This action cannot be undone.
+            from the database and Cognito, along with everything they own &mdash;
+            PRISM assessments and results, conversations, files and feedback.
+            This action <strong>cannot be undone</strong>, and it is the only way
+            to free the email address for re-registration.
+            <br />
+            <br />
+            To revoke access but keep the record, use <strong>Deactivate</strong>
+            {" "}instead.
           </>
         }
         confirmPhrase={selected?.email ?? ""}
@@ -787,10 +826,11 @@ export default function UserManagement() {
         title="Delete selected users"
         description={
           <>
-            This will delete <strong>{selectedEmails.size}</strong> selected
-            user(s). Active rows are soft-deleted (reversible); already-deactivated
-            rows are permanently removed from the database and Cognito with all
-            cascading data. Use with care.
+            This will <strong>permanently</strong> delete{" "}
+            <strong>{selectedEmails.size}</strong> selected user(s) from the
+            database and Cognito, along with everything they own &mdash; PRISM
+            assessments and results, conversations, files and feedback.
+            <strong> No status is spared and none of it can be undone.</strong>
           </>
         }
         confirmPhrase={`DELETE ${selectedEmails.size}`}
@@ -840,6 +880,11 @@ export default function UserManagement() {
         }
         loading={purgeMutation.isPending}
         onConfirm={handlePurgeInactive}
+      />
+      <UserActivityDialog
+        open={activityUser !== null}
+        onOpenChange={(o) => !o && setActivityUser(null)}
+        user={activityUser}
       />
     </SuperAdminLayout>
   );

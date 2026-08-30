@@ -1,5 +1,13 @@
 import { bulkUserSchema } from "@/types/bulk-import"
 import type { RawUserRecord, ValidationResult, ValidationError, BulkUserRecord } from "@/types/bulk-import"
+import { HEADER_MAPPING_KEY, type HeaderMapping } from "@/lib/bulk-import/parsers"
+
+/** Pull the parser's header report off the batch. Absent when records were
+ *  hand-built rather than parsed from a file, so every field is optional. */
+function readHeaderMapping(records: RawUserRecord[]): HeaderMapping {
+  const raw = records[0]?.[HEADER_MAPPING_KEY] as Partial<HeaderMapping> | undefined
+  return { inferred: raw?.inferred ?? {}, ignored: raw?.ignored ?? [] }
+}
 
 type CallerRole = "manager" | "company-admin" | "super-admin"
 
@@ -14,7 +22,17 @@ export function validateRecords(
   records: RawUserRecord[],
   callerRole: CallerRole = "super-admin",
 ): ValidationResult {
-  const result: ValidationResult = { valid: [], invalid: [], duplicates: [] }
+  const headerMapping = readHeaderMapping(records)
+  const result: ValidationResult = {
+    valid: [],
+    invalid: [],
+    duplicates: [],
+    ignoredColumns: headerMapping.ignored,
+    inferredColumns: Object.entries(headerMapping.inferred).map(([field, header]) => ({
+      field,
+      header,
+    })),
+  }
   const emailIndex = new Map<string, number>()
 
   for (let i = 0; i < records.length; i++) {
@@ -43,6 +61,19 @@ export function validateRecords(
         row,
         field: "user_type",
         message: `${roleLabel} cannot create ${record.user_type} users`,
+      })
+    }
+
+    // Reporting line — a cycle of length one. Postgres accepts it (manager_id
+    // is just an FK to a profile), the roster then lists the person under
+    // themselves, and nothing anywhere reports an error. Caught here because
+    // this is the only layer that can point at the offending row.
+    const managerEmail = (record.manager_email ?? "").toLowerCase().trim()
+    if (managerEmail && managerEmail === (record.email1 ?? "").toLowerCase().trim()) {
+      errors.push({
+        row,
+        field: "manager_email",
+        message: "A user cannot report to themselves",
       })
     }
 
@@ -89,6 +120,11 @@ export function revalidateRecord(
   if (disallowed.includes(record.user_type as string)) {
     const roleLabel = callerRole === "manager" ? "Managers" : "Company admins"
     errors.push({ row: 0, field: "user_type", message: `${roleLabel} cannot create ${record.user_type} users` })
+  }
+
+  const managerEmail = (record.manager_email ?? "").toLowerCase().trim()
+  if (managerEmail && managerEmail === (record.email1 ?? "").toLowerCase().trim()) {
+    errors.push({ row: 0, field: "manager_email", message: "A user cannot report to themselves" })
   }
 
   return errors

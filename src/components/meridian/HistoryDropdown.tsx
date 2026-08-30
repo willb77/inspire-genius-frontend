@@ -1,5 +1,7 @@
-import { useMemo } from "react";
-import { History, ChevronDown } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { History, ChevronDown, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
+import { useDeleteConversation } from "@/hooks/agents/useDeleteConversation";
 import { cn } from "@/lib/utils";
 
 const AGENT_ID = "meridian";
@@ -19,6 +22,12 @@ type HistoryDropdownProps = {
   onChange: (ids: string[]) => void;
   activeId: string | null;
   onSelectActive: (id: string) => void;
+  /**
+   * Fired when the user deletes the conversation that is currently active, so
+   * the host can clear the pane. Without it the chat would keep rendering a
+   * transcript whose conversation no longer exists on the server.
+   */
+  onDeletedActive?: (id: string) => void;
   className?: string;
 };
 
@@ -61,8 +70,10 @@ export default function HistoryDropdown({
   onChange,
   activeId,
   onSelectActive,
+  onDeletedActive,
   className,
 }: HistoryDropdownProps) {
+  const { t } = useTranslation("chat");
   const { data, isLoading, isError } = useAgentConversation(AGENT_ID, {
     page: 1,
     limit: 50,
@@ -89,11 +100,57 @@ export default function HistoryDropdown({
     }
   };
 
+  // Delete is armed per-row (see the two-step control below), so only one row
+  // can be pending confirmation at a time.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const deleteConv = useDeleteConversation();
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    deleteConv.mutate(
+      { conversationId: id, agentId: AGENT_ID },
+      {
+        onSuccess: () => {
+          setDeletingId(null);
+          setConfirmingId(null);
+          // Drop it from the review selection too — leaving a deleted id in
+          // there would keep asking the chat to render a conversation the
+          // server no longer has.
+          if (selectedIds.includes(id)) {
+            onChange(selectedIds.filter((x) => x !== id));
+          }
+          // If the deleted conversation was the active one, tell the host so it
+          // can clear the pane rather than showing a phantom transcript.
+          if (activeId === id) onDeletedActive?.(id);
+          toast.success(
+            t("history.deleted", { defaultValue: "Conversation deleted." }),
+          );
+        },
+        onError: () => {
+          setDeletingId(null);
+          setConfirmingId(null);
+          toast.error(
+            t("history.deleteFailed", {
+              defaultValue: "Couldn't delete that conversation. Please try again.",
+            }),
+          );
+        },
+      },
+    );
+  };
+
   const reviewCount = selectedIds.length;
   const triggerLabel =
     reviewCount > 0
-      ? `History (${reviewCount} shown)`
-      : `History (${conversations.length})`;
+      ? t("history.triggerShown", {
+          defaultValue: "History ({{count}} shown)",
+          count: reviewCount,
+        })
+      : t("history.triggerCount", {
+          defaultValue: "History ({{count}})",
+          count: conversations.length,
+        });
 
   return (
     <DropdownMenu>
@@ -105,7 +162,7 @@ export default function HistoryDropdown({
             "h-9 px-3 rounded-lg text-sm font-normal flex items-center gap-2",
             className,
           )}
-          aria-label="Browse conversation history"
+          aria-label={t("history.triggerAria", { defaultValue: "Browse conversation history" })}
         >
           <History className="size-4" />
           <span>{triggerLabel}</span>
@@ -118,7 +175,10 @@ export default function HistoryDropdown({
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
-          Click a conversation to make it active, or check it to add to review.
+          {t("history.hint", {
+            defaultValue:
+              "Click a conversation to make it active, or check it to add to review.",
+          })}
         </div>
         <div
           className="max-h-80 overflow-y-auto p-2"
@@ -141,11 +201,13 @@ export default function HistoryDropdown({
             </div>
           ) : isError ? (
             <div className="p-3 text-sm text-destructive">
-              Couldn't load conversation history.
+              {t("history.loadError", { defaultValue: "Couldn't load conversation history." })}
             </div>
           ) : conversations.length === 0 ? (
             <div className="p-3 text-sm text-muted-foreground">
-              No conversations yet. Send a message to start one.
+              {t("common.noConversations", {
+                defaultValue: "No conversations yet. Send a message to start one.",
+              })}
             </div>
           ) : (
             <ul className="space-y-0.5">
@@ -153,7 +215,8 @@ export default function HistoryDropdown({
                 const isActive = activeId === c.id;
                 const isChecked = selectedIds.includes(c.id);
                 const title =
-                  (c.title && c.title.trim()) || "Untitled conversation";
+                  (c.title && c.title.trim()) ||
+                  t("common.untitledConversation", { defaultValue: "Untitled conversation" });
                 const when = formatRelative(c.updated_at || c.created_at);
                 return (
                   <li key={c.id}>
@@ -167,7 +230,10 @@ export default function HistoryDropdown({
                       <Checkbox
                         checked={isChecked}
                         onCheckedChange={() => toggle(c.id)}
-                        aria-label={`Include ${title} in review`}
+                        aria-label={t("history.includeAria", {
+                          defaultValue: "Include {{title}} in review",
+                          title,
+                        })}
                         data-testid={`history-dropdown-checkbox-${c.id}`}
                       />
                       <button
@@ -188,7 +254,7 @@ export default function HistoryDropdown({
                               className="inline-flex shrink-0 items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
                               data-testid={`history-dropdown-active-${c.id}`}
                             >
-                              Active
+                              {t("history.activeBadge", { defaultValue: "Active" })}
                             </span>
                           )}
                         </div>
@@ -198,6 +264,53 @@ export default function HistoryDropdown({
                           </span>
                         )}
                       </button>
+                      {/* Delete — two-step, never one click. Removing a
+                          conversation is irreversible and the row sits right
+                          next to the one that merely opens it, so a single
+                          misclick would otherwise destroy history the user
+                          cannot get back. The first click arms; the second
+                          confirms; anything else disarms. */}
+                      {confirmingId === c.id ? (
+                        <span className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(c.id)}
+                            disabled={deletingId === c.id}
+                            className="rounded px-1.5 py-1 text-[11px] font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                            data-testid={`history-dropdown-confirm-delete-${c.id}`}
+                          >
+                            {deletingId === c.id
+                              ? t("history.deleting", { defaultValue: "Deleting…" })
+                              : t("history.confirmDelete", { defaultValue: "Delete?" })}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingId(null)}
+                            disabled={deletingId === c.id}
+                            className="rounded px-1.5 py-1 text-[11px] text-muted-foreground hover:bg-muted disabled:opacity-50"
+                            data-testid={`history-dropdown-cancel-delete-${c.id}`}
+                          >
+                            {t("common.cancel", { defaultValue: "Cancel" })}
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingId(c.id)}
+                          aria-label={t("history.deleteAria", {
+                            defaultValue: "Delete {{title}}",
+                            title,
+                          })}
+                          title={t("history.deleteAria", {
+                            defaultValue: "Delete {{title}}",
+                            title,
+                          })}
+                          className="shrink-0 rounded p-1 text-muted-foreground opacity-60 hover:bg-destructive/10 hover:text-destructive hover:opacity-100"
+                          data-testid={`history-dropdown-delete-${c.id}`}
+                        >
+                          <Trash2 className="size-3.5" aria-hidden />
+                        </button>
+                      )}
                     </div>
                   </li>
                 );
@@ -208,14 +321,18 @@ export default function HistoryDropdown({
         {!isLoading && !isError && conversations.length > 0 && reviewCount > 0 && (
           <div className="border-t px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between">
             <span>
-              {reviewCount} additional conversation{reviewCount === 1 ? "" : "s"} in review
+              {t("history.reviewCount", {
+                defaultValue: "{{count}} additional conversation{{plural}} in review",
+                count: reviewCount,
+                plural: reviewCount === 1 ? "" : "s",
+              })}
             </span>
             <button
               type="button"
               onClick={() => onChange([])}
               className="text-primary hover:underline"
             >
-              Clear review
+              {t("history.clearReview", { defaultValue: "Clear review" })}
             </button>
           </div>
         )}

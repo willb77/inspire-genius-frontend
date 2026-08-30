@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +28,7 @@ const getSecureRandomInt = (maxExclusive: number) => {
 };
 
 export default function ExportChatModal({ open, onOpenChange, onExport, disableExport =false }: ExportChatModalProps) {
+  const { t } = useTranslation("chat");
   type Step = "form" | "progress" | "complete";
   const [step, setStep] = useState<Step>("form");
   const [progress, setProgress] = useState(0);
@@ -108,11 +110,11 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
       <DialogContent className="w-[min(520px,calc(100vw-2rem))] p-0 overflow-visible" showCloseButton={false}>
         {step === "form" && (
           <div className="p-6">
-            <div className="mb-1 text-lg font-semibold">Export Chat</div>
-            <div className="text-sm text-muted-foreground mb-5">Download a copy of your chat for future reference.</div>
+            <div className="mb-1 text-lg font-semibold">{t("export.title", { defaultValue: "Export Chat" })}</div>
+            <div className="text-sm text-muted-foreground mb-5">{t("export.subtitle", { defaultValue: "Download a copy of your chat for future reference." })}</div>
 
             {/* From date (Onboarding-style DatePicker) */}
-            <label className="block text-sm font-medium mb-1">Chat From</label>
+            <label className="block text-sm font-medium mb-1">{t("export.fromLabel", { defaultValue: "Chat From" })}</label>
             <div className="mb-3 w-full">
               <DatePicker
                 value={fromStr}
@@ -125,7 +127,7 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
                     setToStr(v);
                   }
                 }}
-                placeholder="From date"
+                placeholder={t("export.fromPlaceholder", { defaultValue: "From date" })}
                 minDate={new Date(1900, 0, 1)}
                 maxDate={(() => {
                   const parsedTo = parse(toStr, DISP_FMT, new Date());
@@ -136,13 +138,13 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
             </div>
 
             {/* To date (Onboarding-style DatePicker) */}
-            <label className="block text-sm font-medium mb-1">Chat Till</label>
+            <label className="block text-sm font-medium mb-1">{t("export.toLabel", { defaultValue: "Chat Till" })}</label>
             <div className="mb-3 w-full">
               <DatePicker
                 value={toStr}
                 displayFormat={DISP_FMT}
                 onChange={(v) => setToStr(v)}
-                placeholder="To date"
+                placeholder={t("export.toPlaceholder", { defaultValue: "To date" })}
                 minDate={(() => {
                   const parsedFrom = parse(fromStr, DISP_FMT, new Date());
                   return isValid(parsedFrom) ? parsedFrom : new Date(1900, 0, 1);
@@ -153,28 +155,28 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
             </div>
 
             {/* Export type */}
-            <label className="block text-sm font-medium mb-1">Export File</label>
+            <label className="block text-sm font-medium mb-1">{t("export.formatLabel", { defaultValue: "Export File" })}</label>
             <Select value={exportFormat} disabled>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="PDF" />
+                <SelectValue placeholder={t("export.formatPdf", { defaultValue: "PDF" })} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pdf">PDF</SelectItem>
+                <SelectItem value="pdf">{t("export.formatPdf", { defaultValue: "PDF" })}</SelectItem>
               </SelectContent>
             </Select>
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 mt-6">
               <Button variant="secondary" className="bg-gray-100 hover:bg-gray-100 text-foreground" onClick={onCancel}>
-                Cancel
+                {t("common.cancel", { defaultValue: "Cancel" })}
               </Button>
               <Button className="bg-blue-primary hover:bg-blue-primary/90" onClick={handleExport} disabled={isSubmitting || disableExport}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="size-4 mr-2 animate-spin" /> Exporting
+                    <Loader2 className="size-4 mr-2 animate-spin" /> {t("export.exporting", { defaultValue: "Exporting" })}
                   </>
                 ) : (
-                  "Export"
+                  t("export.exportButton", { defaultValue: "Export" })
                 )}
               </Button>
             </div>
@@ -185,8 +187,8 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
           <div className="p-6">
             <div className="flex flex-col items-center text-center gap-5">
               <Loader2 className="size-10 text-blue-primary animate-spin" />
-              <div className="text-lg font-medium">Exporting Chat... {progress}%</div>
-              <div className="text-sm text-muted-foreground">Sit back and relax, we're working on your export.</div>
+              <div className="text-lg font-medium">{t("export.progressLabel", { defaultValue: "Exporting Chat... {{progress}}%", progress })}</div>
+              <div className="text-sm text-muted-foreground">{t("export.progressSubtitle", { defaultValue: "Sit back and relax, we're working on your export." })}</div>
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-blue-primary transition-[width] duration-300"
@@ -195,7 +197,7 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
               </div>
               <div className="w-full flex justify-center">
                 <Button variant="secondary" className="bg-gray-100 hover:bg-gray-100 text-foreground" onClick={onCancel}>
-                  Cancel
+                  {t("common.cancel", { defaultValue: "Cancel" })}
                 </Button>
               </div>
             </div>
@@ -206,11 +208,11 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
           <div className="p-6">
             <div className="flex flex-col items-center text-center gap-5">
               <CheckCircle2 className="size-10 text-green-600" />
-              <div className="text-lg font-semibold">Export Complete</div>
-              <div className="text-sm text-muted-foreground">Chat exported successfully!</div>
+              <div className="text-lg font-semibold">{t("export.completeTitle", { defaultValue: "Export Complete" })}</div>
+              <div className="text-sm text-muted-foreground">{t("export.completeSubtitle", { defaultValue: "Chat exported successfully!" })}</div>
               <div className="w-full flex justify-center">
                 <Button variant="secondary" className="bg-gray-100 hover:bg-gray-100 text-foreground" onClick={() => onOpenChange(false)}>
-                  Back
+                  {t("export.back", { defaultValue: "Back" })}
                 </Button>
               </div>
             </div>

@@ -1,0 +1,335 @@
+{
+  "common": {
+    "copiedToClipboard": "Disalin ke papan klip",
+    "copyMessage": "Salin pesan",
+    "play": "Putar",
+    "pause": "Jeda",
+    "close": "Tutup",
+    "delete": "Hapus",
+    "download": "Unduh",
+    "cancel": "Batal",
+    "save": "Simpan",
+    "clear": "Bersihkan",
+    "you": "Anda",
+    "connected": "Terhubung",
+    "error": "Kesalahan",
+    "unknownError": "Kesalahan tidak diketahui",
+    "hide": "Sembunyikan",
+    "show": "Tampilkan",
+    "untitledConversation": "Percakapan tanpa judul",
+    "noConversations": "Belum ada percakapan. Kirim pesan untuk memulai.",
+    "noDocuments": "Belum ada dokumen yang diunggah."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian sedang berpikir...",
+    "noResponse": "Tidak ada respons.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "melalui {{agent}}",
+    "profileLabel": "Profil: {{frameworks}}",
+    "reviewingBanner": "Meninjau {{count}} percakapan tambahan bersama obrolan aktif.",
+    "profileIndicator": {
+      "title": "Kerangka kerja yang dapat dirujuk Meridian dalam percakapan ini"
+    },
+    "newChat": {
+      "title": "Mulai obrolan baru",
+      "label": "Obrolan Baru"
+    },
+    "status": {
+      "connected": "Terhubung ke Meridian"
+    },
+    "error": {
+      "agent": "Kesalahan agen",
+      "unreachable": "Maaf, saya tidak dapat menjangkau Meridian. Silakan coba lagi.",
+      "unreachableShort": "Tidak dapat menjangkau Meridian",
+      "newChatFailed": "Tidak dapat memulai obrolan baru. Silakan coba lagi."
+    },
+    "export": {
+      "aria": "Ekspor obrolan",
+      "label": "Ekspor",
+      "sessionSubject": "Sesi Obrolan Meridian",
+      "assistantDomain": "Pendampingan",
+      "success": "Log Percakapan + PDF Laporan Terstruktur berhasil diekspor.",
+      "noConversation": "Tidak dapat mengekspor obrolan — tidak ada percakapan aktif.",
+      "noData": "Tidak dapat mengekspor obrolan — backend tidak mengembalikan data.",
+      "noContent": "Tidak dapat mengekspor obrolan — tidak ada konten dalam rentang yang dipilih.",
+      "retry": "Tidak dapat mengekspor obrolan — silakan coba lagi."
+    },
+    "voice": {
+      "mute": "Bisukan suara Meridian",
+      "enable": "Aktifkan suara Meridian",
+      "onTitle": "Respons suara AKTIF — klik untuk membisukan",
+      "offTitle": "Respons suara NONAKTIF — klik untuk mengaktifkan",
+      "notSupported": "Input suara tidak didukung di peramban ini",
+      "micDenied": "Akses mikrofon ditolak"
+    },
+    "audio": {
+      "blockedTitle": "Peramban memblokir pemutaran audio — klik untuk mengaktifkan",
+      "enable": "Aktifkan audio",
+      "rewind": "Mundur 5 detik",
+      "resume": "Lanjutkan audio",
+      "pause": "Jeda audio",
+      "fastForward": "Maju cepat 5 detik",
+      "skip": "Lewati ke kalimat berikutnya",
+      "cancel": "Batalkan streaming",
+      "queued": "{{count}} dalam antrean"
+    },
+    "conn": {
+      "availableTitle": "Streaming suara tersedia",
+      "connectingTitle": "Menghubungkan streaming suara...",
+      "unavailableTitle": "Streaming suara tidak tersedia",
+      "ready": "Suara siap",
+      "connecting": "Menghubungkan",
+      "off": "Suara nonaktif"
+    },
+    "personalRow": {
+      "aria": "Halaman Anda",
+      "selfPortrait": "Potret Diri Saya",
+      "moments": "Momen",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} tidak diaktifkan untuk akun Anda"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Didukung oleh Agent Eco-System",
+    "back": "Kembali",
+    "export": "Ekspor",
+    "documentsButton": "Dokumen",
+    "tab": {
+      "chat": "Obrolan",
+      "documents": "Dokumen"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Buka panel samping dokumen",
+      "tooltip": "Buka panel dokumen untuk memilih berkas yang akan ditambahkan ke obrolan"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Percakapan dan proyek"
+    },
+    "active": {
+      "title": "Sesi Aktif",
+      "empty": "Belum ada sesi aktif.",
+      "badge": {
+        "live": "langsung",
+        "open": "terbuka"
+      }
+    },
+    "history": {
+      "title": "Riwayat"
+    },
+    "last5": {
+      "title": "5 Obrolan Terakhir",
+      "empty": "Belum ada apa pun di sini."
+    },
+    "projects": {
+      "title": "Proyek",
+      "inputPlaceholder": "Nama proyek baru…",
+      "inputAria": "Nama proyek baru",
+      "addAria": "Tambah proyek",
+      "empty": "Belum ada proyek. Kelompokkan obrolan terkait dalam satu proyek.",
+      "badge": {
+        "active": "aktif"
+      }
+    },
+    "knowledge": {
+      "title": "Pengetahuan",
+      "badge": {
+        "indexed": "terindeks"
+      }
+    }
+  },
+  "history": {
+    "title": "Riwayat",
+    "newChat": "Obrolan Baru",
+    "newChatTooltip": "Mulai percakapan baru",
+    "newChatTooltipExisting": "Anda sudah memiliki percakapan baru",
+    "newConversationLabel": "Percakapan Baru",
+    "searchPlaceholder": "Cari..",
+    "loadError": "Tidak dapat memuat riwayat percakapan.",
+    "loadErrorDetailed": "Tidak dapat memuat riwayat percakapan — backend mungkin tidak tersedia. Segarkan untuk mencoba lagi.",
+    "openActions": "Buka tindakan percakapan",
+    "rename": "Ganti nama",
+    "deleteTitle": "Hapus percakapan",
+    "deleteDescription": "Apakah Anda yakin ingin menghapus percakapan ini? Tindakan ini tidak dapat dibatalkan.",
+    "audioWarning": "Beralih percakapan akan menghentikan audio saat ini",
+    "renameDialogTitle": "Ganti nama percakapan",
+    "renamePlaceholder": "Judul percakapan",
+    "renameAnimationTitle": "Animasi penggantian nama",
+    "renamePending": "Membentuk identitas percakapan Anda… ✨",
+    "renameHint": "Beri nama percakapan Anda — buat mudah diingat 🚀",
+    "triggerShown": "Riwayat ({{count}} ditampilkan)",
+    "triggerCount": "Riwayat ({{count}})",
+    "triggerAria": "Jelajahi riwayat percakapan",
+    "hint": "Klik percakapan untuk menjadikannya aktif, atau centang untuk menambahkannya ke tinjauan.",
+    "includeAria": "Sertakan {{title}} dalam tinjauan",
+    "activeBadge": "Aktif",
+    "reviewCount": "{{count}} percakapan tambahan dalam tinjauan",
+    "clearReview": "Bersihkan tinjauan"
+  },
+  "documents": {
+    "triggerLabel": "Dokumen",
+    "triggerSelected": "Dokumen ({{count}} dipilih)",
+    "triggerAria": "Pilih dokumen",
+    "header": "Lampirkan dokumen ke obrolan ini",
+    "loadError": "Tidak dapat memuat dokumen.",
+    "uploadLink": "Unggah dokumen",
+    "selectFileAria": "Pilih {{filename}}",
+    "autoAttached": "Terlampir otomatis",
+    "selectedCount": "{{selected}} dari {{total}} dipilih",
+    "iframe": {
+      "defaultFileName": "Dokumen",
+      "loading": "Memuat dokumen…"
+    },
+    "panel": {
+      "selectedCount": "Dipilih ({{count}})",
+      "confirmDeleteTitle": "Konfirmasi hapus",
+      "confirmDeleteBulkDescription": "Apakah Anda yakin ingin menghapus {{count}} dokumen yang dipilih? Tindakan ini tidak dapat dibatalkan.",
+      "confirmDeleteOneDescription": "Apakah Anda yakin ingin menghapus dokumen ini? Tindakan ini tidak dapat dibatalkan.",
+      "upload": "Unggah",
+      "importToChat": "Impor ke Obrolan",
+      "loading": "Memuat dokumen...",
+      "empty": "Tidak ada berkas ditemukan",
+      "emptyAnimationTitle": "berkas tidak ditemukan",
+      "selectItem": "Pilih {{name}}",
+      "preview": "Pratinjau"
+    },
+    "sidePanel": {
+      "title": "Dokumen",
+      "close": "Tutup dokumen",
+      "closeOverlay": "Tutup panel dokumen"
+    },
+    "upload": "Unggah dokumen"
+  },
+  "export": {
+    "title": "Ekspor Obrolan",
+    "subtitle": "Unduh salinan obrolan Anda untuk referensi di masa mendatang.",
+    "fromLabel": "Obrolan Dari",
+    "fromPlaceholder": "Dari tanggal",
+    "toLabel": "Obrolan Sampai",
+    "toPlaceholder": "Sampai tanggal",
+    "formatLabel": "Berkas Ekspor",
+    "formatPdf": "PDF",
+    "exporting": "Mengekspor",
+    "exportButton": "Ekspor",
+    "progressLabel": "Mengekspor Obrolan... {{progress}}%",
+    "progressSubtitle": "Bersantailah, kami sedang mengerjakan ekspor Anda.",
+    "completeTitle": "Ekspor Selesai",
+    "completeSubtitle": "Obrolan berhasil diekspor!",
+    "back": "Kembali"
+  },
+  "routing": {
+    "confidence": "Keyakinan: {{confidencePct}}%",
+    "latency": "{{latencyMs}}md",
+    "tokens": "{{tokenCount}} token",
+    "observabilityDetails": "Detail observabilitas"
+  },
+  "feedback": {
+    "thankYou": "Terima kasih",
+    "rateThisResponse": "Beri nilai respons ini",
+    "correctionPlaceholder": "Opsional: sarankan respons yang lebih baik (maks 2000 karakter)",
+    "submitting": "Mengirim...",
+    "submit": "Kirim"
+  },
+  "compose": {
+    "sectionLabel": "Susun Prompt"
+  },
+  "conversation": {
+    "sectionLabel": "Percakapan",
+    "replayVoice": "Putar ulang suara",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "melalui {{agent}}",
+    "observabilityUnavailable": "Observabilitas tidak tersedia untuk pesan ini.",
+    "tableSrLabel": "Tabel",
+    "waiting": {
+      "shortly": "{{coachName}} akan segera menemui Anda",
+      "oneMoment": "Sebentar bersama {{coachName}}",
+      "pleaseWait": "Mohon tunggu"
+    },
+    "source": {
+      "label": "Sumber ({{count}})",
+      "openTitle": "Buka {{filename}}",
+      "openError": {
+        "noUrl": "Tidak dapat membuka \"{{filename}}\" — backend tidak mengembalikan URL.",
+        "notFound": "Tidak dapat membuka \"{{filename}}\" — dokumen tidak ditemukan atau akses ditolak.",
+        "generic": "Tidak dapat membuka \"{{filename}}\" — silakan coba lagi."
+      }
+    },
+    "collaboration": {
+      "label": "Respons kolaboratif ({{count}} agen)",
+      "synthesizedFrom": "Disintesis dari {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Tanyakan Apa Saja…  (Enter untuk mengirim · Shift+Enter untuk baris baru)",
+    "unmuteCoach": "Aktifkan Suara Pendamping",
+    "muteCoach": "Bisukan Pendamping",
+    "stopRecording": "Hentikan perekaman",
+    "startRecording": "Mulai perekaman",
+    "sendMessage": "Kirim pesan",
+    "muteTooltip": {
+      "mute": "Bisukan",
+      "unmute": "Aktifkan suara",
+      "disabledDuringPlayback": "Bisukan dinonaktifkan selama pemutaran"
+    }
+  },
+  "banner": {
+    "selected": "Dipilih:",
+    "connecting": "Menghubungkan...",
+    "successAnimationTitle": "Animasi berhasil"
+  },
+  "audio": {
+    "close": "Tutup pemutar audio"
+  },
+  "coach": {
+    "defaultName": "Pendamping",
+    "authError": "Kesalahan autentikasi",
+    "untitledConversation": "Tanpa Judul",
+    "previewPlaceholder": "Akan dikerjakan",
+    "conversationsLabel": "Percakapan",
+    "sessionSubject": "Sesi Pendampingan {{coachName}}",
+    "assistantDomain": "Pendampingan",
+    "exportSuccess": "Log Percakapan + PDF Laporan Terstruktur berhasil diekspor.",
+    "exportNoConversation": "Tidak dapat mengekspor obrolan — tidak ada percakapan aktif.",
+    "audioWarning": "Beralih percakapan akan mengatur ulang audio untuk percakapan baru."
+  },
+  "diagnostic": {
+    "title": "Obrolan Diagnostik",
+    "sessionLabel": "Sesi: {{sessionId}}...",
+    "statusConnecting": "Menghubungkan...",
+    "statusReconnecting": "Menghubungkan ulang...",
+    "statusDisconnected": "Terputus",
+    "newChat": "Obrolan Baru",
+    "newChatTitle": "Mulai sesi obrolan baru",
+    "reconnect": "Hubungkan ulang",
+    "clearAllTitle": "Bersihkan semua",
+    "traceLog": "Log Jejak",
+    "dataSourcesLabel": "Sumber Data Terhubung",
+    "emptyTitle": "Antarmuka Obrolan Diagnostik",
+    "emptySubtitle": "Kirim pesan untuk menelusuri siklus hidup permintaan secara penuh",
+    "streaming": "streaming",
+    "processing": "Meridian sedang memproses...",
+    "stopRecording": "Hentikan perekaman",
+    "startVoiceInput": "Mulai input suara",
+    "inputPlaceholder": "Ketik pesan untuk menelusuri seluruh alur...",
+    "recordingHint": "Merekam — bicaralah dengan jelas, lalu berhenti untuk mengirim",
+    "latency": "Latensi: {{latencyMs}}md",
+    "ttft": "TTFT: {{ttftMs}}md",
+    "tokens": "Token: {{tokenCount}}",
+    "entriesCount": "{{count}} entri",
+    "errorsCount": "{{count}} kesalahan",
+    "warningsCount": "{{count}} peringatan",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

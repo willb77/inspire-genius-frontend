@@ -1,0 +1,335 @@
+{
+  "common": {
+    "copiedToClipboard": "تم النسخ إلى الحافظة",
+    "copyMessage": "نسخ الرسالة",
+    "play": "تشغيل",
+    "pause": "إيقاف مؤقت",
+    "close": "إغلاق",
+    "delete": "حذف",
+    "download": "تنزيل",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "clear": "مسح",
+    "you": "أنت",
+    "connected": "متصل",
+    "error": "خطأ",
+    "unknownError": "خطأ غير معروف",
+    "hide": "إخفاء",
+    "show": "إظهار",
+    "untitledConversation": "محادثة بلا عنوان",
+    "noConversations": "لا توجد محادثات بعد. أرسل رسالة لبدء واحدة.",
+    "noDocuments": "لم يتم رفع أي مستندات بعد."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian يفكّر...",
+    "noResponse": "لا يوجد رد.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "عبر {{agent}}",
+    "profileLabel": "الملف الشخصي: {{frameworks}}",
+    "reviewingBanner": "مراجعة {{count}} محادثة إضافية إلى جانب المحادثة النشطة.",
+    "profileIndicator": {
+      "title": "الأطر التي يمكن لـ Meridian الرجوع إليها في هذه المحادثة"
+    },
+    "newChat": {
+      "title": "بدء محادثة جديدة",
+      "label": "محادثة جديدة"
+    },
+    "status": {
+      "connected": "متصل بـ Meridian"
+    },
+    "error": {
+      "agent": "خطأ في الوكيل",
+      "unreachable": "عذرًا، تعذّر الوصول إلى Meridian. يرجى المحاولة مرة أخرى.",
+      "unreachableShort": "تعذّر الوصول إلى Meridian",
+      "newChatFailed": "تعذّر بدء محادثة جديدة. يرجى المحاولة مرة أخرى."
+    },
+    "export": {
+      "aria": "تصدير المحادثة",
+      "label": "تصدير",
+      "sessionSubject": "جلسة محادثة Meridian",
+      "assistantDomain": "التدريب",
+      "success": "تم تصدير سجل المحادثة + تقارير PDF منظّمة.",
+      "noConversation": "تعذّر تصدير المحادثة — لا توجد محادثة نشطة.",
+      "noData": "تعذّر تصدير المحادثة — لم تُرجع الخلفية أي بيانات.",
+      "noContent": "تعذّر تصدير المحادثة — لا يوجد محتوى في النطاق المحدد.",
+      "retry": "تعذّر تصدير المحادثة — يرجى المحاولة مرة أخرى."
+    },
+    "voice": {
+      "mute": "كتم صوت Meridian",
+      "enable": "تفعيل صوت Meridian",
+      "onTitle": "الردود الصوتية مفعّلة — انقر للكتم",
+      "offTitle": "الردود الصوتية متوقفة — انقر للتفعيل",
+      "notSupported": "الإدخال الصوتي غير مدعوم في هذا المتصفح",
+      "micDenied": "تم رفض الوصول إلى الميكروفون"
+    },
+    "audio": {
+      "blockedTitle": "حظر المتصفح تشغيل الصوت — انقر للتفعيل",
+      "enable": "تفعيل الصوت",
+      "rewind": "إرجاع 5 ثوانٍ",
+      "resume": "استئناف الصوت",
+      "pause": "إيقاف الصوت مؤقتًا",
+      "fastForward": "تقديم سريع 5 ثوانٍ",
+      "skip": "التخطي إلى الجملة التالية",
+      "cancel": "إلغاء البث",
+      "queued": "{{count}} في قائمة الانتظار"
+    },
+    "conn": {
+      "availableTitle": "البث الصوتي متاح",
+      "connectingTitle": "جارٍ الاتصال بالبث الصوتي...",
+      "unavailableTitle": "البث الصوتي غير متاح",
+      "ready": "الصوت جاهز",
+      "connecting": "جارٍ الاتصال",
+      "off": "الصوت متوقف"
+    },
+    "personalRow": {
+      "aria": "صفحاتك",
+      "selfPortrait": "صورتي الذاتية",
+      "moments": "لحظات",
+      "coaching": "التوجيه",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} غير مُفعَّل لحسابك"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "مدعوم من Agent Eco-System",
+    "back": "رجوع",
+    "export": "تصدير",
+    "documentsButton": "المستندات",
+    "tab": {
+      "chat": "محادثة",
+      "documents": "المستندات"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "فتح اللوحة الجانبية للمستندات",
+      "tooltip": "افتح لوحة المستندات لتحديد الملفات لإضافتها إلى المحادثة"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "المحادثات والمشاريع"
+    },
+    "active": {
+      "title": "الجلسات النشطة",
+      "empty": "لا توجد جلسات نشطة بعد.",
+      "badge": {
+        "live": "مباشر",
+        "open": "مفتوح"
+      }
+    },
+    "history": {
+      "title": "السجل"
+    },
+    "last5": {
+      "title": "آخر 5 محادثات",
+      "empty": "لا يوجد شيء هنا بعد."
+    },
+    "projects": {
+      "title": "المشاريع",
+      "inputPlaceholder": "اسم مشروع جديد…",
+      "inputAria": "اسم مشروع جديد",
+      "addAria": "إضافة مشروع",
+      "empty": "لا توجد مشاريع بعد. جمّع المحادثات ذات الصلة ضمن مشروع.",
+      "badge": {
+        "active": "نشط"
+      }
+    },
+    "knowledge": {
+      "title": "المعرفة",
+      "badge": {
+        "indexed": "مفهرس"
+      }
+    }
+  },
+  "history": {
+    "title": "السجل",
+    "newChat": "محادثة جديدة",
+    "newChatTooltip": "بدء محادثة جديدة",
+    "newChatTooltipExisting": "لديك بالفعل محادثة جديدة",
+    "newConversationLabel": "محادثة جديدة",
+    "searchPlaceholder": "بحث..",
+    "loadError": "تعذّر تحميل سجل المحادثات.",
+    "loadErrorDetailed": "تعذّر تحميل سجل المحادثات — قد تكون الخلفية غير متاحة. حدّث الصفحة لإعادة المحاولة.",
+    "openActions": "فتح إجراءات المحادثة",
+    "rename": "إعادة تسمية",
+    "deleteTitle": "حذف المحادثة",
+    "deleteDescription": "هل أنت متأكد من رغبتك في حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء.",
+    "audioWarning": "سيؤدي تبديل المحادثات إلى إيقاف الصوت الحالي",
+    "renameDialogTitle": "إعادة تسمية المحادثة",
+    "renamePlaceholder": "عنوان المحادثة",
+    "renameAnimationTitle": "رسم متحرك لإعادة التسمية",
+    "renamePending": "جارٍ تشكيل هوية محادثتك… ✨",
+    "renameHint": "امنح محادثتك اسمًا — اجعله سهل التذكّر 🚀",
+    "triggerShown": "السجل ({{count}} معروض)",
+    "triggerCount": "السجل ({{count}})",
+    "triggerAria": "تصفّح سجل المحادثات",
+    "hint": "انقر على محادثة لجعلها نشطة، أو حدّدها لإضافتها إلى المراجعة.",
+    "includeAria": "تضمين {{title}} في المراجعة",
+    "activeBadge": "نشط",
+    "reviewCount": "{{count}} محادثة إضافية قيد المراجعة",
+    "clearReview": "مسح المراجعة"
+  },
+  "documents": {
+    "triggerLabel": "المستندات",
+    "triggerSelected": "المستندات ({{count}} محدد)",
+    "triggerAria": "تحديد المستندات",
+    "header": "إرفاق المستندات بهذه المحادثة",
+    "loadError": "تعذّر تحميل المستندات.",
+    "uploadLink": "رفع المستندات",
+    "selectFileAria": "تحديد {{filename}}",
+    "autoAttached": "مُرفق تلقائيًا",
+    "selectedCount": "{{selected}} من {{total}} محدد",
+    "iframe": {
+      "defaultFileName": "مستند",
+      "loading": "جارٍ تحميل المستند…"
+    },
+    "panel": {
+      "selectedCount": "محدد ({{count}})",
+      "confirmDeleteTitle": "تأكيد الحذف",
+      "confirmDeleteBulkDescription": "هل أنت متأكد من رغبتك في حذف {{count}} مستند محدد؟ لا يمكن التراجع عن هذا الإجراء.",
+      "confirmDeleteOneDescription": "هل أنت متأكد من رغبتك في حذف هذا المستند؟ لا يمكن التراجع عن هذا الإجراء.",
+      "upload": "رفع",
+      "importToChat": "استيراد إلى المحادثة",
+      "loading": "جارٍ تحميل المستندات...",
+      "empty": "لم يتم العثور على ملفات",
+      "emptyAnimationTitle": "الملف غير موجود",
+      "selectItem": "تحديد {{name}}",
+      "preview": "معاينة"
+    },
+    "sidePanel": {
+      "title": "المستندات",
+      "close": "إغلاق المستندات",
+      "closeOverlay": "إغلاق لوحة المستندات"
+    },
+    "upload": "رفع مستند"
+  },
+  "export": {
+    "title": "تصدير المحادثة",
+    "subtitle": "نزّل نسخة من محادثتك للرجوع إليها مستقبلًا.",
+    "fromLabel": "المحادثة من",
+    "fromPlaceholder": "من تاريخ",
+    "toLabel": "المحادثة حتى",
+    "toPlaceholder": "إلى تاريخ",
+    "formatLabel": "ملف التصدير",
+    "formatPdf": "PDF",
+    "exporting": "جارٍ التصدير",
+    "exportButton": "تصدير",
+    "progressLabel": "جارٍ تصدير المحادثة... {{progress}}%",
+    "progressSubtitle": "استرخِ ودعنا نعمل على تصديرك.",
+    "completeTitle": "اكتمل التصدير",
+    "completeSubtitle": "تم تصدير المحادثة بنجاح!",
+    "back": "رجوع"
+  },
+  "routing": {
+    "confidence": "الثقة: {{confidencePct}}%",
+    "latency": "{{latencyMs}} مللي ثانية",
+    "tokens": "{{tokenCount}} رمز",
+    "observabilityDetails": "تفاصيل المراقبة"
+  },
+  "feedback": {
+    "thankYou": "شكرًا لك",
+    "rateThisResponse": "قيّم هذا الرد",
+    "correctionPlaceholder": "اختياري: اقترح ردًا أفضل (بحد أقصى 2000 حرف)",
+    "submitting": "جارٍ الإرسال...",
+    "submit": "إرسال"
+  },
+  "compose": {
+    "sectionLabel": "كتابة الطلب"
+  },
+  "conversation": {
+    "sectionLabel": "المحادثة",
+    "replayVoice": "إعادة تشغيل الصوت",
+    "messageId": "المعرّف: {{id}}",
+    "viaAgent": "عبر {{agent}}",
+    "observabilityUnavailable": "المراقبة غير متاحة لهذه الرسالة.",
+    "tableSrLabel": "جدول",
+    "waiting": {
+      "shortly": "سيكون {{coachName}} معك قريبًا",
+      "oneMoment": "لحظة واحدة مع {{coachName}}",
+      "pleaseWait": "يرجى الانتظار"
+    },
+    "source": {
+      "label": "المصادر ({{count}})",
+      "openTitle": "فتح {{filename}}",
+      "openError": {
+        "noUrl": "تعذّر فتح \"{{filename}}\" — لم تُرجع الخلفية أي رابط.",
+        "notFound": "تعذّر فتح \"{{filename}}\" — المستند غير موجود أو تم رفض الوصول.",
+        "generic": "تعذّر فتح \"{{filename}}\" — يرجى المحاولة مرة أخرى."
+      }
+    },
+    "collaboration": {
+      "label": "رد تعاوني ({{count}} وكلاء)",
+      "synthesizedFrom": "مُركّب من {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "اسأل أي شيء…  (Enter للإرسال · Shift+Enter لسطر جديد)",
+    "unmuteCoach": "إلغاء كتم المدرّب",
+    "muteCoach": "كتم المدرّب",
+    "stopRecording": "إيقاف التسجيل",
+    "startRecording": "بدء التسجيل",
+    "sendMessage": "إرسال الرسالة",
+    "muteTooltip": {
+      "mute": "كتم",
+      "unmute": "إلغاء الكتم",
+      "disabledDuringPlayback": "الكتم معطّل أثناء التشغيل"
+    }
+  },
+  "banner": {
+    "selected": "محدد:",
+    "connecting": "جارٍ الاتصال...",
+    "successAnimationTitle": "رسم متحرك للنجاح"
+  },
+  "audio": {
+    "close": "إغلاق مشغّل الصوت"
+  },
+  "coach": {
+    "defaultName": "المدرّب",
+    "authError": "خطأ في المصادقة",
+    "untitledConversation": "بلا عنوان",
+    "previewPlaceholder": "قيد الإنجاز",
+    "conversationsLabel": "المحادثات",
+    "sessionSubject": "جلسة تدريب {{coachName}}",
+    "assistantDomain": "التدريب",
+    "exportSuccess": "تم تصدير سجل المحادثة + تقارير PDF منظّمة.",
+    "exportNoConversation": "تعذّر تصدير المحادثة — لا توجد محادثة نشطة.",
+    "audioWarning": "سيؤدي تبديل المحادثات إلى إعادة ضبط الصوت للمحادثة الجديدة."
+  },
+  "diagnostic": {
+    "title": "محادثة تشخيصية",
+    "sessionLabel": "الجلسة: {{sessionId}}...",
+    "statusConnecting": "جارٍ الاتصال...",
+    "statusReconnecting": "جارٍ إعادة الاتصال...",
+    "statusDisconnected": "غير متصل",
+    "newChat": "محادثة جديدة",
+    "newChatTitle": "بدء جلسة محادثة جديدة",
+    "reconnect": "إعادة الاتصال",
+    "clearAllTitle": "مسح الكل",
+    "traceLog": "سجل التتبّع",
+    "dataSourcesLabel": "مصادر البيانات المتصلة",
+    "emptyTitle": "واجهة المحادثة التشخيصية",
+    "emptySubtitle": "أرسل رسالة لتتبّع دورة حياة الطلب بالكامل",
+    "streaming": "جارٍ البث",
+    "processing": "Meridian قيد المعالجة...",
+    "stopRecording": "إيقاف التسجيل",
+    "startVoiceInput": "بدء الإدخال الصوتي",
+    "inputPlaceholder": "اكتب رسالة لتتبّع المسار الكامل...",
+    "recordingHint": "جارٍ التسجيل — تحدّث بوضوح، ثم أوقف للإرسال",
+    "latency": "زمن الاستجابة: {{latencyMs}} مللي ثانية",
+    "ttft": "TTFT: {{ttftMs}} مللي ثانية",
+    "tokens": "الرموز: {{tokenCount}}",
+    "entriesCount": "{{count}} إدخال",
+    "errorsCount": "{{count}} خطأ",
+    "warningsCount": "{{count}} تحذير",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

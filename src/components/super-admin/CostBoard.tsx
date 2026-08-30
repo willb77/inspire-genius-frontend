@@ -25,8 +25,16 @@ export type CostBoardProps = {
   className?: string
 }
 
+// This used to blame R-2.4, which closed 2026-05-11. The real reason platform
+// spend reads zero is upstream and unrelated: GET /v1/trainer/costs/dashboard
+// is a hard-coded stub (`trainer-service/app/routes/costs.py`) that returns
+// `total_spend: 0.0` with empty agent/category/trend collections on every
+// call — a 200 with no computation behind it. It also returns `total_spend`
+// where this panel reads `total_cost`, so even a populated stub would not
+// surface here. Naming that is the difference between "we spent nothing" and
+// "nothing is adding it up".
 const DATA_PENDING_MESSAGE =
-  "Cost telemetry is enabled but the audit-service EventBridge pipeline is still being verified — values may be empty until R-2.4 closes."
+  "Platform spend is not being aggregated yet: the cost dashboard endpoint returns a fixed zero rather than a computed total. Treat this panel as not-yet-implemented, not as $0 of spend."
 
 // TODO(R-2.4): remove banner in Wave 3 once telemetry populates.
 // See REMAINING_TASKS.md §4 (R-2.4 — Telemetry + audit closure) for the
@@ -69,7 +77,13 @@ function useCostByScope(scope: CostBoardScope, scopeId?: string): CostBoardResul
 export default function CostBoard({ scope, scopeId, className }: CostBoardProps) {
   const { data, hasData, isLoading, error } = useCostByScope(scope, scopeId)
 
+  // `!error` here meant the explanatory banner vanished at exactly the moment
+  // it was needed: on a failed request the panel rendered a bare grid of 0 / —
+  // / 0.0% with nothing to say the numbers were never fetched. A zero that
+  // means "the call failed" is indistinguishable from a genuine quiet day, so
+  // the failure is now surfaced in its own right.
   const showBanner = !hasData && !isLoading && !error
+  const showError = Boolean(error) && !isLoading
 
   const scopeLabel =
     scope === "platform" ? "Platform" : scope === "org" ? "Organization" : "Department"
@@ -77,6 +91,18 @@ export default function CostBoard({ scope, scopeId, className }: CostBoardProps)
   return (
     <div className={cn("space-y-4", className)} data-testid={`cost-board-${scope}`}>
       {showBanner && <DataPendingBanner />}
+      {showError && (
+        <div
+          role="alert"
+          className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2"
+        >
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
+          <span className="text-[12px] font-medium leading-snug text-red-800">
+            Could not load these figures. The values below are placeholders, not
+            measurements — treat them as unknown rather than as zero.
+          </span>
+        </div>
+      )}
 
       {/* KPI strip — total cost, total tokens, error rate */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

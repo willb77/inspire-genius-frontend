@@ -78,16 +78,50 @@ export async function vectorizePrismReport(
   return resp.data
 }
 
-/** Import a PRISM report from a file (PDF, DOCX, CSV, XLS/XLSX) */
+/**
+ * Import a PRISM report from a legacy CSV file.
+ *
+ * Server-side parses the CSV via the canonical `parse_prism_csv` adapter
+ * (same code path as `scripts/backfill_prism_csvs_to_assessments.py`) and
+ * inserts an `assessments` row + child `assessment_scores`. Idempotent
+ * per (user_id, sha256) — re-uploading the same file returns 409.
+ *
+ * Only .csv is supported. The old `/v1/agents/documents/import-prism`
+ * endpoint (LLM-backed, accepted PDF/DOCX/XLS/XLSX) was removed in §17.5.
+ */
 export async function importPrismFile(userId: string, file: File) {
   const { agentApi } = await import('@/lib/agentApi')
   const formData = new FormData()
   formData.append('file', file)
   formData.append('user_id', userId)
-  const resp = await agentApi.post('/v1/agents/documents/import-prism', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  })
+  const resp = await agentApi.post(
+    '/v1/profile/admin/assessments/import-csv',
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  )
   return resp.data
+}
+
+/**
+ * Check whether a customer already exists in PRISM by email / external ident.
+ * When `exists === true` a new report can still be requested for them without
+ * recreating the account; the backend returns an optional `action_url`.
+ */
+export async function checkExistingCustomer(params: {
+  email?: string
+  externalIdent?: string
+  questionnaireTypeId: number
+  forename?: string
+  surname?: string
+}) {
+  // Backend returns the raw CheckCustomerResponse (NOT a BaseApiResponse
+  // envelope), consistent with the sibling /v1/prism request endpoints.
+  const { data } = await api.post<{
+    exists: boolean
+    action_url?: string
+    response_message?: string
+  }>(`${BASE}/check-customer`, params)
+  return data
 }
 
 /** Submit callback — called when user returns from PRISM questionnaire */

@@ -3,7 +3,11 @@ import ChatWindow from "@/components/user/chat/ChatWindow";
 import DocumentsDropdown from "@/components/meridian/DocumentsDropdown";
 import HistoryDropdown from "@/components/meridian/HistoryDropdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import type { ComponentType, ReactNode } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { ROUTES } from "@/constants/routes";
+import { useEnabledVerticals } from "@/verticals/core";
+import { useTranslation } from "react-i18next";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
@@ -36,14 +40,26 @@ import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
 import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
 import { api } from "@/lib/axios";
 import { getApi as getAgentApi } from "@/lib/agentApi";
-import { exportConversation } from "@/services/agent/agentService";
+import {
+  exportConversation,
+  exportTranscriptViaServer,
+  type TranscriptTurnPayload,
+} from "@/services/agent/agentService";
+import { exportTranscriptPdfs, downloadBlob, type TranscriptMeta } from "@/lib/exportTranscript";
+import { parseMessages as parseChatMessages } from "@/lib/exportTranscript/parseMessages";
+import { exportTurn, type TurnExportFormat } from "@/lib/exportTranscript/exportTurn";
+import { applyPartialToMessages } from "@/lib/chat/applyPartial";
+import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
 import { toast } from "sonner";
 // Agent engine toggle is handled internally by conversation hooks/services
 import { format } from "date-fns";
 import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
 import PrismBadge from "@/components/chat/PrismBadge";
+import StarterQuestionsDropdown from "@/components/meridian/StarterQuestionsDropdown";
+import ExportChatModal from "@/components/user/chat/ExportChatModal";
 import {
   Sparkles,
+  SquarePen,
   Wifi,
   WifiOff,
   Loader2,
@@ -55,6 +71,8 @@ import {
   Rewind,
   FastForward,
   X,
+  Download,
+  Lock,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -101,8 +119,129 @@ function formatUSTimeSafe(input: unknown): string {
 const AGENT_ID = "meridian";
 const COACH_NAME = "Meridian";
 
-export default function MeridianChat() {
+/**
+ * Longest we will hold a chat dispatch waiting for the ECS warm-up ping.
+ * A warm task answers `/v1/agents/health` in well under a second; a cold one
+ * can take several. Past this we send anyway and let startJob's own
+ * retry-with-backoff handle it — a hung health check must never strand a
+ * question.
+ */
+const WARMUP_MAX_WAIT_MS = 8000;
+
+export type MeridianChatVariant = "classic" | "v2";
+
+/**
+ * Meridian Chat page.
+ *
+ * `variant="v2"` (the flag-gated new user surface) reskins the page to the
+ * HomeV2 design system: a left tile rail plus a stacked Compose Prompt /
+ * Conversation two-card layout, with Export moved next to History. Every piece
+ * of streaming machinery (WS, SSE, async-jobs, audio) is shared — only the
+ * arrangement + skin differ, so there is a single source of truth for the
+ * fragile logic. `variant="classic"` (the default, and /meridian/chat/classic)
+ * renders the original layout unchanged.
+ */
+export default function MeridianChat({
+  variant = "classic",
+  LayoutComponent = UserLayout,
+}: {
+  variant?: MeridianChatVariant;
+  /**
+   * Layout wrapper. Defaults to UserLayout (the My Workspace chrome) so every
+   * existing usage is unchanged; the practitioner route passes PractitionerLayout
+   * so the same chat renders inside the practitioner sidebar.
+   */
+  LayoutComponent?: ComponentType<{
+    children: ReactNode;
+    /** Optional — layouts that support it start the nav rail collapsed. */
+    collapseSidebarOnMount?: boolean;
+  }>;
+} = {}) {
+  const isV2 = variant === "v2";
+  const { t } = useTranslation("chat");
+  // Drives the personal row's locked state. Defaults to "entitled to nothing"
+  // while the query is in flight, so a slow response shows locks rather than
+  // links that would bounce off the route guard.
+  const { data: entitledVerticals = [] } = useEnabledVerticals();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // One-shot prefill+submit passed via navigation state (HomeV2 ask box /
+  // starter questions). Captured once at mount; the history state is then
+  // cleared so a refresh or back-navigation does not resend it. ChatWindow
+  // consumes `autoSendText` and submits it a single time.
+  const [autoSendText] = useState<string | undefined>(() => {
+    const s = location.state as
+      | { prefillPrompt?: string; autoSubmit?: boolean }
+      | null;
+    return s?.autoSubmit && s.prefillPrompt ? s.prefillPrompt : undefined;
+  });
+  // Optional display-only counterpart. Surfaces that wrap the question in
+  // scaffolding (Lumen appends a "sources in scope" line) send the clean
+  // question here so the user's bubble shows what they actually asked rather
+  // than the machine-composed prompt.
+  const [autoSendDisplayText] = useState<string | undefined>(() => {
+    const s = location.state as { prefillDisplay?: string } | null;
+    return s?.prefillDisplay || undefined;
+  });
+
+  // Deep-link into an existing conversation (2026-08-05). HomeV2's "what you
+  // worked on last visit" list sends the conversation id here so picking an
+  // entry lands on that transcript already loaded in the Conversation tile,
+  // rather than dumping the user into a blank chat to go find it again.
+  //
+  // Captured once at mount, like the prefill above, so a refresh or a
+  // back-navigation does not yank the user out of whatever they have since
+  // selected. Applied by the effect below once the handler exists.
+  const [deepLinkConversationId] = useState<string | undefined>(() => {
+    const s = location.state as { conversationId?: string } | null;
+    return typeof s?.conversationId === "string" && s.conversationId
+      ? s.conversationId
+      : undefined;
+  });
+
+  // ── Warm-up gate for injected questions (2026-08-01) ───────────────
+  //
+  // Reported symptom: a question injected from another surface took far
+  // longer to answer than the same question typed here. Cause: the warmup
+  // `GET /v1/agents/health` and the auto-send fire in the SAME tick, so an
+  // injected question gets ZERO warm-up window and hits a cold ECS task —
+  // paying API GW's 30s cap, then startJob's 3s/6s retry backoff, before the
+  // job is even accepted. A typed question never pays this, because the
+  // user's typing time IS the warm-up window.
+  //
+  // So we defer only the network dispatch (never the bubbles — the user sees
+  // their question and "Meridian is thinking…" immediately). For a typed
+  // send the warmup settled long ago and `runWhenWarm` runs inline, so this
+  // is a no-op on that path.
+  const warmupSettledRef = useRef(false);
+  const pendingWarmDispatchRef = useRef<(() => void) | null>(null);
+
+  const markWarm = useCallback(() => {
+    if (warmupSettledRef.current) return;
+    warmupSettledRef.current = true;
+    const queued = pendingWarmDispatchRef.current;
+    pendingWarmDispatchRef.current = null;
+    queued?.();
+  }, []);
+
+  const runWhenWarm = useCallback((fn: () => void) => {
+    if (warmupSettledRef.current) {
+      fn();
+      return;
+    }
+    pendingWarmDispatchRef.current = fn;
+  }, []);
+  useEffect(() => {
+    if (autoSendText) {
+      navigate(location.pathname + location.search, {
+        replace: true,
+        state: null,
+      });
+    }
+    // Run once on mount to consume the navigation state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { user } = useAuth();
   const accessToken = user?.token ?? "";
@@ -118,11 +257,19 @@ export default function MeridianChat() {
   const loadedFrameworkNames = useMemo(() => {
     const data = loadedFrameworksQuery.data;
     if (!data || data.length === 0) return [] as string[];
-    return data.map((f) => f.framework);
+    // loaded-frameworks is already a string[] of framework names.
+    return [...data];
   }, [loadedFrameworksQuery.data]);
 
   // Local UI state
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+  // V2 only — the Export control lives in the sticky header (next to History);
+  // the page owns the modal state since the stacked ChatWindow no longer
+  // renders its own header/export trigger.
+  const [exportOpen, setExportOpen] = useState(false);
+  // "Document Upload" in the header — the same modal the Documents panel uses,
+  // so an upload started mid-conversation lands in the same corpus.
+  const [uploadOpen, setUploadOpen] = useState(false);
   const demoAudioServiceRef = useRef<DemoAudioService | null>(null);
   if (!demoAudioServiceRef.current) demoAudioServiceRef.current = new DemoAudioService();
   const [isAudioPaused, setIsAudioPaused] = useState(false);
@@ -334,6 +481,13 @@ export default function MeridianChat() {
       const ragSources = metadata?.rag_sources?.filter((s) => s.filename) ?? [];
       const contributingAgents = metadata?.contributing_agents;
       const synthesized = metadata?.synthesized;
+      // IG Core document-generation skill — files produced this turn, each with
+      // a presigned download URL. Rendered as a download button in the bubble.
+      const attachments = metadata?.attachments?.filter((a) => a?.url) ?? [];
+      // PRISM Brain Map — accompanies a turn that reported the user's scores.
+      // Only accepted when it carries actual SVG; a partial payload renders
+      // nothing rather than an empty frame.
+      const prismMap = metadata?.prism_map?.svg ? metadata.prism_map : undefined;
       const assistantMessageId =
         (metadata as { assistant_message_id?: string } | undefined)?.assistant_message_id
           ?? `msg-${Date.now()}`;
@@ -357,6 +511,8 @@ export default function MeridianChat() {
                 ragSources: ragSources.length > 0 ? ragSources : undefined,
                 contributingAgents,
                 synthesized,
+                attachments: attachments.length > 0 ? attachments : undefined,
+                prismMap,
               },
             ];
           }
@@ -368,10 +524,13 @@ export default function MeridianChat() {
               sender: "assistant" as const,
               text: content,
               time: formatUSTimeSafe(new Date()),
+              ts: Date.now(),
               agent: agent ?? undefined,
               ragSources: ragSources.length > 0 ? ragSources : undefined,
               contributingAgents,
               synthesized,
+              attachments: attachments.length > 0 ? attachments : undefined,
+              prismMap,
             },
           ];
         });
@@ -398,15 +557,16 @@ export default function MeridianChat() {
   const handleJobSettled = useCallback(
     (job: ChatJob) => {
       if (job.status === "error") {
-        setStatusBanner({ type: "error", text: job.error || "Agent error" });
+        setStatusBanner({ type: "error", text: job.error || t("meridian.error.agent", { defaultValue: "Agent error" }) });
         setMessages((prev) => [
           ...prev.filter((m) => m.kind !== "processing"),
           {
             id: `msg-${Date.now()}-err`,
             kind: "text" as const,
             sender: "assistant" as const,
-            text: "Sorry, I couldn't reach Meridian. Please try again.",
+            text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }),
             time: formatUSTimeSafe(new Date()),
+            ts: Date.now(),
           },
         ]);
         return;
@@ -430,7 +590,30 @@ export default function MeridianChat() {
     [renderAssistantComplete],
   );
 
-  const meridianJob = useMeridianJob({ onJobSettled: handleJobSettled });
+  // ── Progressive delivery (2026-07-30) ──────────────────────────────
+  // The async-jobs poll already fetches `job.content` every 2s; it was
+  // only ever read once the job went terminal. The agent engine now
+  // flushes partial text onto the running row for single-agent turns, so
+  // the answer can be rendered as it is written instead of appearing all
+  // at once after ~45s.
+  //
+  // Deliberately defensive: when the backend has NOT been promoted yet,
+  // `content` stays null on running jobs and this is a no-op — which
+  // matters because a frontend merge deploys to dev AND staging-b while
+  // the backend only moves by tag.
+  const handleJobProgress = useCallback((job: ChatJob) => {
+    if (job.status === "complete" || job.status === "error") return;
+    const partial = job.content ?? "";
+    if (!partial) return;
+    // applyPartialToMessages returns the SAME array reference when nothing
+    // should change, so an unchanged poll costs no re-render.
+    setMessages((prev) => applyPartialToMessages(prev, partial));
+  }, []);
+
+  const meridianJob = useMeridianJob({
+    onJobSettled: handleJobSettled,
+    onJobUpdate: handleJobProgress,
+  });
   const meridianJobRef = useRef(meridianJob);
   meridianJobRef.current = meridianJob;
 
@@ -442,21 +625,27 @@ export default function MeridianChat() {
   // intentional empty deps array.
   useEffect(() => {
     const ac = new AbortController();
+    const done = () => markWarm();
+    // Never let a hung health check strand an auto-submitted question.
+    const cap = setTimeout(done, WARMUP_MAX_WAIT_MS);
     try {
       const promise = getAgentApi().get("/v1/agents/health", { signal: ac.signal });
       // Defensive — under test mocks `getAgentApi()` may not return a
       // real axios instance.  Only chain when we actually got a thenable.
-      if (promise && typeof (promise as { catch?: unknown }).catch === "function") {
-        (promise as Promise<unknown>).catch(() => {
-          // Swallow — best-effort warmup. The retry-with-backoff in
-          // startJob handles real cold-start cases.
-        });
+      if (promise && typeof (promise as { then?: unknown }).then === "function") {
+        (promise as Promise<unknown>).then(done, done);
+      } else {
+        done();
       }
     } catch {
       // Same — never let warmup throw out of the effect.
+      done();
     }
-    return () => ac.abort();
-  }, []);
+    return () => {
+      clearTimeout(cap);
+      ac.abort();
+    };
+  }, [markWarm]);
 
   // G6: the latest-PRISM client-side auto-attach effect was removed here.
   // Server-side profile preload (G3) now handles the equivalent ingestion
@@ -471,7 +660,7 @@ export default function MeridianChat() {
       if (meridianJobRef.current.notifyPushFrame(resp)) return;
 
       if (resp.type === "connected") {
-        setStatusBanner({ type: "success", text: "Connected to Meridian" });
+        setStatusBanner({ type: "success", text: t("meridian.status.connected", { defaultValue: "Connected to Meridian" }) });
         // Flush any text message queued while the socket was reconnecting.
         const pending = pendingSendRef.current;
         if (pending) {
@@ -491,7 +680,7 @@ export default function MeridianChat() {
       }
 
       if (resp.type === "error") {
-        setStatusBanner({ type: "error", text: resp.message || "Agent error" });
+        setStatusBanner({ type: "error", text: resp.message || t("meridian.error.agent", { defaultValue: "Agent error" }) });
         lastMessageRef.current = { type: "error", text: resp.message ?? "" };
         wsHasAudioRef.current = false;
         // Replace the "Meridian is thinking…" placeholder with the same
@@ -502,8 +691,9 @@ export default function MeridianChat() {
             id: `msg-${Date.now()}-err`,
             kind: "text" as const,
             sender: "assistant" as const,
-            text: "Sorry, I couldn't reach Meridian. Please try again.",
+            text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }),
             time: formatUSTimeSafe(new Date()),
+            ts: Date.now(),
           },
         ]);
         return;
@@ -534,6 +724,7 @@ export default function MeridianChat() {
               sender: "assistant" as const,
               text,
               time: formatUSTimeSafe(new Date()),
+              ts: Date.now(),
             },
           ];
         });
@@ -613,6 +804,11 @@ export default function MeridianChat() {
   // the per-sentence /v1/agents/voice/synthesize loop, not just stop the queue.
   const ttsAbortRef = useRef<AbortController | null>(null);
   const ttsCancelledRef = useRef(false);
+  // The exact text most recently handed to TTS. A settled turn can reach
+  // `speakText` from more than one delivery path (async-job settlement, WS
+  // `complete` frame); comparing on content makes the second call a no-op so
+  // the answer is never read aloud twice. Cleared when a new question is sent.
+  const lastSpokenTextRef = useRef<string | null>(null);
 
   // Streaming-TTS sentence queue (T22 voice streaming, flag-gated).
   // Each sentence emitted by SentenceStreamer triggers a TTS POST
@@ -763,6 +959,34 @@ export default function MeridianChat() {
     async (text: string) => {
       const responseText = (text || "").trim();
       if (!responseText) return;
+
+      // ── Duplicate-playback guards (2026-08-01) ──────────────────────
+      //
+      // Reported symptom: Meridian sometimes read a response back twice from
+      // start to finish, and sometimes repeated paragraphs/sentences within
+      // one response. Both are the same defect. A settled turn can reach TTS
+      // from more than one delivery path (the async-job settlement AND the WS
+      // `complete` frame), and this function had NO re-entrancy protection:
+      // it overwrote `ttsAbortRef` with a fresh controller WITHOUT aborting
+      // the previous one, and reset `ttsCancelledRef` to false. The first
+      // run's in-flight sentence requests therefore kept resolving and kept
+      // calling `enqueueAudio`, into a queue that is a plain FIFO with no
+      // dedupe — so both runs' audio played. Two clean runs read the whole
+      // answer twice; two overlapping runs interleave and repeat fragments.
+      //
+      // Guard 1: same text already spoken (or being spoken) for this turn →
+      // no-op. This is what actually stops the double read-back.
+      if (lastSpokenTextRef.current === responseText) return;
+      lastSpokenTextRef.current = responseText;
+
+      // Guard 2: a different response is arriving while one is still being
+      // synthesised (e.g. the user sent another message) — cancel the old
+      // run properly instead of letting the two race into the audio queue.
+      if (ttsAbortRef.current) {
+        try { ttsAbortRef.current.abort(); } catch { /* already settled */ }
+        ttsAbortRef.current = null;
+      }
+
       const sentences = responseText
         .replace(/([.!?;:])\s+/g, "$1\n")
         .split("\n")
@@ -948,6 +1172,10 @@ export default function MeridianChat() {
   const sseTtsControllerRef = useRef<ReturnType<
     typeof createStreamingTtsController
   > | null>(null);
+  // Whether the streaming-TTS controller actually produced audio this turn.
+  // Distinguishes "already spoken, don't repeat" from "never spoke, the
+  // legacy speakText fallback must still run".
+  const sseTtsSpokeRef = useRef(false);
   const sseStream = useMeridianSSEStream({
     onToken: (tok: string) => {
       // T22 streaming voice: drive per-sentence TTS in lockstep with
@@ -959,6 +1187,7 @@ export default function MeridianChat() {
         sseTtsControllerRef.current =
           createStreamingTtsControllerRef.current?.("shimmer") ?? null;
       }
+      if (sseTtsControllerRef.current) sseTtsSpokeRef.current = true;
       sseTtsControllerRef.current?.push(tok);
     },
     onComplete: () => {
@@ -987,6 +1216,16 @@ export default function MeridianChat() {
   // Finalize the placeholder once the complete frame arrives.
   useEffect(() => {
     if (!_sseLastComplete) return;
+    // If the streaming-TTS controller actually spoke this turn, record the
+    // text so a later `speakText` for the same turn is a no-op rather than a
+    // second full read-back. Gated on `sseTtsSpokeRef`: when voice is muted
+    // or the streaming flag is OFF no controller is ever created, and
+    // suppressing the legacy `speakText` fallback would leave the user with
+    // silence instead of a duplicate.
+    if (sseTtsSpokeRef.current && _sseLastComplete.content) {
+      lastSpokenTextRef.current = _sseLastComplete.content.trim();
+    }
+    sseTtsSpokeRef.current = false;
     const placeholderId = sseStreamingMessageIdRef.current;
     if (!placeholderId) return;
     setMessages((prev) =>
@@ -1065,6 +1304,20 @@ export default function MeridianChat() {
 
   // Hydrate conversation on mount
   useEffect(() => {
+    // A deep link is an explicit instruction about which conversation to open,
+    // so it outranks both the stored conversation and auto-creating a new one.
+    //
+    // The auto-create branch below is the one that actually breaks without
+    // this: it is a network round trip, so its onSuccess lands well after the
+    // deep-link effect and overwrites the chosen conversation with a fresh
+    // empty one — and burns a conversation server-side on every deep link.
+    // Covered by "does not auto-create a conversation over the deep-linked
+    // one", which is red without this line.
+    //
+    // The stored-conversation branch happens to resolve in the right order
+    // today, so it survives without the guard; this makes that independent of
+    // which async chain wins rather than leaving it to timing.
+    if (deepLinkConversationId) return;
     let mounted = true;
     (async () => {
       const stored = await secureGetItem<{ id?: string }>("conv");
@@ -1120,13 +1373,20 @@ export default function MeridianChat() {
       const sender: "assistant" | "user" = role.toLowerCase() === "assistant" ? "assistant" : "user";
       const created = m.sent_at ?? m.created_at ?? m.timestamp;
       const time = formatUSTimeSafe(created);
+      const createdTs =
+        typeof created === "number"
+          ? created
+          : typeof created === "string"
+            ? Date.parse(created)
+            : NaN;
+      const ts = Number.isNaN(createdTs) ? undefined : createdTs;
       const text =
         typeof m.content === "string"
           ? (m.content as string)
           : typeof m.text === "string"
             ? (m.text as string)
             : "";
-      return { id, kind: "text", sender, text, time };
+      return { id, kind: "text", sender, text, time, ts };
     });
     setMessages(mapped);
   }, [messagesPages]);
@@ -1148,9 +1408,190 @@ export default function MeridianChat() {
     [disconnect, selectedId],
   );
 
+  // Apply a deep-linked conversation exactly once, after mount.
+  //
+  // This runs in its own effect rather than as the initial `selectedId` so it
+  // goes through handleSelectConversation — the one path that also tears down
+  // the socket, resets audio and clears the previous transcript. Setting the
+  // id directly would load the new messages while leaving the old
+  // conversation's audio and WS still running.
+  const deepLinkAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!deepLinkConversationId || deepLinkAppliedRef.current) return;
+    deepLinkAppliedRef.current = true;
+    void handleSelectConversation(deepLinkConversationId);
+  }, [deepLinkConversationId, handleSelectConversation]);
+
+  // "New Chat" header action. Mirrors handleSelectConversation's cleanup,
+  // then calls the same createConv path used on first mount (lines 1083-
+  // 1104). The new conversation_id from the server replaces selectedId +
+  // conversationId + the persisted `conv` storage key. After success we
+  // invalidate the conversations list so HistoryDropdown picks up the new
+  // entry without waiting for staleTime.
+  const handleNewChat = useCallback(async () => {
+    if (createConvMutation.isPending) return;
+    await disconnect();
+    // istanbul ignore next
+    demoAudioServiceRef.current?.resetAudioState();
+    setIsAudioPaused(true);
+    setSearchQuery("");
+    setMessages([]);
+    setAudioPlayerBuffer(null);
+    setAgentAttribution(null);
+    await secureRemoveItem("conv");
+    setSelectedId(undefined);
+    setConversationId(undefined);
+
+    createConvMutation.mutate(
+      { agentId: AGENT_ID },
+      {
+        onSuccess: async (resp: unknown) => {
+          queryClient.invalidateQueries({
+            queryKey: ["agent", "conversation", AGENT_ID],
+            exact: false,
+          });
+          const id = extractSessionId(resp);
+          // istanbul ignore if -- defensive: server always returns an id on 200
+          if (!id) return;
+          setSelectedId(id);
+          setConversationId(id);
+          secureSetItem("conv", { id });
+        },
+        onError: (e) => {
+          console.error("[MeridianChat] New chat creation failed", e);
+          toast.error(t("meridian.error.newChatFailed", { defaultValue: "Couldn't start a new chat. Please try again." }));
+        },
+      },
+    );
+  }, [createConvMutation, disconnect, queryClient]);
+
+  /**
+   * Export ONE turn (the per-message "Export ▾" link) as Word or PDF.
+   *
+   * Deliberately client-side and separate from `handleExportChat`: the whole-
+   * conversation export is a two-document bundle with a cover page, which is
+   * the wrong artefact for "keep this one answer".
+   */
+  const handleExportMessage = useCallback(
+    async (message: ChatMessage, exportFormat: TurnExportFormat) => {
+      if (message.kind !== "text" || !message.text?.trim()) {
+        toast.error(t("meridian.exportTurn.empty", { defaultValue: "Nothing to export in this message." }));
+        return;
+      }
+      const userLabel = user?.fullName || user?.name || user?.email || t("common.you", { defaultValue: "You" });
+      const speaker =
+        message.sender === "user" ? userLabel : message.agent || COACH_NAME;
+      try {
+        await exportTurn(
+          {
+            speaker,
+            body: message.text,
+            timestamp: message.ts ? formatUSTimeSafe(message.ts) : undefined,
+            contributingAgents: message.contributingAgents,
+            userLabel,
+            slug: `meridian-${speaker}-${message.id}`,
+            // Carry the PRISM Brain Map into the Word/PDF/print artefact so
+            // the exported turn matches what was on screen.
+            figure: message.prismMap?.svg
+              ? {
+                  svg: message.prismMap.svg,
+                  caption: message.prismMap.description,
+                }
+              : undefined,
+          },
+          exportFormat,
+        );
+        toast.success(
+          exportFormat === "word"
+            ? t("meridian.exportTurn.wordDone", { defaultValue: "Exported this response as a Word document." })
+            : t("meridian.exportTurn.pdfDone", { defaultValue: "Exported this response as a PDF." }),
+        );
+      } catch (err) {
+        console.warn("Per-turn export failed", err);
+        toast.error(t("meridian.exportTurn.failed", { defaultValue: "Couldn't export this response — please try again." }));
+      }
+    },
+    [t, user],
+  );
+
   const handleExportChat = useCallback(
     async (from: Date, to: Date) => {
-      if (!conversationId) return;
+      // Three-tier export pipeline (added end-to-end across PR #147 +
+      // the follow-up backend PR):
+      //   1. Server-side WeasyPrint — sharpest text, native @page
+      //      rules. Same locked §7 brand CSS lives in the agent-engine
+      //      Python module so the two paths render identically.
+      //   2. Client-side jspdf+html2canvas fallback when the server
+      //      returns 5xx / network blip (old image still rolling out
+      //      will return 503 — that's expected; client renders).
+      //   3. Legacy single-PDF backend fallback as last resort when
+      //      neither dual-PDF path can run (zero messages in state).
+      const subject = t("meridian.export.sessionSubject", { defaultValue: "Meridian Chat Session" });
+      const fromLabel = format(from, "do MMM yy");
+      const toLabel = format(to, "do MMM yy");
+      const userLabel = user?.fullName || user?.name || user?.email || t("common.you", { defaultValue: "You" });
+      const slug = `meridian-chat-${format(from, "yyyy-MM-dd")}-to-${format(to, "yyyy-MM-dd")}`;
+      const meta: TranscriptMeta = {
+        sessionSubject: subject,
+        fromLabel,
+        toLabel,
+        userLabel,
+        slug,
+        assistantDomain: t("meridian.export.assistantDomain", { defaultValue: "Coaching" }),
+      };
+
+      // ── Tier 1: server-side WeasyPrint
+      if (messages.length > 0) {
+        try {
+          const turns = parseChatMessages(messages, userLabel);
+          const turnPayload: TranscriptTurnPayload[] = turns.map((t) => ({
+            role: t.role,
+            speaker_raw: t.speakerRaw,
+            body: t.body,
+            timestamp: t.timestamp ?? null,
+            contributing_agents: t.contributingAgents ?? null,
+          }));
+          const resp = await exportTranscriptViaServer(turnPayload, {
+            session_subject: meta.sessionSubject,
+            from_label: meta.fromLabel,
+            to_label: meta.toLabel,
+            user_label: meta.userLabel,
+            slug: meta.slug,
+            assistant_domain: meta.assistantDomain,
+          });
+          if (resp?.status && resp.files?.length) {
+            for (const f of resp.files) {
+              const raw = atob(f.base64);
+              const bytes = new Uint8Array(raw.length);
+              for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+              const blob = new Blob([bytes], { type: f.mime_type || "application/pdf" });
+              downloadBlob(f.file_name, blob);
+            }
+            toast.success(t("meridian.export.success", { defaultValue: "Exported Conversation Log + Structured Report PDFs." }));
+            return;
+          }
+        } catch (serverErr) {
+          console.warn("Server-side dual-PDF export failed, falling back to client renderer.", serverErr);
+        }
+      }
+
+      // ── Tier 2: client-side jspdf + html2canvas
+      try {
+        const pdfs = await exportTranscriptPdfs({ messages, meta });
+        for (const { fileName, blob } of pdfs) {
+          downloadBlob(fileName, blob);
+        }
+        toast.success(t("meridian.export.success", { defaultValue: "Exported Conversation Log + Structured Report PDFs." }));
+        return;
+      } catch (clientErr) {
+        console.warn("Client-side dual-PDF export failed, falling back to legacy backend export.", clientErr);
+      }
+
+      // ── Tier 3: legacy single-PDF backend
+      if (!conversationId) {
+        toast.error(t("meridian.export.noConversation", { defaultValue: "Couldn't export chat — no active conversation." }));
+        return;
+      }
       try {
         const resp = (await exportConversation(conversationId, from, to)) as {
           status?: boolean;
@@ -1166,7 +1607,7 @@ export default function MeridianChat() {
           base64_csv?: string;
         };
         if (!resp || !resp.status) {
-          toast.error("Couldn't export chat — the backend returned no data.");
+          toast.error(t("meridian.export.noData", { defaultValue: "Couldn't export chat — the backend returned no data." }));
           return;
         }
         const payload = resp.data ?? resp;
@@ -1174,7 +1615,7 @@ export default function MeridianChat() {
         const mime = payload.mime_type || "application/pdf";
         const fileName = payload.file_name || `conversation_${conversationId}.pdf`;
         if (!base64) {
-          toast.error("Couldn't export chat — no content in the selected range.");
+          toast.error(t("meridian.export.noContent", { defaultValue: "Couldn't export chat — no content in the selected range." }));
           return;
         }
         const byteChars = atob(base64);
@@ -1182,20 +1623,13 @@ export default function MeridianChat() {
         for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: mime });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+        downloadBlob(fileName, blob);
       } catch (e) {
         console.error("Failed to export conversation", e);
-        toast.error("Couldn't export chat — please try again.");
+        toast.error(t("meridian.export.retry", { defaultValue: "Couldn't export chat — please try again." }));
       }
     },
-    [conversationId],
+    [conversationId, messages, user],
   );
 
   // ── Page-refresh hydration: in-flight async-jobs ────────────────
@@ -1219,6 +1653,7 @@ export default function MeridianChat() {
         setMessages((prev) => {
           const filtered = prev.filter((m) => m.kind !== "processing");
           const time = formatUSTimeSafe(new Date());
+          const ts = Date.now();
           const additions: ChatMessage[] = [];
           for (const job of active) {
             additions.push({
@@ -1227,15 +1662,17 @@ export default function MeridianChat() {
               sender: "user" as const,
               text: job.message,
               time,
+              ts,
             });
             additions.push({
               id: `msg-${job.job_id}-pending`,
               kind: "processing" as const,
               sender: "assistant" as const,
               time,
+              ts,
               isProcessing: true,
               type: "processing",
-              text: "Meridian is thinking...",
+              text: t("meridian.thinking", { defaultValue: "Meridian is thinking..." }),
             });
           }
           return [...filtered, ...additions];
@@ -1287,22 +1724,173 @@ export default function MeridianChat() {
     const titled = consultedAgents.map(
       (a) => a.charAt(0).toUpperCase() + a.slice(1),
     );
-    return `+ ${titled.join(", ")}`;
+    return t("meridian.consultedAgents", { defaultValue: "+ {{agents}}", agents: titled.join(", ") });
   }, [consultedAgents]);
 
+  /**
+   * Dispatch one Meridian turn.
+   *
+   * Lifted out of the ChatWindow JSX (2026-08-05) so the header's Starter
+   * Questions dropdown can start a turn through exactly the same path the
+   * composer uses -- injecting the question and submitting it in one step,
+   * with no duplicate dispatch logic to drift.
+   *
+   * Deliberately a plain function rather than useCallback: the inline arrow
+   * this replaces was re-created on every render, so this preserves identity
+   * semantics exactly and cannot go stale behind a dependency array.
+   */
+  const handleSendText = (text: string, displayText?: string) => {
+    demoAudioServiceRef.current?.resetAudioState();
+    setHasAudio(false);
+    setIsAudioPaused(false);
+    setAgentAttribution(null);
+    stopAudio(); // Clear any previous audio queue
+    // New turn — allow TTS again. (Without this, asking the same
+    // question twice in a session would return a silent answer.)
+    lastSpokenTextRef.current = null;
+    sseTtsSpokeRef.current = false;
+    const timeStr = formatUSTimeSafe(new Date());
+    const tsNow = Date.now();
+    setMessages((prev) => [
+      ...prev.filter((m) => m.kind !== "processing"),
+      {
+        id: `msg-${Date.now()}-user`,
+        kind: "text",
+        sender: "user",
+        // Show what the person asked, not the composed prompt.
+        text: displayText || text,
+        time: timeStr,
+        ts: tsNow,
+      },
+      {
+        id: `msg-${Date.now()}-assistant`,
+        kind: "processing",
+        sender: "assistant",
+        time: timeStr,
+        ts: tsNow,
+        isProcessing: true,
+        type: "processing",
+        text: t("meridian.thinking", { defaultValue: "Meridian is thinking..." }),
+      },
+    ]);
+    // Route text chat through the async-jobs path. POST
+    // /v1/agents/chat/async returns a job_id immediately and
+    // runs meridian.respond() in the background — sidestepping
+    // API GW HTTP API's 30s integration cap that killed
+    // multi-agent DAG responses. Completion arrives via the
+    // WS `job_complete` push frame (when the socket is open)
+    // or by polling GET /v1/agents/chat/jobs/{job_id}.
+    //
+    // The placeholder bubble is replaced inside
+    // handleJobSettled → renderAssistantComplete via the
+    // shared rendering path.
+    const sessionForJob = conversationId || "default";
+
+    // T22 — SSE fallback branch. Fires only when the WS
+    // reconnect budget is fully exhausted; the happy path
+    // (next clause) is unchanged. On the SSE path the
+    // assistant placeholder is the streaming bubble itself.
+    if (_wsReconnectExhausted) {
+      const placeholderId = `msg-${Date.now()}-assistant`;
+      // Re-tag the placeholder (which was inserted above with
+      // the same Date.now() in the same tick) so the SSE
+      // effects above can target it. We patch the LAST
+      // processing bubble belonging to the assistant.
+      setMessages((prev) => {
+        const idx = [...prev].reverse().findIndex(
+          (m) => m.sender === "assistant" && m.kind === "processing",
+        );
+        if (idx === -1) return prev;
+        const realIdx = prev.length - 1 - idx;
+        const copy = prev.slice();
+        copy[realIdx] = { ...copy[realIdx], id: placeholderId };
+        return copy;
+      });
+      sseStreamingMessageIdRef.current = placeholderId;
+      void sseStream
+        .send({
+          message: text,
+          sessionId: sessionForJob,
+          context: { conversation_id: conversationId, session_id: sessionForJob },
+          fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
+        })
+        .catch((err: unknown) => {
+          // Preflight option C — the server redirected us to
+          // the async-jobs path. Hand off to the existing
+          // meridianJob flow so polling + final render goes
+          // through the canonical settlement code.
+          if (err instanceof PreflightAsyncRedirectError) {
+            sseStreamingMessageIdRef.current = null;
+            void meridianJob
+              .startJob({
+                message: text,
+                sessionId: sessionForJob,
+                fileIds:
+                  selectedFileIds.length > 0 ? selectedFileIds : undefined,
+                context: {
+                  conversation_id: conversationId,
+                  session_id: sessionForJob,
+                  preflight_redirect_job_id: err.redirect.jobId,
+                },
+              })
+              .catch(() => {
+                setStatusBanner({ type: "error", text: t("meridian.error.unreachableShort", { defaultValue: "Couldn't reach Meridian" }) });
+              });
+          }
+          // All other errors — including STREAMING_DISABLED
+          // — already surface via sseStream.lastError; let the
+          // UI render the error frame text on the placeholder
+          // rather than swallowing it here.
+        });
+    } else {
+      runWhenWarm(() => {
+      void meridianJob
+        .startJob({
+          message: text,
+          sessionId: sessionForJob,
+          fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
+          context: { conversation_id: conversationId, session_id: sessionForJob },
+        })
+        .catch(() => {
+          setStatusBanner({ type: "error", text: t("meridian.error.unreachableShort", { defaultValue: "Couldn't reach Meridian" }) });
+          setMessages((prev) => [
+            ...prev.filter((m) => m.kind !== "processing"),
+            {
+              id: `msg-${Date.now()}-err`,
+              kind: "text" as const,
+              sender: "assistant" as const,
+              text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }),
+              time: formatUSTimeSafe(new Date()),
+              ts: Date.now(),
+            },
+          ]);
+        });
+      });
+    }
+    // Keep the WS open in the background so push frames land
+    // when the job settles. The socket is not required for
+    // correctness (polling is the fallback), but it removes
+    // the poll-cycle wait when the user is still on the page.
+    if (!_isConnected && accessToken) wsConnect(accessToken);
+  };
+
   return (
-    <UserLayout>
+    // The nav rail starts collapsed here — the chat is the densest surface in
+    // the app and the tile row now lives in the header. Not persisted, so every
+    // other page keeps whatever the user set (see SidebarScaffold).
+    <LayoutComponent collapseSidebarOnMount>
       {/* T8 — Sticky header. Wraps the Meridian label, consulted-agents
           sub-label (T10), dropdowns (T4/T5), and audio/voice controls so
           the controls stay visible as the chat scrolls. `sticky top-0`
           works because no ancestor in UserLayout sets `overflow: hidden`. */}
+      <div className="sticky top-0 z-30 -mx-4 mb-2 border-b bg-background px-4">
       <div
-        className="sticky top-0 z-30 bg-background border-b -mx-4 px-4 py-3 mb-2 flex flex-wrap items-center gap-3"
+        className="flex flex-wrap items-center gap-3 py-3"
         data-tour="meridian-header"
       >
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">Meridian</h1>
+          <h1 className="text-lg font-semibold">{t("meridian.title", { defaultValue: "Meridian" })}</h1>
           {/* T10 — Consulted-agents sub-label. Renders only after the
               first assistant response provides `contributingAgents`. */}
           {consultedAgentsLabel && (
@@ -1314,7 +1902,7 @@ export default function MeridianChat() {
             </span>
           )}
           {agentAttribution && agentAttribution !== "meridian" && !consultedAgentsLabel && (
-            <span className="text-xs text-muted-foreground">via {agentAttribution}</span>
+            <span className="text-xs text-muted-foreground">{t("meridian.viaAgent", { defaultValue: "via {{agent}}", agent: agentAttribution })}</span>
           )}
           {currentDomain && (
             <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
@@ -1329,15 +1917,15 @@ export default function MeridianChat() {
             <span
               className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
               data-testid="profile-loaded-indicator"
-              title="Frameworks Meridian can reference in this conversation"
+              title={t("meridian.profileIndicator.title", { defaultValue: "Frameworks Meridian can reference in this conversation" })}
             >
-              Profile: {loadedFrameworkNames.join(", ")}
+              {t("meridian.profileLabel", { defaultValue: "Profile: {{frameworks}}", frameworks: loadedFrameworkNames.join(", ") })}
             </span>
           )}
           {/* G9 Agent C — "PRISM ready" chip (hidden until G9 P2 ingest done) */}
           <PrismBadge />
           {isProcessing && (
-            <span className="text-xs italic text-muted-foreground">Meridian is thinking...</span>
+            <span className="text-xs italic text-muted-foreground">{t("meridian.thinking", { defaultValue: "Meridian is thinking..." })}</span>
           )}
         </div>
 
@@ -1354,10 +1942,65 @@ export default function MeridianChat() {
             existing side panels are still mounted inside ChatWindow for
             now (revert path). */}
         <div className="flex items-center gap-2" data-tour="meridian-dropdowns">
-          <DocumentsDropdown
-            selectedIds={selectedFileIds}
-            onChange={(ids) => setSelectedFileIds(ids)}
-          />
+          <button
+            type="button"
+            onClick={() => void handleNewChat()}
+            disabled={createConvMutation.isPending}
+            aria-label={t("meridian.newChat.title", { defaultValue: "Start a new chat" })}
+            title={t("meridian.newChat.title", { defaultValue: "Start a new chat" })}
+            data-testid="meridian-new-chat-button"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <SquarePen className="size-4" />
+            <span>{t("meridian.newChat.label", { defaultValue: "New Chat" })}</span>
+          </button>
+          {/* Starter Questions — the same persona-grouped library HomeV2 shows
+              on its "Chat with Meridian" tile. On HomeV2 a starter question is
+              how you open a chat; bringing it in here means it is also how you
+              get unstuck mid-conversation. Picking one sends immediately
+              through handleSendText — the composer's own dispatch path. */}
+          {isV2 && (
+            <StarterQuestionsDropdown
+              disabled={isProcessing}
+              onSelect={(question) => handleSendText(question)}
+            />
+          )}
+          {/* Moments — promoted from the second row, which held four personal
+              links and is now gone. Moments is the one that belongs beside the
+              conversation: it is where a turn worth keeping ends up, so it is
+              part of the chat loop rather than a separate destination.
+              Entitlement gates USE, not SIGHT — an unentitled account still
+              sees it, greyed and locked, so the capability stays discoverable
+              instead of bouncing off a route guard. */}
+          {isV2 && (
+            entitledVerticals.includes("lumen") ? (
+              <Link
+                to={ROUTES.LUMEN.MOMENTS}
+                data-testid="meridian-personal-moments"
+                className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted"
+              >
+                <Sparkles className="size-4" aria-hidden />
+                <span>{t("meridian.personalRow.moments", { defaultValue: "Moments" })}</span>
+              </Link>
+            ) : (
+              <span
+                data-testid="meridian-personal-moments"
+                aria-disabled="true"
+                title={t("meridian.personalRow.locked", {
+                  defaultValue: "{{name}} isn't enabled for your account",
+                  name: t("meridian.personalRow.moments", { defaultValue: "Moments" }),
+                })}
+                className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-muted-foreground opacity-60"
+              >
+                <Sparkles className="size-4" aria-hidden />
+                <span>{t("meridian.personalRow.moments", { defaultValue: "Moments" })}</span>
+                <Lock className="size-3.5 shrink-0 opacity-60" aria-hidden />
+              </span>
+            )
+          )}
+          {/* History then Documents, after Moments. Row order is fixed by
+              request (2026-08-06): New Chat · Starter Questions · Moments ·
+              History · Documents · Export. */}
           <HistoryDropdown
             selectedIds={reviewConversationIds}
             onChange={setReviewConversationIds}
@@ -1365,7 +2008,37 @@ export default function MeridianChat() {
             onSelectActive={(id) => {
               void handleSelectConversation(id);
             }}
+            onDeletedActive={() => {
+              // The open conversation was just deleted. Clear the pane rather
+              // than leaving a transcript the server no longer has, and start
+              // a fresh chat so the composer stays usable.
+              void handleNewChat();
+            }}
           />
+          {/* Documents — selecting corpus files AND uploading a new one, both
+              under one control (2026-07-31). They were two adjacent buttons,
+              which read as two unrelated features when they are two halves of
+              the same job; `onUpload` opens the same modal the standalone
+              button used to. */}
+          <DocumentsDropdown
+            selectedIds={selectedFileIds}
+            onChange={(ids) => setSelectedFileIds(ids)}
+            onUpload={() => setUploadOpen(true)}
+          />
+          {/* Export closes the row. */}
+          {isV2 && (
+            <button
+              type="button"
+              onClick={() => setExportOpen(true)}
+              aria-label={t("meridian.export.aria", { defaultValue: "Export chat" })}
+              title={t("meridian.export.aria", { defaultValue: "Export chat" })}
+              data-testid="meridian-export-button"
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-hairline bg-white px-3 text-sm font-normal text-ink hover:bg-panel"
+            >
+              <Download className="size-4" />
+              <span>{t("meridian.export.label", { defaultValue: "Export" })}</span>
+            </button>
+          )}
         </div>
 
         {/* Spacer */}
@@ -1374,8 +2047,8 @@ export default function MeridianChat() {
         {/* Voice toggle — T8 WCAG 2.1 target-size:enhanced (40x40). */}
         <button
           type="button"
-          aria-label={voiceEnabled ? "Mute Meridian's voice" : "Enable Meridian's voice"}
-          title={voiceEnabled ? "Voice responses ON — click to mute" : "Voice responses OFF — click to enable"}
+          aria-label={voiceEnabled ? t("meridian.voice.mute", { defaultValue: "Mute Meridian's voice" }) : t("meridian.voice.enable", { defaultValue: "Enable Meridian's voice" })}
+          title={voiceEnabled ? t("meridian.voice.onTitle", { defaultValue: "Voice responses ON — click to mute" }) : t("meridian.voice.offTitle", { defaultValue: "Voice responses OFF — click to enable" })}
           className={`h-10 w-10 grid place-items-center rounded-md transition-colors ${voiceEnabled ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-muted"}`}
           onClick={() => {
             const next = !voiceEnabled;
@@ -1394,12 +2067,12 @@ export default function MeridianChat() {
         {isAudioAutoplayBlocked && voiceEnabled && (
           <button
             type="button"
-            title="Browser blocked audio playback — click to enable"
+            title={t("meridian.audio.blockedTitle", { defaultValue: "Browser blocked audio playback — click to enable" })}
             className="ml-2 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900 shadow-sm hover:bg-amber-100 transition-colors"
             onClick={() => unlockAudio()}
           >
             <Volume2 className="h-3.5 w-3.5" />
-            Enable audio
+            {t("meridian.audio.enable", { defaultValue: "Enable audio" })}
           </button>
         )}
 
@@ -1410,8 +2083,8 @@ export default function MeridianChat() {
             {/* Rewind 5s within current sentence */}
             <button
               type="button"
-              aria-label="Rewind 5 seconds"
-              title="Rewind 5 seconds"
+              aria-label={t("meridian.audio.rewind", { defaultValue: "Rewind 5 seconds" })}
+              title={t("meridian.audio.rewind", { defaultValue: "Rewind 5 seconds" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={() => seekAudio(-5)}
             >
@@ -1420,8 +2093,8 @@ export default function MeridianChat() {
             {/* Pause / Resume */}
             <button
               type="button"
-              aria-label={isAudioQueuePaused ? "Resume audio" : "Pause audio"}
-              title={isAudioQueuePaused ? "Resume audio" : "Pause audio"}
+              aria-label={isAudioQueuePaused ? t("meridian.audio.resume", { defaultValue: "Resume audio" }) : t("meridian.audio.pause", { defaultValue: "Pause audio" })}
+              title={isAudioQueuePaused ? t("meridian.audio.resume", { defaultValue: "Resume audio" }) : t("meridian.audio.pause", { defaultValue: "Pause audio" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={() => isAudioQueuePaused ? resumeAudio() : pauseAudio()}
             >
@@ -1430,8 +2103,8 @@ export default function MeridianChat() {
             {/* Fast-forward 5s within current sentence */}
             <button
               type="button"
-              aria-label="Fast-forward 5 seconds"
-              title="Fast-forward 5 seconds"
+              aria-label={t("meridian.audio.fastForward", { defaultValue: "Fast-forward 5 seconds" })}
+              title={t("meridian.audio.fastForward", { defaultValue: "Fast-forward 5 seconds" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={() => seekAudio(5)}
             >
@@ -1440,8 +2113,8 @@ export default function MeridianChat() {
             {/* Skip to next sentence */}
             <button
               type="button"
-              aria-label="Skip to next sentence"
-              title="Skip to next sentence"
+              aria-label={t("meridian.audio.skip", { defaultValue: "Skip to next sentence" })}
+              title={t("meridian.audio.skip", { defaultValue: "Skip to next sentence" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={skipAudio}
             >
@@ -1450,15 +2123,15 @@ export default function MeridianChat() {
             {/* Cancel — stop playback AND abort in-flight TTS stream */}
             <button
               type="button"
-              aria-label="Cancel stream"
-              title="Cancel stream"
+              aria-label={t("meridian.audio.cancel", { defaultValue: "Cancel stream" })}
+              title={t("meridian.audio.cancel", { defaultValue: "Cancel stream" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors text-destructive"
               onClick={handleCancelStream}
             >
               <X className="h-4 w-4" />
             </button>
             {audioQueueLength > 0 && (
-              <span className="text-[10px] text-muted-foreground ml-1">{audioQueueLength} queued</span>
+              <span className="text-[10px] text-muted-foreground ml-1">{t("meridian.audio.queued", { defaultValue: "{{count}} queued", count: audioQueueLength })}</span>
             )}
           </div>
         )}
@@ -1467,10 +2140,10 @@ export default function MeridianChat() {
         <div
           title={
             _isConnected
-              ? "Voice streaming available"
+              ? t("meridian.conn.availableTitle", { defaultValue: "Voice streaming available" })
               : isConnecting
-                ? "Connecting voice stream..."
-                : "Voice streaming unavailable"
+                ? t("meridian.conn.connectingTitle", { defaultValue: "Connecting voice stream..." })
+                : t("meridian.conn.unavailableTitle", { defaultValue: "Voice streaming unavailable" })
           }
           className="flex items-center gap-1"
         >
@@ -1482,151 +2155,57 @@ export default function MeridianChat() {
             <WifiOff className="h-4 w-4 text-muted-foreground" />
           )}
           <span className="text-[10px] text-muted-foreground hidden sm:inline">
-            {_isConnected ? "Voice ready" : isConnecting ? "Connecting" : "Voice off"}
+            {_isConnected ? t("meridian.conn.ready", { defaultValue: "Voice ready" }) : isConnecting ? t("meridian.conn.connecting", { defaultValue: "Connecting" }) : t("meridian.conn.off", { defaultValue: "Voice off" })}
           </span>
         </div>
       </div>
 
-      {/* T6 — Canvas expansion. The ChatWindow now fills the full
-          content width; History is reachable via the HistoryDropdown
-          in the sticky header above. The flex-col wrapper lets
-          ChatWindow grow to take the remaining viewport space. */}
-      <div className="flex flex-col w-full" data-tour="chat-window-canvas">
-        {reviewConversationIds.length > 0 && (
-          <div className="mb-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            Reviewing {reviewConversationIds.length} additional conversation
-            {reviewConversationIds.length === 1 ? "" : "s"} alongside the active chat.
-          </div>
-        )}
-        <div className="w-full" data-tour="chat-window">
+      {/* The second header row is gone (2026-08-05). It carried My
+          Self-Portrait, Moments, Coaching and Job Fit; three of those were
+          destinations that pull the user out of the conversation and are
+          already reachable from the sidebar, so they cost a permanent row of
+          chrome to duplicate navigation. Moments earned its keep and moved up
+          beside History; the row it leaves behind is reclaimed for the
+          conversation. */}
+      </div>
+
+      {/* Canvas. V2 now reads: nav (UserLayout) │ [tile row / Compose /
+          Conversation] as one full-width column, with a viewport-derived height
+          so the stacked Conversation card can flex-grow and scroll internally.
+          Classic keeps the full-width single ChatWindow (History via the header
+          dropdown). */}
+      <div
+        className={
+          isV2
+            ? "flex h-[calc(100vh-11rem)] flex-col gap-5 rounded-2xl bg-panel p-4 md:p-6"
+            : "flex flex-col w-full"
+        }
+        data-tour="chat-window-canvas"
+      >
+        <div
+          className={isV2 ? "flex min-h-0 min-w-0 flex-1 flex-col" : "w-full"}
+          data-tour="chat-window"
+        >
+          {reviewConversationIds.length > 0 && (
+            <div
+              className={
+                isV2
+                  ? "mb-2 rounded-lg border border-hairline bg-panel px-3 py-2 text-xs text-mute"
+                  : "mb-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+              }
+            >
+              {t("meridian.reviewingBanner", { defaultValue: "Reviewing {{count}} additional conversation{{plural}} alongside the active chat.", count: reviewConversationIds.length, plural: reviewConversationIds.length === 1 ? "" : "s" })}
+            </div>
+          )}
           <ChatWindow
+            stacked={isV2}
             coachName={COACH_NAME}
             coachId={AGENT_ID}
             conversationId={conversationId}
+            autoSendText={autoSendText}
+            autoSendDisplayText={autoSendDisplayText}
             onBack={() => navigate(-1)}
-            onSendText={(t) => {
-              demoAudioServiceRef.current?.resetAudioState();
-              setHasAudio(false);
-              setIsAudioPaused(false);
-              setAgentAttribution(null);
-              stopAudio(); // Clear any previous audio queue
-              const timeStr = formatUSTimeSafe(new Date());
-              setMessages((prev) => [
-                ...prev.filter((m) => m.kind !== "processing"),
-                {
-                  id: `msg-${Date.now()}-user`,
-                  kind: "text",
-                  sender: "user",
-                  text: t,
-                  time: timeStr,
-                },
-                {
-                  id: `msg-${Date.now()}-assistant`,
-                  kind: "processing",
-                  sender: "assistant",
-                  time: timeStr,
-                  isProcessing: true,
-                  type: "processing",
-                  text: "Meridian is thinking...",
-                },
-              ]);
-              // Route text chat through the async-jobs path. POST
-              // /v1/agents/chat/async returns a job_id immediately and
-              // runs meridian.respond() in the background — sidestepping
-              // API GW HTTP API's 30s integration cap that killed
-              // multi-agent DAG responses. Completion arrives via the
-              // WS `job_complete` push frame (when the socket is open)
-              // or by polling GET /v1/agents/chat/jobs/{job_id}.
-              //
-              // The placeholder bubble is replaced inside
-              // handleJobSettled → renderAssistantComplete via the
-              // shared rendering path.
-              const sessionForJob = conversationId || "default";
-
-              // T22 — SSE fallback branch. Fires only when the WS
-              // reconnect budget is fully exhausted; the happy path
-              // (next clause) is unchanged. On the SSE path the
-              // assistant placeholder is the streaming bubble itself.
-              if (_wsReconnectExhausted) {
-                const placeholderId = `msg-${Date.now()}-assistant`;
-                // Re-tag the placeholder (which was inserted above with
-                // the same Date.now() in the same tick) so the SSE
-                // effects above can target it. We patch the LAST
-                // processing bubble belonging to the assistant.
-                setMessages((prev) => {
-                  const idx = [...prev].reverse().findIndex(
-                    (m) => m.sender === "assistant" && m.kind === "processing",
-                  );
-                  if (idx === -1) return prev;
-                  const realIdx = prev.length - 1 - idx;
-                  const copy = prev.slice();
-                  copy[realIdx] = { ...copy[realIdx], id: placeholderId };
-                  return copy;
-                });
-                sseStreamingMessageIdRef.current = placeholderId;
-                void sseStream
-                  .send({
-                    message: t,
-                    sessionId: sessionForJob,
-                    context: { conversation_id: conversationId, session_id: sessionForJob },
-                    fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
-                  })
-                  .catch((err: unknown) => {
-                    // Preflight option C — the server redirected us to
-                    // the async-jobs path. Hand off to the existing
-                    // meridianJob flow so polling + final render goes
-                    // through the canonical settlement code.
-                    if (err instanceof PreflightAsyncRedirectError) {
-                      sseStreamingMessageIdRef.current = null;
-                      void meridianJob
-                        .startJob({
-                          message: t,
-                          sessionId: sessionForJob,
-                          fileIds:
-                            selectedFileIds.length > 0 ? selectedFileIds : undefined,
-                          context: {
-                            conversation_id: conversationId,
-                            session_id: sessionForJob,
-                            preflight_redirect_job_id: err.redirect.jobId,
-                          },
-                        })
-                        .catch(() => {
-                          setStatusBanner({ type: "error", text: "Couldn't reach Meridian" });
-                        });
-                    }
-                    // All other errors — including STREAMING_DISABLED
-                    // — already surface via sseStream.lastError; let the
-                    // UI render the error frame text on the placeholder
-                    // rather than swallowing it here.
-                  });
-              } else {
-                void meridianJob
-                  .startJob({
-                    message: t,
-                    sessionId: sessionForJob,
-                    fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
-                    context: { conversation_id: conversationId, session_id: sessionForJob },
-                  })
-                  .catch(() => {
-                    setStatusBanner({ type: "error", text: "Couldn't reach Meridian" });
-                    setMessages((prev) => [
-                      ...prev.filter((m) => m.kind !== "processing"),
-                      {
-                        id: `msg-${Date.now()}-err`,
-                        kind: "text" as const,
-                        sender: "assistant" as const,
-                        text: "Sorry, I couldn't reach Meridian. Please try again.",
-                        time: formatUSTimeSafe(new Date()),
-                      },
-                    ]);
-                  });
-              }
-              // Keep the WS open in the background so push frames land
-              // when the job settles. The socket is not required for
-              // correctness (polling is the fallback), but it removes
-              // the poll-cycle wait when the user is still on the page.
-              if (!_isConnected && accessToken) wsConnect(accessToken);
-            }}
+            onSendText={handleSendText}
             onToggleRecording={() => {
               if (voiceRecording) {
                 // Stop recording — SpeechRecognition will fire onend/onresult
@@ -1638,7 +2217,7 @@ export default function MeridianChat() {
               const SpeechRec = (window as unknown as Record<string, unknown>).SpeechRecognition
                 || (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
               if (!SpeechRec) {
-                setStatusBanner({ type: "error", text: "Voice input not supported in this browser" });
+                setStatusBanner({ type: "error", text: t("meridian.voice.notSupported", { defaultValue: "Voice input not supported in this browser" }) });
                 return;
               }
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1661,11 +2240,12 @@ export default function MeridianChat() {
                 if (!transcript) return;
 
                 const timeStr = formatUSTimeSafe(new Date());
+                const tsNow = Date.now();
                 stopAudio(); // Clear any previous audio queue
                 setMessages((prev) => [
                   ...prev.filter((m) => m.kind !== "processing"),
-                  { id: `msg-${Date.now()}-user`, kind: "text", sender: "user", text: transcript, time: timeStr },
-                  { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
+                  { id: `msg-${Date.now()}-user`, kind: "text", sender: "user", text: transcript, time: timeStr, ts: tsNow },
+                  { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, ts: tsNow, isProcessing: true, type: "processing", text: t("meridian.thinking", { defaultValue: "Meridian is thinking..." }) },
                 ]);
 
                 // D1-A (2026-05-30, PR α from #316): when voice is enabled
@@ -1796,12 +2376,12 @@ export default function MeridianChat() {
                       throw new Error(data.error || "voice chat: job error");
                     }
 
-                    const responseText = data?.content || "No response.";
+                    const responseText = data?.content || t("meridian.noResponse", { defaultValue: "No response." });
                     const restAssistantIdVoice =
                       data?.metadata?.assistant_message_id ?? `msg-${Date.now()}-resp`;
                     setMessages((prev) => [
                       ...prev.filter((m) => m.kind !== "processing"),
-                      { id: restAssistantIdVoice, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent ?? undefined, ragSources: data?.metadata?.rag_sources?.filter((s) => s.filename) },
+                      { id: restAssistantIdVoice, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), ts: Date.now(), agent: data?.agent ?? undefined, ragSources: data?.metadata?.rag_sources?.filter((s) => s.filename) },
                     ]);
                     if (data?.agent) setAgentAttribution(data.agent);
 
@@ -1826,7 +2406,7 @@ export default function MeridianChat() {
                     console.error("[MeridianChat] Voice chat failed:", err);
                     setMessages((prev) => [
                       ...prev.filter((m) => m.kind !== "processing"),
-                      { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: "Sorry, I couldn't reach Meridian. Please try again.", time: formatUSTimeSafe(new Date()) },
+                      { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }), time: formatUSTimeSafe(new Date()), ts: Date.now() },
                     ]);
                   }
                 })();
@@ -1835,7 +2415,7 @@ export default function MeridianChat() {
               rec.onerror = (e: any) => {
                 console.error("[MeridianChat] Speech recognition error:", e.error);
                 setVoiceRecording(false);
-                if (e.error === "not-allowed") setStatusBanner({ type: "error", text: "Microphone access denied" });
+                if (e.error === "not-allowed") setStatusBanner({ type: "error", text: t("meridian.voice.micDenied", { defaultValue: "Microphone access denied" }) });
               };
               recognitionRef.current = rec;
               rec.start();
@@ -1883,9 +2463,33 @@ export default function MeridianChat() {
             docOnDelete={docOnDelete}
             docOnDownload={docOnDownload}
             onReplayMessage={speakText}
+            onExportMessage={(m, fmt) => void handleExportMessage(m, fmt)}
           />
         </div>
       </div>
-    </UserLayout>
+
+      {/* V2 export modal — opened from the header Export button (next to
+          History). The stacked ChatWindow no longer renders its own trigger. */}
+      {isV2 && (
+        <ExportChatModal
+          open={exportOpen}
+          onOpenChange={setExportOpen}
+          onExport={handleExportChat}
+          disableExport={false}
+        />
+      )}
+
+      {/* Header "Document Upload". Invalidates the documents list on success so
+          the new file is immediately selectable in DocumentsDropdown and shows
+          in the Knowledge tile without a reload. */}
+      <UploadDocumentsModal
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        onUploaded={() => {
+          setUploadOpen(false);
+          void queryClient.invalidateQueries({ queryKey: ["documents"] });
+        }}
+      />
+    </LayoutComponent>
   );
 }

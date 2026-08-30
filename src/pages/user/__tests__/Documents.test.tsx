@@ -19,6 +19,7 @@ jest.mock("@/lib/axios", () => ({
 import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Documents from "../Documents";
+import DocumentsV2 from "../DocumentsV2";
 import {
   useDocuments,
   useDownloadDocumentV2,
@@ -141,7 +142,7 @@ describe("Documents Page", () => {
 
   it("renders page header", () => {
     render(<Documents />, { wrapper: createWrapper() });
-    expect(screen.getByText("Documents Uploaded")).toBeInTheDocument();
+    expect(screen.getByText("Document Library")).toBeInTheDocument();
   });
 
   it("renders upload button", () => {
@@ -248,5 +249,15 @@ describe("Documents Page", () => {
     expect(markButtons).toHaveLength(1);
     // The PRISM row has the read-only indicator
     expect(screen.getByLabelText("Marked as my PRISM report")).toBeInTheDocument();
+  });
+});
+
+describe("DocumentsV2 — the surface that actually ships", () => {
+  // VITE_NEW_USER_SURFACES=true in CI, so DocumentsSurface renders V2 in every
+  // deployed environment while the legacy page above only appears behind the
+  // toggle. V2 had no test file at all, so its heading was unguarded.
+  it("uses the same 'Document Library' heading as the legacy surface", () => {
+    render(<DocumentsV2 />, { wrapper: createWrapper() });
+    expect(screen.getByText("Document Library")).toBeInTheDocument();
   });
 });

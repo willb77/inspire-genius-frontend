@@ -1,6 +1,6 @@
-import { useState } from "react";
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
+import { useSupportAgent } from "@/context/useSupportAgent";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/constants/routes";
@@ -13,8 +13,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { usePrismHistory } from "@/hooks/prism/usePrismHistory";
 import { useLatestPrismStatus } from "@/hooks/prism/usePrismRequest";
 import { useAuditStats } from "@/hooks/audit/useAudit";
+import { useDashboardMetrics } from "@/hooks/observability/useObservability";
 import { ASSESSMENT_STATUS } from "@/constants/prism";
-import RequestPrismDialog from "@/components/prism/RequestPrismDialog";
 import {
   MessageSquare,
   Target,
@@ -28,6 +28,7 @@ import {
   CalendarDays,
   Star,
   Brain,
+  Sparkles,
 } from "lucide-react";
 
 const ACTIVE_STATUSES = new Set([
@@ -53,16 +54,20 @@ function getReportStatus(status: string | undefined, t: (key: string) => string)
 
 export default function Home() {
   const { user } = useAuth();
+  const { open: openSupportAgent } = useSupportAgent();
   const navigate = useNavigate();
   const { t } = useTranslation(["common", "dashboard", "coaching"]);
   const firstName = user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
 
-  // G8: PRISM survey-request dialog (opened from the new Home tile).
-  const [prismDialogOpen, setPrismDialogOpen] = useState(false);
-
-  // Audit stats — real data from GET /v1/audit/stats
+  // Audit stats — real data from GET /v1/audit/stats (admin-gated in the hook).
   const { data: auditData, isLoading: auditLoading } = useAuditStats();
   const stats = auditData?.data;
+
+  // Observability dashboard — real AI/session activity from
+  // GET /v1/observability/dashboard. The audit `ai_usage` block is empty on
+  // staging-b, so the AI/session tiles read from here instead. May be
+  // loading/absent — every read is `?? 0` guarded below.
+  const { data: obsMetrics } = useDashboardMetrics(user?.id ?? undefined);
 
   const QUICK_ACTIONS = [
     // T2 — pass `autoLoadPrism: true` route state so MeridianChat
@@ -75,38 +80,49 @@ export default function Home() {
     // the generic flow. Backstop for when GET /latest-prism can't find
     // their PRISM (coach-coachee scenario, generic-upload tag).
     { label: t("coaching:quickActions.markAsMyPrism", { defaultValue: "Mark as My PRISM Rpt" }), icon: Star, to: ROUTES.DOCUMENTS, bg: "bg-rose-100", iconColor: "text-rose-600" },
-    { label: t("coaching:quickActions.setNewGoal"), icon: Flag, to: ROUTES.COACHES, bg: "bg-amber-100", iconColor: "text-amber-600" },
+    { label: t("coaching:quickActions.setNewGoal", { defaultValue: "Set a Goal" }), icon: Flag, to: ROUTES.SUMMIT.BASE, bg: "bg-amber-100", iconColor: "text-amber-600" },
+    { label: t("coaching:quickActions.goalSetting", { defaultValue: "Goal Setting" }), icon: Target, to: ROUTES.SUMMIT.BASE, bg: "bg-teal-100", iconColor: "text-teal-600" },
+    // Opens the assistant popup in place rather than routing — a quick
+    // question shouldn't cost the user their place on the dashboard.
+    { label: t("coaching:quickActions.askMeridian", { defaultValue: "Ask Meridian" }), icon: Sparkles, onClick: openSupportAgent, bg: "bg-indigo-100", iconColor: "text-indigo-600" },
   ];
 
   const STATS = [
+    // Tile 1 — audit-log row counts (every login/pageview/etc.). Labeled
+    // "Total Activity" rather than "Sessions" to be honest about the source.
     {
-      label: t("dashboard:totalSessions"),
+      label: t("dashboard:totalActivity"),
       value: auditLoading ? "..." : String(stats?.total_logs ?? 0),
       change: auditLoading ? "" : `+${stats?.logs_this_week ?? 0} ${t("dashboard:thisWeek")}`,
       icon: MessageSquare,
       iconColor: "text-blue-600",
       iconBg: "bg-blue-100",
     },
+    // Tile 2 — real coaching sessions today, from observability.
     {
-      label: t("dashboard:sessionsToday"),
-      value: auditLoading ? "..." : String(stats?.logs_today ?? 0),
-      change: auditLoading ? "" : `${stats?.logs_this_month ?? 0} ${t("dashboard:thisMonth")}`,
+      label: t("dashboard:activeSessions"),
+      value: String(obsMetrics?.active_sessions ?? 0),
+      change: `${obsMetrics?.unique_users_today ?? 0} ${t("dashboard:usersToday")}`,
       icon: Target,
       iconColor: "text-emerald-600",
       iconBg: "bg-emerald-100",
     },
+    // Tile 3 — real AI responses today, from observability (audit `ai_usage`
+    // is empty on staging-b).
     {
-      label: t("dashboard:aiRequests"),
-      value: auditLoading ? "..." : String(stats?.ai_usage?.request_count ?? 0),
-      change: auditLoading ? "" : `$${(stats?.ai_usage?.total_cost_usd ?? 0).toFixed(2)} ${t("dashboard:cost")}`,
+      label: t("dashboard:aiRequestsToday"),
+      value: String(obsMetrics?.total_responses_today ?? 0),
+      change: `$${(obsMetrics?.total_cost_today ?? 0).toFixed(2)} ${t("dashboard:cost")}`,
       icon: Activity,
       iconColor: "text-violet-600",
       iconBg: "bg-violet-100",
     },
+    // Tile 4 — audit activity this month (replaces the buggy "this month"
+    // sub-label title; now a real title key + a distinct "today" change line).
     {
-      label: t("dashboard:thisMonth"),
+      label: t("dashboard:activityThisMonth"),
       value: auditLoading ? "..." : String(stats?.logs_this_month ?? 0),
-      change: auditLoading ? "" : `${stats?.logs_this_week ?? 0} ${t("dashboard:thisWeek")}`,
+      change: auditLoading ? "" : `${stats?.logs_today ?? 0} ${t("dashboard:today")}`,
       icon: FileUp,
       iconColor: "text-amber-600",
       iconBg: "bg-amber-100",
@@ -136,6 +152,9 @@ export default function Home() {
   const lastReportDate = latestAssessment?.completedAt ?? latestAssessment?.initiatedAt;
   const hasActiveAssessment = assessments.some((a) => ACTIVE_STATUSES.has(a.status as never));
 
+  // Single canonical entry point for requesting a PRISM survey. Every Home
+  // tile routes here rather than opening its own dialog — /prism-assessment
+  // owns the request form (see PrismInitiateForm).
   const handleRequestSurvey = () => {
     navigate(ROUTES.PRISM_ASSESSMENT);
   };
@@ -206,11 +225,12 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* G8: Take PRISM Assessment tile — opens RequestPrismDialog */}
+        {/* Take PRISM Assessment tile — routes to /prism-assessment, the
+            single self-service request surface. */}
         <Card
           className="border border-[#e5e7eb] cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all"
           data-testid="take-prism-assessment-tile"
-          onClick={() => setPrismDialogOpen(true)}
+          onClick={handleRequestSurvey}
         >
           <CardContent className="p-4 flex flex-col justify-between h-full">
             <div className="flex items-center gap-3 mb-3">
@@ -237,7 +257,7 @@ export default function Home() {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setPrismDialogOpen(true);
+                handleRequestSurvey();
               }}
             >
               Take PRISM Assessment
@@ -245,11 +265,6 @@ export default function Home() {
           </CardContent>
         </Card>
       </div>
-
-      <RequestPrismDialog
-        open={prismDialogOpen}
-        onOpenChange={setPrismDialogOpen}
-      />
 
       {/* Recent Activity — from audit top actions */}
       <DataCard title={t("dashboard:recentActivity")}>

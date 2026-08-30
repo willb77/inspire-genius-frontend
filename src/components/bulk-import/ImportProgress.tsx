@@ -13,10 +13,11 @@ type ImportProgressProps = {
 }
 
 function downloadReport(data: BulkImportResponse) {
-  const header = "email,status,error"
+  const header = "email,status,error,reporting_line"
   const rows = data.results.map((r) => {
     const error = r.error ? `"${r.error.replace(/"/g, '""')}"` : ""
-    return `${r.email},${r.status},${error}`
+    const employment = r.employment ? `"${r.employment.replace(/"/g, '""')}"` : ""
+    return `${r.email},${r.status},${error},${employment}`
   })
   const csv = [header, ...rows].join("\n")
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
@@ -35,6 +36,12 @@ export function ImportProgress({ isLoading, data, onContinue }: ImportProgressPr
   const succeeded = data?.succeeded ?? 0
   const failed = data?.failed ?? 0
   const processed = succeeded + failed
+  // Rows that asked to be attached to a manager, and rows where it worked.
+  // `employment_linked` is absent on older responses, so fall back to counting.
+  const employmentRequested = (data?.results ?? []).filter((r) => !!r.employment).length
+  const employmentLinked =
+    data?.employment_linked ??
+    (data?.results ?? []).filter((r) => r.employment === "linked").length
   const progressPercent = total > 0 ? Math.round((processed / total) * 100) : 0
   const isComplete = !isLoading && !!data
 
@@ -86,6 +93,21 @@ export function ImportProgress({ isLoading, data, onContinue }: ImportProgressPr
           >
             Failed: {failed}
           </Badge>
+          {/* Users imported and users ATTACHED TO A MANAGER are different
+              numbers, and only the first one used to be shown. "50 succeeded"
+              with nobody on any roster looked like a clean import. */}
+          {employmentRequested > 0 && (
+            <Badge
+              className={cn(
+                "text-sm",
+                employmentLinked === employmentRequested
+                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                  : "bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300"
+              )}
+            >
+              Reporting line set: {employmentLinked}/{employmentRequested}
+            </Badge>
+          )}
         </div>
 
         {/* Per-user result list */}
@@ -106,6 +128,11 @@ export function ImportProgress({ isLoading, data, onContinue }: ImportProgressPr
                 </div>
                 {result.error && (
                   <span className="ml-2 truncate text-xs text-red-600">{result.error}</span>
+                )}
+                {!result.error && result.employment && result.employment !== "linked" && (
+                  <span className="ml-2 truncate text-xs text-amber-700 dark:text-amber-400">
+                    {result.employment}
+                  </span>
                 )}
               </div>
             ))}

@@ -1,17 +1,29 @@
 import { type RefObject, useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
+import { Copy, CirclePlay, Download, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { TurnExportFormat } from "@/lib/exportTranscript/exportTurn";
 import { cn } from "@/lib/utils";
+import { formatFullTimestamp } from "@/lib/dateFormatters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { agentApi } from "@/lib/agentApi";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
+import MessageAttachments from "@/components/user/chat/MessageAttachments";
+import PrismMapFigure from "@/components/prism/PrismMapFigure";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
 import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 
-async function openSourceDocument(documentId: string, filename: string) {
+async function openSourceDocument(documentId: string, filename: string, t: TFunction) {
   // P3 — open source document via the existing per-user download
   // endpoint. We fetch the presigned URL with our auth headers (the
   // axios interceptor injects access-token) and then window.open() it.
@@ -25,19 +37,20 @@ async function openSourceDocument(documentId: string, filename: string) {
     if (resp.data?.url) {
       window.open(resp.data.url, "_blank", "noopener,noreferrer");
     } else {
-      toast.error(`Couldn't open "${filename}" — backend returned no URL.`);
+      toast.error(t("conversation.source.openError.noUrl", { defaultValue: "Couldn't open \"{{filename}}\" — backend returned no URL.", filename }));
     }
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status;
     if (status === 404) {
-      toast.error(`Couldn't open "${filename}" — document not found or access denied.`);
+      toast.error(t("conversation.source.openError.notFound", { defaultValue: "Couldn't open \"{{filename}}\" — document not found or access denied.", filename }));
     } else {
-      toast.error(`Couldn't open "${filename}" — please try again.`);
+      toast.error(t("conversation.source.openError.generic", { defaultValue: "Couldn't open \"{{filename}}\" — please try again.", filename }));
     }
   }
 }
 
 function SourceAttribution({ sources }: { sources: RAGSource[] }) {
+  const { t } = useTranslation("chat");
   const [expanded, setExpanded] = useState(false);
   // Dedup on (document_id, filename) so two tenants who happen to have
   // files with the same name don't collapse into one row. document_id
@@ -61,7 +74,7 @@ function SourceAttribution({ sources }: { sources: RAGSource[] }) {
         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <FileText className="h-3 w-3" />
-        <span>Sources ({unique.length})</span>
+        <span>{t("conversation.source.label", { defaultValue: "Sources ({{count}})", count: unique.length })}</span>
         {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
       {expanded && (
@@ -87,9 +100,9 @@ function SourceAttribution({ sources }: { sources: RAGSource[] }) {
                 <button
                   key={sharedKey}
                   type="button"
-                  onClick={() => openSourceDocument(s.document_id as string, s.filename)}
+                  onClick={() => openSourceDocument(s.document_id as string, s.filename, t)}
                   className={`${sharedClass} hover:bg-accent hover:text-foreground cursor-pointer`}
-                  title={`Open ${s.filename}`}
+                  title={t("conversation.source.openTitle", { defaultValue: "Open {{filename}}", filename: s.filename })}
                 >
                   {contents}
                 </button>
@@ -108,6 +121,7 @@ function SourceAttribution({ sources }: { sources: RAGSource[] }) {
 }
 
 function CollaborationBadge({ agents }: { agents: string[] }) {
+  const { t } = useTranslation("chat");
   const [expanded, setExpanded] = useState(false);
   if (agents.length < 2) return null;
 
@@ -119,15 +133,53 @@ function CollaborationBadge({ agents }: { agents: string[] }) {
         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <Users className="h-3 w-3" />
-        <span>Collaborative response ({agents.length} agents)</span>
+        <span>{t("conversation.collaboration.label", { defaultValue: "Collaborative response ({{count}} agents)", count: agents.length })}</span>
         {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
       {expanded && (
         <div className="mt-1 text-xs text-muted-foreground">
-          <span className="opacity-80">Synthesized from {summary}</span>
+          <span className="opacity-80">{t("conversation.collaboration.synthesizedFrom", { defaultValue: "Synthesized from {{summary}}", summary })}</span>
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Per-turn export link — "Export ▾" with Word and PDF.
+ *
+ * Sits in the same action row as Copy and Replay, so every answer can be kept
+ * on its own without exporting (and then trimming) the whole conversation.
+ */
+function TurnExport({
+  onExport,
+}: {
+  onExport: (format: TurnExportFormat) => void;
+}) {
+  const { t } = useTranslation("chat");
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("conversation.exportTurn.aria", { defaultValue: "Export this response" })}
+          title={t("conversation.exportTurn.aria", { defaultValue: "Export this response" })}
+          data-testid="turn-export-trigger"
+          className="inline-flex cursor-pointer items-center gap-1 text-xs text-muted-foreground/70 hover:text-foreground"
+        >
+          <Download className="size-4 text-black" />
+          <span>{t("conversation.exportTurn.label", { defaultValue: "Export" })}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-36">
+        <DropdownMenuItem onSelect={() => onExport("word")} data-testid="turn-export-word">
+          {t("conversation.exportTurn.word", { defaultValue: "Word (.doc)" })}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onExport("pdf")} data-testid="turn-export-pdf">
+          {t("conversation.exportTurn.pdf", { defaultValue: "PDF" })}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -151,6 +203,15 @@ type ChatWindowChatTabProps = {
   coachId?: string;
   conversationId?: string;
   onReplayMessage?: (text: string) => void;
+  /** Export a single turn as Word or PDF. Omitted → no per-turn export link. */
+  onExportMessage?: (message: ChatMessage, format: TurnExportFormat) => void;
+  /**
+   * When true, assistant ("response") bubbles fill the width of the conversation
+   * tile instead of being capped at 70%. Used by the V2 stacked Meridian layout,
+   * whose scroll body carries a 5px inset so the bubble sits ~5px from the tile
+   * edges on all sides. Off by default so the classic layout is unchanged.
+   */
+  responseBubbleFullWidth?: boolean;
 };
 
 export default function ChatWindowChatTab({
@@ -166,13 +227,27 @@ export default function ChatWindowChatTab({
   coachId,
   conversationId,
   onReplayMessage,
+  onExportMessage,
+  responseBubbleFullWidth,
 }: ChatWindowChatTabProps) {
+  const { t } = useTranslation("chat");
   const renderMessage = (m: ChatMessage) => {
     if (m.kind === "text") {
       const right = m.sender === "user";
       return (
         <div key={m.id} className="space-y-1">
-          <div className={cn("max-w-[70%] min-w-40 w-fit ", right ? "ml-auto" : undefined)}>
+          <div
+            className={cn(
+              // A user turn stays a compact right-aligned bubble; an assistant
+              // "response" fills the tile when responseBubbleFullWidth is set
+              // (V2 Meridian layout), otherwise keeps the classic 70% cap.
+              right
+                ? "max-w-[70%] min-w-40 w-fit ml-auto"
+                : responseBubbleFullWidth
+                  ? "w-full"
+                  : "max-w-[70%] min-w-40 w-fit"
+            )}
+          >
             <div
               className={cn(
                 "rounded-2xl p-3 text-sm text-foreground/90 shadow-sm",
@@ -196,7 +271,7 @@ export default function ChatWindowChatTab({
             >
               <div className="flex items-center gap-4">
                 <button
-                  aria-label="Copy message"
+                  aria-label={t("common.copyMessage", { defaultValue: "Copy message" })}
                   type="button"
                   className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
                   onClick={() => onCopy(m.text)}
@@ -205,8 +280,8 @@ export default function ChatWindowChatTab({
                 </button>
                 {m.sender === "assistant" && onReplayMessage && m.text && (
                   <button
-                    aria-label="Replay voice"
-                    title="Replay voice"
+                    aria-label={t("conversation.replayVoice", { defaultValue: "Replay voice" })}
+                    title={t("conversation.replayVoice", { defaultValue: "Replay voice" })}
                     type="button"
                     className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
                     onClick={() => onReplayMessage(m.text)}
@@ -222,14 +297,31 @@ export default function ChatWindowChatTab({
                       onClick={onShowAudioPlayer}
                     />
                   )}
+                {onExportMessage && m.text && (
+                  <TurnExport onExport={(format) => onExportMessage(m, format)} />
+                )}
               </div>
-              <div className="text-[11px] text-muted-foreground">{m.time}</div>
+              <div className="flex flex-col items-end">
+                <div className="text-[11px] text-muted-foreground">{formatFullTimestamp(m.ts)}</div>
+                {m.sender === "assistant" && (
+                  <div className="text-[10px] text-muted-foreground/70 font-mono">{t("conversation.messageId", { defaultValue: "ID: {{id}}", id: m.id })}</div>
+                )}
+              </div>
             </div>
             {m.kind === "text" && m.sender === "assistant" && m.agent && (
               <p className="mt-1 text-xs text-muted-foreground">
-                via {m.agent}
+                {t("conversation.viaAgent", { defaultValue: "via {{agent}}", agent: m.agent })}
               </p>
             )}
+            {m.kind === "text" && m.sender === "assistant" && m.prismMap && (
+              <PrismMapFigure map={m.prismMap} />
+            )}
+            {m.kind === "text" &&
+              m.sender === "assistant" &&
+              m.attachments &&
+              m.attachments.length > 0 && (
+                <MessageAttachments attachments={m.attachments} />
+              )}
             {m.kind === "text" && m.sender === "assistant" && m.ragSources && m.ragSources.length > 0 && (
               <SourceAttribution sources={m.ragSources} />
             )}
@@ -251,7 +343,7 @@ export default function ChatWindowChatTab({
               <ErrorBoundary
                 fallback={() => (
                   <div className="mt-1 text-[10px] text-muted-foreground">
-                    Observability unavailable for this message.
+                    {t("conversation.observabilityUnavailable", { defaultValue: "Observability unavailable for this message." })}
                   </div>
                 )}
               >
@@ -339,7 +431,7 @@ export default function ChatWindowChatTab({
           )}
         >
           <button
-            aria-label="Copy message"
+            aria-label={t("common.copyMessage", { defaultValue: "Copy message" })}
             type="button"
             className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
             onClick={() => onCopy(`${m.docName}`)}

@@ -1,5 +1,6 @@
 
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
@@ -33,6 +34,7 @@ export default function DocumentsSidePanel({
   onPreview,
   onUploadClick,
 }: DocumentsSidePanelProps) {
+  const { t } = useTranslation("chat");
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) onOpenChange(false);
@@ -57,7 +59,7 @@ export default function DocumentsSidePanel({
         onClick={() => onOpenChange(false)}
         role="button"
         tabIndex={0}
-        aria-label="Close documents panel"
+        aria-label={t("documents.sidePanel.closeOverlay", { defaultValue: "Close documents panel" })}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") onOpenChange(false);
         }}
@@ -72,11 +74,11 @@ export default function DocumentsSidePanel({
       >
         <div className="flex items-center justify-between border-b px-4 py-3 gap-3">
           <div className="flex items-center gap-3">
-            <div className="text-base font-semibold">Documents</div>
+            <div className="text-base font-semibold">{t("documents.sidePanel.title", { defaultValue: "Documents" })}</div>
           </div>
           <button
             type="button"
-            aria-label="Close documents"
+            aria-label={t("documents.sidePanel.close", { defaultValue: "Close documents" })}
             className="cursor-pointer p-1 rounded-md hover:bg-gray-100"
             onClick={() => onOpenChange(false)}
           >

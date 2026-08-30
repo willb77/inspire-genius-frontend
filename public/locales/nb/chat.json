@@ -1,0 +1,335 @@
+{
+  "common": {
+    "copiedToClipboard": "Kopiert til utklippstavlen",
+    "copyMessage": "Kopier melding",
+    "play": "Spill av",
+    "pause": "Pause",
+    "close": "Lukk",
+    "delete": "Slett",
+    "download": "Last ned",
+    "cancel": "Avbryt",
+    "save": "Lagre",
+    "clear": "Tøm",
+    "you": "Du",
+    "connected": "Tilkoblet",
+    "error": "Feil",
+    "unknownError": "Ukjent feil",
+    "hide": "Skjul",
+    "show": "Vis",
+    "untitledConversation": "Samtale uten navn",
+    "noConversations": "Ingen samtaler ennå. Send en melding for å starte en.",
+    "noDocuments": "Ingen dokumenter lastet opp ennå."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian tenker...",
+    "noResponse": "Ingen respons.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "via {{agent}}",
+    "profileLabel": "Profil: {{frameworks}}",
+    "reviewingBanner": "Gjennomgår {{count}} flere samtaler ved siden av den aktive chatten.",
+    "profileIndicator": {
+      "title": "Rammeverk som Meridian kan referere til i denne samtalen"
+    },
+    "newChat": {
+      "title": "Start en ny chat",
+      "label": "Ny chat"
+    },
+    "status": {
+      "connected": "Tilkoblet Meridian"
+    },
+    "error": {
+      "agent": "Agentfeil",
+      "unreachable": "Beklager, jeg kunne ikke nå Meridian. Prøv igjen.",
+      "unreachableShort": "Kunne ikke nå Meridian",
+      "newChatFailed": "Kunne ikke starte en ny chat. Prøv igjen."
+    },
+    "export": {
+      "aria": "Eksporter chat",
+      "label": "Eksporter",
+      "sessionSubject": "Meridian chatøkt",
+      "assistantDomain": "Coaching",
+      "success": "Eksporterte samtalelogg + strukturerte rapport-PDF-er.",
+      "noConversation": "Kunne ikke eksportere chatten – ingen aktiv samtale.",
+      "noData": "Kunne ikke eksportere chatten – backend returnerte ingen data.",
+      "noContent": "Kunne ikke eksportere chatten – ingen innhold i det valgte området.",
+      "retry": "Kunne ikke eksportere chatten – prøv igjen."
+    },
+    "voice": {
+      "mute": "Demp Meridians stemme",
+      "enable": "Aktiver Meridians stemme",
+      "onTitle": "Stemmesvar PÅ – klikk for å dempe",
+      "offTitle": "Stemmesvar AV – klikk for å aktivere",
+      "notSupported": "Stemmeinndata støttes ikke i denne nettleseren",
+      "micDenied": "Mikrofontilgang nektet"
+    },
+    "audio": {
+      "blockedTitle": "Nettleseren blokkerte lydavspilling – klikk for å aktivere",
+      "enable": "Aktiver lyd",
+      "rewind": "Spol tilbake 5 sekunder",
+      "resume": "Gjenoppta lyd",
+      "pause": "Sett lyd på pause",
+      "fastForward": "Spol frem 5 sekunder",
+      "skip": "Hopp til neste setning",
+      "cancel": "Avbryt strøm",
+      "queued": "{{count}} i kø"
+    },
+    "conn": {
+      "availableTitle": "Stemmestrømming tilgjengelig",
+      "connectingTitle": "Kobler til stemmestrøm...",
+      "unavailableTitle": "Stemmestrømming ikke tilgjengelig",
+      "ready": "Stemme klar",
+      "connecting": "Kobler til",
+      "off": "Stemme av"
+    },
+    "personalRow": {
+      "aria": "Sidene dine",
+      "selfPortrait": "Mitt selvportrett",
+      "moments": "Øyeblikk",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} er ikke aktivert for kontoen din"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Drevet av Agent Eco-System",
+    "back": "Tilbake",
+    "export": "Eksporter",
+    "documentsButton": "Dokumenter",
+    "tab": {
+      "chat": "Chat",
+      "documents": "Dokumenter"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Åpne sidepanel for dokumenter",
+      "tooltip": "Åpne dokumentpanelet for å velge filer å legge til i chatten"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Samtaler og prosjekter"
+    },
+    "active": {
+      "title": "Aktive økter",
+      "empty": "Ingen aktive økter ennå.",
+      "badge": {
+        "live": "live",
+        "open": "åpen"
+      }
+    },
+    "history": {
+      "title": "Historikk"
+    },
+    "last5": {
+      "title": "Siste 5 chatter",
+      "empty": "Ingenting her ennå."
+    },
+    "projects": {
+      "title": "Prosjekter",
+      "inputPlaceholder": "Nytt prosjektnavn…",
+      "inputAria": "Nytt prosjektnavn",
+      "addAria": "Legg til prosjekt",
+      "empty": "Ingen prosjekter ennå. Grupper relaterte chatter under et prosjekt.",
+      "badge": {
+        "active": "aktiv"
+      }
+    },
+    "knowledge": {
+      "title": "Kunnskap",
+      "badge": {
+        "indexed": "indeksert"
+      }
+    }
+  },
+  "history": {
+    "title": "Historikk",
+    "newChat": "Ny chat",
+    "newChatTooltip": "Start en ny samtale",
+    "newChatTooltipExisting": "Du har allerede en ny samtale",
+    "newConversationLabel": "Ny samtale",
+    "searchPlaceholder": "Søk..",
+    "loadError": "Kunne ikke laste samtalehistorikken.",
+    "loadErrorDetailed": "Kunne ikke laste samtalehistorikken – backend kan være utilgjengelig. Oppdater for å prøve igjen.",
+    "openActions": "Åpne samtalehandlinger",
+    "rename": "Gi nytt navn",
+    "deleteTitle": "Slett samtale",
+    "deleteDescription": "Er du sikker på at du vil slette denne samtalen? Denne handlingen kan ikke angres.",
+    "audioWarning": "Å bytte samtale stopper gjeldende lyd",
+    "renameDialogTitle": "Gi samtalen nytt navn",
+    "renamePlaceholder": "Samtaletittel",
+    "renameAnimationTitle": "Animasjon for navneendring",
+    "renamePending": "Former samtalens identitet… ✨",
+    "renameHint": "Gi samtalen et navn – gjør det lett å huske 🚀",
+    "triggerShown": "Historikk ({{count}} vist)",
+    "triggerCount": "Historikk ({{count}})",
+    "triggerAria": "Bla i samtalehistorikken",
+    "hint": "Klikk på en samtale for å gjøre den aktiv, eller merk den for å legge til i gjennomgang.",
+    "includeAria": "Inkluder {{title}} i gjennomgang",
+    "activeBadge": "Aktiv",
+    "reviewCount": "{{count}} flere samtaler i gjennomgang",
+    "clearReview": "Tøm gjennomgang"
+  },
+  "documents": {
+    "triggerLabel": "Dokumenter",
+    "triggerSelected": "Dokumenter ({{count}} valgt)",
+    "triggerAria": "Velg dokumenter",
+    "header": "Legg ved dokumenter til denne chatten",
+    "loadError": "Kunne ikke laste dokumenter.",
+    "uploadLink": "Last opp dokumenter",
+    "selectFileAria": "Velg {{filename}}",
+    "autoAttached": "Automatisk vedlagt",
+    "selectedCount": "{{selected}} av {{total}} valgt",
+    "iframe": {
+      "defaultFileName": "Dokument",
+      "loading": "Laster dokument…"
+    },
+    "panel": {
+      "selectedCount": "Valgt ({{count}})",
+      "confirmDeleteTitle": "Bekreft sletting",
+      "confirmDeleteBulkDescription": "Er du sikker på at du vil slette {{count}} valgte dokument(er)? Denne handlingen kan ikke angres.",
+      "confirmDeleteOneDescription": "Er du sikker på at du vil slette dette dokumentet? Denne handlingen kan ikke angres.",
+      "upload": "Last opp",
+      "importToChat": "Importer til chat",
+      "loading": "Laster dokumenter...",
+      "empty": "Ingen filer funnet",
+      "emptyAnimationTitle": "filen ble ikke funnet",
+      "selectItem": "Velg {{name}}",
+      "preview": "Forhåndsvis"
+    },
+    "sidePanel": {
+      "title": "Dokumenter",
+      "close": "Lukk dokumenter",
+      "closeOverlay": "Lukk dokumentpanel"
+    },
+    "upload": "Last opp et dokument"
+  },
+  "export": {
+    "title": "Eksporter chat",
+    "subtitle": "Last ned en kopi av chatten din for fremtidig referanse.",
+    "fromLabel": "Chat fra",
+    "fromPlaceholder": "Fra dato",
+    "toLabel": "Chat til",
+    "toPlaceholder": "Til dato",
+    "formatLabel": "Eksportfil",
+    "formatPdf": "PDF",
+    "exporting": "Eksporterer",
+    "exportButton": "Eksporter",
+    "progressLabel": "Eksporterer chat... {{progress}}%",
+    "progressSubtitle": "Len deg tilbake og slapp av, vi jobber med eksporten din.",
+    "completeTitle": "Eksport fullført",
+    "completeSubtitle": "Chatten ble eksportert!",
+    "back": "Tilbake"
+  },
+  "routing": {
+    "confidence": "Sikkerhet: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} tokens",
+    "observabilityDetails": "Observability-detaljer"
+  },
+  "feedback": {
+    "thankYou": "Takk",
+    "rateThisResponse": "Vurder dette svaret",
+    "correctionPlaceholder": "Valgfritt: foreslå et bedre svar (maks 2000 tegn)",
+    "submitting": "Sender...",
+    "submit": "Send"
+  },
+  "compose": {
+    "sectionLabel": "Skriv prompt"
+  },
+  "conversation": {
+    "sectionLabel": "Samtale",
+    "replayVoice": "Spill av stemme på nytt",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "via {{agent}}",
+    "observabilityUnavailable": "Observability er ikke tilgjengelig for denne meldingen.",
+    "tableSrLabel": "Tabell",
+    "waiting": {
+      "shortly": "{{coachName}} er straks hos deg",
+      "oneMoment": "Et øyeblikk med {{coachName}}",
+      "pleaseWait": "Vennligst vent"
+    },
+    "source": {
+      "label": "Kilder ({{count}})",
+      "openTitle": "Åpne {{filename}}",
+      "openError": {
+        "noUrl": "Kunne ikke åpne \"{{filename}}\" – backend returnerte ingen URL.",
+        "notFound": "Kunne ikke åpne \"{{filename}}\" – dokumentet ble ikke funnet eller tilgang nektet.",
+        "generic": "Kunne ikke åpne \"{{filename}}\" – prøv igjen."
+      }
+    },
+    "collaboration": {
+      "label": "Samarbeidssvar ({{count}} agenter)",
+      "synthesizedFrom": "Sammenstilt fra {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Spør om hva som helst…  (Enter for å sende · Shift+Enter for ny linje)",
+    "unmuteCoach": "Slå på lyd for coach",
+    "muteCoach": "Demp coach",
+    "stopRecording": "Stopp opptak",
+    "startRecording": "Start opptak",
+    "sendMessage": "Send melding",
+    "muteTooltip": {
+      "mute": "Demp",
+      "unmute": "Slå på lyd",
+      "disabledDuringPlayback": "Demping er deaktivert under avspilling"
+    }
+  },
+  "banner": {
+    "selected": "Valgt:",
+    "connecting": "Kobler til...",
+    "successAnimationTitle": "Suksessanimasjon"
+  },
+  "audio": {
+    "close": "Lukk lydspiller"
+  },
+  "coach": {
+    "defaultName": "Coach",
+    "authError": "Autentiseringsfeil",
+    "untitledConversation": "Ingen tittel",
+    "previewPlaceholder": "Å gjøre",
+    "conversationsLabel": "Samtaler",
+    "sessionSubject": "{{coachName}} coachingøkt",
+    "assistantDomain": "Coaching",
+    "exportSuccess": "Eksporterte samtalelogg + strukturerte rapport-PDF-er.",
+    "exportNoConversation": "Kunne ikke eksportere chatten – ingen aktiv samtale.",
+    "audioWarning": "Å bytte samtale tilbakestiller lyden for den nye samtalen."
+  },
+  "diagnostic": {
+    "title": "Diagnostisk chat",
+    "sessionLabel": "Økt: {{sessionId}}...",
+    "statusConnecting": "Kobler til...",
+    "statusReconnecting": "Kobler til på nytt...",
+    "statusDisconnected": "Frakoblet",
+    "newChat": "Ny chat",
+    "newChatTitle": "Start en ny chatøkt",
+    "reconnect": "Koble til på nytt",
+    "clearAllTitle": "Tøm alt",
+    "traceLog": "Sporingslogg",
+    "dataSourcesLabel": "Tilkoblede datakilder",
+    "emptyTitle": "Diagnostisk chatgrensesnitt",
+    "emptySubtitle": "Send en melding for å spore hele forespørselens livssyklus",
+    "streaming": "streaming",
+    "processing": "Meridian behandler...",
+    "stopRecording": "Stopp opptak",
+    "startVoiceInput": "Start stemmeinndata",
+    "inputPlaceholder": "Skriv en melding for å spore hele pipelinen...",
+    "recordingHint": "Tar opp – snakk tydelig, stopp deretter for å sende",
+    "latency": "Latens: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "Tokens: {{tokenCount}}",
+    "entriesCount": "{{count}} oppføringer",
+    "errorsCount": "{{count}} feil",
+    "warningsCount": "{{count}} advarsler",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Loader2, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,11 +12,13 @@ type Props = {
 };
 
 export default function DocumentIframeModal({ open, onOpenChange, fileUrl, fileName = "Document" }: Props) {
+  const { t } = useTranslation("chat");
   const [loading, setLoading] = useState<boolean>(true);
+  const defaultFileName = t("documents.iframe.defaultFileName", { defaultValue: "Document" });
   const displayName = useMemo(() => {
-    const name = String(fileName || "");
+    const name = String(fileName && fileName !== "Document" ? fileName : defaultFileName);
     return name.length > 40 ? `${name.slice(0, 40)}…` : name;
-  }, [fileName]);
+  }, [fileName, defaultFileName]);
 
   useEffect(() => {
     if (open) setLoading(true);
@@ -34,7 +37,7 @@ export default function DocumentIframeModal({ open, onOpenChange, fileUrl, fileN
             ) : null}
           </Tooltip>
           <div className="flex items-center gap-2">
-            <button aria-label="Close" className="p-1 rounded-md hover:bg-gray-100" onClick={() => onOpenChange(false)}>
+            <button aria-label={t("common.close", { defaultValue: "Close" })} className="p-1 rounded-md hover:bg-gray-100" onClick={() => onOpenChange(false)}>
               <X className="size-5" />
             </button>
           </div>
@@ -44,7 +47,7 @@ export default function DocumentIframeModal({ open, onOpenChange, fileUrl, fileN
             <div className="absolute inset-0 grid place-items-center bg-white/80 z-10">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="size-5 animate-spin" />
-                <span>Loading document…</span>
+                <span>{t("documents.iframe.loading", { defaultValue: "Loading document…" })}</span>
               </div>
             </div>
           )}

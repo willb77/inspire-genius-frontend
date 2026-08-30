@@ -22,12 +22,6 @@ import {
 } from '@/components/ui/tooltip'
 import { useLatestPrismStatus } from '@/hooks/prism/usePrismRequest'
 
-function csvFilename(key: string | null): string | null {
-  if (!key) return null
-  const tail = key.split('/').pop()
-  return tail && tail.length > 0 ? tail : null
-}
-
 function formatCompletionDate(iso: string | null): string | null {
   if (!iso) return null
   const d = new Date(iso)
@@ -36,9 +30,8 @@ function formatCompletionDate(iso: string | null): string | null {
 }
 
 export default function PrismBadge() {
-  const { hasReadyPrism, csv_s3_key, completed_at } = useLatestPrismStatus()
+  const { hasReadyPrism, completed_at } = useLatestPrismStatus()
 
-  const filename = useMemo(() => csvFilename(csv_s3_key), [csv_s3_key])
   const completionDate = useMemo(
     () => formatCompletionDate(completed_at),
     [completed_at],
@@ -66,18 +59,22 @@ export default function PrismBadge() {
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="text-xs">
-          {filename ? (
-            <div>
-              <div className="font-medium">{filename}</div>
-              {completionDate && (
-                <div className="text-muted-foreground">
-                  Completed: {completionDate}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>PRISM result available</div>
-          )}
+          {/* The completion date used to be nested inside a filename branch
+              fed by `csv_s3_key` — an internal S3 object key that
+              GET /v1/prism/requests/me does not return, so the date never
+              rendered. The filename was a machine artifact
+              ("PRISM,W,B,2026-06-15.csv") of no use to a user, and exposing
+              the key would have leaked bucket layout and the user id to the
+              browser. The date is what people actually want, and it is
+              already in the payload. */}
+          <div>
+            <div className="font-medium">PRISM result available</div>
+            {completionDate && (
+              <div className="text-muted-foreground">
+                Completed: {completionDate}
+              </div>
+            )}
+          </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

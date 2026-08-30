@@ -3,14 +3,20 @@
  *
  * Selects the best available TTS engine at runtime:
  *
- *   Online  + preferServer → Server TTS (OpenAI gpt-4o-mini-tts via /v1/audio/tts)
+ *   Online  + preferServer → Server TTS (OpenAI, via /v1/agents/voice/synthesize)
  *   Offline | server error → Browser TTS (SpeechSynthesis API via useTextToSpeech)
+ *
+ * The fallback is real and load-bearing, which is exactly why it hid a bug for
+ * as long as it did: the server call pointed at `/v1/audio/tts`, a route that
+ * does not exist, so every surface quietly spoke in the browser's synthetic
+ * voice and nothing ever reported an error. If the voice sounds mechanical,
+ * check `activeProvider` before assuming the voice ID is wrong.
  *
  * The activeProvider value tells callers which engine is running so the UI
  * can show an offline indicator when voice quality differs.
  *
  * Usage:
- *   const { speak, stop, pause, resume, activeProvider, isOnline } = useTTS({ voice: "coral" });
+ *   const { speak, stop, pause, resume, activeProvider, isOnline } = useTTS();
  */
 
 import {
@@ -20,16 +26,24 @@ import {
   useState,
 } from "react";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
-import { api } from "@/lib/axios";
 
 export type TTSProvider = "server" | "browser";
+
+/**
+ * The voice Meridian speaks in.
+ *
+ * Exported so callers state the intent rather than repeating a magic string,
+ * and so there is one place to change it. Matches the default MeridianChat
+ * passes to `/v1/agents/voice/synthesize`.
+ */
+export const MERIDIAN_VOICE = "shimmer";
 
 export type UseTTSOptions = {
   /** Prefer server-side TTS when online. Default: true */
   preferServer?: boolean;
   /** Fall back to browser SpeechSynthesis if server fails. Default: true */
   fallbackToLocal?: boolean;
-  /** Server voice ID (e.g. "coral", "alloy"). Default: "coral" */
+  /** Server voice ID. Defaults to MERIDIAN_VOICE — the platform speaks as Meridian. */
   voice?: string;
   /** BCP-47 language tag for browser TTS fallback (e.g. "en-US"). Default: "en-US" */
   language?: string;
@@ -52,17 +66,35 @@ export type UseTTSReturn = {
 // ─── Server TTS helpers ──────────────────────────────────────────────────────
 
 /**
- * POST /v1/audio/tts → ArrayBuffer of audio/mp3.
+ * POST /v1/agents/voice/synthesize → ArrayBuffer of audio/mpeg.
  * Returns null on any network or HTTP error.
+ *
+ * **This used to POST `/v1/audio/tts`, which does not exist.** That route 404s
+ * (verified against dev), `fetchServerAudio` swallowed it and returned null,
+ * and every caller silently fell through to browser SpeechSynthesis. That is
+ * why the voice sounded mechanical everywhere `useTTS` is used — the goal
+ * interview, Chronicle, Interview Practice — while looking like it was working.
+ *
+ * `/v1/agents/voice/synthesize` is the endpoint MeridianChat already uses and
+ * has an API Gateway route to the agent-engine (verified: 200, audio/mpeg). It
+ * goes through `agentApi` for the same reason every other `/v1/agents/*` call
+ * does — the plain `api` instance would not reach the engine.
  */
 async function fetchServerAudio(text: string, voice: string): Promise<ArrayBuffer | null> {
   try {
-    const response = await api.post(
-      "/v1/audio/tts",
-      { text, voice },
-      { responseType: "arraybuffer", timeout: 15_000 },
+    const { agentApi } = await import("@/lib/agentApi");
+    const response = await agentApi.post(
+      "/v1/agents/voice/synthesize",
+      // The endpoint caps input; MeridianChat slices to the same bound.
+      { text: text.slice(0, 4096), voice },
+      { responseType: "arraybuffer", timeout: 20_000 },
     );
-    return response.data as ArrayBuffer;
+    const data = response.data as ArrayBuffer;
+    // A JSON error body arrives as a tiny ArrayBuffer and would fail to decode
+    // as audio, so treat an implausibly small payload as a miss and let the
+    // caller fall back rather than throwing inside the audio pipeline.
+    if (!data || data.byteLength < 256) return null;
+    return data;
   } catch {
     return null;
   }
@@ -103,7 +135,12 @@ function playAudioBuffer(
 export function useTTS({
   preferServer = true,
   fallbackToLocal = true,
-  voice = "coral",
+  // Meridian's voice. Every spoken surface on the platform is Meridian — the
+  // specialists work behind her and she is the only voice a user ever hears —
+  // so the default matches what MeridianChat passes rather than a per-surface
+  // choice. `coral` was the old default and made the goal interview sound like
+  // a different assistant from the one in the chat panel.
+  voice = MERIDIAN_VOICE,
   language = "en-US",
 }: UseTTSOptions = {}): UseTTSReturn {
   const [isOnline, setIsOnline] = useState(() =>

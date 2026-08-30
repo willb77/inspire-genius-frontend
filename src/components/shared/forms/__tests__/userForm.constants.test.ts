@@ -16,6 +16,7 @@ describe("User Form Constants", () => {
         email: "",
         role: "",
         status: "Active",
+        skip_onboarding: false,
       });
     });
   });

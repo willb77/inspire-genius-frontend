@@ -81,6 +81,19 @@ export type InviteUserPayload = {
   role?: string
   organization_id?: string
   business_id?: string
+  // Dev/Staging-B only. When true, the new user is provisioned active +
+  // already-onboarded and emailed a one-click magic sign-in link instead of
+  // the set-your-password invitation (auth-service Settings.demo_provisioning_allowed
+  // hard-rejects this with 400 in production). Wired to the "Skip onboarding"
+  // checkbox in the Add User form.
+  demo_account?: boolean
+  // Reporting line + employment detail. auth-service resolves manager_email to
+  // that manager's user_profiles.id and writes employee_profiles — the relation
+  // a manager's roster and Team Development dossier read. Optional; an unknown
+  // manager email is reported, and the user is still created unattached.
+  manager_email?: string
+  department?: string
+  position?: string
 }
 
 export type InviteUserData = {
@@ -95,6 +108,45 @@ export type InviteUserResponse = BaseApiResponse<InviteUserData>
 
 export async function inviteUser(payload: InviteUserPayload) {
   const { data } = await api.post<InviteUserResponse>('/v1/admin/invite-user', payload)
+  return data
+}
+
+// ------------------ BULK INVITE (auth-service, direct) ------------------
+
+// auth-service /v1/user-management/invite/bulk — Strangler-Fig extraction of
+// the monolith bulk-invite. Creates + emails up to 50 users in one call with
+// per-user pass/fail isolation. Used by the bulk importer's "skip onboarding"
+// path so demo cohorts are provisioned active + onboarded + magic-linked via
+// the SAME backend as the single Add User flow (no user-service/invitation-
+// service staging round-trip). Every row carries demo_account so the whole
+// batch skips onboarding.
+export type BulkInviteResultRow = {
+  index: number
+  email: string
+  name: string
+  result?: InviteUserData & {
+    demo_account?: boolean
+    onboarding_skipped?: boolean
+    auth_method?: string
+    email_sent?: boolean
+  }
+  error?: string
+  error_code?: string
+}
+
+export type BulkInviteData = {
+  summary: { total: number; successful: number; failed: number }
+  successful_invitations: BulkInviteResultRow[]
+  failed_invitations: BulkInviteResultRow[]
+}
+
+export type BulkInviteResponse = BaseApiResponse<BulkInviteData>
+
+export async function bulkInviteUsers(users: InviteUserPayload[]) {
+  const { data } = await api.post<BulkInviteResponse>(
+    '/v1/user-management/invite/bulk',
+    { users }
+  )
   return data
 }
 

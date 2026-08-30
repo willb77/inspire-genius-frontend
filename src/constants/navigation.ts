@@ -7,9 +7,11 @@ import {
   Settings,
   HelpCircle,
   Bot,
+  CalendarDays,
   LayoutDashboard,
   UsersRound,
   MessageSquarePlus,
+  MessagesSquare,
   Wand2,
   Users,
   Building2,
@@ -18,8 +20,6 @@ import {
   Brain,
   Sparkles,
   BarChart3,
-  MessageCircle,
-  GitBranch,
   UserPlus,
   Eye,
   Network,
@@ -28,23 +28,94 @@ import {
   ShieldCheck,
   SearchCheck,
   Activity,
+  ClipboardCheck,
+  ClipboardList,
+  FolderOpen,
+  Drama,
 } from "lucide-react"
 
-/** Navigation items for the regular user role */
+/**
+ * Why the three switched-off My Workspace entries are greyed (2026-08-04).
+ *
+ * NOT an entitlement gate — these are turned off for everyone, so the default
+ * "not included in your plan" hover text in {@link NavItemDef} would be a lie.
+ * Shared with `useVerticalLauncher` so Job Fit — which is greyed by the same
+ * decision but reaches the menu through the vertical registry rather than this
+ * list — gives the identical explanation.
+ */
+export const WORKSPACE_ITEM_UNAVAILABLE_REASON = "Temporarily unavailable"
+
+/**
+ * The user role's menu, in order. **Exactly six entries** as of 2026-08-12
+ * (request: "for all User roles only show these menu items on the left side
+ * menu — Home, Chat with Meridian, Interview Practice, Document Library,
+ * Settings, Help & Support").
+ *
+ * Kept in step with {@link getUserNavItems}, which is the toggle-aware version
+ * the layouts actually call. Both must yield the same six labels, because which
+ * one renders depends on the layout: `UserLayout` and `SuperAdminLayout` call
+ * `getUserNavItems`, while `UnifiedLayout` reads this list through
+ * `NAV_ITEMS_BY_ROLE`. They drifted before — this one carried Request
+ * Assessment and Feedback long after the other had dropped them — and a menu
+ * that changes depending on which page you are on is the bug that creates.
+ *
+ * Nothing is spliced in any more either: `WORKSPACE_VERTICALS` and
+ * `WORKSPACE_VERTICAL_LINKS` (Job Fit, Resume Writer) were emptied in the same
+ * change, so this list is the whole menu rather than most of it.
+ */
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-  { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
-  { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
-  { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
-  { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
+  { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
 
 /**
- * Toggle-aware navigation items for the user role.
- * When Agent Engine is ON, shows "Chat with Meridian" instead of "Chat with Coaches".
+ * The user role's menu — the toggle-aware version the layouts call.
+ *
+ * **Exactly six entries** as of 2026-08-12 (request: "for all User roles only
+ * show these menu items on the left side menu"):
+ *
+ *   Home · Chat with Meridian · Interview Practice · Document Library ·
+ *   Settings · Help & Support
+ *
+ * The chat row is the only variation: it points at Meridian when the Agent
+ * Engine toggle is on (the default) and falls back to "Chat with Coaches"
+ * when it is off. Six items either way — the toggle changes the destination,
+ * not the shape of the menu.
+ *
+ * ## Nothing is spliced in
+ *
+ * `useWorkspaceNavItems` used to merge workspace verticals into this list, so
+ * the rendered menu was longer than what you read here. `WORKSPACE_VERTICALS`
+ * (Job Fit) and `WORKSPACE_VERTICAL_LINKS` (Resume Writer) were emptied in the
+ * same change, so this IS the menu now.
+ *
+ * ## What was removed, and why the pages are fine
+ *
+ * Everything dropped from this list still routes; see
+ * {@link HIDDEN_WORKSPACE_ROUTES} for the full accounting. This menu is a
+ * shortcut list, not the route table.
+ *
+ *   - **Goals** (2026-08-12) — reachable from the Direction Setting sub-nav
+ *     ("My goals" in constants/vertical-subnav.ts) and JourneyPage stage 5.
+ *     Access was never decided here anyway: it is the `direction-setting`
+ *     entitlement, enforced server-side by `require_vertical`.
+ *   - **Analytics** (2026-08-12) — had been greyed and non-navigating since
+ *     2026-08-04. A permanently disabled row is menu noise.
+ *   - **Request Assessment, Feedback, Onboarding Wizard** (2026-07-31).
+ *   - **Bio Capture** (2026-08-04) — moved into the Tools rollup, which is
+ *     super-admin only as of 2026-08-12.
+ *
+ * **Job Fit is the one to watch.** It was spliced in from `WORKSPACE_VERTICALS`,
+ * which is now empty — so it falls back into the Tools catalogue rather than
+ * disappearing. Tools is super-admin only, which means a super-admin still
+ * reaches Job Fit and the `user` role no longer can: nothing on Home or the
+ * Meridian header links to it either. The routes resolve, so it is reachable by
+ * URL and from the vertical's own pill row once inside, but it is effectively
+ * undiscoverable for this role until something links to it again.
  */
 export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
   return [
@@ -59,18 +130,192 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
           state: { autoLoadPrism: true },
         }
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-    // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
-    // admin-only route at /super-admin/agent-trace-console.
-    { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
-    { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
-    { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
-    { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
-    // Combined Plan §A.E3.4 — Forge onboarding wizard
-    { to: ROUTES.ONBOARDING.WIZARD, icon: Wand2, label: "Onboarding Wizard" },
+    // Candidate-side STAR rehearsal with Alex (voice-capable).
+    { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
+    // Document Library sits directly above Settings (2026-08-06 request). It is
+    // a reference surface you go to occasionally, not a daily shortcut, so it
+    // sits with the Settings/Help tail rather than among the primary actions.
+    { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
     { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
     { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
   ]
 }
+
+/**
+ * Routes deliberately absent from the My Workspace menu as of 2026-07-31.
+ *
+ * Kept as a named constant rather than deleted comments so the decision is
+ * greppable: every one of these pages still exists and still routes; only the
+ * sidebar shortcut was withdrawn. Restoring one means adding a line back to
+ * {@link getUserNavItems}, nothing more.
+ *
+ * 2026-08-03 — ROUTES.DOCUMENTS was restored to the menu as "Document Library"
+ * and removed from this list. The two must stay in step: a route listed here
+ * AND present in getUserNavItems would make this constant lie about the menu.
+ */
+export const HIDDEN_WORKSPACE_ROUTES = [
+  ROUTES.PRISM_ASSESSMENT,
+  ROUTES.SUMMIT.BASE,
+  ROUTES.FEEDBACK,
+  ROUTES.ONBOARDING.WIZARD,
+  // Joined 2026-08-12, when the greyed row was removed rather than left as a
+  // permanently-disabled entry. Page and route untouched, as with the rest.
+  ROUTES.ANALYTICS,
+  // Joined 2026-08-12 when the menu was cut to six entries. Goals is still
+  // reachable from the Direction Setting sub-nav and JourneyPage stage 5.
+  ROUTES.DIRECTION_SETTING.GOALS,
+  // Job Fit stopped being spliced in on 2026-08-12 (WORKSPACE_VERTICALS was
+  // emptied). Listed here because this constant tracks what is ABSENT from the
+  // menu regardless of how it used to get there — but note it is the one entry
+  // with no remaining link from any user-facing surface. See getUserNavItems.
+  ROUTES.JOB_FIT.MATCHES,
+] as const
+
+/**
+ * Team Development Studio is feature-flagged for a pilot cohort.
+ * Enabled at build time via VITE_FEATURE_TEAM_DEVELOPMENT=true. Declared here
+ * (above SUPER_ADMIN_NAV_ITEMS) so both super-admin and manager nav can gate on it.
+ */
+const TEAM_DEVELOPMENT_ENABLED =
+  import.meta.env.VITE_FEATURE_TEAM_DEVELOPMENT === "true"
+
+/**
+ * The Team Development Studio nav entry. Shared by the manager "Tools" rollup
+ * (via {@link TOOL_ITEMS_BY_ROLE}) and the super-admin "Tools" section, so the
+ * label/route/icon stay in one place.
+ *
+ * Labelled "Team Development Studio" as of 2026-08-12 (request) — that is the
+ * product's own name (TDS), and the truncated "Team Development" read as a
+ * category rather than a tool.
+ */
+const TEAM_DEVELOPMENT_ITEM: NavItemDef = {
+  to: ROUTES.MANAGER.DEVELOPMENT,
+  icon: Sparkles,
+  label: "Team Development Studio",
+}
+
+// Candidate-side interview rehearsal (Alex interview-coach). A universal,
+// un-gated feature — surfaced in the "Tools" rollup for every role that renders
+// one, so it's discoverable regardless of which role is logged in.
+const INTERVIEW_PRACTICE_ITEM: NavItemDef = {
+  to: ROUTES.INTERVIEW_PRACTICE,
+  icon: MessagesSquare,
+  label: "Interview Practice",
+}
+
+// Live Scored Candidate Interview (Phase 3) — a REAL, scored interview an
+// interviewer (manager/practitioner) runs of a candidate who is NOT the
+// signed-in user. Distinct route per role since the underlying page is a
+// role-layout wrapper, same as Interview Prep.
+//
+// TODO: gate on the server-side `live_interview_scoring` flag once there is a
+// clean mechanism to surface a backend feature flag to the FE nav (e.g. via
+// GET /v1/agents/me). No such mechanism exists today — interview-practice v5
+// personalization degrades gracefully per-request rather than gating
+// visibility, so there's nothing to reuse here. Gated by role only for now;
+// the backend routes 404 when the flag is off, which is an acceptable
+// fallback (not a broken link — just an inert menu entry until launch).
+const INTERVIEW_LIVE_ITEM_MANAGER: NavItemDef = {
+  to: ROUTES.MANAGER.INTERVIEW_LIVE,
+  icon: ClipboardCheck,
+  label: "Live Interview",
+}
+const INTERVIEW_LIVE_ITEM_PRACTITIONER: NavItemDef = {
+  to: ROUTES.PRACTITIONER.INTERVIEW_LIVE,
+  icon: ClipboardCheck,
+  label: "Live Interview",
+}
+
+// Interview Studio — a flexible, scored interview built from the interviewer's
+// OWN questions or generated from a topic (career discovery, values, onboarding
+// …), not the fixed STAR bank. Same server-side `live_interview_scoring` flag +
+// interviewer role gate as Live Interview; the backend 404s when the flag is
+// off (inert menu entry, not a broken link — same TODO as above re: FE flag
+// surfacing). One item per role since the page is a role-layout wrapper.
+const INTERVIEW_STUDIO_ITEM_MANAGER: NavItemDef = {
+  to: ROUTES.MANAGER.INTERVIEW_STUDIO,
+  icon: Sparkles,
+  label: "Interview Studio",
+}
+const INTERVIEW_STUDIO_ITEM_PRACTITIONER: NavItemDef = {
+  to: ROUTES.PRACTITIONER.INTERVIEW_STUDIO,
+  icon: Sparkles,
+  label: "Interview Studio",
+}
+const INTERVIEW_STUDIO_ITEM_SUPER_ADMIN: NavItemDef = {
+  to: ROUTES.SUPER_ADMIN.INTERVIEW_STUDIO,
+  icon: Sparkles,
+  label: "Interview Studio",
+}
+// Super-admin Live Interview — the route and page were added 2026-08-12; manager
+// and practitioner already had theirs. Same role-layout-wrapper pattern.
+const INTERVIEW_LIVE_ITEM_SUPER_ADMIN: NavItemDef = {
+  to: ROUTES.SUPER_ADMIN.INTERVIEW_LIVE,
+  icon: ClipboardCheck,
+  label: "Live Interview",
+}
+
+/**
+ * Character Lab — the fictional-character PRISM demo.
+ *
+ * Moved out of the flat super-admin list into the Tools rollup on 2026-08-27
+ * (request). It is a workbench you open to do something, which is what the
+ * Tools section is for, rather than a platform surface you administer.
+ *
+ * The label must stay unique: `SidebarScaffold` keys nav items by label, so a
+ * duplicate collides during reconciliation — the bug that made Tools appear to
+ * hide behind Administration.
+ */
+const CHARACTER_LAB_ITEM: NavItemDef = {
+  to: ROUTES.SUPER_ADMIN.CHARACTER_LAB,
+  icon: Drama,
+  label: "Character Lab",
+}
+
+/**
+ * Per-role "Tools" rollup items. Rendered as a collapsible "Tools" section in
+ * the sidebar (see UnifiedLayout for manager et al.; SuperAdminLayout for
+ * super-admin) rather than as flat top-level nav items. Empty when the pilot
+ * flag is off, which collapses the section away entirely.
+ */
+// NOTE: `user` intentionally omitted — the user role renders UserLayout (flat
+// sidebar) which already carries "Interview Practice" in USER_NAV_ITEMS; adding
+// it here would also give the user a UnifiedLayout Tools section it never uses.
+// These roles render UnifiedLayout / SuperAdminLayout, which show the Tools rollup.
+export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
+  manager: [
+    ...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []),
+    INTERVIEW_PRACTICE_ITEM,
+    INTERVIEW_LIVE_ITEM_MANAGER,
+    INTERVIEW_STUDIO_ITEM_MANAGER,
+  ],
+  practitioner: [
+    INTERVIEW_PRACTICE_ITEM,
+    INTERVIEW_LIVE_ITEM_PRACTITIONER,
+    INTERVIEW_STUDIO_ITEM_PRACTITIONER,
+  ],
+  // Super-admin is entitled to all four unconditionally (2026-08-12, request:
+  // "add Live Interview, Interview Studio, Team Development Studio to super
+  // admin entitlement"). Note Team Development Studio is NOT behind
+  // TEAM_DEVELOPMENT_ENABLED here, unlike the manager list above: that build
+  // flag scopes the manager PILOT cohort, and gating the platform owner on a
+  // pilot flag is what made the entry vanish from super-admin builds where the
+  // flag was unset. Manager keeps the flag; super-admin does not.
+  "super-admin": [
+    TEAM_DEVELOPMENT_ITEM,
+    INTERVIEW_PRACTICE_ITEM,
+    INTERVIEW_LIVE_ITEM_SUPER_ADMIN,
+    INTERVIEW_STUDIO_ITEM_SUPER_ADMIN,
+    CHARACTER_LAB_ITEM,
+  ],
+}
+
+// SUPER_ADMIN_TOOLS_SECTION was removed 2026-08-12. It wrapped
+// TOOL_ITEMS_BY_ROLE["super-admin"] in a section labelled "Tools", which is now
+// assembled — together with the vertical catalogue, Bio Capture and Platform
+// Alerts — by `useToolsSection` (src/hooks/nav/useToolsSection.ts). Having a
+// second thing that built a "Tools" section is precisely what produced two
+// same-labelled sections and the reconciliation bug documented there.
 
 /** Navigation items for the super-admin role */
 export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
@@ -79,36 +324,97 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT, icon: Wand2, label: "Agent Management" },
   { to: ROUTES.SUPER_ADMIN.RLHF_TRAINING, icon: MessageSquarePlus, label: "RLHF Training" },
   { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics & Logs" },
+  // Agent Trainer absorbs the old "Process Builder" row. That row pointed at
+  // /super-admin/process-builder, which is only a <Navigate> to
+  // /super-admin/agent-trainer/workflows — so it was a second door onto a
+  // page inside Agent Trainer, not a separate destination. The Workflow
+  // Designer (plus Executions and Approvals, which had no nav entry at all)
+  // is now reachable from the Agent Trainer landing page. The redirect route
+  // stays registered so existing links and bookmarks keep working.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRAINER, icon: Brain, label: "Agent Trainer" },
-  { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
   { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk User Import" },
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
   { to: ROUTES.SUPER_ADMIN.EXPLAINABILITY, icon: SearchCheck, label: "Explainability" },
   { to: ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT, icon: Activity, label: "Dev Traffic Report" },
-  // Combined Plan §A.E3.4 — Sage document research
-  { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Document Research" },
-  { to: ROUTES.SUPER_ADMIN.RESEARCH_LIBRARY, icon: BookHeart, label: "Research Library" },
+  // Research — consolidated: ask Sage, browse the saved library, and upload
+  // documents to the corpus via the standard document pipeline (one nav item).
+  { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Research" },
   // Wave 0.E (P5.1) — Cultural Content is now a domain filter on the Knowledge Base page.
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
   { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   // Wave 2 Lane 2.A (P7.1) — formerly "Diagnostic Chat" at /diagnostic-chat.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRACE_CONSOLE, icon: Network, label: "Agent Trace Console" },
+  // Surveys — build questionnaires + select one to take (shared /surveys surface).
+  { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
+  // Team Development Studio lives in the consolidated "Tools" section
+  // (useToolsSection, fed by TOOL_ITEMS_BY_ROLE) rather than inline here.
+  // Asset Library: a standalone S3-hosted tool. This entry points at the in-app
+  // launcher, which hands the tool a verified super-admin session so its
+  // confidential tier unlocks. Label must stay unique — SidebarScaffold keys
+  // nav items by label, so a duplicate collides.
+  { to: ROUTES.SUPER_ADMIN.ASSET_LIBRARY, icon: FolderOpen, label: "Asset Library" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
-/** Navigation items for the manager role */
+/**
+ * Navigation items for the manager role.
+ *
+ * Rewritten 2026-08-16 to the order Bill specified: Dashboard, Team Roster
+ * (Client), Schedule, Chat with Meridian, Document Library, Team Import,
+ * Surveys — then Settings and Help & Support at the foot.
+ *
+ * ## Four of these are not new pages
+ *
+ * `ProtectedRoute` role-gates by PATH PREFIX only (`/manager/*`,
+ * `/super-admin/*`, …). `/meridian/chat`, `/documents`, `/surveys` and `/help`
+ * carry no prefix, so a manager has always been able to open them — they were
+ * simply absent from this list. Adding the rows exposes surfaces that already
+ * shipped and are already live on staging-b; it does not widen access.
+ *
+ * ## What was removed, and why the pages are fine
+ *
+ * PRISM Team, Job Blueprint, Interview Prep, Team Composition and Analytics
+ * were dropped from the menu on request. Every one still routes — this is a
+ * shortcut list, not the route table, the same convention the user nav follows
+ * (see {@link getUserNavItems}). PRISM data has not gone anywhere either: the
+ * roster carries each member's PRISM colour, and the full behavioural profile
+ * is the first tab of the member workspace under Team Development Studio.
+ */
 export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Management" },
-  { to: ROUTES.MANAGER.PRISM_TEAM, icon: Brain, label: "PRISM Team" },
-  // Combined Plan §A.E3.4 — task agents (Maven/James/Atlas)
-  { to: ROUTES.MANAGER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
-  { to: ROUTES.MANAGER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
-  { to: ROUTES.MANAGER.TEAM_COMPOSITION, icon: UsersRound, label: "Team Composition" },
-  { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Bulk Import" },
-  { to: ROUTES.MANAGER.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  // "Team Roster (Client)" rather than "Team Management": for a manager these
+  // are the people they coach, and the page is now a roster of real direct
+  // reports (employee_profiles.manager_id) rather than a management console.
+  { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Roster (Client)" },
+  // Student Oversight sits directly under the roster because it answers the
+  // question the roster raises: "what may I actually see about these people?"
+  // Kept as a SEPARATE entry rather than merged into Team Roster — the two
+  // pages obey different rules, and a manager needs to know which one they are
+  // reading. Team Roster shows PRISM colour for everyone; this one shows
+  // nothing a student has not agreed to share.
+  { to: ROUTES.MANAGER.STUDENTS, icon: ShieldCheck, label: "Student Oversight" },
+  // Sits next to the roster because it is how the roster grows. There is no
+  // notification when a request arrives — the queue is pull-only — so it has
+  // to be visible in the sidebar or nobody will ever look at it.
+  { to: ROUTES.MANAGER.JOIN_REQUESTS, icon: UserPlus, label: "Join Requests" },
+  { to: ROUTES.MANAGER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
+  {
+    to: ROUTES.MERIDIAN_CHAT,
+    icon: Sparkles,
+    label: "Chat with Meridian",
+    // Same auto-attach as the user nav — entering via the sidebar loads the
+    // signed-in manager's most recent PRISM result into the conversation.
+    state: { autoLoadPrism: true },
+  },
+  { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
+  // Same page as before at /manager/bulk-import, relabelled: what a manager
+  // does here is bring their team in, and the file now carries the Manager
+  // column that puts those people on this manager's roster.
+  { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Team Import" },
+  { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   { to: ROUTES.MANAGER.SETTINGS, icon: Settings, label: "Settings" },
+  { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
 
 /** Navigation items for the company-admin role */
@@ -120,20 +426,29 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.COMPANY_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.COMPANY_ADMIN.OBSERVABILITY, icon: Eye, label: "AI Observability" },
   { to: ROUTES.COMPANY_ADMIN.CULTURE, icon: BookHeart, label: "Culture Docs" },
+  { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   { to: ROUTES.COMPANY_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
-/** Navigation items for the practitioner role */
+/**
+ * Navigation items for the practitioner role.
+ *
+ * Phase 1/2 (2026-07-22): the practitioner now renders through the standard
+ * SidebarScaffold chrome (via UnifiedLayout) instead of the legacy AppShell,
+ * and this array is the single source of truth for the menu. Home + Chat with
+ * Meridian + Schedule + Meeting are the new Phase-2 surfaces; every
+ * `/practitioner/*` route is entitlement-gated to practitioner + super-admin
+ * by ROLE_PERMISSIONS (see src/types/roles.ts).
+ */
 export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
-  { to: ROUTES.PRACTITIONER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "Clients" },
-  { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "PRISM Clients" },
-  // Wave 4 Lane 4.D (P7.2) — task-agent forms (Maven/James/Atlas) for practitioner
-  { to: ROUTES.PRACTITIONER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
-  { to: ROUTES.PRACTITIONER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
-  { to: ROUTES.PRACTITIONER.TEAM_COMPOSITION, icon: UsersRound, label: "Team Composition" },
+  { to: ROUTES.PRACTITIONER.HOME, icon: Home, label: "Practitioner Home" },
+  // Uses the standard My Workspace Meridian chat surface (/meridian/chat — the
+  // v2 six-tile-rail experience), not a practitioner-specific copy.
+  { to: ROUTES.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian", state: { autoLoadPrism: true } },
+  { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "My Clients" },
+  { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
+  { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
-  { to: ROUTES.PRACTITIONER.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
 /** Navigation items for the distributor role */
@@ -141,6 +456,7 @@ export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.DISTRIBUTOR.NETWORK, icon: Network, label: "Network" },
   { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
@@ -149,7 +465,7 @@ const ROLE_VIEW_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "User Home" },
   { to: ROUTES.MANAGER.DASHBOARD, icon: Users, label: "Manager" },
   { to: ROUTES.COMPANY_ADMIN.DASHBOARD, icon: Building2, label: "Company Admin" },
-  { to: ROUTES.PRACTITIONER.DASHBOARD, icon: UserCheck, label: "Practitioner" },
+  { to: ROUTES.PRACTITIONER.HOME, icon: UserCheck, label: "Practitioner" },
   { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: Briefcase, label: "Distributor" },
 ]
 
@@ -158,6 +474,41 @@ export const SUPER_ADMIN_NAV_SECTIONS: NavSectionDef[] = [
   { label: "Administration", items: SUPER_ADMIN_NAV_ITEMS, defaultCollapsed: true },
   { label: "Role Views", items: ROLE_VIEW_ITEMS, defaultCollapsed: true },
 ]
+
+/**
+ * Platform owner email — mirrors the backend allow-list
+ * (`_AUTHORIZED_EMAILS` in
+ * `services/agent-engine/app/routes/super_admin_traffic.py`).
+ */
+export const PLATFORM_OWNER_EMAIL = "willb77@3pp.com"
+
+/** Case-insensitive owner check for nav gating. */
+export function isPlatformOwner(email: string | null | undefined): boolean {
+  return (email ?? "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL
+}
+
+/**
+ * Super-admin nav routes that are visible ONLY to the platform owner.
+ * The item stays in its normal section (e.g. Dev Traffic Report under
+ * Administration); SuperAdminLayout filters it out for every other
+ * super-admin. The Dev Traffic Report backend also hard-403s non-owners,
+ * so this is defence-in-depth, not the sole gate.
+ */
+export const OWNER_ONLY_NAV_ROUTES: ReadonlySet<string> = new Set<string>([
+  ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT,
+])
+
+/**
+ * NOT the only owner gate — My Workspace's Goals entry is owner-gated too, but
+ * differently, and deliberately so.
+ *
+ * Routes in {@link OWNER_ONLY_NAV_ROUTES} are REMOVED for non-owners. Goals is
+ * instead left in place and greyed (see {@link getUserNavItems}), because it
+ * was already a visible-but-disabled row for every user before the owner got
+ * it back on 2026-08-06 — removing it would have changed what everyone else
+ * sees, which the request did not ask for. Adding Goals to this set would do
+ * exactly that, so don't.
+ */
 
 /** Lookup from role to its nav items */
 export const NAV_ITEMS_BY_ROLE: Record<UserRole, NavItemDef[]> = {
@@ -174,7 +525,7 @@ export const HOME_ROUTE_BY_ROLE: Record<UserRole, string> = {
   user: ROUTES.HOME,
   manager: ROUTES.MANAGER.DASHBOARD,
   "company-admin": ROUTES.COMPANY_ADMIN.DASHBOARD,
-  practitioner: ROUTES.PRACTITIONER.DASHBOARD,
+  practitioner: ROUTES.PRACTITIONER.HOME,
   distributor: ROUTES.DISTRIBUTOR.DASHBOARD,
   // Super-admins land on the user Home for a simpler default experience;
   // Administration tools remain available via the collapsed sidebar section.

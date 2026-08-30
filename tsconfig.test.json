@@ -2,6 +2,31 @@
   "extends": "./tsconfig.app.json",
   "compilerOptions": {
     "module": "ESNext",
+    // Makes ts-jest transpile each test file on its own (`transpileModule`)
+    // instead of compiling through a shared TypeScript LanguageService program.
+    //
+    // Why: the language-service path throws
+    //   "Unable to process '<file>', please make sure that `outDir` in your
+    //    tsconfig is neither '' or '.'"
+    // whenever TypeScript reports `emitSkipped` for a file — see
+    // node_modules/ts-jest/dist/legacy/compiler/ts-compiler.js:193, guarded at
+    // :74 by exactly this flag. On GitHub runners that fired intermittently and
+    // then deterministically on `src/hooks/interview/__tests__/useSpeechDictation.test.tsx`
+    // — a COMPILE failure, never an assertion failure: 4363 tests passed and one
+    // suite failed to run, four times across unrelated branches on 2026-08-05,
+    // ultimately blocking a deploy through three consecutive reruns. It never
+    // reproduced locally, including under the exact CI command with --coverage.
+    //
+    // What this does NOT cost: type-checking was already not a gate here. The
+    // ts-jest transform sets `diagnostics.warnOnly: true` (see jest.config.ts),
+    // so jest was paying for a type-aware program while deriving no safety from
+    // it. Real type-checking is `npm run build` (tsc), a separate CI job, and
+    // this file is test-only so that build is untouched.
+    //
+    // Risk accepted: `isolatedModules` forbids `const enum` and type-only
+    // re-exports without `export type`. Verified none exist in src/, and the
+    // full suite passes under the exact CI invocation with this on.
+    "isolatedModules": true,
     "target": "ES2020",
     "esModuleInterop": true,
     "verbatimModuleSyntax": false,

@@ -19,11 +19,23 @@ import { useListDocuments } from "@/hooks/documents/useListDocuments";
 import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
 import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
 import { api } from "@/lib/axios";
-import { exportConversation } from "@/services/agent/agentService";
+import {
+  exportConversation,
+  exportTranscriptViaServer,
+  type TranscriptTurnPayload,
+} from "@/services/agent/agentService";
+import {
+  exportTranscriptPdfs,
+  downloadBlob,
+  type TranscriptMeta,
+} from "@/lib/exportTranscript";
+import { parseMessages as parseChatMessages } from "@/lib/exportTranscript/parseMessages";
+import { toast } from "sonner";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 function titleCaseFromSlug(slug: string): string {
-  if (!slug) return "Coach";
+  if (!slug) return "";
   return slug
     .split("-")
     .filter(Boolean)
@@ -53,6 +65,7 @@ function extractSessionId(resp: unknown): string | undefined {
 export default function CoachChat() {
   const { coach = "" } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation("chat");
   // Parse '/:coach' param shaped as '<id>--<name-slug>' (preferred). Fallback to '<id>-<name-slug>'.
   const { agentId, coachName } = useMemo(() => {
     const raw = String(coach || "");
@@ -68,8 +81,8 @@ export default function CoachChat() {
       nameSlug = nameParts.join("-");
     }
     const name = titleCaseFromSlug(nameSlug);
-    return { agentId: id, coachName: name || "Coach" };
-  }, [coach]);
+    return { agentId: id, coachName: name || t("coach.defaultName", { defaultValue: "Coach" }) };
+  }, [coach, t]);
   const { user } = useAuth();
   const accessToken = user?.token ?? "";
 
@@ -243,11 +256,11 @@ export default function CoachChat() {
   const onResponse = useCallback((resp: AgentResponse) => {
 
     if (resp.type === "init_success") {
-      setStatusBanner({ type: "success", text: "Connected" });
+      setStatusBanner({ type: "success", text: t("common.connected", { defaultValue: "Connected" }) });
       return;
     }
     if (resp.type === "auth_error") {
-      setStatusBanner({ type: "error", text: resp.message || "Authentication error" });
+      setStatusBanner({ type: "error", text: resp.message || t("coach.authError", { defaultValue: "Authentication error" }) });
       return;
     }
 
@@ -260,6 +273,7 @@ export default function CoachChat() {
           kind: "processing",
           sender: "assistant",
           time: formatUSTimeSafe(new Date()),
+          ts: Date.now(),
           isProcessing: true,
           type: "processing",
           text: text || undefined,
@@ -271,7 +285,7 @@ export default function CoachChat() {
       // Show processing placeholder (recording started)
       setMessages((prev) => ([
         ...prev.filter((m) => m.kind !== 'processing'),
-        { id: `msg-${Date.now()}`, kind: 'processing', sender: 'assistant', time: formatUSTimeSafe(new Date()), isProcessing: true, type: 'processing' }
+        { id: `msg-${Date.now()}`, kind: 'processing', sender: 'assistant', time: formatUSTimeSafe(new Date()), ts: Date.now(), isProcessing: true, type: 'processing' }
       ]));
       return;
     }
@@ -292,7 +306,7 @@ export default function CoachChat() {
     if (resp.type === "transcript") {
       const text = resp.text ?? "";
       if (!text) return;
-      setMessages((prev) => ([...prev, { id: `msg-${Date.now()}`, kind: "text", sender: "user", text, time: formatUSTimeSafe(new Date()) }]));
+      setMessages((prev) => ([...prev, { id: `msg-${Date.now()}`, kind: "text", sender: "user", text, time: formatUSTimeSafe(new Date()), ts: Date.now() }]));
       lastMessageRef.current = { type: "transcript", text };
       return;
     }
@@ -302,7 +316,7 @@ export default function CoachChat() {
       if (lastMessageRef.current.type !== "response_chunk" || lastMessageRef.current.text !== text) {
         setMessages((prev) => ([
           ...prev.filter((m) => m.kind !== 'processing'),
-          { id: `msg-${Date.now()}`, kind: "text", sender: "assistant", text, time: formatUSTimeSafe(new Date()) }
+          { id: `msg-${Date.now()}`, kind: "text", sender: "assistant", text, time: formatUSTimeSafe(new Date()), ts: Date.now() }
         ]));
         lastMessageRef.current = { type: "response_chunk", text };
       }
@@ -315,12 +329,12 @@ export default function CoachChat() {
       return;
     }
     if (resp.type === "error") {
-      const text = resp.message ?? "Unknown error";
+      const text = resp.message ?? t("common.unknownError", { defaultValue: "Unknown error" });
       setStatusBanner({ type: "error", text });
       lastMessageRef.current = { type: "error", text };
       return;
     }
-  }, [scheduleAudioBufferRefresh]);
+  }, [scheduleAudioBufferRefresh, t]);
 
   const onAudioData = useCallback((audioData: ArrayBuffer) => {
     const svc = demoAudioServiceRef.current;
@@ -497,24 +511,91 @@ export default function CoachChat() {
     const convs = (conversationData as { data?: { conversations?: Array<{ id: string; title?: string; created_at?: string }> } } | undefined)?.data?.conversations ?? [];
     const items = convs.map((c) => ({
       id: c.id,
-      title: c.title || "No Title",
-      preview: "To do",
+      title: c.title || t("coach.untitledConversation", { defaultValue: "No Title" }),
+      preview: t("coach.previewPlaceholder", { defaultValue: "To do" }),
       timeLabel: c.created_at ? formatUSTimeSafe(c.created_at) : "",
     }));
     return [
       {
-        label: "Conversations",
+        label: t("coach.conversationsLabel", { defaultValue: "Conversations" }),
         items,
       },
     ];
-  }, [conversationData]);
+  }, [conversationData, t]);
 
   const handleExportChat = useCallback(async (from: Date, to: Date) => {
-    if (!conversationId) return;
+    // Three-tier dual-PDF export — same shape as MeridianChat
+    // (server-side WeasyPrint → client-side jspdf/html2canvas →
+    // legacy single-PDF backend).
+    const subject = t("coach.sessionSubject", { coachName, defaultValue: "{{coachName}} Coaching Session" });
+    const fromLabel = format(from, "do MMM yy");
+    const toLabel = format(to, "do MMM yy");
+    const userLabel = user?.fullName || user?.name || user?.email || t("common.you", { defaultValue: "You" });
+    const slug = `${coachName.toLowerCase().replace(/\s+/g, "-") || "coach"}-${format(from, "yyyy-MM-dd")}-to-${format(to, "yyyy-MM-dd")}`;
+    const meta: TranscriptMeta = {
+      sessionSubject: subject,
+      fromLabel,
+      toLabel,
+      userLabel,
+      slug,
+      assistantDomain: t("coach.assistantDomain", { defaultValue: "Coaching" }),
+    };
+
+    // ── Tier 1: server-side WeasyPrint
+    if (messages.length > 0) {
+      try {
+        const turns = parseChatMessages(messages, userLabel);
+        const turnPayload: TranscriptTurnPayload[] = turns.map((t) => ({
+          role: t.role,
+          speaker_raw: t.speakerRaw,
+          body: t.body,
+          timestamp: t.timestamp ?? null,
+          contributing_agents: t.contributingAgents ?? null,
+        }));
+        const resp = await exportTranscriptViaServer(turnPayload, {
+          session_subject: meta.sessionSubject,
+          from_label: meta.fromLabel,
+          to_label: meta.toLabel,
+          user_label: meta.userLabel,
+          slug: meta.slug,
+          assistant_domain: meta.assistantDomain,
+        });
+        if (resp?.status && resp.files?.length) {
+          for (const f of resp.files) {
+            const raw = atob(f.base64);
+            const bytes = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+            const blob = new Blob([bytes], { type: f.mime_type || "application/pdf" });
+            downloadBlob(f.file_name, blob);
+          }
+          toast.success(t("coach.exportSuccess", { defaultValue: "Exported Conversation Log + Structured Report PDFs." }));
+          return;
+        }
+      } catch (serverErr) {
+        console.warn("Server-side dual-PDF export failed, falling back to client renderer.", serverErr);
+      }
+    }
+
+    // ── Tier 2: client-side jspdf + html2canvas
+    try {
+      const pdfs = await exportTranscriptPdfs({ messages, meta });
+      for (const { fileName, blob } of pdfs) {
+        downloadBlob(fileName, blob);
+      }
+      toast.success(t("coach.exportSuccess", { defaultValue: "Exported Conversation Log + Structured Report PDFs." }));
+      return;
+    } catch (clientErr) {
+      console.warn("Client-side dual-PDF export failed, falling back to legacy backend export.", clientErr);
+    }
+
+    // ── Tier 3: legacy single-PDF backend
+    if (!conversationId) {
+      toast.error(t("coach.exportNoConversation", { defaultValue: "Couldn't export chat — no active conversation." }));
+      return;
+    }
     try {
       const resp = await exportConversation(conversationId, from, to) as { status?: boolean; data?: { file_name?: string; mime_type?: string; base64_pdf?: string; base64_csv?: string }; file_name?: string; mime_type?: string; base64_pdf?: string; base64_csv?: string };
       if (!resp || !resp.status) return;
-      // API may return data nested in envelope or flat — handle both
       const payload = resp.data ?? resp;
       const base64 = payload.base64_pdf || payload.base64_csv;
       const mime = payload.mime_type || "application/pdf";
@@ -525,18 +606,11 @@ export default function CoachChat() {
       for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      downloadBlob(fileName, blob);
     } catch (e) {
       console.error("Failed to export conversation", e);
     }
-  }, [conversationId]);
+  }, [conversationId, messages, user, coachName, t]);
 
   // Map paginated conversation messages into ChatMessage[] and sync to state
   useEffect(() => {
@@ -553,9 +627,16 @@ export default function CoachChat() {
       const sender: "assistant" | "user" = role.toLowerCase() === "assistant" ? "assistant" : "user";
       const created = (m as Record<string, unknown>).sent_at ?? (m as Record<string, unknown>).created_at ?? (m as Record<string, unknown>).timestamp;
       const time = formatUSTimeSafe(created);
+      const createdTs =
+        typeof created === "number"
+          ? created
+          : typeof created === "string"
+            ? Date.parse(created)
+            : NaN;
+      const ts = Number.isNaN(createdTs) ? undefined : createdTs;
       const text = typeof (m as Record<string, unknown>).content === "string" ? ((m as Record<string, unknown>).content as string) :
         typeof (m as Record<string, unknown>).text === "string" ? ((m as Record<string, unknown>).text as string) : "";
-      return { id, kind: "text", sender, text, time };
+      return { id, kind: "text", sender, text, time, ts };
     });
     setMessages(mapped);
 
@@ -655,7 +736,7 @@ export default function CoachChat() {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             isAudioRunning={hasAudio && !isAudioPaused}
-            audioWarningText="Switching conversations will reset audio for the new conversation."
+            audioWarningText={t("coach.audioWarning", { defaultValue: "Switching conversations will reset audio for the new conversation." })}
             onDeleteConversation={handleDeleteConversation}
             onRenameConversation={handleRenameConversation}
             renameIsPending={renameConvMutation.isPending}
@@ -673,10 +754,11 @@ export default function CoachChat() {
               setIsAudioPaused(false);
               // Add user message and a processing placeholder
               const timeStr = formatUSTimeSafe(new Date());
+              const tsNow = Date.now();
               setMessages((prev) => ([
                 ...prev.filter((m) => m.kind !== 'processing'),
-                { id: `msg-${Date.now()}-user`, kind: 'text', sender: 'user', text: t, time: timeStr },
-                { id: `msg-${Date.now()}-assistant`, kind: 'processing', sender: 'assistant', time: timeStr, isProcessing: true, type: 'processing' },
+                { id: `msg-${Date.now()}-user`, kind: 'text', sender: 'user', text: t, time: timeStr, ts: tsNow },
+                { id: `msg-${Date.now()}-assistant`, kind: 'processing', sender: 'assistant', time: timeStr, ts: tsNow, isProcessing: true, type: 'processing' },
               ]));
               sendTextMessage(t);
             }}

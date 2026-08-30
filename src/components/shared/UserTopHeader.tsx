@@ -1,5 +1,5 @@
-import { Bell, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronDown, PlayCircle } from "lucide-react";
+import NotificationBell from "@/components/layout/NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,13 +10,50 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/useAuth";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ROLES, ROUTES } from "@/constants/routes";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+
+/**
+ * The My Workspace orientation film (8:06), narrated.
+ *
+ * A durable object URL on the public demo bucket the Home videos already play
+ * from: no auth, no expiry. A presigned link would lapse and leave a dead pill
+ * in the header of every page, which is worse than the one it replaced.
+ *
+ * Re-recorded 2026-08-26. Pointed at a NEW key rather than overwriting
+ * `My_Workspace_userguide.mp4` in place: that bucket is served straight from
+ * S3 with `max-age=86400` and no CloudFront in front, so an overwrite has no
+ * invalidation path — anyone who had already played the old film would keep
+ * getting it for up to a day, with nothing anyone could do about it. A new key
+ * is correct for every viewer the moment this deploys.
+ */
+const WORKSPACE_GUIDE_VIDEO_URL =
+  "https://ig-demo-public-videos.s3.amazonaws.com/My_Workspace_Orientation.mp4";
+
+/**
+ * Route prefixes where the guide pill is NOT shown.
+ *
+ * This header is rendered by SidebarScaffold for all six roles, so an ungated
+ * pill would appear on every admin console too. The film is about My Workspace
+ * — the user-role surface — so it follows the user's own pages and stays out of
+ * the role consoles rather than being shown everywhere or only on /home.
+ */
+const ROLE_CONSOLE_PREFIXES = [
+  "/super-admin",
+  "/manager",
+  "/company-admin",
+  "/practitioner",
+  "/distributor",
+];
 
 export default function UserTopHeader() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const showWorkspaceGuide = !ROLE_CONSOLE_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
   const email = user?.email ?? "";
   const role = user?.role ?? "";
   const fallbackName = (email && email.split("@")[0]) || "User";
@@ -24,18 +61,41 @@ export default function UserTopHeader() {
   const initial = (displayName?.[0] ?? "U").toUpperCase();
   return (
     <div className="mt-2 flex items-center justify-between w-full">
-      <div className="ml-1 flex-1 min-w-0 flex flex-col text-left">
-        <p className="text-sm sm:text-base md:text-2xl font-medium text-black-250 truncate">Welcome! {displayName}</p>
-        <p className="text-xs text-black-250 hidden sm:block">
-          Your AI coaches are ready—let’s begin!
-        </p>
+      {/* The greeting column and the guide pill sit on one row, so the pill
+          lands immediately right of the two-line greeting rather than below it.
+          `min-w-0` stays on the column, not this wrapper — it is what lets the
+          name keep truncating instead of pushing the pill off the header. */}
+      <div className="ml-1 flex-1 min-w-0 flex items-center gap-3">
+        <div className="min-w-0 flex flex-col text-left">
+          <p className="font-serif text-sm sm:text-base md:text-2xl font-medium text-ink truncate">Welcome! {displayName}</p>
+          <p className="text-xs text-black-250 hidden sm:block">
+            Your AI coaches are ready—let’s begin!
+          </p>
+        </div>
+        {/* Orientation film for My Workspace. A plain anchor, not
+            `window.open`: `window.open(url, "_blank", "noopener")` returns null
+            and navigates the CURRENT tab in some browsers, which would drop the
+            user out of the app mid-session. `rel` carries noopener anyway.
+
+            Hidden below `sm`, matching the subtitle above it — the header is
+            56px tall and already carries three controls on the right, so on a
+            phone the pill would squeeze the name it sits beside. */}
+        {showWorkspaceGuide && (
+          <a
+            href={WORKSPACE_GUIDE_VIDEO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="workspace-guide-video"
+            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#C9711A]/35 bg-[#C9711A]/10 px-3 py-1 text-[13px] font-semibold text-[#9C560F] transition-colors hover:bg-[#C9711A]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9711A]"
+          >
+            <PlayCircle className="size-4" aria-hidden />
+            Watch: My Workspace guide
+          </a>
+        )}
       </div>
       <div className="flex items-center gap-2">
         <LanguageSwitcher />
-        <Button disabled variant="ghost" size="icon" aria-label="Notifications" className="relative cursor-not-allowed size-11 md:size-9">
-          <Bell className="size-5" />
-          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-        </Button>
+        <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
