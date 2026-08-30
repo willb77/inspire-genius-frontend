@@ -30,6 +30,14 @@ export type UserActivityEvent = {
 export type UserActivity = {
   userId: string
   /** null = this user has never logged in. Not a missing value — an absent one. */
+  /** The most recent sign-in that actually recorded an address, when the
+   *  latest sign-in did not.
+   *
+   *  Absent when `lastLogin` already carries an IP — the two must never show
+   *  the same address twice. It carries its OWN timestamp because it is a
+   *  DIFFERENT sign-in: presenting it as the latest one's address would answer
+   *  "where did they sign in from this time?" confidently and wrongly. */
+  lastKnownIp?: { ipAddress: string; at: string } | null
   lastLogin: {
     at: string | null
     ipAddress?: string | null
