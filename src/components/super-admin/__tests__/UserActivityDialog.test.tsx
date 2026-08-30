@@ -96,3 +96,60 @@ it("lists recent audited events", async () => {
   expect(await screen.findByText("document.uploaded")).toBeInTheDocument()
   expect(screen.getByText("198.51.100.4")).toBeInTheDocument()
 })
+
+describe("the IP fallback found in the browser, not by a test", () => {
+  /* The legacy bare `login` action records no IP (dev: 127 rows, 0 addresses)
+   * while `auth.user.login` always does (349 of 349). `lastLogin` takes the
+   * newest row across both spellings, so a user whose most recent sign-in
+   * landed under the legacy name was shown "not captured" while their address
+   * sat in the log minutes earlier — 8 of the 40 users with login history. */
+
+  it("shows the address we hold, and says which sign-in it belongs to", async () => {
+    mockGet.mockResolvedValue({
+      userId: "u1",
+      lastLogin: { at: "2026-08-25T18:29:00Z", ipAddress: null, userAgent: null, action: "login" },
+      lastKnownIp: { ipAddress: "203.0.113.10", at: "2026-08-25T18:25:00Z" },
+      loginCount: 24,
+      locationRecorded: false,
+      activity: [],
+    })
+    renderDialog()
+    expect(await screen.findByText("203.0.113.10")).toBeInTheDocument()
+    // It must still be clear the LATEST sign-in had no address of its own —
+    // attributing an older IP to it would be a worse bug than showing none.
+    expect(screen.getByText(/Not captured for this sign-in/i)).toBeInTheDocument()
+    expect(screen.getByText(/most recent recorded address/i)).toBeInTheDocument()
+  })
+
+  it("says nothing extra when there is no address anywhere", async () => {
+    mockGet.mockResolvedValue({
+      userId: "u1",
+      lastLogin: { at: "2026-08-25T18:29:00Z", ipAddress: null, userAgent: null, action: "login" },
+      lastKnownIp: null,
+      loginCount: 2,
+      locationRecorded: false,
+      activity: [],
+    })
+    renderDialog()
+    expect(await screen.findByText(/Not captured for this sign-in/i)).toBeInTheDocument()
+    expect(screen.queryByText(/most recent recorded address/i)).not.toBeInTheDocument()
+  })
+
+  it("does not show the same address twice when the latest sign-in has one", async () => {
+    mockGet.mockResolvedValue({
+      userId: "u1",
+      lastLogin: {
+        at: "2026-08-25T18:29:00Z", ipAddress: "203.0.113.99",
+        userAgent: null, action: "auth.user.login",
+      },
+      lastKnownIp: null,
+      loginCount: 5,
+      locationRecorded: false,
+      activity: [],
+    })
+    renderDialog()
+    expect(await screen.findByText("203.0.113.99")).toBeInTheDocument()
+    expect(screen.queryByText(/most recent recorded address/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Not captured for this sign-in/i)).not.toBeInTheDocument()
+  })
+})
