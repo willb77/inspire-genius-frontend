@@ -387,6 +387,13 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   // are the people they coach, and the page is now a roster of real direct
   // reports (employee_profiles.manager_id) rather than a management console.
   { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Roster (Client)" },
+  // Student Oversight sits directly under the roster because it answers the
+  // question the roster raises: "what may I actually see about these people?"
+  // Kept as a SEPARATE entry rather than merged into Team Roster — the two
+  // pages obey different rules, and a manager needs to know which one they are
+  // reading. Team Roster shows PRISM colour for everyone; this one shows
+  // nothing a student has not agreed to share.
+  { to: ROUTES.MANAGER.STUDENTS, icon: ShieldCheck, label: "Student Oversight" },
   // Sits next to the roster because it is how the roster grows. There is no
   // notification when a request arrives — the queue is pull-only — so it has
   // to be visible in the sidebar or nobody will ever look at it.
