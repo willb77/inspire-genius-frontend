@@ -41,6 +41,18 @@ describe("constants/navigation", () => {
   // the roster GROWS — approving a request writes that person's tenant key —
   // and there is no notification when one arrives, so if it is not in the
   // sidebar nobody ever looks at it and the queue silently fills up.
+  //
+  // 2026-08-29: "Student Oversight" added directly under the roster (Student
+  // Oversight Phase 1). It sits there because it answers the question the
+  // roster raises — "what may I actually see about these people?" — and it is
+  // a SEPARATE entry rather than a tab inside Team Roster because the two obey
+  // different rules: Team Roster shows every direct report's PRISM colour
+  // unconditionally, this one shows nothing a student has not agreed to share.
+  // A manager needs to know which of those they are reading.
+  //
+  // This assertion failing is the intended behaviour of adding a nav item: the
+  // order was specified by a person, so changing it should require a deliberate
+  // edit here rather than passing silently.
   describe("MANAGER_NAV_ITEMS", () => {
     const labels = () => NAV_ITEMS_BY_ROLE.manager.map((i) => i.label)
 
@@ -48,6 +60,7 @@ describe("constants/navigation", () => {
       expect(labels()).toEqual([
         "Dashboard",
         "Team Roster (Client)",
+        "Student Oversight",
         "Join Requests",
         "Schedule",
         "Chat with Meridian",
