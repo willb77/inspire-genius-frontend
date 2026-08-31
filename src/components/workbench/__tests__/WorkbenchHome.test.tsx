@@ -131,3 +131,34 @@ describe("hero chrome is the only role difference", () => {
     expect(screen.getByText("Good morning, Dana.")).toBeInTheDocument()
   })
 })
+
+
+describe("the hero does not state counts it does not have yet", () => {
+  /* Caught on staging-b by watching the page load, not by a test.
+   *
+   * The hero renders OUTSIDE the loading branch so the greeting and actions
+   * appear immediately — but the subtitle is a count sentence, so for the
+   * second before the query resolved the page published
+   * "0 on your roster · 0 without a PRISM result" about a real manager's team.
+   * Brief, but it is a confident claim made with no data behind it, and it is
+   * indistinguishable from the true statement about a manager who has nobody. */
+
+  it("suppresses the count sentence while loading", () => {
+    renderWB(base({ isLoading: true, subtitle: "2 on your roster · 1 without a PRISM result." }))
+    expect(screen.queryByText(/on your roster/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/Loading your roster/i)).toBeInTheDocument()
+  })
+
+  it("still shows the greeting while loading", () => {
+    // The fix must not blank the hero — the point is to withhold the NUMBERS,
+    // not to make the page look broken.
+    renderWB(base({ isLoading: true }))
+    expect(screen.getByText("Good morning, Alicia")).toBeInTheDocument()
+  })
+
+  it("shows the count sentence once the data has resolved", () => {
+    renderWB(base({ subtitle: "2 on your roster · 1 without a PRISM result." }))
+    expect(screen.getByText(/2 on your roster/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Loading your roster/i)).not.toBeInTheDocument()
+  })
+})
