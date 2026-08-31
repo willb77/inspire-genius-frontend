@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "Pendamping",
+    "sectionLabel": "Sesi Coaching",
     "authError": "Kesalahan autentikasi",
     "untitledConversation": "Tanpa Judul",
     "previewPlaceholder": "Akan dikerjakan",

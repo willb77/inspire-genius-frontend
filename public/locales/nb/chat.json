@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "Coach",
+    "sectionLabel": "Coaching-økt",
     "authError": "Autentiseringsfeil",
     "untitledConversation": "Ingen tittel",
     "previewPlaceholder": "Å gjøre",

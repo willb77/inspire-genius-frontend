@@ -148,7 +148,67 @@ const DATA_SOURCES = [
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export default function DiagnosticChat() {
+export type DiagnosticChatVariant = "classic" | "v2";
+
+/**
+ * DiagnosticChat / Agent Trace Console.
+ *
+ * `variant="v2"` (the flag-gated new user surface) re-skins the console chrome
+ * to the HomeV2 design system — cream page panel, hairline borders, serif
+ * title, ink/mute text and the orange brand accent replacing indigo on the
+ * primary controls and user bubbles. All diagnostic machinery (WebSocket,
+ * trace log, voice pipeline, REST fallback) and the semantic trace-level
+ * colours (green/red/amber/blue signalling) are shared and unchanged — only
+ * the neutral chrome differs. `variant="classic"` (the default, and
+ * /super-admin/agent-trace-console/classic) renders the original console
+ * unchanged.
+ */
+export default function DiagnosticChat({
+  variant = "classic",
+}: {
+  variant?: DiagnosticChatVariant;
+} = {}) {
+  const isV2 = variant === "v2";
+
+  // Token-based chrome classes for the V2 re-skin. Each entry pairs the V2
+  // (HomeV2 tokens) look with the exact classic string, so the classic path is
+  // byte-for-byte unchanged when the flag is OFF.
+  const skin = {
+    page: isV2 ? "min-h-screen bg-panel" : "min-h-screen bg-white",
+    headerBar: isV2
+      ? "flex items-center justify-between px-4 py-3 border-b border-hairline bg-white shrink-0"
+      : "flex items-center justify-between px-4 py-3 border-b bg-white shrink-0",
+    brandIcon: isV2 ? "h-5 w-5 text-accent-orange" : "h-5 w-5 text-indigo-600",
+    title: isV2
+      ? "font-serif text-lg font-semibold text-ink"
+      : "text-lg font-semibold text-gray-900",
+    chromeBtn: isV2
+      ? "border-hairline text-ink hover:bg-panel"
+      : "border-gray-300 hover:bg-gray-50",
+    traceToggleActive: isV2
+      ? "bg-accent-orange/10 border-accent-orange/40 text-accent-orange-dark"
+      : "bg-indigo-50 border-indigo-300 text-indigo-700",
+    dataBar: isV2
+      ? "px-4 py-2 bg-panel border-b border-hairline text-xs"
+      : "px-4 py-2 bg-gray-50 border-b text-xs",
+    dataLabel: isV2 ? "font-medium text-mute" : "font-medium text-gray-600",
+    userBubble: isV2 ? "bg-accent-orange text-white" : "bg-indigo-600 text-white",
+    userMeta: isV2 ? "text-white/70" : "text-indigo-200",
+    inputBar: isV2
+      ? "px-4 py-3 border-t border-hairline bg-white shrink-0"
+      : "px-4 py-3 border-t bg-white shrink-0",
+    textarea: isV2
+      ? "w-full resize-none rounded-lg border border-hairline px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange focus:border-transparent disabled:bg-panel disabled:text-mute"
+      : "w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400",
+    sendBtn: isV2
+      ? "absolute right-2 bottom-2 p-1.5 rounded-md bg-accent-orange text-white hover:bg-accent-orange-dark disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+      : "absolute right-2 bottom-2 p-1.5 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors",
+    traceHeaderBar: isV2
+      ? "flex items-center justify-between px-4 py-2.5 border-b border-hairline bg-white"
+      : "flex items-center justify-between px-4 py-2.5 border-b bg-white",
+    traceAccentIcon: isV2 ? "h-4 w-4 text-accent-orange" : "h-4 w-4 text-indigo-600",
+  };
+
   // Try to read token from auth context if available, otherwise use empty string
   let userEmail = "anonymous";
   let userRole = "none";
@@ -694,11 +754,11 @@ export default function DiagnosticChat() {
       <div className="bg-white rounded-lg border overflow-hidden">
         <div className="flex flex-col h-[calc(100vh-8rem)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-white shrink-0">
+        <div className={skin.headerBar}>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <Network className="h-5 w-5 text-indigo-600" />
-              <h1 className="text-lg font-semibold text-gray-900">
+              <Network className={skin.brandIcon} />
+              <h1 className={skin.title}>
                 {t("diagnostic.title", { defaultValue: "Diagnostic Chat" })}
               </h1>
             </div>
@@ -719,7 +779,7 @@ export default function DiagnosticChat() {
             <button
               onClick={handleNewChat}
               data-testid="diagnostic-new-chat-button"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${skin.chromeBtn}`}
               title={t("diagnostic.newChatTitle", { defaultValue: "Start a new chat session" })}
             >
               <SquarePen className="h-3.5 w-3.5" />
@@ -727,20 +787,20 @@ export default function DiagnosticChat() {
             </button>
             <button
               onClick={() => { disconnect(); connect(); }}
-              className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+              className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${skin.chromeBtn}`}
             >
               {t("diagnostic.reconnect", { defaultValue: "Reconnect" })}
             </button>
             <button
               onClick={clearAll}
-              className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+              className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${skin.chromeBtn}`}
               title={t("diagnostic.clearAllTitle", { defaultValue: "Clear all" })}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => setTraceOpen((v) => !v)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${traceOpen ? "bg-indigo-50 border-indigo-300 text-indigo-700" : "border-gray-300 hover:bg-gray-50"}`}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${traceOpen ? skin.traceToggleActive : skin.chromeBtn}`}
             >
               {traceOpen ? t("common.hide", { defaultValue: "Hide" }) : t("common.show", { defaultValue: "Show" })} {t("diagnostic.traceLog", { defaultValue: "Trace Log" })}
             </button>
@@ -752,10 +812,10 @@ export default function DiagnosticChat() {
           {/* Chat Panel */}
           <div className={`flex flex-col ${traceOpen ? "w-1/2" : "w-full"} border-r`}>
             {/* Data Sources Bar */}
-            <div className="px-4 py-2 bg-gray-50 border-b text-xs">
+            <div className={skin.dataBar}>
               <div className="flex items-center gap-2 mb-1">
                 <Database className="h-3.5 w-3.5 text-gray-500" />
-                <span className="font-medium text-gray-600">{t("diagnostic.dataSourcesLabel", { defaultValue: "Connected Data Sources" })}</span>
+                <span className={skin.dataLabel}>{t("diagnostic.dataSourcesLabel", { defaultValue: "Connected Data Sources" })}</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {DATA_SOURCES.map((ds) => (
@@ -790,7 +850,7 @@ export default function DiagnosticChat() {
                   <div
                     className={`max-w-[80%] rounded-xl px-4 py-3 ${
                       msg.sender === "user"
-                        ? "bg-indigo-600 text-white"
+                        ? skin.userBubble
                         : "bg-gray-100 text-gray-900"
                     }`}
                   >
@@ -807,7 +867,7 @@ export default function DiagnosticChat() {
                       </div>
                     )}
                     <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                    <div className={`flex items-center gap-3 mt-2 text-[10px] ${msg.sender === "user" ? "text-indigo-200" : "text-gray-400"}`}>
+                    <div className={`flex items-center gap-3 mt-2 text-[10px] ${msg.sender === "user" ? skin.userMeta : "text-gray-400"}`}>
                       <span className="flex items-center gap-1">
                         <Clock className="h-2.5 w-2.5" />
                         {ts(msg.timestamp)}
@@ -865,7 +925,7 @@ export default function DiagnosticChat() {
             </div>
 
             {/* Input Bar */}
-            <div className="px-4 py-3 border-t bg-white shrink-0">
+            <div className={skin.inputBar}>
               <div className="flex items-end gap-2">
                 <button
                   onClick={toggleRecording}
@@ -893,12 +953,12 @@ export default function DiagnosticChat() {
                     placeholder={t("diagnostic.inputPlaceholder", { defaultValue: "Type a message to trace the full pipeline..." })}
                     disabled={isProcessing}
                     rows={1}
-                    className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
+                    className={skin.textarea}
                   />
                   <button
                     onClick={handleSend}
                     disabled={!inputText.trim() || isProcessing}
-                    className="absolute right-2 bottom-2 p-1.5 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className={skin.sendBtn}
                   >
                     <ArrowUp className="h-4 w-4" />
                   </button>
@@ -916,9 +976,9 @@ export default function DiagnosticChat() {
           {/* Trace Log Panel */}
           {traceOpen && (
             <div className="flex flex-col w-1/2 bg-gray-50">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b bg-white">
+              <div className={skin.traceHeaderBar}>
                 <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-indigo-600" />
+                  <Activity className={skin.traceAccentIcon} />
                   <span className="text-sm font-semibold text-gray-700">
                     {t("diagnostic.traceLog", { defaultValue: "Trace Log" })}
                   </span>

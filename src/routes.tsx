@@ -359,6 +359,24 @@ function MeridianChatSurface() {
     </Suspense>
   );
 }
+// CoachChat + the Agent Trace Console follow the silent Wave-1 resolver (like
+// Dashboard/Coaches): the new_user_surfaces flag picks the variant, and a
+// /classic escape-hatch route always renders the original. Both keep every
+// piece of chat machinery in the single component; only the skin differs.
+function CoachChatSurface() {
+  return isNewUserSurfacesEnabled() ? (
+    <CoachChat variant="v2" />
+  ) : (
+    <CoachChat variant="classic" />
+  );
+}
+function AgentTraceConsoleSurface() {
+  return isNewUserSurfacesEnabled() ? (
+    <DiagnosticChat variant="v2" />
+  ) : (
+    <DiagnosticChat variant="classic" />
+  );
+}
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -422,7 +440,8 @@ export const routes: RouteObject[] = [
       { path: "/dashboard/classic", element: withSuspense(<Dashboard />) },
       { path: "/coaches", element: withSuspense(<CoachesSurface />) },
       { path: "/coaches/classic", element: withSuspense(<Coaches />) },
-      { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
+      { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChatSurface />) },
+      { path: "/dashboard/:coach/chat/classic", element: withSuspense(<CoachChat />) },
       { path: "/meridian/chat", element: withSuspense(<MeridianChatSurface />) },
       { path: "/meridian/chat/classic", element: withSuspense(<MeridianChat />) },
       // Bio Capture — Chronicle life-narrative surface (viewer + chat + memoir export)
@@ -526,7 +545,8 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/explainability/c/:sessionId", element: withSuspense(<Explainability />) },
       { path: "/super-admin/explainability/c/:sessionId/t/:turnId", element: withSuspense(<Explainability />) },
       // Wave 2 Lane 2.A (P7.1) — formerly `/diagnostic-chat`. Renamed to "Agent Trace Console" and gated to super-admin.
-      { path: "/super-admin/agent-trace-console", element: withSuspense(<DiagnosticChat />) },
+      { path: "/super-admin/agent-trace-console", element: withSuspense(<AgentTraceConsoleSurface />) },
+      { path: "/super-admin/agent-trace-console/classic", element: withSuspense(<DiagnosticChat />) },
       { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
 
       // Agent Trainer routes

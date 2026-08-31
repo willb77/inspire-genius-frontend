@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "Coach",
+    "sectionLabel": "Coachningssession",
     "authError": "Autentiseringsfel",
     "untitledConversation": "Ingen titel",
     "previewPlaceholder": "Att göra",
