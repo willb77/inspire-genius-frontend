@@ -148,18 +148,40 @@ describe("GrantLoansPage (UI-6)", () => {
   })
 })
 
-describe("GrantApplicationsPage (UI-7 concierge)", () => {
-  test("builds a checklist and toggles completion", async () => {
+describe("GrantApplicationsPage (UI-7 FAFSA concierge)", () => {
+  test("renders readiness, collect fields, packet action, and the guided handoff", async () => {
     renderPage(<GrantApplicationsPage />)
     expect(screen.getByRole("heading", { name: "Application Concierge" })).toBeInTheDocument()
-    // "Create your FSA ID" is both the "Next up" hint and a list item — expect it twice.
-    expect((await screen.findAllByText("Create your FSA ID")).length).toBeGreaterThan(1)
 
-    // A deadline-derived task is unique to the list; toggling it strikes it through.
-    const fafsaLabel = await screen.findByText("Submit FAFSA Submission")
-    expect(fafsaLabel).not.toHaveClass("line-through")
-    fireEvent.click(fafsaLabel.closest("button") as HTMLButtonElement)
-    expect(fafsaLabel).toHaveClass("line-through")
+    // Completeness % from the mock (45%).
+    expect(await screen.findByText("45%")).toBeInTheDocument()
+    // The no-SSN / no-tax reassurance is always shown.
+    expect(screen.getByText(/never stores your SSN or tax data/i)).toBeInTheDocument()
+
+    // A collectable field renders as an input; the SSN is a locked, non-input row.
+    expect(await screen.findByLabelText("First name")).toBeInTheDocument()
+    expect(screen.getByText(/You enter on StudentAid.gov/i)).toBeInTheDocument()
+    // A DDX tax field is surfaced as auto-fill, never an input.
+    expect(screen.getByText(/Auto-fills on consent/i)).toBeInTheDocument()
+
+    // The prep-packet action is present.
+    expect(screen.getByRole("button", { name: /Generate prep packet/i })).toBeInTheDocument()
+
+    // A guided handoff step with a StudentAid.gov deep link renders.
+    expect(await screen.findByText("Start your FAFSA form")).toBeInTheDocument()
+    const links = screen.getAllByRole("link", { name: /Open on StudentAid.gov/i })
+    expect(links.length).toBeGreaterThan(0)
+    expect(links[0]).toHaveAttribute("href", expect.stringContaining("studentaid.gov"))
+  })
+
+  test("toggles a guided handoff step to complete", async () => {
+    renderPage(<GrantApplicationsPage />)
+    const stepTitle = await screen.findByText("Start your FAFSA form")
+    expect(stepTitle).not.toHaveClass("line-through")
+    const toggle = screen.getByRole("button", { name: /Mark "Start your FAFSA form" done/i })
+    fireEvent.click(toggle)
+    // The mock mutation flips the step's status; the UI re-renders it struck through.
+    expect(await screen.findByText("Start your FAFSA form")).toHaveClass("line-through")
   })
 })
 

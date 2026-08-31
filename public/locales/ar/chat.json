@@ -81,6 +81,14 @@
       "ready": "الصوت جاهز",
       "connecting": "جارٍ الاتصال",
       "off": "الصوت متوقف"
+    },
+    "personalRow": {
+      "aria": "صفحاتك",
+      "selfPortrait": "صورتي الذاتية",
+      "moments": "لحظات",
+      "coaching": "التوجيه",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} غير مُفعَّل لحسابك"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "المستندات",
       "close": "إغلاق المستندات",
       "closeOverlay": "إغلاق لوحة المستندات"
-    }
+    },
+    "upload": "رفع مستند"
   },
   "export": {
     "title": "تصدير المحادثة",

@@ -46,6 +46,26 @@ export type MeridianResponse = {
     rag_avg_similarity?: number;
     contributing_agents?: string[];
     synthesized?: boolean;
+    // IG Core document-generation skill — files produced this turn, each with
+    // a presigned download URL. Rendered as a download button in the bubble.
+    attachments?: {
+      kind: string;
+      filename: string;
+      url: string;
+      format?: string;
+      content_type?: string;
+      size_bytes?: number;
+      expires_in?: number;
+    }[];
+    // PRISM Brain Map for turns that report the user's own scores. Kept out
+    // of the response text on purpose so TTS never speaks the SVG markup.
+    prism_map?: {
+      format: "svg";
+      svg: string;
+      table: string;
+      description: string;
+      assessed_at?: string | null;
+    };
   };
   observability?: Record<string, unknown>;
 };

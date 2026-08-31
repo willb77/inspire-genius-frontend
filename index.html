@@ -14,6 +14,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Inspire Genius" />
     <title>Inspire Genius</title>
+    <!--
+      Asset-failure recovery. MUST stay a classic (non-module) script and MUST
+      stay ahead of the app's module script, so its listeners are registered
+      before any module can fail to load.
+
+      The in-app stale-bundle detector (src/lib/buildVersion.ts) cannot help
+      when the bundle itself fails to load — it ships inside that bundle. This
+      file is served from a stable, un-hashed URL and referenced from
+      index.html, which is deployed no-store, so it is always current.
+      See public/ig-recovery.js for the full rationale.
+    -->
+    <script src="/ig-recovery.js"></script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,15 +1,11 @@
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { createFellow, inviteFellow } from "@/services/honor/coach.service"
+import { createFellow, inviteFellow, setFellowGoals } from "@/services/honor/coach.service"
 import {
   importFellowAssessment,
   type HonorFramework,
 } from "@/services/honor/assessment.service"
-import {
-  initiateUpload,
-  uploadToS3,
-  triggerProcessing,
-} from "@/services/documents/documentService"
+import { uploadFellowDocument } from "@/services/honor/artifact.service"
 
 /**
  * Honor onboarding — one member, wired end-to-end to the IG Core process.
@@ -19,7 +15,7 @@ import {
  *   2. inviteFellow           → POST .../{id}/invite (mints the IG user + magic-link
  *                               intake + "honor" entitlement — gives us a SUBJECT
  *                               user to attach scores/docs to)
- *   3. PRISM CSV (mandatory)  → coach-scoped assessments/import (adapters →
+ *   3. PRISM CSV (optional)   → coach-scoped assessments/import (adapters →
  *                               assessments/assessment_scores, subject = member)
  *   4. optional frameworks    → same import path (DISC / CLIFTON / BIG_FIVE /
  *                               MBTI / HOGAN — the shipped adapters parse them)
@@ -42,13 +38,25 @@ export type HonorOnboardInput = {
   background?: string
   target?: string
   cohort?: string
-  /** Mandatory PRISM export (CSV / PDF / XLSX) — the source-of-truth assessment. */
-  prismFile: File
+  /** Optional PRISM export (CSV / PDF / XLSX). When present it's imported as the
+   *  source-of-truth assessment; a fellow can be onboarded without one. */
+  prismFile?: File | null
   /** Optional behavioural reports, one file per provided framework. */
   frameworkFiles?: Partial<Record<OptionalFrameworkKey, File>>
+  /** Send the magic-link intake email now (default true). Off = create the
+   *  account silently; the coach sends the invite later from My Fellows. */
+  sendInvitation?: boolean
   resumeFile?: File | null
   bio?: string
   additionalInfo?: string
+  /** Optional Bio file (pdf/doc/docx/xls/xlsx) — supplements/replaces the bio text. */
+  bioFile?: File | null
+  /** Optional Additional-Information file — stored with the bio in RAG (doc_kind "bio"). */
+  additionalInfoFile?: File | null
+  /** Optional goals & objectives text — stored via the coach goals endpoint. */
+  goals?: string
+  /** Optional goals file — stored in the member's RAG (doc_kind "personal"). */
+  goalsFile?: File | null
 }
 
 export type OnboardStepResult = {
@@ -64,21 +72,14 @@ export type HonorOnboardResult = {
 }
 
 /** Turn a plain-text field into an uploadable document (bio / notes → RAG). */
-async function uploadTextDocument(name: string, text: string, docKind: string) {
+async function uploadTextDocument(
+  name: string,
+  text: string,
+  docKind: "resume" | "bio" | "personal",
+  subjectUserId?: string,
+) {
   const file = new File([text], name, { type: "text/plain" })
-  await uploadFileDocument(file, docKind)
-}
-
-/** Reusable 3-step presigned upload → process (document-service). */
-async function uploadFileDocument(file: File, docKind: string) {
-  const presigned = await initiateUpload({
-    filename: file.name,
-    content_type: file.type || "application/octet-stream",
-    file_size: file.size,
-    doc_kind: docKind,
-  })
-  await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
-  await triggerProcessing(presigned.document_id)
+  await uploadFellowDocument(file, docKind, subjectUserId)
 }
 
 export async function runHonorOnboard(
@@ -104,11 +105,30 @@ export async function runHonorOnboard(
 
   const result: HonorOnboardResult = { fellowId, steps }
 
+  // The invite RE-KEYS the fellow row to the invited user's canonical sub, so the
+  // create-time `fellowId` goes STALE the moment the invite succeeds. Every
+  // subject-scoped import below must target the POST-INVITE id — which the invite
+  // endpoint returns under `data.fellowId` (NOT `data.id`; that field is absent).
+  // Default to the create id only if the invite response omits the new id.
+  let effectiveFellowId = fellowId
+
   // 2. Invite → mint the IG user so assessments/docs have a SUBJECT to attach to.
   try {
-    const inviteResp = await inviteFellow(fellowId, input.role.toLowerCase() !== "fellow")
-    result.memberUserId = inviteResp.data?.userId
-    steps.push({ step: "invite", ok: true, detail: "magic-link intake sent" })
+    const sendInvite = input.sendInvitation !== false
+    // keepCoachAccess=true — the coach keeps the fellow they just onboarded on
+    // their roster (false soft-deletes the coach link → fellow disappears).
+    const inviteResp = await inviteFellow(fellowId, true, sendInvite)
+    effectiveFellowId = inviteResp.data?.fellowId ?? inviteResp.data?.id ?? fellowId
+    // The re-keyed fellow id IS the fellow's canonical sub, so it doubles as the
+    // subject for doc attribution when the invite omits an explicit `userId`.
+    result.memberUserId = inviteResp.data?.userId ?? inviteResp.data?.fellowId
+    // THF invite: the backend sends the "Acknowledge invitation" confirmation
+    // email itself (no magic-link, Fellows are not IG users). Nothing to fire here.
+    if (sendInvite && inviteResp.data?.invitationSent) {
+      steps.push({ step: "invite", ok: true, detail: "fellow invited — acknowledge email sent" })
+    } else {
+      steps.push({ step: "invite", ok: true, detail: "fellow created — invitation not sent (send later)" })
+    }
   } catch (e) {
     steps.push({ step: "invite", ok: false, detail: errMsg(e) })
     // Without an invited member the subject-scoped writes below will 409;
@@ -117,29 +137,35 @@ export async function runHonorOnboard(
       `PRISM/framework scores need an invited member to attach to.`)
   }
 
-  // 3. PRISM CSV — mandatory.
-  try {
-    const imp = await importFellowAssessment(fellowId, "PRISM", input.prismFile)
-    steps.push({ step: "prism", ok: true, detail: `${imp.scoreCount} scores` })
-  } catch (e) {
-    steps.push({ step: "prism", ok: false, detail: errMsg(e) })
+  // 3. PRISM CSV — OPTIONAL. Import only when a file was provided; the fellow can
+  // be onboarded without one. Use the POST-INVITE id (see re-key note above).
+  if (input.prismFile) {
+    try {
+      const imp = await importFellowAssessment(effectiveFellowId, "PRISM", input.prismFile)
+      steps.push({ step: "prism", ok: true, detail: `${imp.scoreCount} scores` })
+    } catch (e) {
+      steps.push({ step: "prism", ok: false, detail: errMsg(e) })
+    }
   }
 
-  // 4. Optional frameworks — one import per provided file.
+  // 4. Optional frameworks — one import per provided file (post-invite id).
   for (const [fw, file] of Object.entries(input.frameworkFiles ?? {})) {
     if (!file) continue
     try {
-      const imp = await importFellowAssessment(fellowId, fw as HonorFramework, file)
+      const imp = await importFellowAssessment(effectiveFellowId, fw as HonorFramework, file)
       steps.push({ step: fw, ok: true, detail: `${imp.scoreCount} scores` })
     } catch (e) {
       steps.push({ step: fw, ok: false, detail: errMsg(e) })
     }
   }
 
-  // 5. Résumé / bio / additional info → document RAG.
+  // 5. Résumé / bio / additional info → document RAG, attributed to the MEMBER
+  // (subject = their sub) so the docs inject into the member's context, not the
+  // coach's. Falls back to self-attribution if the invite didn't return a sub.
+  const subject = result.memberUserId
   if (input.resumeFile) {
     try {
-      await uploadFileDocument(input.resumeFile, "resume")
+      await uploadFellowDocument(input.resumeFile, "resume", subject)
       steps.push({ step: "resume", ok: true })
     } catch (e) {
       steps.push({ step: "resume", ok: false, detail: errMsg(e) })
@@ -150,10 +176,49 @@ export async function runHonorOnboard(
     .join("\n\n")
   if (bioText) {
     try {
-      await uploadTextDocument(`${input.firstName}_${input.lastName}_bio.txt`, bioText, "bio")
+      await uploadTextDocument(`${input.firstName}_${input.lastName}_bio.txt`, bioText, "bio", subject)
       steps.push({ step: "bio", ok: true })
     } catch (e) {
       steps.push({ step: "bio", ok: false, detail: errMsg(e) })
+    }
+  }
+  // Uploaded Bio / Additional-Information files supplement (or replace) the text —
+  // both ride the same doc_kind "bio" so they inject into the member's RAG.
+  if (input.bioFile) {
+    try {
+      await uploadFellowDocument(input.bioFile, "bio", subject)
+      steps.push({ step: "bio-file", ok: true, detail: input.bioFile.name })
+    } catch (e) {
+      steps.push({ step: "bio-file", ok: false, detail: errMsg(e) })
+    }
+  }
+  if (input.additionalInfoFile) {
+    try {
+      await uploadFellowDocument(input.additionalInfoFile, "bio", subject)
+      steps.push({ step: "additional-info-file", ok: true, detail: input.additionalInfoFile.name })
+    } catch (e) {
+      steps.push({ step: "additional-info-file", ok: false, detail: errMsg(e) })
+    }
+  }
+
+  // 6. Goals & objectives — the free text persists via the coach goals endpoint
+  // (subject = the invited member); an uploaded goals file rides the member's
+  // RAG as a "personal" doc so the coaching agents retrieve it.
+  const goalsText = input.goals?.trim()
+  if (goalsText) {
+    try {
+      await setFellowGoals(effectiveFellowId, goalsText)
+      steps.push({ step: "goals", ok: true })
+    } catch (e) {
+      steps.push({ step: "goals", ok: false, detail: errMsg(e) })
+    }
+  }
+  if (input.goalsFile) {
+    try {
+      await uploadFellowDocument(input.goalsFile, "personal", subject)
+      steps.push({ step: "goals-file", ok: true, detail: input.goalsFile.name })
+    } catch (e) {
+      steps.push({ step: "goals-file", ok: false, detail: errMsg(e) })
     }
   }
 

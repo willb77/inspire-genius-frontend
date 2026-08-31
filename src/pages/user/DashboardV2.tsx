@@ -12,6 +12,7 @@ import { useAgentEngine } from "@/lib/agentApi";
 import { ROUTES } from "@/constants/routes";
 import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
 import { V2Panel, V2Card } from "@/components/v2";
+import AskMeridianButton from "@/components/support/AskMeridianButton";
 
 /**
  * DashboardV2 — the new-design variant of the coach-picker Dashboard. Flag-gated
@@ -115,14 +116,18 @@ export default function DashboardV2() {
                 {t("dashboard:coachDescription")}
               </p>
             </div>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-mute" />
-              <Input
-                placeholder={t("dashboard:search")}
-                className="!bg-white ps-9 border-hairline"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-mute" />
+                <Input
+                  placeholder={t("dashboard:search")}
+                  className="!bg-white ps-9 border-hairline"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+              {/* Answers a question without making the user pick a coach first. */}
+              <AskMeridianButton className="!bg-white border-hairline" />
             </div>
           </div>
 

@@ -34,6 +34,13 @@ type JobResponse = {
 
 export type SendEvalOptions = {
   memberId?: string
+  /**
+   * Every subject the turn covers, primary first, for a comparative/team run.
+   * The agent engine prefers `member_ids` over `member_id` and wraps each owned
+   * subject in its own <SUBJECT> block, so the narrator sees the whole
+   * comparison set instead of only the primary. Omitted for a solo evaluation.
+   */
+  memberIds?: string[]
   sessionId?: string
   signal?: AbortSignal
   onStatus?: (status: string) => void
@@ -52,6 +59,7 @@ export async function sendHonorEvaluation(
   const api = getApi()
   const {
     memberId,
+    memberIds,
     sessionId,
     signal,
     onStatus,
@@ -64,7 +72,13 @@ export async function sendHonorEvaluation(
     {
       message,
       session_id: sessionId ?? null,
-      context: { surface: "honor", intent: "member_evaluation", member_id: memberId },
+      context: {
+        surface: "honor",
+        intent: "member_evaluation",
+        member_id: memberId,
+        // Only present on a comparative/team run — a solo turn stays byte-identical.
+        ...(memberIds && memberIds.length > 1 ? { member_ids: memberIds } : {}),
+      },
     },
     { signal }
   )

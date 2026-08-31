@@ -24,16 +24,30 @@ export const QUADRANT_CONFIG = {
   4: { label: 'Gold', color: '#ECC94B', bgClass: 'bg-yellow-500' },
 } as const
 
-/** PRISM 8D behaviour labels and colours */
+/**
+ * PRISM 8D behaviour labels and colours, keyed by PRISM's own BehaviourID.
+ *
+ * Each behaviour is tinted with ITS OWN quadrant's colour, per the licensed
+ * PRISM manual:
+ *   Green = Innovating + Initiating      Blue = Supporting + Co-Ordinating
+ *   Red   = Focusing   + Delivering      Gold = Finishing  + Evaluating
+ *
+ * Until 2026-08-01 six of the eight carried the wrong quadrant's colour
+ * (Supporting/Coordinating were red, Focusing/Delivering gold, Finishing/
+ * Evaluating blue), matching a rotation that also existed server-side and
+ * produced visibly wrong Blue/Gold/Red scores. `quadrant` indexes
+ * QUADRANT_CONFIG and exists so the pairing is explicit and testable rather
+ * than implied by a hex value.
+ */
 export const BEHAVIOUR_CONFIG = {
-  1: { label: 'Innovating', color: '#38A169' },
-  2: { label: 'Initiating', color: '#2F855A' },
-  3: { label: 'Supporting', color: '#E53E3E' },
-  4: { label: 'Coordinating', color: '#C53030' },
-  5: { label: 'Focusing', color: '#ECC94B' },
-  6: { label: 'Delivering', color: '#D69E2E' },
-  7: { label: 'Finishing', color: '#3182CE' },
-  8: { label: 'Evaluating', color: '#2B6CB0' },
+  1: { label: 'Innovating', quadrant: 1, color: '#38A169' },
+  2: { label: 'Initiating', quadrant: 1, color: '#2F855A' },
+  3: { label: 'Supporting', quadrant: 2, color: '#3182CE' },
+  4: { label: 'Coordinating', quadrant: 2, color: '#2B6CB0' },
+  5: { label: 'Focusing', quadrant: 3, color: '#E53E3E' },
+  6: { label: 'Delivering', quadrant: 3, color: '#C53030' },
+  7: { label: 'Finishing', quadrant: 4, color: '#ECC94B' },
+  8: { label: 'Evaluating', quadrant: 4, color: '#D69E2E' },
 } as const
 
 /** Status badge config for UI display */

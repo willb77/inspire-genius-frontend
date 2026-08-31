@@ -53,13 +53,10 @@ describe("SuperAdmin Observability", () => {
     expect(screen.getByText("Agent Observability")).toBeInTheDocument();
   });
 
-  it("renders description text", () => {
+  it("describes the window and the source rather than claiming 'real-time'", () => {
     render(<Observability />);
-    expect(
-      screen.getByText(
-        "Real-time transparency into AI agent decisions, costs, and performance"
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText(/one row per LLM call/i)).toBeInTheDocument();
+    expect(screen.getByText(/What this page shows/i)).toBeInTheDocument();
   });
 
   it("renders the platform-scoped ObservabilityBoard panel", () => {
@@ -74,9 +71,18 @@ describe("SuperAdmin Observability", () => {
     expect(screen.getByTestId("cost-board-mock-platform")).toBeInTheDocument();
   });
 
-  it("renders time range selector", () => {
+  // The Today / 7d / 30d Select was removed: `timeRange` was held in state and
+  // never read, neither child panel accepts a range, and the dashboard endpoint
+  // takes no range parameter — so the control silently did nothing. Assert it
+  // is gone AND that the fixed window is stated, so it cannot quietly return
+  // without also being wired up.
+  it("does not offer a time range control it cannot honour", () => {
     render(<Observability />);
-    expect(screen.getByText("Today")).toBeInTheDocument();
+    expect(screen.queryByText("Last 30 days")).not.toBeInTheDocument();
+    expect(screen.queryByText("Last 7 days")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/window is the current day and is not adjustable/i)
+    ).toBeInTheDocument();
   });
 
   it("hooks the refetch via the refresh button without crashing in loading state", () => {

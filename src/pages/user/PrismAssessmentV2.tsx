@@ -1,16 +1,15 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import UserLayout from '@/layouts/UserLayout'
 import { V2Panel } from '@/components/v2'
 import PrismInitiateForm from '@/components/prism/PrismInitiateForm'
+import ActivePrismRequestCard from '@/components/prism/ActivePrismRequestCard'
 import PrismAssessmentCard from '@/components/prism/PrismAssessmentCard'
 import PrismReportViewer from '@/components/prism/PrismReportViewer'
-import { Button } from '@/components/ui/button'
+import { ReplacePrismDataButton } from '@/components/prism/ReplacePrismDataButton'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Upload, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/useAuth'
 import { usePrismHistory } from '@/hooks/prism/usePrismHistory'
-import { usePrismImport } from '@/hooks/prism/usePrismImport'
 import { ASSESSMENT_STATUS } from '@/constants/prism'
 
 const ACTIVE_STATUSES: Set<string> = new Set([
@@ -31,18 +30,7 @@ export default function PrismAssessmentV2() {
   const { t } = useTranslation(["common", "coaching"]);
   const { user } = useAuth()
   const { data, isLoading } = usePrismHistory(user?.id ?? null)
-  const importMutation = usePrismImport()
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [viewingReportId, setViewingReportId] = useState<string | null>(null)
-
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file && user?.id) {
-      importMutation.mutate({ userId: user.id, file })
-    }
-    // Reset so the same file can be selected again
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
 
   const assessments = data?.data?.assessments ?? []
   const activeAssessment = assessments.find((a) =>
@@ -65,26 +53,11 @@ export default function PrismAssessmentV2() {
             </p>
           </div>
           <div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.csv,.xls,.xlsx"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-            <Button
+            <ReplacePrismDataButton
+              label="Import / Replace Report"
               variant="outline"
               size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={importMutation.isPending}
-            >
-              {importMutation.isPending ? (
-                <Loader2 className="me-1.5 h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="me-1.5 h-4 w-4" />
-              )}
-              Import Existing Report
-            </Button>
+            />
           </div>
         </div>
 
@@ -100,6 +73,10 @@ export default function PrismAssessmentV2() {
         )}
 
         {/* Request New */}
+        {/* Recover the questionnaire link for any survey already requested
+            but not yet completed — it is otherwise shown only once. */}
+        <ActivePrismRequestCard />
+
         <PrismInitiateForm disabled={!!activeAssessment} />
 
         {/* Report Viewer */}

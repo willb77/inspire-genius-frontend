@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import PrismInitiateForm from "../PrismInitiateForm";
 
 /* Mock the check-existing-customer hook so the form renders without a
@@ -9,6 +10,20 @@ jest.mock("@/hooks/prism/useCheckExistingCustomer", () => ({
     isPending: false,
   }),
   checkCustomerKey: ["prism", "check-customer"],
+}));
+
+/* Mock the survey-request mutation for the same reason. `mockRequestSurvey`
+   is what the wiring tests assert against. */
+const mockRequestSurvey = jest.fn();
+jest.mock("@/hooks/prism/usePrismRequest", () => ({
+  useRequestPrismSurvey: () => ({
+    mutateAsync: mockRequestSurvey,
+    isPending: false,
+  }),
+}));
+
+jest.mock("sonner", () => ({
+  toast: { success: jest.fn(), error: jest.fn() },
 }));
 
 /* Mock the Select components from shadcn which use Radix and fail in jsdom */
@@ -88,10 +103,161 @@ describe("PrismInitiateForm", () => {
     expect(screen.getByDisplayValue("alice@test.com")).toBeInTheDocument();
   });
 
+  /* Guard against the field coming back: it was mandatory until
+     2026-08-20 and blocked submission on a value PRISM ignores. */
+  it("does not render a gender control", () => {
+    render(<PrismInitiateForm />);
+    expect(screen.queryByText(/gender/i)).not.toBeInTheDocument();
+  });
+
   it("renders section headings", () => {
     render(<PrismInitiateForm />);
     expect(screen.getByText("Candidate Details")).toBeInTheDocument();
     expect(screen.getByText("Questionnaire Configuration")).toBeInTheDocument();
     expect(screen.getByText("PRISM Options")).toBeInTheDocument();
+  });
+
+  /* ── Submit wiring ──────────────────────────────────────────────
+     Regression cover for the defect where the real pages rendered this
+     form with no `onSubmit` prop, so "Request Assessment" built a payload
+     and discarded it — no network call, no toast, no error. */
+  describe("submit wiring", () => {
+    /* The Select components are mocked out (Radix breaks in jsdom), so the
+       two select-backed fields are supplied via defaultValues to get a
+       schema-valid form. */
+    const validDefaults = {
+      forename: "Jane",
+      surname: "Smith",
+      email: "jane.smith@company.com",
+      organisation: "Acme Corp",
+      questionnaireTypeId: 4,
+      languageId: 25,
+    };
+
+    beforeEach(() => {
+      mockRequestSurvey.mockReset();
+    });
+
+    it("POSTs the mapped payload to the survey-request endpoint", async () => {
+      mockRequestSurvey.mockResolvedValue({
+        request_id: "req-1",
+        action_url_1: "https://prism.example/q/abc",
+        quest_status_desc: "sent",
+      });
+
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(
+        screen.getByRole("button", { name: /request assessment/i })
+      );
+
+      await waitFor(() => expect(mockRequestSurvey).toHaveBeenCalledTimes(1));
+      expect(mockRequestSurvey).toHaveBeenCalledWith(
+        expect.objectContaining({
+          forename: "Jane",
+          surname: "Smith",
+          email: "jane.smith@company.com",
+          organisation: "Acme Corp",
+          qtype_id: 4,
+          lang_id: 25,
+          isGift: false,
+        })
+      );
+    });
+
+    /* PRISM Service Library API v2.5 §5.1.2.10 defines Gender as a
+       report-text switch for gendered languages, not a scoring input, and
+       IG runs English. The form no longer collects it, so the payload must
+       not carry it either — omitting the key lets the backend default
+       (`CreateRequestBody.gender = False`) apply. objectContaining above
+       would happily pass with a stray `gender`, so assert its absence. */
+    it("does not send gender in the payload", async () => {
+      mockRequestSurvey.mockResolvedValue({
+        request_id: "req-1",
+        action_url_1: "https://prism.example/q/abc",
+        quest_status_desc: "sent",
+      });
+
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(
+        screen.getByRole("button", { name: /request assessment/i })
+      );
+
+      await waitFor(() => expect(mockRequestSurvey).toHaveBeenCalledTimes(1));
+      expect(mockRequestSurvey.mock.calls[0][0]).not.toHaveProperty("gender");
+    });
+
+    it("shows the returned questionnaire link on success", async () => {
+      mockRequestSurvey.mockResolvedValue({
+        request_id: "req-1",
+        action_url_1: "https://prism.example/q/abc",
+        quest_status_desc: "sent",
+      });
+
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(
+        screen.getByRole("button", { name: /request assessment/i })
+      );
+
+      expect(
+        await screen.findByText("Assessment Request Submitted")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("https://prism.example/q/abc")
+      ).toBeInTheDocument();
+    });
+
+    it("still confirms when PRISM returns no questionnaire link", async () => {
+      mockRequestSurvey.mockResolvedValue({
+        request_id: "req-1",
+        action_url_1: null,
+        quest_status_desc: "pending",
+      });
+
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(
+        screen.getByRole("button", { name: /request assessment/i })
+      );
+
+      expect(
+        await screen.findByText("Assessment Request Submitted")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/has not returned a questionnaire link yet/i)
+      ).toBeInTheDocument();
+    });
+
+    it("stays on the form when the request fails", async () => {
+      mockRequestSurvey.mockRejectedValue(new Error("boom"));
+
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(
+        screen.getByRole("button", { name: /request assessment/i })
+      );
+
+      await waitFor(() => expect(mockRequestSurvey).toHaveBeenCalled());
+      expect(
+        screen.queryByText("Assessment Request Submitted")
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /request assessment/i })
+      ).toBeInTheDocument();
+    });
+
+    it("does NOT call the API in harness mode", async () => {
+      const onSubmit = jest.fn();
+      render(
+        <PrismInitiateForm
+          defaultValues={validDefaults}
+          showPayloadPreview
+          onSubmit={onSubmit}
+        />
+      );
+      await userEvent.click(
+        screen.getByRole("button", { name: /request assessment/i })
+      );
+
+      await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+      expect(mockRequestSurvey).not.toHaveBeenCalled();
+    });
   });
 });

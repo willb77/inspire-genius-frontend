@@ -81,6 +81,14 @@
       "ready": "Głos gotowy",
       "connecting": "Łączenie",
       "off": "Głos wyłączony"
+    },
+    "personalRow": {
+      "aria": "Twoje strony",
+      "selfPortrait": "Mój autoportret",
+      "moments": "Momenty",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} nie jest włączone dla Twojego konta"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Dokumenty",
       "close": "Zamknij dokumenty",
       "closeOverlay": "Zamknij panel dokumentów"
-    }
+    },
+    "upload": "Prześlij dokument"
   },
   "export": {
     "title": "Eksportuj czat",

@@ -1,12 +1,21 @@
 import { type RefObject, useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
+import { Copy, CirclePlay, Download, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { TurnExportFormat } from "@/lib/exportTranscript/exportTurn";
 import { cn } from "@/lib/utils";
 import { formatFullTimestamp } from "@/lib/dateFormatters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { agentApi } from "@/lib/agentApi";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
+import MessageAttachments from "@/components/user/chat/MessageAttachments";
+import PrismMapFigure from "@/components/prism/PrismMapFigure";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
 import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -136,6 +145,44 @@ function CollaborationBadge({ agents }: { agents: string[] }) {
   );
 }
 
+/**
+ * Per-turn export link — "Export ▾" with Word and PDF.
+ *
+ * Sits in the same action row as Copy and Replay, so every answer can be kept
+ * on its own without exporting (and then trimming) the whole conversation.
+ */
+function TurnExport({
+  onExport,
+}: {
+  onExport: (format: TurnExportFormat) => void;
+}) {
+  const { t } = useTranslation("chat");
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("conversation.exportTurn.aria", { defaultValue: "Export this response" })}
+          title={t("conversation.exportTurn.aria", { defaultValue: "Export this response" })}
+          data-testid="turn-export-trigger"
+          className="inline-flex cursor-pointer items-center gap-1 text-xs text-muted-foreground/70 hover:text-foreground"
+        >
+          <Download className="size-4 text-black" />
+          <span>{t("conversation.exportTurn.label", { defaultValue: "Export" })}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-36">
+        <DropdownMenuItem onSelect={() => onExport("word")} data-testid="turn-export-word">
+          {t("conversation.exportTurn.word", { defaultValue: "Word (.doc)" })}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onExport("pdf")} data-testid="turn-export-pdf">
+          {t("conversation.exportTurn.pdf", { defaultValue: "PDF" })}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 const getDocKindBadgeClass = (kind?: string) => {
   if (kind === "pdf") return "bg-red-50 text-red-600";
   if (kind === "csv") return "bg-green-50 text-green-600";
@@ -156,6 +203,15 @@ type ChatWindowChatTabProps = {
   coachId?: string;
   conversationId?: string;
   onReplayMessage?: (text: string) => void;
+  /** Export a single turn as Word or PDF. Omitted → no per-turn export link. */
+  onExportMessage?: (message: ChatMessage, format: TurnExportFormat) => void;
+  /**
+   * When true, assistant ("response") bubbles fill the width of the conversation
+   * tile instead of being capped at 70%. Used by the V2 stacked Meridian layout,
+   * whose scroll body carries a 5px inset so the bubble sits ~5px from the tile
+   * edges on all sides. Off by default so the classic layout is unchanged.
+   */
+  responseBubbleFullWidth?: boolean;
 };
 
 export default function ChatWindowChatTab({
@@ -171,6 +227,8 @@ export default function ChatWindowChatTab({
   coachId,
   conversationId,
   onReplayMessage,
+  onExportMessage,
+  responseBubbleFullWidth,
 }: ChatWindowChatTabProps) {
   const { t } = useTranslation("chat");
   const renderMessage = (m: ChatMessage) => {
@@ -178,7 +236,18 @@ export default function ChatWindowChatTab({
       const right = m.sender === "user";
       return (
         <div key={m.id} className="space-y-1">
-          <div className={cn("max-w-[70%] min-w-40 w-fit ", right ? "ml-auto" : undefined)}>
+          <div
+            className={cn(
+              // A user turn stays a compact right-aligned bubble; an assistant
+              // "response" fills the tile when responseBubbleFullWidth is set
+              // (V2 Meridian layout), otherwise keeps the classic 70% cap.
+              right
+                ? "max-w-[70%] min-w-40 w-fit ml-auto"
+                : responseBubbleFullWidth
+                  ? "w-full"
+                  : "max-w-[70%] min-w-40 w-fit"
+            )}
+          >
             <div
               className={cn(
                 "rounded-2xl p-3 text-sm text-foreground/90 shadow-sm",
@@ -228,6 +297,9 @@ export default function ChatWindowChatTab({
                       onClick={onShowAudioPlayer}
                     />
                   )}
+                {onExportMessage && m.text && (
+                  <TurnExport onExport={(format) => onExportMessage(m, format)} />
+                )}
               </div>
               <div className="flex flex-col items-end">
                 <div className="text-[11px] text-muted-foreground">{formatFullTimestamp(m.ts)}</div>
@@ -241,6 +313,15 @@ export default function ChatWindowChatTab({
                 {t("conversation.viaAgent", { defaultValue: "via {{agent}}", agent: m.agent })}
               </p>
             )}
+            {m.kind === "text" && m.sender === "assistant" && m.prismMap && (
+              <PrismMapFigure map={m.prismMap} />
+            )}
+            {m.kind === "text" &&
+              m.sender === "assistant" &&
+              m.attachments &&
+              m.attachments.length > 0 && (
+                <MessageAttachments attachments={m.attachments} />
+              )}
             {m.kind === "text" && m.sender === "assistant" && m.ragSources && m.ragSources.length > 0 && (
               <SourceAttribution sources={m.ragSources} />
             )}

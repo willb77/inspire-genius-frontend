@@ -88,12 +88,58 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: "autoUpdate",
         workbox: {
-          globPatterns: ["**/*.{js,css,html,ico,png,woff2}"],
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+          // ── Precache: app shell ONLY ────────────────────────────────
+          //
+          // INCIDENT 2026-08-17. This was `**/*.{js,css,html,ico,png,woff2}`,
+          // which resolved to 513 precache entries. A service worker fetches
+          // its ENTIRE precache manifest on install, so one Chromebook opening
+          // the site cold fired ~513 requests in seconds. A classroom shares a
+          // single school NAT IP, so two devices exhausted the CloudFront WAF's
+          // per-IP budget and the whole class got blank pages.
+          //
+          // The shell stays precached (installability + offline fallback); the
+          // hashed build assets moved to runtime caching below, which fetches
+          // them on demand instead of all at once. Cold-load request count
+          // drops from ~513 to single digits.
+          globPatterns: [
+            "index.html",
+            "offline.html",
+            "manifest.json",
+            "icons/icon-192x192.png",
+            "icons/icon-512x512.png",
+          ],
+          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB
           navigateFallback: "/index.html",
           skipWaiting: true,
           clientsClaim: true,
+          cleanupOutdatedCaches: true,
           runtimeCaching: [
+            {
+              // Hashed build output — content-addressed, so a cached entry can
+              // never be stale for its URL. Served from cache and revalidated
+              // in the background; fetched individually rather than all at once.
+              //
+              // `statuses: [200]` is deliberate: 0 (opaque) must NOT be cached
+              // here or a WAF-blocked/404 response could be stored and replayed
+              // as though it were a real module.
+              urlPattern: /\/assets\/.*\.(?:js|mjs|css|woff2?)$/i,
+              handler: "StaleWhileRevalidate",
+              options: {
+                cacheName: "ig-build-assets",
+                expiration: { maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [200] },
+              },
+            },
+            {
+              // Static imagery / locale bundles — same reasoning, on demand.
+              urlPattern: /\/(?:icons|images|locales)\/.*\.(?:png|jpe?g|svg|webp|json)$/i,
+              handler: "StaleWhileRevalidate",
+              options: {
+                cacheName: "ig-static",
+                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [200] },
+              },
+            },
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
               handler: "CacheFirst",

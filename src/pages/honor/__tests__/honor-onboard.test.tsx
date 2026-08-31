@@ -8,9 +8,11 @@ import { MemoryRouter, Routes, Route } from "react-router-dom"
 /* ── Service mocks ── */
 const createFellow = jest.fn()
 const inviteFellow = jest.fn()
+const setFellowGoals = jest.fn()
 jest.mock("@/services/honor/coach.service", () => ({
   createFellow: (...a: unknown[]) => createFellow(...a),
   inviteFellow: (...a: unknown[]) => inviteFellow(...a),
+  setFellowGoals: (...a: unknown[]) => setFellowGoals(...a),
 }))
 
 const importFellowAssessment = jest.fn()
@@ -48,6 +50,7 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
     jest.clearAllMocks()
     createFellow.mockResolvedValue({ data: { id: "fellow-1" } })
     inviteFellow.mockResolvedValue({ data: { userId: "user-9" } })
+    setFellowGoals.mockResolvedValue({ data: { fellowId: "fellow-1", goals: "x", hasGoals: true } })
     importFellowAssessment.mockResolvedValue({ id: "a1", scoreCount: 4, subjectUserId: "user-9" })
     initiateUpload.mockResolvedValue({ document_id: "d1", upload_url: "u", upload_fields: {} })
     uploadToS3.mockResolvedValue(undefined)
@@ -61,7 +64,7 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
       email: "marcus@honor.org",
       role: "Fellow",
       prismFile: file("prism.csv"),
-      frameworkFiles: { DISC: file("disc.csv"), HOGAN: file("hogan.pdf") },
+      frameworkFiles: { DISC: file("disc.csv"), CLIFTON: file("clifton.pdf") },
       resumeFile: file("resume.pdf"),
       bio: "Naval Special Warfare veteran.",
       additionalInfo: "Prefers async coaching.",
@@ -69,12 +72,12 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
 
     // Order: create before invite before any import.
     expect(createFellow).toHaveBeenCalledTimes(1)
-    expect(inviteFellow).toHaveBeenCalledWith("fellow-1", false)
+    expect(inviteFellow).toHaveBeenCalledWith("fellow-1", true, true)
 
     // PRISM (mandatory) + the two optional frameworks all import against the fellow.
     expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "PRISM", expect.any(File))
     expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "DISC", expect.any(File))
-    expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "HOGAN", expect.any(File))
+    expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "CLIFTON", expect.any(File))
     expect(importFellowAssessment).toHaveBeenCalledTimes(3)
 
     // Résumé + a combined bio doc go through the document pipeline.
@@ -84,6 +87,66 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
     expect(res.fellowId).toBe("fellow-1")
     expect(res.memberUserId).toBe("user-9")
     expect(res.steps.every((s) => s.ok)).toBe(true)
+  })
+
+  test("imports against the POST-INVITE id when the invite re-keys the fellow", async () => {
+    // The invite re-keys the managed row to the invited user's canonical sub, so
+    // the create-time id goes stale. Every import must use the returned id — which
+    // the backend returns under `fellowId` (NOT `id`; that field is absent).
+    inviteFellow.mockResolvedValue({ data: { fellowId: "canonical-sub-42" } })
+
+    await runHonorOnboard({
+      firstName: "Marcus",
+      lastName: "Reyes",
+      email: "marcus@honor.org",
+      role: "Fellow",
+      prismFile: file("prism.csv"),
+      frameworkFiles: { DISC: file("disc.csv") },
+    })
+
+    // Both the mandatory PRISM and optional framework imports use the new id,
+    // never the stale create-time "fellow-1".
+    expect(importFellowAssessment).toHaveBeenCalledWith("canonical-sub-42", "PRISM", expect.any(File))
+    expect(importFellowAssessment).toHaveBeenCalledWith("canonical-sub-42", "DISC", expect.any(File))
+    expect(importFellowAssessment).not.toHaveBeenCalledWith("fellow-1", "PRISM", expect.any(File))
+  })
+
+  test("uploads provided Bio and Additional-Information files through the document pipeline", async () => {
+    await runHonorOnboard({
+      firstName: "Marcus",
+      lastName: "Reyes",
+      email: "marcus@honor.org",
+      role: "Fellow",
+      prismFile: file("prism.csv"),
+      bioFile: file("bio.pdf"),
+      additionalInfoFile: file("extra.docx"),
+    })
+
+    // PRISM import + résumé/bio pipeline: two document uploads (bio file + addl file).
+    expect(initiateUpload).toHaveBeenCalledTimes(2)
+    expect(triggerProcessing).toHaveBeenCalledTimes(2)
+  })
+
+  test("persists goals text via the goals endpoint and uploads a goals file to RAG", async () => {
+    await runHonorOnboard({
+      firstName: "Marcus",
+      lastName: "Reyes",
+      email: "marcus@honor.org",
+      role: "Fellow",
+      prismFile: file("prism.csv"),
+      goals: "Move into an operations program-management role",
+      goalsFile: file("goals.pdf"),
+    })
+
+    // Goals text is stored against the invited member (effective id fellow-1 here).
+    expect(setFellowGoals).toHaveBeenCalledWith(
+      "fellow-1",
+      "Move into an operations program-management role",
+    )
+    // The goals file rides the member's RAG as a "personal" document.
+    expect(initiateUpload).toHaveBeenCalledWith(
+      expect.objectContaining({ doc_kind: "personal", subject_user_id: "user-9" }),
+    )
   })
 
   test("aborts assessment writes if the invite fails (no subject to attach to)", async () => {

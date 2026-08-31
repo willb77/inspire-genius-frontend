@@ -81,6 +81,14 @@
       "ready": "Voz pronta",
       "connecting": "Conectando",
       "off": "Voz desativada"
+    },
+    "personalRow": {
+      "aria": "Suas páginas",
+      "selfPortrait": "Meu autorretrato",
+      "moments": "Momentos",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} não está habilitado na sua conta"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Documentos",
       "close": "Fechar documentos",
       "closeOverlay": "Fechar painel de documentos"
-    }
+    },
+    "upload": "Enviar um documento"
   },
   "export": {
     "title": "Exportar chat",

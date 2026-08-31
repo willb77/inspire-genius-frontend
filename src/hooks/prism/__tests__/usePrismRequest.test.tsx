@@ -20,6 +20,8 @@ jest.mock('@/services/prism/prism', () => ({
 import {
   useMyPrismRequests,
   useRequestPrismSurvey,
+  useActivePrismRequests,
+  useLatestPrismStatus,
   myPrismRequestsKey,
 } from '@/hooks/prism/usePrismRequest'
 
@@ -40,19 +42,24 @@ beforeEach(() => {
 
 describe('usePrismRequest hooks (G8)', () => {
   test('T2a: useMyPrismRequests returns the mocked response shape', async () => {
+    // Mirrors the BACKEND payload exactly: `rows` (not `items`) and `id`
+    // (not `request_id`). This fixture previously encoded the wrong shape,
+    // which is why the mismatch went unnoticed — the hook read `items`,
+    // always got [], and the "PRISM ready" badge could never render.
     const fixture = {
-      items: [
+      rows: [
         {
-          request_id: 'req-1',
-          action_url_1: 'https://prism.test/survey/1',
-          quest_status_desc: 'pending',
+          id: 'req-1',
+          action_url_1: '',
+          action_url_2: 'https://prism.test/survey/1',
           forename: 'Jane',
           surname: 'Smith',
           email: 'jane@example.com',
           organisation: null,
           qtype_id: 1,
-          created_at: '2026-06-15T00:00:00Z',
-          updated_at: '2026-06-15T00:00:00Z',
+          requested_at: '2026-06-15T00:00:00Z',
+          completed_at: null,
+          ingest_status: 'pending',
         },
       ],
       total: 1,
@@ -93,5 +100,84 @@ describe('usePrismRequest hooks (G8)', () => {
       email: 'jane@example.com',
     })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: myPrismRequestsKey })
+  })
+
+  /* Contract regression: the backend returns `rows`, not `items`. The old
+     fixture (and the type) said `items`, so useLatestPrismStatus always saw
+     an empty list and the "PRISM ready" badge could never render. */
+  test('T2c: useLatestPrismStatus reads the backend `rows` key', async () => {
+    mockList.mockResolvedValue({
+      rows: [
+        {
+          id: 'req-done',
+          action_url_1: '',
+          action_url_2: 'https://prism.test/survey/done',
+          forename: 'Jane',
+          surname: 'Smith',
+          email: 'jane@example.com',
+          organisation: null,
+          qtype_id: 4,
+          requested_at: '2026-06-15T00:00:00Z',
+          completed_at: '2026-06-20T00:00:00Z',
+          ingest_status: 'done',
+        },
+      ],
+      total: 1,
+    })
+
+    const { wrapper } = makeWrapper()
+    const { result } = renderHook(() => useLatestPrismStatus(), { wrapper })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.latest?.id).toBe('req-done')
+    expect(result.current.hasReadyPrism).toBe(true)
+  })
+
+  /* The link-recovery surface: open requests, each with ActionURL1 falling
+     back to ActionURL2 (PRISM leaves URL1 empty for a fresh candidate). */
+  test('T2d: useActivePrismRequests returns open rows with a resolved link', async () => {
+    mockList.mockResolvedValue({
+      rows: [
+        {
+          id: 'req-open',
+          action_url_1: '',
+          action_url_2: 'https://prism.test/survey/open',
+          forename: 'Jane',
+          surname: 'Smith',
+          email: 'jane@example.com',
+          organisation: null,
+          qtype_id: 1,
+          requested_at: '2026-07-22T00:00:00Z',
+          completed_at: null,
+          ingest_status: 'pending',
+        },
+        {
+          id: 'req-closed',
+          action_url_1: 'https://prism.test/survey/closed',
+          action_url_2: '',
+          forename: 'Jane',
+          surname: 'Smith',
+          email: 'jane@example.com',
+          organisation: null,
+          qtype_id: 4,
+          requested_at: '2026-06-01T00:00:00Z',
+          completed_at: '2026-06-05T00:00:00Z',
+          ingest_status: 'done',
+        },
+      ],
+      total: 2,
+    })
+
+    const { wrapper } = makeWrapper()
+    const { result } = renderHook(() => useActivePrismRequests(), { wrapper })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    // Completed rows are excluded.
+    expect(result.current.active).toHaveLength(1)
+    expect(result.current.active[0].row.id).toBe('req-open')
+    // ActionURL2 is used when ActionURL1 is empty.
+    expect(result.current.active[0].questionnaireUrl).toBe(
+      'https://prism.test/survey/open',
+    )
   })
 })

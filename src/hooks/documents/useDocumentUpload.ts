@@ -26,6 +26,7 @@ async function uploadOne(args: {
   docKind?: string;
   companyId?: string;
   tags?: string[];
+  shared?: boolean;
   onProgress?: (pct: number) => void;
 }): Promise<DocumentOut> {
   const presigned = await initiateUpload({
@@ -35,6 +36,7 @@ async function uploadOne(args: {
     doc_kind: args.docKind,
     company_id: args.companyId,
     tags: args.tags,
+    shared: args.shared,
   });
 
   await uploadToS3(
@@ -61,6 +63,7 @@ export function useDocumentUpload() {
       docKind?: string;
       companyId?: string;
       tags?: string[];
+      shared?: boolean;
       onProgress?: (pct: number) => void;
     }): Promise<DocumentOut> => uploadOne(args),
     onSuccess: (_doc, variables) => {

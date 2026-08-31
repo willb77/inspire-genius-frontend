@@ -5,6 +5,7 @@
  * returns the agent-engine TaskAgentResponse.
  */
 import { api } from '@/lib/axios'
+import { agentApi } from '@/lib/agentApi'
 
 // ─── Shared response shape ────────────────────────────────────────
 
@@ -118,9 +119,33 @@ export const tasksService = {
       .post<TaskAgentResponse>(`${BASE}/onboarding`, body)
       .then((r) => r.data),
 
+  /**
+   * Document research via Sage, called DIRECTLY on the agent-engine.
+   *
+   * This used to POST `/v1/tasks/document-research`, which is a monolith
+   * proxy route that then hairpins to the agent-engine. The API Gateway
+   * declares only the four `/v1/tasks/results*` routes and no
+   * `/v1/tasks/{proxy+}` catch-all, so on a microservices-only environment
+   * (staging-b, and every new env) the request matched nothing and the
+   * gateway 404'd. Confirmed in the browser on stable: "Sage (DocumentAgent)
+   * failed: Request failed with status code 404".
+   *
+   * `/v1/agents/sage/run` is the same handler one hop earlier
+   * (`agent-engine/app/routes/task_agents.py`), takes the identical request
+   * body and returns the identical `TaskAgentResponse`, and IS routed —
+   * `ANY /v1/agents/{proxy+}` is bound to the agent-engine ALB in every
+   * environment. It authenticates off the same `access-token` header that
+   * `agentApi` already attaches.
+   *
+   * NOTE: the other four task agents on this service (jobBlueprint,
+   * interviewPrep, teamComposition, onboarding) still call `/v1/tasks/<slug>`
+   * and have the same unrouted-prefix defect. They are left alone here
+   * deliberately — they belong to surfaces not covered by this change and
+   * have not been verified against their own `/v1/agents/<id>/run` handlers.
+   */
   documentResearch: (body: DocumentResearchRequest) =>
-    api
-      .post<TaskAgentResponse>(`${BASE}/document-research`, body)
+    agentApi
+      .post<TaskAgentResponse>('/v1/agents/sage/run', body)
       .then((r) => r.data),
 
   saveResult: (body: SaveTaskResultRequest) =>

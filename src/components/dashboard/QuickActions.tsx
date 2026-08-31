@@ -7,7 +7,11 @@ type DateMode = "day" | "month" | "range"
 type QuickAction = {
   label: string
   icon: React.ComponentType<{ className?: string }>
-  to: string
+  /**
+   * Route to navigate to. Optional only so an action can be in-page
+   * instead — see `onClick`. One of `to` or `onClick` must be set.
+   */
+  to?: string
   bg: string
   iconColor: string
   /**
@@ -17,6 +21,12 @@ type QuickAction = {
    * user's most recent PRISM CSV on mount.
    */
   state?: Record<string, unknown>
+  /**
+   * In-page handler, used instead of navigating. Added for the "Ask
+   * Meridian" tile, which opens the support assistant popup rather than
+   * leaving the page. Takes precedence over `to` when both are set.
+   */
+  onClick?: () => void
 }
 
 type QuickActionsProps = {
@@ -64,7 +74,13 @@ export default function QuickActions({ actions }: QuickActionsProps) {
           return (
             <button
               key={a.label}
-              onClick={() => navigate(a.to, a.state ? { state: a.state } : undefined)}
+              onClick={() => {
+                if (a.onClick) {
+                  a.onClick()
+                  return
+                }
+                if (a.to) navigate(a.to, a.state ? { state: a.state } : undefined)
+              }}
               className="bg-white border border-[#e5e7eb] rounded-lg p-3 sm:p-4 text-center cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all min-h-[44px]"
             >
               <div className={cn("w-10 h-10 rounded-[10px] flex items-center justify-center mx-auto mb-2", a.bg)}>

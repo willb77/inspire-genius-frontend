@@ -2,7 +2,21 @@
   max-width: 1280px;
   margin: 0 auto;
   /* Previous padding was removed; restore via git history if needed. */
-  text-align: center;
+
+  /* Left, not center (2026-08-09).
+   *
+   * `text-align: center` here was `create-vite`'s React scaffold default and
+   * was never revisited — the sibling `.logo` / `.read-the-docs` rules below
+   * are from the same template. Because it sits on #root, every string in the
+   * app that does not set its own alignment inherited *centred*, which is why
+   * left-alignment complaints arrived against four unrelated surfaces at once
+   * (Self-Portrait, Moments, My Journey, Establish) rather than against one.
+   *
+   * Anything that genuinely wants centring now says so — see the explicit
+   * `text-center` on the auth/splash/empty-state surfaces. That is the right
+   * way round: centring is a deliberate choice on a handful of screens, not
+   * the silent default for a data-dense app. */
+  text-align: left;
 }
 
 /* RTL layout support */

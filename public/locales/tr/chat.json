@@ -81,6 +81,14 @@
       "ready": "Ses hazır",
       "connecting": "Bağlanıyor",
       "off": "Ses kapalı"
+    },
+    "personalRow": {
+      "aria": "Sayfaların",
+      "selfPortrait": "Öz Portrem",
+      "moments": "Anlar",
+      "coaching": "Koçluk",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} hesabınız için etkin değil"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Belgeler",
       "close": "Belgeleri kapat",
       "closeOverlay": "Belge panelini kapat"
-    }
+    },
+    "upload": "Belge yükle"
   },
   "export": {
     "title": "Sohbeti Dışa Aktar",

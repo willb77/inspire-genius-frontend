@@ -79,6 +79,29 @@ const STATUS_STYLES: Record<string, string> = {
   todo: "bg-[#F1ECE2] text-[#7C93B5]",
 };
 
+/**
+ * Says plainly that what follows is an illustration, not the reader's data.
+ *
+ * Summit was built from a clickable wireframe, and several of its panels still
+ * render that wireframe's invented figures — a behavioural profile, a progress
+ * history, a set of documents — for a person who never existed. Wiring those to
+ * real sources needs endpoints that do not exist yet. Until they do, the panels
+ * stay (they show what the finished surface does) but they must never be
+ * mistakable for a reading of the person looking at them. Showing someone
+ * invented scores about themselves is worse than showing them nothing.
+ */
+export function SampleNotice({ what }: { what: string }) {
+  return (
+    <div className="flex items-start gap-2.5 rounded-xl border border-dashed border-[#C88B1B]/50 bg-[#FBF7F0] px-4 py-3 text-[13px] leading-snug text-[#13294B]">
+      <span>
+        <b className="text-[#0B1B33]">This is a sample, not your data.</b> {what}{" "}
+        Nothing on this panel is a reading of you, and nothing here has been
+        saved against your account.
+      </span>
+    </div>
+  );
+}
+
 export function StatusPill({ status, label }: { status: string; label: string }) {
   return (
     <span className={cn("rounded-full px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wide", STATUS_STYLES[status] ?? STATUS_STYLES.todo)}>

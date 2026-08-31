@@ -3,32 +3,59 @@
  */
 import { render, screen } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import VerticalShell from "../VerticalShell"
+import { __resetRegistry, registerVertical } from "../registry"
 
 // Gate is exercised on its own in RequireVertical.test; here we force it open so
-// the tests isolate the chrome-selection behaviour (default AppShell vs custom).
+// the tests isolate the chrome-selection behaviour (default SidebarScaffold vs
+// a themed vertical's custom shell) and the vertical sub-nav preservation.
 const mockUseVerticalAccess = jest.fn()
 jest.mock("../useVerticalAccess", () => ({
   useVerticalAccess: () => mockUseVerticalAccess(),
 }))
 jest.mock("@/context/useAuth", () => ({ useAuth: () => ({ user: { role: "user" } }) }))
-jest.mock("@/layouts/AppShell", () => ({
+jest.mock("@/hooks/audit/usePageViewAudit", () => ({ usePageViewAudit: jest.fn() }))
+
+// Mock the shared scaffold: capture the section labels it receives so we can
+// assert each vertical keeps its own sub-nav after the move off AppShell.
+jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
   __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="app-shell">{children}</div>
+  default: ({
+    children,
+    navSections,
+  }: {
+    children: React.ReactNode
+    navSections?: Array<{ label: string; items: Array<{ label: string }> }>
+  }) => (
+    <div
+      data-testid="sidebar-scaffold"
+      data-section-labels={JSON.stringify((navSections ?? []).map((s) => s.label))}
+    >
+      {children}
+    </div>
   ),
 }))
 
-function renderShell(element: React.ReactNode) {
+function renderShell(element: React.ReactNode, vertical = "grant") {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <MemoryRouter initialEntries={["/vertical/grant/page"]}>
-      <Routes>
-        <Route path="/vertical/grant" element={element}>
-          <Route path="page" element={<div>routed page</div>} />
-        </Route>
-        <Route path="/home" element={<div>home</div>} />
-      </Routes>
-    </MemoryRouter>
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[`/vertical/${vertical}/page`]}>
+        <Routes>
+          <Route path={`/vertical/${vertical}`} element={element}>
+            <Route path="page" element={<div>routed page</div>} />
+          </Route>
+          <Route path="/home" element={<div>home</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  )
+}
+
+function sectionLabels(): string[] {
+  return JSON.parse(
+    screen.getByTestId("sidebar-scaffold").getAttribute("data-section-labels") ?? "[]",
   )
 }
 
@@ -36,32 +63,63 @@ describe("VerticalShell chrome selection", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockUseVerticalAccess.mockReturnValue({ hasAccess: true, isLoading: false, enabledVerticals: ["grant"] })
+    __resetRegistry()
+    registerVertical({
+      key: "grant",
+      title: "GRANT",
+      routePrefix: "/vertical/grant",
+      homePath: "/vertical/grant/dashboard",
+    })
+    registerVertical({
+      key: "knowledge-continuity",
+      title: "Knowledge Continuity",
+      routePrefix: "/vertical/knowledge-continuity",
+      homePath: "/vertical/knowledge-continuity/blueprint",
+    })
   })
 
-  test("default: wraps the routed page in the shared AppShell", () => {
+  test("default: wraps the routed page in the standard SidebarScaffold", () => {
     renderShell(<VerticalShell vertical="grant" />)
-    expect(screen.getByTestId("app-shell")).toBeInTheDocument()
+    expect(screen.getByTestId("sidebar-scaffold")).toBeInTheDocument()
     expect(screen.getByText("routed page")).toBeInTheDocument()
   })
 
-  test("custom shell REPLACES AppShell (no shared chrome rendered)", () => {
-    // A themed vertical's shell renders its own <Outlet/>; here a stand-in that
-    // wraps children in its own chrome marker.
-    const CustomShell = () => (
-      <div data-testid="honor-shell">
-        {/* real shells render <Outlet/>; the stand-in just proves substitution */}
-        custom chrome
-      </div>
-    )
-    renderShell(<VerticalShell vertical="grant" shell={<CustomShell />} />)
+  test("GRANT keeps its Financial Aid sub-nav after the AppShell removal", () => {
+    renderShell(<VerticalShell vertical="grant" />)
+    expect(sectionLabels()).toContain("Financial Aid")
+  })
+
+  test("KCE keeps its Knowledge Continuity sub-nav", () => {
+    renderShell(<VerticalShell vertical="knowledge-continuity" />, "knowledge-continuity")
+    expect(sectionLabels()).toContain("Knowledge Continuity")
+  })
+
+  test("the whole app menu stays present, in order, with the vertical between", () => {
+    // Entering a vertical used to REPLACE the menu; My Workspace still stays
+    // reachable (rolled up) above the open sub-nav.
+    //
+    // The Tools catalogue used to sit below it here. It became super-admin only
+    // on 2026-08-12, and this suite mocks a plain `user` — so its absence is the
+    // gate working, not the menu regressing. My Workspace is what keeps the
+    // rest of the app reachable for this role.
+    renderShell(<VerticalShell vertical="grant" />)
+    expect(sectionLabels()).toEqual([
+      "My Workspace",
+      "Financial Aid",
+    ])
+  })
+
+  test("custom shell REPLACES the scaffold (no shared chrome rendered) — the Honor path", () => {
+    const CustomShell = () => <div data-testid="honor-shell">custom chrome</div>
+    renderShell(<VerticalShell vertical="honor" shell={<CustomShell />} />, "honor")
     expect(screen.getByTestId("honor-shell")).toBeInTheDocument()
-    expect(screen.queryByTestId("app-shell")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("sidebar-scaffold")).not.toBeInTheDocument()
   })
 
   test("gate still applies with a custom shell: unentitled user is redirected", () => {
     mockUseVerticalAccess.mockReturnValue({ hasAccess: false, isLoading: false, enabledVerticals: [] })
     const CustomShell = () => <div data-testid="honor-shell">custom chrome</div>
-    renderShell(<VerticalShell vertical="grant" shell={<CustomShell />} redirectTo="/home" />)
+    renderShell(<VerticalShell vertical="honor" shell={<CustomShell />} redirectTo="/home" />, "honor")
     expect(screen.queryByTestId("honor-shell")).not.toBeInTheDocument()
     expect(screen.getByText("home")).toBeInTheDocument()
   })

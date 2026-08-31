@@ -8,12 +8,17 @@ import { api } from "@/lib/axios";
 // ─── Types ──────────────────────────────────────────────────────
 
 export type TicketCreate = {
-  user_id: string;
+  /** Optional — the backend takes ownership from the verified JWT and ignores
+   *  any user_id sent here. Kept for backward compatibility only. */
+  user_id?: string;
   org_id?: string;
   subject: string;
   description: string;
   priority?: string;
   category?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
 };
 
 export type TicketUpdate = {
@@ -31,6 +36,9 @@ export type TicketOut = {
   status: string;
   priority: string;
   category: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
   created_at: string;
   updated_at: string;
 };

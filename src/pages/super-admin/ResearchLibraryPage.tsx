@@ -16,7 +16,7 @@
  * 2026-05-15). The legacy monolith handlers stay in place as a
  * rollback path; the tasksService accepts either response shape.
  */
-import { useMemo, useState } from "react"
+import { Fragment, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { BookHeart, Loader2, Trash2, ArrowLeft, Search } from "lucide-react"
 import { toast } from "sonner"
@@ -209,7 +209,9 @@ function ResultRowCard({
 }
 
 
-export default function ResearchLibraryPage() {
+export default function ResearchLibraryPage({ embedded = false }: { embedded?: boolean } = {}) {
+  // When `embedded` inside the consolidated Research page tabs, skip the layout.
+  const Wrapper = embedded ? Fragment : SuperAdminLayout
   const [taskSlug, setTaskSlug] = useState<string>("document-research")
   const [searchQuery, setSearchQuery] = useState("")
   const [openId, setOpenId] = useState<string | null>(null)
@@ -235,7 +237,7 @@ export default function ResearchLibraryPage() {
   }, [data, searchQuery])
 
   return (
-    <SuperAdminLayout>
+    <Wrapper>
       <div className="mx-auto max-w-5xl py-8 space-y-6">
         <header className="flex items-start justify-between gap-4">
           <div>
@@ -328,6 +330,6 @@ export default function ResearchLibraryPage() {
           </>
         )}
       </div>
-    </SuperAdminLayout>
+    </Wrapper>
   )
 }

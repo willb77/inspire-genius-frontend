@@ -25,6 +25,7 @@ import PersonalDataSettings from "@/components/shared/settings/PersonalDataSetti
 import AssessmentsSettings from "@/components/shared/settings/AssessmentsSettings";
 import { V2Panel, SectionLabel } from "@/components/v2";
 import { isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
+import SurveysSettingsCard from "@/components/settings/SurveysSettingsCard";
 
 export type SettingsVariant = "classic" | "v2";
 
@@ -267,6 +268,15 @@ export default function Settings({
         {role === ROLES.USER && (
           <div data-tour="settings-other-assessments">
             <AssessmentsSettings />
+          </div>
+        )}
+
+        {/* My Workspace — Surveys shared with the user's organization. The
+            user-role entry point (the left nav is frozen for that role); also
+            shown to super-admin so the owner can see it while testing. */}
+        {(role === ROLES.USER || role === ROLES.SUPER_ADMIN) && (
+          <div data-tour="settings-surveys">
+            <SurveysSettingsCard />
           </div>
         )}
 

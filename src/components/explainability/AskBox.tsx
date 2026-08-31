@@ -82,7 +82,7 @@ export function AskBox({ turnId, className }: AskBoxProps) {
       </header>
 
       <div
-        className="max-h-72 space-y-2 overflow-y-auto rounded border bg-background p-2"
+        className="max-h-[26rem] space-y-2 overflow-y-auto rounded border bg-background p-3"
         data-testid="ask-thread"
       >
         {isLoadingAsks && !askList && (
@@ -149,7 +149,7 @@ function AskThreadRow({ row }: { row: AskRecord }) {
         </div>
         <div className="flex items-start gap-2">
           <Bot className="mt-0.5 size-3 text-emerald-600" />
-          <pre className="flex-1 whitespace-pre-wrap font-sans text-xs leading-snug text-foreground">
+          <pre className="flex-1 whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
             {row.answer}
           </pre>
         </div>

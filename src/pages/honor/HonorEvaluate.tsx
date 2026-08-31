@@ -1,92 +1,406 @@
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import {
   Sparkles,
-  Send,
-  Target,
-  GraduationCap,
-  Landmark,
-  Calculator,
   Users,
   User,
+  Upload,
+  Loader2,
+  CheckSquare,
+  Square,
+  Download,
+  Printer,
+  Mail,
+  ChevronDown,
+  FileText,
+  Save,
+  History,
+  Trash2,
+  PenLine,
+  Link2,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { sanitizeBodyHtml } from "@/lib/sanitizeHtml"
-import { useCaseload } from "@/hooks/honor/useCoachData"
-import { useHonorEvaluate } from "@/hooks/honor/useHonorEvaluate"
+import { ROUTES } from "@/constants/routes"
+import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown"
+import { useAuth } from "@/context/useAuth"
+import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
 import {
-  MOCK_COMPARE_METRICS,
-  MOCK_EVAL_ANSWERS,
-  MOCK_EVAL_PROMPTS,
-  MOCK_SUGGESTED_GOALS,
-  USE_HONOR_EVAL_LIVE,
-} from "@/hooks/honor/mocks"
-import type { EvaluateAnswer } from "@/types/honor"
+  useDeleteEvaluation,
+  useEvaluationHistory,
+  useFellowSources,
+  useHonorEvaluate,
+  useHonorEvaluateReport,
+  useLoadSavedEvaluation,
+  useSaveEvaluation,
+} from "@/hooks/honor/useHonorEvaluate"
+import { useFellowSourcesBulk } from "@/hooks/honor/useHonorArtifacts"
+import {
+  useEmailHonorReport,
+  useGenerateReportDocument,
+  useRecordReportExport,
+} from "@/hooks/honor/useHonorReport"
+import type { HonorReportFormat } from "@/services/honor/coach.service"
+import { USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
+import { downloadBlob } from "@/lib/exportTranscript"
+import {
+  formatReportDate,
+  renderHonorReportPdf,
+  type HonorReportMeta,
+} from "@/lib/honor/exportHonorReport"
+import { copyReportLink, emailReportLink } from "@/lib/honor/shareReportLink"
+import { initiateUpload, uploadToS3, triggerProcessing } from "@/services/documents/documentService"
+import type {
+  HonorCareerFit,
+  HonorCitedClaim,
+  HonorComparative,
+  HonorEvaluation,
+  HonorFellow,
+  HonorFitFactor,
+  HonorGoalFit,
+  HonorGoalVerdict,
+} from "@/types/honor"
 import {
   AgentTraceRow,
   HonorCard,
+  HonorEmptyState,
   HonorMeter,
   HonorPageHeader,
   HonorPill,
   HonorSectionTitle,
 } from "./_shared"
+import { ArtifactStatusMatrix } from "./_ArtifactUploader"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
 
 /**
- * Honor Coach Workbench — Evaluate Member (core AI surface).
+ * Honor Coach Workbench — Evaluate Fellow (Phase 3).
  *
- * The biggest wiring lift. Wiring target: the coach's free-text prompt drives a
- * multi-agent DAG (Aura → James → Nova → Meridian) that analyses a SELECTED
- * member (not the coach) — a net-new "coach evaluates a member" invocation over
- * the existing Meridian orchestration. Compare matrix, goals (Ascend →
- * user_milestones), education (Echo/Bridge), funding (Grant), and the ROI model
- * are all agent-backed in the target. Phase-0 scaffold: canned Meridian answers
- * with agent traces + mock compare scores. Chat HTML is sanitized on render.
- *
- * PR B: the chat is wired to the live Meridian async-jobs transport
- * (useHonorEvaluate → POST /v1/agents/chat/async, context.surface="honor") when
- * USE_HONOR_EVAL_LIVE is on, with a graceful fallback to the seeded classifier
- * on error/timeout so the surface never breaks. Compare/goals/education/funding/
- * ROI panels remain seeded (Phase-2 wiring).
+ * Wires the deterministic backend evaluate route
+ * (POST /v1/agents/honor/coach/students/{fellow_id}/evaluate) into a structured,
+ * CITED report: the objective evaluation, development areas, ranked career /
+ * position fit, and goals-fit — every number computed server-side by the
+ * config-weighted scorer (no model call), rendered verbatim. Selecting more than
+ * one owned Fellow turns on the comparative matrix + team read (1:1 / 1:many /
+ * many:many / team). A position description can be attached (doc_kind="position")
+ * and Meridian can narrate the sections into prose on demand. The primary
+ * (first-selected) Fellow is the subject; ownership is enforced server-side.
  */
 
-type Scope = "individual" | "team"
-type ChatTurn = { role: "coach" | "meridian"; text?: string; answer?: EvaluateAnswer; pending?: boolean }
+// Known career-area archetypes (matches the backend fit_config; used for the
+// team-read target select before a report exists).
+const HONOR_CAREER_AREAS: ReadonlyArray<{ key: string; label: string }> = [
+  { key: "operations_program_management", label: "Operations Program Management" },
+  { key: "security_risk_management", label: "Security Risk Management" },
+  { key: "consulting_advisory", label: "Consulting & Advisory" },
+  { key: "sales_business_development", label: "Sales & Business Development" },
+  { key: "people_leadership", label: "People Leadership" },
+  { key: "analysis_intelligence", label: "Analysis & Intelligence" },
+]
 
-/** Naive keyword classifier over the seeded answers (fallback when live is off/errors). */
-function classify(prompt: string): EvaluateAnswer {
-  const p = prompt.toLowerCase()
-  if (p.includes("struggle") || p.includes("weak") || p.includes("risk"))
-    return MOCK_EVAL_ANSWERS.find((a) => a.key === "struggle")!
-  if (p.includes("client") || p.includes("leadership"))
-    return MOCK_EVAL_ANSWERS.find((a) => a.key === "insight")!
-  if (p.includes("pair") || p.includes("pod") || p.includes("complement"))
-    return MOCK_EVAL_ANSWERS.find((a) => a.key === "plan")!
-  return MOCK_EVAL_ANSWERS.find((a) => a.key === "fit")!
+// The evaluation dimensions the coach can toggle. The selected keys are sent as
+// `dimensions` on the evaluate body.
+//
+// `position` is OFF by default and labelled as not-yet-scored: an uploaded job
+// description is stored as evidence on the fellow (doc_kind="position") and is
+// retrievable in chat, but JD -> competency-vector extraction is not built, so
+// the JD does NOT influence the ranked fit. The backend accepts only a
+// precomputed `positionVector`, which nothing produces. Leaving this on by
+// default implied a capability the system does not have.
+const EVAL_DIMENSIONS: ReadonlyArray<{ key: string; label: string }> = [
+  { key: "career", label: "Career" },
+  { key: "goals", label: "Goals" },
+  { key: "education", label: "Education" },
+  { key: "position", label: "Position (not scored yet)" },
+]
+
+/** Dimensions enabled when the page loads — everything except `position`. */
+const DEFAULT_DIMENSIONS: ReadonlyArray<string> = EVAL_DIMENSIONS.filter(
+  (d) => d.key !== "position",
+).map((d) => d.key)
+
+// Downloadable document formats (the branded PDF is handled client-side; the
+// rest render server-side via the Core docgen engine).
+const FORMAT_LABEL: Record<HonorReportFormat, string> = {
+  docx: "Word (.docx)",
+  pdf: "PDF",
+  pptx: "PowerPoint (.pptx)",
+  xlsx: "Excel (.xlsx)",
+  csv: "CSV",
+  md: "Markdown (.md)",
+  html: "Web page (.html)",
+  txt: "Text (.txt)",
 }
 
-/** Wrap Meridian's synthesized reply (plain text/markdown) into an EvaluateAnswer. */
-function liveAnswer(question: string, content: string, trace: string[]): EvaluateAnswer {
-  const esc = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-  const html = esc
+// Formats offered in the export menu, in order (PDF is a separate primary button).
+const EXPORT_MENU_FORMATS: HonorReportFormat[] = ["docx", "pptx", "xlsx", "csv", "md", "html", "txt"]
+
+const VERDICT_TONE: Record<HonorGoalVerdict, "ok" | "navy" | "orange" | "gray"> = {
+  supported: "ok",
+  mixed: "navy",
+  "at-tension": "orange",
+  unmapped: "gray",
+}
+
+/**
+ * Convert Meridian's markdown narrative to lightweight sanitized HTML for the
+ * client-side PDF (which takes an HTML string). Structure markers are flattened
+ * to plain lines — the docx/pdf docgen exports render the markdown properly; this
+ * is just so the branded client PDF doesn't show literal `#`/`**`/`|`.
+ */
+function narrativeToPdfHtml(md: string): string {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  const clean = (s: string) =>
+    esc(s)
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/__(.+?)__/g, "$1")
+      .replace(/`([^`]+)`/g, "$1")
+  return md
+    .replace(/\r\n/g, "\n")
     .split(/\n\n+/)
-    .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+    .map((block) => {
+      const lines = block.split("\n").filter((l) => !/^\s*\|?[\s:|-]+\|?\s*$/.test(l))
+      if (lines.every((l) => /^\s*[-*+]\s+/.test(l))) {
+        const items = lines.map((l) => `<li>${clean(l.replace(/^\s*[-*+]\s+/, ""))}</li>`).join("")
+        return `<ul>${items}</ul>`
+      }
+      const h = lines[0]?.match(/^\s*(#{1,6})\s+(.*)$/)
+      if (h) return `<p><strong>${clean(h[2])}</strong></p>`
+      return `<p>${lines.map(clean).join("<br>")}</p>`
+    })
     .join("")
-  return { key: "live", question, trace: trace.length ? trace : ["Meridian"], html }
+}
+
+/** `prism:behaviorpreferences:coordinating` → `Coordinating` (prompt-readable). */
+function featureLabel(key: string): string {
+  const last = key.split(":").pop() ?? key
+  return last.charAt(0).toUpperCase() + last.slice(1)
+}
+
+/**
+ * The deterministic comparison backbone, rendered for the narrator. Returns ""
+ * for a solo run so the solo prompt is byte-identical to before.
+ */
+function comparativeBackbone(
+  report: HonorEvaluation,
+  nameById: Record<string, string>,
+  behavioralById: Record<string, boolean> = {},
+): string {
+  const cmp = report.comparative
+  if (!cmp || !cmp.subjects?.length) return ""
+  const named = (id: string) => nameById[id] ?? id
+  const others = cmp.subjects.map(named).join(", ")
+  // Provenance per subject. A subject with no behavioral assessment on file has
+  // an EMPTY feature vector, so every per-area value is the neutral placeholder
+  // the scorer imputes — identical for every such subject, and carrying no
+  // comparative signal at all. Without this the narrator reads those numbers as
+  // measured and invents distinctions (and score ranges) that do not exist.
+  const measured = (sid: string) => behavioralById[sid] === true
+  const rows = cmp.subjects
+    .map((sid) => {
+      const fits = cmp.per_subject_area_fit?.[sid] ?? {}
+      const scores = Object.entries(fits)
+        .map(([area, score]) => `${area} ${score}`)
+        .join(", ")
+      const basis = measured(sid)
+        ? "measured from a behavioral assessment"
+        : "IMPUTED-NEUTRAL — no behavioral assessment on file"
+      return `- ${named(sid)} [${basis}]: ${scores}`
+    })
+    .join("\n")
+  const imputedNames = cmp.subjects.filter((sid) => !measured(sid)).map(named)
+  const allImputed = imputedNames.length === cmp.subjects.length
+  const tr = cmp.team_read
+  const teamBits = tr
+    ? [
+        tr.covered?.length ? `covered: ${tr.covered.map(featureLabel).join(", ")}` : "",
+        tr.gaps?.length ? `gaps: ${tr.gaps.map(featureLabel).join(", ")}` : "",
+        tr.complementary?.length
+          ? `complementary: ${tr.complementary.map(featureLabel).join(", ")}`
+          : "",
+        tr.redundant?.length ? `redundant: ${tr.redundant.map(featureLabel).join(", ")}` : "",
+      ].filter(Boolean).join("; ")
+    : ""
+  return [
+    `This is a COMPARISON. Comparison set: ${others}.`,
+    `Add a "## Comparison" section that reads across the whole set — do NOT invent or alter any score.`,
+    `Deterministic per-subject fit by area (0–100):`,
+    rows,
+    tr ? `Team read against ${tr.label ?? tr.target_area} — ${teamBits}.` : "",
+    // Provenance rules. These exist because a narrator handed bare numbers will
+    // otherwise describe imputed placeholders as measured, call identical values
+    // "higher", and invent a score range for the subject.
+    imputedNames.length
+      ? `PROVENANCE — READ BEFORE COMPARING. These subjects have NO behavioral assessment on file: ${imputedNames.join(", ")}. Their per-area values are neutral placeholders the scorer imputes, NOT measured results. Never call such a value scored, measured, instrument-derived, higher, lower, stronger or weaker, and never rank subjects by them.`
+      : "",
+    allImputed
+      ? `Every subject in this comparison is imputed-neutral, so their per-area values are IDENTICAL by construction and carry no comparative signal. Do not present them as a difference. Compare only on documented evidence (résumé, bio, additional info), and say plainly that no behavioral instrument is on file for anyone in this set.`
+      : "",
+    `Use ONLY the figures supplied above. Do not estimate, widen, average or invent any score — no ranges, no "est." values — for any subject, including the primary.`,
+  ]
+    .filter(Boolean)
+    .join("\n")
+}
+
+/**
+ * Prompt Meridian to compose the full, formatted evaluation. Meridian already
+ * receives the FELLOW's <USER_PROFILE> (résumé, bio, PRISM, docs) injected
+ * subject-scoped on the honor surface, so it can ground the prose directly. When
+ * scored assessments exist we hand it the deterministic backbone to respect;
+ * when they don't (résumé-only), it evaluates primarily from the résumé + other
+ * sources. Output is markdown so the surface + exports render it formatted.
+ */
+function summarizeForNarration(
+  report: HonorEvaluation,
+  subjectName: string,
+  criteria?: string,
+  nameById: Record<string, string> = {},
+  behavioralById: Record<string, boolean> = {},
+): string {
+  const hasScores = (report.confidence?.behavioralBasis ?? report.frameworks.length > 0)
+  const top = report.career_fit_ranked
+    .slice(0, 3)
+    .map((c) => `${c.label} ${c.score}`)
+    .join(", ")
+  const strengths = report.objective_evaluation.map((c) => c.source).join("; ")
+  const goals = report.goals_fit.map((g) => `${g.goal} → ${g.verdict}`).join("; ")
+  const ask = (criteria || "").trim()
+  return [
+    `You are Nova, the career-strategy & feedback specialist, writing a professional evaluation of ${subjectName} for their Honor Foundation coach — direct, concise, objective, and dignified.`,
+    `ASSESS the fellow's attached document(s) (their résumé / bio / additional info in the <USER_PROFILE> block) plus any behavioral assessment. Concretely evaluate the material, then give actionable SUGGESTIONS FOR IMPROVEMENT.`,
+    ask
+      ? `The coach's specific request to address: "${ask}". Make this the focus and answer it directly.`
+      : `Cover the fellow's overall fit, strengths, development areas, and goal/career alignment.`,
+    `Write the evaluation inline as well-structured Markdown prose — NOT a file, link, or download. Use these ## section headings, short paragraphs, **bold** for key points, and bullet lists (a small table only where it genuinely aids clarity):`,
+    `## Objective Evaluation`,
+    `## Suggestions for Improvement`,
+    `## Goals & Objectives — Fit`,
+    `## Career / Position Fit`,
+    `Cite the evidence behind each insight inline — name the source (e.g. "PRISM: Coordinating 90", "Résumé: 8y Naval Special Warfare team lead", "Bio", "Hogan").`,
+    hasScores
+      ? `Respect these computed scores — do NOT invent or change any number. Top career fit (0–100): ${top}.`
+      : `No behavioral (PRISM) assessment is on file — base your assessment ENTIRELY on the attached document(s) (résumé / bio / additional info). Assess those directly; say plainly where evidence is limited; do not fabricate scores.`,
+    strengths ? `Cited strengths: ${strengths}.` : "",
+    goals ? `Stated goals: ${goals}.` : "",
+    comparativeBackbone(report, nameById, behavioralById),
+    `Never surface classified or sensitive operational detail; translate SOF experience safely to private-sector terms.`,
+  ]
+    .filter(Boolean)
+    .join("\n")
+}
+
+/** Blob → base64 (no data: prefix) for the email payload. */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onloadend = () => {
+      const s = String(r.result)
+      resolve(s.slice(s.indexOf(",") + 1))
+    }
+    r.onerror = () => reject(new Error("Could not read the PDF."))
+    r.readAsDataURL(blob)
+  })
+}
+
+/** Print a rendered PDF blob via a hidden iframe (keeps the per-page footer). */
+function printBlob(blob: Blob) {
+  const url = URL.createObjectURL(blob)
+  const iframe = document.createElement("iframe")
+  iframe.style.position = "fixed"
+  iframe.style.right = "0"
+  iframe.style.bottom = "0"
+  iframe.style.width = "0"
+  iframe.style.height = "0"
+  iframe.style.border = "0"
+  iframe.src = url
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+    } catch {
+      window.open(url, "_blank")
+    }
+    // Revoke after the print dialog has had time to grab the document.
+    window.setTimeout(() => {
+      iframe.remove()
+      URL.revokeObjectURL(url)
+    }, 60_000)
+  }
+  document.body.appendChild(iframe)
 }
 
 export default function HonorEvaluate() {
+  const navigate = useNavigate()
   const { data: fellows = [] } = useCaseload()
-  const evaluate = useHonorEvaluate()
-  const [scope, setScope] = useState<Scope>("individual")
-  const [selected, setSelected] = useState<Set<string>>(new Set(["2201", "2205"]))
-  const [input, setInput] = useState("")
-  const [thread, setThread] = useState<ChatTurn[]>([])
+  const { user } = useAuth()
+  const { data: coachHome } = useCoachHome()
+  const report = useHonorEvaluateReport()
+  const narrate = useHonorEvaluate()
+  const recordExport = useRecordReportExport()
+  const emailMutation = useEmailHonorReport()
+  const generateDoc = useGenerateReportDocument()
+  const saveEval = useSaveEvaluation()
+  const loadSaved = useLoadSavedEvaluation()
+  const deleteEval = useDeleteEvaluation()
+  const fileRef = useRef<HTMLInputElement | null>(null)
+
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [criteria, setCriteria] = useState("")
+  const [dimensions, setDimensions] = useState<Set<string>>(
+    () => new Set(DEFAULT_DIMENSIONS),
+  )
+  const [targetArea, setTargetArea] = useState<string>("operations_program_management")
+  const [result, setResult] = useState<HonorEvaluation | null>(null)
+  const [narrationMarkdown, setNarrationMarkdown] = useState<string>("")
+  const [narrationTrace, setNarrationTrace] = useState<string[]>([])
+  const [positionAttached, setPositionAttached] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [exporting, setExporting] = useState<null | "download" | "print">(null)
+  const [exportFormat, setExportFormat] = useState<HonorReportFormat | null>(null)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [sharing, setSharing] = useState<null | "copy" | "email">(null)
+  const [showEmail, setShowEmail] = useState(false)
+  const [emailTo, setEmailTo] = useState("")
+  // Source selection — which of the primary fellow's sources to evaluate on.
+  // Excluded assessment frameworks + résumé/bio toggles; empty/all = full profile.
+  const [excludedFrameworks, setExcludedFrameworks] = useState<Set<string>>(new Set())
+  const [includeResume, setIncludeResume] = useState(true)
+  const [includeBio, setIncludeBio] = useState(true)
+  // Saved-evaluation history (Feature 1). `savedId` is set once the current
+  // result is persisted (or loaded from history) so the Save button flips to
+  // "Saved" and the coach can delete the loaded record.
+  const [showHistory, setShowHistory] = useState(false)
+  const [savedId, setSavedId] = useState<string | null>(null)
 
   const selectedFellows = useMemo(
     () => fellows.filter((f) => selected.has(f.id)),
-    [fellows, selected]
+    [fellows, selected],
   )
+  const primary: HonorFellow | undefined = selectedFellows[0]
+  const primaryName = primary ? fellowName(primary.firstName, primary.lastName) : "Fellow"
+  const sourcesQuery = useFellowSources(primary?.id)
+  const sources = sourcesQuery.data
+  const historyQuery = useEvaluationHistory(primary?.id)
+  const history = historyQuery.data ?? []
+  // Per-fellow source status for the whole grid (compact 10-artifact row below
+  // each fellow). Read-safe: degrades to an empty map when unavailable.
+  const allFellowIds = useMemo(() => fellows.map((f) => f.id), [fellows])
+  const bulkSourcesQuery = useFellowSourcesBulk(allFellowIds)
+  const bulkSources = bulkSourcesQuery.data ?? {}
+  const comparisonIds = selectedFellows.slice(1).map((f) => f.id)
+  const mode =
+    selectedFellows.length <= 1
+      ? "Individual"
+      : selectedFellows.length === 2
+        ? "1:1 comparison"
+        : `Team (${selectedFellows.length})`
+
+  const nameById = useMemo(() => {
+    const m: Record<string, string> = {}
+    for (const f of fellows) m[f.id] = fellowName(f.firstName, f.lastName)
+    return m
+  }, [fellows])
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -96,344 +410,1336 @@ export default function HonorEvaluate() {
       return next
     })
   }
+  const allSelected = fellows.length > 0 && fellows.every((f) => selected.has(f.id))
+  function toggleAll() {
+    setSelected(() => (allSelected ? new Set<string>() : new Set(fellows.map((f) => f.id))))
+  }
 
-  async function ask(prompt: string) {
-    const q = prompt.trim()
-    if (!q) return
-    setInput("")
+  function toggleDimension(key: string) {
+    setDimensions((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+  const positionOn = dimensions.has("position")
 
-    // Mock mode (or no member selected for context): use the seeded classifier.
-    if (!USE_HONOR_EVAL_LIVE) {
-      setThread((prev) => [
-        ...prev,
-        { role: "coach", text: q },
-        { role: "meridian", answer: classify(q) },
-      ])
+  async function runEvaluation() {
+    if (!primary) {
+      toast.warning("Select a fellow to evaluate.")
       return
     }
-
-    // Live: append the coach turn + a pending placeholder, then call Meridian
-    // (async-jobs). On success swap in the real reply; on error fall back to the
-    // canned answer so the surface never breaks.
-    const memberId = selectedFellows[0]?.id
-    setThread((prev) => [...prev, { role: "coach", text: q }, { role: "meridian", pending: true }])
+    setNarrationMarkdown("")
+    setNarrationTrace([])
+    setSavedId(null)
     try {
-      const reply = await evaluate.mutateAsync({ prompt: q, memberId })
-      const answer = reply.content.trim()
-        ? liveAnswer(q, reply.content, reply.trace)
-        : classify(q)
-      setThread((prev) => {
-        const next = [...prev]
-        const i = next.map((t) => t.pending).lastIndexOf(true)
-        if (i >= 0) next[i] = { role: "meridian", answer }
-        return next
+      // Source selection — only send when we know the fellow's sources. Narrow
+      // assessmentFrameworks only if the coach excluded some (else null = all).
+      const sourcesBody = sources
+        ? {
+            assessmentFrameworks: excludedFrameworks.size
+              ? sources.assessments
+                  .map((a) => a.framework)
+                  .filter((f) => !excludedFrameworks.has(f))
+              : null,
+            includeResume,
+            includeBio,
+          }
+        : undefined
+      const selectedDimensions = EVAL_DIMENSIONS.map((d) => d.key).filter((k) => dimensions.has(k))
+      const data = await report.mutateAsync({
+        fellowId: primary.id,
+        body: {
+          criteria: criteria.trim() || undefined,
+          dimensions: selectedDimensions,
+          memberIds: comparisonIds.length ? comparisonIds : undefined,
+          targetArea: comparisonIds.length ? targetArea : undefined,
+          sources: sourcesBody,
+        },
       })
-    } catch {
-      setThread((prev) => {
-        const next = [...prev]
-        const i = next.map((t) => t.pending).lastIndexOf(true)
-        if (i >= 0) next[i] = { role: "meridian", answer: classify(q) }
-        return next
-      })
+      setResult(data ?? null)
+      if (!data) {
+        toast.error("Evaluation returned no data.")
+        return
+      }
+      // Auto-compose the formatted Meridian narrative — this is the primary,
+      // readable evaluation (essential when the fellow has only a résumé, where
+      // the deterministic scores are imputed-neutral). Runs in the background;
+      // the structured backbone renders immediately below it.
+      void narrateResult(data)
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast.error(
+        status === 422
+          ? detail ||
+              "Upload a résumé for this fellow before evaluating."
+          : status === 409
+            ? "This fellow has no IG profile yet — invite them before evaluating."
+            : "Evaluation failed. Please try again.",
+      )
     }
   }
 
-  // Compare matrix — only metrics with scores for the selected members.
-  const compareRows = useMemo(() => {
-    const ids = selectedFellows.map((f) => f.id)
-    return MOCK_COMPARE_METRICS.map((m) => ({
-      label: m.label,
-      cells: ids.map((id) => ({ id, value: m.scores[id] ?? 0 })),
-    }))
-  }, [selectedFellows])
+  async function onPositionFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file || !primary) return
+    setUploading(true)
+    try {
+      // Attach the position description to the FELLOW (subject), doc_kind="position".
+      const presigned = await initiateUpload({
+        filename: file.name,
+        content_type: file.type || "application/octet-stream",
+        file_size: file.size,
+        doc_kind: "position",
+        subject_user_id: primary.id,
+      })
+      await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
+      await triggerProcessing(presigned.document_id)
+      setPositionAttached(file.name)
+      toast.success(`Position description saved to ${fellowName(primary.firstName, primary.lastName)}.`)
+    } catch {
+      toast.error("Could not attach the position description.")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function narrateResult(evalResult: HonorEvaluation) {
+    if (!primary) return
+    const subjectName = fellowName(primary.firstName, primary.lastName)
+    // Names for every selected fellow so the narrator can refer to the
+    // comparison set by name rather than by opaque id.
+    const nameById = Object.fromEntries(
+      selectedFellows.map((f) => [f.id, fellowName(f.firstName, f.lastName)]),
+    )
+    // Which subjects actually have a behavioral assessment behind their numbers.
+    // The primary's basis comes from the report itself; the comparison subjects'
+    // from the roster-wide sources map.
+    const behavioralById: Record<string, boolean> = Object.fromEntries(
+      selectedFellows.map((f) => [
+        f.id,
+        f.id === primary.id
+          ? (evalResult.confidence?.behavioralBasis ?? false)
+          : (bulkSources[f.id]?.assessments?.length ?? 0) > 0,
+      ]),
+    )
+    // Primary first — the engine wraps each owned subject in its own <SUBJECT>
+    // block. Solo runs send no memberIds and behave exactly as before.
+    const memberIds = selectedFellows.length > 1 ? selectedFellows.map((f) => f.id) : undefined
+    try {
+      const reply = await narrate.mutateAsync({
+        prompt: summarizeForNarration(evalResult, subjectName, criteria, nameById, behavioralById),
+        memberId: primary.id,
+        memberIds,
+      })
+      if (reply.content.trim()) {
+        setNarrationMarkdown(reply.content)
+        setNarrationTrace(reply.trace?.length ? reply.trace : ["Meridian"])
+      } else {
+        toast.info("Meridian returned no narration.")
+      }
+    } catch {
+      toast.error("Meridian could not compose the evaluation right now.")
+    }
+  }
+
+  // ── Report export (Phase 4) ──────────────────────────────────────────────
+  function buildReportMeta(): HonorReportMeta | null {
+    if (!primary) return null
+    const coachName = user?.fullName || user?.name || coachHome?.coachName || "Coach"
+    return {
+      fellowName: fellowName(primary.firstName, primary.lastName),
+      fellowTitle: primary.target || primary.background || "",
+      fellowEmail: primary.email || "",
+      coachName,
+      coachTitle: coachHome?.coachTitle || "",
+      coachEmail: user?.email || "",
+      dateLabel: formatReportDate(new Date()),
+      narrativeHtml: narrationMarkdown ? narrativeToPdfHtml(narrationMarkdown) : undefined,
+    }
+  }
+
+  async function renderReport(): Promise<{ fileName: string; blob: Blob } | null> {
+    const meta = buildReportMeta()
+    if (!result || !meta) return null
+    return renderHonorReportPdf(result, meta, nameById)
+  }
+
+  async function handleDownload() {
+    if (!result || !primary) return
+    setExporting("download")
+    try {
+      const out = await renderReport()
+      if (!out) return
+      downloadBlob(out.fileName, out.blob)
+      // Fire-and-forget audit — never block the download on it.
+      recordExport.mutate({ fellowId: primary.id, kind: "evaluation", action: "download" })
+      toast.success("Evaluation PDF downloaded.")
+    } catch {
+      toast.error("Could not generate the PDF.")
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  async function handlePrint() {
+    if (!result || !primary) return
+    setExporting("print")
+    try {
+      const out = await renderReport()
+      if (!out) return
+      printBlob(out.blob)
+      recordExport.mutate({ fellowId: primary.id, kind: "evaluation", action: "print" })
+    } catch {
+      toast.error("Could not prepare the report for printing.")
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  /**
+   * Render + download the report in a docgen format (Word / PowerPoint / Excel /
+   * CSV / Markdown / HTML) via the backend. The branded PDF stays client-side
+   * (handleDownload) so its exact title-page layout is preserved.
+   */
+  async function handleGenerateFormat(fmt: HonorReportFormat) {
+    if (!result || !primary) return
+    setExportMenuOpen(false)
+    setExportFormat(fmt)
+    const meta = buildReportMeta()
+    try {
+      const data = await generateDoc.mutateAsync({
+        fellowId: primary.id,
+        body: {
+          kind: "evaluation",
+          format: fmt,
+          evaluation: result,
+          narrativeMarkdown: narrationMarkdown || undefined,
+          fellowName: meta?.fellowName,
+          fellowTitle: meta?.fellowTitle,
+          fellowEmail: meta?.fellowEmail,
+          coachName: meta?.coachName,
+          coachTitle: meta?.coachTitle,
+          coachEmail: meta?.coachEmail,
+          dateLabel: meta?.dateLabel,
+        },
+      })
+      if (data?.downloadUrl) {
+        // The presigned URL carries Content-Disposition: attachment, so opening
+        // it downloads the file rather than navigating away.
+        window.open(data.downloadUrl, "_blank", "noopener")
+        toast.success(`${FORMAT_LABEL[fmt]} generated.`)
+      } else {
+        toast.error("The document could not be generated.")
+      }
+    } catch {
+      toast.error(`Could not generate the ${FORMAT_LABEL[fmt]}.`)
+    } finally {
+      setExportFormat(null)
+    }
+  }
+
+  // ── Persisted evaluations (Feature 1: Save + history) ─────────────────────
+  /** Provenance of the current run — stored with the saved evaluation. */
+  function currentSourcesUsed(): Record<string, unknown> {
+    return {
+      includeResume,
+      includeBio,
+      excludedFrameworks: [...excludedFrameworks],
+      comparisonIds,
+      targetArea: comparisonIds.length ? targetArea : null,
+    }
+  }
+
+  /** A default label when the coach doesn't name the saved evaluation. */
+  function defaultSaveTitle(): string {
+    const crit = criteria.trim()
+    const base = crit ? crit.slice(0, 60) : `${primaryName} evaluation`
+    return `${base} — ${formatReportDate(new Date())}`
+  }
+
+  async function handleSaveEvaluation() {
+    if (!result || !primary || savedId) return
+    try {
+      const saved = await saveEval.mutateAsync({
+        fellowId: primary.id,
+        body: {
+          evaluation: result,
+          narrativeMarkdown: narrationMarkdown || undefined,
+          criteria: criteria.trim() || undefined,
+          dimensions: EVAL_DIMENSIONS.map((d) => d.key).filter((k) => dimensions.has(k)),
+          sourcesUsed: currentSourcesUsed(),
+          title: defaultSaveTitle(),
+        },
+      })
+      if (saved?.id) setSavedId(saved.id)
+    } catch {
+      /* toast handled in the hook */
+    }
+  }
+
+  async function handleLoadSaved(evaluationId: string) {
+    if (!primary) return
+    try {
+      const saved = await loadSaved.mutateAsync({ fellowId: primary.id, evaluationId })
+      if (!saved) return
+      const backbone = saved.evaluation as HonorEvaluation | Record<string, never>
+      // Reload the deterministic backbone when present; always restore the
+      // narrative + criteria so the reader sees the saved prose verbatim.
+      setResult(
+        backbone && "objective_evaluation" in backbone ? (backbone as HonorEvaluation) : null,
+      )
+      setNarrationMarkdown(saved.narrativeMarkdown || "")
+      setNarrationTrace(saved.narrativeMarkdown ? ["Nova (saved)"] : [])
+      setCriteria(saved.criteria || "")
+      setSavedId(saved.id)
+      setShowHistory(false)
+      toast.success("Saved evaluation loaded.")
+    } catch {
+      /* toast handled in the hook */
+    }
+  }
+
+  async function handleDeleteSaved(evaluationId: string) {
+    if (!primary) return
+    try {
+      await deleteEval.mutateAsync({ fellowId: primary.id, evaluationId })
+      if (savedId === evaluationId) setSavedId(null)
+    } catch {
+      /* toast handled in the hook */
+    }
+  }
+
+  /**
+   * Feature 2 — hand off to the Résumé Writer to rewrite keyed off this
+   * evaluation's suggestions. If the evaluation is saved, pass its id (the server
+   * pulls the "Suggestions for Improvement" section); otherwise pass the narrative
+   * prose directly. Either way the Résumé Writer opens pre-targeted at this fellow.
+   */
+  function handleRewriteResume() {
+    if (!primary) return
+    navigate(ROUTES.HONOR.RESUME, {
+      state: {
+        fellowId: primary.id,
+        fellowName: primaryName,
+        evaluationId: savedId || undefined,
+        improvements: savedId ? undefined : narrationMarkdown || undefined,
+      },
+    })
+  }
+
+  /**
+   * Feature 3 — "email a link" / "copy link". Generates the report as a PDF to
+   * S3 (presigned URL), then either copies the link or opens the coach's OWN mail
+   * client (mailto:) pre-filled with it. No SES, no flag, no confirm — the coach
+   * sends it themselves; we never route the document through our mail path.
+   */
+  async function handleShareLink(mode: "copy" | "email") {
+    if (!result || !primary) return
+    setSharing(mode)
+    try {
+      const meta = buildReportMeta()
+      const data = await generateDoc.mutateAsync({
+        fellowId: primary.id,
+        body: {
+          kind: "evaluation",
+          format: "pdf",
+          evaluation: result,
+          narrativeMarkdown: narrationMarkdown || undefined,
+          fellowName: meta?.fellowName,
+          fellowTitle: meta?.fellowTitle,
+          fellowEmail: meta?.fellowEmail,
+          coachName: meta?.coachName,
+          coachTitle: meta?.coachTitle,
+          coachEmail: meta?.coachEmail,
+          dateLabel: meta?.dateLabel,
+        },
+      })
+      if (!data?.downloadUrl) {
+        toast.error("Could not prepare a shareable link.")
+        return
+      }
+      recordExport.mutate({ fellowId: primary.id, kind: "evaluation", action: "download" })
+      if (mode === "copy") {
+        const ok = await copyReportLink(data.downloadUrl)
+        toast[ok ? "success" : "error"](
+          ok ? "Download link copied to clipboard." : "Could not copy the link.",
+        )
+      } else {
+        emailReportLink({
+          to: primary.email || "",
+          subject: `Honor evaluation — ${fellowName(primary.firstName, primary.lastName)}`,
+          intro: `Attached is the Honor Foundation evaluation for ${fellowName(primary.firstName, primary.lastName)}.`,
+          url: data.downloadUrl,
+        })
+      }
+    } catch {
+      toast.error("Could not prepare a shareable link.")
+    } finally {
+      setSharing(null)
+    }
+  }
+
+  function openEmail() {
+    if (!primary) return
+    setEmailTo(primary.email || "")
+    setShowEmail(true)
+  }
+
+  async function confirmEmail() {
+    if (!result || !primary) return
+    const to = emailTo.trim()
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+      toast.warning("Enter a valid recipient email.")
+      return
+    }
+    try {
+      const out = await renderReport()
+      if (!out) return
+      const pdfBase64 = await blobToBase64(out.blob)
+      const res = await emailMutation.mutateAsync({
+        fellowId: primary.id,
+        body: {
+          to,
+          kind: "evaluation",
+          filename: out.fileName,
+          pdfBase64,
+          subject: `Honor evaluation — ${fellowName(primary.firstName, primary.lastName)}`,
+        },
+      })
+      if (res?.disabled) {
+        toast.info("Email delivery isn't enabled yet. Download or print the report in the meantime.")
+      } else if (res?.sent) {
+        toast.success(`Evaluation emailed to ${to}.`)
+        setShowEmail(false)
+      } else {
+        toast.error("The report could not be emailed.")
+      }
+    } catch {
+      toast.error("The report could not be emailed.")
+    }
+  }
+
+  const canExport = !!result && !!primary
 
   return (
     <div>
       <HonorPageHeader
         icon={Sparkles}
-        title="Evaluate Member"
-        description="Ask Meridian about a member or compare a pod. Every answer shows the agent trace behind it."
+        title="Evaluate Fellow"
+        description="A cited, deterministic evaluation from the Fellow's behavioral profile. Select more than one fellow to compare a pod. Meridian can narrate the result."
       />
 
-      {/* Scope + member picker */}
+      {/* Controls */}
       <HonorCard className="mb-6">
-        <div className="mb-4 flex flex-wrap items-center gap-4">
-          <div className="inline-flex rounded-lg border border-[#dfe4ec] bg-white p-0.5">
-            {(["individual", "team"] as Scope[]).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setScope(s)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors",
-                  scope === s ? "bg-[#1B2A4A] text-white" : "text-[#5b6678] hover:bg-[#f6f7f9]"
-                )}
-              >
-                {s === "individual" ? <User className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-                {s === "individual" ? "Individual" : "Whole team"}
-              </button>
-            ))}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <HonorSectionTitle>Fellows</HonorSectionTitle>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 text-sm text-[#5b6678]">
+              {selectedFellows.length <= 1 ? (
+                <User className="h-4 w-4" />
+              ) : (
+                <Users className="h-4 w-4" />
+              )}
+              {mode}
+            </span>
+            <button
+              type="button"
+              onClick={toggleAll}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5b6678] hover:text-[#1B2A4A]"
+            >
+              {allSelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+              {allSelected ? "Clear all" : "Select all"}
+            </button>
           </div>
-          <span className="text-sm text-[#9299a6]">
-            {selectedFellows.length} selected
-          </span>
         </div>
 
-        <HonorSectionTitle>Members</HonorSectionTitle>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {fellows.map((f) => {
             const on = selected.has(f.id)
+            const isPrimary = primary?.id === f.id
             return (
-              <button
+              <div
                 key={f.id}
-                type="button"
-                onClick={() => toggle(f.id)}
                 className={cn(
-                  "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                  "overflow-hidden rounded-lg border transition-colors",
                   on
                     ? "border-[#E8792B] bg-[rgba(232,121,43,0.06)]"
-                    : "border-[#dfe4ec] bg-white hover:border-[#c6cdd9]"
+                    : "border-[#dfe4ec] bg-white",
                 )}
               >
-                <span>
-                  <span className="font-medium text-[#18202f]">
-                    {fellowName(f.firstName, f.lastName)}
+                <button
+                  type="button"
+                  onClick={() => toggle(f.id)}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm"
+                >
+                  <span>
+                    <span className="font-medium text-[#18202f]">
+                      {fellowName(f.firstName, f.lastName)}
+                    </span>
+                    <span className="block text-xs text-[#9299a6]">{f.target}</span>
                   </span>
-                  <span className="block text-xs text-[#9299a6]">{f.target}</span>
-                </span>
-                {f.prism && <HonorPill tone="navy">{f.prism.label}</HonorPill>}
-              </button>
+                  {isPrimary ? (
+                    <HonorPill tone="orange">Subject</HonorPill>
+                  ) : (
+                    f.prism && <HonorPill tone="navy">{f.prism.label}</HonorPill>
+                  )}
+                </button>
+                <div className="border-t border-[#eef1f6] px-3 py-2">
+                  <ArtifactStatusMatrix
+                    compact
+                    fellowId={f.id}
+                    sources={bulkSources[f.id]}
+                    onChanged={() => bulkSourcesQuery.refetch()}
+                  />
+                </div>
+              </div>
             )
           })}
         </div>
-      </HonorCard>
+        {fellows.length === 0 && (
+          <HonorEmptyState>No fellows on your caseload yet.</HonorEmptyState>
+        )}
 
-      {/* Chat with Meridian */}
-      <HonorCard className="mb-6">
-        <HonorSectionTitle>Chat with Meridian</HonorSectionTitle>
+        {/* Criteria + dimensions + team target + position + run */}
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-[#374151]">
+              Describe the Evaluation <span className="text-[#9299a6]">(evaluation criteria)</span>
+            </span>
+            <textarea
+              value={criteria}
+              onChange={(e) => setCriteria(e.target.value)}
+              placeholder="Describe what to evaluate — e.g. fit for an operations program-management role, readiness to lead a security team, and any specific concerns to weigh."
+              className="min-h-[70px] w-full resize-y rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+            />
+          </label>
 
-        <div className="mb-3 flex flex-wrap gap-2">
-          {MOCK_EVAL_PROMPTS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => void ask(p)}
-              className="rounded-full border border-[#dfe4ec] bg-white px-3 py-1 text-xs font-medium text-[#5b6678] transition-colors hover:border-[#E8792B] hover:text-[#c9631a]"
-            >
-              {p}
-            </button>
-          ))}
+          <div className="flex flex-col gap-3">
+            <div className="text-sm">
+              <span className="mb-1.5 block font-medium text-[#374151]">Dimensions to evaluate</span>
+              <div className="flex flex-wrap gap-2">
+                {EVAL_DIMENSIONS.map((d) => {
+                  const on = dimensions.has(d.key)
+                  return (
+                    <label
+                      key={d.key}
+                      className={cn(
+                        "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs",
+                        on
+                          ? "border-[#c7d6ff] bg-[#eef3ff] text-[#1B2A4A]"
+                          : "border-[#e6e9ef] bg-white text-[#9299a6]",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => toggleDimension(d.key)}
+                      />
+                      <span className="font-medium">{d.label}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+
+            {comparisonIds.length > 0 && (
+              <label className="text-sm">
+                <span className="mb-1 block font-medium text-[#374151]">Team read — target area</span>
+                <select
+                  value={targetArea}
+                  onChange={(e) => setTargetArea(e.target.value)}
+                  className="w-full rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                >
+                  {HONOR_CAREER_AREAS.map((a) => (
+                    <option key={a.key} value={a.key}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {positionOn && (
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  className="hidden"
+                  onChange={onPositionFile}
+                />
+                <button
+                  type="button"
+                  disabled={!primary || uploading}
+                  onClick={() => fileRef.current?.click()}
+                  className={HONOR_BTN_OUTLINE}
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {positionAttached ? "Replace position" : "Attach position description"}
+                </button>
+                {positionAttached && (
+                  <span className="text-xs text-[#5b6678]">Attached: {positionAttached}</span>
+                )}
+                <span className="w-full text-xs text-[#8a6d1b]">
+                  The position description is stored as evidence on this fellow and is available
+                  to Meridian in chat. It does <strong>not</strong> yet influence the ranked
+                  career/position fit — automatic JD scoring is not built.
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {thread.length > 0 && (
-          <div className="mb-3 space-y-3">
-            {thread.map((turn, i) =>
-              turn.role === "coach" ? (
-                <div key={i} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-lg bg-[#1B2A4A] px-3 py-2 text-sm text-white">
-                    {turn.text}
-                  </div>
-                </div>
-              ) : turn.pending ? (
-                <div key={i} className="max-w-[92%] rounded-lg border border-[#dfe4ec] bg-[#f6f7f9] p-3">
-                  <span className="inline-flex items-center gap-2 text-sm text-[#5b6678]">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#E8792B]" />
-                    Meridian is evaluating…
-                  </span>
-                </div>
-              ) : (
-                <div key={i} className="max-w-[92%] rounded-lg border border-[#dfe4ec] bg-[#f6f7f9] p-3">
-                  {turn.answer && <AgentTraceRow trace={turn.answer.trace} />}
-                  <div
-                    className="prose prose-sm mt-2 max-w-none text-sm text-[#18202f] [&_p]:mb-2 [&_strong]:font-semibold"
-                    // Meridian-synthesized (or seeded) content; sanitized defense-in-depth.
-                    dangerouslySetInnerHTML={{
-                      __html: sanitizeBodyHtml(turn.answer?.html ?? ""),
-                    }}
-                  />
-                </div>
-              )
+        {primary && (
+          <div className="mt-5 rounded-lg border border-[#e6e9ef] bg-[#fafbfc] p-4">
+            <div className="mb-1 text-sm font-semibold text-[#18202f]">
+              Evidence for {primaryName}
+            </div>
+            <p className="mb-3 text-xs text-[#5b6678]">
+              Choose which submitted sources to evaluate on. You can evaluate with a PRISM
+              report and without, or on just a résumé, bio, or another assessment — the
+              confidence meter shows how the fit score degrades as sources are excluded.
+            </p>
+            {sourcesQuery.isLoading ? (
+              <p className="text-xs text-[#9299a6]">Loading submitted documents…</p>
+            ) : sources?.managed ? (
+              <p className="text-xs text-[#9299a6]">
+                This fellow hasn’t been invited yet — invite them to attach and evaluate sources.
+              </p>
+            ) : sources &&
+              sources.assessments.length === 0 &&
+              !sources.resume &&
+              !sources.bio ? (
+              <p className="text-xs text-[#9299a6]">No documents on file for this fellow yet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {(sources?.assessments ?? []).map((a) => {
+                  const on = !excludedFrameworks.has(a.framework)
+                  return (
+                    <label
+                      key={a.framework + (a.assessedAt ?? "")}
+                      className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                        on
+                          ? "border-[#c7d6ff] bg-[#eef3ff] text-[#1B2A4A]"
+                          : "border-[#e6e9ef] bg-white text-[#9299a6]"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() =>
+                          setExcludedFrameworks((prev) => {
+                            const next = new Set(prev)
+                            if (next.has(a.framework)) next.delete(a.framework)
+                            else next.add(a.framework)
+                            return next
+                          })
+                        }
+                      />
+                      <span className="font-medium">{a.framework}</span>
+                      <span className="opacity-70">{a.scoreCount} scores</span>
+                    </label>
+                  )
+                })}
+                {sources?.resume && (
+                  <label
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                      includeResume
+                        ? "border-[#c7d6ff] bg-[#eef3ff] text-[#1B2A4A]"
+                        : "border-[#e6e9ef] bg-white text-[#9299a6]"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includeResume}
+                      onChange={() => setIncludeResume((v) => !v)}
+                    />
+                    <span className="font-medium">Résumé</span>
+                  </label>
+                )}
+                {sources?.bio && (
+                  <label
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                      includeBio
+                        ? "border-[#c7d6ff] bg-[#eef3ff] text-[#1B2A4A]"
+                        : "border-[#e6e9ef] bg-white text-[#9299a6]"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includeBio}
+                      onChange={() => setIncludeBio((v) => !v)}
+                    />
+                    <span className="font-medium">Bio</span>
+                  </label>
+                )}
+              </div>
             )}
           </div>
         )}
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            void ask(input)
-          }}
-          className="flex items-center gap-2"
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about a member — e.g. What careers is this member a fit for?"
-            className="flex-1 rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-          />
-          <button type="submit" className={HONOR_BTN_PRIMARY}>
-            <Send className="h-4 w-4" /> Ask
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={runEvaluation}
+            disabled={!primary || report.isPending || narrate.isPending}
+            className={HONOR_BTN_PRIMARY}
+          >
+            {report.isPending || narrate.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {report.isPending
+              ? "Scoring…"
+              : narrate.isPending
+                ? "Writing evaluation…"
+                : result
+                  ? "Re-run evaluation"
+                  : "Run evaluation"}
           </button>
-        </form>
+          {primary && (
+            <button
+              type="button"
+              onClick={() => setShowHistory((v) => !v)}
+              className={HONOR_BTN_OUTLINE}
+              aria-expanded={showHistory}
+            >
+              <History className="h-4 w-4" />
+              Saved evaluations{history.length ? ` (${history.length})` : ""}
+            </button>
+          )}
+          <span className="text-xs text-[#9299a6]">
+            Scores the fellow&rsquo;s profile and writes the evaluation. Edit the
+            criteria above and run again to refocus it.
+          </span>
+        </div>
       </HonorCard>
 
-      {/* Compare matrix (2+ selected) */}
-      {selectedFellows.length >= 2 && (
-        <HonorCard className="mb-6 p-0">
-          <div className="p-5 pb-0">
-            <HonorSectionTitle>Compare</HonorSectionTitle>
+      {/* Saved-evaluation history (Feature 1) — load a past run back into the
+          view, or delete it. Shown on demand; independent of the current run. */}
+      {primary && showHistory && (
+        <HonorCard className="mb-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <HonorSectionTitle>Saved evaluations — {primaryName}</HonorSectionTitle>
+            {historyQuery.isFetching && <Loader2 className="h-4 w-4 animate-spin text-[#9299a6]" />}
           </div>
-          <div className="overflow-x-auto p-5 pt-2">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase tracking-wide text-[#5b6678]">
-                <tr>
-                  <th className="py-2 pr-4">Criteria</th>
-                  {selectedFellows.map((f) => (
-                    <th key={f.id} className="px-3 py-2">
-                      {fellowName(f.firstName, f.lastName)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {compareRows.map((row) => {
-                  const best = Math.max(...row.cells.map((c) => c.value))
-                  return (
-                    <tr key={row.label} className="border-t border-[#f1f3f7]">
-                      <td className="py-3 pr-4 font-medium text-[#18202f]">{row.label}</td>
-                      {row.cells.map((c) => (
-                        <td key={c.id} className="px-3 py-3">
-                          <HonorMeter
-                            value={c.value}
-                            tone={c.value === best ? "orange" : "navy"}
-                            right={`${c.value}`}
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          {history.length === 0 ? (
+            <p className="text-sm text-[#9299a6]">
+              No saved evaluations yet. Run an evaluation and choose{" "}
+              <span className="font-medium text-[#5b6678]">Save evaluation</span> to keep it here.
+            </p>
+          ) : (
+            <ul className="divide-y divide-[#eef1f6]">
+              {history.map((h) => (
+                <li key={h.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[#18202f]">
+                      {h.title || "Untitled evaluation"}
+                    </p>
+                    <p className="truncate text-xs text-[#9299a6]">
+                      {h.createdAt ? formatReportDate(new Date(h.createdAt)) : ""}
+                      {h.hasNarrative ? " · Nova narrative" : " · scores only"}
+                      {h.dimensions.length ? ` · ${h.dimensions.join(", ")}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleLoadSaved(h.id)}
+                      disabled={loadSaved.isPending}
+                      className={HONOR_BTN_OUTLINE}
+                    >
+                      {loadSaved.isPending && loadSaved.variables?.evaluationId === h.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4 rotate-180" />
+                      )}
+                      Load
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSaved(h.id)}
+                      disabled={deleteEval.isPending}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#f0d9d9] px-2.5 py-1.5 text-sm text-[#a2543f] hover:bg-[#fdf4f4] disabled:opacity-50"
+                      aria-label="Delete saved evaluation"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </HonorCard>
       )}
 
-      {/* Coaching outputs grid */}
-      <div className="mb-6 grid gap-4 lg:grid-cols-2">
-        {/* Goal setting */}
-        <HonorCard>
-          <HonorSectionTitle>Goal Setting</HonorSectionTitle>
-          <AgentTraceRow trace={["Ascend", "Meridian"]} />
-          <ul className="mt-3 space-y-2">
-            {MOCK_SUGGESTED_GOALS.map((g) => (
-              <li
-                key={g.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-[#f1f3f7] px-3 py-2"
-              >
-                <span className="flex items-center gap-2 text-sm text-[#18202f]">
-                  <Target className="h-4 w-4 text-[#E8792B]" /> {g.title}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => toast.success("Goal added to user_milestones (stub)")}
-                  className="text-xs font-medium text-[#E8792B] hover:underline"
+      {result && (
+        <>
+          {/* Evidence confidence — shows how the fit score degrades with missing sources */}
+          {result.confidence && (
+            <HonorCard className="mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <HonorSectionTitle>Evaluation confidence</HonorSectionTitle>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    result.confidence.band === "high"
+                      ? "bg-[#eef8f0] text-[#1f7a3d]"
+                      : result.confidence.band === "moderate"
+                        ? "bg-[#fdf6ec] text-[#8a5a12]"
+                        : "bg-[#fdecec] text-[#c0472b]"
+                  }`}
                 >
-                  Add as goal
-                </button>
-              </li>
-            ))}
-          </ul>
-        </HonorCard>
+                  {result.confidence.score}% · {result.confidence.band}
+                </span>
+              </div>
+              <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-[#eef1f6]">
+                <div
+                  className={`h-full rounded-full ${
+                    result.confidence.band === "high"
+                      ? "bg-[#1f7a3d]"
+                      : result.confidence.band === "moderate"
+                        ? "bg-[#c88b1b]"
+                        : "bg-[#c0472b]"
+                  }`}
+                  style={{ width: `${Math.max(4, result.confidence.score)}%` }}
+                />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {result.confidence.breakdown.map((b) => (
+                  <span
+                    key={b.source}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${
+                      b.present
+                        ? "border-[#cfe8d4] bg-[#f2faf4] text-[#1f7a3d]"
+                        : "border-[#f0d9d9] bg-[#fdf4f4] text-[#a2543f] line-through"
+                    }`}
+                    title={`${b.label} — ${b.present ? `+${b.weight}%` : `missing (−${b.weight}%)`}`}
+                  >
+                    {b.present ? "✓" : "—"} {b.label}
+                    <span className="opacity-70">{b.present ? `+${b.weight}` : `−${b.weight}`}</span>
+                  </span>
+                ))}
+              </div>
+              {!result.confidence.behavioralBasis && (
+                <p className="mt-3 text-xs text-[#a2543f]">
+                  No behavioral assessment in this selection — the fit score is imputed-neutral
+                  (not measured). Include PRISM or another assessment for a scored fit.
+                </p>
+              )}
+              <p className="mt-2 text-xs text-[#9299a6]">{result.confidence.note}</p>
+            </HonorCard>
+          )}
 
-        {/* Education & training */}
-        <HonorCard>
-          <HonorSectionTitle>Education &amp; Training</HonorSectionTitle>
-          <AgentTraceRow trace={["Echo", "Bridge", "Meridian"]} />
-          <ul className="mt-3 space-y-2 text-sm">
-            <li className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-              <GraduationCap className="h-4 w-4 text-[#1B2A4A]" /> PMP Cert Prep · PMI · 35 hrs · ~$1,200
-            </li>
-            <li className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-              <GraduationCap className="h-4 w-4 text-[#1B2A4A]" /> Google PM Certificate · Coursera · 6 mo
-            </li>
-            <li className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-              <GraduationCap className="h-4 w-4 text-[#1B2A4A]" /> UNC Kenan-Flagler MBA (part-time)
-            </li>
-          </ul>
-        </HonorCard>
+          {/* Export toolbar — branded PDF / other formats / print / (email, flag-gated) */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={!canExport || exporting !== null}
+              className={HONOR_BTN_PRIMARY}
+            >
+              {exporting === "download" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Download PDF
+            </button>
 
-        {/* Funding */}
-        <HonorCard>
-          <HonorSectionTitle>Funding Options</HonorSectionTitle>
-          <AgentTraceRow trace={["Grant", "Meridian"]} />
-          <ul className="mt-3 space-y-2 text-sm">
-            <li className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-              <Landmark className="h-4 w-4 text-[#1B2A4A]" /> Post-9/11 GI Bill
-            </li>
-            <li className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-              <Landmark className="h-4 w-4 text-[#1B2A4A]" /> DoD SkillBridge
-            </li>
-            <li className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-              <Landmark className="h-4 w-4 text-[#E8792B]" /> THF partner scholarship grant · up to $5,000
-            </li>
-          </ul>
-        </HonorCard>
+            {/* Other formats — Word / PowerPoint / Excel / CSV / Markdown / HTML */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setExportMenuOpen((v) => !v)}
+                disabled={!canExport || generateDoc.isPending}
+                className={HONOR_BTN_OUTLINE}
+                aria-haspopup="menu"
+                aria-expanded={exportMenuOpen}
+              >
+                {generateDoc.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4" />
+                )}
+                {generateDoc.isPending && exportFormat
+                  ? `Generating ${FORMAT_LABEL[exportFormat]}…`
+                  : "Export as…"}
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              {exportMenuOpen && (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-40 cursor-default"
+                    aria-hidden
+                    tabIndex={-1}
+                    onClick={() => setExportMenuOpen(false)}
+                  />
+                  <div
+                    role="menu"
+                    className="absolute left-0 z-50 mt-1 w-56 overflow-hidden rounded-lg border border-[#dfe4ec] bg-white py-1 shadow-lg"
+                  >
+                    {EXPORT_MENU_FORMATS.map((fmt) => (
+                      <button
+                        key={fmt}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => handleGenerateFormat(fmt)}
+                        disabled={generateDoc.isPending}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#18202f] hover:bg-[#f4f6fa] disabled:opacity-50"
+                      >
+                        <FileText className="h-4 w-4 text-[#5b6678]" />
+                        {FORMAT_LABEL[fmt]}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
-        {/* ROI model */}
-        <HonorCard>
-          <HonorSectionTitle>Job / Career ROI</HonorSectionTitle>
-          <AgentTraceRow trace={["Nova", "Grant", "Meridian"]} />
-          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-            <Roi icon={Calculator} label="Median first-year comp" value="$96,000" hint="Program Manager (US)" />
-            <Roi icon={Landmark} label="Net program cost" value="$0" hint="fully funded" />
-            <Roi icon={Target} label="Time to first offer" value="5–7 mo" />
-            <Roi icon={Sparkles} label="Behavioral fit" value="Strong · 82%" />
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={!canExport || exporting !== null}
+              className={HONOR_BTN_OUTLINE}
+            >
+              {exporting === "print" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4" />
+              )}
+              Print
+            </button>
+
+            {/* Save the evaluation (deterministic backbone + Nova narrative) for
+                later reference / re-export / résumé rewrite (Feature 1). */}
+            <button
+              type="button"
+              onClick={handleSaveEvaluation}
+              disabled={!canExport || saveEval.isPending || !!savedId}
+              className={HONOR_BTN_OUTLINE}
+              title={savedId ? "This evaluation is saved to the fellow's history." : "Save this evaluation"}
+            >
+              {saveEval.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {savedId ? "Saved" : "Save evaluation"}
+            </button>
+
+            {/* Feature 3 — share a time-limited download link (coach's own mail
+                client / clipboard; no SES, no confirm). */}
+            <button
+              type="button"
+              onClick={() => handleShareLink("email")}
+              disabled={!canExport || sharing !== null}
+              className={HONOR_BTN_OUTLINE}
+              title="Open your email with a secure download link to send"
+            >
+              {sharing === "email" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              Email a link
+            </button>
+            <button
+              type="button"
+              onClick={() => handleShareLink("copy")}
+              disabled={!canExport || sharing !== null}
+              className={HONOR_BTN_OUTLINE}
+              title="Copy a secure download link to the clipboard"
+            >
+              {sharing === "copy" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4" />
+              )}
+              Copy link
+            </button>
+
+            {/* Feature 2 — hand off to the Résumé Writer to rewrite keyed off
+                this evaluation's suggestions. Enabled once a narrative exists. */}
+            <button
+              type="button"
+              onClick={handleRewriteResume}
+              disabled={!canExport || !narrationMarkdown}
+              className={HONOR_BTN_OUTLINE}
+              title="Rewrite the fellow's résumé using this evaluation's suggestions"
+            >
+              <PenLine className="h-4 w-4" />
+              Rewrite résumé from this
+            </button>
+            {USE_HONOR_REPORT_EMAIL && (
+              <button
+                type="button"
+                onClick={openEmail}
+                disabled={!canExport}
+                className={HONOR_BTN_OUTLINE}
+              >
+                <Mail className="h-4 w-4" />
+                Email to fellow
+              </button>
+            )}
+            <span className="ml-auto text-xs text-[#9299a6]">
+              Confidential — distribute only by permission of the fellow.
+            </span>
           </div>
-        </HonorCard>
-      </div>
 
-      {/* Coach status comment */}
-      <HonorCard>
-        <HonorSectionTitle>Coach Status Comment</HonorSectionTitle>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="flex-1 text-sm">
-            <span className="mb-1 block font-medium text-[#374151]">Comment</span>
-            <textarea
-              className="min-h-[70px] w-full resize-y rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              placeholder="Written to the Activity feed for the selected member or whole team."
-            />
-          </label>
-          <button
-            type="button"
-            className={HONOR_BTN_OUTLINE}
-            onClick={() => toast.success("Status comment saved & written to Activity feed (stub)")}
-          >
-            Save status
-          </button>
+          <ReportView
+            report={result}
+            primaryName={primary ? fellowName(primary.firstName, primary.lastName) : "Fellow"}
+            nameById={nameById}
+            narrationMarkdown={narrationMarkdown}
+            narrationTrace={narrationTrace}
+            narrationPending={narrate.isPending}
+          />
+        </>
+      )}
+
+      {showEmail && primary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-[#18202f]">Email evaluation</h3>
+              <button
+                type="button"
+                onClick={() => setShowEmail(false)}
+                className="text-[#9299a6] hover:text-[#18202f]"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mb-3 text-sm text-[#5b6678]">
+              Sends the branded, confidential PDF for{" "}
+              <span className="font-medium text-[#18202f]">
+                {fellowName(primary.firstName, primary.lastName)}
+              </span>
+              . Only send with the fellow&rsquo;s permission.
+            </p>
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-[#374151]">Recipient</span>
+              <input
+                type="email"
+                value={emailTo}
+                onChange={(e) => setEmailTo(e.target.value)}
+                placeholder="fellow@email.com"
+                className="w-full rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+              />
+            </label>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setShowEmail(false)} className={HONOR_BTN_OUTLINE}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmEmail}
+                disabled={emailMutation.isPending}
+                className={HONOR_BTN_PRIMARY}
+              >
+                {emailMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4" />
+                )}
+                Send
+              </button>
+            </div>
+          </div>
         </div>
-      </HonorCard>
+      )}
     </div>
   )
 }
 
-function Roi({
-  icon: Icon,
-  label,
-  value,
-  hint,
+// ── Report render ────────────────────────────────────────────────────────────
+
+function ReportView({
+  report,
+  primaryName,
+  nameById,
+  narrationMarkdown,
+  narrationTrace,
+  narrationPending,
 }: {
-  icon: typeof Calculator
-  label: string
-  value: string
-  hint?: string
+  report: HonorEvaluation
+  primaryName: string
+  nameById: Record<string, string>
+  narrationMarkdown: string
+  narrationTrace: string[]
+  narrationPending: boolean
 }) {
+  const noScores = report.frameworks.length === 0
+  return (
+    <div className="space-y-6">
+      {noScores && (
+        <div className="rounded-lg border border-[#f0d9b8] bg-[#fdf6ec] px-4 py-3 text-sm text-[#8a5a12]">
+          No scored assessment on file — this evaluation is composed from the
+          fellow&rsquo;s résumé and other sources. Import a PRISM report to add a
+          scored behavioral fit.
+        </div>
+      )}
+
+      {/* Primary output: Meridian's formatted evaluation. */}
+      {(narrationMarkdown || narrationPending) && (
+        <HonorCard>
+          <HonorSectionTitle>Evaluation — {primaryName}</HonorSectionTitle>
+          {narrationMarkdown ? (
+            <>
+              <AgentTraceRow trace={narrationTrace} />
+              <AssistantMarkdown
+                text={narrationMarkdown}
+                className="prose prose-sm mt-2 max-w-none text-sm leading-relaxed text-[#18202f] [&_h2]:mt-4 [&_h2]:mb-1 [&_h2]:text-base [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_p]:mb-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_strong]:font-semibold [&_table]:my-2"
+              />
+            </>
+          ) : (
+            <p className="mt-2 flex items-center gap-2 text-sm text-[#5b6678]">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Meridian is composing the evaluation…
+            </p>
+          )}
+        </HonorCard>
+      )}
+
+      {/* Supporting detail: the deterministic, cited backbone. */}
+      {/* 1. Objective evaluation */}
+      <HonorCard>
+        <HonorSectionTitle>Objective Evaluation — {primaryName}</HonorSectionTitle>
+        <ClaimList claims={report.objective_evaluation} empty="No behavioral strengths on file." />
+        {report.development_areas.length > 0 && (
+          <>
+            <div className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wide text-[#9299a6]">
+              Development areas
+            </div>
+            <ClaimList claims={report.development_areas} empty="" tone="orange" />
+          </>
+        )}
+      </HonorCard>
+
+      {/* 2. Goals & objectives fit */}
+      {report.goals_fit.length > 0 && (
+        <HonorCard>
+          <HonorSectionTitle>Goals &amp; Objectives — Fit</HonorSectionTitle>
+          <ul className="mt-2 space-y-3">
+            {report.goals_fit.map((g, i) => (
+              <GoalRow key={`${g.goal}-${i}`} goal={g} />
+            ))}
+          </ul>
+        </HonorCard>
+      )}
+
+      {/* 3. Career / position fit — ranked */}
+      <HonorCard>
+        <HonorSectionTitle>Career / Position Fit — Ranked</HonorSectionTitle>
+        <div className="mt-2 space-y-3">
+          {report.career_fit_ranked.map((c) => (
+            <CareerRow key={c.area} fit={c} />
+          ))}
+        </div>
+      </HonorCard>
+
+      {/* 4. Comparative / team */}
+      {report.comparative && (
+        <ComparativeView
+          comparative={report.comparative}
+          career={report.career_fit_ranked}
+          primaryName={primaryName}
+          nameById={nameById}
+        />
+      )}
+
+      <p className="text-xs text-[#9299a6]">{report.notes}</p>
+    </div>
+  )
+}
+
+function ClaimList({
+  claims,
+  empty,
+  tone = "navy",
+}: {
+  claims: HonorCitedClaim[]
+  empty: string
+  tone?: "navy" | "orange"
+}) {
+  if (claims.length === 0) {
+    return empty ? <p className="mt-2 text-sm text-[#9299a6]">{empty}</p> : null
+  }
+  return (
+    <ul className="mt-2 space-y-2">
+      {claims.map((c, i) => (
+        <li key={i} className="flex flex-wrap items-center gap-2 text-sm text-[#18202f]">
+          <span>{c.statement}</span>
+          <HonorPill tone={tone === "orange" ? "orange" : "gray"}>{c.source}</HonorPill>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function FactorPills({ factors, label }: { factors: HonorFitFactor[]; label: string }) {
+  if (factors.length === 0) return null
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+      <span className="text-xs text-[#9299a6]">{label}:</span>
+      {factors.map((f) => (
+        <HonorPill key={f.feature} tone="gray">
+          {f.source}
+        </HonorPill>
+      ))}
+    </div>
+  )
+}
+
+function CareerRow({ fit }: { fit: HonorCareerFit }) {
   return (
     <div className="rounded-lg border border-[#f1f3f7] p-3">
-      <div className="mb-1 flex items-center gap-1.5 text-xs text-[#5b6678]">
-        <Icon className="h-3.5 w-3.5" /> {label}
+      <div className="mb-1.5 flex items-center justify-between gap-3">
+        <span className="font-medium text-[#18202f]">{fit.label}</span>
+        <span className="text-sm font-semibold text-[#1B2A4A]">{fit.score}</span>
       </div>
-      <div className="text-lg font-bold text-[#18202f]">{value}</div>
-      {hint && <div className="text-xs text-[#9299a6]">{hint}</div>}
+      <HonorMeter value={fit.score} tone={fit.score >= 80 ? "orange" : "navy"} />
+      <FactorPills factors={fit.top_factors} label="Drivers" />
+      <FactorPills factors={fit.top_gaps} label="Gaps" />
+    </div>
+  )
+}
+
+function GoalRow({ goal }: { goal: HonorGoalFit }) {
+  return (
+    <li className="rounded-lg border border-[#f1f3f7] px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-sm font-medium text-[#18202f]">{goal.goal}</span>
+        <span className="flex items-center gap-2">
+          {goal.score != null && <span className="text-sm text-[#5b6678]">{goal.score}</span>}
+          <HonorPill tone={VERDICT_TONE[goal.verdict]}>{goal.verdict}</HonorPill>
+        </span>
+      </div>
+      {goal.label && goal.verdict !== "unmapped" && (
+        <div className="mt-0.5 text-xs text-[#9299a6]">vs {goal.label}</div>
+      )}
+      <FactorPills factors={goal.factors} label="Support" />
+    </li>
+  )
+}
+
+function ComparativeView({
+  comparative,
+  career,
+  primaryName,
+  nameById,
+}: {
+  comparative: HonorComparative
+  career: HonorCareerFit[]
+  primaryName: string
+  nameById: Record<string, string>
+}) {
+  // Columns = the archetype areas (labels from the primary's ranked list).
+  const areaLabel = useMemo(() => {
+    const m: Record<string, string> = {}
+    for (const c of career) m[c.area] = c.label
+    return m
+  }, [career])
+  const areas = comparative.areas.filter((a) => a !== "uploaded_position")
+  const primaryScores = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const c of career) m[c.area] = c.score
+    return m
+  }, [career])
+
+  // Rows = primary (from ranked list) + each comparison subject.
+  const rows: Array<{ id: string; name: string; scores: Record<string, number> }> = [
+    { id: "__primary__", name: `${primaryName} (subject)`, scores: primaryScores },
+    ...comparative.subjects.map((sid) => ({
+      id: sid,
+      name: nameById[sid] ?? sid,
+      scores: comparative.per_subject_area_fit[sid] ?? {},
+    })),
+  ]
+
+  return (
+    <HonorCard className="p-0">
+      <div className="p-5 pb-0">
+        <HonorSectionTitle>Comparative — fit by area</HonorSectionTitle>
+      </div>
+      <div className="overflow-x-auto p-5 pt-2">
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs uppercase tracking-wide text-[#5b6678]">
+            <tr>
+              <th className="py-2 pr-4">Fellow</th>
+              {areas.map((a) => (
+                <th key={a} className="px-3 py-2">
+                  {areaLabel[a] ?? a}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-[#f1f3f7]">
+                <td className="py-3 pr-4 font-medium text-[#18202f]">{r.name}</td>
+                {areas.map((a) => {
+                  const v = r.scores[a] ?? 0
+                  const best = Math.max(...rows.map((rr) => rr.scores[a] ?? 0))
+                  return (
+                    <td key={a} className="px-3 py-3">
+                      <HonorMeter value={v} tone={v === best && v > 0 ? "orange" : "navy"} right={`${v}`} />
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {comparative.team_read && (
+        <div className="border-t border-[#f1f3f7] p-5">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#9299a6]">
+            Team read — {comparative.team_read.label}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <TeamChips label="Covered" items={comparative.team_read.covered} tone="ok" />
+            <TeamChips label="Gaps" items={comparative.team_read.gaps} tone="orange" />
+            <TeamChips label="Complementary" items={comparative.team_read.complementary} tone="navy" />
+            <TeamChips label="Redundant" items={comparative.team_read.redundant} tone="gray" />
+          </div>
+        </div>
+      )}
+    </HonorCard>
+  )
+}
+
+function TeamChips({
+  label,
+  items,
+  tone,
+}: {
+  label: string
+  items: string[]
+  tone: "ok" | "orange" | "navy" | "gray"
+}) {
+  return (
+    <div>
+      <span className="text-xs text-[#9299a6]">{label}:</span>{" "}
+      {items.length === 0 ? (
+        <span className="text-xs text-[#c6cdd9]">—</span>
+      ) : (
+        <span className="inline-flex flex-wrap gap-1.5">
+          {items.map((it) => (
+            <HonorPill key={it} tone={tone}>
+              {it.split(":").pop()}
+            </HonorPill>
+          ))}
+        </span>
+      )}
     </div>
   )
 }

@@ -9,6 +9,11 @@
 import type {
   AwardLetter,
   Deadline,
+  FafsaApplication,
+  FafsaCompleteness,
+  FafsaFieldCatalog,
+  FafsaHandoff,
+  FafsaPacket,
   NetPriceEstimate,
   RepaymentEstimate,
   SalaryLookup,
@@ -83,3 +88,96 @@ export const MOCK_WEB_SEARCH: WebSearchResult[] = [
   { title: "Federal Student Aid — Types of Aid", url: "https://studentaid.gov/understand-aid/types", snippet: "Grants, loans, and work-study overview from the U.S. Dept. of Education." },
   { title: "How the Student Aid Index works", url: "https://example.org/sai", snippet: "The SAI replaced the EFC for the 2024–25 award year." },
 ]
+
+// ── FAFSA Application Concierge fixtures ─────────────────────────────────────
+
+export const MOCK_FAFSA_APPLICATION: FafsaApplication = {
+  application_id: "fafsa-mock-1",
+  student_id: "me",
+  award_year: "2026-27",
+  status: "in_progress",
+  sections: { first_name: "Alex", last_name: "Rivera", household_size: 4, is_married: false },
+  contributors: {},
+  handoff: {},
+  packet: {},
+  submitted: false,
+  confirmation_number: null,
+}
+
+export const MOCK_FAFSA_FIELD_CATALOG: FafsaFieldCatalog = {
+  sections: [
+    {
+      key: "student_identity",
+      title: "About You",
+      description: "Pre-filled from your profile so you just confirm.",
+      handoff: false,
+      fields: [
+        { key: "first_name", label: "First name", type: "text", required: true, ddx: false, sensitive: false, collectable: true, prefillSource: "first_name", help: "", options: [] },
+        { key: "last_name", label: "Last name", type: "text", required: true, ddx: false, sensitive: false, collectable: true, prefillSource: "last_name", help: "", options: [] },
+        { key: "ssn", label: "Social Security Number", type: "text", required: true, ddx: false, sensitive: true, collectable: false, prefillSource: null, help: "Entered by you directly on StudentAid.gov. GRANT never sees or stores your SSN.", options: [] },
+      ],
+    },
+    {
+      key: "family",
+      title: "Family & Household",
+      description: "Carries over year to year.",
+      handoff: false,
+      fields: [
+        { key: "household_size", label: "People in your household", type: "number", required: true, ddx: false, sensitive: false, collectable: true, prefillSource: "household_size", help: "", options: [] },
+      ],
+    },
+    {
+      key: "tax_information",
+      title: "Tax Information",
+      description: "Auto-filled from the IRS when you consent.",
+      handoff: false,
+      fields: [
+        { key: "adjusted_gross_income", label: "Adjusted gross income", type: "number", required: false, ddx: true, sensitive: false, collectable: false, prefillSource: null, help: "Transferred from the IRS when you consent. Never entered here.", options: [] },
+      ],
+    },
+  ],
+}
+
+export const MOCK_FAFSA_COMPLETENESS: FafsaCompleteness = {
+  awardYear: "2026-27",
+  percentComplete: 45,
+  requiredTotal: 11,
+  requiredComplete: 5,
+  missingRequired: ["citizenship_status", "cash_savings_checking", "school_codes"],
+  ready: false,
+  sections: [
+    { key: "student_identity", title: "About You", requiredTotal: 3, requiredComplete: 3, complete: true },
+    { key: "family", title: "Family & Household", requiredTotal: 2, requiredComplete: 1, complete: false },
+  ],
+}
+
+export const MOCK_FAFSA_PACKET: FafsaPacket = {
+  awardYear: "2026-27",
+  ready: false,
+  counts: { collected: 4, prefilled: 4, missing: 3, missingRequired: 3 },
+  sections: [],
+  summary: [
+    "FAFSA 2026-27 prep packet.",
+    "4 field(s) pre-filled from your profile, 4 you've completed.",
+    "3 required field(s) still need an answer before your packet is submission-ready.",
+  ],
+  disclaimer:
+    "This packet stages your non-tax answers so you can confirm them on StudentAid.gov. Your tax information transfers directly from the IRS when you consent, and your SSN is entered by you on the official site — GRANT never stores either. GRANT never submits your FAFSA for you.",
+}
+
+export const MOCK_FAFSA_HANDOFF: FafsaHandoff = {
+  awardYear: "2026-27",
+  contributors: [
+    { role: "student", label: "You" },
+    { role: "parent1", label: "Your parent" },
+  ],
+  steps: [
+    { id: "fsa_id_student", title: "Create an FSA ID — You", description: "Create a StudentAid.gov account. Allow 1–3 days to verify.", deepLink: "https://studentaid.gov/fsa-id/create-account/launch", status: "complete", contributor: "student" },
+    { id: "fsa_id_parent1", title: "Create an FSA ID — Your parent", description: "Your parent creates a StudentAid.gov account.", deepLink: "https://studentaid.gov/fsa-id/create-account/launch", status: "pending", contributor: "parent1" },
+    { id: "start_form", title: "Start your FAFSA form", description: "Open the FAFSA for your award year.", deepLink: "https://studentaid.gov/apply-for-aid/fafsa/filling-out", status: "pending" },
+    { id: "consent_student", title: "Consent to the IRS tax transfer — You", description: "The step that auto-fills the tax section.", deepLink: "https://studentaid.gov/help/consent-fdx", status: "pending", contributor: "student" },
+    { id: "submit", title: "Submit your FAFSA", description: "Only you can do this — GRANT never submits on your behalf.", deepLink: "https://studentaid.gov/apply-for-aid/fafsa/filling-out", status: "pending" },
+  ],
+  counts: { total: 5, complete: 1, remaining: 4 },
+  complete: false,
+}

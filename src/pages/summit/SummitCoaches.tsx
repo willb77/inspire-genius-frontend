@@ -1,6 +1,7 @@
 import { Briefcase, TrendingUp, Brain, GitBranch, Sparkles } from "lucide-react";
 import { COACHES, type Coach } from "@/pages/summit/summitData";
 import { PageHead, Card, Callout } from "@/pages/summit/components/ui";
+import { useGoalSession } from "@/hooks/summit/useGoalSession";
 
 const ICONS: Record<string, typeof Briefcase> = {
   briefcase: Briefcase,
@@ -8,7 +9,19 @@ const ICONS: Record<string, typeof Briefcase> = {
   brain: Brain,
 };
 
-function CoachCard({ c }: { c: Coach }) {
+/**
+ * The roster's descriptions are product copy and correctly static. The goal
+ * COUNTS are not — they are a claim about this person's goals, and they were
+ * hardcoded to the wireframe's 2/1/1 for everybody. They are derivable from the
+ * live session, so derive them.
+ */
+const COACH_KEY: Record<string, string> = {
+  "Job Mentor": "job_mentor",
+  "Career Coach": "career_coach",
+  "PRISM Coach": "prism_coach",
+};
+
+function CoachCard({ c, count }: { c: Coach; count: number }) {
   const Icon = ICONS[c.icon] ?? Briefcase;
   return (
     <Card className="flex items-center gap-4 !py-[17px]">
@@ -23,14 +36,22 @@ function CoachCard({ c }: { c: Coach }) {
         <div className="mt-1.5 text-[13px] leading-snug text-[#13294B]/85">{c.focus}</div>
       </div>
       <div className="flex-shrink-0 rounded-xl border border-slate-200 bg-[#FBF7F0] px-3.5 py-2.5 text-center">
-        <b className="block font-serif text-xl text-[#0B1B33]">{c.count}</b>
-        <span className="text-[10.5px] uppercase tracking-wide text-[#7C93B5]">goal{c.count === 1 ? "" : "s"}</span>
+        <b className="block font-serif text-xl text-[#0B1B33]">{count}</b>
+        <span className="text-[10.5px] uppercase tracking-wide text-[#7C93B5]">goal{count === 1 ? "" : "s"}</span>
       </div>
     </Card>
   );
 }
 
 export default function SummitCoaches() {
+  const { data: session } = useGoalSession();
+
+  const counts = new Map<string, number>();
+  for (const goal of session?.goals ?? []) {
+    if (!goal.owning_coach) continue;
+    counts.set(goal.owning_coach, (counts.get(goal.owning_coach) ?? 0) + 1);
+  }
+
   return (
     <div className="flex flex-col gap-[18px]">
       <PageHead
@@ -40,7 +61,11 @@ export default function SummitCoaches() {
       />
       <div className="flex flex-col gap-3">
         {COACHES.map((c) => (
-          <CoachCard key={c.role} c={c} />
+          <CoachCard
+            key={c.role}
+            c={c}
+            count={counts.get(COACH_KEY[c.role] ?? "") ?? 0}
+          />
         ))}
       </div>
       <Callout tone="sage" icon={<Sparkles className="h-4 w-4 text-[#5B8A72]" />}>
