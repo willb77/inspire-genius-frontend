@@ -137,7 +137,14 @@ const pageModules: Record<string, string> = {
   "@/pages/super-admin/trainer/ExecutionList": "ExecutionListPage",
   "@/pages/super-admin/trainer/ExecutionViewer": "ExecutionViewerPage",
   "@/pages/super-admin/trainer/HitlDashboard": "HitlDashboardPage",
-  "@/pages/manager/Dashboard": "ManagerDashboardPage",
+  // /manager/dashboard now routes to DashboardSwitch, which picks the V2
+  // Workbench or the classic page from the surface flag. The route target is
+  // what this map has to mock — mocking only the classic page silently stops
+  // intercepting the moment the route points somewhere else, and the role-access
+  // assertions below then fail for reasons that have nothing to do with roles.
+  "@/pages/manager/DashboardSwitch": "ManagerDashboardPage",
+  "@/pages/manager/Dashboard": "ManagerDashboardClassicPage",
+  "@/pages/manager/WorkbenchDashboard": "ManagerWorkbenchPage",
   "@/pages/manager/Team": "ManagerTeamPage",
   "@/pages/manager/Hiring": "ManagerHiringPage",
   "@/pages/manager/Candidates": "ManagerCandidatesPage",
@@ -158,7 +165,9 @@ const pageModules: Record<string, string> = {
   "@/pages/company-admin/Settings": "CompanyAdminSettingsPage",
   "@/pages/company-admin/Analytics": "CompanyAdminAnalyticsPage",
   "@/pages/company-admin/BulkImport": "CompanyAdminBulkImportPage",
-  "@/pages/practitioner/Home": "PractitionerHomePage",
+  "@/pages/practitioner/HomeSwitch": "PractitionerHomePage",
+  "@/pages/practitioner/Home": "PractitionerHomeClassicPage",
+  "@/pages/practitioner/WorkbenchHomePage": "PractitionerWorkbenchPage",
   "@/pages/practitioner/MeridianChat": "PractitionerMeridianChatPage",
   "@/pages/practitioner/ComingSoon": "PractitionerComingSoonPage",
   "@/pages/practitioner/ClientProfile": "PractitionerClientProfilePage",

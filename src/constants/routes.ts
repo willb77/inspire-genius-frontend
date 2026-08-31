@@ -166,6 +166,14 @@ export const ROUTES = {
     SETTINGS: "/practitioner/settings",
     // Wave 4 Lane 4.D (P7.2) — task-agent forms mirrored from manager.
     JOB_BLUEPRINT: "/practitioner/job-blueprint",
+    /** Team Development Studio for practitioners.
+     *  A SEPARATE path from MANAGER.DEVELOPMENT on purpose: ProtectedRoute
+     *  gates by path prefix and `practitioner` has no `/manager` prefix in
+     *  ROLE_PERMISSIONS, so a practitioner nav item pointing at
+     *  /manager/development would silently redirect them home — a menu entry
+     *  that looks live and goes nowhere. */
+    DEVELOPMENT: "/practitioner/development",
+    DEVELOPMENT_MEMBER: "/practitioner/development/:memberId",
     INTERVIEW_PREP: "/practitioner/interview-prep",
     /** Live Scored Candidate Interview — Phase 3. The candidate is NOT the signed-in user. */
     INTERVIEW_LIVE: "/practitioner/interview-live",

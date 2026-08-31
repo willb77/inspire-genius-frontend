@@ -194,6 +194,34 @@ const TEAM_DEVELOPMENT_ITEM: NavItemDef = {
   label: "Team Development Studio",
 }
 
+/**
+ * The practitioner's Team Development Studio entry.
+ *
+ * A SEPARATE item from {@link TEAM_DEVELOPMENT_ITEM} pointing at
+ * /practitioner/development, not a shared one. ProtectedRoute gates by path
+ * prefix and `practitioner` has no `/manager` prefix in ROLE_PERMISSIONS, so
+ * reusing the manager item here would render a menu entry that silently
+ * bounces a practitioner to their home page — live-looking and dead.
+ */
+const TEAM_DEVELOPMENT_ITEM_PRACTITIONER: NavItemDef = {
+  to: ROUTES.PRACTITIONER.DEVELOPMENT,
+  icon: Sparkles,
+  label: "Team Development Studio",
+}
+
+/** Job Blueprint — role-scoped routes, one item each. Both already routed. */
+const JOB_BLUEPRINT_ITEM_MANAGER: NavItemDef = {
+  to: ROUTES.MANAGER.JOB_BLUEPRINT,
+  icon: ClipboardList,
+  label: "Job Blueprint",
+}
+
+const JOB_BLUEPRINT_ITEM_PRACTITIONER: NavItemDef = {
+  to: ROUTES.PRACTITIONER.JOB_BLUEPRINT,
+  icon: ClipboardList,
+  label: "Job Blueprint",
+}
+
 // Candidate-side interview rehearsal (Alex interview-coach). A universal,
 // un-gated feature — surfaced in the "Tools" rollup for every role that renders
 // one, so it's discoverable regardless of which role is logged in.
@@ -283,13 +311,23 @@ const CHARACTER_LAB_ITEM: NavItemDef = {
 // it here would also give the user a UnifiedLayout Tools section it never uses.
 // These roles render UnifiedLayout / SuperAdminLayout, which show the Tools rollup.
 export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
+  // 2026-08-31 (request): manager and practitioner do the same job — they hold
+  // a roster of people and advise them — so they get the SAME tool set. The
+  // items differ only in which role-prefixed route they point at, because
+  // ProtectedRoute gates by path prefix.
   manager: [
     ...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []),
+    JOB_BLUEPRINT_ITEM_MANAGER,
     INTERVIEW_PRACTICE_ITEM,
     INTERVIEW_LIVE_ITEM_MANAGER,
     INTERVIEW_STUDIO_ITEM_MANAGER,
   ],
   practitioner: [
+    // Not gated on TEAM_DEVELOPMENT_ENABLED: that build flag scopes the manager
+    // PILOT cohort, and gating a second role on another role's pilot flag is
+    // what made this entry vanish from super-admin builds once already.
+    TEAM_DEVELOPMENT_ITEM_PRACTITIONER,
+    JOB_BLUEPRINT_ITEM_PRACTITIONER,
     INTERVIEW_PRACTICE_ITEM,
     INTERVIEW_LIVE_ITEM_PRACTITIONER,
     INTERVIEW_STUDIO_ITEM_PRACTITIONER,
