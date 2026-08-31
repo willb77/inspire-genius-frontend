@@ -7,6 +7,7 @@ import {
   getUserNavItems,
   HIDDEN_WORKSPACE_ROUTES,
 } from "../navigation"
+import { hasAccess } from "@/types/roles"
 import { ROUTES } from "@/constants/routes"
 import type { UserRole } from "@/types/roles"
 
@@ -362,6 +363,100 @@ describe("My Workspace menu order + switched-off entries", () => {
       "Help & Support",
     ]) {
       expect(items.find((i) => i.label === label)!.disabled).toBeFalsy()
+    }
+  })
+})
+
+
+describe("manager and practitioner tool sets (2026-08-31)", () => {
+  /* These two roles do the same job — hold a roster of people and advise them
+   * — so their Tools rollup carries the same labels. The ROUTES differ because
+   * ProtectedRoute gates by path prefix: a practitioner has no `/manager`
+   * entry in ROLE_PERMISSIONS, so a shared item pointing at /manager/* would
+   * render a live-looking menu entry that silently bounces them home.
+   *
+   * ONE ASYMMETRY IS REAL AND DELIBERATE. Team Development Studio is gated for
+   * MANAGER on the build flag VITE_FEATURE_TEAM_DEVELOPMENT, which scopes a
+   * pilot cohort; it is ungated for practitioner (and for super-admin, for the
+   * same reason recorded above — gating one role on another role's pilot flag
+   * is what made the entry vanish from super-admin builds once already).
+   *
+   * Every deployed build sets that flag true (ci-deploy.yml), so the two menus
+   * match in every environment a user sees. In jest the env var is unset, so
+   * the manager list is one shorter here — asserted explicitly rather than
+   * hidden, because a test that quietly tolerated either shape would not
+   * notice the entry disappearing from a real build. */
+
+  const labelsFor = (role: "manager" | "practitioner") =>
+    (TOOL_ITEMS_BY_ROLE[role] ?? []).map((i) => i.label).sort()
+
+  const UNGATED = [
+    "Interview Practice",
+    "Interview Studio",
+    "Job Blueprint",
+    "Live Interview",
+  ].sort()
+
+  it("gives the practitioner every requested tool, ungated", () => {
+    expect(labelsFor("practitioner")).toEqual(
+      [...UNGATED, "Team Development Studio"].sort(),
+    )
+  })
+
+  it("gives the manager every requested tool bar the pilot-gated one", () => {
+    // With VITE_FEATURE_TEAM_DEVELOPMENT set (every deployed build) this list
+    // also carries Team Development Studio and the two roles match exactly.
+    expect(labelsFor("manager")).toEqual(UNGATED)
+  })
+
+  it("differs by AT MOST the pilot-gated entry", () => {
+    const only = (a: string[], b: string[]) => a.filter((x) => !b.includes(x))
+    expect(only(labelsFor("practitioner"), labelsFor("manager"))).toEqual([
+      "Team Development Studio",
+    ])
+    expect(only(labelsFor("manager"), labelsFor("practitioner"))).toEqual([])
+  })
+
+  it("never points a practitioner tool at a /manager route", () => {
+    // ROLE_PERMISSIONS.practitioner has no "/manager" prefix, so such a link is
+    // a dead entry that looks live.
+    expect(
+      (TOOL_ITEMS_BY_ROLE.practitioner ?? []).filter((i) => i.to.startsWith("/manager")),
+    ).toEqual([])
+  })
+
+  it("never points a manager tool at a /practitioner route", () => {
+    expect(
+      (TOOL_ITEMS_BY_ROLE.manager ?? []).filter((i) => i.to.startsWith("/practitioner")),
+    ).toEqual([])
+  })
+
+  it("gives every ROLE-PREFIXED tool a route the role is actually permitted", () => {
+    // The general form of the two checks above, asserted against the real
+    // permission table rather than a hardcoded prefix.
+    //
+    // Scoped to role-prefixed paths because that is exactly what ProtectedRoute
+    // does: it computes `isRolePrefixedRoute` first and only consults
+    // `hasAccess` when true. Unprefixed routes — /interview-practice,
+    // /meridian/chat, /documents, /surveys, /help — are open to any
+    // authenticated user by design, and asserting hasAccess over them fails
+    // against a working product. (It did: the first version of this test
+    // flagged /interview-practice, which every role can reach.)
+    const ROLE_PREFIXES = ["/super-admin", "/manager", "/company-admin", "/practitioner", "/distributor"]
+    for (const role of ["manager", "practitioner"] as const) {
+      for (const item of TOOL_ITEMS_BY_ROLE[role] ?? []) {
+        if (!ROLE_PREFIXES.some((p) => item.to.startsWith(p))) continue
+        expect(hasAccess(role, item.to)).toBe(true)
+      }
+    }
+  })
+
+  it("has at least one role-prefixed tool per role, so the check above is not vacuous", () => {
+    for (const role of ["manager", "practitioner"] as const) {
+      const prefixed = (TOOL_ITEMS_BY_ROLE[role] ?? []).filter((i) =>
+        i.to.startsWith(`/${role}`),
+      )
+      expect(prefixed.length).toBeGreaterThan(0)
     }
   })
 })

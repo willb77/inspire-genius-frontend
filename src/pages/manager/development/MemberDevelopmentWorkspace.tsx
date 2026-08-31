@@ -10,6 +10,7 @@ import { Suspense, lazy, useMemo, type ReactNode } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Download, MessageSquare, RefreshCw, Share2 } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
+import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -91,7 +92,20 @@ function TabFallback() {
   )
 }
 
-export default function MemberDevelopmentWorkspace({ variant }: { variant?: DevVariant }) {
+/** See {@link DevelopmentStudio} for why `audience` exists — the back-link must
+ *  not point a practitioner at a /manager path they cannot reach. */
+export default function MemberDevelopmentWorkspace({
+  variant,
+  audience = "manager",
+}: {
+  variant?: DevVariant
+  audience?: "manager" | "practitioner"
+}) {
+  const Layout = audience === "practitioner" ? PractitionerLayout : ManagerLayout
+  const studioRoute =
+    audience === "practitioner"
+      ? ROUTES.PRACTITIONER.DEVELOPMENT
+      : ROUTES.MANAGER.DEVELOPMENT
   const v2 = resolveDevV2(variant)
   const sk = getDevSkin(v2)
   const { memberId } = useParams<{ memberId: string }>()
@@ -102,11 +116,11 @@ export default function MemberDevelopmentWorkspace({ variant }: { variant?: DevV
   // Standard manager chrome + (flag-gated) HomeV2 cream frame around whichever
   // shell state we return below.
   const frame = (node: ReactNode) => (
-    <ManagerLayout>
+    <Layout>
       <DevSkinProvider v2={v2}>
         <DevPageFrame>{node}</DevPageFrame>
       </DevSkinProvider>
-    </ManagerLayout>
+    </Layout>
   )
 
   const tabParam = (searchParams.get("tab") as DevTab | null) ?? "profile"
@@ -168,7 +182,7 @@ export default function MemberDevelopmentWorkspace({ variant }: { variant?: DevV
     return frame(
       <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
         <p className={cn("text-sm", sk.text500)}>{isError ? t("dev.workspace.error") : t("dev.workspace.notFound")}</p>
-        <Button variant="outline" onClick={() => navigate(ROUTES.MANAGER.DEVELOPMENT)}>
+        <Button variant="outline" onClick={() => navigate(studioRoute)}>
           Back to roster
         </Button>
       </div>,
@@ -188,7 +202,7 @@ export default function MemberDevelopmentWorkspace({ variant }: { variant?: DevV
     <div className="space-y-4">
       <button
         type="button"
-        onClick={() => navigate(ROUTES.MANAGER.DEVELOPMENT)}
+        onClick={() => navigate(studioRoute)}
         className={cn("inline-flex items-center gap-1 text-xs hover:text-slate-800", sk.text500)}
       >
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />

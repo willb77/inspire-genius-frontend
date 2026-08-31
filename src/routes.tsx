@@ -122,7 +122,7 @@ const AgentTrainerExecutionViewer = React.lazy(() => import("@/pages/super-admin
 const HitlDashboard = React.lazy(() => import("@/pages/super-admin/trainer/HitlDashboard"));
 
 // ── Manager pages ───────────────────────────────────────────────────────────
-const ManagerDashboard = React.lazy(() => import("@/pages/manager/Dashboard"));
+const ManagerDashboard = React.lazy(() => import("@/pages/manager/DashboardSwitch"));
 const ManagerTeam = React.lazy(() => import("@/pages/manager/Team"));
 const ManagerJoinRequests = React.lazy(() => import("@/pages/manager/JoinRequests"));
 const ManagerHiring = React.lazy(() => import("@/pages/manager/Hiring"));
@@ -193,7 +193,7 @@ const PractitionerInterviewLive = React.lazy(() => import("@/pages/practitioner/
 const PractitionerTeamComposition = React.lazy(() => import("@/pages/practitioner/TeamCompositionPage"));
 // Phase 2 (Practitioner page wireframes) — Home, Meridian chat, and clickable
 // placeholders for the Schedule/Meeting surfaces (built out in later phases).
-const PractitionerHome = React.lazy(() => import("@/pages/practitioner/Home"));
+const PractitionerHome = React.lazy(() => import("@/pages/practitioner/HomeSwitch"));
 const PractitionerMeridianChat = React.lazy(() => import("@/pages/practitioner/MeridianChat"));
 const PractitionerClientProfile = React.lazy(() => import("@/pages/practitioner/ClientProfile"));
 const PractitionerSchedule = React.lazy(() => import("@/pages/practitioner/Schedule"));
@@ -568,7 +568,11 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/agent-trainer/approvals", element: withSuspense(<HitlDashboard />) },
 
       // Manager pages
+      // Resolves the Workbench (V2) or the classic dashboard from the
+      // `new_user_surfaces` flag; /classic forces the original look as a
+      // permanent escape hatch, matching /manager/development.
       { path: "/manager/dashboard", element: withSuspense(<ManagerDashboard />) },
+      { path: "/manager/dashboard/classic", element: withSuspense(<ManagerDashboard variant="classic" />) },
       { path: "/manager/team", element: withSuspense(<ManagerTeam />) },
       { path: "/manager/join-requests", element: withSuspense(<ManagerJoinRequests />) },
       { path: "/manager/hiring", element: withSuspense(<ManagerHiring />) },
@@ -615,6 +619,14 @@ export const routes: RouteObject[] = [
 
       // Practitioner pages
       { path: "/practitioner/home", element: withSuspense(<PractitionerHome />) },
+      { path: "/practitioner/home/classic", element: withSuspense(<PractitionerHome variant="classic" />) },
+      // Team Development Studio for practitioners. Same component and same
+      // token-scoped roster as the manager route; `audience` only swaps the
+      // chrome and the member link, which must not point at /manager/* — a
+      // practitioner has no such prefix in ROLE_PERMISSIONS.
+      { path: "/practitioner/development", element: withSuspense(<DevelopmentStudio audience="practitioner" />) },
+      { path: "/practitioner/development/classic", element: withSuspense(<DevelopmentStudio audience="practitioner" variant="classic" />) },
+      { path: "/practitioner/development/:memberId", element: withSuspense(<MemberDevelopmentWorkspace audience="practitioner" />) },
       { path: "/practitioner/meridian-chat", element: withSuspense(<PractitionerMeridianChat />) },
       { path: "/practitioner/schedule", element: withSuspense(<PractitionerSchedule />) },
       { path: "/practitioner/meeting", element: withSuspense(<PractitionerMeeting />) },
