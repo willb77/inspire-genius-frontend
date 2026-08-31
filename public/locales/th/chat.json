@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "โค้ช",
+    "sectionLabel": "เซสชันโค้ชชิ่ง",
     "authError": "ข้อผิดพลาดในการยืนยันตัวตน",
     "untitledConversation": "ไม่มีชื่อ",
     "previewPlaceholder": "ที่ต้องทำ",

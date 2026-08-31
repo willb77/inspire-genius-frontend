@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "コーチ",
+    "sectionLabel": "コーチングセッション",
     "authError": "認証エラー",
     "untitledConversation": "タイトルなし",
     "previewPlaceholder": "未対応",

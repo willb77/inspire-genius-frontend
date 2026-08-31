@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "教练",
+    "sectionLabel": "教练会话",
     "authError": "身份验证错误",
     "untitledConversation": "无标题",
     "previewPlaceholder": "待办",

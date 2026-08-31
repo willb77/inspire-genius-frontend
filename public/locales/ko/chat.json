@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "코치",
+    "sectionLabel": "코칭 세션",
     "authError": "인증 오류",
     "untitledConversation": "제목 없음",
     "previewPlaceholder": "할 일",

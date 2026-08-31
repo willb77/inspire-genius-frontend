@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "المدرّب",
+    "sectionLabel": "جلسة تدريب",
     "authError": "خطأ في المصادقة",
     "untitledConversation": "بلا عنوان",
     "previewPlaceholder": "قيد الإنجاز",

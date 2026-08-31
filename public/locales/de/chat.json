@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "Coach",
+    "sectionLabel": "Coaching-Sitzung",
     "authError": "Authentifizierungsfehler",
     "untitledConversation": "Kein Titel",
     "previewPlaceholder": "Zu erledigen",

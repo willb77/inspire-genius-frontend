@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "Коуч",
+    "sectionLabel": "Коуч-сессия",
     "authError": "Ошибка аутентификации",
     "untitledConversation": "Без названия",
     "previewPlaceholder": "Сделать",

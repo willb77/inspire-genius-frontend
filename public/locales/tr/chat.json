@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "Koç",
+    "sectionLabel": "Koçluk Seansı",
     "authError": "Kimlik doğrulama hatası",
     "untitledConversation": "Başlık Yok",
     "previewPlaceholder": "Yapılacak",
