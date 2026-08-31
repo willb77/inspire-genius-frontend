@@ -613,5 +613,32 @@ describe("Settings Component", () => {
 
   });
 
+  /* ---------- V2 surface ---------- */
+
+  it("renders the V2 cream frame + eyebrow header when variant=v2", () => {
+    const { container } = render(<Settings variant="v2" />, {
+      wrapper: createWrapper(),
+    });
+    // V2-only eyebrow/serif header — absent in classic.
+    expect(screen.getByTestId("settings-v2-header")).toBeInTheDocument();
+    // The cream V2Panel page frame carries the bg-panel token.
+    expect(container.querySelector(".bg-panel")).toBeInTheDocument();
+    // Shared child cards + logic are unchanged in V2.
+    expect(screen.getByTestId("account-settings")).toBeInTheDocument();
+    expect(screen.getByTestId("notification-settings")).toBeInTheDocument();
+    expect(screen.getByText("Legal")).toBeInTheDocument();
+    expect(screen.getByText("Terms of Use")).toHaveAttribute("href", "/terms");
+  });
+
+  it("classic variant has no V2 header or cream frame", () => {
+    const { container } = render(<Settings variant="classic" />, {
+      wrapper: createWrapper(),
+    });
+    expect(screen.queryByTestId("settings-v2-header")).not.toBeInTheDocument();
+    expect(container.querySelector(".bg-panel")).toBeNull();
+    // Classic still renders all the shared sections.
+    expect(screen.getByTestId("account-settings")).toBeInTheDocument();
+  });
+
 });
 
