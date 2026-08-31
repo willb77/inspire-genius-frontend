@@ -15,6 +15,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
+import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { useTranslation } from "react-i18next";
 import {
   AGENT_VOICE_CONFIG,
@@ -741,8 +742,17 @@ export default function DiagnosticChat({
   // ─── Render ─────────────────────────────────────────────────
 
   return (
-    <div className={skin.page}>
-      <div className="flex flex-col h-screen">
+    <SuperAdminLayout>
+      {/*
+        This page is reached only at /super-admin/agent-trace-console, so it now
+        renders inside the super-admin chrome rather than painting over the whole
+        viewport. SidebarScaffold contributes a sticky h-14 (4rem) header and
+        p-4/md:p-6 padding around this slot, so the old `h-screen` would push the
+        composer and the tail of the trace log below the fold. 8rem = header +
+        vertical padding; see the same calc in Analytics.tsx.
+      */}
+      <div className="bg-white rounded-lg border overflow-hidden">
+        <div className="flex flex-col h-[calc(100vh-8rem)]">
         {/* Header */}
         <div className={skin.headerBar}>
           <div className="flex items-center gap-3">
@@ -1023,7 +1033,8 @@ export default function DiagnosticChat({
             </div>
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </SuperAdminLayout>
   );
 }

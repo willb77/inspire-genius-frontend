@@ -19,23 +19,68 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
-import { USER } from "@/pages/summit/summitData";
-import MeridianPanel from "@/pages/summit/components/MeridianPanel";
+import SummitInterviewPanel from "@/components/summit/SummitInterviewPanel";
+import { useAuth } from "@/context/useAuth";
+import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
 
 type Section = { to: string; label: string; icon: typeof Compass; badge?: string; end?: boolean };
 
-const SECTIONS: Section[] = [
-  { to: ROUTES.SUMMIT.DASHBOARD, label: "Dashboard", icon: Compass, end: true },
-  { to: ROUTES.SUMMIT.DISCOVERY, label: "Discovery", icon: Layers, badge: "3/5" },
-  { to: ROUTES.SUMMIT.PRISM, label: "PRISM Lens", icon: Brain },
-  { to: ROUTES.SUMMIT.GOALS, label: "My Goals", icon: Flag, badge: "4" },
-  { to: ROUTES.SUMMIT.COACHES, label: "Coaches", icon: Users },
-  { to: ROUTES.SUMMIT.DOCUMENTS, label: "Documents", icon: FileText, badge: "6" },
-  { to: ROUTES.SUMMIT.PROGRESS, label: "Progress", icon: TrendingUp },
-];
+/**
+ * Badges are derived from the live session, not fixed.
+ *
+ * They previously read "3/5", "4" and "6" for everybody — numbers belonging to
+ * the wireframe's fictional user. A count you have not earned is worse than no
+ * count: it tells a person who has done nothing that they are most of the way
+ * through, and it never moves when they do the work.
+ */
+function sections(explored: number, total: number, goals: number): Section[] {
+  return [
+    { to: ROUTES.SUMMIT.DASHBOARD, label: "Dashboard", icon: Compass, end: true },
+    {
+      to: ROUTES.SUMMIT.DISCOVERY,
+      label: "Discovery",
+      icon: Layers,
+      badge: total ? `${explored}/${total}` : undefined,
+    },
+    { to: ROUTES.SUMMIT.PRISM, label: "PRISM Lens", icon: Brain },
+    {
+      to: ROUTES.SUMMIT.GOALS,
+      label: "My Goals",
+      icon: Flag,
+      badge: goals > 0 ? String(goals) : undefined,
+    },
+    { to: ROUTES.SUMMIT.COACHES, label: "Coaches", icon: Users },
+    { to: ROUTES.SUMMIT.DOCUMENTS, label: "Documents", icon: FileText },
+    { to: ROUTES.SUMMIT.PROGRESS, label: "Progress", icon: TrendingUp },
+  ];
+}
+
+/** Initials from a display name, for the avatar. "" when there's no name. */
+function initialsOf(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 export default function SummitLayout() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: session } = useGoalSession();
+  const categories = useSummitCategories(session);
+
+  const explored = categories.filter((c) => c.status === "explored").length;
+  const SECTIONS = sections(
+    explored,
+    categories.length,
+    session?.goals?.length ?? 0
+  );
+
+  const displayName = (user?.name ?? user?.fullName ?? "").trim();
+  const initials = initialsOf(displayName);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#FBF7F0]">
@@ -78,15 +123,21 @@ export default function SummitLayout() {
         </nav>
 
         <div className="mt-2.5 border-t border-white/10 pt-3.5">
-          <div className="mb-3 flex items-center gap-2.5 px-1">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#127A8A] text-sm font-bold text-white">
-              {USER.initials}
+          {/* The signed-in person. This block used to render a fictional name
+              and job title from the wireframe for every user. */}
+          {displayName && (
+            <div className="mb-3 flex items-center gap-2.5 px-1">
+              <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#127A8A] text-sm font-bold text-white">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{displayName}</div>
+                {user?.email && (
+                  <div className="truncate text-[11px] text-slate-400">{user.email}</div>
+                )}
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-semibold">{USER.name}</div>
-              <div className="text-[11px] text-slate-400">{USER.role}</div>
-            </div>
-          </div>
+          )}
           <button
             onClick={() => navigate(ROUTES.HOME)}
             className="flex w-full items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-[12.5px] text-slate-300 transition-colors hover:bg-white/10"
@@ -109,14 +160,18 @@ export default function SummitLayout() {
           </span>
         </header>
 
-        <div className="flex min-h-0 flex-1">
+        {/* The interview stacks under the content below `lg` rather than being
+            hidden. It was `hidden lg:flex`, which was defensible when the panel
+            was an optional chat companion — but the interview is the way goals
+            get made, and hiding it made goal-setting a desktop-only feature. */}
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="flex-1 overflow-y-auto px-6 py-7 lg:px-8">
             <div className="mx-auto max-w-3xl">
               <Outlet />
             </div>
           </div>
-          <div className="hidden w-[344px] flex-shrink-0 lg:flex">
-            <MeridianPanel />
+          <div className="flex w-full flex-shrink-0 border-t lg:w-[344px] lg:border-t-0">
+            <SummitInterviewPanel />
           </div>
         </div>
       </main>

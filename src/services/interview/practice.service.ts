@@ -1,0 +1,472 @@
+/**
+ * Interview PRACTICE service — candidate-side STAR rehearsal.
+ *
+ * The candidate-safe counterpart to interview.service.ts. Backed by the
+ * agent-engine `GET /v1/agents/interview/practice-questions`, which returns STAR
+ * questions + probes ONLY — never the evaluator's scores or exemplars. Coaching
+ * feedback is produced by Alex in interview-coach mode over the async-job chat
+ * path (driven by the page via useMeridianJob). Reached via `agentApi`.
+ */
+import { agentApi } from "@/lib/agentApi"
+
+export type PracticeCompetency = {
+  id: string
+  competency: string
+  question: string
+  starProbes: string[]
+  /** Where this question came from. `employer`/`sector` = a curated pack
+   * question, served verbatim and never rewritten by the model; `role` = a
+   * curated role+level pack, likewise verbatim; `bank` = the shared STAR bank
+   * (optionally role-tailored). Absent on older responses. */
+  source?: "employer" | "sector" | "role" | "bank"
+  /** Candidate-facing coaching for curated questions — what a strong answer
+   * covers. Never the evaluator's 1-5 rubric or its 5/3/1 exemplars. */
+  strongAnswerCovers?: string
+}
+
+/**
+ * The curated pack the backend matched from the frame's company/industry.
+ *
+ * Provenance matters here: these questions are written by Inspire Genius in the
+ * style of each employer's OWN publicly published values or hiring framework —
+ * they are not that company's actual questions, and no affiliation is implied.
+ * `provenance` carries that statement with the payload so the disclaimer
+ * travels with the content rather than living only in the UI.
+ */
+export type EmployerPackMatch = {
+  kind: "employer" | "sector"
+  slug: string
+  name: string
+  coachingNote: string
+  questionCount: number
+  provenance: string
+  // employer packs only
+  sector?: string
+  sectorSlug?: string
+  framework?: string
+  howTheyInterview?: string
+  optimizesFor?: string
+  // sector packs only
+  typicalEmployers?: string
+}
+
+export type EmployerPackCatalogue = {
+  provenance: string
+  employers: {
+    slug: string
+    name: string
+    sector: string
+    sectorSlug: string
+    framework: string
+    questionCount: number
+  }[]
+  sectors: {
+    slug: string
+    name: string
+    typicalEmployers: string
+    questionCount: number
+  }[]
+}
+
+/**
+ * A curated role+level question set the candidate can pick instead of
+ * describing the seat in free text. Metadata only — the catalogue never
+ * carries question text, so the picker cannot surface a set the candidate has
+ * not chosen.
+ */
+export type RolePackSummary = {
+  slug: string
+  title: string
+  /** "Entry level" | "Individual contributor" | "Manager / team lead" | ... */
+  level: string
+  /** 1..n up the ladder. The picker lists by this, NOT alphabetically. */
+  levelOrder: number
+  seniority: string
+  /** The discipline the ladder belongs to; used to group the picker. */
+  family: string
+  competencyCount: number
+  questionCount: number
+}
+
+export type RolePackCatalogue = {
+  provenance: string
+  roles: RolePackSummary[]
+}
+
+/** The matched role pack, echoed back with the questions it produced. */
+export type RolePackMatch = {
+  slug: string
+  title: string
+  level: string
+  family: string
+  seniority: string
+  competencyCount: number
+  questionCount: number
+  coachingNote: string
+  provenance: string
+}
+
+export type PracticeSection = {
+  key: "vision" | "behavioral" | "productivity"
+  section: string
+  title: string
+  competencies: PracticeCompetency[]
+}
+
+export type PracticeQuestions = {
+  guidance: string
+  sections: PracticeSection[]
+  totalCompetencies?: number
+  /** True when the backend generated these questions from a specific job
+   * title/description rather than serving the static 12-competency bank. */
+  tailored?: boolean
+  /** The curated employer/sector pack that matched, or null when the company
+   * and industry are ones we do not cover (in which case nothing changes). */
+  employer?: EmployerPackMatch | null
+  /** The curated role+level pack these questions came from, when the candidate
+   * picked one. Absent on every other path. */
+  role?: RolePackMatch | null
+}
+
+/**
+ * One-time personalization payload for the coach — the signed-in user's OWN
+ * profile block (PRISM summary + ambient résumé), fetched ONCE at interview
+ * start and replayed into each turn. `enabled` is false when the backend flag
+ * (AGENT_ENGINE_INTERVIEW_PRACTICE_PERSONALIZATION) is off; `personalContext`
+ * is empty when the user has no PRISM/résumé on file. It is the user's own data,
+ * never an evaluator score — the candidate-safe contract is unchanged.
+ */
+export type PracticeContext = {
+  enabled: boolean
+  hasPrism: boolean
+  hasResume: boolean
+  personalContext: string
+}
+
+export const practiceService = {
+  async getPracticeQuestions(params?: {
+    section?: PracticeSection["key"]
+  }): Promise<PracticeQuestions> {
+    const { data } = await agentApi.get<PracticeQuestions>(
+      "/v1/agents/interview/practice-questions",
+      { params: { section: params?.section } },
+    )
+    return data
+  },
+
+  /**
+   * Fetch the caller's own coaching-context block ONCE at interview start. The
+   * expensive assembly happens here (cheap SQL, no pgvector) and the result is
+   * replayed by the page into every turn's job context — so the per-turn path
+   * never pays a retrieval cost.
+   */
+  async getPracticeContext(): Promise<PracticeContext> {
+    const { data } = await agentApi.get<PracticeContext>(
+      "/v1/agents/interview/practice-context",
+    )
+    return data
+  },
+}
+
+/**
+ * Fetch questions tailored to a specific job title / description via the
+ * agent-engine's LLM-backed endpoint. Candidate-safe — same shape as the
+ * static bank (no rubric, no exemplars). On ANY failure (network error,
+ * timeout, non-2xx) this falls back to the static
+ * `practiceService.getPracticeQuestions(section)` bank so the interview
+ * never breaks.
+ */
+export async function getTailoredPracticeQuestions(
+  jobTitle: string,
+  jobDescription?: string,
+  section?: PracticeSection["key"],
+  employer?: { company?: string; industry?: string },
+): Promise<PracticeQuestions> {
+  try {
+    const { data } = await agentApi.post<PracticeQuestions>(
+      "/v1/agents/interview/practice-questions/tailored",
+      {
+        job_title: jobTitle,
+        job_description: jobDescription,
+        section,
+        // Both optional and fail-open server-side: an employer we do not cover
+        // returns exactly the previous behaviour with `employer: null`.
+        company: employer?.company?.trim() || undefined,
+        industry: employer?.industry?.trim() || undefined,
+      },
+    )
+    return data
+  } catch {
+    return practiceService.getPracticeQuestions({ section })
+  }
+}
+
+/**
+ * The catalogue of employers and sectors we have curated packs for. Metadata
+ * only — names, sectors, published frameworks and counts, never question text.
+ * Used to tell the candidate up-front that naming their target employer will
+ * change the questions. Returns empty lists on any failure (never throws) so a
+ * dead catalogue degrades to "no hint shown" rather than a broken form.
+ */
+export async function getEmployerPackCatalogue(): Promise<EmployerPackCatalogue> {
+  try {
+    const { data } = await agentApi.get<EmployerPackCatalogue>(
+      "/v1/agents/interview/employer-packs",
+    )
+    return data
+  } catch {
+    return { provenance: "", employers: [], sectors: [] }
+  }
+}
+
+/**
+ * The catalogue of curated role+level packs. Metadata only — titles, levels
+ * and counts, never question text.
+ *
+ * **Fails open to an empty list, deliberately.** The frontend deploys to dev
+ * and staging-b on merge; the agent-engine reaches dev on merge and staging-b
+ * only on a release tag. So this route WILL be absent on at least one tier for
+ * a window. An empty list means the picker does not render and the setup form
+ * is byte-identical to what it was before role packs existed — a missing
+ * backend degrades to "no picker", never to a broken form.
+ */
+export async function getRolePackCatalogue(): Promise<RolePackCatalogue> {
+  try {
+    const { data } = await agentApi.get<RolePackCatalogue>(
+      "/v1/agents/interview/role-packs",
+    )
+    return data
+  } catch {
+    return { provenance: "", roles: [] }
+  }
+}
+
+/**
+ * Fetch one curated role pack's questions.
+ *
+ * Returns the SAME envelope as `/practice-questions` (guidance + the three
+ * sections), so `buildInterviewPlan` consumes it unchanged. Throws on failure
+ * rather than swallowing: the caller decides whether to fall back to the
+ * ordinary bank, and silently substituting a generic interview for the role
+ * the candidate explicitly picked would be a dishonest success.
+ */
+export async function getRolePackQuestions(slug: string): Promise<PracticeQuestions> {
+  const { data } = await agentApi.get<PracticeQuestions>(
+    `/v1/agents/interview/role-packs/${encodeURIComponent(slug)}`,
+  )
+  return data
+}
+
+/**
+ * The interview seat the candidate is practising for. Collected up-front by the
+ * frame form and passed into coaching so Alex tailors questions + feedback to
+ * the specific role, reporting line, and scope (and weights flagged risks).
+ */
+export type InterviewFrame = {
+  company: string
+  industry: string
+  roleTitle: string
+  reportingLine: string
+  scope: string
+  candidateType?: "external" | "internal" | ""
+  weightedFocus?: string
+  /** Optional job description pasted by the candidate — when set, the
+   * interview questions are tailored to it (via getTailoredPracticeQuestions)
+   * instead of using the static 12-competency bank. */
+  jobDescription?: string
+  /** The curated role pack the candidate picked, if any. When set, the
+   * interview serves that pack verbatim instead of tailoring the STAR bank —
+   * see `startInterview` in InterviewPracticePage. */
+  rolePackSlug?: string
+  /** The picked pack's display title, kept so the setup summary can show it
+   * without a second fetch. */
+  rolePackTitle?: string
+  /** How many questions the interview should run (default 12). */
+  numQuestions?: number
+  /** Target length in minutes (default 50). */
+  lengthMinutes?: number
+  // ── Interview Studio (custom mode) only ──────────────────────────────
+  // Absent/`"star"` = the shipped STAR live/practice interview (unchanged).
+  /** `"custom"` runs an interviewer-supplied / topic-generated question list. */
+  mode?: "star" | "custom"
+  /** Banding + narrative tone for a custom interview. Default `general`. */
+  kind?: "general" | "hiring"
+  /** The custom question list (custom mode). */
+  questions?: { text: string; theme?: string; id?: string; probes?: string[] }[]
+  /** Topic + purpose + audience metadata for a custom/generated interview. */
+  topic?: string
+  purpose?: string
+  audience?: string
+}
+
+export const DEFAULT_NUM_QUESTIONS = 12
+export const DEFAULT_LENGTH_MINUTES = 50
+export const DEFAULT_LENGTH_PREF = "45–60 minutes across 12 questions (4 vision, 4 behavioral, 4 productivity)"
+
+export function frameQuestionCount(f: InterviewFrame): number {
+  const n = Number(f.numQuestions)
+  if (!Number.isFinite(n) || n < 1) return DEFAULT_NUM_QUESTIONS
+  return Math.min(Math.round(n), 12) // bank has 12 competencies
+}
+
+export function frameLengthMinutes(f: InterviewFrame): number {
+  const m = Number(f.lengthMinutes)
+  if (!Number.isFinite(m) || m < 1) return DEFAULT_LENGTH_MINUTES
+  return Math.round(m)
+}
+
+function frameSummary(f: InterviewFrame): string {
+  const lines = [
+    `- Company: ${f.company}`,
+    `- Industry/sector: ${f.industry}`,
+    `- Role title: ${f.roleTitle}`,
+    `- Reporting line: ${f.reportingLine}`,
+    `- Scope of responsibility: ${f.scope}`,
+  ]
+  if (f.candidateType) lines.push(`- Candidate type: ${f.candidateType === "internal" ? "internal promotion" : "external candidate"}`)
+  if (f.weightedFocus?.trim()) lines.push(`- Weight more heavily: ${f.weightedFocus.trim()}`)
+  lines.push(`- Interview length: ${frameLengthMinutes(f)} minutes across ${frameQuestionCount(f)} questions`)
+  return lines.join("\n")
+}
+
+/** One planned interview question, positioned in the bounded sequence. */
+export type PlannedQuestion = {
+  id: string
+  competency: string
+  question: string
+  starProbes: string[]
+  sectionKey: PracticeSection["key"]
+  sectionTitle: string
+  number: number // 1-based position in the interview
+  /** Carried through from the bank so the question card can show provenance. */
+  source?: PracticeCompetency["source"]
+  strongAnswerCovers?: string
+}
+
+/**
+ * Build a BOUNDED, ordered interview of exactly N questions, distributed across
+ * the three sections (vision → behavioral → productivity) as evenly as the
+ * count allows. This is what fixes "questions repeat forever": the interview is
+ * a fixed list, presented once, then it ends.
+ */
+export function buildInterviewPlan(bank: PracticeQuestions, frame: InterviewFrame): PlannedQuestion[] {
+  const n = frameQuestionCount(frame)
+  const order: PracticeSection["key"][] = ["vision", "behavioral", "productivity"]
+  const sections = order
+    .map((k) => bank.sections.find((s) => s.key === k))
+    .filter((s): s is PracticeSection => Boolean(s))
+
+  // Even split with remainder going to the earlier sections.
+  const base = Math.floor(n / sections.length)
+  const rem = n % sections.length
+  const perSection = sections.map((_, i) => base + (i < rem ? 1 : 0))
+
+  const plan: PlannedQuestion[] = []
+  sections.forEach((sec, i) => {
+    const take = Math.min(perSection[i], sec.competencies.length)
+    for (let j = 0; j < take; j++) {
+      const c = sec.competencies[j]
+      plan.push({
+        id: c.id,
+        competency: c.competency,
+        question: c.question,
+        starProbes: c.starProbes,
+        sectionKey: sec.key,
+        sectionTitle: sec.title,
+        number: 0, // assigned below
+        source: c.source,
+        strongAnswerCovers: c.strongAnswerCovers,
+      })
+    }
+  })
+  // If rounding/caps left us short of N, top up from any remaining competencies.
+  if (plan.length < n) {
+    const used = new Set(plan.map((p) => p.id))
+    for (const sec of sections) {
+      for (const c of sec.competencies) {
+        if (plan.length >= n) break
+        if (used.has(c.id)) continue
+        plan.push({
+          id: c.id, competency: c.competency, question: c.question,
+          starProbes: c.starProbes, sectionKey: sec.key, sectionTitle: sec.title, number: 0,
+          source: c.source, strongAnswerCovers: c.strongAnswerCovers,
+        })
+        used.add(c.id)
+      }
+    }
+  }
+  return plan.slice(0, n).map((p, i) => ({ ...p, number: i + 1 }))
+}
+
+/** A completed exchange in the interview, for the findings compilation. */
+export type InterviewExchange = {
+  number: number
+  sectionTitle: string
+  competency: string
+  question: string
+  answer: string
+}
+
+/**
+ * Ask Alex for the end-of-interview FINDINGS — a developmental (self-assessment)
+ * read-out, NOT a hiring score. Mirrors the reference format: Key Strengths,
+ * Areas to Improve, Recommended Actions, a coverage caveat when the interview
+ * was ended early, and a confidence note. Explicitly forbids a numeric score.
+ */
+export function buildFindingsMessage(
+  frame: InterviewFrame,
+  exchanges: InterviewExchange[],
+): string {
+  const planned = frameQuestionCount(frame)
+  const transcript = exchanges
+    .map((e) => `Q${e.number} [${e.sectionTitle}] — ${e.competency}\nQuestion: ${e.question}\nMy answer: ${e.answer}`)
+    .join("\n\n")
+  const coverage = exchanges.length < planned
+    ? `\n\nNOTE: I ended early — I answered ${exchanges.length} of ${planned} planned questions. Add a brief coverage caveat.`
+    : ""
+  return (
+    `Interview practice — the session is complete. Please give me my end-of-interview FINDINGS as a developmental self-assessment coaching summary.\n\n` +
+    `Interview frame:\n${frameSummary(frame)}\n\n` +
+    `Structure this as: Key Strengths (Evidenced), Areas to Improve, Recommended Actions, Coverage note, and Confidence in this read. ` +
+    `This is practice — DO NOT give a numeric score, a 1–5 rating, or a hiring recommendation. Coach me to get better.${coverage}\n\n` +
+    `Here is the full interview (${exchanges.length} answered of ${planned} planned):\n\n${transcript}`
+  )
+}
+
+/**
+ * Frame the user's answer so the coaching orchestrator routes it to Alex in
+ * interview-coach mode. The leading "Interview practice" phrase matches the
+ * orchestrator's practice short-circuit; `alex_mode` + the interview frame are
+ * also passed as job context. No score/exemplar is ever requested or shown.
+ */
+export function buildCoachMessage(question: string, answer: string, frame?: InterviewFrame | null): string {
+  const framePreamble = frame
+    ? `Interview frame (the seat I'm practising for):\n${frameSummary(frame)}\n\n`
+    : ""
+  return (
+    `Interview practice — please coach my STAR answer.\n\n` +
+    framePreamble +
+    `Question: "${question}"\n\n` +
+    `My answer: "${answer}"`
+  )
+}
+
+/**
+ * Job context for the async-chat coaching call. Includes the frame when set, and
+ * the one-time `personal_context` blob when personalization is on — the backend
+ * (Alex interview-coach mode) folds it into the prompt as grounding. Passed via
+ * job context (not the visible message) so a multi-KB profile block never bloats
+ * the transcript. Omitted entirely when empty, so the coach degrades to bank +
+ * frame only.
+ */
+export function practiceJobContext(
+  frame?: InterviewFrame | null,
+  personalContext?: string | null,
+): Record<string, unknown> {
+  const ctx: Record<string, unknown> = { alex_mode: "interview_coach" }
+  if (frame) ctx.interview_frame = frame
+  if (personalContext && personalContext.trim()) ctx.personal_context = personalContext
+  return ctx
+}
+
+export const PRACTICE_JOB_CONTEXT = { alex_mode: "interview_coach" } as const

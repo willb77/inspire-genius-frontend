@@ -17,9 +17,11 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { tasksService, type TaskAgentResponse } from "@/services/tasks/tasks.service"
 import TaskAgentResultCard from "@/components/tasks/TaskAgentResultCard"
 import CostEstimateBanner from "@/components/tasks/CostEstimateBanner"
+import QuestionBankPanel from "@/components/task-agents/QuestionBankPanel"
 import { toast } from "sonner"
 
 const schema = z.object({
@@ -85,10 +87,22 @@ export default function InterviewPrepBody() {
       <header>
         <h1 className="text-2xl font-semibold">Interview Prep</h1>
         <p className="text-sm text-slate-600">
-          Get a structured 3-section interview plan from Maven (InterviewAgent).
+          Get a structured 3-section interview plan from Maven (InterviewAgent),
+          or browse the shared STAR question bank with scoring anchors.
         </p>
       </header>
 
+      <Tabs defaultValue="generate">
+        <TabsList>
+          <TabsTrigger value="generate">Generate prep</TabsTrigger>
+          <TabsTrigger value="bank">Question bank</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="bank" className="pt-4">
+          <QuestionBankPanel />
+        </TabsContent>
+
+        <TabsContent value="generate" className="pt-4">
       <Card>
         <CardHeader>
           <CardTitle>Inputs</CardTitle>
@@ -145,6 +159,8 @@ export default function InterviewPrepBody() {
           </form>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

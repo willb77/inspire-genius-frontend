@@ -59,6 +59,19 @@ Object.defineProperty(global, "WebSocket", {
   writable: true,
 });
 
+/* ── Layout chrome ──
+   The page now renders inside SuperAdminLayout so the left nav is present at
+   /super-admin/agent-trace-console. That pulls in SidebarScaffold →
+   UserTopHeader → NotificationBell → the real `@/lib/axios`, whose
+   module-level `attachInterceptors` blows up against this file's axios mock.
+   Stub the layout, as the other super-admin page tests do. */
+jest.mock("@/layouts/SuperAdminLayout", () => ({
+  __esModule: true,
+  default: ({ children }: { children?: React.ReactNode }) => (
+    <div data-testid="super-admin-layout">{children}</div>
+  ),
+}));
+
 /* ── Mock MediaRecorder / scrollIntoView for the voice + auto-scroll path ── */
 beforeAll(() => {
   Object.defineProperty(global, "MediaRecorder", {

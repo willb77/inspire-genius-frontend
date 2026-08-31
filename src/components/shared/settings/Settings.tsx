@@ -23,6 +23,7 @@ import PrivacySettings from "@/components/settings/PrivacySettings";
 import RetentionSettings from "@/components/settings/RetentionSettings";
 import PersonalDataSettings from "@/components/shared/settings/PersonalDataSettings";
 import AssessmentsSettings from "@/components/shared/settings/AssessmentsSettings";
+import SurveysSettingsCard from "@/components/settings/SurveysSettingsCard";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -231,6 +232,15 @@ export default function Settings() {
         {role === ROLES.USER && (
           <div data-tour="settings-other-assessments">
             <AssessmentsSettings />
+          </div>
+        )}
+
+        {/* My Workspace — Surveys shared with the user's organization. The
+            user-role entry point (the left nav is frozen for that role); also
+            shown to super-admin so the owner can see it while testing. */}
+        {(role === ROLES.USER || role === ROLES.SUPER_ADMIN) && (
+          <div data-tour="settings-surveys">
+            <SurveysSettingsCard />
           </div>
         )}
 

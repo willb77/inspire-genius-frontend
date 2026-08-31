@@ -1,9 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
 import { useListDocuments } from "@/hooks/documents/useListDocuments";
 
@@ -26,6 +31,15 @@ const DEFAULT_OPEN: Record<TileId, boolean> = {
   last5: true,
   projects: true,
   knowledge: true,
+};
+
+/** Every tile shut — the starting state for the horizontal dropdown row. */
+const ALL_CLOSED: Record<TileId, boolean> = {
+  active: false,
+  history: false,
+  last5: false,
+  projects: false,
+  knowledge: false,
 };
 
 function loadTileState(): Record<TileId, boolean> {
@@ -142,20 +156,80 @@ function Tile({ id, title, open, onToggle, badge, children }: TileProps) {
   );
 }
 
+/**
+ * Horizontal variant of {@link Tile} — the same tile, rendered as a compact
+ * dropdown trigger in a top row. `Popover` rather than `DropdownMenu` because
+ * two of the bodies contain a text input and scrollable lists, which a menu's
+ * roving-focus/keyboard model fights with.
+ *
+ * The open/closed contract is identical to the vertical tile (same `openState`
+ * map, same localStorage persistence, same `rail-toggle-*` / `rail-body-*`
+ * test ids), so every existing behaviour and test carries over unchanged.
+ */
+function TileDropdown({ id, title, open, onToggle, badge, children }: TileProps) {
+  return (
+    <Popover open={open} onOpenChange={() => onToggle(id)}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={`meridian-rail-${id}`}
+          data-testid={`rail-toggle-${id}`}
+          className={cn(
+            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-hairline bg-white px-3 text-sm font-semibold text-ink shadow-sm hover:bg-panel",
+            open && "border-accent-orange bg-panel",
+          )}
+        >
+          <span>{title}</span>
+          {badge}
+          <ChevronDown
+            className={cn(
+              "size-3.5 text-accent-orange-dark transition-transform",
+              open && "rotate-180",
+            )}
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-80 overflow-hidden p-0"
+        id={`meridian-rail-${id}`}
+        data-testid={`rail-body-${id}`}
+      >
+        {children}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export type MeridianTileRailProps = {
   /** Currently-active conversation id (highlighted in the lists). */
   activeConversationId?: string;
   /** Make a conversation active when a rail row is clicked. */
   onSelectConversation?: (id: string) => void;
   className?: string;
+  /**
+   * `"vertical"` (default) — stacked cards in the left rail.
+   * `"horizontal"` — a row of dropdown triggers, for mounting in the page
+   * header under the agent names instead of down the left side.
+   */
+  orientation?: "vertical" | "horizontal";
+  /**
+   * Restrict the rail to a subset of tiles, in the rail's own order. Omit for
+   * all five.
+   *
+   * Added 2026-07-31 so Meridian's header can show **Projects only**, inline
+   * among the New Chat / Documents / History / Export buttons, without either
+   * duplicating the tile's implementation or dragging the other four tiles into
+   * a row that no longer wants them. Filtering here keeps one source of truth
+   * for what a tile is and does.
+   */
+  tiles?: readonly TileId[];
 };
 
 /**
- * MeridianTileRail — the left rail of the Meridian Chat V2 surface.
- *
- * Sits to the right of the app nav menu; the desktop layout reads:
- * nav (UserLayout) │ tile rail │ [Compose Prompt / Conversation]. Five
- * collapsible tiles, per the V2 wireframe:
+ * MeridianTileRail — the five conversation/knowledge tiles of the Meridian Chat
+ * V2 surface:
  *
  *   Active Sessions — three most-recent conversations (real, useAgentConversation)
  *   History         — full conversation list (real)
@@ -163,16 +237,39 @@ export type MeridianTileRailProps = {
  *   Projects        — client-side project list (localStorage; no backend yet)
  *   Knowledge       — uploaded documents (real, useListDocuments)
  *
- * Open/closed state persists in localStorage. Skinned with the HomeV2 design
- * tokens (ink / accent-orange / panel / hairline). RTL-safe (logical spacing).
+ * Two arrangements of the same tiles, chosen with `orientation`:
+ *
+ *   "horizontal" (Meridian Chat, 2026-07-28) — a row of dropdown triggers in the
+ *     page header under the agent names, freeing the full page width for the
+ *     conversation.
+ *   "vertical" (default) — stacked cards down a left rail:
+ *     nav (UserLayout) │ tile rail │ [Compose Prompt / Conversation].
+ *
+ * Open/closed state persists in localStorage and is shared by both
+ * arrangements. Skinned with the HomeV2 design tokens (ink / accent-orange /
+ * panel / hairline). RTL-safe (logical spacing).
  */
 export default function MeridianTileRail({
   activeConversationId,
   onSelectConversation,
   className,
+  orientation = "vertical",
+  tiles,
 }: MeridianTileRailProps) {
   const { t } = useTranslation("chat");
-  const [openState, setOpenState] = useState<Record<TileId, boolean>>(loadTileState);
+  const isHorizontal = orientation === "horizontal";
+  const BaseTileShell = isHorizontal ? TileDropdown : Tile;
+  // `tiles` narrows which of the five render. Implemented as a wrapper rather
+  // than five conditionals so adding a tile later can't forget the filter.
+  const visible = tiles ? new Set<TileId>(tiles) : null;
+  const TileShell = (props: TileProps) =>
+    visible && !visible.has(props.id) ? null : <BaseTileShell {...props} />;
+  // Horizontal tiles are dropdowns: they start CLOSED regardless of the stored
+  // state, because five popovers open at once on load would blanket the page.
+  // Toggling still persists, so the vertical rail's remembered state is intact.
+  const [openState, setOpenState] = useState<Record<TileId, boolean>>(() =>
+    isHorizontal ? { ...ALL_CLOSED } : loadTileState(),
+  );
 
   const toggleTile = useCallback((id: TileId) => {
     setOpenState((prev) => {
@@ -272,12 +369,16 @@ export default function MeridianTileRail({
 
   return (
     <aside
-      className={cn("flex flex-col gap-4", className)}
+      className={cn(
+        isHorizontal ? "flex flex-wrap items-center gap-2" : "flex flex-col gap-4",
+        className,
+      )}
       aria-label={t("tiles.rail.aria", { defaultValue: "Conversations and projects" })}
       data-testid="meridian-tile-rail"
+      data-orientation={orientation}
     >
       {/* Active Sessions */}
-      <Tile
+      <TileShell
         id="active"
         title={t("tiles.active.title", { defaultValue: "Active Sessions" })}
         open={openState.active}
@@ -306,10 +407,10 @@ export default function MeridianTileRail({
             )}
           </ul>
         )}
-      </Tile>
+      </TileShell>
 
       {/* History */}
-      <Tile
+      <TileShell
         id="history"
         title={t("tiles.history.title", { defaultValue: "History" })}
         open={openState.history}
@@ -325,10 +426,10 @@ export default function MeridianTileRail({
             {conversations.map((c) => renderConvRow(c))}
           </ul>
         )}
-      </Tile>
+      </TileShell>
 
       {/* Last 5 Chats */}
-      <Tile
+      <TileShell
         id="last5"
         title={t("tiles.last5.title", { defaultValue: "Last 5 Chats" })}
         open={openState.last5}
@@ -344,10 +445,10 @@ export default function MeridianTileRail({
             {lastFive.map((c) => renderConvRow(c))}
           </ul>
         )}
-      </Tile>
+      </TileShell>
 
       {/* Projects — client-side list (no backend yet) */}
-      <Tile
+      <TileShell
         id="projects"
         title={t("tiles.projects.title", { defaultValue: "Projects" })}
         open={openState.projects}
@@ -408,10 +509,10 @@ export default function MeridianTileRail({
             })}
           </ul>
         )}
-      </Tile>
+      </TileShell>
 
       {/* Knowledge — real documents */}
-      <Tile
+      <TileShell
         id="knowledge"
         title={t("tiles.knowledge.title", { defaultValue: "Knowledge" })}
         open={openState.knowledge}
@@ -444,7 +545,7 @@ export default function MeridianTileRail({
             ))}
           </ul>
         )}
-      </Tile>
+      </TileShell>
     </aside>
   );
 }

@@ -16,6 +16,7 @@ import type {
   CompareMetric,
   EvaluateAnswer,
   HonorFellow,
+  HonorResume,
   ScheduleEvent,
   TeamRecord,
   TransitionGoal,
@@ -32,11 +33,50 @@ export const USE_HONOR_MOCKS = true
  * EVAL_LIVE: the Evaluate chat uses the live Meridian async-jobs transport
  *   (POST /v1/agents/chat/async, context.surface="honor"), with a graceful
  *   fallback to the seeded canned answers on error so the surface never breaks.
- * Activity / Schedule / Administration stay on fixtures until their shared-Core
- * endpoints are adapted (Phase 2).
+ * ACTIVITY_LIVE: the Activity feed reads the live conversation/audit history
+ *   (GET /v1/chat/history), scoped to the signed-in coach's JWT.
+ * Schedule / Administration stay on fixtures — Schedule's calendar sync is an
+ * explicit Phase-2 stub in the wireframe, and Administration's coach-of-coaches
+ * management has no dedicated Core endpoint yet.
  */
 export const USE_HONOR_ROSTER_LIVE = true
 export const USE_HONOR_EVAL_LIVE = true
+export const USE_HONOR_ACTIVITY_LIVE = true
+
+/**
+ * Phase 3 — the deterministic evaluate route (POST …/{fellow_id}/evaluate).
+ * When on, the Evaluate surface runs the config-weighted fit scorer server-side
+ * and renders the cited, ranked sections; Meridian narration (EVAL_LIVE) becomes
+ * an optional prose layer on top. Off → the surface stays chat-only.
+ */
+export const USE_HONOR_EVAL_DETERMINISTIC = true
+
+/**
+ * Phase 4 — email delivery of the branded report/résumé PDF. **Per-env.**
+ * Branded PDF export + print + download are always live; emailing a Fellow's
+ * confidential evaluation is gated behind this flag AND the server-side
+ * `honor_report_email` flag AND an in-UI confirm (email is always-confirm, and
+ * SES identity verification + the confidential-email authorization must land
+ * first).
+ *
+ * Env-scoped via `VITE_HONOR_REPORT_EMAIL` (same pattern as
+ * `VITE_NEW_USER_SURFACES`) so a build can enable the Email button for one
+ * environment without lighting a non-functional button elsewhere. Set `"true"`
+ * only in envs where the server flag + SES sender identity are live (currently
+ * staging-b via `.env.staging-b`). Absent/anything-else → off.
+ */
+export const USE_HONOR_REPORT_EMAIL =
+  import.meta.env.VITE_HONOR_REPORT_EMAIL === "true"
+
+/**
+ * Phase 5 — generative résumé writer. The SURFACE is always live (navigable,
+ * exportable); "Generate" calls the server route, which ships **dark** behind the
+ * server `honor_resume` flag (returns `{ disabled: true }`) until the Phase-0
+ * safe-translation SME sign-off lands. While disabled the surface renders a
+ * clearly-labeled {@link MOCK_RESUME} sample so the layout + branded PDF export
+ * stay demoable. This flag only forces the sample path in tests/Storybook.
+ */
+export const USE_HONOR_RESUME_SAMPLE = false
 
 /** The signed-in coach persona shown in the wireframe. */
 export const MOCK_COACH = {
@@ -234,3 +274,58 @@ export const MOCK_TEAMS: TeamRecord[] = [
   { id: "t2", name: "Cohort 2026-B", memberCount: 19 },
   { id: "t3", name: "SOF Transition Pod", memberCount: 11 },
 ]
+
+/**
+ * Sample résumé shown on the Evaluate/Résumé surface while live generation is
+ * dark (server `honor_resume` off). Clearly a demo layout — safe-translated,
+ * grounded in no real Fellow. Mirrors the backend `HonorResume` shape.
+ */
+export const MOCK_RESUME: HonorResume = {
+  fellow_id: "2201",
+  target: "Operations & Program Management",
+  headline: "Operations & Program Management Leader",
+  summary:
+    "Disciplined operations leader who translates a decade of elite team leadership into "
+    + "measurable private-sector results. Trusted to plan complex programs, make high-stakes "
+    + "risk decisions, and develop high-performing teams under pressure.",
+  competencies: [
+    "Program & project management",
+    "Cross-functional team leadership",
+    "Risk assessment & mitigation",
+    "Operational planning",
+    "Stakeholder communication",
+    "Budget & resource stewardship",
+    "Training & mentorship",
+    "Crisis decision-making",
+  ],
+  experience: [
+    {
+      title: "Operations Team Lead",
+      organization: "U.S. Naval Special Warfare",
+      dates: "2016 – 2024",
+      bullets: [
+        "Led a 12-person team delivering complex, time-critical operations on schedule.",
+        "Owned planning and risk decisions for multi-million-dollar equipment and assets.",
+        "Built and mentored teams that consistently exceeded readiness and performance standards.",
+      ],
+    },
+    {
+      title: "Team Member / Specialist",
+      organization: "U.S. Navy",
+      dates: "2012 – 2016",
+      bullets: [
+        "Executed demanding assignments requiring precision, discipline, and adaptability.",
+        "Trained peers on procedures, safety, and mission-critical systems.",
+      ],
+    },
+  ],
+  education: ["B.S., Organizational Leadership (in progress)"],
+  certifications: ["Project Management Professional (PMP) — pursuing"],
+  frameworks: ["PRISM"],
+  sources: ["Sample data — not a real Fellow"],
+  grounded: false,
+  disclaimer:
+    "Sample layout shown while résumé generation is pending activation. Live drafts are "
+    + "written from the Fellow's own profile and documents, framed by THF safe-translation rules, "
+    + "and must be reviewed by the coach before use.",
+}

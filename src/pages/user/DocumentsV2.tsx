@@ -320,7 +320,7 @@ export default function DocumentsV2() {
         {/* Header row */}
         <div className="flex items-start justify-between">
           <div className="text-start flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight font-serif text-ink">Documents Uploaded</h1>
+            <h1 className="text-2xl font-semibold tracking-tight font-serif text-ink">Document Library</h1>
             <p className="text-xs text-body-slate">
               Upload documents to access them in the chat.
             </p>

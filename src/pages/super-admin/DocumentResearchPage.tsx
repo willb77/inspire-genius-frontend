@@ -1,12 +1,12 @@
 /**
  * /super-admin/research — Sage (DocumentAgent) document research (Combined Plan §A.E3.4).
  */
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useMutation } from "@tanstack/react-query"
-import { Loader2 } from "lucide-react"
+import { Loader2, FileText, FileDown, FileSpreadsheet, FileType2, Mail } from "lucide-react"
 
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +19,14 @@ import { tasksService, type TaskAgentResponse } from "@/services/tasks/tasks.ser
 import TaskAgentResultCard from "@/components/tasks/TaskAgentResultCard"
 import CostEstimateBanner from "@/components/tasks/CostEstimateBanner"
 import { toast } from "sonner"
+import {
+  exportResearchMarkdown,
+  exportResearchPdf,
+  exportResearchWord,
+  exportResearchExcel,
+  emailResearch,
+  type ResearchExportPayload,
+} from "@/lib/exportResearch"
 
 const schema = z.object({
   question: z.string().min(1).max(4000),
@@ -28,9 +36,16 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export default function DocumentResearchPage() {
+export default function DocumentResearchPage({ embedded = false }: { embedded?: boolean } = {}) {
+  // When `embedded` (rendered inside the consolidated Research page's tabs), skip
+  // SuperAdminLayout so we don't double-wrap the chrome.
+  const Wrapper = embedded ? Fragment : SuperAdminLayout
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
   const [lastRequest, setLastRequest] = useState<Record<string, unknown>>({})
+  // Stamped when the answer lands, not when it is exported — an export run
+  // ten minutes later must not claim the research is ten minutes newer.
+  const [generatedAt, setGeneratedAt] = useState<Date | null>(null)
+  const [exporting, setExporting] = useState<string | null>(null)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -45,6 +60,7 @@ export default function DocumentResearchPage() {
     mutationFn: tasksService.documentResearch,
     onSuccess: (data) => {
       setResult(data)
+      setGeneratedAt(new Date())
       toast.success("Research complete.")
     },
     onError: (err: unknown) => {
@@ -66,9 +82,42 @@ export default function DocumentResearchPage() {
     mutation.mutate(payload)
   }
 
+  const exportPayload = (): ResearchExportPayload => ({
+    question: String(lastRequest.question ?? ""),
+    answer: result?.content ?? "",
+    agentName: result?.agent_name ?? "Sage (DocumentAgent)",
+    confidence: result?.confidence ?? 0,
+    suggestedNext: result?.suggested_next ?? null,
+    metadata: result?.metadata ?? {},
+    filterTags: (lastRequest.document_filter_tags as string[] | undefined) ?? [],
+    summarizeOnly: Boolean(lastRequest.summarize_only),
+    generatedAt: generatedAt ?? new Date(),
+  })
+
+  /** Run one export, surfacing real failures instead of a blanket success. */
+  async function runExport(key: string, label: string, fn: () => void | Promise<void>) {
+    setExporting(key)
+    try {
+      await fn()
+      toast.success(`Exported as ${label}.`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      toast.error(`${label} export failed: ${message}`)
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  const EXPORTS = [
+    { key: "word", label: "Word", icon: FileType2, run: () => exportResearchWord(exportPayload()) },
+    { key: "pdf", label: "PDF", icon: FileDown, run: () => exportResearchPdf(exportPayload()) },
+    { key: "md", label: "Markdown", icon: FileText, run: () => exportResearchMarkdown(exportPayload()) },
+    { key: "xlsx", label: "Excel", icon: FileSpreadsheet, run: () => exportResearchExcel(exportPayload()) },
+  ] as const
+
   if (result) {
     return (
-      <SuperAdminLayout>
+      <Wrapper>
         <div className="mx-auto max-w-3xl py-8 space-y-4">
           <h1 className="text-2xl font-semibold">Document Research</h1>
           <TaskAgentResultCard
@@ -79,13 +128,63 @@ export default function DocumentResearchPage() {
             requestPayload={lastRequest}
             title="Document research"
           />
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Export this result</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {EXPORTS.map((item) => (
+                  <Button
+                    key={item.key}
+                    variant="outline"
+                    size="sm"
+                    disabled={exporting !== null}
+                    onClick={() => void runExport(item.key, item.label, item.run)}
+                  >
+                    {exporting === item.key ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <item.icon className="mr-2 h-4 w-4" />
+                    )}
+                    {item.label}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={exporting !== null}
+                  onClick={() =>
+                    void runExport("email", "Email", () => {
+                      const { truncated } = emailResearch(exportPayload())
+                      if (truncated) {
+                        toast.info(
+                          "Answer too long for an email body — the full Markdown was downloaded to attach.",
+                        )
+                      }
+                    })
+                  }
+                >
+                  <Mail className="mr-2 h-4 w-4" />
+                  Email
+                </Button>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Every export carries the question, agent, confidence, document filter and
+                timestamp, so a forwarded copy can still be traced back to the query that
+                produced it. Email opens a draft in your mail client — there is no
+                server-side send on this surface.
+              </p>
+            </CardContent>
+          </Card>
         </div>
-      </SuperAdminLayout>
+      </Wrapper>
     )
   }
 
   return (
-    <SuperAdminLayout>
+    <Wrapper>
       <div className="mx-auto max-w-3xl py-8 space-y-4">
         <header>
           <h1 className="text-2xl font-semibold">Document Research</h1>
@@ -145,6 +244,6 @@ export default function DocumentResearchPage() {
           </CardContent>
         </Card>
       </div>
-    </SuperAdminLayout>
+    </Wrapper>
   )
 }

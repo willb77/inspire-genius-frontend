@@ -7,12 +7,50 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Brain, Search, Settings2, MessageSquare, BookOpen } from "lucide-react"
+import {
+  Brain, Search, Settings2, MessageSquare, BookOpen,
+  Target, DollarSign, GitBranch, ListChecks, ShieldCheck,
+} from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import type { AgentConfig } from "@/types/trainer"
 
 const DOMAIN_COLORS = { coaching: "bg-blue-100 text-blue-800", business: "bg-green-100 text-green-800", system: "bg-purple-100 text-purple-800" }
 const MATURITY_NAMES = ["Seed", "Sprout", "Growing", "Mature", "Expert"]
+
+/** The per-agent options each tile exposes. Segments match the routes
+ *  registered in routes.tsx under /super-admin/agent-trainer/:agentId/*. */
+const AGENT_TILE_ACTIONS = [
+  { segment: "prompt", label: "Prompt", icon: Settings2, hint: "Prompt Studio — system prompt, versions, A/B" },
+  { segment: "knowledge", label: "Knowledge", icon: BookOpen, hint: "Knowledge Manager — sources, uploads, coverage" },
+  { segment: "test", label: "Test", icon: MessageSquare, hint: "Conversation Simulator — try prompts against the agent" },
+  { segment: "training", label: "Training", icon: Target, hint: "Training Plans — goals, progress, maturity" },
+  { segment: "costs", label: "Costs", icon: DollarSign, hint: "Cost & ROI for this agent" },
+] as const
+
+/** Trainer tools that are not scoped to a single agent. Routes for all three
+ *  already existed; none of them was reachable from anywhere in the UI —
+ *  Workflows only via the Process Builder nav item, and Executions/Approvals
+ *  from no link at all. */
+const TRAINER_TOOLS = [
+  {
+    to: "/super-admin/agent-trainer/workflows",
+    label: "Workflow Designer",
+    icon: GitBranch,
+    blurb: "Compose multi-agent DAG plans on a canvas and save them as templates.",
+  },
+  {
+    to: "/super-admin/agent-trainer/executions",
+    label: "Executions",
+    icon: ListChecks,
+    blurb: "History of workflow runs, with per-step traces, latency and cost.",
+  },
+  {
+    to: "/super-admin/agent-trainer/approvals",
+    label: "Approvals",
+    icon: ShieldCheck,
+    blurb: "Human-in-the-loop queue for steps a workflow paused on.",
+  },
+] as const
 
 function MaturityRing({ level }: { level: number }) {
   const pct = (level / 5) * 100
@@ -41,11 +79,27 @@ export default function AgentTrainerDashboard() {
 
   const ecosystems = (ecosystemsResp as any)?.data ?? []
 
+  // GET /v1/trainer/agents returns each row keyed `id` (trainer-service
+  // routes/agents.py), but AgentConfig — and every link on this page — reads
+  // `agent_id`. Passing the payload through raw made `agent.agent_id`
+  // undefined, so every card rendered with key={undefined} and every button
+  // navigated to /super-admin/agent-trainer/undefined/... . Confirmed live on
+  // stable before this fix. The coaches fallback below already mapped the id
+  // correctly, which is why the tiles only worked when the trainer API
+  // returned nothing.
+  const normalizeAgent = (a: Record<string, unknown>): AgentConfig =>
+    ({
+      ...a,
+      agent_id: (a.agent_id ?? a.id) as string,
+    }) as AgentConfig
+
   const agents: AgentConfig[] = useMemo(() => {
     // Try trainer agents first
     const d = (agentsResp as any)?.data
-    if (Array.isArray(d) && d.length > 0) return d
-    if (d?.agents && Array.isArray(d.agents) && d.agents.length > 0) return d.agents
+    if (Array.isArray(d) && d.length > 0) return d.map(normalizeAgent)
+    if (d?.agents && Array.isArray(d.agents) && d.agents.length > 0) {
+      return d.agents.map(normalizeAgent)
+    }
 
     // Fallback to coaches list (agent-settings API)
     const cd = coachesData?.data
@@ -64,7 +118,13 @@ export default function AgentTrainerDashboard() {
     return []
   }, [agentsResp, coachesData])
 
-  const isLoading = trainerLoading && coachesLoading
+  // Skeletons only while there is genuinely nothing to show.
+  //
+  // `trainerLoading && coachesLoading` let the grid paint "No agents found"
+  // over requests still in flight; plain `||` was worse — it blocked the grid
+  // on the FALLBACK query even after the primary had already returned agents.
+  // What the operator cares about is whether there is anything to render yet.
+  const isLoading = (trainerLoading || coachesLoading) && agents.length === 0
 
   const filtered = agents.filter(a => {
     if (a.status?.toLowerCase() === "deactivated") return false
@@ -116,6 +176,28 @@ export default function AgentTrainerDashboard() {
           </div>
         )}
 
+        {/* Process Builder used to be its own nav item that only redirected
+            here (/super-admin/agent-trainer/workflows). Surfacing the three
+            non-agent-scoped tools on this page is what lets that duplicate
+            nav entry go away without losing any destination. */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {TRAINER_TOOLS.map(tool => (
+            <Card
+              key={tool.to}
+              className="cursor-pointer hover:border-primary transition-colors"
+              onClick={() => navigate(tool.to)}
+            >
+              <CardContent className="flex items-start gap-3 p-4">
+                <tool.icon className="h-5 w-5 mt-0.5 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">{tool.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{tool.blurb}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map(i => <Card key={i} className="h-48 animate-pulse bg-muted" />)}
@@ -141,16 +223,32 @@ export default function AgentTrainerDashboard() {
                     <span className="flex items-center gap-1">{MATURITY_NAMES[(agent.maturity_level || 1) - 1]}</span>
                     <Badge variant={agent.status === "active" ? "default" : "secondary"} className="text-[10px]">{agent.status || "active"}</Badge>
                   </div>
-                  <div className="flex gap-2 mt-3">
-                    <Button size="sm" variant="ghost" className="flex-1 text-xs" onClick={e => { e.stopPropagation(); navigate(`/super-admin/agent-trainer/${agent.agent_id}/prompt`) }}>
-                      <Settings2 className="h-3 w-3 mr-1" /> Prompt
-                    </Button>
-                    <Button size="sm" variant="ghost" className="flex-1 text-xs" onClick={e => { e.stopPropagation(); navigate(`/super-admin/agent-trainer/${agent.agent_id}/knowledge`) }}>
-                      <BookOpen className="h-3 w-3 mr-1" /> Knowledge
-                    </Button>
-                    <Button size="sm" variant="ghost" className="flex-1 text-xs" onClick={e => { e.stopPropagation(); navigate(`/super-admin/agent-trainer/${agent.agent_id}/test`) }}>
-                      <MessageSquare className="h-3 w-3 mr-1" /> Test
-                    </Button>
+                  {/*
+                    Three flex-1 buttons in a ~249px card overflowed to 283px,
+                    so the third option was clipped at the card edge — the
+                    "tiles don't display their options" report. A 2-col grid
+                    wraps instead of overflowing, and exposes the two routes
+                    (`/training`, `/costs`) that already existed but had no
+                    entry point anywhere in the UI — including Training Plans,
+                    which the help panel above tells the operator to use.
+                  */}
+                  <div className="grid grid-cols-2 gap-1.5 mt-3">
+                    {AGENT_TILE_ACTIONS.map(action => (
+                      <Button
+                        key={action.segment}
+                        size="sm"
+                        variant="ghost"
+                        title={action.hint}
+                        className="justify-start text-xs px-2 min-w-0"
+                        onClick={e => {
+                          e.stopPropagation()
+                          navigate(`/super-admin/agent-trainer/${agent.agent_id}/${action.segment}`)
+                        }}
+                      >
+                        <action.icon className="h-3 w-3 mr-1 shrink-0" />
+                        <span className="truncate">{action.label}</span>
+                      </Button>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

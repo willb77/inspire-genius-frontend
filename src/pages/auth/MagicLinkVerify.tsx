@@ -27,6 +27,18 @@ export default function MagicLinkVerify() {
           await completeAuthFromPayload(payload, email, {
             message: resp?.message ?? "Signed in successfully",
           })
+          // Honor standalone entry stashes a post-auth intent so a coach who
+          // signed in from /honor lands in the workbench, not the generic home.
+          // Additive: only fires when that key is present (the Honor entry sets it).
+          try {
+            const intent = localStorage.getItem("ig_post_auth_redirect")
+            if (intent) {
+              localStorage.removeItem("ig_post_auth_redirect")
+              window.location.assign(intent)
+            }
+          } catch {
+            /* ignore storage failures */
+          }
         },
       }
     )

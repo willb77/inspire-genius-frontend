@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { GripHorizontal, Maximize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useResizableHeight } from "@/hooks/useResizableHeight";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
 import DocumentsPanel from "@/components/user/chat/DocumentsPanel";
 import DocumentsSidePanel from "@/components/user/chat/DocumentsSidePanel";
@@ -47,6 +49,7 @@ export default function ChatWindow({
   onBack,
   onSendText,
   autoSendText,
+  autoSendDisplayText,
   onToggleRecording,
   isRecording,
   hasAudio,
@@ -76,6 +79,7 @@ export default function ChatWindow({
   setShowAudioPlayer,
   showAudioPlayer,
   onReplayMessage,
+  onExportMessage,
   stacked,
 }: ChatWindowProps) {
   const { t } = useTranslation("chat");
@@ -155,10 +159,12 @@ export default function ChatWindow({
     const text = autoSendText?.trim();
     if (!text || autoSentRef.current) return;
     autoSentRef.current = true;
-    setInputText(text);
-    onSendText?.(text);
-    setInputText("");
-  }, [autoSendText, onSendText]);
+    // Deliberately NOT written into the composer first. Setting and clearing
+    // it in the same effect is invisible in React 18 (both updates batch),
+    // but under any path that flushed between them the injected prompt —
+    // scaffolding and all — would flash in the input box.
+    onSendText?.(text, autoSendDisplayText?.trim() || undefined);
+  }, [autoSendText, autoSendDisplayText, onSendText]);
 
     const selectDocsLottieSrc = useMemo(() => {
     const options = [
@@ -269,57 +275,70 @@ const genericMessages =
 
   const selectedDocsTooltip = selectedDocNames ? selectedDocNames.map(stripPdfExt).join(", ") : "";
 
+  // User-controlled height for the V2 Conversation card (persisted). `null`
+  // until the first drag, so the card keeps its flex-1 fill by default. Declared
+  // unconditionally (before the `stacked` return) to satisfy the rules of hooks.
+  const {
+    height: convHeight,
+    handleProps: convHandleProps,
+    reset: convResetHeight,
+  } = useResizableHeight("meridian-conversation-height", { min: 260, max: 1400 });
+
   // ── HomeV2 stacked layout ────────────────────────────────────────────
-  // Two separate cards — "Compose Prompt" on top, a full-height scrollable
-  // "Conversation" below — matching the Meridian Chat V2 wireframe. Reuses
-  // every piece of ChatWindow state/handlers (inputText, handleSend, scroll
-  // refs, auto-send/auto-scroll effects, modals); only the arrangement +
-  // skin differ. The classic single-card layout below is unchanged. Export
+  // Two separate cards — a full-height scrollable "Conversation" on top and
+  // "Compose Prompt" beneath it (2026-08-05; the composer used to sit above).
+  // Putting the composer last matches how every other chat surface reads: the
+  // transcript occupies the page and the box you type in sits at the bottom
+  // edge, next to the newest message rather than a scroll away from it.
+  //
+  // Reuses every piece of ChatWindow state/handlers (inputText, handleSend,
+  // scroll refs, auto-send/auto-scroll effects, modals); only the arrangement
+  // + skin differ. The classic single-card layout below is unchanged. Export
   // is triggered from the page header in V2, so no export trigger here.
+  //
+  // The Conversation card is user-resizable: a drag strip at its bottom sets a
+  // persisted height (double-click / the reset control returns it to the
+  // automatic full-height fill).
   if (stacked) {
     return (
       <div className={cn("flex min-h-0 flex-1 flex-col gap-4", className)}>
-        {/* Compose Prompt card */}
-        <V2Card className="flex flex-col gap-3 p-4 md:p-5" data-testid="v2-compose-card">
-          <SectionLabel>{t("compose.sectionLabel", { defaultValue: "Compose Prompt" })}</SectionLabel>
-          <ChatWindowTopBanner
-            selectedDocNames={selectedDocNames}
-            selectedSummary={selectedSummary}
-            selectedTooltip={selectedDocsTooltip}
-            isConnecting={isConnecting}
-            statusBanner={statusBanner}
-            activeTab="chat"
-            selectDocsLottieSrc={selectDocsLottieSrc}
-          />
-          <ChatWindowInputBar
-            inputText={inputText}
-            onInputTextChange={setInputText}
-            onSend={handleSend}
-            onToggleRecording={onToggleRecording}
-            isRecording={isRecording}
-            hasAudio={hasAudio}
-            isAudioPaused={isAudioPaused}
-            onToggleAudioPlayback={onToggleAudioPlayback}
-            isMuted={isMuted}
-            onToggleMute={onToggleMute}
-            muteTooltipText={muteTooltipText}
-          />
-        </V2Card>
-
-        {/* Conversation card — vertically visible top→bottom, scrollable */}
+        {/* Conversation card — vertically visible top→bottom, scrollable, and
+            user-resizable via the drag strip at its bottom edge. */}
         <V2Card
-          className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-0"
+          className={cn(
+            "relative flex min-h-0 flex-col overflow-hidden p-0",
+            // flex-1 only while the user hasn't chosen a height; once they have,
+            // the explicit height below wins and the card stops flexing.
+            convHeight == null && "flex-1"
+          )}
+          style={convHeight != null ? { height: convHeight, flex: "none" } : undefined}
           data-testid="v2-conversation-card"
         >
           <div className="flex items-center justify-between border-b border-hairline px-4 py-3 md:px-5">
             <SectionLabel>{t("conversation.sectionLabel", { defaultValue: "Conversation" })}</SectionLabel>
-            <span className="font-serif text-sm font-semibold text-ink">{coachName}</span>
+            <div className="flex items-center gap-3">
+              {convHeight != null && (
+                <button
+                  type="button"
+                  onClick={convResetHeight}
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  title={t("conversation.resetSize", { defaultValue: "Reset conversation size" })}
+                >
+                  <Maximize2 className="h-3.5 w-3.5" aria-hidden />
+                  {t("conversation.resetSize", { defaultValue: "Reset size" })}
+                </button>
+              )}
+              <span className="font-serif text-sm font-semibold text-ink">{coachName}</span>
+            </div>
           </div>
           <div
             ref={scrollRef}
             className={cn(
-              "flex-1 overflow-auto p-4 md:p-5",
-              audioPlayerBuffer && showAudioPlayer ? "pb-40" : "pb-6"
+              // 5px inset on all sides so a full-width response bubble sits ~5px
+              // from the tile edges (item 4). Extra bottom room only when the
+              // floating audio player is up.
+              "flex-1 overflow-auto p-[5px]",
+              audioPlayerBuffer && showAudioPlayer && "pb-40"
             )}
           >
             <ChatWindowChatTab
@@ -335,16 +354,71 @@ const genericMessages =
               coachId={coachId}
               conversationId={conversationId}
               onReplayMessage={onReplayMessage}
+              onExportMessage={onExportMessage}
+              responseBubbleFullWidth
             />
           </div>
-          {/* Floating audio player pinned to the bottom of the conversation card */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 [&>*]:pointer-events-auto">
+          {/* Drag strip: resize the conversation height; double-click to reset. */}
+          <div
+            {...convHandleProps}
+            onDoubleClick={convResetHeight}
+            title={t("conversation.dragToResize", { defaultValue: "Drag to resize · double-click to reset" })}
+            aria-label={t("conversation.dragToResize", { defaultValue: "Drag to resize the conversation" })}
+            className="group flex h-3 shrink-0 cursor-ns-resize touch-none items-center justify-center border-t border-hairline bg-muted/40 hover:bg-muted"
+          >
+            <GripHorizontal className="h-3 w-3 text-muted-foreground/50 group-hover:text-muted-foreground" aria-hidden />
+          </div>
+          {/* Floating audio player pinned above the resize strip */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 [&>*]:pointer-events-auto">
             <ChatWindowFloatingAudioPlayer
               audioPlayerBuffer={audioPlayerBuffer}
               showAudioPlayer={showAudioPlayer}
               onCloseAudioPlayer={onCloseAudioPlayer}
             />
           </div>
+        </V2Card>
+
+        {/* Compose Prompt card — now beneath the conversation, and deliberately
+            slimmer than it was: `shrink-0` so it never gets squeezed, tighter
+            padding, and the section label inline with the status banner rather
+            than on its own line. The height it gives up goes to the transcript.
+
+            The textarea inside is user-expandable (drag strip at the bottom
+            edge) for composing something longer than the auto-grow ceiling —
+            the same interaction, and the same hook, as the Conversation card
+            above it. */}
+        <V2Card
+          className="flex shrink-0 flex-col gap-2 p-3 md:p-4"
+          data-testid="v2-compose-card"
+        >
+          <div className="flex items-center gap-3">
+            <SectionLabel>{t("compose.sectionLabel", { defaultValue: "Compose Prompt" })}</SectionLabel>
+            <div className="min-w-0 flex-1">
+              <ChatWindowTopBanner
+                selectedDocNames={selectedDocNames}
+                selectedSummary={selectedSummary}
+                selectedTooltip={selectedDocsTooltip}
+                isConnecting={isConnecting}
+                statusBanner={statusBanner}
+                activeTab="chat"
+                selectDocsLottieSrc={selectDocsLottieSrc}
+              />
+            </div>
+          </div>
+          <ChatWindowInputBar
+            inputText={inputText}
+            onInputTextChange={setInputText}
+            onSend={handleSend}
+            onToggleRecording={onToggleRecording}
+            isRecording={isRecording}
+            hasAudio={hasAudio}
+            isAudioPaused={isAudioPaused}
+            onToggleAudioPlayback={onToggleAudioPlayback}
+            isMuted={isMuted}
+            onToggleMute={onToggleMute}
+            muteTooltipText={muteTooltipText}
+            expandable
+          />
         </V2Card>
 
         {copied ? (
@@ -435,6 +509,7 @@ const genericMessages =
             coachId={coachId}
             conversationId={conversationId}
             onReplayMessage={onReplayMessage}
+            onExportMessage={onExportMessage}
           />
         ) : (
           <DocumentsPanel

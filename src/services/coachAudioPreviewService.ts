@@ -8,7 +8,17 @@ export type CoachAudioParams = {
 }
 
 export function buildCoachAudioPreviewUrl(params?: CoachAudioParams): string {
-  const base = (api.defaults.baseURL as string) || (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL || ""
+  // Plain `import.meta.env.X`, NOT a cast. `jest.vite-env-transform.ts` rewrites
+  // `import.meta.env.X` → `process.env.X` for Jest's CJS runtime by matching the
+  // MetaProperty node; casting `import.meta` wraps it in an AsExpression, the
+  // match fails silently, and the untransformed `import.meta` reaches the CJS
+  // runtime as "SyntaxError: Cannot use 'import.meta' outside a module".
+  //
+  // That was latent until 2026-08-06 — nothing under test imported this service
+  // until CoachesV2 became the default surface, at which point four
+  // route-integration tests failed on a file nobody had touched. `vite/client`
+  // is in the tsconfig types, so the cast bought nothing.
+  const base = (api.defaults.baseURL as string) || import.meta.env.VITE_API_BASE_URL || ""
   const stripTrailingSlashes = (s: string) => {
     let end = s.length
     while (end > 0 && s.charCodeAt(end - 1) === 47) end -= 1

@@ -16,11 +16,13 @@ export type ObservabilityBoardProps = {
   className?: string
 }
 
+// The previous copy read "…values may be empty until R-2.4 closes". R-2.4
+// closed on 2026-05-11 (REMAINING_TASKS.md), so for over a year this banner
+// blamed an empty board on a task that was already finished — sending anyone
+// investigating quiet metrics after a non-existent pipeline problem.
 const DATA_PENDING_MESSAGE =
-  "Observability telemetry is enabled but the audit-service EventBridge pipeline is still being verified — values may be empty until R-2.4 closes."
+  "No agent activity recorded today. Telemetry is live — the agent-engine writes one row per LLM call — so this is a genuinely quiet window rather than a pipeline that has not been switched on."
 
-// TODO(R-2.4): remove banner in Wave 3 once telemetry populates. Same gating
-// as CostBoard — see REMAINING_TASKS.md §4 (R-2.4 closure).
 function DataPendingBanner() {
   return (
     <div
@@ -82,13 +84,31 @@ export default function ObservabilityBoard({
   className,
 }: ObservabilityBoardProps) {
   const { data, hasData, isLoading, error } = useObservabilityByScope(scope, scopeId)
+  // `!error` here meant the explanatory banner vanished at exactly the moment
+  // it was needed: on a failed request the panel rendered a bare grid of 0 / —
+  // / 0.0% with nothing to say the numbers were never fetched. A zero that
+  // means "the call failed" is indistinguishable from a genuine quiet day, so
+  // the failure is now surfaced in its own right.
   const showBanner = !hasData && !isLoading && !error
+  const showError = Boolean(error) && !isLoading
   const { kpis, topAgents } = data
   const errorRatePct = (kpis.errorRate * 100).toFixed(1)
 
   return (
     <div className={cn("space-y-4", className)} data-testid={`observability-board-${scope}`}>
       {showBanner && <DataPendingBanner />}
+      {showError && (
+        <div
+          role="alert"
+          className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2"
+        >
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
+          <span className="text-[12px] font-medium leading-snug text-red-800">
+            Could not load these figures. The values below are placeholders, not
+            measurements — treat them as unknown rather than as zero.
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard

@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { History, ChevronDown } from "lucide-react";
+import { History, ChevronDown, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
+import { useDeleteConversation } from "@/hooks/agents/useDeleteConversation";
 import { cn } from "@/lib/utils";
 
 const AGENT_ID = "meridian";
@@ -20,6 +22,12 @@ type HistoryDropdownProps = {
   onChange: (ids: string[]) => void;
   activeId: string | null;
   onSelectActive: (id: string) => void;
+  /**
+   * Fired when the user deletes the conversation that is currently active, so
+   * the host can clear the pane. Without it the chat would keep rendering a
+   * transcript whose conversation no longer exists on the server.
+   */
+  onDeletedActive?: (id: string) => void;
   className?: string;
 };
 
@@ -62,6 +70,7 @@ export default function HistoryDropdown({
   onChange,
   activeId,
   onSelectActive,
+  onDeletedActive,
   className,
 }: HistoryDropdownProps) {
   const { t } = useTranslation("chat");
@@ -89,6 +98,46 @@ export default function HistoryDropdown({
     } else {
       onChange([...selectedIds, id]);
     }
+  };
+
+  // Delete is armed per-row (see the two-step control below), so only one row
+  // can be pending confirmation at a time.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const deleteConv = useDeleteConversation();
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    deleteConv.mutate(
+      { conversationId: id, agentId: AGENT_ID },
+      {
+        onSuccess: () => {
+          setDeletingId(null);
+          setConfirmingId(null);
+          // Drop it from the review selection too — leaving a deleted id in
+          // there would keep asking the chat to render a conversation the
+          // server no longer has.
+          if (selectedIds.includes(id)) {
+            onChange(selectedIds.filter((x) => x !== id));
+          }
+          // If the deleted conversation was the active one, tell the host so it
+          // can clear the pane rather than showing a phantom transcript.
+          if (activeId === id) onDeletedActive?.(id);
+          toast.success(
+            t("history.deleted", { defaultValue: "Conversation deleted." }),
+          );
+        },
+        onError: () => {
+          setDeletingId(null);
+          setConfirmingId(null);
+          toast.error(
+            t("history.deleteFailed", {
+              defaultValue: "Couldn't delete that conversation. Please try again.",
+            }),
+          );
+        },
+      },
+    );
   };
 
   const reviewCount = selectedIds.length;
@@ -215,6 +264,53 @@ export default function HistoryDropdown({
                           </span>
                         )}
                       </button>
+                      {/* Delete — two-step, never one click. Removing a
+                          conversation is irreversible and the row sits right
+                          next to the one that merely opens it, so a single
+                          misclick would otherwise destroy history the user
+                          cannot get back. The first click arms; the second
+                          confirms; anything else disarms. */}
+                      {confirmingId === c.id ? (
+                        <span className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(c.id)}
+                            disabled={deletingId === c.id}
+                            className="rounded px-1.5 py-1 text-[11px] font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                            data-testid={`history-dropdown-confirm-delete-${c.id}`}
+                          >
+                            {deletingId === c.id
+                              ? t("history.deleting", { defaultValue: "Deleting…" })
+                              : t("history.confirmDelete", { defaultValue: "Delete?" })}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingId(null)}
+                            disabled={deletingId === c.id}
+                            className="rounded px-1.5 py-1 text-[11px] text-muted-foreground hover:bg-muted disabled:opacity-50"
+                            data-testid={`history-dropdown-cancel-delete-${c.id}`}
+                          >
+                            {t("common.cancel", { defaultValue: "Cancel" })}
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingId(c.id)}
+                          aria-label={t("history.deleteAria", {
+                            defaultValue: "Delete {{title}}",
+                            title,
+                          })}
+                          title={t("history.deleteAria", {
+                            defaultValue: "Delete {{title}}",
+                            title,
+                          })}
+                          className="shrink-0 rounded p-1 text-muted-foreground opacity-60 hover:bg-destructive/10 hover:text-destructive hover:opacity-100"
+                          data-testid={`history-dropdown-delete-${c.id}`}
+                        >
+                          <Trash2 className="size-3.5" aria-hidden />
+                        </button>
+                      )}
                     </div>
                   </li>
                 );

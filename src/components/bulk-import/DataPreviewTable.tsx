@@ -5,10 +5,23 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle2, Trash2, RefreshCw } from "lucide-react"
+import { AlertCircle, CheckCircle2, Info, Trash2, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { validateRecords } from "@/lib/bulk-import/validation"
+
 import type { RawUserRecord, ValidationResult, ValidationError, BulkUserRecord } from "@/types/bulk-import"
+
+/** Field keys as the operator sees them in the preview table. */
+const FIELD_LABELS: Record<string, string> = {
+  fname: "First Name",
+  lname: "Last Name",
+  email1: "Email 1",
+  email2: "Email 2",
+  user_type: "User Type",
+  manager_email: "Manager",
+  department: "Department",
+  position: "Position",
+}
 
 type DataPreviewTableProps = {
   records: RawUserRecord[]
@@ -19,7 +32,15 @@ type DataPreviewTableProps = {
 
 const PAGE_SIZE = 50
 
-type EditableField = "fname" | "lname" | "email1" | "email2" | "user_type"
+type EditableField =
+  | "fname"
+  | "lname"
+  | "email1"
+  | "email2"
+  | "user_type"
+  | "manager_email"
+  | "department"
+  | "position"
 
 type EditingCell = {
   row: number
@@ -39,7 +60,13 @@ export function DataPreviewTable({
   onProceed,
   callerRole = "company-admin",
 }: DataPreviewTableProps) {
-  const [validation, setValidation] = useState<ValidationResult>({ valid: [], invalid: [], duplicates: [] })
+  const [validation, setValidation] = useState<ValidationResult>({
+    valid: [],
+    invalid: [],
+    duplicates: [],
+    ignoredColumns: [],
+    inferredColumns: [],
+  })
   const [editingCell, setEditingCell] = useState<EditingCell>(null)
   const [currentPage, setCurrentPage] = useState(0)
 
@@ -172,6 +199,40 @@ export function DataPreviewTable({
       <p className="text-sm text-muted-foreground mb-4">
         Review the imported data below. Fix any errors, then click 'Proceed to Import' when ready.
       </p>
+      {/* Column-mapping notice. An importer that silently discards a column it
+          did not recognise, then reports a missing field the operator never
+          typed, is unusable — this names the actual column. */}
+      {(validation.ignoredColumns.length > 0 || validation.inferredColumns.length > 0) && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-950/40">
+          <div className="flex gap-2">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
+            <div className="space-y-1 text-sm">
+              {validation.inferredColumns.map(({ field, header }) => (
+                <p key={field}>
+                  Using column <span className="font-mono font-medium">{header}</span> as{" "}
+                  <span className="font-medium">{FIELD_LABELS[field] ?? field}</span>.
+                </p>
+              ))}
+              {validation.ignoredColumns.length > 0 && (
+                <p>
+                  {validation.ignoredColumns.length === 1 ? "Column" : "Columns"}{" "}
+                  {validation.ignoredColumns.map((c, i) => (
+                    <span key={c}>
+                      {i > 0 && ", "}
+                      <span className="font-mono font-medium">{c}</span>
+                    </span>
+                  ))}{" "}
+                  {validation.ignoredColumns.length === 1 ? "was" : "were"} not recognised and{" "}
+                  {validation.ignoredColumns.length === 1 ? "is" : "are"} being ignored. If one holds
+                  the primary address, rename its header to{" "}
+                  <span className="font-mono font-medium">Email</span> and upload again.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary bar */}
       <div className="flex items-center justify-between rounded-lg border bg-muted/50 px-4 py-3">
         <div className="flex items-center gap-4">
@@ -208,6 +269,13 @@ export function DataPreviewTable({
               <TableHead>Email 1</TableHead>
               <TableHead>Email 2</TableHead>
               <TableHead className="w-36">User Type</TableHead>
+              {/* Manager is the reporting line. It is editable in the preview
+                  for the same reason every other cell is: a wrong manager
+                  imports cleanly and shows up as an empty roster, and this is
+                  the last screen where anyone can see the value at all. */}
+              <TableHead>Manager</TableHead>
+              <TableHead>Department</TableHead>
+              <TableHead>Position</TableHead>
               <TableHead className="w-24">Status</TableHead>
               <TableHead className="w-12" />
             </TableRow>
@@ -231,6 +299,9 @@ export function DataPreviewTable({
                   <TableCell>{renderCell(rowIndex, "email1", record.email1)}</TableCell>
                   <TableCell>{renderCell(rowIndex, "email2", record.email2)}</TableCell>
                   <TableCell>{renderCell(rowIndex, "user_type", record.user_type)}</TableCell>
+                  <TableCell>{renderCell(rowIndex, "manager_email", record.manager_email)}</TableCell>
+                  <TableCell>{renderCell(rowIndex, "department", record.department)}</TableCell>
+                  <TableCell>{renderCell(rowIndex, "position", record.position)}</TableCell>
                   <TableCell>
                     {isInvalid ? (
                       <TooltipProvider>
@@ -278,7 +349,7 @@ export function DataPreviewTable({
             })}
             {records.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
                   No records to display. Upload a file to get started.
                 </TableCell>
               </TableRow>

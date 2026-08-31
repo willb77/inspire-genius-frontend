@@ -2,9 +2,10 @@ import { useState, useRef, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Upload, File, X, FileSpreadsheet, FileJson, FileCode } from "lucide-react"
+import { Upload, File, X, FileSpreadsheet, FileJson, FileCode, Download } from "lucide-react"
 import { toast } from "sonner"
 import { parseFile, SUPPORTED_EXTENSIONS, MAX_FILE_SIZE } from "@/lib/bulk-import/parsers"
+import { downloadTemplateCsv } from "@/lib/bulk-import/template"
 import type { RawUserRecord } from "@/types/bulk-import"
 
 type FileUploaderProps = {
@@ -229,7 +230,37 @@ export function FileUploader({ onParsed, disabled = false }: FileUploaderProps) 
             <div className="mt-3 rounded-md bg-muted/50 p-3 text-left w-full max-w-md">
               <p className="text-xs font-medium mb-1">Required columns:</p>
               <p className="text-xs text-muted-foreground font-mono">First Name, Last Name, Email</p>
-              <p className="text-xs text-muted-foreground mt-1">Optional: Email 2, Role (user/manager/company-admin)</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional: Email 2, Role (user/manager/company-admin), Manager, Department, Position
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                <span className="font-mono">Manager</span> takes the manager&apos;s{" "}
+                <span className="font-medium">email address</span> — it is what puts this person on
+                that manager&apos;s roster. Leave it blank and the user is imported reporting to
+                nobody. <span className="font-mono">Reports To</span> and{" "}
+                <span className="font-mono">Supervisor</span> work as header names too.
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Header names are matched loosely — <span className="font-mono">Email</span>,{" "}
+                <span className="font-mono">E-mail</span> and{" "}
+                <span className="font-mono">Student Email</span> all work. Anything unrecognised is
+                reported at the next step rather than dropped.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3 w-full"
+                disabled={disabled}
+                onClick={(e) => {
+                  // The card itself opens the file picker; downloading must not.
+                  e.stopPropagation()
+                  downloadTemplateCsv()
+                }}
+              >
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+                Download CSV template
+              </Button>
             </div>
           </div>
         )}

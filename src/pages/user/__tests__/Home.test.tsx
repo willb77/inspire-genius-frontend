@@ -16,7 +16,15 @@ jest.mock("@/lib/axios", () => ({
   },
 }));
 
-import { render, screen } from "@testing-library/react";
+/* Capture navigation so the PRISM tiles can be asserted to route at the
+   single canonical surface (/prism-assessment) rather than opening a dialog. */
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
+}));
+
+import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import Home from "../Home";
@@ -91,11 +99,6 @@ jest.mock("@/hooks/prism/usePrismRequest", () => ({
   useLatestPrismStatus: jest.fn(),
 }));
 
-jest.mock("@/components/prism/RequestPrismDialog", () => ({
-  __esModule: true,
-  default: () => <div data-testid="request-prism-dialog" />,
-}));
-
 jest.mock("@/hooks/audit/useAudit", () => ({
   useAuditStats: jest.fn(),
 }));
@@ -138,8 +141,6 @@ describe("Home Page", () => {
       hasReadyPrism: false,
       ingest_status: null,
       completed_at: null,
-      csv_s3_key: null,
-      pdf_s3_key: null,
       requested_at: null,
       isLoading: false,
       isError: false,
@@ -302,8 +303,6 @@ describe("Home Page", () => {
       hasReadyPrism: true,
       ingest_status: "done",
       completed_at: "2026-06-12T15:00:00Z",
-      csv_s3_key: "users/x/prism/2026-06-12/PRISM,W,B,2026-06-12.csv",
-      pdf_s3_key: null,
       requested_at: "2026-06-10T00:00:00Z",
       isLoading: false,
       isError: false,
@@ -312,5 +311,42 @@ describe("Home Page", () => {
     render(<Home />, { wrapper: createWrapper() });
     const statusEl = screen.getByTestId("prism-tile-status");
     expect(statusEl.textContent ?? "").toMatch(/^Last result: /);
+  });
+
+  /* Consolidation: RequestPrismDialog was deleted — /prism-assessment is the
+     single self-service request surface, so every Home entry point routes
+     there instead of opening its own dialog. */
+  describe("PRISM request entry points", () => {
+    beforeEach(() => {
+      mockNavigate.mockClear();
+      (useLatestPrismStatus as jest.Mock).mockReturnValue({
+        latest: null,
+        hasReadyPrism: false,
+        ingest_status: null,
+        completed_at: null,
+        requested_at: null,
+        isLoading: false,
+        isError: false,
+      });
+    });
+
+    it("routes to /prism-assessment when the tile is clicked", () => {
+      render(<Home />, { wrapper: createWrapper() });
+      fireEvent.click(screen.getByTestId("take-prism-assessment-tile"));
+      expect(mockNavigate).toHaveBeenCalledWith("/prism-assessment");
+    });
+
+    it("routes to /prism-assessment from the tile's button", () => {
+      render(<Home />, { wrapper: createWrapper() });
+      fireEvent.click(
+        screen.getByRole("button", { name: /take prism assessment/i }),
+      );
+      expect(mockNavigate).toHaveBeenCalledWith("/prism-assessment");
+    });
+
+    it("renders no survey-request dialog", () => {
+      render(<Home />, { wrapper: createWrapper() });
+      expect(screen.queryByTestId("request-prism-dialog")).not.toBeInTheDocument();
+    });
   });
 });

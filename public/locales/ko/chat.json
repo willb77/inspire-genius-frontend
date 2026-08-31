@@ -81,6 +81,14 @@
       "ready": "음성 준비 완료",
       "connecting": "연결 중",
       "off": "음성 꺼짐"
+    },
+    "personalRow": {
+      "aria": "내 페이지",
+      "selfPortrait": "나의 자화상",
+      "moments": "모먼트",
+      "coaching": "코칭",
+      "jobFit": "Job Fit",
+      "locked": "{{name}}은(는) 계정에서 사용할 수 없습니다"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "문서",
       "close": "문서 닫기",
       "closeOverlay": "문서 패널 닫기"
-    }
+    },
+    "upload": "문서 업로드"
   },
   "export": {
     "title": "채팅 내보내기",

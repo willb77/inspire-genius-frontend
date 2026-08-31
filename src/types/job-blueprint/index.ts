@@ -1,4 +1,5 @@
 export * from './job-dna'
+export * from './draft'
 export * from './candidate'
 export * from './assessment'
 export * from './scorecard'

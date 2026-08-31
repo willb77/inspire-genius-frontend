@@ -1,118 +1,365 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
+import { Plus, Upload, Search, Loader2, AlertCircle } from "lucide-react"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
-import DataCard from "@/components/dashboard/DataCard"
-import StatusBadge from "@/components/dashboard/StatusBadge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { usePractitionerClients } from "@/hooks/practitioner/usePractitioner"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  useCoachClients,
+  useAddCoachClient,
+  useBulkImportCoachClients,
+} from "@/hooks/practitioner/useCoachClient"
+import type { ClientSummary } from "@/types/practitioner/coachClient"
 
-type Client = { id: string; name: string; org: string; email: string; prism: number; sessions: number; status: string; lastSession: string; nextSession: string; notes: string; tier: string }
+const TOTAL_RESOURCES = 10
 
-const FALLBACK_CLIENTS: Client[] = [
-  { id: "cl-1", name: "Marcus Chen", org: "TechCorp Inc", email: "marcus@techcorp.com", prism: 82, sessions: 12, status: "active", lastSession: "Mar 15", nextSession: "Mar 22", notes: "Working on delegation skills", tier: "mid" },
-  { id: "cl-2", name: "Aisha Patel", org: "GlobalHealth", email: "aisha@globalhealth.com", prism: 78, sessions: 8, status: "active", lastSession: "Mar 14", nextSession: "Mar 21", notes: "Career transition coaching", tier: "mid" },
-  { id: "cl-3", name: "James Morrison", org: "Finova Group", email: "james@finova.com", prism: 85, sessions: 15, status: "active", lastSession: "Mar 13", nextSession: "Mar 20", notes: "Leadership development", tier: "high" },
-  { id: "cl-4", name: "Sophie Laurent", org: "CreativeEdge", email: "sophie@creativeedge.com", prism: 91, sessions: 20, status: "active", lastSession: "Mar 12", nextSession: "Mar 19", notes: "Executive coaching", tier: "high" },
-  { id: "cl-5", name: "David Kimura", org: "DataPrime", email: "david@dataprime.com", prism: 76, sessions: 6, status: "new", lastSession: "Mar 11", nextSession: "Mar 25", notes: "Onboarding phase", tier: "mid" },
-  { id: "cl-6", name: "Emma Watson", org: "MediaFlow", email: "emma@mediaflow.com", prism: 88, sessions: 18, status: "active", lastSession: "Mar 10", nextSession: "Mar 24", notes: "Team dynamics focus", tier: "high" },
-  { id: "cl-7", name: "Ryan Park", org: "BuildRight", email: "ryan@buildright.com", prism: 73, sessions: 4, status: "new", lastSession: "Mar 9", nextSession: "Mar 23", notes: "Initial assessment phase", tier: "low" },
-  { id: "cl-8", name: "Lisa Fernandez", org: "EduNext", email: "lisa@edunext.com", prism: 87, sessions: 14, status: "active", lastSession: "Mar 8", nextSession: "Mar 22", notes: "Goal-setting review", tier: "high" },
-]
+function PrismCell({ client }: { client: ClientSummary }) {
+  if (client.prismStatus === "ready" && client.prismScore !== null) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-[#D1FAE5] px-2.5 py-0.5 text-xs font-semibold text-[#065F46]">
+        {client.prismScore}
+      </span>
+    )
+  }
+  if (client.prismStatus === "in_progress") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-xs font-medium text-[#92400E]">
+        In progress
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#6b7280]">
+      None
+    </span>
+  )
+}
 
-const prismBg = (tier: string) =>
-  tier === "high" ? "bg-[#D1FAE5] text-[#065F46]" : tier === "mid" ? "bg-[#FEF3C7] text-[#92400E]" : "bg-[#FEE2E2] text-[#991B1B]"
+function ResourceMeter({ present }: { present: number }) {
+  const pct = Math.round((present / TOTAL_RESOURCES) * 100)
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[#e5e7eb]">
+        <div className="h-full rounded-full bg-[#3B5BFF]" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs tabular-nums text-[#6b7280]">
+        {present}/{TOTAL_RESOURCES}
+      </span>
+    </div>
+  )
+}
 
 export default function PractitionerClients() {
-  const [search, setSearch] = useState("")
-  const { data: clientsData, isLoading, error, refetch } = usePractitionerClients()
+  const navigate = useNavigate()
+  const { data, isLoading, error, refetch } = useCoachClients()
+  const addClient = useAddCoachClient()
+  const bulkImport = useBulkImportCoachClients()
 
-  const allClients = ((clientsData as { clients?: Client[] } | undefined)?.clients ?? FALLBACK_CLIENTS) as Client[]
-  const filtered = allClients.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.org.toLowerCase().includes(search.toLowerCase())
-  )
+  const [search, setSearch] = useState("")
+  const [addOpen, setAddOpen] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
+
+  // add-client form
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [org, setOrg] = useState("")
+
+  // bulk-import form
+  const [csvText, setCsvText] = useState("")
+
+  const clients = useMemo<ClientSummary[]>(() => data ?? [], [data])
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return clients
+    return clients.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        c.org.toLowerCase().includes(q),
+    )
+  }, [clients, search])
+
+  function resetAdd() {
+    setName("")
+    setEmail("")
+    setOrg("")
+  }
+
+  function handleAdd() {
+    if (!name.trim() || !email.trim()) {
+      toast.error("Name and email are required.")
+      return
+    }
+    addClient.mutate(
+      { name: name.trim(), email: email.trim(), org: org.trim() || undefined },
+      {
+        onSuccess: (c) => {
+          toast.success(`Added ${c.name} to your client roster.`)
+          resetAdd()
+          setAddOpen(false)
+        },
+      },
+    )
+  }
+
+  function parseCsv(text: string): Array<{ name: string; email: string; org?: string }> {
+    return text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [n, e, o] = line.split(",").map((p) => p.trim())
+        return { name: n ?? "", email: e ?? "", org: o || undefined }
+      })
+      .filter((r) => r.name && r.email)
+  }
+
+  function handleBulk(fileText?: string) {
+    const source = fileText ?? csvText
+    const rows = parseCsv(source)
+    if (rows.length === 0) {
+      toast.error("No valid rows found. Use: name,email,org")
+      return
+    }
+    bulkImport.mutate(rows, {
+      onSuccess: (res) => {
+        toast.success(`Imported ${res.imported} client${res.imported === 1 ? "" : "s"}.`)
+        setCsvText("")
+        setBulkOpen(false)
+      },
+    })
+  }
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => handleBulk(String(reader.result ?? ""))
+    reader.readAsText(file)
+  }
 
   return (
     <PractitionerLayout>
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 className="text-xl font-bold text-[#111827]">Client Management</h1>
-          <p className="text-[13px] text-[#6b7280]">Manage your client roster, PRISM assessments, and session history.</p>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-[#111827]">My Clients</h1>
+            <p className="text-sm text-[#6b7280]">
+              Your coaching roster — resources, PRISM, and session history at a glance.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="border-[#e5e7eb] text-[#111827]"
+              onClick={() => setBulkOpen(true)}
+            >
+              <Upload className="mr-1.5 h-4 w-4" />
+              Bulk Import
+            </Button>
+            <Button
+              className="bg-[#3B5BFF] text-white hover:bg-[#2A47CC]"
+              onClick={() => setAddOpen(true)}
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Add Client
+            </Button>
+          </div>
         </div>
-        <button className="bg-[#3B5BFF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-[#2A47CC] transition-colors">
-          + Add Client
-        </button>
-      </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        {[
-          { label: "Total Clients", value: "24" },
-          { label: "Active", value: "20" },
-          { label: "New (This Month)", value: "3" },
-          { label: "Avg PRISM Score", value: "83" },
-        ].map((s) => (
-          <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5">
-            <div className="text-xs text-[#6b7280]">{s.label}</div>
-            <div className="text-2xl font-bold text-[#111827]">{s.value}</div>
-          </div>
-        ))}
-      </div>
-
-      <DataCard title="Client Roster" badge={24}>
-        {error && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
-          </div>
-        )}
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="Search by name or organization..."
+        {/* Search */}
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+          <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full max-w-md border border-[#e5e7eb] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#3B5BFF] transition-colors"
+            placeholder="Search by name, email, or organization…"
+            className="pl-9"
           />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                {["Client", "Organization", "PRISM", "Sessions", "Status", "Last Session", "Next Session", "Notes"].map((h) => (
-                  <th key={h} className="text-left text-[10px] font-bold uppercase tracking-wider text-[#6b7280] px-3 py-2.5">{h}</th>
+        {/* Roster */}
+        <div className="rounded-lg border border-[#e5e7eb] bg-white">
+          {isLoading ? (
+            <div className="space-y-2 p-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <AlertCircle className="h-8 w-8 text-[#dc2626]" />
+              <p className="text-sm text-[#6b7280]">Failed to load your client roster.</p>
+              <Button variant="outline" onClick={() => refetch()}>
+                Retry
+              </Button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="py-16 text-center text-sm text-[#6b7280]">
+              {clients.length === 0
+                ? "No clients yet — add your first one."
+                : "No clients match your search."}
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Organization</TableHead>
+                  <TableHead className="text-center"># Sessions</TableHead>
+                  <TableHead>Top Goals</TableHead>
+                  <TableHead>PRISM</TableHead>
+                  <TableHead>Resources</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((c) => (
+                  <TableRow
+                    key={c.id}
+                    className="cursor-pointer hover:bg-[#f9fafb]"
+                    onClick={() => navigate(`/practitioner/clients/${c.id}`)}
+                  >
+                    <TableCell>
+                      <div className="font-medium text-[#111827]">{c.name}</div>
+                      <div className="text-xs text-[#6b7280]">{c.email}</div>
+                    </TableCell>
+                    <TableCell className="text-[#374151]">{c.org || "—"}</TableCell>
+                    <TableCell className="text-center tabular-nums text-[#374151]">{c.sessions}</TableCell>
+                    <TableCell className="max-w-[220px] text-[#374151]">
+                      {c.topGoals.length ? (
+                        c.topGoals.join(", ")
+                      ) : (
+                        <span className="text-[#9ca3af]">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <PrismCell client={c} />
+                    </TableCell>
+                    <TableCell>
+                      <ResourceMeter present={c.resourcesPresent} />
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading
-                ? Array(5).fill(0).map((_, i) => (
-                    <tr key={i}><td colSpan={8} className="px-3 py-3">
-                      <Skeleton className="h-8 w-full" />
-                    </td></tr>
-                  ))
-                : filtered.map((c) => (
-                    <tr key={c.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                      <td className="px-3 py-2.5">
-                        <div className="text-[13px] font-semibold text-[#1f2937]">{c.name}</div>
-                        <div className="text-[11px] text-[#9ca3af]">{c.email}</div>
-                      </td>
-                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{c.org}</td>
-                      <td className="px-3 py-2.5">
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${prismBg(c.tier)}`}>{c.prism}</span>
-                      </td>
-                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{c.sessions}</td>
-                      <td className="px-3 py-2.5"><StatusBadge status={c.status} label={c.status.charAt(0).toUpperCase() + c.status.slice(1)} /></td>
-                      <td className="px-3 py-2.5 text-xs text-[#6b7280]">{c.lastSession}</td>
-                      <td className="px-3 py-2.5 text-xs text-[#374151] font-medium">{c.nextSession}</td>
-                      <td className="px-3 py-2.5 text-xs text-[#6b7280] max-w-[140px] truncate">{c.notes}</td>
-                    </tr>
-                  ))
-              }
-            </tbody>
-          </table>
+              </TableBody>
+            </Table>
+          )}
         </div>
-      </DataCard>
+      </div>
+
+      {/* Add Client dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Client</DialogTitle>
+            <DialogDescription>Add a single client to your coaching roster.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div className="space-y-1.5">
+              <Label htmlFor="add-name">Name</Label>
+              <Input id="add-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Doe" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="add-email">Email</Label>
+              <Input
+                id="add-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="jane@company.com"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="add-org">Organization</Label>
+              <Input id="add-org" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Company Inc" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-[#3B5BFF] text-white hover:bg-[#2A47CC]"
+              disabled={addClient.isPending}
+              onClick={handleAdd}
+            >
+              {addClient.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Add Client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Import dialog */}
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk Import Clients</DialogTitle>
+            <DialogDescription>
+              Paste one client per line as{" "}
+              <code className="rounded bg-[#f3f4f6] px-1">name,email,org</code>, or upload a CSV file.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div className="space-y-1.5">
+              <Label htmlFor="bulk-csv">Paste rows</Label>
+              <Textarea
+                id="bulk-csv"
+                value={csvText}
+                onChange={(e) => setCsvText(e.target.value)}
+                rows={6}
+                placeholder={
+                  "Marcus Chen,marcus@techcorp.com,TechCorp Inc\nAisha Patel,aisha@globalhealth.com,GlobalHealth"
+                }
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="bulk-file">…or upload a CSV file</Label>
+              <input
+                id="bulk-file"
+                type="file"
+                accept=".csv,text/csv,text/plain"
+                onChange={handleFile}
+                className="block w-full text-sm text-[#6b7280] file:mr-3 file:rounded file:border-0 file:bg-[#3B5BFF] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-[#2A47CC]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-[#3B5BFF] text-white hover:bg-[#2A47CC]"
+              disabled={bulkImport.isPending}
+              onClick={() => handleBulk()}
+            >
+              {bulkImport.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Import
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PractitionerLayout>
   )
 }

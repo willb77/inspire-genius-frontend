@@ -54,6 +54,9 @@ export type AuditLogListParams = {
   action?: string
   actor_type?: string
   actor_id?: string
+  /** Free-text match. Server-side this ILIKEs actor_email and the metadata
+   *  blob — it is the right home for anything that is not a UUID. */
+  search?: string
   company_id?: string
   target_type?: string
   start_date?: string

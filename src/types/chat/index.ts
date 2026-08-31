@@ -7,6 +7,7 @@ export type {
   SimpleDoc,
   DocumentRef,
   RAGSource,
+  ChatAttachment,
   ChatMessage,
   HistoryItem,
   HistoryGroup

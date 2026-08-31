@@ -14,6 +14,39 @@ export interface DocumentRef {
   url?: string;
 }
 
+// A file the assistant generated this turn (e.g. a branded Word/PDF/PowerPoint
+// document from the IG Core document-generation skill). Carries a presigned,
+// time-limited download URL. Shaped to match the backend `attachments` entry
+// on the chat response (also present under `metadata.attachments`).
+export interface ChatAttachment {
+  kind: string; // e.g. "document"
+  filename: string;
+  url: string; // presigned download URL (expires — see expires_in)
+  format?: string; // docx | pdf | pptx | xlsx | csv | md | html | txt
+  content_type?: string;
+  size_bytes?: number;
+  expires_in?: number; // seconds the URL stays valid
+}
+
+/**
+ * The PRISM Brain Map for a turn that reported the user's own scores.
+ *
+ * Arrives under `metadata.prism_map`, deliberately NOT inside the response
+ * text: the text-to-speech path speaks `content`, and an inline SVG there
+ * would be read aloud as markup. `table` and `description` carry the same
+ * numbers in plain text for TTS, screen readers and plain-text export.
+ */
+export interface PrismMap {
+  format: "svg";
+  /** Self-contained SVG markup — no external fonts, images or scripts. */
+  svg: string;
+  /** Markdown table with the identical numbers. */
+  table: string;
+  /** One-line text equivalent. */
+  description: string;
+  assessed_at?: string | null;
+}
+
 // RAG source attribution
 export interface RAGSource {
   filename: string;
@@ -39,6 +72,8 @@ export type ChatMessage =
       ragSources?: RAGSource[];
       contributingAgents?: string[];
       synthesized?: boolean;
+      attachments?: ChatAttachment[];
+      prismMap?: PrismMap;
     }
   | {
       id: string;

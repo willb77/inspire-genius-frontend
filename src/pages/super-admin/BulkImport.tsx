@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from "react"
+import { useReducer, useCallback, useState } from "react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -120,7 +120,10 @@ export default function SuperAdminBulkImport() {
   const currentIdx = stepIndex(state.currentStep)
 
   const importMutation = useBulkImport()
-  const demoMutation = useBulkDemoInvite()
+  // Chunked upload progress. A 50-row import runs ~2 minutes across several
+  // requests; without this the UI looks hung and invites a mid-import refresh.
+  const [demoProgress, setDemoProgress] = useState<{ done: number; total: number } | null>(null)
+  const demoMutation = useBulkDemoInvite({ onProgress: setDemoProgress })
   const sendMutation = useSendInvitations()
   const resendMutation = useResendInvitation()
   const { data: invitationStatus, isLoading: isTrackingLoading } = useInvitationStatus(
@@ -302,6 +305,7 @@ export default function SuperAdminBulkImport() {
         {state.currentStep === "import" && state.skipOnboarding && (
           <DemoImportResult
             isLoading={demoMutation.isPending}
+            progress={demoProgress}
             data={demoMutation.data}
             onReset={() => dispatch({ type: "RESET" })}
           />

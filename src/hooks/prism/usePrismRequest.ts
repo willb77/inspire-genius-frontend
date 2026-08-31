@@ -49,8 +49,6 @@ export type LatestPrismStatus = {
   // ── Convenience accessors (also available on `latest`) ──
   ingest_status: PrismIngestStatus | null
   completed_at: string | null
-  csv_s3_key: string | null
-  pdf_s3_key: string | null
   requested_at: string | null
   // ── React Query passthrough ─────────────────────────────
   isLoading: boolean
@@ -65,7 +63,7 @@ export type LatestPrismStatus = {
  *  (G8) when the backend hasn't been migrated yet. */
 export function useLatestPrismStatus(): LatestPrismStatus {
   const q = useMyPrismRequests()
-  const items: PrismRequestRow[] = q.data?.items ?? []
+  const items: PrismRequestRow[] = q.data?.rows ?? []
 
   // Sort by requested_at, then created_at, descending. Rows without
   // either timestamp sort to the end (treated as oldest).
@@ -87,10 +85,52 @@ export function useLatestPrismStatus(): LatestPrismStatus {
     hasReadyPrism,
     ingest_status,
     completed_at: latest?.completed_at ?? null,
-    csv_s3_key: latest?.csv_s3_key ?? null,
-    pdf_s3_key: latest?.pdf_s3_key ?? null,
     requested_at: latest?.requested_at ?? latest?.created_at ?? null,
     isLoading: q.isLoading,
     isError: q.isError,
   }
+}
+
+/** Shape returned by {@link useActivePrismRequests}. */
+export type ActivePrismRequest = {
+  row: PrismRequestRow
+  /** The questionnaire link. PRISM leaves ActionURL1 empty for a freshly
+   *  created candidate and puts the link in ActionURL2, so read both. */
+  questionnaireUrl: string | null
+}
+
+/** Hook: the caller's still-open PRISM requests (one per questionnaire type),
+ *  each with its questionnaire link resolved.
+ *
+ *  Exists because the link was previously shown exactly once — in the submit
+ *  success card — and was unrecoverable from the UI after a reload, even
+ *  though the row and both ActionURLs are persisted and returned by
+ *  `GET /v1/prism/requests/me`.
+ *
+ *  "Open" means `completed_at` is unset. Sorted newest first. Wraps
+ *  {@link useMyPrismRequests}, so it costs no extra network call. */
+export function useActivePrismRequests(): {
+  active: ActivePrismRequest[]
+  isLoading: boolean
+  isError: boolean
+} {
+  const q = useMyPrismRequests()
+  const rows: PrismRequestRow[] = q.data?.rows ?? []
+
+  const active = rows
+    .filter((r) => !r.completed_at)
+    .sort((a, b) => {
+      const at = a.requested_at ?? a.created_at ?? ''
+      const bt = b.requested_at ?? b.created_at ?? ''
+      if (at === bt) return 0
+      if (!at) return 1
+      if (!bt) return -1
+      return at < bt ? 1 : -1
+    })
+    .map((row) => ({
+      row,
+      questionnaireUrl: row.action_url_1 || row.action_url_2 || null,
+    }))
+
+  return { active, isLoading: q.isLoading, isError: q.isError }
 }

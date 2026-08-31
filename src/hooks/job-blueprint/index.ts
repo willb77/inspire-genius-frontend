@@ -1,4 +1,6 @@
 export * from './useJobDna'
+export * from './useDraftBenchmark'
+export * from './useAllRoles'
 export * from './useTriage'
 export * from './useAssessment'
 export * from './useScorecard'
