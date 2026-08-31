@@ -50,6 +50,7 @@ const InterviewRolesIndex = React.lazy(() => import("@/pages/interview-practice/
 const InterviewRolePage = React.lazy(() => import("@/pages/interview-practice/InterviewRolePage"));
 const Profile = React.lazy(() => import("@/pages/user/Profile"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
+const UserSettingsClassicPage = React.lazy(() => import("@/pages/user/SettingsClassic"));
 const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
 const HelpPage = React.lazy(() => import("@/pages/user/Help"));
 const SupportPage = React.lazy(() => import("@/pages/user/Support"));
@@ -469,6 +470,10 @@ export const routes: RouteObject[] = [
       { path: "/profile", element: withSuspense(<ProfileSurface />) },
       { path: "/profile/classic", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
+      // Permanent escape hatch — original Settings, flag-independent. The main
+      // /settings resolves classic/V2 inside the shared Settings component via
+      // the new_user_surfaces flag (shared across all six role Settings pages).
+      { path: "/settings/classic", element: withSuspense(<UserSettingsClassicPage />) },
       { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacySurface />) },
       { path: "/settings/privacy/classic", element: withSuspense(<UserSettingsPrivacy />) },
       // Help & Support is the support-request surface: it posts to
