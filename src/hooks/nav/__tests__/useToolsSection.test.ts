@@ -57,22 +57,31 @@ beforeEach(() => {
 })
 
 describe("canSeeToolsSection", () => {
-  it("admits super-admin and nobody else", () => {
-    expect(canSeeToolsSection("super-admin")).toBe(true)
-    for (const role of [
-      "user",
-      "manager",
-      "company-admin",
-      "practitioner",
-      "distributor",
-    ] as const) {
+  /* Widened on 2026-08-31 (request) from super-admin-only to include manager
+   * and practitioner — the two roster-holding roles.
+   *
+   * This assertion USED to read "super-admin and nobody else", and it failing
+   * is what a deliberate scope change is supposed to look like. It is kept as
+   * an exact set rather than loosened to `toBe(true)` per role, so the next
+   * widening is also a conscious edit here.
+   *
+   * Why it matters more than it looks: both roles already had entries in
+   * TOOL_ITEMS_BY_ROLE, kept deliberately when the section was narrowed on
+   * 2026-08-12. Until this gate opened, those entries were correct data that
+   * rendered NOWHERE — a nav constant whose own tests pass while the sidebar
+   * shows nothing. */
+  it("admits the roster-holding roles and nobody else", () => {
+    for (const role of ["super-admin", "manager", "practitioner"] as const) {
+      expect(canSeeToolsSection(role)).toBe(true)
+    }
+    for (const role of ["user", "company-admin", "distributor"] as const) {
       expect(canSeeToolsSection(role)).toBe(false)
     }
   })
 })
 
 describe("useToolsSection", () => {
-  it("returns null for every non-super-admin role, even with a full catalogue", () => {
+  it("returns null for the roles still outside the gate, even with a full catalogue", () => {
     // The launcher is deliberately NON-empty here: a null return must come from
     // the role gate, not from there being nothing to show. Without this the
     // test would pass just as happily if the gate were removed.
@@ -81,15 +90,21 @@ describe("useToolsSection", () => {
     })
     mockBroadcast.mockReturnValue({ data: { authorized: true } })
 
-    for (const role of [
-      "user",
-      "manager",
-      "company-admin",
-      "practitioner",
-      "distributor",
-    ] as const) {
+    for (const role of ["user", "company-admin", "distributor"] as const) {
       const { result } = renderHook(() => useToolsSection(role))
       expect(result.current).toBeNull()
+    }
+  })
+
+  it("returns a populated section for manager and practitioner", () => {
+    // The counterpart of the test above, and the one that would have caught the
+    // real defect: TOOL_ITEMS_BY_ROLE entries for these roles rendered nowhere
+    // because the gate was closed, so every data-level nav test passed while
+    // the sidebar was empty.
+    for (const role of ["manager", "practitioner"] as const) {
+      const { result } = renderHook(() => useToolsSection(role))
+      expect(result.current).not.toBeNull()
+      expect((result.current?.items ?? []).length).toBeGreaterThan(0)
     }
   })
 
