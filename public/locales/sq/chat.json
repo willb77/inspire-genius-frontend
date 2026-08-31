@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "Trajner",
+    "sectionLabel": "Sesion coaching",
     "authError": "Gabim vërtetimi",
     "untitledConversation": "Pa Titull",
     "previewPlaceholder": "Për t'u bërë",

@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "कोच",
+    "sectionLabel": "कोचिंग सत्र",
     "authError": "प्रमाणीकरण त्रुटि",
     "untitledConversation": "कोई शीर्षक नहीं",
     "previewPlaceholder": "करना है",

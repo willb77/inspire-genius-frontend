@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "Huấn luyện viên",
+    "sectionLabel": "Phiên huấn luyện",
     "authError": "Lỗi xác thực",
     "untitledConversation": "Không có tiêu đề",
     "previewPlaceholder": "Cần làm",

@@ -286,6 +286,7 @@
   },
   "coach": {
     "defaultName": "Coach",
+    "sectionLabel": "Coachingsessie",
     "authError": "Authenticatiefout",
     "untitledConversation": "Geen titel",
     "previewPlaceholder": "Te doen",
