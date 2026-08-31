@@ -56,6 +56,16 @@ export const TOOLS_SECTION_LABEL = "Tools"
  */
 export const TOOLS_SECTION_ROLES: ReadonlySet<UserRole> = new Set<UserRole>([
   "super-admin",
+  // 2026-08-31 (request): give managers and practitioners their tools back.
+  //
+  // This is the "one-line edit" the note above anticipated. Both roles already
+  // had entries in TOOL_ITEMS_BY_ROLE — kept deliberately when the section was
+  // narrowed to super-admin on 2026-08-12 — so until now those entries were
+  // correct data that rendered nowhere. Adding items to TOOL_ITEMS_BY_ROLE
+  // without widening this set is the trap: the nav constant reads right, its
+  // tests pass, and the sidebar shows nothing.
+  "manager",
+  "practitioner",
 ])
 
 export function canSeeToolsSection(role: UserRole): boolean {
