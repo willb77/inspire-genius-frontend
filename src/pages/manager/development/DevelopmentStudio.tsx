@@ -9,6 +9,7 @@ import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Search, Users } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
+import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -64,8 +65,28 @@ function lastActivity(m: RosterMember): number {
   return Math.max(0, ...dates)
 }
 
-export default function DevelopmentStudio({ variant }: { variant?: DevVariant }) {
+/**
+ * `audience` swaps the chrome and the member-link target for practitioners.
+ *
+ * A practitioner CANNOT be sent to /manager/development/:id — ProtectedRoute
+ * gates by path prefix and `practitioner` has no `/manager` entry in
+ * ROLE_PERMISSIONS, so the link would silently bounce them to their home page.
+ * The roster itself needs no branch: /v1/growth/roster scopes to the caller's
+ * own token, so each audience sees their own people.
+ */
+export default function DevelopmentStudio({
+  variant,
+  audience = "manager",
+}: {
+  variant?: DevVariant
+  audience?: "manager" | "practitioner"
+}) {
   const v2 = resolveDevV2(variant)
+  const Layout = audience === "practitioner" ? PractitionerLayout : ManagerLayout
+  const memberRoute =
+    audience === "practitioner"
+      ? ROUTES.PRACTITIONER.DEVELOPMENT_MEMBER
+      : ROUTES.MANAGER.DEVELOPMENT_MEMBER
   const sk = getDevSkin(v2)
   const navigate = useNavigate()
   const { t } = useDevelopmentText()
@@ -117,11 +138,11 @@ export default function DevelopmentStudio({ variant }: { variant?: DevVariant })
   const handleInvite = (memberId: string) => {
     // Route to the member's workspace, where the header invite action is
     // correctly scoped to that member (avoids a mis-scoped roster-level call).
-    navigate(ROUTES.MANAGER.DEVELOPMENT_MEMBER.replace(":memberId", memberId))
+    navigate(memberRoute.replace(":memberId", memberId))
   }
 
   return (
-    <ManagerLayout>
+    <Layout>
       <DevSkinProvider v2={v2}>
         <DevPageFrame>
       <header className="flex items-start justify-between gap-3">
@@ -232,6 +253,6 @@ export default function DevelopmentStudio({ variant }: { variant?: DevVariant })
       )}
         </DevPageFrame>
       </DevSkinProvider>
-    </ManagerLayout>
+    </Layout>
   )
 }
