@@ -54,13 +54,25 @@ export function WorkbenchHome(config: WorkbenchConfig) {
 function Hero({ config }: { config: WorkbenchConfig }) {
   const actions = config.actions ?? []
 
+  // The subtitle is a COUNT SENTENCE ("2 on your roster · 1 without a PRISM
+  // result"), and the hero renders outside the loading branch so the greeting
+  // and actions appear immediately. That combination briefly published
+  // "0 on your roster · 0 without a PRISM result" on staging-b before the query
+  // resolved — a confident claim about a real manager's team, made before we
+  // had any data. Held back until the numbers are real; the greeting stays.
+  const subtitle = config.isLoading ? null : config.subtitle
+
   if (config.hero === "gradient") {
     return (
       <div className="rounded-2xl bg-gradient-to-r from-[#2E5BFF] to-[#2BC3B4] p-6 text-white">
         <h1 className="font-serif text-[26px] leading-tight tracking-tight">
           {config.greeting}
         </h1>
-        <p className="mt-1 text-sm text-white/90">{config.subtitle}</p>
+        {subtitle ? (
+          <p className="mt-1 text-sm text-white/90">{subtitle}</p>
+        ) : (
+          <p className="mt-1 text-sm text-white/70">Loading your roster&hellip;</p>
+        )}
         {actions.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {actions.map((a) => (
@@ -88,7 +100,11 @@ function Hero({ config }: { config: WorkbenchConfig }) {
       <h1 className="font-serif text-[26px] leading-tight tracking-tight text-ink">
         {config.greeting}
       </h1>
-      <p className="mt-1 text-sm text-muted-foreground">{config.subtitle}</p>
+      {subtitle ? (
+        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+      ) : (
+        <p className="mt-1 text-sm text-muted-foreground">Loading your roster&hellip;</p>
+      )}
       {actions.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {actions.map((a) => (
