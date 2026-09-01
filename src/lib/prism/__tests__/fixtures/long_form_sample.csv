@@ -1,0 +1,120 @@
+Person,Test Subject
+Email,subject@example.com
+Environment,staging-b
+Assessment ID,00000000-0000-0000-0000-000000000000
+Framework,PRISM (framework_version: legacy)
+Assessed at,2026-08-03 02:13:30 UTC
+Source,admin_csv_upload (authoritative)
+
+category,dimension,score_type,score,detail
+Quadrant (brain map),Gold,Underlying,92,mean of Finishing (96) and Evaluating (88); stored value 92
+Quadrant (brain map),Green,Underlying,85,mean of Innovating (95) and Initiating (75); stored value 85
+Quadrant (brain map),Blue,Underlying,44,mean of Supporting (80) and Coordinating (8); stored value 44
+Quadrant (brain map),Red,Underlying,40,mean of Focusing (19) and Delivering (61); stored value 40
+BehaviorPreferences,Coordinating,Adapted,21,
+BehaviorPreferences,Delivering,Adapted,53,
+BehaviorPreferences,Evaluating,Adapted,66,
+BehaviorPreferences,Extroversion,Adapted,50,
+BehaviorPreferences,Finishing,Adapted,80,
+BehaviorPreferences,Focusing,Adapted,9,
+BehaviorPreferences,Initiating,Adapted,62,
+BehaviorPreferences,Innovating,Adapted,67,
+BehaviorPreferences,Introversion,Adapted,50,
+BehaviorPreferences,Supporting,Adapted,55,
+BehaviorPreferences,Coordinating,Consistent,9,
+BehaviorPreferences,Delivering,Consistent,56,
+BehaviorPreferences,Evaluating,Consistent,78,
+BehaviorPreferences,Extroversion,Consistent,50,
+BehaviorPreferences,Finishing,Consistent,91,
+BehaviorPreferences,Focusing,Consistent,11,
+BehaviorPreferences,Initiating,Consistent,69,
+BehaviorPreferences,Innovating,Consistent,81,
+BehaviorPreferences,Introversion,Consistent,50,
+BehaviorPreferences,Supporting,Consistent,65,
+BehaviorPreferences,Coordinating,Underlying,8,
+BehaviorPreferences,Delivering,Underlying,61,
+BehaviorPreferences,Evaluating,Underlying,88,
+BehaviorPreferences,Extroversion,Underlying,50,
+BehaviorPreferences,Finishing,Underlying,96,
+BehaviorPreferences,Focusing,Underlying,19,
+BehaviorPreferences,Initiating,Underlying,75,
+BehaviorPreferences,Innovating,Underlying,95,
+BehaviorPreferences,Introversion,Underlying,50,
+BehaviorPreferences,Supporting,Underlying,80,
+BigFive,agreeableness,Underlying,36,
+BigFive,conscientiousness,Underlying,75,
+BigFive,emotional stability,Underlying,27,
+BigFive,extraversion,Underlying,50,
+BigFive,openness to experience,Underlying,83,
+CDA,Abstract thinking,Underlying,85,
+CDA,Adaptability,Underlying,85,
+CDA,Ambition,Underlying,40,
+CDA,Analytical thinking,Underlying,92,
+CDA,Attention to detail,Underlying,92,
+CDA,Compliance,Underlying,96,
+CDA,Concern for others,Underlying,44,
+CDA,Consensus seeking,Underlying,8,
+CDA,Control,Underlying,40,
+CDA,Dependability,Underlying,78,
+CDA,Determination,Underlying,79,
+CDA,Energy level,Underlying,63,
+CDA,Initiative,Underlying,40,
+CDA,Need for social interaction,Underlying,75,
+CDA,Need for stability,Underlying,80,
+CDA,Need to achieve,Underlying,61,
+CDA,Need to be right,Underlying,96,
+CDA,People focus,Underlying,80,
+CDA,Recognition,Underlying,75,
+CDA,Risk taking,Underlying,63,
+CDA,Self management,Underlying,68,
+CDA,Social skills,Underlying,75,
+CDA,Stability,Underlying,65,
+CDA,Stress management,Underlying,35,
+CDA,Task focus,Underlying,66,
+CDA,Teamworking,Underlying,44,
+CoreTraits,Conscientiousness,Underlying,75,
+CoreTraits,Decisiveness,Underlying,53,
+CoreTraits,Emotional stability,Underlying,27,
+CoreTraits,Flexibility,Underlying,83,
+CoreTraits,Relationship management,Underlying,35,
+CoreTraits,SD Score,Underlying,3,
+CoreTraits,Self-motivation,Underlying,76,
+EmotionalIntelligence,Awareness of others,Underlying,41,
+EmotionalIntelligence,Consistency,Underlying,65,
+EmotionalIntelligence,Decisiveness,Underlying,53,
+EmotionalIntelligence,Influencing others,Underlying,35,
+EmotionalIntelligence,Relationship management,Underlying,35,
+EmotionalIntelligence,Self awareness,Underlying,65,
+EmotionalIntelligence,Self management,Underlying,24,
+EmotionalIntelligence,Self motivation,Underlying,76,
+MentalToughness,Adaptability,Underlying,76,
+MentalToughness,Ambition,Underlying,68,
+MentalToughness,Competitiveness,Underlying,72,
+MentalToughness,Determination,Underlying,62,
+MentalToughness,Independence,Underlying,58,
+MentalToughness,Optimism,Underlying,66,
+MentalToughness,Overall Mental Toughness Rating,Underlying,63,
+MentalToughness,Resilience,Underlying,46,
+MentalToughness,Self Belief,Underlying,68,
+MentalToughness,Self Management,Underlying,52,
+WorkAptitudes,Competitive and entrepreneurial,Underlying,25,
+WorkAptitudes,Creative and artistic,Underlying,100,
+WorkAptitudes,Investigative and analytical,Underlying,88,
+WorkAptitudes,Mathematical and logical,Underlying,38,
+WorkAptitudes,Orderly and efficient,Underlying,63,
+WorkAptitudes,Outgoing and expressive,Underlying,50,
+WorkAptitudes,Practical and mechanical,Underlying,50,
+WorkAptitudes,Social and empathetic,Underlying,75,
+WorkPreferenceProfile,Adaptability,Underlying,24,Likely to be able to adapt to a range of situations and to tolerate both criticism and challenge. Also likely to be able to maintain consistent performance in a wide range of situations and when under considerable pressure.
+WorkPreferenceProfile,Assertiveness,Underlying,64,"A tendency to be independent, forthright and demanding, and to have a strong preference for relating to others by being tough, distant and persistent."
+WorkPreferenceProfile,Caution,Underlying,88,"Being cautious, but not fearful.  Making careful, well thought out, astute decisions."
+WorkPreferenceProfile,Composure,Underlying,27,"A tendency to be calm, stable and unflustered and to have a strong preference for being rational and rather impervious to stress and environmental pressures."
+WorkPreferenceProfile,Concentration,Underlying,96,"Being able to concentrate for long periods on large quantities of complex information. Paying close attention to rules, instructions or detailed specifications."
+WorkPreferenceProfile,Consensus Building,Underlying,8,Building group consensus and making good use of others’ talents. Consulting and enabling others to take part in the decision making process.
+WorkPreferenceProfile,Cooperation,Underlying,58,"A tendency to be sympathetic, co-operative and considerate, and have a strong preference for deferring to others and for relating to them by being tolerant and accommodating."
+WorkPreferenceProfile,Drive,Underlying,61,"Comfortable working independently to achieve tough objectives or tight deadlines. Working in an environment that is results-driven, physically challenging and fast-paced."
+WorkPreferenceProfile,Imagination,Underlying,95,"Creating imaginative and innovative concepts, or visualising outcomes or solutions."
+WorkPreferenceProfile,Motivation,Underlying,76,Likely to have a high level of motivation and to show high levels of commitment to long-term goals and results which are pursued in the face of obstacles and setbacks.
+WorkPreferenceProfile,Persuasion,Underlying,35,"Likely to be effective in persuading others to change their viewpoint or to adopt your interpretation of a situation, or the need for action."
+WorkPreferenceProfile,Sociability,Underlying,62,"Being cheerful, talkative and outgoing with strangers. Having a strong need to interact socially with others for most of the time."
+WorkPreferenceProfile,Toughness,Underlying,19,"Taking and implementing tough, unpopular decisions despite strong opposition. Confronting or challenging others in a forthright or provocative manner."
