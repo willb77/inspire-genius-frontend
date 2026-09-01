@@ -71,3 +71,54 @@ export async function checkForUpdate(): Promise<boolean> {
     return false
   }
 }
+
+/**
+ * Force the service worker to re-check for a new build. Called on every
+ * successful login.
+ *
+ * Scope note: this deliberately does NOT clear any cache. Clearing on every
+ * login was in the original request and was withdrawn once measured — the
+ * build-asset cache is content-addressed (the hash is in the filename), so an
+ * entry can never be stale for its URL, and since the 2026-08-17 precache
+ * reduction the app shell is the only thing precached. Wiping it per sign-in
+ * would re-fetch the whole ~1.39 MB entry graph over the network and make the
+ * app measurably slower, which is the opposite of the intent. See
+ * docs/analysis/2026-09-01-latency-investigation.md.
+ *
+ * Genuinely stale bundles are still handled — by `checkForUpdate()` above,
+ * which tears down caches only when /version.json reports a DIFFERENT build.
+ * That is a real staleness signal; "the user logged in" is not.
+ *
+ * Why not `unregisterServiceWorkers()`: unregistering on every login leaves
+ * the next page load with no worker at all, losing the offline fallback and
+ * the runtime cache until a fresh install completes. `registration.update()`
+ * gets the same freshness guarantee while keeping the worker alive.
+ *
+ * Returns a short report so callers/tests can assert what happened rather
+ * than trusting a void promise.
+ */
+export async function refreshServiceWorkerOnLogin(): Promise<{
+  updated: boolean
+}> {
+  let updated = false
+
+  if ("serviceWorker" in navigator) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(
+        regs.map(async (r) => {
+          // update() re-fetches the SW script bypassing the HTTP cache; if the
+          // bytes differ the new worker installs and (skipWaiting/clientsClaim
+          // are both set in vite.config.ts) takes over without a prompt.
+          await r.update()
+          updated = true
+          if (r.waiting) r.waiting.postMessage({ type: "SKIP_WAITING" })
+        }),
+      )
+    } catch {
+      // A blocked/unsupported SW must never block sign-in.
+    }
+  }
+
+  return { updated }
+}

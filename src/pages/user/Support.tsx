@@ -3,6 +3,8 @@ import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Phone } from "lucide-react";
 
+import { toast } from "sonner";
+import { uploadTicketScreenshot } from "@/services/support/support.service";
 import UserLayout from "@/layouts/UserLayout";
 import SupportRequestForm from "@/components/support/SupportRequestForm";
 import SupportRequestList from "@/components/support/SupportRequestList";
@@ -29,6 +31,7 @@ import {
 export default function Support() {
   const { user } = useAuth();
   const [lastSubmittedId, setLastSubmittedId] = useState<string | null>(null);
+  const [screenshots, setScreenshots] = useState<File[]>([]);
 
   const listQuery = useSupportTickets(
     user?.id ? { user_id: user.id } : undefined,
@@ -79,6 +82,33 @@ export default function Support() {
     });
 
     setLastSubmittedId(ticket.id);
+
+    // Screenshots upload AFTER the ticket exists, because each one is keyed
+    // to a ticket id. A failed screenshot must not read as a failed request:
+    // the request is already saved and the support team already has it, so
+    // report the partial outcome instead of throwing away a successful post.
+    if (screenshots.length > 0) {
+      const failed: string[] = [];
+      for (const file of screenshots) {
+        try {
+          await uploadTicketScreenshot(ticket.id, file);
+        } catch {
+          failed.push(file.name);
+        }
+      }
+      if (failed.length === 0) {
+        toast.success(
+          `${screenshots.length} screenshot${screenshots.length === 1 ? "" : "s"} attached.`,
+        );
+      } else {
+        toast.error(
+          `Your request was sent, but ${failed.length} screenshot${failed.length === 1 ? "" : "s"} could not be attached (${failed.join(", ")}). You can reply to the confirmation email with the image.`,
+        );
+      }
+      await listQuery.refetch();
+    }
+    setScreenshots([]);
+
     // Keep the contact block — only clear what is specific to this request.
     form.reset({
       ...form.getValues(),

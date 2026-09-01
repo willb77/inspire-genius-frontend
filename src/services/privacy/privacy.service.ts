@@ -54,9 +54,33 @@ export async function deleteUserData(userId: string): Promise<DeletionResponse> 
   return data
 }
 
-export async function exportUserData(userId: string): Promise<ExportResponse> {
-  const { data } = await agentApi.get<ExportResponse>(`/v1/privacy/user/${userId}/export`)
-  return data
+export interface ExportArchive {
+  blob: Blob
+  filename: string
+  /** False when the backend could not notify the privacy inbox. */
+  notified: boolean
+}
+
+/**
+ * Download the subject-access archive.
+ *
+ * The endpoint returns a ZIP (`application/zip`), not JSON — the archive
+ * carries a README, a manifest and one file per data category, which a
+ * single JSON body cannot represent. `responseType: "blob"` is therefore
+ * mandatory: without it axios coerces the bytes to a string and the saved
+ * file is a corrupt archive that still "downloads successfully".
+ */
+export async function exportUserData(userId: string): Promise<ExportArchive> {
+  const resp = await agentApi.get(`/v1/privacy/user/${userId}/export`, {
+    responseType: "blob",
+  })
+  const disposition = String(resp.headers?.["content-disposition"] ?? "")
+  const match = /filename="?([^"]+)"?/.exec(disposition)
+  return {
+    blob: resp.data as Blob,
+    filename: match?.[1] ?? `inspire-genius-data-${new Date().toISOString().slice(0, 10)}.zip`,
+    notified: String(resp.headers?.["x-ig-privacy-notified"] ?? "") !== "false",
+  }
 }
 
 export async function getDeletionRequests(

@@ -25,7 +25,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Send } from "lucide-react";
+import { ImagePlus, Send, X } from "lucide-react";
 import {
   DESCRIPTION_PROMPTS,
   MAX_DESCRIPTION_CHARS,
@@ -36,10 +36,16 @@ import {
   type SupportRequestValues,
 } from "@/types/support/component-types";
 
+/** Matches the server's per-file ceiling (support-service max_attachment_bytes). */
+const MAX_SCREENSHOT_BYTES = 10 * 1024 * 1024;
+const MAX_SCREENSHOTS = 5;
+
 export default function SupportRequestForm({
   form,
   onSubmit,
   isSubmitting,
+  screenshots = [],
+  onScreenshotsChange,
 }: SupportRequestFormProps) {
   const description = form.watch("description") ?? "";
   const used = description.length;
@@ -279,6 +285,85 @@ export default function SupportRequestForm({
                 )}
               />
             </div>
+
+            {/* Screenshots. Validated here against the SAME limits the server
+                enforces, so an oversized file is refused before the user waits
+                on an upload that would be rejected. The client check is a
+                courtesy, not the boundary — support-service re-checks type and
+                size before issuing any presigned URL. */}
+            {onScreenshotsChange && (
+              <div className="mt-4 text-left">
+                <div className="text-sm font-medium mb-1">
+                  Screenshots{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Images only, up to {MAX_SCREENSHOTS} files, 10&nbsp;MB each. A
+                  picture of the screen you are describing usually resolves a
+                  request faster than any description.
+                </p>
+
+                <label
+                  htmlFor="support-screenshots"
+                  className="inline-flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm cursor-pointer hover:bg-muted/50"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  Add screenshots
+                </label>
+                <input
+                  id="support-screenshots"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  disabled={isSubmitting}
+                  onChange={(e) => {
+                    const picked = Array.from(e.target.files ?? []);
+                    const accepted: File[] = [];
+                    for (const f of picked) {
+                      if (!f.type.startsWith("image/")) continue;
+                      if (f.size > MAX_SCREENSHOT_BYTES) continue;
+                      accepted.push(f);
+                    }
+                    onScreenshotsChange(
+                      [...screenshots, ...accepted].slice(0, MAX_SCREENSHOTS),
+                    );
+                    // Reset so re-picking the same file still fires onChange.
+                    e.target.value = "";
+                  }}
+                />
+
+                {screenshots.length > 0 && (
+                  <ul className="mt-2 flex flex-wrap gap-2">
+                    {screenshots.map((f, i) => (
+                      <li
+                        key={`${f.name}-${i}`}
+                        className="flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1 text-xs"
+                      >
+                        <span className="max-w-[16rem] truncate">{f.name}</span>
+                        <span className="text-muted-foreground">
+                          {(f.size / 1024).toFixed(0)} KB
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${f.name}`}
+                          className="rounded p-0.5 hover:bg-muted"
+                          onClick={() =>
+                            onScreenshotsChange(
+                              screenshots.filter((_, idx) => idx !== i),
+                            )
+                          }
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             <CardFooter className="mt-2 flex flex-col sm:flex-row items-center gap-3 justify-end p-0">
               <Button

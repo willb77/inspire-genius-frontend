@@ -4,7 +4,7 @@ import Settings from "@/components/shared/settings/Settings";
 const SuperAdminSettingsPage = () => {
     return (
         <SuperAdminLayout>
-            <Settings />
+            <Settings surface="administration" />
         </SuperAdminLayout>
     );
 };

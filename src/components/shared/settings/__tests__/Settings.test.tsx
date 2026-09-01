@@ -159,6 +159,11 @@ jest.mock("@/components/settings/AccountSettings", () => ({
 
 
 
+jest.mock("@/components/settings/AgentEngineToggle", () => ({
+  __esModule: true,
+  default: () => <div data-testid="agent-engine-toggle" />,
+}));
+
 jest.mock("@/components/settings/NotificationSettings", () => ({
 
   __esModule: true,
@@ -345,7 +350,10 @@ describe("Settings Component", () => {
 
     expect(screen.getByTestId("account-settings")).toBeInTheDocument();
 
-    expect(screen.getByTestId("notification-settings")).toBeInTheDocument();
+    // The old cosmetic "Push Notifications" card was removed (2026-09-01):
+    // its Switch was hard-coded disabled and persisted nothing, and it
+    // duplicated the title of the working <NotificationPreferences> card.
+    expect(screen.queryByTestId("notification-settings")).not.toBeInTheDocument();
 
     expect(screen.getByText("Legal")).toBeInTheDocument();
 
@@ -571,25 +579,60 @@ describe("Settings Component", () => {
 
 
 
-  it("toggles push notifications", () => {
-
+  it("no longer renders the disabled duplicate push-notifications card", () => {
     render(<Settings />, { wrapper: createWrapper() });
 
-
-
-    const checkbox = screen.getByTestId("push-notifications");
-
-    expect(checkbox).toBeChecked();
-
-
-
-    fireEvent.click(checkbox);
-
-    expect(checkbox).not.toBeChecked();
-
+    // Settings used to show TWO cards titled "Push Notifications": this one,
+    // whose Switch was `disabled={true}` and backed by state nothing read,
+    // and the real <NotificationPreferences>. Only the working one remains,
+    // so there must be exactly one such heading and no dead checkbox.
+    expect(screen.queryByTestId("push-notifications")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("notification-settings")).not.toBeInTheDocument();
   });
 
 
+
+
+  /* ---------- Agent Engine Routing surface gate ---------- */
+
+  it("hides Agent Engine Routing from a super-admin on a NON-admin surface", () => {
+    // The gate used to be role-only, so a super-admin saw this operator
+    // diagnostic on /settings, /manager/settings and every other role page —
+    // all six mount this same component. Same privileged user, ordinary
+    // surface: the tile must not appear.
+    mockUseAuth.mockReturnValue({
+      user: { role: ROLES.SUPER_ADMIN },
+      markFullName: mockMarkFullName,
+    } as any);
+
+    render(<Settings />, { wrapper: createWrapper() });
+
+    expect(screen.queryByTestId("agent-engine-toggle")).not.toBeInTheDocument();
+  });
+
+  it("shows Agent Engine Routing to a super-admin on the Administration surface", () => {
+    mockUseAuth.mockReturnValue({
+      user: { role: ROLES.SUPER_ADMIN },
+      markFullName: mockMarkFullName,
+    } as any);
+
+    render(<Settings surface="administration" />, { wrapper: createWrapper() });
+
+    expect(screen.getByTestId("agent-engine-toggle")).toBeInTheDocument();
+  });
+
+  it("never shows Agent Engine Routing to a non-super-admin, even on the admin surface", () => {
+    // Belt and braces: the surface prop must not become a way around the
+    // role check for anyone who reaches that route.
+    mockUseAuth.mockReturnValue({
+      user: { role: ROLES.MANAGER },
+      markFullName: mockMarkFullName,
+    } as any);
+
+    render(<Settings surface="administration" />, { wrapper: createWrapper() });
+
+    expect(screen.queryByTestId("agent-engine-toggle")).not.toBeInTheDocument();
+  });
 
   /* ---------- Legal Links ---------- */
 
@@ -625,7 +668,10 @@ describe("Settings Component", () => {
     expect(container.querySelector(".bg-panel")).toBeInTheDocument();
     // Shared child cards + logic are unchanged in V2.
     expect(screen.getByTestId("account-settings")).toBeInTheDocument();
-    expect(screen.getByTestId("notification-settings")).toBeInTheDocument();
+    // The old cosmetic "Push Notifications" card was removed (2026-09-01):
+    // its Switch was hard-coded disabled and persisted nothing, and it
+    // duplicated the title of the working <NotificationPreferences> card.
+    expect(screen.queryByTestId("notification-settings")).not.toBeInTheDocument();
     expect(screen.getByText("Legal")).toBeInTheDocument();
     expect(screen.getByText("Terms of Use")).toHaveAttribute("href", "/terms");
   });

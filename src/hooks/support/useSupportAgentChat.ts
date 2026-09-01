@@ -10,9 +10,15 @@
  * `reference_apigw_30s_llm_route`). Completion arrives on the WS
  * `job_complete` push frame or by polling — `useMeridianJob` owns both.
  *
- * This hook deliberately does NOT talk to support-service. A support ticket is
- * a durable record a human works; this is a live assistant. The popup keeps
- * the "Submit a request" form as the escalation path.
+ * This hook does not OPEN a support ticket — a ticket is a durable record a
+ * human works, and the popup keeps the "Submit a request" form as the
+ * escalation path. It does, however, LOG the conversation to support-service
+ * (`POST /v1/support/assistant-sessions`, status "self_served") so it appears
+ * in "Your requests" alongside posted requests. Without that the surface was
+ * amnesiac: a user could ask for help, get it, and find no record they had
+ * ever contacted support. The write is idempotent on session id — one row per
+ * conversation, not one per turn — and best-effort, because failing to log a
+ * conversation must never break the conversation.
  *
  * EXPORT: reuses `exportTranscriptPdfs` so the popup emits the identical
  * branded Conversation Log + Structured Report PDFs as the full chat page —
@@ -22,6 +28,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useMeridianJob, type ChatJob } from "@/hooks/agents/useMeridianJob";
+import { logAssistantSession } from "@/services/support/support.service";
 import {
   exportTranscriptPdfs,
   downloadBlob,
@@ -74,6 +81,39 @@ export function useSupportAgentChat(options: UseSupportAgentChatOptions = {}) {
   const onTurnStartRef = useRef(onTurnStart);
   onTurnStartRef.current = onTurnStart;
 
+  // Mirrors the visible transcript into the requests log. Held in a ref so
+  // handleJobSettled can stay dependency-free while still reading current
+  // messages, and so a re-render never re-registers it.
+  const messagesRef = useRef<ChatMessage[]>([GREETING]);
+  const logConversationRef = useRef<(() => Promise<void>) | null>(null);
+  logConversationRef.current = async () => {
+    // A type predicate, not a bare `.filter`: ChatMessage is a discriminated
+    // union and only the "text" variant has `.text` at all.
+    const isText = (
+      m: ChatMessage,
+    ): m is Extract<ChatMessage, { kind: "text" }> => m.kind === "text";
+    const spoken = messagesRef.current
+      .filter(isText)
+      .filter((m) => m.id !== "support-greeting");
+    // Nothing the user actually said — do not create a row for an opened-
+    // and-abandoned popup.
+    if (!spoken.some((m) => m.sender === "user")) return;
+
+    const firstUser = spoken.find((m) => m.sender === "user");
+    const subject = (firstUser?.text ?? "Support conversation").slice(0, 120);
+    const transcript = spoken
+      .map((m) => `${m.sender === "user" ? "You" : "Meridian"}: ${m.text ?? ""}`)
+      .join("\n\n")
+      .slice(0, 20000);
+
+    try {
+      await logAssistantSession(sessionIdRef.current, subject, transcript);
+    } catch {
+      // Best-effort by design: the user is mid-conversation and a failed
+      // audit write is not their problem to see.
+    }
+  };
+
   const handleJobSettled = useCallback((job: ChatJob) => {
     const time = formatTime(new Date());
     if (job.status === "error" || (!job.content && job.error)) {
@@ -112,9 +152,13 @@ export function useSupportAgentChat(options: UseSupportAgentChatOptions = {}) {
     ]);
 
     onAssistantMessageRef.current?.(content);
+    void logConversationRef.current?.();
   }, []);
 
   const meridianJob = useMeridianJob({ onJobSettled: handleJobSettled });
+
+  // Keep the ref aligned with state for the logger above.
+  messagesRef.current = messages;
 
   const isBusy = useMemo(
     () => messages.some((m) => m.kind === "processing"),

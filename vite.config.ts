@@ -108,6 +108,11 @@ export default defineConfig(({ mode }) => {
             "icons/icon-192x192.png",
             "icons/icon-512x512.png",
           ],
+          // Adds the `push` / `notificationclick` listeners to the generated
+          // worker. importScripts rather than injectManifest: switching modes
+          // would hand us ownership of the precache manifest, and the
+          // precache is precisely what caused the 2026-08-17 outage above.
+          importScripts: ["/sw-push.js"],
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB
           navigateFallback: "/index.html",
           skipWaiting: true,

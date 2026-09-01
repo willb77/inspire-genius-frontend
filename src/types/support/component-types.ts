@@ -47,6 +47,10 @@ export type SupportRequestFormProps = {
   form: UseFormReturn<SupportRequestValues>;
   onSubmit: (values: SupportRequestValues) => Promise<void> | void;
   isSubmitting: boolean;
+  /** Screenshots staged for upload after the ticket is created. */
+  screenshots?: File[];
+  /** Omit to hide the screenshot control entirely. */
+  onScreenshotsChange?: (files: File[]) => void;
 };
 
 export const SUPPORT_CATEGORIES = [
