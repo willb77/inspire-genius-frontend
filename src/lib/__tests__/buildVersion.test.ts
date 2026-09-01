@@ -60,12 +60,11 @@ describe("refreshServiceWorkerOnLogin", () => {
     return deleted
   }
 
-  it("KEEPS the content-addressed build-asset cache", async () => {
-    // Build output is hashed, so a cached entry can never be stale for its
-    // URL. Since the 2026-08-17 precache reduction only the shell is
-    // precached, so deleting this on every login would force a full
-    // re-download of every chunk — worsening the exact slowness we are
-    // trying to fix.
+  it("clears NO cache — that half of the request was withdrawn", async () => {
+    // Clearing on every login would wipe the content-addressed build-asset
+    // cache and re-fetch the whole entry graph per sign-in, which measurably
+    // slows the app. Genuine staleness is handled by checkForUpdate(), which
+    // clears only on a real version change.
     const deleted = stubCaches(["ig-build-assets", "ig-static", "api-cache"])
     Object.defineProperty(navigator, "serviceWorker", {
       value: { getRegistrations: jest.fn().mockResolvedValue([]) },
@@ -73,11 +72,9 @@ describe("refreshServiceWorkerOnLogin", () => {
     })
 
     const { refreshServiceWorkerOnLogin } = await import("@/lib/buildVersion")
-    const res = await refreshServiceWorkerOnLogin()
+    await refreshServiceWorkerOnLogin()
 
-    expect(deleted).not.toContain("ig-build-assets")
-    expect(deleted).toEqual(expect.arrayContaining(["ig-static", "api-cache"]))
-    expect(res.clearedCaches).not.toContain("ig-build-assets")
+    expect(deleted).toEqual([])
   })
 
   it("asks each registration to check for a new worker", async () => {
@@ -110,7 +107,6 @@ describe("refreshServiceWorkerOnLogin", () => {
     const { refreshServiceWorkerOnLogin } = await import("@/lib/buildVersion")
     await expect(refreshServiceWorkerOnLogin()).resolves.toEqual({
       updated: false,
-      clearedCaches: ["ig-static"],
     })
   })
 })

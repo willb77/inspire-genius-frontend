@@ -73,48 +73,34 @@ export async function checkForUpdate(): Promise<boolean> {
 }
 
 /**
- * Caches that are content-addressed and therefore CANNOT be stale.
+ * Force the service worker to re-check for a new build. Called on every
+ * successful login.
  *
- * Vite emits build output with a content hash in the filename, so a given
- * URL maps to exactly one immutable body forever. Deleting these on login
- * cannot fix a staleness bug (there isn't one to fix) and does real harm:
- * since the 2026-08-17 precache reduction the app shell is the ONLY thing
- * precached, so a cleared asset cache means every chunk is re-fetched over
- * the network on the next navigation. That is a direct, measurable
- * regression in the exact "the app feels slow" symptom we are trying to
- * remove. Everything else — runtime/static/API responses, which are keyed
- * by unhashed URLs and CAN go stale — is cleared.
- */
-const IMMUTABLE_CACHES = ["ig-build-assets"]
-
-async function clearStaleableCaches(): Promise<string[]> {
-  if (typeof caches === "undefined") return []
-  const keys = await caches.keys()
-  const doomed = keys.filter((k) => !IMMUTABLE_CACHES.includes(k))
-  await Promise.all(doomed.map((k) => caches.delete(k)))
-  return doomed
-}
-
-/**
- * Force the service worker to re-check for a new build and drop any cache
- * that could serve a previous user's content. Called on every successful
- * login.
+ * Scope note: this deliberately does NOT clear any cache. Clearing on every
+ * login was in the original request and was withdrawn once measured — the
+ * build-asset cache is content-addressed (the hash is in the filename), so an
+ * entry can never be stale for its URL, and since the 2026-08-17 precache
+ * reduction the app shell is the only thing precached. Wiping it per sign-in
+ * would re-fetch the whole ~1.39 MB entry graph over the network and make the
+ * app measurably slower, which is the opposite of the intent. See
+ * docs/analysis/2026-09-01-latency-investigation.md.
  *
- * Why this is not simply `unregisterServiceWorkers() + clearAllCaches()`:
- * unregistering on every login means the next page load has no SW at all,
- * so the offline fallback and the runtime asset cache are both gone until
- * a fresh install completes. `registration.update()` gets the same
- * freshness guarantee while keeping the worker alive.
+ * Genuinely stale bundles are still handled — by `checkForUpdate()` above,
+ * which tears down caches only when /version.json reports a DIFFERENT build.
+ * That is a real staleness signal; "the user logged in" is not.
+ *
+ * Why not `unregisterServiceWorkers()`: unregistering on every login leaves
+ * the next page load with no worker at all, losing the offline fallback and
+ * the runtime cache until a fresh install completes. `registration.update()`
+ * gets the same freshness guarantee while keeping the worker alive.
  *
  * Returns a short report so callers/tests can assert what happened rather
  * than trusting a void promise.
  */
 export async function refreshServiceWorkerOnLogin(): Promise<{
   updated: boolean
-  clearedCaches: string[]
 }> {
   let updated = false
-  const clearedCaches = await clearStaleableCaches().catch(() => [] as string[])
 
   if ("serviceWorker" in navigator) {
     try {
@@ -134,5 +120,5 @@ export async function refreshServiceWorkerOnLogin(): Promise<{
     }
   }
 
-  return { updated, clearedCaches }
+  return { updated }
 }

@@ -193,10 +193,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (options?.message) toast.success(options.message);
       logAuditEvent({ action: "login", actor_email: resolvedEmail, actor_id: userId ?? undefined });
 
-      // Every login: make the service worker re-check for a new build and
-      // drop every cache that could still hold the PREVIOUS user's content.
-      // The content-addressed build-asset cache is deliberately kept — see
-      // refreshServiceWorkerOnLogin(). Never allowed to block sign-in.
+      // Every login: make the service worker re-check for a new build.
+      // No cache is cleared here — see refreshServiceWorkerOnLogin() for why
+      // clearing on login was withdrawn. Never allowed to block sign-in.
       await refreshServiceWorkerOnLogin().catch(() => undefined);
 
       // If a new bundle has been deployed since this tab was opened, reload
