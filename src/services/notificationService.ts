@@ -16,6 +16,23 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray
 }
 
+/** Raised when the deployment — not the browser — cannot deliver push. */
+export class PushUnavailableError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'PushUnavailableError'
+  }
+}
+
+/**
+ * Whether THIS DEPLOYMENT can deliver push, as distinct from whether the
+ * browser supports the API. Both must hold; they fail for different reasons
+ * and the user needs to be told which.
+ */
+export function isConfigured(): boolean {
+  return Boolean(import.meta.env.VITE_VAPID_PUBLIC_KEY)
+}
+
 /**
  * Check whether the browser supports push notifications.
  */
@@ -59,8 +76,13 @@ export async function subscribe(): Promise<PushSubscription | null> {
 
   const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
   if (!vapidPublicKey) {
-    console.warn('[notificationService] VITE_VAPID_PUBLIC_KEY is not set')
-    return null
+    // Throw, do not return null. Returning null left the caller unable to
+    // distinguish "the user declined" from "this deployment cannot do push
+    // at all", so the toggle silently sprang back with no explanation. The
+    // UI now reports the real reason.
+    throw new PushUnavailableError(
+      'Push notifications are not configured for this environment.',
+    )
   }
 
   const registration = await navigator.serviceWorker.ready

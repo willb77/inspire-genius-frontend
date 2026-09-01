@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import SearchBar from "@/components/shared/SearchBar";
 import AccountSettings from "@/components/settings/AccountSettings";
-import NotificationSettings from "@/components/settings/NotificationSettings";
 import { useMe } from "@/hooks/user/useMe";
 import { useChangePassword } from "@/hooks/user/useChangePassword";
 import { toast } from "sonner";
@@ -30,6 +29,18 @@ import SurveysSettingsCard from "@/components/settings/SurveysSettingsCard";
 export type SettingsVariant = "classic" | "v2";
 
 /**
+ * Which Settings surface is being rendered.
+ *
+ * All six role pages mount this same component, so a role check alone
+ * cannot distinguish "the super-admin's own Administration settings"
+ * from "the user Settings page, viewed by someone who happens to be a
+ * super-admin". Operator-only tiles need the latter distinction: a
+ * super-admin visiting /settings is looking at the USER surface and
+ * should see what a user sees.
+ */
+export type SettingsSurface = "role" | "administration";
+
+/**
  * Shared Settings surface (used by all 6 role pages).
  *
  * `variant="v2"` re-skins the page to the HomeV2 design system: the cream
@@ -44,15 +55,14 @@ export type SettingsVariant = "classic" | "v2";
  */
 export default function Settings({
   variant,
+  surface = "role",
 }: {
   variant?: SettingsVariant;
+  surface?: SettingsSurface;
 } = {}) {
   const isV2 = variant ? variant === "v2" : isNewUserSurfacesEnabled();
-  const [pushNotifications, setPushNotifications] = useState(true);
   const { user, markFullName } = useAuth();
   const role = user?.role;
-  const [updateNotifications, setUpdateNotifications] = useState(true);
-  const [marketingNotifications, setMarketingNotifications] = useState(false);
   const { data: meResp, isPending: meLoading } = useMe<{
     sub: string;
     groups: string[];
@@ -279,23 +289,22 @@ export default function Settings({
             <SurveysSettingsCard />
           </div>
         )}
+        {/* The second "Push Notifications" card was removed here (2026-09-01).
+            It rendered a Switch hard-coded `disabled={true}` plus two disabled
+            checkboxes, backed by three useState values nothing read and
+            nothing persisted — a control that could not be operated and would
+            not have done anything if it could. It also duplicated the title of
+            the real <NotificationPreferences> card below, so Settings showed
+            two "Push Notifications" sections, one of them permanently greyed
+            out. The working card is the one below. */}
 
-        {/* Notifications Settings Card */}
-        {role === ROLES.USER && (
-          <div data-tour="settings-notifications">
-            <NotificationSettings
-              pushNotifications={pushNotifications}
-              updateNotifications={updateNotifications}
-              marketingNotifications={marketingNotifications}
-              onPushNotificationsChange={setPushNotifications}
-              onUpdateNotificationsChange={setUpdateNotifications}
-              onMarketingNotificationsChange={setMarketingNotifications}
-            />
-          </div>
-        )}
-
-        {/* Agent Engine Routing (super-admin only) */}
-        {role === ROLES.SUPER_ADMIN && (
+        {/* Agent Engine Routing — Administration surface only.
+            The monolith is deprecated (2026-05-07) and production WS routing
+            cannot reach it, so this toggle is an operator diagnostic, not a
+            user preference. Gating on role alone was not enough: a super-admin
+            opening /settings, /manager/settings etc. still saw it, because
+            every role page mounts this same component. */}
+        {role === ROLES.SUPER_ADMIN && surface === "administration" && (
           <div data-tour="settings-agent-engine">
             <AgentEngineToggle />
           </div>

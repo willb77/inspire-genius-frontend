@@ -28,18 +28,26 @@ export default function PrivacySettings() {
   const handleExport = () => {
     if (!userId) return
     exportMutation.mutate(userId, {
-      onSuccess: (resp) => {
-        // Download as JSON file
-        const blob = new Blob([JSON.stringify(resp.data, null, 2)], {
-          type: "application/json",
-        })
-        const url = URL.createObjectURL(blob)
+      onSuccess: (archive) => {
+        // The server already built the ZIP; save its bytes verbatim. Do not
+        // re-serialise — re-encoding a binary body corrupts the archive.
+        const url = URL.createObjectURL(archive.blob)
         const a = document.createElement("a")
         a.href = url
-        a.download = `my-data-${new Date().toISOString().slice(0, 10)}.json`
+        a.download = archive.filename
         a.click()
         URL.revokeObjectURL(url)
-        toast.success("Your data has been downloaded.")
+        // An empty archive is a real answer ("we hold nothing"), but a
+        // zero-byte body is not — that is a failed build reported as success.
+        if (archive.blob.size === 0) {
+          toast.error("The export came back empty. Please try again.")
+          return
+        }
+        toast.success(
+          archive.notified
+            ? "Your data has been downloaded."
+            : "Your data has been downloaded. (The privacy team could not be notified automatically.)",
+        )
       },
       onError: (err) => {
         toast.error(
@@ -53,10 +61,21 @@ export default function PrivacySettings() {
   const handleDelete = () => {
     if (!userId) return
     deleteMutation.mutate(userId, {
-      onSuccess: () => {
-        toast.success(
-          "Your data has been deleted. You will be logged out.",
-        )
+      onSuccess: (resp) => {
+        // A 200 means the request was handled, not that every store was
+        // cleared. The server reports partial erasure via success/manifest;
+        // claiming "deleted" over a partial result would tell the user their
+        // data is gone when some of it is not.
+        if (resp?.success === false) {
+          const failed = Object.entries(resp.manifest?.stores ?? {})
+            .filter(([, v]) => v?.error)
+            .map(([k]) => k)
+          toast.error(
+            `Some data could not be deleted${failed.length ? `: ${failed.join(", ")}` : ""}. Support has been notified.`,
+          )
+          return
+        }
+        toast.success("Your data has been deleted. You will be logged out.")
         setTimeout(() => logout(), 2000)
       },
       onError: (err) => {

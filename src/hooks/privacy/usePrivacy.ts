@@ -7,7 +7,7 @@ import {
   getDeletionManifest,
   triggerRetentionSweep,
   type DeletionResponse,
-  type ExportResponse,
+  type ExportArchive,
   type DeletionRequestsResponse,
   type DeletionManifest,
   type RetentionSweepResponse,
@@ -24,7 +24,7 @@ export function useDeleteUserData() {
 }
 
 export function useExportUserData() {
-  return useMutation<ExportResponse, AxiosError, string>({
+  return useMutation<ExportArchive, AxiosError, string>({
     mutationFn: (userId) => exportUserData(userId),
   })
 }

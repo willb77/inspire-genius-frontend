@@ -23,7 +23,8 @@ import {
   getNextStep,
 } from "@/lib/storage";
 import { syncAuthToken } from "@/lib/axios";
-import { checkForUpdate } from "@/lib/buildVersion";
+import { checkForUpdate, refreshServiceWorkerOnLogin } from "@/lib/buildVersion";
+import { useIdleTimeout, clearIdleTracking } from "@/hooks/useIdleTimeout";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
 import { NEXT_STEPS, ROUTES } from "@/constants/routes";
@@ -191,6 +192,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setPendingVerification(false);
       if (options?.message) toast.success(options.message);
       logAuditEvent({ action: "login", actor_email: resolvedEmail, actor_id: userId ?? undefined });
+
+      // Every login: make the service worker re-check for a new build and
+      // drop every cache that could still hold the PREVIOUS user's content.
+      // The content-addressed build-asset cache is deliberately kept — see
+      // refreshServiceWorkerOnLogin(). Never allowed to block sign-in.
+      await refreshServiceWorkerOnLogin().catch(() => undefined);
 
       // If a new bundle has been deployed since this tab was opened, reload
       // before navigating so the user lands on the fresh code. Tokens were
@@ -528,8 +535,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setPendingVerification(false);
     logAuditEvent({ action: "logout", actor_email: email ?? "unknown" });
+    clearIdleTracking();
     navigate(ROUTES.LOGIN, { replace: true });
   }, [navigate, user?.email]);
+
+  // Idle sign-out. Tracking runs only while a session exists, so the login
+  // page never accumulates a deadline. The toast is raised BEFORE logout()
+  // because logout() navigates, and a toast queued after the navigation is
+  // dropped on some routes.
+  const handleIdleTimeout = useCallback(() => {
+    toast.info("You were signed out after 1 hour of inactivity.");
+    void logout();
+  }, [logout]);
+
+  useIdleTimeout(Boolean(user?.token), handleIdleTimeout);
 
   const markOnboardingCompleted = useCallback(async (): Promise<void> => {
     await setOnboardingFlag(true);

@@ -4,8 +4,7 @@ import {
   isSupported as checkSupported,
   subscribe as doSubscribe,
   unsubscribe as doUnsubscribe,
-  getSubscription,
-} from '@/services/notificationService'
+  getSubscription, PushUnavailableError, isConfigured } from '@/services/notificationService'
 
 type PermissionState = NotificationPermission | 'unsupported'
 
@@ -38,7 +37,14 @@ export function useNotifications() {
       setPermission(Notification.permission)
     } catch (err) {
       console.error('[useNotifications] subscribe failed:', err)
-      toast.error("Failed to enable push notifications. Please check browser permissions.")
+      // Distinguish "this deployment cannot do push" from "your browser
+      // blocked it" — telling someone to check their permissions when the
+      // server has no VAPID key sends them to fix the wrong thing.
+      toast.error(
+        err instanceof PushUnavailableError
+          ? err.message
+          : "Failed to enable push notifications. Please check browser permissions.",
+      )
     } finally {
       setLoading(false)
     }
@@ -60,6 +66,9 @@ export function useNotifications() {
 
   return {
     isSupported: supported,
+    /** False when the deployment has no VAPID key — a separate failure from
+     *  browser support, and one the user cannot fix themselves. */
+    isConfigured: isConfigured(),
     isSubscribed,
     permission,
     loading,

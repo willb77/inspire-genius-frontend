@@ -7,6 +7,7 @@ import { useNotifications } from '@/hooks/useNotifications'
 export function NotificationPreferences() {
   const {
     isSupported,
+    isConfigured,
     isSubscribed,
     permission,
     loading,
@@ -36,6 +37,26 @@ export function NotificationPreferences() {
           </CardTitle>
           <CardDescription>
             Push notifications are not supported in this browser.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    )
+  }
+
+  // Browser can do push, but this deployment has no VAPID key, so a toggle
+  // here could never deliver anything. Say so rather than presenting a
+  // control that silently fails.
+  if (!isConfigured) {
+    return (
+      <Card className="shadow-none sm:shadow-sm">
+        <CardHeader className="text-left">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <BellOff className="h-5 w-5 text-muted-foreground" />
+            Push Notifications
+          </CardTitle>
+          <CardDescription>
+            Push notifications are not yet switched on for this environment.
+            Your browser supports them — the platform is not sending them yet.
           </CardDescription>
         </CardHeader>
       </Card>

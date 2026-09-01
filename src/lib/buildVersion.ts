@@ -71,3 +71,68 @@ export async function checkForUpdate(): Promise<boolean> {
     return false
   }
 }
+
+/**
+ * Caches that are content-addressed and therefore CANNOT be stale.
+ *
+ * Vite emits build output with a content hash in the filename, so a given
+ * URL maps to exactly one immutable body forever. Deleting these on login
+ * cannot fix a staleness bug (there isn't one to fix) and does real harm:
+ * since the 2026-08-17 precache reduction the app shell is the ONLY thing
+ * precached, so a cleared asset cache means every chunk is re-fetched over
+ * the network on the next navigation. That is a direct, measurable
+ * regression in the exact "the app feels slow" symptom we are trying to
+ * remove. Everything else — runtime/static/API responses, which are keyed
+ * by unhashed URLs and CAN go stale — is cleared.
+ */
+const IMMUTABLE_CACHES = ["ig-build-assets"]
+
+async function clearStaleableCaches(): Promise<string[]> {
+  if (typeof caches === "undefined") return []
+  const keys = await caches.keys()
+  const doomed = keys.filter((k) => !IMMUTABLE_CACHES.includes(k))
+  await Promise.all(doomed.map((k) => caches.delete(k)))
+  return doomed
+}
+
+/**
+ * Force the service worker to re-check for a new build and drop any cache
+ * that could serve a previous user's content. Called on every successful
+ * login.
+ *
+ * Why this is not simply `unregisterServiceWorkers() + clearAllCaches()`:
+ * unregistering on every login means the next page load has no SW at all,
+ * so the offline fallback and the runtime asset cache are both gone until
+ * a fresh install completes. `registration.update()` gets the same
+ * freshness guarantee while keeping the worker alive.
+ *
+ * Returns a short report so callers/tests can assert what happened rather
+ * than trusting a void promise.
+ */
+export async function refreshServiceWorkerOnLogin(): Promise<{
+  updated: boolean
+  clearedCaches: string[]
+}> {
+  let updated = false
+  const clearedCaches = await clearStaleableCaches().catch(() => [] as string[])
+
+  if ("serviceWorker" in navigator) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(
+        regs.map(async (r) => {
+          // update() re-fetches the SW script bypassing the HTTP cache; if the
+          // bytes differ the new worker installs and (skipWaiting/clientsClaim
+          // are both set in vite.config.ts) takes over without a prompt.
+          await r.update()
+          updated = true
+          if (r.waiting) r.waiting.postMessage({ type: "SKIP_WAITING" })
+        }),
+      )
+    } catch {
+      // A blocked/unsupported SW must never block sign-in.
+    }
+  }
+
+  return { updated, clearedCaches }
+}

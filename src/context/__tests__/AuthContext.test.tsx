@@ -81,7 +81,16 @@ jest.mock("@/hooks/auth", () => ({
 }));
 
 jest.mock("sonner", () => ({
-  toast: { success: jest.fn(), error: jest.fn() },
+  // `info`/`warning`/`dismiss` are used by the idle-session timeout the
+  // provider now installs. A partial mock here fails inside an effect
+  // cleanup, which surfaces as eight unrelated AuthContext failures.
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    warning: jest.fn(),
+    dismiss: jest.fn(),
+  },
 }));
 
 jest.mock("@/services/audit/audit.service", () => ({
