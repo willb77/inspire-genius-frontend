@@ -149,6 +149,25 @@ export type SessionTurnRow = {
   n_unsupported: number
   canon_violations: string[]
   preview: string
+  /** Whether the model graded this turn (session scoring with the model on). */
+  llm_used?: boolean
+  /** Why the model did not grade it, or a caveat when it did (e.g. reply truncated). */
+  llm_note?: string | null
+}
+
+/** How much of a session the model pass covered before the gateway budget ran out. */
+export type SessionLlmSummary = {
+  requested: boolean
+  used: boolean
+  model?: string | null
+  turns_graded: number
+  turns_not_finished: number
+  turns_failed: number
+  budget_seconds: number
+  elapsed_seconds: number | null
+  input_tokens?: number
+  output_tokens?: number
+  reason?: string
 }
 
 export type Aggregate = {
@@ -172,6 +191,7 @@ export type SessionScoreResult = {
   subject: SubjectSummary | null
   aggregate: Aggregate
   turns: SessionTurnRow[]
+  llm?: SessionLlmSummary
 }
 
 export type RubricCriterion = {

@@ -169,6 +169,34 @@ describe("PrismAccuracyScorer — people first", () => {
     expect(mutate).toHaveBeenCalledWith({ turn_id: "t-9", use_llm: false }, expect.anything())
   })
 
+  it("session results say how far the model pass got and which turns it missed", async () => {
+    sessionData = {
+      session_id: "s-1", subject: SUBJECT,
+      aggregate: { n_turns: 2, n_scored: 2, n_ungrounded: 0, n_unscorable_other: 0, mean_pas: 80, median_pas: 80, min_pas: 70, pass_rate: 0.5, grades: { A: 0, B: 1, C: 1, D: 0, F: 0 }, total_claims: 4, total_inverted: 0, total_unsupported: 0, total_canon_violations: 0 },
+      turns: [
+        { turn_id: "t-1", agent_name: "Aura", created_at: "2026-09-01T00:00:00Z", scorable: true, reason: "", pas: 90, grade: "A", caps_applied: [], n_claims: 2, n_inverted: 0, n_unsupported: 0, canon_violations: [], preview: "One", llm_used: true, llm_note: null },
+        { turn_id: "t-2", agent_name: "Aura", created_at: "2026-09-01T00:00:10Z", scorable: true, reason: "", pas: 70, grade: "C", caps_applied: [], n_claims: 2, n_inverted: 0, n_unsupported: 0, canon_violations: [], preview: "Two", llm_used: false, llm_note: "the model did not answer within the 22s budget the gateway allows — lexical extraction only, interpretive fidelity not scored" },
+      ],
+      llm: { requested: true, used: true, model: "claude-haiku-4-5-20251001", turns_graded: 1, turns_not_finished: 1, turns_failed: 0, budget_seconds: 22, elapsed_seconds: 22.1 },
+    }
+    render(<PrismAccuracyScorer />)
+    expect(screen.getByTestId("model-coverage")).toHaveTextContent("graded interpretation on 1 of 2 turns")
+    expect(screen.getByTestId("model-coverage")).toHaveTextContent("1 did not finish within the 22-second budget")
+    expect(screen.getByText(/Model: the model did not answer within the 22s budget/)).toBeInTheDocument()
+  })
+
+  it("session results stay silent about the model when it was not asked for", () => {
+    sessionData = {
+      session_id: "s-1", subject: SUBJECT,
+      aggregate: { n_turns: 1, n_scored: 1, n_ungrounded: 0, n_unscorable_other: 0, mean_pas: 90, median_pas: 90, min_pas: 90, pass_rate: 1, grades: { A: 1, B: 0, C: 0, D: 0, F: 0 }, total_claims: 2, total_inverted: 0, total_unsupported: 0, total_canon_violations: 0 },
+      turns: [{ turn_id: "t-1", agent_name: "Aura", created_at: "2026-09-01T00:00:00Z", scorable: true, reason: "", pas: 90, grade: "A", caps_applied: [], n_claims: 2, n_inverted: 0, n_unsupported: 0, canon_violations: [], preview: "One", llm_used: false, llm_note: null }],
+      llm: { requested: false, used: false, turns_graded: 0, turns_not_finished: 0, turns_failed: 0, budget_seconds: 22, elapsed_seconds: null },
+    }
+    render(<PrismAccuracyScorer />)
+    expect(screen.queryByTestId("model-coverage")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Model:/)).not.toBeInTheDocument()
+  })
+
   it("pasted-text flow needs a person and text, then sends both", async () => {
     render(<PrismAccuracyScorer />)
     await userEvent.click(screen.getByRole("tab", { name: /Score pasted text/i }))
