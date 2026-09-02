@@ -1,5 +1,6 @@
 import { agentApi } from "@/lib/agentApi"
 import type {
+  ConversationRow,
   Rubric,
   ScoreRequest,
   ScoreResult,
@@ -24,8 +25,25 @@ export async function fetchRubric(): Promise<Rubric> {
   return data.data
 }
 
-export async function listSubjects(limit = 50): Promise<SubjectRow[]> {
-  const { data } = await agentApi.get<Envelope<SubjectRow[]>>(`${BASE}/subjects`, { params: { limit } })
+export async function listSubjects(limit = 50, search?: string): Promise<SubjectRow[]> {
+  const { data } = await agentApi.get<Envelope<SubjectRow[]>>(`${BASE}/subjects`, {
+    params: { limit, search: search?.trim() || undefined },
+  })
+  return data.data
+}
+
+export async function listConversations(params: {
+  user_id?: string
+  search?: string
+  limit?: number
+} = {}): Promise<ConversationRow[]> {
+  const { data } = await agentApi.get<Envelope<ConversationRow[]>>(`${BASE}/conversations`, {
+    params: {
+      user_id: params.user_id || undefined,
+      search: params.search?.trim() || undefined,
+      limit: params.limit ?? 30,
+    },
+  })
   return data.data
 }
 

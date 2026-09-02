@@ -1,6 +1,16 @@
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
-import { AlertTriangle, CheckCircle2, Loader2, ShieldAlert, Target, XCircle } from "lucide-react"
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  MessageSquare,
+  Search,
+  ShieldAlert,
+  Target,
+  UserRound,
+  XCircle,
+} from "lucide-react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,18 +24,20 @@ import { cn } from "@/lib/utils"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import {
   usePrismAccuracyRubric,
+  usePrismConversations,
   usePrismSubject,
   usePrismSubjects,
   useScoreResponse,
   useScoreSession,
 } from "@/hooks/super-admin/usePrismAccuracy"
-import { useConversation, useConversations } from "@/hooks/super-admin/explainability/useExplainability"
 import type {
   AccuracyReport,
   ClaimVerdict,
+  ConversationRow,
   ScoreResult,
   SessionScoreResult,
   SessionTurnRow,
+  SubjectRow,
   SubjectSummary,
   Verdict,
 } from "@/types/prism-accuracy"
@@ -34,10 +46,11 @@ import type {
  * PRISM Accuracy Scorer — how faithfully an IG response describes a real
  * person's PRISM data.
  *
- * The page is a thin front on `/v1/agents/prism-accuracy`. Claims are found
- * in the response and each is checked arithmetically against the scores on
- * file; the model, when used, only extracts claims and grades interpretation
- * and never sees the stored values. Read the claim table before the number.
+ * People-first: you find a person by name or email, pick one of their
+ * conversations by what it was about, and score it. Ids never lead; they
+ * appear only as small print. The report shows every claim IG made and
+ * whether the person's stored scores back it up. Read the claims before the
+ * number.
  */
 export default function PrismAccuracyScorer() {
   return (
@@ -47,24 +60,24 @@ export default function PrismAccuracyScorer() {
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
             <Target className="h-6 w-6" /> PRISM Accuracy Scorer
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Scores an IG response against the person's PRISM scores on file. Every claim the
-            response makes about a scale or colour is verified against the stored value; the
-            composite is a summary of those verdicts, not an opinion.
+          <p className="text-muted-foreground mt-1 max-w-3xl text-sm">
+            Checks what IG told someone about their PRISM profile against the scores actually on
+            file for that person. Find the person, pick a conversation, and read the verdict on
+            each claim.
           </p>
         </div>
 
-        <Tabs defaultValue="response">
+        <Tabs defaultValue="conversation">
           <TabsList>
-            <TabsTrigger value="response">Score a response</TabsTrigger>
-            <TabsTrigger value="session">Score a session</TabsTrigger>
+            <TabsTrigger value="conversation">Score a conversation</TabsTrigger>
+            <TabsTrigger value="paste">Score pasted text</TabsTrigger>
             <TabsTrigger value="rubric">Rubric &amp; how to use</TabsTrigger>
           </TabsList>
-          <TabsContent value="response" className="mt-4">
-            <ScoreResponsePanel />
+          <TabsContent value="conversation" className="mt-4">
+            <ScoreConversationPanel />
           </TabsContent>
-          <TabsContent value="session" className="mt-4">
-            <ScoreSessionPanel />
+          <TabsContent value="paste" className="mt-4">
+            <ScorePastedPanel />
           </TabsContent>
           <TabsContent value="rubric" className="mt-4">
             <RubricPanel />
@@ -75,51 +88,105 @@ export default function PrismAccuracyScorer() {
   )
 }
 
-// ─── Subject picker ──────────────────────────────────────────────────
+// ─── Shared: step heading, person finder, profile card ───────────────
 
-function SubjectPicker({
+function StepHeading({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <p className="text-sm font-semibold">
+      <span className="bg-primary text-primary-foreground mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs">
+        {n}
+      </span>
+      {children}
+    </p>
+  )
+}
+
+function personLabel(p: { name?: string | null; email?: string | null; user_id: string }): string {
+  return p.name || p.email || `user ${p.user_id.slice(0, 8)}…`
+}
+
+function when(iso: string): string {
+  const d = new Date(iso)
+  return isNaN(d.getTime()) ? iso.slice(0, 16) : d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+}
+
+/**
+ * Find a person by name or email among those who have PRISM data on file.
+ * The list is the search result; the selection is shown as a card with what
+ * the scorer will verify against.
+ */
+function PersonFinder({
   value,
   onChange,
 }: {
-  value: string
-  onChange: (v: string) => void
+  value: SubjectRow | null
+  onChange: (p: SubjectRow | null) => void
 }) {
-  const subjects = usePrismSubjects(100)
-  const subject = usePrismSubject(value.trim() || undefined)
+  const [search, setSearch] = useState("")
+  const people = usePrismSubjects(100, search)
+  const profile = usePrismSubject(value?.user_id)
+
+  if (value) {
+    return (
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="gap-1 text-sm">
+            <UserRound className="h-3.5 w-3.5" /> {personLabel(value)}
+            {value.email && value.name && <span className="text-muted-foreground font-normal">· {value.email}</span>}
+          </Badge>
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>
+            Change person
+          </Button>
+        </div>
+        {profile.isLoading && <p className="text-muted-foreground text-xs">Reading their profile…</p>}
+        {profile.isError && (
+          <p className="text-xs text-red-600">Could not read this person's PRISM profile.</p>
+        )}
+        {profile.data && <SubjectCard subject={profile.data} />}
+      </div>
+    )
+  }
+
+  const list = people.data ?? []
   return (
     <div className="space-y-2">
-      <Label htmlFor="subject-user-id">Subject user id</Label>
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="relative">
+        <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
         <Input
-          id="subject-user-id"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="The user whose PRISM data the response is about"
-          className="font-mono text-sm"
+          aria-label="Find a person by name or email"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Type a name or email…"
+          className="pl-8"
+          autoComplete="off"
         />
-        <select
-          aria-label="Users with a PRISM assessment"
-          className="border-input bg-background h-9 rounded-md border px-2 text-sm"
-          value=""
-          onChange={(e) => e.target.value && onChange(e.target.value)}
-        >
-          <option value="">
-            {subjects.isLoading ? "Loading users…" : `Pick from ${subjects.data?.length ?? 0} with PRISM data`}
-          </option>
-          {(subjects.data ?? []).map((s) => (
-            <option key={s.user_id} value={s.user_id}>
-              {s.user_id} · {s.scores} scores
-            </option>
-          ))}
-        </select>
       </div>
-      {value.trim() && subject.isLoading && (
-        <p className="text-muted-foreground text-xs">Reading the profile…</p>
-      )}
-      {value.trim() && subject.isError && (
-        <p className="text-xs text-red-600">No PRISM assessment on file for this user.</p>
-      )}
-      {subject.data && <SubjectCard subject={subject.data} />}
+      <p className="text-muted-foreground text-xs">
+        {people.isLoading
+          ? "Loading people with PRISM data…"
+          : `${list.length} ${list.length === 1 ? "person has" : "people have"} PRISM scores on file${search.trim() ? " matching your search" : ""}. Only people with a PRISM assessment can be scored.`}
+      </p>
+      <div className="max-h-72 divide-y overflow-y-auto rounded-md border" data-testid="person-list">
+        {list.map((p) => (
+          <button
+            key={p.user_id}
+            type="button"
+            onClick={() => onChange(p)}
+            className="hover:bg-muted/60 flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm"
+          >
+            <span>
+              <span className="font-medium">{personLabel(p)}</span>
+              {p.email && p.name && <span className="text-muted-foreground"> · {p.email}</span>}
+            </span>
+            <span className="text-muted-foreground shrink-0 text-xs">{p.scores} scores on file</span>
+          </button>
+        ))}
+        {!people.isLoading && list.length === 0 && (
+          <p className="text-muted-foreground px-3 py-4 text-sm">
+            No one matches. Names come from the user's profile; try their email instead.
+          </p>
+        )}
+      </div>
     </div>
   )
 }
@@ -133,6 +200,10 @@ function SubjectCard({ subject }: { subject: SubjectSummary }) {
       )}
       data-testid="subject-card"
     >
+      <p className="mb-1 font-medium">
+        {personLabel(subject)}
+        {subject.email && subject.name && <span className="text-muted-foreground font-normal"> · {subject.email}</span>}
+      </p>
       {subject.conflicted && (
         <p className="mb-2 flex items-center gap-2 font-medium text-red-700 dark:text-red-300">
           <ShieldAlert className="h-4 w-4" /> Conflicted profile — two assessments disagree on{" "}
@@ -141,7 +212,7 @@ function SubjectCard({ subject }: { subject: SubjectSummary }) {
       )}
       <div className="flex flex-wrap gap-x-6 gap-y-1">
         <span>
-          <span className="text-muted-foreground">Scales on file</span>{" "}
+          <span className="text-muted-foreground">PRISM scales on file</span>{" "}
           <strong>{subject.scales_on_file ?? subject.coverage}</strong> / 88
         </span>
         {subject.colours && (
@@ -159,212 +230,232 @@ function SubjectCard({ subject }: { subject: SubjectSummary }) {
       </div>
       {subject.salient.length > 0 && (
         <p className="text-muted-foreground mt-2 text-xs">
-          Defining scales:{" "}
+          What defines them:{" "}
           {subject.salient.map((s) => `${s.label} ${s.value} (${s.band})`).join(" · ")}
         </p>
       )}
+      <p className="text-muted-foreground mt-1 text-[10px]">id {subject.user_id}</p>
     </div>
   )
 }
 
-// ─── Score one response ──────────────────────────────────────────────
+// ─── Score a conversation ────────────────────────────────────────────
 
-function ScoreResponsePanel() {
-  const [subjectId, setSubjectId] = useState("")
-  const [mode, setMode] = useState<"paste" | "turn">("paste")
+function ConversationCard({
+  c,
+  selected,
+  onSelect,
+}: {
+  c: ConversationRow
+  selected: boolean
+  onSelect: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-label={`Select conversation ${c.session_id}`}
+      className={cn(
+        "w-full rounded-md border p-3 text-left text-sm transition-colors",
+        selected ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+      )}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="font-medium">{personLabel(c)}</span>
+        <span className="text-muted-foreground text-xs">{when(c.last_seen_at)}</span>
+      </div>
+      <p className="mt-1 line-clamp-2 italic">
+        {c.opening_message ? `“${c.opening_message}”` : "(no opening message stored)"}
+      </p>
+      <p className="text-muted-foreground mt-1 text-xs">
+        {c.agents.length ? c.agents.join(", ") : "IG"} · {c.ig_turns} {c.ig_turns === 1 ? "reply" : "replies"} from IG
+      </p>
+    </button>
+  )
+}
+
+function ScoreConversationPanel() {
+  const [person, setPerson] = useState<SubjectRow | null>(null)
+  const [search, setSearch] = useState("")
+  const [selected, setSelected] = useState<ConversationRow | null>(null)
+  const [useLlm, setUseLlm] = useState(false)
+  const conversations = usePrismConversations({ user_id: person?.user_id, search, limit: 30 })
+  const score = useScoreSession()
+
+  const waitingFor = score.isPending
+    ? "Scoring every IG reply in the conversation…"
+    : !selected
+      ? "Pick a conversation above."
+      : ""
+
+  function run() {
+    if (!selected) return
+    score.mutate(
+      { session_id: selected.session_id, use_llm: useLlm, limit: 25 },
+      { onError: (err) => toast.error(apiErrorMessage(err, "Could not score the conversation")) },
+    )
+  }
+
+  const list = conversations.data ?? []
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Score a conversation</CardTitle>
+          <CardDescription>
+            Every reply IG gave in the conversation is checked against the person's PRISM scores.
+            You get one score per reply, a summary, and a claim-by-claim table for any reply you
+            click.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <StepHeading n={1}>Who is it about? (optional — narrows the list)</StepHeading>
+            <PersonFinder value={person} onChange={(p) => { setPerson(p); setSelected(null) }} />
+          </div>
+
+          <div className="space-y-2">
+            <StepHeading n={2}>Pick the conversation</StepHeading>
+            <div className="relative">
+              <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
+              <Input
+                aria-label="Search conversations"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name, email, or words from the opening message…"
+                className="pl-8"
+                autoComplete="off"
+              />
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {conversations.isLoading
+                ? "Loading conversations…"
+                : `${list.length} conversation${list.length === 1 ? "" : "s"}${person ? ` with ${personLabel(person)}` : " with people who have PRISM data"}, newest first.`}
+            </p>
+            <div className="grid gap-2 md:grid-cols-2" data-testid="conversation-list">
+              {list.map((c) => (
+                <ConversationCard
+                  key={c.session_id}
+                  c={c}
+                  selected={selected?.session_id === c.session_id}
+                  onSelect={() => setSelected(c)}
+                />
+              ))}
+            </div>
+            {!conversations.isLoading && list.length === 0 && (
+              <p className="text-muted-foreground flex items-center gap-2 text-sm">
+                <MessageSquare className="h-4 w-4" /> No conversations found. Only people with a
+                PRISM assessment are listed.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <StepHeading n={3}>Score it</StepHeading>
+            <div className="flex flex-wrap items-center gap-4">
+              <Button onClick={run} disabled={!selected || score.isPending}>
+                {score.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Target className="mr-2 h-4 w-4" />}
+                Score this conversation
+              </Button>
+              <div className="flex items-center gap-2">
+                <Switch id="session-llm" checked={useLlm} onCheckedChange={setUseLlm} />
+                <Label htmlFor="session-llm" className="text-xs">
+                  Also grade interpretation with the model (slower)
+                </Label>
+              </div>
+            </div>
+            {waitingFor && (
+              <p className="text-muted-foreground text-xs" data-testid="waiting-for">
+                {waitingFor}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {score.data && <SessionResultView result={score.data} />}
+    </div>
+  )
+}
+
+// ─── Score pasted text ───────────────────────────────────────────────
+
+function ScorePastedPanel() {
+  const [person, setPerson] = useState<SubjectRow | null>(null)
   const [responseText, setResponseText] = useState("")
   const [promptText, setPromptText] = useState("")
-  const [sessionId, setSessionId] = useState("")
-  const [turnId, setTurnId] = useState("")
   const [useLlm, setUseLlm] = useState(true)
   const score = useScoreResponse()
 
-  const conversations = useConversations({ user_id: subjectId.trim() || undefined, limit: 25 })
-  const conversation = useConversation(mode === "turn" && sessionId ? sessionId : undefined)
-  const assistantTurns = useMemo(
-    () => (conversation.data?.turns ?? []).filter((t) => t.role === "assistant"),
-    [conversation.data],
-  )
-
-  const canScore =
-    !score.isPending &&
-    (mode === "paste" ? !!subjectId.trim() && !!responseText.trim() : !!turnId)
-
-  // Say what the grey button is waiting for. A disabled control with no
-  // reason reads as broken.
+  const canScore = !score.isPending && !!person && !!responseText.trim()
   const waitingFor = score.isPending
     ? "Scoring…"
-    : mode === "paste"
-      ? !subjectId.trim()
-        ? "Choose the person first (step 1)."
-        : !responseText.trim()
-          ? "Paste the response to score (step 2)."
-          : ""
-      : !sessionId
-        ? "Pick a conversation (step 2)."
-        : !turnId
-          ? "Click one of IG's turns in that conversation (step 2)."
-          : ""
+    : !person
+      ? "Choose the person first (step 1)."
+      : !responseText.trim()
+        ? "Paste what IG said (step 2)."
+        : ""
 
   function run() {
-    const body =
-      mode === "paste"
-        ? {
-            subject_user_id: subjectId.trim(),
-            response_text: responseText,
-            prompt_text: promptText.trim() || undefined,
-            use_llm: useLlm,
-          }
-        : { turn_id: turnId, subject_user_id: subjectId.trim() || undefined, use_llm: useLlm }
-    score.mutate(body, {
-      onError: (err) => toast.error(apiErrorMessage(err, "Could not score the response")),
-    })
+    if (!person) return
+    score.mutate(
+      {
+        subject_user_id: person.user_id,
+        response_text: responseText,
+        prompt_text: promptText.trim() || undefined,
+        use_llm: useLlm,
+      },
+      { onError: (err) => toast.error(apiErrorMessage(err, "Could not score the response")) },
+    )
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Score one response, in three steps</CardTitle>
+          <CardTitle className="text-base">Score pasted text</CardTitle>
           <CardDescription>
-            Who the response is about, what IG said, then Score. The report on the right shows
-            every claim IG made and whether the person's PRISM scores back it up.
+            For text that is not in chat history: a profile write-up, a coaching summary, a draft
+            reply. Choose the person it is about, paste it, score.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-6">
           <div className="space-y-2">
-            <p className="text-sm font-semibold">
-              <span className="bg-primary text-primary-foreground mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs">1</span>
-              Who is the response about?
-            </p>
-            <SubjectPicker value={subjectId} onChange={setSubjectId} />
+            <StepHeading n={1}>Who is it about?</StepHeading>
+            <PersonFinder value={person} onChange={setPerson} />
+          </div>
+
+          <div className="space-y-3">
+            <StepHeading n={2}>What did IG say?</StepHeading>
+            <div className="space-y-2">
+              <Label htmlFor="response-text">IG's text</Label>
+              <Textarea
+                id="response-text"
+                rows={8}
+                value={responseText}
+                onChange={(e) => setResponseText(e.target.value)}
+                placeholder="Paste what IG wrote about this person…"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="prompt-text">What the person asked (optional, gives the judge context)</Label>
+              <Textarea
+                id="prompt-text"
+                rows={2}
+                value={promptText}
+                onChange={(e) => setPromptText(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch id="use-llm" checked={useLlm} onCheckedChange={setUseLlm} />
+              <Label htmlFor="use-llm" className="text-xs">
+                Also grade interpretation with the model
+              </Label>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-semibold">
-              <span className="bg-primary text-primary-foreground mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs">2</span>
-              What did IG say?
-            </p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant={mode === "paste" ? "default" : "outline"}
-                onClick={() => setMode("paste")}
-              >
-                Paste a response
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={mode === "turn" ? "default" : "outline"}
-                onClick={() => setMode("turn")}
-              >
-                Pick a turn from their chat history
-              </Button>
-            </div>
-            <p className="text-muted-foreground text-xs">
-              {mode === "paste"
-                ? "Paste any text IG produced about this person: a chat reply, a profile write-up, a coaching summary."
-                : "Choose a conversation, then click one of IG's own turns. The person is taken from the turn if step 1 is empty."}
-            </p>
-          </div>
-
-          {mode === "paste" ? (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="response-text">IG response</Label>
-                <Textarea
-                  id="response-text"
-                  rows={8}
-                  value={responseText}
-                  onChange={(e) => setResponseText(e.target.value)}
-                  placeholder="The response IG gave about this person…"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="prompt-text">User message (optional, gives the judge context)</Label>
-                <Textarea
-                  id="prompt-text"
-                  rows={2}
-                  value={promptText}
-                  onChange={(e) => setPromptText(e.target.value)}
-                />
-              </div>
-            </>
-          ) : (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="session-select">Conversation</Label>
-                <select
-                  id="session-select"
-                  className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
-                  value={sessionId}
-                  onChange={(e) => {
-                    setSessionId(e.target.value)
-                    setTurnId("")
-                  }}
-                >
-                  <option value="">
-                    {conversations.isLoading
-                      ? "Loading…"
-                      : `${conversations.data?.data.length ?? 0} conversations${subjectId.trim() ? " for this user" : ""}`}
-                  </option>
-                  {(conversations.data?.data ?? []).map((c) => (
-                    <option key={c.session_id} value={c.session_id}>
-                      {c.last_seen_at.slice(0, 16)} · {c.user_email ?? c.user_id} ·{" "}
-                      {c.agents_involved.map((a) => a.name).join(", ") || "—"} · {c.message_count} msgs
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {sessionId && (
-                <div className="space-y-2">
-                  <Label>Assistant turn</Label>
-                  {conversation.isLoading && (
-                    <p className="text-muted-foreground text-xs">Loading turns…</p>
-                  )}
-                  <div className="max-h-64 space-y-1 overflow-y-auto">
-                    {assistantTurns.map((t) => (
-                      <button
-                        key={t.turn_id}
-                        type="button"
-                        onClick={() => setTurnId(t.turn_id)}
-                        className={cn(
-                          "w-full rounded-md border p-2 text-left text-xs",
-                          turnId === t.turn_id ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-                        )}
-                      >
-                        <span className="text-muted-foreground">
-                          {t.agent_name ?? "IG"} · {t.created_at.slice(0, 16)}
-                        </span>
-                        <p className="mt-1 line-clamp-2">{t.content}</p>
-                      </button>
-                    ))}
-                    {sessionId && !conversation.isLoading && assistantTurns.length === 0 && (
-                      <p className="text-muted-foreground text-xs">No assistant turns in this session.</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div>
-              <Label htmlFor="use-llm">Refine with the model</Label>
-              <p className="text-muted-foreground text-xs">
-                Model extraction plus interpretive fidelity. Off = lexical extraction only.
-              </p>
-            </div>
-            <Switch id="use-llm" checked={useLlm} onCheckedChange={setUseLlm} />
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm font-semibold">
-              <span className="bg-primary text-primary-foreground mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs">3</span>
-              Score it
-            </p>
+            <StepHeading n={3}>Score it</StepHeading>
             <Button onClick={run} disabled={!canScore}>
               {score.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Target className="mr-2 h-4 w-4" />}
               Score
@@ -378,28 +469,15 @@ function ScoreResponsePanel() {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        {score.data ? (
+      {score.data && (
+        <div className="space-y-4">
           <ResultView result={score.data} />
-        ) : (
-          <Card>
-            <CardContent className="text-muted-foreground space-y-2 p-6 text-sm">
-              <p className="text-foreground font-medium">What you will get</p>
-              <p>
-                A score out of 100 with a grade, one sentence saying why, the standard metrics, and
-                a table with one row per claim IG made: the quote, what it claimed, what the
-                person's PRISM file actually says, and the verdict.
-              </p>
-              <p>
-                Read the table before the number. The number is a summary of the table.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
+
 
 // ─── Result rendering ────────────────────────────────────────────────
 
@@ -633,71 +711,8 @@ function ClaimsTable({ verdicts }: { verdicts: ClaimVerdict[] }) {
   )
 }
 
-// ─── Score a session ─────────────────────────────────────────────────
+// ─── Session results ─────────────────────────────────────────────────
 
-function ScoreSessionPanel() {
-  const [sessionId, setSessionId] = useState("")
-  const [useLlm, setUseLlm] = useState(false)
-  const conversations = useConversations({ limit: 25 })
-  const score = useScoreSession()
-
-  function run() {
-    score.mutate(
-      { session_id: sessionId.trim(), use_llm: useLlm, limit: 25 },
-      { onError: (err) => toast.error(apiErrorMessage(err, "Could not score the session")) },
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Every assistant turn in one session</CardTitle>
-          <CardDescription>
-            The standard aggregate: mean and median score, pass rate at 80, grade distribution,
-            and how many turns were ungrounded. Lexical extraction by default so it fits the
-            gateway's time limit.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              aria-label="Session id"
-              value={sessionId}
-              onChange={(e) => setSessionId(e.target.value)}
-              placeholder="Session id"
-              className="font-mono text-sm"
-            />
-            <select
-              aria-label="Recent conversations"
-              className="border-input bg-background h-9 rounded-md border px-2 text-sm"
-              value=""
-              onChange={(e) => e.target.value && setSessionId(e.target.value)}
-            >
-              <option value="">Recent conversations</option>
-              {(conversations.data?.data ?? []).map((c) => (
-                <option key={c.session_id} value={c.session_id}>
-                  {c.last_seen_at.slice(0, 16)} · {c.user_email ?? c.user_id} · {c.message_count} msgs
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-3">
-            <Switch id="session-llm" checked={useLlm} onCheckedChange={setUseLlm} />
-            <Label htmlFor="session-llm">Refine with the model (slower)</Label>
-          </div>
-          <Button onClick={run} disabled={!sessionId.trim() || score.isPending}>
-            {score.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Score session
-          </Button>
-        </CardContent>
-      </Card>
-      {score.data && <SessionResultView result={score.data} />}
-    </div>
-  )
-}
-
-/** What the flags mean, as a sentence, for one turn in the session table. */
 function turnFlagsInWords(t: SessionTurnRow): string {
   if (!t.scorable) return t.reason
   const bits: string[] = []
@@ -763,7 +778,9 @@ function SessionResultView({ result }: { result: SessionScoreResult }) {
       {result.subject && <SubjectCard subject={result.subject} />}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">What this conversation scored</CardTitle>
+          <CardTitle className="text-sm">
+            What this conversation scored{result.subject ? ` — ${personLabel(result.subject)}` : ""}
+          </CardTitle>
           <CardDescription data-testid="session-summary">{summary}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -862,6 +879,13 @@ function RubricPanel() {
             {r.name} <span className="text-muted-foreground text-xs">v{r.version}</span>
           </CardTitle>
           <CardDescription>{r.purpose}</CardDescription>
+          {r.source && (
+            <p className="text-muted-foreground text-xs" data-testid="rubric-source">
+              Source of truth for the eight behaviours and four colours: <em>{r.source.document}</em>{" "}
+              (verbatim extraction, content sha {r.source.content_sha256.slice(0, 12)}). Not covered by it:{" "}
+              {r.source.not_covered}
+            </p>
+          )}
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-sm">

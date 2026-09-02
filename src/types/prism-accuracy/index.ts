@@ -80,6 +80,8 @@ export type SubjectSalient = { key: string; label: string; group: string; value:
 
 export type SubjectSummary = {
   user_id: string
+  name?: string | null
+  email?: string | null
   coverage: number
   scales_on_file?: number
   missing?: number
@@ -185,6 +187,7 @@ export type Rubric = {
   name: string
   version: string
   purpose: string
+  source?: { document: string; content_sha256: string; applies_to: string; not_covered: string }
   criteria: RubricCriterion[]
   bands: { scheme: "guide" | "rubric"; low: number; high: number; label: BandLabel; meaning: string }[]
   band_schemes?: Record<"guide" | "rubric", string>
@@ -196,4 +199,25 @@ export type Rubric = {
   metrics: Record<string, string>
 }
 
-export type SubjectRow = { user_id: string; assessments: number; scores: number; latest: string | null }
+export type SubjectRow = {
+  user_id: string
+  name: string | null
+  email: string | null
+  assessments: number
+  scores: number
+  latest: string | null
+}
+
+/** One conversation worth scoring, as the page lists it. */
+export type ConversationRow = {
+  session_id: string
+  user_id: string
+  name: string | null
+  email: string | null
+  first_seen_at: string
+  last_seen_at: string
+  ig_turns: number
+  message_count: number
+  agents: string[]
+  opening_message: string
+}

@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   fetchRubric,
   getSubject,
+  listConversations,
   listSubjects,
   scoreResponse,
   scoreSession,
@@ -17,11 +18,19 @@ export function usePrismAccuracyRubric() {
   })
 }
 
-export function usePrismSubjects(limit = 50) {
+export function usePrismSubjects(limit = 50, search = "") {
   return useQuery({
-    queryKey: ["prism-accuracy", "subjects", limit],
-    queryFn: () => listSubjects(limit),
+    queryKey: ["prism-accuracy", "subjects", limit, search.trim()],
+    queryFn: () => listSubjects(limit, search),
     staleTime: 60_000,
+  })
+}
+
+export function usePrismConversations(params: { user_id?: string; search?: string; limit?: number } = {}) {
+  return useQuery({
+    queryKey: ["prism-accuracy", "conversations", params.user_id ?? "", (params.search ?? "").trim(), params.limit ?? 30],
+    queryFn: () => listConversations(params),
+    staleTime: 30_000,
   })
 }
 
