@@ -90,6 +90,7 @@ const UserManagement = React.lazy(() => import("@/pages/super-admin/UserManageme
 const SuperAdminUserMemory = React.lazy(() => import("@/pages/super-admin/UserMemory"));
 const IssuesDetailsPage = React.lazy(() => import("@/pages/super-admin/IssuesDetailsPage"));
 const IssueDetailPage = React.lazy(() => import("@/pages/super-admin/IssueDetailPage"));
+const HelpSupportManagement = React.lazy(() => import("@/pages/super-admin/HelpSupportManagement"));
 const LicenceDetailsPage = React.lazy(() => import("@/pages/super-admin/LicenceDetailsPage"));
 const SuperAdminSettingsPage = React.lazy(() => import("@/pages/super-admin/Settings"));
 const OrganizationView = React.lazy(() => import("@/pages/super-admin/OrganizationView"));
@@ -513,6 +514,11 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/users/:userId/memory", element: withSuspense(<SuperAdminUserMemory />) },
       { path: "/super-admin/dashboard/issues", element: withSuspense(<IssuesDetailsPage />) },
       { path: "/super-admin/issues/:id", element: withSuspense(<IssueDetailPage />) },
+      // Help and Support Management — support-service tickets (not the legacy
+      // /v1/issues above). The emailed "Open this ticket" link lands on the
+      // :ticketId route with ?claim=1 and assigns the admin who opened it.
+      { path: "/super-admin/support", element: withSuspense(<HelpSupportManagement />) },
+      { path: "/super-admin/support/:ticketId", element: withSuspense(<HelpSupportManagement />) },
       { path: "/super-admin/dashboard/licences", element: withSuspense(<LicenceDetailsPage />) },
       { path: "/super-admin/settings", element: withSuspense(<SuperAdminSettingsPage />) },
       { path: "/super-admin/project-log", element: withSuspense(<ProjectLog />) },

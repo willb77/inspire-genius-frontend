@@ -34,6 +34,7 @@ import {
   ClipboardList,
   FolderOpen,
   Drama,
+  LifeBuoy,
 } from "lucide-react"
 
 /**
@@ -385,6 +386,9 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PRISM_CSV_CONVERTER, icon: FileSpreadsheet, label: "PRISM CSV Converter" },
   { to: ROUTES.SUPER_ADMIN.PRISM_ACCURACY_SCORER, icon: Target, label: "PRISM Accuracy Scorer" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
+  // Support-service tickets: who has each one, escalation, notes, resolve.
+  // Label must stay unique - SidebarScaffold keys nav items by label.
+  { to: ROUTES.SUPER_ADMIN.SUPPORT_MANAGEMENT, icon: LifeBuoy, label: "Help and Support Management" },
   // Wave 2 Lane 2.A (P7.1) — formerly "Diagnostic Chat" at /diagnostic-chat.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRACE_CONSOLE, icon: Network, label: "Agent Trace Console" },
   // Surveys — build questionnaires + select one to take (shared /surveys surface).

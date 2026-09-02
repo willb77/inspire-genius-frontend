@@ -33,9 +33,13 @@ export default function Support() {
   const [lastSubmittedId, setLastSubmittedId] = useState<string | null>(null);
   const [screenshots, setScreenshots] = useState<File[]>([]);
 
-  const listQuery = useSupportTickets(
-    user?.id ? { user_id: user.id } : undefined,
-  );
+  // No `user_id` filter, on purpose. The API already restricts the list to
+  // the caller's own tickets (plus their organisation's) from the verified
+  // token. Passing `user.id` here sent the literal string "me" — the auth
+  // context never stores the real id — and the server ANDed
+  // `user_id = 'me'` onto the query, so "Your requests" was empty for every
+  // user in every environment while creation succeeded and toasted.
+  const listQuery = useSupportTickets();
   const createMutation = useCreateSupportTicket();
 
   const form = useForm<SupportRequestValues>({
@@ -67,10 +71,9 @@ export default function Support() {
 
   const handleSubmit = async (values: SupportRequestValues) => {
     const ticket = await createMutation.mutateAsync({
-      // Backward compatibility only. The current support-service takes
-      // ownership from the verified JWT and ignores this field; older
-      // deployments (staging-b, as of 2026-07-27) still declare `user_id`
-      // required and reject the submission with a 422 without it.
+      // Ownership comes from the verified JWT; the server ignores this field.
+      // Kept only because a tier running the pre-2026-07-27 backend declared
+      // it required. It carries "me" today, which the server discards.
       user_id: user?.id,
       subject: values.subject,
       description: values.description,

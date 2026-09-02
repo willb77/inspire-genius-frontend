@@ -66,7 +66,14 @@ export default function SupportRequestList({
               )}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="font-medium">{t.subject}</div>
+                <div className="font-medium">
+                  {t.ticket_number ? (
+                    <span className="mr-2 text-muted-foreground tabular-nums">
+                      #{t.ticket_number}
+                    </span>
+                  ) : null}
+                  {t.subject}
+                </div>
                 <div className="flex items-center gap-2">
                   {t.source === "assistant" && (
                     <Badge variant="outline">Support chat</Badge>
@@ -90,6 +97,15 @@ export default function SupportRequestList({
               <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                 <dt className="font-medium">Sent</dt>
                 <dd>{fmt(t.created_at) ?? "—"}</dd>
+
+                <dt className="font-medium">Assigned</dt>
+                <dd>
+                  {t.assigned_to
+                    ? `${t.assigned_to_name ?? t.assigned_to}${
+                        fmt(t.assigned_at) ? ` — ${fmt(t.assigned_at)}` : ""
+                      }`
+                    : "Awaiting assignment"}
+                </dd>
 
                 {t.resolved_at ? (
                   <>

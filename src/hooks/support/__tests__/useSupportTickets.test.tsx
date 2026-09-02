@@ -13,7 +13,11 @@ import {
   useUpdateSupportTicket,
   useTicketMessages,
   useAddTicketMessage,
+  useClaimTicket,
+  useAdminTickets,
 } from "@/hooks/support/useSupportTickets";
+import { toast } from "sonner";
+import { claimTicket, listAdminTickets } from "@/services/support/support.service";
 import {
   listTickets,
   getTicket,
@@ -30,6 +34,17 @@ jest.mock("@/services/support/support.service", () => ({
   updateTicket: jest.fn(),
   listMessages: jest.fn(),
   addMessage: jest.fn(),
+  listAdminTickets: jest.fn(),
+  getAdminTicket: jest.fn(),
+  listAdmins: jest.fn(),
+  claimTicket: jest.fn(),
+  escalateTicket: jest.fn(),
+  addAdminNote: jest.fn(),
+  resolveTicket: jest.fn(),
+}));
+
+jest.mock("sonner", () => ({
+  toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() },
 }));
 
 function createWrapper() {
@@ -235,5 +250,42 @@ describe("useAddTicketMessage", () => {
 
     expect(addMessage).toHaveBeenCalledWith("t1", { author_id: "u1", content: "Please help" });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe("Help and Support Management hooks", () => {
+  const mockClaim = claimTicket as jest.MockedFunction<typeof claimTicket>;
+  const mockAdminList = listAdminTickets as jest.MockedFunction<typeof listAdminTickets>;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it("useAdminTickets passes the filter through", async () => {
+    mockAdminList.mockResolvedValue([]);
+    const { result } = renderHook(() => useAdminTickets({ status: "open" }), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAdminList).toHaveBeenCalledWith({ status: "open" });
+  });
+
+  it("useClaimTicket toasts success when claimed", async () => {
+    mockClaim.mockResolvedValue({ claimed: true, ticket: { ...TICKET, ticket_number: 1042 } as never });
+    const { result } = renderHook(() => useClaimTicket(), { wrapper: createWrapper() });
+    await act(async () => {
+      await result.current.mutateAsync("t1");
+    });
+    expect(mockClaim).toHaveBeenCalledWith("t1");
+    expect(toast.success).toHaveBeenCalledWith("Ticket #1042 assigned to you.");
+  });
+
+  it("useClaimTicket reports the current assignee when not claimed", async () => {
+    mockClaim.mockResolvedValue({
+      claimed: false,
+      ticket: { ...TICKET, assigned_to: "x@y.z", assigned_to_name: "X Y" } as never,
+    });
+    const { result } = renderHook(() => useClaimTicket(), { wrapper: createWrapper() });
+    await act(async () => {
+      await result.current.mutateAsync("t1");
+    });
+    expect(toast.info).toHaveBeenCalledWith("Already assigned to X Y.");
+    expect(toast.success).not.toHaveBeenCalled();
   });
 });
