@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
-import CastPicker from "@/components/super-admin/character-lab/CastPicker"
-import ProfileMarkdown from "@/components/super-admin/character-lab/ProfileMarkdown"
-import NarrativeExportButtons from "@/components/super-admin/character-lab/NarrativeExportButtons"
+import CastPicker from "@/components/prism/narrative/CastPicker"
+import ProfileMarkdown from "@/components/prism/narrative/ProfileMarkdown"
+import NarrativeExportButtons from "@/components/prism/narrative/NarrativeExportButtons"
 import {
   useDeleteScenario,
   useRunScenario,
