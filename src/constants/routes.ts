@@ -68,6 +68,7 @@ export const ROUTES = {
     CULTURAL_CONTENT: "/super-admin/cultural-content",
     PRISM_MANAGEMENT: "/super-admin/prism-management",
     PRISM_CSV_CONVERTER: "/super-admin/prism-csv-converter",
+    PRISM_ACCURACY_SCORER: "/super-admin/prism-accuracy-scorer",
     CHARACTER_LAB: "/super-admin/character-lab",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
     RESEARCH: "/super-admin/research",
