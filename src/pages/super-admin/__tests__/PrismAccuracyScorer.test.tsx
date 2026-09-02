@@ -2,7 +2,7 @@ import React from "react"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import PrismAccuracyScorer from "../PrismAccuracyScorer"
-import type { Rubric, ScoreResult, SubjectSummary } from "@/types/prism-accuracy"
+import type { Rubric, ScoreResult, SessionScoreResult, SubjectSummary } from "@/types/prism-accuracy"
 
 jest.mock("@/layouts/SuperAdminLayout", () => ({
   __esModule: true,
@@ -17,6 +17,7 @@ jest.mock("sonner", () => ({ toast: { error: (m: string) => toastError(m), succe
 const mutate = jest.fn()
 const sessionMutate = jest.fn()
 let scoreData: ScoreResult | undefined
+let sessionData: SessionScoreResult | undefined
 let subjectData: SubjectSummary | undefined
 let rubricData: Rubric | undefined
 
@@ -25,7 +26,7 @@ jest.mock("@/hooks/super-admin/usePrismAccuracy", () => ({
   usePrismSubjects: () => ({ data: [{ user_id: "u-1", assessments: 1, scores: 88, latest: null }], isLoading: false }),
   usePrismSubject: (id?: string) => ({ data: id ? subjectData : undefined, isLoading: false, isError: false }),
   useScoreResponse: () => ({ mutate, isPending: false, data: scoreData }),
-  useScoreSession: () => ({ mutate: sessionMutate, isPending: false, data: undefined }),
+  useScoreSession: () => ({ mutate: sessionMutate, isPending: false, data: sessionData }),
 }))
 
 jest.mock("@/hooks/super-admin/explainability/useExplainability", () => ({
@@ -76,6 +77,7 @@ beforeEach(() => {
   sessionMutate.mockClear()
   toastError.mockClear()
   scoreData = undefined
+  sessionData = undefined
   subjectData = SUBJECT
   rubricData = {
     name: "PRISM Accuracy Scorer", version: "1.0", purpose: "Measures fidelity.",
@@ -105,7 +107,9 @@ describe("PrismAccuracyScorer", () => {
     render(<PrismAccuracyScorer />)
     const button = screen.getByRole("button", { name: /^Score$/ })
     expect(button).toBeDisabled()
+    expect(screen.getByTestId("waiting-for")).toHaveTextContent("Choose the person first (step 1).")
     await userEvent.type(screen.getByLabelText(/Subject user id/i), "u-1")
+    expect(screen.getByTestId("waiting-for")).toHaveTextContent("Paste the response to score (step 2).")
     await userEvent.type(screen.getByLabelText(/^IG response$/i), "Innovating is high.")
     expect(button).toBeEnabled()
     await userEvent.click(button)
@@ -128,6 +132,7 @@ describe("PrismAccuracyScorer", () => {
     expect(screen.getByTestId("pas")).toHaveTextContent("93.9")
     expect(screen.getByTestId("pas")).toHaveTextContent("A")
     expect(screen.getByText(/No caps applied/)).toBeInTheDocument()
+    expect(screen.getByTestId("plain-verdict")).toHaveTextContent("2 of 2 checkable claims matched the person's PRISM file.")
     expect(screen.getByText("Claim precision")).toBeInTheDocument()
     expect(screen.getByText("Innovating")).toBeInTheDocument()
     expect(screen.getByText("correct")).toBeInTheDocument()
@@ -140,6 +145,44 @@ describe("PrismAccuracyScorer", () => {
     expect(screen.queryByTestId("pas")).not.toBeInTheDocument()
     expect(screen.getByText("Not scorable")).toBeInTheDocument()
     expect(screen.getByText("Profile is conflicted.")).toBeInTheDocument()
+  })
+
+  it("says in words when a claim is inverted and what it costs", () => {
+    scoreData = {
+      ...RESULT,
+      report: {
+        ...RESULT.report,
+        pas: 69, grade: "D", caps_applied: ["inversion"],
+        metrics: { ...RESULT.report.metrics, n_correct: 10, n_verifiable: 11, n_incorrect: 1, direction_accuracy: 0.909 },
+        verdicts: [{ ...RESULT.report.verdicts[0], label: "Supporting", verdict: "incorrect", inverted: true }],
+      },
+    }
+    render(<PrismAccuracyScorer />)
+    expect(screen.getByTestId("plain-verdict")).toHaveTextContent(
+      "One claim put the person on the wrong side of a scale (Supporting), which caps the score at 69",
+    )
+  })
+
+  it("session view explains the aggregate in words and opens a turn's claims on click", async () => {
+    sessionData = {
+      session_id: "s-1",
+      subject: SUBJECT,
+      aggregate: {
+        n_turns: 1, n_scored: 1, n_ungrounded: 0, n_unscorable_other: 0, mean_pas: 69, median_pas: 69, min_pas: 69,
+        pass_rate: 0, grades: { A: 0, B: 0, C: 0, D: 1, F: 0 }, total_claims: 11, total_inverted: 1, total_unsupported: 0, total_canon_violations: 0,
+      },
+      turns: [{
+        turn_id: "t-9", agent_name: "Aura", created_at: "2026-09-01T00:00:00Z", scorable: true, reason: "", pas: 69, grade: "D",
+        caps_applied: ["inversion"], n_claims: 11, n_inverted: 1, n_unsupported: 0, canon_violations: [], preview: "Great question",
+      }],
+    }
+    render(<PrismAccuracyScorer />)
+    await userEvent.click(screen.getByRole("tab", { name: /Score a session/i }))
+    expect(await screen.findByTestId("session-summary")).toHaveTextContent("1 of 1 IG turn made PRISM claims")
+    expect(screen.getByTestId("session-summary")).toHaveTextContent("1 inverted claim")
+    expect(screen.getByText(/1 claim put the person on the wrong side of a scale \(caps at 69\)/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole("button", { name: /Open claims for turn t-9/ }))
+    expect(mutate).toHaveBeenCalledWith({ turn_id: "t-9", use_llm: false }, expect.anything())
   })
 
   it("lists caps and canon violations when they apply", () => {
