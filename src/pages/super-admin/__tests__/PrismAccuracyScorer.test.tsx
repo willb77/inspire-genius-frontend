@@ -80,7 +80,12 @@ beforeEach(() => {
   rubricData = {
     name: "PRISM Accuracy Scorer", version: "1.0", purpose: "Measures fidelity.",
     criteria: [{ key: "claim_precision", name: "Claim precision", weight: 0.35, measures: "m", scoring: "s", target: "≥ 0.90" }],
-    bands: [{ low: 0, high: 19, label: "Very low", meaning: "absent" }],
+    bands: [
+      { scheme: "guide", low: 65, high: 74, label: "High", meaning: "a strong preference" },
+      { scheme: "rubric", low: 0, high: 19, label: "Very low", meaning: "absent" },
+    ],
+    band_schemes: { guide: "PRISM intensity scale", rubric: "IG six-band rubric" },
+    opposites: [{ a: "Finishing", b: "Innovating" }],
     grades: [{ min: 90, grade: "A" }],
     caps: [{ key: "canon_violation", cap: 59, rule: "Any canon violation caps at 59." }],
     not_scorable: ["No claims."],
@@ -154,6 +159,9 @@ describe("PrismAccuracyScorer", () => {
     expect(screen.getByText("35%")).toBeInTheDocument()
     expect(screen.getByText("Read the claim table first.")).toBeInTheDocument()
     expect(screen.getByText(/Any canon violation caps at 59/)).toBeInTheDocument()
+    expect(screen.getByText(/PRISM guide — behaviours and colours/)).toBeInTheDocument()
+    expect(screen.getByText(/High \(65–74\)/)).toBeInTheDocument()
+    expect(screen.getByText(/Finishing ↔ Innovating/)).toBeInTheDocument()
   })
 
   it("scores a session by id", async () => {

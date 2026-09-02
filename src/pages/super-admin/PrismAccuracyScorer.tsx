@@ -747,18 +747,40 @@ function RubricPanel() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Bands (0–100)</CardTitle>
+            <CardDescription>
+              Two scales, by design: the PRISM guide's intensity scale for the eight behaviours and
+              the four colours, and IG's six-band rubric for the other 80 scales.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-1 text-sm">
-              {r.bands.map((b) => (
-                <li key={b.label}>
-                  <span className="font-medium">
-                    {b.label} ({b.low}–{b.high})
-                  </span>{" "}
-                  <span className="text-muted-foreground">{b.meaning}</span>
-                </li>
-              ))}
-            </ul>
+          <CardContent className="space-y-3">
+            {(["guide", "rubric"] as const).map((scheme) => (
+              <div key={scheme}>
+                <p className="text-xs font-medium">
+                  {scheme === "guide" ? "PRISM guide — behaviours and colours" : "IG rubric — other scales"}
+                </p>
+                {r.band_schemes?.[scheme] && (
+                  <p className="text-muted-foreground mb-1 text-xs">{r.band_schemes[scheme]}</p>
+                )}
+                <ul className="space-y-1 text-sm">
+                  {r.bands
+                    .filter((b) => (b.scheme ?? "rubric") === scheme)
+                    .map((b) => (
+                      <li key={`${scheme}-${b.label}`}>
+                        <span className="font-medium">
+                          {b.label} ({b.low}–{b.high})
+                        </span>{" "}
+                        <span className="text-muted-foreground">{b.meaning}</span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ))}
+            {r.opposites && r.opposites.length > 0 && (
+              <p className="text-muted-foreground text-xs">
+                Dimension opposites (opposite in behaviour, never in map position):{" "}
+                {r.opposites.map((o) => `${o.a} ↔ ${o.b}`).join(" · ")}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -34,6 +34,8 @@ export type ClaimVerdict = {
   inverted: boolean
   note: string
   resolved_target: string | null
+  /** "guide" = the PRISM intensity scale (behaviours + colours); "rubric" = IG's six bands. */
+  band_scheme?: "guide" | "rubric"
   /** Added by the route: the scale label, or the colour's display name. */
   label: string
   /** Added by the route: the rubric group, or "Colour". */
@@ -184,7 +186,9 @@ export type Rubric = {
   version: string
   purpose: string
   criteria: RubricCriterion[]
-  bands: { low: number; high: number; label: BandLabel; meaning: string }[]
+  bands: { scheme: "guide" | "rubric"; low: number; high: number; label: BandLabel; meaning: string }[]
+  band_schemes?: Record<"guide" | "rubric", string>
+  opposites?: { a: string; b: string }[]
   grades: { min: number; grade: string }[]
   caps: { key: string; cap: number; rule: string }[]
   not_scorable: string[]
