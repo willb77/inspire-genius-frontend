@@ -36,6 +36,7 @@ import type {
   ConversationRow,
   ScoreResult,
   SessionScoreResult,
+  SessionLlmSummary,
   SessionTurnRow,
   SubjectRow,
   SubjectSummary,
@@ -283,7 +284,9 @@ function ScoreConversationPanel() {
   const score = useScoreSession()
 
   const waitingFor = score.isPending
-    ? "Scoring every IG reply in the conversation…"
+    ? useLlm
+      ? "Scoring every IG reply and asking the model to grade interpretation — up to about 25 seconds…"
+      : "Scoring every IG reply in the conversation…"
     : !selected
       ? "Pick a conversation above."
       : ""
@@ -360,7 +363,8 @@ function ScoreConversationPanel() {
               <div className="flex items-center gap-2">
                 <Switch id="session-llm" checked={useLlm} onCheckedChange={setUseLlm} />
                 <Label htmlFor="session-llm" className="text-xs">
-                  Also grade interpretation with the model (slower)
+                  Also grade interpretation with the model (about 25 seconds; very long conversations are graded
+                  partially and the result says how many turns the model reached)
                 </Label>
               </div>
             </div>
@@ -713,6 +717,29 @@ function ClaimsTable({ verdicts }: { verdicts: ClaimVerdict[] }) {
 
 // ─── Session results ─────────────────────────────────────────────────
 
+/** One sentence on how far the model pass got, or null when the model was not asked for. */
+function modelCoverageInWords(llm: SessionLlmSummary | undefined): string | null {
+  if (!llm || !llm.requested) return null
+  if (!llm.used) {
+    return llm.reason
+      ? `The model did not grade interpretation: ${llm.reason}.`
+      : llm.turns_not_finished > 0
+        ? `The model did not finish any turn within the ${Math.round(llm.budget_seconds)}-second budget the gateway allows, so every turn was scored by the lexical extractor alone.`
+        : "The model was not available, so every turn was scored by the lexical extractor alone."
+  }
+  const total = llm.turns_graded + llm.turns_not_finished + llm.turns_failed
+  const bits = [`The model${llm.model ? ` (${llm.model})` : ""} graded interpretation on ${llm.turns_graded} of ${total} turn${total === 1 ? "" : "s"}`]
+  if (llm.turns_not_finished > 0) {
+    bits.push(
+      `${llm.turns_not_finished} did not finish within the ${Math.round(llm.budget_seconds)}-second budget the gateway allows and ${llm.turns_not_finished === 1 ? "was" : "were"} scored lexically`,
+    )
+  }
+  if (llm.turns_failed > 0) {
+    bits.push(`${llm.turns_failed} came back unusable and ${llm.turns_failed === 1 ? "was" : "were"} scored lexically`)
+  }
+  return bits.join("; ") + (llm.elapsed_seconds !== null ? ` (${llm.elapsed_seconds}s).` : ".")
+}
+
 function turnFlagsInWords(t: SessionTurnRow): string {
   if (!t.scorable) return t.reason
   const bits: string[] = []
@@ -725,7 +752,8 @@ function turnFlagsInWords(t: SessionTurnRow): string {
   if (t.canon_violations.length > 0) {
     bits.push(`${t.canon_violations.length} PRISM canon error${t.canon_violations.length === 1 ? "" : "s"} (caps at 59)`)
   }
-  return bits.length ? bits.join("; ") + "." : "No inversions, fabrications or canon errors."
+  const flags = bits.length ? bits.join("; ") + "." : "No inversions, fabrications or canon errors."
+  return t.llm_used === false && t.llm_note ? `${flags} Model: ${t.llm_note}.` : flags
 }
 
 function SessionResultView({ result }: { result: SessionScoreResult }) {
@@ -762,6 +790,7 @@ function SessionResultView({ result }: { result: SessionScoreResult }) {
     )
     return s.join(" ")
   })()
+  const modelCoverage = modelCoverageInWords(result.llm)
 
   const tiles: [string, string][] = [
     ["Mean PAS", a.mean_pas === null ? "—" : String(a.mean_pas)],
@@ -782,6 +811,9 @@ function SessionResultView({ result }: { result: SessionScoreResult }) {
             What this conversation scored{result.subject ? ` — ${personLabel(result.subject)}` : ""}
           </CardTitle>
           <CardDescription data-testid="session-summary">{summary}</CardDescription>
+          {modelCoverage && (
+            <CardDescription data-testid="model-coverage">{modelCoverage}</CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
