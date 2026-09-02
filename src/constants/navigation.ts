@@ -5,6 +5,7 @@ import {
   Home,
   FileText,
   FileSpreadsheet,
+  Target,
   Settings,
   HelpCircle,
   Bot,
@@ -382,6 +383,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
   { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },
   { to: ROUTES.SUPER_ADMIN.PRISM_CSV_CONVERTER, icon: FileSpreadsheet, label: "PRISM CSV Converter" },
+  { to: ROUTES.SUPER_ADMIN.PRISM_ACCURACY_SCORER, icon: Target, label: "PRISM Accuracy Scorer" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   // Wave 2 Lane 2.A (P7.1) — formerly "Diagnostic Chat" at /diagnostic-chat.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRACE_CONSOLE, icon: Network, label: "Agent Trace Console" },
