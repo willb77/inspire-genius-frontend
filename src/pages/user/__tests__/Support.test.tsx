@@ -216,6 +216,15 @@ describe("Help & Support page", () => {
     expect(screen.getByDisplayValue("Dana Reed")).toBeInTheDocument();
   });
 
+  it("never filters the list by user_id (the auth context id is the literal \"me\")", async () => {
+    mockListTickets.mockResolvedValue([]);
+    renderPage();
+    await waitFor(() => expect(mockListTickets).toHaveBeenCalled());
+    for (const call of mockListTickets.mock.calls) {
+      expect(call[0]?.user_id).toBeUndefined();
+    }
+  });
+
   it("lists previously posted requests", async () => {
     mockListTickets.mockResolvedValue([CREATED]);
     renderPage();

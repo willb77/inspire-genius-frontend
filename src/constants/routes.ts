@@ -71,6 +71,8 @@ export const ROUTES = {
     PRISM_ACCURACY_SCORER: "/super-admin/prism-accuracy-scorer",
     CHARACTER_LAB: "/super-admin/character-lab",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
+    SUPPORT_MANAGEMENT: "/super-admin/support",
+    SUPPORT_TICKET: "/super-admin/support/:ticketId",
     RESEARCH: "/super-admin/research",
     RESEARCH_LIBRARY: "/super-admin/research-library",
     EXPLAINABILITY: "/super-admin/explainability",
