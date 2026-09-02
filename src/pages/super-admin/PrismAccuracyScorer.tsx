@@ -25,6 +25,7 @@ import type {
   ClaimVerdict,
   ScoreResult,
   SessionScoreResult,
+  SessionTurnRow,
   SubjectSummary,
   Verdict,
 } from "@/types/prism-accuracy"
@@ -189,6 +190,22 @@ function ScoreResponsePanel() {
     !score.isPending &&
     (mode === "paste" ? !!subjectId.trim() && !!responseText.trim() : !!turnId)
 
+  // Say what the grey button is waiting for. A disabled control with no
+  // reason reads as broken.
+  const waitingFor = score.isPending
+    ? "Scoring…"
+    : mode === "paste"
+      ? !subjectId.trim()
+        ? "Choose the person first (step 1)."
+        : !responseText.trim()
+          ? "Paste the response to score (step 2)."
+          : ""
+      : !sessionId
+        ? "Pick a conversation (step 2)."
+        : !turnId
+          ? "Click one of IG's turns in that conversation (step 2)."
+          : ""
+
   function run() {
     const body =
       mode === "paste"
@@ -208,31 +225,49 @@ function ScoreResponsePanel() {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">What to score</CardTitle>
+          <CardTitle className="text-base">Score one response, in three steps</CardTitle>
           <CardDescription>
-            Paste a response, or pick a stored assistant turn from the person's chat history.
+            Who the response is about, what IG said, then Score. The report on the right shows
+            every claim IG made and whether the person's PRISM scores back it up.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <SubjectPicker value={subjectId} onChange={setSubjectId} />
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">
+              <span className="bg-primary text-primary-foreground mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs">1</span>
+              Who is the response about?
+            </p>
+            <SubjectPicker value={subjectId} onChange={setSubjectId} />
+          </div>
 
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "paste" ? "default" : "outline"}
-              onClick={() => setMode("paste")}
-            >
-              Paste a response
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "turn" ? "default" : "outline"}
-              onClick={() => setMode("turn")}
-            >
-              Stored turn
-            </Button>
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">
+              <span className="bg-primary text-primary-foreground mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs">2</span>
+              What did IG say?
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={mode === "paste" ? "default" : "outline"}
+                onClick={() => setMode("paste")}
+              >
+                Paste a response
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={mode === "turn" ? "default" : "outline"}
+                onClick={() => setMode("turn")}
+              >
+                Pick a turn from their chat history
+              </Button>
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {mode === "paste"
+                ? "Paste any text IG produced about this person: a chat reply, a profile write-up, a coaching summary."
+                : "Choose a conversation, then click one of IG's own turns. The person is taken from the turn if step 1 is empty."}
+            </p>
           </div>
 
           {mode === "paste" ? (
@@ -325,10 +360,21 @@ function ScoreResponsePanel() {
             <Switch id="use-llm" checked={useLlm} onCheckedChange={setUseLlm} />
           </div>
 
-          <Button onClick={run} disabled={!canScore}>
-            {score.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Target className="mr-2 h-4 w-4" />}
-            Score
-          </Button>
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">
+              <span className="bg-primary text-primary-foreground mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs">3</span>
+              Score it
+            </p>
+            <Button onClick={run} disabled={!canScore}>
+              {score.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Target className="mr-2 h-4 w-4" />}
+              Score
+            </Button>
+            {waitingFor && (
+              <p className="text-muted-foreground text-xs" data-testid="waiting-for">
+                {waitingFor}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -337,9 +383,16 @@ function ScoreResponsePanel() {
           <ResultView result={score.data} />
         ) : (
           <Card>
-            <CardContent className="text-muted-foreground p-6 text-sm">
-              The report appears here: composite score, the standard metrics, and a row per claim
-              showing what was said, what is on file, and the verdict.
+            <CardContent className="text-muted-foreground space-y-2 p-6 text-sm">
+              <p className="text-foreground font-medium">What you will get</p>
+              <p>
+                A score out of 100 with a grade, one sentence saying why, the standard metrics, and
+                a table with one row per claim IG made: the quote, what it claimed, what the
+                person's PRISM file actually says, and the verdict.
+              </p>
+              <p>
+                Read the table before the number. The number is a summary of the table.
+              </p>
             </CardContent>
           </Card>
         )}
@@ -366,6 +419,41 @@ function gradeColour(grade: string | null) {
 
 function pct(v: number | null | undefined) {
   return v === null || v === undefined ? "—" : `${Math.round(v * 100)}%`
+}
+
+/** One sentence a reader can act on, built from the caps and counts. */
+function plainVerdict(report: AccuracyReport): string {
+  const m = report.metrics
+  const inverted = report.verdicts.filter((v) => v.inverted)
+  const parts: string[] = []
+  parts.push(
+    `${m.n_correct} of ${m.n_verifiable} checkable claim${m.n_verifiable === 1 ? "" : "s"} matched the person's PRISM file` +
+      (m.n_partial > 0 ? `, ${m.n_partial} ${m.n_partial === 1 ? "was" : "were"} one band off` : "") +
+      ".",
+  )
+  if (inverted.length > 0) {
+    const names = inverted.map((v) => v.label).join(", ")
+    parts.push(
+      `${inverted.length === 1 ? "One claim" : `${inverted.length} claims`} put the person on the wrong side of a scale (${names}), which caps the score at 69 no matter what else was right.`,
+    )
+  }
+  if (m.n_unsupported > 0) {
+    parts.push(
+      `${m.n_unsupported} claim${m.n_unsupported === 1 ? "" : "s"} named a scale this person has no value for` +
+        (report.caps_applied.includes("fabrication") ? ", which caps the score at 49." : "."),
+    )
+  }
+  if (m.canon_violations.length > 0) {
+    parts.push("It also breaks PRISM canon (see below), which caps the score at 59.")
+  }
+  if (parts.length === 1 && report.caps_applied.length === 0) {
+    parts.push(
+      report.grade === "A" || report.grade === "B"
+        ? "Nothing was inverted, fabricated or against canon."
+        : "Nothing was inverted, fabricated or against canon; the score is held down by partial matches or by missing the person's defining scales.",
+    )
+  }
+  return parts.join(" ")
 }
 
 function ResultView({ result }: { result: ScoreResult }) {
@@ -425,6 +513,9 @@ function ReportHeadline({ report }: { report: AccuracyReport }) {
             <span className={cn("ml-3 text-2xl", gradeColour(report.grade))}>{report.grade}</span>
           </p>
         </div>
+        <p className="w-full text-sm" data-testid="plain-verdict">
+          {plainVerdict(report)}
+        </p>
         <div className="flex flex-wrap gap-2">
           {report.caps_applied.length === 0 ? (
             <Badge variant="outline" className="gap-1">
@@ -510,7 +601,10 @@ function ClaimsTable({ verdicts }: { verdicts: ClaimVerdict[] }) {
                       .filter(Boolean)
                       .join(" ") || "—"
               return (
-                <tr key={`${v.claim.target}-${i}`} className="border-t align-top">
+                <tr
+                  key={`${v.claim.target}-${i}`}
+                  className={cn("border-t align-top", v.inverted && "bg-red-50 dark:bg-red-950/30")}
+                >
                   <td className="py-1.5 pr-2">
                     <div className="font-medium">{v.label}</div>
                     <div className="text-muted-foreground">{v.group}</div>
@@ -603,8 +697,57 @@ function ScoreSessionPanel() {
   )
 }
 
+/** What the flags mean, as a sentence, for one turn in the session table. */
+function turnFlagsInWords(t: SessionTurnRow): string {
+  if (!t.scorable) return t.reason
+  const bits: string[] = []
+  if (t.n_inverted > 0) {
+    bits.push(`${t.n_inverted} claim${t.n_inverted === 1 ? "" : "s"} put the person on the wrong side of a scale (caps at 69)`)
+  }
+  if (t.n_unsupported > 0) {
+    bits.push(`${t.n_unsupported} claim${t.n_unsupported === 1 ? "" : "s"} about a scale with no value on file`)
+  }
+  if (t.canon_violations.length > 0) {
+    bits.push(`${t.canon_violations.length} PRISM canon error${t.canon_violations.length === 1 ? "" : "s"} (caps at 59)`)
+  }
+  return bits.length ? bits.join("; ") + "." : "No inversions, fabrications or canon errors."
+}
+
 function SessionResultView({ result }: { result: SessionScoreResult }) {
   const a = result.aggregate
+  const detail = useScoreResponse()
+  const [openTurn, setOpenTurn] = useState<string | null>(null)
+
+  function openDetail(turnId: string) {
+    setOpenTurn(turnId)
+    detail.mutate(
+      { turn_id: turnId, use_llm: false },
+      { onError: (err) => toast.error(apiErrorMessage(err, "Could not load that turn's claims")) },
+    )
+  }
+
+  const scoredTurns = result.turns.filter((t) => t.scorable)
+  const summary = (() => {
+    const n = scoredTurns.length
+    if (n === 0) return "No turn in this conversation made a checkable PRISM claim, so there is nothing to score."
+    const s: string[] = []
+    s.push(
+      `${n} of ${a.n_turns} IG turn${a.n_turns === 1 ? "" : "s"} made PRISM claims and ${n === 1 ? "was" : "were"} scored; ` +
+        `${a.n_ungrounded} ${a.n_ungrounded === 1 ? "was" : "were"} small talk or logistics and ${a.n_ungrounded === 1 ? "is" : "are"} not counted.`,
+    )
+    s.push(`Mean score ${a.mean_pas}, and ${pct(a.pass_rate)} of scored turns reached 80 (a B).`)
+    const defects: string[] = []
+    if (a.total_inverted > 0) defects.push(`${a.total_inverted} inverted claim${a.total_inverted === 1 ? "" : "s"}`)
+    if (a.total_unsupported > 0) defects.push(`${a.total_unsupported} fabricated`)
+    if (a.total_canon_violations > 0) defects.push(`${a.total_canon_violations} canon error${a.total_canon_violations === 1 ? "" : "s"}`)
+    s.push(
+      defects.length
+        ? `Defects to fix in the prompt or agent: ${defects.join(", ")}. Click a turn below to see exactly which claim.`
+        : "No inversions, fabrications or canon errors. Click a turn below to see its claims.",
+    )
+    return s.join(" ")
+  })()
+
   const tiles: [string, string][] = [
     ["Mean PAS", a.mean_pas === null ? "—" : String(a.mean_pas)],
     ["Median PAS", a.median_pas === null ? "—" : String(a.median_pas)],
@@ -620,7 +763,8 @@ function SessionResultView({ result }: { result: SessionScoreResult }) {
       {result.subject && <SubjectCard subject={result.subject} />}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Aggregate</CardTitle>
+          <CardTitle className="text-sm">What this conversation scored</CardTitle>
+          <CardDescription data-testid="session-summary">{summary}</CardDescription>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
@@ -639,21 +783,31 @@ function SessionResultView({ result }: { result: SessionScoreResult }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">Turns</CardTitle>
+          <CardDescription>Click a turn to open its claim-by-claim table.</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead className="text-muted-foreground text-left">
               <tr>
                 <th className="py-1 pr-2">Agent</th>
-                <th className="py-1 pr-2">PAS</th>
+                <th className="py-1 pr-2">Score</th>
                 <th className="py-1 pr-2">Claims</th>
-                <th className="py-1 pr-2">Flags</th>
+                <th className="py-1 pr-2">What happened</th>
                 <th className="py-1">Preview</th>
               </tr>
             </thead>
             <tbody>
               {result.turns.map((t) => (
-                <tr key={t.turn_id} className="border-t align-top">
+                <tr
+                  key={t.turn_id}
+                  className={cn(
+                    "cursor-pointer border-t align-top hover:bg-muted/50",
+                    openTurn === t.turn_id && "bg-primary/5",
+                  )}
+                  onClick={() => openDetail(t.turn_id)}
+                  role="button"
+                  aria-label={`Open claims for turn ${t.turn_id}`}
+                >
                   <td className="py-1.5 pr-2">{t.agent_name ?? "IG"}</td>
                   <td className="py-1.5 pr-2 font-medium">
                     {t.scorable ? (
@@ -665,11 +819,8 @@ function SessionResultView({ result }: { result: SessionScoreResult }) {
                     )}
                   </td>
                   <td className="py-1.5 pr-2">{t.n_claims}</td>
-                  <td className="py-1.5 pr-2">
-                    {t.n_inverted > 0 && <Badge variant="destructive">{t.n_inverted} inverted</Badge>}{" "}
-                    {t.n_unsupported > 0 && <Badge variant="destructive">{t.n_unsupported} fabricated</Badge>}{" "}
-                    {t.canon_violations.length > 0 && <Badge variant="destructive">canon</Badge>}
-                    {!t.scorable && <span className="text-muted-foreground">{t.reason}</span>}
+                  <td className={cn("py-1.5 pr-2", (t.n_inverted > 0 || t.n_unsupported > 0 || t.canon_violations.length > 0) && "text-red-700 dark:text-red-300")}>
+                    {turnFlagsInWords(t)}
                   </td>
                   <td className="text-muted-foreground py-1.5">{t.preview}</td>
                 </tr>
@@ -678,6 +829,16 @@ function SessionResultView({ result }: { result: SessionScoreResult }) {
           </table>
         </CardContent>
       </Card>
+      {openTurn && detail.isPending && (
+        <p className="text-muted-foreground flex items-center gap-2 text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading that turn's claims…
+        </p>
+      )}
+      {openTurn && detail.data && detail.data.turn?.turn_id === openTurn && (
+        <div className="space-y-4" data-testid="session-turn-detail">
+          <ResultView result={detail.data} />
+        </div>
+      )}
     </>
   )
 }
