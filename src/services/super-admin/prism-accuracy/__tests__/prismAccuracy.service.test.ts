@@ -2,6 +2,7 @@ import { agentApi } from "@/lib/agentApi"
 import {
   fetchRubric,
   getSubject,
+  listConversations,
   listSubjects,
   scoreResponse,
   scoreSession,
@@ -22,7 +23,8 @@ describe("prismAccuracy.service", () => {
     get.mockResolvedValue({ data: { status: true, data: [] } })
     post.mockResolvedValue({ data: { status: true, data: {} } })
     await fetchRubric()
-    await listSubjects(10)
+    await listSubjects(10, " ada ")
+    await listConversations({ user_id: "u-1", search: "lead" })
     await getSubject("u 1", 8)
     await scoreResponse({ subject_user_id: "u-1", response_text: "x" })
     await scoreSession({ session_id: "s-1" })
@@ -30,6 +32,8 @@ describe("prismAccuracy.service", () => {
       expect(String(call[0])).toMatch(/^\/v1\/agents\/prism-accuracy/)
     }
     expect(get).toHaveBeenCalledWith("/v1/agents/prism-accuracy/subjects/u%201", { params: { salient_k: 8 } })
+    expect(get).toHaveBeenCalledWith("/v1/agents/prism-accuracy/subjects", { params: { limit: 10, search: "ada" } })
+    expect(get).toHaveBeenCalledWith("/v1/agents/prism-accuracy/conversations", { params: { user_id: "u-1", search: "lead", limit: 30 } })
     expect(post).toHaveBeenCalledWith("/v1/agents/prism-accuracy/score", { subject_user_id: "u-1", response_text: "x" })
   })
 

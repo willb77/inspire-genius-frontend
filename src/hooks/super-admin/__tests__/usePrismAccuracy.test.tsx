@@ -2,6 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
   usePrismAccuracyRubric,
+  usePrismConversations,
   usePrismSubject,
   usePrismSubjects,
   useScoreResponse,
@@ -11,6 +12,7 @@ import {
 jest.mock("@/services/super-admin/prism-accuracy/prismAccuracy.service", () => ({
   fetchRubric: jest.fn(),
   listSubjects: jest.fn(),
+  listConversations: jest.fn(),
   getSubject: jest.fn(),
   scoreResponse: jest.fn(),
   scoreSession: jest.fn(),
@@ -34,7 +36,14 @@ describe("usePrismAccuracy", () => {
     await waitFor(() => expect(rubric.result.current.isSuccess).toBe(true))
     await waitFor(() => expect(subjects.result.current.isSuccess).toBe(true))
     expect(rubric.result.current.data).toEqual({ name: "r" })
-    expect(service.listSubjects).toHaveBeenCalledWith(10)
+    expect(service.listSubjects).toHaveBeenCalledWith(10, "")
+  })
+
+  it("lists conversations with the given filters", async () => {
+    ;(service.listConversations as jest.Mock).mockResolvedValue([{ session_id: "s-1" }])
+    const { result } = renderHook(() => usePrismConversations({ user_id: "u-1", search: "lead" }), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(service.listConversations).toHaveBeenCalledWith({ user_id: "u-1", search: "lead" })
   })
 
   it("does not read a subject until an id is given", async () => {
