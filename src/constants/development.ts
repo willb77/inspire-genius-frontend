@@ -33,6 +33,26 @@ export const DEVELOPMENT_INPUT_DISCLAIMER =
   "behavioral tendencies to inform coaching conversations — a human makes any " +
   "hiring, promotion, or placement decision."
 
+/**
+ * The TDS Studio tabs (write-up, compare, scenarios) — build-time flag,
+ * **default OFF**.
+ *
+ * `VITE_FEATURE_TDS_STUDIO=true` is what turns them on; anything else, the env
+ * var missing included, leaves them off. Distinct from
+ * `VITE_FEATURE_TEAM_DEVELOPMENT`, which gates whether the Studio appears in
+ * the nav at all.
+ *
+ * **This flag hides tabs. It is not a security boundary.** `ProtectedRoute`
+ * gates `/manager/*` by role and path prefix, so anyone holding the manager
+ * role reaches this workspace whatever this flag says, and the
+ * `/v1/agents/team-studio/*` endpoints answer any request carrying a valid
+ * token regardless of what the browser was built with. A build-time constant
+ * is invisible to every server-side check. The real gate is the authorization
+ * the agent-engine applies to those routes; this one only decides what the
+ * browser offers.
+ */
+export const TDS_STUDIO_ENABLED = import.meta.env.VITE_FEATURE_TDS_STUDIO === "true"
+
 export const DEV_TEXT: Record<string, string> = {
   "dev.studio.title": "Team Development Studio",
   "dev.studio.subtitle":
@@ -63,6 +83,9 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.tab.learning": "Learning & Training",
   "dev.tab.careers": "Career & Job Matches",
   "dev.tab.roadmap": "Roadmap",
+  "dev.tab.profileStudio": "Write-up",
+  "dev.tab.compare": "Compare",
+  "dev.tab.scenarios": "Scenarios",
 
   "dev.profile.radarTitle": "PRISM behavioral map",
   "dev.profile.radarTableCaption": "PRISM 8-dimension scores (text equivalent of the radar).",

@@ -11,6 +11,7 @@
  */
 import { downloadBlob } from "@/lib/exportTranscript"
 import { parseMarkdownBlocks } from "@/lib/markdownBlocks"
+import { SYNTHETIC_FILE_PREFIX, syntheticFooter } from "@/lib/prismExportLabels"
 import type {
   DerivedQuadrant,
   Rubric,
@@ -29,11 +30,40 @@ export type ProfileExportPayload = {
   evidence: Record<string, string>
   rubric: Rubric | undefined
   scoreType: ScoreType
+  /**
+   * Filename stem, no extension. Defaults to the Character Lab's
+   * `PRISM_Character_<Name>`; a real-person export passes
+   * `PRISM_Profile_<Name>` instead. See `@/lib/prismExportLabels`.
+   */
+  fileStem?: string
+  /**
+   * The footer stamped on every PDF page. Defaults to
+   * `<name> — synthetic profile`, which is a false statement about a real
+   * colleague, so any real-person caller MUST pass its own.
+   */
+  footer?: string
 }
 
-export function profileFileStem(name: string): string {
+/** The stem this payload's files are named after. One rule, both formats. */
+export function payloadFileStem(payload: ProfileExportPayload): string {
+  return payload.fileStem ?? profileFileStem(payload.name)
+}
+
+/** The footer this payload's PDF carries. Synthetic unless the caller says otherwise. */
+export function payloadFooter(payload: ProfileExportPayload): string {
+  return payload.footer ?? syntheticFooter(payload.name)
+}
+
+/**
+ * `Sonny Corleone` → `PRISM_Character_Sonny_Corleone`.
+ *
+ * The prefix is a parameter because the same exporters now serve real people,
+ * whose files must not be filed under "Character". It defaults to the
+ * Character Lab's so that every existing caller is unchanged.
+ */
+export function profileFileStem(name: string, prefix: string = SYNTHETIC_FILE_PREFIX): string {
   const slug = name.replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "")
-  return `PRISM_Character_${slug || "profile"}`
+  return `${prefix}${slug || "profile"}`
 }
 
 /** Save CSV text the API produced. Kept separate so the caller cannot pass a hand-built string. */
@@ -193,7 +223,7 @@ export async function exportProfileWord(payload: ProfileExportPayload): Promise<
 
   const doc = new Document({ sections: [{ children: children as never }] })
   const blob = await Packer.toBlob(doc)
-  downloadBlob(`${profileFileStem(payload.name)}.docx`, blob)
+  downloadBlob(`${payloadFileStem(payload)}.docx`, blob)
 }
 
 /**

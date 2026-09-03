@@ -19,6 +19,7 @@
 import { downloadBlob } from '@/lib/exportTranscript'
 import { parseMarkdownBlocks } from '@/lib/markdownBlocks'
 import { createPdfWriter, writeNotice, type PdfLike } from '@/lib/pdfWriter'
+import { SYNTHETIC_NARRATIVE_PREFIX, syntheticFooter } from '@/lib/prismExportLabels'
 
 export type NarrativeSection = {
   /** Optional — the body's own `##` headings are kept either way. */
@@ -30,17 +31,47 @@ export type NarrativeSection = {
 export type NarrativeDoc = {
   title: string
   subtitle?: string
-  /** The synthetic-data notice. Printed in full, never referenced. */
+  /**
+   * The notice about what this document describes. Printed in full at the top
+   * of page one in both formats, never referenced or abbreviated.
+   *
+   * Synthetic for the Character Lab; a real-person notice for a document about
+   * a named colleague. See `@/lib/prismExportLabels`.
+   */
   notice: string
   /** Label/value pairs printed under the title — the cast, the situation. */
   meta?: { label: string; value: string }[]
   sections: NarrativeSection[]
+  /**
+   * Filename stem, no extension. Defaults to `PRISM_<Title>`; a real-person
+   * export passes `PRISM_Profile_<Name>`.
+   */
+  fileStem?: string
+  /**
+   * The footer stamped on every PDF page. Defaults to
+   * `<title> — synthetic profile`, which is a false statement about a real
+   * colleague, so any real-person caller MUST pass its own.
+   */
+  footer?: string
 }
 
-/** `Sonny Corleone vs Michael Corleone` → `PRISM_Sonny_Corleone_vs_Michael_Corleone`. */
-export function narrativeFileStem(title: string): string {
+/** The stem this doc's files are named after. One rule, both formats. */
+function docFileStem(payload: NarrativeDoc): string {
+  return payload.fileStem ?? narrativeFileStem(payload.title)
+}
+
+/**
+ * `Sonny Corleone vs Michael Corleone` → `PRISM_Sonny_Corleone_vs_Michael_Corleone`.
+ *
+ * The prefix is a parameter for the same reason as `profileFileStem`'s: real
+ * people's exports must not be filed under the Character Lab's naming.
+ */
+export function narrativeFileStem(
+  title: string,
+  prefix: string = SYNTHETIC_NARRATIVE_PREFIX,
+): string {
   const slug = title.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '')
-  return `PRISM_${slug || 'narrative'}`.slice(0, 120)
+  return `${prefix}${slug || 'narrative'}`.slice(0, 120)
 }
 
 /** Sections with nothing in them are dropped — an empty heading is a lie about coverage. */
@@ -111,7 +142,7 @@ export async function exportNarrativeWord(payload: NarrativeDoc): Promise<void> 
   }
 
   const doc = new Document({ sections: [{ children: children as never }] })
-  downloadBlob(`${narrativeFileStem(payload.title)}.docx`, await Packer.toBlob(doc))
+  downloadBlob(`${docFileStem(payload)}.docx`, await Packer.toBlob(doc))
 }
 
 // ─── PDF ────────────────────────────────────────────────────────────────
@@ -154,10 +185,11 @@ export async function exportNarrativePdf(payload: NarrativeDoc): Promise<void> {
     w.advance(8)
   }
 
-  // Page numbers last, once the total is known.
-  w.footer(`${payload.title} — synthetic profile`)
+  // Page numbers last, once the total is known. The label is the caller's —
+  // see NarrativeDoc.footer.
+  w.footer(payload.footer ?? syntheticFooter(payload.title))
   downloadBlob(
-    `${narrativeFileStem(payload.title)}.pdf`,
+    `${docFileStem(payload)}.pdf`,
     (w.doc as unknown as { output: (t: string) => Blob }).output('blob'),
   )
 }

@@ -28,6 +28,7 @@ import { ROUTES } from "@/constants/routes"
 import {
   CONFIDENCE_BADGE_VARIANT,
   CONFIDENCE_LABEL,
+  TDS_STUDIO_ENABLED,
 } from "@/constants/development"
 import type { CareerMatch } from "@/types/development"
 import {
@@ -68,7 +69,20 @@ const RoadmapTimeline = lazy(() =>
   import("@/components/manager/development/tabs/RoadmapTimeline").then((m) => ({ default: m.RoadmapTimeline })),
 )
 
-const TABS = [
+// TDS Studio tabs — the PRISM narrative surfaces shared with the super-admin
+// Character Lab. Lazy like the rest: each pulls in the shared studio panels,
+// and a manager who never opens them should not download them.
+const ProfileStudioPanel = lazy(() =>
+  import("@/components/manager/development/tabs/ProfileStudioPanel").then((m) => ({ default: m.ProfileStudioPanel })),
+)
+const TeamComparePanel = lazy(() =>
+  import("@/components/manager/development/tabs/TeamComparePanel").then((m) => ({ default: m.TeamComparePanel })),
+)
+const TeamScenarioPanel = lazy(() =>
+  import("@/components/manager/development/tabs/TeamScenarioPanel").then((m) => ({ default: m.TeamScenarioPanel })),
+)
+
+const BASE_TABS = [
   { value: "profile", labelKey: "dev.tab.profile" },
   { value: "goals", labelKey: "dev.tab.goals" },
   { value: "gaps", labelKey: "dev.tab.gaps" },
@@ -77,7 +91,34 @@ const TABS = [
   { value: "roadmap", labelKey: "dev.tab.roadmap" },
 ] as const
 
-type DevTab = (typeof TABS)[number]["value"]
+/**
+ * The three TDS Studio tabs, behind `VITE_FEATURE_TDS_STUDIO` (default OFF).
+ *
+ * TODO(Phase 4): a `notes` tab belongs here too. Its backend — the
+ * manager-notes store behind the write-up — is being built in parallel and is
+ * not merged, and a tab whose store does not exist would save nothing while
+ * looking as though it had. Add it in the same change that lands the store,
+ * not before.
+ *
+ * The flag only decides which tab buttons render, and `?tab=` falls back to
+ * "profile" for a value not in this list. That is a UI gate, NOT a security
+ * boundary: `ProtectedRoute` admits anyone with the manager role to
+ * `/manager/development/:memberId` by path prefix regardless of this constant,
+ * and `/v1/agents/team-studio/*` answers any request with a valid token no
+ * matter what the browser was built with. The server-side authorization on
+ * those routes is the real gate. See TDS_STUDIO_ENABLED.
+ */
+const STUDIO_TABS = [
+  { value: "profile-studio", labelKey: "dev.tab.profileStudio" },
+  { value: "compare", labelKey: "dev.tab.compare" },
+  { value: "scenarios", labelKey: "dev.tab.scenarios" },
+] as const
+
+const TABS = TDS_STUDIO_ENABLED ? [...BASE_TABS, ...STUDIO_TABS] : BASE_TABS
+
+type DevTab =
+  | (typeof BASE_TABS)[number]["value"]
+  | (typeof STUDIO_TABS)[number]["value"]
 
 function initials(name: string): string {
   return name.trim().split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase()
@@ -124,6 +165,9 @@ export default function MemberDevelopmentWorkspace({
   )
 
   const tabParam = (searchParams.get("tab") as DevTab | null) ?? "profile"
+  // A `?tab=` value that is not on offer — including a Studio tab while the
+  // flag is off — falls back to the profile rather than rendering an empty
+  // panel that reads like a tab with nothing in it.
   const activeTab: DevTab = TABS.some((x) => x.value === tabParam) ? tabParam : "profile"
 
   const { data: dossier, isLoading, isError } = useMemberDossier(memberId)
@@ -362,6 +406,19 @@ export default function MemberDevelopmentWorkspace({
                   trajectory={dossier.trajectory}
                 />
               </TabsContent>
+              {TDS_STUDIO_ENABLED ? (
+                <>
+                  <TabsContent value="profile-studio">
+                    <ProfileStudioPanel memberName={member.name} profile={dossier.profile} />
+                  </TabsContent>
+                  <TabsContent value="compare">
+                    <TeamComparePanel />
+                  </TabsContent>
+                  <TabsContent value="scenarios">
+                    <TeamScenarioPanel />
+                  </TabsContent>
+                </>
+              ) : null}
             </Suspense>
           </div>
         </Tabs>

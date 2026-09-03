@@ -1,6 +1,7 @@
 /** Team Development Studio hooks — one hook per concern. */
 export { developmentKeys } from "./queryKeys"
 export { useTeamDevelopmentRoster } from "./useTeamDevelopmentRoster"
+export { useStudioCast } from "./useStudioCast"
 export { useMemberDossier, useRefreshDossier } from "./useMemberDossier"
 export { useDevelopmentGoals, useRatifyGoal } from "./useDevelopmentGoals"
 export { useGoalSession } from "./useGoalSession"
