@@ -1,0 +1,107 @@
+import { agentApi } from '@/lib/agentApi'
+import type {
+  AnalysisPart,
+  AskResult,
+  ComparisonPart,
+  ScenarioPart,
+  StarterQuestions,
+} from '@/types/character-lab'
+
+/**
+ * Team Development Studio API — PRISM narrative about a REAL direct report.
+ *
+ * Calls `agentApi`, NOT the monolith `api` instance: these routes live on the
+ * agent-engine and are only reachable through `/v1/agents/{proxy+}`. Anything
+ * mounted outside `/v1/agents/` falls through to the monolith, which has no
+ * such route — it passes every unit test, deploys green, and 404s in the
+ * browser. The prefix below is load-bearing; do not "tidy" it.
+ *
+ * Deliberately NOT a parameterisation of the Character Lab service. That
+ * service reaches `/v1/agents/character-lab`, which is super-admin territory
+ * and operates on invented people. One module that could address either would
+ * put a manager surface one argument away from it. Two modules cannot make that
+ * mistake, and the duplication is four lines of axios.
+ *
+ * Unlike Character Lab, nothing here is stored: every call sends the subject
+ * with the request. There is no saved-profile id, no library, no scenario
+ * store — a real person's PRISM record lives in the PRISM stores, and this
+ * surface reads narrative about it rather than keeping its own copy.
+ */
+
+const BASE = '/v1/agents/team-studio'
+
+type Envelope<T> = { status: string; data: T }
+
+/**
+ * A person as this API wants them: a name, their scores, optionally the
+ * quadrant roll-up and any free-text context the manager has recorded.
+ *
+ * `scores` is scale label → 0–100, and `colours` quadrant name → 0–100. Both
+ * are sent as the caller derived them; nothing in this file invents a number.
+ */
+export type StudioSubject = {
+  name: string
+  scores: Record<string, number>
+  colours?: Record<string, number>
+  notes?: string
+}
+
+/**
+ * One slice of the write-up.
+ *
+ * Split for the same measured reason as every other narrative endpoint here:
+ * a full write-up over 88 scores exceeds API Gateway's 30s integration cap and
+ * returns 503. The server owns the section grouping and reports how many parts
+ * there are; callers fetch the rest and concatenate in part order.
+ */
+export async function analyseSubject(req: {
+  subject: StudioSubject
+  part: number
+}): Promise<AnalysisPart> {
+  const { data } = await agentApi.post<Envelope<AnalysisPart>>(`${BASE}/analyse`, req)
+  return data.data
+}
+
+/** One section of a comparison across two to four people. Same 30s reason. */
+export async function compareSubjects(req: {
+  subjects: StudioSubject[]
+  part: number
+}): Promise<ComparisonPart> {
+  const { data } = await agentApi.post<Envelope<ComparisonPart>>(`${BASE}/compare`, req)
+  return data.data
+}
+
+export async function fetchStarterQuestions(req: {
+  subject: StudioSubject[]
+}): Promise<StarterQuestions> {
+  const { data } = await agentApi.post<Envelope<StarterQuestions>>(`${BASE}/questions`, req)
+  return data.data
+}
+
+export async function askAboutSubjects(req: {
+  subject: StudioSubject[]
+  question: string
+}): Promise<AskResult> {
+  const { data } = await agentApi.post<Envelope<AskResult>>(`${BASE}/ask`, req)
+  return data.data
+}
+
+export async function runScenario(req: {
+  subject: StudioSubject[]
+  situation: string
+  focus: string
+}): Promise<ScenarioPart> {
+  const { data } = await agentApi.post<Envelope<ScenarioPart>>(`${BASE}/scenario`, req)
+  return data.data
+}
+
+export async function exportSubject(req: {
+  subject: StudioSubject
+  fmt: 'wide' | 'long'
+}): Promise<{ filename: string; content: string }> {
+  const { data } = await agentApi.post<Envelope<{ filename: string; content: string }>>(
+    `${BASE}/export`,
+    req,
+  )
+  return data.data
+}

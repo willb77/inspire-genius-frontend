@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -18,6 +19,7 @@ export default function CastPicker({
   max,
   min = 1,
   idPrefix,
+  empty,
 }: {
   profiles: ProfileSummary[]
   loading: boolean
@@ -26,14 +28,24 @@ export default function CastPicker({
   max: number
   min?: number
   idPrefix: string
+  /**
+   * What to say when there is nothing to choose. Defaults to the Character
+   * Lab's wording; a caller reading real people must pass its own, because
+   * "build one on the Build tab" is not advice a manager can act on.
+   */
+  empty?: ReactNode
 }) {
   if (loading) return <Skeleton className="h-24 w-full" />
 
   if (!profiles.length) {
     return (
       <p className="text-sm text-muted-foreground">
-        No saved characters yet. Build one on the <strong>Build</strong> tab and save it — this
-        list reads from what you have saved, not from the tab you left open.
+        {empty ?? (
+          <>
+            No saved characters yet. Build one on the <strong>Build</strong> tab and save it —
+            this list reads from what you have saved, not from the tab you left open.
+          </>
+        )}
       </p>
     )
   }
