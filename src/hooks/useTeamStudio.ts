@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { BEHAVIOUR_CONFIG, QUADRANT_CONFIG } from '@/constants/prism'
+import { QUADRANT_CONFIG } from '@/constants/prism'
 import { mapWithConcurrency } from '@/lib/mapWithConcurrency'
 import {
   analyseSubject,
@@ -8,6 +8,7 @@ import {
   exportSubject,
   fetchStarterQuestions,
   runScenario,
+  type ScoreByType,
   type StudioSubject,
 } from '@/services/team-studio/teamStudio.service'
 import {
@@ -23,7 +24,7 @@ import type {
   ScenarioPort,
   SubjectListPort,
 } from '@/components/prism/studio/ports'
-import type { BehavioralProfile } from '@/types/development'
+import type { BehavioralProfile, PrismDimensionId } from '@/types/development'
 
 /**
  * Team Development Studio — PRISM narrative about a real direct report.
@@ -52,6 +53,37 @@ import type { BehavioralProfile } from '@/types/development'
 
 /** How many narrative parts to have in flight at once. See mapWithConcurrency. */
 const PART_CONCURRENCY = 3
+
+/**
+ * PRISM dimension id → the CANONICAL key the server indexes scores by.
+ *
+ * Stated explicitly rather than derived from the label. `"Innovating"
+ * .toLowerCase()` happens to equal `"innovating"`, and that coincidence holds
+ * for all eight behaviours and for Introversion/Extroversion — which is exactly
+ * what makes it dangerous. It does NOT hold for the other 78 scales:
+ * `"Practical and mechanical"` is keyed `practical_mechanical`, not
+ * `"practical and mechanical"`. A `.toLowerCase()` here would work today, keep
+ * working through review, and start silently dropping scales the moment this
+ * surface reads more than the behaviour radar — the same failure it is being
+ * written to fix.
+ *
+ * A map means an unmapped id yields no key and the scale is left out visibly
+ * (`Scales on file` drops, `hasScores` can go false) instead of being sent
+ * under a key the server will never look up.
+ *
+ * Source of truth: `packages/ig-prism/ig_prism/rubric.py` — the `key` field of
+ * `BEHAVIOUR_DIMENSIONS`, which is what `score_digest` reads.
+ */
+const CANONICAL_KEY_BY_ID: Record<PrismDimensionId, string> = {
+  1: 'innovating',
+  2: 'initiating',
+  3: 'supporting',
+  4: 'coordinating',
+  5: 'focusing',
+  6: 'delivering',
+  7: 'finishing',
+  8: 'evaluating',
+}
 
 /**
  * Turns the ids the shared panels work in into whole subjects.
@@ -83,12 +115,12 @@ export function subjectFromProfile(
   profile: Pick<BehavioralProfile, 'prism'>,
   notes?: string,
 ): StudioSubject {
-  const scores: Record<string, number> = {}
+  const scores: Record<string, ScoreByType> = {}
   const totals: Record<string, { sum: number; n: number }> = {}
 
   for (const d of profile.prism ?? []) {
-    const label = d.label || BEHAVIOUR_CONFIG[d.id]?.label
-    if (label) scores[label] = d.score
+    const key = CANONICAL_KEY_BY_ID[d.id]
+    if (key) scores[key] = { Underlying: d.score }
     const quadrant = QUADRANT_CONFIG[d.quadrant]?.label
     if (!quadrant) continue
     const bucket = (totals[quadrant] ??= { sum: 0, n: 0 })

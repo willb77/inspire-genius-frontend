@@ -80,7 +80,12 @@ it("resolves only the ids that were chosen", async () => {
   expect(getDossier).toHaveBeenCalledTimes(1)
   expect(getDossier).toHaveBeenCalledWith("a")
   expect(subjects).toEqual([
-    { name: "Ann", scores: { Innovating: 70, Finishing: 30 }, colours: { Green: 70, Gold: 30 } },
+    {
+      name: "Ann",
+      // Canonical keys, per score type — the shape `score_digest` indexes.
+      scores: { innovating: { Underlying: 70 }, finishing: { Underlying: 30 } },
+      colours: { Green: 70, Gold: 30 },
+    },
   ])
 })
 

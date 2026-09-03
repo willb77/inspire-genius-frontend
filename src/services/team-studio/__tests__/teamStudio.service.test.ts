@@ -14,7 +14,10 @@ jest.mock("@/lib/agentApi", () => ({
 
 const post = agentApi.post as jest.Mock
 
-const SUBJECT = { name: "A. Member", scores: { Innovating: 71 } }
+// The CANONICAL key shape, per score type — what the server indexes by, and
+// what `subjectFromProfile` now emits. A label-keyed fixture here would agree
+// with the wrong side and pass forever, which is how the mismatch shipped.
+const SUBJECT = { name: "A. Member", scores: { innovating: { Underlying: 71 } } }
 
 beforeEach(() => {
   post.mockReset()

@@ -40,14 +40,71 @@ beforeEach(() => jest.clearAllMocks())
 // ─── subjectFromProfile ─────────────────────────────────────────────────
 
 describe("subjectFromProfile", () => {
-  it("keys scores by behaviour label, not by numeric id", () => {
-    // A payload of {"1": 71} means nothing to a reader and would silently mean
-    // a different scale if the ids were ever renumbered.
+  it("keys scores by the CANONICAL dimension key, per score type", () => {
+    // The server indexes `scores.get(d.key)` where `d.key` is the lowercase
+    // canonical key from ig_prism's rubric, and reads a per-score-type object
+    // off it. A label key ("Innovating") misses every lookup, so every scale is
+    // skipped and the model sees only the four quadrant colours — 200 OK, real
+    // prose, grounded in the wrong thing. Measured on dev 2026-09-03: the flat
+    // payload produced "(Gold 92 — Finishing + Evaluating)" where the nested
+    // one produced "(Finishing 96)".
     const s = subjectFromProfile("A. Member", {
       prism: [dim(1, "Innovating", 71, 1), dim(5, "Focusing", 40, 3)],
     })
-    expect(s.scores).toEqual({ Innovating: 71, Focusing: 40 })
+    expect(s.scores).toEqual({
+      innovating: { Underlying: 71 },
+      focusing: { Underlying: 40 },
+    })
     expect(s.name).toBe("A. Member")
+  })
+
+  it("emits keys the server's own rubric contains — not a lowercased label", () => {
+    // The eight behaviour labels lowercase to their canonical keys by
+    // coincidence, which is what makes `.toLowerCase()` dangerous: it would
+    // pass this suite and start dropping scales the moment the surface reads
+    // one of the 78 scales whose key is snake_case
+    // ("Practical and mechanical" -> practical_mechanical).
+    //
+    // Pinned against the rubric's own key list rather than restating it here,
+    // so a rename on the server side fails HERE rather than in front of a
+    // manager.
+    const CANONICAL = [
+      "innovating",
+      "initiating",
+      "supporting",
+      "coordinating",
+      "focusing",
+      "delivering",
+      "finishing",
+      "evaluating",
+    ]
+    const s = subjectFromProfile("A. Member", {
+      prism: [
+        dim(1, "Innovating", 1, 1),
+        dim(2, "Initiating", 2, 1),
+        dim(3, "Supporting", 3, 2),
+        dim(4, "Coordinating", 4, 2),
+        dim(5, "Focusing", 5, 3),
+        dim(6, "Delivering", 6, 3),
+        dim(7, "Finishing", 7, 4),
+        dim(8, "Evaluating", 8, 4),
+      ],
+    })
+    expect(Object.keys(s.scores).sort()).toEqual([...CANONICAL].sort())
+    for (const k of Object.keys(s.scores)) {
+      expect(k).toBe(k.toLowerCase())
+      expect(k).not.toMatch(/\s/)
+    }
+  })
+
+  it("drops a dimension it cannot map rather than inventing a key for it", () => {
+    // An unmapped id must be visibly absent — "Scales on file" falls, and
+    // `hasScores` can go false — not sent under a key the server never looks
+    // up, which is indistinguishable from a scale the person did not score.
+    const s = subjectFromProfile("A. Member", {
+      prism: [dim(1, "Innovating", 71, 1), dim(99 as never, "Invented", 50, 1)],
+    })
+    expect(Object.keys(s.scores)).toEqual(["innovating"])
   })
 
   it("rolls quadrants up from the dimension's own quadrant id", () => {
@@ -75,14 +132,14 @@ describe("subjectFromProfile", () => {
     // The caller is expected to check: asking for a narrative about no scores
     // produces confident prose about nothing.
     expect(hasScores({ name: "x", scores: {} })).toBe(false)
-    expect(hasScores({ name: "x", scores: { Innovating: 1 } })).toBe(true)
+    expect(hasScores({ name: "x", scores: { innovating: { Underlying: 1 } } })).toBe(true)
   })
 })
 
 // ─── useSubjectNarrative ────────────────────────────────────────────────
 
 describe("useSubjectNarrative", () => {
-  const subject: StudioSubject = { name: "A. Member", scores: { Innovating: 71 } }
+  const subject: StudioSubject = { name: "A. Member", scores: { innovating: { Underlying: 71 } } }
 
   it("fetches every part and stitches them in order", async () => {
     analyse.mockImplementation(({ part }: { part: number }) =>
@@ -125,7 +182,7 @@ describe("useSubjectNarrative", () => {
 
 describe("the ports handed to the shared panels", () => {
   const cast = { subjects: [], isLoading: false }
-  const resolve = (ids: string[]) => ids.map((id) => ({ name: id, scores: { Innovating: 1 } }))
+  const resolve = (ids: string[]) => ids.map((id) => ({ name: id, scores: { innovating: { Underlying: 1 } } }))
 
   it("translates the panel's ids into whole subjects before sending them", async () => {
     // The panel works in ids because Character Lab does. Team Studio has no
@@ -137,8 +194,8 @@ describe("the ports handed to the shared panels", () => {
 
     expect(compare).toHaveBeenCalledWith({
       subjects: [
-        { name: "ann", scores: { Innovating: 1 } },
-        { name: "bo", scores: { Innovating: 1 } },
+        { name: "ann", scores: { innovating: { Underlying: 1 } } },
+        { name: "bo", scores: { innovating: { Underlying: 1 } } },
       ],
       part: 0,
     })
@@ -166,7 +223,7 @@ describe("the ports handed to the shared panels", () => {
 
     await result.current.run.run(["ann"], "a hard week", "ann")
     expect(scenario).toHaveBeenCalledWith({
-      subjects: [{ name: "ann", scores: { Innovating: 1 } }],
+      subjects: [{ name: "ann", scores: { innovating: { Underlying: 1 } } }],
       situation: "a hard week",
     })
   })
@@ -184,7 +241,7 @@ describe("the ports handed to the shared panels", () => {
 
     const out = await result.current.run.run(["ann", "bo"], "a hard week", "bo")
 
-    expect(scenario.mock.calls[0][0].subjects).toEqual([{ name: "bo", scores: { Innovating: 1 } }])
+    expect(scenario.mock.calls[0][0].subjects).toEqual([{ name: "bo", scores: { innovating: { Underlying: 1 } } }])
     expect(out.focus).toBe("bo")
     expect(out.behaviour).toBe("b")
   })
@@ -215,7 +272,7 @@ describe("the ports handed to the shared panels", () => {
 
 describe("the ports hand back the panel's field names, not the wire's", () => {
   const cast = { subjects: [], isLoading: false }
-  const resolve = (ids: string[]) => ids.map((id) => ({ name: id, scores: { Innovating: 1 } }))
+  const resolve = (ids: string[]) => ids.map((id) => ({ name: id, scores: { innovating: { Underlying: 1 } } }))
 
   it("compare exposes `comparison`, so the panel renders prose the server sent", async () => {
     // 13 × 200 OK with nothing on screen was this exact gap on staging-b.
