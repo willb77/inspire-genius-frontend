@@ -69,6 +69,8 @@ export const ROUTES = {
     PRISM_MANAGEMENT: "/super-admin/prism-management",
     PRISM_CSV_CONVERTER: "/super-admin/prism-csv-converter",
     PRISM_ACCURACY_SCORER: "/super-admin/prism-accuracy-scorer",
+    /** Practitioner handbook exam: run it against the tier, score it, keep every run. */
+    PRISM_EXAM: "/super-admin/prism-exam",
     CHARACTER_LAB: "/super-admin/character-lab",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
     SUPPORT_MANAGEMENT: "/super-admin/support",
