@@ -294,24 +294,12 @@ export default function MeridianChat({
   const lastCombinedLengthRef = useRef(0);
   const audioBufferFirstRefreshScheduledRef = useRef(false);
 
-  // Text send queued while the Meridian WS is reconnecting. Flushed in
-  // onResponse on the next "connected" frame. We escape API GW HTTP API's
-  // 30s integration cap by routing text chat through the WS — but if the
-  // socket isn't open yet we hold the message instead of falling back to
-  // the REST endpoint that triggers the cap (multi-agent DAG answers run
-  // 45–90s).
-  const pendingSendRef = useRef<
-    { text: string; fileIds: string[]; convId: string | undefined } | null
-  >(null);
-  const wsSendMessageRef = useRef<
-    | ((
-        text: string,
-        context?: Record<string, unknown>,
-        fileIds?: string[],
-        options?: { voice?: boolean; gender?: string; accent?: string },
-      ) => void)
-    | null
-  >(null);
+  // NOTE: the WS text-send queue that used to live here is gone. Nothing ever
+  // enqueued to it — the flush read a ref no code assigned — and the comment
+  // above it described a design ("route text chat through the WS to escape the
+  // 30s cap") that this page stopped following when it moved to the async-jobs
+  // path. Sending is `startJob` + poll, which has no cap to escape and settles
+  // whether or not a socket is up. See `.claude/rules/agents.md` §6.
 
   // Agent attribution from WS
   const [agentAttribution, setAgentAttribution] = useState<string | null>(null);
@@ -661,16 +649,6 @@ export default function MeridianChat({
 
       if (resp.type === "connected") {
         setStatusBanner({ type: "success", text: t("meridian.status.connected", { defaultValue: "Connected to Meridian" }) });
-        // Flush any text message queued while the socket was reconnecting.
-        const pending = pendingSendRef.current;
-        if (pending) {
-          pendingSendRef.current = null;
-          wsSendMessageRef.current?.(
-            pending.text,
-            { conversation_id: pending.convId, session_id: pending.convId || "default" },
-            pending.fileIds,
-          );
-        }
         return;
       }
 
@@ -1136,7 +1114,6 @@ export default function MeridianChat({
   const {
     connect: wsConnect,
     disconnect,
-    sendMessage: _wsSendMessage,
     isConnected: _isConnected,
     isConnecting,
     isProcessing,
@@ -1144,13 +1121,6 @@ export default function MeridianChat({
     currentDomain,
     reconnectExhausted: _wsReconnectExhausted,
   } = useMeridianWebSocket({ onResponse, onAudioData });
-
-  // Expose wsSendMessage to the connected-frame flush logic in onResponse
-  // (onResponse is defined above the hook call, so it can't close over
-  // _wsSendMessage directly — the ref bridges that).
-  useEffect(() => {
-    wsSendMessageRef.current = _wsSendMessage;
-  }, [_wsSendMessage]);
 
   // -------------------------------------------------------------------
   // T22 — SSE WS-failure fallback for text chat

@@ -9,12 +9,15 @@
  * width — and the results, insights and end-of-session recap all render inside
  * it rather than in a separate column.
  *
- * Transport: reuses the Meridian WebSocket (`useMeridianWebSocket`), the same
- * transport `MeridianChat.tsx` uses, so long syntheses bypass the 30s API
- * Gateway ceiling. Chronicle is the coaching specialist Meridian routes to on
- * bio/life-story keywords, so the panel seeds a bio-oriented context
- * (`surface: "bio_capture"`, `agent_hint: "chronicle"`) and every reply comes
- * back in Meridian's unified voice — the platform contract.
+ * Transport: `useMeridianChat` — `POST /v1/agents/chat/async`, polled, with the
+ * socket as a push accelerator only. It used to SEND over the WebSocket, which
+ * meant that on the tier whose ws-proxy invoked a forwarder named for a
+ * different environment, absent from that account the interview accepted an answer and then
+ * went silent forever, error frame discarded. Chronicle is the coaching
+ * specialist Meridian routes to on bio/life-story keywords, so the panel seeds
+ * a bio-oriented context (`surface: "bio_capture"`, `agent_hint: "chronicle"`)
+ * and every reply comes back in Meridian's unified voice — the platform
+ * contract. See `.claude/rules/agents.md` §6.
  *
  * Audio (one switch, on/off): when on, `useTTS` reads Chronicle's newest reply
  * aloud so the interview guides the member spoken-word, and `useSpeechDictation`
@@ -34,6 +37,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
+  AlertTriangle,
   Bot,
   FilePlus2,
   History,
@@ -69,10 +73,7 @@ import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown"
 import { moduleLabel } from "@/lib/bio/clientMemoir"
 import { useSpeechDictation } from "@/hooks/interview/useSpeechDictation"
 import { useTTS } from "@/hooks/useTTS"
-import {
-  useMeridianWebSocket,
-  type MeridianResponse,
-} from "@/hooks/agents/useMeridianWebSocket"
+import { useMeridianChat } from "@/hooks/agents/useMeridianChat"
 import { useCaptureBioTurn } from "@/hooks/useCaptureBioTurn"
 import {
   useBioSessions,
@@ -158,24 +159,23 @@ export function ChronicleChatPanel({
   const { mutateAsync: saveSession, isPending: saving } = useSaveBioSession()
   const { mutateAsync: loadSession } = useLoadBioSession()
 
-  const onResponse = useCallback((res: MeridianResponse) => {
-    if (res.type === "complete" && res.content) {
-      setTurns((prev) => [
-        ...prev,
-        { role: "assistant", content: res.content ?? "", id: nextId("a") },
-      ])
-      onTurnSettledRef.current?.()
-    }
+  const onAssistant = useCallback((content: string) => {
+    setTurns((prev) => [...prev, { role: "assistant", content, id: nextId("a") }])
+    onTurnSettledRef.current?.()
   }, [])
 
   const {
-    isConnected,
+    send: sendToMeridian,
     isProcessing,
-    connect,
-    disconnect,
-    sendMessage,
-    currentResponse,
-  } = useMeridianWebSocket({ onResponse })
+    partial,
+    error,
+    clearError,
+  } = useMeridianChat({
+    sessionKey: memberId || "bio",
+    accessToken,
+    context: { surface: "bio_capture", agent_hint: "chronicle", member_id: memberId },
+    onAssistant,
+  })
 
   // ── Audio: read Chronicle's reply aloud + capture the spoken answer ──────────
   const { speak, stop: stopSpeaking, speaking } = useTTS({ voice: "coral" })
@@ -197,22 +197,9 @@ export function ChronicleChatPanel({
     }
   }, [voiceMode, turns, speak])
 
-  // Connect on mount / token change; disconnect on unmount. The small delay
-  // mirrors MeridianDevelopmentPanel — it lets the token settle before the
-  // socket opens.
-  useEffect(() => {
-    if (!accessToken) return
-    const timer = setTimeout(() => connect(accessToken), 300)
-    return () => {
-      clearTimeout(timer)
-      disconnect()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken])
-
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
-  }, [turns, currentResponse, recap])
+  }, [turns, partial, error, recap])
 
   const send = useCallback(
     (text: string) => {
@@ -228,10 +215,7 @@ export function ChronicleChatPanel({
         ...prev,
         { role: "user", content: trimmed, id: userTurnId },
       ])
-      sendMessage(trimmed, {
-        surface: "bio_capture",
-        agent_hint: "chronicle",
-        member_id: memberId,
+      void sendToMeridian(trimmed, {
         suggested_module: suggestedModule ?? undefined,
       })
       setInput("")
@@ -255,7 +239,7 @@ export function ChronicleChatPanel({
         },
       )
     },
-    [sendMessage, memberId, suggestedModule, dictation, stopSpeaking, captureTurn],
+    [sendToMeridian, memberId, suggestedModule, dictation, stopSpeaking, captureTurn],
   )
 
   // Expose a seed function so the chapters strip can open a chapter as a message.
@@ -418,15 +402,12 @@ export function ChronicleChatPanel({
         </span>
         <div className="min-w-0">
           <div className="text-sm font-semibold">Chronicle interview</div>
+          {/* Not a socket indicator: the socket no longer carries the answer,
+              so reporting it as "Connected" described a transport the member
+              does not depend on — and it read green throughout the outage that
+              made this panel mute. Report the turn instead. */}
           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <span
-              className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                isConnected ? "bg-emerald-500" : "bg-slate-300",
-              )}
-              aria-hidden="true"
-            />
-            {isConnected ? "Connected" : "Connecting…"}
+            {isProcessing ? "Chronicle is thinking…" : "Ready when you are"}
           </div>
         </div>
 
@@ -609,13 +590,38 @@ export function ChronicleChatPanel({
                   </div>
                 ))
               )}
-              {isProcessing && currentResponse ? (
+              {isProcessing ? (
                 <div className="flex gap-2">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <Bot className="h-3.5 w-3.5 text-primary" aria-hidden />
                   </span>
                   <div className="max-w-[80%] rounded-lg bg-muted/50 p-2 text-xs text-muted-foreground">
-                    <AssistantMarkdown text={currentResponse} className="text-left" />
+                    {partial ? (
+                      <AssistantMarkdown text={partial} className="text-left" />
+                    ) : (
+                      "Chronicle is thinking…"
+                    )}
+                  </div>
+                </div>
+              ) : null}
+              {/* A failed turn must say so. The predecessor discarded the
+                  transport's error frame, so a dead send was indistinguishable
+                  from an interview waiting patiently for the member. */}
+              {error ? (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900"
+                >
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <div className="flex-1">
+                    <p>{error}</p>
+                    <button
+                      type="button"
+                      onClick={clearError}
+                      className="mt-1 underline underline-offset-2"
+                    >
+                      Dismiss
+                    </button>
                   </div>
                 </div>
               ) : null}
