@@ -42,6 +42,7 @@ export const TEAM_STUDIO_COMPARE_COPY: CompareCopy = {
   castTitle: "Choose who to compare",
   castEmpty:
     "Nobody on your team has PRISM on file yet. Invite them from the roster — this list only shows people whose scores exist, because a reading built from no scores would look exactly like a real one.",
+  castCapHint: " Deselect someone to choose a different colleague.",
   errorNeedTwo: "Choose at least two people.",
   errorNeedOne: "Choose at least one person.",
   errorNeedOneToAsk: "Choose at least one person first.",
@@ -64,6 +65,7 @@ export const TEAM_STUDIO_SCENARIO_COPY: ScenarioCopy = {
   castTitle: "Rehearse a situation",
   castEmpty:
     "Nobody on your team has PRISM on file yet. Invite them from the roster — this list only shows people whose scores exist.",
+  castCapHint: " Deselect someone to choose a different colleague.",
   castBlurb: `Each person is read on their own first, then as a group. Behaviour is inferred from PRISM scores and is a prediction about tendencies, not a statement about what someone did or will do. ${NOT_A_JUDGEMENT}`,
   errorNeedOne: "Choose at least one person.",
   errorNeedSituation: "Describe the situation first.",

@@ -79,6 +79,8 @@ export type CompareCopy = {
   castTitle: string
   /** Shown by the picker when there is nothing to choose. */
   castEmpty: ReactNode
+  /** At-cap hint. `undefined` keeps CastPicker's fictional-subject default. */
+  castCapHint: ReactNode
   errorNeedTwo: string
   errorNeedOne: string
   errorNeedOneToAsk: string
@@ -144,6 +146,8 @@ export type ScenarioPort = {
 export type ScenarioCopy = {
   castTitle: string
   castEmpty: ReactNode
+  /** At-cap hint. `undefined` keeps CastPicker's fictional-subject default. */
+  castCapHint: ReactNode
   castBlurb: string
   errorNeedOne: string
   errorNeedSituation: string

@@ -39,6 +39,7 @@ export const CHARACTER_LAB_COMPARE_COPY: CompareCopy = {
   groupNoun: "the cast",
   castTitle: "Choose the cast",
   castEmpty: undefined,
+  castCapHint: undefined,
   errorNeedTwo: "Pick at least two characters.",
   errorNeedOne: "Pick at least one character.",
   errorNeedOneToAsk: "Pick at least one character first.",
@@ -61,6 +62,7 @@ export const CHARACTER_LAB_COMPARE_COPY: CompareCopy = {
 export const CHARACTER_LAB_SCENARIO_COPY: ScenarioCopy = {
   castTitle: "Put them in a situation",
   castEmpty: undefined,
+  castCapHint: undefined,
   castBlurb:
     "Each character is read on their own first, then as a group. Behaviour is derived from the scores — where the profile predicts something the character is not famous for, the write-up says so.",
   errorNeedOne: "Pick at least one character.",
