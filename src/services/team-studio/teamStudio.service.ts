@@ -27,15 +27,46 @@ const BASE = '/v1/agents/team-studio'
 type Envelope<T> = { status: string; data: T }
 
 /**
+ * One scale's value, per score type.
+ *
+ * `Underlying` is the score IG treats as canonical. `Adapted` is optional and
+ * the server renders the gap between them when both are present and differ
+ * materially — see `score_digest` in `app/prism_narrative/digest.py`.
+ */
+export type ScoreByType = { Underlying: number; Adapted?: number }
+
+/**
  * A person as this API wants them: a name, their scores, optionally the
  * quadrant roll-up and any free-text context the manager has recorded.
  *
- * `scores` is scale label → 0–100, and `colours` quadrant name → 0–100. Both
- * are sent as the caller derived them; nothing in this file invents a number.
+ * `scores` is keyed by CANONICAL DIMENSION KEY — `innovating`, not
+ * `Innovating` — and each value is per score type. `colours` is quadrant name →
+ * 0–100 and stays flat. Both are sent as the caller derived them; nothing in
+ * this file invents a number.
+ *
+ * This was `Record<string, number>` keyed by LABEL until 2026-09-03, and both
+ * halves of that were wrong in the same silent way. The server indexes scores
+ * by `d.key`:
+ *
+ *     per_type = scores.get(d.key)      # "innovating"
+ *     if not per_type: continue         # a label key misses, every time
+ *
+ * so every dimension was skipped and the model was handed only the four
+ * quadrant colours, which `cast_colours` reads flat and therefore DID receive.
+ * Nothing errored. The endpoint returned 200 and real prose came back — it just
+ * cited "Gold 92" where it should have cited "Finishing 96". Measured on dev
+ * against the same account and endpoint, the two payloads differing only in
+ * this shape.
+ *
+ * `build_wide_csv(name, scores: dict[str, dict[str, float]])` has the same
+ * signature, so the exported CSV was built from a shape it never received
+ * either. Character Lab's own exporters already index `payload.scores[d.key]`
+ * and read a `byType` value off it — nested-by-key is the established contract
+ * across IG, and this module was the outlier.
  */
 export type StudioSubject = {
   name: string
-  scores: Record<string, number>
+  scores: Record<string, ScoreByType>
   colours?: Record<string, number>
   notes?: string
 }
