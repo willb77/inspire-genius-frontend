@@ -30,6 +30,13 @@ jest.mock("@/services/super-admin/prism-exam/prismExam.service", () => ({
 
 import * as service from "@/services/super-admin/prism-exam/prismExam.service"
 
+type IntervalFn = (q: { state: { data: unknown } }) => number | false
+/** The cache's option type is generic; the hooks set refetchInterval, so read it through a narrow shape. */
+function intervalOf(queryKey: unknown[]): IntervalFn | number | false | undefined {
+  const q = qc.getQueryCache().find({ queryKey })
+  return (q?.options as { refetchInterval?: IntervalFn | number | false } | undefined)?.refetchInterval
+}
+
 let qc: QueryClient
 function wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={qc}>{children}</QueryClientProvider>
@@ -76,13 +83,11 @@ describe("usePrismExam", () => {
     expect(service.getRun).toHaveBeenCalledWith("r-1")
     expect(none.result.current.fetchStatus).toBe("idle")
     // A complete run does not poll; a queued one would (interval is a function of state).
-    const query = qc.getQueryCache().find({ queryKey: ["prism-exam", "run", "r-1"] })
-    const interval = query?.options.refetchInterval
+    const interval = intervalOf(["prism-exam", "run", "r-1"]) as IntervalFn
     expect(typeof interval).toBe("function")
-    expect((interval as (q: unknown) => number | false)({ state: { data: { status: "complete" } } })).toBe(false)
-    expect((interval as (q: unknown) => number | false)({ state: { data: { status: "running" } } })).toBe(ACTIVE_POLL_MS)
-    const runsQuery = qc.getQueryCache().find({ queryKey: ["prism-exam", "runs", 10, true] })
-    const runsInterval = runsQuery?.options.refetchInterval as (q: unknown) => number | false
+    expect(interval({ state: { data: { status: "complete" } } })).toBe(false)
+    expect(interval({ state: { data: { status: "running" } } })).toBe(ACTIVE_POLL_MS)
+    const runsInterval = intervalOf(["prism-exam", "runs", 10, true]) as IntervalFn
     expect(runsInterval({ state: { data: [{ status: "complete" }] } })).toBe(false)
     expect(runsInterval({ state: { data: [{ status: "queued" }] } })).toBe(ACTIVE_POLL_MS)
   })
@@ -92,8 +97,7 @@ describe("usePrismExam", () => {
     const { result } = renderHook(() => useExamAnswers("r-1", { verdict: "wrong" }, true), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(service.listAnswers).toHaveBeenCalledWith("r-1", { verdict: "wrong" })
-    const q = qc.getQueryCache().find({ queryKey: ["prism-exam", "answers", "r-1", "wrong", ""] })
-    expect(q?.options.refetchInterval).toBe(ACTIVE_POLL_MS)
+    expect(intervalOf(["prism-exam", "answers", "r-1", "wrong", ""])).toBe(ACTIVE_POLL_MS)
     const idle = renderHook(() => useExamAnswers(undefined), { wrapper })
     expect(idle.result.current.fetchStatus).toBe("idle")
   })
