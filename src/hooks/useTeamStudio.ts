@@ -10,6 +10,14 @@ import {
   runScenario,
   type StudioSubject,
 } from '@/services/team-studio/teamStudio.service'
+import {
+  toAnalysisPart,
+  toAskResult,
+  toComparisonPart,
+  toScenarioPart,
+  toStarterQuestions,
+} from '@/services/team-studio/adapt'
+import { COLLABORATIVE } from '@/types/character-lab'
 import type {
   ComparePort,
   ScenarioPort,
@@ -107,6 +115,18 @@ export function hasScores(subject: StudioSubject): boolean {
 }
 
 /**
+ * The names the panels title a result with.
+ *
+ * Taken from the subjects actually SENT, never from the roster rows or the
+ * selection — so a heading can only ever name the people the answer was
+ * generated from. A comparison titled with four names built from three
+ * subjects is the specific defect this avoids.
+ */
+function names(subjects: StudioSubject[]): string[] {
+  return subjects.map((s) => s.name)
+}
+
+/**
  * The multi-part write-up for one person, stitched.
  *
  * Part 0 is fetched first because it reports how many parts there are; the rest
@@ -117,7 +137,7 @@ export function hasScores(subject: StudioSubject): boolean {
 export function useSubjectNarrative() {
   const mutation = useMutation({
     mutationFn: async (subject: StudioSubject) => {
-      const first = await analyseSubject({ subject, part: 0 })
+      const first = toAnalysisPart(await analyseSubject({ subject, part: 0 }), subject.name)
       if (first.parts <= 1) {
         return { text: first.analysis, notice: first.notice, failed: 0, parts: first.parts }
       }
@@ -131,7 +151,7 @@ export function useSubjectNarrative() {
       rest.forEach((outcome, i) => {
         chunks.push(
           outcome.status === 'fulfilled'
-            ? outcome.value.analysis
+            ? toAnalysisPart(outcome.value, subject.name).analysis
             : `_Section ${i + 2} of ${first.parts} could not be generated._`,
         )
       })
@@ -170,26 +190,36 @@ export function useTeamStudioCompare(
   })
 
   const questions = useMutation({
-    mutationFn: (req: { subject: StudioSubject[] }) => fetchStarterQuestions(req),
+    mutationFn: (req: { subjects: StudioSubject[] }) => fetchStarterQuestions(req),
   })
   const ask = useMutation({
-    mutationFn: (req: { subject: StudioSubject[]; question: string }) => askAboutSubjects(req),
+    mutationFn: (req: { subjects: StudioSubject[]; question: string }) => askAboutSubjects(req),
   })
 
   return {
     cast,
     compare: {
-      run: async (ids, part) =>
-        compare.mutateAsync({ subjects: await resolve(ids), part }),
+      run: async (ids, part) => {
+        const subjects = await resolve(ids)
+        const wire = await compare.mutateAsync({ subjects, part })
+        return toComparisonPart(wire, names(subjects))
+      },
       pending: compare.isPending,
     },
     questions: {
-      run: async (ids) => questions.mutateAsync({ subject: await resolve(ids) }),
+      run: async (ids) => {
+        const subjects = await resolve(ids)
+        const wire = await questions.mutateAsync({ subjects })
+        return toStarterQuestions(wire, names(subjects))
+      },
       pending: questions.isPending,
     },
     ask: {
-      run: async (ids, question) =>
-        ask.mutateAsync({ subject: await resolve(ids), question }),
+      run: async (ids, question) => {
+        const subjects = await resolve(ids)
+        const wire = await ask.mutateAsync({ subjects, question })
+        return toAskResult(wire, question, names(subjects))
+      },
       pending: ask.isPending,
     },
   }
@@ -207,15 +237,36 @@ export function useTeamStudioScenario(
   resolve: SubjectResolver,
 ): ScenarioPort {
   const scenario = useMutation({
-    mutationFn: (req: { subject: StudioSubject[]; situation: string; focus: string }) =>
-      runScenario(req),
+    mutationFn: (req: { subjects: StudioSubject[]; situation: string }) => runScenario(req),
   })
 
   return {
     cast,
     run: {
-      run: async (ids, situation, focus) =>
-        scenario.mutateAsync({ subject: await resolve(ids), situation, focus }),
+      /**
+       * The panel asks for one focus at a time: each chosen person, then the
+       * group. The server has no `focus` argument — it reads however many
+       * subjects it is given — so the focus is applied HERE by choosing who to
+       * send, and the collaborative read is simply all of them.
+       *
+       * A focus that names nobody in the cast is an error rather than a
+       * fallback to the first person: answering about the wrong colleague under
+       * someone else's heading is the failure this surface exists to avoid.
+       */
+      run: async (ids, situation, focus) => {
+        const subjects = await resolve(ids)
+        if (focus === COLLABORATIVE) {
+          const wire = await scenario.mutateAsync({ subjects, situation })
+          return toScenarioPart(wire, focus, names(subjects))
+        }
+        const i = ids.indexOf(focus)
+        if (i < 0 || !subjects[i]) {
+          throw new Error('That person is no longer in the selection.')
+        }
+        const one = [subjects[i]]
+        const wire = await scenario.mutateAsync({ subjects: one, situation })
+        return toScenarioPart(wire, focus, names(one))
+      },
       pending: scenario.isPending,
     },
   }
