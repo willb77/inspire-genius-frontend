@@ -94,6 +94,19 @@ export type CompareCopy = {
   metaLabel: string
   comparisonSubtitle: string
   answerSubtitle: string
+  /**
+   * Export identity for this surface.
+   *
+   * `filePrefix` names the file, `footer` is stamped on every PDF page, and
+   * `fallbackNotice` is printed at the top when the server sends no notice of
+   * its own. All three are stated per caller rather than defaulted, because
+   * the default that existed — "synthetic profile", "PRISM_Character_" — is a
+   * false statement about a real colleague, and a document outlives the tab it
+   * came from.
+   */
+  filePrefix: string
+  footer: (title: string) => string
+  fallbackNotice: string
 }
 
 // ─── Scenario ───────────────────────────────────────────────────────────
@@ -139,6 +152,19 @@ export type ScenarioCopy = {
   subtitle: string
   metaLabel: string
   savedBlurb: string
+  /**
+   * Export identity for this surface.
+   *
+   * `filePrefix` names the file, `footer` is stamped on every PDF page, and
+   * `fallbackNotice` is printed at the top when the server sends no notice of
+   * its own. All three are stated per caller rather than defaulted, because
+   * the default that existed — "synthetic profile", "PRISM_Character_" — is a
+   * false statement about a real colleague, and a document outlives the tab it
+   * came from.
+   */
+  filePrefix: string
+  footer: (title: string) => string
+  fallbackNotice: string
 }
 
 // ─── Library ────────────────────────────────────────────────────────────

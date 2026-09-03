@@ -10,7 +10,7 @@ import ProfileMarkdown from "@/components/prism/narrative/ProfileMarkdown"
 import NarrativeExportButtons from "@/components/prism/narrative/NarrativeExportButtons"
 import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
-import type { NarrativeDoc } from "@/lib/exportNarrative"
+import { narrativeFileStem, type NarrativeDoc } from "@/lib/exportNarrative"
 import type { StarterQuestion } from "@/types/character-lab"
 import type { CompareCopy, ComparePort } from "./ports"
 
@@ -137,25 +137,34 @@ export default function ComparePanel({
 
   /** Built on click, not at render — see NarrativeExportButtons. */
   function comparisonDoc(): NarrativeDoc {
+    const title = names.join(" vs ")
     return {
-      title: names.join(" vs "),
+      title,
       subtitle: copy.comparisonSubtitle,
-      notice,
+      // The server's notice when there is one; the caller's otherwise. An
+      // export with no notice at all is the failure this guards: the reader
+      // of a PDF never saw whatever the screen said.
+      notice: notice || copy.fallbackNotice,
       meta: [{ label: copy.metaLabel, value: names.join(", ") }],
       sections: [{ body: comparison }],
+      fileStem: narrativeFileStem(title, copy.filePrefix),
+      footer: copy.footer(title),
     }
   }
 
   function answerDoc(): NarrativeDoc {
+    const title = `${names.join(", ")} — ${answered.slice(0, 60)}`
     return {
-      title: `${names.join(", ")} — ${answered.slice(0, 60)}`,
+      title,
       subtitle: copy.answerSubtitle,
-      notice,
+      notice: notice || copy.fallbackNotice,
       meta: [
         { label: copy.metaLabel, value: names.join(", ") },
         { label: "Question", value: answered },
       ],
       sections: [{ heading: "Answer", body: answer }],
+      fileStem: narrativeFileStem(title, copy.filePrefix),
+      footer: copy.footer(title),
     }
   }
 

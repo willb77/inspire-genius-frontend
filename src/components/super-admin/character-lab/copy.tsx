@@ -4,6 +4,22 @@ import type {
   LibraryCopy,
   ScenarioCopy,
 } from "@/components/prism/studio/ports"
+import { SYNTHETIC_NARRATIVE_PREFIX, syntheticFooter } from "@/lib/prismExportLabels"
+
+/**
+ * The export identity these documents have always carried.
+ *
+ * Stated rather than left to a default: the exporters used to hard-code it,
+ * and the point of the change was that the same code now also writes about
+ * real colleagues. `fallbackNotice` is empty on purpose — the Character Lab's
+ * notice comes from the server's rubric, and printing an invented one here
+ * would put words in the model's mouth.
+ */
+const SYNTHETIC_EXPORT = {
+  filePrefix: SYNTHETIC_NARRATIVE_PREFIX,
+  footer: syntheticFooter,
+  fallbackNotice: "",
+} as const
 
 /**
  * Character Lab's words for the shared PRISM studio panels.
@@ -39,6 +55,7 @@ export const CHARACTER_LAB_COMPARE_COPY: CompareCopy = {
   metaLabel: "Characters",
   comparisonSubtitle: "PRISM character comparison",
   answerSubtitle: "PRISM character Q&A",
+  ...SYNTHETIC_EXPORT,
 }
 
 export const CHARACTER_LAB_SCENARIO_COPY: ScenarioCopy = {
@@ -59,6 +76,7 @@ export const CHARACTER_LAB_SCENARIO_COPY: ScenarioCopy = {
   metaLabel: "Characters",
   savedBlurb:
     "Each run keeps the character names as they were at the time, so it still reads correctly after a profile is renamed or deleted.",
+  ...SYNTHETIC_EXPORT,
 }
 
 export const CHARACTER_LAB_LIBRARY_COPY: LibraryCopy = {

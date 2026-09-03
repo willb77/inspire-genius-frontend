@@ -13,7 +13,7 @@ import NarrativeExportButtons from "@/components/prism/narrative/NarrativeExport
 import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { COLLABORATIVE } from "@/types/character-lab"
-import type { NarrativeDoc } from "@/lib/exportNarrative"
+import { narrativeFileStem, type NarrativeDoc } from "@/lib/exportNarrative"
 import type { ScenarioCopy, ScenarioPort } from "./ports"
 
 const MAX_CAST = 4
@@ -126,15 +126,18 @@ export default function ScenarioPanel({
     const sections = cast_
       .map((c) => ({ heading: c.name, body: result?.individual[c.id] ?? "" }))
       .concat([{ heading: "Together", body: result?.collaborative ?? "" }])
+    const docTitle = title.trim() || situation.trim().slice(0, 60) || "Scenario"
     return {
-      title: title.trim() || situation.trim().slice(0, 60) || "Scenario",
+      title: docTitle,
       subtitle: copy.subtitle,
-      notice,
+      notice: notice || copy.fallbackNotice,
       meta: [
         { label: copy.metaLabel, value: cast_.map((c) => c.name).join(", ") || "none selected" },
         { label: "Situation", value: situation.trim() },
       ],
       sections,
+      fileStem: narrativeFileStem(docTitle, copy.filePrefix),
+      footer: copy.footer(docTitle),
     }
   }
 

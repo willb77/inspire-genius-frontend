@@ -26,7 +26,8 @@ import {
 } from '@/lib/pdfWriter'
 import {
   QUADRANT_MEANING,
-  profileFileStem,
+  payloadFileStem,
+  payloadFooter,
   type ProfileExportPayload,
 } from '@/lib/exportCharacterProfile'
 
@@ -134,10 +135,12 @@ export async function exportProfilePdf(payload: ProfileExportPayload): Promise<v
     }
   }
 
-  // Page numbers last, once the total is known.
-  w.footer(`${payload.name} — synthetic profile`)
+  // Page numbers last, once the total is known. The label is the caller's:
+  // "synthetic profile" is a false statement about a real colleague, and the
+  // footer is on every page of a document that outlives the tab it came from.
+  w.footer(payloadFooter(payload))
 
-  downloadBlob(`${profileFileStem(payload.name)}.pdf`, (doc as unknown as { output: (t: string) => Blob }).output('blob'))
+  downloadBlob(`${payloadFileStem(payload)}.pdf`, (doc as unknown as { output: (t: string) => Blob }).output('blob'))
 }
 
 /**

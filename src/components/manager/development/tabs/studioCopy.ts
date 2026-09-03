@@ -1,4 +1,9 @@
 import type { CompareCopy, ScenarioCopy } from "@/components/prism/studio/ports"
+import {
+  REAL_PERSON_FILE_PREFIX,
+  REAL_PERSON_NOTICE,
+  realPersonFooter,
+} from "@/lib/prismExportLabels"
 
 /**
  * Team Development Studio's words for the shared PRISM studio panels.
@@ -11,6 +16,22 @@ import type { CompareCopy, ScenarioCopy } from "@/components/prism/studio/ports"
  * The panels carry no wording of their own precisely so this file has to exist
  * — see `@/components/prism/studio/ports`.
  */
+
+/**
+ * What these documents say about themselves once they leave the app.
+ *
+ * `PRISM_Profile_` rather than `PRISM_Character_`, a footer naming the person
+ * and the date rather than "synthetic profile", and a real-person notice
+ * printed in the same place the synthetic one occupies — the top of page one,
+ * in full, in both Word and PDF. The notice fallback matters most: the server
+ * does not always send one, and an export with no notice is read by people who
+ * never saw whatever the screen said.
+ */
+const REAL_PERSON_EXPORT = {
+  filePrefix: REAL_PERSON_FILE_PREFIX,
+  footer: (title: string) => realPersonFooter(title),
+  fallbackNotice: REAL_PERSON_NOTICE,
+} as const
 
 /** The one line that must never be lost: this is a development input. */
 const NOT_A_JUDGEMENT =
@@ -36,6 +57,7 @@ export const TEAM_STUDIO_COMPARE_COPY: CompareCopy = {
   metaLabel: "People",
   comparisonSubtitle: "PRISM team comparison",
   answerSubtitle: "PRISM team Q&A",
+  ...REAL_PERSON_EXPORT,
 }
 
 export const TEAM_STUDIO_SCENARIO_COPY: ScenarioCopy = {
@@ -59,6 +81,7 @@ export const TEAM_STUDIO_SCENARIO_COPY: ScenarioCopy = {
   // so that turning the store on later cannot ship a blank explanation.
   savedBlurb:
     "Each run keeps the names as they were at the time, so it still reads correctly after someone leaves the team.",
+  ...REAL_PERSON_EXPORT,
 }
 
 export { NOT_A_JUDGEMENT }

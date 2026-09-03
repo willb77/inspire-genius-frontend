@@ -7,7 +7,12 @@ import ProfileMarkdown from "@/components/prism/narrative/ProfileMarkdown"
 import NarrativeExportButtons from "@/components/prism/narrative/NarrativeExportButtons"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { hasScores, subjectFromProfile, useSubjectNarrative } from "@/hooks/useTeamStudio"
-import type { NarrativeDoc } from "@/lib/exportNarrative"
+import { narrativeFileStem, type NarrativeDoc } from "@/lib/exportNarrative"
+import {
+  REAL_PERSON_FILE_PREFIX,
+  REAL_PERSON_NOTICE,
+  realPersonFooter,
+} from "@/lib/prismExportLabels"
 import type { BehavioralProfile } from "@/types/development"
 import { NOT_A_JUDGEMENT } from "./studioCopy"
 
@@ -55,9 +60,15 @@ export function ProfileStudioPanel({
     return {
       title: memberName,
       subtitle: "PRISM behavioural write-up",
-      notice,
+      // The server's notice when it sends one, the real-person notice when it
+      // does not. An export about a named colleague must never leave without
+      // one — the PDF outlives the tab, and whoever opens it never saw the
+      // caveat on screen.
+      notice: notice || REAL_PERSON_NOTICE,
       meta: [{ label: "Scales on file", value: String(Object.keys(subject.scores).length) }],
       sections: [{ body: text }],
+      fileStem: narrativeFileStem(memberName, REAL_PERSON_FILE_PREFIX),
+      footer: realPersonFooter(memberName),
     }
   }
 
