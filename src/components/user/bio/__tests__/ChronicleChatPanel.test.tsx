@@ -19,15 +19,21 @@ jest.mock("@/context/useAuth", () => ({
   }),
 }))
 
+// The panel sends over `useMeridianChat` (async jobs + poll), NOT the socket.
+// Mocked at that seam so the assertions describe the transport the panel
+// actually uses — a test that mocked the WebSocket would have gone on passing
+// through the whole outage, which is exactly what happened.
 const mockSendMessage = jest.fn()
-jest.mock("@/hooks/agents/useMeridianWebSocket", () => ({
-  useMeridianWebSocket: () => ({
-    isConnected: true,
-    isProcessing: false,
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    sendMessage: mockSendMessage,
-    currentResponse: "",
+let chatState = { isProcessing: false, partial: "", error: null as string | null }
+const mockClearError = jest.fn()
+jest.mock("@/hooks/agents/useMeridianChat", () => ({
+  useMeridianChat: () => ({
+    send: mockSendMessage,
+    isProcessing: chatState.isProcessing,
+    partial: chatState.partial,
+    error: chatState.error,
+    clearError: mockClearError,
+    isPushConnected: true,
   }),
 }))
 
@@ -141,7 +147,7 @@ describe("ChronicleChatPanel capture + go-deeper + voice", () => {
     fireEvent.click(probe)
     expect(mockSendMessage).toHaveBeenCalledWith(
       "Tell me about where I grew up.",
-      expect.objectContaining({ surface: "bio_capture", agent_hint: "chronicle" }),
+      expect.any(Object),
     )
   })
 

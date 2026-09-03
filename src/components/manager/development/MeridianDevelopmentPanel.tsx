@@ -1,10 +1,19 @@
 /**
  * Meridian assistant panel for the Member Development Workspace.
  *
- * Reuses the existing Meridian WebSocket plumbing (`useMeridianWebSocket`) —
- * the same transport `MeridianChat.tsx` uses — scoped to the current member +
- * active tab. WebSocket (not REST) is used so long syntheses bypass the 30s
- * API Gateway ceiling.
+ * Transport is `useMeridianChat` — `POST /v1/agents/chat/async` with the socket
+ * as a push accelerator only. It used to send over the WebSocket, which meant
+ * that when the tier's ws-proxy turned out to be invoking a dev-named
+ * forwarder that does not exist in that account, this panel accepted the
+ * manager's question, persisted it, and never answered — with the proxy's
+ * error frame discarded because the panel did not read `error`. The async-jobs
+ * path polls, so it settles with or without the socket. See
+ * `.claude/rules/agents.md` §6.
+ *
+ * `surface: "team_development"` in the context is load-bearing: the agent-engine
+ * reads it in `app/profile/surface_grounding.py` and swaps the injected
+ * <USER_PROFILE> to the MEMBER's PRISM. Without it Meridian answers about the
+ * manager, fluently, while the header names the member.
  *
  * Any action Meridian proposes (create goal, assign module, add milestone) is
  * STAGED as a confirmable card and only applied when the manager approves it —
@@ -12,16 +21,13 @@
  * ```action { ... }``` block in Meridian's reply.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Bot, Send, User } from "lucide-react"
+import { AlertTriangle, Bot, Send, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/useAuth"
-import {
-  useMeridianWebSocket,
-  type MeridianResponse,
-} from "@/hooks/agents/useMeridianWebSocket"
+import { useMeridianChat } from "@/hooks/agents/useMeridianChat"
 import {
   useLearningPlan,
   useCreateMilestone,
@@ -153,35 +159,35 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
     )
   }, [history])
 
-  const onResponse = useCallback((res: MeridianResponse) => {
-    if (res.type === "complete" && res.content) {
-      const action = parseProposedAction(res.content)
-      const text = stripActionBlock(res.content)
-      const content = text || "(no response)"
-      setTurns((prev) => [...prev, { role: "assistant", content, id: `a-${Date.now()}` }])
-      // Persist Meridian's reply so it survives navigation (fire-and-forget).
-      saveRef.current({ role: "assistant", content })
-      if (action) setStaged(action)
-    }
+  const onAssistant = useCallback((raw: string) => {
+    const action = parseProposedAction(raw)
+    const content = stripActionBlock(raw) || "(no response)"
+    setTurns((prev) => [...prev, { role: "assistant", content, id: `a-${Date.now()}` }])
+    // Persist Meridian's reply so it survives navigation (fire-and-forget).
+    saveRef.current({ role: "assistant", content })
+    if (action) setStaged(action)
   }, [])
 
-  const { isConnected, isProcessing, connect, disconnect, sendMessage, currentResponse } =
-    useMeridianWebSocket({ onResponse })
-
-  // Connect on mount / token change; disconnect on unmount.
-  useEffect(() => {
-    if (!accessToken) return
-    const timer = setTimeout(() => connect(accessToken), 300)
-    return () => {
-      clearTimeout(timer)
-      disconnect()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken])
+  const { send: sendToMeridian, isProcessing, partial, error, clearError } = useMeridianChat({
+    sessionKey: memberId,
+    accessToken,
+    // `surface` + `member_id` drive the member-profile grounding in the
+    // agent-engine; `member_name` saves it a roster lookup. Real goal/gap ids
+    // so a proposed action binds to an existing row, never a fabricated one.
+    context: {
+      surface: "team_development",
+      member_id: memberId,
+      member_name: memberName,
+      active_tab: tab,
+      goals: (goals ?? []).map((g) => ({ goalId: g.goalId, title: g.title })),
+      gaps: (gaps ?? []).map((g) => ({ gapId: g.gapId, competency: g.competency })),
+    },
+    onAssistant,
+  })
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
-  }, [turns, currentResponse])
+  }, [turns, partial, error])
 
   const contextChips = useMemo(
     () => [memberName, `Tab: ${tab}`],
@@ -193,15 +199,9 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
     if (!trimmed) return
     setTurns((prev) => [...prev, { role: "user", content: trimmed, id: `u-${Date.now()}` }])
     saveChat.mutate({ role: "user", content: trimmed })
-    sendMessage(trimmed, {
-      surface: "team_development",
-      member_id: memberId,
-      active_tab: tab,
-      // Real ids so Meridian can propose a create_milestone / assign_learning
-      // action bound to an existing goal/gap (never a fabricated id).
-      goals: (goals ?? []).map((g) => ({ goalId: g.goalId, title: g.title })),
-      gaps: (gaps ?? []).map((g) => ({ gapId: g.gapId, competency: g.competency })),
-    })
+    // `active_tab` is passed per-send as well as in the base context so a tab
+    // change between renders can't send a stale one.
+    void sendToMeridian(trimmed, { active_tab: tab })
     setInput("")
   }
 
@@ -224,9 +224,13 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
         </span>
         <div>
           <div className={cn("text-sm font-semibold", sk.text800)}>Meridian</div>
+          {/* Deliberately NOT a socket indicator. The old dot read "Connected"
+              off the WebSocket while the panel was incapable of answering —
+              the transport it described had stopped being the one that carries
+              the question. This reports the turn, which is what the manager
+              can act on. */}
           <div className={cn("flex items-center gap-1 text-[11px]", sk.text400)}>
-            <span className={cn("h-1.5 w-1.5 rounded-full", isConnected ? "bg-emerald-500" : "bg-slate-300")} aria-hidden="true" />
-            {isConnected ? "Connected" : "Connecting…"}
+            {isProcessing ? "Thinking…" : "Ask about this member"}
           </div>
         </div>
         {/* Continue a Summit goal-discovery session (resume = continue, not a CV). */}
@@ -276,13 +280,36 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
             </div>
           ))
         )}
-        {isProcessing && currentResponse ? (
+        {isProcessing ? (
           <div className="flex gap-2">
             <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full", sk.accentBgSoft)}>
               <Bot className={cn("h-3.5 w-3.5", sk.accentText)} />
             </span>
             <div className={cn("max-w-[80%] whitespace-pre-wrap rounded-lg p-2 text-xs", sk.bgMuted50, sk.text500)}>
-              {stripActionBlock(currentResponse)}
+              {partial ? stripActionBlock(partial) : "Thinking…"}
+            </div>
+          </div>
+        ) : null}
+        {/* A failed turn must SAY it failed. The predecessor of this panel
+            discarded the transport's error frame, so a dead send looked exactly
+            like a question nobody had answered yet. */}
+        {error ? (
+          <div
+            role="alert"
+            className={cn(
+              "flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900",
+            )}
+          >
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <div className="flex-1">
+              <p>{error}</p>
+              <button
+                type="button"
+                onClick={clearError}
+                className="mt-1 underline underline-offset-2"
+              >
+                Dismiss
+              </button>
             </div>
           </div>
         ) : null}
