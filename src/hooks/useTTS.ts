@@ -103,10 +103,20 @@ async function fetchServerAudio(text: string, voice: string): Promise<ArrayBuffe
 /**
  * Play an ArrayBuffer of audio via Web Audio API.
  * Returns a Promise that resolves when playback ends, or rejects on error.
+ *
+ * The context is reused across calls and may be SUSPENDED when we get here —
+ * `pause()` suspends it, and browsers create it suspended until a user gesture.
+ * A source started on a suspended context makes no sound and its `ended`
+ * event never fires, so the returned promise would hang and the hook would
+ * stay "speaking" forever. That was the "works once, then goes silent" bug:
+ * `stop()` used to suspend the context and nothing ever resumed it, so the
+ * first reply played and every later one was silent. Resume first; if the
+ * browser refuses, reject so the caller can fall back instead of hanging.
  */
 function playAudioBuffer(
   buffer: ArrayBuffer,
   audioCtxRef: React.MutableRefObject<AudioContext | null>,
+  sourceRef: React.MutableRefObject<AudioBufferSourceNode | null>,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
@@ -119,8 +129,24 @@ function playAudioBuffer(
           const source = ctx.createBufferSource();
           source.buffer = decoded;
           source.connect(ctx.destination);
-          source.onended = () => resolve();
-          source.start(0);
+          source.onended = () => {
+            if (sourceRef.current === source) sourceRef.current = null;
+            resolve();
+          };
+          sourceRef.current = source;
+
+          const begin = () => {
+            try {
+              source.start(0);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          if (ctx.state === "suspended") {
+            ctx.resume().then(begin, reject);
+          } else {
+            begin();
+          }
         },
         (err) => reject(err),
       );
@@ -150,6 +176,12 @@ export function useTTS({
   const [speaking, setSpeaking] = useState(false);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
+  // The source currently playing, so stop() can end IT rather than suspend
+  // the whole context (which nothing would resume — see playAudioBuffer).
+  const sourceRef = useRef<AudioBufferSourceNode | null>(null);
+  // Monotonic id per speak(); a superseded call must not reset the state
+  // of the call that replaced it when its own playback settles.
+  const speakGenRef = useRef(0);
 
   // Track network state
   useEffect(() => {
@@ -167,11 +199,15 @@ export function useTTS({
   const browserTTS = useTextToSpeech();
 
   const stop = useCallback(() => {
-    // Stop server audio
+    // Stop server audio: end the playing source. Its `ended` handler settles
+    // the pending speak(). Do NOT suspend the context here — a suspended
+    // context silences every later speak() and nothing resumes it.
+    const source = sourceRef.current;
+    sourceRef.current = null;
     try {
-      audioCtxRef.current?.suspend();
+      source?.stop();
     } catch {
-      /* best-effort */
+      /* best-effort: already ended or never started */
     }
     // Stop browser TTS
     browserTTS.stop();
@@ -200,6 +236,14 @@ export function useTTS({
   const speak = useCallback(
     async (text: string) => {
       if (!text?.trim()) return;
+      const gen = ++speakGenRef.current;
+      // Reset speaking/provider only if no newer speak() has taken over.
+      const settle = () => {
+        if (speakGenRef.current === gen) {
+          setSpeaking(false);
+          setActiveProvider(null);
+        }
+      };
 
       // Always stop previous playback first
       stop();
@@ -215,7 +259,7 @@ export function useTTS({
 
         if (buffer) {
           try {
-            await playAudioBuffer(buffer, audioCtxRef);
+            await playAudioBuffer(buffer, audioCtxRef, sourceRef);
             console.debug("[useTTS] Server TTS playback complete");
           } catch (err) {
             console.warn("[useTTS] Server audio playback error:", err);
@@ -226,8 +270,7 @@ export function useTTS({
               return;
             }
           } finally {
-            setSpeaking(false);
-            setActiveProvider(null);
+            settle();
           }
           return;
         }
@@ -235,8 +278,7 @@ export function useTTS({
         // Server request failed
         if (!fallbackToLocal) {
           console.warn("[useTTS] Server TTS failed and fallbackToLocal=false");
-          setSpeaking(false);
-          setActiveProvider(null);
+          settle();
           return;
         }
 
@@ -252,8 +294,7 @@ export function useTTS({
       // Browser TTS path
       if (!browserTTS.supported) {
         console.warn("[useTTS] Browser TTS not supported");
-        setSpeaking(false);
-        setActiveProvider(null);
+        settle();
         return;
       }
 
