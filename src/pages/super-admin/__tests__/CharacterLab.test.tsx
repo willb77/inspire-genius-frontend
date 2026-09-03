@@ -11,7 +11,7 @@ jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn(), warn
 
 // react-markdown ships ESM that Jest does not transform; the platform's other
 // tests stub the wrapper component the same way.
-jest.mock("@/components/super-admin/character-lab/ProfileMarkdown", () => ({
+jest.mock("@/components/prism/narrative/ProfileMarkdown", () => ({
   __esModule: true,
   default: ({ text }: { text: string }) => <div>{text}</div>,
 }))

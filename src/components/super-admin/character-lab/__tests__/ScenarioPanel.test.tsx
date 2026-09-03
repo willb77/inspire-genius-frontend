@@ -3,7 +3,7 @@ import ScenarioPanel from "../ScenarioPanel"
 import type { ProfileSummary, SavedScenario } from "@/types/character-lab"
 
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn(), warning: jest.fn() } }))
-jest.mock("@/components/super-admin/character-lab/ProfileMarkdown", () => ({
+jest.mock("@/components/prism/narrative/ProfileMarkdown", () => ({
   __esModule: true,
   default: ({ text }: { text: string }) => <div>{text}</div>,
 }))
