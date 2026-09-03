@@ -32,7 +32,20 @@ import {
 import type { Milestone, SummitGoal, DevelopmentGap } from "@/types/development"
 import { useDevSkin } from "./skin"
 
-type DevTab = "profile" | "goals" | "gaps" | "learning" | "careers" | "roadmap"
+type DevTab =
+  | "profile"
+  | "goals"
+  | "gaps"
+  | "learning"
+  | "careers"
+  | "roadmap"
+  // TDS Studio tabs. Present in the union whether or not VITE_FEATURE_TDS_STUDIO
+  // is on: the union is what the workspace can PASS, and a prompt set missing
+  // for a tab the user is looking at renders an assistant with nothing to
+  // suggest, which reads as a broken panel rather than a hidden feature.
+  | "profile-studio"
+  | "compare"
+  | "scenarios"
 
 type ChatTurn = { role: "user" | "assistant"; content: string; id: string }
 
@@ -49,6 +62,18 @@ const SUGGESTED_PROMPTS: Record<DevTab, string[]> = {
   learning: ["Recommend a learning sequence for this member.", "What format fits their behavioral style?"],
   careers: ["Draft a 90-day plan for the CSM path.", "Compare their top two internal matches."],
   roadmap: ["Is this roadmap realistic given their pacing?", "What's the single next best action?"],
+  "profile-studio": [
+    "Summarize this write-up in three lines for my 1:1.",
+    "Which part of this should I raise first, and how?",
+  ],
+  compare: [
+    "Where are these two most likely to friction?",
+    "Who is better placed to lead the handover, and what would the other need?",
+  ],
+  scenarios: [
+    "What should I watch for when this situation lands?",
+    "How would I brief each of them differently?",
+  ],
 }
 
 function parseProposedAction(content: string): ProposedAction | null {

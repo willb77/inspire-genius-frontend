@@ -45,6 +45,17 @@ import type { BehavioralProfile } from '@/types/development'
 /** How many narrative parts to have in flight at once. See mapWithConcurrency. */
 const PART_CONCURRENCY = 3
 
+/**
+ * Turns the ids the shared panels work in into whole subjects.
+ *
+ * Allowed to be async: Team Studio has no stored profile to address, so a
+ * subject the caller has not already loaded has to be fetched. Resolving on
+ * demand rather than up front matters — the roster can be large and each
+ * member's dossier is a ~60s agent job, so pre-loading the whole team to
+ * populate a picker would be a minute of work per name nobody chose.
+ */
+export type SubjectResolver = (ids: string[]) => StudioSubject[] | Promise<StudioSubject[]>
+
 export type { StudioSubject }
 
 /**
@@ -152,11 +163,12 @@ export function useSubjectExport() {
  */
 export function useTeamStudioCompare(
   cast: SubjectListPort,
-  resolve: (ids: string[]) => StudioSubject[],
+  resolve: SubjectResolver,
 ): ComparePort {
   const compare = useMutation({
     mutationFn: (req: { subjects: StudioSubject[]; part: number }) => compareSubjects(req),
   })
+
   const questions = useMutation({
     mutationFn: (req: { subject: StudioSubject[] }) => fetchStarterQuestions(req),
   })
@@ -167,15 +179,17 @@ export function useTeamStudioCompare(
   return {
     cast,
     compare: {
-      run: (ids, part) => compare.mutateAsync({ subjects: resolve(ids), part }),
+      run: async (ids, part) =>
+        compare.mutateAsync({ subjects: await resolve(ids), part }),
       pending: compare.isPending,
     },
     questions: {
-      run: (ids) => questions.mutateAsync({ subject: resolve(ids) }),
+      run: async (ids) => questions.mutateAsync({ subject: await resolve(ids) }),
       pending: questions.isPending,
     },
     ask: {
-      run: (ids, question) => ask.mutateAsync({ subject: resolve(ids), question }),
+      run: async (ids, question) =>
+        ask.mutateAsync({ subject: await resolve(ids), question }),
       pending: ask.isPending,
     },
   }
@@ -190,7 +204,7 @@ export function useTeamStudioCompare(
  */
 export function useTeamStudioScenario(
   cast: SubjectListPort,
-  resolve: (ids: string[]) => StudioSubject[],
+  resolve: SubjectResolver,
 ): ScenarioPort {
   const scenario = useMutation({
     mutationFn: (req: { subject: StudioSubject[]; situation: string; focus: string }) =>
@@ -200,8 +214,8 @@ export function useTeamStudioScenario(
   return {
     cast,
     run: {
-      run: (ids, situation, focus) =>
-        scenario.mutateAsync({ subject: resolve(ids), situation, focus }),
+      run: async (ids, situation, focus) =>
+        scenario.mutateAsync({ subject: await resolve(ids), situation, focus }),
       pending: scenario.isPending,
     },
   }
