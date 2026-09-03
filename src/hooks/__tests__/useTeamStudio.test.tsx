@@ -9,6 +9,7 @@ import {
   useTeamStudioScenario,
 } from "../useTeamStudio"
 import type { StudioSubject } from "@/services/team-studio/teamStudio.service"
+import { COLLABORATIVE } from "@/types/character-lab"
 import type { PrismDimension } from "@/types/development"
 
 const analyse = jest.fn()
@@ -85,7 +86,7 @@ describe("useSubjectNarrative", () => {
 
   it("fetches every part and stitches them in order", async () => {
     analyse.mockImplementation(({ part }: { part: number }) =>
-      Promise.resolve({ part, parts: 4, analysis: `section-${part}`, notice: "REAL PERSON" }),
+      Promise.resolve({ part, parts: 4, markdown: `section-${part}`, notice: "REAL PERSON" }),
     )
     const { result } = renderHook(() => useSubjectNarrative(), { wrapper })
     const out = await result.current.run(subject)
@@ -102,7 +103,7 @@ describe("useSubjectNarrative", () => {
     analyse.mockImplementation(({ part }: { part: number }) =>
       part === 2
         ? Promise.reject(new Error("503"))
-        : Promise.resolve({ part, parts: 3, analysis: `section-${part}`, notice: "" }),
+        : Promise.resolve({ part, parts: 3, markdown: `section-${part}`, notice: "" }),
     )
     const { result } = renderHook(() => useSubjectNarrative(), { wrapper })
     const out = await result.current.run(subject)
@@ -112,7 +113,7 @@ describe("useSubjectNarrative", () => {
   })
 
   it("does not fetch a second part when the server says there is only one", async () => {
-    analyse.mockResolvedValue({ part: 0, parts: 1, analysis: "all of it", notice: "" })
+    analyse.mockResolvedValue({ part: 0, parts: 1, markdown: "all of it", notice: "" })
     const { result } = renderHook(() => useSubjectNarrative(), { wrapper })
     const out = await result.current.run(subject)
     expect(analyse).toHaveBeenCalledTimes(1)
@@ -130,7 +131,7 @@ describe("the ports handed to the shared panels", () => {
     // The panel works in ids because Character Lab does. Team Studio has no
     // stored profile to address, so the adapter resolves them here and the
     // panel never learns which backend it is talking to.
-    compare.mockResolvedValue({ part: 0, parts: 1, comparison: "c", notice: "" })
+    compare.mockResolvedValue({ part: 0, parts: 1, markdown: "c", notice: "" })
     const { result } = renderHook(() => useTeamStudioCompare(cast, resolve), { wrapper })
     await result.current.compare.run(["ann", "bo"], 0)
 
@@ -144,14 +145,14 @@ describe("the ports handed to the shared panels", () => {
   })
 
   it("sends questions and answers over the resolved subjects too", async () => {
-    questions.mockResolvedValue({ questions: [], names: [], notice: "" })
-    ask.mockResolvedValue({ answer: "a", question: "", names: [], notice: "" })
+    questions.mockResolvedValue({ markdown: "- Q one? (Innovating 1)", notice: "" })
+    ask.mockResolvedValue({ markdown: "a", notice: "" })
     const { result } = renderHook(() => useTeamStudioCompare(cast, resolve), { wrapper })
 
     await result.current.questions.run(["ann"])
     await result.current.ask.run(["ann"], "who?")
 
-    expect(questions.mock.calls[0][0].subject).toHaveLength(1)
+    expect(questions.mock.calls[0][0].subjects).toHaveLength(1)
     expect(ask.mock.calls[0][0]).toMatchObject({ question: "who?" })
   })
 
@@ -159,15 +160,106 @@ describe("the ports handed to the shared panels", () => {
     // Team Studio has nowhere to keep a run. An optional store means the panel
     // hides the button rather than showing one that reports success and saves
     // nothing.
-    scenario.mockResolvedValue({ behaviour: "b", focus: "f", heading: "", names: [], notice: "" })
+    scenario.mockResolvedValue({ markdown: "b", notice: "" })
     const { result } = renderHook(() => useTeamStudioScenario(cast, resolve), { wrapper })
     expect(result.current.store).toBeUndefined()
 
     await result.current.run.run(["ann"], "a hard week", "ann")
     expect(scenario).toHaveBeenCalledWith({
-      subject: [{ name: "ann", scores: { Innovating: 1 } }],
+      subjects: [{ name: "ann", scores: { Innovating: 1 } }],
       situation: "a hard week",
-      focus: "ann",
     })
+  })
+
+  /**
+   * The focus is applied by CHOOSING WHO TO SEND, not by a `focus` field.
+   *
+   * The server has no such argument — it reads however many subjects it is
+   * given. Sending everyone and naming a focus would have the server answer
+   * about the group while the panel filed it under one person's heading.
+   */
+  it("sends only the person in focus for an individual read", async () => {
+    scenario.mockResolvedValue({ markdown: "b", notice: "" })
+    const { result } = renderHook(() => useTeamStudioScenario(cast, resolve), { wrapper })
+
+    const out = await result.current.run.run(["ann", "bo"], "a hard week", "bo")
+
+    expect(scenario.mock.calls[0][0].subjects).toEqual([{ name: "bo", scores: { Innovating: 1 } }])
+    expect(out.focus).toBe("bo")
+    expect(out.behaviour).toBe("b")
+  })
+
+  it("sends everyone for the collaborative read", async () => {
+    scenario.mockResolvedValue({ markdown: "together", notice: "" })
+    const { result } = renderHook(() => useTeamStudioScenario(cast, resolve), { wrapper })
+
+    const out = await result.current.run.run(["ann", "bo"], "a hard week", COLLABORATIVE)
+
+    expect(scenario.mock.calls[0][0].subjects).toHaveLength(2)
+    expect(out.focus).toBe(COLLABORATIVE)
+    expect(out.behaviour).toBe("together")
+  })
+
+  it("refuses a focus naming nobody rather than answering about the wrong person", async () => {
+    scenario.mockResolvedValue({ markdown: "b", notice: "" })
+    const { result } = renderHook(() => useTeamStudioScenario(cast, resolve), { wrapper })
+
+    await expect(
+      result.current.run.run(["ann", "bo"], "a hard week", "someone-else"),
+    ).rejects.toThrow(/no longer in the selection/)
+    expect(scenario).not.toHaveBeenCalled()
+  })
+})
+
+// ─── The adapted shape the panels actually read ─────────────────────────
+
+describe("the ports hand back the panel's field names, not the wire's", () => {
+  const cast = { subjects: [], isLoading: false }
+  const resolve = (ids: string[]) => ids.map((id) => ({ name: id, scores: { Innovating: 1 } }))
+
+  it("compare exposes `comparison`, so the panel renders prose the server sent", async () => {
+    // 13 × 200 OK with nothing on screen was this exact gap on staging-b.
+    compare.mockResolvedValue({ part: 0, parts: 2, markdown: "## Friction\nProse.", notice: "N" })
+    const { result } = renderHook(() => useTeamStudioCompare(cast, resolve), { wrapper })
+
+    const out = await result.current.compare.run(["ann", "bo"], 0)
+
+    expect(out.comparison).toBe("## Friction\nProse.")
+    expect(out.parts).toBe(2)
+    expect(out.names).toEqual(["ann", "bo"])
+  })
+
+  it("questions exposes parsed objects, not the raw markdown list", async () => {
+    questions.mockResolvedValue({
+      markdown: "- When does planning feel like delay? (Finishing 96)",
+      notice: "N",
+    })
+    const { result } = renderHook(() => useTeamStudioCompare(cast, resolve), { wrapper })
+
+    const out = await result.current.questions.run(["ann"])
+
+    expect(out.questions).toEqual([
+      { question: "When does planning feel like delay?", why: "Finishing 96" },
+    ])
+  })
+
+  it("ask exposes `answer` and echoes the question", async () => {
+    ask.mockResolvedValue({ markdown: "Grounded answer.", notice: "N" })
+    const { result } = renderHook(() => useTeamStudioCompare(cast, resolve), { wrapper })
+
+    const out = await result.current.ask.run(["ann"], "who leads?")
+
+    expect(out.answer).toBe("Grounded answer.")
+    expect(out.question).toBe("who leads?")
+  })
+
+  it("names a result only from the subjects actually sent", async () => {
+    compare.mockResolvedValue({ part: 0, parts: 1, markdown: "c", notice: "" })
+    const { result } = renderHook(() => useTeamStudioCompare(cast, resolve), { wrapper })
+
+    const out = await result.current.compare.run(["ann", "bo", "cy"], 0)
+
+    expect(out.names).toEqual(["ann", "bo", "cy"])
+    expect(out.names).toHaveLength(compare.mock.calls[0][0].subjects.length)
   })
 })

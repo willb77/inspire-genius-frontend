@@ -72,6 +72,29 @@ export function ProfileStudioPanel({
     }
   }
 
+  // Identity before scores: a write-up is ABOUT someone, and the server
+  // rejects a nameless subject outright (`subject.name` has `min_length=1`, so
+  // it is a 422, not a soft failure). The dossier's name comes from
+  // growth-service's `_resolve_member_meta`, which falls back to
+  // `public.team_members` — a table with no writer and zero rows on both dev
+  // and staging-b — and then to "". So this is reachable for real members
+  // today, and it presented as a raw validation error on staging-b on
+  // 2026-09-03. Every other string on this panel interpolates the name, so
+  // without this guard the "no scores" message below renders headless too.
+  //
+  // Deliberately NOT papered over with a placeholder: "This member has no
+  // PRISM on file" over a real colleague's export is a false document. Naming
+  // the cause gives whoever sees it something to act on.
+  if (!memberName.trim()) {
+    return (
+      <p className="text-sm text-slate-500">
+        This member has no name on their record, so a write-up cannot be attributed to them. The
+        roster shows names correctly — it reads a different source — so this is a data gap on the
+        member record rather than something you did.
+      </p>
+    )
+  }
+
   // No scores means no write-up worth having. Saying so beats generating
   // confident prose about nothing, which would be indistinguishable from a
   // real reading.

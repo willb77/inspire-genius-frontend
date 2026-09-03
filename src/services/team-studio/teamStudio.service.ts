@@ -1,11 +1,5 @@
 import { agentApi } from '@/lib/agentApi'
-import type {
-  AnalysisPart,
-  AskResult,
-  ComparisonPart,
-  ScenarioPart,
-  StarterQuestions,
-} from '@/types/character-lab'
+import type { TeamStudioWire } from './adapt'
 
 /**
  * Team Development Studio API — PRISM narrative about a REAL direct report.
@@ -57,8 +51,8 @@ export type StudioSubject = {
 export async function analyseSubject(req: {
   subject: StudioSubject
   part: number
-}): Promise<AnalysisPart> {
-  const { data } = await agentApi.post<Envelope<AnalysisPart>>(`${BASE}/analyse`, req)
+}): Promise<TeamStudioWire> {
+  const { data } = await agentApi.post<Envelope<TeamStudioWire>>(`${BASE}/analyse`, req)
   return data.data
 }
 
@@ -66,32 +60,47 @@ export async function analyseSubject(req: {
 export async function compareSubjects(req: {
   subjects: StudioSubject[]
   part: number
-}): Promise<ComparisonPart> {
-  const { data } = await agentApi.post<Envelope<ComparisonPart>>(`${BASE}/compare`, req)
+}): Promise<TeamStudioWire> {
+  const { data } = await agentApi.post<Envelope<TeamStudioWire>>(`${BASE}/compare`, req)
   return data.data
 }
 
+/**
+ * `subjects`, plural, on every endpoint that can be asked about a group.
+ *
+ * The count IS the mode: one subject asks about that person, several ask about
+ * them together. That is why there is no `focus` field — a scenario's
+ * individual read is a one-element request and its collaborative read is an
+ * all-of-them request, so the server never has to be told which it is, and the
+ * two cannot disagree.
+ *
+ * These previously sent `subject` (a list, under a singular key) against a
+ * server that wanted a single object, which is a 422 from Pydantic rather than
+ * a soft failure — exactly what staging-b returned on 2026-09-03. Sending only
+ * the first of several would have been worse than the error: an answer about
+ * one person, under a heading naming four.
+ */
 export async function fetchStarterQuestions(req: {
-  subject: StudioSubject[]
-}): Promise<StarterQuestions> {
-  const { data } = await agentApi.post<Envelope<StarterQuestions>>(`${BASE}/questions`, req)
+  subjects: StudioSubject[]
+}): Promise<TeamStudioWire> {
+  const { data } = await agentApi.post<Envelope<TeamStudioWire>>(`${BASE}/questions`, req)
   return data.data
 }
 
 export async function askAboutSubjects(req: {
-  subject: StudioSubject[]
+  subjects: StudioSubject[]
   question: string
-}): Promise<AskResult> {
-  const { data } = await agentApi.post<Envelope<AskResult>>(`${BASE}/ask`, req)
+}): Promise<TeamStudioWire> {
+  const { data } = await agentApi.post<Envelope<TeamStudioWire>>(`${BASE}/ask`, req)
   return data.data
 }
 
+/** One person's read of a situation, or the group's. See the note above. */
 export async function runScenario(req: {
-  subject: StudioSubject[]
+  subjects: StudioSubject[]
   situation: string
-  focus: string
-}): Promise<ScenarioPart> {
-  const { data } = await agentApi.post<Envelope<ScenarioPart>>(`${BASE}/scenario`, req)
+}): Promise<TeamStudioWire> {
+  const { data } = await agentApi.post<Envelope<TeamStudioWire>>(`${BASE}/scenario`, req)
   return data.data
 }
 
