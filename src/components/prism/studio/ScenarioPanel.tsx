@@ -167,6 +167,7 @@ export default function ScenarioPanel({
             max={MAX_CAST}
             min={1}
             empty={copy.castEmpty}
+            capHint={copy.castCapHint}
           />
           <div className="space-y-1.5">
             <Label htmlFor="cl-situation">The situation</Label>

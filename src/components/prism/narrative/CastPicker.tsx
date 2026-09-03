@@ -20,6 +20,7 @@ export default function CastPicker({
   min = 1,
   idPrefix,
   empty,
+  capHint,
 }: {
   profiles: ProfileSummary[]
   loading: boolean
@@ -34,6 +35,12 @@ export default function CastPicker({
    * "build one on the Build tab" is not advice a manager can act on.
    */
   empty?: ReactNode
+  /**
+   * What to say when the selection is full. Defaults to the Character Lab's
+   * wording; a caller reading real people must pass its own, because
+   * "a different character" is not what a manager is choosing between.
+   */
+  capHint?: ReactNode
 }) {
   if (loading) return <Skeleton className="h-24 w-full" />
 
@@ -94,7 +101,7 @@ export default function CastPicker({
       </div>
       <p className="text-xs text-muted-foreground">
         {selected.length} selected · needs at least {min}, at most {max}.
-        {atCap && " Deselect one to choose a different character."}
+        {atCap && (capHint ?? " Deselect one to choose a different character.")}
       </p>
     </div>
   )

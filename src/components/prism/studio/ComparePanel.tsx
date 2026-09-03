@@ -186,6 +186,7 @@ export default function ComparePanel({
             max={MAX_CAST}
             min={2}
             empty={copy.castEmpty}
+            capHint={copy.castCapHint}
           />
           <div className="flex flex-wrap gap-3">
             <Button onClick={onCompare} disabled={port.compare.pending || selected.length < 2}>
