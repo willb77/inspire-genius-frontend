@@ -2,7 +2,10 @@ import type { ReactNode } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { renderHook } from "@testing-library/react"
 import {
+  ConflictedProfileError,
+  bestSubject,
   hasScores,
+  subjectFromFullPrism,
   subjectFromProfile,
   useSubjectNarrative,
   useTeamStudioCompare,
@@ -10,7 +13,7 @@ import {
 } from "../useTeamStudio"
 import type { StudioSubject } from "@/services/team-studio/teamStudio.service"
 import { COLLABORATIVE } from "@/types/character-lab"
-import type { PrismDimension } from "@/types/development"
+import type { FullPrismProfileResponse, PrismDimension } from "@/types/development"
 
 const analyse = jest.fn()
 const compare = jest.fn()
@@ -318,5 +321,156 @@ describe("the ports hand back the panel's field names, not the wire's", () => {
 
     expect(out.names).toEqual(["ann", "bo", "cy"])
     expect(out.names).toHaveLength(compare.mock.calls[0][0].subjects.length)
+  })
+})
+
+// ─── subjectFromFullPrism ───────────────────────────────────────────────
+//
+// The dossier's behaviour radar is 8 scales and `Underlying` only:
+// `long_term._load_prism_from_assessments` filters its query to
+// `score_type = 'Underlying'`. So no Adapted value has ever reached this
+// surface through `subjectFromProfile`, and the write-up told a manager
+// "there is no meaningful adaptation gap here" about a person with ten Adapted
+// rows on file. Measured on staging-b 2026-09-03: 392 Adapted rows across 41
+// people, none of them reaching the narrative.
+
+const BEHAVIOURS: PrismDimension[] = [
+  dim(1, "Innovating", 95, 1),
+  dim(2, "Initiating", 75, 1),
+  dim(3, "Supporting", 80, 2),
+  dim(4, "Coordinating", 8, 2),
+  dim(5, "Focusing", 40, 3),
+  dim(6, "Delivering", 60, 3),
+  dim(7, "Finishing", 96, 4),
+  dim(8, "Evaluating", 88, 4),
+]
+
+const fullProfile = (
+  over: Partial<FullPrismProfileResponse> = {},
+): FullPrismProfileResponse => ({
+  hasData: true,
+  scales: [
+    { key: "innovating", label: "Innovating", group: "Behavior Preferences", scores: { Underlying: 95, Adapted: 61 } },
+    { key: "practical_mechanical", label: "Practical and mechanical", group: "Work Preference Profile", scores: { Underlying: 44 } },
+  ],
+  colours: { gold: 92, green: 30.5, blue: 76.5, orange: 40 },
+  missing: [],
+  coverage: 2,
+  fromLegacyRows: false,
+  isConflicted: false,
+  conflicts: [],
+  conflictMessage: null,
+  ...over,
+})
+
+describe("subjectFromFullPrism", () => {
+  it("carries the Adapted score the dossier path structurally cannot", () => {
+    // The regression, stated as data. Without this the gap section is asked to
+    // read a comparison it was never given.
+    const s = subjectFromFullPrism("Ben", fullProfile(), { prism: BEHAVIOURS })
+    expect(s.scores.innovating).toEqual({ Underlying: 95, Adapted: 61 })
+  })
+
+  it("passes the server's own rubric keys through verbatim", () => {
+    // Including a snake_case one. This is the whole reason the shape is a
+    // pass-through rather than a mapping: `"Practical and mechanical"` is keyed
+    // `practical_mechanical`, so any client-side derivation from the label is
+    // wrong for 78 of the 88 scales.
+    const s = subjectFromFullPrism("Ben", fullProfile(), { prism: BEHAVIOURS })
+    expect(Object.keys(s.scores).sort()).toEqual(["innovating", "practical_mechanical"])
+  })
+
+  it("reads more than the eight behaviours the radar carries", () => {
+    // The quieter half of the same defect: every write-up so far was generated
+    // from 8 of the ~87 scales a real person has on file.
+    const many = fullProfile({
+      scales: Array.from({ length: 40 }, (_, i) => ({
+        key: `scale_${i}`,
+        label: `Scale ${i}`,
+        group: "Work Preference Profile",
+        scores: { Underlying: i },
+      })),
+    })
+    const s = subjectFromFullPrism("Ben", many, { prism: BEHAVIOURS })
+    expect(Object.keys(s.scores).length).toBeGreaterThan(BEHAVIOURS.length)
+  })
+
+  it("derives the brain map from the behaviours, never from the server's colour map", () => {
+    // `full.colours` is keyed by the canon's COLUMN names, which include the
+    // legacy `orange` for what PRISM calls Red. Passing it through would put
+    // "orange 40" into a prompt and from there into prose a manager reads.
+    // PRISM has no orange quadrant.
+    const s = subjectFromFullPrism("Ben", fullProfile(), { prism: BEHAVIOURS })
+    expect(Object.keys(s.colours ?? {})).not.toContain("orange")
+    expect(Object.keys(s.colours ?? {}).sort()).toEqual(["Blue", "Gold", "Green", "Red"])
+    // And the values are the behaviour means, not the server's numbers.
+    expect(s.colours?.Gold).toBe(92)
+    expect(s.colours?.Green).toBe(85)
+  })
+
+  it("skips a scale the server sent with no score types", () => {
+    // `{}` is a row that carried nothing, not a zero. Storing it would make
+    // `hasScores` true off a profile with no numbers in it.
+    const s = subjectFromFullPrism(
+      "Ben",
+      fullProfile({ scales: [{ key: "innovating", label: "", group: "", scores: {} }] }),
+      { prism: BEHAVIOURS },
+    )
+    expect(s.scores).toEqual({})
+    expect(hasScores(s)).toBe(false)
+  })
+
+  it("REFUSES a conflicted profile instead of narrating the agreeing remainder", () => {
+    // Two assessments under one person disagreeing meant, on dev, two different
+    // people's PRISM reports filed under one account. `scales` already excludes
+    // the disagreeing entries, but the overlap that reveals a conflict is a
+    // lower bound — so the remainder is unverifiable too, and narrating it
+    // would put a blend of two humans in front of a manager.
+    const conflicted = fullProfile({
+      isConflicted: true,
+      conflicts: ["innovating"],
+      conflictMessage: "These records disagree.",
+    })
+    expect(() => subjectFromFullPrism("Ben", conflicted, { prism: BEHAVIOURS })).toThrow(
+      ConflictedProfileError,
+    )
+    expect(() => subjectFromFullPrism("Ben", conflicted, { prism: BEHAVIOURS })).toThrow(
+      "These records disagree.",
+    )
+  })
+
+  it("still refuses when the server sends no conflict message", () => {
+    // The refusal may not depend on prose the server happened to include.
+    const conflicted = fullProfile({ isConflicted: true, conflictMessage: null })
+    expect(() => subjectFromFullPrism("Ben", conflicted, { prism: BEHAVIOURS })).toThrow(
+      ConflictedProfileError,
+    )
+  })
+})
+
+describe("bestSubject", () => {
+  it("prefers the full profile when there is one", () => {
+    const s = bestSubject("Ben", fullProfile(), { prism: BEHAVIOURS })
+    expect(s.scores.innovating).toEqual({ Underlying: 95, Adapted: 61 })
+  })
+
+  it("falls back to the behaviour radar when the person has no assessment row", () => {
+    // `hasData: false` is an ordinary state — scores that live only in the
+    // legacy `prism_results` row, which the dossier can still see. Emptying a
+    // working surface for them would be a regression dressed as a fix.
+    for (const full of [null, fullProfile({ hasData: false, scales: [] })]) {
+      const s = bestSubject("Ben", full, { prism: BEHAVIOURS })
+      expect(Object.keys(s.scores).length).toBe(8)
+      expect(s.scores.innovating).toEqual({ Underlying: 95 })
+    }
+  })
+
+  it("does NOT fall back on a conflict — it re-throws", () => {
+    // The one case where falling back would be actively harmful: the behaviour
+    // radar is derived from the same untrustworthy rows.
+    const conflicted = fullProfile({ isConflicted: true, conflictMessage: "Records disagree." })
+    expect(() => bestSubject("Ben", conflicted, { prism: BEHAVIOURS })).toThrow(
+      ConflictedProfileError,
+    )
   })
 })

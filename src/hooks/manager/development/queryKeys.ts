@@ -7,6 +7,9 @@ export const developmentKeys = {
   all: ["development"] as const,
   roster: () => [...developmentKeys.all, "roster"] as const,
   dossier: (memberId: string) => [...developmentKeys.all, "dossier", memberId] as const,
+  /** Every PRISM scale on file — distinct from the dossier's 8-behaviour radar. */
+  fullPrism: (memberId: string) =>
+    [...developmentKeys.all, "full-prism", memberId] as const,
   goals: (memberId: string) => [...developmentKeys.all, "goals", memberId] as const,
   gaps: (memberId: string, targetBlueprintId?: string) =>
     [...developmentKeys.all, "gaps", memberId, targetBlueprintId ?? "default"] as const,
