@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { getMyGoalReviews } from "@/services/manager/development/growthService"
+import type { GoalReviewList } from "@/types/development"
 import type { AxiosError } from "axios"
 import {
   createGoal,
@@ -71,5 +73,21 @@ export function useSetGoalVisibility() {
   return useMutation<SharedGoal, AxiosError, { goalId: string; visibility: GoalVisibility }>({
     mutationFn: ({ goalId, visibility }) => setGoalVisibility(goalId, visibility),
     onSuccess: () => qc.invalidateQueries({ queryKey: myGoalsKeys.mine }),
+  })
+}
+
+/**
+ * The reviews coaches wrote on the member's own goals (Goals offering,
+ * Phase 4, D7). Read from growth's self-scoped route; the member id is the
+ * token's sub, nothing is passed.
+ */
+export function useMyGoalReviews() {
+  return useQuery<GoalReviewList>({
+    queryKey: [...myGoalsKeys.mine, "reviews"] as const,
+    queryFn: async () => {
+      const r = await getMyGoalReviews()
+      return r.data?.data ?? { memberId: "", reviews: [] }
+    },
+    staleTime: 60_000,
   })
 }

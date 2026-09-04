@@ -141,3 +141,19 @@ describe("MeridianDevelopmentPanel", () => {
     expect(screen.queryByText(/connecting/i)).not.toBeInTheDocument()
   })
 })
+
+describe("goals not shared (Goals offering, Phase 4)", () => {
+  it("says the member has not shared their goals, in a sentence", () => {
+    render(
+      <MeridianDevelopmentPanel memberId="m1" memberName="Mark Tully" tab="goals" goals={[]} gaps={[]} goalsNotShared />,
+    )
+    expect(screen.getByTestId("meridian-goals-not-shared")).toHaveTextContent(
+      "Mark Tully has not shared their goals with you, so Meridian cannot see them either.",
+    )
+  })
+
+  it("says nothing when goals are shared", () => {
+    render(<MeridianDevelopmentPanel memberId="m1" memberName="Mark Tully" tab="goals" goals={[]} gaps={[]} />)
+    expect(screen.queryByTestId("meridian-goals-not-shared")).not.toBeInTheDocument()
+  })
+})

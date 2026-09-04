@@ -382,7 +382,7 @@ export default function MemberDevelopmentWorkspace({
                 <BehavioralProfilePanel profile={dossier.profile} onInvite={() => handleInvite()} />
               </TabsContent>
               <TabsContent value="goals">
-                <GoalsPanel memberId={dossier.memberId} />
+                <GoalsPanel memberId={dossier.memberId} memberName={member.name} />
               </TabsContent>
               <TabsContent value="gaps">
                 <GapAnalysisPanel memberId={dossier.memberId} matches={dossier.matches} initialTargetId={targetFromQuery} />
@@ -437,6 +437,7 @@ export default function MemberDevelopmentWorkspace({
               tab={activeTab}
               goals={dossier.goals}
               gaps={dossier.gaps}
+              goalsNotShared={dossier.goalsNotShared}
             />
           </div>
         </aside>
