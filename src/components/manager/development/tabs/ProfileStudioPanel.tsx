@@ -6,7 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import ProfileMarkdown from "@/components/prism/narrative/ProfileMarkdown"
 import NarrativeExportButtons from "@/components/prism/narrative/NarrativeExportButtons"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
-import { hasScores, subjectFromProfile, useSubjectNarrative } from "@/hooks/useTeamStudio"
+import {
+  ConflictedProfileError,
+  bestSubject,
+  hasScores,
+  useSubjectNarrative,
+} from "@/hooks/useTeamStudio"
+import { useMemberFullPrism } from "@/hooks/manager/development/useMemberFullPrism"
 import { narrativeFileStem, type NarrativeDoc } from "@/lib/exportNarrative"
 import {
   REAL_PERSON_FILE_PREFIX,
@@ -28,9 +34,11 @@ import { NOT_A_JUDGEMENT } from "./studioCopy"
  * calls and the tab is reachable by anyone who opens the workspace.
  */
 export function ProfileStudioPanel({
+  memberId,
   memberName,
   profile,
 }: {
+  memberId: string
   memberName: string
   profile: BehavioralProfile
 }) {
@@ -38,13 +46,32 @@ export function ProfileStudioPanel({
   const [text, setText] = useState("")
   const [notice, setNotice] = useState("")
 
-  const subject = useMemo(
-    () => subjectFromProfile(memberName, profile),
-    [memberName, profile],
-  )
-  const scored = hasScores(subject)
+  // Every scale on file, not the eight-behaviour radar the dossier carries —
+  // and the only read that returns Adapted scores. See `subjectFromFullPrism`.
+  const full = useMemberFullPrism(memberId)
+
+  // `bestSubject` THROWS on a conflicted profile rather than returning a
+  // thinner one, so the build is wrapped and the error kept for the refusal
+  // below. Rendering must not be the thing that decides whether a person's
+  // psychometrics are trustworthy.
+  const { subject, conflict } = useMemo(() => {
+    try {
+      return {
+        subject: bestSubject(memberName, full.data ?? null, profile),
+        conflict: null as string | null,
+      }
+    } catch (err) {
+      if (err instanceof ConflictedProfileError) {
+        return { subject: null, conflict: err.message }
+      }
+      throw err
+    }
+  }, [memberName, full.data, profile])
+
+  const scored = Boolean(subject && hasScores(subject))
 
   async function onGenerate() {
+    if (!subject) return
     setText("")
     try {
       const out = await narrative.run(subject)
@@ -65,7 +92,12 @@ export function ProfileStudioPanel({
       // one — the PDF outlives the tab, and whoever opens it never saw the
       // caveat on screen.
       notice: notice || REAL_PERSON_NOTICE,
-      meta: [{ label: "Scales on file", value: String(Object.keys(subject.scores).length) }],
+      meta: [
+        {
+          label: "Scales on file",
+          value: String(Object.keys(subject?.scores ?? {}).length),
+        },
+      ],
       sections: [{ body: text }],
       fileStem: narrativeFileStem(memberName, REAL_PERSON_FILE_PREFIX),
       footer: realPersonFooter(memberName),
@@ -93,6 +125,32 @@ export function ProfileStudioPanel({
         member record rather than something you did.
       </p>
     )
+  }
+
+  // A conflicted profile is a REFUSAL, and it comes before the "no scores"
+  // branch deliberately. It means two assessments under this person disagree,
+  // which on dev turned out to be two different people's PRISM reports filed
+  // under one account. Reporting that as "no scores on file" would hide a data
+  // fault behind an ordinary-looking empty state, and offering to generate a
+  // write-up from the agreeing remainder would narrate a blend of two humans to
+  // their manager. The server withholds the disagreeing scales; the agreeing
+  // ones are not trustworthy either, because the overlap that reveals a
+  // conflict is only a lower bound.
+  if (conflict) {
+    return (
+      <p className="text-sm text-slate-500">
+        {conflict} Nothing can be written up until the records are separated — this is a data
+        fault on the member record, not something you did.
+      </p>
+    )
+  }
+
+  // Still loading the full profile. Without this, the first render sees no
+  // scales, falls into "no PRISM on file", and tells the manager their report
+  // has nothing — which is the dishonest empty state this surface keeps having
+  // to defend against.
+  if (full.isLoading) {
+    return <p className="text-sm text-slate-500">Loading {memberName}&apos;s PRISM scores…</p>
   }
 
   // No scores means no write-up worth having. Saying so beats generating

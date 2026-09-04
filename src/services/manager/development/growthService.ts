@@ -14,6 +14,7 @@ import type {
   BulkMembersResult,
   CareerMatch,
   DevelopmentGap,
+  FullPrismProfileResponse,
   GoalCategoryCoverage,
   LearningItem,
   MemberCreateInput,
@@ -49,6 +50,28 @@ export function getMemberDossier(memberId: string, refresh = false) {
 }
 
 /** POST /members/{id}/dossier/recompute → 202 {status:"computing", jobId}. */
+/**
+ * Every PRISM scale on file for one member — up to 88, not the 8 behaviours.
+ *
+ * The full-profile counterpart to the dossier's `profile.prism`, which carries
+ * the behaviour radar and nothing else. This is the only read that returns
+ * ADAPTED scores; the dossier path is Underlying-only by construction, because
+ * `long_term._load_prism_from_assessments` filters the query to
+ * `score_type = 'Underlying'`.
+ *
+ * Gated server-side by `assert_member_coaching_access` — the gate that denies
+ * unless it can prove the caller coaches this member, and fails CLOSED. That is
+ * stricter than the permissive `assert_member_access` behind the dossier this
+ * surface already reads, so adding this call narrows nothing and widens nothing.
+ *
+ * Callers must honour `isConflicted`. See `FullPrismProfileResponse`.
+ */
+export function getMemberFullPrism(memberId: string) {
+  return getApi().get<BaseApiResponse<FullPrismProfileResponse>>(
+    `${BASE}/members/${memberId}/profile`,
+  )
+}
+
 export function recomputeDossier(memberId: string) {
   return getApi().post<BaseApiResponse<{ status?: string; jobId?: string }>>(
     `${BASE}/members/${memberId}/dossier/recompute`,

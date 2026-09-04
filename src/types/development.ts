@@ -81,6 +81,58 @@ export type BehavioralProfile = {
   coverage: FrameworkCoverage
 }
 
+/**
+ * One rubric scale, with every score type actually stored for it.
+ *
+ * `scores` is the wire shape the narrative endpoints want verbatim: a map of
+ * score type to value, e.g. `{ Underlying: 62, Adapted: 55 }`. Only the types
+ * on file appear — the server never substitutes one for a missing other,
+ * because Adapted answers a different question than Underlying in the same
+ * units, and a substituted value is indistinguishable from a measured one.
+ *
+ * Mirrors `growth-service` `schemas.FullPrismScale`.
+ */
+export type FullPrismScale = {
+  /** Rubric key, e.g. `innovating`, `practical_mechanical`. */
+  key: string
+  label: string
+  group: string
+  scores: Record<string, number>
+}
+
+/**
+ * All 88 PRISM scales for one person, as far as they go.
+ *
+ * Two properties a consumer MUST respect, both of which read as ordinary data
+ * if ignored:
+ *
+ *   - **`coverage < 88` is normal, not an error.** Measured 75–87 on dev plus
+ *     one 26-scale legacy outlier; nobody has all 88. Treating a short profile
+ *     as a failure rejects every real person. `missing` names the gaps, and a
+ *     missing scale is never defaulted to zero — a profile of zeroes is not
+ *     "no data", it is a specific and wrong personality.
+ *   - **`isConflicted` is a refusal, not a warning.** It means two assessments
+ *     under this person disagree, which on dev was two different people's PRISM
+ *     reports filed under one account. Show `conflictMessage` and nothing else:
+ *     `scales` already excludes the disagreeing entries, but the agreeing
+ *     remainder is not trustworthy either, because the overlap that reveals a
+ *     conflict is only a lower bound.
+ *
+ * Mirrors `growth-service` `schemas.FullPrismProfileResponse`.
+ */
+export type FullPrismProfileResponse = {
+  hasData: boolean
+  scales: FullPrismScale[]
+  /** The four colour means, or null when incomplete OR conflicted. */
+  colours?: Record<string, number> | null
+  missing: string[]
+  coverage: number
+  fromLegacyRows: boolean
+  isConflicted: boolean
+  conflicts: string[]
+  conflictMessage?: string | null
+}
+
 /** One of Summit's five discovery categories. */
 export type GoalCategory =
   | "career_history"

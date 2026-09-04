@@ -6,10 +6,12 @@ import type { RosterMember } from "@/types/development"
 
 const getRoster = jest.fn()
 const getDossier = jest.fn()
+const getFullPrism = jest.fn()
 
 jest.mock("@/services/manager/development/growthService", () => ({
   getTeamDevelopmentRoster: () => getRoster(),
   getMemberDossier: (id: string) => getDossier(id),
+  getMemberFullPrism: (id: string) => getFullPrism(id),
 }))
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -40,8 +42,38 @@ const dossierFor = (name: string) => ({
   },
 })
 
+const fullPrismFor = (adapted: number | null = 61) => ({
+  data: {
+    data: {
+      hasData: true,
+      scales: [
+        {
+          key: "innovating",
+          label: "Innovating",
+          group: "Behavior Preferences",
+          scores: adapted === null ? { Underlying: 70 } : { Underlying: 70, Adapted: adapted },
+        },
+        {
+          key: "practical_mechanical",
+          label: "Practical and mechanical",
+          group: "Work Preference Profile",
+          scores: { Underlying: 44 },
+        },
+      ],
+      colours: null,
+      missing: [],
+      coverage: 2,
+      fromLegacyRows: false,
+      isConflicted: false,
+      conflicts: [],
+      conflictMessage: null,
+    },
+  },
+})
+
 beforeEach(() => {
   jest.clearAllMocks()
+  getFullPrism.mockResolvedValue(fullPrismFor())
   getRoster.mockResolvedValue({
     data: { data: [member("a", "Ann", true), member("b", "Bo", false), member("c", "Cy", true)] },
   })
@@ -79,11 +111,28 @@ it("resolves only the ids that were chosen", async () => {
   const subjects = await result.current.resolve(["a"])
   expect(getDossier).toHaveBeenCalledTimes(1)
   expect(getDossier).toHaveBeenCalledWith("a")
+  // Both reads are id-scoped, not just the expensive one. The profile read is
+  // cheap, but fetching it for the whole roster would still hand this surface
+  // psychometric data for people nobody picked.
+  expect(getFullPrism).toHaveBeenCalledTimes(1)
+  expect(getFullPrism).toHaveBeenCalledWith("a")
   expect(subjects).toEqual([
     {
       name: "Ann",
       // Canonical keys, per score type — the shape `score_digest` indexes.
-      scores: { innovating: { Underlying: 70 }, finishing: { Underlying: 30 } },
+      //
+      // These now come from the FULL profile, not the dossier: `scores` carries
+      // every scale on file with every score type, including the Adapted value
+      // the dossier's radar structurally cannot hold. `finishing` is absent
+      // here because this fixture's full profile does not list it — which is
+      // the honest consequence of the source change, not a dropped scale.
+      scores: {
+        innovating: { Underlying: 70, Adapted: 61 },
+        practical_mechanical: { Underlying: 44 },
+      },
+      // The brain map is still derived from the dossier's behaviours, never
+      // from the server's colour map — which is keyed `orange`, a quadrant
+      // PRISM does not have.
       colours: { Green: 70, Gold: 30 },
     },
   ])
@@ -99,4 +148,66 @@ it("refuses loudly when a chosen person's dossier is still computing", async () 
   await waitFor(() => expect(result.current.port.subjects).toHaveLength(2))
 
   await expect(result.current.resolve(["a", "c"])).rejects.toThrow(/still being analysed/i)
+})
+
+// ─── the full-profile read ──────────────────────────────────────────────
+//
+// Until this landed, `resolve` built subjects from the dossier alone — 8
+// behaviour scales, `Underlying` only, because
+// `long_term._load_prism_from_assessments` filters on
+// `score_type = 'Underlying'`. Compare and Scenarios were reading a tenth of
+// each person's profile, and the write-up asserted there was no adaptation gap
+// for people who had one on file.
+
+it("resolves subjects from the full profile, Adapted scores included", async () => {
+  getDossier.mockResolvedValue(dossierFor("Ann"))
+  const { result } = renderHook(() => useStudioCast(), { wrapper })
+  await waitFor(() => expect(result.current.port.subjects).toBeDefined())
+
+  const [subject] = await result.current.resolve(["a"])
+  expect(getFullPrism).toHaveBeenCalledWith("a")
+  expect(subject.scores.innovating).toEqual({ Underlying: 70, Adapted: 61 })
+  // And a scale the behaviour radar does not carry at all.
+  expect(subject.scores.practical_mechanical).toEqual({ Underlying: 44 })
+})
+
+it("falls back to the behaviour radar when the profile read fails", async () => {
+  // A richer read going down must not take a working surface with it. This is
+  // also what the suite was silently doing before the mock above existed: the
+  // service mock had no `getMemberFullPrism`, the call threw, and every test
+  // passed on the fallback path without exercising the new read once.
+  getDossier.mockResolvedValue(dossierFor("Ann"))
+  getFullPrism.mockRejectedValue(new Error("503"))
+  const { result } = renderHook(() => useStudioCast(), { wrapper })
+  await waitFor(() => expect(result.current.port.subjects).toBeDefined())
+
+  const [subject] = await result.current.resolve(["a"])
+  expect(subject.scores.innovating).toEqual({ Underlying: 70 })
+  expect(subject.name).toBe("Ann")
+})
+
+it("refuses a conflicted member rather than comparing a blend of two people", async () => {
+  // The failure this guards is a disclosure: two assessments under one account
+  // were two different people's reports on dev. A comparison built from the
+  // agreeing remainder would look entirely normal.
+  getDossier.mockResolvedValue(dossierFor("Ann"))
+  getFullPrism.mockResolvedValue({
+    data: {
+      data: {
+        hasData: true,
+        scales: [],
+        colours: null,
+        missing: [],
+        coverage: 0,
+        fromLegacyRows: false,
+        isConflicted: true,
+        conflicts: ["innovating"],
+        conflictMessage: "Ann's assessment records disagree with each other.",
+      },
+    },
+  })
+  const { result } = renderHook(() => useStudioCast(), { wrapper })
+  await waitFor(() => expect(result.current.port.subjects).toBeDefined())
+
+  await expect(result.current.resolve(["a"])).rejects.toThrow("disagree with each other")
 })

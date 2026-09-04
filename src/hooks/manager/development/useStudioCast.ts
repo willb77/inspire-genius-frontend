@@ -1,9 +1,16 @@
 import { useCallback, useMemo } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { getMemberDossier } from "@/services/manager/development/growthService"
-import { subjectFromProfile, type StudioSubject } from "@/hooks/useTeamStudio"
+import {
+  getMemberDossier,
+  getMemberFullPrism,
+} from "@/services/manager/development/growthService"
+import { bestSubject, type StudioSubject } from "@/hooks/useTeamStudio"
 import type { SubjectListPort } from "@/components/prism/studio/ports"
-import type { MemberDossier, RosterMember } from "@/types/development"
+import type {
+  FullPrismProfileResponse,
+  MemberDossier,
+  RosterMember,
+} from "@/types/development"
 import type { ProfileSummary } from "@/types/character-lab"
 import { developmentKeys } from "./queryKeys"
 import { useTeamDevelopmentRoster } from "./useTeamDevelopmentRoster"
@@ -89,6 +96,32 @@ export function useStudioCast(): StudioCast {
         ),
       )
 
+      // The full profile, alongside the dossier rather than instead of it: the
+      // dossier carries the name, the behaviour radar the brain map is derived
+      // from, and the 202-still-computing signal; this carries every scale and
+      // every score type. One plain read each, no agent, so it does not add to
+      // the ~60s the dossier can cost.
+      //
+      // A failure here is NOT fatal. If the profile read is unavailable the
+      // subject falls back to the behaviour radar, which is exactly today's
+      // behaviour — an outage on the richer read must not take a working
+      // surface down with it. A CONFLICTED profile is a different matter and
+      // `bestSubject` throws on it.
+      const fulls = await Promise.all(
+        ids.map((id) =>
+          qc
+            .fetchQuery<FullPrismProfileResponse | null>({
+              queryKey: developmentKeys.fullPrism(id),
+              queryFn: async () => {
+                const r = await getMemberFullPrism(id)
+                return r.data?.data ?? null
+              },
+              staleTime: 60_000,
+            })
+            .catch(() => null),
+        ),
+      )
+
       return rows.flatMap((dossier, i) => {
         // A dossier still computing (202 → null) is NOT a person with no
         // scores. Dropping it silently would compare three people and title
@@ -100,7 +133,7 @@ export function useStudioCast(): StudioCast {
         }
         const name =
           dossier.member.name || withPrism.find((m) => m.memberId === ids[i])?.name || "This member"
-        return [subjectFromProfile(name, dossier.profile)]
+        return [bestSubject(name, fulls[i], dossier.profile)]
       })
     },
     [qc, withPrism],

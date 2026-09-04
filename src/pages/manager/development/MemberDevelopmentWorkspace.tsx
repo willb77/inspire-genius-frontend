@@ -409,7 +409,11 @@ export default function MemberDevelopmentWorkspace({
               {TDS_STUDIO_ENABLED ? (
                 <>
                   <TabsContent value="profile-studio">
-                    <ProfileStudioPanel memberName={member.name} profile={dossier.profile} />
+                    <ProfileStudioPanel
+                      memberId={dossier.memberId}
+                      memberName={member.name}
+                      profile={dossier.profile}
+                    />
                   </TabsContent>
                   <TabsContent value="compare">
                     <TeamComparePanel />

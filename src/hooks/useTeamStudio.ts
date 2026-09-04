@@ -24,7 +24,11 @@ import type {
   ScenarioPort,
   SubjectListPort,
 } from '@/components/prism/studio/ports'
-import type { BehavioralProfile, PrismDimensionId } from '@/types/development'
+import type {
+  BehavioralProfile,
+  FullPrismProfileResponse,
+  PrismDimensionId,
+} from '@/types/development'
 
 /**
  * Team Development Studio — PRISM narrative about a real direct report.
@@ -116,29 +120,143 @@ export function subjectFromProfile(
   notes?: string,
 ): StudioSubject {
   const scores: Record<string, ScoreByType> = {}
-  const totals: Record<string, { sum: number; n: number }> = {}
-
   for (const d of profile.prism ?? []) {
     const key = CANONICAL_KEY_BY_ID[d.id]
     if (key) scores[key] = { Underlying: d.score }
-    const quadrant = QUADRANT_CONFIG[d.quadrant]?.label
-    if (!quadrant) continue
-    const bucket = (totals[quadrant] ??= { sum: 0, n: 0 })
-    bucket.sum += d.score
-    bucket.n += 1
   }
 
-  const colours: Record<string, number> = {}
-  for (const [quadrant, { sum, n }] of Object.entries(totals)) {
-    colours[quadrant] = Math.round((sum / n) * 10) / 10
-  }
-
+  const colours = coloursFromBehaviours(profile)
   return {
     name,
     scores,
     ...(Object.keys(colours).length ? { colours } : {}),
     ...(notes?.trim() ? { notes: notes.trim() } : {}),
   }
+}
+
+/**
+ * The four quadrant means, from the eight behaviours.
+ *
+ * Split out so the FULL-profile path can reuse it rather than read the
+ * server's own `colours` map. That map is keyed by the canon's COLUMN names —
+ * `gold`, `green`, `blue`, and the legacy `orange` — and PRISM has no orange
+ * quadrant. Passing it straight through would put "orange 40" into a prompt
+ * and, from there, into prose a manager reads. `COLUMN_TO_QUADRANT` is the
+ * only correct translation and it lives on the server; rather than copy it
+ * here, the brain map keeps being derived the way it already was, from the
+ * behaviours and `QUADRANT_CONFIG`.
+ *
+ * Never from a colour name read off a hex value — see `@/constants/prism`.
+ */
+function coloursFromBehaviours(
+  profile: Pick<BehavioralProfile, 'prism'>,
+): Record<string, number> {
+  const totals: Record<string, { sum: number; n: number }> = {}
+  for (const d of profile.prism ?? []) {
+    const quadrant = QUADRANT_CONFIG[d.quadrant]?.label
+    if (!quadrant) continue
+    const bucket = (totals[quadrant] ??= { sum: 0, n: 0 })
+    bucket.sum += d.score
+    bucket.n += 1
+  }
+  const colours: Record<string, number> = {}
+  for (const [quadrant, { sum, n }] of Object.entries(totals)) {
+    colours[quadrant] = Math.round((sum / n) * 10) / 10
+  }
+  return colours
+}
+
+/**
+ * Raised when a member's PRISM records cannot all belong to one person.
+ *
+ * A distinct type because the caller must not treat it as "this member has no
+ * scores". Two assessments under one user disagreeing meant, on dev, two
+ * different people's reports filed under one account — so the honest response
+ * is to say why nothing is being shown, not to fall back to a thinner profile
+ * built from the same untrustworthy rows.
+ */
+export class ConflictedProfileError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ConflictedProfileError'
+  }
+}
+
+/**
+ * Turn the FULL PRISM profile into a subject — every scale on file, every
+ * score type on file.
+ *
+ * This is the read the write-up was always supposed to have. `subjectFromProfile`
+ * builds from the dossier's behaviour radar, which is eight scales and
+ * Underlying only: `long_term._load_prism_from_assessments` filters its query to
+ * `score_type = 'Underlying'`, so no Adapted value has ever reached this surface
+ * through it. The consequence was not a missing section but a WRONG one — the
+ * write-up told a manager "there is no meaningful adaptation gap here" about a
+ * person with ten Adapted rows on file. Measured on staging-b: 392 Adapted rows
+ * across 41 people, none of them reaching the narrative.
+ *
+ * `scale.scores` is passed through verbatim. It is already `{Underlying, Adapted}`
+ * keyed by rubric key — the exact shape `score_digest` indexes — so there is no
+ * mapping step here to get wrong, and no place for a `.toLowerCase()` to creep
+ * back in. That matters beyond Adapted: the behaviour radar is 8 of the ~87
+ * scales a real person has on file, so every write-up so far was generated from
+ * under a tenth of the profile.
+ *
+ * Colours are still derived from the behaviours — see `coloursFromBehaviours`.
+ *
+ * @throws ConflictedProfileError when the profile is conflicted. NOT optional:
+ * `scales` already drops the disagreeing entries, but the agreeing remainder is
+ * not trustworthy either, and narrating it would put a blend of two people's
+ * psychometrics in front of a manager.
+ */
+export function subjectFromFullPrism(
+  name: string,
+  full: FullPrismProfileResponse,
+  behavioural: Pick<BehavioralProfile, 'prism'>,
+  notes?: string,
+): StudioSubject {
+  if (full.isConflicted) {
+    throw new ConflictedProfileError(
+      full.conflictMessage ||
+        `${name}'s assessment records disagree with each other, so their profile cannot be shown.`,
+    )
+  }
+
+  const scores: Record<string, ScoreByType> = {}
+  for (const scale of full.scales ?? []) {
+    // A scale the server sent with no score types is not a zero; it is a row
+    // that carried nothing. Sending `{}` would make `hasScores` true off a
+    // profile with no numbers in it.
+    if (scale.key && scale.scores && Object.keys(scale.scores).length) {
+      scores[scale.key] = scale.scores as ScoreByType
+    }
+  }
+
+  const colours = coloursFromBehaviours(behavioural)
+  return {
+    name,
+    scores,
+    ...(Object.keys(colours).length ? { colours } : {}),
+    ...(notes?.trim() ? { notes: notes.trim() } : {}),
+  }
+}
+
+/**
+ * The full profile when it exists, the behaviour radar when it does not.
+ *
+ * `hasData: false` is an ordinary state — a member whose scores live only in
+ * the legacy `prism_results` row, which the dossier can still see. Falling back
+ * keeps today's behaviour for them rather than emptying a surface that works.
+ * A conflicted profile is NOT that case and is re-thrown.
+ */
+export function bestSubject(
+  name: string,
+  full: FullPrismProfileResponse | null,
+  behavioural: Pick<BehavioralProfile, 'prism'>,
+  notes?: string,
+): StudioSubject {
+  if (full?.hasData) return subjectFromFullPrism(name, full, behavioural, notes)
+  return subjectFromProfile(name, behavioural, notes)
 }
 
 /** True when there is enough on file to ask for a narrative at all. */
