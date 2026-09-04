@@ -48,11 +48,16 @@ function toSummary(m: RosterMember): ProfileSummary {
     name: m.name,
     source: m.title ?? "",
     notes: "",
-    // The picker prints "N scales scored". The roster does not carry a scale
-    // count, and inventing one would put a number on screen that no request
-    // produced — 0 reads as "nothing on file", which is what we mean for a row
-    // we cannot count.
-    scored: 0,
+    // No `scored`. The roster carries no scale count, and the previous `0` was
+    // not a cautious placeholder — it was false. This list is FILTERED to people
+    // whose PRISM exists (`coverage.prism`), so every row it renders had scores
+    // on file while the picker said they had none, in the one place an operator
+    // decides whether someone is worth including. `ProfileSummary.scored` is
+    // optional so omission means "not counted" and the picker prints nothing.
+    //
+    // Getting a real number here means the roster carrying one, which is a
+    // query per member over `assessment_scores` on a live endpoint. Not worth
+    // that for a label; worth saying nothing rather than something untrue.
     has_analysis: false,
     created_at: null,
     updated_at: m.coverage.prismAssessedAt ?? null,
