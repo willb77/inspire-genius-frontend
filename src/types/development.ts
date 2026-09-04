@@ -133,6 +133,39 @@ export type FullPrismProfileResponse = {
   conflictMessage?: string | null
 }
 
+/**
+ * One person on the organisation chart.
+ *
+ * Name, title, department — and nothing else, deliberately. The chart is
+ * visible to every signed-in member of the org, so it carries no assessment
+ * coverage, no scores and no contact details. Clicking a card routes to that
+ * member's workspace, where the existing per-member gate decides what is shown.
+ *
+ * Mirrors growth-service `schemas.OrgChartNode`.
+ */
+export type OrgChartNode = {
+  id: string
+  name: string
+  title?: string | null
+  department?: string | null
+  /**
+   * `null` for a root — and also for anyone whose manager sits outside this
+   * org or is deactivated. The server nulls those rather than leaving them
+   * dangling, so a person with an unreachable manager still appears as a root
+   * instead of vanishing with their whole subtree.
+   */
+  managerId?: string | null
+}
+
+/** One organisation's reporting tree, as flat nodes. See `buildOrgTree`. */
+export type OrgChartResponse = {
+  nodes: OrgChartNode[]
+  /** The viewer's own node, so the chart can mark "you are here". */
+  viewerId?: string | null
+  /** True when the org exceeded the server's node ceiling. */
+  truncated: boolean
+}
+
 /** One of Summit's five discovery categories. */
 export type GoalCategory =
   | "career_history"

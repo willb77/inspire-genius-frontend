@@ -21,6 +21,7 @@ import type {
   MemberCreateInput,
   MemberCreateResult,
   MemberDossier,
+  OrgChartResponse,
   Milestone,
   RosterMember,
   SelfPrismResponse,
@@ -71,6 +72,18 @@ export function getMemberFullPrism(memberId: string) {
   return getApi().get<BaseApiResponse<FullPrismProfileResponse>>(
     `${BASE}/members/${memberId}/profile`,
   )
+}
+
+/**
+ * The caller's own organisation's reporting tree.
+ *
+ * Takes no arguments on purpose: the organisation is resolved server-side from
+ * the caller's signed token, so there is no id a client could change to read a
+ * different company. A caller whose org cannot be established gets an empty
+ * chart, not an error and not everyone.
+ */
+export function getOrgChart() {
+  return getApi().get<BaseApiResponse<OrgChartResponse>>(`${BASE}/org-chart`)
 }
 
 export function recomputeDossier(memberId: string) {
