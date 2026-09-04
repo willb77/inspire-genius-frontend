@@ -1,7 +1,6 @@
 /** Summit surface — small presentational helpers (platform Tailwind tokens). */
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { PRISM } from "@/pages/summit/summitData";
 
 export function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
@@ -13,9 +12,23 @@ export function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: stri
   );
 }
 
-export function Card({ children, className }: { children: ReactNode; className?: string }) {
+export function Card({
+  children,
+  className,
+  testId,
+}: {
+  children: ReactNode;
+  className?: string;
+  /** Forwarded as data-testid so a page can name its states for tests. */
+  testId?: string;
+}) {
   return (
-    <div className={cn("rounded-2xl border border-slate-200 bg-white p-5", className)}>{children}</div>
+    <div
+      className={cn("rounded-2xl border border-slate-200 bg-white p-5", className)}
+      data-testid={testId}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -48,24 +61,6 @@ export function Callout({
     <div className={cn("flex items-start gap-2.5 rounded-xl px-4 py-3.5 text-[13.5px] leading-snug", CALLOUT_TONES[tone])}>
       {icon && <span className="mt-0.5 flex-shrink-0">{icon}</span>}
       <span>{children}</span>
-    </div>
-  );
-}
-
-export function PrismBars({ compact }: { compact?: boolean }) {
-  return (
-    <div className={cn("flex flex-col", compact ? "gap-1.5" : "gap-2.5")}>
-      {PRISM.map((p) => (
-        <div key={p.dim} className="flex items-center gap-3">
-          <span className={cn("flex-shrink-0 font-semibold text-[#13294B]", compact ? "w-[104px] text-xs" : "w-[120px] text-[13px]")}>
-            {p.dim}
-          </span>
-          <div className="h-[9px] flex-1 overflow-hidden rounded-full bg-[#F1ECE2]">
-            <div className="h-full rounded-full" style={{ width: `${p.score}%`, background: p.hue }} />
-          </div>
-          <span className="w-6 text-right text-[12.5px] font-bold tabular-nums text-[#0B1B33]">{p.score}</span>
-        </div>
-      ))}
     </div>
   );
 }

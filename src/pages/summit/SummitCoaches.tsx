@@ -1,6 +1,14 @@
 import { Briefcase, TrendingUp, Brain, GitBranch, Sparkles } from "lucide-react";
-import { COACHES, type Coach } from "@/pages/summit/summitData";
 import { PageHead, Card, Callout } from "@/pages/summit/components/ui";
+
+type Coach = { role: string; agents: string; icon: string; focus: string };
+
+/** The three coaching roles Summit routes goals to. Product copy, correctly static. */
+const COACHES: Coach[] = [
+  { role: "Job Mentor", agents: "Echo · Forge", icon: "briefcase", focus: "Current-role excellence — performance, team dynamics, job-specific skills, day-to-day productivity." },
+  { role: "Career Coach", agents: "Nova · Ascend · Bridge", icon: "trend", focus: "Strategic advancement — next-role prep, pivots, leadership development, positioning, long-term trajectory." },
+  { role: "PRISM Coach", agents: "Aura", icon: "brain", focus: "Behavioral effectiveness — stress, adaptability, communication style, conflict, emotional intelligence." },
+];
 import { useGoalSession } from "@/hooks/summit/useGoalSession";
 
 const ICONS: Record<string, typeof Briefcase> = {

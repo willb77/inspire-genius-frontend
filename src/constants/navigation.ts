@@ -6,6 +6,7 @@ import {
   FileText,
   FileSpreadsheet,
   Target,
+  Flag,
   Settings,
   HelpCircle,
   Bot,
@@ -69,6 +70,7 @@ export const WORKSPACE_ITEM_UNAVAILABLE_REASON = "Temporarily unavailable"
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
+  { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals" },
   { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
@@ -78,16 +80,18 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
 /**
  * The user role's menu — the toggle-aware version the layouts call.
  *
- * **Exactly six entries** as of 2026-08-12 (request: "for all User roles only
- * show these menu items on the left side menu"):
+ * **Exactly seven entries** as of 2026-09-04. Six were fixed on 2026-08-12
+ * (request: "for all User roles only show these menu items on the left side
+ * menu"); Goals returned on 2026-09-04 as the ungated My Goals surface
+ * (Goals offering, Phase 3 — decision D8: base product, not a vertical):
  *
- *   Home · Chat with Meridian · Interview Practice · Document Library ·
+ *   Home · Chat with Meridian · Goals · Interview Practice · Document Library ·
  *   Settings · Help & Support
  *
  * The chat row is the only variation: it points at Meridian when the Agent
  * Engine toggle is on (the default) and falls back to "Chat with Coaches"
- * when it is off. Six items either way — the toggle changes the destination,
- * not the shape of the menu.
+ * when it is off. Seven items either way — the toggle changes the
+ * destination, not the shape of the menu.
  *
  * ## Nothing is spliced in
  *
@@ -102,10 +106,11 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
  * {@link HIDDEN_WORKSPACE_ROUTES} for the full accounting. This menu is a
  * shortcut list, not the route table.
  *
- *   - **Goals** (2026-08-12) — reachable from the Direction Setting sub-nav
- *     ("My goals" in constants/vertical-subnav.ts) and JourneyPage stage 5.
- *     Access was never decided here anyway: it is the `direction-setting`
- *     entitlement, enforced server-side by `require_vertical`.
+ *   - **Goals** (removed 2026-08-12, back 2026-09-04). While it was out it was
+ *     only reachable through the Direction Setting sub-nav and JourneyPage
+ *     stage 5, both behind the `direction-setting` entitlement — so a user
+ *     without that vertical had no way to their own goals. The row now points
+ *     at `ROUTES.MY_GOALS.BASE`, which is gated on nothing but sign-in.
  *   - **Analytics** (2026-08-12) — had been greyed and non-navigating since
  *     2026-08-04. A permanently disabled row is menu noise.
  *   - **Request Assessment, Feedback, Onboarding Wizard** (2026-07-31).
@@ -133,6 +138,9 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
           state: { autoLoadPrism: true },
         }
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
+    // The person's own goals — set in the Summit interview, shared per person
+    // by consent (Goals offering, Phase 3). Ungated: every role reaches it.
+    { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals" },
     // Candidate-side STAR rehearsal with Alex (voice-capable).
     { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
     // Document Library sits directly above Settings (2026-08-06 request). It is
@@ -158,15 +166,16 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
  */
 export const HIDDEN_WORKSPACE_ROUTES = [
   ROUTES.PRISM_ASSESSMENT,
-  ROUTES.SUMMIT.BASE,
+  // ROUTES.SUMMIT.BASE and ROUTES.DIRECTION_SETTING.GOALS left this list on
+  // 2026-09-04 (Goals offering, Phase 3). The Summit surface is re-homed at
+  // ROUTES.MY_GOALS.BASE and back in the menu as "Goals"; /summit/* redirects
+  // there. The Direction Setting goals page is stage 5 of that journey, not a
+  // withdrawn shortcut — it links to My Goals and is reached from the map.
   ROUTES.FEEDBACK,
   ROUTES.ONBOARDING.WIZARD,
   // Joined 2026-08-12, when the greyed row was removed rather than left as a
   // permanently-disabled entry. Page and route untouched, as with the rest.
   ROUTES.ANALYTICS,
-  // Joined 2026-08-12 when the menu was cut to six entries. Goals is still
-  // reachable from the Direction Setting sub-nav and JourneyPage stage 5.
-  ROUTES.DIRECTION_SETTING.GOALS,
   // Job Fit stopped being spliced in on 2026-08-12 (WORKSPACE_VERTICALS was
   // emptied). Listed here because this constant tracks what is ABSENT from the
   // menu regardless of how it used to get there — but note it is the one entry

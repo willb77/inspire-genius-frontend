@@ -1,43 +1,36 @@
 import { useEffect } from "react"
+import { Link } from "react-router-dom"
 import {
+  ArrowRight,
   Check,
   CornerDownRight,
   Heart,
-  Loader2,
   Mountain,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAdvanceJourney, useJourney } from "@/hooks/direction-setting/useJourney"
+import { ROUTES } from "@/constants/routes"
+import {
+  useAdvanceJourney,
+  useJourney,
+  useRecordStageComplete,
+} from "@/hooks/direction-setting/useJourney"
 import { useGoalSession } from "@/hooks/summit/useGoalSession"
-import GoalInterviewPanel from "@/components/direction-setting/GoalInterviewPanel"
 import type { StageState } from "@/types/direction-setting"
 
 /**
  * Stage 5 — "What do I actually want?"
  *
- * **This page used to be a door.** It explained the step and sent people to
- * `/summit/*`, and its own header argued that was correct: Summit's surface is
- * a three-column shell with its own sub-nav and chat panel, so it could not be
- * embedded without forking or gutting it — and a second goal system would drift
- * from the first within a release, leaving a person with two lists of goals and
- * no idea which one counted.
+ * This page was a door, then it was the interview, and it is a door again —
+ * for a better reason this time. The interview now lives at My Goals
+ * (Goals offering, Phase 3), which every user reaches from the menu whether
+ * or not they are on this journey, and which is also where a goal gets
+ * published and shared. Running a second copy of the conversation here would
+ * mean two places to confirm a goal and two places to get it wrong.
  *
- * That reasoning was right about the risk and wrong about the options, and it
- * is now obsolete. The interview is no longer a surface: `useSummitInterview`
- * is a headless state machine over `/ask`, `/why-ladder` and `/synthesize`. So
- * the interview runs *here*, driving the same three routes against the same
- * store. There is still exactly one list of goals — this is a second way into
- * the same conversation, not a second conversation.
- *
- * And it is spoken. A goal interview is a conversation, and typing paragraphs
- * about why your job is going nowhere is a different and worse activity than
- * saying it out loud. Voice leads; text is one toggle away.
- *
- * The one thing worth defending in the copy: Summit does not collect
- * intentions. The WHY ladder walks each stated goal down — up to five rungs,
- * hard-stopped there in the backend — until it hits a value or an identity.
- * "Get a better job" is not a goal. What sits underneath it is.
+ * So this page explains the step, sends the person to My Goals with a way
+ * back, and records the stage from what they did there: in progress once the
+ * session holds any goal, complete once one is confirmed.
  */
 
 /** The backend's id for this stage. See `stages.py`. */
@@ -78,26 +71,17 @@ export default function GoalsPage() {
   const { data: journey, isLoading, isError } = useJourney()
   const { data: session } = useGoalSession()
   const advance = useAdvanceJourney()
-
-  // Absent journey (still loading, or the fetch failed) is treated as
-  // not_started rather than as an error state for the whole page. The page's
-  // real job — explaining the step and pointing at Summit — does not depend on
-  // the journey row, and refusing to render it because a progress marker failed
-  // to load would be the wrong trade.
   const state: StageState = journey?.stageStatus?.[STAGE_ID] ?? "not_started"
   const goals = session?.goals ?? []
+  const confirmed = goals.filter((g) => g.status === "confirmed").length
 
   /**
-   * Mark the stage under way as soon as the interview actually starts.
-   *
-   * Fire-and-forget on purpose: the interview is the point, and making someone
-   * wait on a progress write would be spending their patience on our
-   * bookkeeping. If the write fails the worst case is the map still says "not
-   * started", which the person can correct below.
+   * Under way as soon as the session holds a goal — the person has started the
+   * conversation at My Goals and come back. Fire-and-forget: if the write fails
+   * the map still says "not started", which they can correct below.
    */
   useEffect(() => {
-    if (state === "not_started" && goals.length === 0) return
-    if (state !== "not_started") return
+    if (state !== "not_started" || goals.length === 0) return
     advance.mutate({ stageId: STAGE_ID, state: "in_progress" })
     // `advance` is a stable mutation object; re-running on its identity would
     // re-post the same write.
@@ -105,18 +89,11 @@ export default function GoalsPage() {
   }, [state, goals.length])
 
   /**
-   * Goals came back — the stage has produced its artefact, so record it.
-   *
-   * This is what stage 5 exists to produce, and recording it here is what lets
-   * the journey map move someone on to job matches without them having to
-   * remember to press a button. They can still mark it done by hand below; this
-   * just stops the common case depending on that.
+   * Complete once a goal is confirmed — that is the artefact this stage exists
+   * to produce. Recorded on return from My Goals, so the map moves on without
+   * the person having to remember a button. Never walks the stage backwards.
    */
-  const onGoalsSynthesised = (count: number) => {
-    if (count > 0 && state !== "complete") {
-      advance.mutate({ stageId: STAGE_ID, state: "complete" })
-    }
-  }
+  useRecordStageComplete(STAGE_ID, confirmed > 0)
 
   const markDone = () => {
     advance.mutate({ stageId: STAGE_ID, state: "complete" })
@@ -136,13 +113,28 @@ export default function GoalsPage() {
         </p>
       </header>
 
-      {/* The interview itself. It used to be a link to Summit; it is now the
-          conversation, in place. */}
-      <GoalInterviewPanel onGoalsSynthesised={onGoalsSynthesised} />
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Mountain className="h-4 w-4 text-primary" aria-hidden />
+            Your goals live in one place
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            The interview, your drafts, publishing and who can see them are all at
+            My Goals. This step is done when you have confirmed a goal there — the
+            map picks that up when you come back.
+          </p>
+          <Button asChild>
+            <Link to={`${ROUTES.MY_GOALS.BASE}?journey=direction-setting`}>
+              Go to My Goals
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
 
-      {/* Goals already banked. Reached without leaving the step, because the
-          previous version sent people to a different room to look at them and
-          they did not always come back. */}
       {goals.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
@@ -155,10 +147,12 @@ export default function GoalsPage() {
             <ul className="space-y-3">
               {goals.map((goal) => (
                 <li key={goal.goal_id} className="border-l-2 border-primary/40 pl-3">
-                  <p className="text-sm font-medium">{goal.title}</p>
-                  {/* The motivation is the WHY-ladder root. It is the whole
-                      point of the interview, so it is shown with the goal
-                      rather than hidden behind a detail view. */}
+                  <p className="text-sm font-medium">
+                    {goal.title}
+                    {goal.status === "confirmed" && (
+                      <span className="ml-2 text-xs font-normal text-emerald-700">confirmed</span>
+                    )}
+                  </p>
                   {goal.motivation && (
                     <p className="mt-0.5 flex items-start gap-1.5 text-xs text-muted-foreground">
                       <Heart className="mt-0.5 h-3 w-3 shrink-0 text-amber-600" aria-hidden />
@@ -172,12 +166,9 @@ export default function GoalsPage() {
         </Card>
       )}
 
-      {/* Why this step is not a list of new year's resolutions. */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">
-            Goals with the reason underneath them
-          </CardTitle>
+          <CardTitle className="text-base">Goals with the reason underneath them</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
@@ -187,7 +178,6 @@ export default function GoalsPage() {
             about rather than something you think you should say. That root is
             what everything after this step gets aimed at.
           </p>
-
           <ol className="space-y-2" aria-label="How the WHY ladder works">
             {LADDER_EXAMPLE.map((rung) => (
               <li key={rung.role} className="flex gap-2.5">
@@ -195,65 +185,36 @@ export default function GoalsPage() {
                   {"root" in rung && rung.root ? (
                     <Heart className="h-4 w-4 text-amber-600" aria-hidden />
                   ) : (
-                    <CornerDownRight
-                      className="h-4 w-4 text-muted-foreground/60"
-                      aria-hidden
-                    />
+                    <CornerDownRight className="h-4 w-4 text-muted-foreground/60" aria-hidden />
                   )}
                 </span>
                 <span className="min-w-0">
                   <span className="block text-xs uppercase tracking-wide text-muted-foreground">
                     {rung.role}
                   </span>
-                  <span
-                    className={
-                      "root" in rung && rung.root
-                        ? "block text-sm font-medium"
-                        : "block text-sm"
-                    }
-                  >
+                  <span className={"root" in rung && rung.root ? "block text-sm font-medium" : "block text-sm"}>
                     {rung.body}
                   </span>
                 </span>
               </li>
             ))}
           </ol>
-
-          <p className="text-xs text-muted-foreground">
-            Summit works through five areas of your life this way, and it does it
-            gradually — you are never handed a questionnaire.
-          </p>
         </CardContent>
       </Card>
 
       {isError && (
         <p className="text-xs text-muted-foreground">
           We couldn&apos;t read your progress just now, so this step may show as
-          not started. The interview itself is unaffected.
+          not started. Your goals themselves are unaffected.
         </p>
       )}
 
-      {/* Only the person can say whether the conversation reached anything. */}
       {state !== "complete" && (
         <footer className="border-t pt-4">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={advance.isPending}
-            onClick={markDone}
-          >
-            {advance.isPending ? (
-              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <Check className="mr-1.5 h-4 w-4" aria-hidden />
-            )}
-            I&apos;ve set my goals — mark this step done
+          <Button type="button" variant="ghost" onClick={markDone} disabled={advance.isPending}>
+            <Check className="mr-2 h-4 w-4" aria-hidden />
+            Mark this step done
           </Button>
-          <p className="mt-1 text-xs text-muted-foreground">
-            You can carry on adding to them afterwards. This just tells the map
-            to move you on.
-          </p>
         </footer>
       )}
     </div>

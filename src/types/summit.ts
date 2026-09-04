@@ -127,3 +127,45 @@ export type SummitSynthesizeResponse = {
   goals: SummitGoal[]
   session: SummitSession
 }
+
+// ─── The shared record (Store B) — Goals offering, Phases 1–3 ───────────
+//
+// What a person publishes from their session becomes a row in `public.goals`
+// (the record every coach surface reads), served back to them by
+// `GET /v1/agents/goals/mine` in the camelCase `SummitGoal` contract from
+// `@/types/development` — the SAME shape the coach-side GoalsPanel renders,
+// which is what lets the sharing panel preview "what they see" with the coach's
+// own card rather than a redrawn one. These routes DO use the `ok()` envelope
+// (`{status, data}`), unlike the session routes above.
+
+export type GoalVisibility = "shareable" | "private"
+export type GoalSource = "seed" | "member"
+
+/** A published goal: the coach contract plus the Phase 1 columns. */
+export type SharedGoal = import("@/types/development").SummitGoal & {
+  source: GoalSource
+  /** Per-goal privacy switch (D5). A private goal is never shown to a viewer. */
+  visibility: GoalVisibility
+  /** The session goal_id it was published from; null for seed rows. */
+  publishedFrom: string | null
+  publishedAt: string | null
+  /** Coach reviews — empty until Phase 4 fills it. */
+  reviews?: unknown[]
+}
+
+export type MyGoalsResponse = {
+  memberId: string
+  goals: SharedGoal[]
+  coverage: import("@/types/development").GoalCategoryCoverage[]
+}
+
+/** Body for POST /v1/agents/goals — a quick-added session goal. */
+export type SummitGoalCreate = {
+  title: string
+  category?: SummitCategoryKey
+  time_horizon?: "short" | "medium" | "long"
+  motivation?: string
+  success_metric?: string
+  first_step?: string
+  owning_coach?: string
+}

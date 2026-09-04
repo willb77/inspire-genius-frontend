@@ -15,7 +15,9 @@ import {
 import { useDeleteUserData, useExportUserData } from "@/hooks/privacy/usePrivacy"
 import { useAuth } from "@/context/useAuth"
 import { toast } from "sonner"
-import { Download, Trash2, Shield } from "lucide-react"
+import { Download, Trash2, Shield, Flag } from "lucide-react"
+import { Link } from "react-router-dom"
+import { ROUTES } from "@/constants/routes"
 
 export default function PrivacySettings() {
   const { user, logout } = useAuth()
@@ -107,8 +109,27 @@ export default function PrivacySettings() {
           </ul>
         </div>
 
-        {/* Export data */}
+        {/* Who can see my goals — the sharing panel (Goals offering, Phase 3).
+            Goals are shared per person, by your choice, for a fixed term;
+            nobody sees them by rank. */}
         <div className="flex items-start justify-between gap-4">
+          <div>
+            <h4 className="font-medium text-sm">Who can see my goals</h4>
+            <p className="text-sm text-muted-foreground">
+              Your goals are private until you share them with a specific person.
+              Turn sharing on or off per person, see when it expires, and renew it.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm" className="shrink-0">
+            <Link to={ROUTES.MY_GOALS.SHARING}>
+              <Flag className="mr-2 h-4 w-4" />
+              Manage sharing
+            </Link>
+          </Button>
+        </div>
+
+        {/* Export data */}
+        <div className="flex items-start justify-between gap-4 border-t pt-4">
           <div>
             <h4 className="font-medium text-sm">Download My Data</h4>
             <p className="text-sm text-muted-foreground">

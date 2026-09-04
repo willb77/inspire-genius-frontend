@@ -80,8 +80,8 @@ export default function Home() {
     // the generic flow. Backstop for when GET /latest-prism can't find
     // their PRISM (coach-coachee scenario, generic-upload tag).
     { label: t("coaching:quickActions.markAsMyPrism", { defaultValue: "Mark as My PRISM Rpt" }), icon: Star, to: ROUTES.DOCUMENTS, bg: "bg-rose-100", iconColor: "text-rose-600" },
-    { label: t("coaching:quickActions.setNewGoal", { defaultValue: "Set a Goal" }), icon: Flag, to: ROUTES.SUMMIT.BASE, bg: "bg-amber-100", iconColor: "text-amber-600" },
-    { label: t("coaching:quickActions.goalSetting", { defaultValue: "Goal Setting" }), icon: Target, to: ROUTES.SUMMIT.BASE, bg: "bg-teal-100", iconColor: "text-teal-600" },
+    { label: t("coaching:quickActions.setNewGoal", { defaultValue: "Set a Goal" }), icon: Flag, to: ROUTES.MY_GOALS.BASE, bg: "bg-amber-100", iconColor: "text-amber-600" },
+    { label: t("coaching:quickActions.goalSetting", { defaultValue: "Goal Setting" }), icon: Target, to: ROUTES.MY_GOALS.BASE, bg: "bg-teal-100", iconColor: "text-teal-600" },
     // Opens the assistant popup in place rather than routing — a quick
     // question shouldn't cost the user their place on the dashboard.
     { label: t("coaching:quickActions.askMeridian", { defaultValue: "Ask Meridian" }), icon: Sparkles, onClick: openSupportAgent, bg: "bg-indigo-100", iconColor: "text-indigo-600" },

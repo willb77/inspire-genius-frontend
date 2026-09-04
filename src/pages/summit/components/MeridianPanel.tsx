@@ -11,7 +11,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Sparkles, Send, Loader2 } from "lucide-react";
 import { sendSummitMessage } from "@/services/summit/summitChat";
 import { cn } from "@/lib/utils";
-import { SUMMIT_QUICK_PROMPTS } from "@/pages/summit/summitData";
+const SUMMIT_QUICK_PROMPTS = [
+  "Where am I in goal-setting?",
+  "Why these goals?",
+  "What does my PRISM say?",
+];
 
 type Msg = { who: "m" | "u"; text: string };
 

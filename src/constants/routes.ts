@@ -28,6 +28,11 @@ export const ROUTES = {
   /** Bio Capture — the Chronicle life-narrative surface. */
   BIO_CAPTURE: "/bio",
   PRISM_ASSESSMENT: "/prism-assessment",
+  /**
+   * @deprecated Goals offering, Phase 3 (2026-09-04) — the surface now lives at
+   * {@link ROUTES.MY_GOALS}. These paths stay for one release as redirects
+   * (see routes.tsx); nothing should link to them.
+   */
   SUMMIT: {
     BASE: "/summit",
     DASHBOARD: "/summit",
@@ -37,6 +42,20 @@ export const ROUTES = {
     COACHES: "/summit/coaches",
     DOCUMENTS: "/summit/documents",
     PROGRESS: "/summit/progress",
+  },
+  /**
+   * Goals — the person's own goals surface (Goals offering, Phase 3).
+   * Ungated and open to every role (D8): base product, not a vertical.
+   * BASE is the goal list; the rest are the Summit sub-pages re-homed here.
+   */
+  MY_GOALS: {
+    BASE: "/my/goals",
+    OVERVIEW: "/my/goals/overview",
+    DISCOVERY: "/my/goals/discovery",
+    INTERVIEW: "/my/goals/interview",
+    SHARING: "/my/goals/sharing",
+    COACHES: "/my/goals/coaches",
+    COMING_SOON: "/my/goals/coming-soon",
   },
   /** @deprecated Wave 2 Lane 2.A (P7.1) — moved under super-admin as `SUPER_ADMIN.AGENT_TRACE_CONSOLE`. The old path now redirects to the new one. */
   DIAGNOSTIC_CHAT: "/diagnostic-chat",

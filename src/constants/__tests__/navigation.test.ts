@@ -273,21 +273,27 @@ describe("My Workspace menu order + switched-off entries", () => {
     // the rendered menu") is asserting against a lie.
     for (const route of [
       ROUTES.ANALYTICS,
-      ROUTES.DIRECTION_SETTING.GOALS,
       ROUTES.JOB_FIT.MATCHES,
     ]) {
       expect(HIDDEN_WORKSPACE_ROUTES).toContain(route)
     }
+    // 2026-09-04: Summit and the Direction Setting goals page left the hidden
+    // list — the surface is back in the menu at MY_GOALS.BASE, so listing
+    // either here would make the constant lie about the menu.
+    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.SUMMIT.BASE)
+    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.DIRECTION_SETTING.GOALS)
   })
 
-  // ── 2026-08-12, user request: the menu is EXACTLY these six ──────────────
-  it("renders exactly six entries, in the specified order", () => {
+  // ── 2026-08-12, user request: the menu is EXACTLY these six; 2026-09-04,
+  // Goals offering Phase 3: Goals returns as the ungated My Goals surface ──
+  it("renders exactly seven entries, in the specified order", () => {
     // An exact-array assertion, deliberately: the request was a closed list, so
     // anything ADDED here should fail, not just anything removed. A subsequence
-    // or arrayContaining check would let a seventh entry through silently.
+    // or arrayContaining check would let an eighth entry through silently.
     expect(labels(true)).toEqual([
       "Home",
       "Chat with Meridian",
+      "Goals",
       "Interview Practice",
       "Document Library",
       "Settings",
@@ -295,12 +301,13 @@ describe("My Workspace menu order + switched-off entries", () => {
     ])
   })
 
-  it("is still six entries with the agent-engine toggle OFF", () => {
+  it("is still seven entries with the agent-engine toggle OFF", () => {
     // The toggle swaps the chat row's destination and label, not the shape of
     // the menu.
     expect(labels(false)).toEqual([
       "Home",
       "Chat with Coaches",
+      "Goals",
       "Interview Practice",
       "Document Library",
       "Settings",
@@ -308,10 +315,15 @@ describe("My Workspace menu order + switched-off entries", () => {
     ])
   })
 
-  it("drops Goals and Job Fit from the menu", () => {
+  it("carries Goals at the ungated My Goals route, and still drops Job Fit", () => {
     const items = getUserNavItems(true)
+    const goals = items.find((i) => i.label === "Goals")
+    // The row points at the base-product surface, not the Direction Setting
+    // stage page — that one sits behind the `direction-setting` entitlement
+    // and would send an unentitled user to a locked door.
+    expect(goals?.to).toBe(ROUTES.MY_GOALS.BASE)
     expect(items.find((i) => i.to === ROUTES.DIRECTION_SETTING.GOALS)).toBeUndefined()
-    expect(labels(true)).not.toContain("Goals")
+    expect(items.find((i) => i.to === ROUTES.SUMMIT.BASE)).toBeUndefined()
     expect(labels(true)).not.toContain("Job Fit")
   })
 

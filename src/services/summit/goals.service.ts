@@ -1,10 +1,14 @@
 import { getApi } from "@/lib/agentApi"
 import type {
+  GoalVisibility,
+  MyGoalsResponse,
+  SharedGoal,
   SummitAnswer,
   SummitAskResponse,
   SummitCategoryKey,
   SummitCategoryStatus,
   SummitGoal,
+  SummitGoalCreate,
   SummitSession,
   SummitSynthesizeResponse,
   SummitWhyExchange,
@@ -131,4 +135,50 @@ export async function synthesizeGoals() {
     `${PREFIX}/synthesize`
   )
   return data
+}
+
+// ─── The shared record — Goals offering, Phase 3 ────────────────────────
+//
+// Four routes appended in Phase 1 (backend PR #1153). Unlike the session
+// routes above these DO return the `ok()` envelope, so each unwraps `.data`.
+// publish / unpublish take the SESSION goal_id; visibility takes the SHARED
+// goalId (the one `/mine` returns) — two id namespaces, deliberately.
+
+type Envelope<T> = { status: boolean; data: T }
+
+/** POST / — add a goal to the session by hand (title + category). 201. */
+export async function createGoal(body: SummitGoalCreate) {
+  const { data } = await getApi().post<SummitGoal>(PREFIX, body)
+  return data
+}
+
+/** GET /mine — my published goals + coverage, coach contract shape. */
+export async function getMyGoals() {
+  const { data } = await getApi().get<Envelope<MyGoalsResponse>>(`${PREFIX}/mine`)
+  return data.data
+}
+
+/** POST /{session goal_id}/publish — upsert the shared record (idempotent). */
+export async function publishGoal(sessionGoalId: string) {
+  const { data } = await getApi().post<Envelope<SharedGoal>>(
+    `${PREFIX}/${encodeURIComponent(sessionGoalId)}/publish`
+  )
+  return data.data
+}
+
+/** POST /{session goal_id}/unpublish — remove that one shared row; the session goal stays. */
+export async function unpublishGoal(sessionGoalId: string) {
+  const { data } = await getApi().post<Envelope<{ publishedFrom: string; removed: boolean }>>(
+    `${PREFIX}/${encodeURIComponent(sessionGoalId)}/unpublish`
+  )
+  return data.data
+}
+
+/** PATCH /{shared goalId}/visibility — shareable | private. */
+export async function setGoalVisibility(sharedGoalId: string, visibility: GoalVisibility) {
+  const { data } = await getApi().patch<Envelope<SharedGoal>>(
+    `${PREFIX}/${encodeURIComponent(sharedGoalId)}/visibility`,
+    { visibility }
+  )
+  return data.data
 }
