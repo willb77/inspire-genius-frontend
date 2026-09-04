@@ -76,6 +76,13 @@ export const TEAM_STUDIO_SCENARIO_COPY: ScenarioCopy = {
     "A decision the group disagreed on has to be made this week.",
     "A piece of work came back with substantial changes requested.",
   ],
+  // A label for the operator's own reference. Deliberately mundane and
+  // workplace-shaped: this sits above named colleagues, and "scene" frames
+  // real people as performers in a story someone wrote.
+  titlePlaceholder: "The Q3 handover",
+  // Not "Running the scene…" — these are colleagues in a work situation, not
+  // performers in one.
+  runningLabel: "Working it through…",
   subtitle: "PRISM team scenario",
   metaLabel: "People",
   // Team Studio passes no `store`, so the saved-scenarios card never renders

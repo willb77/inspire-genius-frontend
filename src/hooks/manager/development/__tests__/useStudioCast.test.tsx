@@ -211,3 +211,21 @@ it("refuses a conflicted member rather than comparing a blend of two people", as
 
   await expect(result.current.resolve(["a"])).rejects.toThrow("disagree with each other")
 })
+
+// ─── the picker's scale count ───────────────────────────────────────────
+
+it("reports no scale count rather than a false zero", async () => {
+  // The roster carries no scale count, and the row used to send `scored: 0`.
+  // This list is FILTERED to people whose PRISM exists, so "0 scales scored"
+  // printed beside every colleague in it — including two with eighty-seven
+  // scales on file — in the one place an operator decides who is worth asking
+  // about. `undefined` means "not counted" and prints nothing; `0` is a
+  // measured claim that these people have no scores.
+  const { result } = renderHook(() => useStudioCast(), { wrapper })
+  await waitFor(() => expect(result.current.port.subjects).toHaveLength(2))
+
+  for (const s of result.current.port.subjects ?? []) {
+    expect(s.scored).toBeUndefined()
+    expect(s).not.toHaveProperty("scored", 0)
+  }
+})

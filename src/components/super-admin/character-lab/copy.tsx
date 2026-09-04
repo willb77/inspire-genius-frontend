@@ -74,6 +74,10 @@ export const CHARACTER_LAB_SCENARIO_COPY: ScenarioCopy = {
     "The plan they argued for has just failed in public.",
     "A rival offers them something they want, in exchange for something small.",
   ],
+  // The string the shared panel used to hardcode. It was always correct HERE —
+  // the defect was that Team Studio inherited it.
+  titlePlaceholder: "The hospital scene",
+  runningLabel: "Running the scene…",
   subtitle: "PRISM character scenario",
   metaLabel: "Characters",
   savedBlurb:

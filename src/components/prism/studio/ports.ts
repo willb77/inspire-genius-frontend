@@ -153,6 +153,22 @@ export type ScenarioCopy = {
   errorNeedSituation: string
   saveFailed: string
   presets: string[]
+  /**
+   * Placeholder for the optional scenario NAME field.
+   *
+   * Required, and stated per caller, because the shared panel hardcoded "The
+   * hospital scene" — a Character Lab example sitting on a manager's screen
+   * above a real colleague's name. Same class as #495 and the same fix: a word
+   * that differs between fiction and a named person is copy, not markup, and
+   * gets no default here. A default is how the fictional wording reached the
+   * real-person surface in the first place.
+   */
+  titlePlaceholder: string
+  /**
+   * The Run button's pending label — "Running the scene…" was hardcoded beside
+   * the placeholder above, on the same control, and leaked the same way.
+   */
+  runningLabel: string
   subtitle: string
   metaLabel: string
   savedBlurb: string

@@ -16,6 +16,8 @@
  * future field added without a Team Studio override fails here instead of in
  * front of a manager.
  */
+import fs from "fs"
+import path from "path"
 import { TEAM_STUDIO_COMPARE_COPY, TEAM_STUDIO_SCENARIO_COPY } from "../studioCopy"
 import { CHARACTER_LAB_COMPARE_COPY } from "@/components/super-admin/character-lab/copy"
 
@@ -27,7 +29,12 @@ function strings(value: unknown): string[] {
   return []
 }
 
-const FICTIONAL = /\b(character|characters|fictional|synthetic)\b/i
+// `scene` is here because it is what actually shipped: the scenario panel
+// hardcoded "The hospital scene" and "Running the scene…", and the previous
+// regex — character/fictional/synthetic — would have passed both. A work
+// situation involving named colleagues is not a scene, and they are not
+// performing in one.
+const FICTIONAL = /\b(character|characters|fictional|synthetic|scene|scenes)\b/i
 
 describe("Team Studio copy", () => {
   it.each([
@@ -54,5 +61,50 @@ describe("Team Studio copy", () => {
     const clStrings = strings(CHARACTER_LAB_COMPARE_COPY)
     expect(clStrings.length).toBeGreaterThan(0)
     expect(clStrings.some((s) => FICTIONAL.test(s))).toBe(true)
+  })
+})
+
+
+/**
+ * The copy-object walk above cannot see a string that never reaches a copy
+ * object. That is exactly how "The hospital scene" survived it: the shared
+ * `ScenarioPanel` hardcoded the placeholder in its markup, so there was no
+ * field to omit and nothing for the traversal to find. It rendered above a
+ * named direct report's PRISM scenario on staging-b until 2026-09-04.
+ *
+ * So this reads the shared panels' SOURCE, the way the agent-engine guards read
+ * `team_studio.py`. A behavioural test only covers the branches it happens to
+ * render; the leak is in whichever branch nobody opened.
+ */
+describe("the shared studio panels hold no subject wording of their own", () => {
+  /** Source minus comments and imports — a guard tracks what a file RENDERS. */
+  function renderable(file: string): string {
+    return fs
+      .readFileSync(path.join(__dirname, file), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("\n")
+      .filter((l) => !/^\s*(\/\/|import |} from )/.test(l))
+      .join("\n")
+  }
+
+  it.each([
+    ["ScenarioPanel", "../../../../prism/studio/ScenarioPanel.tsx"],
+    ["ComparePanel", "../../../../prism/studio/ComparePanel.tsx"],
+  ])("%s names no fictional subject in its own markup", (_label, file) => {
+    const src = renderable(file)
+    // Everything the panel says about a subject must arrive through `copy`,
+    // because the same component renders authored characters AND real people.
+    const offenders = (src.match(/[^\n]*\b(character|fictional|synthetic|scene)\b[^\n]*/gi) ?? [])
+      // `character_names` / `COLLABORATIVE` are wire fields and constants, not
+      // words anyone reads; `characterLab` in a type position likewise.
+      .filter((l) => !/character_names|character-lab|characterLab|ProfileSummary/.test(l))
+    expect(offenders).toEqual([])
+  })
+
+  it("is not vacuous — the guard still fires on the string that shipped", () => {
+    // Mutation-proofing the guard itself. If the filter above ever swallows
+    // everything, this fails and says so.
+    const shipped = '              placeholder="The hospital scene"'
+    expect(/\b(character|fictional|synthetic|scene)\b/i.test(shipped)).toBe(true)
   })
 })

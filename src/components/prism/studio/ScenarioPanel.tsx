@@ -197,14 +197,14 @@ export default function ScenarioPanel({
               id="cl-scenario-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="The hospital scene"
+              placeholder={copy.titlePlaceholder}
             />
           </div>
           <div className="flex flex-wrap gap-3">
             <Button onClick={onRun} disabled={running || !selected.length}>
               {running ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Running the scene…
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {copy.runningLabel}
                 </>
               ) : (
                 "Run the scenario"

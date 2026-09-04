@@ -107,8 +107,16 @@ export type ProfileSummary = {
   /**
    * How many scales actually came back — not how many exist. A profile built
    * from a run where a battery failed says 62, not 88.
+   *
+   * OPTIONAL, because "we do not know" is a real state and is not zero. Team
+   * Studio builds these rows from the roster, which carries no scale count, and
+   * used to send `0`. Every row in that picker has PRISM on file — the list is
+   * filtered on exactly that — so "0 scales scored" appeared beside people with
+   * eighty-seven of them, in the one place an operator goes to decide whether
+   * there is enough on file to be worth asking about. Undefined renders as
+   * nothing; a number renders as a count. Do not default this to 0.
    */
-  scored: number
+  scored?: number
   has_analysis: boolean
   created_at: string | null
   updated_at: string | null

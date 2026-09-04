@@ -90,10 +90,19 @@ export default function CastPicker({
                 {p.source && (
                   <span className="ml-1.5 text-xs text-muted-foreground">{p.source}</span>
                 )}
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  {p.scored} scale{p.scored === 1 ? "" : "s"} scored
-                  {p.has_analysis ? " · analysed" : ""}
-                </span>
+                {/* A count only where one was actually produced. `scored` is
+                    optional precisely so a caller that cannot count says so by
+                    omission rather than by printing a zero, which reads as
+                    "nothing on file" about someone who has a full profile. */}
+                {(typeof p.scored === "number" || p.has_analysis) && (
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {typeof p.scored === "number"
+                      ? `${p.scored} scale${p.scored === 1 ? "" : "s"} scored`
+                      : ""}
+                    {typeof p.scored === "number" && p.has_analysis ? " · " : ""}
+                    {p.has_analysis ? "analysed" : ""}
+                  </span>
+                )}
               </Label>
             </div>
           )
