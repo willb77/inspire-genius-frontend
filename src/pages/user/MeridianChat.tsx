@@ -1950,7 +1950,7 @@ export default function MeridianChat({
                 className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted"
               >
                 <Sparkles className="size-4" aria-hidden />
-                <span>{t("meridian.personalRow.moments", { defaultValue: "Moments" })}</span>
+                <span>{t("meridian.personalRow.moments", { defaultValue: "Prep Me" })}</span>
               </Link>
             ) : (
               <span
@@ -1958,12 +1958,12 @@ export default function MeridianChat({
                 aria-disabled="true"
                 title={t("meridian.personalRow.locked", {
                   defaultValue: "{{name}} isn't enabled for your account",
-                  name: t("meridian.personalRow.moments", { defaultValue: "Moments" }),
+                  name: t("meridian.personalRow.moments", { defaultValue: "Prep Me" }),
                 })}
                 className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-muted-foreground opacity-60"
               >
                 <Sparkles className="size-4" aria-hidden />
-                <span>{t("meridian.personalRow.moments", { defaultValue: "Moments" })}</span>
+                <span>{t("meridian.personalRow.moments", { defaultValue: "Prep Me" })}</span>
                 <Lock className="size-3.5 shrink-0 opacity-60" aria-hidden />
               </span>
             )

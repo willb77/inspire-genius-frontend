@@ -46,7 +46,7 @@ beforeEach(() => jest.clearAllMocks());
 describe("LumenNav", () => {
   it("renders the Lumen tools", () => {
     renderNav();
-    for (const label of ["Dashboard", "My Self-Portrait", "Moments"]) {
+    for (const label of ["Dashboard", "My Self-Portrait", "Prep Me"]) {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     }
   });

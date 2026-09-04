@@ -8,10 +8,14 @@
  *
  *   <AskMeridianButton />
  *
+ * The glyph is the universal information "i" (2026-09-04, request) rather
+ * than the sparkle it carried before: sparkles read as "AI magic" on a
+ * control whose actual job is "get an answer about this".
+ *
  * Outside the provider `useSupportAgent` degrades to a no-op, so rendering
  * this in a bare test harness is safe.
  */
-import { Sparkles } from "lucide-react";
+import { Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useSupportAgent } from "@/context/useSupportAgent";
@@ -42,7 +46,7 @@ export default function AskMeridianButton({
       onClick={open}
       data-testid="ask-meridian-button"
     >
-      <Sparkles className="size-4 mr-2" />
+      <Info className="size-4 mr-2" />
       {label}
     </Button>
   );

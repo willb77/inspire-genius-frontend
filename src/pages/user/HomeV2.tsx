@@ -64,11 +64,11 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  *      Survey (right). All three moved up out of the tile.
  *   2. WelcomeBackTile — the last four recent topics (each deep-links into the
  *      chat), the behavioral row with "Latest report" beside "Powered by
- *      PRISM", then the quick-action row (Self-Portrait / Today's Prep /
+ *      PRISM", then the quick-action row (Self-Portrait / Prep Me /
  *      Goals(off) / Videos) with Personal Info pinned to its end.
  *
  * Removed along the way, each on request: the MeridianEngageCard that used to
- * lead the page (2026-08-05), the embedded "Today's Prep" Moments tile, and the
+ * lead the page (2026-08-05), the embedded Moments tile, and the
  * My Journey / Job Fit quick actions (2026-08-06). Every destination is still
  * reachable — Meridian and Goals from the sidebar, Moments from its own page
  * and the chat header, Direction Setting from its sub-nav.
@@ -82,7 +82,7 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  *     legible without a headline percentage.
  *   - The standalone QuickDirectionCard was removed and Direction Setting is
  *     now reached from the "My Journey" quick action, which sits between
- *     Today's Prep and Job Fit. Same destination, in the row people scan.
+ *     Prep Me and Job Fit. Same destination, in the row people scan.
  *   - Uploaded profile material is listed under the PRISM line and opens in a
  *     viewer modal, as does "View PRISM Report" — previously that button
  *     navigated to the assessment page and never showed the report.
@@ -139,7 +139,7 @@ const QUICK_ACTIONS: {
   {
     key: "moments",
     labelKey: "homeV2.quickTodaysPrep",
-    defaultLabel: "Today's Prep",
+    defaultLabel: "Prep Me",
     to: ROUTES.LUMEN.MOMENTS,
     vertical: "lumen",
     icon: Sparkles,
@@ -577,10 +577,12 @@ export default function HomeV2() {
             videos={VIDEOS}
           />
 
-          {/* The "Today's Prep" tile that embedded Lumen Moments was removed on
-              2026-08-06 (request). Moments itself is untouched: still its own
-              page at /vertical/lumen/moments, still in the Meridian chat header,
-              and still the "Today's Prep" pill in the quick-action row above.
+          {/* The tile that embedded Lumen Moments — then called "Today's
+              Prep" — was removed on 2026-08-06 (request). The surface itself is
+              untouched: still its own page at /vertical/lumen/moments, still in
+              the Meridian chat header, and still a pill in the quick-action row
+              above — now labelled "Prep Me" (2026-09-04, by request: one
+              destination had two names depending on the surface you came from).
               The `embedded` variant added for that tile stays on the component —
               it costs nothing and is the thing to reuse if it ever comes back. */}
 

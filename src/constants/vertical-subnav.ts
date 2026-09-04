@@ -53,7 +53,7 @@ export const JOB_FIT_TOOLS: NavItemDef[] = [
 export const LUMEN_TOOLS: NavItemDef[] = [
   { to: ROUTES.LUMEN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.LUMEN.SELF_PORTRAIT, icon: UserRoundSearch, label: "My Self-Portrait" },
-  { to: ROUTES.LUMEN.MOMENTS, icon: Sparkles, label: "Moments" },
+  { to: ROUTES.LUMEN.MOMENTS, icon: Sparkles, label: "Prep Me" },
   // Coaching is gone entirely, in three steps: the nav entry went 2026-08-06,
   // the Lumen Dashboard card 2026-08-12, and the page, hook and question bank
   // were deleted the same day. Unlike Settings below, nothing survives to link

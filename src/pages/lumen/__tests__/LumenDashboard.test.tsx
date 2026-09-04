@@ -22,7 +22,7 @@ describe("LumenDashboard", () => {
     // Every surface now ships, so each card must link — a card without a link
     // is the old placeholder state and should fail here.
     renderDashboard()
-    for (const title of ["My Self-Portrait", "Moments"]) {
+    for (const title of ["My Self-Portrait", "Prep Me"]) {
       // Each title also appears in the "how they fit together" paragraph, so
       // assert on the link, which is unique per surface.
       expect(

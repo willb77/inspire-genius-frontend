@@ -62,7 +62,7 @@ function itemStatus(item: {
 }
 
 /**
- * A quick-action link under the completion gauge (Self-Portrait, Today's Prep,
+ * A quick-action link under the completion gauge (Self-Portrait, Prep Me,
  * Job Fit). `entitled` follows the platform rule that **entitlement gates USE,
  * not SIGHT**: an unentitled action stays visible so the capability is
  * discoverable, but renders greyed, locked and non-navigating rather than as a

@@ -22,7 +22,18 @@ import {
 import type { Moment, MomentState, SavedPrompt } from "@/types/lumen"
 
 /**
- * "Moments" — just-in-time guidance at the point of use.
+ * "Prep Me" — just-in-time guidance at the point of use.
+ *
+ * NAMING (2026-09-04, request). The surface is called **Prep Me** everywhere a
+ * user can click it — Home's quick-action pill (was "Today's Prep"), the Lumen
+ * pill row and sidebar, the Meridian chat header row, the Lumen dashboard card —
+ * and the page opens by asking "What's coming up?". One destination had carried
+ * two different names depending on which surface you came from.
+ *
+ * A **Moment** is still the noun for one piece of guidance: it is what the API
+ * returns (`MomentsFeed`, `Moment`, `MomentState`), what the feed counts ("3
+ * Moments on file") and what the route is keyed on. Renaming the item would have
+ * meant "3 Prep Mes". The button is the thing that got renamed, not the record.
  *
  * Two halves: an ask box for the situation in front of you, and the feed of
  * everything generated so far (including proactive Moments once the scheduler
@@ -221,7 +232,7 @@ function SavedSituations({
 
 export interface MomentsProps {
   /**
-   * Render for embedding inside a host tile (Home's "Today's Prep") rather than
+   * Render for embedding inside a host tile (Home's "Prep Me") rather than
    * as a standalone page: drops the page `<h1>`/description and the outer page
    * padding, because the host supplies both and two headings stacked reads as a
    * bug.
@@ -286,7 +297,7 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
     <div className={embedded ? "space-y-4" : "space-y-6 p-6"}>
       {!embedded && (
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Moments</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Prep Me</h1>
           <p className="max-w-2xl text-muted-foreground">
             Short, specific guidance — grounded in your own behavioral profile.
           </p>
@@ -295,7 +306,7 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">What are you walking into?</CardTitle>
+          <CardTitle className="text-base">What's coming up?</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Textarea

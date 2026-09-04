@@ -37,7 +37,7 @@ const SURFACES: Surface[] = [
   },
   {
     icon: Sparkles,
-    title: "Moments",
+    title: "Prep Me",
     trigger: "Comes to you",
     body: "Short, specific guidance for the thing you're about to walk into — the difficult 1:1, the negotiation, the conversation you've been avoiding. Describe the situation and get a read grounded in your own profile, or let it arrive ahead of what's in your calendar.",
     to: ROUTES.LUMEN.MOMENTS,
@@ -68,7 +68,7 @@ export default function LumenDashboard() {
             <span className="text-muted-foreground">
               Your <strong className="font-medium text-foreground">Self-Portrait</strong>{" "}
               is the foundation — the more it has to read, the sharper everything else
-              gets. <strong className="font-medium text-foreground">Moments</strong> is
+              gets. <strong className="font-medium text-foreground">Prep Me</strong> is
               what that foundation is for: it arrives on its own when something is
               coming up, so you don't have to think to ask.
             </span>

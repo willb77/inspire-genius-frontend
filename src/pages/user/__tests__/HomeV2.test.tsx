@@ -238,11 +238,11 @@ describe("HomeV2", () => {
       ).toEqual([screen.getByTestId("homev2-chat-with-meridian")]);
     });
 
-    // The Today's Prep tile (embedded Lumen Moments) was REMOVED on 2026-08-06.
+    // The embedded Lumen Moments tile was REMOVED on 2026-08-06.
     // Asserting its absence, and that Moments is not mounted from Home at all —
     // the tile's whole cost was mounting that surface on a page most visits use
     // for something else.
-    it("no longer renders the Today's Prep tile", () => {
+    it("no longer renders the embedded Moments tile", () => {
       wrap();
       expect(screen.queryByTestId("homev2-todays-prep")).toBeNull();
       expect(screen.queryByTestId("homev2-todays-prep-toggle")).toBeNull();
@@ -251,13 +251,15 @@ describe("HomeV2", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("keeps Today's Prep reachable as a quick action", () => {
-      // Removing the tile must not remove the destination.
+    it("keeps Prep Me reachable as a quick action, under that name", () => {
+      // Removing the tile must not remove the destination. The label is
+      // asserted here because it is the ONLY place the "Prep Me" rename
+      // (2026-09-04) is guarded on Home — every other assertion in this file
+      // goes through the test id, which survives any renaming.
       wrap();
-      expect(screen.getByTestId("homev2-quick-moments")).toHaveAttribute(
-        "href",
-        "/vertical/lumen/moments",
-      );
+      const pill = screen.getByTestId("homev2-quick-moments");
+      expect(pill).toHaveAttribute("href", "/vertical/lumen/moments");
+      expect(pill).toHaveTextContent("Prep Me");
     });
 
     it("leads with the greeting, then the tile", () => {
@@ -283,7 +285,7 @@ describe("HomeV2", () => {
   });
 
   describe("quick-action entitlement", () => {
-    it("links Today's Prep when lumen is entitled", () => {
+    it("links Prep Me when lumen is entitled", () => {
       wrap();
       expect(screen.getByTestId("homev2-quick-moments")).toHaveAttribute(
         "href",
@@ -386,7 +388,7 @@ describe("HomeV2 — 2026-08-03 changes", () => {
     expect(screen.queryByTestId("quick-direction-card")).not.toBeInTheDocument();
   });
 
-  it("orders the row Self-Portrait → Today's Prep → Goals", () => {
+  it("orders the row Self-Portrait → Prep Me → Goals", () => {
     mockEnabledVerticals.mockReturnValue({
       data: ["lumen", "job-fit", "direction-setting"],
     });
