@@ -2,10 +2,18 @@
  * SupportAgentProvider — mounts the Help & Support assistant once and exposes
  * imperative open/close to every page beneath it.
  *
- * Mounted by BOTH layout families, because the app has two and they do not
- * nest: `SidebarScaffold` (User, SuperAdmin, Unified) and `AppShell` (Manager,
- * CompanyAdmin, Distributor, Practitioner). Mounting in only one leaves four
- * roles with no assistant, which is what happened before this change.
+ * Mounted by `SidebarScaffold`, which every role layout now wraps — User,
+ * Manager, CompanyAdmin, Practitioner, Distributor, SuperAdmin and Unified,
+ * plus `VerticalShell` and `LumenLayout`. So one mount covers every
+ * authenticated page.
+ *
+ * This block previously said the provider was mounted by BOTH families,
+ * `SidebarScaffold` and `AppShell`, because mounting in one left four roles
+ * with no assistant. `AppShell` no longer exists — the layouts converged on
+ * SidebarScaffold — so there is one mount, not two. Corrected 2026-09-04 after
+ * a grep for the second mount found nothing and the coverage claim had to be
+ * re-derived from the layouts. (CLAUDE.md still describes AppShell as the
+ * unified layout; it is stale in the same way.)
  *
  * Not mounted on auth pages — those render no authenticated layout, and there
  * is no session to talk to Meridian with.

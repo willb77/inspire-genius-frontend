@@ -45,6 +45,18 @@ describe("SupportAgentLauncher", () => {
     expect(screen.getByRole("button", { name: /help & support/i })).toBeInTheDocument();
   });
 
+  it("carries the universal information glyph", () => {
+    // The ONLY assertion guarding the 2026-09-04 glyph swap. Every other test
+    // in this file goes through the test id or the aria-label, both of which
+    // survive any icon change — so without this, reverting to LifeBuoy leaves
+    // the suite fully green. lucide stamps the icon name into the SVG class,
+    // which is the one thing that differs between two icons of equal size.
+    renderWith(false);
+    const svg = screen.getByTestId("support-agent-launcher").querySelector("svg");
+    expect(svg).not.toBeNull();
+    expect(svg?.getAttribute("class")).toContain("lucide-info");
+  });
+
   it("does not sit on top of AlexFloating's corner", () => {
     renderWith(false);
     // AlexFloating owns bottom-6 right-6; the launcher must be offset left.
