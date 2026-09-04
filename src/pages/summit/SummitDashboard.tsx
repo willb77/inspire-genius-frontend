@@ -68,7 +68,7 @@ export default function SummitDashboard() {
                 <div className="font-serif text-2xl text-[#0B1B33]">{pct}% explored</div>
               </div>
               <Link
-                to={ROUTES.SUMMIT.DISCOVERY}
+                to={ROUTES.MY_GOALS.DISCOVERY}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-[#127A8A] px-3.5 py-2 text-[13px] font-bold text-white hover:bg-[#0E5F6B]"
               >
                 {explored === 0 ? "Start" : "Resume"} <ArrowRight className="h-3.5 w-3.5" />
@@ -110,7 +110,7 @@ export default function SummitDashboard() {
                   "Summit gathers this in conversation rather than as a form — a few minutes now is enough to move it on."}
               </p>
               <Link
-                to={ROUTES.SUMMIT.DISCOVERY}
+                to={ROUTES.MY_GOALS.DISCOVERY}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#0B1B33] px-4 py-2.5 text-sm font-semibold text-[#FBF7F0] hover:bg-[#1D3A66]"
               >
                 Continue discovery <ChevronRight className="h-4 w-4" />
@@ -129,7 +129,7 @@ export default function SummitDashboard() {
                 </CardH>
               </div>
               {goals.length > 2 && (
-                <Link to={ROUTES.SUMMIT.GOALS} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#0E5F6B]">
+                <Link to={ROUTES.MY_GOALS.BASE} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#0E5F6B]">
                   See all {goals.length} <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               )}

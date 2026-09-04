@@ -72,15 +72,16 @@ const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"))
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
 const MeridianChat = React.lazy(() => import("@/pages/user/MeridianChat"));
 const BioCapture = React.lazy(() => import("@/pages/user/BioCapture"));
-// Summit — Goal Setting surface
+// Goals (Summit) — the person's own goals surface, re-homed at /my/goals
+// (Goals offering, Phase 3). /summit/* redirects below for one release.
 const SummitLayout = React.lazy(() => import("@/pages/summit/SummitLayout"));
 const SummitDashboard = React.lazy(() => import("@/pages/summit/SummitDashboard"));
 const SummitDiscovery = React.lazy(() => import("@/pages/summit/SummitDiscovery"));
-const SummitPrism = React.lazy(() => import("@/pages/summit/SummitPrism"));
 const SummitGoals = React.lazy(() => import("@/pages/summit/SummitGoals"));
+const SummitInterview = React.lazy(() => import("@/pages/summit/SummitInterview"));
+const SummitSharing = React.lazy(() => import("@/pages/summit/SummitSharing"));
 const SummitCoaches = React.lazy(() => import("@/pages/summit/SummitCoaches"));
-const SummitDocuments = React.lazy(() => import("@/pages/summit/SummitDocuments"));
-const SummitProgress = React.lazy(() => import("@/pages/summit/SummitProgress"));
+const SummitComingSoon = React.lazy(() => import("@/pages/summit/SummitComingSoon"));
 const DiagnosticChat = React.lazy(() => import("@/pages/user/DiagnosticChat"));
 
 // ── Super Admin pages ───────────────────────────────────────────────────────
@@ -451,20 +452,31 @@ export const routes: RouteObject[] = [
       { path: "/meridian/chat/classic", element: withSuspense(<MeridianChat />) },
       // Bio Capture — Chronicle life-narrative surface (viewer + chat + memoir export)
       { path: "/bio", element: withSuspense(<BioCapture />) },
-      // Summit — Goal Setting surface (nested; SummitLayout renders the sub-nav + Meridian chat)
+      // Goals — the person's own goals surface (nested; SummitLayout renders
+      // the sub-nav). Index is the goal list; the interview is its own page.
       {
-        path: "/summit",
+        path: "/my/goals",
         element: withSuspense(<SummitLayout />),
         children: [
-          { index: true, element: withSuspense(<SummitDashboard />) },
+          { index: true, element: withSuspense(<SummitGoals />) },
+          { path: "overview", element: withSuspense(<SummitDashboard />) },
           { path: "discovery", element: withSuspense(<SummitDiscovery />) },
-          { path: "prism", element: withSuspense(<SummitPrism />) },
-          { path: "goals", element: withSuspense(<SummitGoals />) },
+          { path: "interview", element: withSuspense(<SummitInterview />) },
+          { path: "sharing", element: withSuspense(<SummitSharing />) },
           { path: "coaches", element: withSuspense(<SummitCoaches />) },
-          { path: "documents", element: withSuspense(<SummitDocuments />) },
-          { path: "progress", element: withSuspense(<SummitProgress />) },
+          { path: "coming-soon", element: withSuspense(<SummitComingSoon />) },
         ],
       },
+      // /summit/* — the old home of the surface. Redirects for one release
+      // (Goals offering, Phase 3, 2026-09-04); the three sample pages
+      // (prism, documents, progress) collapse to the honest coming-soon page.
+      { path: "/summit", element: <Navigate to="/my/goals/overview" replace /> },
+      { path: "/summit/discovery", element: <Navigate to="/my/goals/discovery" replace /> },
+      { path: "/summit/goals", element: <Navigate to="/my/goals" replace /> },
+      { path: "/summit/coaches", element: <Navigate to="/my/goals/coaches" replace /> },
+      { path: "/summit/prism", element: <Navigate to="/my/goals/coming-soon" replace /> },
+      { path: "/summit/documents", element: <Navigate to="/my/goals/coming-soon" replace /> },
+      { path: "/summit/progress", element: <Navigate to="/my/goals/coming-soon" replace /> },
       { path: "/documents", element: withSuspense(<DocumentsSurface />) },
       { path: "/documents/classic", element: withSuspense(<Documents />) },
       { path: "/interview-practice", element: withSuspense(<InterviewPractice />) },

@@ -1,21 +1,28 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { SummitSession } from "@/types/summit";
+import type { MyGoalsResponse, SummitSession } from "@/types/summit";
 
-// Summit reads one live endpoint (GET /v1/agents/goals/session). Mock the
-// service rather than the hook so the hook's own derivation — category order,
-// goal counts, the "first incomplete" next step — is exercised rather than
-// stubbed past. That derivation is where the bugs would be.
+// The surface reads two live endpoints: the session (GET /v1/agents/goals/session)
+// and the shared record (GET /v1/agents/goals/mine). Mock the SERVICE rather
+// than the hooks so the hooks' own derivation — category order, goal counts,
+// which session goals are still drafts — is exercised rather than stubbed
+// past. That derivation is where the bugs would be.
 const mockGetGoalSession = jest.fn();
+const mockGetMyGoals = jest.fn();
 jest.mock("@/services/summit/goals.service", () => ({
   getGoalSession: () => mockGetGoalSession(),
+  getMyGoals: () => mockGetMyGoals(),
   patchGoal: jest.fn(),
   deleteGoal: jest.fn(),
+  createGoal: jest.fn(),
+  publishGoal: jest.fn(),
+  unpublishGoal: jest.fn(),
+  setGoalVisibility: jest.fn(),
 }));
 
 jest.mock("@/context/useAuth", () => ({
-  useAuth: () => ({ user: { name: "Will Brown", email: "willb77@3pp.com" } }),
+  useAuth: () => ({ user: { name: "Will Brown", email: "will@example.com" } }),
 }));
 
 // The chat panel opens a real transport; it is covered by its own tests.
@@ -26,13 +33,10 @@ jest.mock("@/pages/summit/components/MeridianPanel", () => ({
 
 import SummitDashboard from "@/pages/summit/SummitDashboard";
 import SummitDiscovery from "@/pages/summit/SummitDiscovery";
-import SummitPrism from "@/pages/summit/SummitPrism";
 import SummitGoals from "@/pages/summit/SummitGoals";
 import SummitCoaches from "@/pages/summit/SummitCoaches";
-import SummitProgress from "@/pages/summit/SummitProgress";
-import SummitDocuments from "@/pages/summit/SummitDocuments";
+import SummitComingSoon from "@/pages/summit/SummitComingSoon";
 
-/** A session shaped exactly like the backend's, mid-way through discovery. */
 const SESSION: SummitSession = {
   version: 1,
   categories: {
@@ -69,6 +73,34 @@ const EMPTY: SummitSession = {
   goals: [],
 };
 
+const NOTHING_PUBLISHED: MyGoalsResponse = { memberId: "m1", goals: [], coverage: [] };
+
+const PUBLISHED: MyGoalsResponse = {
+  memberId: "m1",
+  coverage: [],
+  goals: [
+    {
+      goalId: "b1",
+      memberId: "m1",
+      title: "Automate the top 3 manual reporting workflows",
+      category: "current_job",
+      horizon: "short",
+      motivation: "Reclaim energy drained by repetitive status work",
+      prismAlignment: { kind: "leverages" },
+      executionStyle: "",
+      successMetric: "3 reports run without manual intervention",
+      firstStep: "",
+      ownerCoach: "job_mentor",
+      status: "provisional",
+      provenanceQuotes: [],
+      source: "member",
+      visibility: "shareable",
+      publishedFrom: "g1",
+      publishedAt: "2026-09-04T00:00:00Z",
+    },
+  ],
+};
+
 function renderWithRouter(ui: React.ReactElement) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
@@ -82,7 +114,9 @@ function renderWithRouter(ui: React.ReactElement) {
 
 beforeEach(() => {
   mockGetGoalSession.mockReset();
+  mockGetMyGoals.mockReset();
   mockGetGoalSession.mockResolvedValue(SESSION);
+  mockGetMyGoals.mockResolvedValue(NOTHING_PUBLISHED);
 });
 
 describe("Summit surface pages", () => {
@@ -96,43 +130,65 @@ describe("Summit surface pages", () => {
 
   it("derives discovery progress from the live session", async () => {
     renderWithRouter(<SummitDashboard />);
-    // 2 of 5 explored → 40%. Previously hardcoded regardless of state.
     expect(await screen.findByText(/2 of 5 categories/i)).toBeInTheDocument();
     expect(screen.getByText(/40% explored/i)).toBeInTheDocument();
   });
 
   it("points at the first unfinished category, not a fixed one", async () => {
     renderWithRouter(<SummitDashboard />);
-    // history + job are explored; workplace is the first that is not.
     expect(
       await screen.findByText(/Finish the Workplace Situation category/i),
     ).toBeInTheDocument();
   });
 
-  it("renders Discovery from the live categories", async () => {
+  it("renders Discovery from the live categories, with an illustration that names no one", async () => {
     renderWithRouter(<SummitDiscovery />);
     expect(await screen.findByText(/Current Job Situation/i)).toBeInTheDocument();
     expect(screen.getByText(/Career Ambitions/i)).toBeInTheDocument();
-    // Goal counts are derived per category, not fixed.
     expect(screen.getByText(/1 goal surfaced/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Daniel/)).toBeNull();
   });
 
-  it("renders the live goal, mapping backend vocabulary to labels", async () => {
+  it("renders Coaches with the three coaching roles", () => {
+    renderWithRouter(<SummitCoaches />);
+    expect(screen.getByText("Job Mentor")).toBeInTheDocument();
+    expect(screen.getByText("Career Coach")).toBeInTheDocument();
+    expect(screen.getByText("PRISM Coach")).toBeInTheDocument();
+  });
+});
+
+describe("My Goals — two stores, kept apart", () => {
+  it("shows an unpublished session goal as a draft, mapping backend vocabulary to labels", async () => {
     renderWithRouter(<SummitGoals />);
     expect(
       await screen.findByText(/Automate the top 3 manual reporting workflows/i),
     ).toBeInTheDocument();
+    expect(screen.getByText(/Drafts from your interview/i)).toBeInTheDocument();
     // leverages_strength → "Leverages strength"; job → "Current Job".
     expect(screen.getByText(/Leverages strength/i)).toBeInTheDocument();
-    expect(screen.getByText(/Current Job/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Current Job/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /confirm & publish/i })).toBeInTheDocument();
     // The old mock goal must be gone.
     expect(screen.queryByText(/Lead the ops-reporting redesign/i)).toBeNull();
+  });
+
+  it("lists a published goal once — under your goals, not also as a draft", async () => {
+    mockGetMyGoals.mockResolvedValue(PUBLISHED);
+    renderWithRouter(<SummitGoals />);
+    expect(await screen.findByText(/No reviews yet/i)).toBeInTheDocument();
+    // The session goal g1 IS publishedFrom of b1, so it is not a draft any more.
+    expect(screen.queryByText(/Drafts from your interview/i)).toBeNull();
+    expect(screen.getAllByText(/Automate the top 3 manual reporting workflows/i)).toHaveLength(1);
+    expect(screen.getByRole("switch", { name: /keep .* private/i })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: /unpublish/i })).toBeInTheDocument();
   });
 
   it("says there are no goals rather than showing someone else's", async () => {
     mockGetGoalSession.mockResolvedValue(EMPTY);
     renderWithRouter(<SummitGoals />);
     expect(await screen.findByText(/No goals yet/i)).toBeInTheDocument();
+    // The way out is always offered.
+    expect(screen.getByRole("button", { name: /save & publish/i })).toBeInTheDocument();
   });
 
   it("surfaces a read failure instead of rendering an empty journey", async () => {
@@ -141,48 +197,24 @@ describe("Summit surface pages", () => {
     expect(
       await screen.findByText(/couldn't read your goals just now/i),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/No goals yet/i)).toBeNull();
   });
 
-  // The panels below have no live source yet. What matters is that they never
-  // read as a statement about the person looking at them.
-  it("labels the PRISM lens as a sample", async () => {
-    renderWithRouter(<SummitPrism />);
-    expect(await screen.findByText(/Underlying vs Adapted vs Consistent/i)).toBeInTheDocument();
-    expect(screen.getByText(/This is a sample, not your data/i)).toBeInTheDocument();
+  it("surfaces a shared-record failure the same way", async () => {
+    mockGetMyGoals.mockRejectedValue(new Error("boom"));
+    renderWithRouter(<SummitGoals />);
+    expect(await screen.findByText(/couldn't read your goals just now/i)).toBeInTheDocument();
   });
+});
 
-  it("labels Progress as a sample", () => {
-    renderWithRouter(<SummitProgress />);
-    expect(screen.getByText(/Your living goal plan/i)).toBeInTheDocument();
-    expect(screen.getByText(/This is a sample, not your data/i)).toBeInTheDocument();
-  });
-
-  it("warns before the document writer's drafts can be copied or downloaded", () => {
-    renderWithRouter(<SummitDocuments />);
-    for (const name of ["Résumé", "CV", "Professional Bio", "Job History", "Wikipedia Article", "LinkedIn Profile"]) {
-      expect(screen.getByText(name)).toBeInTheDocument();
-    }
-    expect(screen.getByRole("button", { name: /build/i })).toBeInTheDocument();
-    // These drafts are a fictional person's; they must not read as the user's.
-    expect(screen.getByText(/made-up person/i)).toBeInTheDocument();
-  });
-
-  it("renders Coaches with the three coaching roles", () => {
-    renderWithRouter(<SummitCoaches />);
-    expect(screen.getByText(/Job Mentor/i)).toBeInTheDocument();
-    expect(screen.getByText(/Career Coach/i)).toBeInTheDocument();
-    expect(screen.getByText(/PRISM Coach/i)).toBeInTheDocument();
-  });
-
-  it("counts each coach's goals from the live session", async () => {
-    // Was hardcoded 2/1/1 for everybody, from the wireframe. The single goal in
-    // SESSION is owned by job_mentor, so the other two must read zero.
-    renderWithRouter(<SummitCoaches />);
-    expect(await screen.findByText("1")).toBeInTheDocument();
-    expect(screen.getAllByText("0")).toHaveLength(2);
-    // The count and its label are separate elements, so assert the singular
-    // label exists alongside the two plural ones rather than as one string.
-    expect(screen.getByText("goal")).toBeInTheDocument();
-    expect(screen.getAllByText("goals")).toHaveLength(2);
+describe("Coming soon — the honest page", () => {
+  it("names the three planned panels and renders nobody's sample data", () => {
+    renderWithRouter(<SummitComingSoon />);
+    expect(screen.getByText("PRISM lens")).toBeInTheDocument();
+    expect(screen.getByText("Progress")).toBeInTheDocument();
+    expect(screen.getByText("Documents")).toBeInTheDocument();
+    expect(screen.getByText(/Not built yet/i)).toBeInTheDocument();
+    expect(screen.queryByText(/sample/i)).toBeNull();
+    expect(screen.queryByText(/Daniel/)).toBeNull();
   });
 });

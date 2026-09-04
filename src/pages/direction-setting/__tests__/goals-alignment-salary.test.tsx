@@ -31,7 +31,13 @@ import type {
  * the whole router surface they touch — cheaper and more precise than wrapping
  * each render in a MemoryRouter and inspecting history. */
 const mockNavigate = jest.fn()
-jest.mock("react-router-dom", () => ({ useNavigate: () => mockNavigate }))
+jest.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
+  // GoalsPage is a door to My Goals again (Goals offering, Phase 3) and
+  // renders a <Link>; an anchor keeps the href inspectable.
+  Link: ({ to, children }: { to: string; children: React.ReactNode }) =>
+    require("react").createElement("a", { href: to }, children),
+}))
 
 /* ── Journey hooks (GoalsPage only) ───────────────────────────────────────── */
 const mockAdvance = jest.fn()
@@ -329,49 +335,72 @@ const withStage5 = (state: string) => {
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-describe("GoalsPage (stage 5) — the interview runs here, and there is still one goal store", () => {
+describe("GoalsPage (stage 5) — a door to My Goals, and still one goal store", () => {
   /*
-   * The previous version of this block guarded a handoff to `/summit/*`, with a
-   * note that if anyone replaced it with an inline interview, the test should be
-   * the thing that made them justify it. Fair, and here is the justification.
-   *
-   * The handoff existed because Summit's SURFACE could not be embedded — a
-   * three-column shell with its own sub-nav and chat panel. The risk it was
-   * protecting against was a second goal system: two lists of goals and no idea
-   * which one counted.
-   *
-   * That risk is real and is still guarded. What changed is that the interview
-   * is no longer a surface — `useSummitInterview` is a headless state machine
-   * over `/ask`, `/why-ladder` and `/synthesize`. Running it here drives the
-   * same routes against the same store, so there is still exactly one list.
-   * The assertion below is what now holds that line: the inline interview must
-   * go through the shared goal service, not a private copy of it.
+   * This block has guarded the same line three times over: there must be ONE
+   * list of goals. First the page was a handoff to /summit/*; then, when the
+   * interview became a headless state machine, it ran here in place. Now the
+   * interview, publishing and sharing all live at My Goals (Goals offering,
+   * Phase 3), which every user reaches from the menu — so running a second
+   * copy of the conversation here would be the two-lists problem in a new
+   * coat. The page explains the step, sends the person there with a way back,
+   * and records the stage from what they did there.
    */
 
-  test("runs the interview in place rather than sending the user elsewhere", () => {
+  test("sends the person to My Goals with a way back, without navigating for them", () => {
     renderGoals()
-    expect(screen.getByTestId("goal-interview")).toBeInTheDocument()
+    const link = screen.getByRole("link", { name: /go to my goals/i })
+    expect(link).toHaveAttribute("href", "/my/goals?journey=direction-setting")
     expect(mockNavigate).not.toHaveBeenCalled()
+    // No inline interview: that would be a second copy of the conversation.
+    expect(screen.queryByTestId("goal-interview")).not.toBeInTheDocument()
   })
 
-  test("the inline interview uses the shared goal store, not a second one", () => {
-    // The line the old handoff was defending. If this panel ever stops calling
-    // the shared service, a person ends up with two sets of goals.
+  test("does not mark the stage under way on a bare visit", async () => {
     renderGoals()
-    fireEvent.click(screen.getByRole("button", { name: /the conversation/i }))
-    expect(mockAskCategory).toHaveBeenCalled()
-  })
-
-  test("marks the stage under way once it is under way", async () => {
-    withStage5("in_progress")
-    renderGoals()
-    // Already in progress — must not be re-marked.
     await waitFor(() => {
-      expect(mockAdvance).not.toHaveBeenCalledWith({
-        stageId: "5",
-        state: "in_progress",
-      })
+      expect(mockAdvance).not.toHaveBeenCalledWith({ stageId: "5", state: "in_progress" })
     })
+  })
+
+  test("marks the stage under way once the session holds a goal", async () => {
+    goalSession = {
+      data: {
+        version: 1,
+        categories: {},
+        goals: [{ goal_id: "g1", title: "Run my own team", status: "proposed" }],
+        why_roots: [],
+      },
+    }
+    renderGoals()
+    await waitFor(() => {
+      expect(mockAdvance).toHaveBeenCalledWith({ stageId: "5", state: "in_progress" })
+    })
+  })
+
+  test("does not re-mark a stage already under way", async () => {
+    withStage5("in_progress")
+    goalSession = {
+      data: { version: 1, categories: {}, goals: [{ goal_id: "g1", title: "x", status: "proposed" }], why_roots: [] },
+    }
+    renderGoals()
+    await waitFor(() => {
+      expect(mockAdvance).not.toHaveBeenCalledWith({ stageId: "5", state: "in_progress" })
+    })
+  })
+
+  test("records completion from a CONFIRMED goal, not from any goal", () => {
+    goalSession = {
+      data: { version: 1, categories: {}, goals: [{ goal_id: "g1", title: "x", status: "proposed" }], why_roots: [] },
+    }
+    renderGoals()
+    expect(mockRecordStage).toHaveBeenLastCalledWith("5", false)
+
+    goalSession = {
+      data: { version: 1, categories: {}, goals: [{ goal_id: "g1", title: "x", status: "confirmed" }], why_roots: [] },
+    }
+    renderGoals()
+    expect(mockRecordStage).toHaveBeenLastCalledWith("5", true)
   })
 
   test("shows goals already captured without leaving the step", () => {
@@ -393,9 +422,7 @@ describe("GoalsPage (stage 5) — the interview runs here, and there is still on
     renderGoals()
     expect(screen.getByText("Run my own team")).toBeInTheDocument()
     // The WHY root travels with the goal — it is the point of the interview.
-    expect(
-      screen.getByText(/being trusted with the hard calls/i)
-    ).toBeInTheDocument()
+    expect(screen.getByText(/being trusted with the hard calls/i)).toBeInTheDocument()
   })
 
   test("lets the person say when they're done, and stops asking once they have", () => {
@@ -407,25 +434,21 @@ describe("GoalsPage (stage 5) — the interview runs here, and there is still on
     withStage5("complete")
     renderGoals()
     expect(screen.getByText("Done")).toBeInTheDocument()
-    expect(
-      screen.queryByRole("button", { name: /mark this step done/i })
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /mark this step done/i })).not.toBeInTheDocument()
   })
 
   test("explains that goals here carry the reason underneath them", () => {
     // The product point. Copy can be reworded; the promise cannot quietly
     // become "list your objectives".
     renderGoals()
-    expect(
-      screen.getByText(/goals with the reason underneath them/i)
-    ).toBeInTheDocument()
+    expect(screen.getByText(/goals with the reason underneath them/i)).toBeInTheDocument()
     expect(screen.getByText(/up to five times, and no further/i)).toBeInTheDocument()
   })
 
-  test("still renders the interview when the progress read fails", () => {
+  test("still shows the door when the progress read fails", () => {
     journeyResult = { data: undefined, isLoading: false, isError: true }
     renderGoals()
-    expect(screen.getByTestId("goal-interview")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /go to my goals/i })).toBeInTheDocument()
     expect(screen.getByText(/couldn't read your progress/i)).toBeInTheDocument()
   })
 })

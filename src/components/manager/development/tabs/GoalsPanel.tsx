@@ -81,7 +81,12 @@ function AlignmentBadge({ alignment }: { alignment: PrismAlignment }) {
   )
 }
 
-function GoalCard({
+/**
+ * The goal card a coach sees. Exported (Goals offering, Phase 3) so the
+ * member's sharing panel can render "what they see" with THIS component —
+ * a redrawn preview would drift from the real card within a release.
+ */
+export function CoachGoalCard({
   goal,
   onRatify,
   ratifying,
@@ -224,7 +229,7 @@ export function GoalsPanel({ memberId }: GoalsPanelProps) {
       <CoverageStrip coverage={coverage} />
       <div className="grid gap-4 lg:grid-cols-2">
         {goals.map((goal) => (
-          <GoalCard
+          <CoachGoalCard
             key={goal.goalId}
             goal={goal}
             onRatify={(goalId) => ratify.mutate({ goalId })}

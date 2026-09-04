@@ -93,12 +93,14 @@ describe("My Workspace — rendered menu", () => {
   it("renders in the specified order", () => {
     const menu = renderMenu()
     expect(menu.map((i) => i.label)).toEqual([
-      // Exactly six as of 2026-08-12 (request). Nothing is spliced in any
+      // Exactly six as of 2026-08-12 (request), seven since 2026-09-04 when
+      // Goals returned (Goals offering, Phase 3). Nothing is spliced in any
       // more — WORKSPACE_VERTICALS and WORKSPACE_VERTICAL_LINKS are both empty
       // — so the rendered menu is the nav array, with nothing added between
       // building it and drawing it.
       "Home",
       "Chat with Meridian",
+      "Goals",
       "Interview Practice",
       "Document Library",
       "Settings",
@@ -159,16 +161,16 @@ describe("My Workspace — rendered menu", () => {
 // Rendered, not just asserted on the nav array: the greying lives in
 // SidebarScaffold's NavItem, and entries used to be spliced in after the array
 // was built, so only a render proves what a user actually sees.
-describe("My Workspace — the six entries", () => {
-  it("renders the same six regardless of entitlements", () => {
+describe("My Workspace — the seven entries", () => {
+  it("renders the same seven regardless of entitlements", () => {
     const menu = renderMenu([])
     expect(menu.map((i) => i.label)).toEqual([
-      // Exactly six as of 2026-08-12 (request). Nothing is spliced in any
-      // more — WORKSPACE_VERTICALS and WORKSPACE_VERTICAL_LINKS are both empty
-      // — so the rendered menu is the nav array, with nothing added between
-      // building it and drawing it.
+      // Exactly six as of 2026-08-12 (request), seven since 2026-09-04 when
+      // Goals returned — and Goals renders with NO entitlement, which is the
+      // point of asserting on an empty entitlement list here.
       "Home",
       "Chat with Meridian",
+      "Goals",
       "Interview Practice",
       "Document Library",
       "Settings",

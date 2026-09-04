@@ -124,7 +124,8 @@ const QUICK_ACTIONS: {
   labelKey: string;
   defaultLabel: string;
   to: string;
-  vertical: string;
+  /** The entitlement that gates USE. `null` = base product, never locked. */
+  vertical: string | null;
   icon: WelcomeBackQuickAction["icon"];
 }[] = [
   {
@@ -150,8 +151,12 @@ const QUICK_ACTIONS: {
     key: "goals",
     labelKey: "homeV2.quickGoals",
     defaultLabel: "Goals",
-    to: ROUTES.DIRECTION_SETTING.GOALS,
-    vertical: "direction-setting",
+    // Goals offering, Phase 3 (D8): the pill points at the person's own goals
+    // surface and is gated on nothing. It used to point at the Direction
+    // Setting stage page behind that vertical's entitlement, so a user without
+    // it had no way to their goals from Home.
+    to: ROUTES.MY_GOALS.BASE,
+    vertical: null,
     icon: Target,
   },
 ];
@@ -304,13 +309,16 @@ export default function HomeV2() {
         // lever so turning a shortcut back on cannot accidentally re-enable a
         // vertical, or vice versa.
         const forcedOff =
-          isVerticalForceDisabled(vertical) || LOCKED_QUICK_ACTIONS.has(key);
+          (vertical !== null && isVerticalForceDisabled(vertical)) ||
+          LOCKED_QUICK_ACTIONS.has(key);
         return {
           key,
           label: t(labelKey, { defaultValue: defaultLabel }),
           to,
           icon,
-          entitled: entitledVerticals.includes(vertical) && !forcedOff,
+          // A base-product action (vertical null) is entitled for everyone.
+          entitled:
+            (vertical === null || entitledVerticals.includes(vertical)) && !forcedOff,
           ...(forcedOff ? { lockedReason: WORKSPACE_ITEM_UNAVAILABLE_REASON } : {}),
         };
       }),

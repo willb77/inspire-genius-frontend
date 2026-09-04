@@ -308,23 +308,26 @@ describe("HomeV2", () => {
 
     // 2026-08-11: Goals UN-locked. LOCKED_QUICK_ACTIONS is now empty, so every
     // pill in the row is decided by entitlement alone.
-    it("links Goals when Direction Setting is entitled", () => {
+    // 2026-09-04 (Goals offering, Phase 3 — decision D8): Goals is base
+    // product. The pill points at /my/goals and is gated on NOTHING — a user
+    // without the Direction Setting vertical used to have no way to their own
+    // goals from Home.
+    it("links Goals at /my/goals whatever the entitlements", () => {
       mockEnabledVerticals.mockReturnValue({
         data: ["lumen", "direction-setting"],
       });
       wrap();
       const goals = screen.getByTestId("homev2-quick-goals");
-      expect(goals).toHaveAttribute("href", "/vertical/direction-setting/goals");
+      expect(goals).toHaveAttribute("href", "/my/goals");
       expect(goals).not.toHaveAttribute("aria-disabled", "true");
     });
 
-    it("still locks Goals for a user NOT entitled to Direction Setting", () => {
-      // Un-locking the pill must not bypass the entitlement gate underneath it.
+    it("does NOT lock Goals for a user without Direction Setting", () => {
       mockEnabledVerticals.mockReturnValue({ data: ["lumen"] });
       wrap();
       const goals = screen.getByTestId("homev2-quick-goals");
-      expect(goals).toHaveAttribute("aria-disabled", "true");
-      expect(goals).not.toHaveAttribute("href");
+      expect(goals).toHaveAttribute("href", "/my/goals");
+      expect(goals).not.toHaveAttribute("aria-disabled", "true");
     });
 
     it("drops My Journey and Job Fit from the row entirely", () => {
@@ -349,16 +352,18 @@ describe("HomeV2", () => {
       expect(screen.getByTestId("homev2-quick-self-portrait")).toHaveAttribute("href");
     });
 
-    it("locks every action while entitlements are still loading", () => {
+    it("locks every entitled action while entitlements are still loading", () => {
       // No `data` yet — the hook's default must not flash working links.
       mockEnabledVerticals.mockReturnValue({ data: undefined as never });
       wrap();
-      for (const key of ["self-portrait", "moments", "goals"]) {
+      for (const key of ["self-portrait", "moments"]) {
         expect(screen.getByTestId(`homev2-quick-${key}`)).toHaveAttribute(
           "aria-disabled",
           "true",
         );
       }
+      // Goals needs no entitlement, so there is nothing to wait for.
+      expect(screen.getByTestId("homev2-quick-goals")).toHaveAttribute("href", "/my/goals");
     });
   });
 });
