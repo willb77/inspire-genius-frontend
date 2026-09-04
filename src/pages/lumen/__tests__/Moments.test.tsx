@@ -133,7 +133,8 @@ describe("Moments", () => {
   test("renders the ask box, and the history only once asked for", () => {
     setup()
     render(<Moments />)
-    expect(screen.getByRole("heading", { level: 1, name: "Moments" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1, name: "Prep Me" })).toBeInTheDocument()
+    expect(screen.getByText("What's coming up?")).toBeInTheDocument()
     expect(screen.getByLabelText("Describe the situation")).toBeInTheDocument()
     // Nothing from the history until it is picked.
     expect(screen.queryByText("Lead with the question.")).not.toBeInTheDocument()
