@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import {
   extendGrant,
+  getAccessLog,
   getMyGrants,
   getPeople,
   lookupPerson,
@@ -10,6 +11,7 @@ import {
   revokeGrant,
 } from "@/services/consent/visibility.service"
 import type {
+  AccessLogRow,
   ExtendResult,
   LookupResult,
   MyGrantRow,
@@ -29,6 +31,7 @@ import type {
 export const consentKeys = {
   people: ["consent", "people"] as const,
   myGrants: ["consent", "my-grants"] as const,
+  accessLog: ["consent", "access-log"] as const,
 }
 
 export function usePeople() {
@@ -99,4 +102,13 @@ export function useRespondToRequest() {
 /** A lookup is a mutation, not a query: it runs when the person presses the button, never on keystrokes. */
 export function useLookupPerson() {
   return useMutation<LookupResult, AxiosError, string>({ mutationFn: lookupPerson })
+}
+
+/** Who has looked at the caller's data (Goals offering, Phase 5). */
+export function useAccessLog() {
+  return useQuery<AccessLogRow[], AxiosError>({
+    queryKey: consentKeys.accessLog,
+    queryFn: getAccessLog,
+    staleTime: 30 * 1000,
+  })
 }

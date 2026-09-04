@@ -1,5 +1,6 @@
 import { agentApi } from "@/lib/agentApi"
 import type {
+  AccessLogRow,
   ExtendResult,
   LookupResult,
   MyGrantRow,
@@ -92,4 +93,10 @@ export async function respondToRequest(
     { approve, ...(categories ? { categories } : {}) }
   )
   return unwrap(data)
+}
+
+/** GET /access-log — who has looked at the caller's data, newest first. */
+export async function getAccessLog(): Promise<AccessLogRow[]> {
+  const { data } = await agentApi.get<Envelope<AccessLogRow[]>>(`${BASE}/access-log`)
+  return data.data ?? []
 }

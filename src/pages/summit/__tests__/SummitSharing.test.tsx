@@ -16,6 +16,7 @@ import type { MyGoalsResponse } from "@/types/summit";
 const svc = {
   getPeople: jest.fn(),
   getMyGrants: jest.fn(),
+  getAccessLog: jest.fn(),
   lookupPerson: jest.fn(),
   offerAccess: jest.fn(),
   extendGrant: jest.fn(),
@@ -25,6 +26,7 @@ const svc = {
 jest.mock("@/services/consent/visibility.service", () => ({
   getPeople: () => svc.getPeople(),
   getMyGrants: () => svc.getMyGrants(),
+  getAccessLog: () => svc.getAccessLog(),
   lookupPerson: (...a: unknown[]) => svc.lookupPerson(...a),
   offerAccess: (...a: unknown[]) => svc.offerAccess(...a),
   extendGrant: (...a: unknown[]) => svc.extendGrant(...a),
@@ -101,6 +103,7 @@ function renderPage() {
 beforeEach(() => {
   jest.clearAllMocks();
   svc.getMyGrants.mockResolvedValue([]);
+  svc.getAccessLog.mockResolvedValue([]);
   mockGetMyGoals.mockResolvedValue({ memberId: "m1", goals: [], coverage: [] });
 });
 
@@ -237,5 +240,36 @@ describe("add a person", () => {
     fireEvent.click(screen.getByRole("button", { name: /share my goals/i }));
     await waitFor(() => expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u9", categories: { goals: true } }));
     expect(await screen.findByText(/Shared with Coach Nine/)).toBeInTheDocument();
+  });
+});
+
+describe("Who has looked (Phase 5)", () => {
+  it("lists reads by name where known and by id where not, newest first as given", async () => {
+    svc.getPeople.mockResolvedValue({
+      people: [{ userId: "m1", displayName: "Mo Manager", email: "mo@example.com", kinds: ["manager_of_record"], grant: null }],
+      sources: {},
+    });
+    svc.getAccessLog.mockResolvedValue([
+      { viewer_user_id: "m1", categories_viewed: ["goals"], surface: "growth:goals", viewed_at: "2026-09-04T14:00:00Z" },
+      { viewer_user_id: "abcdef12-0000-4000-8000-000000000000", categories_viewed: ["goals"], surface: "growth:goals:super-admin", viewed_at: "2026-09-04T13:00:00Z" },
+    ]);
+    renderPage();
+    const list = await screen.findByRole("list", { name: "Access log" });
+    expect(list).toHaveTextContent("Mo Manager");
+    expect(list).toHaveTextContent("read your goals");
+    expect(list).toHaveTextContent("Someone (abcdef12…)");
+    expect(list).toHaveTextContent("platform admin");
+  });
+
+  it("says the log is unread, not empty, when it cannot be read", async () => {
+    svc.getAccessLog.mockRejectedValue(new Error("down"));
+    renderPage();
+    expect(await screen.findByTestId("who-has-looked-error")).toBeInTheDocument();
+    expect(screen.queryByTestId("who-has-looked-empty")).not.toBeInTheDocument();
+  });
+
+  it("says nobody has looked when the log is empty", async () => {
+    renderPage();
+    expect(await screen.findByTestId("who-has-looked-empty")).toBeInTheDocument();
   });
 });
