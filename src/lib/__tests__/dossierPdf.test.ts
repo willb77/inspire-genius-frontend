@@ -53,3 +53,12 @@ describe("exportDossierPdf", () => {
     expect(save).toHaveBeenCalledWith("development-dossier-team-member.pdf")
   })
 })
+
+it("prints 'Not shared with you' for a goals-redacted dossier instead of dropping the section", () => {
+  text.mockClear()
+  exportDossierPdf({ ...dossier, goals: [], goalsNotShared: true } as unknown as MemberDossier)
+  const written = text.mock.calls.map((c) => String(c[0])).join("\n")
+  expect(written).toContain("Goals")
+  expect(written).toContain("Not shared with you.")
+  expect(written).not.toContain("Own a cross-team initiative")
+})

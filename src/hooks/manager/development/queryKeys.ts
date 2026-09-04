@@ -11,6 +11,9 @@ export const developmentKeys = {
   fullPrism: (memberId: string) =>
     [...developmentKeys.all, "full-prism", memberId] as const,
   goals: (memberId: string) => [...developmentKeys.all, "goals", memberId] as const,
+  /** Coach reviews of the member's shared goals (Goals offering, Phase 4). */
+  goalReviews: (memberId: string) =>
+    [...developmentKeys.all, "goal-reviews", memberId] as const,
   gaps: (memberId: string, targetBlueprintId?: string) =>
     [...developmentKeys.all, "gaps", memberId, targetBlueprintId ?? "default"] as const,
   milestones: (memberId: string) =>

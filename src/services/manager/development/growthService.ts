@@ -11,6 +11,7 @@
 import { getApi } from "@/lib/agentApi"
 import type { BaseApiResponse } from "@/types/api"
 import type {
+  GoalReviewList,
   BulkMembersResult,
   CareerMatch,
   DevelopmentGap,
@@ -83,6 +84,15 @@ export type DevelopmentGoalsResponse = {
   coverage: GoalCategoryCoverage[]
   goalsPending?: boolean
   prismNeeded?: boolean
+  /** Goals offering, Phase 2/4 — the three share states the tab renders,
+   *  none of them the empty list:
+   *    shared      → goalsSharedUntil = the grant's expiry (null for self /
+   *                  super-admin, who hold no grant)
+   *    not shared  → goalsNotShared = true
+   *    no account  → goalsNotShared = true AND goalsNoAccount = true */
+  goalsNotShared?: boolean
+  goalsSharedUntil?: string | null
+  goalsNoAccount?: boolean
 }
 
 /** GET /members/{id}/goals → { goals, coverage, goalsPending?, prismNeeded? } */
@@ -102,11 +112,64 @@ export function postGoalSession(memberId: string, action: GoalSessionAction) {
   )
 }
 
-/** POST /goals/{goalId}/ratify — manager co-ratify / comment (never overwrites member). */
-export function ratifyGoal(goalId: string, comment?: string) {
-  return getApi().post<BaseApiResponse<SummitGoal>>(`${BASE}/goals/${goalId}/ratify`, {
-    comment,
+/** What POST /goals/{goalId}/ratify returns: the review row it wrote. */
+export type RatifyResult = {
+  goalId: string
+  managerId?: string | null
+  ratified: boolean
+  comment: string
+  reviewId?: string | null
+  createdAt?: string | null
+}
+
+/**
+ * POST /goals/{goalId}/ratify — a coach's review: ratified or not, with a
+ * comment. Never overwrites the member's own ratification; writes a
+ * goal_reviews row the member reads back (Goals offering, Phase 4, D7).
+ */
+export function ratifyGoal(goalId: string, comment?: string, ratified = true) {
+  return getApi().post<BaseApiResponse<RatifyResult>>(`${BASE}/goals/${goalId}/ratify`, {
+    ratified,
+    comment: comment ?? "",
   })
+}
+
+/** GET /members/{id}/goal-reviews — every coach review of the member's shared
+ *  goals; behind the goals grant like every other coach-side reader. */
+export function getGoalReviews(memberId: string) {
+  return getApi().get<BaseApiResponse<GoalReviewList>>(`${BASE}/members/${memberId}/goal-reviews`)
+}
+
+/** GET /me/goal-reviews — the member reads the reviews on their own goals. */
+export function getMyGoalReviews() {
+  return getApi().get<BaseApiResponse<GoalReviewList>>(`${BASE}/me/goal-reviews`)
+}
+
+export type CoachingNoteKind = "observation" | "plan" | "outcome"
+
+export type CreateCoachingNoteInput = {
+  kind: CoachingNoteKind
+  body: string
+  /** A shared goal of this member. A note is about a goal OR a milestone OR
+   *  neither — never both (the server rejects both with 400). */
+  goalId?: string
+  milestoneId?: string
+  source?: "analysis" | "compare" | "scenario" | "ask" | "manual"
+}
+
+export type CoachingNote = {
+  id: string
+  memberId: string
+  kind: CoachingNoteKind
+  body: string
+  goalId?: string | null
+  milestoneId?: string | null
+  createdAt?: string | null
+}
+
+/** POST /members/{id}/notes — one coaching note (this manager's, this member). */
+export function createCoachingNote(memberId: string, input: CreateCoachingNoteInput) {
+  return getApi().post<BaseApiResponse<CoachingNote>>(`${BASE}/members/${memberId}/notes`, input)
 }
 
 /** GET /members/{id}/gaps?target_blueprint_id= → DevelopmentGap[] */

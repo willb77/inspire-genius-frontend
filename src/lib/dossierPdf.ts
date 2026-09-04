@@ -52,7 +52,12 @@ export function exportDossierPdf(dossier: MemberDossier): void {
     prism.forEach((d) => line(`${d.label}: ${Math.round(d.score)}`, 11, false, 15))
   }
 
-  if (dossier.goals?.length) {
+  // Goals offering, Phase 2/4: a dossier redacted for a caller without the
+  // member's goals grant says so on paper too — never a silently missing section.
+  if (dossier.goalsNotShared) {
+    heading("Goals")
+    line("Not shared with you.", 10, false, 14)
+  } else if (dossier.goals?.length) {
     heading("Goals")
     dossier.goals.forEach((g) => {
       line(`• ${g.title}`, 11, true, 15)

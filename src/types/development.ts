@@ -180,6 +180,25 @@ export type SummitGoal = {
   updatedAt?: string
 }
 
+/** A coach's review of one shared goal (Goals offering, Phase 4, D7). */
+export type GoalReview = {
+  id: string
+  goalId: string
+  memberId: string
+  reviewerSub: string
+  /** Display name when the roster knows one; else the UI says "Your coach". */
+  reviewerName?: string | null
+  ratified: boolean
+  comment: string
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+export type GoalReviewList = {
+  memberId: string
+  reviews: GoalReview[]
+}
+
 /** Per-category discovery coverage, for the five-category strip. */
 export type GoalCategoryCoverage = {
   category: GoalCategory
@@ -298,6 +317,10 @@ export type MemberDossier = {
   goalsPending?: boolean
   /** True when the member has no PRISM → route-to-Aura gate. */
   prismNeeded?: boolean
+  /** Goals offering, Phase 2: the member has not shared goals with this caller.
+   *  Then goals/goalCoverage are empty and goalsPending is null — an explicit
+   *  state, never the "no goals yet" empty list. */
+  goalsNotShared?: boolean
   gaps: DevelopmentGap[]
   learning: LearningItem[]
   milestones: Milestone[]

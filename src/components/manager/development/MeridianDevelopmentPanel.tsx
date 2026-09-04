@@ -127,9 +127,15 @@ export type MeridianDevelopmentPanelProps = {
    *  agent-engine's meridian.py. */
   goals?: Pick<SummitGoal, "goalId" | "title">[]
   gaps?: Pick<DevelopmentGap, "gapId" | "competency">[]
+  /** Goals offering, Phase 2/4: the member has not shared goals with this
+   *  caller. The panel then has no goal ids to forward (the dossier is
+   *  redacted server-side) and says so in a sentence, rather than letting
+   *  the empty list read as "no goals". The server renders its own
+   *  <MEMBER_GOALS status="not_shared"> block on the same signal. */
+  goalsNotShared?: boolean
 }
 
-export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gaps }: MeridianDevelopmentPanelProps) {
+export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gaps, goalsNotShared }: MeridianDevelopmentPanelProps) {
   const sk = useDevSkin()
   const { user } = useAuth()
   const accessToken = user?.token ?? ""
@@ -193,6 +199,9 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
     () => [memberName, `Tab: ${tab}`],
     [memberName, tab],
   )
+  const goalsNotSharedLine = goalsNotShared
+    ? `${memberName || "This member"} has not shared their goals with you, so Meridian cannot see them either.`
+    : null
 
   const send = (text: string) => {
     const trimmed = text.trim()
@@ -252,6 +261,11 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
           </Badge>
         ))}
       </div>
+      {goalsNotSharedLine ? (
+        <p className={cn("border-b px-3 py-2 text-xs", sk.border200, sk.text500)} data-testid="meridian-goals-not-shared">
+          {goalsNotSharedLine}
+        </p>
+      ) : null}
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-3">
         {turns.length === 0 ? (

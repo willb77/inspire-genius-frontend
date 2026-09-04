@@ -113,6 +113,12 @@ export async function compareSubjects(req: {
  */
 export async function fetchStarterQuestions(req: {
   subjects: StudioSubject[]
+  /** Goals offering, Phase 4: the person's SHARED goals, as titles, so two of
+   *  the six questions connect a score to something they said they want.
+   *  Only ever what the coach-side Goals tab showed — that tab is behind the
+   *  member's grant. Optional; the compare panel (a cast of several people)
+   *  has no single goal set and does not pass it. */
+  goals?: string[]
 }): Promise<TeamStudioWire> {
   const { data } = await agentApi.post<Envelope<TeamStudioWire>>(`${BASE}/questions`, req)
   return data.data

@@ -29,12 +29,14 @@ import { GOAL_CATEGORY_LABEL, GOAL_HORIZON_LABEL } from "@/constants/development
 import { useGoalSession, usePatchGoal } from "@/hooks/summit/useGoalSession";
 import {
   useCreateGoal,
+  useMyGoalReviews,
   useMyGoals,
   usePublishGoal,
   useSetGoalVisibility,
   useUnpublishGoal,
 } from "@/hooks/summit/useMyGoals";
 import { SUMMIT_CATEGORY_KEYS, type SharedGoal, type SummitCategoryKey, type SummitGoal } from "@/types/summit";
+import type { GoalReview } from "@/types/development";
 import {
   ALIGN_LABEL,
   ALIGN_STYLES,
@@ -124,8 +126,26 @@ export function GoalCard({ g, children }: { g: SummitGoal; children?: React.Reac
   );
 }
 
+/** A coach's review, as the member reads it back (Goals offering, Phase 4, D7). */
+function ReviewRow({ review }: { review: GoalReview }) {
+  const when = review.createdAt ? new Date(review.createdAt).toLocaleDateString() : "";
+  return (
+    <li className="rounded-xl border border-[#F1ECE2] bg-[#FBF7F0] px-3 py-2 text-[12.5px] text-[#13294B]">
+      <div className="flex flex-wrap items-center gap-2">
+        <b className="text-[#0B1B33]">{review.reviewerName || "A coach"}</b>
+        <StatusPill
+          status={review.ratified ? "confirmed" : "proposed"}
+          label={review.ratified ? "Ratified" : "Not ratified"}
+        />
+        {when && <span className="ml-auto text-[11px] text-[#7C93B5]">{when}</span>}
+      </div>
+      {review.comment && <p className="mt-1">{review.comment}</p>}
+    </li>
+  );
+}
+
 /** A published goal (Store B) — what a coach would see, with the owner's controls. */
-function SharedGoalCard({ goal }: { goal: SharedGoal }) {
+function SharedGoalCard({ goal, reviews = [] }: { goal: SharedGoal; reviews?: GoalReview[] }) {
   const setVisibility = useSetGoalVisibility();
   const unpublish = useUnpublishGoal();
   const isPrivate = goal.visibility === "private";
@@ -165,8 +185,15 @@ function SharedGoalCard({ goal }: { goal: SharedGoal }) {
           {goal.source === "member" ? "From your interview" : "Seeded"}
         </span>
       </div>
-      {/* Reviews arrive in Phase 4; an honest placeholder until then. */}
-      <p className="mt-3 text-[12.5px] text-[#13294B]/70">No reviews yet.</p>
+      {reviews.length > 0 ? (
+        <ul className="mt-3 space-y-1.5" aria-label="Coach reviews">
+          {reviews.map((r) => (
+            <ReviewRow key={r.id} review={r} />
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-[12.5px] text-[#13294B]/70">No reviews yet.</p>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-[#F1ECE2] pt-3">
         <label className="flex items-center gap-2 text-[12.5px] font-semibold text-[#13294B]">
@@ -365,6 +392,7 @@ export default function SummitGoals() {
   const fromJourney = params.get("journey") === "direction-setting";
   const session = useGoalSession();
   const mine = useMyGoals();
+  const myReviews = useMyGoalReviews();
 
   const shared = mine.data?.goals ?? [];
   const publishedFrom = new Set(shared.map((g) => g.publishedFrom).filter(Boolean));
@@ -438,7 +466,11 @@ export default function SummitGoals() {
             Your goals
           </h2>
           {shared.map((g) => (
-            <SharedGoalCard key={g.goalId} goal={g} />
+            <SharedGoalCard
+              key={g.goalId}
+              goal={g}
+              reviews={(myReviews.data?.reviews ?? []).filter((r) => r.goalId === g.goalId)}
+            />
           ))}
         </section>
       )}
