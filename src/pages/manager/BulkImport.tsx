@@ -1,5 +1,9 @@
 import { useReducer, useCallback, useState } from "react"
+import { Link } from "react-router-dom"
 import ManagerLayout from "@/layouts/ManagerLayout"
+import { ROUTES } from "@/constants/routes"
+import { useAuth } from "@/context/useAuth"
+import { useJoinRequestQueue } from "@/hooks/org/useOrgMembership"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -11,6 +15,7 @@ import {
   BarChart3,
   ChevronLeft,
   Check,
+  Inbox,
 } from "lucide-react"
 
 import { Checkbox } from "@/components/ui/checkbox"
@@ -210,11 +215,23 @@ export default function ManagerBulkImport() {
               Upload a file to import team members and send invitation emails
             </p>
           </div>
-          {state.currentStep !== "upload" && (
-            <Button variant="outline" size="sm" onClick={() => dispatch({ type: "RESET" })}>
-              Start Over
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {/*
+              Join Requests moved here from its own sidebar entry on 2026-09-05
+              (request). This is the page it belongs to — both answer "how does
+              somebody get onto my roster" — but the queue is PULL-ONLY: nothing
+              notifies a manager when a request arrives. A plain link would make
+              it less visible than the sidebar row it replaced, so the count is
+              loaded here and shown on the button. A queue nobody can see is a
+              queue nobody empties.
+            */}
+            <JoinRequestsButton />
+            {state.currentStep !== "upload" && (
+              <Button variant="outline" size="sm" onClick={() => dispatch({ type: "RESET" })}>
+                Start Over
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Stepper */}
@@ -358,5 +375,38 @@ export default function ManagerBulkImport() {
         )}
       </div>
     </ManagerLayout>
+  )
+}
+
+
+/**
+ * The Join Requests queue, surfaced on Team Import.
+ *
+ * Renders whether or not the count loads. `org_id` can be absent from the auth
+ * user and the query is disabled without it — but the destination page handles
+ * that case and says so, whereas hiding the button would leave a manager with
+ * no route to their own queue and nothing indicating one exists.
+ */
+function JoinRequestsButton() {
+  const { user } = useAuth()
+  const orgId = (user as { org_id?: string } | null)?.org_id
+  const { data } = useJoinRequestQueue(orgId)
+  const pending = data?.length ?? 0
+
+  return (
+    <Button asChild variant="outline" size="sm">
+      <Link to={ROUTES.MANAGER.JOIN_REQUESTS}>
+        <Inbox className="mr-2 h-4 w-4" aria-hidden />
+        Join Requests
+        {pending > 0 && (
+          <span
+            className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-medium text-white"
+            aria-label={`${pending} pending`}
+          >
+            {pending}
+          </span>
+        )}
+      </Link>
+    </Button>
   )
 }
