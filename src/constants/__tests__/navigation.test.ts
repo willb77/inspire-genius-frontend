@@ -58,31 +58,36 @@ describe("constants/navigation", () => {
     const labels = () => NAV_ITEMS_BY_ROLE.manager.map((i) => i.label)
 
     it("is in the specified order", () => {
-      expect(labels()).toEqual([
-        "Dashboard",
-        "Team Roster (Client)",
+      // Consolidated from ELEVEN entries to six on 2026-09-05 (request). The
+      // first slot varies with VITE_FEATURE_TEAM_DEVELOPMENT, which jest and
+      // .env.example leave unset while every deployed build sets it — see
+      // managerNav.test.ts for the fallback that keeps a landing surface either
+      // way. The five that do not move are pinned exactly.
+      expect(labels()[0]).toMatch(/^(Team Development Studio|Dashboard)$/)
+      expect(labels().slice(1)).toEqual([
         "Student Oversight",
-        "Join Requests",
-        "Schedule",
-        "Chat with Meridian",
-        "Document Library",
         "Team Import",
-        "Surveys",
+        "Schedule",
         "Settings",
         "Help & Support",
       ])
     })
 
-    it("points the four shared surfaces at their unprefixed routes", () => {
+    it("points the shared surface it still lists at its unprefixed route", () => {
       // These carry no `/manager/` prefix, which is exactly why a manager can
       // already reach them — ProtectedRoute gates by path prefix only. Pointing
       // any of them at a /manager/* clone would create a second copy of a
       // surface that already ships.
+      //
+      // Chat with Meridian, Document Library and Surveys left the MENU in the
+      // 2026-09-05 consolidation. The rule above is about the shape of a route
+      // when it IS listed, so it now covers the one that still is; the routes
+      // themselves are unchanged and the pages are reachable as before.
       const byLabel = Object.fromEntries(NAV_ITEMS_BY_ROLE.manager.map((i) => [i.label, i.to]))
-      expect(byLabel["Chat with Meridian"]).toBe(ROUTES.MERIDIAN_CHAT)
-      expect(byLabel["Document Library"]).toBe(ROUTES.DOCUMENTS)
-      expect(byLabel["Surveys"]).toBe(ROUTES.SURVEYS)
       expect(byLabel["Help & Support"]).toBe(ROUTES.HELP)
+      expect(ROUTES.MERIDIAN_CHAT).toBeTruthy()
+      expect(ROUTES.DOCUMENTS).toBeTruthy()
+      expect(ROUTES.SURVEYS).toBeTruthy()
     })
 
     it("keeps Team Import on the existing manager bulk-import route", () => {
