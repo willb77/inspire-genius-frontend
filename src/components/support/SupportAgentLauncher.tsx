@@ -14,6 +14,14 @@
  * Rendering once from `SupportAgentProvider` sidesteps the whole class of bug:
  * whatever the surface resolver picks, the launcher is outside it.
  *
+ * GLYPH
+ * The universal information "i" (2026-09-04, request), not the life-buoy it
+ * carried before. This is the ONLY Ask Meridian control most users ever see:
+ * `AskMeridianButton` renders on `/dashboard` alone, and a trigger on any
+ * classic page is unreachable because the V2 surfaces are the default. So the
+ * glyph on THIS button is what "the Ask Meridian button" looks like on all
+ * pages — changing the component with that name changed one page.
+ *
  * POSITION
  * `bottom-6 right-24` deliberately, NOT `right-6` — AlexFloating already owns
  * `bottom-6 right-6` (z-30) and VoiceDeskWidget claims the same spot at z-50.
@@ -21,7 +29,7 @@
  * launcher hides while the popup is open, since the popup itself occupies the
  * bottom-right corner.
  */
-import { LifeBuoy } from "lucide-react";
+import { Info } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useSupportAgent } from "@/context/useSupportAgent";
@@ -52,7 +60,7 @@ export default function SupportAgentLauncher({ className }: SupportAgentLauncher
         className,
       )}
     >
-      <LifeBuoy className="size-5" />
+      <Info className="size-5" />
     </button>
   );
 }
