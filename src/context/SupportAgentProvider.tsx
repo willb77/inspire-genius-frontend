@@ -12,8 +12,10 @@
  * with no assistant. `AppShell` no longer exists — the layouts converged on
  * SidebarScaffold — so there is one mount, not two. Corrected 2026-09-04 after
  * a grep for the second mount found nothing and the coverage claim had to be
- * re-derived from the layouts. (CLAUDE.md still describes AppShell as the
- * unified layout; it is stale in the same way.)
+ * re-derived from the layouts. The rules file that carried the same stale
+ * claim — `.claude/rules/architecture.md`, which called AppShell a 3-column
+ * layout used by ALL roles — was corrected the same day; CLAUDE.md itself
+ * never named it.
  *
  * Not mounted on auth pages — those render no authenticated layout, and there
  * is no session to talk to Meridian with.
