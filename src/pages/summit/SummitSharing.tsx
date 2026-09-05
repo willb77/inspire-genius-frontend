@@ -190,6 +190,7 @@ const SURFACE_LABEL: Record<string, string> = {
   "growth:goal-reviews": "read the reviews on your goals",
   "growth:goal-reviews:super-admin": "read the reviews on your goals (platform admin)",
   offered: "was given access by you",
+  extended: "had access renewed by you",
 };
 
 function describeSurface(surface: string | null): string {
