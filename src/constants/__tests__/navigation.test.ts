@@ -140,6 +140,8 @@ describe("constants/navigation", () => {
       const labels = (TOOL_ITEMS_BY_ROLE["super-admin"] ?? []).map((i) => i.label)
       expect(labels).toEqual([
         "Team Development Studio",
+        // 2026-09-04: the goals surface, one ungated path for every role.
+        "Goals Studio",
         "Interview Practice",
         "Live Interview",
         "Interview Studio",
@@ -280,7 +282,7 @@ describe("My Workspace menu order + switched-off entries", () => {
     // 2026-09-04: Summit and the Direction Setting goals page left the hidden
     // list — the surface is back in the menu at MY_GOALS.BASE, so listing
     // either here would make the constant lie about the menu.
-    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.SUMMIT.BASE)
+    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain("/summit")
     expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.DIRECTION_SETTING.GOALS)
   })
 
@@ -293,7 +295,7 @@ describe("My Workspace menu order + switched-off entries", () => {
     expect(labels(true)).toEqual([
       "Home",
       "Chat with Meridian",
-      "Goals",
+      "Goals Studio",
       "Interview Practice",
       "Document Library",
       "Settings",
@@ -307,7 +309,7 @@ describe("My Workspace menu order + switched-off entries", () => {
     expect(labels(false)).toEqual([
       "Home",
       "Chat with Coaches",
-      "Goals",
+      "Goals Studio",
       "Interview Practice",
       "Document Library",
       "Settings",
@@ -317,13 +319,13 @@ describe("My Workspace menu order + switched-off entries", () => {
 
   it("carries Goals at the ungated My Goals route, and still drops Job Fit", () => {
     const items = getUserNavItems(true)
-    const goals = items.find((i) => i.label === "Goals")
+    const goals = items.find((i) => i.label === "Goals Studio")
     // The row points at the base-product surface, not the Direction Setting
     // stage page — that one sits behind the `direction-setting` entitlement
     // and would send an unentitled user to a locked door.
     expect(goals?.to).toBe(ROUTES.MY_GOALS.BASE)
     expect(items.find((i) => i.to === ROUTES.DIRECTION_SETTING.GOALS)).toBeUndefined()
-    expect(items.find((i) => i.to === ROUTES.SUMMIT.BASE)).toBeUndefined()
+    expect(items.find((i) => i.to === "/summit")).toBeUndefined()
     expect(labels(true)).not.toContain("Job Fit")
   })
 
@@ -405,6 +407,7 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
   const UNGATED = [
     "Interview Practice",
     "Interview Studio",
+    "Goals Studio",
     "Job Blueprint",
     "Live Interview",
   ].sort()

@@ -405,7 +405,7 @@ export default function GoalInterviewPanel({
           <Bot className="h-4 w-4" aria-hidden />
         </span>
         <div className="min-w-0">
-          <div className="text-sm font-semibold">Summit</div>
+          <div className="text-sm font-semibold">Goals Studio</div>
           <div className="truncate text-[11px] text-muted-foreground">
             {phase === "opening"
               ? "Getting the next questions…"
@@ -451,7 +451,7 @@ export default function GoalInterviewPanel({
               id="goal-interview-voice"
               checked={voiceMode}
               onCheckedChange={toggleVoice}
-              aria-label="Voice mode: Summit reads its questions aloud and listens for your answer"
+              aria-label="Voice mode: Goals Studio reads its questions aloud and listens for your answer"
             />
           </div>
         </div>
@@ -461,7 +461,7 @@ export default function GoalInterviewPanel({
         {turns.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Summit works through five areas of your working life a few
+              Goals Studio works through five areas of your working life a few
               questions at a time, then asks <em>why</em> until it reaches what
               actually sits underneath. What comes out are goals with a reason
               attached — not a list you typed.
@@ -509,7 +509,7 @@ export default function GoalInterviewPanel({
           screen turned away because they are having a conversation. */}
       <div className="sr-only" role="status" aria-live="polite">
         {speaking
-          ? "Summit is speaking."
+          ? "Goals Studio is speaking."
           : dictation.listening
             ? "Listening. Speak your answer."
             : pendingSend

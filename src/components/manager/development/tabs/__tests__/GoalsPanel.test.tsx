@@ -57,7 +57,7 @@ beforeEach(() => {
 })
 
 describe("the three share states", () => {
-  it("not shared: says so, and never the invite-to-Summit empty state", () => {
+  it("not shared: says so, and never the invite-to-Goals-Studio empty state", () => {
     goalsState.data = { goals: [], coverage: [], goalsNotShared: true, goalsNoAccount: false }
     renderAt("/manager/development/m1")
     expect(screen.getByTestId("goals-state-not-shared")).toBeInTheDocument()
@@ -89,7 +89,7 @@ describe("the three share states", () => {
     renderAt("/manager/development/m1")
     expect(screen.getByTestId("goals-state-shared")).toHaveTextContent("Shared with you.")
     expect(screen.getByTestId("goals-state-pending")).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: /Invite to Summit session/ }))
+    fireEvent.click(screen.getByRole("button", { name: /Invite to Goals Studio session/ }))
     expect(sessionMutate).toHaveBeenCalledWith("invite")
   })
 })

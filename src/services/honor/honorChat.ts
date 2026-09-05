@@ -1,7 +1,8 @@
 /**
  * Honor Evaluate transport — Meridian async-jobs flow.
  *
- * Cloned from src/services/summit/summitChat.ts (the Summit pattern). The
+ * Cloned from the former src/services/summit/summitChat.ts (removed 2026-09-04
+ * with the Summit surface; this file is now the reference). The
  * coach's evaluation prompt about a SELECTED member is routed to the existing
  * agents (Aura/James/Nova/Ascend/Echo/Bridge/Grant) synthesized by Meridian —
  * NOT a bespoke DAG. Uses the async-jobs flow to beat the 30s API-Gateway cap on

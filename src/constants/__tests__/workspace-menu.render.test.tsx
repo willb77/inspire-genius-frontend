@@ -100,7 +100,7 @@ describe("My Workspace — rendered menu", () => {
       // building it and drawing it.
       "Home",
       "Chat with Meridian",
-      "Goals",
+      "Goals Studio",
       "Interview Practice",
       "Document Library",
       "Settings",
@@ -170,7 +170,7 @@ describe("My Workspace — the seven entries", () => {
       // point of asserting on an empty entitlement list here.
       "Home",
       "Chat with Meridian",
-      "Goals",
+      "Goals Studio",
       "Interview Practice",
       "Document Library",
       "Settings",

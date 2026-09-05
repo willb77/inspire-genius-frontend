@@ -70,7 +70,7 @@ export const WORKSPACE_ITEM_UNAVAILABLE_REASON = "Temporarily unavailable"
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-  { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals" },
+  { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals Studio" },
   { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
@@ -85,8 +85,13 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
  * menu"); Goals returned on 2026-09-04 as the ungated My Goals surface
  * (Goals offering, Phase 3 — decision D8: base product, not a vertical):
  *
- *   Home · Chat with Meridian · Goals · Interview Practice · Document Library ·
- *   Settings · Help & Support
+ *   Home · Chat with Meridian · Goals Studio · Interview Practice · Document
+ *   Library · Settings · Help & Support
+ *
+ * "Goals" became "Goals Studio" on 2026-09-04 (request) — the same name the
+ * coach roles see under Tools, so a member and their coach are talking about
+ * the same thing. The row is not owner-gated and not greyed; it is the base
+ * product.
  *
  * The chat row is the only variation: it points at Meridian when the Agent
  * Engine toggle is on (the default) and falls back to "Chat with Coaches"
@@ -140,7 +145,7 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
     // The person's own goals — set in the Summit interview, shared per person
     // by consent (Goals offering, Phase 3). Ungated: every role reaches it.
-    { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals" },
+    { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals Studio" },
     // Candidate-side STAR rehearsal with Alex (voice-capable).
     { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
     // Document Library sits directly above Settings (2026-08-06 request). It is
@@ -166,10 +171,10 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
  */
 export const HIDDEN_WORKSPACE_ROUTES = [
   ROUTES.PRISM_ASSESSMENT,
-  // ROUTES.SUMMIT.BASE and ROUTES.DIRECTION_SETTING.GOALS left this list on
-  // 2026-09-04 (Goals offering, Phase 3). The Summit surface is re-homed at
-  // ROUTES.MY_GOALS.BASE and back in the menu as "Goals"; /summit/* redirects
-  // there. The Direction Setting goals page is stage 5 of that journey, not a
+  // The old /summit route and ROUTES.DIRECTION_SETTING.GOALS left this list on
+  // 2026-09-04 (Goals offering, Phase 3). The surface lives at
+  // ROUTES.MY_GOALS.BASE and is in the menu as "Goals Studio"; /summit/* is
+  // retired. The Direction Setting goals page is stage 5 of that journey, not a
   // withdrawn shortcut — it links to My Goals and is reached from the map.
   ROUTES.FEEDBACK,
   ROUTES.ONBOARDING.WIZARD,
@@ -204,6 +209,20 @@ const TEAM_DEVELOPMENT_ITEM: NavItemDef = {
   to: ROUTES.MANAGER.DEVELOPMENT,
   icon: Sparkles,
   label: "Team Development Studio",
+}
+
+/**
+ * Goals Studio — the goals surface, listed under Tools for the coach roles
+ * (2026-09-04, request: "an offering that for now goes in the Tools left side
+ * menu"). ONE item for every role: the surface is ungated and lives at the
+ * same path for everyone, so unlike the studios below there is no
+ * role-prefixed variant to point at. It feeds Team Development Studio today
+ * (the Goals tab reads what a member has shared) and is listed right after it.
+ */
+const GOALS_STUDIO_ITEM: NavItemDef = {
+  to: ROUTES.MY_GOALS.BASE,
+  icon: Flag,
+  label: "Goals Studio",
 }
 
 /**
@@ -329,6 +348,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
   // ProtectedRoute gates by path prefix.
   manager: [
     ...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []),
+    GOALS_STUDIO_ITEM,
     JOB_BLUEPRINT_ITEM_MANAGER,
     INTERVIEW_PRACTICE_ITEM,
     INTERVIEW_LIVE_ITEM_MANAGER,
@@ -339,6 +359,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     // PILOT cohort, and gating a second role on another role's pilot flag is
     // what made this entry vanish from super-admin builds once already.
     TEAM_DEVELOPMENT_ITEM_PRACTITIONER,
+    GOALS_STUDIO_ITEM,
     JOB_BLUEPRINT_ITEM_PRACTITIONER,
     INTERVIEW_PRACTICE_ITEM,
     INTERVIEW_LIVE_ITEM_PRACTITIONER,
@@ -353,6 +374,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
   // flag was unset. Manager keeps the flag; super-admin does not.
   "super-admin": [
     TEAM_DEVELOPMENT_ITEM,
+    GOALS_STUDIO_ITEM,
     INTERVIEW_PRACTICE_ITEM,
     INTERVIEW_LIVE_ITEM_SUPER_ADMIN,
     INTERVIEW_STUDIO_ITEM_SUPER_ADMIN,
@@ -555,15 +577,13 @@ export const OWNER_ONLY_NAV_ROUTES: ReadonlySet<string> = new Set<string>([
 ])
 
 /**
- * NOT the only owner gate — My Workspace's Goals entry is owner-gated too, but
- * differently, and deliberately so.
+ * Routes in {@link OWNER_ONLY_NAV_ROUTES} are REMOVED for non-owners.
  *
- * Routes in {@link OWNER_ONLY_NAV_ROUTES} are REMOVED for non-owners. Goals is
- * instead left in place and greyed (see {@link getUserNavItems}), because it
- * was already a visible-but-disabled row for every user before the owner got
- * it back on 2026-08-06 — removing it would have changed what everyone else
- * sees, which the request did not ask for. Adding Goals to this set would do
- * exactly that, so don't.
+ * Goals Studio is NOT in this set and is not owner-gated any more. It was —
+ * left in place and greyed for everyone but the owner from 2026-08-06 — until
+ * the Goals offering made it base product on 2026-09-04 (Phase 3, D8), open to
+ * every signed-in user. Adding it here would take the surface away from the
+ * members who share their goals through it, so don't.
  */
 
 /** Lookup from role to its nav items */

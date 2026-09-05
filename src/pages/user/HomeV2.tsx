@@ -150,7 +150,7 @@ const QUICK_ACTIONS: {
   {
     key: "goals",
     labelKey: "homeV2.quickGoals",
-    defaultLabel: "Goals",
+    defaultLabel: "Goals Studio",
     // Goals offering, Phase 3 (D8): the pill points at the person's own goals
     // surface and is gated on nothing. It used to point at the Direction
     // Setting stage page behind that vertical's entitlement, so a user without

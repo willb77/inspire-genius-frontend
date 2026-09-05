@@ -179,7 +179,7 @@ describe("voice", () => {
     expect(toggle).toBeChecked()
   })
 
-  it("speaks Summit's questions aloud", async () => {
+  it("speaks the interview questions aloud", async () => {
     const user = userEvent.setup()
     renderPanel()
     await startIt(user)
