@@ -7,7 +7,7 @@
  */
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Search, Users } from "lucide-react"
+import { Network, Search, Users } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { Input } from "@/components/ui/input"
@@ -30,6 +30,7 @@ import {
 } from "@/hooks/manager/development"
 import { MemberCard } from "@/components/manager/development/MemberCard"
 import { AddMemberDialog } from "@/components/manager/development/AddMemberDialog"
+import { OrgChartPanel } from "@/components/manager/development/OrgChartPanel"
 import {
   DevSkinProvider,
   DevPageFrame,
@@ -91,6 +92,17 @@ export default function DevelopmentStudio({
   const navigate = useNavigate()
   const { t } = useDevelopmentText()
   const { data: roster, isLoading, isError, refetch } = useTeamDevelopmentRoster()
+
+  /**
+   * Which view the first page is showing.
+   *
+   * The org chart is a different QUESTION about the same organisation — "who
+   * reports to whom" rather than "who needs what" — so it replaces the grid
+   * rather than sitting beside it, and the search/filter row does not apply to
+   * it. Local state, not a route: it is a lens on this page, and a URL for it
+   * would be a second surface to keep gated.
+   */
+  const [view, setView] = useState<"grid" | "org">("grid")
 
   const [search, setSearch] = useState("")
   const [coverage, setCoverage] = useState<CoverageFilter>("all")
@@ -155,7 +167,7 @@ export default function DevelopmentStudio({
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full md:max-w-xs">
+        <div className={cn("relative w-full md:max-w-xs", view === "org" && "invisible")}>
           <Search className={cn("pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2", sk.text400)} aria-hidden="true" />
           <Input
             value={search}
@@ -166,6 +178,39 @@ export default function DevelopmentStudio({
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* The Org Chart pill.
+              A toggle, not a filter: the chart answers "who reports to whom"
+              rather than "who needs what", so it REPLACES the grid and the
+              search/filter controls beside it do not apply to it. They are
+              hidden in chart view rather than left visible and inert, because
+              a filter that silently does nothing is worse than one that is not
+              offered. */}
+          <div className="flex items-center rounded-full border p-0.5" role="group" aria-label="View">
+            <button
+              type="button"
+              onClick={() => setView("grid")}
+              aria-pressed={view === "grid"}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium transition",
+                view === "grid" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
+              )}
+            >
+              Team
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("org")}
+              aria-pressed={view === "org"}
+              className={cn(
+                "flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition",
+                view === "org" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
+              )}
+            >
+              <Network className="h-3 w-3" aria-hidden /> Org Chart
+            </button>
+          </div>
+          {view === "grid" && (
+          <>
           <Select value={coverage} onValueChange={(v) => setCoverage(v as CoverageFilter)}>
             <SelectTrigger className="w-[150px]" aria-label={t("dev.studio.filter.coverage")}>
               <SelectValue placeholder={t("dev.studio.filter.coverage")} />
@@ -214,11 +259,18 @@ export default function DevelopmentStudio({
               <SelectItem value="activity">{t("dev.studio.sort.activity")}</SelectItem>
             </SelectContent>
           </Select>
+          </>
+          )}
         </div>
       </div>
 
-      {/* States */}
-      {isLoading ? (
+      {/* The search box filters the ROSTER, not the org chart — the chart is a
+          different dataset with its own scope, and pointing this at it would
+          filter people out of a reporting tree, leaving their reports
+          reparented under whoever survived. */}
+      {view === "org" ? (
+        <OrgChartPanel memberRoute={memberRoute} />
+      ) : isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className={cn("h-44 w-full", sk.radius)} />

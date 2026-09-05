@@ -6,6 +6,8 @@
 export const developmentKeys = {
   all: ["development"] as const,
   roster: () => [...developmentKeys.all, "roster"] as const,
+  /** The whole org's reporting tree — not per-member. */
+  orgChart: () => [...developmentKeys.all, "org-chart"] as const,
   dossier: (memberId: string) => [...developmentKeys.all, "dossier", memberId] as const,
   /** Every PRISM scale on file — distinct from the dossier's 8-behaviour radar. */
   fullPrism: (memberId: string) =>
