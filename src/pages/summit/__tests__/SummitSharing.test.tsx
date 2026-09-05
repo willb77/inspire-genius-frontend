@@ -261,6 +261,25 @@ describe("Who has looked (Phase 5)", () => {
     expect(list).toHaveTextContent("platform admin");
   });
 
+  it("names the grant-side events in the member's words — share and renew are not 'looked (surface)'", async () => {
+    // The backend logs the member's own offer as surface "offered" and a renewal as
+    // "extended". Found on stable 2026-09-04: "extended" had no label, so a renewal
+    // read "looked (extended)". Every surface the backend writes needs a label here.
+    svc.getPeople.mockResolvedValue({
+      people: [{ userId: "c1", displayName: "SB Verify", email: "sb.verify.coach@example.com", kinds: ["added"], grant: null }],
+      sources: {},
+    });
+    svc.getAccessLog.mockResolvedValue([
+      { viewer_user_id: "c1", categories_viewed: ["goals"], surface: "extended", viewed_at: "2026-09-05T01:41:28Z" },
+      { viewer_user_id: "c1", categories_viewed: ["goals"], surface: "offered", viewed_at: "2026-09-05T01:41:24Z" },
+    ]);
+    renderPage();
+    const list = await screen.findByRole("list", { name: "Access log" });
+    expect(list).toHaveTextContent("had access renewed by you");
+    expect(list).toHaveTextContent("was given access by you");
+    expect(list).not.toHaveTextContent("looked (");
+  });
+
   it("says the log is unread, not empty, when it cannot be read", async () => {
     svc.getAccessLog.mockRejectedValue(new Error("down"));
     renderPage();
