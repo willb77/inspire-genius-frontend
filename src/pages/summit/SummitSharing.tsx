@@ -18,7 +18,7 @@
  * settled.
  */
 import { useState, type FormEvent } from "react";
-import { Loader2, Mail, RefreshCw, Search, ShieldAlert, UserPlus } from "lucide-react";
+import { Eye, Loader2, Mail, RefreshCw, Search, ShieldAlert, UserPlus } from "lucide-react";
 import { PageHead, Card, Callout } from "@/pages/summit/components/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { CoachGoalCard } from "@/components/manager/development/tabs/GoalsPanel";
 import { useMyGoals } from "@/hooks/summit/useMyGoals";
 import {
+  useAccessLog,
   useExtendGrant,
   useLookupPerson,
   useMyGrants,
@@ -34,7 +35,7 @@ import {
   useRespondToRequest,
   useRevokeGrant,
 } from "@/hooks/consent/useVisibility";
-import type { LookupResult, MyGrantRow, PersonKind, VisibilityPerson } from "@/types/consent";
+import type { AccessLogRow, LookupResult, MyGrantRow, PersonKind, VisibilityPerson } from "@/types/consent";
 
 const KIND_LABEL: Record<PersonKind, string> = {
   manager_of_record: "Your manager",
@@ -176,6 +177,75 @@ function RequestRow({ row, name }: { row: MyGrantRow; name: string }) {
         </p>
       )}
     </li>
+  );
+}
+
+const SURFACE_LABEL: Record<string, string> = {
+  "growth:goals": "read your goals",
+  "growth:goals:super-admin": "read your goals (platform admin)",
+  "growth:dossier": "opened your development dossier",
+  "growth:dossier:super-admin": "opened your development dossier (platform admin)",
+  "growth:ratify": "reviewed a goal",
+  "growth:ratify:super-admin": "reviewed a goal (platform admin)",
+  "growth:goal-reviews": "read the reviews on your goals",
+  "growth:goal-reviews:super-admin": "read the reviews on your goals (platform admin)",
+  offered: "was given access by you",
+};
+
+function describeSurface(surface: string | null): string {
+  if (!surface) return "looked";
+  return SURFACE_LABEL[surface] ?? `looked (${surface})`;
+}
+
+function formatWhen(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
+}
+
+/**
+ * Who has looked (Goals offering, Phase 5). Every read behind the goals grant
+ * writes an access-log row; this is that log, newest first, in the subject's
+ * own words. A reader we cannot name is shown by id, never hidden — a log
+ * that omits the reads it cannot label is not a log.
+ */
+function WhoHasLooked({ nameById }: { nameById: Map<string, string> }) {
+  const log = useAccessLog();
+  const rows = (log.data ?? []).slice(0, 50);
+  return (
+    <section aria-labelledby="looked-heading" className="flex flex-col gap-2" data-testid="who-has-looked">
+      <h2 id="looked-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">
+        Who has looked
+      </h2>
+      <Card className="!p-5">
+        {log.isLoading && (
+          <p className="text-[13.5px] text-[#13294B]/70">Reading the access log…</p>
+        )}
+        {log.isError && (
+          <p className="text-[13.5px] text-[#13294B]/80" data-testid="who-has-looked-error">
+            We couldn&apos;t read the access log just now. It is not empty — it is unread.
+          </p>
+        )}
+        {!log.isLoading && !log.isError && rows.length === 0 && (
+          <p className="text-[13.5px] text-[#13294B]/70" data-testid="who-has-looked-empty">
+            Nobody has looked at your goals yet. Every read is recorded here, including reads by
+            platform administrators.
+          </p>
+        )}
+        {rows.length > 0 && (
+          <ul className="flex flex-col divide-y divide-[#F1ECE2]" aria-label="Access log">
+            {rows.map((r: AccessLogRow, i) => (
+              <li key={`${r.viewer_user_id}-${r.viewed_at ?? i}`} className="flex flex-wrap items-center gap-2 py-2 text-[13px] text-[#13294B]">
+                <Eye className="h-3.5 w-3.5 text-[#7C93B5]" aria-hidden />
+                <b className="text-[#0B1B33]">{nameById.get(r.viewer_user_id) ?? `Someone (${r.viewer_user_id.slice(0, 8)}…)`}</b>
+                <span>{describeSurface(r.surface)}</span>
+                <span className="ml-auto text-[11.5px] text-[#7C93B5]">{formatWhen(r.viewed_at)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </section>
   );
 }
 
@@ -334,6 +404,8 @@ export default function SummitSharing() {
       )}
 
       {!loading && !failed && <AddPerson />}
+
+      {!loading && !failed && <WhoHasLooked nameById={nameById} />}
 
       <section aria-labelledby="preview-heading" className="flex flex-col gap-2">
         <h2 id="preview-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">

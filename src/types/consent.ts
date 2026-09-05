@@ -74,3 +74,12 @@ export type OfferResult = {
 }
 
 export type ExtendResult = { id: string; status: "granted"; expires_at: string }
+
+/** One row of GET /access-log — a read of the subject's data (Goals offering, Phase 5). */
+export type AccessLogRow = {
+  viewer_user_id: string
+  categories_viewed: string[] | string
+  /** Which reader: growth:goals, growth:dossier, growth:ratify, growth:goal-reviews, offered, … */
+  surface: string | null
+  viewed_at: string | null
+}
