@@ -164,6 +164,14 @@ export type OrgChartResponse = {
   viewerId?: string | null
   /** True when the org exceeded the server's node ceiling. */
   truncated: boolean
+  /**
+   * False when the server could not establish which organisation the caller
+   * belongs to. `nodes: []` has two causes — "nobody is on file" and "we could
+   * not tell which org you are in" — and they are indistinguishable from the
+   * list alone. Optional so an older payload reads as resolved rather than
+   * flipping every existing empty chart to an error message.
+   */
+  orgResolved?: boolean
 }
 
 /** One of Summit's five discovery categories. */
