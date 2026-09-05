@@ -138,8 +138,18 @@ export function OrgChartPanel({ memberRoute }: { memberRoute: string }) {
         the connector above a wrapped card points at whoever happens to sit
         above it on the new line. Wide organisations scroll instead; the
         measured worst case here is 50 roots side by side.
+
+        `w-0 min-w-full` is load-bearing, not decoration. `overflow-x-auto`
+        alone did NOT stop this subtree contributing its full 2600px to the
+        page's min-content width: AppShell's <main> is a flex item with
+        `min-width: auto`, so it cannot shrink below that, and the whole page
+        grew 134px past the viewport — the header buttons and the Team/Org
+        Chart pill were pushed off the right edge. Measured on stable:
+        <main> was 1248 wide with the chart and 1024 without, against 1114 of
+        available space. `width: 0` removes the min-content contribution and
+        `min-width: 100%` puts the visible width back.
       */}
-      <div className="overflow-x-auto pb-2">
+      <div className="w-0 min-w-full overflow-x-auto pb-2">
         <ul
           className="flex w-max min-w-full justify-center gap-2"
           aria-label="Organisation chart"
