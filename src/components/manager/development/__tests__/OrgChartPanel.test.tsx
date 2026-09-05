@@ -58,10 +58,35 @@ it("renders the whole tree, rolling down from the root", async () => {
   expect(chart_.getByText("Cleo Chief")).toBeInTheDocument()
   expect(chart_.getByText("Will Brown")).toBeInTheDocument()
   expect(chart_.getByText("Ben Burnette")).toBeInTheDocument()
-  // Depth is rendered as indentation, so the tree is nested rather than flat.
-  const rows = chart_.getAllByRole("listitem")
-  expect(rows[0]).toHaveStyle({ paddingLeft: "0px" })
-  expect(rows[2]).toHaveStyle({ paddingLeft: "40px" })
+  // Nesting is STRUCTURAL, not a padding value. The chart used to convey depth
+  // with `paddingLeft`, which meant every card was a sibling in the DOM and the
+  // hierarchy existed only as a number — a flat list wearing an indent. Assert
+  // containment instead: Ben sits inside Will's subtree, which sits inside
+  // Cleo's. That survives a restyle and fails on a genuinely flattened tree.
+  const cardOf = (name: string) => chart_.getByText(name).closest("li") as HTMLElement
+  const cleo = cardOf("Cleo Chief")
+  const will = cardOf("Will Brown")
+  const ben = cardOf("Ben Burnette")
+  expect(cleo).toContainElement(will)
+  expect(will).toContainElement(ben)
+  // ...and not the other way round, which containment alone would not catch if
+  // every node were rendered inside every other.
+  expect(ben).not.toContainElement(will)
+})
+
+it("draws connectors rather than indentation", async () => {
+  // The visual difference between an org chart and a file tree is the lines. A
+  // nested <ul> with no connector classes renders as an indented list and every
+  // structural assertion above still passes.
+  render_()
+  await waitFor(() => expect(screen.getByLabelText("Organisation chart")).toBeInTheDocument())
+  const chart_ = within(screen.getByLabelText("Organisation chart"))
+  const will = chart_.getByText("Will Brown").closest("li") as HTMLElement
+  // Will is not a root, so his card hangs from a drawn connector.
+  expect(will.className).toMatch(/before:border-t/)
+  expect(will.className).toMatch(/after:border-l/)
+  // Nobody carries a hardcoded pixel indent any more.
+  expect(will.getAttribute("style")).toBeNull()
 })
 
 it("shows the viewer's chain upward", async () => {
