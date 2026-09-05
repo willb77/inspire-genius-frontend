@@ -89,6 +89,26 @@ it("draws connectors rather than indentation", async () => {
   expect(will.getAttribute("style")).toBeNull()
 })
 
+it("cannot widen the page it sits in", async () => {
+  // Found on stable, not in a test: `overflow-x-auto` alone did NOT stop this
+  // subtree contributing its full width to the page's min-content. AppShell's
+  // <main> is a flex item with `min-width: auto`, so it could not shrink below
+  // that and the whole page grew 134px past the viewport — the header buttons
+  // and the Team/Org Chart pill were pushed off the right edge.
+  //
+  // jsdom does no layout, so this asserts the CLASSES rather than the geometry.
+  // That is a weaker guard than the bug deserves and is recorded as such: it
+  // catches the removal, not a future regression by some other route.
+  render_()
+  await waitFor(() => expect(screen.getByLabelText("Organisation chart")).toBeInTheDocument())
+  const scroller = screen.getByLabelText("Organisation chart").parentElement as HTMLElement
+  expect(scroller.className).toMatch(/overflow-x-auto/)
+  // `w-0` kills the min-content contribution; `min-w-full` puts the width back.
+  // Neither works alone — w-0 without min-w-full collapses the chart to nothing.
+  expect(scroller.className).toMatch(/(^|\s)w-0(\s|$)/)
+  expect(scroller.className).toMatch(/min-w-full/)
+})
+
 it("shows the viewer's chain upward", async () => {
   render_()
   await waitFor(() => expect(screen.getByText(/report up through/i)).toBeInTheDocument())
