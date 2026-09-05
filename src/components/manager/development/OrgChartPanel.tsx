@@ -54,11 +54,23 @@ export function OrgChartPanel({ memberRoute }: { memberRoute: string }) {
     )
   }
 
+  // Three different facts used to share one sentence. `nodes: []` is produced
+  // both by "your organisation has nobody on it" and by "we could not work out
+  // which organisation you are in", and the old copy asserted the first —
+  // stating something about an organisation that had never been identified.
+  if (data?.orgResolved === false) {
+    return (
+      <p className="text-sm text-slate-500">
+        We could not work out which organisation you belong to, so there is no chart to
+        show. This is not an empty organisation — your profile does not have one on it.
+      </p>
+    )
+  }
+
   if (!rows.length) {
     return (
       <p className="text-sm text-slate-500">
-        No reporting lines are on file for your organisation yet. The chart is built from
-        each person&apos;s manager on their employment record.
+        Nobody is on file for your organisation yet.
       </p>
     )
   }
@@ -69,6 +81,13 @@ export function OrgChartPanel({ memberRoute }: { memberRoute: string }) {
         <p className="text-xs text-amber-700">
           This organisation is larger than the chart can show, so it is cut short. Nobody has
           been hidden deliberately — the list below is incomplete.
+        </p>
+      )}
+
+      {!rows.some((n) => n.children.length > 0) && rows.length > 1 && (
+        <p className="text-xs text-slate-500">
+          No reporting lines are on file yet, so everyone appears at the top level. The
+          chart is built from each person&apos;s manager on their employment record.
         </p>
       )}
 

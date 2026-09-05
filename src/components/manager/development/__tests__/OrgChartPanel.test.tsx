@@ -99,11 +99,55 @@ it("says a load FAILED rather than showing an empty organisation", async () => {
 })
 
 it("distinguishes a genuinely empty organisation from a failure", async () => {
-  getOrgChart.mockResolvedValue(chart({ nodes: [], viewerId: null }))
+  getOrgChart.mockResolvedValue(chart({ nodes: [], viewerId: null, orgResolved: true }))
   render_()
   await waitFor(() =>
-    expect(screen.getByText(/no reporting lines are on file/i)).toBeInTheDocument(),
+    expect(screen.getByText(/nobody is on file for your organisation/i)).toBeInTheDocument(),
   )
+  // ...and does NOT claim anything about reporting lines in an org that has
+  // nobody in it to have reporting lines between.
+  expect(screen.queryByText(/no reporting lines/i)).not.toBeInTheDocument()
+})
+
+it("does not call an UNIDENTIFIED organisation an empty one", async () => {
+  // `nodes: []` is produced by two very different facts. Until this split, the
+  // panel asserted the wrong one: it told a user whose org could not be
+  // resolved that their organisation had no reporting lines on file — a claim
+  // about an organisation nobody had identified.
+  getOrgChart.mockResolvedValue(chart({ nodes: [], viewerId: null, orgResolved: false }))
+  render_()
+  await waitFor(() =>
+    expect(
+      screen.getByText(/could not work out which organisation you belong to/i),
+    ).toBeInTheDocument(),
+  )
+  expect(screen.queryByText(/nobody is on file/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/no reporting lines/i)).not.toBeInTheDocument()
+})
+
+it("explains a flat chart instead of leaving it looking broken", async () => {
+  // Real data: an org where nobody has a manager recorded renders as a bare
+  // list of names. That is correct, and indistinguishable from a broken chart
+  // unless it says why.
+  getOrgChart.mockResolvedValue(
+    chart({
+      nodes: [
+        { id: "a", name: "Kevin McCoy", title: null, department: null, managerId: null },
+        { id: "b", name: "Michael Brown", title: null, department: null, managerId: null },
+      ],
+      viewerId: "a",
+    }),
+  )
+  render_()
+  await waitFor(() => expect(screen.getByText("Kevin McCoy")).toBeInTheDocument())
+  expect(screen.getByText("Michael Brown")).toBeInTheDocument()
+  expect(screen.getByText(/everyone appears at the top level/i)).toBeInTheDocument()
+})
+
+it("does not explain flatness on a chart that has a hierarchy", async () => {
+  render_()
+  await waitFor(() => expect(screen.getByText("Ben Burnette")).toBeInTheDocument())
+  expect(screen.queryByText(/everyone appears at the top level/i)).not.toBeInTheDocument()
 })
 
 it("says so out loud when the chart is truncated", async () => {

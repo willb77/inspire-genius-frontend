@@ -15,7 +15,13 @@ export function useOrgChart() {
     queryKey: developmentKeys.orgChart(),
     queryFn: async () => {
       const r = await getOrgChart()
-      return r.data?.data ?? { nodes: [], viewerId: null, truncated: false }
+      // `orgResolved: true` on the fallback: a missing BODY is a transport
+      // problem, already reported as `isError`. Defaulting it to false here
+      // would put "we could not identify your organisation" on screen for
+      // what is actually a network failure.
+      return (
+        r.data?.data ?? { nodes: [], viewerId: null, truncated: false, orgResolved: true }
+      )
     },
     staleTime: 5 * 60_000,
   })
