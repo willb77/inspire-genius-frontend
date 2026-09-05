@@ -72,9 +72,9 @@ const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"))
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
 const MeridianChat = React.lazy(() => import("@/pages/user/MeridianChat"));
 const BioCapture = React.lazy(() => import("@/pages/user/BioCapture"));
-// Goals (Summit) — the person's own goals surface, re-homed at /my/goals
-// (Goals offering, Phase 3). /summit/* redirects below for one release.
-const SummitLayout = React.lazy(() => import("@/pages/summit/SummitLayout"));
+// Goals Studio — the person's own goals surface at /my/goals (Goals offering,
+// Phase 3; renamed from Summit on 2026-09-04, the page files keep their names).
+const GoalsStudioLayout = React.lazy(() => import("@/pages/summit/GoalsStudioLayout"));
 const SummitDashboard = React.lazy(() => import("@/pages/summit/SummitDashboard"));
 const SummitDiscovery = React.lazy(() => import("@/pages/summit/SummitDiscovery"));
 const SummitGoals = React.lazy(() => import("@/pages/summit/SummitGoals"));
@@ -452,11 +452,12 @@ export const routes: RouteObject[] = [
       { path: "/meridian/chat/classic", element: withSuspense(<MeridianChat />) },
       // Bio Capture — Chronicle life-narrative surface (viewer + chat + memoir export)
       { path: "/bio", element: withSuspense(<BioCapture />) },
-      // Goals — the person's own goals surface (nested; SummitLayout renders
-      // the sub-nav). Index is the goal list; the interview is its own page.
+      // Goals Studio — the person's own goals surface (nested; GoalsStudioLayout
+      // renders the role's chrome and the section pills). Index is the goal
+      // list; the interview is its own page.
       {
         path: "/my/goals",
-        element: withSuspense(<SummitLayout />),
+        element: withSuspense(<GoalsStudioLayout />),
         children: [
           { index: true, element: withSuspense(<SummitGoals />) },
           { path: "overview", element: withSuspense(<SummitDashboard />) },
@@ -467,16 +468,11 @@ export const routes: RouteObject[] = [
           { path: "coming-soon", element: withSuspense(<SummitComingSoon />) },
         ],
       },
-      // /summit/* — the old home of the surface. Redirects for one release
-      // (Goals offering, Phase 3, 2026-09-04); the three sample pages
-      // (prism, documents, progress) collapse to the honest coming-soon page.
-      { path: "/summit", element: <Navigate to="/my/goals/overview" replace /> },
-      { path: "/summit/discovery", element: <Navigate to="/my/goals/discovery" replace /> },
-      { path: "/summit/goals", element: <Navigate to="/my/goals" replace /> },
-      { path: "/summit/coaches", element: <Navigate to="/my/goals/coaches" replace /> },
-      { path: "/summit/prism", element: <Navigate to="/my/goals/coming-soon" replace /> },
-      { path: "/summit/documents", element: <Navigate to="/my/goals/coming-soon" replace /> },
-      { path: "/summit/progress", element: <Navigate to="/my/goals/coming-soon" replace /> },
+      // /summit/* — the surface's old home — redirected here for one release
+      // after Phase 3 (2026-09-04) and was retired the same day the surface
+      // became Goals Studio (request: "I will deprecate the Summit interface").
+      // Nothing in the app, and no email ever sent, links to /summit; a stale
+      // bookmark now gets the platform's not-found page like any other dead URL.
       { path: "/documents", element: withSuspense(<DocumentsSurface />) },
       { path: "/documents/classic", element: withSuspense(<Documents />) },
       { path: "/interview-practice", element: withSuspense(<InterviewPractice />) },

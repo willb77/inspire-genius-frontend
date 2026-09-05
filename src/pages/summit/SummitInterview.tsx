@@ -16,7 +16,7 @@ export default function SummitInterview() {
     <div className="flex flex-col gap-[18px]">
       <PageHead
         eyebrow="A conversation, not a form"
-        title="Talk it through with Summit"
+        title="Talk it through with Goals Studio"
         sub="Five areas of your working life, a category at a time, with the WHY ladder underneath each stated goal. Voice leads; text is one toggle away."
       />
       {synthesised > 0 && (

@@ -205,7 +205,8 @@ export async function getTeams() {
  * context.surface="honor" so the server routes to the existing agents
  * (Aura/James/Nova/Ascend/Echo/Bridge/Grant) synthesized by Meridian, then poll
  * GET /v1/agents/chat/jobs/{job_id}. Wired in Phase 1 (see src/services/summit/
- * summitChat.ts for the reference implementation).
+ * honorChat.ts for the reference implementation; the summitChat.ts it was
+ * cloned from went with the Summit surface on 2026-09-04).
  */
 export async function submitMemberEvaluation(prompt: string, memberId: string) {
   const { data } = await api.post<HonorApiResponse<{ job_id: string }>>("/v1/agents/chat/async", {

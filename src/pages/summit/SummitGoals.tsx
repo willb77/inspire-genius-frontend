@@ -420,7 +420,7 @@ export default function SummitGoals() {
       <div className="flex flex-wrap gap-2">
         <Button asChild size="sm">
           <Link to={ROUTES.MY_GOALS.INTERVIEW}>
-            <Mic className="mr-1 h-3.5 w-3.5" aria-hidden /> Talk it through with Summit
+            <Mic className="mr-1 h-3.5 w-3.5" aria-hidden /> Talk it through with Goals Studio
           </Link>
         </Button>
         <Button asChild size="sm" variant="outline">

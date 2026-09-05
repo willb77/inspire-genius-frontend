@@ -108,7 +108,7 @@ export default function GoalsPage() {
         </div>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
           Step 5 of the journey. This is a conversation, not a form — you talk it
-          through with Summit over as many sittings as you need, and it keeps
+          through with Goals Studio over as many sittings as you need, and it keeps
           everything between visits.
         </p>
       </header>
@@ -173,7 +173,7 @@ export default function GoalsPage() {
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Most goal-setting stops at the first answer, which is why most goals
-            don&apos;t survive a bad week. Summit keeps asking why — up to five
+            don&apos;t survive a bad week. Goals Studio keeps asking why — up to five
             times, and no further — until it reaches something you actually care
             about rather than something you think you should say. That root is
             what everything after this step gets aimed at.

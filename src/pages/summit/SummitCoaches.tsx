@@ -3,7 +3,7 @@ import { PageHead, Card, Callout } from "@/pages/summit/components/ui";
 
 type Coach = { role: string; agents: string; icon: string; focus: string };
 
-/** The three coaching roles Summit routes goals to. Product copy, correctly static. */
+/** The three coaching roles Goals Studio routes goals to. Product copy, correctly static. */
 const COACHES: Coach[] = [
   { role: "Job Mentor", agents: "Echo · Forge", icon: "briefcase", focus: "Current-role excellence — performance, team dynamics, job-specific skills, day-to-day productivity." },
   { role: "Career Coach", agents: "Nova · Ascend · Bridge", icon: "trend", focus: "Strategic advancement — next-role prep, pivots, leadership development, positioning, long-term trajectory." },
@@ -65,7 +65,7 @@ export default function SummitCoaches() {
       <PageHead
         eyebrow="Discover, structure, route"
         title="Your coaching team"
-        sub="Summit doesn't coach the goals itself — it hands each one to the specialist who owns that kind of growth, then Meridian brings their work back to you in one voice."
+        sub="Goals Studio doesn't coach the goals itself — it hands each one to the specialist who owns that kind of growth, then Meridian brings their work back to you in one voice."
       />
       <div className="flex flex-col gap-3">
         {COACHES.map((c) => (

@@ -25,12 +25,6 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { name: "Will Brown", email: "will@example.com" } }),
 }));
 
-// The chat panel opens a real transport; it is covered by its own tests.
-jest.mock("@/pages/summit/components/MeridianPanel", () => ({
-  __esModule: true,
-  default: () => <div />,
-}));
-
 import SummitDashboard from "@/pages/summit/SummitDashboard";
 import SummitDiscovery from "@/pages/summit/SummitDiscovery";
 import SummitGoals from "@/pages/summit/SummitGoals";

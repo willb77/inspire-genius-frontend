@@ -38,7 +38,7 @@ export default function SummitDashboard() {
             ? `Let's turn the conversation into goals, ${who}.`
             : "Let's turn the conversation into goals."
         }
-        sub="Summit works through five areas of your life, asks why until it reaches something you actually care about, and turns that into goals with the reason still attached."
+        sub="Goals Studio works through five areas of your life, asks why until it reaches something you actually care about, and turns that into goals with the reason still attached."
       />
 
       {isLoading && (
@@ -107,7 +107,7 @@ export default function SummitDashboard() {
               </CardH>
               <p className="mb-3.5 text-[14.5px] leading-relaxed text-[#13294B]/80">
                 {nextCategory.summary ||
-                  "Summit gathers this in conversation rather than as a form — a few minutes now is enough to move it on."}
+                  "Goals Studio gathers this in conversation rather than as a form — a few minutes now is enough to move it on."}
               </p>
               <Link
                 to={ROUTES.MY_GOALS.DISCOVERY}
@@ -121,7 +121,7 @@ export default function SummitDashboard() {
           <Card>
             <div className="mb-3.5 flex items-start justify-between gap-3">
               <div>
-                <MiniLabel>Goals surfaced so far · Summit</MiniLabel>
+                <MiniLabel>Goals surfaced so far · Goals Studio</MiniLabel>
                 <CardH>
                   {goals.length === 0
                     ? "No goals yet"
@@ -137,7 +137,7 @@ export default function SummitDashboard() {
             {goals.length === 0 ? (
               <p className="text-[14px] leading-relaxed text-[#13294B]/80">
                 Goals are written out of the discovery conversation rather than typed
-                into a form, so they appear here as you talk to Summit — on the right
+                into a form, so they appear here as you talk to Goals Studio — on the right
                 of this screen.
               </p>
             ) : (

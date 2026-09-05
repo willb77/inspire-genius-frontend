@@ -88,7 +88,7 @@ function parseProposedAction(content: string): ProposedAction | null {
   try {
     const raw = JSON.parse(match[1].trim()) as Partial<ProposedAction> & { type?: string }
     if (raw.type === "invite_summit") {
-      return { type: "invite_summit", label: (raw as { label?: string }).label ?? "Invite to a Summit discovery session" }
+      return { type: "invite_summit", label: (raw as { label?: string }).label ?? "Invite to a Goals Studio discovery session" }
     }
     if (raw.type === "assign_learning" && (raw as { title?: string }).title) {
       const r = raw as { title: string; label?: string; goalId?: string; gapId?: string }

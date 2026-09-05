@@ -2,11 +2,11 @@ import { Check, Flag, Info, Heart, Loader2 } from "lucide-react";
 /** An illustration of the WHY ladder's shape — not anyone's data. */
 const LADDER: { role: string; body: string; cls: "q" | "a" | "root" }[] = [
   { role: "Stated goal", body: "“I want to get better at leading through change.”", cls: "a" },
-  { role: "Summit asks", body: "Why does that feel important right now?", cls: "q" },
+  { role: "Goals Studio asks", body: "Why does that feel important right now?", cls: "q" },
   { role: "You", body: "The reorg keeps shifting and my team looks to me for answers.", cls: "a" },
-  { role: "Summit asks", body: "What makes having the answers matter so much to you?", cls: "q" },
+  { role: "Goals Studio asks", body: "What makes having the answers matter so much to you?", cls: "q" },
   { role: "You", body: "If I hesitate, they'll think I don't have it together.", cls: "a" },
-  { role: "Summit asks", body: "And why is that particular thing hard to sit with?", cls: "q" },
+  { role: "Goals Studio asks", body: "And why is that particular thing hard to sit with?", cls: "q" },
   { role: "True motivation", body: "Not a skill to acquire — protecting how the team sees you under pressure. That's what the goal hooks onto.", cls: "root" },
 ];
 import { PageHead, Card, MiniLabel, CardH, StatusPill } from "@/pages/summit/components/ui";
@@ -25,7 +25,7 @@ export default function SummitDiscovery() {
       <PageHead
         eyebrow="The five-category conversation"
         title="Discovery, not a questionnaire"
-        sub="Summit gathers organically across sessions. For each category it explores, probes for patterns, runs the WHY ladder to your true motivation, then converts the discussion into candidate goals."
+        sub="Goals Studio gathers organically across sessions. For each category it explores, probes for patterns, runs the WHY ladder to your true motivation, then converts the discussion into candidate goals."
       />
 
       {isLoading && (

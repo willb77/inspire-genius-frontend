@@ -477,10 +477,10 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
           testId="goals-state-pending"
           icon={<Sparkles className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />}
           title="No goals discovered yet"
-          body="Invite this member to a Summit discovery session to formalize their goals."
+          body="Invite this member to a Goals Studio discovery session to formalize their goals."
         >
           <Button onClick={() => session.mutate("invite")} disabled={session.isPending}>
-            Invite to Summit session
+            Invite to Goals Studio session
           </Button>
         </StateCard>
       </div>

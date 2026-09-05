@@ -29,24 +29,12 @@ export const ROUTES = {
   BIO_CAPTURE: "/bio",
   PRISM_ASSESSMENT: "/prism-assessment",
   /**
-   * @deprecated Goals offering, Phase 3 (2026-09-04) — the surface now lives at
-   * {@link ROUTES.MY_GOALS}. These paths stay for one release as redirects
-   * (see routes.tsx); nothing should link to them.
-   */
-  SUMMIT: {
-    BASE: "/summit",
-    DASHBOARD: "/summit",
-    DISCOVERY: "/summit/discovery",
-    PRISM: "/summit/prism",
-    GOALS: "/summit/goals",
-    COACHES: "/summit/coaches",
-    DOCUMENTS: "/summit/documents",
-    PROGRESS: "/summit/progress",
-  },
-  /**
-   * Goals — the person's own goals surface (Goals offering, Phase 3).
-   * Ungated and open to every role (D8): base product, not a vertical.
-   * BASE is the goal list; the rest are the Summit sub-pages re-homed here.
+   * Goals Studio — the person's own goals surface (Goals offering, Phase 3;
+   * renamed from "Summit" on 2026-09-04 by request, the Summit agent kept).
+   * Ungated and open to every role (D8): base product, not a vertical, and
+   * listed under Tools for the coach roles. BASE is the goal list; the rest
+   * are the studio's sections. The old /summit/* paths were retired with the
+   * rename — nothing links to them and no email ever did.
    */
   MY_GOALS: {
     BASE: "/my/goals",
