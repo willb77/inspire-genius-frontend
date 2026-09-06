@@ -364,7 +364,20 @@ describe("the inherited pipeline still works in the fork", () => {
     confirmSpy.mockRestore()
   })
 
-  it("reports a failed finalize rather than showing a scored result", async () => {
+  /**
+   * PINS THE SAME DEFECT AS LiveInterviewBody — IS-F13, forked verbatim.
+   *
+   * `finish()` here sets the phase to "findings" BEFORE awaiting finalize,
+   * exactly as the Live body does. On rejection the toast fires and vanishes,
+   * `finalizeResult` stays null, and the render falls to the `!finalizeResult`
+   * branch: "Compiling the scored write-up…" spinning forever.
+   *
+   * This is pinned in BOTH bodies deliberately. A fix applied only to the Live
+   * body would leave the Studio — the surface with more traffic — still stuck,
+   * and the Live-only test would go green and read as done. When IS-4 fixes
+   * this, BOTH of these tests must fail together.
+   */
+  it("finalize failure currently leaves a spinner that never resolves (IS-F13)", async () => {
     finalizeMutate.mockRejectedValue(new Error("nope"))
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
@@ -374,7 +387,9 @@ describe("the inherited pipeline still works in the fork", () => {
     await user.click(screen.getByRole("button", { name: /end interview/i }))
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/could not finalize/i)))
+    expect(screen.getByText(/compiling the scored write-up/i)).toBeInTheDocument()
     expect(screen.queryByText("Recommendation")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /word/i })).not.toBeInTheDocument()
     confirmSpy.mockRestore()
   })
 
