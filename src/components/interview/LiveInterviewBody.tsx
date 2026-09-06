@@ -176,7 +176,16 @@ export default function LiveInterviewBody() {
     if (!candidate || !consent) return
     setFrame(f)
     try {
-      const result = await createSession.mutateAsync({ frame: f, candidate, consent })
+      // The requisition travels TOP-LEVEL, not inside the frame — that is
+      // where _CreateLiveSessionBody reads it. It stays on the frame too so
+      // the form can be reopened with what was entered.
+      const result = await createSession.mutateAsync({
+        frame: f,
+        candidate,
+        consent,
+        requisitionId: f.requisitionId,
+        requisitionLabel: f.requisitionLabel,
+      })
       setSessionId(result.session_id)
       setPlan(result.plan)
       setIdx(0)
@@ -292,6 +301,7 @@ export default function LiveInterviewBody() {
             title="Set up a live interview"
             description="Confirm the seat you're interviewing for so the STAR questions and scoring fit the actual role, reporting line, and scope."
             submitLabel="Confirm & start the live interview"
+            showRequisition
             onConfirm={(f) => void handleFrameConfirm(f)}
           />
         )}

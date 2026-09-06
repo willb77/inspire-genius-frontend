@@ -216,7 +216,14 @@ export default function StudioInterviewBody() {
     if (!participant || !consent) return
     setFrame(f)
     try {
-      const result = await createSession.mutateAsync({ frame: f, candidate: participant, consent })
+      const result = await createSession.mutateAsync({
+        frame: f,
+        candidate: participant,
+        consent,
+        // Top-level, not inside the frame — that is where the backend reads it.
+        requisitionId: f.requisitionId,
+        requisitionLabel: f.requisitionLabel,
+      })
       setSessionId(result.session_id)
       setPlan(result.plan)
       setEmployer(result.employer ?? null)

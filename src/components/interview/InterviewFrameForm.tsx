@@ -43,6 +43,11 @@ const schema = z.object({
   weightedFocus: z.string().max(600).optional(),
   rolePackSlug: z.string().max(120).optional(),
   rolePackTitle: z.string().max(200).optional(),
+  // Lengths mirror the backend's _CreateLiveSessionBody caps exactly, so an
+  // over-long value is refused here rather than 422'ing after the candidate
+  // is already sitting down.
+  requisitionId: z.string().max(120).optional(),
+  requisitionLabel: z.string().max(240).optional(),
   jobDescription: z.string().max(8000).optional(),
   numQuestions: z.number().int().min(1, "At least 1").max(12, "Max 12 (the STAR bank size)"),
   lengthMinutes: z.number().int().min(1, "At least 1 minute").max(180),
@@ -58,6 +63,7 @@ export default function InterviewFrameForm({
   submitLabel = "Confirm & start the interview",
   showEmployerPacks = false,
   showRolePacks = false,
+  showRequisition = false,
 }: {
   initial?: InterviewFrame | null
   onConfirm: (frame: InterviewFrame) => void
@@ -87,6 +93,17 @@ export default function InterviewFrameForm({
    * delivers.
    */
   showRolePacks?: boolean
+  /**
+   * Collect the role opening (requisition) this interview is run against.
+   *
+   * OFF by default, and for the same reason as the two props above: this form
+   * is ALSO the candidate's own practice setup, where there is no opening and
+   * no hiring decision. Asking a candidate to key their practice run against a
+   * requisition would be meaningless at best and would imply their rehearsal
+   * is being filed against a job at worst. Turn it on only on the
+   * interviewer-side surfaces.
+   */
+  showRequisition?: boolean
 }) {
   const [jdOpen, setJdOpen] = useState(false)
   const [jdBusy, setJdBusy] = useState(false)
@@ -98,6 +115,8 @@ export default function InterviewFrameForm({
     defaultValues: {
       company: initial?.company ?? "",
       industry: initial?.industry ?? "",
+      requisitionId: initial?.requisitionId ?? "",
+      requisitionLabel: initial?.requisitionLabel ?? "",
       roleTitle: initial?.roleTitle ?? "",
       reportingLine: initial?.reportingLine ?? "",
       scope: initial?.scope ?? "",
@@ -255,6 +274,40 @@ export default function InterviewFrameForm({
               with it rather than appearing only after the interview starts. */}
           {packCount > 0 && catalogue?.provenance && (
             <p className="text-xs italic text-slate-400">{catalogue.provenance}</p>
+          )}
+          {showRequisition && (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <p className="text-sm font-semibold text-slate-800">
+                Requisition / role opening{" "}
+                <span className="font-normal text-slate-500">(optional)</span>
+              </p>
+              <p className="mt-0.5 text-xs text-slate-600">
+                Key this interview to the opening it is for. Everyone interviewed for
+                the same opening can then be compared against the same procedure —
+                without it, this session belongs to no opening and cannot be included
+                in that check.
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="requisitionId">Requisition ID</Label>
+                  <Input
+                    id="requisitionId"
+                    placeholder="ATS req #, e.g. REQ-2041"
+                    {...form.register("requisitionId")}
+                  />
+                  {err("requisitionId")}
+                </div>
+                <div>
+                  <Label htmlFor="requisitionLabel">Opening name</Label>
+                  <Input
+                    id="requisitionLabel"
+                    placeholder="e.g. Regional Manager — North"
+                    {...form.register("requisitionLabel")}
+                  />
+                  {err("requisitionLabel")}
+                </div>
+              </div>
+            </div>
           )}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>

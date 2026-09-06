@@ -29,6 +29,20 @@ export type StudioQuestion = {
   id?: string
   /** Optional follow-up probes for the interviewer. */
   probes?: string[]
+  /** Where this question came from, recorded at the moment it enters the
+   * builder — the ONLY place that still knows.
+   *
+   * `manual` typed by the interviewer · `generated` written by the topic
+   * generator · `bank` the generator's static discovery fallback (curated, not
+   * model-written) · `upload` parsed out of a pasted or uploaded list ·
+   * `pack` loaded from a curated employer/sector framework.
+   *
+   * Left undefined when genuinely unknown. The backend records no provenance
+   * for an untagged question rather than inventing one — see
+   * `interview_live_repo.answer_provenance`. */
+  source?: "manual" | "generated" | "bank" | "upload" | "pack"
+  /** Identifier for the source, e.g. the employer pack slug. */
+  sourceRef?: string
 }
 
 /** One generated question, as the backend returns it (plan-shaped bank). */

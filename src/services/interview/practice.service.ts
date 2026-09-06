@@ -281,6 +281,15 @@ export type InterviewFrame = {
   /** The picked pack's display title, kept so the setup summary can show it
    * without a second fetch. */
   rolePackTitle?: string
+  /** The role opening this interview is being run against.
+   *
+   * Set ONLY on the interviewer-side surfaces. UGESP asks whether every
+   * candidate for one opening met a comparable procedure, and without this key
+   * a session belongs to no opening and is invisible to that measure. Never
+   * collected on the candidate's own practice setup — there is no opening. */
+  requisitionId?: string
+  /** Human label for the opening, so a report can name it without a lookup. */
+  requisitionLabel?: string
   /** How many questions the interview should run (default 12). */
   numQuestions?: number
   /** Target length in minutes (default 50). */
