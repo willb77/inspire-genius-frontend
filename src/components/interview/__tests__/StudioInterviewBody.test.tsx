@@ -365,20 +365,18 @@ describe("the inherited pipeline still works in the fork", () => {
   })
 
   /**
-   * PINS THE SAME DEFECT AS LiveInterviewBody — IS-F13, forked verbatim.
+   * IS-F13 FIXED (package IS-4). Replaces the pin that recorded the defect:
+   * `finish()` set the phase to "findings" before awaiting finalize, so a
+   * rejection left "Compiling the scored write-up…" spinning forever while the
+   * toast that reported it vanished.
    *
-   * `finish()` here sets the phase to "findings" BEFORE awaiting finalize,
-   * exactly as the Live body does. On rejection the toast fires and vanishes,
-   * `finalizeResult` stays null, and the render falls to the `!finalizeResult`
-   * branch: "Compiling the scored write-up…" spinning forever.
-   *
-   * This is pinned in BOTH bodies deliberately. A fix applied only to the Live
-   * body would leave the Studio — the surface with more traffic — still stuck,
-   * and the Live-only test would go green and read as done. When IS-4 fixes
-   * this, BOTH of these tests must fail together.
+   * The pin was written to FAIL when the bug was fixed, and it did — in this
+   * body and the Live one together, which is what stopped a Live-only fix
+   * reading as done. Keep BOTH of these; they are the only thing that catches
+   * a future fix landing on one fork and not the other.
    */
-  it("finalize failure currently leaves a spinner that never resolves (IS-F13)", async () => {
-    finalizeMutate.mockRejectedValue(new Error("nope"))
+  it("shows a recoverable error instead of a spinner that never resolves (IS-F13)", async () => {
+    finalizeMutate.mockRejectedValueOnce(new Error("upstream exploded"))
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
     render(<StudioInterviewBody />)
@@ -386,10 +384,16 @@ describe("the inherited pipeline still works in the fork", () => {
     await screen.findByText("panel 1/1: What drew you here?")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/could not finalize/i)))
-    expect(screen.getByText(/compiling the scored write-up/i)).toBeInTheDocument()
-    expect(screen.queryByText("Recommendation")).not.toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: /word/i })).not.toBeInTheDocument()
+    expect(await screen.findByText(/could not be compiled/i)).toBeInTheDocument()
+    expect(screen.getByText("upstream exploded")).toBeInTheDocument()
+    // The spinner must be GONE, not merely accompanied by an error.
+    expect(screen.queryByText(/compiling the scored write-up/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/nothing was lost/i)).toBeInTheDocument()
+
+    finalizeMutate.mockResolvedValueOnce(BASE_FINALIZE)
+    await user.click(screen.getByRole("button", { name: /try again/i }))
+    expect(await screen.findByText("Recommendation")).toBeInTheDocument()
+    expect(screen.queryByText(/could not be compiled/i)).not.toBeInTheDocument()
     confirmSpy.mockRestore()
   })
 

@@ -138,6 +138,7 @@ export default function LiveInterviewBody() {
   const [answers, setAnswers] = useState<Record<string, AnswerState>>({})
   const [finalizeResult, setFinalizeResult] = useState<FinalizeResult | null>(null)
   const [exporting, setExporting] = useState<"word" | "pdf" | "save" | null>(null)
+  const [finalizeError, setFinalizeError] = useState<string | null>(null)
 
   const createSession = useCreateLiveSession()
   const submitAnswer = useSubmitLiveAnswer()
@@ -234,10 +235,21 @@ export default function LiveInterviewBody() {
   const finish = async () => {
     if (!sessionId) return
     setPhase("findings")
+    setFinalizeError(null)
     try {
       const result = await finalizeSession.mutateAsync({ sessionId })
       setFinalizeResult(result)
-    } catch {
+    } catch (e) {
+      // IS-F13. The phase is already "findings" by this point, so without an
+      // error state the render falls to the !finalizeResult branch and spins
+      // "Compiling the scored write-up…" FOREVER — the interviewer watching a
+      // progress indicator for work that already failed, answers gone from the
+      // screen, no way back but "New interview". A toast that vanishes is not
+      // a state. This is pinned by a test in BOTH bodies; it was forked
+      // verbatim, so fixing only one leaves the other stuck and green.
+      const detail =
+        e instanceof Error && e.message ? e.message : "Could not finalize the interview."
+      setFinalizeError(detail)
       toast.error("Could not finalize the interview. Please try again.")
     }
   }
@@ -264,6 +276,7 @@ export default function LiveInterviewBody() {
     setPhase("setup"); setSetupStep("consent")
     setConsent(null); setCandidate(null); setFrame(null)
     setSessionId(null); setPlan([]); setIdx(0); setAnswers({}); setFinalizeResult(null)
+    setFinalizeError(null)
   }
 
   const doExport = async (kind: "word" | "pdf" | "save") => {
@@ -338,7 +351,20 @@ export default function LiveInterviewBody() {
           </div>
         </header>
 
-        {!finalizeResult ? (
+        {!finalizeResult && finalizeError ? (
+          <Card className="border-rose-200 bg-rose-50/50">
+            <CardContent className="space-y-3 py-6 text-sm">
+              <p className="font-medium text-rose-900">The scored write-up could not be compiled.</p>
+              <p className="text-rose-800">{finalizeError}</p>
+              <p className="text-xs text-rose-700">
+                Nothing was lost — the answers and ratings are saved. Try again.
+              </p>
+              <Button size="sm" variant="outline" onClick={() => void finish()}>
+                <RefreshCw className="mr-2 h-4 w-4" /> Try again
+              </Button>
+            </CardContent>
+          </Card>
+        ) : !finalizeResult ? (
           <Card>
             <CardContent className="flex items-center py-8 text-sm text-slate-500">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Compiling the scored write-up…
@@ -357,6 +383,25 @@ export default function LiveInterviewBody() {
               </CardContent>
             </Card>
 
+            {(finalizeResult.unrated?.length ?? 0) > 0 && (
+              <Card className="border-amber-200 bg-amber-50/60">
+                <CardContent className="space-y-2 py-4 text-sm">
+                  <p className="font-medium text-amber-900">
+                    {finalizeResult.unrated!.length} of {finalizeResult.answer_count ?? finalizeResult.answers.length}{" "}
+                    answers were never rated and are NOT part of this score.
+                  </p>
+                  <ul className="list-disc space-y-1 pl-5 text-xs text-amber-800">
+                    {finalizeResult.unrated!.map((u) => (
+                      <li key={u.answer_id}>{u.question_text || u.competency_id}</li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-amber-700">
+                    They are still in the transcript below. A score that quietly dropped them
+                    would read as a complete scorecard.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader><CardTitle className="text-base">Section scores</CardTitle></CardHeader>
               <CardContent className="space-y-2">

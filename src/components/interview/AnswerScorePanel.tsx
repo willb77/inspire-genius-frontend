@@ -257,7 +257,16 @@ export default function AnswerScorePanel({
             <Button onClick={handleSave} disabled={finalScore == null || saving}>
               {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</> : <><Save className="mr-2 h-4 w-4" /> Save rating</>}
             </Button>
-            {scored && typeof scored.final_score === "number" && (
+            {/* `scored` alone is not enough: the row carries a seeded
+                final_score from the moment the answer is submitted, so keying
+                the label off a number would announce a "saved rating" nobody
+                made. final_source is the fact that says somebody decided. */}
+            {hasSubmitted && !scored?.final_source && (
+              <p className="text-xs font-medium text-amber-700">
+                Not yet rated — this answer will be left out of the score until you rate it.
+              </p>
+            )}
+            {scored?.final_source && typeof scored.final_score === "number" && (
               <p className="text-xs text-slate-500">Saved rating: {scored.final_score} / 5</p>
             )}
           </div>
