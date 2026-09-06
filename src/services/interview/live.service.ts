@@ -158,6 +158,10 @@ export type CreateLiveSessionPayload = {
   frame: InterviewFrame
   candidate: LiveCandidate
   consent: LiveConsent
+  /** The role opening, sent TOP-LEVEL (not inside the frame) because that is
+   * where the backend reads it — `_CreateLiveSessionBody.requisition_id`. */
+  requisitionId?: string
+  requisitionLabel?: string
 }
 
 /**
@@ -220,7 +224,15 @@ const BASE = "/v1/agents/interview/live/session"
 
 export const liveInterviewService = {
   async createSession(payload: CreateLiveSessionPayload): Promise<CreateLiveSessionResult> {
-    const { data } = await agentApi.post<CreateLiveSessionResult>(BASE, payload)
+    // The wire contract is snake_case at the top level. Blank stays UNDEFINED
+    // rather than becoming "": the column means "no opening recorded", and an
+    // empty string would group every un-keyed session together as if they
+    // shared one.
+    const { requisitionId, requisitionLabel, ...rest } = payload
+    const body: Record<string, unknown> = { ...rest }
+    if (requisitionId?.trim()) body.requisition_id = requisitionId.trim()
+    if (requisitionLabel?.trim()) body.requisition_label = requisitionLabel.trim()
+    const { data } = await agentApi.post<CreateLiveSessionResult>(BASE, body)
     return data
   },
 

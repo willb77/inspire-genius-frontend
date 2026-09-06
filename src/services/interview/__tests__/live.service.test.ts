@@ -166,3 +166,52 @@ describe("liveInterviewService — failures reach the caller", () => {
     await expect(liveInterviewService.getSession(SID)).rejects.toThrow("gone")
   })
 })
+
+describe("the requisition crosses the wire in the shape the backend reads", () => {
+  // `_CreateLiveSessionBody` reads requisition_id / requisition_label at the
+  // TOP LEVEL, not inside `frame`. Putting them on the frame type-checks, sends
+  // 200, and stores NULL — which is indistinguishable from an interviewer who
+  // simply left the field blank. So the shape is asserted, not the round trip.
+  it("sends snake_case at the top level, not inside the frame", async () => {
+    post.mockResolvedValue({ data: { session_id: SID, plan: [] } })
+
+    await liveInterviewService.createSession({
+      ...CREATE,
+      requisitionId: "REQ-2041",
+      requisitionLabel: "Regional Manager — North",
+    })
+
+    const [, body] = post.mock.calls[0] as [string, Record<string, unknown>]
+    expect(body.requisition_id).toBe("REQ-2041")
+    expect(body.requisition_label).toBe("Regional Manager — North")
+    expect(body).not.toHaveProperty("requisitionId")
+    expect(body.frame).not.toHaveProperty("requisitionId")
+  })
+
+  it("omits the keys entirely when blank, rather than sending empty strings", async () => {
+    // "" would group every un-keyed session together as though they shared one
+    // opening — worse than NULL, which at least reads as "no opening".
+    post.mockResolvedValue({ data: { session_id: SID, plan: [] } })
+    await liveInterviewService.createSession({ ...CREATE, requisitionId: "   ", requisitionLabel: "" })
+
+    const [, body] = post.mock.calls[0] as [string, Record<string, unknown>]
+    expect(body).not.toHaveProperty("requisition_id")
+    expect(body).not.toHaveProperty("requisition_label")
+  })
+
+  it("trims what the interviewer typed", async () => {
+    post.mockResolvedValue({ data: { session_id: SID, plan: [] } })
+    await liveInterviewService.createSession({ ...CREATE, requisitionId: "  REQ-7  " })
+    const [, body] = post.mock.calls[0] as [string, Record<string, unknown>]
+    expect(body.requisition_id).toBe("REQ-7")
+  })
+
+  it("still sends frame, candidate and consent unchanged", async () => {
+    post.mockResolvedValue({ data: { session_id: SID, plan: [] } })
+    await liveInterviewService.createSession({ ...CREATE, requisitionId: "REQ-1" })
+    const [, body] = post.mock.calls[0] as [string, Record<string, unknown>]
+    expect(body.frame).toEqual(CREATE.frame)
+    expect(body.candidate).toEqual(CREATE.candidate)
+    expect(body.consent).toEqual(CREATE.consent)
+  })
+})

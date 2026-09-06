@@ -45,7 +45,22 @@ import {
 } from "@/lib/extractRoleText"
 import { parseQuestionList } from "@/lib/parseQuestionList"
 
-type RowQuestion = { text: string; theme: string; probes?: string[] }
+/**
+ * A row in the builder.
+ *
+ * `source` is stamped where the row is CREATED, because that is the only
+ * moment its origin is known: once four different paths have all pushed
+ * `{text, theme, probes}` into one list, a typed question, a pasted one and a
+ * model-written one are indistinguishable — which is exactly why
+ * `interview_answer.competency_provenance` was null for every Studio session.
+ */
+type RowQuestion = {
+  text: string
+  theme: string
+  probes?: string[]
+  source?: StudioQuestion["source"]
+  sourceRef?: string
+}
 
 export type StudioQuestionBuilderProps = {
   onConfirm: (frame: InterviewFrame) => void
@@ -63,6 +78,8 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
   const [audience, setAudience] = useState("")
   const [kind, setKind] = useState<InterviewKind>("general")
   const [count, setCount] = useState(8)
+  const [requisitionId, setRequisitionId] = useState("")
+  const [requisitionLabel, setRequisitionLabel] = useState("")
   const [rows, setRows] = useState<RowQuestion[]>([])
 
   const [uploading, setUploading] = useState(false)
@@ -80,7 +97,7 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
 
   const nonEmpty = rows.filter((r) => r.text.trim().length > 0)
 
-  const addRow = () => setRows((r) => [...r, { text: "", theme: "" }])
+  const addRow = () => setRows((r) => [...r, { text: "", theme: "", source: "manual" }])
   const removeRow = (i: number) => setRows((r) => r.filter((_, idx) => idx !== i))
   const updateRow = (i: number, patch: Partial<RowQuestion>) =>
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...patch } : row)))
@@ -101,6 +118,8 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
           text: q.text,
           theme: q.theme ?? "",
           probes: q.probes,
+          source: "pack" as const,
+          sourceRef: detail.pack.slug,
         })),
       ])
       toast.success(`Loaded ${detail.questions.length} questions from ${detail.pack.name}.`)
@@ -122,9 +141,19 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
         num_questions: count,
       })
       const generated: StudioQuestion[] = generatedSetToQuestions(set)
+      // `set.generated === false` is the STATIC discovery fallback, not the
+      // model's work. Tagging those "generated" would put a fabricated
+      // authorship claim in the record — the same mistake as defaulting an
+      // untagged question to "manual". They are the curated starter bank.
+      const origin = set.generated ? ("generated" as const) : ("bank" as const)
       setRows((r) => [
         ...r,
-        ...generated.map((q) => ({ text: q.text, theme: q.theme ?? "", probes: q.probes })),
+        ...generated.map((q) => ({
+          text: q.text,
+          theme: q.theme ?? "",
+          probes: q.probes,
+          source: origin,
+        })),
       ])
       if (set.generated) {
         toast.success(`Drafted ${generated.length} questions — review and edit below.`)
@@ -146,7 +175,7 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
         toast.error("No questions found in that file — it may be empty or unreadable.")
         return
       }
-      setRows((r) => [...r, ...parsed.map((q) => ({ text: q, theme: "" }))])
+      setRows((r) => [...r, ...parsed.map((q) => ({ text: q, theme: "", source: "upload" as const }))])
       toast.success(`Loaded ${parsed.length} question${parsed.length === 1 ? "" : "s"} — review and edit below.`)
     } catch (e) {
       const msg =
@@ -169,6 +198,11 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
       text: r.text.trim(),
       theme: r.theme.trim() || undefined,
       probes: r.probes,
+      // Undefined stays undefined. A row from a build before this shipped, or
+      // from a path that did not stamp one, is genuinely unknown and the
+      // backend records nothing for it.
+      source: r.source,
+      sourceRef: r.sourceRef,
     }))
     const frame: InterviewFrame = {
       // STAR fields are unused in custom mode, but `company` IS read: the
@@ -181,6 +215,8 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
       scope: "",
       mode: "custom",
       kind,
+      requisitionId: requisitionId.trim() || undefined,
+      requisitionLabel: requisitionLabel.trim() || undefined,
       topic: title.trim() || undefined,
       purpose: purpose.trim() || undefined,
       audience: audience.trim() || undefined,
@@ -232,6 +268,42 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
               />
             </div>
           </div>
+          {kind === "hiring" && (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <p className="text-sm font-semibold text-slate-800">
+                Requisition / role opening{" "}
+                <span className="font-normal text-slate-500">(optional)</span>
+              </p>
+              <p className="mt-0.5 text-xs text-slate-600">
+                Key this interview to the opening it is for, so everyone interviewed
+                for it can be compared against the same procedure. Shown for hiring
+                interviews only — a development or discovery conversation is not run
+                against an opening.
+              </p>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="studio-requisition-id">Requisition ID</Label>
+                  <Input
+                    id="studio-requisition-id"
+                    value={requisitionId}
+                    onChange={(e) => setRequisitionId(e.target.value)}
+                    maxLength={120}
+                    placeholder="ATS req #, e.g. REQ-2041"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="studio-requisition-label">Opening name</Label>
+                  <Input
+                    id="studio-requisition-label"
+                    value={requisitionLabel}
+                    onChange={(e) => setRequisitionLabel(e.target.value)}
+                    maxLength={240}
+                    placeholder="e.g. Regional Manager — North"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
           <div>
             <Label>Interview style</Label>
             <div className="mt-1 grid gap-2 sm:grid-cols-2">
