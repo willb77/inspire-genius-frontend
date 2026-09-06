@@ -322,20 +322,16 @@ describe("findings", () => {
   })
 
   /**
-   * PINS A DEFECT — do not read this as approval of the behaviour.
+   * IS-F13 FIXED (package IS-4). This test replaces the one that pinned the
+   * defect: `finish()` set the phase to "findings" before awaiting finalize, so
+   * a rejection left "Compiling the scored write-up…" spinning forever while the
+   * toast that reported it vanished.
    *
-   * `finish()` sets the phase to "findings" BEFORE awaiting finalize. When the
-   * call rejects, the toast fires and vanishes, `finalizeResult` stays null, and
-   * the render falls to the `!finalizeResult` branch: a spinner reading
-   * "Compiling the scored write-up…" that never resolves. The interviewer is
-   * left watching a progress indicator for work that already failed, with the
-   * answers no longer on screen and no way back except "New interview".
-   *
-   * Filed as IS-F13. When it is fixed, this test SHOULD fail — replace it with
-   * one asserting the error state and a retry.
+   * The pin was written to FAIL when the bug was fixed, and it did — in both
+   * bodies at once, which is what stopped a Live-only fix reading as done.
    */
-  it("finalize failure currently leaves a spinner that never resolves (IS-F13)", async () => {
-    finalizeMutate.mockRejectedValue(new Error("nope"))
+  it("shows a recoverable error instead of a spinner that never resolves (IS-F13)", async () => {
+    finalizeMutate.mockRejectedValueOnce(new Error("upstream exploded"))
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
     render(<LiveInterviewBody />)
@@ -343,9 +339,19 @@ describe("findings", () => {
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/could not finalize/i)))
-    expect(screen.getByText(/compiling the scored write-up/i)).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: /word/i })).not.toBeInTheDocument()
+    expect(await screen.findByText(/could not be compiled/i)).toBeInTheDocument()
+    expect(screen.getByText("upstream exploded")).toBeInTheDocument()
+    // The spinner must be GONE, not merely accompanied by an error.
+    expect(screen.queryByText(/compiling the scored write-up/i)).not.toBeInTheDocument()
+    // And the interviewer is told their work survived, which is true — the
+    // answers and ratings were saved as they went.
+    expect(screen.getByText(/nothing was lost/i)).toBeInTheDocument()
+
+    // Retry works from the error state, so it is a state and not a dead end.
+    finalizeMutate.mockResolvedValueOnce(FINALIZE)
+    await user.click(screen.getByRole("button", { name: /try again/i }))
+    expect(await screen.findByText("Advance to final round")).toBeInTheDocument()
+    expect(screen.queryByText(/could not be compiled/i)).not.toBeInTheDocument()
     confirmSpy.mockRestore()
   })
 })

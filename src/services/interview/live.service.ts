@@ -77,6 +77,16 @@ export type LiveAnswer = {
   /** True when the advisory suggestion was capped (e.g. missing STAR elements). */
   capped?: boolean
   final_score?: number | null
+  /** WHO decided `final_score`.
+   *
+   * `null` = nobody yet. The row is seeded with the advisory suggestion (or a
+   * literal 3) at insert, so `final_score` alone cannot tell a rating apart
+   * from a seed — which is why finalize used to average both. Read this, never
+   * `final_score`, to decide whether an answer has been rated.
+   *
+   * `"human"` the interviewer PATCHed it · `"model"` the suggestion was
+   * deliberately adopted on the self-run practice path. */
+  final_source?: "human" | "model" | null
   interviewer_notes?: string
 }
 
@@ -119,9 +129,22 @@ export type InterviewFeedback = {
   per_section: Record<string, string>
 }
 
+/** One answer the score was NOT built from. Named, not merely counted. */
+export type UnratedAnswer = {
+  answer_id: string
+  competency_id: string
+  question_text?: string
+}
+
 export type FinalizeResult = {
   session: LiveSession
   answers: LiveAnswer[]
+  /** Answers excluded from the score because nobody rated them. Absent on
+   * older backends — treat as []. A silent exclusion would read as a complete
+   * scorecard that quietly omits whatever nobody got round to rating. */
+  unrated?: UnratedAnswer[]
+  rated_count?: number
+  answer_count?: number
   section_scores: SectionScoresRaw
   overall_score: number
   overall_mean: number
