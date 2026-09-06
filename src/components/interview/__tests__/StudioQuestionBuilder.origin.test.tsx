@@ -52,20 +52,20 @@ function renderBuilder(onConfirm = jest.fn()) {
   return { onConfirm }
 }
 
-const SET = (generated: boolean): GeneratedQuestionSet =>
-  ({
-    generated,
-    topic: "student discovery",
-    sections: [
-      {
-        key: "warm_up",
-        title: "Warm-up",
-        competencies: [
-          { id: "warm_up.q1", competency: "Background", question: "Tell me about yourself.", starProbes: [] },
-        ],
-      },
-    ],
-  }) as GeneratedQuestionSet
+const SET = (generated: boolean): GeneratedQuestionSet => ({
+  generated,
+  topic: "student discovery",
+  sections: [
+    {
+      key: "warm_up",
+      title: "Warm-up",
+      competencies: [
+        { id: "warm_up.q1", competency: "Background", question: "Tell me about yourself.", starProbes: [] },
+      ],
+    },
+  ],
+  totalQuestions: 1,
+})
 
 beforeEach(() => jest.clearAllMocks())
 
