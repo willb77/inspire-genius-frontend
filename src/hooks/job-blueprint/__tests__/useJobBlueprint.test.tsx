@@ -22,7 +22,7 @@ jest.mock("@/services/job-blueprint", () => ({
   },
   analyticsService: {
     getFunnel: jest.fn().mockResolvedValue({ data: { data: [] } }),
-    getAccuracy: jest.fn().mockResolvedValue({ data: { data: [] } }),
+    getAccuracy: jest.fn().mockResolvedValue({ data: { data: { distribution: [], pendingOutcomeData: true, note: "pending" } } }),
     getTimeToFill: jest.fn().mockResolvedValue({ data: { data: [] } }),
     getHires: jest.fn().mockResolvedValue({ data: { data: [] } }),
     getStats: jest.fn().mockResolvedValue({ data: { data: { total: 10 } } }),

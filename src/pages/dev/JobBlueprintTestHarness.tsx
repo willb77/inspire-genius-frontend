@@ -43,7 +43,7 @@ import { BML_QUESTIONS } from '@/constants/job-blueprint/bml-questions'
 import type {
   JobDNA, DimensionBenchmark, Candidate, DimensionScore,
   VariationResult, InsightPackage, InterviewGuide, BlueprintStats,
-  FunnelStage, AccuracyDataPoint, TimeToFillDataPoint,
+  FunnelStage, AccuracyReport, TimeToFillDataPoint,
   ClassificationTier, PipelineStep,
 } from '@/types/job-blueprint'
 
@@ -265,14 +265,18 @@ const MOCK_FUNNEL: FunnelStage[] = [
   { stage: 'Hired', count: 5, percentage: 4 },
 ]
 
-const MOCK_ACCURACY: AccuracyDataPoint[] = [
-  { month: 'Oct', predicted: 78, actual: 72 },
-  { month: 'Nov', predicted: 82, actual: 80 },
-  { month: 'Dec', predicted: 75, actual: 78 },
-  { month: 'Jan', predicted: 88, actual: 85 },
-  { month: 'Feb', predicted: 85, actual: 82 },
-  { month: 'Mar', predicted: 90, actual: 88 },
-]
+const MOCK_ACCURACY: AccuracyReport = {
+  distribution: [
+    { period: '2025-10', strongFit: 8, potentialFit: 6, moderateFit: 3, misalignment: 5, total: 22 },
+    { period: '2025-11', strongFit: 10, potentialFit: 7, moderateFit: 2, misalignment: 4, total: 23 },
+    { period: '2025-12', strongFit: 6, potentialFit: 9, moderateFit: 4, misalignment: 6, total: 25 },
+    { period: '2026-01', strongFit: 12, potentialFit: 8, moderateFit: 2, misalignment: 3, total: 25 },
+    { period: '2026-02', strongFit: 11, potentialFit: 6, moderateFit: 3, misalignment: 4, total: 24 },
+    { period: '2026-03', strongFit: 14, potentialFit: 7, moderateFit: 1, misalignment: 2, total: 24 },
+  ],
+  pendingOutcomeData: true,
+  note: 'Predicted classification distribution only — no post-hire outcomes yet (harness mock).',
+}
 
 const MOCK_TIME_TO_FILL: TimeToFillDataPoint[] = [
   { month: 'Oct', days: 35, tier: 'professional' },
@@ -561,7 +565,7 @@ export default function JobBlueprintTestHarness() {
               <StatsGrid stats={MOCK_STATS} />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <HiringFunnel data={MOCK_FUNNEL} />
-                <AccuracyChart data={MOCK_ACCURACY} />
+                <AccuracyChart report={MOCK_ACCURACY} />
               </div>
               <TimeToFillChart data={MOCK_TIME_TO_FILL} />
             </div>

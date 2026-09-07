@@ -6,10 +6,28 @@ export type FunnelStage = {
   percentage: number
 }
 
-export type AccuracyDataPoint = {
-  month: string
-  predicted: number
-  actual: number
+/**
+ * One period's count of each PREDICTED fit tier — blind, counts only.
+ * Mirrors blueprint-service `ClassificationDistributionPoint` (camelCase on the wire).
+ */
+export type ClassificationDistributionPoint = {
+  period: string
+  strongFit: number
+  potentialFit: number
+  moderateFit: number
+  misalignment: number
+  total: number
+}
+
+/**
+ * `GET /v1/blueprint/analytics/accuracy`. Honest by design: the platform tracks
+ * no post-hire outcomes, so the backend reports the distribution of predicted
+ * tiers with an explicit pending marker and a note — never an accuracy figure.
+ */
+export type AccuracyReport = {
+  distribution: ClassificationDistributionPoint[]
+  pendingOutcomeData: boolean
+  note: string
 }
 
 export type TimeToFillDataPoint = {
