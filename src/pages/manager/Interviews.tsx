@@ -1,64 +1,76 @@
+/**
+ * /manager/interviews — the interviews a manager has actually run.
+ *
+ * Package IS-C Lane C, finding IS-F5. This page previously rendered EIGHT
+ * hard-coded candidates — Sarah Chen, Marcus Johnson, David Kim and five more,
+ * none of whom exist — behind a PlaceholderBanner, with `completedCount = 12`
+ * as a literal and a `// TODO: wire to real endpoint`. It was live on stable.
+ *
+ * A manager-visible list of people who do not exist is worse than an empty
+ * page: it looks like a working product, so nobody reports it, and a manager
+ * could reasonably believe those interviews are scheduled.
+ *
+ * It now reads `GET /v1/agents/interview/live/sessions`. Every number on the
+ * page is counted from that response — there are no literals left.
+ */
+import { useMemo } from "react"
+import { Link } from "react-router-dom"
+
 import ManagerLayout from "@/layouts/ManagerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
-import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useManagerInterviewSchedule } from "@/hooks/manager/useManagerTeam"
+import { ROUTES } from "@/constants/routes"
+import { useLiveSessions } from "@/hooks/interview/useLiveSessions"
+import type { LiveSessionSummary } from "@/services/interview/live.service"
 
-type Interview = {
-  time: string
-  candidate: string
-  position: string
-  type: string
-  status: string
-  interviewer: string
-  group: string
-}
+const fmtDate = (iso?: string | null) =>
+  iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—"
 
-const FALLBACK_INTERVIEWS: Interview[] = [
-  { time: "9:00 AM", candidate: "Sarah Chen", position: "Frontend Developer", type: "Technical", status: "confirmed", interviewer: "James Wilson", group: "Today" },
-  { time: "10:30 AM", candidate: "Marcus Johnson", position: "Product Manager", type: "Behavioral", status: "confirmed", interviewer: "Lisa Park", group: "Today" },
-  { time: "1:00 PM", candidate: "David Kim", position: "Backend Engineer", type: "Technical", status: "pending", interviewer: "Chris Martin", group: "Today" },
-  { time: "2:30 PM", candidate: "Priya Patel", position: "QA Lead", type: "Screening", status: "confirmed", interviewer: "Sarah Lee", group: "Today" },
-  { time: "9:30 AM", candidate: "Elena Rodriguez", position: "UX Designer", type: "Portfolio Review", status: "pending", interviewer: "Maria Garcia", group: "Tomorrow" },
-  { time: "11:00 AM", candidate: "Tom Harris", position: "Frontend Developer", type: "Final Round", status: "confirmed", interviewer: "Alex Thompson", group: "Tomorrow" },
-  { time: "10:00 AM", candidate: "Lisa Wang", position: "Data Analyst", type: "Technical", status: "scheduled", interviewer: "James Wilson", group: "This Week" },
-  { time: "2:00 PM", candidate: "Chris Lee", position: "DevOps Engineer", type: "Behavioral", status: "scheduled", interviewer: "Chris Martin", group: "This Week" },
-]
+const fmtScore = (v?: number | null) =>
+  typeof v === "number" && Number.isFinite(v) ? `${v.toFixed(2)} / 5` : "—"
 
-const typeColor = (type: string) => {
-  const map: Record<string, string> = {
-    Technical: "#3B5BFF",
-    Behavioral: "#8B5CF6",
-    Screening: "#0D9488",
-    "Portfolio Review": "#E53E3E",
-    "Final Round": "#10B981",
-  }
-  return map[type] ?? "#6b7280"
-}
+/** What the interviewer typed for the candidate, or the PII-free hash. */
+const candidateLabel = (s: LiveSessionSummary) =>
+  s.candidate_ref?.display_name?.trim() ||
+  (s.candidate_ref?.candidate_hash ? `#${s.candidate_ref.candidate_hash.slice(0, 8)}` : "—")
+
+const modeLabel = (s: LiveSessionSummary) =>
+  (s.frame?.mode ?? "star") === "custom" ? "Studio" : "Live scored"
 
 export default function ManagerInterviews() {
-  const { data: scheduleData, isLoading, error, refetch } = useManagerInterviewSchedule()
-  const interviews = ((scheduleData as { interviews?: Interview[] } | undefined)?.interviews ?? FALLBACK_INTERVIEWS) as Interview[]
+  const { data, isLoading, error, refetch } = useLiveSessions({ limit: 100 })
 
-  const groups = ["Today", "Tomorrow", "This Week"]
-  const todayCount = interviews.filter((i) => i.group === "Today").length
-  const weekCount = interviews.length
-  const upcomingCount = interviews.filter((i) => i.status === "pending" || i.status === "scheduled").length
-  const completedCount = 12 // TODO: wire to real endpoint when available
+  const sessions = useMemo(() => data?.sessions ?? [], [data])
+  const inProgress = useMemo(() => sessions.filter((s) => s.status === "in_progress"), [sessions])
+  const finalized = useMemo(() => sessions.filter((s) => s.status === "finalized"), [sessions])
+  const abandoned = useMemo(() => sessions.filter((s) => s.status === "abandoned"), [sessions])
 
+  // Every one of these is counted. The old page had `completedCount = 12` as a
+  // literal beside three derived numbers, which made all four look equally real.
   const STATS = [
-    { label: "Today's Interviews", value: String(todayCount), color: "#3B5BFF" },
-    { label: "This Week", value: String(weekCount), color: "#0D9488" },
-    { label: "Upcoming", value: String(upcomingCount), color: "#3B82F6" },
-    { label: "Completed", value: String(completedCount), color: "#10B981" },
+    { label: "In progress", value: String(inProgress.length), color: "#3B5BFF" },
+    { label: "Completed", value: String(finalized.length), color: "#10B981" },
+    { label: "Abandoned", value: String(abandoned.length), color: "#6b7280" },
+    { label: "Total", value: String(data?.total ?? sessions.length), color: "#0D9488" },
+  ]
+
+  const groups: { title: string; rows: LiveSessionSummary[] }[] = [
+    { title: "In progress", rows: inProgress },
+    { title: "Completed", rows: finalized },
+    { title: "Abandoned", rows: abandoned },
   ]
 
   return (
     <ManagerLayout>
-      <PlaceholderBanner />
       <h1 className="text-xl font-bold text-[#111827] mb-1">Interviews</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Schedule and track candidate interviews.</p>
+      <p className="text-[13px] text-[#6b7280] mb-5">
+        Interviews you have run. Start a new one from{" "}
+        <Link to={ROUTES.MANAGER.INTERVIEW_STUDIO} className="text-[#3B5BFF] underline">
+          Interview Studio
+        </Link>
+        .
+      </p>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {STATS.map((s) => (
@@ -74,17 +86,36 @@ export default function ManagerInterviews() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4">
-          Failed to load interview schedule.
-          <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+        <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4" role="alert">
+          Could not load your interviews.
+          <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">
+            Retry
+          </button>
         </div>
       )}
 
-      {groups.map((group) => {
-        const groupInterviews = interviews.filter((i) => i.group === group)
-        if (groupInterviews.length === 0) return null
+      {/* An honest empty state. It says WHY there is nothing, which the old
+          page could not do because it always had eight rows. */}
+      {!isLoading && !error && sessions.length === 0 && (
+        <DataCard title="No interviews yet">
+          <p className="text-[13px] text-[#6b7280]">
+            Interviews you run appear here — in progress ones you can return to, and completed
+            ones with their scores.
+            {data && !data.org_scope_applied && (
+              <>
+                {" "}
+                This list shows interviews <span className="font-medium">you</span> ran; it is not
+                organisation-wide.
+              </>
+            )}
+          </p>
+        </DataCard>
+      )}
+
+      {groups.map(({ title, rows }) => {
+        if (!isLoading && rows.length === 0) return null
         return (
-          <DataCard key={group} title={group} badge={groupInterviews.length}>
+          <DataCard key={title} title={title} badge={rows.length}>
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
@@ -94,27 +125,32 @@ export default function ManagerInterviews() {
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="text-left text-[11px] text-[#6b7280] border-b border-[#e5e7eb]">
-                      <th className="pb-2 font-medium">Time</th>
+                      <th className="pb-2 font-medium">Date</th>
                       <th className="pb-2 font-medium">Candidate</th>
-                      <th className="pb-2 font-medium">Position</th>
-                      <th className="pb-2 font-medium">Type</th>
-                      <th className="pb-2 font-medium">Interviewer</th>
+                      <th className="pb-2 font-medium">Role</th>
+                      <th className="pb-2 font-medium">Opening</th>
+                      <th className="pb-2 font-medium">Kind</th>
+                      <th className="pb-2 font-medium">Score</th>
                       <th className="pb-2 font-medium">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {groupInterviews.map((i) => (
-                      <tr key={`${i.candidate}-${i.time}`} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb] transition-colors">
-                        <td className="py-2.5 font-medium text-[#111827]">{i.time}</td>
-                        <td className="py-2.5 text-[#111827]">{i.candidate}</td>
-                        <td className="py-2.5 text-[#6b7280]">{i.position}</td>
-                        <td className="py-2.5">
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${typeColor(i.type)}15`, color: typeColor(i.type) }}>
-                            {i.type}
-                          </span>
+                    {rows.map((s) => (
+                      <tr
+                        key={s.id}
+                        className="border-b border-[#f3f4f6] hover:bg-[#f9fafb] transition-colors"
+                      >
+                        <td className="py-2.5 font-medium text-[#111827]">
+                          {fmtDate(s.finalized_at ?? s.created_at)}
                         </td>
-                        <td className="py-2.5 text-[#6b7280]">{i.interviewer}</td>
-                        <td className="py-2.5"><StatusBadge status={i.status} /></td>
+                        <td className="py-2.5 text-[#111827]">{candidateLabel(s)}</td>
+                        <td className="py-2.5 text-[#6b7280]">{s.frame?.roleTitle || "—"}</td>
+                        <td className="py-2.5 text-[#6b7280]">{s.requisition_label || "—"}</td>
+                        <td className="py-2.5 text-[#6b7280]">{modeLabel(s)}</td>
+                        <td className="py-2.5 text-[#6b7280] tabular-nums">
+                          {s.status === "finalized" ? fmtScore(s.overall_score) : "—"}
+                        </td>
+                        <td className="py-2.5"><StatusBadge status={s.status} /></td>
                       </tr>
                     ))}
                   </tbody>

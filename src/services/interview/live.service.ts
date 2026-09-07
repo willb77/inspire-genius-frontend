@@ -172,6 +172,48 @@ export function normalizeSectionScores(raw: SectionScoresRaw): SectionScore[] {
   }))
 }
 
+/** One row of the Past interviews / manager board list. */
+export type LiveSessionSummary = {
+  id: string
+  interviewer_sub: string
+  org_id?: string | null
+  candidate_ref?: { display_name?: string; external_id?: string; candidate_hash?: string }
+  requisition_id?: string | null
+  requisition_label?: string | null
+  frame?: InterviewFrame & { mode?: string; kind?: string }
+  status: string
+  overall_score?: number | null
+  recommendation?: string | null
+  created_at?: string | null
+  finalized_at?: string | null
+}
+
+export type ListSessionsResult = {
+  sessions: LiveSessionSummary[]
+  total: number
+  limit: number
+  offset: number
+  /**
+   * Whether the caller's token carried an org claim.
+   *
+   * NOT decoration. `org_id` is written from the token at create time and
+   * existing sessions have it NULL, so an org-scoped read matches nothing and
+   * a company-admin sees only their own sessions. An empty list means
+   * something different depending on this flag, and the UI has to say which —
+   * otherwise "no interviews yet" and "we never recorded the org" look
+   * identical.
+   */
+  org_scope_applied: boolean
+}
+
+export type ListSessionsParams = {
+  mode?: string
+  status?: string
+  requisitionId?: string
+  limit?: number
+  offset?: number
+}
+
 export type GetSessionResult = {
   session: LiveSession
   answers: LiveAnswer[]
@@ -244,6 +286,9 @@ export type ScoreAnswerPayload = {
 }
 
 const BASE = "/v1/agents/interview/live/session"
+/** The LIST route is a sibling of BASE, not a child of it — spelled out rather
+ * than built as `${BASE}s`, which reads like a typo. */
+const LIST = "/v1/agents/interview/live/sessions"
 
 export const liveInterviewService = {
   async createSession(payload: CreateLiveSessionPayload): Promise<CreateLiveSessionResult> {
@@ -278,6 +323,28 @@ export const liveInterviewService = {
 
   async finalize(sessionId: string): Promise<FinalizeResult> {
     const { data } = await agentApi.post<FinalizeResult>(`${BASE}/${sessionId}/finalize`)
+    return data
+  },
+
+  async listSessions(params: ListSessionsParams = {}): Promise<ListSessionsResult> {
+    // `session_status`, not `status` — the route's own parameter name; `status`
+    // collides with FastAPI's imported `status` module in that file.
+    const { data } = await agentApi.get<ListSessionsResult>(LIST, {
+      params: {
+        mode: params.mode,
+        session_status: params.status,
+        requisition_id: params.requisitionId,
+        limit: params.limit,
+        offset: params.offset,
+      },
+    })
+    return data
+  },
+
+  async abandonSession(sessionId: string): Promise<{ session: LiveSessionSummary }> {
+    const { data } = await agentApi.post<{ session: LiveSessionSummary }>(
+      `${BASE}/${sessionId}/abandon`,
+    )
     return data
   },
 
