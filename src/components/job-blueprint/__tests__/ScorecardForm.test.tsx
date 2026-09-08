@@ -58,7 +58,8 @@ describe('ScorecardForm', () => {
     render(<ScorecardForm sections={sections} onSubmit={mockOnSubmit} />)
     // The grand total section shows "X / 55"
     expect(screen.getByText('/ 55')).toBeInTheDocument()
-    // The recommendation section should show "Do Not Hire" for 0 total
-    expect(screen.getByText('Do Not Hire')).toBeInTheDocument()
+    // The evidence band for a 0 total — never an imperative verdict
+    expect(screen.getByText('Limited alignment on the evidence gathered')).toBeInTheDocument()
+    expect(screen.queryByText(/do not hire/i)).not.toBeInTheDocument()
   })
 })

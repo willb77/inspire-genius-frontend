@@ -2,7 +2,18 @@
 
 export type ScorecardScore = 0 | 3 | 5
 
-export type ScorecardRecommendation = 'strong-hire' | 'hire-with-plan' | 'conditional' | 'do-not-hire'
+/**
+ * The evidence band a scorecard's grand total falls in. Decision SUPPORT, never
+ * a verdict: until 2026-09-08 these were 'strong-hire' | 'hire-with-plan' |
+ * 'conditional' | 'do-not-hire' — imperative hiring instructions, which Job
+ * Studio must never issue. The cut scores (45 / 35 / 25 of 55) are unchanged.
+ * The field is still called `recommendation` on the wire.
+ */
+export type ScorecardRecommendation =
+  | 'strong-alignment'
+  | 'good-alignment'
+  | 'partial-alignment'
+  | 'limited-alignment'
 
 export type ScorecardEntry = {
   dimensionId: number

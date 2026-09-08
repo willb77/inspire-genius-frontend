@@ -1,25 +1,21 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { ScorecardRecommendation } from '@/types/job-blueprint'
-import { SCORECARD_THRESHOLDS } from '@/constants/job-blueprint/classification'
+import { SCORECARD_BAND_LABELS, SCORECARD_THRESHOLDS } from '@/constants/job-blueprint/classification'
 
 type ScorecardSummaryProps = {
   grandTotal: number
   recommendation: ScorecardRecommendation
 }
 
-const recLabels: Record<ScorecardRecommendation, string> = {
-  'strong-hire': 'Strong Hire',
-  'hire-with-plan': 'Hire with Development Plan',
-  'conditional': 'Conditional',
-  'do-not-hire': 'Do Not Hire',
-}
-
+// The band is what the interview evidence shows against the benchmark —
+// decision support for the hiring manager, never a verdict. Labels come from
+// the one source in classification.ts so the badge, the scale and the guide agree.
 const recColors: Record<ScorecardRecommendation, string> = {
-  'strong-hire': 'bg-green-100 text-green-800',
-  'hire-with-plan': 'bg-blue-100 text-blue-800',
-  'conditional': 'bg-yellow-100 text-yellow-800',
-  'do-not-hire': 'bg-red-100 text-red-800',
+  'strong-alignment': 'bg-green-100 text-green-800',
+  'good-alignment': 'bg-blue-100 text-blue-800',
+  'partial-alignment': 'bg-yellow-100 text-yellow-800',
+  'limited-alignment': 'bg-red-100 text-red-800',
 }
 
 export function ScorecardSummary({ grandTotal, recommendation }: ScorecardSummaryProps) {
@@ -32,9 +28,9 @@ export function ScorecardSummary({ grandTotal, recommendation }: ScorecardSummar
             <p className="text-3xl font-bold text-slate-800">{grandTotal} <span className="text-lg text-slate-400">/ 55</span></p>
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium text-slate-500 mb-1">Recommendation</p>
+            <p className="text-sm font-medium text-slate-500 mb-1">What the evidence shows</p>
             <Badge className={`text-sm px-3 py-1 ${recColors[recommendation]}`}>
-              {recLabels[recommendation]}
+              {SCORECARD_BAND_LABELS[recommendation]}
             </Badge>
           </div>
         </div>
