@@ -1046,3 +1046,61 @@ describe("MeridianChat — injected questions (prefill)", () => {
     jest.useRealTimers();
   });
 });
+
+describe("MeridianChat — audio is OFF by default", () => {
+  // Audio used to be opt-OUT: the default read `!== "false"`, so an absent key
+  // meant ON and a first-time user had Meridian start speaking unprompted.
+  // The default is now opt-IN. The migration hinges on only the two EXPLICIT
+  // values being honoured, so all three states are pinned here — a test that
+  // only covered the absent key would still pass if the read were changed to
+  // something that ignored a stored preference.
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAgentEngine.mockReturnValue(true);
+    capturedChatWindowProps = {};
+    capturedOnResponse = null;
+    mockIsConnected = true;
+    mockLocationState = null;
+    localStorage.removeItem("meridian_voice");
+    mockSharedApi.post.mockResolvedValue({
+      data: { job_id: "job-voice", session_id: "sess-1", status: "queued" },
+    });
+    mockSharedApi.get.mockResolvedValue({
+      data: { job_id: "job-voice", session_id: "sess-1", status: "queued", message: "" },
+    });
+  });
+
+  const ANSWER = "Gold is Finishing plus Evaluating.";
+
+  const speakAndCountSynthesis = async () => {
+    await act(async () => {
+      capturedOnResponse?.({ type: "complete", content: ANSWER });
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    return synthesizeCalls().length;
+  };
+
+  it("stays silent when the user has never set a preference", async () => {
+    renderPage();
+    expect(await speakAndCountSynthesis()).toBe(0);
+  });
+
+  it("shows the muted control when no preference is stored", () => {
+    renderPage();
+    expect(
+      screen.getByLabelText("Enable Meridian's voice"),
+    ).toBeInTheDocument();
+  });
+
+  it("still speaks for a user who explicitly turned voice ON", async () => {
+    localStorage.setItem("meridian_voice", "true");
+    renderPage();
+    expect(await speakAndCountSynthesis()).toBeGreaterThan(0);
+  });
+
+  it("still stays silent for a user who explicitly turned voice OFF", async () => {
+    localStorage.setItem("meridian_voice", "false");
+    renderPage();
+    expect(await speakAndCountSynthesis()).toBe(0);
+  });
+});
