@@ -730,9 +730,21 @@ export default function MeridianChat({
     [renderAssistantComplete],
   );
 
-  // Voice-enabled toggle: when ON, WS messages include voice=true for streaming TTS
+  // Voice-enabled toggle: when ON, WS messages include voice=true for streaming TTS.
+  //
+  // Audio is OFF by default (2026-09-08). It used to be opt-OUT — an absent key
+  // read as ON — so a first-time user had Meridian start talking at them without
+  // ever asking for it, which is the wrong default for a surface people open at
+  // a desk or in an open-plan office.
+  //
+  // Note the comparison is `=== "true"`, not `!== "false"`. That distinction is
+  // the whole migration: only the two explicit values are honoured, and an
+  // ABSENT key now means OFF rather than ON. So a user who deliberately turned
+  // voice on keeps it (their key holds "true"), a user who deliberately turned
+  // it off keeps it off ("false"), and only the users who never expressed a
+  // preference move — which is exactly the set the default is for.
   const [voiceEnabled, setVoiceEnabled] = useState(() => {
-    try { return localStorage.getItem("meridian_voice") !== "false"; } catch { return true; }
+    try { return localStorage.getItem("meridian_voice") === "true"; } catch { return false; }
   });
 
   // ── Streaming audio queue (sentence-level TTS chunks from WebSocket) ──
