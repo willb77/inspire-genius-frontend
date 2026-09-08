@@ -40,6 +40,12 @@ export function useMemberDossier(memberId: string | undefined) {
 export function useRefreshDossier(memberId: string | undefined) {
   const qc = useQueryClient()
   return useMutation<void, Error, void>({
+    // Opted into the global error net (`lib/mutationErrorToast.ts`): this hook
+    // has no `onError`, and its caller fires it without awaiting, so a failure
+    // has no other voice. A recompute that never reached the backend
+    // spun the Refresh button and said nothing, which read as success.
+    meta: { surfaceError: true },
+
     mutationFn: async () => {
       await recomputeDossier(memberId as string)
     },

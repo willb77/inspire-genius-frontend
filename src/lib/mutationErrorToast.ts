@@ -25,6 +25,30 @@ import { apiErrorMessage } from "@/lib/apiErrorMessage"
  * A global handler cannot fix a bad write path, and is not meant to. It makes
  * the failure *audible* so the next one is diagnosed in seconds instead of an
  * hour.
+ *
+ * ## Why this is opt-IN, for now
+ *
+ * The obvious shape — toast everything that has no `onError` — was built first
+ * and measured against the codebase before shipping. It double-toasts. **77
+ * catch blocks across 36 files** already `await mutateAsync(...)` inside a
+ * `try/catch` and toast in the surface's own words, and React Query gives the
+ * cache callback no way to tell `mutate` from `mutateAsync` — both route
+ * through the same `execute`, so the global handler fires whether or not the
+ * caller caught. On those paths the user would see the specific message and
+ * then a generic one; on three interview surfaces, a third report as an error
+ * card. "Could not save that rating" twice does not read as thoroughness, it
+ * reads as two failures.
+ *
+ * The affected files span AuthContext, Documents, Character Lab, Honor,
+ * Broadcast and Interview Studio — nearly every lane, several with live PRs.
+ * Annotating them all in this change would mean a wide cross-lane diff to serve
+ * one addition.
+ *
+ * So the net starts opt-in: a hook declares `meta: { surfaceError: true }` when
+ * it has no error handling of its own and no caller doing it either. The
+ * follow-up audits those 36 files, adds `meta: { quietError: true }` where the
+ * caller already speaks, and flips this default to opt-out — at which point all
+ * ~219 fire-and-forget `.mutate()` sites are covered with no doubling.
  */
 
 /** Copy shown when the server gave us nothing a human should read. */
@@ -43,18 +67,22 @@ type ErrorShape = {
 /**
  * Should the global net stay quiet about this rejection?
  *
- * Two cases, both deliberate:
+ * Quiet unless the hook has explicitly asked to be covered. Three reasons a
+ * mutation stays silent, in the order they are checked:
  *
- * 1. **The mutation owns its errors.** If the hook passed an `onError`, it has
- *    already said whatever it wants to say; a second toast would be noise and
- *    would contradict hooks that deliberately show a tailored message.
- * 2. **A 401.** `src/lib/axios.ts` owns that path — single-flight refresh, retry,
+ * 1. **It did not opt in.** The default, until the audit described above lands.
+ * 2. **The mutation owns its errors.** An `onError` on the hook wins even over
+ *    an explicit opt-in: it has already said whatever it wants to say, and a
+ *    second toast would contradict a tailored message. Checked separately from
+ *    the opt-in so that adding `onError` later cannot silently produce doubles.
+ * 3. **A 401.** `src/lib/axios.ts` owns that path — single-flight refresh, retry,
  *    and logout on a second failure. Session expiry legitimately produces 401s
  *    across every in-flight request at once, so toasting here turns one expiry
  *    into a pile of identical toasts stacked over the login redirect.
  *
- * `meta: { quietError: true }` is the opt-out for genuinely background writes
- * whose failure the user cannot act on.
+ * `meta: { quietError: true }` is honoured now so the audit can annotate hooks
+ * ahead of the flip, and so a hook that opts in cannot be made noisy by a
+ * caller that already handles it.
  */
 export function shouldStayQuiet(
   error: unknown,
@@ -62,6 +90,7 @@ export function shouldStayQuiet(
 ): boolean {
   if (mutation?.options?.onError) return true
   if (mutation?.options?.meta?.quietError) return true
+  if (!mutation?.options?.meta?.surfaceError) return true
   return (error as ErrorShape)?.response?.status === 401
 }
 
