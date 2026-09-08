@@ -9,9 +9,12 @@ import type { TargetDraft } from '@/types/targets'
  * NOT behind `blueprint_matching_enabled`: it takes a job description (text) only
  * and returns a governed DRAFT, so it is available to any authenticated user.
  *
- * Only `extract` is wired today — the Job-Fit "Fit a job description" tool needs
- * the draft, nothing more. `score` / `adverse-impact` join here when a consumer
- * needs them.
+ * Only `extract` is wired here. "Fit a job description" scores its draft through
+ * `fitService.scoreTarget` (`POST /v1/blueprint/fit/target`), NOT through
+ * `/v1/targets/score`: that route is vector-only by design (Decision D6) and the
+ * user's own vector never passes through the browser, so the self-scoped fit
+ * route loads it server-side. `score` / `adverse-impact` join here only for a
+ * consumer that already holds a vector.
  */
 const BASE = '/v1/targets'
 

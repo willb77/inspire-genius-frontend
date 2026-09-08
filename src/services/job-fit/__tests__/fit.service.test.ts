@@ -5,7 +5,7 @@ import { api } from "@/lib/axios"
 import { fitService } from "../fit.service"
 
 jest.mock("@/lib/axios", () => ({
-  api: { get: jest.fn() },
+  api: { get: jest.fn(), post: jest.fn() },
 }))
 
 const mockApi = api as jest.Mocked<typeof api>
@@ -58,5 +58,25 @@ describe("fitService", () => {
     expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/fit/j1", {
       params: { method: "closeness" },
     })
+  })
+
+  // ── JS-5 — Fit a JD scores the draft through the self-scoped route ──
+  test("scoreTarget POSTs the target body to /v1/blueprint/fit/target", async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { data: { jobId: "" } } })
+    const body = {
+      target: [
+        { category: "behavior" as const, dimensionId: 1, dimensionName: "Innovating", finalBenchmarkPercent: 72, interpretation: "very-high" },
+      ],
+      roleTitle: "Delivery coordinator",
+    }
+    await fitService.scoreTarget(body)
+    expect(mockApi.post).toHaveBeenCalledWith("/v1/blueprint/fit/target", body)
+  })
+
+  test("scoreTarget never goes near the vector-only /v1/targets/score", async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { data: {} } })
+    await fitService.scoreTarget({ target: [] })
+    const [url] = mockApi.post.mock.calls[0]
+    expect(url).not.toContain("/v1/targets")
   })
 })
