@@ -134,7 +134,7 @@ beforeEach(() => {
   })
   ;(analyticsHooks.useBlueprintStats as jest.Mock).mockReturnValue(query(STATS))
   ;(analyticsHooks.useBlueprintFunnel as jest.Mock).mockReturnValue(query([]))
-  ;(analyticsHooks.useBlueprintAccuracy as jest.Mock).mockReturnValue(query([]))
+  ;(analyticsHooks.useBlueprintAccuracy as jest.Mock).mockReturnValue(query(undefined))
   ;(analyticsHooks.useBlueprintTimeToFill as jest.Mock).mockReturnValue(query([]))
 })
 
@@ -216,5 +216,26 @@ describe("Analytics", () => {
     renderPage(<JobBlueprintAnalyticsPage />)
     expect(screen.getByRole("heading", { name: "Analytics" })).toBeInTheDocument()
     expect(screen.getByText("Total Job DNAs")).toBeInTheDocument()
+  })
+
+  test("renders the accuracy read as the backend's object — distribution plus the pending note", () => {
+    ;(analyticsHooks.useBlueprintAccuracy as jest.Mock).mockReturnValue(
+      query({
+        distribution: [
+          { period: "2026-07", strongFit: 25, potentialFit: 25, moderateFit: 10, misalignment: 36, total: 96 },
+        ],
+        pendingOutcomeData: true,
+        note: "Predicted classification distribution only — no outcome data exists yet.",
+      })
+    )
+    renderPage(<JobBlueprintAnalyticsPage />)
+    expect(screen.getByText("Predicted fit distribution")).toBeInTheDocument()
+    expect(screen.getByRole("note")).toHaveTextContent("no outcome data exists yet")
+    expect(screen.queryByText("No accuracy data yet.")).not.toBeInTheDocument()
+  })
+
+  test("no accuracy body at all → the empty state", () => {
+    renderPage(<JobBlueprintAnalyticsPage />)
+    expect(screen.getByText("No accuracy data yet.")).toBeInTheDocument()
   })
 })

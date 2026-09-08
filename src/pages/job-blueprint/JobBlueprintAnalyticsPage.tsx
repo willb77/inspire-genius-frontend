@@ -26,7 +26,7 @@ export default function JobBlueprintAnalyticsPage() {
       <JobDnaPageHeader
         icon={BarChart3}
         title="Analytics"
-        description="Hiring funnel, prediction accuracy and time-to-fill across your Job DNAs."
+        description="Hiring funnel, predicted fit distribution and time-to-fill across your Job DNAs."
       />
 
       {loadingStats ? (
@@ -41,8 +41,8 @@ export default function JobBlueprintAnalyticsPage() {
             ) : (
               <JobDnaEmptyState>No funnel data yet.</JobDnaEmptyState>
             )}
-            {accuracy && accuracy.length > 0 ? (
-              <AccuracyChart data={accuracy} />
+            {accuracy ? (
+              <AccuracyChart report={accuracy} />
             ) : (
               <JobDnaEmptyState>No accuracy data yet.</JobDnaEmptyState>
             )}

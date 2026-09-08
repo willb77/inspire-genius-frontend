@@ -21,7 +21,7 @@ export function useBlueprintFunnel() {
 export function useBlueprintAccuracy() {
   return useQuery({
     queryKey: KEYS.accuracy(),
-    queryFn: () => analyticsService.getAccuracy().then(r => r.data.data ?? []),
+    queryFn: () => analyticsService.getAccuracy().then(r => r.data.data),
   })
 }
 

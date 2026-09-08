@@ -1,6 +1,6 @@
 import { api } from '@/lib/axios'
 import type { BaseApiResponse } from '@/types/api'
-import type { FunnelStage, AccuracyDataPoint, TimeToFillDataPoint, HiresByPeriod, BlueprintStats, ActivityItem } from '@/types/job-blueprint'
+import type { FunnelStage, AccuracyReport, TimeToFillDataPoint, HiresByPeriod, BlueprintStats, ActivityItem } from '@/types/job-blueprint'
 
 const BASE = '/v1/blueprint/analytics'
 
@@ -10,7 +10,7 @@ export const analyticsService = {
   },
 
   getAccuracy() {
-    return api.get<BaseApiResponse<AccuracyDataPoint[]>>(`${BASE}/accuracy`)
+    return api.get<BaseApiResponse<AccuracyReport>>(`${BASE}/accuracy`)
   },
 
   getTimeToFill() {
