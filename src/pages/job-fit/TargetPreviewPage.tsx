@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react"
-import { FileUp, Loader2, ScanSearch, Sparkles } from "lucide-react"
+import { AlertTriangle, FileUp, Gauge, Loader2, ScanSearch, Sparkles, Sprout, Target } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,11 +9,15 @@ import {
   RoleExtractionError,
 } from "@/lib/extractRoleText"
 import { useTargetExtract } from "@/hooks/job-fit/useTargetExtract"
+import { isNoPrismError, useScoreTarget } from "@/hooks/job-fit/useScoreTarget"
+import type { FitDetail } from "@/types/job-fit"
 import type { ExtractedDimension, TargetDraft } from "@/types/targets"
 import { flattenTargetDraft } from "@/types/targets"
 import {
   FitCard,
   FitEmptyState,
+  FitError,
+  FitLoading,
   FitMeter,
   FitMethodologyNote,
   FitPageHeader,
@@ -21,7 +25,16 @@ import {
   FitSectionTitle,
   FitStat,
 } from "./_shared"
-import { confidenceTone, type Tone } from "./_fit"
+import {
+  bandLabel,
+  bandTone,
+  confidenceTone,
+  fitPercent,
+  fitPercentLabel,
+  fitPercentTone,
+  type Tone,
+} from "./_fit"
+import { FitBreakdown } from "./FitBreakdown"
 
 /** Group definitions in a stable, human order. */
 const GROUPS: { key: keyof Pick<TargetDraft, "behaviors" | "aptitudes" | "coreTraits">; label: string }[] = [
@@ -58,6 +71,69 @@ function DimensionRow({ dim }: { dim: ExtractedDimension }) {
 }
 
 /**
+ * The scored read of a drafted target: the same headline the role detail page
+ * leads with (fit %, closeness, growth areas, priority focus, tier), then the
+ * shared breakdown. No narrative cards — those need a published role id.
+ */
+function TargetFitResult({ data }: { data: FitDetail }) {
+  const pct = fitPercent(data.fitScore, data.totalVariation, data.perDimension.length || 22)
+  return (
+    <div className="space-y-6">
+      <FitCard>
+        <FitSectionTitle>Your fit against this target</FitSectionTitle>
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-[#1f2937]">{pct}</span>
+              <span className="text-lg font-semibold text-[#6b7280]">%</span>
+            </div>
+            <p className="text-sm font-medium text-[#374151]">{fitPercentLabel(pct)}</p>
+          </div>
+          <Gauge className="h-8 w-8 text-[#0D9488]" aria-hidden />
+        </div>
+        <FitMeter value={pct} tone={fitPercentTone(pct)} className="mb-4" />
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
+          <FitPill tone={bandTone(data.tier)}>{bandLabel(data.tier)}</FitPill>
+          {data.baseTier !== data.tier && (
+            <FitPill tone="gray">Before the critical-gap cap: {bandLabel(data.baseTier)}</FitPill>
+          )}
+          {data.gated && <FitPill tone="amber">Decision support only</FitPill>}
+        </div>
+      </FitCard>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <FitStat
+          icon={Target}
+          label="Overall closeness"
+          value={data.totalVariation}
+          hint="Lower means closer to this target"
+        />
+        <FitStat
+          icon={Sprout}
+          label="Growth areas"
+          value={data.coachingGaps.length}
+          hint="Dimensions to develop toward the target"
+          tone="amber"
+        />
+        <FitStat
+          icon={AlertTriangle}
+          label="Priority focus"
+          value={data.criticalGaps.length}
+          hint="Larger gaps worth prioritizing"
+          tone={data.criticalGaps.length > 0 ? "red" : "green"}
+        />
+      </div>
+
+      <div>
+        <FitBreakdown data={data} />
+      </div>
+
+      <FitMethodologyNote note={data.methodologyNote} />
+    </div>
+  )
+}
+
+/**
  * Job-Fit "Fit a job description" tool — the vertical's consumer of the neutral
  * target service (Decision D7, `POST /v1/targets/extract`).
  *
@@ -66,19 +142,36 @@ function DimensionRow({ dim }: { dim: ExtractedDimension }) {
  * the governed target the extractor drafts for it — per-dimension benchmark,
  * provenance (was it in the JD, or imputed?), and confidence. It is a DRAFT, and
  * the disclaimer makes that explicit: it informs, it does not decide.
+ *
+ * Once a target is drafted you can score your own PRISM against it
+ * (`POST /v1/blueprint/fit/target`, self-scoped — your vector never leaves the
+ * server). The result is the same breakdown the role detail page renders. An
+ * account with no PRISM on file is told so in place, never shown a score.
  */
 export default function TargetPreviewPage() {
   const [jdText, setJdText] = useState("")
   const [draft, setDraft] = useState<TargetDraft | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const extract = useTargetExtract()
+  const score = useScoreTarget()
 
   const trimmed = jdText.trim()
   const canSubmit = trimmed.length > 0 && !extract.isPending
 
   function onSubmit() {
     if (!canSubmit) return
-    extract.mutate(trimmed, { onSuccess: setDraft })
+    extract.mutate(trimmed, {
+      onSuccess: (d) => {
+        // A new draft is a new target: any earlier score no longer applies to it.
+        score.reset()
+        setDraft(d)
+      },
+    })
+  }
+
+  function onScore() {
+    if (!draft || score.isPending) return
+    score.mutate({ draft })
   }
 
   async function onFile(e: ChangeEvent<HTMLInputElement>) {
@@ -213,6 +306,51 @@ export default function TargetPreviewPage() {
           )}
 
           <FitMethodologyNote note={draft.methodologyNote} />
+
+          {/* Score my fit — the draft is a target; this is you against it */}
+          <FitCard>
+            <FitSectionTitle
+              action={
+                <Button type="button" onClick={onScore} disabled={score.isPending}>
+                  {score.isPending ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
+                      Scoring…
+                    </>
+                  ) : (
+                    <>
+                      <Gauge className="mr-1.5 h-4 w-4" aria-hidden />
+                      Score my fit against this target
+                    </>
+                  )}
+                </Button>
+              }
+            >
+              Score my fit
+            </FitSectionTitle>
+            <p className="text-sm text-[#6b7280]">
+              Compare your own PRISM profile with this drafted target, dimension by dimension —
+              the same read as a published role, so a role that isn&apos;t on the platform yet can
+              still be sized up.
+            </p>
+          </FitCard>
+
+          {score.isPending && <FitLoading label="Scoring your fit against this target…" />}
+
+          {score.isError && isNoPrismError(score.error) && (
+            <FitEmptyState>
+              We can&apos;t score your fit yet — there&apos;s no PRISM assessment on file for your
+              account. Once your PRISM report is uploaded, come back and score this target.
+            </FitEmptyState>
+          )}
+
+          {score.isError && !isNoPrismError(score.error) && (
+            <FitError>
+              We couldn&apos;t score your fit against this target. Please try again shortly.
+            </FitError>
+          )}
+
+          {score.isSuccess && score.data && <TargetFitResult data={score.data} />}
         </div>
       )}
     </div>

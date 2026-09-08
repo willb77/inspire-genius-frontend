@@ -6,6 +6,7 @@
 // so the person-side and recruiter-side share one vocabulary.
 
 import type { DimensionCategory, JobTier } from '@/types/job-blueprint'
+import type { TargetBenchmarkInput } from '@/types/targets'
 
 /**
  * Coarse, plain-language fit label the backend assigns per role. Kept as a
@@ -128,6 +129,18 @@ export type FitDetail = {
   closenessTopFactors?: string[]
   /** Dimension keys furthest from the target (closeness read only). */
   closenessTopGaps?: string[]
+}
+
+/**
+ * Body of `POST /v1/blueprint/fit/target` — score the user's OWN PRISM against a
+ * caller-supplied target, normally the draft "Fit a job description" extracted.
+ * The response is a `FitDetail` with an empty `jobId` (a pasted JD has no
+ * published role behind it) and `roleTitle` echoed from here.
+ */
+export type FitTargetRequest = {
+  target: TargetBenchmarkInput[]
+  method?: FitMethod
+  roleTitle?: string
 }
 
 // ── Fit narration (agent-engine explain-fit) — FLAT responses, not enveloped ──

@@ -64,3 +64,34 @@ export type TargetDraft = {
 export function flattenTargetDraft(draft: TargetDraft): ExtractedDimension[] {
   return [...draft.behaviors, ...draft.aptitudes, ...draft.coreTraits]
 }
+
+/**
+ * One benchmark row as `POST /v1/blueprint/fit/target` expects it — the wire
+ * shape of blueprint-service `TargetDimensionBenchmark`. The rank/rate fields
+ * are optional: a drafted target has a benchmark percentile and an
+ * interpretation band, nothing more, and the service defaults the rest.
+ */
+export type TargetBenchmarkInput = {
+  category: DimensionCategory
+  dimensionId: number
+  dimensionName: string
+  finalBenchmarkPercent: number
+  interpretation: string
+}
+
+/**
+ * Turn a drafted target into the benchmark list the self-fit scorer takes.
+ * Every drafted dimension is carried, measured or imputed alike: the draft
+ * already says which is which, and the scorer's provenance/confidence output
+ * is where that honesty is surfaced — dropping imputed rows here would score
+ * against a partial role and read as a better fit than it is.
+ */
+export function targetDraftToBenchmarks(draft: TargetDraft): TargetBenchmarkInput[] {
+  return flattenTargetDraft(draft).map((d) => ({
+    category: d.category,
+    dimensionId: d.dimensionId,
+    dimensionName: d.dimensionName,
+    finalBenchmarkPercent: d.target,
+    interpretation: d.interpretation,
+  }))
+}
