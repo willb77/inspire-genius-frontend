@@ -28,6 +28,35 @@ const finalizeMutate = jest.fn()
 const toastError = jest.fn()
 const toastSuccess = jest.fn()
 
+// ── IS-C Lane B ──────────────────────────────────────────────────
+// The setup screen now mounts PastInterviewsPanel, which reads the sessions
+// list. Mocked here rather than wrapped in a QueryClientProvider: the panel has
+// its own suite, and these tests are about this component.
+const useLiveSessions = jest.fn()
+const abandonMutate = jest.fn()
+const getSession = jest.fn()
+
+jest.mock("@/hooks/interview/useLiveSessions", () => ({
+  useLiveSessions: (...a: unknown[]) => useLiveSessions(...a),
+  useAbandonLiveSession: () => ({ mutateAsync: abandonMutate }),
+}))
+
+jest.mock("@/services/interview/live.service", () => {
+  const actual = jest.requireActual("@/services/interview/live.service")
+  return {
+    ...actual,
+    liveInterviewService: { ...actual.liveInterviewService, getSession: (...a: unknown[]) => getSession(...a) },
+  }
+})
+
+const EMPTY_SESSIONS = {
+  data: { sessions: [], total: 0, limit: 25, offset: 0, org_scope_applied: true },
+  isLoading: false,
+  isFetching: false,
+  error: null,
+  refetch: jest.fn(),
+}
+
 jest.mock("sonner", () => ({
   toast: { error: (...a: unknown[]) => toastError(...a), success: (...a: unknown[]) => toastSuccess(...a) },
 }))
@@ -124,6 +153,7 @@ beforeEach(() => {
   createMutate.mockResolvedValue({ session_id: "s1", plan: PLAN })
   submitMutate.mockResolvedValue({ answer_id: "a1", suggested_score: 3, star_evidence: null })
   scoreMutate.mockResolvedValue({ answer_id: "a1", final_score: 4, interviewer_notes: "solid result" })
+  useLiveSessions.mockReturnValue(EMPTY_SESSIONS)
   finalizeMutate.mockResolvedValue(FINALIZE)
 })
 
@@ -353,5 +383,236 @@ describe("findings", () => {
     expect(await screen.findByText("Advance to final round")).toBeInTheDocument()
     expect(screen.queryByText(/could not be compiled/i)).not.toBeInTheDocument()
     confirmSpy.mockRestore()
+  })
+})
+
+// ── IS-C Lane B — past interviews: resume and reopen ───────────────
+// The panel is REAL here (only its data hook is mocked), so these drive the
+// same buttons an interviewer clicks.
+
+const LIST = (over: Record<string, unknown> = {}) => ({
+  data: {
+    sessions: [
+      {
+        id: "s-old",
+        interviewer_sub: "sub-1",
+        candidate_ref: { display_name: "Dana Reyes", candidate_hash: "abcdef1234567890" },
+        frame: { roleTitle: "Regional Manager" },
+        status: "in_progress",
+        created_at: "2026-09-01T10:00:00Z",
+        ...over,
+      },
+    ],
+    total: 1,
+    limit: 25,
+    offset: 0,
+    org_scope_applied: true,
+  },
+  isLoading: false,
+  isFetching: false,
+  error: null,
+  refetch: jest.fn(),
+})
+
+/** What `GET /live/session/{id}` returns, already normalized by the service. */
+const DETAIL = (over: Record<string, unknown> = {}) => ({
+  session: {
+    session_id: "s-old",
+    frame: { roleTitle: "Regional Manager", company: "Acme" },
+    candidate: { display_name: "Dana Reyes" },
+    consent: { captured: true, mode: "no_audio" },
+    status: "in_progress",
+  },
+  plan: PLAN,
+  answers: [
+    {
+      answer_id: "a-old-1",
+      competency_id: "c1",
+      question_text: "Tell me about a turnaround.",
+      captured_answer: "…",
+      suggested_score: 3,
+      star_evidence: null,
+      final_score: 4,
+      final_source: "human",
+    },
+  ],
+  status: "in_progress",
+  section_scores: null,
+  overall_score: null,
+  recommendation: null,
+  candidate_ref: { display_name: "Dana Reyes", candidate_hash: "abcdef1234567890" },
+  ...over,
+})
+
+describe("past interviews — resume", () => {
+  it("continues an in-progress interview at the first UNANSWERED question", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST())
+    getSession.mockResolvedValue(DETAIL())
+    render(<LiveInterviewBody />)
+
+    await user.click(screen.getByRole("button", { name: /resume/i }))
+
+    // c1 is answered, so the interviewer lands on question 2 — not back at 1,
+    // which would re-ask a question the candidate has already answered.
+    await waitFor(() =>
+      expect(screen.getByText("panel 2/2: Describe a missed deadline.")).toBeInTheDocument(),
+    )
+    expect(getSession).toHaveBeenCalledWith("s-old")
+  })
+
+  it("saves a rating on a RESUMED answer — the id survives rehydration", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST())
+    // Every question answered, the last one never rated: the interviewer closed
+    // the tab between answering and rating. Resume lands ON that question, which
+    // is the one place a rehydrated answer id is actually used.
+    getSession.mockResolvedValue(
+      DETAIL({
+        answers: [
+          {
+            answer_id: "a-old-1",
+            competency_id: "c1",
+            question_text: "Tell me about a turnaround.",
+            captured_answer: "…",
+            suggested_score: 3,
+            star_evidence: null,
+            final_score: 4,
+            final_source: "human",
+          },
+          {
+            answer_id: "a-old-2",
+            competency_id: "c2",
+            question_text: "Describe a missed deadline.",
+            captured_answer: "…",
+            suggested_score: 3,
+            star_evidence: null,
+            final_score: 3,
+            final_source: null,
+          },
+        ],
+      }),
+    )
+    render(<LiveInterviewBody />)
+    await user.click(screen.getByRole("button", { name: /resume/i }))
+    await waitFor(() => expect(screen.getByText(/^panel 2\/2/)).toBeInTheDocument())
+
+    await user.click(screen.getByText("mock-save-score"))
+
+    // The wire names this id `id`, the app reads `answer_id`. If rehydration
+    // drops it, handleSaveScore returns early: no PATCH, no error, and the
+    // interviewer's rating is silently gone.
+    await waitFor(() =>
+      expect(scoreMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionId: "s-old", answerId: "a-old-2" }),
+      ),
+    )
+  })
+
+  it("refuses to resume an interview whose question plan was not recorded", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST())
+    getSession.mockResolvedValue(DETAIL({ plan: [] }))
+    render(<LiveInterviewBody />)
+    await user.click(screen.getByRole("button", { name: /resume/i }))
+    // An empty interview screen would read as a loading bug.
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/cannot be resumed/i)))
+    expect(screen.getByText("mock-consent-proceed")).toBeInTheDocument()
+  })
+
+  it("says so when the interview could not be opened at all", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST())
+    getSession.mockRejectedValue(new Error("Session not found"))
+    render(<LiveInterviewBody />)
+    await user.click(screen.getByRole("button", { name: /resume/i }))
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Session not found"))
+  })
+})
+
+describe("past interviews — reopen is read only", () => {
+  const FINALIZED = () =>
+    DETAIL({
+      status: "finalized",
+      overall_score: 4.25,
+      recommendation: "Advance to final round",
+      section_scores: { vision: { mean: 4.25 } },
+    })
+
+  it("shows the stored write-up and never re-finalizes", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
+    getSession.mockResolvedValue(FINALIZED())
+    render(<LiveInterviewBody />)
+
+    await user.click(screen.getByRole("button", { name: /reopen/i }))
+
+    await waitFor(() => expect(screen.getByText(/reopened for review/i)).toBeInTheDocument())
+    expect(screen.getByText("Advance to final round")).toBeInTheDocument()
+    // Re-running the scorer could produce a different number for an interview
+    // the candidate has already been judged on. The backend answers 409; the
+    // client must not send it in the first place.
+    expect(finalizeMutate).not.toHaveBeenCalled()
+  })
+
+  it("offers no control that would re-score it", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
+    getSession.mockResolvedValue(FINALIZED())
+    render(<LiveInterviewBody />)
+    await user.click(screen.getByRole("button", { name: /reopen/i }))
+    await waitFor(() => expect(screen.getByText(/reopened for review/i)).toBeInTheDocument())
+
+    // This — not the `readOnly` early-return inside finish() — is what actually
+    // stops a second finalize reaching the server. The early-return is
+    // unreachable and deleting it fails nothing, so this is the assertion that
+    // has to hold.
+    expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /finish/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /end interview/i })).not.toBeInTheDocument()
+  })
+
+  it("re-exports a reopened interview without rescoring it", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
+    getSession.mockResolvedValue(FINALIZED())
+    render(<LiveInterviewBody />)
+    await user.click(screen.getByRole("button", { name: /reopen/i }))
+    await waitFor(() => expect(screen.getByText(/reopened for review/i)).toBeInTheDocument())
+
+    await user.click(screen.getByRole("button", { name: /word/i }))
+    await waitFor(() => expect(exportDownload).toHaveBeenCalled())
+    expect(finalizeMutate).not.toHaveBeenCalled()
+  })
+
+  it("labels a pre-IS-4 answer as not decided instead of printing its seed", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
+    getSession.mockResolvedValue(
+      DETAIL({
+        status: "finalized",
+        overall_score: 3.5,
+        recommendation: "Advance to final round",
+        answers: [
+          {
+            answer_id: "legacy-1",
+            competency_id: "c1",
+            question_text: "Tell me about a turnaround.",
+            captured_answer: "…",
+            suggested_score: 3,
+            star_evidence: null,
+            // NOT NULL, seeded at insert. Nobody decided it.
+            final_score: 3,
+            final_source: null,
+          },
+        ],
+      }),
+    )
+    render(<LiveInterviewBody />)
+    await user.click(screen.getByRole("button", { name: /reopen/i }))
+
+    await waitFor(() => expect(screen.getByText(/not decided/i)).toBeInTheDocument())
+    // "Final score: 3 / 5" would attribute a judgement nobody made.
+    expect(screen.queryByText(/Final score: 3 \/ 5/)).not.toBeInTheDocument()
   })
 })

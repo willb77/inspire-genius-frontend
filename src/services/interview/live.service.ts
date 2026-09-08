@@ -146,8 +146,12 @@ export type FinalizeResult = {
   rated_count?: number
   answer_count?: number
   section_scores: SectionScoresRaw
-  overall_score: number
-  overall_mean: number
+  /** NULL when no roll-up was ever recorded — an interview reopened after
+   * being abandoned has answers but was never scored, and a 0.00 there would
+   * read as "the candidate scored zero". Every consumer renders these through
+   * `fmtScore`, which prints "—". */
+  overall_score: number | null
+  overall_mean: number | null
   recommendation: string
   /** Advisory narrative — present on Studio + live finalize; may be absent. */
   feedback?: InterviewFeedback
@@ -214,9 +218,111 @@ export type ListSessionsParams = {
   offset?: number
 }
 
+/**
+ * `GET /live/session/{id}` — the WIRE shape, which is NOT `{session, answers}`.
+ *
+ * The route returns `_session_to_dict(session, include_answers=True)`: the
+ * session's own fields at the TOP level with `answers` nested inside. Finalize,
+ * by contrast, returns `{session: {...}, answers: [...]}`. Two routes over the
+ * same two objects, two shapes.
+ *
+ * This type used to claim the finalize shape. Nothing consumed `getSession()`,
+ * so nobody found out; the first consumer would have read `data.session` as
+ * `undefined` and rendered a blank reopen. Go through
+ * {@link normalizeSessionDetail} rather than either shape directly.
+ */
+export type SessionDetailWire = {
+  id: string
+  interviewer_sub?: string
+  org_id?: string | null
+  candidate_ref?: { display_name?: string; external_id?: string; candidate_hash?: string }
+  requisition_id?: string | null
+  requisition_label?: string | null
+  frame?: InterviewFrame
+  /** Stored as `{items: [...]}` — the create route returns a bare array. */
+  plan?: { items?: LivePlanQuestion[] } | LivePlanQuestion[] | null
+  consent?: LiveConsent
+  status?: string
+  section_scores?: SectionScoresRaw
+  overall_score?: number | null
+  recommendation?: string | null
+  feedback?: InterviewFeedback | null
+  created_at?: string | null
+  finalized_at?: string | null
+  answers?: Array<LiveAnswer & { id?: string }>
+}
+
+/** A session detail in the shape the UI actually needs. */
 export type GetSessionResult = {
   session: LiveSession
+  /** The ordered plan, unwrapped from `{items: []}`. Empty when unrecorded. */
+  plan: LivePlanQuestion[]
   answers: LiveAnswer[]
+  status: string
+  section_scores: SectionScoresRaw
+  overall_score: number | null
+  recommendation: string | null
+  feedback?: InterviewFeedback | null
+  requisition_id?: string | null
+  requisition_label?: string | null
+  candidate_ref?: { display_name?: string; external_id?: string; candidate_hash?: string }
+}
+
+/**
+ * Normalize a session detail, and give every answer an `answer_id`.
+ *
+ * The backend names the same fact two ways: `POST /answer` returns
+ * `answer_id`, while `_answer_to_dict` — which serves GET detail, PATCH and
+ * finalize — returns `id`. The app reads `answer_id` everywhere. Two live
+ * consequences, one of them already shipped:
+ *
+ *  - the findings transcript keys its rows on `a.answer_id`, which is
+ *    `undefined` for every row today;
+ *  - RESUME rehydrates answers from this route, and `handleSaveScore` looks up
+ *    `answer_id` before PATCHing. Undefined means it returns early — no
+ *    request, no error, the interviewer's rating silently dropped.
+ *
+ * Read `id ?? answer_id` rather than fixing it server-side alone: the frontend
+ * deploys to both tiers on merge and the agent-engine only on a tag, so for a
+ * window the running backend is whatever shipped last.
+ */
+export function normalizeSessionDetail(wire: SessionDetailWire): GetSessionResult {
+  const rawPlan = wire.plan
+  const plan: LivePlanQuestion[] = Array.isArray(rawPlan)
+    ? rawPlan
+    : Array.isArray(rawPlan?.items)
+      ? rawPlan.items
+      : []
+  const answers: LiveAnswer[] = (wire.answers ?? []).map((a) => ({
+    ...a,
+    answer_id: String(a.answer_id ?? a.id ?? ""),
+  }))
+  return {
+    session: {
+      session_id: wire.id,
+      frame: wire.frame,
+      candidate: wire.candidate_ref?.display_name
+        ? {
+            display_name: wire.candidate_ref.display_name,
+            external_id: wire.candidate_ref.external_id,
+          }
+        : undefined,
+      consent: wire.consent,
+      status: wire.status,
+      created_at: wire.created_at ?? undefined,
+      finalized_at: wire.finalized_at ?? undefined,
+    },
+    plan,
+    answers,
+    status: wire.status ?? "in_progress",
+    section_scores: wire.section_scores ?? null,
+    overall_score: wire.overall_score ?? null,
+    recommendation: wire.recommendation ?? null,
+    feedback: wire.feedback ?? null,
+    requisition_id: wire.requisition_id,
+    requisition_label: wire.requisition_label,
+    candidate_ref: wire.candidate_ref,
+  }
 }
 
 export type CreateLiveSessionPayload = {
@@ -323,7 +429,17 @@ export const liveInterviewService = {
 
   async finalize(sessionId: string): Promise<FinalizeResult> {
     const { data } = await agentApi.post<FinalizeResult>(`${BASE}/${sessionId}/finalize`)
-    return data
+    // Finalize serializes its answers through the same `_answer_to_dict` as GET
+    // detail, so they arrive keyed `id`, not `answer_id` — which is what the
+    // findings transcript keys its rows on. Every row's React key is currently
+    // `undefined`. Same coercion as normalizeSessionDetail, for the same reason.
+    return {
+      ...data,
+      answers: (data.answers ?? []).map((a) => ({
+        ...a,
+        answer_id: String(a.answer_id ?? (a as { id?: string }).id ?? ""),
+      })),
+    }
   },
 
   async listSessions(params: ListSessionsParams = {}): Promise<ListSessionsResult> {
@@ -349,7 +465,7 @@ export const liveInterviewService = {
   },
 
   async getSession(sessionId: string): Promise<GetSessionResult> {
-    const { data } = await agentApi.get<GetSessionResult>(`${BASE}/${sessionId}`)
-    return data
+    const { data } = await agentApi.get<SessionDetailWire>(`${BASE}/${sessionId}`)
+    return normalizeSessionDetail(data)
   },
 }

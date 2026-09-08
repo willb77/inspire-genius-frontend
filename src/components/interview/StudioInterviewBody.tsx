@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label"
 
 import ConsentGate from "@/components/interview/ConsentGate"
 import AnswerScorePanel from "@/components/interview/AnswerScorePanel"
+import PastInterviewsPanel from "@/components/interview/PastInterviewsPanel"
 import StudioQuestionBuilder from "@/components/interview/StudioQuestionBuilder"
 import { useAuth } from "@/context/useAuth"
 import {
@@ -45,7 +46,11 @@ import {
   useSubmitLiveAnswer,
 } from "@/hooks/interview/useLiveInterview"
 import type { InterviewFrame } from "@/services/interview/practice.service"
-import { normalizeSectionScores } from "@/services/interview/live.service"
+import { liveInterviewService, normalizeSectionScores } from "@/services/interview/live.service"
+import {
+  finalizeResultFromDetail,
+  rehydrateSession,
+} from "@/services/interview/liveSessionResume"
 import type {
   FinalizeResult,
   LiveAnswer,
@@ -142,6 +147,9 @@ export default function StudioInterviewBody() {
   const [finalizeResult, setFinalizeResult] = useState<FinalizeResult | null>(null)
   const [exporting, setExporting] = useState<"word" | "pdf" | "save" | null>(null)
   const [finalizeError, setFinalizeError] = useState<string | null>(null)
+  /** A reopened session is REVIEW ONLY — never re-finalized, never re-rated. */
+  const [readOnly, setReadOnly] = useState(false)
+  const [openingSessionId, setOpeningSessionId] = useState<string | null>(null)
 
   const createSession = useCreateLiveSession()
   const submitAnswer = useSubmitLiveAnswer()
@@ -274,6 +282,16 @@ export default function StudioInterviewBody() {
 
   const finish = async () => {
     if (!sessionId) return
+    // A reopened interview is a record, not a draft.
+    //
+    // This line is UNREACHABLE from the UI — the findings screen renders no
+    // control that calls finish() once a result is present, which is asserted
+    // by "offers no control that would re-score it". Mutation-testing it
+    // confirms as much: deleting it fails nothing. It is kept deliberately, as
+    // defence for a later edit that adds a re-score control to this screen, and
+    // it is recorded here as UNCOVERED rather than left looking tested. The
+    // enforcing guard is the backend's 409, which has its own test.
+    if (readOnly) return
     setPhase("findings")
     setFinalizeError(null)
     try {
@@ -307,11 +325,78 @@ export default function StudioInterviewBody() {
     void finish()
   }
 
+
+  // ── Past interviews: resume + reopen ─────────────────────────────
+  /**
+   * Open a stored session. `resume` continues an in-progress interview at its
+   * first unanswered question; `reopen` shows a finished one read-only.
+   *
+   * A reopened session is NEVER re-finalized. The roll-up is the record of a
+   * decision already made about a real candidate, and re-running it against
+   * today's answers could produce a different number for an interview that has
+   * already been acted on. The backend refuses with a 409; this is the client
+   * keeping the same rule rather than relying on being told.
+   */
+  const openSession = async (sid: string, mode: "resume" | "reopen") => {
+    setOpeningSessionId(sid)
+    try {
+      const detail = await liveInterviewService.getSession(sid)
+      const fallbackName =
+        detail.candidate_ref?.display_name?.trim() ||
+        (detail.candidate_ref?.candidate_hash
+          ? `Candidate ${detail.candidate_ref.candidate_hash.slice(0, 8)}`
+          : "Candidate not recorded")
+
+      setSessionId(sid)
+      setFrame(detail.session.frame ?? null)
+      setParticipant(
+        detail.session.candidate ?? {
+          display_name: fallbackName,
+          external_id: detail.candidate_ref?.external_id,
+        },
+      )
+      setConsent(detail.session.consent ?? null)
+      setFinalizeError(null)
+
+      if (mode === "reopen" || detail.status !== "in_progress") {
+        setReadOnly(true)
+        setFinalizeResult(finalizeResultFromDetail(detail))
+        setPlan(detail.plan)
+        setPhase("findings")
+        return
+      }
+
+      const rehydrated = rehydrateSession(detail)
+      if (rehydrated.plan.length === 0) {
+        // The plan column is what makes an interview resumable. Empty means the
+        // remaining questions are not recoverable, and dropping the interviewer
+        // into an empty interview screen would look like a loading bug.
+        toast.error("That interview has no recorded question plan, so it cannot be resumed.")
+        return
+      }
+      setReadOnly(false)
+      setPlan(rehydrated.plan)
+      setAnswers(rehydrated.answers)
+      setIdx(rehydrated.startIndex)
+      setFinalizeResult(null)
+      setPhase("interview")
+      if (rehydrated.complete) {
+        toast.info("Every question in this interview has been answered — review and finish it.")
+      }
+    } catch (e) {
+      toast.error(
+        e instanceof Error && e.message ? e.message : "Could not open that interview.",
+      )
+    } finally {
+      setOpeningSessionId(null)
+    }
+  }
+
   const restart = () => {
     setPhase("setup"); setSetupStep("consent")
     setConsent(null); setParticipant(null); setFrame(null)
     setSessionId(null); setPlan([]); setIdx(0); setAnswers({}); setFinalizeResult(null)
-    setFinalizeError(null)
+    setFinalizeError(null); setReadOnly(false)
     setEmployer(null); setTailoring(null)
   }
 
@@ -348,6 +433,14 @@ export default function StudioInterviewBody() {
             suggestions, your authoritative rating.
           </p>
         </header>
+        {setupStep === "consent" && (
+          <PastInterviewsPanel
+            surface="studio"
+            busySessionId={openingSessionId}
+            onResume={(sid) => void openSession(sid, "resume")}
+            onReopen={(sid) => void openSession(sid, "reopen")}
+          />
+        )}
         {setupStep === "consent" && <ConsentGate onProceed={handleConsent} />}
         {setupStep === "participant" && <ParticipantForm onConfirm={handleParticipant} />}
         {setupStep === "questions" && (
@@ -410,6 +503,18 @@ export default function StudioInterviewBody() {
           </Card>
         ) : (
           <>
+            {readOnly && (
+              <Card className="border-slate-300 bg-slate-50">
+                <CardContent className="py-4 text-sm text-slate-700">
+                  <p className="font-medium text-slate-900">Reopened for review — read only.</p>
+                  <p className="mt-1 text-xs">
+                    This is the interview as it was recorded. Its score is the one the decision was
+                    made on and is not recalculated; ratings cannot be changed and it cannot be
+                    finalized again. Exporting it again is fine.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader><CardTitle className="text-base">{isHiring ? "Recommendation" : "Overall assessment"}</CardTitle></CardHeader>
               <CardContent className="space-y-2">
