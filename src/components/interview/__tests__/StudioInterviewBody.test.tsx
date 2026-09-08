@@ -26,6 +26,35 @@ const scoreMutate = jest.fn()
 const finalizeMutate = jest.fn()
 const toastError = jest.fn()
 
+// ── IS-C Lane B ──────────────────────────────────────────────────
+// The setup screen now mounts PastInterviewsPanel, which reads the sessions
+// list. Mocked here rather than wrapped in a QueryClientProvider: the panel has
+// its own suite, and these tests are about this component.
+const useLiveSessions = jest.fn()
+const abandonMutate = jest.fn()
+const getSession = jest.fn()
+
+jest.mock("@/hooks/interview/useLiveSessions", () => ({
+  useLiveSessions: (...a: unknown[]) => useLiveSessions(...a),
+  useAbandonLiveSession: () => ({ mutateAsync: abandonMutate }),
+}))
+
+jest.mock("@/services/interview/live.service", () => {
+  const actual = jest.requireActual("@/services/interview/live.service")
+  return {
+    ...actual,
+    liveInterviewService: { ...actual.liveInterviewService, getSession: (...a: unknown[]) => getSession(...a) },
+  }
+})
+
+const EMPTY_SESSIONS = {
+  data: { sessions: [], total: 0, limit: 25, offset: 0, org_scope_applied: true },
+  isLoading: false,
+  isFetching: false,
+  error: null,
+  refetch: jest.fn(),
+}
+
 jest.mock("sonner", () => ({
   toast: { error: (...a: unknown[]) => toastError(...a), success: jest.fn() },
 }))
@@ -113,6 +142,7 @@ beforeEach(() => {
   createMutate.mockResolvedValue({ session_id: "s1", plan: PLAN })
   submitMutate.mockResolvedValue({ answer_id: "a1", suggested_score: 4, star_evidence: null })
   scoreMutate.mockResolvedValue({ answer_id: "a1", final_score: 5, interviewer_notes: "excellent" })
+  useLiveSessions.mockReturnValue(EMPTY_SESSIONS)
   finalizeMutate.mockResolvedValue(BASE_FINALIZE)
 })
 
@@ -425,5 +455,134 @@ describe("the inherited pipeline still works in the fork", () => {
     expect(screen.getByRole("button", { name: /pdf/i })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /^save$/i })).toBeInTheDocument()
     confirmSpy.mockRestore()
+  })
+})
+
+/**
+ * IS-C Lane B in the fork. Same reason the IS-F13 pin lives in both files: the
+ * two bodies were forked verbatim, resume and reopen were added to both in one
+ * change, and only a test in each catches the next fix landing on one of them.
+ */
+describe("past interviews — resume and reopen (fork)", () => {
+  const LIST = (over: Record<string, unknown> = {}) => ({
+    data: {
+      sessions: [
+        {
+          id: "s-old",
+          interviewer_sub: "sub-1",
+          candidate_ref: { display_name: "Participant A", candidate_hash: "abcdef1234567890" },
+          frame: { roleTitle: "Ops Lead" },
+          status: "in_progress",
+          created_at: "2026-09-01T10:00:00Z",
+          ...over,
+        },
+      ],
+      total: 1,
+      limit: 25,
+      offset: 0,
+      org_scope_applied: true,
+    },
+    isLoading: false,
+    isFetching: false,
+    error: null,
+    refetch: jest.fn(),
+  })
+
+  const DETAIL = (over: Record<string, unknown> = {}) => ({
+    session: {
+      session_id: "s-old",
+      frame: { roleTitle: "Ops Lead", company: "Acme" },
+      candidate: { display_name: "Participant A" },
+      consent: { captured: true, mode: "no_audio" },
+      status: "in_progress",
+    },
+    plan: PLAN,
+    answers: [],
+    status: "in_progress",
+    section_scores: null,
+    overall_score: null,
+    recommendation: null,
+    candidate_ref: { display_name: "Participant A", candidate_hash: "abcdef1234567890" },
+    ...over,
+  })
+
+  it("resumes an unfinished Studio interview at its first unanswered question", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST())
+    getSession.mockResolvedValue(DETAIL())
+    render(<StudioInterviewBody />)
+
+    await user.click(screen.getByRole("button", { name: /resume/i }))
+
+    expect(await screen.findByText("panel 1/1: What drew you here?")).toBeInTheDocument()
+    // Resuming must not create a second session for the same interview.
+    expect(createMutate).not.toHaveBeenCalled()
+  })
+
+  it("keeps the rehydrated answer id so a resumed rating is actually saved", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST())
+    getSession.mockResolvedValue(
+      DETAIL({
+        answers: [
+          {
+            answer_id: "a-old-1",
+            competency_id: "q1",
+            question_text: "What drew you here?",
+            captured_answer: "…",
+            suggested_score: 4,
+            star_evidence: null,
+            final_score: 4,
+            final_source: null,
+          },
+        ],
+      }),
+    )
+    render(<StudioInterviewBody />)
+    await user.click(screen.getByRole("button", { name: /resume/i }))
+    await screen.findByText("panel 1/1: What drew you here?")
+
+    await user.click(screen.getByText("mock-save-score"))
+    await waitFor(() =>
+      expect(scoreMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionId: "s-old", answerId: "a-old-1" }),
+      ),
+    )
+  })
+
+  it("reopens a finished Studio interview read-only and never re-finalizes it", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
+    getSession.mockResolvedValue(
+      DETAIL({
+        status: "finalized",
+        overall_score: 5,
+        recommendation: "Advance",
+        section_scores: { warm_up: { mean: 5 } },
+      }),
+    )
+    render(<StudioInterviewBody />)
+
+    await user.click(screen.getByRole("button", { name: /reopen/i }))
+
+    expect(await screen.findByText(/reopened for review/i)).toBeInTheDocument()
+    expect(screen.getByText("Advance")).toBeInTheDocument()
+    expect(finalizeMutate).not.toHaveBeenCalled()
+  })
+
+  it("shows no score at all for an abandoned interview rather than 0.00", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST({ status: "abandoned" }))
+    getSession.mockResolvedValue(DETAIL({ status: "abandoned" }))
+    render(<StudioInterviewBody />)
+
+    await user.click(screen.getByRole("button", { name: /reopen/i }))
+
+    await screen.findByText(/reopened for review/i)
+    // "Overall score: 0.00 / 5" on an interview nobody finished reads as a
+    // candidate who scored zero.
+    const scoreLine = screen.getAllByText(/Overall score:/i)[0].textContent ?? ""
+    expect(scoreLine).toContain("—")
+    expect(scoreLine).not.toContain("0.00")
   })
 })

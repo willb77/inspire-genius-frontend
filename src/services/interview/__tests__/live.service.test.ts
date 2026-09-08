@@ -133,16 +133,59 @@ describe("liveInterviewService — routes and verbs", () => {
     expect(out.recommendation).toBe("hire")
   })
 
-  it("getSession GETs the session and returns its answers", async () => {
+  /**
+   * This fixture was authored from the service's TYPE, not from the route.
+   *
+   * It sent `{session, answers}` — the finalize shape — and passed, because
+   * the type said the same wrong thing the fixture did. `GET /live/session/{id}`
+   * actually returns `_session_to_dict(session, include_answers=True)`: the
+   * session's own fields at the TOP level, `answers` nested, and the answer id
+   * spelled `id` rather than `answer_id`. Nothing consumed `getSession` until
+   * IS-C Lane B, so the disagreement never surfaced.
+   *
+   * Rewritten to what the server sends. A test written from the type it is
+   * testing can only ever confirm the type agrees with itself.
+   */
+  it("getSession reads the FLAT wire shape the route actually returns", async () => {
     get.mockResolvedValue({
-      data: { session: { session_id: SID, status: "in_progress" }, answers: [{ answer_id: AID }] },
+      data: {
+        id: SID,
+        status: "in_progress",
+        frame: { roleTitle: "Regional Manager" },
+        plan: { items: [{ competency_id: "c1", section: "vision", question: "Q1" }] },
+        answers: [{ id: AID, competency_id: "c1", captured_answer: "…", suggested_score: 3 }],
+      },
     })
 
     const out = await liveInterviewService.getSession(SID)
 
     expect(get).toHaveBeenCalledWith(`${BASE}/${SID}`)
-    expect(out.session.status).toBe("in_progress")
+    expect(out.session.session_id).toBe(SID)
+    expect(out.status).toBe("in_progress")
+    expect(out.plan).toHaveLength(1)
     expect(out.answers).toHaveLength(1)
+    // The id the rating PATCH needs, taken from the key the server sends.
+    expect(out.answers[0].answer_id).toBe(AID)
+  })
+
+  it("finalize gives its answers an answer_id too", async () => {
+    // Finalize serializes through the same `_answer_to_dict`, so its answers
+    // arrive keyed `id` — and the findings transcript keys its React rows on
+    // `answer_id`. Every row's key is `undefined` without this.
+    post.mockResolvedValue({
+      data: {
+        session: { session_id: SID },
+        answers: [{ id: AID, competency_id: "c1", captured_answer: "…" }],
+        section_scores: null,
+        overall_score: 4,
+        overall_mean: 4,
+        recommendation: "hire",
+      },
+    })
+
+    const out = await liveInterviewService.finalize(SID)
+
+    expect(out.answers[0].answer_id).toBe(AID)
   })
 })
 
