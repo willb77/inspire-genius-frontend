@@ -12,6 +12,7 @@ import {
   PortraitSkeleton,
 } from "@/components/lumen/portrait"
 import { SelfPortraitNarrative } from "@/pages/lumen/SelfPortraitNarrative"
+import { ProvenanceNote } from "@/components/shared/ProvenanceNote"
 
 /**
  * Stage 2 — "what am I actually like?"
@@ -124,10 +125,13 @@ export default function PortraitPage() {
         </Button>
       </header>
 
+      {/* Provenance, shown ALWAYS — see ProvenanceNote. */}
+      <ProvenanceNote sources={portrait.sources ?? {}} className="max-w-3xl" />
+
       <SelfPortraitNarrative portrait={portrait} showAsk={false} />
 
       {!portrait.prism ? (
-        <PortraitNoPrism title="No PRISM yet" headline={portrait.headline}>
+        <PortraitNoPrism title="What this is built on so far" headline={portrait.headline}>
           <Button asChild variant="outline" size="sm">
             <Link to={ROUTES.DIRECTION_SETTING.ESTABLISH}>
               Request or upload PRISM

@@ -174,7 +174,13 @@ describe("SelfPortrait", () => {
       coverage: "This read rests on your résumé alone.",
     })
     render(<SelfPortrait />)
-    expect(screen.getByText("No PRISM profile yet")).toBeInTheDocument()
+    // The card names what the read IS built on. Leading on the absence
+    // ("No PRISM profile yet") told the user their portrait was the broken one.
+    expect(screen.getByText("What this is built on so far")).toBeInTheDocument()
+    // Provenance renders in EVERY state, so it is present here and carries the
+    // résumé as the source rather than PRISM.
+    expect(screen.getByTestId("provenance-note")).toHaveTextContent(/your résumé/)
+    expect(screen.getByTestId("provenance-note")).not.toHaveTextContent(/measured from/i)
     expect(screen.queryByText(/leads$/)).not.toBeInTheDocument()
     // The coverage line moved off this page with "What this is built from".
     expect(screen.queryByText(/rests on your résumé alone/)).not.toBeInTheDocument()

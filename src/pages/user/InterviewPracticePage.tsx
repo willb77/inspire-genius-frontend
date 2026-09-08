@@ -39,6 +39,7 @@ import { usePracticeQuestions } from "@/hooks/interview/usePracticeQuestions"
 import { useSpeechDictation } from "@/hooks/interview/useSpeechDictation"
 import { useMeridianJob, type ChatJob } from "@/hooks/agents/useMeridianJob"
 import { useMeridianVoice } from "@/hooks/interview/useMeridianVoice"
+import { ProvenanceNote, type ProvenanceSources } from "@/components/shared/ProvenanceNote"
 import {
   buildCoachMessage,
   buildFindingsMessage,
@@ -108,7 +109,10 @@ export default function InterviewPracticePage() {
   // On by default (their own data); a privacy-conscious user can turn it off.
   const [personalize, setPersonalize] = useState(true)
   const [personalContext, setPersonalContext] = useState("")
-  const [personalizedApplied, setPersonalizedApplied] = useState(false)
+  // The practice-context call already returns hasPrism/hasResume; the page used
+  // to drop them. They drive the provenance line, which renders in every state
+  // rather than only when there is something to boast about.
+  const [practiceSources, setPracticeSources] = useState<ProvenanceSources>({})
   const [starting, setStarting] = useState(false)
   // Job-aware tailoring: when the frame has a role/job title, questions are
   // fetched from the LLM-backed tailored endpoint instead of the static bank.
@@ -232,12 +236,14 @@ export default function InterviewPracticePage() {
       try {
         const res = await practiceService.getPracticeContext()
         pctx = res.enabled ? (res.personalContext || "") : ""
+        setPracticeSources(
+          res.enabled ? { prism: res.hasPrism, resume: res.hasResume } : {},
+        )
       } catch {
         pctx = "" // never block the interview on the personalization fetch
       }
     }
     setPersonalContext(pctx)
-    setPersonalizedApplied(Boolean(pctx))
     setFrame(f); setPlan(buildInterviewPlan(bank, f)); setIdx(0)
     setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null)
     setPhase("interview"); setStarting(false)
@@ -292,7 +298,8 @@ export default function InterviewPracticePage() {
   const restart = () => {
     setPhase("setup"); setFrame(null); setPlan([]); setIdx(0)
     setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null); spokenRef.current = null
-    setPersonalContext(""); setPersonalizedApplied(false); setTailoredApplied(false)
+    setPersonalContext(""); setTailoredApplied(false)
+    setPracticeSources({})
     voice.stop()
   }
 
@@ -488,9 +495,14 @@ export default function InterviewPracticePage() {
                     : `${employerPack.questionCount} sector-style questions`}
                 </p>
               )}
-              {personalizedApplied && (
-                <p className="flex items-center gap-1 text-xs text-indigo-600">
-                  <Sparkles className="h-3 w-3" /> Personalized to your profile
+              {/* Provenance, in every state. This slot used to render only when
+                  personalization HAD something to apply, so a user with no
+                  PRISM was told nothing about what their coaching rested on. */}
+              {personalize ? (
+                <ProvenanceNote sources={practiceSources} />
+              ) : (
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Running on the question bank only — personalization is off.
                 </p>
               )}
             </div>

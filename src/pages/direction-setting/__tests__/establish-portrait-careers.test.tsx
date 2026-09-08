@@ -322,7 +322,8 @@ describe("PortraitPage", () => {
       coverage: "This read rests on your résumé alone.",
     })
     renderPage(<PortraitPage />)
-    expect(screen.getByText("No PRISM yet")).toBeInTheDocument()
+    expect(screen.getByText("What this is built on so far")).toBeInTheDocument()
+    expect(screen.getByTestId("provenance-note")).toHaveTextContent(/your résumé/)
     // The coverage readout left with the source-coverage card.
     expect(screen.queryByText(/rests on your résumé alone/)).not.toBeInTheDocument()
     expect(
