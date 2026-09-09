@@ -17,6 +17,7 @@ import { downloadBlob } from "@/lib/exportTranscript"
 import { renderHtmlToPdf } from "@/lib/exportTranscript/renderPdf"
 import { copyReportLink, emailReportLink } from "@/lib/honor/shareReportLink"
 import { useWriteResume } from "@/hooks/job-fit/useWriteResume"
+import { useSaveFitReport } from "@/hooks/job-fit/useFitHistory"
 import {
   buildFitReportHtml,
   buildFitReportMarkdown,
@@ -37,8 +38,6 @@ const EXPORT_FORMATS: Array<{ fmt: ExportFormat; label: string }> = [
   { fmt: "html", label: "Web page (.html)" },
   { fmt: "txt", label: "Text (.txt)" },
 ]
-
-const SAVED_KEY = "ig.jobfit.savedReports"
 
 /** Print a rendered PDF blob via a hidden iframe (keeps the report isolated). */
 function printBlob(blob: Blob) {
@@ -65,6 +64,9 @@ function printBlob(blob: Blob) {
  * Honor-Evaluate-style action toolbar for a Job Fit result: Download PDF,
  * Export As, Print, Save, Email, Copy link, and Write Résumé. All copy is
  * NON-BINARY. Reuses the shared export/share utils — no new dependencies.
+ *
+ * Save writes a real row (POST /v1/blueprint/fit/history, JS-3) with the
+ * breakdown as rendered; it used to write browser storage and report success.
  */
 export function FitActionsBar({ data, overview }: { data: FitDetail; overview?: string }) {
   const pct = fitPercent(data.fitScore, data.totalVariation, data.perDimension.length || 22)
@@ -72,6 +74,7 @@ export function FitActionsBar({ data, overview }: { data: FitDetail; overview?: 
   const [busy, setBusy] = useState<null | "pdf" | "print" | "export">(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [saved, setSaved] = useState(false)
+  const saveReport = useSaveFitReport()
   const writeResume = useWriteResume()
   const [showResume, setShowResume] = useState(false)
 
@@ -123,24 +126,20 @@ export function FitActionsBar({ data, overview }: { data: FitDetail; overview?: 
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
+    if (saveReport.isPending) return
     try {
-      const raw = localStorage.getItem(SAVED_KEY)
-      const list: unknown[] = raw ? JSON.parse(raw) : []
-      const entry = {
-        jobId: data.jobId,
+      await saveReport.mutateAsync({
+        jobId: data.jobId || null,
         roleTitle: data.roleTitle,
         fitScore: pct,
-        overview: overview || "",
-        savedAt: new Date().toISOString(),
-        url: window.location.href,
-      }
-      const next = [entry, ...list.filter((e) => (e as { jobId?: string })?.jobId !== data.jobId)].slice(0, 50)
-      localStorage.setItem(SAVED_KEY, JSON.stringify(next))
+        tier: data.tier,
+        payload: { ...data, overview: overview || "" },
+      })
       setSaved(true)
       toast.success("Saved to your fit reports.")
     } catch {
-      toast.error("Could not save this report.")
+      /* the hook already toasted the failure */
     }
   }
 
@@ -248,8 +247,14 @@ export function FitActionsBar({ data, overview }: { data: FitDetail; overview?: 
           Print
         </button>
 
-        <button type="button" onClick={handleSave} className={BTN} title="Save this fit report to revisit later">
-          <Save className="h-4 w-4" />
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saveReport.isPending}
+          className={BTN}
+          title="Save this fit report to revisit later"
+        >
+          {saveReport.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saved ? "Saved" : "Save"}
         </button>
 

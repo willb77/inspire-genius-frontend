@@ -278,6 +278,10 @@ export const ROUTES = {
     DETAIL: "/vertical/job-fit/fit/:jobId",
     /** Build the fit-detail path for a concrete role id. */
     detail: (jobId: string) => `/vertical/job-fit/fit/${jobId}`,
+    /** Route pattern for one saved / recorded fit report (JS-3 history). */
+    HISTORY: "/vertical/job-fit/history/:snapshotId",
+    /** Build the path that reopens one fit report. */
+    history: (snapshotId: string) => `/vertical/job-fit/history/${snapshotId}`,
   },
   // Knowledge Continuity vertical (flag-gated by user_preferences.enabled_verticals)
   KNOWLEDGE_CONTINUITY: {

@@ -79,4 +79,24 @@ describe("fitService", () => {
     const [url] = mockApi.post.mock.calls[0]
     expect(url).not.toContain("/v1/targets")
   })
+
+  // ── JS-3 — fit history ──
+  test("getHistory GETs /v1/blueprint/fit/history", async () => {
+    mockApi.get.mockResolvedValueOnce({ data: { data: [] } })
+    await fitService.getHistory()
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/fit/history")
+  })
+
+  test("getSnapshot GETs the snapshot route with the id encoded", async () => {
+    mockApi.get.mockResolvedValueOnce({ data: { data: { id: "a b" } } })
+    await fitService.getSnapshot("a b")
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/fit/history/snapshot/a%20b")
+  })
+
+  test("saveSnapshot POSTs the body to /v1/blueprint/fit/history", async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { data: { id: "s1" } } })
+    const body = { jobId: "j1", roleTitle: "Ops", fitScore: 70, payload: { overview: "x" } }
+    await fitService.saveSnapshot(body)
+    expect(mockApi.post).toHaveBeenCalledWith("/v1/blueprint/fit/history", body)
+  })
 })
