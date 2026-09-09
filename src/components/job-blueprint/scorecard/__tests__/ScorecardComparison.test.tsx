@@ -18,7 +18,7 @@ const mockScorecards: InterviewScorecard[] = [
     aptitudeScores: [],
     coreTraitScores: [],
     grandTotal: 48,
-    recommendation: 'strong-hire',
+    recommendation: 'strong-alignment',
     notes: '',
     completedAt: '2026-01-15T12:00:00Z',
   },
@@ -33,7 +33,7 @@ const mockScorecards: InterviewScorecard[] = [
     aptitudeScores: [],
     coreTraitScores: [],
     grandTotal: 30,
-    recommendation: 'conditional',
+    recommendation: 'partial-alignment',
     notes: '',
     completedAt: '2026-01-16T12:00:00Z',
   },
@@ -59,8 +59,8 @@ describe('ScorecardComparison', () => {
 
   it('displays recommendation labels', () => {
     render(<ScorecardComparison scorecards={mockScorecards} />)
-    expect(screen.getByText('Strong Hire')).toBeInTheDocument()
-    expect(screen.getByText('Conditional')).toBeInTheDocument()
+    expect(screen.getByText('Strong evidence of alignment')).toBeInTheDocument()
+    expect(screen.getByText('Partial alignment, with clear areas to develop')).toBeInTheDocument()
   })
 
   it('sorts by grand total descending', () => {

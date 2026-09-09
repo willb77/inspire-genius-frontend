@@ -21,13 +21,23 @@ export const VARIATION_THRESHOLDS: { min: number; max: number; tier: Classificat
   { min: 301, max: Infinity, tier: 'misalignment', label: 'Misalignment', color: '#E53E3E' },
 ]
 
-/** Scorecard grand total interpretation */
+/**
+ * Scorecard grand total interpretation — what the interview evidence shows
+ * against the benchmark. Never a hiring verdict: Job Studio gives the hiring
+ * manager information for a decision and does not make one. Keys and labels
+ * mirror ig_blueprint_scoring.tables.SCORECARD_BANDS and the User's Guide.
+ */
 export const SCORECARD_THRESHOLDS: { min: number; max: number; recommendation: ScorecardRecommendation; label: string; color: string }[] = [
-  { min: 45, max: 55, recommendation: 'strong-hire', label: 'Strong Hire', color: '#38A169' },
-  { min: 35, max: 44, recommendation: 'hire-with-plan', label: 'Hire with Development Plan', color: '#3182CE' },
-  { min: 25, max: 34, recommendation: 'conditional', label: 'Conditional', color: '#ECC94B' },
-  { min: 0, max: 24, recommendation: 'do-not-hire', label: 'Do Not Hire', color: '#E53E3E' },
+  { min: 45, max: 55, recommendation: 'strong-alignment', label: 'Strong evidence of alignment', color: '#38A169' },
+  { min: 35, max: 44, recommendation: 'good-alignment', label: 'Good alignment, with development areas', color: '#3182CE' },
+  { min: 25, max: 34, recommendation: 'partial-alignment', label: 'Partial alignment, with clear areas to develop', color: '#ECC94B' },
+  { min: 0, max: 24, recommendation: 'limited-alignment', label: 'Limited alignment on the evidence gathered', color: '#E53E3E' },
 ]
+
+/** Reader-facing label for a scorecard band, from the single source above. */
+export const SCORECARD_BAND_LABELS: Record<ScorecardRecommendation, string> = Object.fromEntries(
+  SCORECARD_THRESHOLDS.map((t) => [t.recommendation, t.label]),
+) as Record<ScorecardRecommendation, string>
 
 /** Pipeline step display config */
 export const PIPELINE_STEP_CONFIG: Record<string, { label: string; color: string; bgClass: string }> = {
