@@ -280,6 +280,7 @@ const JobBlueprintDashboardPage = React.lazy(() => import("@/pages/job-blueprint
 const JobBlueprintAuthoringPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintAuthoringPage"));
 const JobBlueprintDnaDetailPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintDnaDetailPage"));
 const JobBlueprintCandidatesPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintCandidatesPage"));
+const JobBlueprintCandidateDetailPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintCandidateDetailPage"));
 const JobBlueprintPipelinePage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintPipelinePage"));
 const JobBlueprintScorecardsPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintScorecardsPage"));
 const JobBlueprintAnalyticsPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintAnalyticsPage"));
@@ -843,6 +844,7 @@ export const routes: RouteObject[] = [
           { path: "authoring", element: withSuspense(<JobBlueprintAuthoringPage />) },
           { path: "dna/:id", element: withSuspense(<JobBlueprintDnaDetailPage />) },
           { path: "candidates", element: withSuspense(<JobBlueprintCandidatesPage />) },
+          { path: "candidates/:candidateId", element: withSuspense(<JobBlueprintCandidateDetailPage />) },
           { path: "pipeline", element: withSuspense(<JobBlueprintPipelinePage />) },
           { path: "scorecards", element: withSuspense(<JobBlueprintScorecardsPage />) },
           { path: "analytics", element: withSuspense(<JobBlueprintAnalyticsPage />) },

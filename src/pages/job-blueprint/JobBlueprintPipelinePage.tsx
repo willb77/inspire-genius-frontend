@@ -1,5 +1,7 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { ROUTES } from "@/constants/routes"
 import { GitBranch } from "lucide-react"
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
 import { usePipeline, useAdvanceCandidate } from "@/hooks/job-blueprint/useTriage"
@@ -15,11 +17,14 @@ import {
 /**
  * Hiring pipeline board for a selected role, reading the live triage pipeline
  * (`GET /v1/blueprint/triage/pipeline/:jobId`). Advancing a candidate posts to
- * `POST /v1/blueprint/triage/advance/:id` (useAdvanceCandidate).
+ * `POST /v1/blueprint/triage/advance/:id` (useAdvanceCandidate). Clicking a
+ * card opens the candidate's detail page (it used to raise an info toast that
+ * acted on nothing).
  */
 export default function JobBlueprintPipelinePage() {
   const { data: jobDnas, isLoading: loadingJobs } = useJobDnaList()
   const [jobId, setJobId] = useState("")
+  const navigate = useNavigate()
 
   const { data: candidates, isLoading, isError, refetch } = usePipeline(jobId)
   const advance = useAdvanceCandidate()
@@ -60,7 +65,7 @@ export default function JobBlueprintPipelinePage() {
       ) : (
         <PipelineDashboard
           candidates={candidates}
-          onCandidateClick={(c) => toast.info(`${c.name} — ${c.status}`)}
+          onCandidateClick={(c) => navigate(ROUTES.JOB_DNA.candidateDetail(c.id))}
           onAdvance={handleAdvance}
         />
       )}
