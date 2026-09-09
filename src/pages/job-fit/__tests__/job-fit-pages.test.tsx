@@ -19,6 +19,12 @@ jest.mock("@/hooks/job-fit/useFitMatches", () => ({
 }))
 jest.mock("@/hooks/job-fit/useFitDetail", () => ({ useFitDetail: () => mockUseFitDetail() }))
 jest.mock("@/hooks/job-fit/useFitPathway", () => ({ useFitPathway: () => mockUseFitPathway() }))
+// JS-3 — the matches page mounts the history panel; keep it quiet here.
+jest.mock("@/hooks/job-fit/useFitHistory", () => ({
+  useFitHistory: () => ({ data: [], isLoading: false, isError: false }),
+  useSaveFitReport: () => ({ mutateAsync: jest.fn(), isPending: false }),
+  useFitSnapshot: () => ({ data: undefined, isLoading: false, isError: false }),
+}))
 
 // recharts ResponsiveContainer renders nothing at 0×0 in jsdom; stub the radar
 // so FitDetailPage's chart branch renders without noise.

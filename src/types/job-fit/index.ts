@@ -143,6 +143,39 @@ export type FitTargetRequest = {
   roleTitle?: string
 }
 
+// ── Fit history (JS-3) — `/v1/blueprint/fit/history*` ─────────────────────────
+
+/** Where a history row came from. */
+export type FitSnapshotSource = 'matches' | 'detail' | 'target' | 'saved'
+
+/** One row of the person's fit history, as listed (no payload). */
+export type FitSnapshotSummary = {
+  id: string
+  source: FitSnapshotSource
+  jobId: string | null
+  roleTitle: string
+  fitScore: number | null
+  tier: string | null
+  engineVersion: string
+  computedAt: string
+}
+
+/** One row with the response as it was served — a FitDetail, a FitMatch list, or a saved blob. */
+export type FitSnapshot = FitSnapshotSummary & {
+  payload: FitDetail | FitMatch[] | Record<string, unknown>
+}
+
+/** Body of `POST /v1/blueprint/fit/history` — "Save to your fit reports". */
+export type FitSnapshotSaveBody = {
+  jobId?: string | null
+  roleTitle?: string
+  fitScore?: number | null
+  tier?: string | null
+  payload?: FitDetail | Record<string, unknown>
+  /** Only the one-time localStorage import sets this, to keep the original save date. */
+  computedAt?: string
+}
+
 // ── Fit narration (agent-engine explain-fit) — FLAT responses, not enveloped ──
 
 /** One gap explained in plain language with how to close it. */
