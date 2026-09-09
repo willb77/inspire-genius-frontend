@@ -8,6 +8,8 @@ import type {
   DimensionBenchmark,
   JobDNA,
   BlueprintStats,
+  Candidate,
+  InterviewScorecard,
 } from "@/types/job-blueprint"
 
 /* ── Router: keep everything real except useNavigate ── */
@@ -53,6 +55,7 @@ import JobBlueprintDashboardPage from "../JobBlueprintDashboardPage"
 import JobBlueprintAuthoringPage from "../JobBlueprintAuthoringPage"
 import JobBlueprintDnaDetailPage from "../JobBlueprintDnaDetailPage"
 import JobBlueprintCandidatesPage from "../JobBlueprintCandidatesPage"
+import JobBlueprintCandidateDetailPage from "../JobBlueprintCandidateDetailPage"
 import JobBlueprintPipelinePage from "../JobBlueprintPipelinePage"
 import JobBlueprintScorecardsPage from "../JobBlueprintScorecardsPage"
 import JobBlueprintAnalyticsPage from "../JobBlueprintAnalyticsPage"
@@ -96,6 +99,39 @@ const STATS: BlueprintStats = {
   hiresThisMonth: 1,
 }
 
+const CANDIDATE: Candidate = {
+  id: "cand-1",
+  jobId: "j1",
+  name: "CAND-R01@BP-PEOPLE-MGR",
+  email: "",
+  code: "CAND-R01@BP-PEOPLE-MGR",
+  status: "classified",
+  assessmentId: null,
+  prismScores: null,
+  variationScores: null,
+  classificationTier: "potential-fit",
+  scorecardId: null,
+  insightPackage: null,
+  createdAt: "2026-07-01T00:00:00Z",
+  updatedAt: "2026-07-01T00:00:00Z",
+}
+
+const SCORECARD: InterviewScorecard = {
+  id: "sc-1",
+  candidateId: "cand-1",
+  jobId: "j1",
+  interviewerId: "",
+  interviewDate: "2026-07-02",
+  behaviorScores: [],
+  counterProductiveScores: [],
+  aptitudeScores: [],
+  coreTraitScores: [],
+  grandTotal: 41,
+  recommendation: "good-alignment",
+  notes: "",
+  completedAt: "2026-07-02T00:00:00Z",
+}
+
 function query<T>(data: T, over: Record<string, unknown> = {}) {
   return { data, isLoading: false, isError: false, refetch: jest.fn(), ...over }
 }
@@ -122,12 +158,20 @@ beforeEach(() => {
     isPending: false,
   })
   ;(triageHooks.usePipeline as jest.Mock).mockReturnValue(query([]))
+  ;(triageHooks.useCandidateDetail as jest.Mock).mockReturnValue(query(CANDIDATE))
   ;(triageHooks.useCandidateInsights as jest.Mock).mockReturnValue(query(undefined))
   ;(triageHooks.useAdvanceCandidate as jest.Mock).mockReturnValue({
     mutateAsync: jest.fn().mockResolvedValue({}),
     isPending: false,
   })
   ;(scorecardHooks.useInterviewGuide as jest.Mock).mockReturnValue(query(undefined))
+  ;(scorecardHooks.useScorecardDetail as jest.Mock).mockReturnValue(
+    query(undefined, { isError: true, error: { response: { status: 404 } } })
+  )
+  ;(scorecardHooks.useScorecardsFor as jest.Mock).mockReturnValue({ scorecards: [], missing: [], pending: false, failed: false })
+  ;(scorecardHooks.isNoScorecardError as jest.Mock).mockImplementation(
+    (err: { response?: { status: number } } | undefined) => err?.response?.status === 404
+  )
   ;(scorecardHooks.useSubmitScorecard as jest.Mock).mockReturnValue({
     mutateAsync: jest.fn().mockResolvedValue({}),
     isPending: false,
@@ -136,6 +180,8 @@ beforeEach(() => {
   ;(analyticsHooks.useBlueprintFunnel as jest.Mock).mockReturnValue(query([]))
   ;(analyticsHooks.useBlueprintAccuracy as jest.Mock).mockReturnValue(query(undefined))
   ;(analyticsHooks.useBlueprintTimeToFill as jest.Mock).mockReturnValue(query([]))
+  ;(analyticsHooks.useBlueprintHires as jest.Mock).mockReturnValue(query([]))
+  ;(analyticsHooks.useBlueprintActivity as jest.Mock).mockReturnValue(query([]))
 })
 
 describe("Dashboard", () => {
@@ -237,5 +283,146 @@ describe("Analytics", () => {
   test("no accuracy body at all → the empty state", () => {
     renderPage(<JobBlueprintAnalyticsPage />)
     expect(screen.getByText("No accuracy data yet.")).toBeInTheDocument()
+  })
+})
+
+// ── JS-4 — candidate detail, scorecard comparison, hires + activity panels ──
+
+describe("Candidate detail", () => {
+  function renderDetail() {
+    return render(
+      <MemoryRouter initialEntries={["/vertical/job-blueprint/candidates/cand-1"]}>
+        <Routes>
+          <Route path="/vertical/job-blueprint/candidates/:candidateId" element={<JobBlueprintCandidateDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    )
+  }
+
+  test("shows the blind code as the title, never a name field, and the honest states", () => {
+    renderDetail()
+    expect(screen.getByRole("heading", { name: "Candidate CAND-R01@BP-PEOPLE-MGR" })).toBeInTheDocument()
+    expect(screen.getByText(/identity is held in the blind map/i)).toBeInTheDocument()
+    expect(screen.queryByText(/email/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/has not been fit-scored yet/i)).toBeInTheDocument()
+    expect(screen.getByText(/No insight package has been generated/i)).toBeInTheDocument()
+    expect(screen.getByText(/No interview scorecard has been submitted/i)).toBeInTheDocument()
+    // reads went to the hooks with the route's id
+    expect(triageHooks.useCandidateDetail).toHaveBeenCalledWith("cand-1")
+    expect(scorecardHooks.useScorecardDetail).toHaveBeenCalledWith("cand-1")
+  })
+
+  test("renders the submitted scorecard's evidence summary when one exists", () => {
+    ;(scorecardHooks.useScorecardDetail as jest.Mock).mockReturnValue(query(SCORECARD))
+    renderDetail()
+    expect(screen.getByText("41")).toBeInTheDocument()
+    expect(screen.getByText("Good alignment, with development areas")).toBeInTheDocument()
+  })
+
+  test("a non-404 scorecard failure is an error, not the empty state", () => {
+    ;(scorecardHooks.useScorecardDetail as jest.Mock).mockReturnValue(
+      query(undefined, { isError: true, error: { response: { status: 500 } } })
+    )
+    renderDetail()
+    expect(screen.getByText(/Failed to load the scorecard/i)).toBeInTheDocument()
+    expect(screen.queryByText(/No interview scorecard has been submitted/i)).not.toBeInTheDocument()
+  })
+
+  test("advance reuses useAdvanceCandidate; a terminal step disables it", async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({ ...CANDIDATE, status: "insights-delivered" })
+    ;(triageHooks.useAdvanceCandidate as jest.Mock).mockReturnValue({ mutateAsync, isPending: false })
+    renderDetail()
+    fireEvent.click(screen.getByRole("button", { name: /advance to next stage/i }))
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith("cand-1"))
+  })
+
+  test("hired → nothing to advance to", () => {
+    ;(triageHooks.useCandidateDetail as jest.Mock).mockReturnValue(query({ ...CANDIDATE, status: "hired" }))
+    renderDetail()
+    expect(screen.getByRole("button", { name: /pipeline complete/i })).toBeDisabled()
+  })
+
+  test("load failure → error with a way back", () => {
+    ;(triageHooks.useCandidateDetail as jest.Mock).mockReturnValue(query(undefined, { isError: true }))
+    renderDetail()
+    expect(screen.getByText(/Failed to load this candidate/i)).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /back to candidates/i })).toHaveAttribute("href", "/vertical/job-blueprint/candidates")
+  })
+})
+
+describe("Pipeline → candidate detail", () => {
+  test("clicking a card navigates to the candidate's page", () => {
+    ;(triageHooks.usePipeline as jest.Mock).mockReturnValue(query([CANDIDATE]))
+    renderPage(<JobBlueprintPipelinePage />)
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "j1" } })
+    fireEvent.click(screen.getAllByText("CAND-R01@BP-PEOPLE-MGR")[0])
+    expect(mockNavigate).toHaveBeenCalledWith("/vertical/job-blueprint/candidates/cand-1")
+  })
+})
+
+describe("Scorecards comparison", () => {
+  function pickRole() {
+    renderPage(<JobBlueprintScorecardsPage />)
+    fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "j1" } })
+  }
+
+  test("no submitted scorecards → the honest empty state", () => {
+    ;(triageHooks.usePipeline as jest.Mock).mockReturnValue(query([CANDIDATE]))
+    pickRole()
+    expect(screen.getByText(/No submitted scorecards for this role yet/i)).toBeInTheDocument()
+  })
+
+  test("candidates with a scorecard are offered; selecting two renders the comparison", () => {
+    const a = { ...CANDIDATE, id: "cand-1", code: "A-1", name: "A-1", scorecardId: "sc-1" }
+    const b = { ...CANDIDATE, id: "cand-2", code: "B-2", name: "B-2", scorecardId: "sc-2" }
+    const c = { ...CANDIDATE, id: "cand-3", code: "C-3", name: "C-3", scorecardId: null }
+    ;(triageHooks.usePipeline as jest.Mock).mockReturnValue(query([a, b, c]))
+    ;(scorecardHooks.useScorecardsFor as jest.Mock).mockImplementation((ids: string[]) => ({
+      scorecards: ids.map((id, i) => ({ ...SCORECARD, id: `sc-${id}`, candidateId: id, grandTotal: 48 - i * 10 })),
+      missing: [],
+      pending: false,
+      failed: false,
+    }))
+    pickRole()
+    // only the two with a scorecardId are offered
+    expect(screen.getByRole("checkbox", { name: "Compare A-1" })).toBeInTheDocument()
+    expect(screen.getByRole("checkbox", { name: "Compare B-2" })).toBeInTheDocument()
+    expect(screen.queryByRole("checkbox", { name: "Compare C-3" })).not.toBeInTheDocument()
+    expect(screen.getByText(/Select candidates to compare/i)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Compare A-1" }))
+    fireEvent.click(screen.getByRole("checkbox", { name: "Compare B-2" }))
+    expect(scorecardHooks.useScorecardsFor).toHaveBeenLastCalledWith(["cand-1", "cand-2"])
+    expect(screen.getByText("Scorecard Comparison")).toBeInTheDocument()
+    expect(screen.getByText("48/55")).toBeInTheDocument()
+    expect(screen.getByText("38/55")).toBeInTheDocument()
+  })
+
+  test("a fifth candidate cannot be added", () => {
+    const five = [1, 2, 3, 4, 5].map((n) => ({ ...CANDIDATE, id: `c${n}`, code: `K-${n}`, name: `K-${n}`, scorecardId: `s${n}` }))
+    ;(triageHooks.usePipeline as jest.Mock).mockReturnValue(query(five))
+    pickRole()
+    for (const n of [1, 2, 3, 4]) fireEvent.click(screen.getByRole("checkbox", { name: `Compare K-${n}` }))
+    expect(screen.getByRole("checkbox", { name: "Compare K-5" })).toBeDisabled()
+  })
+})
+
+describe("Analytics — hires and activity", () => {
+  test("both panels render their honest empty states by default", () => {
+    renderPage(<JobBlueprintAnalyticsPage />)
+    expect(screen.getByText("No hires recorded yet.")).toBeInTheDocument()
+    expect(screen.getByText("No activity yet.")).toBeInTheDocument()
+  })
+
+  test("rows render the panels", () => {
+    ;(analyticsHooks.useBlueprintHires as jest.Mock).mockReturnValue(query([{ period: "2026-07", hires: 2, avgFitScore: 70 }]))
+    ;(analyticsHooks.useBlueprintActivity as jest.Mock).mockReturnValue(
+      query([{ id: "a1", type: "job-created", description: "Blueprint created for Account Executive", timestamp: "2026-08-02T05:28:12Z" }])
+    )
+    renderPage(<JobBlueprintAnalyticsPage />)
+    expect(screen.getByText("Hires by period")).toBeInTheDocument()
+    expect(screen.getByText("Blueprint created for Account Executive")).toBeInTheDocument()
+    expect(analyticsHooks.useBlueprintHires).toHaveBeenCalledWith("month")
+    expect(analyticsHooks.useBlueprintActivity).toHaveBeenCalledWith(10)
   })
 })

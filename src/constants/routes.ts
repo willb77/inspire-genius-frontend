@@ -235,6 +235,10 @@ export const ROUTES = {
     /** Build the detail path for a concrete Job DNA id. */
     dnaDetail: (id: string) => `/vertical/job-blueprint/dna/${id}`,
     CANDIDATES: "/vertical/job-blueprint/candidates",
+    /** Route pattern for one candidate (blind code, fit, insights, scorecard). */
+    CANDIDATE_DETAIL: "/vertical/job-blueprint/candidates/:candidateId",
+    /** Build the detail path for a concrete candidate id. */
+    candidateDetail: (id: string) => `/vertical/job-blueprint/candidates/${id}`,
     PIPELINE: "/vertical/job-blueprint/pipeline",
     SCORECARDS: "/vertical/job-blueprint/scorecards",
     ANALYTICS: "/vertical/job-blueprint/analytics",
