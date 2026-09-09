@@ -270,11 +270,11 @@ describe("findings — banding and the advisory narrative", () => {
     await user.click(await screen.findByRole("button", { name: /finish & view results/i }))
   }
 
-  it("says 'Recommendation' for a hiring interview", async () => {
+  it("says 'What the evidence shows' for a selection interview", async () => {
     const user = userEvent.setup()
     render(<StudioInterviewBody />)
     await finish(user)
-    expect(await screen.findByText("Recommendation")).toBeInTheDocument()
+    expect(await screen.findByText("What the evidence shows")).toBeInTheDocument()
     expect(screen.queryByText("Overall assessment")).not.toBeInTheDocument()
   })
 
@@ -286,7 +286,7 @@ describe("findings — banding and the advisory narrative", () => {
     render(<StudioInterviewBody />)
     await finish(user)
     expect(await screen.findByText("Overall assessment")).toBeInTheDocument()
-    expect(screen.queryByText("Recommendation")).not.toBeInTheDocument()
+    expect(screen.queryByText("What the evidence shows")).not.toBeInTheDocument()
   })
 
   it("shows the narrative when the backend generated one", async () => {
@@ -319,7 +319,7 @@ describe("findings — banding and the advisory narrative", () => {
     const user = userEvent.setup()
     render(<StudioInterviewBody />)
     await finish(user)
-    expect(await screen.findByText("Recommendation")).toBeInTheDocument()
+    expect(await screen.findByText("What the evidence shows")).toBeInTheDocument()
     expect(screen.getByText("Advance")).toBeInTheDocument()
     expect(screen.getByText("Section scores")).toBeInTheDocument()
   })
@@ -422,7 +422,7 @@ describe("the inherited pipeline still works in the fork", () => {
 
     finalizeMutate.mockResolvedValueOnce(BASE_FINALIZE)
     await user.click(screen.getByRole("button", { name: /try again/i }))
-    expect(await screen.findByText("Recommendation")).toBeInTheDocument()
+    expect(await screen.findByText("What the evidence shows")).toBeInTheDocument()
     expect(screen.queryByText(/could not be compiled/i)).not.toBeInTheDocument()
     confirmSpy.mockRestore()
   })
@@ -434,11 +434,11 @@ describe("the inherited pipeline still works in the fork", () => {
     await reachInterview(user)
     await screen.findByText("panel 1/1: What drew you here?")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
-    await screen.findByText("Recommendation")
+    await screen.findByText("What the evidence shows")
 
     await user.click(screen.getByRole("button", { name: /new interview/i }))
     expect(screen.getByText("mock-consent-proceed")).toBeInTheDocument()
-    expect(screen.queryByText("Recommendation")).not.toBeInTheDocument()
+    expect(screen.queryByText("What the evidence shows")).not.toBeInTheDocument()
     confirmSpy.mockRestore()
   })
 
@@ -449,7 +449,7 @@ describe("the inherited pipeline still works in the fork", () => {
     await reachInterview(user)
     await screen.findByText("panel 1/1: What drew you here?")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
-    await screen.findByText("Recommendation")
+    await screen.findByText("What the evidence shows")
 
     expect(screen.getByRole("button", { name: /word/i })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /pdf/i })).toBeInTheDocument()

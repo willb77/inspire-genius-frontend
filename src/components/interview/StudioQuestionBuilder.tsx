@@ -69,7 +69,10 @@ export type StudioQuestionBuilderProps = {
 
 const KIND_OPTIONS: { value: InterviewKind; label: string; hint: string }[] = [
   { value: "general", label: "Development / discovery", hint: "Warm, growth-oriented — no hiring verdict" },
-  { value: "hiring", label: "Hiring / evaluation", hint: "Evaluative — strong-hire … do-not-hire band" },
+  // The band words changed 2026-09-09 with the backend's. "Selection" names
+  // what the interview is FOR; the bands describe the evidence gathered, never
+  // an instruction about the person (the platform informs, it does not decide).
+  { value: "hiring", label: "Selection / evaluation", hint: "Evaluative — strong to limited alignment with the role" },
 ]
 
 export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQuestionBuilderProps) {
