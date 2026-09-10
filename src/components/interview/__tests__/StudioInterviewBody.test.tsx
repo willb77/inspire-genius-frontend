@@ -270,11 +270,11 @@ describe("findings — banding and the advisory narrative", () => {
     await user.click(await screen.findByRole("button", { name: /finish & view results/i }))
   }
 
-  it("says 'Recommendation' for a hiring interview", async () => {
+  it("says 'What the evidence shows' for a selection interview", async () => {
     const user = userEvent.setup()
     render(<StudioInterviewBody />)
     await finish(user)
-    expect(await screen.findByText("Recommendation")).toBeInTheDocument()
+    expect(await screen.findByText("What the evidence shows")).toBeInTheDocument()
     expect(screen.queryByText("Overall assessment")).not.toBeInTheDocument()
   })
 
@@ -286,7 +286,7 @@ describe("findings — banding and the advisory narrative", () => {
     render(<StudioInterviewBody />)
     await finish(user)
     expect(await screen.findByText("Overall assessment")).toBeInTheDocument()
-    expect(screen.queryByText("Recommendation")).not.toBeInTheDocument()
+    expect(screen.queryByText("What the evidence shows")).not.toBeInTheDocument()
   })
 
   it("shows the narrative when the backend generated one", async () => {
@@ -319,7 +319,7 @@ describe("findings — banding and the advisory narrative", () => {
     const user = userEvent.setup()
     render(<StudioInterviewBody />)
     await finish(user)
-    expect(await screen.findByText("Recommendation")).toBeInTheDocument()
+    expect(await screen.findByText("What the evidence shows")).toBeInTheDocument()
     expect(screen.getByText("Advance")).toBeInTheDocument()
     expect(screen.getByText("Section scores")).toBeInTheDocument()
   })
@@ -422,7 +422,7 @@ describe("the inherited pipeline still works in the fork", () => {
 
     finalizeMutate.mockResolvedValueOnce(BASE_FINALIZE)
     await user.click(screen.getByRole("button", { name: /try again/i }))
-    expect(await screen.findByText("Recommendation")).toBeInTheDocument()
+    expect(await screen.findByText("What the evidence shows")).toBeInTheDocument()
     expect(screen.queryByText(/could not be compiled/i)).not.toBeInTheDocument()
     confirmSpy.mockRestore()
   })
@@ -434,11 +434,11 @@ describe("the inherited pipeline still works in the fork", () => {
     await reachInterview(user)
     await screen.findByText("panel 1/1: What drew you here?")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
-    await screen.findByText("Recommendation")
+    await screen.findByText("What the evidence shows")
 
     await user.click(screen.getByRole("button", { name: /new interview/i }))
     expect(screen.getByText("mock-consent-proceed")).toBeInTheDocument()
-    expect(screen.queryByText("Recommendation")).not.toBeInTheDocument()
+    expect(screen.queryByText("What the evidence shows")).not.toBeInTheDocument()
     confirmSpy.mockRestore()
   })
 
@@ -449,7 +449,7 @@ describe("the inherited pipeline still works in the fork", () => {
     await reachInterview(user)
     await screen.findByText("panel 1/1: What drew you here?")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
-    await screen.findByText("Recommendation")
+    await screen.findByText("What the evidence shows")
 
     expect(screen.getByRole("button", { name: /word/i })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /pdf/i })).toBeInTheDocument()
@@ -584,5 +584,119 @@ describe("past interviews — resume and reopen (fork)", () => {
     const scoreLine = screen.getAllByText(/Overall score:/i)[0].textContent ?? ""
     expect(scoreLine).toContain("—")
     expect(scoreLine).not.toContain("0.00")
+  })
+})
+
+/**
+ * Fork parity for the transcript label.
+ *
+ * The Live body got this with IS-C Lane B and the Studio body did not: the
+ * patch carrying it also asserted a second anchor, that assert failed, and the
+ * write never happened. Both suites were green — because only the LIVE suite
+ * asserted the label. The Studio findings screen shipped printing a SEEDED
+ * score as though an interviewer had decided it.
+ *
+ * This is the third time in this lane a defect has lived in exactly one fork.
+ * The assertion belongs here, not only there.
+ */
+describe("transcript — an undecided answer never shows a decided score (fork parity)", () => {
+  const LIST_FINAL = {
+    data: {
+      sessions: [
+        {
+          id: "s-old",
+          interviewer_sub: "sub-1",
+          candidate_ref: { display_name: "Participant A", candidate_hash: "abcdef1234567890" },
+          frame: { roleTitle: "Ops Lead" },
+          status: "finalized",
+          created_at: "2026-09-01T10:00:00Z",
+        },
+      ],
+      total: 1,
+      limit: 25,
+      offset: 0,
+      org_scope_applied: true,
+    },
+    isLoading: false,
+    isFetching: false,
+    error: null,
+    refetch: jest.fn(),
+  }
+
+  it("says 'Not decided' rather than printing the seeded final_score", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST_FINAL)
+    getSession.mockResolvedValue({
+      session: {
+        session_id: "s-old",
+        frame: { roleTitle: "Ops Lead", company: "Acme" },
+        candidate: { display_name: "Participant A" },
+        consent: { captured: true, mode: "no_audio" },
+        status: "finalized",
+      },
+      plan: PLAN,
+      answers: [
+        {
+          answer_id: "legacy-1",
+          competency_id: "q1",
+          question_text: "What drew you here?",
+          captured_answer: "…",
+          suggested_score: 3,
+          star_evidence: null,
+          // NOT NULL, seeded at insert. Nobody decided it.
+          final_score: 3,
+          final_source: null,
+        },
+      ],
+      status: "finalized",
+      section_scores: { warm_up: { mean: 3.5 } },
+      overall_score: 3.5,
+      recommendation: "Advance",
+      candidate_ref: { display_name: "Participant A", candidate_hash: "abcdef1234567890" },
+    })
+    render(<StudioInterviewBody />)
+
+    await user.click(screen.getByRole("button", { name: /reopen/i }))
+
+    expect(await screen.findByText(/not decided/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Score: 3 \/ 5/)).not.toBeInTheDocument()
+  })
+
+  it("still shows the score when a human did decide it", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST_FINAL)
+    getSession.mockResolvedValue({
+      session: {
+        session_id: "s-old",
+        frame: { roleTitle: "Ops Lead", company: "Acme" },
+        candidate: { display_name: "Participant A" },
+        consent: { captured: true, mode: "no_audio" },
+        status: "finalized",
+      },
+      plan: PLAN,
+      answers: [
+        {
+          answer_id: "rated-1",
+          competency_id: "q1",
+          question_text: "What drew you here?",
+          captured_answer: "…",
+          suggested_score: 3,
+          star_evidence: null,
+          final_score: 5,
+          final_source: "human",
+        },
+      ],
+      status: "finalized",
+      section_scores: { warm_up: { mean: 5 } },
+      overall_score: 5,
+      recommendation: "Advance",
+      candidate_ref: { display_name: "Participant A", candidate_hash: "abcdef1234567890" },
+    })
+    render(<StudioInterviewBody />)
+
+    await user.click(screen.getByRole("button", { name: /reopen/i }))
+
+    expect(await screen.findByText(/Score: 5 \/ 5/)).toBeInTheDocument()
+    expect(screen.queryByText(/not decided/i)).not.toBeInTheDocument()
   })
 })

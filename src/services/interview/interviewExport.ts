@@ -145,7 +145,11 @@ export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
   lines.push(`**Questions scored:** ${result.answers.length}`)
   lines.push("")
 
-  lines.push(frame?.kind === "hiring" || !frame?.mode ? "## Recommendation" : "## Overall Assessment")
+  // "What the evidence shows", not "Recommendation" — the exported document is
+  // the one that leaves the platform and gets read by people who were not in
+  // the room, so the heading carries most of the framing. Matches the Job
+  // Studio scorecard heading changed in #1243.
+  lines.push(frame?.kind === "hiring" || !frame?.mode ? "## What the evidence shows" : "## Overall Assessment")
   lines.push(`**${result.recommendation}**`)
   lines.push(
     `Overall score: **${fmtScore(result.overall_score)} / 5** · Overall mean: **${fmtScore(result.overall_mean)}**`,

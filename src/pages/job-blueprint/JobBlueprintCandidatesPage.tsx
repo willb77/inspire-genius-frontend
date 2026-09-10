@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
-import { Users } from "lucide-react"
+import { ExternalLink, Users } from "lucide-react"
+import { ROUTES } from "@/constants/routes"
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
 import { usePipeline, useCandidateInsights } from "@/hooks/job-blueprint/useTriage"
 import { CandidateCard } from "@/components/job-blueprint/triage/CandidateCard"
@@ -13,6 +14,7 @@ import {
   JobDnaEmptyState,
   JobDnaLoading,
   JobDnaError,
+  JobDnaLinkButton,
 } from "./_shared"
 
 /**
@@ -82,6 +84,17 @@ export default function JobBlueprintCandidatesPage() {
           </div>
 
           <div>
+            {selected ? (
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="text-sm text-[#6b7280]">
+                  Candidate <span className="font-medium text-[#1f2937]">{selected.code ?? selected.name}</span>
+                </span>
+                <JobDnaLinkButton to={ROUTES.JOB_DNA.candidateDetail(selected.id)}>
+                  <ExternalLink className="h-4 w-4" />
+                  Open candidate
+                </JobDnaLinkButton>
+              </div>
+            ) : null}
             {selected && selected.prismScores && selected.variationScores && selected.classificationTier ? (
               <div className="space-y-6">
                 <JobDnaCardSurface>

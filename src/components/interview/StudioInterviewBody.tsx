@@ -516,7 +516,7 @@ export default function StudioInterviewBody() {
               </Card>
             )}
             <Card>
-              <CardHeader><CardTitle className="text-base">{isHiring ? "Recommendation" : "Overall assessment"}</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">{isHiring ? "What the evidence shows" : "Overall assessment"}</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 <p className="text-lg font-semibold capitalize text-slate-900">{finalizeResult.recommendation}</p>
                 <p className="text-sm text-slate-600">
@@ -601,10 +601,31 @@ export default function StudioInterviewBody() {
                   <div key={a.answer_id} className="border-b border-slate-100 pb-3 last:border-0">
                     {a.question_text && <p className="text-sm font-medium text-slate-900">{a.question_text}</p>}
                     <p className="mt-1 text-sm text-slate-700">{a.captured_answer}</p>
-                    <p className="mt-1 text-sm text-indigo-700">
-                      Score: {a.final_score ?? "—"} / 5
-                      {typeof a.suggested_score === "number" && <span className="text-slate-500"> (AI suggested {a.suggested_score})</span>}
-                    </p>
+                    {/* Read `final_source`, never `final_score`. Every answer row is
+                        SEEDED with a score at insert, so an answer nobody rated still
+                        carries a number — printing it as "Score: 3 / 5" attributes to
+                        the interviewer a judgement they never made. That is the whole
+                        reason IS-4 added the column. Undecided answers say so, and are
+                        never back-filled.
+
+                        This landed in LiveInterviewBody with IS-C Lane B and was LOST
+                        here: the patch that carried it also asserted a second anchor,
+                        the assert failed, and the file was never written. The Live
+                        suite asserted the label and the Studio suite did not, so the
+                        fork stayed green while showing a seeded score as a decision.
+                        The parity test below exists so that cannot recur. */}
+                    {a.final_source ? (
+                      <p className="mt-1 text-sm text-indigo-700">
+                        Score: {a.final_score ?? "—"} / 5
+                        {a.final_source === "model" && <span className="text-slate-500"> (AI suggestion adopted)</span>}
+                        {typeof a.suggested_score === "number" && <span className="text-slate-500"> (AI suggested {a.suggested_score})</span>}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-slate-500">
+                        Not decided — this answer was not part of the score.
+                        {typeof a.suggested_score === "number" && <span> The AI suggested {a.suggested_score}.</span>}
+                      </p>
+                    )}
                     {a.interviewer_notes && <p className="mt-1 text-xs text-slate-600">Notes: {a.interviewer_notes}</p>}
                   </div>
                 ))}

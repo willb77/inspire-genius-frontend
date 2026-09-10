@@ -12,6 +12,7 @@ import {
   FitError,
 } from "./_shared"
 import FitPurpose from "./FitPurpose"
+import { FitHistoryPanel } from "./FitHistoryPanel"
 import { tierLabel, fitPercent, fitPercentTone } from "./_fit"
 
 const PCT_COLOR: Record<string, string> = {
@@ -153,6 +154,9 @@ export default function MatchesPage() {
           ))}
         </FitCard>
       )}
+
+      {/* JS-3 — every fit read and every save, from the server */}
+      <FitHistoryPanel />
     </div>
   )
 }

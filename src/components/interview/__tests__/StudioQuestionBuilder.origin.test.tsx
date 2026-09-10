@@ -148,7 +148,7 @@ describe("the requisition on a hiring interview", () => {
     const { onConfirm } = renderBuilder()
 
     await user.type(screen.getByLabelText(/interview topic/i), "Regional Manager")
-    await user.click(screen.getByRole("button", { name: /hiring \/ evaluation/i }))
+    await user.click(screen.getByRole("button", { name: /selection \/ evaluation/i }))
     await user.type(await screen.findByLabelText(/requisition id/i), "REQ-2041")
     await user.click(screen.getByRole("tab", { name: /add manually/i }))
     await user.click(screen.getByRole("button", { name: /add a question/i }))

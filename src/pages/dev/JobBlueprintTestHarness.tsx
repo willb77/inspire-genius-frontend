@@ -550,7 +550,7 @@ export default function JobBlueprintTestHarness() {
                 }}
               />
 
-              <ScorecardSummary grandTotal={43} recommendation="hire-with-plan" />
+              <ScorecardSummary grandTotal={43} recommendation="good-alignment" />
             </div>
           </TabsContent>
 

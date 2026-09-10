@@ -478,7 +478,7 @@ export default function LiveInterviewBody() {
               </Card>
             )}
             <Card>
-              <CardHeader><CardTitle className="text-base">Recommendation</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">What the evidence shows</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 <p className="text-lg font-semibold text-slate-900">{finalizeResult.recommendation}</p>
                 <p className="text-sm text-slate-600">

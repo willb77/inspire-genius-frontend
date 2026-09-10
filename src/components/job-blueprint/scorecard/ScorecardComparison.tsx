@@ -1,17 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScoreBar } from '@/components/job-blueprint/shared/ScoreBar'
-import type { InterviewScorecard } from '@/types/job-blueprint'
+import type { InterviewScorecard, ScorecardRecommendation } from '@/types/job-blueprint'
+import { SCORECARD_BAND_LABELS } from '@/constants/job-blueprint/classification'
 import { cn } from '@/lib/utils'
 
 type ScorecardComparisonProps = {
   scorecards: InterviewScorecard[]
 }
 
-const recColors: Record<string, string> = {
-  'strong-hire': 'text-green-600',
-  'hire-with-plan': 'text-blue-600',
-  'conditional': 'text-yellow-600',
-  'do-not-hire': 'text-red-600',
+const recColors: Record<ScorecardRecommendation, string> = {
+  'strong-alignment': 'text-green-600',
+  'good-alignment': 'text-blue-600',
+  'partial-alignment': 'text-yellow-600',
+  'limited-alignment': 'text-red-600',
 }
 
 export function ScorecardComparison({ scorecards }: ScorecardComparisonProps) {
@@ -31,7 +32,7 @@ export function ScorecardComparison({ scorecards }: ScorecardComparisonProps) {
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold">{sc.grandTotal}/55</span>
                   <span className={cn('text-xs font-semibold', recColors[sc.recommendation])}>
-                    {sc.recommendation.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    {SCORECARD_BAND_LABELS[sc.recommendation] ?? sc.recommendation}
                   </span>
                 </div>
               </div>

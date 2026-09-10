@@ -1,6 +1,15 @@
 import { api } from '@/lib/axios'
 import type { BaseApiResponse } from '@/types/api'
-import type { FitMatch, FitDetail, FitMethod, FitPathway, FitTargetRequest } from '@/types/job-fit'
+import type {
+  FitMatch,
+  FitDetail,
+  FitMethod,
+  FitPathway,
+  FitTargetRequest,
+  FitSnapshot,
+  FitSnapshotSaveBody,
+  FitSnapshotSummary,
+} from '@/types/job-fit'
 
 /**
  * Person-side Job-Fit API. Routes through the `api` axios instance (API Gateway
@@ -48,5 +57,22 @@ export const fitService = {
    */
   scoreTarget(body: FitTargetRequest) {
     return api.post<BaseApiResponse<FitDetail>>(`${BASE}/target`, body)
+  },
+
+  // ── Fit history (JS-3). Every fit read above leaves a row server-side; these read it back. ──
+
+  /** GET /v1/blueprint/fit/history — the user's own history, newest first, summaries only. */
+  getHistory() {
+    return api.get<BaseApiResponse<FitSnapshotSummary[]>>(`${BASE}/history`)
+  },
+
+  /** GET /v1/blueprint/fit/history/snapshot/{id} — one of the user's own rows with its payload. */
+  getSnapshot(snapshotId: string) {
+    return api.get<BaseApiResponse<FitSnapshot>>(`${BASE}/history/snapshot/${encodeURIComponent(snapshotId)}`)
+  },
+
+  /** POST /v1/blueprint/fit/history — "Save to your fit reports". */
+  saveSnapshot(body: FitSnapshotSaveBody) {
+    return api.post<BaseApiResponse<FitSnapshotSummary>>(`${BASE}/history`, body)
   },
 }

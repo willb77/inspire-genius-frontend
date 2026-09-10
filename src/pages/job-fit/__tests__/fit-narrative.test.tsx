@@ -12,6 +12,8 @@ const mockExplain = { mutate: jest.fn(), mutateAsync: jest.fn(), isPending: fals
 const mockResume = { mutateAsync: jest.fn(), data: undefined as unknown, isPending: false, isError: false }
 jest.mock("@/hooks/job-fit/useExplainFit", () => ({ useExplainFit: () => mockExplain }))
 jest.mock("@/hooks/job-fit/useWriteResume", () => ({ useWriteResume: () => mockResume }))
+const mockSaveReport = { mutateAsync: jest.fn().mockResolvedValue({ id: "snap-1" }), isPending: false }
+jest.mock("@/hooks/job-fit/useFitHistory", () => ({ useSaveFitReport: () => mockSaveReport }))
 
 import { FitFollowUpCard } from "../FitFollowUpCard"
 import { FitActionsBar } from "../FitActionsBar"
@@ -64,4 +66,30 @@ test("Write Résumé shows the drafted résumé", async () => {
   fireEvent.click(screen.getByRole("button", { name: /write résumé/i }))
   await waitFor(() => expect(screen.getByText("Operations leader.")).toBeInTheDocument())
   expect(screen.getByText("Led a program.")).toBeInTheDocument()
+})
+
+describe("FitActionsBar — Save (JS-3)", () => {
+  it("posts the rendered breakdown to the fit history, never browser storage", async () => {
+    mockSaveReport.mutateAsync.mockClear()
+    const setItem = jest.spyOn(Storage.prototype, "setItem")
+    render(<FitActionsBar data={DATA} overview="about 62% aligned" />)
+    fireEvent.click(screen.getByRole("button", { name: /^save$/i }))
+    await waitFor(() => expect(mockSaveReport.mutateAsync).toHaveBeenCalledTimes(1))
+    const body = mockSaveReport.mutateAsync.mock.calls[0][0]
+    expect(body).toMatchObject({ jobId: DATA.jobId, roleTitle: DATA.roleTitle, tier: DATA.tier })
+    expect(typeof body.fitScore).toBe("number")
+    expect(body.payload).toMatchObject({ perDimension: DATA.perDimension, overview: "about 62% aligned" })
+    expect(setItem).not.toHaveBeenCalledWith("ig.jobfit.savedReports", expect.anything())
+    await waitFor(() => expect(screen.getByRole("button", { name: /^saved$/i })).toBeInTheDocument())
+    setItem.mockRestore()
+  })
+
+  it("a failed save does not claim success", async () => {
+    mockSaveReport.mutateAsync.mockRejectedValueOnce(new Error("503"))
+    render(<FitActionsBar data={DATA} />)
+    fireEvent.click(screen.getByRole("button", { name: /^save$/i }))
+    await waitFor(() => expect(mockSaveReport.mutateAsync).toHaveBeenCalled())
+    expect(screen.getByRole("button", { name: /^save$/i })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /^saved$/i })).not.toBeInTheDocument()
+  })
 })

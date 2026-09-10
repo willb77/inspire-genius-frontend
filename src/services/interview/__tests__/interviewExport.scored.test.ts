@@ -95,7 +95,7 @@ describe("buildScoredInterviewMarkdown", () => {
     expect(md).toContain("Acme Corp")
 
     // Recommendation band + overall figures
-    expect(md).toContain("## Recommendation")
+    expect(md).toContain("## What the evidence shows")
     expect(md).toContain("Strong Hire")
     expect(md).toContain("4 / 5")
     expect(md).toContain("3.50")

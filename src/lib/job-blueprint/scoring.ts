@@ -141,17 +141,21 @@ export function classifyCandidate(totalVariation: number): ClassificationTier {
 
 // ── Interview Scorecard ──────────────────────────────────────────────
 
-/** Calculate interview scorecard grand total and recommendation */
+/**
+ * Calculate interview scorecard grand total and its evidence band. The band
+ * is decision support (what the evidence shows against the benchmark), never
+ * a hire / no-hire verdict. Mirrors ig_blueprint_scoring.calculate_scorecard_total.
+ */
 export function calculateScorecardTotal(
   entries: ScorecardEntry[]
 ): { grandTotal: number; recommendation: ScorecardRecommendation } {
   const grandTotal = entries.reduce((sum, e) => sum + e.score, 0)
 
   let recommendation: ScorecardRecommendation
-  if (grandTotal >= 45) recommendation = 'strong-hire'
-  else if (grandTotal >= 35) recommendation = 'hire-with-plan'
-  else if (grandTotal >= 25) recommendation = 'conditional'
-  else recommendation = 'do-not-hire'
+  if (grandTotal >= 45) recommendation = 'strong-alignment'
+  else if (grandTotal >= 35) recommendation = 'good-alignment'
+  else if (grandTotal >= 25) recommendation = 'partial-alignment'
+  else recommendation = 'limited-alignment'
 
   return { grandTotal, recommendation }
 }

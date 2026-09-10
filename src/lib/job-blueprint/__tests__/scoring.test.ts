@@ -186,37 +186,37 @@ describe('calculateScorecardTotal', () => {
     // 11 entries, all 5 = 55
     const result = calculateScorecardTotal(makeEntries([5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]))
     expect(result.grandTotal).toBe(55)
-    expect(result.recommendation).toBe('strong-hire')
+    expect(result.recommendation).toBe('strong-alignment')
   })
 
-  it('returns strong-hire for 45-55', () => {
+  it('returns strong-alignment for 45-55', () => {
     const result = calculateScorecardTotal(makeEntries([5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 0]))
     expect(result.grandTotal).toBe(45)
-    expect(result.recommendation).toBe('strong-hire')
+    expect(result.recommendation).toBe('strong-alignment')
   })
 
-  it('returns hire-with-plan for 35-44', () => {
+  it('returns good-alignment for 35-44', () => {
     const result = calculateScorecardTotal(makeEntries([5, 5, 5, 5, 5, 5, 3, 3, 0, 0, 0]))
     expect(result.grandTotal).toBe(36)
-    expect(result.recommendation).toBe('hire-with-plan')
+    expect(result.recommendation).toBe('good-alignment')
   })
 
-  it('returns conditional for 25-34', () => {
+  it('returns partial-alignment for 25-34', () => {
     const result = calculateScorecardTotal(makeEntries([5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0]))
     expect(result.grandTotal).toBe(25)
-    expect(result.recommendation).toBe('conditional')
+    expect(result.recommendation).toBe('partial-alignment')
   })
 
-  it('returns do-not-hire for 0-24', () => {
+  it('returns limited-alignment for 0-24', () => {
     const result = calculateScorecardTotal(makeEntries([5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0]))
     expect(result.grandTotal).toBe(20)
-    expect(result.recommendation).toBe('do-not-hire')
+    expect(result.recommendation).toBe('limited-alignment')
   })
 
   it('handles all zeros', () => {
     const result = calculateScorecardTotal(makeEntries([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
     expect(result.grandTotal).toBe(0)
-    expect(result.recommendation).toBe('do-not-hire')
+    expect(result.recommendation).toBe('limited-alignment')
   })
 })
 
