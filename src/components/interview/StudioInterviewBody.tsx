@@ -516,7 +516,7 @@ export default function StudioInterviewBody() {
               </Card>
             )}
             <Card>
-              <CardHeader><CardTitle className="text-base">{isHiring ? "Recommendation" : "Overall assessment"}</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">{isHiring ? "What the evidence shows" : "Overall assessment"}</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 <p className="text-lg font-semibold capitalize text-slate-900">{finalizeResult.recommendation}</p>
                 <p className="text-sm text-slate-600">

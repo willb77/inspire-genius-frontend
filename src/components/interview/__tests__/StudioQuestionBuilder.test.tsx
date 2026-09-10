@@ -128,7 +128,7 @@ describe("StudioQuestionBuilder", () => {
     const { onConfirm } = renderBuilder()
 
     await user.type(screen.getByLabelText(/interview topic/i), "Sales Manager")
-    await user.click(screen.getByRole("button", { name: /hiring \/ evaluation/i }))
+    await user.click(screen.getByRole("button", { name: /selection \/ evaluation/i }))
     await user.click(screen.getByRole("tab", { name: /add manually/i }))
     await user.click(screen.getByRole("button", { name: /add a question/i }))
     await user.type(screen.getByPlaceholderText(/question text/i), "Describe a deal you closed.")
