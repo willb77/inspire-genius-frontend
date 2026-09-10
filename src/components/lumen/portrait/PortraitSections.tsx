@@ -148,8 +148,9 @@ export function PortraitNoPrism({
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         {headline && <p>{headline}</p>}
         <p>
-          PRISM is the anchor the other sources get read against. Without it this
-          reads what you&apos;ve told us, but can&apos;t yet corroborate it.
+          This is a real read of what you have given us. PRISM is the anchor the
+          other sources get read against, so adding it lets the picture be
+          corroborated rather than only described.
         </p>
         {children}
       </CardContent>

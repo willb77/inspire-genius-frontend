@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSelfPortrait } from "@/hooks/lumen/useSelfPortrait"
+import { ProvenanceNote } from "@/components/shared/ProvenanceNote"
 import {
   PortraitAnchorNote,
   PortraitCorroborating,
@@ -67,6 +68,9 @@ export default function SelfPortrait() {
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">My Self-Portrait</h1>
         <p className="max-w-3xl text-muted-foreground">{portrait.headline}</p>
+        {/* Provenance, shown ALWAYS — see ProvenanceNote. Rendering it only
+            when PRISM is absent would make its presence the message. */}
+        <ProvenanceNote sources={portrait.sources ?? {}} className="max-w-3xl" />
       </header>
 
       {/* Plain-language description + PDF/Word export. `showAsk={false}` drops
@@ -74,7 +78,10 @@ export default function SelfPortrait() {
       <SelfPortraitNarrative portrait={portrait} showAsk={false} />
 
       {!portrait.prism ? (
-        <PortraitNoPrism title="No PRISM profile yet" headline={portrait.headline} />
+        <PortraitNoPrism
+          title="What this is built on so far"
+          headline={portrait.headline}
+        />
       ) : (
         <PortraitDimensions prism={portrait.prism} />
       )}

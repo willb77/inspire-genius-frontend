@@ -133,7 +133,9 @@ let frameToConfirm: Record<string, unknown> = { numQuestions: 2, lengthMinutes: 
 beforeEach(() => {
   jest.clearAllMocks()
   frameToConfirm = { numQuestions: 2, lengthMinutes: 20 }
-  getPracticeContext.mockResolvedValue({ enabled: true, personalContext: "PRISM: analytical." })
+  getPracticeContext.mockResolvedValue({
+    enabled: true, hasPrism: true, hasResume: true, personalContext: "PRISM: analytical.",
+  })
   getTailored.mockResolvedValue({ ...BANK, tailored: true })
   getRolePack.mockResolvedValue({ ...BANK, role: null })
   startJob.mockResolvedValue(undefined)
@@ -165,26 +167,33 @@ describe("setup", () => {
     await user.click(screen.getByLabelText(/personalize coaching to my profile/i))
     await start(user)
     expect(getPracticeContext).not.toHaveBeenCalled()
-    expect(screen.queryByText(/personalized to your profile/i)).not.toBeInTheDocument()
+    // The slot is still filled — turning personalization off is a choice the
+    // candidate made, and the surface says which mode it is running in rather
+    // than going quiet.
+    expect(screen.getByText(/personalization is off/i)).toBeInTheDocument()
+    expect(screen.queryByText(/measured from/i)).not.toBeInTheDocument()
   })
 })
 
 describe("the four quiet fallbacks — what the candidate is told", () => {
-  it("claims personalization only when context actually came back", async () => {
+  it("names PRISM as the source only when context actually came back", async () => {
     const user = userEvent.setup()
     render(<InterviewPracticePage />)
     await start(user)
-    expect(screen.getByText(/personalized to your profile/i)).toBeInTheDocument()
+    expect(screen.getByTestId("provenance-note")).toHaveTextContent(/measured from/i)
   })
 
   it("does not claim personalization when the backend flag is off", async () => {
-    // `enabled: false` is the flag-off shape. Showing the badge anyway would
-    // tell the candidate their PRISM shaped coaching that never saw it.
-    getPracticeContext.mockResolvedValue({ enabled: false, personalContext: "" })
+    // `enabled: false` is the flag-off shape. Claiming a measurement anyway
+    // would tell the candidate their PRISM shaped coaching that never saw it.
+    getPracticeContext.mockResolvedValue({
+      enabled: false, hasPrism: true, hasResume: true, personalContext: "",
+    })
     const user = userEvent.setup()
     render(<InterviewPracticePage />)
     await start(user)
-    expect(screen.queryByText(/personalized to your profile/i)).not.toBeInTheDocument()
+    // hasPrism is TRUE in this payload — the flag being off must still win.
+    expect(screen.getByTestId("provenance-note")).not.toHaveTextContent(/measured from/i)
   })
 
   it("still starts the interview when the personalization fetch throws", async () => {
@@ -193,7 +202,7 @@ describe("the four quiet fallbacks — what the candidate is told", () => {
     render(<InterviewPracticePage />)
     await start(user)
     expect(screen.getByText("Where do you want to be?")).toBeInTheDocument()
-    expect(screen.queryByText(/personalized to your profile/i)).not.toBeInTheDocument()
+    expect(screen.getByTestId("provenance-note")).not.toHaveTextContent(/measured from/i)
   })
 
   it("serves a picked role pack verbatim and never runs it through tailoring", async () => {
