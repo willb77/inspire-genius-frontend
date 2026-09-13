@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { agentApi } from "@/lib/agentApi"
+import { ttsLanguage } from "@/lib/voiceLanguage"
 
 const MAX_CHARS = 4096
 
@@ -87,7 +88,7 @@ export function useMeridianVoice(voice = "nova") {
     try {
       const res = await agentApi.post(
         "/v1/agents/voice/synthesize",
-        { text: t.slice(0, MAX_CHARS), voice },
+        { text: t.slice(0, MAX_CHARS), voice, language: ttsLanguage() },
         { responseType: "arraybuffer", timeout: 30000 },
       )
       const buf: ArrayBuffer | undefined = res.data

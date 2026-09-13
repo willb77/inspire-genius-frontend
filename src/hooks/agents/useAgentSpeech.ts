@@ -27,6 +27,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { agentApi } from "@/lib/agentApi";
 import { useAudioQueue } from "@/hooks/agents/useAudioQueue";
+import { ttsLanguage } from "@/lib/voiceLanguage"
 
 /** Longest text accepted by the synthesize endpoint in one call. */
 const MAX_TTS_CHARS = 4096;
@@ -156,7 +157,7 @@ export function useAgentSpeech(options: UseAgentSpeechOptions = {}) {
           try {
             const res = await agentApi.post(
               "/v1/agents/voice/synthesize",
-              { text: sentence.slice(0, MAX_TTS_CHARS), voice },
+              { text: sentence.slice(0, MAX_TTS_CHARS), voice, language: ttsLanguage() },
               {
                 responseType: "arraybuffer",
                 timeout: 30000,

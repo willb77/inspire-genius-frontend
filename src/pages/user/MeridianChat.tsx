@@ -74,6 +74,7 @@ import {
   Download,
   Lock,
 } from "lucide-react";
+import { ttsLanguage } from "@/lib/voiceLanguage"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -863,7 +864,7 @@ export default function MeridianChat({
           const t = await resolveToken();
           const r = await agentApi.post(
             "/v1/agents/voice/synthesize",
-            { text: sentence.slice(0, 4096), voice },
+            { text: sentence.slice(0, 4096), voice, language: ttsLanguage() },
             {
               headers: t ? { "access-token": t } : {},
               responseType: "arraybuffer",
@@ -1020,7 +1021,7 @@ export default function MeridianChat({
           agentApi
             .post(
               "/v1/agents/voice/synthesize",
-              { text: sentence.slice(0, 4096), voice: "shimmer" },
+              { text: sentence.slice(0, 4096), voice: "shimmer", language: ttsLanguage() },
               {
                 headers: token ? { "access-token": token } : {},
                 responseType: "arraybuffer",
