@@ -75,6 +75,7 @@ import {
   Lock,
 } from "lucide-react";
 import { ttsLanguage } from "@/lib/voiceLanguage"
+import { createTurnLanguageLatch, replyLanguage } from "@/lib/detectLanguage"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -840,6 +841,11 @@ export default function MeridianChat({
       ttsCancelledRef.current = false;
       ttsStreamingQueueRef.current = [];
 
+      // One latch per turn. Sentences arrive one at a time here, so there is
+      // no full reply to inspect up front — the latch accumulates until it is
+      // confident, then freezes so the voice cannot change mid-answer.
+      const turnLanguage = createTurnLanguageLatch(ttsLanguage());
+
       let tokenP: Promise<string> | null = null;
       const resolveToken = async (): Promise<string> => {
         if (tokenP) return tokenP;
@@ -859,12 +865,13 @@ export default function MeridianChat({
       const postSentence = async (
         sentence: string,
       ): Promise<ArrayBuffer | null> => {
+        const language = turnLanguage.next(sentence);
         try {
           const { agentApi } = await import("@/lib/agentApi");
           const t = await resolveToken();
           const r = await agentApi.post(
             "/v1/agents/voice/synthesize",
-            { text: sentence.slice(0, 4096), voice, language: ttsLanguage() },
+            { text: sentence.slice(0, 4096), voice, language },
             {
               headers: t ? { "access-token": t } : {},
               responseType: "arraybuffer",
@@ -978,6 +985,9 @@ export default function MeridianChat({
         ttsAbortRef.current = null;
       }
 
+      // Decided once, before the split, for the same reason as the streaming
+      // path: a per-sentence decision lets the voice change mid-reply.
+      const turnLanguage = replyLanguage(responseText, ttsLanguage());
       const sentences = responseText
         .replace(/([.!?;:])\s+/g, "$1\n")
         .split("\n")
@@ -1021,7 +1031,7 @@ export default function MeridianChat({
           agentApi
             .post(
               "/v1/agents/voice/synthesize",
-              { text: sentence.slice(0, 4096), voice: "shimmer", language: ttsLanguage() },
+              { text: sentence.slice(0, 4096), voice: "shimmer", language: turnLanguage },
               {
                 headers: token ? { "access-token": token } : {},
                 responseType: "arraybuffer",
