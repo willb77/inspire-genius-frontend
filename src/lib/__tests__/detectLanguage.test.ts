@@ -209,3 +209,124 @@ describe("the three guards that mutation testing showed were untested", () => {
     expect(latch.settled).toBe("fr")
   })
 })
+
+describe("an unlisted language must not be captured by a listed one", () => {
+  /**
+   * Found in production on 2026-09-14, not by a test. Bill spoke Haitian
+   * Creole on staging-b and heard a POLISH voice for two entire turns —
+   * 22 sentences each, every one routed to pl-PL-Chirp3-HD-Kore.
+   *
+   * The margin guard did not help and could not have: an unlisted language has
+   * NO COMPETITOR, so whichever listed language shares its short function words
+   * wins by a wide margin, confidently. Polish lists `w`, `sa`, `na` and `to`,
+   * all ordinary Creole words.
+   *
+   * The fix is substantive-token evidence, so these tests are about the CLASS,
+   * not about Creole. Any Latin-script language we do not list — Romanian,
+   * Swahili, Tagalog — would have hit exactly this.
+   */
+
+  const CREOLE = [
+    "Bonjou! Kijan ou ye jodi a? Mwen kontan pale avèk ou.",
+    "Sa se yon bon kesyon sou pwofil ou. Mwen ka ede ou ak sa.",
+    "Nou gen anpil bagay pou nou fè. Ou pa bezwen enkyete ou.",
+  ].join(" ")
+
+  it("detects Haitian Creole as Creole, not Polish", () => {
+    expect(detectLanguage(CREOLE).language).toBe("ht")
+  })
+
+  it("Creole resolves to no Chirp locale, so the server uses OpenAI", () => {
+    // "ht" is deliberately absent from the server's locale map — Google has no
+    // Chirp 3 HD voice for it — so this degrades exactly like Albanian.
+    // Detecting it POSITIVELY is what makes that deterministic instead of
+    // depending on whatever the UI happens to be set to.
+    expect(replyLanguage(CREOLE, "en")).toBe("ht")
+    expect(replyLanguage(CREOLE, "fr")).toBe("ht")
+  })
+
+  it("short shared tokens alone never establish confidence", () => {
+    // Polish function words only, nothing substantive. Before the fix this was
+    // a confident "pl"; it must now fall back.
+    const shortOnly = "sa to na sa to na sa to na sa to na sa to na"
+    expect(detectLanguage(shortOnly).confident).toBe(false)
+  })
+
+  it("a made-up unlisted language falls back rather than being captured", () => {
+    // Deliberately seeded with tokens several listed languages share, and no
+    // substantive word from any of them.
+    const unlisted = "la el de je du vi su to na sa la el de je du vi su"
+    expect(detectLanguage(unlisted).confident).toBe(false)
+  })
+
+  it("real Polish is still detected — the fix must not blind us", () => {
+    const pl =
+      "Cześć! Jak się masz dzisiaj? Dziękuję bardzo za pytanie, to jest " +
+      "dobre pytanie o twój profil."
+    expect(detectLanguage(pl).language).toBe("pl")
+  })
+
+  it("every other language still detected after the tightening", () => {
+    expect(detectLanguage(FR).language).toBe("fr")
+    expect(detectLanguage(DE).language).toBe("de")
+    expect(detectLanguage(ES).language).toBe("es")
+    expect(detectLanguage(EN).language).toBe("en")
+  })
+})
+
+describe("accented stopwords must actually match", () => {
+  /**
+   * The root cause behind the Creole-as-Polish incident, and invisible until
+   * you look for it: JavaScript's `\b` is defined on ASCII word characters, so
+   * `/\bcześć\b/` can never match. Every accented token in the table was dead
+   * from the day it shipped — `très`, `für`, `olá`, `teşekkür`, `snälla`, the
+   * lot.
+   *
+   * That did not merely weaken detection. It left Polish running on nothing
+   * but `w`, `sa`, `na` and `to` — ordinary Haitian Creole words — which is
+   * how Creole got read aloud in a Polish voice.
+   */
+
+  it("matches languages whose function words are mostly accented", () => {
+    // Polish with its real orthography. Under ASCII \b this scored 2 and lost.
+    const pl = "Cześć! Dziękuję bardzo. Jak się masz? Wiem, że tak jest."
+    expect(detectLanguage(pl).language).toBe("pl")
+  })
+
+  it.each([
+    ["fr", "Très bien, je vous explique cela avec plaisir aujourd'hui."],
+    ["de", "Für Sie ist das eine gute Frage, und ich danke Ihnen dafür."],
+    ["pt", "Olá! Não é uma pergunta difícil, obrigado por perguntar hoje."],
+    ["tr", "Merhaba, teşekkür ederim. Lütfen nasıl olduğunu bana söyle."],
+    ["sv", "Hej! Snälla, när är det dags? Tack så mycket för hjälpen."],
+  ])("detects %s through its accented forms", (lang, text) => {
+    expect(detectLanguage(text).language).toBe(lang)
+  })
+
+  it("the boundary is Unicode-aware, not ASCII", () => {
+    // Guards the mechanism directly: an accented token inside a longer word
+    // must NOT match, and standing alone it must.
+    expect(detectLanguage("Cześć cześć dziękuję się że tak").language).toBe("pl")
+    // ...and no partial-word match: "Nonmerciful" must not count as French.
+    const notFrench = "Nonmerciful bonjourno unetheless desirable dansing"
+    expect(detectLanguage(notFrench).language).not.toBe("fr")
+  })
+})
+
+describe("one substantive token is not enough", () => {
+  it("requires TWO distinct substantive tokens, not one", () => {
+    // Exactly one distinct token of 3+ chars ("jak"), padded with short
+    // Polish function words to clear length and margin. One long word can be
+    // a loanword, a name, or a coincidence; two agreeing is a claim.
+    //
+    // Mutation testing found this gap: MIN_SUBSTANTIVE_TOKENS could be dropped
+    // from 2 to 1 with the whole suite still green.
+    const oneSubstantive = "jak ja my ty ja my ty ja my ty ja my ty ja my"
+    expect(detectLanguage(oneSubstantive).confident).toBe(false)
+  })
+
+  it("two distinct substantive tokens is enough", () => {
+    const twoSubstantive = "jak jest ja my ty ja my ty ja my ty ja my ty"
+    expect(detectLanguage(twoSubstantive).language).toBe("pl")
+  })
+})
