@@ -51,6 +51,22 @@ export type LiveSession = {
   finalized_at?: string
 }
 
+/**
+ * Whether the STAR Result cap was applied to one answer.
+ *
+ * The wire shape is an OBJECT, and always has been — the server sends
+ * `{applied: false, reason: null}` for an answer that was NOT capped, not an
+ * absent key. This type said `boolean` until 2026-09-14, and the panel rendered
+ * on `{capped && ...}`; an object is truthy whichever way `applied` points, so
+ * the amber "capped" note appeared on EVERY rated answer, in every kind of
+ * session. Read `capped.applied`, never `capped`.
+ */
+export type CappedInfo = {
+  applied: boolean
+  /** e.g. "no_measurable_result". Null when nothing was capped. */
+  reason: string | null
+}
+
 export type StarEvidenceField = { present: boolean; note?: string }
 
 export type StarEvidence = {
@@ -74,8 +90,8 @@ export type LiveAnswer = {
   captured_answer: string
   suggested_score: number | null
   star_evidence: StarEvidence
-  /** True when the advisory suggestion was capped (e.g. missing STAR elements). */
-  capped?: boolean
+  /** Whether the Result cap was applied to this answer. See {@link CappedInfo}. */
+  capped?: CappedInfo
   final_score?: number | null
   /** WHO decided `final_score`.
    *
@@ -382,7 +398,7 @@ export type SubmitAnswerResult = {
   answer_id: string
   suggested_score: number | null
   star_evidence: StarEvidence
-  capped?: boolean
+  capped?: CappedInfo
 }
 
 export type ScoreAnswerPayload = {

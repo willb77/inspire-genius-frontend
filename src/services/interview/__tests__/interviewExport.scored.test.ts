@@ -52,7 +52,7 @@ const RESULT: FinalizeResult = {
         A: { present: true },
         R: { present: false },
       },
-      capped: false,
+      capped: { applied: false, reason: null },
       final_score: 4,
       interviewer_notes: "Strong situation/task framing.",
     },
@@ -69,7 +69,7 @@ const RESULT: FinalizeResult = {
         A: { present: true },
         R: { present: true },
       },
-      capped: true,
+      capped: { applied: true, reason: "no_measurable_result" },
       final_score: 3,
       interviewer_notes: "",
     },
@@ -111,6 +111,12 @@ describe("buildScoredInterviewMarkdown", () => {
     // Per-question final scores
     expect(md).toContain("**Final score:** 4 / 5")
     expect(md).toContain("**Final score:** 3 / 5 (capped)")
+    // The other side of it, which nothing asserted: an answer that was NOT
+    // capped must not be labelled in the transcript. `capped` is an object, so
+    // the old truthiness check marked every answer — in the document that gets
+    // shared with a candidate or kept as a selection record.
+    expect(md).toContain("**Final score:** 4 / 5")
+    expect(md).not.toContain("**Final score:** 4 / 5 (capped)")
 
     // Rubric summary table
     expect(md).toContain("## Rubric Summary")
