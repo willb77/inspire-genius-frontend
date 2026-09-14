@@ -27,6 +27,7 @@ import {
 } from "react";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { ttsLanguage } from "@/lib/voiceLanguage"
+import { replyLanguage } from "@/lib/detectLanguage"
 
 export type TTSProvider = "server" | "browser";
 
@@ -89,7 +90,9 @@ async function fetchServerAudio(text: string, voice: string): Promise<ArrayBuffe
       // The endpoint caps input; MeridianChat slices to the same bound.
       // `language` lets the server pick a native voice for a non-English
       // UI; omitted/undefined keeps the previous English-on-OpenAI path.
-      { text: text.slice(0, 4096), voice, language: ttsLanguage() },
+      // Detect on the text we are about to speak; the UI language is only
+      // a tie-break when the text itself is inconclusive.
+      { text: text.slice(0, 4096), voice, language: replyLanguage(text, ttsLanguage()) },
       { responseType: "arraybuffer", timeout: 20_000 },
     );
     const data = response.data as ArrayBuffer;
