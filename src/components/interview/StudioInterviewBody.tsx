@@ -678,6 +678,7 @@ export default function StudioInterviewBody() {
             scored={currentAnswer?.scored ?? null}
             submitting={submitAnswer.isPending}
             saving={scoreAnswer.isPending}
+            developmentMode={!isHiring}
             onSubmitAnswer={(text) => handleSubmitAnswer(current.competency_id, current.question, text)}
             onSaveScore={(score, notes) => handleSaveScore(current.competency_id, score, notes)}
           />

@@ -600,6 +600,10 @@ export default function LiveInterviewBody() {
             scored={currentAnswer?.scored ?? null}
             submitting={submitAnswer.isPending}
             saving={scoreAnswer.isPending}
+            // A Live scored interview is always a hiring interview — there is no
+            // kind selector on this surface. Passed explicitly rather than left to
+            // the default so the fork parity test can see both sides.
+            developmentMode={false}
             bankEntry={bankByCompetency.get(current.competency_id)}
             onSubmitAnswer={(text) => handleSubmitAnswer(current.competency_id, current.question, text)}
             onSaveScore={(score, notes) => handleSaveScore(current.competency_id, score, notes)}

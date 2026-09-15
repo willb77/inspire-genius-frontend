@@ -22,11 +22,19 @@ const EVIDENCE: StarEvidence = {
   R: { present: true },
 }
 
+// The real wire shape. `capped` is an OBJECT and always has been — the server
+// sends {applied:false, reason:null} for an answer it did NOT cap. This fixture
+// said `capped: false` until 2026-09-14, which is why no test here ever saw the
+// defect below: the fixture and the type shared the same wrong belief, and the
+// app produced something else.
+const NOT_CAPPED = { applied: false, reason: null }
+const CAPPED = { applied: true, reason: "no_measurable_result" }
+
 const SUGGESTION: SubmitAnswerResult = {
   answer_id: "ans-1",
   suggested_score: 3,
   star_evidence: EVIDENCE,
-  capped: false,
+  capped: NOT_CAPPED,
 }
 
 describe("AnswerScorePanel", () => {
@@ -116,5 +124,60 @@ describe("AnswerScorePanel", () => {
     await user.click(screen.getByRole("button", { name: /save rating/i }))
 
     expect(onSaveScore).toHaveBeenCalledWith(2, "Weak on the Result element.")
+  })
+})
+
+describe("the Result-cap note", () => {
+  const base = {
+    question: QUESTION,
+    number: 1,
+    total: 1,
+    consentMode: "no_audio" as const,
+    scored: null,
+    onSubmitAnswer: jest.fn(),
+    onSaveScore: jest.fn(),
+  }
+
+  it("says nothing when the answer was not capped", () => {
+    // The reported defect. `capped` is an object, so the old
+    // `{capped && ...}` render showed the amber note on EVERY rated answer —
+    // in a hiring interview too, not only a discovery one.
+    render(<AnswerScorePanel {...base} suggestion={{ ...SUGGESTION, capped: NOT_CAPPED }} />)
+    expect(screen.queryByText(/capped/i)).not.toBeInTheDocument()
+  })
+
+  it("names the rule when the answer WAS capped", () => {
+    render(<AnswerScorePanel {...base} suggestion={{ ...SUGGESTION, capped: CAPPED }} />)
+    expect(screen.getByText(/capped at 3 — no measurable result yet/i)).toBeInTheDocument()
+  })
+
+  it("says nothing when the server sent no cap information at all", () => {
+    render(<AnswerScorePanel {...base} suggestion={{ ...SUGGESTION, capped: undefined }} />)
+    expect(screen.queryByText(/capped/i)).not.toBeInTheDocument()
+  })
+})
+
+describe("a development conversation is framed as one", () => {
+  const base = {
+    question: QUESTION,
+    number: 1,
+    total: 1,
+    consentMode: "no_audio" as const,
+    scored: null,
+    suggestion: SUGGESTION,
+    onSubmitAnswer: jest.fn(),
+    onSaveScore: jest.fn(),
+  }
+
+  it("reads the STAR row as description, not as a checklist", () => {
+    render(<AnswerScorePanel {...base} developmentMode />)
+    expect(screen.getByText(/descriptive only/i)).toBeInTheDocument()
+    expect(screen.getByText(/not scored on the STAR arc/i)).toBeInTheDocument()
+  })
+
+  it("leaves a hiring interview's STAR row exactly as it was", () => {
+    render(<AnswerScorePanel {...base} />)
+    expect(screen.queryByText(/descriptive only/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/Situation/)).toBeInTheDocument()
   })
 })

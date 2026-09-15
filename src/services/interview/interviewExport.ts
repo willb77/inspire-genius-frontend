@@ -194,7 +194,12 @@ export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
       ({ key, label }) => `${label}: ${a.star_evidence[key]?.present ? "Present" : "Not observed"}`,
     ).join(" · ")
     lines.push(`**STAR evidence:** ${evidence}`)
-    lines.push(`**Final score:** ${a.final_score ?? "—"} / 5${a.capped ? " (capped)" : ""}`)
+    // `capped` is an OBJECT — `a.capped ? …` marked EVERY answer "(capped)" in
+    // the exported transcript, including a hiring answer that was not capped
+    // and every answer of a development conversation. This is the shared
+    // document, so it was the most consequential of the three places that read
+    // the field wrongly. Read `.applied`.
+    lines.push(`**Final score:** ${a.final_score ?? "—"} / 5${a.capped?.applied ? " (capped)" : ""}`)
     if (typeof a.suggested_score === "number") {
       lines.push(`**AI-suggested score (advisory):** ${a.suggested_score} / 5`)
     }

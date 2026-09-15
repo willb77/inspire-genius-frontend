@@ -63,6 +63,14 @@ export type AnswerScorePanelProps = {
   saving?: boolean
   /** The matching bank entry (rubric + exemplars), for the "what to listen for" reference. */
   bankEntry?: StarCompetency
+  /**
+   * True for a Development / discovery conversation (`frame.kind === "general"`).
+   *
+   * Such a session is not assessed on the STAR arc — the server disables the
+   * Result cap for it and frames the advisory prompt differently — so the S/T/A/R
+   * row here must read as description, not as a checklist the person failed.
+   */
+  developmentMode?: boolean
   onSubmitAnswer: (capturedAnswer: string) => void | Promise<void>
   onSaveScore: (finalScore: number, interviewerNotes: string) => void | Promise<void>
 }
@@ -77,6 +85,7 @@ export default function AnswerScorePanel({
   submitting = false,
   saving = false,
   bankEntry,
+  developmentMode = false,
   onSubmitAnswer,
   onSaveScore,
 }: AnswerScorePanelProps) {
@@ -199,8 +208,18 @@ export default function AnswerScorePanel({
             <p className="text-sm text-slate-700">
               Suggested score:{" "}
               <span className="font-semibold">{suggestion?.suggested_score ?? "—"}</span> / 5
-              {capped && <span className="ml-1 text-xs text-amber-600">(capped — evidence incomplete)</span>}
+              {capped?.applied && (
+                <span className="ml-1 text-xs text-amber-600">
+                  (capped at {capped.reason === "no_measurable_result" ? "3 — no measurable result yet" : "the section limit"})
+                </span>
+              )}
             </p>
+            {developmentMode && (
+              <p className="mt-2 text-xs text-slate-500">
+                Noted in the answer — descriptive only. A development conversation
+                is not scored on the STAR arc.
+              </p>
+            )}
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
               {(Object.keys(STAR_LABELS) as (keyof StarEvidence)[]).map((k) => (
                 <span
