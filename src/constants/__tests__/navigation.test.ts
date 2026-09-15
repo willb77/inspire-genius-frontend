@@ -65,7 +65,7 @@ describe("constants/navigation", () => {
       // way. The five that do not move are pinned exactly.
       expect(labels()[0]).toMatch(/^(Team Development Studio|Dashboard)$/)
       expect(labels().slice(1)).toEqual([
-        "Student Oversight",
+        "Member Oversight",
         "Team Import",
         "Schedule",
         "Settings",
