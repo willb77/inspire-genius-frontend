@@ -37,10 +37,13 @@ export function ProfileStudioPanel({
   memberId,
   memberName,
   profile,
+  notShared,
 }: {
   memberId: string
   memberName: string
   profile: BehavioralProfile
+  /** TDS-1b: the member has not shared their PRISM with this caller. */
+  notShared?: boolean
 }) {
   const narrative = useSubjectNarrative()
   const [text, setText] = useState("")
@@ -156,6 +159,22 @@ export function ProfileStudioPanel({
   // No scores means no write-up worth having. Saying so beats generating
   // confident prose about nothing, which would be indistinguishable from a
   // real reading.
+  //
+  // TDS-1b sits ABOVE this: the redaction empties the scores, so `!scored`
+  // would otherwise report "no PRISM on file" about a member who has one and
+  // simply withheld it. A write-up is the sharpest case for the grant — prose
+  // about a named colleague's psychology, exported to a PDF that outlives the
+  // tab and reaches people who never saw the caveat.
+  if (notShared) {
+    return (
+      <p className="text-sm text-slate-500" data-testid="studio-state-not-shared">
+        {memberName} has not shared their PRISM profile with you, so there is nothing to write
+        up. You can ask from the Behavioral Profile tab — asking grants nothing, and declining
+        carries no consequence for them.
+      </p>
+    )
+  }
+
   if (!scored) {
     return (
       <p className="text-sm text-slate-500">

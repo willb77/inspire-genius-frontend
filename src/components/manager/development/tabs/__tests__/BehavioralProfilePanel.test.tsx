@@ -87,3 +87,87 @@ describe("BehavioralProfilePanel", () => {
     expect(screen.getByText(/Invite to add PRISM/i)).toBeInTheDocument()
   })
 })
+
+// ── TDS-1b: the member withheld their PRISM ──────────────────────────────
+
+describe("BehavioralProfilePanel — not shared (TDS-1b)", () => {
+  // The redaction empties `prism` but PRESERVES `coverage.prism`, because
+  // whether a PRISM EXISTS is not the secret. This is that exact payload.
+  const redacted: BehavioralProfile = {
+    prism: [],
+    reconciliation: {
+      headline: "",
+      throughLine: "",
+      discrepancies: [],
+      confidence: "low",
+    },
+    coverage: { prism: true, clifton: false, disc: false },
+  }
+
+  it("says the profile is withheld, not that there is none", () => {
+    render(<BehavioralProfilePanel profile={redacted} notShared memberName="Gary Burnette" />)
+    expect(screen.getByTestId("prism-state-not-shared")).toBeInTheDocument()
+    expect(screen.getByText(/has a PRISM profile on file but has not shared it/i)).toBeInTheDocument()
+  })
+
+  it("never offers to invite a member who already completed PRISM", () => {
+    // The defect this branch exists to prevent: with `prism: []` and
+    // `coverage.prism: true`, the ordinary path renders an invite to complete
+    // an assessment the member sat years ago. False, and its own call to
+    // action cannot fix it.
+    render(<BehavioralProfilePanel profile={redacted} notShared memberName="Gary Burnette" />)
+    expect(screen.queryByText(/Invite to complete PRISM/i)).not.toBeInTheDocument()
+    expect(screen.queryByTestId("prism-radar")).not.toBeInTheDocument()
+  })
+
+  it("offers the ask, and asking is not granting", () => {
+    const onRequestAccess = jest.fn()
+    render(
+      <BehavioralProfilePanel
+        profile={redacted}
+        notShared
+        memberName="Gary Burnette"
+        onRequestAccess={onRequestAccess}
+      />,
+    )
+    const btn = screen.getByRole("button", { name: /Ask to see this profile/i })
+    btn.click()
+    expect(onRequestAccess).toHaveBeenCalledTimes(1)
+    // No scores appear as a result of asking.
+    expect(screen.queryByTestId("prism-radar")).not.toBeInTheDocument()
+  })
+
+  it("after asking, reports that the member decides", () => {
+    render(
+      <BehavioralProfilePanel profile={redacted} notShared memberName="Gary Burnette" requestSent />,
+    )
+    expect(screen.getByTestId("prism-request-sent")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Ask to see this profile/i })).not.toBeInTheDocument()
+  })
+
+  it("offers no ask when the member has no account — there is nobody to answer", () => {
+    // The seven Studio-added rows on staging-b are exactly this case. A button
+    // here would report "Asked. They decide" for a request that reaches no
+    // human: consent/people.py matches a roster manager on
+    // `member_id = :caller`, and a synthetic id never equals a real sub.
+    const onRequestAccess = jest.fn()
+    render(
+      <BehavioralProfilePanel
+        profile={redacted}
+        notShared
+        noAccount
+        memberName="Paula Averico"
+        onRequestAccess={onRequestAccess}
+      />,
+    )
+    expect(screen.getByTestId("prism-state-no-account")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Ask to see this profile/i })).not.toBeInTheDocument()
+    expect(onRequestAccess).not.toHaveBeenCalled()
+  })
+
+  it("renders the real profile untouched when the grant is live", () => {
+    render(<BehavioralProfilePanel profile={fullProfile} />)
+    expect(screen.queryByTestId("prism-state-not-shared")).not.toBeInTheDocument()
+    expect(screen.getByText("Structured innovator")).toBeInTheDocument()
+  })
+})

@@ -21,7 +21,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { requestStudentAccess } from "@/services/manager/studentRoster.service"
 import { cn } from "@/lib/utils"
 import { exportDossierPdf } from "@/lib/dossierPdf"
 import { ROUTES } from "@/constants/routes"
@@ -174,6 +176,18 @@ export default function MemberDevelopmentWorkspace({
   const refresh = useRefreshDossier(memberId)
   const share = useSharePlan(memberId)
   const session = useGoalSession(memberId)
+  // TDS-1b. Reuses Member Oversight's existing ask — POST
+  // /v1/agents/consent/visibility/request — rather than inventing a second
+  // way to request the same grant. Asking grants nothing; the member decides.
+  const requestPrism = useMutation({
+    mutationFn: () =>
+      requestStudentAccess({
+        studentUserId: memberId ?? "",
+        categories: { prism: true },
+        reason: "Requested from the Team Development Studio.",
+      }),
+    onSuccess: () => toast.success("Asked. They decide, and declining costs them nothing."),
+  })
 
   const { internal, external } = useMemo(() => {
     const matches = dossier?.matches ?? []
@@ -379,7 +393,16 @@ export default function MemberDevelopmentWorkspace({
           <div className="mt-4">
             <Suspense fallback={<TabFallback />}>
               <TabsContent value="profile">
-                <BehavioralProfilePanel profile={dossier.profile} onInvite={() => handleInvite()} />
+                <BehavioralProfilePanel
+                  profile={dossier.profile}
+                  onInvite={() => handleInvite()}
+                  notShared={dossier.prismNotShared}
+                  noAccount={dossier.prismNoAccount}
+                  memberName={member.name}
+                  onRequestAccess={() => requestPrism.mutate()}
+                  requestPending={requestPrism.isPending}
+                  requestSent={requestPrism.isSuccess}
+                />
               </TabsContent>
               <TabsContent value="goals">
                 <GoalsPanel memberId={dossier.memberId} memberName={member.name} />
@@ -413,6 +436,7 @@ export default function MemberDevelopmentWorkspace({
                       memberId={dossier.memberId}
                       memberName={member.name}
                       profile={dossier.profile}
+                      notShared={dossier.prismNotShared}
                     />
                   </TabsContent>
                   <TabsContent value="compare">
@@ -438,6 +462,7 @@ export default function MemberDevelopmentWorkspace({
               goals={dossier.goals}
               gaps={dossier.gaps}
               goalsNotShared={dossier.goalsNotShared}
+              prismNotShared={dossier.prismNotShared}
             />
           </div>
         </aside>
