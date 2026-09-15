@@ -14,6 +14,7 @@ import {
   RadarChart,
   ResponsiveContainer,
 } from "recharts"
+import { Lock } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -75,11 +76,53 @@ function InviteToAddCard({ framework, onInvite }: { framework: string; onInvite?
 export type BehavioralProfilePanelProps = {
   profile: BehavioralProfile
   onInvite?: (framework: "prism" | "clifton" | "disc") => void
+  /** TDS-1b: the member holds a PRISM but has not shared it with this caller. */
+  notShared?: boolean
+  /** Ask the member for the `prism` category. Asking grants nothing. */
+  onRequestAccess?: () => void
+  requestPending?: boolean
+  requestSent?: boolean
+  memberName?: string
 }
 
-export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfilePanelProps) {
+export function BehavioralProfilePanel({
+  profile, onInvite, notShared, onRequestAccess, requestPending, requestSent, memberName,
+}: BehavioralProfilePanelProps) {
   const sk = useDevSkin()
   const { prism, clifton, disc, reconciliation, coverage } = profile
+  const who = memberName?.trim() || "This member"
+
+  // TDS-1b. FIRST, before every other branch — and that order is the whole
+  // point. The redaction empties `prism` while PRESERVING `coverage.prism`,
+  // so without this the next branch down renders "Invite to complete PRISM"
+  // at a member who completed it years ago and simply did not share it. That
+  // sentence is both false and unfixable by its own call to action.
+  if (notShared) {
+    return (
+      <div className="space-y-6" data-testid="prism-state-not-shared">
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+            <Lock className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />
+            <div className={cn("text-sm font-semibold", sk.text900)}>Not shared with you</div>
+            <p className={cn("max-w-md text-sm", sk.text600)}>
+              {who} has a PRISM profile on file but has not shared it with you. Nobody sees a
+              behavioural profile by rank — they choose, person by person, from their own
+              workspace. You can ask; asking grants nothing.
+            </p>
+            {requestSent ? (
+              <p className={cn("text-sm", sk.text500)} data-testid="prism-request-sent">
+                Asked. {who} decides, and declining carries no consequence for them.
+              </p>
+            ) : onRequestAccess ? (
+              <Button variant="outline" onClick={onRequestAccess} disabled={requestPending}>
+                {requestPending ? "Asking…" : "Ask to see this profile"}
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const radarData = prism.map((d) => ({
     dimension: d.label || BEHAVIOUR_CONFIG[d.id]?.label || `Dim ${d.id}`,

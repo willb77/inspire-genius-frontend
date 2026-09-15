@@ -133,9 +133,11 @@ export type MeridianDevelopmentPanelProps = {
    *  the empty list read as "no goals". The server renders its own
    *  <MEMBER_GOALS status="not_shared"> block on the same signal. */
   goalsNotShared?: boolean
+  /** TDS-1b: PRISM withheld — Meridian is not grounded in it either. */
+  prismNotShared?: boolean
 }
 
-export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gaps, goalsNotShared }: MeridianDevelopmentPanelProps) {
+export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gaps, goalsNotShared, prismNotShared }: MeridianDevelopmentPanelProps) {
   const sk = useDevSkin()
   const { user } = useAuth()
   const accessToken = user?.token ?? ""
@@ -202,6 +204,12 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
   const goalsNotSharedLine = goalsNotShared
     ? `${memberName || "This member"} has not shared their goals with you, so Meridian cannot see them either.`
     : null
+  // TDS-1b. The engine already DROPS the member's USER_PROFILE block when it
+  // cannot read their PRISM, so the reply really is ungrounded — say so, or a
+  // plausible answer passes for an informed one.
+  const prismNotSharedLine = prismNotShared
+    ? `${memberName || "This member"} has not shared their PRISM profile with you, so Meridian is not grounded in it.`
+    : null
 
   const send = (text: string) => {
     const trimmed = text.trim()
@@ -261,6 +269,11 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
           </Badge>
         ))}
       </div>
+      {prismNotSharedLine ? (
+        <p className={cn("px-3 pt-2 text-xs", sk.text500)} data-testid="meridian-prism-not-shared">
+          {prismNotSharedLine}
+        </p>
+      ) : null}
       {goalsNotSharedLine ? (
         <p className={cn("border-b px-3 py-2 text-xs", sk.border200, sk.text500)} data-testid="meridian-goals-not-shared">
           {goalsNotSharedLine}

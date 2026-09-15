@@ -362,6 +362,11 @@ export type MemberDossier = {
    *  Then goals/goalCoverage are empty and goalsPending is null — an explicit
    *  state, never the "no goals yet" empty list. */
   goalsNotShared?: boolean
+  /** TDS-1b: the member has a PRISM on file but has NOT shared it with this
+   *  caller. Distinct from `profile.coverage.prism === false`, which means no
+   *  PRISM exists. Render them differently — "not shared" is a decision the
+   *  member made and can revisit; "no PRISM" is an invitation to sit it. */
+  prismNotShared?: boolean
   gaps: DevelopmentGap[]
   learning: LearningItem[]
   milestones: Milestone[]
