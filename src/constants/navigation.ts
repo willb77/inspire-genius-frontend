@@ -492,7 +492,7 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   // Oversight obeys different visibility rules from every other roster surface
   // — it shows nothing a student has not agreed to share — and a manager needs
   // to know which set of rules they are reading.
-  { to: ROUTES.MANAGER.STUDENTS, icon: ShieldCheck, label: "Student Oversight" },
+  { to: ROUTES.MANAGER.STUDENTS, icon: ShieldCheck, label: "Member Oversight" },
   // Team Import is how the roster grows, so the Join Requests queue lives on
   // it now. That queue is pull-only — nothing notifies a manager when a request
   // arrives — so the button carries a count and the page loads it eagerly;

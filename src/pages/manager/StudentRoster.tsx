@@ -48,27 +48,27 @@ const CONSENT_COPY: Record<string, { label: string; tone: string; hint: string }
   none: {
     label: "Not requested",
     tone: "bg-slate-100 text-slate-700",
-    hint: "You have not asked this student for access yet.",
+    hint: "You have not asked this member for access yet.",
   },
   pending: {
     label: "Awaiting reply",
     tone: "bg-amber-100 text-amber-800",
-    hint: "The student has been asked and has not answered. Asking again is not available.",
+    hint: "The member has been asked and has not answered. Asking again is not available.",
   },
   granted: {
     label: "Shared",
     tone: "bg-emerald-100 text-emerald-800",
-    hint: "The student has granted the categories listed.",
+    hint: "The member has granted the categories listed.",
   },
   declined: {
     label: "Declined",
     tone: "bg-slate-100 text-slate-600",
-    hint: "The student declined. This carries no consequence for them and no action for you.",
+    hint: "The member declined. This carries no consequence for them and no action for you.",
   },
   revoked: {
     label: "Withdrawn",
     tone: "bg-slate-100 text-slate-600",
-    hint: "The student withdrew access they had previously granted.",
+    hint: "The member withdrew access they had previously granted.",
   },
   expired: {
     label: "Term ended",
@@ -155,7 +155,7 @@ function EngagementCell({ engagement }: { engagement: StudentRosterRow["engageme
     <div className="flex flex-col gap-0.5 text-sm">
       <span>
         {since === null ? (
-          <NotRecorded why="We have no sign-in event for this student. That is not the same as never signing in." />
+          <NotRecorded why="We have no sign-in event for this member. That is not the same as never signing in." />
         ) : since === 0 ? (
           "Seen today"
         ) : (
@@ -164,7 +164,7 @@ function EngagementCell({ engagement }: { engagement: StudentRosterRow["engageme
       </span>
       <span className="text-xs text-slate-500">
         {visits === null ? (
-          <NotRecorded why="No activity has been recorded for this student, so visits cannot be counted. This is not a count of zero." />
+          <NotRecorded why="No activity has been recorded for this member, so visits cannot be counted. This is not a count of zero." />
         ) : (
           `${visits} day${visits === 1 ? "" : "s"} active in ${engagement.cadenceWindowDays / 7} weeks`
         )}
@@ -208,10 +208,10 @@ export default function StudentRoster() {
     <ManagerLayout>
       <div className="space-y-6 p-6">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-slate-900">Student oversight</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Member oversight</h1>
           <p className="max-w-3xl text-sm text-slate-600">
             Your direct reports. What you can see about each of them is decided by
-            them — a student who has not shared a category is shown as{" "}
+            them — a member who has not shared a category is shown as{" "}
             <span className="font-medium">Not shared</span>, which says nothing
             about how engaged they are.
           </p>
@@ -307,7 +307,7 @@ export default function StudentRoster() {
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th scope="col" className="px-4 py-3">Student</th>
+                    <th scope="col" className="px-4 py-3">Member</th>
                     <th scope="col" className="px-4 py-3">Sharing</th>
                     <th scope="col" className="px-4 py-3">PRISM</th>
                     <th scope="col" className="px-4 py-3">Engagement</th>
