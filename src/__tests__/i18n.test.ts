@@ -2,14 +2,16 @@
  * i18n regression test suite.
  *
  * Covers:
- * - All 60 locale JSON files are valid JSON (10 langs × 6 namespaces)
+ * - Every shipped locale JSON file is valid JSON
  * - Every key present in English exists in all other languages
+ * - The three lists of languages agree: i18n.ts supportedLngs, the locale
+ *   directories on disk, and LanguageSwitcher's menu
  * - zh-CN/dashboard.json JSON syntax (regression for unescaped-quote bug)
  * - RTL switching: Arabic sets dir=rtl, all others set dir=ltr
  * - useDirection hook returns correct dir value
  * - localStorage key is 'i18nextLng' (persistence contract)
- * - i18n config: fallbackLng='en', all 10 langs in supportedLngs
- * - LanguageSwitcher defines exactly 10 language entries
+ * - i18n config: fallbackLng='en', supportedLngs read from src/lib/i18n.ts
+ * - LanguageSwitcher's entries match supportedLngs exactly
  * - RTL_LANGUAGES set covers Arabic (ar), Hebrew (he), Farsi (fa), Urdu (ur)
  * - Interpolation: no {{key}} double-brace placeholders escaped to literal text
  */
@@ -21,8 +23,48 @@ import * as path from "path";
 //  Constants mirrored from src/lib/i18n.ts
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SUPPORTED_LNGS = ["en", "es", "fr", "de", "pt", "ja", "ko", "zh-CN", "ar", "hi"] as const;
-type SupportedLng = (typeof SUPPORTED_LNGS)[number];
+const SRC_DIR = path.resolve(__dirname, "..");
+
+/**
+ * Read a string-literal array out of a source file WITHOUT importing it.
+ *
+ * Importing `src/lib/i18n.ts` would run `i18n.init()` with HttpBackend inside
+ * jsdom for every test that touches this file — the same reason
+ * `src/lib/voiceLanguage.ts` reads localStorage directly instead of importing
+ * the i18next instance. Parsing the source keeps the assertion honest without
+ * paying that cost.
+ */
+function readCodesFrom(
+  relPath: string,
+  pattern: RegExp,
+  entry = /["']([\w-]+)["']/g
+): string[] {
+  const src = fs.readFileSync(path.join(SRC_DIR, relPath), "utf-8");
+  const m = src.match(pattern);
+  if (!m) {
+    throw new Error(
+      `could not read language codes from ${relPath} — the source shape changed, ` +
+        `and this test must be updated rather than left passing against a stale copy`
+    );
+  }
+  const codes = [...m[1].matchAll(entry)].map((x) => x[1]);
+  if (codes.length === 0) {
+    throw new Error(`no language codes found in ${relPath}`);
+  }
+  return codes;
+}
+
+/** The real supportedLngs from src/lib/i18n.ts — not a copy of it. */
+const SUPPORTED_LNGS = readCodesFrom("lib/i18n.ts", /supportedLngs:\s*\[([^\]]*)\]/);
+
+/** The real menu from LanguageSwitcher.tsx — not a copy of it. */
+const SWITCHER_CODES = readCodesFrom(
+  "components/LanguageSwitcher.tsx",
+  /LANGUAGES(?::[^=]*)?\s*=\s*\[([\s\S]*?)\n\s*\]/,
+  /\bcode:\s*["']([\w-]+)["']/g
+);
+
+type SupportedLng = string;
 
 const NAMESPACES = ["common", "auth", "coaching", "dashboard", "admin", "chat"] as const;
 type Namespace = (typeof NAMESPACES)[number];
@@ -79,14 +121,16 @@ describe("Locale file existence", () => {
     expect(fs.existsSync(filePath)).toBe(true);
   });
 
-  it("at least 10 language directories (partial community langs may add more)", () => {
+  it("the locale directories on disk are exactly the supported languages", () => {
     const dirs = fs
       .readdirSync(LOCALES_DIR)
       .filter((d) => fs.statSync(path.join(LOCALES_DIR, d)).isDirectory());
-    expect(dirs.length).toBeGreaterThanOrEqual(SUPPORTED_LNGS.length);
+    // Equality, not ">=". A language shipped in supportedLngs with no locale
+    // directory renders raw keys; a directory nothing lists is dead weight.
+    expect([...dirs].sort()).toEqual([...SUPPORTED_LNGS].sort());
   });
 
-  it("exactly 5 namespaces per language", () => {
+  it("every namespace file exists for every language", () => {
     for (const lang of SUPPORTED_LNGS) {
       const files = fs
         .readdirSync(path.join(LOCALES_DIR, lang))
@@ -248,7 +292,7 @@ describe("RTL_LANGUAGES set", () => {
     expect(RTL_LANGUAGES.has("es")).toBe(false);
   });
 
-  it("All 10 supported languages except ar are LTR", () => {
+  it("every supported language except ar is LTR", () => {
     const ltrLangs = SUPPORTED_LNGS.filter((l) => l !== "ar");
     for (const lang of ltrLangs) {
       const baseLang = lang.split("-")[0];
@@ -305,7 +349,7 @@ describe("useDirection hook logic", () => {
     expect(computeDir("hi")).toBe("ltr");
   });
 
-  it("All 10 supported languages return a valid dir value", () => {
+  it("every supported language returns a valid dir value", () => {
     for (const lang of SUPPORTED_LNGS) {
       const dir = computeDir(lang);
       expect(["rtl", "ltr"]).toContain(dir);
@@ -376,8 +420,19 @@ describe("i18n configuration contract", () => {
     }
   });
 
-  it("supportedLngs has exactly 10 languages", () => {
-    expect(SUPPORTED_LNGS.length).toBe(10);
+  it("supportedLngs is non-empty and free of duplicates", () => {
+    // NOT a hardcoded count. This file asserted "exactly 10" against its own
+    // copy of the list while the app shipped 21 — it passed, and guarded
+    // nothing. The count is whatever i18n.ts says; what matters is that the
+    // other two lists agree with it.
+    expect(SUPPORTED_LNGS.length).toBeGreaterThan(0);
+    expect(new Set(SUPPORTED_LNGS).size).toBe(SUPPORTED_LNGS.length);
+  });
+
+  it("every supported language has a locale directory", () => {
+    for (const lang of SUPPORTED_LNGS) {
+      expect(fs.existsSync(path.join(LOCALES_DIR, lang))).toBe(true);
+    }
   });
 
   it("supportedLngs includes 'en'", () => {
@@ -420,68 +475,36 @@ describe("i18n configuration contract", () => {
 //  LanguageSwitcher — 10 language entries
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("LanguageSwitcher language definitions", () => {
-  // Mirrors the LANGUAGES array from LanguageSwitcher.tsx (10 core + 10 community)
-  const SWITCHER_LANGUAGES = [
-    { code: "en",    label: "English" },
-    { code: "es",    label: "Español" },
-    { code: "fr",    label: "Français" },
-    { code: "de",    label: "Deutsch" },
-    { code: "pt",    label: "Português" },
-    { code: "ja",    label: "日本語" },
-    { code: "ko",    label: "한국어" },
-    { code: "zh-CN", label: "中文（简体）" },
-    { code: "ar",    label: "العربية" },
-    { code: "hi",    label: "हिन्दी" },
-    { code: "it",    label: "Italiano" },
-    { code: "nl",    label: "Nederlands" },
-    { code: "ru",    label: "Русский" },
-    { code: "pl",    label: "Polski" },
-    { code: "tr",    label: "Türkçe" },
-    { code: "th",    label: "ไทย" },
-    { code: "vi",    label: "Tiếng Việt" },
-    { code: "id",    label: "Bahasa Indonesia" },
-    { code: "sv",    label: "Svenska" },
-    { code: "nb",    label: "Norsk" },
-  ] as const;
-
-  it("defines exactly 20 languages (10 core + 10 community)", () => {
-    expect(SWITCHER_LANGUAGES.length).toBe(20);
-  });
-
-  it("core 10 codes are all in supported languages", () => {
-    const coreCodes = SWITCHER_LANGUAGES.slice(0, 10).map((l) => l.code);
-    for (const code of coreCodes) {
-      expect(SUPPORTED_LNGS).toContain(code as SupportedLng);
-    }
-  });
-
-  it("every entry has a non-empty code and label", () => {
-    for (const lang of SWITCHER_LANGUAGES) {
-      expect(lang.code.length).toBeGreaterThan(0);
-      expect(lang.label.length).toBeGreaterThan(0);
-    }
-  });
-
-  it("English code is 'en'", () => {
-    const en = SWITCHER_LANGUAGES.find((l) => l.label === "English");
-    expect(en?.code).toBe("en");
-  });
-
-  it("Arabic code is 'ar'", () => {
-    const ar = SWITCHER_LANGUAGES.find((l) => l.code === "ar");
-    expect(ar?.label).toBe("العربية");
-  });
-
-  it("Chinese entry uses 'zh-CN' code", () => {
-    const zh = SWITCHER_LANGUAGES.find((l) => l.code === "zh-CN");
-    expect(zh).toBeDefined();
-    expect(zh?.label).toContain("中文");
+describe("LanguageSwitcher menu", () => {
+  it("offers exactly the supported languages — no more, no less", () => {
+    // This block used to assert "exactly 20 (10 core + 10 community)" against
+    // a hand-copied array. The switcher had 21 entries at the time. A menu
+    // entry i18n.ts does not support switches the user to a language that
+    // never loads; a supported language missing from the menu is unreachable.
+    expect([...SWITCHER_CODES].sort()).toEqual([...SUPPORTED_LNGS].sort());
   });
 
   it("no duplicate codes", () => {
-    const codes = SWITCHER_LANGUAGES.map((l) => l.code);
-    expect(new Set(codes).size).toBe(codes.length);
+    expect(new Set(SWITCHER_CODES).size).toBe(SWITCHER_CODES.length);
+  });
+
+  it("English is offered", () => {
+    expect(SWITCHER_CODES).toContain("en");
+  });
+
+  it("Arabic is offered (the one RTL language shipped)", () => {
+    expect(SWITCHER_CODES).toContain("ar");
+  });
+
+  it("Chinese uses the hyphenated 'zh-CN' code, not bare 'zh'", () => {
+    expect(SWITCHER_CODES).toContain("zh-CN");
+    expect(SWITCHER_CODES).not.toContain("zh");
+  });
+
+  it("every code reads as a language tag", () => {
+    for (const code of SWITCHER_CODES) {
+      expect(code).toMatch(/^[a-z]{2}(-[A-Z]{2})?$/);
+    }
   });
 });
 
