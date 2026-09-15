@@ -397,6 +397,7 @@ export default function MemberDevelopmentWorkspace({
                   profile={dossier.profile}
                   onInvite={() => handleInvite()}
                   notShared={dossier.prismNotShared}
+                  noAccount={dossier.prismNoAccount}
                   memberName={member.name}
                   onRequestAccess={() => requestPrism.mutate()}
                   requestPending={requestPrism.isPending}

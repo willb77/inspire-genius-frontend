@@ -78,6 +78,8 @@ export type BehavioralProfilePanelProps = {
   onInvite?: (framework: "prism" | "clifton" | "disc") => void
   /** TDS-1b: the member holds a PRISM but has not shared it with this caller. */
   notShared?: boolean
+  /** TDS-1b: no IG account, so nobody can answer a request. */
+  noAccount?: boolean
   /** Ask the member for the `prism` category. Asking grants nothing. */
   onRequestAccess?: () => void
   requestPending?: boolean
@@ -86,7 +88,7 @@ export type BehavioralProfilePanelProps = {
 }
 
 export function BehavioralProfilePanel({
-  profile, onInvite, notShared, onRequestAccess, requestPending, requestSent, memberName,
+  profile, onInvite, notShared, noAccount, onRequestAccess, requestPending, requestSent, memberName,
 }: BehavioralProfilePanelProps) {
   const sk = useDevSkin()
   const { prism, clifton, disc, reconciliation, coverage } = profile
@@ -109,7 +111,18 @@ export function BehavioralProfilePanel({
               behavioural profile by rank — they choose, person by person, from their own
               workspace. You can ask; asking grants nothing.
             </p>
-            {requestSent ? (
+            {noAccount ? (
+              // Measured 2026-09-14: all seven Studio-added rows on staging-b
+              // carry synthetic member_ids matching no account, and
+              // consent/people.py finds a roster manager by `member_id =
+              // :caller` — a synthetic id never equals a real sub. Offering
+              // the ask here would report "Asked. They decide" for a request
+              // no human can ever see.
+              <p className={cn("text-sm", sk.text500)} data-testid="prism-state-no-account">
+                {who} has no Inspires Genius account, so there is nobody to ask. A profile is
+                shared by the person it describes.
+              </p>
+            ) : requestSent ? (
               <p className={cn("text-sm", sk.text500)} data-testid="prism-request-sent">
                 Asked. {who} decides, and declining carries no consequence for them.
               </p>

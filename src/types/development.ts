@@ -367,6 +367,9 @@ export type MemberDossier = {
    *  PRISM exists. Render them differently — "not shared" is a decision the
    *  member made and can revisit; "no PRISM" is an invitation to sit it. */
   prismNotShared?: boolean
+  /** TDS-1b: the member has no IG account — a Studio-added roster row. They
+   *  cannot sign in, so they cannot grant, so there is nobody to ask. */
+  prismNoAccount?: boolean
   gaps: DevelopmentGap[]
   learning: LearningItem[]
   milestones: Milestone[]

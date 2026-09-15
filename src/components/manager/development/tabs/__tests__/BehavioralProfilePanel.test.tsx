@@ -145,10 +145,29 @@ describe("BehavioralProfilePanel — not shared (TDS-1b)", () => {
     expect(screen.queryByRole("button", { name: /Ask to see this profile/i })).not.toBeInTheDocument()
   })
 
+  it("offers no ask when the member has no account — there is nobody to answer", () => {
+    // The seven Studio-added rows on staging-b are exactly this case. A button
+    // here would report "Asked. They decide" for a request that reaches no
+    // human: consent/people.py matches a roster manager on
+    // `member_id = :caller`, and a synthetic id never equals a real sub.
+    const onRequestAccess = jest.fn()
+    render(
+      <BehavioralProfilePanel
+        profile={redacted}
+        notShared
+        noAccount
+        memberName="Paula Averico"
+        onRequestAccess={onRequestAccess}
+      />,
+    )
+    expect(screen.getByTestId("prism-state-no-account")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Ask to see this profile/i })).not.toBeInTheDocument()
+    expect(onRequestAccess).not.toHaveBeenCalled()
+  })
+
   it("renders the real profile untouched when the grant is live", () => {
     render(<BehavioralProfilePanel profile={fullProfile} />)
     expect(screen.queryByTestId("prism-state-not-shared")).not.toBeInTheDocument()
     expect(screen.getByText("Structured innovator")).toBeInTheDocument()
   })
 })
-
