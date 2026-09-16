@@ -44,7 +44,7 @@ import {
   useRespondToRequest,
   useRevokeGrant,
 } from "@/hooks/consent/useVisibility";
-import type { AccessLogRow, LookupResult, MyGrantRow, PersonKind, VisibilityPerson } from "@/types/consent";
+import type { AccessLogRow, LookupResult, MyGrantRow, PersonKind, VisibilityCategories, VisibilityPerson } from "@/types/consent";
 
 const KIND_LABEL: Record<PersonKind, string> = {
   manager_of_record: "Your manager",
