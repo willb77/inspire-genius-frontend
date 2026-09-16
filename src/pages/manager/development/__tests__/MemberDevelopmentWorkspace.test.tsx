@@ -396,3 +396,39 @@ describe("MemberDevelopmentWorkspace — the ask that cannot succeed (TDS-1c par
     expect(arg).toMatch(/nothing was asked/i)
   })
 })
+
+describe("MemberDevelopmentWorkspace — the 409 contract, and what it does NOT depend on", () => {
+  // Contract (TDS-1c part B, final 2026-09-16): a 409 over a live pair carries
+  // {detail, code, live, asked, grantId}. The pre-existing GENERIC 409 — the race
+  // fallback — carries `detail` only, with NO `code`. This client therefore reads
+  // `detail` and nothing else: every coded reason and the uncoded fallback render
+  // identically, and a change to code/live/asked/grantId cannot break it.
+  const conflict409 = (data: Record<string, unknown>) =>
+    Object.assign(new Error("Request failed with status code 409"), {
+      response: { status: 409, data },
+    })
+
+  it.each([
+    ["grant_live", "They already share their goals with you. Ask them to turn on PRISM profile on their Sharing page - a new request cannot be opened while a grant is live."],
+    ["request_open", "You have already asked to see their PRISM profile; they have not answered yet. Asking again would not reach them sooner."],
+    ["already_granted", "They already share their PRISM profile with you - there is nothing to ask for."],
+  ])("renders the server's sentence for code %s", async (code, detail) => {
+    requestStudentAccess.mockRejectedValue(
+      conflict409({ detail, code, live: { goals: true }, asked: { prism: true }, grantId: "g-1" }),
+    )
+    dossierState = { data: dossier({ prismNotShared: true }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask" }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(detail))
+    expect(toast.success).not.toHaveBeenCalled()
+  })
+
+  it("renders the uncoded race fallback too — `code` is optional, and is never read", async () => {
+    const detail = "There is already an open request or an active grant for this student."
+    requestStudentAccess.mockRejectedValue(conflict409({ detail }))
+    dossierState = { data: dossier({ prismNotShared: true }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask" }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(detail))
+  })
+})
