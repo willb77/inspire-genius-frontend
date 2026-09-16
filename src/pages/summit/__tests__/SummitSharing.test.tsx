@@ -155,7 +155,7 @@ it("a live grant shows Sharing, the expiry and Renew; switching off revokes", as
   svc.extendGrant.mockResolvedValue({ id: "g1", status: "granted", expires_at: IN_A_YEAR });
   svc.revokeGrant.mockResolvedValue({ id: "g1", status: "revoked" });
   renderPage();
-  expect(await screen.findByText("Sharing")).toBeInTheDocument();
+  expect(await screen.findByText("Sharing goals")).toBeInTheDocument();
   expect(screen.getByText(/^Until /)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: /renew for a year/i }));
   await waitFor(() => expect(svc.extendGrant).toHaveBeenCalledWith("g1", 365));
@@ -190,8 +190,106 @@ it("a pending request shows the requester's reason with Share / Decline", async 
   expect(screen.getByText(/Quarterly 1:1 prep/)).toBeInTheDocument();
   // No switch for a pending person — the answer is the request's, not a toggle.
   expect(screen.queryByRole("switch")).toBeNull();
+  expect(screen.getByText(/wants to see your goals\./)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: /^share my goals$/i }));
-  await waitFor(() => expect(svc.respondToRequest).toHaveBeenCalledWith("req1", true, { goals: true }));
+  // No categories on approve: the backend stores exactly what was asked.
+  await waitFor(() => expect(svc.respondToRequest).toHaveBeenCalledWith("req1", true, undefined));
+});
+
+// ── TDS-1c: the PRISM profile has the same door as goals ────────────────────
+//
+// Two backend facts shape these tests. ONE live consent row exists per
+// (member, person) and an offer REPLACES its category set — so a switch must
+// send the union of what is live and what was toggled, or it strips the other
+// category. And approving a request with NO categories stores what was asked —
+// so a PRISM request must not be answered with a hard-coded goals grant, which
+// is exactly what shipped before (a manager asked for PRISM, the member
+// approved, a goals grant was written, and nobody was told).
+describe("PRISM profile (TDS-1c)", () => {
+  const grantWith = (categories: MyGrantRow["categories"]) =>
+    person({ grant: { id: "g1", status: "granted", categories: categories as never, expiresAt: IN_A_YEAR, requestedAt: null } });
+
+  it("a PRISM request says so, and approving sends no categories", async () => {
+    const row: MyGrantRow = {
+      id: "req2", grantee_user_id: "u-mgr", categories: { prism: true }, reason: "Development conversation",
+      status: "pending", access_basis: "student_consent", consent_holder: "student",
+      requested_at: "2026-09-15T00:00:00Z", responded_at: null, expires_at: IN_A_YEAR, revoked_at: null,
+    };
+    svc.getPeople.mockResolvedValue({
+      people: [person({ kinds: ["requester"], grant: { id: "req2", status: "pending", categories: { prism: true }, expiresAt: IN_A_YEAR, requestedAt: row.requested_at } })],
+      sources: PEOPLE_OK,
+    });
+    svc.getMyGrants.mockResolvedValue([row]);
+    svc.respondToRequest.mockResolvedValue({ id: "req2", status: "granted" });
+    renderPage();
+    expect(await screen.findByText(/wants to see your PRISM profile\./)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /share my goals/i })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /^share my PRISM profile$/i }));
+    await waitFor(() => expect(svc.respondToRequest).toHaveBeenCalledWith("req2", true, undefined));
+  });
+
+  it("reads the requested categories when the row carries them as a JSON string", async () => {
+    const row: MyGrantRow = {
+      id: "req3", grantee_user_id: "u-mgr", categories: '{"goals": true, "prism": true}', reason: null,
+      status: "pending", access_basis: "student_consent", consent_holder: "student",
+      requested_at: "2026-09-15T00:00:00Z", responded_at: null, expires_at: IN_A_YEAR, revoked_at: null,
+    };
+    svc.getPeople.mockResolvedValue({ people: [person({ kinds: ["requester"], grant: { id: "req3", status: "pending", categories: {}, expiresAt: null, requestedAt: null } })], sources: PEOPLE_OK });
+    svc.getMyGrants.mockResolvedValue([row]);
+    renderPage();
+    expect(await screen.findByText(/wants to see your goals and PRISM profile\./)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^share my goals and PRISM profile$/i })).toBeInTheDocument();
+  });
+
+  it("turning PRISM on for someone who already sees goals offers BOTH — never PRISM alone", async () => {
+    svc.getPeople.mockResolvedValue({ people: [grantWith({ goals: true })], sources: PEOPLE_OK });
+    svc.offerAccess.mockResolvedValue({ id: "g1", status: "granted", mode: "refreshed" });
+    renderPage();
+    expect(await screen.findByText("Sharing goals")).toBeInTheDocument();
+    const prism = screen.getByRole("switch", { name: /share PRISM profile with morgan manager/i });
+    expect(prism).not.toBeChecked();
+    fireEvent.click(prism);
+    await waitFor(() =>
+      expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u-mgr", categories: { goals: true, prism: true } }),
+    );
+    expect(svc.revokeGrant).not.toHaveBeenCalled();
+  });
+
+  it("turning PRISM off while goals stay shared offers goals alone — not a revoke", async () => {
+    svc.getPeople.mockResolvedValue({ people: [grantWith({ goals: true, prism: true })], sources: PEOPLE_OK });
+    svc.offerAccess.mockResolvedValue({ id: "g1", status: "granted", mode: "refreshed" });
+    renderPage();
+    expect(await screen.findByText("Sharing goals and PRISM profile")).toBeInTheDocument();
+    const prism = screen.getByRole("switch", { name: /share PRISM profile with/i });
+    expect(prism).toBeChecked();
+    fireEvent.click(prism);
+    await waitFor(() =>
+      expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u-mgr", categories: { goals: true } }),
+    );
+    expect(svc.revokeGrant).not.toHaveBeenCalled();
+  });
+
+  it("turning off the last shared category revokes the row", async () => {
+    svc.getPeople.mockResolvedValue({ people: [grantWith({ prism: true })], sources: PEOPLE_OK });
+    svc.revokeGrant.mockResolvedValue({ id: "g1", status: "revoked" });
+    renderPage();
+    expect(await screen.findByText("Sharing PRISM profile")).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: /share goals with/i })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("switch", { name: /share PRISM profile with/i }));
+    await waitFor(() => expect(svc.revokeGrant).toHaveBeenCalledWith("g1"));
+    expect(svc.offerAccess).not.toHaveBeenCalled();
+  });
+
+  it("a person with no grant gets an offer for exactly the category toggled", async () => {
+    svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
+    svc.offerAccess.mockResolvedValue({ id: "g2", status: "granted", mode: "offered" });
+    renderPage();
+    expect(await screen.findByText("Not shared")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("switch", { name: /share PRISM profile with/i }));
+    await waitFor(() =>
+      expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u-mgr", categories: { prism: true } }),
+    );
+  });
 });
 
 it("reports an unreadable source instead of rendering it as empty", async () => {
