@@ -328,3 +328,71 @@ describe("MemberDevelopmentWorkspace — tabs and header", () => {
     expect(screen.getByText("practitioner roster")).toBeInTheDocument()
   })
 })
+
+describe("MemberDevelopmentWorkspace — the ask that cannot succeed (TDS-1c part B)", () => {
+  // `ux_svg_live_pair` is UNIQUE (student, grantee) WHERE status IN
+  // ('pending','granted') and request_access INSERTs a pending row, so ANY live
+  // grant for the pair rejects a PRISM ask. Measured 2026-09-16: 8/8 live grants
+  // on staging-b and 7/7 on dev are goals-without-prism. The 409 is the NORMAL
+  // path for every existing relationship, not a rare one — and until part B this
+  // mutation had onSuccess alone, so all of it was silent.
+  const conflict = (detail: unknown) =>
+    Object.assign(new Error("Request failed with status code 409"), {
+      response: { status: 409, data: { detail, code: "grant_live" } },
+    })
+
+  it("renders the server's reason instead of saying nothing", async () => {
+    const primary =
+      "They already share their goals with you. Ask them to turn on PRISM profile on their Sharing page — a new request cannot be opened while a grant is live."
+    requestStudentAccess.mockRejectedValue(conflict(primary))
+    dossierState = { data: dossier({ prismNotShared: true }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask" }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(primary))
+    // and it must NOT claim the ask went out
+    expect(toast.success).not.toHaveBeenCalled()
+    expect(received.profile?.requestSent).not.toBe(true)
+  })
+
+  it("never claims the ask was sent when it was refused", async () => {
+    requestStudentAccess.mockRejectedValue(conflict("You have already asked; they have not answered yet."))
+    dossierState = { data: dossier({ prismNotShared: true }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask" }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+    expect(toast.success).not.toHaveBeenCalled()
+  })
+
+  // The trap apiErrorMessage exists for: FastAPI sends `detail` as a STRING for a
+  // raised HTTPException and an ARRAY OF OBJECTS for a 422. Handing that array to
+  // sonner renders an object as a React child — React #31 — which once took the
+  // whole page down on a failed save. A toast must always receive a string.
+  it("renders a STRING when the server sends a 422 validation list, never an object", async () => {
+    requestStudentAccess.mockRejectedValue(
+      Object.assign(new Error("Unprocessable"), {
+        response: {
+          status: 422,
+          data: { detail: [{ type: "string_type", loc: ["body", "categories"], msg: "Input should be a valid string" }] },
+        },
+      }),
+    )
+    dossierState = { data: dossier({ prismNotShared: true }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask" }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+    const arg = (toast.error as jest.Mock).mock.calls[0][0]
+    expect(typeof arg).toBe("string")
+    expect(arg).toMatch(/categories/)
+  })
+
+  it("falls back to honest copy when the error carries no detail at all", async () => {
+    requestStudentAccess.mockRejectedValue(Object.assign(new Error(""), { response: { status: 500, data: {} } }))
+    dossierState = { data: dossier({ prismNotShared: true }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask" }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+    const arg = (toast.error as jest.Mock).mock.calls[0][0]
+    expect(typeof arg).toBe("string")
+    expect(arg).toMatch(/nothing was asked/i)
+  })
+})

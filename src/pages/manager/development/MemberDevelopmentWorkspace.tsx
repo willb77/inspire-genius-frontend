@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/popover"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { requestStudentAccess } from "@/services/manager/studentRoster.service"
 import { cn } from "@/lib/utils"
 import { exportDossierPdf } from "@/lib/dossierPdf"
@@ -187,6 +188,28 @@ export default function MemberDevelopmentWorkspace({
         reason: "Requested from the Team Development Studio.",
       }),
     onSuccess: () => toast.success("Asked. They decide, and declining costs them nothing."),
+    // TDS-1c part B. This mutation shipped with onSuccess ALONE, so a failed ask
+    // was silent: the manager clicked, the request never opened, and nothing on
+    // screen changed. That is not a hypothetical path — `ux_svg_live_pair` is
+    // UNIQUE (student, grantee) WHERE status IN ('pending','granted'), and
+    // request_access INSERTs a new pending row, so ANY live grant for the pair
+    // rejects the ask. Measured 2026-09-16: 8 of 8 live grants on staging-b and
+    // 7 of 7 on dev are goals-without-prism, i.e. every existing pair fails.
+    // The 409 is the normal path here, not the exception.
+    //
+    // The server owns the words: its `detail` is written as primary copy, so
+    // this renders it verbatim rather than paraphrasing a reason it cannot see.
+    // Depending on `detail` ALONE — not on `code`/`live`/`asked` — keeps this
+    // half working if the rest of that body changes.
+    //
+    // apiErrorMessage, not `err.response.data.detail`: FastAPI sends `detail` as
+    // a STRING for a raised HTTPException and an ARRAY of objects for a 422.
+    // Four call sites once passed that array straight to a toast, which handed
+    // React an object as a child and took the page down (see the file's header).
+    onError: (err) =>
+      toast.error(
+        apiErrorMessage(err, "That didn't send — nothing was asked. Try again in a moment."),
+      ),
   })
 
   const { internal, external } = useMemo(() => {
