@@ -158,8 +158,8 @@ export interface Engagement {
   at_risk: boolean
   missing_fields: MissingField[]
   checklist: ChecklistRow[]
-  /** Things §8 says Paula must be told that she has not been told. */
-  pending_paula: string[]
+  /** Things §8 says the invoicing contact must be told that they have not been told. */
+  pending_invoicing: string[]
   next_stage: EngagementStage | null
   can_advance: GateResult | null
 }
@@ -169,7 +169,7 @@ export interface Milestone {
   name?: string
   due?: string
   accepted_at?: string | null
-  paula_notified_at?: string | null
+  invoicing_notified_at?: string | null
 }
 
 export interface Activity {
@@ -323,7 +323,7 @@ export interface InvoicingDocument {
   taxes?: string
   expenses?: string
   currency?: string
-  notes_for_paula?: string
+  notes_for_invoicing?: string
 }
 
 export interface InvoicingValidation {
@@ -391,7 +391,7 @@ export interface RaciRow {
   activity: string
   engagement_lead: string
   delivery_lead: string
-  paula: string
+  invoicing: string
   principal: string
 }
 
@@ -443,7 +443,7 @@ export type EngagementUpdatePayload = Partial<
   Omit<
     Engagement,
     | "id" | "stage" | "stage_label" | "opportunity_name"
-    | "at_risk" | "missing_fields" | "checklist" | "pending_paula"
+    | "at_risk" | "missing_fields" | "checklist" | "pending_invoicing"
     | "next_stage" | "can_advance"
     | "created_at" | "updated_at" | "last_activity_at" | "created_by"
     | "sow_sent_at" | "sow_signed_at"

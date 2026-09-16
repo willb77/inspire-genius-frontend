@@ -168,7 +168,7 @@ export default function ClientEngagement() {
   )
 }
 
-// ─── Header: stage, the next move, and Paula's queue ─────────────
+// ─── Header: stage, the next move, and the invoicing contact's queue ─────────────
 
 function EngagementHeader({
   engagement,
@@ -278,12 +278,12 @@ function EngagementHeader({
         <Refusal error={changeStage.error} title="The stage was not changed." />
       )}
 
-      {/* §8 — things Paula must be told that she has not been told. */}
-      {engagement.pending_paula.length > 0 && (
+      {/* §8 — things the invoicing contact must be told that they have not been told. */}
+      {engagement.pending_invoicing.length > 0 && (
         <div className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
           <p className="font-medium">Invoicing hand-off outstanding</p>
           <ul className="mt-1 list-inside list-disc">
-            {engagement.pending_paula.map((p) => (
+            {engagement.pending_invoicing.map((p) => (
               <li key={p}>{p}</li>
             ))}
           </ul>
@@ -883,7 +883,7 @@ function InvoicingTab({ engagement }: { engagement: Engagement }) {
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <Receipt className="h-4 w-4" />
-            Invoicing summary for Paula
+            Invoicing summary
             {summary && <Badge variant="secondary">v{summary.version}</Badge>}
           </CardTitle>
           <div className="flex gap-2">
@@ -915,18 +915,18 @@ function InvoicingTab({ engagement }: { engagement: Engagement }) {
             <Button
               size="sm"
               onClick={() =>
-                send.mutate(undefined, { onSuccess: () => toast.success("Sent to Paula") })
+                send.mutate(undefined, { onSuccess: () => toast.success("Sent to the invoicing contact") })
               }
               disabled={send.isPending || !summary}
             >
               <Send className="mr-2 h-4 w-4" />
-              Send to Paula
+              Send to the invoicing contact
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-slate-600">
-            Paula invoices from this summary, not from the SOW, so it must be complete
+            Invoices are raised from this summary, not from the SOW, so it must be complete
             and self-contained. It goes out the same day the SOW is countersigned.
           </p>
 
@@ -943,7 +943,7 @@ function InvoicingTab({ engagement }: { engagement: Engagement }) {
             <Text label="PO number / vendor requirements" value={doc.po_number ?? ""} onChange={(v) => setDoc((d) => ({ ...d, po_number: v }))} />
             <Text label="Payment terms" value={doc.payment_terms ?? "Net 30"} onChange={(v) => setDoc((d) => ({ ...d, payment_terms: v }))} />
             <Text label="Signed SOW location (link)" value={doc.signed_sow_location ?? ""} onChange={(v) => setDoc((d) => ({ ...d, signed_sow_location: v }))} />
-            <Text label="Notes for Paula" value={doc.notes_for_paula ?? ""} onChange={(v) => setDoc((d) => ({ ...d, notes_for_paula: v }))} />
+            <Text label="Notes for invoicing" value={doc.notes_for_invoicing ?? ""} onChange={(v) => setDoc((d) => ({ ...d, notes_for_invoicing: v }))} />
           </div>
           <Area
             label="One-line description of the work (this becomes the invoice narrative)"
@@ -989,7 +989,7 @@ function InvoicingTab({ engagement }: { engagement: Engagement }) {
           {summary?.sent_at && !summary.confirmed_at && (
             <div className="flex flex-wrap items-end gap-3 rounded-md border border-sky-200 bg-sky-50 p-3">
               <div className="space-y-1">
-                <Label className="text-xs">First invoice date (Paula confirms)</Label>
+                <Label className="text-xs">First invoice date (confirmed by invoicing)</Label>
                 <Input
                   type="date"
                   value={firstInvoice}
@@ -1005,7 +1005,7 @@ function InvoicingTab({ engagement }: { engagement: Engagement }) {
                 }
                 disabled={confirm.isPending}
               >
-                Record Paula's confirmation
+                Record the confirmation
               </Button>
             </div>
           )}
@@ -1033,7 +1033,7 @@ function ChangeOrdersCard({ engagementId }: { engagementId: string }) {
         <p className="text-sm text-slate-600">
           Any change to scope, deliverables, dates or fees needs a written Change
           Order signed by both parties <em>before</em> the changed work is done.
-          Signing one puts a revised invoicing summary on Paula's queue.
+          Signing one puts a revised invoicing summary on the invoicing queue.
         </p>
         {create.isError && <Refusal error={create.error} title="The Change Order was not raised." />}
 

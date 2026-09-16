@@ -210,7 +210,7 @@ export async function saveInvoicingSummary(
 }
 
 /**
- * Hand the summary to Paula.
+ * Hand the summary to the invoicing contact.
  *
  * Rejects with 409 + an `InvoicingValidation` when it is incomplete or does not
  * reconcile to the SOW total. That equality is the last check before an invoice

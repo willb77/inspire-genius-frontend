@@ -290,7 +290,7 @@ export function useSignSow(id: string) {
     onSuccess: (sow) => {
       qc.setQueryData(sowKey(id), sow)
       void qc.invalidateQueries({ queryKey: sowVersionsKey(id) })
-      // Signing puts "send the invoicing summary" on Paula's queue (§8).
+      // Signing puts "send the invoicing summary" on the invoicing contact's queue (§8).
       void qc.invalidateQueries({ queryKey: engagementKey(id) })
       void qc.invalidateQueries({ queryKey: activitiesKey(id) })
     },
@@ -376,7 +376,7 @@ export function useSignChangeOrder(id: string) {
     mutationFn: (coId: string) => signChangeOrder(id, coId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: changeOrdersKey(id) })
-      // A signed CO reopens Paula's queue — §8 wants a revised summary.
+      // A signed CO reopens the invoicing contact's queue — §8 wants a revised summary.
       void qc.invalidateQueries({ queryKey: engagementKey(id) })
       void qc.invalidateQueries({ queryKey: activitiesKey(id) })
     },
