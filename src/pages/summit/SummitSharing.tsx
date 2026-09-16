@@ -1,13 +1,22 @@
 /**
- * Sharing — who can see my goals (Goals offering, Phase 3).
+ * Sharing — who can see my goals and my PRISM profile (Goals offering,
+ * Phase 3; PRISM added by TDS-1c).
  *
- * Goals are private until the person shares them with a specific someone, for
- * a fixed term they can see and renew, and can take back at any time. Rank
- * buys nobody a look (D6, D9). This page is the whole of that decision:
+ * Goals and the PRISM profile are private until the person shares them with a
+ * specific someone, for a fixed term they can see and renew, and can take back
+ * at any time. Rank buys nobody a look (D6, D9). This page is the whole of
+ * that decision:
  *
- *   - the people they could share with, each with an on/off switch, the
- *     expiry and a Renew;
- *   - requests waiting on them, with the requester's stated reason;
+ *   - the people they could share with, each with one switch PER CATEGORY,
+ *     the expiry and a Renew. The backend keeps ONE live consent row per
+ *     (member, person) and an offer REPLACES that row's category set, so a
+ *     switch sends the union of what is live and what was toggled — never a
+ *     single category on its own, which would silently strip the other;
+ *   - requests waiting on them, naming what was asked, with the requester's
+ *     stated reason. Approving sends NO categories: the backend then stores
+ *     exactly what was asked. Before TDS-1c every request was approved as
+ *     goals, whatever it asked for, and a manager's PRISM request was answered
+ *     with a grant that could not satisfy it;
  *   - add a person by exact email;
  *   - "what they see": the coach's own goal card, rendered with the coach's
  *     own component, so the preview cannot drift from the real thing.
@@ -35,7 +44,7 @@ import {
   useRespondToRequest,
   useRevokeGrant,
 } from "@/hooks/consent/useVisibility";
-import type { AccessLogRow, LookupResult, MyGrantRow, PersonKind, VisibilityPerson } from "@/types/consent";
+import type { AccessLogRow, LookupResult, MyGrantRow, PersonKind, VisibilityCategories, VisibilityPerson } from "@/types/consent";
 
 const KIND_LABEL: Record<PersonKind, string> = {
   manager_of_record: "Your manager",
@@ -53,6 +62,40 @@ const SOURCE_LABEL: Record<string, string> = {
 
 const GOALS_ONLY = { goals: true } as const;
 
+/** The categories a member can share from this page, in display order. */
+type ShareCategory = "goals" | "prism";
+const SHARE_CATEGORIES: { key: ShareCategory; label: string; noun: string }[] = [
+  { key: "goals", label: "Goals", noun: "goals" },
+  { key: "prism", label: "PRISM profile", noun: "PRISM profile" },
+];
+
+/** The grant rows arrive with `categories` as an object or as a JSON string. */
+function parseCategories(raw: VisibilityCategories | string | null | undefined): VisibilityCategories {
+  if (!raw) return {};
+  if (typeof raw === "string") {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? (parsed as VisibilityCategories) : {};
+    } catch {
+      return {};
+    }
+  }
+  return raw;
+}
+
+/** "your goals", "your PRISM profile", "your goals and PRISM profile". */
+function describeCategories(cats: VisibilityCategories, possessive = "your"): string {
+  const named = SHARE_CATEGORIES.filter((c) => cats[c.key] === true).map((c) => c.noun);
+  const other = Object.entries(cats)
+    .filter(([k, v]) => v === true && !SHARE_CATEGORIES.some((c) => c.key === k))
+    .map(([k]) => k);
+  const all = [...named, ...other];
+  const prefix = possessive ? `${possessive} ` : "";
+  if (all.length === 0) return `${prefix}goals`;
+  if (all.length === 1) return `${prefix}${all[0]}`;
+  return `${prefix}${all.slice(0, -1).join(", ")} and ${all[all.length - 1]}`;
+}
+
 function errorText(err: unknown): string {
   const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
   if (typeof detail === "string") return detail;
@@ -65,22 +108,38 @@ function formatDate(iso: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function isLiveGoalsGrant(p: VisibilityPerson): boolean {
+/** What this person can see RIGHT NOW — nothing if the grant is missing, pending, revoked or expired. */
+function liveCategories(p: VisibilityPerson): VisibilityCategories {
   const g = p.grant;
-  if (!g || g.status !== "granted") return false;
-  if (g.expiresAt && new Date(g.expiresAt).getTime() <= Date.now()) return false;
-  return g.categories?.goals === true;
+  if (!g || g.status !== "granted") return {};
+  if (g.expiresAt && new Date(g.expiresAt).getTime() <= Date.now()) return {};
+  return parseCategories(g.categories);
 }
 
-/** One person: name, relation, a switch, the term, Renew. */
+/** One person: name, relation, one switch per category, the term, Renew. */
 function PersonRow({ person }: { person: VisibilityPerson }) {
   const offer = useOfferAccess();
   const revoke = useRevokeGrant();
   const extend = useExtendGrant();
-  const shared = isLiveGoalsGrant(person);
+  const live = liveCategories(person);
+  const sharedAny = SHARE_CATEGORIES.some((c) => live[c.key] === true);
   const pending = offer.isPending || revoke.isPending || extend.isPending;
   const error = offer.error ?? revoke.error ?? extend.error;
   const isPendingRequest = person.grant?.status === "pending";
+  const who = person.displayName || person.email || "this person";
+
+  // One row per person on the backend; an offer replaces its category set.
+  // So the next set is computed from what is live, and only when nothing is
+  // left does the row get revoked.
+  const toggle = (key: ShareCategory, checked: boolean) => {
+    const next: VisibilityCategories = { ...live, [key]: checked };
+    const remaining = Object.entries(next).filter(([, v]) => v === true);
+    if (remaining.length === 0) {
+      if (person.grant) revoke.mutate(person.grant.id);
+      return;
+    }
+    offer.mutate({ granteeUserId: person.userId, categories: Object.fromEntries(remaining) });
+  };
 
   return (
     <li className="flex flex-col gap-2 border-b border-[#F1ECE2] py-3 last:border-b-0">
@@ -99,25 +158,26 @@ function PersonRow({ person }: { person: VisibilityPerson }) {
             Waiting on you — see requests below
           </span>
         ) : (
-          <label className="flex items-center gap-2 text-[12.5px] font-semibold text-[#13294B]">
-            <Switch
-              checked={shared}
-              disabled={pending}
-              aria-label={`Share goals with ${person.displayName || person.email || "this person"}`}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  offer.mutate({ granteeUserId: person.userId, categories: GOALS_ONLY });
-                } else if (person.grant) {
-                  revoke.mutate(person.grant.id);
-                }
-              }}
-            />
-            {shared ? "Sharing" : "Not shared"}
-          </label>
+          <div className="flex flex-wrap items-center gap-4" data-testid={`share-switches-${person.userId}`}>
+            {SHARE_CATEGORIES.map((c) => (
+              <label key={c.key} className="flex items-center gap-2 text-[12.5px] font-semibold text-[#13294B]">
+                <Switch
+                  checked={live[c.key] === true}
+                  disabled={pending}
+                  aria-label={`Share ${c.noun} with ${who}`}
+                  onCheckedChange={(checked) => toggle(c.key, checked)}
+                />
+                {c.label}
+              </label>
+            ))}
+            <span className="text-[12px] text-[#13294B]/70" data-testid={`share-state-${person.userId}`}>
+              {sharedAny ? `Sharing ${describeCategories(live, "")}` : "Not shared"}
+            </span>
+          </div>
         )}
         {pending && <Loader2 className="h-4 w-4 animate-spin text-[#7C93B5]" aria-hidden />}
       </div>
-      {shared && person.grant && (
+      {sharedAny && person.grant && (
         <div className="flex flex-wrap items-center gap-3 text-[12px] text-[#13294B]/75">
           <span>Until {formatDate(person.grant.expiresAt)}</span>
           <Button
@@ -144,9 +204,13 @@ function PersonRow({ person }: { person: VisibilityPerson }) {
 /** A request waiting on the person, with the reason the requester gave. */
 function RequestRow({ row, name }: { row: MyGrantRow; name: string }) {
   const respond = useRespondToRequest();
+  // What was asked, in the member's words. Approving sends no categories, so
+  // the backend stores exactly this set — never a hard-coded one.
+  const asked = describeCategories(parseCategories(row.categories));
   return (
-    <li className="flex flex-col gap-2 border-b border-[#F1ECE2] py-3 last:border-b-0">
+    <li className="flex flex-col gap-2 border-b border-[#F1ECE2] py-3 last:border-b-0" data-testid={`request-${row.id}`}>
       <div className="text-[14px] font-bold text-[#0B1B33]">{name}</div>
+      <p className="text-[13px] font-semibold text-[#13294B]">wants to see {asked}.</p>
       <p className="text-[13px] text-[#13294B]/80">
         {row.reason ? <>&ldquo;{row.reason}&rdquo;</> : <em>No reason given.</em>}
         {row.requested_at ? <span className="text-[#13294B]/60"> · asked {formatDate(row.requested_at)}</span> : null}
@@ -156,9 +220,9 @@ function RequestRow({ row, name }: { row: MyGrantRow; name: string }) {
           type="button"
           size="sm"
           disabled={respond.isPending}
-          onClick={() => respond.mutate({ grantId: row.id, approve: true, categories: GOALS_ONLY })}
+          onClick={() => respond.mutate({ grantId: row.id, approve: true })}
         >
-          Share my goals
+          Share {describeCategories(parseCategories(row.categories), "my")}
         </Button>
         <Button
           type="button"
@@ -345,8 +409,8 @@ export default function SummitSharing() {
     <div className="flex flex-col gap-[18px]">
       <PageHead
         eyebrow="Your choice, person by person"
-        title="Who can see my goals"
-        sub="Nobody sees your goals by rank. You share them with a specific person for a year, can renew, and can take it back at any time. A goal you mark private stays hidden even from them."
+        title="Who can see my goals and PRISM profile"
+        sub="Nobody sees your goals or your PRISM profile by rank. You share each with a specific person for a year, can renew, and can take it back at any time. Turning a switch on renews the term for a year. A goal you mark private stays hidden even from them."
       />
 
       {loading && (
@@ -387,8 +451,9 @@ export default function SummitSharing() {
         <Card className="!p-5" testId="sharing-empty">
           <div className="text-[15px] font-bold text-[#0B1B33]">No one to share with yet</div>
           <p className="mt-1.5 text-[14px] leading-relaxed text-[#13294B]/80">
-            When a manager or coach is linked to you they appear here. You can also add
-            someone by their email address below.
+            When a manager or coach is linked to you they appear here, with a switch for your
+            goals and one for your PRISM profile. You can also add someone by their email address
+            below.
           </p>
         </Card>
       )}
