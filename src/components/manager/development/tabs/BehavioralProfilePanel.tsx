@@ -100,18 +100,45 @@ export function BehavioralProfilePanel({
   // at a member who completed it years ago and simply did not share it. That
   // sentence is both false and unfixable by its own call to action.
   if (notShared) {
+    // `coverage.prism` survives the redaction ON PURPOSE — see
+    // service.redact_prism_not_shared, which says so outright: whether a PRISM
+    // EXISTS is not the secret. Read it here, or this state asserts a profile
+    // that may not exist, telling a manager their report is withholding
+    // something they never had and offering an ask nobody can satisfy.
+    // Shipped without this check earlier today; with zero live `prism` grants
+    // every member lands here, so every member without a PRISM got the claim.
+    const onFile = coverage.prism
     return (
       <div className="space-y-6" data-testid="prism-state-not-shared">
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
             <Lock className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />
-            <div className={cn("text-sm font-semibold", sk.text900)}>Not shared with you</div>
+            <div className={cn("text-sm font-semibold", sk.text900)}>
+              {onFile ? "Not shared with you" : "Nothing on file yet"}
+            </div>
             <p className={cn("max-w-md text-sm", sk.text600)}>
-              {who} has a PRISM profile on file but has not shared it with you. Nobody sees a
-              behavioural profile by rank — they choose, person by person, from their own
-              workspace. You can ask; asking grants nothing.
+              {onFile ? (
+                <>
+                  {who} has a PRISM profile on file but has not shared it with you. Nobody sees a
+                  behavioural profile by rank — they choose, person by person, from their own
+                  workspace. You can ask; asking grants nothing.
+                </>
+              ) : (
+                <>
+                  {who} has no PRISM profile on file, so there is nothing to share yet. Nobody
+                  sees a behavioural profile by rank; this stays empty until they complete PRISM
+                  and choose to share it.
+                </>
+              )}
             </p>
-            {noAccount ? (
+            {!onFile ? (
+              // No profile means no ask: a request to share something that
+              // does not exist cannot be granted, and would read to the member
+              // as their manager asking for a thing they never made.
+              <p className={cn("text-sm", sk.text500)} data-testid="prism-state-none-on-file">
+                There is nothing to ask for yet.
+              </p>
+            ) : noAccount ? (
               // Measured 2026-09-14: all seven Studio-added rows on staging-b
               // carry synthetic member_ids matching no account, and
               // consent/people.py finds a roster manager by `member_id =

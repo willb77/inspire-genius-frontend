@@ -171,3 +171,75 @@ describe("BehavioralProfilePanel — not shared (TDS-1b)", () => {
     expect(screen.getByText("Structured innovator")).toBeInTheDocument()
   })
 })
+
+describe("BehavioralProfilePanel — withheld vs none on file", () => {
+  // Both fixtures are redacted payloads: `prism` empty, `notShared` true.
+  // They differ ONLY in `coverage.prism`, which the redaction preserves on
+  // purpose. Every not-shared test above sets it true, which is how the panel
+  // shipped asserting a profile exists for members who have none — with zero
+  // live `prism` grants, that was every member without a PRISM.
+  const base = {
+    prism: [],
+    reconciliation: {
+      headline: "",
+      throughLine: "",
+      discrepancies: [],
+      confidence: "low" as const,
+    },
+  }
+  const withheld: BehavioralProfile = { ...base, coverage: { prism: true, clifton: false, disc: false } }
+  const noneOnFile: BehavioralProfile = { ...base, coverage: { prism: false, clifton: false, disc: false } }
+
+  it("does not claim a profile exists when none does", () => {
+    render(<BehavioralProfilePanel profile={noneOnFile} notShared memberName="Paula Averico" />)
+    expect(screen.queryByText(/has a PRISM profile on file/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/has no PRISM profile on file/i)).toBeInTheDocument()
+  })
+
+  it("offers no ask when there is nothing to ask for", () => {
+    const onRequestAccess = jest.fn()
+    render(
+      <BehavioralProfilePanel
+        profile={noneOnFile}
+        notShared
+        memberName="Paula Averico"
+        onRequestAccess={onRequestAccess}
+      />,
+    )
+    expect(screen.getByTestId("prism-state-none-on-file")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /ask to see this profile/i })).not.toBeInTheDocument()
+    expect(onRequestAccess).not.toHaveBeenCalled()
+  })
+
+  // Mutation guard: flipping ONLY coverage.prism must change what is said.
+  // Without this pair, a panel that ignores coverage passes every test above.
+  it("says something different for the two, from the same emptied scores", () => {
+    const { unmount } = render(
+      <BehavioralProfilePanel profile={withheld} notShared memberName="Gary Burnette" onRequestAccess={jest.fn()} />,
+    )
+    expect(screen.getByText(/has a PRISM profile on file/i)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /ask to see this profile/i })).toBeInTheDocument()
+    expect(screen.queryByTestId("prism-state-none-on-file")).not.toBeInTheDocument()
+    unmount()
+
+    render(
+      <BehavioralProfilePanel profile={noneOnFile} notShared memberName="Gary Burnette" onRequestAccess={jest.fn()} />,
+    )
+    expect(screen.queryByText(/has a PRISM profile on file/i)).not.toBeInTheDocument()
+    expect(screen.getByTestId("prism-state-none-on-file")).toBeInTheDocument()
+  })
+
+  it("still reports no account ahead of the ask when the profile does exist", () => {
+    render(
+      <BehavioralProfilePanel
+        profile={withheld}
+        notShared
+        noAccount
+        memberName="Gary Burnette"
+        onRequestAccess={jest.fn()}
+      />,
+    )
+    expect(screen.getByTestId("prism-state-no-account")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /ask to see this profile/i })).not.toBeInTheDocument()
+  })
+})
