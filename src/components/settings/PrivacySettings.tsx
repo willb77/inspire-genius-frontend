@@ -109,15 +109,15 @@ export default function PrivacySettings() {
           </ul>
         </div>
 
-        {/* Who can see my goals — the sharing panel (Goals offering, Phase 3).
-            Goals are shared per person, by your choice, for a fixed term;
-            nobody sees them by rank. */}
+        {/* Who can see my goals and PRISM profile — the sharing panel (Goals
+            offering, Phase 3; PRISM added by TDS-1c). Both are shared per person,
+            by your choice, for a fixed term; nobody sees them by rank. */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h4 className="font-medium text-sm">Who can see my goals</h4>
+            <h4 className="font-medium text-sm">Who can see my goals and PRISM profile</h4>
             <p className="text-sm text-muted-foreground">
-              Your goals are private until you share them with a specific person.
-              Turn sharing on or off per person, see when it expires, and renew it.
+              Your goals and your PRISM profile are private until you share them with a
+              specific person. Turn each on or off per person, see when it expires, and renew it.
             </p>
           </div>
           <Button asChild variant="outline" size="sm" className="shrink-0">
