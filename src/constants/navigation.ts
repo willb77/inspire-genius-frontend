@@ -36,6 +36,7 @@ import {
   FolderOpen,
   Drama,
   LifeBuoy,
+  Handshake,
 } from "lucide-react"
 
 /**
@@ -421,6 +422,13 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PRISM_ACCURACY_SCORER, icon: Target, label: "PRISM Accuracy Scorer" },
   { to: ROUTES.SUPER_ADMIN.PRISM_EXAM, icon: ClipboardCheck, label: "PRISM Practitioner Exam" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
+  // Client Sign-Up — the operating procedure in
+  // docs/operations/IG_Client_Signup_and_SOW_Process.docx, as a working surface:
+  // CRM pipeline with the stage gates enforced, the 14-section SOW, and the
+  // invoicing hand-off. Label must stay unique — SidebarScaffold keys nav items
+  // by label, and a duplicate collides during reconciliation (the bug that made
+  // Tools appear to hide behind Administration).
+  { to: ROUTES.SUPER_ADMIN.CLIENT_SIGNUP, icon: Handshake, label: "Client Sign-Up" },
   // Support-service tickets: who has each one, escalation, notes, resolve.
   // Label must stay unique - SidebarScaffold keys nav items by label.
   { to: ROUTES.SUPER_ADMIN.SUPPORT_MANAGEMENT, icon: LifeBuoy, label: "Help and Support Management" },

@@ -80,6 +80,9 @@ export const ROUTES = {
     PRISM_EXAM: "/super-admin/prism-exam",
     CHARACTER_LAB: "/super-admin/character-lab",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
+    /** Administration → Client Sign-Up: the CRM pipeline, SOWs and invoicing hand-off. */
+    CLIENT_SIGNUP: "/super-admin/client-signup",
+    CLIENT_SIGNUP_ENGAGEMENT: "/super-admin/client-signup/:engagementId",
     SUPPORT_MANAGEMENT: "/super-admin/support",
     SUPPORT_TICKET: "/super-admin/support/:ticketId",
     RESEARCH: "/super-admin/research",
