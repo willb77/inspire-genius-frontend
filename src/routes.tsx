@@ -179,6 +179,8 @@ const SuperAdminObservability = React.lazy(() => import("@/pages/super-admin/Obs
 const MentorManagement = React.lazy(() => import("@/pages/super-admin/MentorManagement"));
 const KnowledgeBase = React.lazy(() => import("@/pages/super-admin/KnowledgeBase"));
 const PrivacyCompliance = React.lazy(() => import("@/pages/super-admin/PrivacyCompliance"));
+const ClientSignup = React.lazy(() => import("@/pages/super-admin/ClientSignup"));
+const ClientEngagement = React.lazy(() => import("@/pages/super-admin/ClientEngagement"));
 const Explainability = React.lazy(() => import("@/pages/super-admin/Explainability"));
 
 // ── Practitioner pages ──────────────────────────────────────────────────────
@@ -568,6 +570,12 @@ export const routes: RouteObject[] = [
       // Wave 0.E (P5.1) — CulturalContent merged into KnowledgeBase as a domain filter.
       { path: "/super-admin/cultural-content", element: <Navigate to="/super-admin/knowledge-base?domain=cultural" replace /> },
       { path: "/super-admin/privacy-compliance", element: withSuspense(<PrivacyCompliance />) },
+      // Administration -> Client Sign-Up. The detail route is registered AFTER
+      // the list so the literal path is matched first; React Router v6 ranks
+      // static segments above dynamic ones regardless, but keeping them adjacent
+      // makes the pair obvious to the next reader.
+      { path: "/super-admin/client-signup", element: withSuspense(<ClientSignup />) },
+      { path: "/super-admin/client-signup/:engagementId", element: withSuspense(<ClientEngagement />) },
       { path: "/super-admin/explainability", element: withSuspense(<Explainability />) },
       { path: "/super-admin/explainability/c/:sessionId", element: withSuspense(<Explainability />) },
       { path: "/super-admin/explainability/c/:sessionId/t/:turnId", element: withSuspense(<Explainability />) },
