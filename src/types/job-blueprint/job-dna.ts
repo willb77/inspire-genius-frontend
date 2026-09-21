@@ -17,6 +17,8 @@ export type DimensionBenchmark = {
   rateValue: number
   finalBenchmarkPercent: number
   interpretation: InterpretationBand
+  /** Three-way importance tier (Manual §3): critical ≥ 65, counter-productive ≤ 35, else unimportant. Absent on older backends. */
+  importanceTier?: "critical" | "counter-productive" | "unimportant"
 }
 
 export type ContextSurveyResponse = {
@@ -58,6 +60,10 @@ export type JobDNA = {
   }
 
   createdBy: string
+  /** Tier-shape conformance of the saved benchmark (Manual §3) — reported by the service, never enforced. */
+  shape?: { conforms: boolean; counts: Record<string, Record<string, number>>; violations: string[] }
+  /** Set when this version replaced an earlier active one. */
+  supersedesId?: string | null
   createdAt: string
   updatedAt: string
   version: number

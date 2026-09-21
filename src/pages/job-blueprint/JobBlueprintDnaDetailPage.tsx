@@ -150,6 +150,17 @@ export default function JobBlueprintDnaDetailPage() {
             Authored here — drafted by the Job DNA engine or built by hand — and reviewed by a person.
             Candidates&apos; PRISM profiles are scored against it. It is not a PRISM-validated job benchmark.
           </CardDescription>
+          {jobDna.shape ? (
+            jobDna.shape.conforms ? (
+              <p className="text-xs text-emerald-700" data-testid="shape-report">
+                Tier shape conforms to the methodology: 3 critical per block, 2 counter-productive behaviours.
+              </p>
+            ) : (
+              <p className="text-xs text-amber-700" role="alert" data-testid="shape-report">
+                Tier shape differs from the methodology: {jobDna.shape.violations.join("; ")}.
+              </p>
+            )
+          ) : null}
         </CardHeader>
         <CardContent>
           <BenchmarkRadarChart

@@ -70,6 +70,24 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { name: "Interviewer One", email: "i@example.test" } }),
 }))
 
+
+// The Job DNA candidate link (IS-11c2 front door) reads two query hooks; it has
+// its own suite. Mocked as a single "link" button so these tests can prove the
+// ids travel with the session and the finalise line renders.
+jest.mock("@/components/interview/JobDnaCandidatePicker", () => ({
+  __esModule: true,
+  default: ({ value, onPick }: { value: unknown; onPick: (l: unknown) => void }) => (
+    <button
+      type="button"
+      onClick={() =>
+        onPick({ blueprint_id: "bp-1", candidate_id: "cand-1", display_name: "Linked Person", external_id: "REQ-9" })
+      }
+    >
+      {value ? "mock-linked" : "mock-link-candidate"}
+    </button>
+  ),
+}))
+
 jest.mock("@/components/interview/ConsentGate", () => ({
   __esModule: true,
   default: ({ onProceed }: { onProceed: (c: unknown) => void }) => (

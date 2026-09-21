@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label"
 
 import InterviewFrameForm from "@/components/interview/InterviewFrameForm"
 import ConsentGate from "@/components/interview/ConsentGate"
+import JobDnaCandidatePicker, { type JobDnaCandidateLink } from "@/components/interview/JobDnaCandidatePicker"
 import AnswerScorePanel from "@/components/interview/AnswerScorePanel"
 import PastInterviewsPanel from "@/components/interview/PastInterviewsPanel"
 import { useQuestionBank } from "@/hooks/interview/useQuestionBank"
@@ -59,6 +60,7 @@ import type {
   LiveCandidate,
   LiveConsent,
   LivePlanQuestion,
+  ScorecardDraftReport,
   SubmitAnswerResult,
 } from "@/services/interview/live.service"
 
@@ -78,11 +80,38 @@ const candidateSchema = z.object({
 })
 type CandidateFormValues = z.infer<typeof candidateSchema>
 
+
+/** One honest line about the Job Studio scorecard draft after finalise. */
+function ScorecardDraftLine({ linked, report }: { linked: boolean; report?: ScorecardDraftReport | null }) {
+  if (!linked) return null
+  if (report?.written) {
+    return (
+      <p className="text-sm text-emerald-700" data-testid="scorecard-draft-line">
+        Scorecard draft written for the linked candidate
+        {typeof report.dimensions_scored === "number" ? ` (${report.dimensions_scored} dimensions)` : ""}.
+        Review it under Job DNA → Scorecards before it counts.
+      </p>
+    )
+  }
+  return (
+    <p className="text-sm text-amber-700" role="alert" data-testid="scorecard-draft-line">
+      No scorecard draft was written for the linked candidate
+      {report?.reason ? ` (${report.reason})` : " (the backend did not report one)"}.
+    </p>
+  )
+}
+
 function CandidateIdentityForm({ onConfirm }: { onConfirm: (c: LiveCandidate) => void }) {
   const form = useForm<CandidateFormValues>({
     resolver: zodResolver(candidateSchema),
     defaultValues: { displayName: "", externalId: "" },
   })
+  const [link, setLink] = useState<JobDnaCandidateLink | null>(null)
+  const pick = (l: JobDnaCandidateLink) => {
+    setLink(l)
+    form.setValue("displayName", l.display_name, { shouldValidate: true })
+    form.setValue("externalId", l.external_id ?? "")
+  }
   return (
     <Card>
       <CardHeader>
@@ -100,10 +129,13 @@ function CandidateIdentityForm({ onConfirm }: { onConfirm: (c: LiveCandidate) =>
             onConfirm({
               display_name: v.displayName.trim(),
               external_id: v.externalId?.trim() ? v.externalId.trim() : undefined,
+              candidate_id: link?.candidate_id,
+              blueprint_id: link?.blueprint_id,
             }),
           )}
           className="space-y-4"
         >
+          <JobDnaCandidatePicker value={link} onPick={pick} onClear={() => setLink(null)} />
           <div>
             <Label htmlFor="candidate-name">Candidate name</Label>
             <Input id="candidate-name" {...form.register("displayName")} />
@@ -190,10 +222,14 @@ export default function LiveInterviewBody() {
       // the form can be reopened with what was entered.
       const result = await createSession.mutateAsync({
         frame: f,
-        candidate,
+        candidate: { display_name: candidate.display_name, external_id: candidate.external_id },
         consent,
         requisitionId: f.requisitionId,
         requisitionLabel: f.requisitionLabel,
+        // Job DNA link (IS-11c2): both ids or neither — finalise writes the
+        // scorecard draft only when both are present.
+        candidate_id: candidate.candidate_id,
+        blueprint_id: candidate.blueprint_id,
       })
       setSessionId(result.session_id)
       setPlan(result.plan)
@@ -481,6 +517,7 @@ export default function LiveInterviewBody() {
               <CardHeader><CardTitle className="text-base">What the evidence shows</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 <p className="text-lg font-semibold text-slate-900">{finalizeResult.recommendation}</p>
+                <ScorecardDraftLine linked={!!candidate?.candidate_id} report={finalizeResult.scorecard_draft} />
                 <p className="text-sm text-slate-600">
                   Overall score: <span className="font-medium">{fmtScore(finalizeResult.overall_score)}</span> / 5
                   {" · "}Mean: <span className="font-medium">{fmtScore(finalizeResult.overall_mean)}</span>

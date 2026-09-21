@@ -76,6 +76,24 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { name: "Interviewer One", email: "i@example.test" } }),
 }))
 
+
+// The Job DNA candidate link (IS-11c2 front door) reads two query hooks; it has
+// its own suite. Mocked as a single "link" button so these tests can prove the
+// ids travel with the session and the finalise line renders.
+jest.mock("@/components/interview/JobDnaCandidatePicker", () => ({
+  __esModule: true,
+  default: ({ value, onPick }: { value: unknown; onPick: (l: unknown) => void }) => (
+    <button
+      type="button"
+      onClick={() =>
+        onPick({ blueprint_id: "bp-1", candidate_id: "cand-1", display_name: "Linked Person", external_id: "REQ-9" })
+      }
+    >
+      {value ? "mock-linked" : "mock-link-candidate"}
+    </button>
+  ),
+}))
+
 jest.mock("@/components/interview/ConsentGate", () => ({
   __esModule: true,
   default: ({ onProceed }: { onProceed: (c: unknown) => void }) => (
@@ -188,6 +206,67 @@ describe("setup — consent gates everything", () => {
         consent: { captured: true, mode: "no_audio", method: "in_app_ack" },
       }),
     )
+  })
+})
+
+describe("Job DNA candidate link (IS-11c2 front door)", () => {
+  it("sends both ids with the session and reports the scorecard draft after finalise", async () => {
+    finalizeMutate.mockResolvedValue({
+      ...FINALIZE,
+      scorecard_draft: { written: true, reason: null, draft_id: "d1", candidate_id: "cand-1", dimensions_scored: 9 },
+    })
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+    const user = userEvent.setup()
+    render(<LiveInterviewBody />)
+    await user.click(screen.getByText("mock-consent-proceed"))
+    await user.click(screen.getByText("mock-link-candidate"))
+    // picking prefills the identity; the interviewer may still edit it
+    expect(screen.getByLabelText(/candidate name/i)).toHaveValue("Linked Person")
+    expect(screen.getByText("mock-linked")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: /continue/i }))
+    await user.click(screen.getByText("mock-frame-confirm"))
+    await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1))
+    expect(createMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        candidate: { display_name: "Linked Person", external_id: "REQ-9" },
+        candidate_id: "cand-1",
+        blueprint_id: "bp-1",
+      }),
+    )
+    await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    expect(await screen.findByTestId("scorecard-draft-line")).toHaveTextContent(/draft written .*9 dimensions/i)
+    confirmSpy.mockRestore()
+  })
+
+  it("says plainly when a linked session produced no draft", async () => {
+    finalizeMutate.mockResolvedValue({ ...FINALIZE, scorecard_draft: { written: false, reason: "flag_off" } })
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+    const user = userEvent.setup()
+    render(<LiveInterviewBody />)
+    await user.click(screen.getByText("mock-consent-proceed"))
+    await user.click(screen.getByText("mock-link-candidate"))
+    await user.click(screen.getByRole("button", { name: /continue/i }))
+    await user.click(screen.getByText("mock-frame-confirm"))
+    await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    expect(await screen.findByTestId("scorecard-draft-line")).toHaveTextContent(/no scorecard draft .*flag_off/i)
+    confirmSpy.mockRestore()
+  })
+
+  it("an unlinked session sends no ids and shows no draft line", async () => {
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+    const user = userEvent.setup()
+    render(<LiveInterviewBody />)
+    await reachInterview(user)
+    const payload = createMutate.mock.calls[0][0]
+    expect(payload.candidate_id).toBeUndefined()
+    expect(payload.blueprint_id).toBeUndefined()
+    await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    await screen.findByRole("heading", { name: /interview results/i })
+    expect(screen.queryByTestId("scorecard-draft-line")).not.toBeInTheDocument()
+    confirmSpy.mockRestore()
   })
 })
 

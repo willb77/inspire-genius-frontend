@@ -25,6 +25,22 @@ export type LiveConsent = {
 export type LiveCandidate = {
   display_name: string
   external_id?: string
+  /** Job DNA link (both or neither) — sent top-level on create, see CreateLiveSessionPayload. */
+  candidate_id?: string
+  blueprint_id?: string
+}
+
+/**
+ * What finalise reports about the Job Studio scorecard draft (IS-11c2). Present
+ * whenever the backend has the write path; `written: false` + `reason` when the
+ * session carried no candidate link, the flag is off, or the write failed.
+ */
+export type ScorecardDraftReport = {
+  written: boolean
+  reason: string | null
+  draft_id?: string | null
+  candidate_id?: string | null
+  dimensions_scored?: number | null
 }
 
 /** One planned question, as returned by the backend's ordered session plan. */
@@ -171,6 +187,8 @@ export type FinalizeResult = {
   recommendation: string
   /** Advisory narrative — present on Studio + live finalize; may be absent. */
   feedback?: InterviewFeedback
+  /** IS-11c2 — the scorecard-draft outcome; absent on older backends. */
+  scorecard_draft?: ScorecardDraftReport | null
 }
 
 /** Coerce whatever the backend sent for `section_scores` into a display array. */
@@ -349,6 +367,10 @@ export type CreateLiveSessionPayload = {
    * where the backend reads it — `_CreateLiveSessionBody.requisition_id`. */
   requisitionId?: string
   requisitionLabel?: string
+  /** Job DNA link — both or neither (the backend 422s a lone one). Snake_case
+   * already, because that is the wire name; sent through as-is. */
+  candidate_id?: string
+  blueprint_id?: string
 }
 
 /**
