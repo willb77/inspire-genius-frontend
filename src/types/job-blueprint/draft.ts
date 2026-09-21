@@ -37,6 +37,8 @@ export type DraftDimension = {
 
 /** POST /v1/agents/blueprint/draft-benchmark response. */
 export type DraftBenchmarkResponse = {
+  /** JS-6/JS-7 — whether the PRISM canon was in the drafting prompt, and which sections. Absent on older backends. */
+  prism_reference?: { applied: boolean; reason?: string | null; sections?: string[]; missing?: string[]; chars?: number } | null
   role_title: string
   archetype: string
   rationale: string

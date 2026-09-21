@@ -64,6 +64,11 @@ export type JobDNA = {
   shape?: { conforms: boolean; counts: Record<string, Record<string, number>>; violations: string[] }
   /** Set when this version replaced an earlier active one. */
   supersedesId?: string | null
+  /** V2 provenance: which front door wrote the benchmark ("unknown" before 2026-09-21), from what, and who published it. */
+  benchmarkSource?: "llm-draft" | "manual" | "jd-extract" | "incumbent-contrast" | "unknown"
+  sourceRef?: string | null
+  reviewedBy?: string | null
+  reviewedAt?: string | null
   createdAt: string
   updatedAt: string
   version: number

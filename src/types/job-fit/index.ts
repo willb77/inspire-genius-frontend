@@ -24,6 +24,9 @@ export type FitMethod = 'gap' | 'closeness'
 
 /** One published role ranked against the user's profile (best-first). */
 export type FitMatch = {
+  /** V2 — the benchmark version and source this score is against (absent on older backends). */
+  blueprintVersion?: number | null
+  benchmarkSource?: string | null
   jobId: string
   roleTitle: string
   department: string | null
@@ -98,6 +101,9 @@ export type OverdoneFlag = {
 
 /** Full fit breakdown for one role. */
 export type FitDetail = {
+  /** V2 — the benchmark version and source this score is against (absent on older backends). */
+  blueprintVersion?: number | null
+  benchmarkSource?: string | null
   jobId: string
   roleTitle: string
   tier: JobTier

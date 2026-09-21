@@ -59,6 +59,8 @@ export default function JobBlueprintAuthoringPage() {
         aptitudes: data.aptitudes,
         coreTraits: data.coreTraits,
         roleContext: data.roleContext,
+        // V2 provenance: built by hand in the wizard
+        benchmarkSource: "manual",
       })
 
       if (!created?.id) {
