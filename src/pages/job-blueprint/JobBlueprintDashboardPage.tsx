@@ -31,7 +31,7 @@ export default function JobBlueprintDashboardPage() {
       <JobDnaPageHeader
         icon={Dna}
         title="Job DNA"
-        description="Behavioral job blueprints — benchmark a role, then screen and rank candidates by fit."
+        description="Job blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it."
         action={
           <JobDnaLinkButton to={ROUTES.JOB_DNA.AUTHORING}>
             <Plus className="h-4 w-4" />

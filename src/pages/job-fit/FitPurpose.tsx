@@ -17,12 +17,12 @@ const STEPS = [
   {
     icon: Compass,
     title: "Blueprint a role",
-    body: "Upload a posting or describe one. The Job DNA engine drafts the behavioral benchmark and saves the role for reuse.",
+    body: "Upload a posting or describe one. The Job DNA engine drafts a behavioral benchmark from it — a starting point a person reviews, not a validated PRISM benchmark — and saves the role for reuse.",
   },
   {
     icon: Target,
     title: "See the fit",
-    body: "Your profile against that benchmark, dimension by dimension — where you line up, where you don't, and by how much.",
+    body: "Your PRISM profile against that benchmark, dimension by dimension — where you line up, where you don't, and by how much.",
   },
   {
     icon: MessagesSquare,

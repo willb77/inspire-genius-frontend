@@ -218,7 +218,7 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
       {
         onSuccess: (result) => {
           stopProgress(true)
-          toast.success("Blueprint drafted — 22 dimensions benchmarked.")
+          toast.success("Blueprint drafted — 22 dimensions to review.")
           onDrafted(result)
         },
         onError: () => stopProgress(false), // the hook surfaces the error toast
@@ -236,8 +236,10 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
           Draft a blueprint
         </CardTitle>
         <CardDescription>
-          Benchmark all 22 dimensions for a role from a title, an uploaded job description, or a role
-          from another vertical. You review and edit the profile before anything is saved.
+          Draft all 22 dimensions for a role from a title, an uploaded job description, or a role
+          from another vertical. The draft is the engine&apos;s reading of the role against the PRISM
+          definition of each dimension — a starting point, not a validated PRISM benchmark. You review
+          and edit the profile before anything is saved.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -502,8 +504,9 @@ function ReviewStep({
           <div>
             <div className="font-semibold">Blueprint drafted</div>
             <div className="text-sm text-muted-foreground">
-              22 dimensions benchmarked · <span className="capitalize">{draft.archetype}</span> shape.
-              {draft.rationale ? ` ${draft.rationale}` : ""} Tweak the percents below, then save.
+              22 dimensions drafted · <span className="capitalize">{draft.archetype}</span> shape.
+              {draft.rationale ? ` ${draft.rationale}` : ""} This is a draft for you to review, not a
+              validated benchmark. Adjust the percents below, then save.
             </div>
           </div>
         </CardContent>

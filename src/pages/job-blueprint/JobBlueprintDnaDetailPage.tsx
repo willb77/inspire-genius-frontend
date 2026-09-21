@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useParams, Link } from "react-router-dom"
 import { toast } from "sonner"
 import { Dna, Pencil, Save, X } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -146,6 +146,10 @@ export default function JobBlueprintDnaDetailPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base">Benchmark profile</CardTitle>
+          <CardDescription>
+            Authored here — drafted by the Job DNA engine or built by hand — and reviewed by a person.
+            Candidates&apos; PRISM profiles are scored against it. It is not a PRISM-validated job benchmark.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <BenchmarkRadarChart
