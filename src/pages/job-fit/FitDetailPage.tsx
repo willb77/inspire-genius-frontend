@@ -79,6 +79,9 @@ export default function FitDetailPage() {
 
           <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
             <FitPill tone="teal">{tierLabel(data.tier)} role</FitPill>
+            {typeof data.blueprintVersion === "number" && (
+              <FitPill tone="gray">Scored against benchmark v{data.blueprintVersion}</FitPill>
+            )}
             {data.baseTier !== data.tier && (
               <FitPill tone="gray">Base tier: {tierLabel(data.baseTier)}</FitPill>
             )}

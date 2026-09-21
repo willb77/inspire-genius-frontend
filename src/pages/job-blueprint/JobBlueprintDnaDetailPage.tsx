@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import type { JobDNA } from "@/types/job-blueprint"
 import { useParams, Link } from "react-router-dom"
 import { toast } from "sonner"
 import { Dna, Pencil, Save, X } from "lucide-react"
@@ -22,6 +23,25 @@ const TIERS: JobTier[] = ["front-line", "professional", "executive"]
  * details (title, department, tier) can be edited inline and saved via
  * `PUT /v1/blueprint/job-dna/:id` (useUpdateJobDna).
  */
+const SOURCE_LABEL: Record<string, string> = {
+  "llm-draft": "drafted by the Job DNA engine",
+  manual: "built by hand",
+  "jd-extract": "extracted from a job description",
+  "incumbent-contrast": "proposed from incumbent interviews",
+  unknown: "source not recorded",
+}
+
+/** V2 — " · drafted by the Job DNA engine · reviewed 21 Sep 2026" or " · source not recorded". */
+function provenanceLine(jobDna: JobDNA): string {
+  const source = SOURCE_LABEL[jobDna.benchmarkSource ?? "unknown"] ?? "source not recorded"
+  const reviewed = jobDna.reviewedAt
+    ? ` · reviewed ${new Date(jobDna.reviewedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`
+    : jobDna.status === "active"
+      ? " · reviewer not recorded"
+      : ""
+  return ` · ${source}${reviewed}`
+}
+
 export default function JobBlueprintDnaDetailPage() {
   const { id = "" } = useParams<{ id: string }>()
   const { data: jobDna, isLoading, isError, refetch } = useJobDnaDetail(id)
@@ -69,7 +89,7 @@ export default function JobBlueprintDnaDetailPage() {
       <JobDnaPageHeader
         icon={Dna}
         title={jobDna.roleTitle}
-        description={`${jobDna.department} · ${jobDna.tier} · v${jobDna.version}`}
+        description={`${jobDna.department} · ${jobDna.tier} · v${jobDna.version}${provenanceLine(jobDna)}`}
         action={
           !editing ? (
             <Button variant="outline" onClick={() => setEditing(true)}>

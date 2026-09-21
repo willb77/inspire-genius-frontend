@@ -474,6 +474,11 @@ function ReviewStep({
         behaviors,
         aptitudes,
         coreTraits,
+        // V2 provenance: the engine drafted it; say from what
+        benchmarkSource: "llm-draft",
+        sourceRef: `draft-benchmark: ${draft.archetype || "auto"} shape${
+          draft.prism_reference?.applied ? `, PRISM reference ${draft.prism_reference.sections?.length ?? 0} sections` : ""
+        }`,
       })
 
       if (!created?.id) {
