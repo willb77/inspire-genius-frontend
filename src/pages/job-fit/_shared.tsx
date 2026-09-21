@@ -174,7 +174,7 @@ export function FitMethodologyNote({ note }: { note?: string }) {
   return (
     <p className="rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-3 text-xs leading-relaxed text-[#6b7280]">
       {note ??
-        "This is a self-guided development aid, not a hiring decision. It compares your behavioral profile to a role's published benchmark to help you focus your growth and interview prep."}
+        "This is a self-guided development aid, not a hiring decision. It compares your PRISM profile to a role's published benchmark — a profile drafted for the role and reviewed by a person, not a validated PRISM benchmark — to help you focus your growth and interview prep."}
     </p>
   )
 }

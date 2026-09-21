@@ -49,7 +49,7 @@ export default function JobBlueprintCandidatesPage() {
       <JobDnaPageHeader
         icon={Users}
         title="Candidates"
-        description="Screen and review candidates scored against a role's Job DNA benchmark."
+        description="Screen and review candidates: each one's PRISM profile scored against the role's reviewed Job DNA benchmark."
         action={
           <JobDnaSelect
             jobDnas={jobDnas ?? []}

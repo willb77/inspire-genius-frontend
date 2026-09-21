@@ -89,7 +89,7 @@ export default function JobBlueprintAuthoringPage() {
       <JobDnaPageHeader
         icon={PencilRuler}
         title="Create a Job DNA"
-        description="Draft a benchmark from a role, or build one by hand across behaviours, aptitudes and core traits."
+        description="Draft a benchmark from a role, or build one by hand across behaviours, aptitudes and core traits. Either way a person reviews it before it is used — this is not a PRISM-validated job benchmark."
         action={
           mode !== "chooser" ? (
             <button
@@ -115,8 +115,9 @@ export default function JobBlueprintAuthoringPage() {
             </span>
             <span className="text-base font-semibold text-[#1f2937]">Draft from a role</span>
             <span className="text-sm text-[#6b7280]">
-              Give a title or upload a job description and we benchmark all 22 dimensions for you to
-              review and edit. Fastest way to a first draft.
+              Give a title or upload a job description and the Job DNA engine drafts all 22 dimensions
+              from the PRISM definitions of each one. A starting point for you to review and edit, not
+              a validated benchmark. Fastest way to a first draft.
             </span>
           </button>
 
