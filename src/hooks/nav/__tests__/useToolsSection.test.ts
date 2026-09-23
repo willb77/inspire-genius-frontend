@@ -128,13 +128,13 @@ describe("useToolsSection", () => {
     )
   })
 
-  it("leads with Bio Capture, then role tools, then the vertical catalogue", () => {
+  it("leads with Bio Capture Studio, then role tools, then the vertical catalogue", () => {
     mockLauncher.mockReturnValue({
       items: [{ to: "/vertical/grant/dashboard", icon: () => null, label: "GRANT" }],
     })
     const { result } = renderHook(() => useToolsSection("super-admin"))
     const labels = result.current?.items.map((i) => i.label) ?? []
-    expect(labels[0]).toBe("Bio Capture")
+    expect(labels[0]).toBe("Bio Capture Studio")
     expect(labels.indexOf("Interview Studio")).toBeLessThan(labels.indexOf("GRANT"))
   })
 
@@ -188,5 +188,44 @@ describe("useToolsSection", () => {
     const { result } = renderHook(() => useToolsSection("super-admin"))
     const tos = result.current?.items.map((i) => i.to) ?? []
     expect(tos.length).toBe(new Set(tos).size)
+  })
+})
+
+describe("useToolsSection — Career Studio (2026-09-23)", () => {
+  const CATALOGUE = [
+    { to: "/vertical/grant/dashboard", icon: () => null, label: "Financial Aid", disabled: false },
+    { to: "/vertical/job-fit/matches", icon: () => null, label: "Career Fit", disabled: true },
+    { to: "/vertical/job-blueprint/dashboard", icon: () => null, label: "Career Blueprint", disabled: false },
+  ]
+
+  it("lifts the two career verticals out of the catalogue into one group, Blueprint before Fit, flags intact", () => {
+    mockLauncher.mockReturnValue({ items: CATALOGUE })
+    const { result } = renderHook(() => useToolsSection("super-admin"))
+    const items = result.current?.items ?? []
+    const group = items.find((i) => i.label === "Career Studio")
+    expect(group?.to).toBe("")
+    expect(group?.children?.map((c) => [c.label, c.disabled])).toEqual([
+      ["Career Blueprint", false],
+      ["Career Fit", true],
+    ])
+    // Not listed twice: the flat catalogue keeps only what was not lifted.
+    expect(items.map((i) => i.label)).not.toContain("Career Blueprint")
+    expect(items.map((i) => i.label)).not.toContain("Career Fit")
+    expect(items.map((i) => i.label)).toContain("Financial Aid")
+  })
+
+  it("sits just ahead of Interview Studio among the role tools, after Bio Capture Studio", () => {
+    mockLauncher.mockReturnValue({ items: CATALOGUE })
+    const { result } = renderHook(() => useToolsSection("super-admin"))
+    const labels = result.current?.items.map((i) => i.label) ?? []
+    expect(labels[0]).toBe("Bio Capture Studio")
+    expect(labels.indexOf("Career Studio")).toBe(labels.indexOf("Interview Studio") - 1)
+    expect(labels.indexOf("Career Studio")).toBeLessThan(labels.indexOf("Financial Aid"))
+  })
+
+  it("adds no group when neither career vertical is registered", () => {
+    mockLauncher.mockReturnValue({ items: [CATALOGUE[0]] })
+    const { result } = renderHook(() => useToolsSection("super-admin"))
+    expect(result.current?.items.map((i) => i.label)).not.toContain("Career Studio")
   })
 })

@@ -204,3 +204,71 @@ describe("SidebarScaffold — collapseOnMount", () => {
     );
   });
 });
+
+describe("SidebarScaffold — nested items (2026-09-23 studio groups)", () => {
+  const GROUPED = [
+    { to: "/home", icon: Home, label: "Home" },
+    {
+      to: "",
+      icon: Wallet,
+      label: "Career Studio",
+      children: [
+        { to: "/vertical/job-blueprint/dashboard", icon: Wallet, label: "Career Blueprint", activePrefix: "/vertical/job-blueprint" },
+        { to: "/vertical/job-fit/matches", icon: Wallet, label: "Career Fit", disabled: true },
+      ],
+    },
+    {
+      to: "/manager/interview-studio",
+      icon: Wallet,
+      label: "Interview Studio",
+      children: [
+        { to: "/manager/interview-live", icon: Wallet, label: "Live Interview" },
+        { to: "/interview-practice", icon: Wallet, label: "Practice Interview" },
+      ],
+    },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetUIFlag.mockReturnValue(true);
+    mockPathname = "/home";
+  });
+  afterEach(() => {
+    mockPathname = "/home";
+  });
+
+  it("starts a group closed and opens it when its row is clicked (pure group, no page)", () => {
+    renderScaffold({ navItems: GROUPED });
+    expect(screen.queryByRole("button", { name: "Career Blueprint" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Career Studio" }));
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Career Blueprint" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Career Fit" })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("a parent with its own page navigates AND opens; the chevron alone toggles", () => {
+    renderScaffold({ navItems: GROUPED });
+    fireEvent.click(screen.getByRole("button", { name: "Interview Studio" }));
+    expect(mockNavigate).toHaveBeenCalledWith("/manager/interview-studio", undefined);
+    expect(screen.getByRole("button", { name: "Live Interview" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Interview Studio" }));
+    expect(screen.queryByRole("button", { name: "Live Interview" })).not.toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+  });
+
+  it("a child navigates to its own route; a locked child does not", () => {
+    renderScaffold({ navItems: GROUPED });
+    fireEvent.click(screen.getByRole("button", { name: "Career Studio" }));
+    fireEvent.click(screen.getByRole("button", { name: "Career Blueprint" }));
+    expect(mockNavigate).toHaveBeenCalledWith("/vertical/job-blueprint/dashboard", undefined);
+    fireEvent.click(screen.getByRole("button", { name: "Career Fit" }));
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens by itself when a child is the active route, and marks that child active", () => {
+    mockPathname = "/vertical/job-blueprint/authoring";
+    renderScaffold({ navItems: GROUPED });
+    expect(screen.getByRole("button", { name: "Career Blueprint" })).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("button", { name: "Career Studio" })).toHaveAttribute("aria-expanded", "true");
+  });
+});

@@ -13,7 +13,7 @@ import { registerVertical } from "@/verticals/core"
  */
 export const JOB_FIT = registerVertical({
   key: "job-fit",
-  title: "Job Fit",
+  title: "Career Fit",
   description:
     "Match your behavioral profile to open roles: fit ranking, gaps, and interview prep.",
   routePrefix: "/vertical/job-fit",

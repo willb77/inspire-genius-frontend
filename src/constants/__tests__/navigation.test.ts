@@ -147,17 +147,26 @@ describe("constants/navigation", () => {
         "Team Development Studio",
         // 2026-09-04: the goals surface, one ungated path for every role.
         "Goals Studio",
-        "Interview Practice",
-        "Live Interview",
+        // 2026-09-23: Live Interview and Practice Interview moved UNDER this
+        // entry (see the group test below); they are no longer top-level rows.
         "Interview Studio",
         "Character Lab",
       ])
     })
 
+    it("nests Live Interview and Practice Interview under Interview Studio, in that order", () => {
+      for (const role of ["manager", "practitioner", "super-admin"] as const) {
+        const studio = (TOOL_ITEMS_BY_ROLE[role] ?? []).find((i) => i.label === "Interview Studio")
+        expect(studio?.children?.map((c) => c.label)).toEqual(["Live Interview", "Practice Interview"])
+        // Practice Interview is the one shared page; the parent keeps its own route.
+        expect(studio?.children?.[1].to).toBe(ROUTES.INTERVIEW_PRACTICE)
+        expect(studio?.to).not.toBe("")
+      }
+    })
+
     it("points super-admin Live Interview at its OWN route, not the manager one", () => {
-      const live = (TOOL_ITEMS_BY_ROLE["super-admin"] ?? []).find(
-        (i) => i.label === "Live Interview",
-      )
+      const studio = (TOOL_ITEMS_BY_ROLE["super-admin"] ?? []).find((i) => i.label === "Interview Studio")
+      const live = studio?.children?.find((i) => i.label === "Live Interview")
       expect(live?.to).toBe(ROUTES.SUPER_ADMIN.INTERVIEW_LIVE)
     })
   })
@@ -409,13 +418,9 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
   const labelsFor = (role: "manager" | "practitioner") =>
     (TOOL_ITEMS_BY_ROLE[role] ?? []).map((i) => i.label).sort()
 
-  const UNGATED = [
-    "Interview Practice",
-    "Interview Studio",
-    "Goals Studio",
-    "Job Blueprint",
-    "Live Interview",
-  ].sort()
+  // Live Interview and Practice Interview are children of Interview Studio
+  // since 2026-09-23, so they are not in the top-level label set any more.
+  const UNGATED = ["Interview Studio", "Goals Studio", "Job Blueprint"].sort()
 
   it("gives the practitioner every requested tool, ungated", () => {
     expect(labelsFor("practitioner")).toEqual(
@@ -435,6 +440,15 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
       "Team Development Studio",
     ])
     expect(only(labelsFor("manager"), labelsFor("practitioner"))).toEqual([])
+  })
+
+  it("points each role's nested Live Interview at that role's own route", () => {
+    const liveFor = (role: "manager" | "practitioner") =>
+      (TOOL_ITEMS_BY_ROLE[role] ?? [])
+        .find((i) => i.label === "Interview Studio")
+        ?.children?.find((c) => c.label === "Live Interview")?.to
+    expect(liveFor("manager")).toBe(ROUTES.MANAGER.INTERVIEW_LIVE)
+    expect(liveFor("practitioner")).toBe(ROUTES.PRACTITIONER.INTERVIEW_LIVE)
   })
 
   it("never points a practitioner tool at a /manager route", () => {

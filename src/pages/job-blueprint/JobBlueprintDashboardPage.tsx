@@ -30,7 +30,7 @@ export default function JobBlueprintDashboardPage() {
     <div className="max-w-6xl">
       <JobDnaPageHeader
         icon={Dna}
-        title="Job DNA"
+        title="Career Blueprint"
         description="Job blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it."
         action={
           <JobDnaLinkButton to={ROUTES.JOB_DNA.AUTHORING}>

@@ -110,7 +110,7 @@ export function grantSidebarSectionForRole(role: UserRole): SidebarSection {
  */
 export const KCE_SIDEBAR_SECTION: SidebarSection = {
   id: "knowledge-continuity",
-  label: "Knowledge Continuity",
+  label: "Knowledge Continuity Studio",
   roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
   items: [
     { to: "/vertical/knowledge-continuity/blueprint", icon: Wand2, label: "Blueprint a role" },

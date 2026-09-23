@@ -7,7 +7,7 @@ import { getVertical, listEntitledVerticals } from "@/verticals/core"
 describe("job-fit manifest", () => {
   test("registers with the expected shape", () => {
     expect(JOB_FIT.key).toBe("job-fit")
-    expect(JOB_FIT.title).toBe("Job Fit")
+    expect(JOB_FIT.title).toBe("Career Fit")
     expect(JOB_FIT.routePrefix).toBe("/vertical/job-fit")
     expect(JOB_FIT.homePath).toBe("/vertical/job-fit/matches")
   })
@@ -19,7 +19,7 @@ describe("job-fit manifest", () => {
   })
 
   test("is discoverable through the Core registry", () => {
-    expect(getVertical("job-fit")?.title).toBe("Job Fit")
+    expect(getVertical("job-fit")?.title).toBe("Career Fit")
   })
 
   test("surfaces only when the entitlement is present", () => {
