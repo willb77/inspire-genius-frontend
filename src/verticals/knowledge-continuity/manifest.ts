@@ -9,7 +9,7 @@ import { registerVertical } from "@/verticals/core"
  */
 export const KNOWLEDGE_CONTINUITY = registerVertical({
   key: "knowledge-continuity",
-  title: "Knowledge Continuity",
+  title: "Knowledge Continuity Studio",
   description: "Capture, validate, and transfer expert knowledge before it retires.",
   routePrefix: "/vertical/knowledge-continuity",
   homePath: "/vertical/knowledge-continuity/dashboard",

@@ -255,12 +255,15 @@ const JOB_BLUEPRINT_ITEM_PRACTITIONER: NavItemDef = {
 }
 
 // Candidate-side interview rehearsal (Alex interview-coach). A universal,
-// un-gated feature — surfaced in the "Tools" rollup for every role that renders
-// one, so it's discoverable regardless of which role is logged in.
-const INTERVIEW_PRACTICE_ITEM: NavItemDef = {
+// un-gated feature. Since 2026-09-23 (request) it sits UNDER the Interview
+// Studio entry in the Tools rollup, labelled "Practice Interview" as named in
+// that request. The user role's flat menu keeps its own "Interview Practice"
+// row: that menu's six entries were fixed by name on 2026-08-12 and were not
+// part of this change.
+const PRACTICE_INTERVIEW_ITEM: NavItemDef = {
   to: ROUTES.INTERVIEW_PRACTICE,
   icon: MessagesSquare,
-  label: "Interview Practice",
+  label: "Practice Interview",
 }
 
 // Live Scored Candidate Interview (Phase 3) — a REAL, scored interview an
@@ -315,6 +318,25 @@ const INTERVIEW_LIVE_ITEM_SUPER_ADMIN: NavItemDef = {
   label: "Live Interview",
 }
 
+// Interview Studio as a GROUP (2026-09-23, request: "move Live Interview, and
+// add a link to Practice Interview under Interview Studio"). The parent row is
+// still the Interview Studio page — clicking it navigates and opens the group;
+// the two children sit indented beneath it. One group per role because the
+// parent and Live Interview are role-prefixed routes; Practice Interview is the
+// shared /interview-practice page for all three.
+const INTERVIEW_STUDIO_GROUP_MANAGER: NavItemDef = {
+  ...INTERVIEW_STUDIO_ITEM_MANAGER,
+  children: [INTERVIEW_LIVE_ITEM_MANAGER, PRACTICE_INTERVIEW_ITEM],
+}
+const INTERVIEW_STUDIO_GROUP_PRACTITIONER: NavItemDef = {
+  ...INTERVIEW_STUDIO_ITEM_PRACTITIONER,
+  children: [INTERVIEW_LIVE_ITEM_PRACTITIONER, PRACTICE_INTERVIEW_ITEM],
+}
+const INTERVIEW_STUDIO_GROUP_SUPER_ADMIN: NavItemDef = {
+  ...INTERVIEW_STUDIO_ITEM_SUPER_ADMIN,
+  children: [INTERVIEW_LIVE_ITEM_SUPER_ADMIN, PRACTICE_INTERVIEW_ITEM],
+}
+
 /**
  * Character Lab — the fictional-character PRISM demo.
  *
@@ -354,9 +376,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     // Tools, because their main nav is unchanged.
     GOALS_STUDIO_ITEM,
     JOB_BLUEPRINT_ITEM_MANAGER,
-    INTERVIEW_PRACTICE_ITEM,
-    INTERVIEW_LIVE_ITEM_MANAGER,
-    INTERVIEW_STUDIO_ITEM_MANAGER,
+    INTERVIEW_STUDIO_GROUP_MANAGER,
   ],
   practitioner: [
     // Not gated on TEAM_DEVELOPMENT_ENABLED: that build flag scopes the manager
@@ -365,9 +385,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     TEAM_DEVELOPMENT_ITEM_PRACTITIONER,
     GOALS_STUDIO_ITEM,
     JOB_BLUEPRINT_ITEM_PRACTITIONER,
-    INTERVIEW_PRACTICE_ITEM,
-    INTERVIEW_LIVE_ITEM_PRACTITIONER,
-    INTERVIEW_STUDIO_ITEM_PRACTITIONER,
+    INTERVIEW_STUDIO_GROUP_PRACTITIONER,
   ],
   // Super-admin is entitled to all four unconditionally (2026-08-12, request:
   // "add Live Interview, Interview Studio, Team Development Studio to super
@@ -379,9 +397,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
   "super-admin": [
     TEAM_DEVELOPMENT_ITEM,
     GOALS_STUDIO_ITEM,
-    INTERVIEW_PRACTICE_ITEM,
-    INTERVIEW_LIVE_ITEM_SUPER_ADMIN,
-    INTERVIEW_STUDIO_ITEM_SUPER_ADMIN,
+    INTERVIEW_STUDIO_GROUP_SUPER_ADMIN,
     CHARACTER_LAB_ITEM,
   ],
 }

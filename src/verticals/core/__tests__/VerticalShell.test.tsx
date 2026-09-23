@@ -91,7 +91,7 @@ describe("VerticalShell chrome selection", () => {
 
   test("KCE keeps its Knowledge Continuity sub-nav", () => {
     renderShell(<VerticalShell vertical="knowledge-continuity" />, "knowledge-continuity")
-    expect(sectionLabels()).toContain("Knowledge Continuity")
+    expect(sectionLabels()).toContain("Knowledge Continuity Studio")
   })
 
   test("the whole app menu stays present, in order, with the vertical between", () => {

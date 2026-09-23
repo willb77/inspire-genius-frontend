@@ -8,7 +8,7 @@ describe("Knowledge Continuity manifest", () => {
     expect(KNOWLEDGE_CONTINUITY.key).toBe("knowledge-continuity")
     expect(KNOWLEDGE_CONTINUITY.routePrefix).toBe("/vertical/knowledge-continuity")
     expect(KNOWLEDGE_CONTINUITY.homePath).toBe("/vertical/knowledge-continuity/dashboard")
-    expect(KNOWLEDGE_CONTINUITY.title).toBe("Knowledge Continuity")
+    expect(KNOWLEDGE_CONTINUITY.title).toBe("Knowledge Continuity Studio")
   })
 
   test("the src/verticals barrel registers it as a side effect", async () => {

@@ -9,8 +9,12 @@ import {
   SidebarHeader as SidebarSectionHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
@@ -61,6 +65,16 @@ export type NavItemDef = {
    * any other page inside that vertical.
    */
   activePrefix?: string;
+  /**
+   * Nested entries, rendered indented under this item (2026-09-23, request:
+   * "Career Studio" and "Interview Studio" as menu items that hold their own
+   * links). A parent with `to` set is itself a link — clicking it navigates
+   * AND opens the group; the chevron alone toggles. A parent with `to: ""` is
+   * a pure group: the row only toggles. The group opens by itself whenever a
+   * child is the active route, so a deep link never lands in a closed group.
+   * Children are hidden in the icon rail, like section headers.
+   */
+  children?: NavItemDef[];
 };
 
 export type NavSectionDef = {
@@ -93,19 +107,104 @@ export type SidebarScaffoldProps = {
   collapseOnMount?: boolean;
 };
 
-function NavItem({ to, icon: Icon, label, state, disabled, disabledReason, activePrefix, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
+function isItemActive(pathname: string, item: Pick<NavItemDef, "to" | "activePrefix">): boolean {
+  return item.activePrefix ? pathname.startsWith(item.activePrefix) : item.to !== "" && pathname === item.to;
+}
+
+/** A nested entry: same lock / active semantics as {@link NavItem}, rendered in the sub-menu. */
+function NavSubItem({ to, icon: Icon, label, state, disabled, disabledReason, activePrefix }: NavItemDef) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isActive = isItemActive(location.pathname, { to, activePrefix });
+  return (
+    <SidebarMenuSubItem>
+      <SidebarMenuSubButton
+        asChild
+        isActive={!disabled && isActive}
+        aria-disabled={disabled || undefined}
+        className={cn(
+          "cursor-pointer",
+          disabled && "!text-[#1A1A1A]/40 [&>svg]:!text-[#1A1A1A]/40 cursor-not-allowed hover:!bg-transparent",
+        )}
+      >
+        <button
+          type="button"
+          aria-label={label}
+          title={disabled ? disabledReason ?? `${label} — not included in your plan` : undefined}
+          onClick={() => {
+            if (disabled) return;
+            navigate(to, state ? { state } : undefined);
+          }}
+        >
+          <Icon className="shrink-0" />
+          <span>{label}</span>
+          {disabled && <Lock className="ms-auto size-3.5 shrink-0 opacity-60" />}
+        </button>
+      </SidebarMenuSubButton>
+    </SidebarMenuSubItem>
+  );
+}
+
+function NavItem({ to, icon: Icon, label, state, disabled, disabledReason, activePrefix, children, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { open, setOpen } = useSidebar();
-  const isActive = activePrefix
-    ? location.pathname.startsWith(activePrefix)
-    : location.pathname === to;
+  const hasChildren = !!children && children.length > 0;
+  const childActive = hasChildren && children.some((c) => isItemActive(location.pathname, c));
+  const [groupOpen, setGroupOpen] = React.useState(childActive);
+  React.useEffect(() => {
+    if (childActive) setGroupOpen(true);
+  }, [childActive]);
+  const isActive = isItemActive(location.pathname, { to, activePrefix });
   const activeClasses = "cursor-pointer !bg-ink !text-white [&>svg]:!text-white";
   const inactiveClasses = "cursor-pointer !bg-transparent !text-[#1A1A1A] [&>svg]:!text-[#1A1A1A] glow-border-hover";
   // Locked (no entitlement): still listed so the catalogue is discoverable, but
   // greyed, non-navigating, and announced as disabled to assistive tech.
   const lockedClasses =
     "!bg-transparent !text-[#1A1A1A]/40 [&>svg]:!text-[#1A1A1A]/40 cursor-not-allowed hover:!bg-transparent";
+  if (hasChildren) {
+    const Chevron = groupOpen ? ChevronDown : ChevronRight;
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          isActive={isActive}
+          aria-expanded={groupOpen}
+          onClick={() => {
+            if (to) {
+              setGroupOpen(true);
+              navigate(to, state ? { state } : undefined);
+            } else {
+              setGroupOpen((v) => !v);
+            }
+          }}
+          aria-label={label}
+          className={cn("py-2.5", isActive ? activeClasses : inactiveClasses)}
+        >
+          <Icon className="shrink-0 " />
+          <span>{label}</span>
+        </SidebarMenuButton>
+        <SidebarMenuAction
+          aria-label={`${groupOpen ? "Collapse" : "Expand"} ${label}`}
+          aria-expanded={groupOpen}
+          onClick={(e) => {
+            e.stopPropagation();
+            setGroupOpen((v) => !v);
+          }}
+          className="group-data-[collapsible=icon]:hidden"
+        >
+          <Chevron className="size-3.5" />
+        </SidebarMenuAction>
+        {groupOpen && (
+          <SidebarMenuSub>
+            {children.map((child) => (
+              <NavSubItem key={child.to || child.label} {...child} />
+            ))}
+          </SidebarMenuSub>
+        )}
+      </SidebarMenuItem>
+    );
+  }
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
@@ -161,7 +260,7 @@ function CollapsibleNavSection({
         <SidebarGroupContent>
           <SidebarMenu>
             {section.items.map((item) => (
-              <NavItem key={item.to} {...item} expandOnPath={expandOnPath} />
+              <NavItem key={item.to || item.label} {...item} expandOnPath={expandOnPath} />
             ))}
           </SidebarMenu>
         </SidebarGroupContent>
@@ -260,7 +359,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
                   <SidebarGroupContent>
                     <SidebarMenu>
                       {section.items.map((item) => (
-                        <NavItem key={item.to} {...item} expandOnPath={expandOnPath} />
+                        <NavItem key={item.to || item.label} {...item} expandOnPath={expandOnPath} />
                       ))}
                     </SidebarMenu>
                   </SidebarGroupContent>
@@ -275,7 +374,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
               <SidebarGroupContent className="mt-2">
                 <SidebarMenu>
                   {navItems.map((item) => (
-                    <NavItem key={item.to} {...item} expandOnPath={expandOnPath} />
+                    <NavItem key={item.to || item.label} {...item} expandOnPath={expandOnPath} />
                   ))}
                 </SidebarMenu>
               </SidebarGroupContent>

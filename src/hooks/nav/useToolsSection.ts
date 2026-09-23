@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { BookOpenText } from "lucide-react"
+import { BookOpenText, Briefcase } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole } from "@/types/roles"
@@ -80,7 +80,31 @@ export function canSeeToolsSection(role: UserRole): boolean {
 const BIO_CAPTURE_ITEM: NavItemDef = {
   to: ROUTES.BIO_CAPTURE,
   icon: BookOpenText,
-  label: "Bio Capture",
+  // "Bio Capture Studio" since 2026-09-23 (request). Route unchanged.
+  label: "Bio Capture Studio",
+}
+
+/**
+ * Career Studio (2026-09-23, request): a Tools entry that holds the two
+ * career verticals — Career Blueprint (the `job-blueprint` vertical, formerly
+ * listed as "Job DNA") and Career Fit (`job-fit`, formerly "Job Fit"). Both
+ * still come from the launcher, so their entitlement greying and lock reasons
+ * are exactly what the flat catalogue would have shown; they are lifted out of
+ * the catalogue and nested here instead of listed twice. The parent has no
+ * page of its own (`to: ""`), so the row only opens and closes the group.
+ */
+export const CAREER_STUDIO_LABEL = "Career Studio"
+const CAREER_STUDIO_PREFIXES = ["/vertical/job-blueprint", "/vertical/job-fit"] as const
+
+function splitCareerStudio(items: NavItemDef[]): { group: NavItemDef | null; rest: NavItemDef[] } {
+  const children: NavItemDef[] = []
+  for (const prefix of CAREER_STUDIO_PREFIXES) {
+    const hit = items.find((i) => i.to.startsWith(prefix))
+    if (hit) children.push(hit)
+  }
+  if (children.length === 0) return { group: null, rest: items }
+  const rest = items.filter((i) => !children.includes(i))
+  return { group: { to: "", icon: Briefcase, label: CAREER_STUDIO_LABEL, children }, rest }
 }
 
 /**
@@ -100,10 +124,20 @@ export function useToolsSection(role: UserRole): NavSectionDef | null {
   return useMemo(() => {
     if (!canSeeToolsSection(role)) return null
 
+    const { group: careerStudio, rest: catalogue } = splitCareerStudio(launcherSection?.items ?? [])
+    const roleTools = [...(TOOL_ITEMS_BY_ROLE[role] ?? [])]
+    if (careerStudio) {
+      // Career Studio sits just ahead of Interview Studio among the role tools
+      // (Bio Capture → Team Development → Goals → Career → Interview …), or at
+      // the end of them when the role has no Interview Studio entry.
+      const at = roleTools.findIndex((i) => i.label === "Interview Studio")
+      roleTools.splice(at === -1 ? roleTools.length : at, 0, careerStudio)
+    }
+
     const candidates: NavItemDef[] = [
       BIO_CAPTURE_ITEM,
-      ...(TOOL_ITEMS_BY_ROLE[role] ?? []),
-      ...(launcherSection?.items ?? []),
+      ...roleTools,
+      ...catalogue,
       // Platform Alerts is access-gated by a DB allowlist the owner controls,
       // not by entitlement — so it is withheld entirely rather than greyed. A
       // non-allowlisted super-admin has no upgrade path to advertise.
