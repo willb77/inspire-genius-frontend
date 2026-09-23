@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  */
 
+import userEvent from "@testing-library/user-event"
 import { render, screen, waitFor, fireEvent } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import type {
@@ -164,6 +165,10 @@ beforeEach(() => {
     mutateAsync: jest.fn().mockResolvedValue({}),
     isPending: false,
   })
+  ;(triageHooks.useSubmitIntake as jest.Mock).mockReturnValue({
+    mutateAsync: jest.fn().mockResolvedValue({}),
+    isPending: false,
+  })
   ;(scorecardHooks.useInterviewGuide as jest.Mock).mockReturnValue(query(undefined))
   ;(scorecardHooks.useScorecardDetail as jest.Mock).mockReturnValue(
     query(undefined, { isError: true, error: { response: { status: 404 } } })
@@ -239,6 +244,13 @@ describe("Candidates", () => {
   test("prompts to pick a role, then shows the gated empty state", () => {
     renderPage(<JobBlueprintCandidatesPage />)
     expect(screen.getByText(/Select a role to see its candidate roster/i)).toBeInTheDocument()
+  })
+
+  test("offers the Add-candidate form and, on an empty pipeline, points at it", async () => {
+    renderPage(<JobBlueprintCandidatesPage />)
+    expect(screen.getByRole("button", { name: /add candidate/i })).toBeInTheDocument()
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: /Job DNA/i }), JOB_DNA.id)
+    expect(screen.getByText(/Use .Add candidate. above to put one in/i)).toBeInTheDocument()
   })
 })
 
