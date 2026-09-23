@@ -6,6 +6,7 @@ import { usePipeline, useCandidateInsights } from "@/hooks/job-blueprint/useTria
 import { CandidateCard } from "@/components/job-blueprint/triage/CandidateCard"
 import { FitAnalysisView } from "@/components/job-blueprint/triage/FitAnalysisView"
 import { InsightPackageView } from "@/components/job-blueprint/triage/InsightPackageView"
+import { AddCandidateDialog } from "@/components/job-blueprint/triage/AddCandidateDialog"
 import type { Candidate } from "@/types/job-blueprint"
 import {
   JobDnaPageHeader,
@@ -51,14 +52,24 @@ export default function JobBlueprintCandidatesPage() {
         title="Candidates"
         description="Screen and review candidates: each one's PRISM profile scored against the role's reviewed Job DNA benchmark."
         action={
-          <JobDnaSelect
-            jobDnas={jobDnas ?? []}
-            value={jobId}
-            onChange={(id) => {
-              setJobId(id)
-              setSelected(null)
-            }}
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <JobDnaSelect
+              jobDnas={jobDnas ?? []}
+              value={jobId}
+              onChange={(id) => {
+                setJobId(id)
+                setSelected(null)
+              }}
+            />
+            <AddCandidateDialog
+              jobDnas={jobDnas ?? []}
+              defaultJobId={jobId}
+              onAdded={(_candidate, addedJobId) => {
+                setJobId(addedJobId)
+                setSelected(null)
+              }}
+            />
+          </div>
         }
       />
 
@@ -72,8 +83,8 @@ export default function JobBlueprintCandidatesPage() {
         <JobDnaError message="Failed to load candidates." onRetry={() => void refetch()} />
       ) : !candidates || candidates.length === 0 ? (
         <JobDnaEmptyState>
-          No candidates in this pipeline yet. Candidate screening (the fit / matching path) is
-          gated for this account.
+          No candidates in this pipeline yet. Use &ldquo;Add candidate&rdquo; above to put one in;
+          fit scoring runs once their PRISM assessment is on file.
         </JobDnaEmptyState>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
