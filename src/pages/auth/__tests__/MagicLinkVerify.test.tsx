@@ -3,18 +3,23 @@
  */
 
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 /* ── Mocks ── */
 const mockMutate = jest.fn();
 const mockCompleteAuth = jest.fn();
+const mockNavigate = jest.fn();
+const mockGetToken = jest.fn();
+// Read inside the factory below, so each test can flip the mutation into its
+// error state without re-isolating the module (which fights the hooks).
+let mockIsError = false;
 
 jest.mock("@/hooks/magic-auth/useMagicAuth", () => ({
   useVerifyMagicLink: () => ({
     mutate: mockMutate,
-    isError: false,
-    isPending: true,
+    isError: mockIsError,
+    isPending: !mockIsError,
   }),
 }));
 
@@ -23,6 +28,15 @@ jest.mock("@/context/useAuth", () => ({
     completeAuthFromPayload: mockCompleteAuth,
   }),
 }));
+
+jest.mock("@/lib/storage", () => ({
+  getToken: () => mockGetToken(),
+}));
+
+jest.mock("react-router-dom", () => {
+  const actual = jest.requireActual("react-router-dom");
+  return { ...actual, useNavigate: () => mockNavigate };
+});
 
 jest.mock("@/components/auth/AuthLayout", () => ({
   __esModule: true,
@@ -54,6 +68,8 @@ function renderPage(token: string = "test-magic-token") {
 describe("MagicLinkVerify", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIsError = false;
+    mockGetToken.mockResolvedValue(null);
   });
 
   test("renders verifying state with spinner", () => {
@@ -95,5 +111,48 @@ describe("MagicLinkVerify", () => {
   });
 });
 
-// TODO: Error state test would require module re-isolation which conflicts
-// with React hooks. The error UI is covered by visual/integration testing.
+/**
+ * A sign-in link is single-use, so the same link can verify twice — a second
+ * tab, a double click, or a mail scanner fetching the URL. The first call signs
+ * the person in; the second comes back 400. The failure screen must not be
+ * shown to somebody whose session is actually live (staging-b, 2026-09-23: a
+ * user hit the replay, then spent three minutes re-clicking the dead link,
+ * trying Sign up and trying Google, all of which dead-end).
+ */
+describe("MagicLinkVerify — failed verification", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockIsError = true;
+  });
+
+  test("shows the expiry screen when no session exists", async () => {
+    mockGetToken.mockResolvedValue(null);
+    renderPage();
+
+    expect(
+      await screen.findByText("This sign-in link has expired")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Send me a new sign-in link")).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  test("forwards an already-signed-in visitor instead of stranding them", async () => {
+    mockGetToken.mockResolvedValue("an-access-token");
+    renderPage();
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith("/login", { replace: true })
+    );
+    expect(screen.queryByText("This sign-in link has expired")).toBeNull();
+  });
+
+  test("falls back to the expiry screen when storage throws", async () => {
+    mockGetToken.mockRejectedValue(new Error("storage unavailable"));
+    renderPage();
+
+    expect(
+      await screen.findByText("This sign-in link has expired")
+    ).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+});
