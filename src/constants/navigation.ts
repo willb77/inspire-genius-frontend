@@ -37,6 +37,7 @@ import {
   Drama,
   LifeBuoy,
   Handshake,
+  IdCard,
 } from "lucide-react"
 
 /**
@@ -437,6 +438,9 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PRISM_CSV_CONVERTER, icon: FileSpreadsheet, label: "PRISM CSV Converter" },
   { to: ROUTES.SUPER_ADMIN.PRISM_ACCURACY_SCORER, icon: Target, label: "PRISM Accuracy Scorer" },
   { to: ROUTES.SUPER_ADMIN.PRISM_EXAM, icon: ClipboardCheck, label: "PRISM Practitioner Exam" },
+  // PC-1a — each practitioner's PRISM identifiers, and the client-assignment
+  // picker. Label must stay unique: SidebarScaffold keys nav items by label.
+  { to: ROUTES.SUPER_ADMIN.PRACTITIONER_REGISTRY, icon: IdCard, label: "Practitioner Registry" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   // Client Sign-Up — the operating procedure in
   // docs/operations/IG_Client_Signup_and_SOW_Process.docx, as a working surface:
