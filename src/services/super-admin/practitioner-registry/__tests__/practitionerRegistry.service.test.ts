@@ -6,6 +6,7 @@ import {
   listAssignable,
   listRegions,
   listRegistry,
+  regeneratePractitionerCode,
   setPractitionerActive,
 } from "../practitionerRegistry.service"
 
@@ -73,5 +74,11 @@ describe("practitionerRegistry.service", () => {
       clientId: "c1", clientSub: "u1", practitionerSub: "p1",
     })
     expect(post).toHaveBeenCalledWith(`${BASE}/assignments`, { clientEmail: "c@d.co", practitionerSub: "p1" })
+  })
+
+  it("regenerates a practitioner's code (PC-1c)", async () => {
+    post.mockResolvedValue(env({ practitionerSub: "p/1", practitionerCode: "ABC-DEF-GHJ" }))
+    expect((await regeneratePractitionerCode("p/1")).practitionerCode).toBe("ABC-DEF-GHJ")
+    expect(post).toHaveBeenLastCalledWith(`${BASE}/p%2F1/regenerate-code`)
   })
 })

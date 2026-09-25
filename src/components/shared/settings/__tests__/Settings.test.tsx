@@ -159,6 +159,11 @@ jest.mock("@/components/settings/AccountSettings", () => ({
 
 
 
+jest.mock("@/components/settings/PractitionerCodeCard", () => ({
+  __esModule: true,
+  default: () => <div data-testid="practitioner-code-card" />,
+}));
+
 jest.mock("@/components/settings/AgentEngineToggle", () => ({
   __esModule: true,
   default: () => <div data-testid="agent-engine-toggle" />,
@@ -637,6 +642,19 @@ describe("Settings Component", () => {
   /* ---------- Legal Links ---------- */
 
 
+
+  // PC-1c: clients hold the user role; the practitioner-code card is theirs.
+  it("shows the practitioner-code card to the user role only", () => {
+    const { unmount } = render(<Settings />, { wrapper: createWrapper() });
+    expect(screen.getByTestId("practitioner-code-card")).toBeInTheDocument();
+    unmount();
+    for (const role of [ROLES.PRACTITIONER, ROLES.MANAGER, ROLES.SUPER_ADMIN]) {
+      mockUseAuth.mockReturnValue({ user: { role }, markFullName: mockMarkFullName } as unknown as ReturnType<typeof useAuth>);
+      const r = render(<Settings />, { wrapper: createWrapper() });
+      expect(screen.queryByTestId("practitioner-code-card")).not.toBeInTheDocument();
+      r.unmount();
+    }
+  });
 
   it("renders legal links correctly", () => {
 

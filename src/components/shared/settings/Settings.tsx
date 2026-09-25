@@ -25,6 +25,7 @@ import AssessmentsSettings from "@/components/shared/settings/AssessmentsSetting
 import { V2Panel, SectionLabel } from "@/components/v2";
 import { isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
 import SurveysSettingsCard from "@/components/settings/SurveysSettingsCard";
+import PractitionerCodeCard from "@/components/settings/PractitionerCodeCard";
 
 export type SettingsVariant = "classic" | "v2";
 
@@ -278,6 +279,16 @@ export default function Settings({
         {role === ROLES.USER && (
           <div data-tour="settings-other-assessments">
             <AssessmentsSettings />
+          </div>
+        )}
+
+        {/* Practitioner code (Practitioner Programme PC-1c). A client who signed
+            up on their own enters the code their practitioner gave them. User
+            role only: clients hold the user role, and this is the one surface
+            every user account reaches (their left nav is frozen). */}
+        {role === ROLES.USER && (
+          <div data-tour="settings-practitioner-code">
+            <PractitionerCodeCard />
           </div>
         )}
 
