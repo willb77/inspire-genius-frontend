@@ -48,7 +48,7 @@ describe("PractitionerHome", () => {
     jest.clearAllMocks()
     mockUseAuth.mockReturnValue({ user: { fullName: "Dana Coach", name: "Dana Coach" } })
     mockClients.mockReturnValue(q(ROSTER))
-    mockCredits.mockReturnValue(q({ balance: 340, allocated: 500, used: 160, currency: "PUK" }))
+    mockCredits.mockReturnValue(q({ clientsUnderManagement: 0 }))
   })
 
   it("renders inside the practitioner layout", () => {
@@ -67,7 +67,20 @@ describe("PractitionerHome", () => {
     expect(screen.getByText("Meeting")).toBeInTheDocument()
     expect(screen.getByText("Add a Client")).toBeInTheDocument()
     expect(screen.getByText("Active Clients")).toBeInTheDocument()
-    expect(screen.getByText("Credit Balance")).toBeInTheDocument()
+    expect(screen.getByText("Clients Under Management")).toBeInTheDocument()
+    expect(screen.queryByText("Credit Balance")).not.toBeInTheDocument()
+  })
+
+  it("shows zero clients under management as 0, and an unreported count as a dash", () => {
+    const tile = () =>
+      screen.getByText("Clients Under Management").closest("div")?.parentElement?.textContent ?? ""
+    const { unmount } = renderHome()
+    expect(tile()).toContain("0")
+    expect(tile()).not.toContain("—")
+    unmount()
+    mockCredits.mockReturnValue(q({ clientsUnderManagement: null }))
+    renderHome()
+    expect(tile()).toContain("—")
   })
 
   it("renders the 2-column client list", () => {

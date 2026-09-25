@@ -100,5 +100,11 @@ export type BulkScheduleInput = {
 
 export type BulkScheduleResult = { created: number; emailed: number; entries: ScheduleEntry[] }
 
-export type CreditsSummary = { balance: number; allocated: number; used: number; currency: string }
+/**
+ * GET /v1/agents/coach/credits — clients under management (Practitioner Programme X-2).
+ * There is no practitioner credit balance: a PRISM survey is billed to the
+ * practitioner's own PRISM site. `null` means the backend did not report the
+ * count (an older deploy) — render it as unavailable, never as zero.
+ */
+export type ClientsUnderManagementSummary = { clientsUnderManagement: number | null }
 export type ClientUsageRow = { clientName: string; sessions: number; creditsUsed: number; lastActive: string }

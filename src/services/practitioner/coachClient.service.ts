@@ -22,7 +22,7 @@ import {
   type ScheduleEntry,
   type BulkScheduleInput,
   type BulkScheduleResult,
-  type CreditsSummary,
+  type ClientsUnderManagementSummary,
   type ClientUsageRow,
 } from "@/types/practitioner/coachClient"
 
@@ -60,7 +60,7 @@ type BeSession = {
   topic?: string | null
 }
 type BeUsage = { clientId: string; name?: string; sessions?: number; creditsUsed?: number }
-type BeCredits = { balance?: number; allocated?: number; used?: number }
+type BeCredits = { clients_under_management?: number }
 
 function fullName(first?: string | null, last?: string | null, email?: string | null): string {
   const n = [first, last].filter(Boolean).join(" ").trim()
@@ -378,18 +378,19 @@ export function createSessionsBulk(input: BulkScheduleInput): Promise<BulkSchedu
   })
 }
 
-export function getCreditsSummary(): Promise<CreditsSummary> {
+/**
+ * Clients under management — the practitioner's activated, live-linked clients.
+ * The path keeps its historical `/credits` name; the legacy balance keys it
+ * still returns are always zero and are deliberately not read.
+ */
+export function getCreditsSummary(): Promise<ClientsUnderManagementSummary> {
   if (USE_COACH_BACKEND) {
-    return agentApi
-      .get<Envelope<BeCredits>>("/v1/agents/coach/credits")
-      .then((r) => ({
-        balance: Number(r.data?.data?.balance ?? 0),
-        allocated: Number(r.data?.data?.allocated ?? 0),
-        used: Number(r.data?.data?.used ?? 0),
-        currency: "PUK",
-      }))
+    return agentApi.get<Envelope<BeCredits>>("/v1/agents/coach/credits").then((r) => {
+      const raw = r.data?.data?.clients_under_management
+      return { clientsUnderManagement: typeof raw === "number" ? raw : null }
+    })
   }
-  return Promise.resolve({ balance: 340, allocated: 500, used: 160, currency: "PUK" })
+  return Promise.resolve({ clientsUnderManagement: ROSTER.length })
 }
 
 export function getClientUsage(): Promise<ClientUsageRow[]> {
