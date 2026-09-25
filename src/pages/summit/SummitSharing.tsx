@@ -353,8 +353,9 @@ function AddPerson() {
         <UserPlus className="h-4 w-4 text-[#127A8A]" aria-hidden /> Add a person
       </div>
       <p className="mt-1 text-[13px] text-[#13294B]/75">
-        Someone with an IG account who isn&apos;t listed above — a coach outside your
-        organisation, for instance. Their exact email address; no lookup by name.
+        Someone with an IG account who isn&apos;t listed above. Their exact email address;
+        no lookup by name. Your coach doesn&apos;t need one: once they&apos;ve added you as a
+        client they appear in the list above, and you share with them there.
       </p>
       <form onSubmit={find} className="mt-3 flex flex-col gap-2 sm:flex-row">
         <Input

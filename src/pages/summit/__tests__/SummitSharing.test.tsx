@@ -321,6 +321,24 @@ describe("what they see", () => {
 });
 
 describe("add a person", () => {
+  it("does not send the member to the email form to reach their coach", async () => {
+    svc.getPeople.mockResolvedValue({ people: [], sources: PEOPLE_OK });
+    renderPage();
+    expect(await screen.findByText(/Your coach doesn.t need one/i)).toBeInTheDocument();
+    expect(screen.queryByText(/coach outside your organisation/i)).not.toBeInTheDocument();
+  });
+
+  it("lists a linked coach with its own switches, no email typed", async () => {
+    svc.getPeople.mockResolvedValue({
+      people: [person({ userId: "u-coach", displayName: "Casey Coach", kinds: ["practitioner"] })],
+      sources: PEOPLE_OK,
+    });
+    renderPage();
+    expect(await screen.findByText("Casey Coach")).toBeInTheDocument();
+    expect(screen.getByText(/^Your coach · morgan@example\.com$/)).toBeInTheDocument();
+    expect(svc.lookupPerson).not.toHaveBeenCalled();
+  });
+
   it("finds ONE exact email, then shares; 404 says so", async () => {
     svc.getPeople.mockResolvedValue({ people: [], sources: PEOPLE_OK });
     svc.lookupPerson.mockRejectedValueOnce({ response: { status: 404 } });
