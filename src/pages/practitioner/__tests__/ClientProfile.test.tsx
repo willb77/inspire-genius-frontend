@@ -17,8 +17,10 @@ jest.mock("@/hooks/prism/usePrismImport", () => ({
 }))
 
 const mockUseCoachClient = jest.fn()
+const mockUseClientPrism = jest.fn()
 jest.mock("@/hooks/practitioner/useCoachClient", () => ({
   useCoachClient: () => mockUseCoachClient(),
+  useClientPrism: () => mockUseClientPrism(),
   useUploadClientResource: () => ({ mutate: jest.fn(), isPending: false }),
 }))
 
@@ -67,6 +69,8 @@ describe("PractitionerClientProfile", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockUseCoachClient.mockReturnValue({ data: DETAIL, isLoading: false })
+    // Stub mode: the reader resolves null and the fixture scores render.
+    mockUseClientPrism.mockReturnValue({ data: null, isLoading: false, isError: false })
   })
 
   it("renders the client header and back link", () => {
@@ -88,6 +92,30 @@ describe("PractitionerClientProfile", () => {
     renderPage()
     expect(screen.getByTestId("practitioner-layout")).toBeInTheDocument()
     expect(screen.getByText("Back to My Clients")).toBeInTheDocument()
+  })
+
+  it("keeps the fixture scores in stub mode", () => {
+    renderPage()
+    expect(screen.getByText("34")).toBeInTheDocument()
+  })
+
+  it("renders the reader's answer in place of the fixture scores", () => {
+    mockUseClientPrism.mockReturnValue({
+      data: { state: "not_shared", colours: null, assessedAt: null },
+      isLoading: false,
+      isError: false,
+    })
+    renderPage()
+    expect(screen.getByText(/Marcus Chen hasn.t shared their PRISM with you/i)).toBeInTheDocument()
+    expect(screen.queryByText("34")).not.toBeInTheDocument()
+    expect(screen.queryByText(/No PRISM scores on file/i)).not.toBeInTheDocument()
+  })
+
+  it("renders a failed PRISM read as an alert, never as an empty profile", () => {
+    mockUseClientPrism.mockReturnValue({ data: undefined, isLoading: false, isError: true })
+    renderPage()
+    expect(screen.getByRole("alert")).toHaveTextContent(/couldn.t be loaded/i)
+    expect(screen.queryByText(/No PRISM scores on file/i)).not.toBeInTheDocument()
   })
 
   it("renders a not-found state when no data resolves", () => {
