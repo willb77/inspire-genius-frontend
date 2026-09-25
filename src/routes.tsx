@@ -110,6 +110,7 @@ const SuperAdminAnalytics = React.lazy(() => import("@/pages/super-admin/Analyti
 const PrismManagement = React.lazy(() => import("@/pages/super-admin/PrismManagement"));
 const PrismCsvConverter = React.lazy(() => import("@/pages/super-admin/PrismCsvConverter"));
 const PrismAccuracyScorer = React.lazy(() => import("@/pages/super-admin/PrismAccuracyScorer"));
+const PractitionerRegistry = React.lazy(() => import("@/pages/super-admin/PractitionerRegistry"));
 const PrismExam = React.lazy(() => import("@/pages/super-admin/PrismExam"));
 const CharacterLab = React.lazy(() => import("@/pages/super-admin/CharacterLab"));
 const ProcessBuilderPage = React.lazy(() => import("@/pages/super-admin/ProcessBuilder"));
@@ -566,6 +567,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/prism-csv-converter", element: withSuspense(<PrismCsvConverter />) },
       { path: "/super-admin/prism-accuracy-scorer", element: withSuspense(<PrismAccuracyScorer />) },
       { path: "/super-admin/prism-exam", element: withSuspense(<PrismExam />) },
+      { path: "/super-admin/practitioner-registry", element: withSuspense(<PractitionerRegistry />) },
       { path: "/super-admin/character-lab", element: withSuspense(<CharacterLab />) },
       // Wave 0.E (P5.1) — CulturalContent merged into KnowledgeBase as a domain filter.
       { path: "/super-admin/cultural-content", element: <Navigate to="/super-admin/knowledge-base?domain=cultural" replace /> },
