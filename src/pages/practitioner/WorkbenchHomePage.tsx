@@ -66,10 +66,7 @@ export default function PractitionerWorkbenchHome() {
         href: ROUTES.PRACTITIONER.CLIENTS,
       }))
 
-    const creditBalance =
-      typeof (creditsQ.data as { balance?: number } | undefined)?.balance === "number"
-        ? (creditsQ.data as { balance: number }).balance
-        : null
+    const underManagement = creditsQ.data?.clientsUnderManagement ?? null
 
     return {
       role: "practitioner",
@@ -94,12 +91,12 @@ export default function PractitionerWorkbenchHome() {
           tone: "alert",
         },
         {
-          key: "credits",
-          label: "Credits",
-          value: creditBalance,
-          // The hint tells the truth about WHY it is blank, so a practitioner
-          // does not read a dash as "you have run out".
-          hint: creditBalance === null ? "balance not available" : "surveys + tool seats",
+          key: "under-management",
+          label: "Under management",
+          value: underManagement,
+          // A dash means the count was not reported — not that there are none.
+          // Zero is a real zero: no client has activated a linked account yet.
+          hint: underManagement === null ? "count not available" : "activated, linked clients",
         },
       ],
       upcoming: {

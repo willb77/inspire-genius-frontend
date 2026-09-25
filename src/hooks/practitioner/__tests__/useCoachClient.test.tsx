@@ -82,11 +82,11 @@ describe("coachClient query hooks", () => {
     expect(result.current.data).toEqual([{ id: "sch-1", clientName: "Marcus" }])
   })
 
-  test("useCoachCredits reads the credits summary", async () => {
-    mockGetCredits.mockResolvedValue({ balance: 340, currency: "PUK" })
+  test("useCoachCredits reads clients under management", async () => {
+    mockGetCredits.mockResolvedValue({ clientsUnderManagement: 4 })
     const { result } = renderHook(() => useCoachCredits(), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data).toEqual({ balance: 340, currency: "PUK" })
+    expect(result.current.data).toEqual({ clientsUnderManagement: 4 })
   })
 
   test("useClientUsage reads the usage rows", async () => {

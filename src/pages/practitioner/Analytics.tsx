@@ -1,4 +1,4 @@
-import { Wallet, Coins, TrendingUp, Users } from "lucide-react"
+import { Users } from "lucide-react"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import StatCard from "@/components/dashboard/StatCard"
@@ -12,86 +12,54 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useCoachCredits, useClientUsage } from "@/hooks/practitioner/useCoachClient"
-import type { CreditsSummary, ClientUsageRow } from "@/types/practitioner/coachClient"
-import type { StatCardData } from "@/types/dashboard/data-types"
+import type { ClientUsageRow } from "@/types/practitioner/coachClient"
 
 function nf(n: number): string {
   return new Intl.NumberFormat("en-US").format(n)
 }
 
-function utilization(credits: CreditsSummary): number {
-  if (credits.allocated <= 0) return 0
-  return Math.round((credits.used / credits.allocated) * 100)
+function CountSkeleton() {
+  return <Skeleton className="h-[132px] w-full max-w-[280px]" />
 }
 
-function creditTiles(credits: CreditsSummary): StatCardData[] {
-  return [
-    {
-      label: `Balance (${credits.currency})`,
-      value: nf(credits.balance),
-      icon: Wallet,
-      iconColor: "text-[#3B5BFF]",
-      iconBg: "bg-[#EEF1FF]",
-    },
-    {
-      label: `Allocated (${credits.currency})`,
-      value: nf(credits.allocated),
-      icon: Coins,
-      iconColor: "text-[#127A8A]",
-      iconBg: "bg-[#E6F2F4]",
-    },
-    {
-      label: `Used (${credits.currency})`,
-      value: nf(credits.used),
-      icon: Users,
-      iconColor: "text-[#C88B1B]",
-      iconBg: "bg-[#FBF2E1]",
-    },
-    {
-      label: "Utilization",
-      value: `${utilization(credits)}%`,
-      icon: TrendingUp,
-      iconColor: "text-[#10B981]",
-      iconBg: "bg-[#E7F7F0]",
-    },
-  ]
-}
-
-function CreditsSkeleton() {
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Skeleton key={i} className="h-[132px] w-full" />
-      ))}
-    </div>
-  )
-}
-
-function PukCreditsSection() {
-  const { data: credits, isLoading, error, refetch } = useCoachCredits()
+/**
+ * Clients under management (X-2). There is no practitioner credit balance —
+ * a PRISM survey is billed to the practitioner's own PRISM site — so this
+ * section reports the one live fact: activated clients on a live link.
+ * Zero is a real zero; a missing count reads as unavailable, never as zero.
+ */
+function ClientsUnderManagementSection() {
+  const { data, isLoading, error, refetch } = useCoachCredits()
+  const count = data?.clientsUnderManagement ?? null
 
   return (
-    <DataCard title="PUK Credits">
-      {isLoading && <CreditsSkeleton />}
+    <DataCard title="Clients under management">
+      {isLoading && <CountSkeleton />}
 
       {!isLoading && error && (
         <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-          Failed to load credit balance.
+          Failed to load clients under management.
           <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">
             Retry
           </button>
         </div>
       )}
 
-      {!isLoading && !error && credits && (
+      {!isLoading && !error && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            {creditTiles(credits).map((tile) => (
-              <StatCard key={tile.label} {...tile} />
-            ))}
+            <StatCard
+              label="Clients under management"
+              value={count === null ? "—" : nf(count)}
+              icon={Users}
+              iconColor="text-[#127A8A]"
+              iconBg="bg-[#E6F2F4]"
+            />
           </div>
           <p className="text-[12px] text-[#6b7280] mt-3.5">
-            Credit allocation and top-ups are managed by your distributor.
+            {count === null
+              ? "The count is not available right now."
+              : "Clients who have activated their account and are linked to you."}
           </p>
         </>
       )}
@@ -164,10 +132,10 @@ export default function PractitionerAnalytics() {
     <PractitionerLayout>
       <h1 className="text-xl font-bold text-[#111827] mb-1">Analytics</h1>
       <p className="text-[13px] text-[#6b7280] mb-1">
-        PUK credit balance and per-client usage.
+        Clients under management and per-client usage.
       </p>
 
-      <PukCreditsSection />
+      <ClientsUnderManagementSection />
       <ClientUseSection />
     </PractitionerLayout>
   )
