@@ -10,6 +10,7 @@ import type { BulkScheduleInput, ResourceKey } from "@/types/practitioner/coachC
 const KEYS = {
   clients: ["practitioner", "clients"] as const,
   client: (id: string) => ["practitioner", "client", id] as const,
+  clientPrism: (id: string) => ["practitioner", "client", id, "prism"] as const,
   schedule: ["practitioner", "schedule"] as const,
   credits: ["practitioner", "credits"] as const,
   usage: ["practitioner", "client-usage"] as const,
@@ -23,6 +24,15 @@ export function useCoachClient(id: string | undefined) {
   return useQuery({
     queryKey: KEYS.client(id ?? ""),
     queryFn: () => coachClient.getClient(id ?? ""),
+    enabled: !!id,
+  })
+}
+
+/** The client's PRISM as the reader states it — shared, or why not. */
+export function useClientPrism(id: string | undefined) {
+  return useQuery({
+    queryKey: KEYS.clientPrism(id ?? ""),
+    queryFn: () => coachClient.getClientPrism(id ?? ""),
     enabled: !!id,
   })
 }

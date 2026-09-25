@@ -24,6 +24,7 @@ import {
   type BulkScheduleResult,
   type CreditsSummary,
   type ClientUsageRow,
+  type ClientPrism,
 } from "@/types/practitioner/coachClient"
 
 /** True only where the real coach backend is deployed (dev build). */
@@ -332,6 +333,31 @@ export async function getClientArtifacts(clientId: string): Promise<BeArtifacts 
     // Null means "not known", which the caller renders as not-checked. It must
     // never collapse into `false` — that would assert absence off a failed call.
     return null
+  }
+}
+
+type BeClientPrism = {
+  state?: ClientPrism["state"]
+  prism?: { colours?: Record<string, number | null>; assessedAt?: string | null } | null
+}
+
+/**
+ * The client's PRISM, gated server-side on the practitioner's ownership link
+ * AND a live prism share from the client. `null` where the coach backend is
+ * not deployed — the page then keeps its fixture scores. A failed call throws,
+ * so the hook's error is what the page renders, never an empty state.
+ */
+export async function getClientPrism(clientId: string): Promise<ClientPrism | null> {
+  if (!USE_COACH_BACKEND) return null
+  const r = await agentApi.get<Envelope<BeClientPrism>>(
+    `/v1/agents/coach/clients/${encodeURIComponent(clientId)}/prism`,
+  )
+  const d = r.data?.data
+  const state = d?.state ?? "unavailable"
+  return {
+    state,
+    colours: state === "shared" ? (d?.prism?.colours ?? null) : null,
+    assessedAt: state === "shared" ? (d?.prism?.assessedAt ?? null) : null,
   }
 }
 

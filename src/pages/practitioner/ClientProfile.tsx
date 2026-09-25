@@ -12,6 +12,7 @@ import {
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import ArtifactStatusMatrix from "@/components/practitioner/ArtifactStatusMatrix"
+import ClientPrismPanel from "@/components/practitioner/ClientPrismPanel"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -23,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useCoachClient } from "@/hooks/practitioner/useCoachClient"
+import { useClientPrism, useCoachClient } from "@/hooks/practitioner/useCoachClient"
 import { usePrismImport } from "@/hooks/prism/usePrismImport"
 
 function formatDate(dateStr: string) {
@@ -36,6 +37,7 @@ export default function PractitionerClientProfile() {
   const { clientId } = useParams<{ clientId: string }>()
   const navigate = useNavigate()
   const { data, isLoading } = useCoachClient(clientId)
+  const prismQuery = useClientPrism(clientId)
   const prismImport = usePrismImport()
 
   const [prismOpen, setPrismOpen] = useState(false)
@@ -162,7 +164,16 @@ export default function PractitionerClientProfile() {
         {/* PRISM */}
         <DataCard title="PRISM Scores">
           <div className="space-y-3">
-            {data.prismScores.length ? (
+            {prismQuery.isError ? (
+              <p role="alert" className="text-sm text-[#B91C1C]">
+                PRISM couldn&rsquo;t be loaded just now. This is a failure, not an empty profile —
+                try again shortly.
+              </p>
+            ) : prismQuery.isLoading ? (
+              <Skeleton className="h-16 w-full" />
+            ) : prismQuery.data ? (
+              <ClientPrismPanel prism={prismQuery.data} clientName={data.name} />
+            ) : data.prismScores.length ? (
               <div className="space-y-2">
                 {data.prismScores.map((p) => (
                   <div key={p.dimension} className="flex items-center gap-3">
