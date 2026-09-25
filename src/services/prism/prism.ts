@@ -31,6 +31,36 @@ export type PrismSurveyRequestPayload = {
   /** Auto-marks the request as pre-paid so the report unlocks immediately.
    *  Sent camelCase — the backend model aliases it to `is_gift`. */
   isGift?: boolean
+  /** Only after a `practitioner_choice_required` 409: which of the caller's
+   *  OWN practitioners the survey is raised under. The server refuses any
+   *  other value. Never populated from a roster. */
+  practitionerSub?: string
+}
+
+/** One of the caller's own practitioners, as the 409 lists them. */
+export type PractitionerChoice = {
+  practitionerSub: string
+  displayName: string
+}
+
+/**
+ * The practitioner list from a `409 practitioner_choice_required`, or `null`
+ * when the error is anything else.
+ *
+ * The server resolves the practitioner from the client's own links and only
+ * asks when there are several — this reads that question off the error.
+ */
+export function practitionerChoiceFrom(err: unknown): PractitionerChoice[] | null {
+  const res = (err as { response?: { status?: number; data?: { detail?: unknown } } })?.response
+  if (res?.status !== 409) return null
+  const detail = res.data?.detail as { code?: unknown; practitioners?: unknown } | undefined
+  if (!detail || detail.code !== 'practitioner_choice_required') return null
+  if (!Array.isArray(detail.practitioners)) return null
+  const out = detail.practitioners.filter(
+    (p): p is PractitionerChoice =>
+      typeof p?.practitionerSub === 'string' && typeof p?.displayName === 'string',
+  )
+  return out.length > 0 ? out : null
 }
 
 /** Lifecycle states the backend can return for a PRISM request */
