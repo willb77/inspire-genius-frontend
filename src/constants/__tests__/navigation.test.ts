@@ -494,3 +494,17 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
     }
   })
 })
+
+describe("practitioner nav doors (X-3, Practitioner Programme)", () => {
+  it("gives the practitioner a door to Client PRISM Assessments", () => {
+    const item = NAV_ITEMS_BY_ROLE.practitioner.find((i) => i.to === ROUTES.PRACTITIONER.PRISM_CLIENTS)
+    expect(item?.label).toBe("Client PRISM Assessments")
+    // A door the role cannot pass through is worse than no door: ProtectedRoute
+    // gates by prefix and would bounce the practitioner home.
+    expect(hasAccess("practitioner", ROUTES.PRACTITIONER.PRISM_CLIENTS)).toBe(true)
+  })
+
+  it("has no door to the retired credits page", () => {
+    expect(NAV_ITEMS_BY_ROLE.practitioner.some((i) => i.to === "/practitioner/credits")).toBe(false)
+  })
+})

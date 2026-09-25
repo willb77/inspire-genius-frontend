@@ -557,6 +557,10 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   // v2 six-tile-rail experience), not a practitioner-specific copy.
   { to: ROUTES.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian", state: { autoLoadPrism: true } },
   { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "My Clients" },
+  // X-3 (Practitioner Programme): the page existed and was routed but sat in
+  // no menu. `/practitioner/*` is in ROLE_PERMISSIONS.practitioner, so this
+  // door is reachable, not a live-looking redirect home.
+  { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "Client PRISM Assessments" },
   { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
