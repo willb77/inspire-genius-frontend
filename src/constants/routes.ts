@@ -176,7 +176,6 @@ export const ROUTES = {
     DASHBOARD: "/practitioner/dashboard",
     CLIENTS: "/practitioner/clients",
     CLIENT_DETAIL: "/practitioner/clients/:clientId",
-    CREDITS: "/practitioner/credits",
     PRISM_CLIENTS: "/practitioner/prism-clients",
     ANALYTICS: "/practitioner/analytics",
     SETTINGS: "/practitioner/settings",

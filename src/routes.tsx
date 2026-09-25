@@ -188,7 +188,6 @@ const Explainability = React.lazy(() => import("@/pages/super-admin/Explainabili
 // redirects to /practitioner/home (the new landing). Its unbuilt
 // /api/practitioner/sessions call was 500-ing; Home uses the coachClient seam.
 const PractitionerClients = React.lazy(() => import("@/pages/practitioner/Clients"));
-const PractitionerCredits = React.lazy(() => import("@/pages/practitioner/Credits"));
 const PrismClients = React.lazy(() => import("@/pages/practitioner/PrismClients"));
 const PractitionerSettings = React.lazy(() => import("@/pages/practitioner/Settings"));
 const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Analytics"));
@@ -663,7 +662,11 @@ export const routes: RouteObject[] = [
       { path: "/practitioner/dashboard", element: <Navigate to="/practitioner/home" replace /> },
       { path: "/practitioner/clients", element: withSuspense(<PractitionerClients />) },
       { path: "/practitioner/clients/:clientId", element: withSuspense(<PractitionerClientProfile />) },
-      { path: "/practitioner/credits", element: withSuspense(<PractitionerCredits />) },
+      // X-3 (Practitioner Programme): practitioner credits are retired — PRISM
+      // surveys route to the practitioner's own PRISM site (D-P1), so there is
+      // nothing left for a credit to buy. Redirect rather than drop, so an old
+      // bookmark lands somewhere real instead of a 404.
+      { path: "/practitioner/credits", element: <Navigate to="/practitioner/home" replace /> },
       { path: "/practitioner/prism-clients", element: withSuspense(<PrismClients />) },
       { path: "/practitioner/settings", element: withSuspense(<PractitionerSettings />) },
       { path: "/practitioner/analytics", element: withSuspense(<PractitionerAnalytics />) },
