@@ -159,6 +159,13 @@ jest.mock("@/components/settings/AccountSettings", () => ({
 
 
 
+/* D9: the code card is also gated on the server's Practitioner Programme
+   switch. ON by default here; the dark test flips it. */
+const mockProgrammeOn = jest.fn(() => true);
+jest.mock("@/hooks/switches/usePractitionerProgrammeEnabled", () => ({
+  usePractitionerProgrammeEnabled: () => mockProgrammeOn(),
+}));
+
 jest.mock("@/components/settings/PractitionerCodeCard", () => ({
   __esModule: true,
   default: () => <div data-testid="practitioner-code-card" />,
@@ -653,6 +660,16 @@ describe("Settings Component", () => {
       const r = render(<Settings />, { wrapper: createWrapper() });
       expect(screen.queryByTestId("practitioner-code-card")).not.toBeInTheDocument();
       r.unmount();
+    }
+  });
+
+  it("hides the practitioner-code card while the programme is switched off", () => {
+    mockProgrammeOn.mockReturnValue(false);
+    try {
+      render(<Settings />, { wrapper: createWrapper() });
+      expect(screen.queryByTestId("practitioner-code-card")).not.toBeInTheDocument();
+    } finally {
+      mockProgrammeOn.mockReturnValue(true);
     }
   });
 

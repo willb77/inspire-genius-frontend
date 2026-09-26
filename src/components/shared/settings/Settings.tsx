@@ -26,6 +26,7 @@ import { V2Panel, SectionLabel } from "@/components/v2";
 import { isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
 import SurveysSettingsCard from "@/components/settings/SurveysSettingsCard";
 import PractitionerCodeCard from "@/components/settings/PractitionerCodeCard";
+import { usePractitionerProgrammeEnabled } from "@/hooks/switches/usePractitionerProgrammeEnabled";
 
 export type SettingsVariant = "classic" | "v2";
 
@@ -64,6 +65,7 @@ export default function Settings({
   const isV2 = variant ? variant === "v2" : isNewUserSurfacesEnabled();
   const { user, markFullName } = useAuth();
   const role = user?.role;
+  const practitionerProgrammeOn = usePractitionerProgrammeEnabled();
   const { data: meResp, isPending: meLoading } = useMe<{
     sub: string;
     groups: string[];
@@ -285,8 +287,10 @@ export default function Settings({
         {/* Practitioner code (Practitioner Programme PC-1c). A client who signed
             up on their own enters the code their practitioner gave them. User
             role only: clients hold the user role, and this is the one surface
-            every user account reaches (their left nav is frozen). */}
-        {role === ROLES.USER && (
+            every user account reaches (their left nav is frozen). Hidden while
+            the server's Practitioner Programme switch is off (D9), so nobody is
+            shown a card whose every submission would be refused. */}
+        {role === ROLES.USER && practitionerProgrammeOn && (
           <div data-tour="settings-practitioner-code">
             <PractitionerCodeCard />
           </div>
