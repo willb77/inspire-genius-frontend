@@ -3,7 +3,7 @@ import { useForm, type UseFormRegisterReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { z } from "zod"
 import { toast } from "sonner"
-import { Download, Link2, Loader2, Pencil, Power, Upload, UserPlus } from "lucide-react"
+import { Download, Link2, Loader2, Pencil, Power, RefreshCw, Upload, UserPlus } from "lucide-react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,7 @@ import {
   useBulkAddPractitioners,
   useEditPractitioner,
   useRegistry,
+  useRegeneratePractitionerCode,
   useRegistryRegions,
   useSetPractitionerActive,
 } from "@/hooks/super-admin/usePractitionerRegistry"
@@ -422,9 +423,54 @@ function EditDialog({ row, onClose }: { row: RegistryRow; onClose: () => void })
   )
 }
 
+/**
+ * PC-1c: confirm before replacing a practitioner's code. The old code stops
+ * working the moment this succeeds, so a client holding it can no longer
+ * connect — the practitioner has to hand out the new one.
+ */
+function RegenerateCodeDialog({ row, onClose }: { row: RegistryRow; onClose: () => void }) {
+  const regenerate = useRegeneratePractitionerCode()
+  const confirm = () =>
+    regenerate.mutate(row.practitionerSub, {
+      onSuccess: (updated) => {
+        toast.success(`New code for ${row.displayName}: ${updated.practitionerCode ?? "—"}`)
+        onClose()
+      },
+    })
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Regenerate code for {row.displayName}?</DialogTitle>
+          <DialogDescription>
+            The current code {row.practitionerCode ? <span className="font-mono">{row.practitionerCode}</span> : null} stops
+            working immediately. Clients who already connected stay connected; anyone who has not yet entered the old
+            code will need the new one.
+          </DialogDescription>
+        </DialogHeader>
+        {regenerate.error && (
+          <p role="alert" className="text-sm text-destructive">
+            {registryErrorSummary(regenerate.error, "Could not regenerate the code")}
+          </p>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={confirm} disabled={regenerate.isPending}>
+            {regenerate.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Regenerate
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function RegistryTable() {
   const [includeInactive, setIncludeInactive] = useState(false)
   const [editing, setEditing] = useState<RegistryRow | null>(null)
+  const [regenerating, setRegenerating] = useState<RegistryRow | null>(null)
   const registry = useRegistry(includeInactive)
   const setActive = useSetPractitionerActive()
 
@@ -473,6 +519,7 @@ function RegistryTable() {
                   <TableHead>IG Reference</TableHead>
                   <TableHead>ExternalIdent</TableHead>
                   <TableHead>Region / country</TableHead>
+                  <TableHead>Practitioner code</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -490,6 +537,17 @@ function RegistryTable() {
                     <TableCell className="font-mono text-xs">{row.externalIdent}</TableCell>
                     <TableCell>
                       {row.region} / {row.country}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <span className="font-mono text-xs">{row.practitionerCode ?? "—"}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setRegenerating(row)}
+                        aria-label={`Regenerate code for ${row.displayName}`}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                     <TableCell>
                       <Badge variant={row.active ? "default" : "secondary"}>{row.active ? "Active" : "Deactivated"}</Badge>
@@ -516,6 +574,7 @@ function RegistryTable() {
         )}
       </CardContent>
       {editing && <EditDialog row={editing} onClose={() => setEditing(null)} />}
+      {regenerating && <RegenerateCodeDialog row={regenerating} onClose={() => setRegenerating(null)} />}
     </Card>
   )
 }

@@ -6,6 +6,7 @@ import {
   useAssignClient,
   useBulkAddPractitioners,
   useEditPractitioner,
+  useRegeneratePractitionerCode,
   useRegistry,
   useRegistryRegions,
   useSetPractitionerActive,
@@ -20,6 +21,7 @@ jest.mock("@/services/super-admin/practitioner-registry/practitionerRegistry.ser
   editPractitioner: jest.fn(),
   setPractitionerActive: jest.fn(),
   assignClient: jest.fn(),
+  regeneratePractitionerCode: jest.fn(),
 }))
 
 import * as service from "@/services/super-admin/practitioner-registry/practitionerRegistry.service"
@@ -62,20 +64,24 @@ describe("usePractitionerRegistry", () => {
     ;(service.editPractitioner as jest.Mock).mockResolvedValue({})
     ;(service.setPractitionerActive as jest.Mock).mockResolvedValue({})
     ;(service.assignClient as jest.Mock).mockResolvedValue({})
+    ;(service.regeneratePractitionerCode as jest.Mock).mockResolvedValue({})
     const add = renderHook(() => useAddPractitioner(), { wrapper })
     const bulk = renderHook(() => useBulkAddPractitioners(), { wrapper })
     const edit = renderHook(() => useEditPractitioner(), { wrapper })
     const active = renderHook(() => useSetPractitionerActive(), { wrapper })
     const assign = renderHook(() => useAssignClient(), { wrapper })
+    const regen = renderHook(() => useRegeneratePractitionerCode(), { wrapper })
     await act(async () => {
       await add.result.current.mutateAsync({ practitionerEmail: "a@b.co", siteId: "S", clientId: "C", reference: "R", externalIdent: "E", region: "EU", country: "FR" })
       await bulk.result.current.mutateAsync("csv")
       await edit.result.current.mutateAsync({ practitionerSub: "p1", region: "EU" })
       await active.result.current.mutateAsync({ practitionerSub: "p1", active: false })
       await assign.result.current.mutateAsync({ clientEmail: "c@d.co", practitionerSub: "p1" })
+      await regen.result.current.mutateAsync("p1")
     })
+    expect(service.regeneratePractitionerCode).toHaveBeenCalledWith("p1")
     expect(service.setPractitionerActive).toHaveBeenCalledWith("p1", false)
-    expect(spy).toHaveBeenCalledTimes(5)
+    expect(spy).toHaveBeenCalledTimes(6)
     expect(spy).toHaveBeenCalledWith({ queryKey: ["practitioner-registry"] })
     spy.mockRestore()
   })

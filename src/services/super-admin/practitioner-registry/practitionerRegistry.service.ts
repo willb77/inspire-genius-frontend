@@ -68,3 +68,11 @@ export async function assignClient(input: AssignInput): Promise<AssignResult> {
   const { data } = await agentApi.post<Envelope<AssignResult>>(`${BASE}/assignments`, input)
   return data.data
 }
+
+/** PC-1c: issue a new practitioner code. The old one stops working at once. */
+export async function regeneratePractitionerCode(practitionerSub: string): Promise<RegistryRow> {
+  const { data } = await agentApi.post<Envelope<RegistryRow>>(
+    `${BASE}/${encodeURIComponent(practitionerSub)}/regenerate-code`,
+  )
+  return data.data
+}
