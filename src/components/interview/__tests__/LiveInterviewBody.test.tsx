@@ -215,7 +215,13 @@ describe("S-3 / D3 — a Live scored interview never reaches a development recor
     render(<LiveInterviewBody />)
     await reachInterview(user)
     await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1))
-    expect(createMutate.mock.calls[0][0]).not.toHaveProperty("subject_sub")
+    const payload = createMutate.mock.calls[0][0]
+    // In-file positive control: the same matcher, on the same captured payload,
+    // passes for fields Live DOES send — so the absence below is a real
+    // absence, not a payload the matcher could never have seen into.
+    expect(payload).toHaveProperty("consent")
+    expect(payload).toHaveProperty("candidate.display_name", "Candidate A")
+    expect(payload).not.toHaveProperty("subject_sub")
     expect(screen.queryByLabelText(/development record/i)).not.toBeInTheDocument()
   })
 })
