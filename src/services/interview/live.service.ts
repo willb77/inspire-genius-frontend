@@ -371,6 +371,11 @@ export type CreateLiveSessionPayload = {
    * already, because that is the wire name; sent through as-is. */
   candidate_id?: string
   blueprint_id?: string
+  /** S-3 — who a DEVELOPMENT session is about (an IG member's id). Only ever
+   * sent by Studio on a `kind: "general"` session; the backend refuses it on a
+   * selection session and on anyone the interviewer does not work with. Live
+   * never sends it (D3: selection interviews never enter a development record). */
+  subject_sub?: string
 }
 
 /**

@@ -343,6 +343,23 @@ export type DossierEvent = {
 }
 
 /** The synthesized, per-member development snapshot. */
+/** S-3: one development interview, as a summary — never the answers. */
+export type DossierInterview = {
+  sessionId: string
+  finalizedAt?: string | null
+  title?: string | null
+  overallScore?: number | null
+  recommendation?: string | null
+  summary?: string | null
+}
+
+/** S-3: three states a viewer must be able to tell apart. `shared` with no
+ *  items means "shared, none yet"; an empty list alone would say all three. */
+export type DossierInterviews = {
+  state: "shared" | "not_shared" | "unavailable"
+  items: DossierInterview[]
+}
+
 export type MemberDossier = {
   memberId: string
   managerId?: string
@@ -370,6 +387,9 @@ export type MemberDossier = {
   /** TDS-1b: the member has no IG account — a Studio-added roster row. They
    *  cannot sign in, so they cannot grant, so there is nobody to ask. */
   prismNoAccount?: boolean
+  /** S-3: development interviews, consent-gated on the member's `interviews`
+   *  grant and read live. Absent on an older backend. */
+  interviews?: DossierInterviews
   gaps: DevelopmentGap[]
   learning: LearningItem[]
   milestones: Milestone[]

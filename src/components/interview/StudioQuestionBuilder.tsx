@@ -12,7 +12,7 @@
  * with `mode: "custom"` + `kind` + `questions[]` that the live-interview
  * pipeline runs and the generic scorer bands.
  */
-import { useRef, useState } from "react"
+import { useRef, useState, type ReactNode } from "react"
 import { Building2, Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -65,6 +65,13 @@ type RowQuestion = {
 export type StudioQuestionBuilderProps = {
   onConfirm: (frame: InterviewFrame) => void
   submitting?: boolean
+  /** S-3: told whenever the interview style changes, so the body can drop a
+   * development subject the moment the session becomes a selection one. */
+  onKindChange?: (kind: InterviewKind) => void
+  /** S-3: rendered under the style selector ONLY while the style is
+   * development / discovery — the subject picker lives here, after the kind is
+   * known, never on the participant step. */
+  developmentOnly?: ReactNode
 }
 
 const KIND_OPTIONS: { value: InterviewKind; label: string; hint: string }[] = [
@@ -75,7 +82,12 @@ const KIND_OPTIONS: { value: InterviewKind; label: string; hint: string }[] = [
   { value: "hiring", label: "Selection / evaluation", hint: "Evaluative — strong to limited alignment with the role" },
 ]
 
-export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQuestionBuilderProps) {
+export default function StudioQuestionBuilder({
+  onConfirm,
+  submitting,
+  onKindChange,
+  developmentOnly,
+}: StudioQuestionBuilderProps) {
   const [title, setTitle] = useState("")
   const [purpose, setPurpose] = useState("")
   const [audience, setAudience] = useState("")
@@ -314,7 +326,10 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setKind(opt.value)}
+                  onClick={() => {
+                    setKind(opt.value)
+                    onKindChange?.(opt.value)
+                  }}
                   className={cn(
                     "rounded-lg border px-3 py-2 text-left text-sm transition",
                     kind === opt.value
@@ -328,6 +343,9 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
               ))}
             </div>
           </div>
+          {kind === "general" && developmentOnly ? (
+            <div data-testid="studio-development-only">{developmentOnly}</div>
+          ) : null}
         </CardContent>
       </Card>
 

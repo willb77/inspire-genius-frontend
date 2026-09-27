@@ -99,10 +99,45 @@ jest.mock("@/components/interview/ConsentGate", () => ({
 
 /** The builder hands back a frame; `kind` decides how findings are worded. */
 let builderFrame: Record<string, unknown> = { mode: "custom", kind: "hiring", roleTitle: "Ops Lead", company: "Acme" }
-jest.mock("@/components/interview/StudioQuestionBuilder", () => ({
+jest.mock("@/components/interview/StudioQuestionBuilder", () => {
+  // S-3: renders the development-only slot and reports style changes, the way
+  // the real builder does. The style is React state, so a change re-renders.
+  const React = jest.requireActual("react") as typeof import("react")
+  function MockBuilder({
+    onConfirm,
+    onKindChange,
+    developmentOnly,
+  }: {
+    onConfirm: (f: unknown) => void
+    onKindChange?: (k: string) => void
+    developmentOnly?: React.ReactNode
+  }) {
+    const [kind, setKind] = React.useState(String(builderFrame.kind))
+    const switchTo = (k: string) => {
+      builderFrame = { ...builderFrame, kind: k }
+      setKind(k)
+      onKindChange?.(k)
+    }
+    return (
+      <div>
+        {kind === "general" ? developmentOnly : null}
+        <button onClick={() => switchTo("hiring")}>mock-switch-to-hiring</button>
+        <button onClick={() => switchTo("general")}>mock-switch-to-general</button>
+        <button onClick={() => onConfirm(builderFrame)}>mock-questions-confirm</button>
+      </div>
+    )
+  }
+  return { __esModule: true, default: MockBuilder }
+})
+
+// S-3: the subject picker has its own suite; here it is one button that picks
+// a roster member, so these tests can follow the id onto the create payload.
+jest.mock("@/components/interview/InterviewSubjectPicker", () => ({
   __esModule: true,
-  default: ({ onConfirm }: { onConfirm: (f: unknown) => void }) => (
-    <button onClick={() => onConfirm(builderFrame)}>mock-questions-confirm</button>
+  default: ({ value, onChange }: { value: string | null; onChange: (id: string | null) => void }) => (
+    <button type="button" onClick={() => onChange("member-7")}>
+      {value ? `mock-subject:${value}` : "mock-pick-subject"}
+    </button>
   ),
 }))
 
@@ -716,5 +751,85 @@ describe("transcript — an undecided answer never shows a decided score (fork p
 
     expect(await screen.findByText(/Score: 5 \/ 5/)).toBeInTheDocument()
     expect(screen.queryByText(/not decided/i)).not.toBeInTheDocument()
+  })
+})
+
+
+describe("S-3 — a development interview can join the member's record; a selection one never does", () => {
+  async function toBuilder(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByText("mock-consent-proceed"))
+    await user.type(screen.getByLabelText(/^name$/i), "Participant A")
+    await user.click(screen.getByRole("button", { name: /continue/i }))
+  }
+
+  it("sends subject_sub on a development session with a picked member (the populated control)", async () => {
+    builderFrame = { mode: "custom", kind: "general", topic: "Discovery" }
+    const user = userEvent.setup()
+    render(<StudioInterviewBody />)
+    await toBuilder(user)
+    await user.click(screen.getByText("mock-pick-subject"))
+    await user.click(screen.getByText("mock-questions-confirm"))
+    await waitFor(() => expect(createMutate).toHaveBeenCalled())
+    expect(createMutate.mock.calls[0][0]).toEqual(expect.objectContaining({ subject_sub: "member-7" }))
+  })
+
+  it("sends no subject_sub on a development session when nobody was picked", async () => {
+    builderFrame = { mode: "custom", kind: "general", topic: "Discovery" }
+    const user = userEvent.setup()
+    render(<StudioInterviewBody />)
+    await toBuilder(user)
+    await user.click(screen.getByText("mock-questions-confirm"))
+    await waitFor(() => expect(createMutate).toHaveBeenCalled())
+    expect(createMutate.mock.calls[0][0]).not.toHaveProperty("subject_sub")
+  })
+
+  it("never offers the picker on a selection session", async () => {
+    builderFrame = { mode: "custom", kind: "hiring", roleTitle: "Ops Lead" }
+    const user = userEvent.setup()
+    render(<StudioInterviewBody />)
+    await toBuilder(user)
+    expect(screen.queryByText("mock-pick-subject")).not.toBeInTheDocument()
+  })
+
+  it("drops a picked member the moment the style becomes selection", async () => {
+    builderFrame = { mode: "custom", kind: "general", topic: "Discovery" }
+    const user = userEvent.setup()
+    render(<StudioInterviewBody />)
+    await toBuilder(user)
+    await user.click(screen.getByText("mock-pick-subject"))
+    await user.click(screen.getByText("mock-switch-to-hiring"))
+    await user.click(screen.getByText("mock-questions-confirm"))
+    await waitFor(() => expect(createMutate).toHaveBeenCalled())
+    expect(createMutate.mock.calls[0][0]).not.toHaveProperty("subject_sub")
+  })
+
+  it("a pick does not silently come back after a detour through selection", async () => {
+    // Development → pick → selection → development again: the interviewer must
+    // pick again. Otherwise the earlier choice rides along unseen.
+    builderFrame = { mode: "custom", kind: "general", topic: "Discovery" }
+    const user = userEvent.setup()
+    render(<StudioInterviewBody />)
+    await toBuilder(user)
+    await user.click(screen.getByText("mock-pick-subject"))
+    await user.click(screen.getByText("mock-switch-to-hiring"))
+    await user.click(screen.getByText("mock-switch-to-general"))
+    expect(screen.getByText("mock-pick-subject")).toBeInTheDocument()
+    await user.click(screen.getByText("mock-questions-confirm"))
+    await waitFor(() => expect(createMutate).toHaveBeenCalled())
+    expect(createMutate.mock.calls[0][0]).not.toHaveProperty("subject_sub")
+  })
+
+  it("keys the payload on the frame being SENT, not on picker state", async () => {
+    // A development pick, then a selection frame with no kind-change event —
+    // the guard on handleFrameConfirm alone must keep the subject off.
+    builderFrame = { mode: "custom", kind: "general", topic: "Discovery" }
+    const user = userEvent.setup()
+    render(<StudioInterviewBody />)
+    await toBuilder(user)
+    await user.click(screen.getByText("mock-pick-subject"))
+    builderFrame = { mode: "custom", kind: "hiring", roleTitle: "Ops Lead" }
+    await user.click(screen.getByText("mock-questions-confirm"))
+    await waitFor(() => expect(createMutate).toHaveBeenCalled())
+    expect(createMutate.mock.calls[0][0]).not.toHaveProperty("subject_sub")
   })
 })
