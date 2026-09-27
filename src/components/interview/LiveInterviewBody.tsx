@@ -230,6 +230,9 @@ export default function LiveInterviewBody() {
         // scorecard draft only when both are present.
         candidate_id: candidate.candidate_id,
         blueprint_id: candidate.blueprint_id,
+        // S-3 / D3: NO subject_sub, ever. A Live scored interview is a
+        // selection record; it must never reach anyone's development record.
+        // interviewBodyForkParity.test.ts holds this line in place.
       })
       setSessionId(result.session_id)
       setPlan(result.plan)

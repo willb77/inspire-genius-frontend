@@ -39,6 +39,7 @@ import JobDnaCandidatePicker, { type JobDnaCandidateLink } from "@/components/in
 import AnswerScorePanel from "@/components/interview/AnswerScorePanel"
 import PastInterviewsPanel from "@/components/interview/PastInterviewsPanel"
 import StudioQuestionBuilder from "@/components/interview/StudioQuestionBuilder"
+import InterviewSubjectPicker from "@/components/interview/InterviewSubjectPicker"
 import { useAuth } from "@/context/useAuth"
 import {
   useCreateLiveSession,
@@ -167,6 +168,9 @@ export default function StudioInterviewBody() {
   const [consent, setConsent] = useState<LiveConsent | null>(null)
   const [participant, setParticipant] = useState<LiveCandidate | null>(null)
   const [frame, setFrame] = useState<InterviewFrame | null>(null)
+  // S-3: the development subject — chosen after the style, cleared the moment
+  // the style becomes selection, and sent only on a development session.
+  const [subject, setSubject] = useState<string | null>(null)
 
   const [sessionId, setSessionId] = useState<string | null>(null)
   // Provenance for THIS run: which curated pack applied, and whether the role
@@ -267,6 +271,10 @@ export default function StudioInterviewBody() {
         // Job DNA link (IS-11c2): both ids or neither.
         candidate_id: participant.candidate_id,
         blueprint_id: participant.blueprint_id,
+        // S-3 / D3: subject_sub only on a development session. Checked on the
+        // frame being sent, not the picker state, so a selection session can
+        // never carry one whatever the UI did.
+        ...(f.kind === "general" && subject ? { subject_sub: subject } : {}),
       })
       setSessionId(result.session_id)
       setPlan(result.plan)
@@ -482,6 +490,10 @@ export default function StudioInterviewBody() {
           <StudioQuestionBuilder
             submitting={createSession.isPending}
             onConfirm={(f) => void handleFrameConfirm(f)}
+            onKindChange={(k) => {
+              if (k !== "general") setSubject(null)
+            }}
+            developmentOnly={<InterviewSubjectPicker value={subject} onChange={setSubject} />}
           />
         )}
       </div>

@@ -28,3 +28,20 @@ describe("both interview bodies stay in step", () => {
     expect(source("LiveInterviewBody.tsx")).toContain("developmentMode={false}")
   })
 })
+
+
+describe("S-3 / D3 — subject_sub is decided in BOTH bodies, out loud", () => {
+  it("Studio sends subject_sub only on a development frame", () => {
+    expect(source("StudioInterviewBody.tsx")).toContain(
+      '...(f.kind === "general" && subject ? { subject_sub: subject } : {})',
+    )
+  })
+
+  it("Live never sends it, and says so where the payload is built", () => {
+    const live = source("LiveInterviewBody.tsx")
+    expect(live).toContain("S-3 / D3: NO subject_sub, ever.")
+    // No assignment and no picker anywhere in the Live body.
+    expect(live).not.toMatch(/subject_sub\s*:/)
+    expect(live).not.toContain("InterviewSubjectPicker")
+  })
+})
