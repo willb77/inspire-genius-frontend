@@ -320,6 +320,50 @@ describe("what they see", () => {
   });
 });
 
+describe("six switches, each honest about enforcement (S-2)", () => {
+  const withGrant = (categories: Record<string, boolean>) =>
+    person({ grant: { id: "g1", status: "granted", categories: categories as never, expiresAt: IN_A_YEAR, requestedAt: null } });
+
+  it("offers all six, per person", async () => {
+    svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
+    renderPage();
+    for (const noun of ["goals", "PRISM profile", "assessments", "profile documents", "interview results", "development plan"]) {
+      expect(await screen.findByRole("switch", { name: new RegExp(`share ${noun} with morgan manager`, "i") })).toBeInTheDocument();
+    }
+  });
+
+  it("marks exactly the four that do not yet decide access, and says why", async () => {
+    svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
+    renderPage();
+    const note = await screen.findByTestId("not-enforced-note");
+    expect(note).toHaveTextContent(/Assessments, Profile, Interviews, Development: your choice is saved now/);
+    expect(note).toHaveTextContent(/can currently still see these through their role/);
+    for (const key of ["assessments", "artefacts", "interviews", "development"]) {
+      expect(screen.getByTestId(`not-enforced-${key}`)).toBeInTheDocument();
+    }
+    expect(screen.queryByTestId("not-enforced-goals")).toBeNull();
+    expect(screen.queryByTestId("not-enforced-prism")).toBeNull();
+  });
+
+  it("turning Development on keeps what is already shared", async () => {
+    svc.getPeople.mockResolvedValue({ people: [withGrant({ goals: true, prism: true })], sources: PEOPLE_OK });
+    svc.offerAccess.mockResolvedValue({ id: "g1", status: "granted", mode: "refreshed" });
+    renderPage();
+    fireEvent.click(await screen.findByRole("switch", { name: /share development plan with/i }));
+    await waitFor(() =>
+      expect(svc.offerAccess).toHaveBeenCalledWith({
+        granteeUserId: "u-mgr", categories: { goals: true, prism: true, development: true },
+      }),
+    );
+  });
+
+  it("names a live interviews grant in the row's summary", async () => {
+    svc.getPeople.mockResolvedValue({ people: [withGrant({ interviews: true })], sources: PEOPLE_OK });
+    renderPage();
+    expect(await screen.findByText("Sharing interview results")).toBeInTheDocument();
+  });
+});
+
 describe("add a person", () => {
   it("finds ONE exact email, then shares; 404 says so", async () => {
     svc.getPeople.mockResolvedValue({ people: [], sources: PEOPLE_OK });

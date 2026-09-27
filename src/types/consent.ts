@@ -3,7 +3,7 @@
  *
  * Mirrors `services/agent-engine/app/consent/` (routes under
  * `/v1/agents/consent/visibility`). Every response is the `ok()` envelope.
- * Timestamps are ISO strings; categories are a boolean map over the six
+ * Timestamps are ISO strings; categories are a boolean map over the eight
  * visibility categories — absent means false, and `safety` is never one.
  */
 
@@ -14,6 +14,8 @@ export type VisibilityCategory =
   | "artefacts"
   | "goals"
   | "assessments"
+  | "interviews"
+  | "development"
 
 export type VisibilityCategories = Partial<Record<VisibilityCategory, boolean>>
 
