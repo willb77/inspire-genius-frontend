@@ -41,6 +41,12 @@ jest.mock("@/components/job-blueprint/job-dna/JobDnaWizard", () => ({
   ),
 }))
 
+/* ── Auth: the signed-in role decides whether a Live Interview link exists (JS-10/11) ── */
+const mockRole = jest.fn<string, []>(() => "manager")
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({ user: { id: "u1", role: mockRole() } }),
+}))
+
 /* ── Hooks ── */
 jest.mock("@/hooks/job-blueprint/useJobDna")
 jest.mock("@/hooks/job-blueprint/useTriage")
@@ -174,6 +180,10 @@ beforeEach(() => {
     query(undefined, { isError: true, error: { response: { status: 404 } } })
   )
   ;(scorecardHooks.useScorecardsFor as jest.Mock).mockReturnValue({ scorecards: [], missing: [], pending: false, failed: false })
+  ;(scorecardHooks.useScorecardDraft as jest.Mock).mockReturnValue(
+    query(undefined, { isError: true, error: { response: { status: 404 } } })
+  )
+  mockRole.mockReturnValue("manager")
   ;(scorecardHooks.isNoScorecardError as jest.Mock).mockImplementation(
     (err: { response?: { status: number } } | undefined) => err?.response?.status === 404
   )
@@ -251,6 +261,110 @@ describe("Candidates", () => {
     expect(screen.getByRole("button", { name: /add candidate/i })).toBeInTheDocument()
     await userEvent.selectOptions(screen.getByRole("combobox", { name: /Job DNA/i }), JOB_DNA.id)
     expect(screen.getByText(/Use .Add candidate. above to put one in/i)).toBeInTheDocument()
+  })
+})
+
+describe("Candidates → Live Interview (JS-10)", () => {
+  async function selectCandidate() {
+    ;(triageHooks.usePipeline as jest.Mock).mockReturnValue(query([CANDIDATE]))
+    renderPage(<JobBlueprintCandidatesPage />)
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: /Job DNA/i }), JOB_DNA.id)
+    await userEvent.click(screen.getByText(CANDIDATE.name))
+  }
+
+  test("a manager gets 'Interview this candidate', deep-linked with both ids", async () => {
+    await selectCandidate()
+    const link = screen.getByRole("link", { name: /interview this candidate/i })
+    expect(link).toHaveAttribute("href", "/manager/interview-live?blueprintId=j1&candidateId=cand-1")
+    // The existing detail link is untouched.
+    expect(screen.getByRole("link", { name: /open candidate/i })).toHaveAttribute(
+      "href",
+      "/vertical/job-blueprint/candidates/cand-1"
+    )
+  })
+
+  test("a practitioner is sent to their own Live Interview page", async () => {
+    mockRole.mockReturnValue("practitioner")
+    await selectCandidate()
+    expect(screen.getByRole("link", { name: /interview this candidate/i })).toHaveAttribute(
+      "href",
+      "/practitioner/interview-live?blueprintId=j1&candidateId=cand-1"
+    )
+  })
+
+  test("a role with no Live Interview page gets no link — not a link that 404s", async () => {
+    mockRole.mockReturnValue("company-admin")
+    await selectCandidate()
+    expect(screen.queryByRole("link", { name: /interview this candidate/i })).not.toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /open candidate/i })).toBeInTheDocument()
+  })
+})
+
+describe("Scorecards — draft from a finalised interview (JS-11)", () => {
+  const DRAFT = {
+    id: "d-1",
+    candidateId: "cand-1",
+    jobId: "j1",
+    interviewerId: "",
+    interviewDate: "2026-09-28",
+    behaviorScores: [{ dimensionId: 1, dimensionName: "Beh1", score: 3 as const, evidence: "" }],
+    counterProductiveScores: [],
+    aptitudeScores: [{ dimensionId: 2, dimensionName: "Apt2", score: 5 as const, evidence: "" }],
+    coreTraitScores: [],
+    notes: "Drafted from a finalised interview session.",
+    status: "draft",
+    interviewSessionId: "sess-77",
+    createdAt: "2026-09-28T10:00:00Z",
+  }
+
+  function pickCandidate() {
+    ;(triageHooks.usePipeline as jest.Mock).mockReturnValue(query([CANDIDATE]))
+    renderPage(<JobBlueprintScorecardsPage />)
+    fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "j1" } })
+    fireEvent.change(screen.getAllByRole("combobox")[1], { target: { value: "cand-1" } })
+  }
+
+  test("shows the draft with its coverage and a link back to the session", () => {
+    ;(scorecardHooks.useScorecardDraft as jest.Mock).mockReturnValue(query(DRAFT))
+    pickCandidate()
+    expect(scorecardHooks.useScorecardDraft).toHaveBeenLastCalledWith("cand-1")
+    const card = screen.getByTestId("scorecard-draft-card")
+    expect(card).toHaveTextContent(/Draft from a finalised interview/i)
+    expect(card).toHaveTextContent(/2 dimensions scored/i)
+    expect(card).toHaveTextContent(/not yet submitted/i)
+    expect(screen.getByRole("link", { name: /open the interview/i })).toHaveAttribute(
+      "href",
+      "/manager/interview-live?session=sess-77"
+    )
+  })
+
+  test("without a Live Interview page for the role, names the session instead of linking", () => {
+    mockRole.mockReturnValue("company-admin")
+    ;(scorecardHooks.useScorecardDraft as jest.Mock).mockReturnValue(query(DRAFT))
+    pickCandidate()
+    expect(screen.queryByRole("link", { name: /open the interview/i })).not.toBeInTheDocument()
+    expect(screen.getByTestId("scorecard-draft-card")).toHaveTextContent(/Interview session sess-77/i)
+  })
+
+  test("a 404 is the honest 'no draft yet' state, not an error", () => {
+    pickCandidate()
+    expect(screen.getByTestId("scorecard-draft-none")).toHaveTextContent(/No finalised interview has written a draft/i)
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  test("any other failure is said out loud", () => {
+    ;(scorecardHooks.useScorecardDraft as jest.Mock).mockReturnValue(
+      query(undefined, { isError: true, error: { response: { status: 500 } } })
+    )
+    pickCandidate()
+    expect(screen.getByRole("alert")).toHaveTextContent(/Could not check for an interview draft/i)
+  })
+
+  test("asks for nothing until a candidate is chosen", () => {
+    renderPage(<JobBlueprintScorecardsPage />)
+    fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "j1" } })
+    expect(scorecardHooks.useScorecardDraft).toHaveBeenLastCalledWith("")
+    expect(screen.queryByTestId("scorecard-draft-none")).not.toBeInTheDocument()
   })
 })
 

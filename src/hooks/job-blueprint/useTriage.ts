@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { triageService } from '@/services/job-blueprint'
+import type { InterviewStep } from '@/types/job-blueprint'
 
 const KEYS = {
   all: ['triage'] as const,
@@ -57,6 +58,25 @@ export function useAdvanceCandidate() {
   return useMutation({
     mutationFn: (candidateId: string) =>
       triageService.advanceCandidate(candidateId).then(r => r.data.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all })
+    },
+  })
+}
+
+/**
+ * JS-12 — the interview sets the candidate's pipeline step by name
+ * (`POST /v1/blueprint/triage/interview-step/{candidateId}`). Resolves with the
+ * candidate as the server now holds it; compare `status` with the step sent
+ * to learn whether anything moved (forward-only, so a re-link is a no-op).
+ */
+export function useSetInterviewStep() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (vars: { candidateId: string; step: InterviewStep; interviewSessionId?: string }) =>
+      triageService
+        .setInterviewStep(vars.candidateId, { step: vars.step, interviewSessionId: vars.interviewSessionId })
+        .then(r => r.data.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all })
     },

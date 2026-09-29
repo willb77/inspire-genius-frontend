@@ -1,6 +1,6 @@
 import { api } from '@/lib/axios'
 import type { BaseApiResponse } from '@/types/api'
-import type { Candidate, InsightPackage } from '@/types/job-blueprint'
+import type { Candidate, InsightPackage, InterviewStep } from '@/types/job-blueprint'
 
 const BASE = '/v1/blueprint/triage'
 
@@ -28,6 +28,15 @@ export const triageService = {
 
   advanceCandidate(candidateId: string) {
     return api.post<BaseApiResponse<Candidate>>(`${BASE}/advance/${candidateId}`)
+  },
+
+  /**
+   * JS-12 — set the candidate's pipeline step from the interview by NAME.
+   * Forward-only and idempotent on the server: the returned `status` says
+   * whether anything moved. Only the two interview steps are sendable.
+   */
+  setInterviewStep(candidateId: string, data: { step: InterviewStep; interviewSessionId?: string }) {
+    return api.post<BaseApiResponse<Candidate>>(`${BASE}/interview-step/${candidateId}`, data)
   },
 
   getStats() {

@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react"
-import { ExternalLink, Users } from "lucide-react"
+import { ExternalLink, Mic, Users } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
+import { useAuth } from "@/context/useAuth"
+import { liveInterviewCandidateLink } from "@/lib/interviewRoutes"
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
 import { usePipeline, useCandidateInsights } from "@/hooks/job-blueprint/useTriage"
 import { CandidateCard } from "@/components/job-blueprint/triage/CandidateCard"
@@ -27,6 +29,7 @@ import {
  */
 export default function JobBlueprintCandidatesPage() {
   const { data: jobDnas, isLoading: loadingJobs } = useJobDnaList()
+  const { user } = useAuth()
   const [jobId, setJobId] = useState("")
   const [selected, setSelected] = useState<Candidate | null>(null)
 
@@ -36,6 +39,16 @@ export default function JobBlueprintCandidatesPage() {
   const selectedJobDna = useMemo(
     () => jobDnas?.find((jd) => jd.id === jobId),
     [jobDnas, jobId]
+  )
+  // JS-10 — "Interview this candidate" opens Live Interview with the candidate
+  // pre-linked (FE #549's picker is the receiving end). Only roles with a Live
+  // Interview page get the button; for the rest it is absent, not a 404.
+  const interviewHref = useMemo(
+    () =>
+      selected && jobId
+        ? liveInterviewCandidateLink(user?.role, { blueprintId: jobId, candidateId: selected.id })
+        : null,
+    [selected, jobId, user?.role]
   )
   const benchmark = useMemo(
     () =>
@@ -100,10 +113,18 @@ export default function JobBlueprintCandidatesPage() {
                 <span className="text-sm text-[#6b7280]">
                   Candidate <span className="font-medium text-[#1f2937]">{selected.code ?? selected.name}</span>
                 </span>
-                <JobDnaLinkButton to={ROUTES.JOB_DNA.candidateDetail(selected.id)}>
-                  <ExternalLink className="h-4 w-4" />
-                  Open candidate
-                </JobDnaLinkButton>
+                <span className="flex flex-wrap items-center gap-2">
+                  {interviewHref ? (
+                    <JobDnaLinkButton to={interviewHref}>
+                      <Mic className="h-4 w-4" />
+                      Interview this candidate
+                    </JobDnaLinkButton>
+                  ) : null}
+                  <JobDnaLinkButton to={ROUTES.JOB_DNA.candidateDetail(selected.id)}>
+                    <ExternalLink className="h-4 w-4" />
+                    Open candidate
+                  </JobDnaLinkButton>
+                </span>
               </div>
             ) : null}
             {selected && selected.prismScores && selected.variationScores && selected.classificationTier ? (

@@ -3,7 +3,16 @@ import { toast } from "sonner"
 import { ClipboardCheck } from "lucide-react"
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
 import { usePipeline } from "@/hooks/job-blueprint/useTriage"
-import { useInterviewGuide, useSubmitScorecard, useScorecardsFor } from "@/hooks/job-blueprint/useScorecard"
+import {
+  isNoScorecardError,
+  useInterviewGuide,
+  useScorecardDraft,
+  useSubmitScorecard,
+  useScorecardsFor,
+} from "@/hooks/job-blueprint/useScorecard"
+import { useAuth } from "@/context/useAuth"
+import { liveInterviewSessionLink } from "@/lib/interviewRoutes"
+import { ScorecardDraftCard } from "@/components/job-blueprint/scorecard/ScorecardDraftCard"
 import { ScorecardForm } from "@/components/job-blueprint/scorecard/ScorecardForm"
 import { ScorecardSummary } from "@/components/job-blueprint/scorecard/ScorecardSummary"
 import { ScorecardComparison } from "@/components/job-blueprint/scorecard/ScorecardComparison"
@@ -63,6 +72,12 @@ export default function JobBlueprintScorecardsPage() {
   const { data: guide } = useInterviewGuide(jobId)
   const { data: candidates } = usePipeline(jobId)
   const submitScorecard = useSubmitScorecard()
+  // JS-11 — the draft a finalised interview wrote for the selected candidate,
+  // with a link back to that session. A 404 is the normal "none" state.
+  const draft = useScorecardDraft(candidateId)
+  const { user } = useAuth()
+  const draftSessionHref =
+    draft.data?.interviewSessionId ? liveInterviewSessionLink(user?.role, draft.data.interviewSessionId) : null
 
   const jobDna = useMemo(() => jobDnas?.find((jd) => jd.id === jobId), [jobDnas, jobId])
 
@@ -194,6 +209,20 @@ export default function JobBlueprintScorecardsPage() {
                 </span>
               ) : null}
             </div>
+
+            {candidateId && draft.data ? (
+              <div className="mb-4">
+                <ScorecardDraftCard draft={draft.data} sessionHref={draftSessionHref} />
+              </div>
+            ) : candidateId && draft.isError && !isNoScorecardError(draft.error) ? (
+              <p className="mb-4 text-xs text-red-600" role="alert">
+                Could not check for an interview draft for this candidate.
+              </p>
+            ) : candidateId && draft.isError ? (
+              <p className="mb-4 text-xs text-[#9ca3af]" data-testid="scorecard-draft-none">
+                No finalised interview has written a draft for this candidate yet.
+              </p>
+            ) : null}
 
             {sections.length > 0 ? (
               <ScorecardForm
