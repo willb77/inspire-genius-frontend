@@ -78,6 +78,8 @@ export const ROUTES = {
     PRISM_ACCURACY_SCORER: "/super-admin/prism-accuracy-scorer",
     /** Practitioner handbook exam: run it against the tier, score it, keep every run. */
     PRISM_EXAM: "/super-admin/prism-exam",
+    /** Practitioner PRISM registry: identifiers per practitioner, and client assignment (PC-1a). */
+    PRACTITIONER_REGISTRY: "/super-admin/practitioner-registry",
     CHARACTER_LAB: "/super-admin/character-lab",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
     /** Administration → Client Sign-Up: the CRM pipeline, SOWs and invoicing hand-off. */
