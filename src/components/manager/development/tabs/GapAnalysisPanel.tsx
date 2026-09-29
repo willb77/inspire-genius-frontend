@@ -1,9 +1,26 @@
 /**
  * Gap Analysis tab — target selector (Job Blueprint / career match), James
  * fit-classification banner (with the development-input disclaimer), gap list,
- * and "Close this gap" which seeds a learning item + milestone.
+ * and "Close this gap", which seeds a learning item and a milestone **and
+ * closes the gap**.
+ *
+ * TDS-4a: it did not close the gap. The handler fired the two seeding calls and
+ * never touched `POST /gaps/{id}/close`, so the button's own label was the one
+ * thing it did not do — and because the gap stayed in the list with nothing said
+ * about it, the surface read as though the click had not registered.
+ *
+ * The sequencing, the single error voice, and why the close runs LAST are all in
+ * `useCloseGapPlan`. Two things are this file's job:
+ *
+ *  - **Report the outcome, not the click.** One toast, after the mutation
+ *    settles, carrying the hook's sentence on failure — which always says what
+ *    was written and what was not.
+ *  - **Render the gap's status.** `GET /gaps` does not filter closed rows out,
+ *    so a closed gap comes back in the list. Without this it would keep
+ *    offering "Close this gap" on something already closed.
  */
 import { useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 import { AlertTriangle, CheckCircle2, Info, Target } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -22,11 +39,7 @@ import {
   GAP_SEVERITY_LABEL,
 } from "@/constants/development"
 import type { CareerMatch, DevelopmentGap, FitClassification, GapSeverity } from "@/types/development"
-import {
-  useGapAnalysis,
-  useLearningPlan,
-  useCreateMilestone,
-} from "@/hooks/manager/development"
+import { useCloseGapPlan, useGapAnalysis } from "@/hooks/manager/development"
 import { useDevSkin } from "../skin"
 
 const SEVERITY_META: Record<GapSeverity, { className: string; icon: typeof AlertTriangle }> = {
@@ -74,25 +87,32 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnal
   }, [initialTargetId])
 
   const { data: gaps, isLoading } = useGapAnalysis(memberId, targetId)
-  const learning = useLearningPlan(memberId)
-  const milestone = useCreateMilestone(memberId)
+  const closePlan = useCloseGapPlan(memberId)
+  // Per-gap, not one shared `isPending`: the old code disabled every row's
+  // button while any one of them was in flight.
+  const [closingGapId, setClosingGapId] = useState<string | null>(null)
 
   const selectedMatch = targetOptions.find((m) => m.blueprintId === targetId)
 
   const handleClose = (gap: DevelopmentGap) => {
-    learning.mutate({
-      gapId: gap.gapId,
-      goalId: gap.goalId,
-      title: `Close gap: ${gap.competency}`,
-    })
-    if (gap.goalId) {
-      milestone.mutate({
-        goalId: gap.goalId,
-        title: `Close ${gap.competency} gap`,
-        horizon: "d90",
-        gapIds: [gap.gapId],
-      })
-    }
+    setClosingGapId(gap.gapId)
+    closePlan.mutate(
+      { gap },
+      {
+        onSuccess: () => {
+          setClosingGapId(null)
+          toast.success(
+            `${gap.competency} gap closed, with a learning item${gap.goalId ? " and a milestone" : ""} on the plan.`,
+          )
+        },
+        // The hook's message always names what was written and what was not, so
+        // a half-applied close cannot be reported as a success.
+        onError: (err) => {
+          setClosingGapId(null)
+          toast.error(err.message)
+        },
+      },
+    )
   }
 
   return (
@@ -169,14 +189,21 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnal
                     <span>Target {gap.targetLevel}</span>
                     <Badge variant="secondary" className="capitalize">{gap.source}</Badge>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleClose(gap)}
-                    disabled={learning.isPending}
-                  >
-                    Close this gap
-                  </Button>
+                  {gap.status === "closed" ? (
+                    <p className={cn("flex items-center gap-1.5 text-xs", sk.text500)}>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+                      Closed. The learning item and milestone stay on the plan.
+                    </p>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleClose(gap)}
+                      disabled={closingGapId === gap.gapId}
+                    >
+                      {closingGapId === gap.gapId ? "Closing…" : "Close this gap"}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             )

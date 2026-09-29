@@ -111,7 +111,10 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.gaps.closeGap": "Close this gap",
 
   "dev.learning.empty": "No learning items yet. Close a gap to seed one.",
-  "dev.learning.assign": "Assign",
+  /** Was "Assign". The click never assigned anything — it navigates to the
+   *  Training surface, where assignment happens — so the label says where it
+   *  goes (TDS-4a). Progress is persisted by the controls on the row. */
+  "dev.learning.assign": "Assign in Training",
 
   /** Notes tab (TDS-2). These notes are per-manager; no string here may imply
    *  the member or another coach can read them. */

@@ -439,7 +439,12 @@ export default function MemberDevelopmentWorkspace({
                 <GapAnalysisPanel memberId={dossier.memberId} matches={dossier.matches} initialTargetId={targetFromQuery} />
               </TabsContent>
               <TabsContent value="learning">
-                <LearningPlanPanel learning={dossier.learning} gaps={dossier.gaps} goals={dossier.goals} />
+                <LearningPlanPanel
+                  memberId={dossier.memberId}
+                  learning={dossier.learning}
+                  gaps={dossier.gaps}
+                  goals={dossier.goals}
+                />
               </TabsContent>
               <TabsContent value="careers">
                 <CareerMatchPanel

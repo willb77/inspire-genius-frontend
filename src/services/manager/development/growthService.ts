@@ -256,6 +256,22 @@ export function getGapAnalysis(memberId: string, targetBlueprintId?: string) {
   )
 }
 
+/**
+ * POST /members/{id}/gaps/{gapId}/close → the CLOSED gap.
+ *
+ * 404 when there is no such gap for this member — the lookup is scoped to the
+ * member, so a gap id guessed from someone else's plan cannot be closed.
+ *
+ * `GET /members/{id}/gaps` does **not** filter closed rows out (`list_gaps`
+ * selects on member + target only), so a closed gap keeps coming back in the
+ * list and the surface has to render its status. Don't assume it disappears.
+ */
+export function closeGap(memberId: string, gapId: string) {
+  return getApi().post<BaseApiResponse<DevelopmentGap>>(
+    `${BASE}/members/${memberId}/gaps/${gapId}/close`,
+  )
+}
+
 export type CreateLearningItemInput = {
   gapId?: string
   goalId?: string
@@ -269,6 +285,41 @@ export type CreateLearningItemInput = {
 export function createLearningItem(memberId: string, input: CreateLearningItemInput) {
   return getApi().post<BaseApiResponse<LearningItem>>(
     `${BASE}/members/${memberId}/learning-items`,
+    input,
+  )
+}
+
+/**
+ * Progress on a learning item. Every field optional — the server writes ONLY
+ * what is sent, so omitting a key leaves it alone.
+ *
+ * `progress` and `quizScore` are percentages, 0..100.
+ */
+export type UpdateLearningItemInput = {
+  status?: LearningItem["status"]
+  progress?: number
+  quizScore?: number
+  lmsRef?: string
+  estHours?: number
+  format?: LearningItem["format"]
+}
+
+/** PATCH /members/{id}/learning-items/{itemId} → LearningItem (coach-side). */
+export function updateLearningItem(
+  memberId: string,
+  itemId: string,
+  input: UpdateLearningItemInput,
+) {
+  return getApi().patch<BaseApiResponse<LearningItem>>(
+    `${BASE}/members/${memberId}/learning-items/${itemId}`,
+    input,
+  )
+}
+
+/** PATCH /me/learning-items/{itemId} → LearningItem (the learner's own row). */
+export function updateMyLearningItem(itemId: string, input: UpdateLearningItemInput) {
+  return getApi().patch<BaseApiResponse<LearningItem>>(
+    `${BASE}/me/learning-items/${itemId}`,
     input,
   )
 }
