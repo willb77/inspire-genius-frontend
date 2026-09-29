@@ -7,6 +7,7 @@ import {
   listAssignable,
   listRegions,
   listRegistry,
+  regeneratePractitionerCode,
   setPractitionerActive,
 } from "@/services/super-admin/practitioner-registry/practitionerRegistry.service"
 
@@ -61,4 +62,9 @@ export function useSetPractitionerActive() {
 
 export function useAssignClient() {
   return useInvalidatingMutation(assignClient)
+}
+
+/** PC-1c: replace a practitioner's code; the old code stops resolving immediately. */
+export function useRegeneratePractitionerCode() {
+  return useInvalidatingMutation(regeneratePractitionerCode)
 }

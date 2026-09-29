@@ -159,6 +159,18 @@ jest.mock("@/components/settings/AccountSettings", () => ({
 
 
 
+/* D9: the code card is also gated on the server's Practitioner Programme
+   switch. ON by default here; the dark test flips it. */
+const mockProgrammeOn = jest.fn(() => true);
+jest.mock("@/hooks/switches/usePractitionerProgrammeEnabled", () => ({
+  usePractitionerProgrammeEnabled: () => mockProgrammeOn(),
+}));
+
+jest.mock("@/components/settings/PractitionerCodeCard", () => ({
+  __esModule: true,
+  default: () => <div data-testid="practitioner-code-card" />,
+}));
+
 jest.mock("@/components/settings/AgentEngineToggle", () => ({
   __esModule: true,
   default: () => <div data-testid="agent-engine-toggle" />,
@@ -637,6 +649,29 @@ describe("Settings Component", () => {
   /* ---------- Legal Links ---------- */
 
 
+
+  // PC-1c: clients hold the user role; the practitioner-code card is theirs.
+  it("shows the practitioner-code card to the user role only", () => {
+    const { unmount } = render(<Settings />, { wrapper: createWrapper() });
+    expect(screen.getByTestId("practitioner-code-card")).toBeInTheDocument();
+    unmount();
+    for (const role of [ROLES.PRACTITIONER, ROLES.MANAGER, ROLES.SUPER_ADMIN]) {
+      mockUseAuth.mockReturnValue({ user: { role }, markFullName: mockMarkFullName } as unknown as ReturnType<typeof useAuth>);
+      const r = render(<Settings />, { wrapper: createWrapper() });
+      expect(screen.queryByTestId("practitioner-code-card")).not.toBeInTheDocument();
+      r.unmount();
+    }
+  });
+
+  it("hides the practitioner-code card while the programme is switched off", () => {
+    mockProgrammeOn.mockReturnValue(false);
+    try {
+      render(<Settings />, { wrapper: createWrapper() });
+      expect(screen.queryByTestId("practitioner-code-card")).not.toBeInTheDocument();
+    } finally {
+      mockProgrammeOn.mockReturnValue(true);
+    }
+  });
 
   it("renders legal links correctly", () => {
 

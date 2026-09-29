@@ -20,6 +20,8 @@ const bulkMutate = jest.fn()
 const editMutate = jest.fn()
 const activeMutate = jest.fn()
 const assignMutate = jest.fn()
+const regenMutate = jest.fn()
+let regenError: unknown
 const assignableArgs = jest.fn()
 const registryArgs = jest.fn()
 let rows: RegistryRow[] = []
@@ -47,6 +49,7 @@ jest.mock("@/hooks/super-admin/usePractitionerRegistry", () => ({
   useEditPractitioner: () => ({ mutate: editMutate, isPending: false }),
   useSetPractitionerActive: () => ({ mutate: activeMutate, isPending: false }),
   useAssignClient: () => ({ mutate: assignMutate, isPending: false }),
+  useRegeneratePractitionerCode: () => ({ mutate: regenMutate, isPending: false, error: regenError }),
 }))
 
 const axios422 = (detail: unknown) => ({ response: { status: 422, data: { detail } } })
@@ -93,6 +96,7 @@ describe("PractitionerRegistry", () => {
     jest.clearAllMocks()
     rows = [ROW]
     registryError = undefined
+    regenError = undefined
   })
 
   it("lists registry rows with their identifiers", () => {
@@ -252,6 +256,46 @@ describe("PractitionerRegistry", () => {
     render(<PractitionerRegistry />)
     await user.click(screen.getByLabelText("Show deactivated"))
     expect(registryArgs).toHaveBeenLastCalledWith(true)
+  })
+})
+
+describe("PractitionerRegistry — practitioner codes (PC-1c)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    rows = [{ ...ROW, practitionerCode: "ABC-DEF-GHJ" }]
+    registryError = undefined
+    regenError = undefined
+  })
+
+  it("shows each practitioner's code", () => {
+    render(<PractitionerRegistry />)
+    expect(screen.getByText("ABC-DEF-GHJ")).toBeInTheDocument()
+  })
+
+  it("regenerating asks first, and only the confirm button calls the API", async () => {
+    const user = userEvent.setup()
+    render(<PractitionerRegistry />)
+    await user.click(screen.getByRole("button", { name: "Regenerate code for Alice Able" }))
+    const dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByText(/stops\s+working immediately/)).toBeInTheDocument()
+    expect(regenMutate).not.toHaveBeenCalled()
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }))
+    expect(regenMutate).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole("button", { name: "Regenerate code for Alice Able" }))
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Regenerate" }))
+    expect(regenMutate).toHaveBeenCalledWith("p1", expect.anything())
+    const opts = regenMutate.mock.calls[0][1] as MutateOpts
+    opts.onSuccess?.({ ...ROW, practitionerCode: "XYZ-XYZ-XYZ" })
+    expect(toastSuccess).toHaveBeenCalledWith("New code for Alice Able: XYZ-XYZ-XYZ")
+  })
+
+  it("renders a regenerate failure instead of swallowing it", async () => {
+    regenError = { response: { status: 403, data: { detail: "Super-admin access required" } } }
+    const user = userEvent.setup()
+    render(<PractitionerRegistry />)
+    await user.click(screen.getByRole("button", { name: "Regenerate code for Alice Able" }))
+    expect(within(await screen.findByRole("dialog")).getByRole("alert")).toHaveTextContent("Super-admin access required")
   })
 })
 
