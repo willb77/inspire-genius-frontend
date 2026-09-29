@@ -58,6 +58,19 @@ export type ClientSummary = {
 export type SessionEntry = { id: string; date: string; topic: string; durationMin: number }
 export type GoalEntry = { id: string; title: string; objective: string }
 export type PrismScore = { dimension: string; score: number }
+
+/**
+ * What the client-PRISM reader says, one state per way of seeing nothing.
+ * `not_shared` and `not_linked` are answers, not failures: owning the client
+ * relationship is not permission to read the person — they share it or not.
+ */
+export type ClientPrismState = "shared" | "not_shared" | "not_linked" | "no_prism" | "unavailable"
+export type ClientPrism = {
+  state: ClientPrismState
+  /** Canon colour name → score, present only when `state === "shared"`. */
+  colours: Record<string, number | null> | null
+  assessedAt: string | null
+}
 export type ConversationRef = { id: string; date: string; preview: string }
 export type FollowUp = { id: string; date: string; note: string }
 
