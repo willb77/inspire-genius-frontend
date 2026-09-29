@@ -22,8 +22,9 @@ import {
   type ScheduleEntry,
   type BulkScheduleInput,
   type BulkScheduleResult,
-  type CreditsSummary,
+  type ClientsUnderManagementSummary,
   type ClientUsageRow,
+  type ClientPrism,
 } from "@/types/practitioner/coachClient"
 
 /** True only where the real coach backend is deployed (dev build). */
@@ -60,7 +61,7 @@ type BeSession = {
   topic?: string | null
 }
 type BeUsage = { clientId: string; name?: string; sessions?: number; creditsUsed?: number }
-type BeCredits = { balance?: number; allocated?: number; used?: number }
+type BeCredits = { clients_under_management?: number }
 
 function fullName(first?: string | null, last?: string | null, email?: string | null): string {
   const n = [first, last].filter(Boolean).join(" ").trim()
@@ -335,6 +336,31 @@ export async function getClientArtifacts(clientId: string): Promise<BeArtifacts 
   }
 }
 
+type BeClientPrism = {
+  state?: ClientPrism["state"]
+  prism?: { colours?: Record<string, number | null>; assessedAt?: string | null } | null
+}
+
+/**
+ * The client's PRISM, gated server-side on the practitioner's ownership link
+ * AND a live prism share from the client. `null` where the coach backend is
+ * not deployed — the page then keeps its fixture scores. A failed call throws,
+ * so the hook's error is what the page renders, never an empty state.
+ */
+export async function getClientPrism(clientId: string): Promise<ClientPrism | null> {
+  if (!USE_COACH_BACKEND) return null
+  const r = await agentApi.get<Envelope<BeClientPrism>>(
+    `/v1/agents/coach/clients/${encodeURIComponent(clientId)}/prism`,
+  )
+  const d = r.data?.data
+  const state = d?.state ?? "unavailable"
+  return {
+    state,
+    colours: state === "shared" ? (d?.prism?.colours ?? null) : null,
+    assessedAt: state === "shared" ? (d?.prism?.assessedAt ?? null) : null,
+  }
+}
+
 export function listSchedule(): Promise<ScheduleEntry[]> {
   if (USE_COACH_BACKEND) {
     return agentApi
@@ -378,18 +404,19 @@ export function createSessionsBulk(input: BulkScheduleInput): Promise<BulkSchedu
   })
 }
 
-export function getCreditsSummary(): Promise<CreditsSummary> {
+/**
+ * Clients under management — the practitioner's activated, live-linked clients.
+ * The path keeps its historical `/credits` name; the legacy balance keys it
+ * still returns are always zero and are deliberately not read.
+ */
+export function getCreditsSummary(): Promise<ClientsUnderManagementSummary> {
   if (USE_COACH_BACKEND) {
-    return agentApi
-      .get<Envelope<BeCredits>>("/v1/agents/coach/credits")
-      .then((r) => ({
-        balance: Number(r.data?.data?.balance ?? 0),
-        allocated: Number(r.data?.data?.allocated ?? 0),
-        used: Number(r.data?.data?.used ?? 0),
-        currency: "PUK",
-      }))
+    return agentApi.get<Envelope<BeCredits>>("/v1/agents/coach/credits").then((r) => {
+      const raw = r.data?.data?.clients_under_management
+      return { clientsUnderManagement: typeof raw === "number" ? raw : null }
+    })
   }
-  return Promise.resolve({ balance: 340, allocated: 500, used: 160, currency: "PUK" })
+  return Promise.resolve({ clientsUnderManagement: ROSTER.length })
 }
 
 export function getClientUsage(): Promise<ClientUsageRow[]> {

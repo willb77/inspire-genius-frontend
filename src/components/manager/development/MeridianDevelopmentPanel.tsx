@@ -45,6 +45,9 @@ type DevTab =
   | "learning"
   | "careers"
   | "roadmap"
+  // S-3: development interviews. Prompts only — nothing here hands the
+  // interview summaries to Meridian.
+  | "interviews"
   // TDS Studio tabs. Present in the union whether or not VITE_FEATURE_TDS_STUDIO
   // is on: the union is what the workspace can PASS, and a prompt set missing
   // for a tab the user is looking at renders an assistant with nothing to
@@ -68,6 +71,10 @@ const SUGGESTED_PROMPTS: Record<DevTab, string[]> = {
   learning: ["Recommend a learning sequence for this member.", "What format fits their behavioral style?"],
   careers: ["Draft a 90-day plan for the CSM path.", "Compare their top two internal matches."],
   roadmap: ["Is this roadmap realistic given their pacing?", "What's the single next best action?"],
+  interviews: [
+    "What should our next development conversation focus on?",
+    "How do I open a discovery conversation with this person?",
+  ],
   "profile-studio": [
     "Summarize this write-up in three lines for my 1:1.",
     "Which part of this should I raise first, and how?",

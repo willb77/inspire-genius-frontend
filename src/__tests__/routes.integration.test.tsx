@@ -4,6 +4,7 @@
  * Tests route rendering, auth protection, role-based access, 404 handling,
  * and onboarding redirect behavior.
  */
+import type { ReactElement } from "react";
 import { render, screen, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useRoutes } from "react-router-dom";
@@ -175,7 +176,6 @@ const pageModules: Record<string, string> = {
   "@/pages/practitioner/Meeting": "PractitionerMeetingPage",
   "@/pages/practitioner/Dashboard": "PractitionerDashboardPage",
   "@/pages/practitioner/Clients": "PractitionerClientsPage",
-  "@/pages/practitioner/Credits": "PractitionerCreditsPage",
   "@/pages/practitioner/PrismClients": "PrismClientsPage",
   "@/pages/practitioner/Settings": "PractitionerSettingsPage",
   "@/pages/practitioner/Analytics": "PractitionerAnalyticsPage",
@@ -471,6 +471,42 @@ describe("Route Integration Tests", () => {
       renderWithRouter("/practitioner/dashboard", ctx);
       await advancePastBoot();
       expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
+    });
+
+    // X-3 — the PRISM clients page now has a nav door; the door must open.
+    it("practitioner can access /practitioner/prism-clients", async () => {
+      const user = makeAuthUser({ role: "practitioner" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter("/practitioner/prism-clients", ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("PrismClientsPage")).toBeInTheDocument();
+    });
+
+    // X-3 — credits are retired; an old bookmark lands on Home, not a 404.
+    it("practitioner /practitioner/credits redirects to Home (credits retired)", async () => {
+      const user = makeAuthUser({ role: "practitioner" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter("/practitioner/credits", ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
+    });
+
+    // The rendered outcome above could also be reached via the `*` → /login
+    // fallback, so pin the route itself: an explicit redirect to Home.
+    it("/practitioner/credits is an explicit redirect to /practitioner/home", () => {
+      const findRoute = (list: typeof routes): (typeof routes)[number] | undefined => {
+        for (const r of list) {
+          if (r.path === "/practitioner/credits") return r;
+          const hit = r.children ? findRoute(r.children) : undefined;
+          if (hit) return hit;
+        }
+        return undefined;
+      };
+      const route = findRoute(routes);
+      expect(route).toBeDefined();
+      const el = route?.element as ReactElement<{ to?: string; replace?: boolean }>;
+      expect(el.props.to).toBe("/practitioner/home");
+      expect(el.props.replace).toBe(true);
     });
 
     it("practitioner CANNOT access /super-admin/dashboard", async () => {

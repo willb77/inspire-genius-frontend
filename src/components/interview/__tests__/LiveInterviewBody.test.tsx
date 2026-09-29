@@ -209,6 +209,23 @@ describe("setup — consent gates everything", () => {
   })
 })
 
+describe("S-3 / D3 — a Live scored interview never reaches a development record", () => {
+  it("creates the session with no subject_sub (StudioInterviewBody.test holds the paired 'is sent' control)", async () => {
+    const user = userEvent.setup()
+    render(<LiveInterviewBody />)
+    await reachInterview(user)
+    await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1))
+    const payload = createMutate.mock.calls[0][0]
+    // In-file positive control: the same matcher, on the same captured payload,
+    // passes for fields Live DOES send — so the absence below is a real
+    // absence, not a payload the matcher could never have seen into.
+    expect(payload).toHaveProperty("consent")
+    expect(payload).toHaveProperty("candidate.display_name", "Candidate A")
+    expect(payload).not.toHaveProperty("subject_sub")
+    expect(screen.queryByLabelText(/development record/i)).not.toBeInTheDocument()
+  })
+})
+
 describe("Job DNA candidate link (IS-11c2 front door)", () => {
   it("sends both ids with the session and reports the scorecard draft after finalise", async () => {
     finalizeMutate.mockResolvedValue({

@@ -41,7 +41,7 @@ export default function PractitionerHome() {
   const QUICK_ACTIONS = [
     { label: "Client", icon: Users, to: ROUTES.PRACTITIONER.CLIENTS, bg: "bg-emerald-100", iconColor: "text-emerald-600" },
     { label: "Schedule", icon: CalendarDays, to: ROUTES.PRACTITIONER.SCHEDULE, bg: "bg-violet-100", iconColor: "text-violet-600" },
-    { label: "Credits", icon: Wallet, to: ROUTES.PRACTITIONER.ANALYTICS, bg: "bg-amber-100", iconColor: "text-amber-600" },
+    { label: "Analytics", icon: Wallet, to: ROUTES.PRACTITIONER.ANALYTICS, bg: "bg-amber-100", iconColor: "text-amber-600" },
     { label: "Add a Client", icon: UserPlus, to: ROUTES.PRACTITIONER.CLIENTS, bg: "bg-rose-100", iconColor: "text-rose-600" },
     { label: "Meeting", icon: Video, to: ROUTES.PRACTITIONER.MEETING, bg: "bg-teal-100", iconColor: "text-teal-600" },
   ]
@@ -53,7 +53,7 @@ export default function PractitionerHome() {
     { label: "Active Clients", value: activeClients, icon: UserCheck, iconColor: "text-blue-600", iconBg: "bg-blue-100" },
     { label: "Total Clients", value: roster.length, icon: Users, iconColor: "text-emerald-600", iconBg: "bg-emerald-100" },
     { label: "PRISM Reports", value: prismReady, icon: Brain, iconColor: "text-violet-600", iconBg: "bg-violet-100" },
-    { label: "Credit Balance", value: credits ? `${credits.balance} ${credits.currency}` : "—", icon: Wallet, iconColor: "text-amber-600", iconBg: "bg-amber-100" },
+    { label: "Clients Under Management", value: credits?.clientsUnderManagement ?? "—", icon: Users, iconColor: "text-amber-600", iconBg: "bg-amber-100" },
   ]
 
   const prismBadge = (c: (typeof roster)[number]) => {

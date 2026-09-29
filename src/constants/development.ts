@@ -83,6 +83,7 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.tab.learning": "Learning & Training",
   "dev.tab.careers": "Career & Job Matches",
   "dev.tab.roadmap": "Roadmap",
+  "dev.tab.interviews": "Interviews",
   "dev.tab.profileStudio": "Write-up",
   "dev.tab.compare": "Compare",
   "dev.tab.scenarios": "Scenarios",

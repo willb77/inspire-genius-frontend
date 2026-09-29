@@ -111,12 +111,9 @@ describe("coachClient.service", () => {
     expect(result.emailed).toBe(0)
   })
 
-  test("getCreditsSummary reports PUK currency", async () => {
+  test("getCreditsSummary reports clients under management, not a credit balance", async () => {
     const summary = await getCreditsSummary()
-    expect(summary.currency).toBe("PUK")
-    expect(summary).toEqual(
-      expect.objectContaining({ balance: expect.any(Number), allocated: expect.any(Number), used: expect.any(Number) }),
-    )
+    expect(summary).toEqual({ clientsUnderManagement: expect.any(Number) })
   })
 
   test("getClientUsage returns a usage row per client", async () => {

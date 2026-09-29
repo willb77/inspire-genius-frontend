@@ -105,10 +105,19 @@ describe("coachClient.service (backend mode)", () => {
     expect(result.entries).toHaveLength(1)
   })
 
-  test("getCreditsSummary maps balances and keeps PUK label", async () => {
+  test("getCreditsSummary reads clients under management and ignores the legacy balance keys", async () => {
+    mockGet.mockResolvedValueOnce(
+      env({ clients_under_management: 0, balance: 0, allocated: 0, used: 0, provisioned: false }),
+    )
+    const summary = await svc.getCreditsSummary()
+    expect(mockGet).toHaveBeenCalledWith("/v1/agents/coach/credits")
+    expect(summary).toEqual({ clientsUnderManagement: 0 })
+  })
+
+  test("getCreditsSummary reports null, not zero, when an older backend omits the count", async () => {
     mockGet.mockResolvedValueOnce(env({ balance: 0, allocated: 0, used: 0, provisioned: false }))
     const summary = await svc.getCreditsSummary()
-    expect(summary).toEqual({ balance: 0, allocated: 0, used: 0, currency: "PUK" })
+    expect(summary).toEqual({ clientsUnderManagement: null })
   })
 
   test("getClientUsage maps usage rows", async () => {

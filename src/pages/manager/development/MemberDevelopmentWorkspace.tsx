@@ -81,6 +81,9 @@ const ProfileStudioPanel = lazy(() =>
 const TeamComparePanel = lazy(() =>
   import("@/components/manager/development/tabs/TeamComparePanel").then((m) => ({ default: m.TeamComparePanel })),
 )
+const InterviewsPanel = lazy(() =>
+  import("@/components/manager/development/tabs/InterviewsPanel").then((m) => ({ default: m.InterviewsPanel })),
+)
 const TeamScenarioPanel = lazy(() =>
   import("@/components/manager/development/tabs/TeamScenarioPanel").then((m) => ({ default: m.TeamScenarioPanel })),
 )
@@ -92,6 +95,7 @@ const BASE_TABS = [
   { value: "learning", labelKey: "dev.tab.learning" },
   { value: "careers", labelKey: "dev.tab.careers" },
   { value: "roadmap", labelKey: "dev.tab.roadmap" },
+  { value: "interviews", labelKey: "dev.tab.interviews" },
 ] as const
 
 /**
@@ -451,6 +455,9 @@ export default function MemberDevelopmentWorkspace({
                   goals={dossier.goals}
                   trajectory={dossier.trajectory}
                 />
+              </TabsContent>
+              <TabsContent value="interviews">
+                <InterviewsPanel interviews={dossier.interviews} memberName={member.name} />
               </TabsContent>
               {TDS_STUDIO_ENABLED ? (
                 <>

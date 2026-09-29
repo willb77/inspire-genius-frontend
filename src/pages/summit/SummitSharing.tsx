@@ -62,12 +62,24 @@ const SOURCE_LABEL: Record<string, string> = {
 
 const GOALS_ONLY = { goals: true } as const;
 
-/** The categories a member can share from this page, in display order. */
-type ShareCategory = "goals" | "prism";
-const SHARE_CATEGORIES: { key: ShareCategory; label: string; noun: string }[] = [
-  { key: "goals", label: "Goals", noun: "goals" },
-  { key: "prism", label: "PRISM profile", noun: "PRISM profile" },
+/**
+ * The categories a member can share from this page, in display order.
+ *
+ * `enforced: false` means the member's choice is RECORDED but not yet what
+ * decides access: those readers still release on the reporting line until
+ * enforcement lands (S-7). The switch says so — a switch that looks like
+ * protection and is not would be worse than no switch (S-2 CSA, S2-F1).
+ */
+type ShareCategory = "goals" | "prism" | "assessments" | "artefacts" | "interviews" | "development";
+const SHARE_CATEGORIES: { key: ShareCategory; label: string; noun: string; enforced: boolean }[] = [
+  { key: "goals", label: "Goals", noun: "goals", enforced: true },
+  { key: "prism", label: "PRISM profile", noun: "PRISM profile", enforced: true },
+  { key: "assessments", label: "Assessments", noun: "assessments", enforced: false },
+  { key: "artefacts", label: "Profile", noun: "profile documents", enforced: false },
+  { key: "interviews", label: "Interviews", noun: "interview results", enforced: false },
+  { key: "development", label: "Development", noun: "development plan", enforced: false },
 ];
+const NOT_YET_ENFORCED = SHARE_CATEGORIES.filter((c) => !c.enforced);
 
 /** The grant rows arrive with `categories` as an object or as a JSON string. */
 function parseCategories(raw: VisibilityCategories | string | null | undefined): VisibilityCategories {
@@ -168,6 +180,11 @@ function PersonRow({ person }: { person: VisibilityPerson }) {
                   onCheckedChange={(checked) => toggle(c.key, checked)}
                 />
                 {c.label}
+                {!c.enforced && (
+                  <span className="text-[11px] font-normal text-[#A9720F]" data-testid={`not-enforced-${c.key}`}>
+                    (not enforced yet)
+                  </span>
+                )}
               </label>
             ))}
             <span className="text-[12px] text-[#13294B]/70" data-testid={`share-state-${person.userId}`}>
@@ -353,8 +370,9 @@ function AddPerson() {
         <UserPlus className="h-4 w-4 text-[#127A8A]" aria-hidden /> Add a person
       </div>
       <p className="mt-1 text-[13px] text-[#13294B]/75">
-        Someone with an IG account who isn&apos;t listed above — a coach outside your
-        organisation, for instance. Their exact email address; no lookup by name.
+        Someone with an IG account who isn&apos;t listed above. Their exact email address;
+        no lookup by name. Your coach doesn&apos;t need one: once they&apos;ve added you as a
+        client they appear in the list above, and you share with them there.
       </p>
       <form onSubmit={find} className="mt-3 flex flex-col gap-2 sm:flex-row">
         <Input
@@ -451,9 +469,8 @@ export default function SummitSharing() {
         <Card className="!p-5" testId="sharing-empty">
           <div className="text-[15px] font-bold text-[#0B1B33]">No one to share with yet</div>
           <p className="mt-1.5 text-[14px] leading-relaxed text-[#13294B]/80">
-            When a manager or coach is linked to you they appear here, with a switch for your
-            goals and one for your PRISM profile. You can also add someone by their email address
-            below.
+            When a manager or coach is linked to you they appear here, with a switch for each
+            part of your record. You can also add someone by their email address below.
           </p>
         </Card>
       )}
@@ -461,6 +478,11 @@ export default function SummitSharing() {
       {!loading && !failed && list.length > 0 && (
         <Card className="!p-[19px]" testId="sharing-people">
           <div className="text-[15px] font-bold text-[#0B1B33]">People</div>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-[#13294B]/75" data-testid="not-enforced-note">
+            {NOT_YET_ENFORCED.map((c) => c.label).join(", ")}: your choice is saved now, but a
+            manager or coach you report to can currently still see these through their role. Your
+            choice takes effect when sharing for them launches.
+          </p>
           <ul className="mt-1">
             {list.map((p) => (
               <PersonRow key={p.userId} person={p} />

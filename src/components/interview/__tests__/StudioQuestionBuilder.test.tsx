@@ -139,3 +139,41 @@ describe("StudioQuestionBuilder", () => {
     expect(frame.roleTitle).toBe("Sales Manager")
   })
 })
+
+describe("S-3 — the development-only slot", () => {
+  function renderWithSlot(onKindChange = jest.fn()) {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <StudioQuestionBuilder
+          onConfirm={jest.fn()}
+          onKindChange={onKindChange}
+          developmentOnly={<span>subject-slot</span>}
+        />
+      </QueryClientProvider>,
+    )
+    return { onKindChange }
+  }
+
+  it("shows the slot on a development interview (the default style)", () => {
+    renderWithSlot()
+    expect(screen.getByText("subject-slot")).toBeInTheDocument()
+  })
+
+  it("hides the slot and reports the change when the style becomes selection", async () => {
+    const user = userEvent.setup()
+    const { onKindChange } = renderWithSlot()
+    await user.click(screen.getByRole("button", { name: /selection \/ evaluation/i }))
+    expect(screen.queryByText("subject-slot")).not.toBeInTheDocument()
+    expect(onKindChange).toHaveBeenLastCalledWith("hiring")
+  })
+
+  it("shows it again when the style goes back to development", async () => {
+    const user = userEvent.setup()
+    const { onKindChange } = renderWithSlot()
+    await user.click(screen.getByRole("button", { name: /selection \/ evaluation/i }))
+    await user.click(screen.getByRole("button", { name: /development \/ discovery/i }))
+    expect(screen.getByText("subject-slot")).toBeInTheDocument()
+    expect(onKindChange).toHaveBeenLastCalledWith("general")
+  })
+})
