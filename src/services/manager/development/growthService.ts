@@ -160,6 +160,8 @@ export function getMyGoalReviews() {
 
 export type CoachingNoteKind = "observation" | "plan" | "outcome"
 
+export type CoachingNoteSource = "analysis" | "compare" | "scenario" | "ask" | "manual"
+
 export type CreateCoachingNoteInput = {
   kind: CoachingNoteKind
   body: string
@@ -167,7 +169,10 @@ export type CreateCoachingNoteInput = {
    *  neither — never both (the server rejects both with 400). */
   goalId?: string
   milestoneId?: string
-  source?: "analysis" | "compare" | "scenario" | "ask" | "manual"
+  source?: CoachingNoteSource
+  /** The analysis / scenario it was taken against. Not an FK server-side: the
+   *  analysis may be deleted while the note outlives it. */
+  sourceRef?: string
 }
 
 export type CoachingNote = {
@@ -175,14 +180,72 @@ export type CoachingNote = {
   memberId: string
   kind: CoachingNoteKind
   body: string
+  source?: string | null
+  sourceRef?: string | null
   goalId?: string | null
   milestoneId?: string | null
   createdAt?: string | null
+  updatedAt?: string | null
 }
 
-/** POST /members/{id}/notes — one coaching note (this manager's, this member). */
+/** GET /members/{id}/notes → { notes } (NoteList). */
+export type CoachingNoteList = { notes: CoachingNote[] }
+
+/**
+ * Every field optional — the server writes ONLY what is sent, and an explicit
+ * `null` clears one. So `undefined` and `null` are different requests here, and
+ * a caller that wants to leave `goalId` alone must omit the key rather than
+ * sending `null` for it.
+ */
+export type UpdateCoachingNoteInput = {
+  kind?: CoachingNoteKind
+  body?: string
+  source?: CoachingNoteSource
+  sourceRef?: string | null
+  goalId?: string | null
+  milestoneId?: string | null
+}
+
+/**
+ * POST /members/{id}/notes — one coaching note (this manager's, this member).
+ *
+ * The notes are **per-manager**: one coach's candid read of a person, not a
+ * shared record. Nothing on this surface may imply the member or another
+ * manager can read them.
+ */
 export function createCoachingNote(memberId: string, input: CreateCoachingNoteInput) {
   return getApi().post<BaseApiResponse<CoachingNote>>(`${BASE}/members/${memberId}/notes`, input)
+}
+
+/** GET /members/{id}/notes — this manager's notes for this member, newest first.
+ *  The order is the server's; nothing re-sorts it here. */
+export function listCoachingNotes(memberId: string) {
+  return getApi().get<BaseApiResponse<CoachingNoteList>>(`${BASE}/members/${memberId}/notes`)
+}
+
+/** PATCH /members/{id}/notes/{noteId} — only the fields sent are written. */
+export function updateCoachingNote(
+  memberId: string,
+  noteId: string,
+  input: UpdateCoachingNoteInput,
+) {
+  return getApi().patch<BaseApiResponse<CoachingNote>>(
+    `${BASE}/members/${memberId}/notes/${noteId}`,
+    input,
+  )
+}
+
+/**
+ * DELETE /members/{id}/notes/{noteId}.
+ *
+ * 404 covers both "no such note" and "not this manager's" — indistinguishable
+ * by design. Never render it as a permission message: that would tell a caller
+ * that somebody else's note exists.
+ */
+export function deleteCoachingNote(memberId: string, noteId: string) {
+  return getApi().delete<BaseApiResponse<{ deleted: boolean }>>(
+    `${BASE}/members/${memberId}/notes/${noteId}`,
+  )
 }
 
 /** GET /members/{id}/gaps?target_blueprint_id= → DevelopmentGap[] */

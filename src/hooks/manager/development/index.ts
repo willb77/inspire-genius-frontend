@@ -4,6 +4,11 @@ export { useTeamDevelopmentRoster } from "./useTeamDevelopmentRoster"
 export { useStudioCast } from "./useStudioCast"
 export { useMemberDossier, useRefreshDossier } from "./useMemberDossier"
 export { useDevelopmentGoals, useRatifyGoal, useGoalReviews, useCreateCoachingNote } from "./useDevelopmentGoals"
+export {
+  useMemberNotes,
+  useUpdateCoachingNote,
+  useDeleteCoachingNote,
+} from "./useCoachingNotes"
 export { useGoalSession } from "./useGoalSession"
 export { useGapAnalysis } from "./useGapAnalysis"
 export { useLearningPlan } from "./useLearningPlan"

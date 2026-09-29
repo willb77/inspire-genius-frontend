@@ -16,6 +16,8 @@ export const developmentKeys = {
   /** Coach reviews of the member's shared goals (Goals offering, Phase 4). */
   goalReviews: (memberId: string) =>
     [...developmentKeys.all, "goal-reviews", memberId] as const,
+  /** This manager's coaching notes for one member. Per-manager, not shared. */
+  notes: (memberId: string) => [...developmentKeys.all, "notes", memberId] as const,
   gaps: (memberId: string, targetBlueprintId?: string) =>
     [...developmentKeys.all, "gaps", memberId, targetBlueprintId ?? "default"] as const,
   milestones: (memberId: string) =>

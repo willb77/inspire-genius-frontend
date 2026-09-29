@@ -46,10 +46,23 @@ it("names the three Studio tabs so they cannot render an empty label", async () 
   expect(DEV_TEXT["dev.tab.scenarios"]).toBeTruthy()
 })
 
-it("has no notes tab — its store is not merged", async () => {
-  // Phase 4. A tab whose backend does not exist saves nothing while looking as
-  // though it had, which is the exact failure this codebase keeps hitting.
+/**
+ * Replaces "has no notes tab — its store is not merged" (TDS-2, 2026-09-29).
+ *
+ * That assertion was a tripwire over a deferred package: the notes store did not
+ * exist, and a tab whose backend does not exist saves nothing while looking as
+ * though it had. The store is now built and merged — `growth-service`
+ * `GET/POST/PATCH/DELETE /v1/growth/members/{id}/notes` — so the premise the
+ * tripwire guarded is withdrawn, and leaving it would have made a green test
+ * defend the absence of a shipped feature.
+ *
+ * What stays is the part that was never about the store: a tab that renders must
+ * have a label. The Notes tab is a BASE tab, so — unlike the three above — it is
+ * not behind `TDS_STUDIO_ENABLED`, and an unnamed one would render a blank
+ * button for every manager.
+ */
+it("names the Notes tab, which is a base tab and not behind the Studio flag", async () => {
   jest.resetModules()
   const { DEV_TEXT } = await import("../development")
-  expect(DEV_TEXT["dev.tab.notes"]).toBeUndefined()
+  expect(DEV_TEXT["dev.tab.notes"]).toBeTruthy()
 })

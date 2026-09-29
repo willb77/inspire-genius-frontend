@@ -71,6 +71,9 @@ const CareerMatchPanel = lazy(() =>
 const RoadmapTimeline = lazy(() =>
   import("@/components/manager/development/tabs/RoadmapTimeline").then((m) => ({ default: m.RoadmapTimeline })),
 )
+const NotesPanel = lazy(() =>
+  import("@/components/manager/development/tabs/NotesPanel").then((m) => ({ default: m.NotesPanel })),
+)
 
 // TDS Studio tabs — the PRISM narrative surfaces shared with the super-admin
 // Character Lab. Lazy like the rest: each pulls in the shared studio panels,
@@ -96,16 +99,14 @@ const BASE_TABS = [
   { value: "careers", labelKey: "dev.tab.careers" },
   { value: "roadmap", labelKey: "dev.tab.roadmap" },
   { value: "interviews", labelKey: "dev.tab.interviews" },
+  // TDS-2. Its store (growth-service `/members/{id}/notes`, GET/POST/PATCH/
+  // DELETE) is built and merged, so the tab is a BASE tab: putting it behind
+  // TDS_STUDIO_ENABLED — which is off by default — would ship it hidden.
+  { value: "notes", labelKey: "dev.tab.notes" },
 ] as const
 
 /**
  * The three TDS Studio tabs, behind `VITE_FEATURE_TDS_STUDIO` (default OFF).
- *
- * TODO(Phase 4): a `notes` tab belongs here too. Its backend — the
- * manager-notes store behind the write-up — is being built in parallel and is
- * not merged, and a tab whose store does not exist would save nothing while
- * looking as though it had. Add it in the same change that lands the store,
- * not before.
  *
  * The flag only decides which tab buttons render, and `?tab=` falls back to
  * "profile" for a value not in this list. That is a UI gate, NOT a security
@@ -454,6 +455,14 @@ export default function MemberDevelopmentWorkspace({
                   milestones={dossier.milestones}
                   goals={dossier.goals}
                   trajectory={dossier.trajectory}
+                />
+              </TabsContent>
+              <TabsContent value="notes">
+                <NotesPanel
+                  memberId={dossier.memberId}
+                  memberName={member.name}
+                  goals={dossier.goals}
+                  milestones={dossier.milestones}
                 />
               </TabsContent>
               <TabsContent value="interviews">

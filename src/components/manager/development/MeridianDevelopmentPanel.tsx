@@ -48,6 +48,11 @@ type DevTab =
   // S-3: development interviews. Prompts only — nothing here hands the
   // interview summaries to Meridian.
   | "interviews"
+  // TDS-2: the manager's own coaching notes. Prompts only — the notes are
+  // per-manager and nothing here forwards them to Meridian. A tab MUST have an
+  // entry in SUGGESTED_PROMPTS below: the lookup is indexed, not defaulted, so
+  // a missing key is a TypeError on render, not a quiet gap.
+  | "notes"
   // TDS Studio tabs. Present in the union whether or not VITE_FEATURE_TDS_STUDIO
   // is on: the union is what the workspace can PASS, and a prompt set missing
   // for a tab the user is looking at renders an assistant with nothing to
@@ -74,6 +79,10 @@ const SUGGESTED_PROMPTS: Record<DevTab, string[]> = {
   interviews: [
     "What should our next development conversation focus on?",
     "How do I open a discovery conversation with this person?",
+  ],
+  notes: [
+    "Help me turn my last observation into a plan.",
+    "What should I be watching for between now and our next 1:1?",
   ],
   "profile-studio": [
     "Summarize this write-up in three lines for my 1:1.",
