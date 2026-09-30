@@ -243,6 +243,75 @@ describe("PrismInitiateForm", () => {
       ).toBeInTheDocument();
     });
 
+    /* PC-1b — the server resolves the practitioner; it only asks when the
+       client has several, and only among their own. */
+    const choice409 = {
+      response: {
+        status: 409,
+        data: {
+          detail: {
+            code: "practitioner_choice_required",
+            message: "choose",
+            practitioners: [
+              { practitionerSub: "p-a", displayName: "Avery Coach" },
+              { practitionerSub: "p-b", displayName: "Blake Coach" },
+            ],
+          },
+        },
+      },
+    };
+
+    it("asks which of their own practitioners when the server says there are several", async () => {
+      mockRequestSurvey.mockRejectedValueOnce(choice409);
+      const { toast } = jest.requireMock("sonner");
+      toast.error.mockClear();
+
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(screen.getByRole("button", { name: /request assessment/i }));
+
+      expect(await screen.findByText(/which practitioner is this assessment for/i)).toBeInTheDocument();
+      expect(screen.getByLabelText("Avery Coach")).toBeInTheDocument();
+      expect(screen.getByLabelText("Blake Coach")).toBeInTheDocument();
+      // A question, not a failure.
+      expect(toast.error).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: /request under this practitioner/i })).toBeDisabled();
+    });
+
+    it("re-sends the same request with the chosen practitioner", async () => {
+      mockRequestSurvey
+        .mockRejectedValueOnce(choice409)
+        .mockResolvedValueOnce({ request_id: "r", action_url_1: "https://prism.example/q/b", quest_status_desc: "sent" });
+
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(screen.getByRole("button", { name: /request assessment/i }));
+      await userEvent.click(await screen.findByLabelText("Blake Coach"));
+      await userEvent.click(screen.getByRole("button", { name: /request under this practitioner/i }));
+
+      await waitFor(() => expect(mockRequestSurvey).toHaveBeenCalledTimes(2));
+      expect(mockRequestSurvey.mock.calls[0][0]).not.toHaveProperty("practitionerSub");
+      expect(mockRequestSurvey.mock.calls[1][0]).toEqual(
+        expect.objectContaining({ practitionerSub: "p-b", forename: "Jane", qtype_id: 4 })
+      );
+      expect(await screen.findByText("Assessment Request Submitted")).toBeInTheDocument();
+    });
+
+    it("never toasts a structured error detail as [object Object]", async () => {
+      mockRequestSurvey.mockRejectedValueOnce({
+        message: "Request failed with status code 409",
+        response: { status: 409, data: { detail: { code: "something_else" } } },
+      });
+      const { toast } = jest.requireMock("sonner");
+      toast.error.mockClear();
+
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(screen.getByRole("button", { name: /request assessment/i }));
+
+      await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+      expect(toast.error.mock.calls[0][0]).not.toContain("[object Object]");
+      expect(toast.error.mock.calls[0][0]).toContain("status code 409");
+      expect(screen.queryByText(/which practitioner/i)).not.toBeInTheDocument();
+    });
+
     it("does NOT call the API in harness mode", async () => {
       const onSubmit = jest.fn();
       render(

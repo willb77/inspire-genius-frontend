@@ -17,6 +17,10 @@ import { Badge } from '@/components/ui/badge'
 import { useCheckExistingCustomer } from '@/hooks/prism/useCheckExistingCustomer'
 import { useRequestPrismSurvey } from '@/hooks/prism/usePrismRequest'
 import {
+  practitionerChoiceFrom,
+  type PractitionerChoice,
+} from '@/services/prism/prism'
+import {
   Card,
   CardContent,
   CardDescription,
@@ -104,6 +108,15 @@ export default function PrismInitiateForm({
     actionUrl?: string
   } | null>(null)
 
+  // PC-1b: set when the server asks which of the caller's own practitioners
+  // this survey is raised under. `pendingValues` is the submission to repeat.
+  const [choices, setChoices] = useState<PractitionerChoice[] | null>(null)
+  const [pending, setPending] = useState<{
+    values: InitiateFormValues
+    apiPayload: Record<string, unknown>
+  } | null>(null)
+  const [chosen, setChosen] = useState<string>('')
+
   const checkCustomer = useCheckExistingCustomer()
   const requestSurvey = useRequestPrismSurvey()
 
@@ -183,6 +196,14 @@ export default function PrismInitiateForm({
     }
 
     // ── Real submit — POST /v1/prism/requests (agent-engine) ──
+    await submitRequest(values, apiPayload)
+  }
+
+  async function submitRequest(
+    values: InitiateFormValues,
+    apiPayload: Record<string, unknown>,
+    practitionerSub?: string,
+  ) {
     try {
       const res = await requestSurvey.mutateAsync({
         forename: values.forename,
@@ -192,21 +213,38 @@ export default function PrismInitiateForm({
         qtype_id: values.questionnaireTypeId,
         lang_id: values.languageId,
         isGift: values.isGift,
+        ...(practitionerSub ? { practitionerSub } : {}),
       })
 
+      setChoices(null)
+      setPending(null)
       setSubmittedPayload(apiPayload)
       setQuestionnaireUrl(res?.action_url_1 ?? null)
       setSubmitted(true)
       toast.success('PRISM assessment requested — the questionnaire link is ready.')
       onSubmitProp?.(values, apiPayload)
     } catch (err) {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? (err as Error)?.message
+      const asked = practitionerChoiceFrom(err)
+      if (asked) {
+        // Not a failure: the server needs to know which of the caller's own
+        // practitioners this is for. Nothing was created at PRISM yet.
+        setChoices(asked)
+        setPending({ values, apiPayload })
+        setChosen('')
+        return
+      }
+      const raw = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      // A structured `detail` must never reach the toast as "[object Object]".
+      const detail = typeof raw === 'string' ? raw : (err as Error)?.message
       toast.error(
         `Failed to request PRISM assessment${detail ? `: ${detail}` : '. Please try again.'}`,
       )
     }
+  }
+
+  async function submitWithPractitioner() {
+    if (!pending || !chosen) return
+    await submitRequest(pending.values, pending.apiPayload, chosen)
   }
 
   async function handleCheckCustomer() {
@@ -641,6 +679,43 @@ export default function PrismInitiateForm({
                 )}
               />
             </div>
+
+            {/* ── Practitioner choice (PC-1b) ── */}
+            {choices && (
+              <fieldset
+                className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-3"
+                aria-describedby="practitioner-choice-help"
+              >
+                <legend className="px-1 text-sm font-medium">
+                  Which practitioner is this assessment for?
+                </legend>
+                <p id="practitioner-choice-help" className="text-sm text-muted-foreground">
+                  You work with more than one practitioner. Choose whose PRISM
+                  account this survey is raised under.
+                </p>
+                <div className="space-y-2">
+                  {choices.map((c) => (
+                    <label key={c.practitionerSub} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        name="practitioner-choice"
+                        value={c.practitionerSub}
+                        checked={chosen === c.practitionerSub}
+                        onChange={() => setChosen(c.practitionerSub)}
+                      />
+                      {c.displayName}
+                    </label>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  onClick={submitWithPractitioner}
+                  disabled={!chosen || requestSurvey.isPending}
+                >
+                  Request under this practitioner
+                </Button>
+              </fieldset>
+            )}
 
             {/* ── Submit ── */}
             <div className="flex items-center gap-3 pt-2">
