@@ -7,7 +7,7 @@
  */
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Network, Search, Users } from "lucide-react"
+import { Network, Search, UserCheck, Users } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { Input } from "@/components/ui/input"
@@ -31,6 +31,7 @@ import {
 import { MemberCard } from "@/components/manager/development/MemberCard"
 import { AddMemberDialog } from "@/components/manager/development/AddMemberDialog"
 import { OrgChartPanel } from "@/components/manager/development/OrgChartPanel"
+import { MyReportsPanel } from "@/components/manager/development/MyReportsPanel"
 import {
   DevSkinProvider,
   DevPageFrame,
@@ -96,13 +97,19 @@ export default function DevelopmentStudio({
   /**
    * Which view the first page is showing.
    *
-   * The org chart is a different QUESTION about the same organisation — "who
-   * reports to whom" rather than "who needs what" — so it replaces the grid
-   * rather than sitting beside it, and the search/filter row does not apply to
-   * it. Local state, not a route: it is a lens on this page, and a URL for it
-   * would be a second surface to keep gated.
+   * Three DIFFERENT questions about the same organisation, which is why each
+   * replaces the grid rather than sitting beside it and why the search/filter
+   * row does not apply to two of them:
+   *
+   *   grid    — who needs what (the roster: the org's people plus anyone added
+   *             here)
+   *   reports — who reports to me (TDS-10; derived from the org chart's edges)
+   *   org     — who reports to whom (the chart itself)
+   *
+   * Local state, not a route: these are lenses on this page, and a URL for each
+   * would be three surfaces to keep gated instead of one.
    */
-  const [view, setView] = useState<"grid" | "org">("grid")
+  const [view, setView] = useState<"grid" | "reports" | "org">("grid")
 
   const [search, setSearch] = useState("")
   const [coverage, setCoverage] = useState<CoverageFilter>("all")
@@ -167,7 +174,7 @@ export default function DevelopmentStudio({
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className={cn("relative w-full md:max-w-xs", view === "org" && "invisible")}>
+        <div className={cn("relative w-full md:max-w-xs", view !== "grid" && "invisible")}>
           <Search className={cn("pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2", sk.text400)} aria-hidden="true" />
           <Input
             value={search}
@@ -178,13 +185,13 @@ export default function DevelopmentStudio({
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {/* The Org Chart pill.
-              A toggle, not a filter: the chart answers "who reports to whom"
-              rather than "who needs what", so it REPLACES the grid and the
-              search/filter controls beside it do not apply to it. They are
-              hidden in chart view rather than left visible and inert, because
-              a filter that silently does nothing is worse than one that is not
-              offered. */}
+          {/* The view pill.
+              A toggle, not a filter: each option answers a DIFFERENT question
+              about the same organisation, so each REPLACES the grid and the
+              search/filter controls beside it do not apply to two of them.
+              They are hidden outside the grid rather than left visible and
+              inert, because a filter that silently does nothing is worse than
+              one that is not offered. */}
           <div className="flex items-center rounded-full border p-0.5" role="group" aria-label="View">
             <button
               type="button"
@@ -196,6 +203,20 @@ export default function DevelopmentStudio({
               )}
             >
               Team
+            </button>
+            {/* TDS-10. "My reports" is a narrower set than "Team", not a
+                filter on it: the ids come from the org chart's surviving edges
+                and the roster only supplies each card. See MyReportsPanel. */}
+            <button
+              type="button"
+              onClick={() => setView("reports")}
+              aria-pressed={view === "reports"}
+              className={cn(
+                "flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition",
+                view === "reports" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
+              )}
+            >
+              <UserCheck className="h-3 w-3" aria-hidden /> My reports
             </button>
             <button
               type="button"
@@ -264,12 +285,39 @@ export default function DevelopmentStudio({
         </div>
       </div>
 
+      {/*
+        TDS-10 — which question the visible view answers, stated on the page.
+        The three sets are genuinely different and were read as one: the roster
+        is the organisation's people plus anyone added here, "My reports" is the
+        reporting line INSIDE the caller's own organisation, and the chart is
+        the lines themselves. A manager on staging-b has four reports on file
+        and zero of them in their own organisation, so "Team" and "My reports"
+        legitimately disagree for them — which is unreadable unless the page
+        says what each one counts.
+      */}
+      <p className={cn("text-xs", sk.text500)}>
+        {t(
+          view === "reports"
+            ? "dev.studio.scope.reports"
+            : view === "org"
+              ? "dev.studio.scope.org"
+              : "dev.studio.scope.team",
+        )}
+      </p>
+
       {/* The search box filters the ROSTER, not the org chart — the chart is a
           different dataset with its own scope, and pointing this at it would
           filter people out of a reporting tree, leaving their reports
           reparented under whoever survived. */}
       {view === "org" ? (
         <OrgChartPanel memberRoute={memberRoute} />
+      ) : view === "reports" ? (
+        /* No roster loading/error/empty branch here: this panel owns its own
+           states, and they are DIFFERENT claims from the grid's. "No team
+           members yet" over a manager whose reports are all cross-org would be
+           false, and a load failure shown as an empty team is the failure mode
+           this whole surface keeps having to defend against. */
+        <MyReportsPanel onInvite={handleInvite} />
       ) : isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
