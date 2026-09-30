@@ -5,6 +5,7 @@ import { PageHead, Card, MiniLabel, CardH, Callout } from "@/pages/summit/compon
 import { GoalCard } from "@/pages/summit/SummitGoals";
 import { useAuth } from "@/context/useAuth";
 import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
+import { GoalsWiringCard } from "@/pages/summit/components/GoalsWiringCard";
 
 /** First name only, for the greeting. Falls back to a name-free headline. */
 function firstName(name: string | null | undefined): string {
@@ -148,6 +149,8 @@ export default function SummitDashboard() {
               </div>
             )}
           </Card>
+
+          <GoalsWiringCard />
         </>
       )}
 

@@ -10,7 +10,10 @@ import {
   FitLoading,
   FitError,
 } from "./_shared"
-import { tierLabel, jobFitNarrativeEnabled } from "./_fit"
+import { tierLabel, jobFitNarrativeEnabled, fitPercent } from "./_fit"
+import { FitComponentsCard } from "./FitComponentsCard"
+import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
+import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
 import { FitBreakdown } from "./FitBreakdown"
 import { FitSummaryCard } from "./FitSummaryCard"
 import { FitFollowUpCard } from "./FitFollowUpCard"
@@ -25,6 +28,14 @@ export default function FitDetailPage() {
   const { jobId } = useParams<{ jobId: string }>()
   const { data, isLoading, isError } = useFitDetail(jobId)
   const narrative = jobFitNarrativeEnabled()
+  // Feeds Phase 2 — the components beside the fit. Idle (no request, no card)
+  // unless the server switch is on, so the page is today's page by default.
+  const componentsOn = useJobFitComponentsEnabled()
+  const fitPct = data ? fitPercent(data.fitScore, data.totalVariation, data.perDimension.length || 22) : 0
+  const components = useFitComponents(
+    data && jobId ? [{ jobId, fitScore: fitPct }] : [],
+    componentsOn,
+  )
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -86,6 +97,15 @@ export default function FitDetailPage() {
               <FitPill tone="gray">Base tier: {tierLabel(data.baseTier)}</FitPill>
             )}
           </div>
+
+          {componentsOn && (
+            <FitComponentsCard
+              fitPct={fitPct}
+              job={jobId ? components.data?.jobs[jobId] : undefined}
+              weights={components.data?.weights}
+              isError={components.isError}
+            />
+          )}
 
           {/* Fit narrative: plain-language read of the overlay + fit % + gaps */}
           {narrative && <FitSummaryCard data={data} />}
