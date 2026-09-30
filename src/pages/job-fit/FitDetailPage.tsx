@@ -14,6 +14,8 @@ import { tierLabel, jobFitNarrativeEnabled, fitPercent } from "./_fit"
 import { FitComponentsCard } from "./FitComponentsCard"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
+import { useGoalTargetsEnabled } from "@/hooks/switches/useGoalTargetsEnabled"
+import { MakeTargetCard } from "./MakeTargetCard"
 import { FitBreakdown } from "./FitBreakdown"
 import { FitSummaryCard } from "./FitSummaryCard"
 import { FitFollowUpCard } from "./FitFollowUpCard"
@@ -36,6 +38,9 @@ export default function FitDetailPage() {
     data && jobId ? [{ jobId, fitScore: fitPct }] : [],
     componentsOn,
   )
+  // Feeds Phase 3 — "Make this my target". Same rule: nothing renders and no
+  // request is made unless the server's goal_targets switch is on.
+  const targetsOn = useGoalTargetsEnabled()
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -106,6 +111,8 @@ export default function FitDetailPage() {
               isError={components.isError}
             />
           )}
+
+          {targetsOn && <MakeTargetCard data={data} />}
 
           {/* Fit narrative: plain-language read of the overlay + fit % + gaps */}
           {narrative && <FitSummaryCard data={data} />}

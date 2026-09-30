@@ -82,6 +82,7 @@ const SummitInterview = React.lazy(() => import("@/pages/summit/SummitInterview"
 const SummitSharing = React.lazy(() => import("@/pages/summit/SummitSharing"));
 const SummitCoaches = React.lazy(() => import("@/pages/summit/SummitCoaches"));
 const SummitComingSoon = React.lazy(() => import("@/pages/summit/SummitComingSoon"));
+const GoalRoadmapPage = React.lazy(() => import("@/pages/summit/GoalRoadmapPage"));
 const DiagnosticChat = React.lazy(() => import("@/pages/user/DiagnosticChat"));
 
 // ── Super Admin pages ───────────────────────────────────────────────────────
@@ -470,6 +471,8 @@ export const routes: RouteObject[] = [
           { path: "sharing", element: withSuspense(<SummitSharing />) },
           { path: "coaches", element: withSuspense(<SummitCoaches />) },
           { path: "coming-soon", element: withSuspense(<SummitComingSoon />) },
+          // Feeds Phase 3 — dark unless the goal_targets switch is on (the page checks).
+          { path: ":goalId/roadmap", element: withSuspense(<GoalRoadmapPage />) },
         ],
       },
       // /summit/* — the surface's old home — redirected here for one release

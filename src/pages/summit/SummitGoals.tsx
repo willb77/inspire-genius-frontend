@@ -37,6 +37,10 @@ import {
 } from "@/hooks/summit/useMyGoals";
 import { SUMMIT_CATEGORY_KEYS, type SharedGoal, type SummitCategoryKey, type SummitGoal } from "@/types/summit";
 import type { GoalReview } from "@/types/development";
+import type { GoalTargetWithRoadmap } from "@/types/goals/targets";
+import { useGoalTargetsEnabled } from "@/hooks/switches/useGoalTargetsEnabled";
+import { useMyTargets } from "@/hooks/goals/useGoalTargets";
+import { isJobFitGoal } from "@/pages/summit/_targets";
 import {
   ALIGN_LABEL,
   ALIGN_STYLES,
@@ -145,7 +149,16 @@ function ReviewRow({ review }: { review: GoalReview }) {
 }
 
 /** A published goal (Store B) — what a coach would see, with the owner's controls. */
-function SharedGoalCard({ goal, reviews = [] }: { goal: SharedGoal; reviews?: GoalReview[] }) {
+function SharedGoalCard({
+  goal,
+  reviews = [],
+  target,
+}: {
+  goal: SharedGoal;
+  reviews?: GoalReview[];
+  /** Feeds Phase 3 — present only while the goal_targets switch is on. */
+  target?: GoalTargetWithRoadmap;
+}) {
   const setVisibility = useSetGoalVisibility();
   const unpublish = useUnpublishGoal();
   const isPrivate = goal.visibility === "private";
@@ -182,9 +195,25 @@ function SharedGoalCard({ goal, reviews = [] }: { goal: SharedGoal; reviews?: Go
           </span>
         )}
         <span className="rounded-lg bg-[#127A8A]/13 px-2.5 py-1.5 text-[#0E5F6B]">
-          {goal.source === "member" ? "From your interview" : "Seeded"}
+          {isJobFitGoal(goal.publishedFrom)
+            ? "From Job Fit"
+            : goal.source === "member" ? "From your interview" : "Seeded"}
         </span>
       </div>
+      {target && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[13px] text-[#13294B]">
+          <Target className="h-3.5 w-3.5 text-[#0E5F6B]" aria-hidden />
+          <span>
+            Targets <b>{target.roleTitle || "a role"}</b>
+          </span>
+          <Link
+            to={ROUTES.MY_GOALS.ROADMAP(goal.goalId)}
+            className="font-semibold text-[#0E5F6B] underline"
+          >
+            View roadmap
+          </Link>
+        </div>
+      )}
       {reviews.length > 0 ? (
         <ul className="mt-3 space-y-1.5" aria-label="Coach reviews">
           {reviews.map((r) => (
@@ -396,6 +425,9 @@ export default function SummitGoals() {
 
   const shared = mine.data?.goals ?? [];
   const publishedFrom = new Set(shared.map((g) => g.publishedFrom).filter(Boolean));
+  const targetsOn = useGoalTargetsEnabled();
+  const targets = useMyTargets(targetsOn);
+  const targetByGoal = new Map((targets.data ?? []).map((t) => [t.goalId, t]));
   const drafts = (session.data?.goals ?? []).filter((g) => !publishedFrom.has(g.goal_id));
 
   const loading = session.isLoading || mine.isLoading;
@@ -470,6 +502,7 @@ export default function SummitGoals() {
               key={g.goalId}
               goal={g}
               reviews={(myReviews.data?.reviews ?? []).filter((r) => r.goalId === g.goalId)}
+              target={targetsOn ? targetByGoal.get(g.goalId) : undefined}
             />
           ))}
         </section>

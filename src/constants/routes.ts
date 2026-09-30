@@ -44,6 +44,8 @@ export const ROUTES = {
     SHARING: "/my/goals/sharing",
     COACHES: "/my/goals/coaches",
     COMING_SOON: "/my/goals/coming-soon",
+    /** Feeds Phase 3 — a goal's roadmap toward the role it targets. */
+    ROADMAP: (goalId: string) => `/my/goals/${encodeURIComponent(goalId)}/roadmap`,
   },
   /** @deprecated Wave 2 Lane 2.A (P7.1) — moved under super-admin as `SUPER_ADMIN.AGENT_TRACE_CONSOLE`. The old path now redirects to the new one. */
   DIAGNOSTIC_CHAT: "/diagnostic-chat",
