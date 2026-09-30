@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { Target, ChevronRight, Building2 } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
@@ -10,10 +10,15 @@ import {
   FitEmptyState,
   FitLoading,
   FitError,
+  FitPill,
 } from "./_shared"
 import FitPurpose from "./FitPurpose"
 import { FitHistoryPanel } from "./FitHistoryPanel"
 import { tierLabel, fitPercent, fitPercentTone } from "./_fit"
+import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
+import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
+import type { JobComponents } from "@/types/job-fit/components"
+import { VERDICT_LABEL, VERDICT_TONE, goalSortRank } from "./_components"
 
 const PCT_COLOR: Record<string, string> = {
   green: "text-[#15803d]",
@@ -23,17 +28,25 @@ const PCT_COLOR: Record<string, string> = {
   gray: "text-[#6b7280]",
 }
 
+/** The row's fit %, exactly as the row shows it (and as the detail page does). */
+function rowPercent(match: FitMatch): number {
+  return match.method === "closeness" && match.closenessScore != null
+    ? Math.max(1, Math.min(100, Math.round(match.closenessScore)))
+    : fitPercent(match.fitScore, match.totalVariation, 22)
+}
+
 /** One ranked role match, linking through to its fit detail. */
-function MatchRow({ match }: { match: FitMatch }) {
+function MatchRow({ match, components }: { match: FitMatch; components?: JobComponents }) {
   // Show an explicit 1-100 fit % on the row so the person sees their fit here on
   // "My Fit" without opening the detail page. Under the closeness method, use the
   // weighted-closeness score; otherwise prefer the backend's authoritative
   // fitScore so this row shows the SAME number as the role's detail page (older
   // backends omit it, so we fall back to the shared derivation).
-  const pct =
-    match.method === "closeness" && match.closenessScore != null
-      ? Math.max(1, Math.min(100, Math.round(match.closenessScore)))
-      : fitPercent(match.fitScore, match.totalVariation, 22)
+  const pct = rowPercent(match)
+  // Feeds Phase 2: a verdict chip only when the role is scored against a goal —
+  // an unlinked role shows nothing rather than a warning.
+  const goal = components?.status === "ok" ? components.goalAlignment : undefined
+  const composite = components?.status === "ok" ? components.composite : undefined
   const pctColor = PCT_COLOR[fitPercentTone(pct)] ?? PCT_COLOR.teal
   return (
     <Link
@@ -43,6 +56,9 @@ function MatchRow({ match }: { match: FitMatch }) {
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <span className="truncate text-base font-semibold text-[#1f2937]">{match.roleTitle}</span>
+          {goal?.status === "scored" && (
+            <FitPill tone={VERDICT_TONE[goal.verdict]}>{VERDICT_LABEL[goal.verdict]}</FitPill>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs text-[#6b7280]">
           {match.department && (
@@ -60,6 +76,11 @@ function MatchRow({ match }: { match: FitMatch }) {
           <span className="text-sm font-semibold text-[#9ca3af]">%</span>
         </div>
         <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">fit</div>
+        {composite?.score != null && (
+          <div className="mt-1 text-[11px] text-[#6b7280]" title="Behavioural fit, goals and experience combined">
+            {Math.round(composite.score)}% composite
+          </div>
+        )}
       </div>
       <ChevronRight className="h-5 w-5 shrink-0 text-[#9ca3af] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0D9488]" />
     </Link>
@@ -117,6 +138,31 @@ function MethodToggle({
 export default function MatchesPage() {
   const [method, setMethod] = useState<FitMethod>("gap")
   const { data, isLoading, isError } = useFitMatches(method)
+  // Feeds Phase 2 — dark unless the server switch is on: no request, no chip,
+  // no sort control, today's list exactly.
+  const componentsOn = useJobFitComponentsEnabled()
+  const [byGoals, setByGoals] = useState(false)
+  const jobs = useMemo(
+    () => (data ?? []).map((m) => ({ jobId: m.jobId, fitScore: rowPercent(m) })),
+    [data],
+  )
+  const components = useFitComponents(jobs, componentsOn)
+  const rows = useMemo(() => {
+    const list = data ?? []
+    if (!byGoals || !components.data) return list
+    const jobsC = components.data.jobs
+    // Stable: ties keep the fit order the list arrived in.
+    return list
+      .map((m, i) => ({ m, i }))
+      .sort((a, b) => {
+        const ca = jobsC[a.m.jobId]
+        const cb = jobsC[b.m.jobId]
+        const ra = goalSortRank(ca?.status === "ok" ? ca.goalAlignment : undefined)
+        const rb = goalSortRank(cb?.status === "ok" ? cb.goalAlignment : undefined)
+        return ra - rb || a.i - b.i
+      })
+      .map(({ m }) => m)
+  }, [data, byGoals, components.data])
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -129,8 +175,25 @@ export default function MatchesPage() {
       <FitPurpose />
 
       <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
+        {componentsOn && (
+          <label className="inline-flex items-center gap-2 text-xs text-[#374151]">
+            <input
+              type="checkbox"
+              checked={byGoals}
+              onChange={(e) => setByGoals(e.target.checked)}
+              disabled={components.isError}
+            />
+            Sort by my goals
+          </label>
+        )}
         <MethodToggle method={method} onChange={setMethod} />
       </div>
+
+      {componentsOn && components.isError && (
+        <p role="alert" className="mb-3 text-xs text-[#6b7280]">
+          Couldn&apos;t read your goals — sorted by fit.
+        </p>
+      )}
 
       {isLoading && <FitLoading label="Matching your profile to open roles…" />}
 
@@ -149,8 +212,8 @@ export default function MatchesPage() {
 
       {!isLoading && !isError && (data?.length ?? 0) > 0 && (
         <FitCard className="space-y-3 p-4">
-          {data!.map((m) => (
-            <MatchRow key={m.jobId} match={m} />
+          {rows.map((m) => (
+            <MatchRow key={m.jobId} match={m} components={components.data?.jobs[m.jobId]} />
           ))}
         </FitCard>
       )}
