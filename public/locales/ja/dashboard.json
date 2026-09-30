@@ -125,6 +125,7 @@
     "welcomePrefix": "ようこそ",
     "whatToday": "今日は何に取り組みますか？",
     "quickGoals": "Goals Studio",
+    "quickMyDevelopment": "My development",
     "checkFailed": "— 確認できませんでした",
     "retry": "再試行",
     "retryItem": "{{name}} を再確認",

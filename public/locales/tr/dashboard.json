@@ -125,6 +125,7 @@
     "welcomePrefix": "Hoş geldiniz",
     "whatToday": "Bugün ne üzerinde çalışıyoruz?",
     "quickGoals": "Goals Studio",
+    "quickMyDevelopment": "My development",
     "checkFailed": "— kontrol edilemedi",
     "retry": "Yeniden dene",
     "retryItem": "{{name}} kontrolünü yeniden dene",

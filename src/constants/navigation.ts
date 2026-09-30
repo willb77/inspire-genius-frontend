@@ -37,6 +37,7 @@ import {
   Drama,
   LifeBuoy,
   Handshake,
+  HeartPulse,
   IdCard,
 } from "lucide-react"
 
@@ -52,10 +53,11 @@ import {
 export const WORKSPACE_ITEM_UNAVAILABLE_REASON = "Temporarily unavailable"
 
 /**
- * The user role's menu, in order. **Exactly six entries** as of 2026-08-12
- * (request: "for all User roles only show these menu items on the left side
- * menu — Home, Chat with Meridian, Interview Practice, Document Library,
- * Settings, Help & Support").
+ * The user role's menu, in order. **Exactly eight entries** as of 2026-09-30.
+ * Six were fixed on 2026-08-12 (request: "for all User roles only show these
+ * menu items on the left side menu — Home, Chat with Meridian, Interview
+ * Practice, Document Library, Settings, Help & Support"); Goals Studio
+ * returned on 2026-09-04 and My development joined on 2026-09-30 (TDS-4c).
  *
  * Kept in step with {@link getUserNavItems}, which is the toggle-aware version
  * the layouts actually call. Both must yield the same six labels, because which
@@ -73,6 +75,7 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
   { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals Studio" },
+  { to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" },
   { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
@@ -82,13 +85,14 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
 /**
  * The user role's menu — the toggle-aware version the layouts call.
  *
- * **Exactly seven entries** as of 2026-09-04. Six were fixed on 2026-08-12
+ * **Exactly eight entries** as of 2026-09-30. Six were fixed on 2026-08-12
  * (request: "for all User roles only show these menu items on the left side
  * menu"); Goals returned on 2026-09-04 as the ungated My Goals surface
- * (Goals offering, Phase 3 — decision D8: base product, not a vertical):
+ * (Goals offering, Phase 3 — decision D8: base product, not a vertical); My
+ * development joined on 2026-09-30 (TDS-4c), on the same footing:
  *
- *   Home · Chat with Meridian · Goals Studio · Interview Practice · Document
- *   Library · Settings · Help & Support
+ *   Home · Chat with Meridian · Goals Studio · My development · Interview
+ *   Practice · Document Library · Settings · Help & Support
  *
  * "Goals" became "Goals Studio" on 2026-09-04 (request) — the same name the
  * coach roles see under Tools, so a member and their coach are talking about
@@ -97,7 +101,7 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
  *
  * The chat row is the only variation: it points at Meridian when the Agent
  * Engine toggle is on (the default) and falls back to "Chat with Coaches"
- * when it is off. Seven items either way — the toggle changes the
+ * when it is off. Eight items either way — the toggle changes the
  * destination, not the shape of the menu.
  *
  * ## Nothing is spliced in
@@ -148,6 +152,17 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // The person's own goals — set in the Summit interview, shared per person
     // by consent (Goals offering, Phase 3). Ungated: every role reaches it.
     { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals Studio" },
+    // My development (TDS-4c, 2026-09-30) — the member's own view of the rows a
+    // coach sees about them in the Team Development Studio. Sits next to Goals
+    // Studio because it is the other "this is mine" surface, and like it the
+    // row is gated on nothing but sign-in: every read behind the page is a
+    // `/v1/growth/me/*` route that resolves the member from the token, so a
+    // plain `user` reaches all of it with no manager involved.
+    //
+    // Deliberately NOT between Document Library and Settings: the adjacency of
+    // those two is asserted as exactly one apart (navigation.test.ts), which is
+    // what caught the workspace-vertical splice landing in that gap.
+    { to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" },
     // Candidate-side STAR rehearsal with Alex (voice-capable).
     { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
     // Document Library sits directly above Settings (2026-08-06 request). It is
