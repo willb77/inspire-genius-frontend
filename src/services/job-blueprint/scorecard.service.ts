@@ -1,6 +1,6 @@
 import { api } from '@/lib/axios'
 import type { BaseApiResponse } from '@/types/api'
-import type { InterviewScorecard, InterviewGuide, ScorecardEntry } from '@/types/job-blueprint'
+import type { InterviewScorecard, InterviewGuide, ScorecardDraft, ScorecardEntry } from '@/types/job-blueprint'
 
 export const scorecardService = {
   submitScorecard(candidateId: string, data: {
@@ -18,6 +18,11 @@ export const scorecardService = {
 
   getScorecard(candidateId: string) {
     return api.get<BaseApiResponse<InterviewScorecard>>(`/v1/blueprint/scorecard/${candidateId}`)
+  },
+
+  /** The draft a finalised interview wrote for this candidate (IS-11b); 404 when none. */
+  getScorecardDraft(candidateId: string) {
+    return api.get<BaseApiResponse<ScorecardDraft>>(`/v1/blueprint/scorecard/${candidateId}/draft`)
   },
 
   generateInterviewGuide(jobId: string, candidateId: string) {

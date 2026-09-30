@@ -20,6 +20,7 @@
  */
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { MemoryRouter } from "react-router-dom"
 
 const createMutate = jest.fn()
 const submitMutate = jest.fn()
@@ -74,6 +75,20 @@ jest.mock("@/hooks/interview/useQuestionBank", () => ({
 
 jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { name: "Interviewer One", email: "i@example.test" } }),
+}))
+
+// JS-10 — the deep link resolver reads the pipeline query; mocked so a test
+// can put the body in each of its states without a QueryClient.
+const useDeepLinked = jest.fn()
+jest.mock("@/hooks/interview/useDeepLinkedCandidate", () => ({
+  useDeepLinkedCandidate: (...a: unknown[]) => useDeepLinked(...a),
+}))
+
+// JS-12 — the pipeline-step write. Resolves with the candidate as the server
+// would return it; a test sets `status` to the step sent (moved) or not.
+const stepMutate = jest.fn()
+jest.mock("@/hooks/job-blueprint/useTriage", () => ({
+  useSetInterviewStep: () => ({ mutateAsync: stepMutate, isPending: false }),
 }))
 
 
@@ -158,6 +173,15 @@ const FINALIZE = {
   recommendation: "Advance to final round",
 }
 
+/** The body always sits under a router: it reads the URL (JS-10 / JS-11). */
+function renderBody(path = "/manager/interview-live") {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <LiveInterviewBody />
+    </MemoryRouter>,
+  )
+}
+
 /** Walk consent -> candidate -> frame, which starts the session. */
 async function reachInterview(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByText("mock-consent-proceed"))
@@ -173,11 +197,13 @@ beforeEach(() => {
   scoreMutate.mockResolvedValue({ answer_id: "a1", final_score: 4, interviewer_notes: "solid result" })
   useLiveSessions.mockReturnValue(EMPTY_SESSIONS)
   finalizeMutate.mockResolvedValue(FINALIZE)
+  useDeepLinked.mockReturnValue({ link: null, state: "idle" })
+  stepMutate.mockImplementation(async ({ step }: { step: string }) => ({ id: "cand-1", status: step }))
 })
 
 describe("setup — consent gates everything", () => {
   it("opens on the consent step, not on the candidate or frame form", () => {
-    render(<LiveInterviewBody />)
+    renderBody()
     expect(screen.getByRole("heading", { name: /live scored interview/i })).toBeInTheDocument()
     expect(screen.getByText("mock-consent-proceed")).toBeInTheDocument()
     expect(screen.queryByLabelText(/candidate name/i)).not.toBeInTheDocument()
@@ -188,7 +214,7 @@ describe("setup — consent gates everything", () => {
 
   it("requires a candidate name before the frame step", async () => {
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await user.click(screen.getByText("mock-consent-proceed"))
     await user.click(screen.getByRole("button", { name: /continue/i }))
     expect(await screen.findByText(/candidate name is required/i)).toBeInTheDocument()
@@ -197,7 +223,7 @@ describe("setup — consent gates everything", () => {
 
   it("sends the candidate and the captured consent with the session", async () => {
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1))
     expect(createMutate).toHaveBeenCalledWith(
@@ -212,7 +238,7 @@ describe("setup — consent gates everything", () => {
 describe("S-3 / D3 — a Live scored interview never reaches a development record", () => {
   it("creates the session with no subject_sub (StudioInterviewBody.test holds the paired 'is sent' control)", async () => {
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1))
     const payload = createMutate.mock.calls[0][0]
@@ -234,7 +260,7 @@ describe("Job DNA candidate link (IS-11c2 front door)", () => {
     })
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await user.click(screen.getByText("mock-consent-proceed"))
     await user.click(screen.getByText("mock-link-candidate"))
     // picking prefills the identity; the interviewer may still edit it
@@ -260,7 +286,7 @@ describe("Job DNA candidate link (IS-11c2 front door)", () => {
     finalizeMutate.mockResolvedValue({ ...FINALIZE, scorecard_draft: { written: false, reason: "flag_off" } })
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await user.click(screen.getByText("mock-consent-proceed"))
     await user.click(screen.getByText("mock-link-candidate"))
     await user.click(screen.getByRole("button", { name: /continue/i }))
@@ -274,7 +300,7 @@ describe("Job DNA candidate link (IS-11c2 front door)", () => {
   it("an unlinked session sends no ids and shows no draft line", async () => {
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     const payload = createMutate.mock.calls[0][0]
     expect(payload.candidate_id).toBeUndefined()
@@ -291,7 +317,7 @@ describe("a failed start does not blank the body", () => {
   it("stays on setup and says so when createSession rejects", async () => {
     createMutate.mockRejectedValue(new Error("live_interview_scoring off"))
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/could not start/i)))
@@ -304,7 +330,7 @@ describe("a failed start does not blank the body", () => {
 describe("interview phase", () => {
   it("shows the first planned question and the running tally", async () => {
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     expect(await screen.findByText("panel 1/2: Tell me about a turnaround.")).toBeInTheDocument()
     expect(screen.getByText(/question 1 of 2/i)).toBeInTheDocument()
@@ -313,7 +339,7 @@ describe("interview phase", () => {
 
   it("advances only after the answer has been rated, not merely submitted", async () => {
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
 
@@ -333,7 +359,7 @@ describe("interview phase", () => {
   it("keeps the question on screen when submitting the answer fails", async () => {
     submitMutate.mockRejectedValue(new Error("nope"))
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
 
@@ -346,7 +372,7 @@ describe("interview phase", () => {
   it("does not count the answer as scored when the rating PATCH fails", async () => {
     scoreMutate.mockRejectedValue(new Error("nope"))
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
     await user.click(screen.getByText("mock-submit-answer"))
@@ -365,7 +391,7 @@ describe("ending the interview", () => {
   it("confirms before ending while the current answer is unsaved", async () => {
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(false)
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
 
@@ -379,7 +405,7 @@ describe("ending the interview", () => {
   it("ends without confirming once the current answer is rated", async () => {
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
     await user.click(screen.getByText("mock-submit-answer"))
@@ -398,7 +424,7 @@ describe("findings", () => {
   it("renders the scored write-up and the export controls", async () => {
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
@@ -416,7 +442,7 @@ describe("findings", () => {
     exportDownload.mockRejectedValueOnce(new Error("Export failed."))
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
@@ -435,7 +461,7 @@ describe("findings", () => {
   it("'New interview' returns to the consent step, not to a half-reset form", async () => {
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
@@ -460,7 +486,7 @@ describe("findings", () => {
     finalizeMutate.mockRejectedValueOnce(new Error("upstream exploded"))
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
-    render(<LiveInterviewBody />)
+    renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
     await user.click(screen.getByRole("button", { name: /end interview/i }))
@@ -545,7 +571,7 @@ describe("past interviews — resume", () => {
     const user = userEvent.setup()
     useLiveSessions.mockReturnValue(LIST())
     getSession.mockResolvedValue(DETAIL())
-    render(<LiveInterviewBody />)
+    renderBody()
 
     await user.click(screen.getByRole("button", { name: /resume/i }))
 
@@ -589,7 +615,7 @@ describe("past interviews — resume", () => {
         ],
       }),
     )
-    render(<LiveInterviewBody />)
+    renderBody()
     await user.click(screen.getByRole("button", { name: /resume/i }))
     await waitFor(() => expect(screen.getByText(/^panel 2\/2/)).toBeInTheDocument())
 
@@ -609,7 +635,7 @@ describe("past interviews — resume", () => {
     const user = userEvent.setup()
     useLiveSessions.mockReturnValue(LIST())
     getSession.mockResolvedValue(DETAIL({ plan: [] }))
-    render(<LiveInterviewBody />)
+    renderBody()
     await user.click(screen.getByRole("button", { name: /resume/i }))
     // An empty interview screen would read as a loading bug.
     await waitFor(() => expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/cannot be resumed/i)))
@@ -620,7 +646,7 @@ describe("past interviews — resume", () => {
     const user = userEvent.setup()
     useLiveSessions.mockReturnValue(LIST())
     getSession.mockRejectedValue(new Error("Session not found"))
-    render(<LiveInterviewBody />)
+    renderBody()
     await user.click(screen.getByRole("button", { name: /resume/i }))
     await waitFor(() => expect(toastError).toHaveBeenCalledWith("Session not found"))
   })
@@ -639,7 +665,7 @@ describe("past interviews — reopen is read only", () => {
     const user = userEvent.setup()
     useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
     getSession.mockResolvedValue(FINALIZED())
-    render(<LiveInterviewBody />)
+    renderBody()
 
     await user.click(screen.getByRole("button", { name: /reopen/i }))
 
@@ -655,7 +681,7 @@ describe("past interviews — reopen is read only", () => {
     const user = userEvent.setup()
     useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
     getSession.mockResolvedValue(FINALIZED())
-    render(<LiveInterviewBody />)
+    renderBody()
     await user.click(screen.getByRole("button", { name: /reopen/i }))
     await waitFor(() => expect(screen.getByText(/reopened for review/i)).toBeInTheDocument())
 
@@ -672,7 +698,7 @@ describe("past interviews — reopen is read only", () => {
     const user = userEvent.setup()
     useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
     getSession.mockResolvedValue(FINALIZED())
-    render(<LiveInterviewBody />)
+    renderBody()
     await user.click(screen.getByRole("button", { name: /reopen/i }))
     await waitFor(() => expect(screen.getByText(/reopened for review/i)).toBeInTheDocument())
 
@@ -704,11 +730,160 @@ describe("past interviews — reopen is read only", () => {
         ],
       }),
     )
-    render(<LiveInterviewBody />)
+    renderBody()
     await user.click(screen.getByRole("button", { name: /reopen/i }))
 
     await waitFor(() => expect(screen.getByText(/not decided/i)).toBeInTheDocument())
     // "Final score: 3 / 5" would attribute a judgement nobody made.
     expect(screen.queryByText(/Final score: 3 \/ 5/)).not.toBeInTheDocument()
+  })
+})
+
+// ── JS-10 / JS-11 / JS-12 — the Career Blueprint seam ─────────────────────
+
+const READY_LINK = { blueprint_id: "bp-1", candidate_id: "cand-1", display_name: "Linked Person", external_id: "REQ-9" }
+const DEEP = "/manager/interview-live?blueprintId=bp-1&candidateId=cand-1"
+
+describe("JS-10 — a deep link from Career Blueprint pre-links the candidate", () => {
+  it("resolves the ids from the URL and applies the link once consent is given", async () => {
+    useDeepLinked.mockReturnValue({ link: READY_LINK, state: "ready" })
+    const user = userEvent.setup()
+    renderBody(DEEP)
+    expect(useDeepLinked).toHaveBeenCalledWith("bp-1", "cand-1")
+    // Said before consent, so the interviewer knows the link took.
+    expect(screen.getByTestId("deep-link-notice")).toHaveTextContent(/Interviewing Linked Person \(REQ-9\)/)
+    // Consent is not skipped.
+    expect(screen.getByText("mock-consent-proceed")).toBeInTheDocument()
+    await user.click(screen.getByText("mock-consent-proceed"))
+    // The picker shows the link as picked and the identity is prefilled (still editable).
+    expect(await screen.findByText("mock-linked")).toBeInTheDocument()
+    expect(screen.getByLabelText(/candidate name/i)).toHaveValue("Linked Person")
+    await user.click(screen.getByRole("button", { name: /continue/i }))
+    await user.click(screen.getByText("mock-frame-confirm"))
+    await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1))
+    expect(createMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ candidate_id: "cand-1", blueprint_id: "bp-1" }),
+    )
+  })
+
+  it("says so when the linked candidate is not in that pipeline, and starts UNLINKED rather than guessing", async () => {
+    useDeepLinked.mockReturnValue({ link: null, state: "missing" })
+    const user = userEvent.setup()
+    renderBody(DEEP)
+    expect(screen.getByRole("alert")).toHaveTextContent(/not in that Job DNA/i)
+    await user.click(screen.getByText("mock-consent-proceed"))
+    expect(screen.getByText("mock-link-candidate")).toBeInTheDocument()
+    await user.type(screen.getByLabelText(/candidate name/i), "Someone Else")
+    await user.click(screen.getByRole("button", { name: /continue/i }))
+    await user.click(screen.getByText("mock-frame-confirm"))
+    await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1))
+    expect(createMutate.mock.calls[0][0].candidate_id).toBeUndefined()
+  })
+
+  it("says so when the pipeline read failed", () => {
+    useDeepLinked.mockReturnValue({ link: null, state: "error" })
+    renderBody(DEEP)
+    expect(screen.getByRole("alert")).toHaveTextContent(/could not load the candidate/i)
+  })
+
+  it("shows nothing about a link when the URL carries none", () => {
+    renderBody()
+    expect(useDeepLinked).toHaveBeenCalledWith("", "")
+    expect(screen.queryByTestId("deep-link-notice")).not.toBeInTheDocument()
+  })
+})
+
+describe("JS-11 — ?session= opens a stored interview from the Scorecards back-link", () => {
+  it("opens a finished session read-only, exactly once", async () => {
+    useLiveSessions.mockReturnValue(EMPTY_SESSIONS)
+    getSession.mockResolvedValue(
+      DETAIL({
+        session: {
+          session_id: "s-done",
+          frame: { roleTitle: "Regional Manager", company: "Acme" },
+          candidate: { display_name: "Dana Reyes" },
+          consent: { captured: true, mode: "no_audio" },
+          status: "completed",
+        },
+        status: "completed",
+        section_scores: { vision: { mean: 4 } },
+        overall_score: 4,
+        recommendation: "Advance to final round",
+      }),
+    )
+    renderBody("/manager/interview-live?session=s-done")
+    await screen.findByRole("heading", { name: /interview results/i })
+    expect(screen.getByText(/reopened for review — read only/i)).toBeInTheDocument()
+    expect(getSession).toHaveBeenCalledTimes(1)
+    expect(getSession).toHaveBeenCalledWith("s-done")
+    expect(finalizeMutate).not.toHaveBeenCalled()
+  })
+
+  it("reports a session that cannot be opened instead of blanking", async () => {
+    getSession.mockRejectedValue(new Error("Session not found"))
+    renderBody("/manager/interview-live?session=s-gone")
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Session not found"))
+    expect(screen.getByText("mock-consent-proceed")).toBeInTheDocument()
+  })
+})
+
+describe("JS-12 — the pipeline step follows the interview, never a verdict", () => {
+  async function linkedInterview(user: ReturnType<typeof userEvent.setup>) {
+    renderBody()
+    await user.click(screen.getByText("mock-consent-proceed"))
+    await user.click(screen.getByText("mock-link-candidate"))
+    await user.click(screen.getByRole("button", { name: /continue/i }))
+    await user.click(screen.getByText("mock-frame-confirm"))
+    await screen.findByText("panel 1/2: Tell me about a turnaround.")
+  }
+
+  it("schedules on link and completes on finalise, with the session id on each write", async () => {
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+    const user = userEvent.setup()
+    await linkedInterview(user)
+    await waitFor(() =>
+      expect(stepMutate).toHaveBeenCalledWith({ candidateId: "cand-1", step: "interview-scheduled", interviewSessionId: "s1" }),
+    )
+    expect(await screen.findByTestId("pipeline-step-lines")).toHaveTextContent(/set to interview scheduled/i)
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    await screen.findByRole("heading", { name: /interview results/i })
+    await waitFor(() =>
+      expect(stepMutate).toHaveBeenCalledWith({ candidateId: "cand-1", step: "interview-completed", interviewSessionId: "s1" }),
+    )
+    expect(await screen.findByTestId("pipeline-step-lines")).toHaveTextContent(/set to interview completed/i)
+    const steps = stepMutate.mock.calls.map((c) => c[0].step)
+    expect(steps).toEqual(["interview-scheduled", "interview-completed"])
+    expect(steps).not.toContain("hired")
+    confirmSpy.mockRestore()
+  })
+
+  it("writes nothing for an unlinked interview", async () => {
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+    const user = userEvent.setup()
+    renderBody()
+    await reachInterview(user)
+    await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    await screen.findByRole("heading", { name: /interview results/i })
+    expect(stepMutate).not.toHaveBeenCalled()
+    expect(screen.queryByTestId("pipeline-step-lines")).not.toBeInTheDocument()
+    confirmSpy.mockRestore()
+  })
+
+  it("says when the server left the step where it was (forward-only)", async () => {
+    stepMutate.mockResolvedValue({ id: "cand-1", status: "hired" })
+    const user = userEvent.setup()
+    await linkedInterview(user)
+    expect(await screen.findByTestId("pipeline-step-lines")).toHaveTextContent(/unchanged \(at hired\)/i)
+  })
+
+  it("names the reason when the write fails, and the interview goes on", async () => {
+    stepMutate.mockRejectedValue({ response: { status: 404 } })
+    const user = userEvent.setup()
+    await linkedInterview(user)
+    const line = await screen.findByRole("alert")
+    expect(line).toHaveTextContent(/not updated to interview scheduled: the pipeline service does not have/i)
+    // The interview itself is untouched by the failure.
+    expect(screen.getByText("panel 1/2: Tell me about a turnaround.")).toBeInTheDocument()
   })
 })

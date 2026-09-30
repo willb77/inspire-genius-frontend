@@ -60,3 +60,26 @@ export type InterviewGuide = {
   generalQuestions: string[]
   generatedAt: string
 }
+
+/**
+ * A scorecard DRAFTED from a finalised interview session (IS-11b/c2): the
+ * interviewer's rated STAR competencies rolled up to Job DNA dimensions and
+ * stored for review. Deliberately has no grand total and no recommendation —
+ * a draft is evidence to review, never a result. `interviewSessionId` is the
+ * session that wrote it, which is what the Scorecards page links back to.
+ */
+export type ScorecardDraft = {
+  id: string
+  candidateId: string
+  jobId: string
+  interviewerId: string
+  interviewDate: string
+  behaviorScores: ScorecardEntry[]
+  counterProductiveScores: ScorecardEntry[]
+  aptitudeScores: ScorecardEntry[]
+  coreTraitScores: ScorecardEntry[]
+  notes: string
+  status: 'draft' | string
+  interviewSessionId: string | null
+  createdAt: string
+}

@@ -22,7 +22,8 @@
  *     scores, overall score, and a banded recommendation — not a coaching
  *     summary.
  */
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Link, useSearchParams } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -41,6 +42,10 @@ import AnswerScorePanel from "@/components/interview/AnswerScorePanel"
 import PastInterviewsPanel from "@/components/interview/PastInterviewsPanel"
 import { useQuestionBank } from "@/hooks/interview/useQuestionBank"
 import { useAuth } from "@/context/useAuth"
+import { useDeepLinkedCandidate } from "@/hooks/interview/useDeepLinkedCandidate"
+import { useSetInterviewStep } from "@/hooks/job-blueprint/useTriage"
+import { ROUTES } from "@/constants/routes"
+import type { InterviewStep } from "@/types/job-blueprint"
 import {
   useCreateLiveSession,
   useFinalizeLiveSession,
@@ -89,7 +94,10 @@ function ScorecardDraftLine({ linked, report }: { linked: boolean; report?: Scor
       <p className="text-sm text-emerald-700" data-testid="scorecard-draft-line">
         Scorecard draft written for the linked candidate
         {typeof report.dimensions_scored === "number" ? ` (${report.dimensions_scored} dimensions)` : ""}.
-        Review it under Job DNA → Scorecards before it counts.
+        <Link to={ROUTES.JOB_DNA.SCORECARDS} className="underline underline-offset-2">
+          Review it under Career Blueprint → Scorecards
+        </Link>{" "}
+        before it counts.
       </p>
     )
   }
@@ -101,7 +109,94 @@ function ScorecardDraftLine({ linked, report }: { linked: boolean; report?: Scor
   )
 }
 
-function CandidateIdentityForm({ onConfirm }: { onConfirm: (c: LiveCandidate) => void }) {
+/**
+ * JS-12 — what happened to the linked candidate's pipeline step. Recorded as
+ * state and rendered, never only toasted: the interviewer must be able to see
+ * afterwards whether the pipeline moved, and if not, why.
+ */
+type PipelineStepOutcome = {
+  step: InterviewStep
+  outcome: "moved" | "unchanged" | "failed"
+  /** The status the server holds (unchanged), or the failure reason. */
+  detail?: string
+}
+
+const STEP_LABEL: Record<InterviewStep, string> = {
+  "interview-scheduled": "interview scheduled",
+  "interview-completed": "interview completed",
+}
+
+function PipelineStepLines({ outcomes }: { outcomes: PipelineStepOutcome[] }) {
+  if (outcomes.length === 0) return null
+  return (
+    <ul className="space-y-0.5" data-testid="pipeline-step-lines">
+      {outcomes.map((o) => (
+        <li
+          key={o.step}
+          className={o.outcome === "failed" ? "text-sm text-amber-700" : "text-sm text-slate-600"}
+          role={o.outcome === "failed" ? "alert" : undefined}
+        >
+          {o.outcome === "moved"
+            ? `Pipeline step set to ${STEP_LABEL[o.step]}.`
+            : o.outcome === "unchanged"
+              ? `Pipeline step unchanged (${o.detail ?? "already there"}) — ${STEP_LABEL[o.step]} was not applied.`
+              : `Pipeline step not updated to ${STEP_LABEL[o.step]}: ${o.detail ?? "unknown error"}.`}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Turn the step write's failure into one sentence the interviewer can act on. */
+function stepFailureReason(e: unknown): string {
+  const status = (e as { response?: { status?: number } } | undefined)?.response?.status
+  if (status === 404) return "the pipeline service does not have the interview-step route yet"
+  if (status === 403) return "this account is not entitled to write the candidate pipeline"
+  if (status === 422) return "the pipeline service rejected the step"
+  return e instanceof Error && e.message ? e.message : "the request failed"
+}
+
+/** JS-10 — say what the URL asked for, in every state, before consent. */
+function DeepLinkNotice({ deepLink }: { deepLink: ReturnType<typeof useDeepLinkedCandidate> }) {
+  if (deepLink.state === "loading") {
+    return <p className="text-sm text-slate-600" data-testid="deep-link-notice">Loading the candidate from Career Blueprint…</p>
+  }
+  if (deepLink.state === "ready" && deepLink.link) {
+    return (
+      <p className="text-sm text-indigo-900" data-testid="deep-link-notice">
+        Interviewing <span className="font-medium">{deepLink.link.display_name}</span>
+        {deepLink.link.external_id ? ` (${deepLink.link.external_id})` : ""} from Career Blueprint — the candidate will
+        be linked once you confirm consent.
+      </p>
+    )
+  }
+  if (deepLink.state === "missing") {
+    return (
+      <p className="text-sm text-amber-700" role="alert" data-testid="deep-link-notice">
+        The candidate in this link is not in that Job DNA&apos;s pipeline. You can still pick one on the next step;
+        otherwise this interview will not be linked.
+      </p>
+    )
+  }
+  if (deepLink.state === "error") {
+    return (
+      <p className="text-sm text-amber-700" role="alert" data-testid="deep-link-notice">
+        Could not load the candidate from Career Blueprint. You can still pick one on the next step; otherwise this
+        interview will not be linked.
+      </p>
+    )
+  }
+  return null
+}
+
+function CandidateIdentityForm({
+  onConfirm,
+  initialLink = null,
+}: {
+  onConfirm: (c: LiveCandidate) => void
+  /** JS-10 — a link resolved from the URL, applied once as if picked. */
+  initialLink?: JobDnaCandidateLink | null
+}) {
   const form = useForm<CandidateFormValues>({
     resolver: zodResolver(candidateSchema),
     defaultValues: { displayName: "", externalId: "" },
@@ -112,6 +207,14 @@ function CandidateIdentityForm({ onConfirm }: { onConfirm: (c: LiveCandidate) =>
     form.setValue("displayName", l.display_name, { shouldValidate: true })
     form.setValue("externalId", l.external_id ?? "")
   }
+  const appliedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!initialLink || appliedRef.current === initialLink.candidate_id) return
+    appliedRef.current = initialLink.candidate_id
+    pick(initialLink)
+    // pick() is stable for this component's lifetime; the effect keys on the link.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLink])
   return (
     <Card>
       <CardHeader>
@@ -179,11 +282,43 @@ export default function LiveInterviewBody() {
   /** A reopened session is REVIEW ONLY — never re-finalized, never re-rated. */
   const [readOnly, setReadOnly] = useState(false)
   const [openingSessionId, setOpeningSessionId] = useState<string | null>(null)
+  /** JS-12 — outcome of each pipeline-step write for the linked candidate. */
+  const [pipelineSteps, setPipelineSteps] = useState<PipelineStepOutcome[]>([])
+
+  // JS-10 / JS-11 — the URL can name a candidate to pre-link or a session to open.
+  const [params] = useSearchParams()
+  const deepLinkBlueprintId = params.get("blueprintId") ?? ""
+  const deepLinkCandidateId = params.get("candidateId") ?? ""
+  const deepLinkSessionId = params.get("session") ?? ""
+  const deepLink = useDeepLinkedCandidate(deepLinkBlueprintId, deepLinkCandidateId)
 
   const createSession = useCreateLiveSession()
   const submitAnswer = useSubmitLiveAnswer()
   const scoreAnswer = useScoreLiveAnswer()
   const finalizeSession = useFinalizeLiveSession()
+  const setInterviewStep = useSetInterviewStep()
+
+  /**
+   * JS-12 — move the linked candidate's pipeline step, and record what
+   * happened. Never blocks the interview: a failure is a line on screen, the
+   * session is unaffected. Only the two interview steps exist on this path;
+   * a verdict is the recruiter's.
+   */
+  const recordPipelineStep = async (step: InterviewStep, sid: string) => {
+    const candidateId = candidate?.candidate_id
+    if (!candidateId) return
+    let outcome: PipelineStepOutcome
+    try {
+      const updated = await setInterviewStep.mutateAsync({ candidateId, step, interviewSessionId: sid })
+      outcome =
+        updated?.status === step
+          ? { step, outcome: "moved" }
+          : { step, outcome: "unchanged", detail: updated?.status ? `at ${updated.status}` : "no status returned" }
+    } catch (e) {
+      outcome = { step, outcome: "failed", detail: stepFailureReason(e) }
+    }
+    setPipelineSteps((prev) => [...prev.filter((o) => o.step !== step), outcome])
+  }
 
   const bankByCompetency = useMemo(() => {
     const map = new Map<string, StarCompetency>()
@@ -239,7 +374,10 @@ export default function LiveInterviewBody() {
       setIdx(0)
       setAnswers({})
       setFinalizeResult(null)
+      setPipelineSteps([])
       setPhase("interview")
+      // JS-12 — linking a candidate to a live interview schedules it.
+      await recordPipelineStep("interview-scheduled", result.session_id)
     } catch {
       toast.error("Could not start the interview. Please try again.")
     }
@@ -296,6 +434,8 @@ export default function LiveInterviewBody() {
     try {
       const result = await finalizeSession.mutateAsync({ sessionId })
       setFinalizeResult(result)
+      // JS-12 — a finalised interview is a completed one. Never past this.
+      await recordPipelineStep("interview-completed", sessionId)
     } catch (e) {
       // IS-F13. The phase is already "findings" by this point, so without an
       // error state the render falls to the !finalizeResult branch and spins
@@ -400,8 +540,19 @@ export default function LiveInterviewBody() {
     setPhase("setup"); setSetupStep("consent")
     setConsent(null); setCandidate(null); setFrame(null)
     setSessionId(null); setPlan([]); setIdx(0); setAnswers({}); setFinalizeResult(null)
-    setFinalizeError(null); setReadOnly(false)
+    setFinalizeError(null); setReadOnly(false); setPipelineSteps([])
   }
+
+  // JS-11 — `?session=<id>` opens a stored session once (finished ones open
+  // read-only; an in-progress one resumes). The ref keeps a re-render from
+  // opening it twice.
+  const openedFromUrlRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!deepLinkSessionId || openedFromUrlRef.current === deepLinkSessionId) return
+    openedFromUrlRef.current = deepLinkSessionId
+    void openSession(deepLinkSessionId, "resume")
+    // openSession is recreated each render; the ref above makes this run once per id.
+  }, [deepLinkSessionId])
 
   const doExport = async (kind: "word" | "pdf" | "save") => {
     if (!finalizeResult) return
@@ -431,6 +582,7 @@ export default function LiveInterviewBody() {
             authoritative rating.
           </p>
         </header>
+        {deepLink.state !== "idle" && <DeepLinkNotice deepLink={deepLink} />}
         {setupStep === "consent" && (
           <PastInterviewsPanel
             surface="live"
@@ -440,7 +592,9 @@ export default function LiveInterviewBody() {
           />
         )}
         {setupStep === "consent" && <ConsentGate onProceed={handleConsent} />}
-        {setupStep === "candidate" && <CandidateIdentityForm onConfirm={handleCandidate} />}
+        {setupStep === "candidate" && (
+          <CandidateIdentityForm onConfirm={handleCandidate} initialLink={deepLink.link} />
+        )}
         {setupStep === "frame" && (
           <InterviewFrameForm
             title="Set up a live interview"
@@ -521,6 +675,7 @@ export default function LiveInterviewBody() {
               <CardContent className="space-y-2">
                 <p className="text-lg font-semibold text-slate-900">{finalizeResult.recommendation}</p>
                 <ScorecardDraftLine linked={!!candidate?.candidate_id} report={finalizeResult.scorecard_draft} />
+                <PipelineStepLines outcomes={pipelineSteps} />
                 <p className="text-sm text-slate-600">
                   Overall score: <span className="font-medium">{fmtScore(finalizeResult.overall_score)}</span> / 5
                   {" · "}Mean: <span className="font-medium">{fmtScore(finalizeResult.overall_mean)}</span>
@@ -613,6 +768,7 @@ export default function LiveInterviewBody() {
           <Flag className="mr-1 h-3.5 w-3.5" /> End interview
         </Button>
       </header>
+      <PipelineStepLines outcomes={pipelineSteps} />
 
       {total > 0 && (
         <div className="space-y-1">

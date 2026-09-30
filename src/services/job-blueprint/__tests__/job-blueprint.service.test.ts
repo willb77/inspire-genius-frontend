@@ -67,6 +67,14 @@ describe("job-blueprint services", () => {
       await triageService.advanceCandidate("c1")
       expect(mockApi.post).toHaveBeenCalledWith("/v1/blueprint/triage/advance/c1")
     })
+
+    it("setInterviewStep posts the named step (JS-12)", async () => {
+      await triageService.setInterviewStep("c1", { step: "interview-scheduled", interviewSessionId: "s1" })
+      expect(api.post).toHaveBeenCalledWith("/v1/blueprint/triage/interview-step/c1", {
+        step: "interview-scheduled",
+        interviewSessionId: "s1",
+      })
+    })
   })
 
   describe("assessmentService", () => {
@@ -94,6 +102,11 @@ describe("job-blueprint services", () => {
       mockApi.get.mockResolvedValueOnce({ data: { data: {} } })
       await scorecardService.getScorecard("c1")
       expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/scorecard/c1")
+    })
+
+    it("getScorecardDraft gets the draft by candidate (JS-11)", async () => {
+      await scorecardService.getScorecardDraft("c1")
+      expect(api.get).toHaveBeenCalledWith("/v1/blueprint/scorecard/c1/draft")
     })
 
     it("getInterviewGuide gets by job", async () => {

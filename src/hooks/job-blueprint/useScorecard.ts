@@ -1,12 +1,13 @@
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
 import { scorecardService } from '@/services/job-blueprint'
-import type { InterviewScorecard, ScorecardEntry } from '@/types/job-blueprint'
+import type { InterviewScorecard, ScorecardDraft, ScorecardEntry } from '@/types/job-blueprint'
 
 const KEYS = {
   all: ['scorecard'] as const,
   detail: (id: string) => [...KEYS.all, 'detail', id] as const,
   guide: (jobId: string) => [...KEYS.all, 'guide', jobId] as const,
+  draft: (id: string) => [...KEYS.all, 'draft', id] as const,
 }
 
 /** "No scorecard for candidate" is a 404 — a state, not a transient failure. */
@@ -58,6 +59,21 @@ export function useScorecardsFor(candidateIds: string[]) {
     else if (r.isError) failed = true
   })
   return { scorecards, missing, pending, failed }
+}
+
+/**
+ * The draft a finalised interview wrote for one candidate
+ * (GET /v1/blueprint/scorecard/{candidateId}/draft). A 404 is the ordinary
+ * "no interview has been finalised for them" state — `isNoScorecardError`
+ * tells it apart from a failure, and it is not retried.
+ */
+export function useScorecardDraft(candidateId: string) {
+  return useQuery<ScorecardDraft | undefined, AxiosError>({
+    queryKey: KEYS.draft(candidateId),
+    queryFn: () => scorecardService.getScorecardDraft(candidateId).then(r => r.data.data),
+    enabled: !!candidateId,
+    retry: retryUnless404,
+  })
 }
 
 export function useInterviewGuide(jobId: string) {

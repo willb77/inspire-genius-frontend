@@ -70,3 +70,11 @@ export type Candidate = {
   createdAt: string
   updatedAt: string
 }
+
+/**
+ * The two pipeline steps an interview may set by name (JS-12):
+ * `interview-scheduled` when a live interview is linked to the candidate,
+ * `interview-completed` when it is finalised. Never `hired` — a verdict is
+ * the recruiter's, and the backend's Literal refuses anything else.
+ */
+export type InterviewStep = 'interview-scheduled' | 'interview-completed'
