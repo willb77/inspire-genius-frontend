@@ -22,6 +22,14 @@ jest.mock("@/hooks/manager/development/useStudioCast", () => ({
   useStudioCast: () => ({ port: castPort, resolve, withoutPrism }),
 }))
 
+// react-markdown is ESM-only and jest's CJS runtime cannot parse it. The panel
+// reaches it through the kept-comparison view added by TDS-3; the markdown
+// renderer is not under test here.
+jest.mock("@/components/prism/narrative/ProfileMarkdown", () => ({
+  __esModule: true,
+  default: ({ text }: { text: string }) => <div>{text}</div>,
+}))
+
 const received: { port?: ComparePort; copy?: CompareCopy } = {}
 jest.mock("@/components/prism/studio/ComparePanel", () => ({
   __esModule: true,
@@ -32,11 +40,15 @@ jest.mock("@/components/prism/studio/ComparePanel", () => ({
   },
 }))
 
+/* TDS-3: the panel now keeps comparisons, so it takes the member whose
+ * workspace it sits in. The store itself is covered by
+ * `TeamComparePanel.saved.test.tsx`; here it is left to fail its read, which
+ * this file asserts nothing about. */
 function renderPanel() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
-      <TeamComparePanel />
+      <TeamComparePanel memberId="m-1" memberName="Dana Whitfield" />
     </QueryClientProvider>,
   )
 }

@@ -70,6 +70,23 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.studio.sort.activity": "Last activity",
   "dev.studio.error": "Couldn't load the team roster. Try again.",
 
+  /**
+   * TDS-10 — the page says which question each view answers.
+   *
+   * The roster and the reporting line are different sets and were being read as
+   * one. The roster's own scope is wider than "the organisation" too:
+   * `list_roster` UNIONs the org query with `growth.roster_members` (people a
+   * manager added here) and with anyone who already has a dossier, "including
+   * people with no `user_profiles` row in this org" — so "everyone in your
+   * organisation" alone would be a false statement about it.
+   */
+  "dev.studio.scope.team":
+    "This roster is everyone on file for your organisation, plus anyone added here — it is not your reporting line.",
+  "dev.studio.scope.reports":
+    "Your reporting line inside your own organisation, drawn from the organisation chart. Anyone you manage who sits in a different organisation is not here.",
+  "dev.studio.scope.org":
+    "The reporting lines on file inside your own organisation. The chart draws the lines; the roster lists the people.",
+
   "dev.workspace.refresh": "Refresh dossier",
   "dev.workspace.share": "Share with member",
   "dev.workspace.export": "Export PDF",
@@ -138,6 +155,84 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.meridian.placeholder": "Ask about this member…",
   "dev.meridian.staged": "Meridian proposed an action — review before applying.",
 }
+
+/**
+ * My Reports (TDS-10) — one sentence per state, and every one of them says
+ * WHICH fact it is reporting.
+ *
+ * Not in `DEV_TEXT` because three of these interpolate a count, and `DEV_TEXT`
+ * is a flat `Record<string, string>` routed through `useFrontendText`.
+ *
+ * The reason this is written out at this length: for the manager measured on
+ * staging-b, all four of whose reports sit in other organisations, the CORRECT
+ * answer for this view is **zero reports**. "No reports" on its own would read
+ * as a broken page, and a load failure rendered the same way would be
+ * indistinguishable from the correct answer. Each sentence therefore names the
+ * cause and says explicitly that it is not an empty team.
+ */
+export const MY_REPORTS_COPY = {
+  chartError:
+    "Your reporting line could not be loaded. This is a load failure, not an empty team — try again shortly.",
+  rosterError:
+    "Your reporting line loaded, but the roster it is matched against did not. This is a load failure, not an empty team — try again shortly.",
+  orgUnresolved:
+    "We could not work out which organisation you belong to, so your reporting line cannot be drawn. This is not an empty team — your profile does not have an organisation on it.",
+  viewerUnknown:
+    "The organisation chart came back without saying which person on it is you, so your reporting line cannot be drawn. This is not an empty team.",
+  viewerAbsent:
+    "You do not appear on your own organisation's chart, so your reporting line cannot be drawn. This is a gap on your employment record rather than an empty team.",
+  none:
+    "Nobody reports to you inside this organisation. If you manage people who sit in a different organisation on the platform, they will not appear here — this view only draws the reporting lines within your own organisation. Open Org Chart to see the lines that are on file.",
+  offRoster: (n: number) =>
+    `${n} ${n === 1 ? "person reports" : "people report"} to you on the organisation chart, but ${
+      n === 1 ? "they are" : "none of them are"
+    } on this roster, so there is nothing to open. That is a gap between the two records, not an empty team.`,
+  unmatchedNote: (n: number) =>
+    `${n} further ${n === 1 ? "person reports" : "people report"} to you on the organisation chart but ${
+      n === 1 ? "is" : "are"
+    } not on this roster, so they are not shown below.`,
+} as const
+
+/**
+ * Saved Team Studio analyses (TDS-3) — the words for keeping, listing and
+ * re-opening a write-up, a comparison or a scenario.
+ *
+ * Three of these sentences are load-bearing rather than decorative:
+ *
+ *  - `privateToYou`. The rows are scoped `(manager_sub, member_id)`. A saved
+ *    analysis is ONE coach's read of a person, not a shared record, and no
+ *    string on this surface may imply the member or another manager can see
+ *    it — the same rule the coaching notes carry.
+ *  - `followsTheMember`. D-TDS3: a row belongs to the workspace it was kept
+ *    in. A comparison naming three colleagues lives under the one whose
+ *    workspace it was taken in, and does not appear in the others'. That is a
+ *    real consequence of the keying and a manager should not have to discover
+ *    it by looking for something that is not there.
+ *  - `loadError`. A list that failed to load is not a list with nothing in it,
+ *    and the two are one keystroke apart in every implementation of this.
+ */
+export const SAVED_ANALYSIS_COPY = {
+  privateToYou:
+    "Only you can see what you keep here. It is not shared with the member, with their other coaches, or with anyone who inherits the report.",
+  followsTheMember: (memberName: string) =>
+    `Kept in ${memberName}'s workspace. Anything that names other colleagues is kept here, with them, rather than appearing in each of their own workspaces.`,
+  empty: "Nothing kept yet.",
+  loadError:
+    "What you have kept could not be loaded. This is a load failure, not an empty list — try again shortly.",
+  keepWriteUp: "Keep this write-up",
+  keepComparison: "Keep this comparison",
+  writeUpHeading: "Kept write-ups",
+  comparisonHeading: "Kept comparisons",
+  open: "Open",
+  saved: "Kept",
+  deleted: "Deleted",
+  saveFailed: "It could not be kept",
+  /** Never a permission message: the server's 404 is "not there OR not yours". */
+  deleteFailed: "It could not be deleted",
+  writeUpFallbackTitle: "Behavioural write-up",
+  comparisonFallbackTitle: "Comparison",
+  scenarioFallbackTitle: "Scenario",
+} as const
 
 export const CONFIDENCE_LABEL: Record<ConfidenceLevel, string> = {
   high: "High confidence",

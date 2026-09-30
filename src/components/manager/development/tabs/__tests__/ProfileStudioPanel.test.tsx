@@ -1,5 +1,6 @@
 /** @jest-environment jsdom */
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import "@testing-library/jest-dom"
 
 import { ProfileStudioPanel } from "../ProfileStudioPanel"
@@ -81,14 +82,20 @@ const none: BehavioralProfile = {
   coverage: { prism: false, clifton: false, disc: false },
 }
 
+/* TDS-3 put a React Query read behind this panel (its kept write-ups), so it
+ * needs a client. The read is left to fail here; this file asserts nothing
+ * about it — the store is covered by `ProfileStudioPanel.saved.test.tsx`. */
 function renderPanel(profile: BehavioralProfile, over: { memberName?: string; notShared?: boolean } = {}) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <ProfileStudioPanel
-      memberId="m-1"
-      memberName={over.memberName ?? "Gary Burnette"}
-      profile={profile}
-      notShared={over.notShared}
-    />,
+    <QueryClientProvider client={client}>
+      <ProfileStudioPanel
+        memberId="m-1"
+        memberName={over.memberName ?? "Gary Burnette"}
+        profile={profile}
+        notShared={over.notShared}
+      />
+    </QueryClientProvider>,
   )
 }
 

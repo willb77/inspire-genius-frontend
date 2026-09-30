@@ -1,10 +1,14 @@
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
-import { Loader2, Sparkles } from "lucide-react"
+import { Loader2, Save, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import ProfileMarkdown from "@/components/prism/narrative/ProfileMarkdown"
 import NarrativeExportButtons from "@/components/prism/narrative/NarrativeExportButtons"
+import SavedRunsCard from "@/components/manager/development/SavedRunsCard"
+import { SAVED_ANALYSIS_COPY } from "@/constants/development"
+import { useSavedRuns } from "@/hooks/manager/development/useSavedRuns"
+import type { SavedRun } from "@/lib/savedAnalysis"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import {
   ConflictedProfileError,
@@ -49,6 +53,16 @@ export function ProfileStudioPanel({
   const [text, setText] = useState("")
   const [notice, setNotice] = useState("")
 
+  /**
+   * TDS-3 — this manager's kept write-ups for this member.
+   *
+   * Re-opening puts the stored text straight back into `text`, so the export
+   * button above it builds from the kept document rather than from whatever was
+   * generated last. A write-up is not reproducible: re-running produces a
+   * different document, which is why it is stored at all.
+   */
+  const store = useSavedRuns(memberId, "analyse", SAVED_ANALYSIS_COPY.writeUpFallbackTitle)
+
   // Every scale on file, not the eight-behaviour radar the dossier carries —
   // and the only read that returns Adapted scores. See `subjectFromFullPrism`.
   const full = useMemberFullPrism(memberId)
@@ -84,6 +98,39 @@ export function ProfileStudioPanel({
     } catch (err) {
       toast.error(apiErrorMessage(err, "The write-up could not be generated"))
     }
+  }
+
+  async function keep() {
+    try {
+      await store.save.run({
+        title: `${memberName} — ${SAVED_ANALYSIS_COPY.writeUpFallbackTitle.toLowerCase()}`,
+        body: text,
+        subjectIds: [memberId],
+        // The name as it was at the time, so a kept write-up still reads
+        // correctly after a rename or after the person leaves the team.
+        subjectNames: [memberName],
+        notice,
+      })
+      toast.success(SAVED_ANALYSIS_COPY.saved)
+    } catch (err) {
+      toast.error(apiErrorMessage(err, SAVED_ANALYSIS_COPY.saveFailed))
+    }
+  }
+
+  async function remove(run: SavedRun) {
+    try {
+      await store.remove.run(run.id)
+      toast.success(SAVED_ANALYSIS_COPY.deleted)
+    } catch (err) {
+      // Never a permission message: the server's 404 means "no such analysis"
+      // OR "not yours", indistinguishable by design.
+      toast.error(apiErrorMessage(err, SAVED_ANALYSIS_COPY.deleteFailed))
+    }
+  }
+
+  function reopen(run: SavedRun) {
+    setText(run.body)
+    setNotice(run.notice)
   }
 
   function doc(): NarrativeDoc {
@@ -196,7 +243,27 @@ export function ProfileStudioPanel({
               Read back from {memberName}&apos;s own PRISM scores. {NOT_A_JUDGEMENT}
             </p>
           </div>
-          {text && <NarrativeExportButtons build={doc} label="a write-up" />}
+          {text && (
+            <div className="flex flex-wrap items-center gap-2">
+              <NarrativeExportButtons build={doc} label="a write-up" />
+              {/* TDS-3. Built from `text` and `notice` — the same two values the
+                  export above is built from, so the kept row and the exported
+                  document can never disagree about what this write-up is. */}
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={store.save.pending}
+                onClick={keep}
+              >
+                {store.save.pending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" aria-hidden />
+                )}
+                {SAVED_ANALYSIS_COPY.keepWriteUp}
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-3">
           <Button onClick={onGenerate} disabled={narrative.pending}>
@@ -213,6 +280,20 @@ export function ProfileStudioPanel({
           {text ? <ProfileMarkdown text={text} /> : null}
         </CardContent>
       </Card>
+
+      <SavedRunsCard
+        heading={SAVED_ANALYSIS_COPY.writeUpHeading}
+        blurb={`${SAVED_ANALYSIS_COPY.privateToYou} ${SAVED_ANALYSIS_COPY.followsTheMember(memberName)}`}
+        runs={store.runs}
+        isLoading={store.isLoading}
+        isError={store.isError}
+        errorLabel={SAVED_ANALYSIS_COPY.loadError}
+        emptyLabel={SAVED_ANALYSIS_COPY.empty}
+        openLabel={SAVED_ANALYSIS_COPY.open}
+        onOpen={reopen}
+        onDelete={remove}
+        deletePending={store.remove.pending}
+      />
     </div>
   )
 }
