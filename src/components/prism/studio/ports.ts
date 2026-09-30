@@ -117,6 +117,17 @@ export type CompareCopy = {
 export type ScenarioStorePort = {
   scenarios: SavedScenario[] | undefined
   isLoading: boolean
+  /**
+   * True when the LIST failed to load — a different claim from an empty list,
+   * and the panel renders them differently.
+   *
+   * Optional, so a store that does not report it behaves exactly as it does
+   * today (`undefined` is falsy and the panel falls through to its empty
+   * branch). Added by TDS-3 with the first store that can fail visibly: without
+   * it, `!scenarios?.length` renders "Nothing kept yet." over a failed read,
+   * which tells a manager their saved work is gone.
+   */
+  isError?: boolean
   save: StudioAction<
     [
       body: {

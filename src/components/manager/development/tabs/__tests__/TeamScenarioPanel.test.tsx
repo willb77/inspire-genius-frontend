@@ -34,7 +34,7 @@ function renderPanel() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
-      <TeamScenarioPanel />
+      <TeamScenarioPanel memberId="m-1" />
     </QueryClientProvider>,
   )
 }
@@ -54,10 +54,24 @@ describe("TeamScenarioPanel", () => {
     expect(received.copy).toBe(TEAM_STUDIO_SCENARIO_COPY)
   })
 
-  it("passes no scenario store, so the panel offers no 'Keep this run' that saves nothing", () => {
+  /**
+   * REPLACED BY TDS-3, and it was the right test until the store existed.
+   *
+   * It read: "passes no scenario store, so the panel offers no 'Keep this run'
+   * that saves nothing" — which was correct while there was nowhere to keep a
+   * run about a real person. `growth.team_studio_analyses` is now wired, so the
+   * assertion is inverted rather than deleted: the button must appear BECAUSE
+   * it now does something, and the store must be a real one with both actions
+   * on it. A store passed as `{}` would satisfy the panel's `{store && …}`
+   * guard and bring the old defect back under a green test.
+   */
+  it("passes a real scenario store, so 'Keep this run' now keeps something", () => {
     renderPanel()
-    expect(received.port).toBeDefined()
-    expect(received.port?.store).toBeUndefined()
+    expect(received.port?.store).toBeDefined()
+    expect(typeof received.port?.store?.save.run).toBe("function")
+    expect(typeof received.port?.store?.remove.run).toBe("function")
+    // A failed read must reach the panel as a failure, not as an empty list.
+    expect(received.port?.store).toHaveProperty("isError")
   })
 
   it("says nothing about exclusions when everyone has PRISM on file", () => {

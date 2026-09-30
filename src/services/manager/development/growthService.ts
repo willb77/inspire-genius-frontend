@@ -158,6 +158,122 @@ export function getMyGoalReviews() {
   return getApi().get<BaseApiResponse<GoalReviewList>>(`${BASE}/me/goal-reviews`)
 }
 
+// ── Team Studio saved analyses (per manager + member) ───────────────────────
+
+/**
+ * Which Studio output a row holds. Mirrors growth-service `schemas.AnalysisKind`
+ * exactly — `Literal["analyse", "compare", "scenario", "questions"]`. The
+ * server does not validate beyond that literal, so a value invented here would
+ * be a 422 rather than a silent miss.
+ *
+ * `questions` is unused by this client today; it is in the union because the
+ * server accepts it, and leaving it out would make a legitimate row read as an
+ * unknown kind rather than as a kind nothing renders yet.
+ */
+export type AnalysisKind = "analyse" | "compare" | "scenario" | "questions"
+
+/**
+ * One saved Studio output. Mirrors growth-service `schemas.AnalysisOut`.
+ *
+ * `inputs` is opaque JSONB server-side — it is whatever the client that wrote
+ * the row put there, so every reader must treat it as untyped and degrade
+ * rather than assume its shape. See `@/lib/savedAnalysis`.
+ */
+export type SavedAnalysis = {
+  id: string
+  memberId: string
+  kind: string
+  title?: string | null
+  content: string
+  inputs?: Record<string, unknown> | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+/** What GET /members/{id}/analyses returns (`schemas.AnalysisList`). */
+export type SavedAnalysisList = { analyses: SavedAnalysis[] }
+
+/** `schemas.AnalysisCreate`. `content` and `kind` are required server-side. */
+export type CreateAnalysisInput = {
+  kind: AnalysisKind
+  content: string
+  title?: string
+  inputs?: Record<string, unknown>
+}
+
+/**
+ * `schemas.AnalysisUpdate`. Every field optional, and the server uses
+ * `exclude_unset`, so an omitted key is left alone while an explicit `null`
+ * clears one — `undefined` and `null` are different requests.
+ */
+export type UpdateAnalysisInput = {
+  title?: string | null
+  content?: string
+  inputs?: Record<string, unknown> | null
+}
+
+/**
+ * GET /members/{id}/analyses — THIS manager's saved analyses for this member,
+ * newest first (the server's order; nothing re-sorts it here).
+ *
+ * Scoped `(manager_sub, member_id)` server-side, from the caller's own signed
+ * sub. **No manager identifier is sent**, deliberately: there is nothing in the
+ * request a client could set, mistype or tamper with that would widen it, so
+ * two managers coaching the same person issue byte-identical requests and get
+ * disjoint answers.
+ */
+export function listMemberAnalyses(memberId: string) {
+  return getApi().get<BaseApiResponse<SavedAnalysisList>>(
+    `${BASE}/members/${memberId}/analyses`,
+  )
+}
+
+/**
+ * POST /members/{id}/analyses → 201 with the stored row.
+ *
+ * Stored rather than regenerated because model output is not reproducible:
+ * re-running would hand the manager a different document under the same title.
+ *
+ * D-TDS3 — **analyses follow the member.** The row is keyed on the member whose
+ * workspace it was saved in, which matters for a comparison or a scenario that
+ * names several colleagues: it belongs to the workspace it was taken in, and
+ * does not appear in the other subjects' workspaces. That is enforced by the
+ * URL, so it is already true while the table is empty (0 rows on dev and 0 on
+ * staging-b, 2026-09-30) and needs no migration later.
+ */
+export function createMemberAnalysis(memberId: string, input: CreateAnalysisInput) {
+  return getApi().post<BaseApiResponse<SavedAnalysis>>(
+    `${BASE}/members/${memberId}/analyses`,
+    input,
+  )
+}
+
+/**
+ * PATCH /members/{id}/analyses/{analysisId} — only the fields sent are written.
+ *
+ * 404 covers both "no such analysis" and "not yours"; the lookup is scoped by
+ * manager AND member rather than fetched-then-checked, so the two are
+ * indistinguishable by design. Never render it as a permission message — that
+ * would tell a caller somebody else's analysis exists.
+ */
+export function updateMemberAnalysis(
+  memberId: string,
+  analysisId: string,
+  input: UpdateAnalysisInput,
+) {
+  return getApi().patch<BaseApiResponse<SavedAnalysis>>(
+    `${BASE}/members/${memberId}/analyses/${analysisId}`,
+    input,
+  )
+}
+
+/** DELETE /members/{id}/analyses/{analysisId}. 404 if it is not this manager's. */
+export function deleteMemberAnalysis(memberId: string, analysisId: string) {
+  return getApi().delete<BaseApiResponse<{ deleted: boolean }>>(
+    `${BASE}/members/${memberId}/analyses/${analysisId}`,
+  )
+}
+
 export type CoachingNoteKind = "observation" | "plan" | "outcome"
 
 export type CoachingNoteSource = "analysis" | "compare" | "scenario" | "ask" | "manual"

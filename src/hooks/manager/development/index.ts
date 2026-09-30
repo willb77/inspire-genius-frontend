@@ -9,6 +9,11 @@ export {
   useUpdateCoachingNote,
   useDeleteCoachingNote,
 } from "./useCoachingNotes"
+export {
+  useMemberAnalyses,
+  useSaveAnalysis,
+  useDeleteAnalysis,
+} from "./useMemberAnalyses"
 export { useGoalSession } from "./useGoalSession"
 export { useGapAnalysis } from "./useGapAnalysis"
 export { useLearningPlan, useUpdateLearningItem } from "./useLearningPlan"

@@ -260,6 +260,16 @@ export default function ScenarioPanel({
           <CardContent>
             {store.isLoading ? (
               <Skeleton className="h-20 w-full" />
+            ) : store.isError ? (
+              /* A failed read is not an empty list. Without this branch,
+                 `!scenarios?.length` below renders "Nothing kept yet." over a
+                 load failure — which tells the operator their saved work is
+                 gone. `isError` is optional on the port, so a store that does
+                 not report it falls through exactly as it did before. */
+              <p className="text-sm text-muted-foreground" role="status">
+                What you have kept could not be loaded. This is a load failure, not an
+                empty list — try again shortly.
+              </p>
             ) : !store.scenarios?.length ? (
               <p className="text-sm text-muted-foreground">Nothing kept yet.</p>
             ) : (

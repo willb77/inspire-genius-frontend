@@ -19,6 +19,22 @@ export const developmentKeys = {
   /** This manager's coaching notes for one member. Per-manager, not shared. */
   notes: (memberId: string) => [...developmentKeys.all, "notes", memberId] as const,
   /**
+   * This manager's saved Team Studio analyses for one member (TDS-3).
+   *
+   * Keyed on the MEMBER and nothing else — D-TDS3, "analyses follow the
+   * member" — which is also what `notes` above does for the same reason. The
+   * server scopes the read to the caller's signed sub, so the key does not
+   * need to and cannot reliably state the manager.
+   *
+   * Caveat, shared with `notes` and `chat` and not introduced here: nothing
+   * clears the QueryClient on logout (`AuthContext.logout` navigates, it does
+   * not reload), so a second manager signing in to the SAME tab can be served
+   * the first one's cached list until the refetch lands. The fix is one line in
+   * AuthContext and belongs with all three reads at once, not inside this
+   * package.
+   */
+  analyses: (memberId: string) => [...developmentKeys.all, "analyses", memberId] as const,
+  /**
    * Prefix over EVERY target-blueprint variant of one member's gaps.
    *
    * Closing a gap has to reach all of them: `gaps()` appends the target id, so

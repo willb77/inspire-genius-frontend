@@ -190,7 +190,48 @@ export const MY_REPORTS_COPY = {
   unmatchedNote: (n: number) =>
     `${n} further ${n === 1 ? "person reports" : "people report"} to you on the organisation chart but ${
       n === 1 ? "is" : "are"
-    } not on this roster, so ${n === 1 ? "they are" : "they are"} not shown below.`,
+    } not on this roster, so they are not shown below.`,
+} as const
+
+/**
+ * Saved Team Studio analyses (TDS-3) — the words for keeping, listing and
+ * re-opening a write-up, a comparison or a scenario.
+ *
+ * Three of these sentences are load-bearing rather than decorative:
+ *
+ *  - `privateToYou`. The rows are scoped `(manager_sub, member_id)`. A saved
+ *    analysis is ONE coach's read of a person, not a shared record, and no
+ *    string on this surface may imply the member or another manager can see
+ *    it — the same rule the coaching notes carry.
+ *  - `followsTheMember`. D-TDS3: a row belongs to the workspace it was kept
+ *    in. A comparison naming three colleagues lives under the one whose
+ *    workspace it was taken in, and does not appear in the others'. That is a
+ *    real consequence of the keying and a manager should not have to discover
+ *    it by looking for something that is not there.
+ *  - `loadError`. A list that failed to load is not a list with nothing in it,
+ *    and the two are one keystroke apart in every implementation of this.
+ */
+export const SAVED_ANALYSIS_COPY = {
+  privateToYou:
+    "Only you can see what you keep here. It is not shared with the member, with their other coaches, or with anyone who inherits the report.",
+  followsTheMember: (memberName: string) =>
+    `Kept in ${memberName}'s workspace. Anything that names other colleagues is kept here, with them, rather than appearing in each of their own workspaces.`,
+  empty: "Nothing kept yet.",
+  loadError:
+    "What you have kept could not be loaded. This is a load failure, not an empty list — try again shortly.",
+  keepWriteUp: "Keep this write-up",
+  keepComparison: "Keep this comparison",
+  writeUpHeading: "Kept write-ups",
+  comparisonHeading: "Kept comparisons",
+  open: "Open",
+  saved: "Kept",
+  deleted: "Deleted",
+  saveFailed: "It could not be kept",
+  /** Never a permission message: the server's 404 is "not there OR not yours". */
+  deleteFailed: "It could not be deleted",
+  writeUpFallbackTitle: "Behavioural write-up",
+  comparisonFallbackTitle: "Comparison",
+  scenarioFallbackTitle: "Scenario",
 } as const
 
 export const CONFIDENCE_LABEL: Record<ConfidenceLevel, string> = {

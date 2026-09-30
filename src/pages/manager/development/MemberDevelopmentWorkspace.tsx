@@ -502,11 +502,20 @@ export default function MemberDevelopmentWorkspace({
                       notShared={dossier.prismNotShared}
                     />
                   </TabsContent>
+                  {/* TDS-3 — both panels now keep their runs, and a kept run
+                      belongs to the workspace it was taken in (D-TDS3,
+                      "analyses follow the member"). So the member is passed
+                      explicitly rather than inferred inside the panel: a
+                      comparison naming three colleagues is stored under THIS
+                      member, and the store's URL is what makes that true. */}
                   <TabsContent value="compare">
-                    <TeamComparePanel />
+                    <TeamComparePanel
+                      memberId={dossier.memberId}
+                      memberName={member.name}
+                    />
                   </TabsContent>
                   <TabsContent value="scenarios">
-                    <TeamScenarioPanel />
+                    <TeamScenarioPanel memberId={dossier.memberId} />
                   </TabsContent>
                 </>
               ) : null}

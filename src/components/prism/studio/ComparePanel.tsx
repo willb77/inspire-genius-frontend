@@ -38,9 +38,26 @@ const COMPARE_CONCURRENCY = 3
 export default function ComparePanel({
   port,
   copy,
+  comparisonActions,
 }: {
   port: ComparePort
   copy: CompareCopy
+  /**
+   * Extra controls for the comparison that is currently on screen, rendered
+   * beside its export buttons (TDS-3).
+   *
+   * A render slot rather than another port, because what the caller needs is
+   * not an action this panel invokes — it is the DOCUMENT this panel is
+   * holding. The panel still reaches nothing on its own: it hands over the text
+   * it already has and the caller decides what may be done with it. The Team
+   * Development Studio passes a "keep this" control here; the Character Lab
+   * passes nothing and renders exactly as before.
+   */
+  comparisonActions?: (ctx: {
+    names: string[]
+    comparison: string
+    notice: string
+  }) => React.ReactNode
 }) {
   const profiles = port.cast.subjects
   const isLoading = port.cast.isLoading
@@ -294,7 +311,14 @@ export default function ComparePanel({
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-base">{names.join(" vs ")}</CardTitle>
-            <NarrativeExportButtons build={comparisonDoc} label="a comparison" />
+            <div className="flex flex-wrap items-center gap-2">
+              <NarrativeExportButtons build={comparisonDoc} label="a comparison" />
+              {/* Exactly what the export button is given — `comparison` is the
+                  stitched text on screen, `names` and `notice` are the same
+                  values `comparisonDoc()` stamps on the document. So a control
+                  here and the export can never disagree about what this is. */}
+              {comparisonActions?.({ names, comparison, notice })}
+            </div>
           </CardHeader>
           <CardContent>
             <ProfileMarkdown text={comparison} />
