@@ -64,7 +64,7 @@ import { toast } from "sonner"
 
 /* ---- panels as probes ---- */
 type Captured = Record<string, unknown>
-const received: { profile?: Captured; studio?: Captured; meridian?: Captured } = {}
+const received: { profile?: Captured; studio?: Captured; meridian?: Captured; notes?: Captured } = {}
 
 jest.mock("@/components/manager/development/tabs/BehavioralProfilePanel", () => ({
   BehavioralProfilePanel: (props: Captured) => {
@@ -107,6 +107,12 @@ jest.mock("@/components/manager/development/tabs/CareerMatchPanel", () => ({
 }))
 jest.mock("@/components/manager/development/tabs/RoadmapTimeline", () => ({
   RoadmapTimeline: () => <div data-testid="roadmap-panel" />,
+}))
+jest.mock("@/components/manager/development/tabs/NotesPanel", () => ({
+  NotesPanel: (props: Captured) => {
+    received.notes = props
+    return <div data-testid="notes-panel" />
+  },
 }))
 jest.mock("@/components/manager/development/tabs/TeamComparePanel", () => ({
   TeamComparePanel: () => <div data-testid="compare-panel" />,
@@ -162,6 +168,7 @@ beforeEach(() => {
   received.profile = undefined
   received.studio = undefined
   received.meridian = undefined
+  received.notes = undefined
   dossierState = { data: undefined, isLoading: true, isError: false }
 })
 
@@ -430,5 +437,64 @@ describe("MemberDevelopmentWorkspace — the 409 contract, and what it does NOT 
     renderAt("/manager/development/m-1?tab=profile")
     fireEvent.click(await screen.findByRole("button", { name: "ask" }))
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(detail))
+  })
+})
+
+describe('MemberDevelopmentWorkspace — "Start growth conversation" (TDS-4b)', () => {
+  // It was `setTab("goals")` and nothing else, so the one thing the label
+  // promised was the one thing it did not do. The shell's job is to ask the rail
+  // for an opening turn; the rail owns the send, and the grounding lives in one
+  // server module, not here.
+  it("asks the Meridian rail for an opening turn, and opens the goals tab", async () => {
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1")
+    await screen.findByRole("heading", { name: "Gary Burnette" })
+    expect(received.meridian?.seedRequest).toBe(0)
+    fireEvent.click(screen.getByRole("button", { name: "Start growth conversation" }))
+    await waitFor(() => expect(received.meridian?.seedRequest).toBe(1))
+    expect(received.meridian?.tab).toBe("goals")
+  })
+
+  it("asks again on a second press — one request per press", async () => {
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1")
+    await screen.findByRole("heading", { name: "Gary Burnette" })
+    const button = screen.getByRole("button", { name: "Start growth conversation" })
+    fireEvent.click(button)
+    await waitFor(() => expect(received.meridian?.seedRequest).toBe(1))
+    fireEvent.click(button)
+    await waitFor(() => expect(received.meridian?.seedRequest).toBe(2))
+  })
+
+  it("still hands the rail the member it must be grounded in", async () => {
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1")
+    await screen.findByRole("heading", { name: "Gary Burnette" })
+    fireEvent.click(screen.getByRole("button", { name: "Start growth conversation" }))
+    await waitFor(() => expect(received.meridian?.seedRequest).toBe(1))
+    expect(received.meridian).toMatchObject({ memberId: "m-1", memberName: "Gary Burnette" })
+  })
+})
+
+describe("MemberDevelopmentWorkspace — the Notes tab (TDS-2)", () => {
+  it("offers the tab, and hands the panel the member plus what a note may point at", async () => {
+    const d = dossier()
+    dossierState = { data: d, isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=notes")
+    expect(await screen.findByTestId("notes-panel")).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Notes" })).toHaveAttribute("aria-selected", "true")
+    expect(received.notes).toMatchObject({
+      memberId: "m-1",
+      memberName: "Gary Burnette",
+      goals: d.goals,
+      milestones: d.milestones,
+    })
+  })
+
+  it("tells the rail which tab is open, so its prompts are not a blank list", async () => {
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=notes")
+    await screen.findByTestId("notes-panel")
+    expect(received.meridian?.tab).toBe("notes")
   })
 })

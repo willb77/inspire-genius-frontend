@@ -52,6 +52,7 @@ jest.mock("@/hooks/manager/development", () => ({
   useSaveChatMessage: () => ({ mutate: mockSaveChat }),
 }))
 
+import { StrictMode } from "react"
 import { fireEvent, render, screen } from "@testing-library/react"
 
 import { MeridianDevelopmentPanel } from "../MeridianDevelopmentPanel"
@@ -156,4 +157,105 @@ describe("goals not shared (Goals offering, Phase 4)", () => {
     render(<MeridianDevelopmentPanel memberId="m1" memberName="Mark Tully" tab="goals" goals={[]} gaps={[]} />)
     expect(screen.queryByTestId("meridian-goals-not-shared")).not.toBeInTheDocument()
   })
+})
+
+describe('"Start growth conversation" seeds a real turn (TDS-4b)', () => {
+  // The button used to be `setTab("goals")` and nothing else: it opened a tab
+  // and started no conversation. What matters is that the seed goes over the
+  // SAME path as a typed question — so it is persisted, it appears in the
+  // transcript, and a failure is rendered rather than swallowed.
+  function renderWithSeed(seedRequest?: number, memberName = "Dana Whitfield") {
+    return render(
+      <MeridianDevelopmentPanel
+        memberId="member-1"
+        memberName={memberName}
+        tab="profile"
+        goals={[]}
+        gaps={[]}
+        seedRequest={seedRequest}
+      />,
+    )
+  }
+
+  it("sends an opening turn naming the member when the request arrives", () => {
+    const { rerender } = renderWithSeed(0)
+    expect(mockSend).not.toHaveBeenCalled()
+    rerender(
+      <MeridianDevelopmentPanel
+        memberId="member-1"
+        memberName="Dana Whitfield"
+        tab="profile"
+        goals={[]}
+        gaps={[]}
+        seedRequest={1}
+      />,
+    )
+    expect(mockSend).toHaveBeenCalledTimes(1)
+    const [text, ctx] = mockSend.mock.calls[0]
+    expect(text).toMatch(/growth conversation with Dana Whitfield/)
+    expect(ctx).toEqual({ active_tab: "profile" })
+  })
+
+  it("persists the seeded turn and shows it, like any other question", () => {
+    renderWithSeed(1)
+    expect(mockSaveChat).toHaveBeenCalledWith({
+      role: "user",
+      content: expect.stringContaining("growth conversation with Dana Whitfield"),
+    })
+    expect(screen.getByText(/growth conversation with Dana Whitfield/)).toBeInTheDocument()
+  })
+
+  it("sends once per request, not once per render", () => {
+    const { rerender } = renderWithSeed(1)
+    expect(mockSend).toHaveBeenCalledTimes(1)
+    rerender(
+      <MeridianDevelopmentPanel memberId="member-1" memberName="Dana Whitfield" tab="goals" goals={[]} gaps={[]} seedRequest={1} />,
+    )
+    expect(mockSend).toHaveBeenCalledTimes(1)
+    rerender(
+      <MeridianDevelopmentPanel memberId="member-1" memberName="Dana Whitfield" tab="goals" goals={[]} gaps={[]} seedRequest={2} />,
+    )
+    expect(mockSend).toHaveBeenCalledTimes(2)
+  })
+
+  it("does not send when no conversation was asked for", () => {
+    renderWithSeed(undefined)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it("falls back to 'this member' rather than addressing a blank name", () => {
+    renderWithSeed(1, "  ")
+    expect(mockSend.mock.calls[0][0]).toMatch(/growth conversation with this member/)
+  })
+
+  // The ref-guard's real job. React StrictMode runs an effect setup, cleanup and
+  // setup again on the same fiber in development, so without the guard one press
+  // sends the opening turn twice — two questions, two persisted rows, and the
+  // manager asked for one.
+  it("sends once even when the effect is invoked twice for the same request", () => {
+    render(
+      <StrictMode>
+        <MeridianDevelopmentPanel
+          memberId="member-1"
+          memberName="Dana Whitfield"
+          tab="profile"
+          goals={[]}
+          gaps={[]}
+          seedRequest={1}
+        />
+      </StrictMode>,
+    )
+    expect(mockSend).toHaveBeenCalledTimes(1)
+  })
+
+  it("a seeded turn that failed says so — it does not sit there looking sent", () => {
+    chatState = { isProcessing: false, partial: "", error: "Meridian couldn't answer that." }
+    renderWithSeed(1)
+    expect(screen.getByRole("alert")).toHaveTextContent("Meridian couldn't answer that.")
+  })
+})
+
+it("offers prompts on the Notes tab — the prompt lookup is indexed, not defaulted", () => {
+  render(<MeridianDevelopmentPanel memberId="m1" memberName="Dana Whitfield" tab="notes" goals={[]} gaps={[]} />)
+  expect(screen.getByRole("button", { name: /turn my last observation into a plan/i })).toBeInTheDocument()
 })

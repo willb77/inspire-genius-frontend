@@ -151,9 +151,33 @@ export type MeridianDevelopmentPanelProps = {
   goalsNotShared?: boolean
   /** TDS-1b: PRISM withheld — Meridian is not grounded in it either. */
   prismNotShared?: boolean
+  /**
+   * TDS-4b. A counter the workspace bumps when "Start growth conversation" is
+   * pressed; each new value sends ONE opening turn about this member.
+   *
+   * A counter rather than a boolean because the manager may start a second
+   * conversation later in the same session, and a boolean that is already true
+   * cannot say "again". Each value is handled once — effects that run twice
+   * (StrictMode, a re-render) must not double-send.
+   *
+   * It goes through the SAME `send` as a typed question, so the turn is
+   * persisted, appears in the transcript, travels over
+   * `POST /v1/agents/chat/async`, and surfaces its failure in the alert below.
+   * Nothing here adds grounding: `surface: "team_development"` is what makes the
+   * engine swap in the MEMBER's profile, and that lives in one server module.
+   */
+  seedRequest?: number
 }
 
-export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gaps, goalsNotShared, prismNotShared }: MeridianDevelopmentPanelProps) {
+/** The opening turn "Start growth conversation" sends (TDS-4b).
+ *  Module-private: a value export here would trip
+ *  `react-refresh/only-export-components`. Covered through the panel. */
+function growthConversationOpener(memberName: string): string {
+  const who = memberName.trim() || "this member"
+  return `Help me open a growth conversation with ${who}. What should I lead with, what should I avoid, and what would a good outcome look like?`
+}
+
+export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gaps, goalsNotShared, prismNotShared, seedRequest }: MeridianDevelopmentPanelProps) {
   const sk = useDevSkin()
   const { user } = useAuth()
   const accessToken = user?.token ?? ""
@@ -227,6 +251,9 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
     ? `${memberName || "This member"} has not shared their PRISM profile with you, so Meridian is not grounded in it.`
     : null
 
+  const memberNameRef = useRef(memberName)
+  memberNameRef.current = memberName
+
   const send = (text: string) => {
     const trimmed = text.trim()
     if (!trimmed) return
@@ -237,6 +264,23 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
     void sendToMeridian(trimmed, { active_tab: tab })
     setInput("")
   }
+
+  // TDS-4b. "Start growth conversation" used to be `setTab("goals")` and
+  // nothing else — it opened a tab and seeded no conversation at all.
+  //
+  // `sendRef` rather than `send` in the deps: `send` is rebuilt every render, so
+  // depending on it would re-run this effect constantly and the ref-guard would
+  // be the only thing standing between that and a flood of turns. The guard
+  // stays regardless, because an effect that runs twice for one value (React
+  // StrictMode does exactly that in development) must not send twice.
+  const sendRef = useRef(send)
+  sendRef.current = send
+  const seededRequestRef = useRef(0)
+  useEffect(() => {
+    if (!seedRequest || seedRequest === seededRequestRef.current) return
+    seededRequestRef.current = seedRequest
+    sendRef.current(growthConversationOpener(memberNameRef.current))
+  }, [seedRequest])
 
   const applyStaged = () => {
     if (!staged) return

@@ -6,7 +6,7 @@
  * lazy-loaded, plus the member-scoped Meridian assistant panel. Loading /
  * degraded / error handled at the shell.
  */
-import { Suspense, lazy, useMemo, type ReactNode } from "react"
+import { Suspense, lazy, useMemo, useState, type ReactNode } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Download, MessageSquare, RefreshCw, Share2 } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
@@ -240,6 +240,12 @@ export default function MemberDevelopmentWorkspace({
 
   const targetFromQuery = searchParams.get("target") ?? undefined
 
+  // TDS-4b. Bumped by "Start growth conversation"; the Meridian rail sends ONE
+  // opening turn per new value. A counter, not a boolean: a manager may start a
+  // second conversation in the same session, and a boolean already true cannot
+  // say "again".
+  const [conversationSeed, setConversationSeed] = useState(0)
+
   // --- Shell states ---
   if (isLoading) {
     return frame(
@@ -399,7 +405,20 @@ export default function MemberDevelopmentWorkspace({
               <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
               {t("dev.workspace.export")}
             </Button>
-            <Button size="sm" onClick={() => setTab("goals")}>
+            {/* TDS-4b. This was `setTab("goals")` and nothing else: a button
+                called "Start growth conversation" that started no conversation.
+                It now also seeds the Meridian rail with an opening turn about
+                this member, through the rail's existing `useMeridianChat` — the
+                one send path (`.claude/rules/agents.md` §6). The tab change
+                stays: it is the surface the conversation is about, and it is the
+                only half that can be seen below the xl breakpoint. */}
+            <Button
+              size="sm"
+              onClick={() => {
+                setTab("goals")
+                setConversationSeed((n) => n + 1)
+              }}
+            >
               <MessageSquare className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
               {t("dev.workspace.startConversation")}
             </Button>
@@ -507,6 +526,7 @@ export default function MemberDevelopmentWorkspace({
               gaps={dossier.gaps}
               goalsNotShared={dossier.goalsNotShared}
               prismNotShared={dossier.prismNotShared}
+              seedRequest={conversationSeed}
             />
           </div>
         </aside>
