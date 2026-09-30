@@ -125,6 +125,7 @@
     "welcomePrefix": "Welkom",
     "whatToday": "Waar werken we vandaag aan?",
     "quickGoals": "Goals Studio",
+    "quickMyDevelopment": "My development",
     "checkFailed": "— kon niet worden gecontroleerd",
     "retry": "Opnieuw proberen",
     "retryItem": "{{name}} opnieuw controleren",

@@ -10,6 +10,7 @@ import {
 } from "date-fns";
 import {
   CalendarDays,
+  HeartPulse,
   MessageSquare,
   Sparkles,
   Target,
@@ -158,6 +159,19 @@ const QUICK_ACTIONS: {
     to: ROUTES.MY_GOALS.BASE,
     vertical: null,
     icon: Target,
+  },
+  // My development (TDS-4c) — the person's own view of the rows a coach sees
+  // about them. `vertical: null` for the same reason Goals Studio is: every
+  // read behind the page is a `/v1/growth/me/*` route resolved from the
+  // caller's own token, so there is nothing to entitle and nothing to lock.
+  // Gating it would grey out a pill that works for everybody.
+  {
+    key: "my-development",
+    labelKey: "homeV2.quickMyDevelopment",
+    defaultLabel: "My development",
+    to: ROUTES.MY_DEVELOPMENT,
+    vertical: null,
+    icon: HeartPulse,
   },
 ];
 

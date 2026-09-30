@@ -125,6 +125,7 @@
     "welcomePrefix": "Benvenuto",
     "whatToday": "Su cosa lavoriamo oggi?",
     "quickGoals": "Goals Studio",
+    "quickMyDevelopment": "My development",
     "checkFailed": "— impossibile verificare",
     "retry": "Riprova",
     "retryItem": "Riprova a verificare {{name}}",

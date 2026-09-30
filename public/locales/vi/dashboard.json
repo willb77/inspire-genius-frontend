@@ -125,6 +125,7 @@
     "welcomePrefix": "Chào mừng",
     "whatToday": "Hôm nay chúng ta làm gì?",
     "quickGoals": "Goals Studio",
+    "quickMyDevelopment": "My development",
     "checkFailed": "— không thể kiểm tra",
     "retry": "Thử lại",
     "retryItem": "Thử kiểm tra lại {{name}}",

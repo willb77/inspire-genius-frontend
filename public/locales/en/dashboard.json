@@ -123,6 +123,7 @@
     "welcomePrefix": "Welcome",
     "whatToday": "What are we working on today?",
     "quickGoals": "Goals Studio",
+    "quickMyDevelopment": "My development",
     "checkFailed": "— couldn't check",
     "retry": "Retry",
     "retryItem": "Retry checking {{name}}",

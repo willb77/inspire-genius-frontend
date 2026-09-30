@@ -125,6 +125,7 @@
     "welcomePrefix": "Velkommen",
     "whatToday": "Hva jobber vi med i dag?",
     "quickGoals": "Goals Studio",
+    "quickMyDevelopment": "My development",
     "checkFailed": "— kunne ikke sjekkes",
     "retry": "Prøv igjen",
     "retryItem": "Sjekk {{name}} på nytt",

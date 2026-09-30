@@ -301,15 +301,19 @@ describe("My Workspace menu order + switched-off entries", () => {
   })
 
   // ── 2026-08-12, user request: the menu is EXACTLY these six; 2026-09-04,
-  // Goals offering Phase 3: Goals returns as the ungated My Goals surface ──
-  it("renders exactly seven entries, in the specified order", () => {
+  // Goals offering Phase 3: Goals returns as the ungated My Goals surface;
+  // 2026-09-30, TDS-4c: My development joins on the same footing ──
+  it("renders exactly eight entries, in the specified order", () => {
     // An exact-array assertion, deliberately: the request was a closed list, so
     // anything ADDED here should fail, not just anything removed. A subsequence
-    // or arrayContaining check would let an eighth entry through silently.
+    // or arrayContaining check would let a ninth entry through silently. This
+    // assertion failing is the intended cost of adding a row — the edit below
+    // is the deliberate acknowledgement, not a formality.
     expect(labels(true)).toEqual([
       "Home",
       "Chat with Meridian",
       "Goals Studio",
+      "My development",
       "Interview Practice",
       "Document Library",
       "Settings",
@@ -317,18 +321,42 @@ describe("My Workspace menu order + switched-off entries", () => {
     ])
   })
 
-  it("is still seven entries with the agent-engine toggle OFF", () => {
+  it("is still eight entries with the agent-engine toggle OFF", () => {
     // The toggle swaps the chat row's destination and label, not the shape of
     // the menu.
     expect(labels(false)).toEqual([
       "Home",
       "Chat with Coaches",
       "Goals Studio",
+      "My development",
       "Interview Practice",
       "Document Library",
       "Settings",
       "Help & Support",
     ])
+  })
+
+  // ── 2026-09-30, TDS-4c ─────────────────────────────────────────────────
+  it("carries My development at the ungated /my/development route, not a /manager clone", () => {
+    for (const on of [true, false]) {
+      const item = getUserNavItems(on).find((i) => i.label === "My development")
+      expect(item).toBeDefined()
+      // A role-prefixed spelling would be a live-looking row that
+      // ProtectedRoute bounces a `user` account away from — the page exists
+      // precisely so a member needs no manager.
+      expect(item!.to).toBe(ROUTES.MY_DEVELOPMENT)
+      expect(item!.to.startsWith("/manager")).toBe(false)
+      // Not greyed and not entitlement-gated: every read behind the page is a
+      // self-scoped growth route.
+      expect(item!.disabled).toBeFalsy()
+    }
+  })
+
+  it("keeps My development OUT of the hidden-route list", () => {
+    // HIDDEN_WORKSPACE_ROUTES means "absent from the menu". Listing a rendered
+    // route there would make the constant lie, which the invariant test above
+    // asserts against.
+    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.MY_DEVELOPMENT)
   })
 
   it("carries Goals at the ungated My Goals route, and still drops Job Fit", () => {

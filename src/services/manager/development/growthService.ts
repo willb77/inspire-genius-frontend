@@ -16,6 +16,7 @@ import type {
   CareerMatch,
   DevelopmentGap,
   FullPrismProfileResponse,
+  GapSeverity,
   GoalCategoryCoverage,
   LearningItem,
   MemberCreateInput,
@@ -432,4 +433,87 @@ export function deleteTeamMember(memberId: string) {
 /** GET /me/prism — the caller's own 8 PRISM behaviours for the map popup. */
 export function getMyPrism() {
   return getApi().get<BaseApiResponse<SelfPrismResponse>>(`${BASE}/me/prism`)
+}
+
+// ── Self-scoped reads and writes (/v1/growth/me/*) — TDS-4c ─────────────────
+//
+// The member id is never passed: growth-service resolves it from the verified
+// JWT `sub` (`require_caller_sub`), so there is no id a client could change to
+// read somebody else's plan. These are the SAME service functions the
+// `/members/{id}/*` routes above call — only the resolution differs — which is
+// why there is one data layer here rather than a parallel "my" service module.
+//
+// They are collected in this file deliberately: `getMyGoalReviews`,
+// `updateMyLearningItem` and `getMyPrism` already lived here, and a second
+// module would give growth-service two front doors in the frontend.
+
+/**
+ * Body for POST /me/gaps — a gap the person declares about themselves.
+ *
+ * `source` is NOT accepted by the server on this path: it always persists
+ * `source='skill'`. That is what makes a self-declared gap survive a dossier
+ * recompute, which deletes and rebuilds only the `behavioral` rows.
+ */
+export type CreateGapInput = {
+  competency: string
+  currentLevel?: number
+  targetLevel?: number
+  severity?: GapSeverity
+  goalId?: string
+  targetBlueprintId?: string
+}
+
+/** GET /me/gaps?target_blueprint_id= → the caller's own gaps.
+ *
+ *  Closed gaps are NOT filtered out server-side (`list_gaps` selects on member
+ *  + target only), so the caller has to render a gap's status rather than
+ *  assume a closed one disappears. */
+export function getMyGaps(targetBlueprintId?: string) {
+  return getApi().get<BaseApiResponse<DevelopmentGap[]>>(`${BASE}/me/gaps`, {
+    params: targetBlueprintId ? { target_blueprint_id: targetBlueprintId } : undefined,
+  })
+}
+
+/** POST /me/gaps → 201 with the created gap. */
+export function createMyGap(input: CreateGapInput) {
+  return getApi().post<BaseApiResponse<DevelopmentGap>>(`${BASE}/me/gaps`, input)
+}
+
+/** POST /me/gaps/{gapId}/close → the CLOSED gap. 404 when it is not the
+ *  caller's own gap — the lookup is scoped to the resolved member. */
+export function closeMyGap(gapId: string) {
+  return getApi().post<BaseApiResponse<DevelopmentGap>>(`${BASE}/me/gaps/${gapId}/close`)
+}
+
+/** GET /me/learning-items → the caller's own learning plan. */
+export function getMyLearningItems() {
+  return getApi().get<BaseApiResponse<LearningItem[]>>(`${BASE}/me/learning-items`)
+}
+
+/** POST /me/learning-items → 201 with the created item. */
+export function createMyLearningItem(input: CreateLearningItemInput) {
+  return getApi().post<BaseApiResponse<LearningItem>>(`${BASE}/me/learning-items`, input)
+}
+
+/** GET /me/milestones → the caller's own roadmap milestones.
+ *
+ *  Read-only for the member by design: there is no self-scoped POST or PATCH
+ *  for milestones on the tip, so this surface shows the roadmap and does not
+ *  offer to edit it. */
+export function getMyMilestones() {
+  return getApi().get<BaseApiResponse<Milestone[]>>(`${BASE}/me/milestones`)
+}
+
+/**
+ * GET /me/profile — every PRISM scale on file for the CALLER, up to 88.
+ *
+ * The self counterpart of {@link getMemberFullPrism}, with an identical
+ * response shape. Callers MUST honour `isConflicted`: it is a refusal, not a
+ * warning — two assessments under one account disagree, which on dev was two
+ * different people's reports filed under one account. Show `conflictMessage`
+ * and nothing else. `coverage < 88` is the ordinary case (75–87 measured, plus
+ * a 26-scale legacy outlier) and `missing` names the gaps.
+ */
+export function getMyFullPrism() {
+  return getApi().get<BaseApiResponse<FullPrismProfileResponse>>(`${BASE}/me/profile`)
 }
