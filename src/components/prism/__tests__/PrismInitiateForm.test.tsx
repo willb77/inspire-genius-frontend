@@ -22,6 +22,13 @@ jest.mock("@/hooks/prism/usePrismRequest", () => ({
   }),
 }));
 
+/* The caller's own practitioners, for the "share my results" option.
+   `mockMine` is what each test sets; the default is "programme off". */
+const mockMine = jest.fn();
+jest.mock("@/hooks/prism/useMyPractitioners", () => ({
+  useMyPractitioners: (opts?: { enabled?: boolean }) => mockMine(opts),
+}));
+
 jest.mock("sonner", () => ({
   toast: { success: jest.fn(), error: jest.fn() },
 }));
@@ -44,20 +51,26 @@ jest.mock("@/components/ui/select", () => ({
 
 /* Mock Switch which also uses Radix */
 jest.mock("@/components/ui/switch", () => ({
-  Switch: ({ checked, onCheckedChange, disabled }: {
+  Switch: ({ checked, onCheckedChange, disabled, "aria-label": ariaLabel }: {
     checked?: boolean;
     onCheckedChange?: (v: boolean) => void;
     disabled?: boolean;
+    "aria-label"?: string;
   }) => (
     <button
       type="button"
       role="switch"
+      aria-label={ariaLabel}
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onCheckedChange?.(!checked)}
     />
   ),
 }));
+
+beforeEach(() => {
+  mockMine.mockReturnValue({ data: { enabled: false, practitioners: [] } });
+});
 
 describe("PrismInitiateForm", () => {
   it("renders the form title and description", () => {
@@ -327,6 +340,87 @@ describe("PrismInitiateForm", () => {
 
       await waitFor(() => expect(onSubmit).toHaveBeenCalled());
       expect(mockRequestSurvey).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("share my results with my practitioner", () => {
+    const validDefaults = {
+      forename: "Jane",
+      surname: "Smith",
+      email: "jane.smith@company.com",
+      organisation: "Acme Corp",
+      questionnaireTypeId: 4,
+      languageId: 25,
+    };
+    const ok = { request_id: "r", action_url_1: "https://prism.example/q/a", quest_status_desc: "sent" };
+    const one = { data: { enabled: true, practitioners: [{ practitionerSub: "p-a", displayName: "Avery Coach" }] } };
+    const two = { data: { enabled: true, practitioners: [
+      { practitionerSub: "p-a", displayName: "Avery Coach" },
+      { practitionerSub: "p-b", displayName: "Blake Coach" },
+    ] } };
+
+    beforeEach(() => mockRequestSurvey.mockReset());
+
+    it.each([
+      ["the programme is off", { data: { enabled: false, practitioners: [] } }],
+      ["the programme is off, whatever else comes back", {
+        data: { enabled: false, practitioners: [{ practitionerSub: "p-a", displayName: "Avery Coach" }] },
+      }],
+      ["they have no practitioner", { data: { enabled: true, practitioners: [] } }],
+      ["the read failed", { data: undefined, isError: true }],
+    ])("is not offered when %s", (_label, value) => {
+      mockMine.mockReturnValue(value);
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      expect(screen.queryByRole("switch", { name: /share my results/i })).toBeNull();
+    });
+
+    it("names the one practitioner and is off by default", async () => {
+      mockMine.mockReturnValue(one);
+      mockRequestSurvey.mockResolvedValue(ok);
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      const tick = screen.getByRole("switch", { name: "Share my results with Avery Coach" });
+      expect(tick).toHaveAttribute("aria-checked", "false");
+      await userEvent.click(screen.getByRole("button", { name: /request assessment/i }));
+      await waitFor(() => expect(mockRequestSurvey).toHaveBeenCalledTimes(1));
+      expect(mockRequestSurvey.mock.calls[0][0]).not.toHaveProperty("shareWithPractitioner");
+    });
+
+    it("sends the tick when it is on", async () => {
+      mockMine.mockReturnValue(one);
+      mockRequestSurvey.mockResolvedValue(ok);
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(screen.getByRole("switch", { name: "Share my results with Avery Coach" }));
+      await userEvent.click(screen.getByRole("button", { name: /request assessment/i }));
+      await waitFor(() => expect(mockRequestSurvey).toHaveBeenCalledTimes(1));
+      expect(mockRequestSurvey.mock.calls[0][0]).toEqual(
+        expect.objectContaining({ shareWithPractitioner: true })
+      );
+    });
+
+    it("with several, says the one they choose and carries the tick through the choice", async () => {
+      mockMine.mockReturnValue(two);
+      mockRequestSurvey
+        .mockRejectedValueOnce({ response: { status: 409, data: { detail: {
+          code: "practitioner_choice_required",
+          practitioners: two.data.practitioners,
+        } } } })
+        .mockResolvedValueOnce(ok);
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(
+        screen.getByRole("switch", { name: "Share my results with the practitioner I choose" })
+      );
+      await userEvent.click(screen.getByRole("button", { name: /request assessment/i }));
+      await userEvent.click(await screen.findByLabelText("Blake Coach"));
+      await userEvent.click(screen.getByRole("button", { name: /request under this practitioner/i }));
+      await waitFor(() => expect(mockRequestSurvey).toHaveBeenCalledTimes(2));
+      expect(mockRequestSurvey.mock.calls[1][0]).toEqual(
+        expect.objectContaining({ practitionerSub: "p-b", shareWithPractitioner: true })
+      );
+    });
+
+    it("does not read the practitioners in harness mode", () => {
+      render(<PrismInitiateForm defaultValues={validDefaults} showPayloadPreview />);
+      expect(mockMine).toHaveBeenCalledWith({ enabled: false });
     });
   });
 });

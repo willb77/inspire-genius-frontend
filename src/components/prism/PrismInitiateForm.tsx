@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useCheckExistingCustomer } from '@/hooks/prism/useCheckExistingCustomer'
 import { useRequestPrismSurvey } from '@/hooks/prism/usePrismRequest'
+import { useMyPractitioners } from '@/hooks/prism/useMyPractitioners'
 import {
   practitionerChoiceFrom,
   type PractitionerChoice,
@@ -68,6 +69,7 @@ const initiateSchema = z.object({
   // PRISM options
   createUser: z.boolean().default(true),
   isGift: z.boolean().default(false),
+  shareWithPractitioner: z.boolean().default(false),
 })
 
 type InitiateFormValues = z.infer<typeof initiateSchema>
@@ -119,6 +121,14 @@ export default function PrismInitiateForm({
 
   const checkCustomer = useCheckExistingCustomer()
   const requestSurvey = useRequestPrismSurvey()
+  // Offered only when the server says the caller has a practitioner to share
+  // with. A failed read hides the option; it never blocks the request.
+  const mine = useMyPractitioners({ enabled: !showPayloadPreview })
+  const shareable = mine.data?.enabled ? mine.data.practitioners : []
+  const shareLabel =
+    shareable.length === 1
+      ? `Share my results with ${shareable[0].displayName}`
+      : 'Share my results with the practitioner I choose'
 
   const form = useForm<InitiateFormValues>({
     resolver: zodResolver(initiateSchema) as Resolver<InitiateFormValues>,
@@ -131,6 +141,7 @@ export default function PrismInitiateForm({
       reference: '',
       createUser: true,
       isGift: false,
+      shareWithPractitioner: false,
       ...defaultValues,
     },
   })
@@ -214,6 +225,9 @@ export default function PrismInitiateForm({
         lang_id: values.languageId,
         isGift: values.isGift,
         ...(practitionerSub ? { practitionerSub } : {}),
+        ...(shareable.length > 0 && values.shareWithPractitioner
+          ? { shareWithPractitioner: true }
+          : {}),
       })
 
       setChoices(null)
@@ -679,6 +693,32 @@ export default function PrismInitiateForm({
                 )}
               />
             </div>
+
+            {shareable.length > 0 && (
+              <FormField
+                control={form.control}
+                name="shareWithPractitioner"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-sm font-medium">{shareLabel}</FormLabel>
+                      <FormDescription>
+                        When your report is ready they will be able to see your PRISM
+                        profile. You can stop sharing at any time from Sharing.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        aria-label={shareLabel}
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={disabled}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* ── Practitioner choice (PC-1b) ── */}
             {choices && (

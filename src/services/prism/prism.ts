@@ -35,6 +35,10 @@ export type PrismSurveyRequestPayload = {
    *  OWN practitioners the survey is raised under. The server refuses any
    *  other value. Never populated from a roster. */
   practitionerSub?: string
+  /** "Share my results with my practitioner." Honoured only when the request
+   *  resolves to one of the caller's practitioners; ignored otherwise. When
+   *  the report lands, that practitioner is granted the PRISM profile. */
+  shareWithPractitioner?: boolean
 }
 
 /** One of the caller's own practitioners, as the 409 lists them. */
@@ -61,6 +65,21 @@ export function practitionerChoiceFrom(err: unknown): PractitionerChoice[] | nul
       typeof p?.practitionerSub === 'string' && typeof p?.displayName === 'string',
   )
   return out.length > 0 ? out : null
+}
+
+/** Response from `GET /v1/agents/practitioner-registry/mine`. */
+export type MyPractitioners = {
+  /** False while the practitioner programme is off on this tier. */
+  enabled: boolean
+  practitioners: PractitionerChoice[]
+}
+
+/** The caller's own practitioners a PRISM request could be raised under. */
+export async function getMyPractitioners(): Promise<MyPractitioners> {
+  const { data } = await agentApi.get<MyPractitioners>(
+    '/v1/agents/practitioner-registry/mine',
+  )
+  return data
 }
 
 /** Lifecycle states the backend can return for a PRISM request */
