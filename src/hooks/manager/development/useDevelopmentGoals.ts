@@ -65,14 +65,24 @@ export function useGoalReviews(memberId: string | undefined, enabled = true) {
   })
 }
 
-/** One coaching note about this member — optionally about one of their goals. */
+/**
+ * One coaching note about this member — optionally about one of their goals.
+ *
+ * Invalidates the notes list (TDS-2) so a note written from the Goals tab shows
+ * up on the Notes tab without a reload. The two surfaces write the same store.
+ */
 export function useCreateCoachingNote(memberId: string | undefined) {
+  const qc = useQueryClient()
   return useMutation<CoachingNote, Error, CreateCoachingNoteInput>({
     mutationFn: async (input) => {
       const r = await createCoachingNote(memberId as string, input)
       const data = r.data?.data
       if (!data) throw new Error("Note not saved")
       return data
+    },
+    onSuccess: () => {
+      if (!memberId) return
+      qc.invalidateQueries({ queryKey: developmentKeys.notes(memberId) })
     },
   })
 }

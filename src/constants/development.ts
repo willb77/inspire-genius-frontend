@@ -84,6 +84,7 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.tab.careers": "Career & Job Matches",
   "dev.tab.roadmap": "Roadmap",
   "dev.tab.interviews": "Interviews",
+  "dev.tab.notes": "Notes",
   "dev.tab.profileStudio": "Write-up",
   "dev.tab.compare": "Compare",
   "dev.tab.scenarios": "Scenarios",
@@ -110,7 +111,18 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.gaps.closeGap": "Close this gap",
 
   "dev.learning.empty": "No learning items yet. Close a gap to seed one.",
-  "dev.learning.assign": "Assign",
+  /** Was "Assign". The click never assigned anything — it navigates to the
+   *  Training surface, where assignment happens — so the label says where it
+   *  goes (TDS-4a). Progress is persisted by the controls on the row. */
+  "dev.learning.assign": "Assign in Training",
+
+  /** Notes tab (TDS-2). These notes are per-manager; no string here may imply
+   *  the member or another coach can read them. */
+  "dev.notes.private":
+    "Only you can see these notes. They are not shared with the member, with their other coaches, or with anyone who inherits the report.",
+  "dev.notes.empty": "You haven't written any notes about this member yet.",
+  "dev.notes.save": "Save note",
+  "dev.notes.about": "About",
 
   "dev.careers.internal": "Internal",
   "dev.careers.external": "External",
@@ -177,6 +189,18 @@ export const LEARNING_STATUS_LABEL: Record<LearningItemStatus, string> = {
   not_started: "Not started",
   in_progress: "In progress",
   complete: "Complete",
+}
+
+/**
+ * Coaching-note kinds (TDS-2). Spelled out rather than imported from the
+ * service so this file keeps its one-way dependency (constants → types only).
+ * The loop's normal path is that yesterday's `plan` becomes today's `outcome`,
+ * which is why a note's kind is editable.
+ */
+export const NOTE_KIND_LABEL: Record<"observation" | "plan" | "outcome", string> = {
+  observation: "Observation",
+  plan: "Plan",
+  outcome: "Outcome",
 }
 
 export const MILESTONE_STATUS_LABEL: Record<MilestoneStatus, string> = {

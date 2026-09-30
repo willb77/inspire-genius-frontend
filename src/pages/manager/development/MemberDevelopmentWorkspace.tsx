@@ -6,7 +6,7 @@
  * lazy-loaded, plus the member-scoped Meridian assistant panel. Loading /
  * degraded / error handled at the shell.
  */
-import { Suspense, lazy, useMemo, type ReactNode } from "react"
+import { Suspense, lazy, useMemo, useState, type ReactNode } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Download, MessageSquare, RefreshCw, Share2 } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
@@ -71,6 +71,9 @@ const CareerMatchPanel = lazy(() =>
 const RoadmapTimeline = lazy(() =>
   import("@/components/manager/development/tabs/RoadmapTimeline").then((m) => ({ default: m.RoadmapTimeline })),
 )
+const NotesPanel = lazy(() =>
+  import("@/components/manager/development/tabs/NotesPanel").then((m) => ({ default: m.NotesPanel })),
+)
 
 // TDS Studio tabs — the PRISM narrative surfaces shared with the super-admin
 // Character Lab. Lazy like the rest: each pulls in the shared studio panels,
@@ -96,16 +99,14 @@ const BASE_TABS = [
   { value: "careers", labelKey: "dev.tab.careers" },
   { value: "roadmap", labelKey: "dev.tab.roadmap" },
   { value: "interviews", labelKey: "dev.tab.interviews" },
+  // TDS-2. Its store (growth-service `/members/{id}/notes`, GET/POST/PATCH/
+  // DELETE) is built and merged, so the tab is a BASE tab: putting it behind
+  // TDS_STUDIO_ENABLED — which is off by default — would ship it hidden.
+  { value: "notes", labelKey: "dev.tab.notes" },
 ] as const
 
 /**
  * The three TDS Studio tabs, behind `VITE_FEATURE_TDS_STUDIO` (default OFF).
- *
- * TODO(Phase 4): a `notes` tab belongs here too. Its backend — the
- * manager-notes store behind the write-up — is being built in parallel and is
- * not merged, and a tab whose store does not exist would save nothing while
- * looking as though it had. Add it in the same change that lands the store,
- * not before.
  *
  * The flag only decides which tab buttons render, and `?tab=` falls back to
  * "profile" for a value not in this list. That is a UI gate, NOT a security
@@ -238,6 +239,12 @@ export default function MemberDevelopmentWorkspace({
   }
 
   const targetFromQuery = searchParams.get("target") ?? undefined
+
+  // TDS-4b. Bumped by "Start growth conversation"; the Meridian rail sends ONE
+  // opening turn per new value. A counter, not a boolean: a manager may start a
+  // second conversation in the same session, and a boolean already true cannot
+  // say "again".
+  const [conversationSeed, setConversationSeed] = useState(0)
 
   // --- Shell states ---
   if (isLoading) {
@@ -398,7 +405,20 @@ export default function MemberDevelopmentWorkspace({
               <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
               {t("dev.workspace.export")}
             </Button>
-            <Button size="sm" onClick={() => setTab("goals")}>
+            {/* TDS-4b. This was `setTab("goals")` and nothing else: a button
+                called "Start growth conversation" that started no conversation.
+                It now also seeds the Meridian rail with an opening turn about
+                this member, through the rail's existing `useMeridianChat` — the
+                one send path (`.claude/rules/agents.md` §6). The tab change
+                stays: it is the surface the conversation is about, and it is the
+                only half that can be seen below the xl breakpoint. */}
+            <Button
+              size="sm"
+              onClick={() => {
+                setTab("goals")
+                setConversationSeed((n) => n + 1)
+              }}
+            >
               <MessageSquare className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
               {t("dev.workspace.startConversation")}
             </Button>
@@ -438,7 +458,12 @@ export default function MemberDevelopmentWorkspace({
                 <GapAnalysisPanel memberId={dossier.memberId} matches={dossier.matches} initialTargetId={targetFromQuery} />
               </TabsContent>
               <TabsContent value="learning">
-                <LearningPlanPanel learning={dossier.learning} gaps={dossier.gaps} goals={dossier.goals} />
+                <LearningPlanPanel
+                  memberId={dossier.memberId}
+                  learning={dossier.learning}
+                  gaps={dossier.gaps}
+                  goals={dossier.goals}
+                />
               </TabsContent>
               <TabsContent value="careers">
                 <CareerMatchPanel
@@ -454,6 +479,14 @@ export default function MemberDevelopmentWorkspace({
                   milestones={dossier.milestones}
                   goals={dossier.goals}
                   trajectory={dossier.trajectory}
+                />
+              </TabsContent>
+              <TabsContent value="notes">
+                <NotesPanel
+                  memberId={dossier.memberId}
+                  memberName={member.name}
+                  goals={dossier.goals}
+                  milestones={dossier.milestones}
                 />
               </TabsContent>
               <TabsContent value="interviews">
@@ -493,6 +526,7 @@ export default function MemberDevelopmentWorkspace({
               gaps={dossier.gaps}
               goalsNotShared={dossier.goalsNotShared}
               prismNotShared={dossier.prismNotShared}
+              seedRequest={conversationSeed}
             />
           </div>
         </aside>

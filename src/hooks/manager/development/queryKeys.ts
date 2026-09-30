@@ -16,8 +16,18 @@ export const developmentKeys = {
   /** Coach reviews of the member's shared goals (Goals offering, Phase 4). */
   goalReviews: (memberId: string) =>
     [...developmentKeys.all, "goal-reviews", memberId] as const,
+  /** This manager's coaching notes for one member. Per-manager, not shared. */
+  notes: (memberId: string) => [...developmentKeys.all, "notes", memberId] as const,
+  /**
+   * Prefix over EVERY target-blueprint variant of one member's gaps.
+   *
+   * Closing a gap has to reach all of them: `gaps()` appends the target id, so
+   * invalidating `gaps(memberId)` matches only the `"default"` variant and a
+   * manager who had a target selected would keep seeing the closed gap as open.
+   */
+  gapsFor: (memberId: string) => [...developmentKeys.all, "gaps", memberId] as const,
   gaps: (memberId: string, targetBlueprintId?: string) =>
-    [...developmentKeys.all, "gaps", memberId, targetBlueprintId ?? "default"] as const,
+    [...developmentKeys.gapsFor(memberId), targetBlueprintId ?? "default"] as const,
   milestones: (memberId: string) =>
     [...developmentKeys.all, "milestones", memberId] as const,
   matches: (memberId: string, kind: "internal" | "external") =>

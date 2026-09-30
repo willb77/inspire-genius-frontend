@@ -1,23 +1,31 @@
 /** @jest-environment jsdom */
 import { fireEvent, render, screen, within } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import "@testing-library/jest-dom"
 
 import { LearningPlanPanel } from "../LearningPlanPanel"
 import { ROUTES } from "@/constants/routes"
 import type { DevelopmentGap, LearningItem, SummitGoal } from "@/types/development"
 
-// The panel is pure props plus `useNavigate`, so the router is the only
-// dependency. `useDevSkin` falls back to the classic skin with no provider.
+// Props plus `useNavigate`, plus — since TDS-4a gave the tab a write —
+// `useUpdateLearningItem`, which needs a QueryClient. `useDevSkin` falls back to
+// the classic skin with no provider. agentApi is globally mocked to reject, so
+// nothing here reaches a network.
 
 function renderWith(ui: React.ReactElement) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
   return render(
-    <MemoryRouter initialEntries={["/manager/development/m-1"]}>
-      <Routes>
-        <Route path="/manager/development/:id" element={ui} />
-        <Route path={ROUTES.MANAGER.TRAINING} element={<div>training surface</div>} />
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={["/manager/development/m-1"]}>
+        <Routes>
+          <Route path="/manager/development/:id" element={ui} />
+          <Route path={ROUTES.MANAGER.TRAINING} element={<div>training surface</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
@@ -92,13 +100,13 @@ const items: LearningItem[] = [
 
 describe("LearningPlanPanel", () => {
   it("shows the honest empty state when there are no learning items", () => {
-    renderWith(<LearningPlanPanel learning={[]} gaps={gaps} goals={goals} />)
+    renderWith(<LearningPlanPanel memberId="m-1" learning={[]} gaps={gaps} goals={goals} />)
     expect(screen.getByText(/No learning items yet\. Close a gap to seed one\./i)).toBeInTheDocument()
     expect(screen.queryByText(/Pacing note/i)).not.toBeInTheDocument()
   })
 
   it("groups items by gap competency, then goal title, then General", () => {
-    renderWith(<LearningPlanPanel learning={items} gaps={gaps} goals={goals} />)
+    renderWith(<LearningPlanPanel memberId="m-1" learning={items} gaps={gaps} goals={goals} />)
     const headings = screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)
     expect(headings).toEqual([
       "Gap: Delegation",
@@ -109,12 +117,12 @@ describe("LearningPlanPanel", () => {
   })
 
   it("falls back to the raw id when a gap is not in the lookup", () => {
-    renderWith(<LearningPlanPanel learning={items} gaps={gaps} goals={goals} />)
+    renderWith(<LearningPlanPanel memberId="m-1" learning={items} gaps={gaps} goals={goals} />)
     expect(screen.getByText("Gap: gap-unknown")).toBeInTheDocument()
   })
 
   it("renders provider, hours, format, status, progress and quiz for an item", () => {
-    renderWith(<LearningPlanPanel learning={[items[0]]} gaps={gaps} goals={goals} />)
+    renderWith(<LearningPlanPanel memberId="m-1" learning={[items[0]]} gaps={gaps} goals={goals} />)
     expect(screen.getByText("Delegation for new managers")).toBeInTheDocument()
     expect(screen.getByText("LinkedIn Learning")).toBeInTheDocument()
     expect(screen.getByText("3h")).toBeInTheDocument()
@@ -125,22 +133,24 @@ describe("LearningPlanPanel", () => {
   })
 
   it("omits hours, format, progress and quiz when the item has none", () => {
-    renderWith(<LearningPlanPanel learning={[items[1]]} gaps={gaps} goals={goals} />)
+    renderWith(<LearningPlanPanel memberId="m-1" learning={[items[1]]} gaps={gaps} goals={goals} />)
     expect(screen.getByText("Complete")).toBeInTheDocument()
     expect(screen.queryByText(/\dh$/)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/^Progress/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Progress \d+%$/)).not.toBeInTheDocument()
     expect(screen.queryByText(/^Quiz:/)).not.toBeInTheDocument()
   })
 
   it("always shows the pacing note above a non-empty plan", () => {
-    renderWith(<LearningPlanPanel learning={items} gaps={gaps} goals={goals} />)
+    renderWith(<LearningPlanPanel memberId="m-1" learning={items} gaps={gaps} goals={goals} />)
     expect(screen.getByText(/Pacing note:/i)).toBeInTheDocument()
   })
 
-  it("Assign navigates to the manager training surface", () => {
-    renderWith(<LearningPlanPanel learning={[items[0]]} gaps={gaps} goals={goals} />)
+  // TDS-4a: the label was "Assign", which the click never did — it navigates.
+  // The navigation is the behaviour; the word was the only thing that changed.
+  it("Assign in Training navigates to the manager training surface", () => {
+    renderWith(<LearningPlanPanel memberId="m-1" learning={[items[0]]} gaps={gaps} goals={goals} />)
     const row = screen.getByText("Delegation for new managers").closest("div.rounded-lg") as HTMLElement
-    fireEvent.click(within(row).getByRole("button", { name: "Assign" }))
+    fireEvent.click(within(row).getByRole("button", { name: "Assign in Training" }))
     expect(screen.getByText("training surface")).toBeInTheDocument()
   })
 })
