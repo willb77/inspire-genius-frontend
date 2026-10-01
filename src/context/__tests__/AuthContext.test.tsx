@@ -5,6 +5,7 @@
 import React from "react";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 /* ── Storage mocks ── */
 const mockGetToken = jest.fn<Promise<string | null>, []>().mockResolvedValue(null);
@@ -148,9 +149,14 @@ jest.mock("@/types/roles", () => ({
 import { AuthProvider } from "../AuthContext";
 import { useAuth } from "../useAuth";
 
-function createWrapper() {
+// AuthProvider reads the query client (logout clears it), so every render
+// needs a provider above it — exactly as App.tsx mounts it. Pass a client to
+// inspect the cache from a test.
+function createWrapper(client: QueryClient = new QueryClient()) {
   return ({ children }: { children: React.ReactNode }) => (
-    <AuthProvider>{children}</AuthProvider>
+    <QueryClientProvider client={client}>
+      <AuthProvider>{children}</AuthProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -175,10 +181,11 @@ describe("AuthContext", () => {
 
   describe("AuthProvider", () => {
     test("renders children", () => {
+      const Wrapper = createWrapper();
       render(
-        <AuthProvider>
+        <Wrapper>
           <div data-testid="child">Hello</div>
-        </AuthProvider>
+        </Wrapper>
       );
       expect(screen.getByTestId("child")).toBeInTheDocument();
     });
@@ -291,6 +298,32 @@ describe("AuthContext", () => {
 
       expect(mockClearAuth).toHaveBeenCalled();
       expect(mockSyncAuthToken).toHaveBeenCalledWith(null);
+      expect(mockNavigate).toHaveBeenCalledWith("/login", { replace: true });
+    });
+
+    test("empties the React Query cache so the next sign-in in this tab starts clean", async () => {
+      mockGetToken.mockResolvedValue("tok");
+      mockReadUser.mockResolvedValue({ email: "a@b.com", role: "manager" });
+      const client = new QueryClient();
+      // What a manager's Team Development page leaves behind: the roster key
+      // carries no user id, so a second manager would read it as their own.
+      client.setQueryData(["development", "roster"], [{ memberId: "m-1", name: "A's report" }]);
+      client.setQueryData(["development", "notes", "m-1"], [{ id: "n-1", body: "A's private note" }]);
+
+      const { result } = renderHook(() => useAuth(), { wrapper: createWrapper(client) });
+      await waitFor(() => {
+        expect(result.current.user).not.toBeNull();
+      });
+      expect(client.getQueryCache().getAll()).toHaveLength(2);
+
+      await act(async () => {
+        await result.current.logout();
+      });
+
+      expect(client.getQueryCache().getAll()).toHaveLength(0);
+      expect(client.getQueryData(["development", "roster"])).toBeUndefined();
+      // Order: the navigate is issued before the cache is cleared, so the
+      // protected page unmounts in the same render that the user becomes null.
       expect(mockNavigate).toHaveBeenCalledWith("/login", { replace: true });
     });
   });
