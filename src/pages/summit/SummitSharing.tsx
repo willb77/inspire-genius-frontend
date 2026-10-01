@@ -8,7 +8,10 @@
  * that decision:
  *
  *   - the people they could share with, each with one switch PER CATEGORY,
- *     the expiry and a Renew. The backend keeps ONE live consent row per
+ *     the expiry and a Renew, and each naming the basis of its own claim
+ *     (TDS-D3: the organisation's record of a reporting line and a manager's
+ *     own roster entry are not the same thing and must not read alike).
+ *     The backend keeps ONE live consent row per
  *     (member, person) and an offer REPLACES that row's category set, so a
  *     switch sends the union of what is live and what was toggled — never a
  *     single category on its own, which would silently strip the other;
@@ -46,16 +49,70 @@ import {
 } from "@/hooks/consent/useVisibility";
 import type { AccessLogRow, LookupResult, MyGrantRow, PersonKind, VisibilityCategories, VisibilityPerson } from "@/types/consent";
 
-const KIND_LABEL: Record<PersonKind, string> = {
-  manager_of_record: "Your manager",
-  roster_manager: "Manager (roster)",
-  practitioner: "Your coach",
-  requester: "Asked for access",
+/**
+ * Where each candidate's claim comes from, said in the member's words.
+ *
+ * The four kinds reach this list by four routes of very different authority,
+ * and before TDS-D3 the panel rendered them as four interchangeable labels —
+ * "Your manager" next to "Manager (roster)", which is the API's vocabulary and
+ * tells a member nothing. The two that matter:
+ *
+ *   - `manager_of_record` is the ORGANISATION's record of the reporting line
+ *     (`public.employee_profiles`);
+ *   - `roster_manager` is a MANAGER'S OWN ASSERTION — anyone who adds this
+ *     member to a roster they keep appears here, and nothing checks it.
+ *
+ * So each row states its basis. `because` describes only what the data
+ * actually establishes: no verification is claimed for either, and neither is
+ * flagged as suspect — the member is choosing who to share with, not being
+ * warned about an intruder. A person can hold several kinds at once and every
+ * one of them is shown, because holding one does not cancel another: a manager
+ * of record who also keeps a roster is both, and hiding either would misstate
+ * the record.
+ *
+ * An unrecognised kind falls back to a stated unknown rather than rendering
+ * blank. `kinds.map((k) => LABEL[k]).join(" · ")` on an unknown key yields the
+ * empty string, which is the failure this codebase keeps paying for — a row
+ * with no basis at all, indistinguishable from one that was never meant to
+ * have one.
+ */
+const KIND_BASIS: Record<PersonKind, { label: string; because: string }> = {
+  manager_of_record: {
+    label: "Your manager",
+    because: "Your organisation's records show you report to them.",
+  },
+  roster_manager: {
+    label: "Lists you on their team",
+    because:
+      "They added you to a team list they keep here — their own list, not your organisation's records.",
+  },
+  practitioner: {
+    label: "Your coach",
+    because: "They added you as a client.",
+  },
+  requester: {
+    label: "Asked for access",
+    because: "They asked you to share with them.",
+  },
 };
+
+const UNKNOWN_BASIS = {
+  label: "On your list",
+  because: "We can't say how they came to be on this list.",
+};
+
+/**
+ * The parameter is a plain string on purpose: `kinds` arrives from the API, so
+ * a kind outside the union is a runtime possibility the type cannot exclude,
+ * and typing it as `PersonKind` would make the fallback look dead.
+ */
+function basisOf(kind: string): { label: string; because: string } {
+  return (KIND_BASIS as Record<string, { label: string; because: string }>)[kind] ?? UNKNOWN_BASIS;
+}
 
 const SOURCE_LABEL: Record<string, string> = {
   managers_of_record: "your manager of record",
-  roster_managers: "managers who added you to a roster",
+  roster_managers: "managers who added you to their team list",
   practitioners: "your coach",
   requesters: "requests",
 };
@@ -160,10 +217,21 @@ function PersonRow({ person }: { person: VisibilityPerson }) {
           <div className="truncate text-[14px] font-bold text-[#0B1B33]">
             {person.displayName || person.email || "Someone"}
           </div>
-          <div className="truncate text-[12px] text-[#13294B]/70">
-            {person.kinds.map((k) => KIND_LABEL[k]).join(" · ")}
-            {person.email ? ` · ${person.email}` : ""}
-          </div>
+          {person.email && (
+            <div className="truncate text-[12px] text-[#13294B]/70">{person.email}</div>
+          )}
+          <ul className="mt-0.5 flex flex-col gap-0.5" data-testid={`basis-${person.userId}`}>
+            {person.kinds.map((k) => {
+              const basis = basisOf(k);
+              return (
+                <li key={k} className="text-[12px] leading-snug text-[#13294B]/70">
+                  <span className="font-semibold text-[#13294B]/85">{basis.label}</span>
+                  {" — "}
+                  {basis.because}
+                </li>
+              );
+            })}
+          </ul>
         </div>
         {isPendingRequest ? (
           <span className="rounded-full bg-[#C88B1B]/15 px-2.5 py-1 text-[11.5px] font-semibold text-[#A9720F]">
@@ -478,6 +546,9 @@ export default function SummitSharing() {
       {!loading && !failed && list.length > 0 && (
         <Card className="!p-[19px]" testId="sharing-people">
           <div className="text-[15px] font-bold text-[#0B1B33]">People</div>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-[#13294B]/75" data-testid="basis-note">
+            Under each name is how they came to be on this list.
+          </p>
           <p className="mt-1 text-[12.5px] leading-relaxed text-[#13294B]/75" data-testid="not-enforced-note">
             {NOT_YET_ENFORCED.map((c) => c.label).join(", ")}: your choice is saved now, but a
             manager or coach you report to can currently still see these through their role. Your
