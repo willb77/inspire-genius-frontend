@@ -379,7 +379,11 @@ describe("add a person", () => {
     });
     renderPage();
     expect(await screen.findByText("Casey Coach")).toBeInTheDocument();
-    expect(screen.getByText(/^Your coach · morgan@example\.com$/)).toBeInTheDocument();
+    // Relation and email both shown. TDS-D3 split them onto their own lines so
+    // each kind could carry its basis, so this asserts the two facts rather
+    // than the single string they used to share.
+    expect(screen.getByTestId("basis-u-coach")).toHaveTextContent("Your coach");
+    expect(screen.getByText("morgan@example.com")).toBeInTheDocument();
     expect(svc.lookupPerson).not.toHaveBeenCalled();
   });
 
@@ -450,5 +454,117 @@ describe("Who has looked (Phase 5)", () => {
   it("says nobody has looked when the log is empty", async () => {
     renderPage();
     expect(await screen.findByTestId("who-has-looked-empty")).toBeInTheDocument();
+  });
+});
+
+/**
+ * Where a candidate's claim comes from (TDS-D3).
+ *
+ * The four kinds reach this list by four routes of different authority, and a
+ * member deciding whether to share their behavioural profile is entitled to
+ * know which one they are looking at. `manager_of_record` is the
+ * organisation's record of the reporting line; `roster_manager` is a
+ * manager's own assertion that nothing checks. These tests assert that the
+ * page says so, in the member's words, for every kind — and that it never
+ * leaks the API's own vocabulary, which is what it showed before.
+ */
+describe("the basis of each candidate's claim", () => {
+  it("a manager of record is attributed to the organisation's records", async () => {
+    svc.getPeople.mockResolvedValue({
+      people: [person({ userId: "u-mor", displayName: "Rowan Avery", kinds: ["manager_of_record"] })],
+      sources: PEOPLE_OK,
+    });
+    renderPage();
+    const basis = await screen.findByTestId("basis-u-mor");
+    expect(basis).toHaveTextContent("Your manager");
+    expect(basis).toHaveTextContent("Your organisation's records show you report to them.");
+  });
+
+  it("a roster manager is attributed to the manager's own list, not the organisation's records", async () => {
+    svc.getPeople.mockResolvedValue({
+      people: [person({ userId: "u-ros", displayName: "Devi Marchetti", kinds: ["roster_manager"] })],
+      sources: PEOPLE_OK,
+    });
+    renderPage();
+    const basis = await screen.findByTestId("basis-u-ros");
+    expect(basis).toHaveTextContent("Lists you on their team");
+    expect(basis).toHaveTextContent("They added you to a team list they keep here");
+    expect(basis).toHaveTextContent("their own list, not your organisation's records");
+    // The distinction is the whole point: a roster entry must not borrow the
+    // manager-of-record sentence.
+    expect(basis).not.toHaveTextContent("records show you report to them");
+  });
+
+  it("a coach and a requester each state their own basis", async () => {
+    svc.getPeople.mockResolvedValue({
+      people: [
+        person({ userId: "u-coach2", displayName: "Kit Solberg", kinds: ["practitioner"] }),
+        person({ userId: "u-req2", displayName: "Noor Haddad", kinds: ["requester"] }),
+      ],
+      sources: PEOPLE_OK,
+    });
+    renderPage();
+    expect(await screen.findByTestId("basis-u-coach2")).toHaveTextContent("They added you as a client.");
+    expect(screen.getByTestId("basis-u-req2")).toHaveTextContent("They asked you to share with them.");
+  });
+
+  it("someone who is both shows both bases — one does not cancel the other", async () => {
+    svc.getPeople.mockResolvedValue({
+      people: [
+        person({
+          userId: "u-both",
+          displayName: "Jules Ferreira",
+          kinds: ["manager_of_record", "roster_manager"],
+        }),
+      ],
+      sources: PEOPLE_OK,
+    });
+    renderPage();
+    const basis = await screen.findByTestId("basis-u-both");
+    expect(basis).toHaveTextContent("Your organisation's records show you report to them.");
+    expect(basis).toHaveTextContent("They added you to a team list they keep here");
+    expect(basis.querySelectorAll("li")).toHaveLength(2);
+  });
+
+  it("an unrecognised kind says the basis is unknown instead of rendering blank", async () => {
+    // `kinds.map((k) => LABEL[k]).join(" · ")` on an unknown key is the empty
+    // string: a row with no basis at all, which reads exactly like a row that
+    // was never meant to have one.
+    svc.getPeople.mockResolvedValue({
+      people: [person({ userId: "u-new", displayName: "Sasha Lindqvist", kinds: ["delegated_reader" as never] })],
+      sources: PEOPLE_OK,
+    });
+    renderPage();
+    const basis = await screen.findByTestId("basis-u-new");
+    expect(basis).toHaveTextContent("On your list");
+    expect(basis).toHaveTextContent("We can't say how they came to be on this list.");
+    expect(basis.textContent?.trim()).not.toBe("");
+  });
+
+  it("never shows the API's own vocabulary for a kind", async () => {
+    svc.getPeople.mockResolvedValue({
+      people: [
+        person({ userId: "u-v1", kinds: ["manager_of_record", "roster_manager"] }),
+        person({ userId: "u-v2", displayName: "Tam Oyelaran", kinds: ["practitioner"] }),
+      ],
+      sources: PEOPLE_OK,
+    });
+    const { container } = renderPage();
+    await screen.findByTestId("basis-u-v1");
+    expect(container.textContent).not.toMatch(/manager_of_record|roster_manager|practitioner|requester/);
+    // ...and the member is told the line under each name means something.
+    expect(screen.getByTestId("basis-note")).toHaveTextContent("how they came to be on this list");
+  });
+
+  it("names the source it could not read, so a short list is not read as a complete one", async () => {
+    // Already honoured before TDS-D3; asserted here because the naming is what
+    // distinguishes "your roster managers are missing" from a generic failure.
+    svc.getPeople.mockResolvedValue({
+      people: [person()],
+      sources: { ...PEOPLE_OK, roster_managers: "unavailable" },
+    });
+    renderPage();
+    expect(await screen.findByText(/managers who added you to their team list/i)).toBeInTheDocument();
+    expect(screen.getByText(/It is not empty — it is unread/i)).toBeInTheDocument();
   });
 });
