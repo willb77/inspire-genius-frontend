@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AuthContext } from "./auth-context";
 import { type AuthContextValue, type AuthUser, type PendingRoleSelection } from "@/types/auth";
 import {
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [pendingRoleSelection, setPendingRoleSelection] = useState<PendingRoleSelection | null>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   /** Parse roles from the login payload — handles comma-separated string, array, or single string */
   const parseRoles = useCallback((payload: LoginDataPayload): UserRole[] => {
@@ -536,7 +538,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logAuditEvent({ action: "logout", actor_email: email ?? "unknown" });
     clearIdleTracking();
     navigate(ROUTES.LOGIN, { replace: true });
-  }, [navigate, user?.email]);
+    // The query client is a module singleton and a navigate is not a reload,
+    // so without this the next person to sign in IN THIS TAB is served the
+    // previous user's cached reads until each refetch lands (the Team
+    // Development roster key carries no user id at all). clear() destroys
+    // every query, which also aborts its in-flight fetch, so a late response
+    // cannot repopulate the cache. CSA: docs/analysis/
+    // 2026-09-30-fe-query-cache-clear-on-logout-csa.md (monorepo).
+    queryClient.clear();
+  }, [navigate, queryClient, user?.email]);
 
   // Idle sign-out. Tracking runs only while a session exists, so the login
   // page never accumulates a deadline. The toast is raised BEFORE logout()
