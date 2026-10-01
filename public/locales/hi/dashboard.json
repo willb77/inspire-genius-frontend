@@ -125,6 +125,7 @@
     "welcomePrefix": "स्वागत है",
     "whatToday": "आज हम किस पर काम कर रहे हैं?",
     "quickGoals": "Goals Studio",
+    "quickMyDevelopment": "My development",
     "checkFailed": "— जाँच नहीं हो सकी",
     "retry": "पुनः प्रयास करें",
     "retryItem": "{{name}} की जाँच पुनः करें",

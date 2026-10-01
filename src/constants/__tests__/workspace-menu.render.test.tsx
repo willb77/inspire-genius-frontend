@@ -94,13 +94,15 @@ describe("My Workspace — rendered menu", () => {
     const menu = renderMenu()
     expect(menu.map((i) => i.label)).toEqual([
       // Exactly six as of 2026-08-12 (request), seven since 2026-09-04 when
-      // Goals returned (Goals offering, Phase 3). Nothing is spliced in any
-      // more — WORKSPACE_VERTICALS and WORKSPACE_VERTICAL_LINKS are both empty
-      // — so the rendered menu is the nav array, with nothing added between
+      // Goals returned (Goals offering, Phase 3), eight since 2026-09-30 when
+      // My development joined (TDS-4c). Nothing is spliced in any more —
+      // WORKSPACE_VERTICALS and WORKSPACE_VERTICAL_LINKS are both empty — so
+      // the rendered menu is the nav array, with nothing added between
       // building it and drawing it.
       "Home",
       "Chat with Meridian",
       "Goals Studio",
+      "My development",
       "Interview Practice",
       "Document Library",
       "Settings",
@@ -123,6 +125,11 @@ describe("My Workspace — rendered menu", () => {
       "Chat with Meridian",
       "Document Library",
       "Interview Practice",
+      // 2026-09-30 (TDS-4c): named explicitly, not left to the "no
+      // permanently-greyed rows" sweep below. A greyed My development would
+      // carry the "Temporarily unavailable" hover text, which would be a lie
+      // about a page gated on nothing but sign-in.
+      "My development",
       "Settings",
       "Help & Support",
     ]) {
@@ -161,16 +168,20 @@ describe("My Workspace — rendered menu", () => {
 // Rendered, not just asserted on the nav array: the greying lives in
 // SidebarScaffold's NavItem, and entries used to be spliced in after the array
 // was built, so only a render proves what a user actually sees.
-describe("My Workspace — the seven entries", () => {
-  it("renders the same seven regardless of entitlements", () => {
+describe("My Workspace — the eight entries", () => {
+  it("renders the same eight regardless of entitlements", () => {
     const menu = renderMenu([])
     expect(menu.map((i) => i.label)).toEqual([
       // Exactly six as of 2026-08-12 (request), seven since 2026-09-04 when
-      // Goals returned — and Goals renders with NO entitlement, which is the
-      // point of asserting on an empty entitlement list here.
+      // Goals returned, eight since 2026-09-30 (TDS-4c) — and both Goals
+      // Studio and My development render with NO entitlement, which is the
+      // point of asserting on an empty entitlement list here. Every read
+      // behind My development is a `/v1/growth/me/*` route resolved from the
+      // caller's own token, so there is nothing to entitle.
       "Home",
       "Chat with Meridian",
       "Goals Studio",
+      "My development",
       "Interview Practice",
       "Document Library",
       "Settings",

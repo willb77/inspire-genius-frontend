@@ -47,6 +47,16 @@ export const ROUTES = {
     /** Feeds Phase 3 — a goal's roadmap toward the role it targets. */
     ROADMAP: (goalId: string) => `/my/goals/${encodeURIComponent(goalId)}/roadmap`,
   },
+  /**
+   * My development (TDS-4c) — the member's own view of the rows a coach sees
+   * about them in the Team Development Studio.
+   *
+   * In the `/my/*` namespace beside MY_GOALS deliberately: both are "this is
+   * mine", both are open to every signed-in role, and neither carries a role
+   * prefix — `ProtectedRoute` gates role-prefixed paths only, so a `/manager/*`
+   * spelling would bounce the `user` account the page exists for.
+   */
+  MY_DEVELOPMENT: "/my/development",
   /** @deprecated Wave 2 Lane 2.A (P7.1) — moved under super-admin as `SUPER_ADMIN.AGENT_TRACE_CONSOLE`. The old path now redirects to the new one. */
   DIAGNOSTIC_CHAT: "/diagnostic-chat",
   SUPER_ADMIN: {

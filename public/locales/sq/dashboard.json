@@ -125,6 +125,7 @@
     "welcomePrefix": "Mirë se vini",
     "whatToday": "Për çfarë po punojmë sot?",
     "quickGoals": "Goals Studio",
+    "quickMyDevelopment": "My development",
     "checkFailed": "— nuk u kontrollua dot",
     "retry": "Riprovo",
     "retryItem": "Riprovo kontrollin e {{name}}",
