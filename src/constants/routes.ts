@@ -44,6 +44,8 @@ export const ROUTES = {
     SHARING: "/my/goals/sharing",
     COACHES: "/my/goals/coaches",
     COMING_SOON: "/my/goals/coming-soon",
+    /** Feeds Phase 3 — a goal's roadmap toward the role it targets. */
+    ROADMAP: (goalId: string) => `/my/goals/${encodeURIComponent(goalId)}/roadmap`,
   },
   /**
    * My development (TDS-4c) — the member's own view of the rows a coach sees
