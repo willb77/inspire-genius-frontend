@@ -93,6 +93,7 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  * The Videos dropdown. PRISM Survey — Introduction is kept; the other four were
  * replaced on 2026-10-02 (request) by the studio tours, all durable objects on
  * the public demo bucket. The films they replaced are still in that bucket.
+ * Bio Capture Studio was added after them the same day (request).
  */
 const VIDEOS: DashboardVideo[] = [
   {
@@ -119,6 +120,11 @@ const VIDEOS: DashboardVideo[] = [
     id: "team-development-studio",
     title: "Team Development Studio",
     src: "https://ig-demo-public-videos.s3.amazonaws.com/IG_Team_Development_Studio.mp4",
+  },
+  {
+    id: "bio-capture-studio",
+    title: "Bio Capture Studio",
+    src: "https://ig-demo-public-videos.s3.amazonaws.com/IG_Bio_Capture_Studio.mp4",
   },
 ];
 
