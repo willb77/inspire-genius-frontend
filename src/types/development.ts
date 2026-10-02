@@ -390,6 +390,10 @@ export type MemberDossier = {
   /** S-3: development interviews, consent-gated on the member's `interviews`
    *  grant and read live. Absent on an older backend. */
   interviews?: DossierInterviews
+  /** S-7: the member has not shared their `development` category with this
+   *  caller, so gaps/learning are withheld — an explicit state, never the
+   *  "none yet" empty list. Absent until development is enforced. */
+  developmentNotShared?: boolean
   gaps: DevelopmentGap[]
   learning: LearningItem[]
   milestones: Milestone[]

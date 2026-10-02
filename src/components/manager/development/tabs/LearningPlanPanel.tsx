@@ -17,6 +17,10 @@
  * Every save is awaited and its outcome toasted, success or failure, with the
  * server's own sentence via `apiErrorMessage` — a PATCH that 422s sends `detail`
  * as an ARRAY, and handing that to sonner renders an object as a React child.
+ *
+ * S-7 prep: "No learning items yet" is said only for a list that actually
+ * arrived empty. When the member has not shared `development` with you, or the
+ * dossier carried no list at all, the tab says that instead.
  */
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -166,12 +170,15 @@ function LearningItemRow({
 export type LearningPlanPanelProps = {
   /** Needed to write: progress is saved per member, per item. */
   memberId: string
-  learning: LearningItem[]
+  /** Missing (null/undefined) means the list did not arrive — not "none". */
+  learning: LearningItem[] | null | undefined
   gaps: DevelopmentGap[]
   goals: SummitGoal[]
+  /** S-7: the dossier says the member has not shared `development` with you. */
+  notShared?: boolean
 }
 
-export function LearningPlanPanel({ memberId, learning, gaps, goals }: LearningPlanPanelProps) {
+export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }: LearningPlanPanelProps) {
   const sk = useDevSkin()
   const navigate = useNavigate()
   const update = useUpdateLearningItem(memberId)
@@ -195,6 +202,26 @@ export function LearningPlanPanel({ memberId, learning, gaps, goals }: LearningP
           toast.error(apiErrorMessage(err, "That didn't save. The item is unchanged."))
         },
       },
+    )
+  }
+
+  if (notShared) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="learning-not-shared">
+          This learning plan hasn&apos;t been shared with you. That isn&apos;t the same as having none.
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!Array.isArray(learning)) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="p-6 text-center text-sm text-amber-700" role="status" data-testid="learning-unavailable">
+          The learning plan couldn&apos;t be loaded right now. That isn&apos;t the same as having none.
+        </CardContent>
+      </Card>
     )
   }
 
