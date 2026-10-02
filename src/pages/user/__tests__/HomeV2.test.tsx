@@ -277,10 +277,48 @@ describe("HomeV2", () => {
       expect(screen.queryByText(/Recent activity/i)).toBeNull();
     });
 
+    // The open Videos list sits beside its toggle button.
+    const videoMenu = () =>
+      within(
+        screen.getByTestId("homev2-quick-videos").parentElement?.querySelector(
+          "ul",
+        ) as HTMLElement,
+      );
+
     it("keeps the videos reachable via the quick-action dropdown", () => {
       wrap();
       fireEvent.click(screen.getByTestId("homev2-quick-videos"));
-      expect(screen.getByText("Brain-Map Quiz")).toBeInTheDocument();
+      expect(videoMenu().getByText("Goals Studio")).toBeInTheDocument();
+    });
+
+    it("lists the PRISM intro and the four studio tours, in order", () => {
+      wrap();
+      fireEvent.click(screen.getByTestId("homev2-quick-videos"));
+      // Scoped to the dropdown: Home also has a "Goals Studio" quick action.
+      const menu = videoMenu();
+      const titles = [
+        "PRISM Survey — Introduction",
+        "Goals Studio",
+        "Interview Studio",
+        "Career Studio",
+        "Team Development Studio",
+      ];
+      const nodes = titles.map((t) => menu.getByText(t));
+      for (let i = 1; i < nodes.length; i++) {
+        expect(
+          nodes[i - 1].compareDocumentPosition(nodes[i]) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+      }
+      // The four films they replaced are gone from the menu.
+      for (const old of [
+        "The Neuroscience of Behavior",
+        "Brain-Map Quiz",
+        "Journey Map Demo",
+        "People in Transition",
+      ]) {
+        expect(menu.queryByText(old)).toBeNull();
+      }
     });
   });
 
