@@ -60,6 +60,20 @@ const INTERVIEW_STUDIO_PREFIXES = [
 ];
 
 /**
+ * The Goals Studio tour, narrated. The person's goal titles are blurred in the
+ * published copy (the original local file is not).
+ */
+const GOALS_STUDIO_GUIDE_VIDEO_URL =
+  "https://ig-demo-public-videos.s3.amazonaws.com/Goals_studio.mp4";
+
+/**
+ * Goals Studio and its sub-pages (overview, discovery, interview, sharing,
+ * coaches, a goal's roadmap) — one tree for every role. Direction Setting's
+ * `/vertical/direction-setting/goals` is a different surface and is excluded.
+ */
+const GOALS_STUDIO_PREFIXES = ["/my/goals"];
+
+/**
  * Route prefixes where the guide pill is NOT shown.
  *
  * This header is rendered by SidebarScaffold for all six roles, so an ungated
@@ -87,6 +101,13 @@ function guidePillFor(pathname: string): GuidePill | null {
       label: "Watch: Interview Studio",
       url: INTERVIEW_STUDIO_GUIDE_VIDEO_URL,
       testId: "interview-studio-guide-video",
+    };
+  }
+  if (matchesPrefix(pathname, GOALS_STUDIO_PREFIXES)) {
+    return {
+      label: "Watch: Goals Studio",
+      url: GOALS_STUDIO_GUIDE_VIDEO_URL,
+      testId: "goals-studio-guide-video",
     };
   }
   if (matchesPrefix(pathname, ROLE_CONSOLE_PREFIXES)) return null;

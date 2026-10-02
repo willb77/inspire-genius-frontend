@@ -187,3 +187,40 @@ describe("UserTopHeader — Interview Studio guide pill", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("UserTopHeader — Goals Studio guide pill", () => {
+  const GOALS_URL =
+    "https://ig-demo-public-videos.s3.amazonaws.com/Goals_studio.mp4";
+
+  it.each([
+    "/my/goals",
+    "/my/goals/overview",
+    "/my/goals/discovery",
+    "/my/goals/interview",
+    "/my/goals/sharing",
+    "/my/goals/coaches",
+    "/my/goals/g-123/roadmap",
+  ])("replaces the My Workspace pill on %s", (path) => {
+    mockPathname = path;
+    render(<UserTopHeader />);
+    const pill = screen.getByTestId("goals-studio-guide-video");
+    expect(pill).toHaveTextContent("Watch: Goals Studio");
+    expect(pill).toHaveAttribute("href", GOALS_URL);
+    expect(pill).toHaveAttribute("target", "_blank");
+    expect(pill.getAttribute("rel")).toContain("noopener");
+    expect(
+      screen.queryByTestId("workspace-guide-video"),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each(["/vertical/direction-setting/goals", "/my/goalsx", "/my/development"])(
+    "does not show on %s",
+    (path) => {
+      mockPathname = path;
+      render(<UserTopHeader />);
+      expect(
+        screen.queryByTestId("goals-studio-guide-video"),
+      ).not.toBeInTheDocument();
+    },
+  );
+});
