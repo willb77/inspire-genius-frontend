@@ -18,8 +18,15 @@
  *  - **Render the gap's status.** `GET /gaps` does not filter closed rows out,
  *    so a closed gap comes back in the list. Without this it would keep
  *    offering "Close this gap" on something already closed.
+ *
+ * S-7 prep: a failed read is NOT "no gaps". The query's error used to be
+ * dropped, so a 403 rendered "No gaps identified against this target" — the one
+ * sentence that is false in that case. Three states now, each said in words:
+ * not shared (the dossier says so, or the read is 403), couldn't load (any other
+ * failure), and none (a successful empty list).
  */
 import { useEffect, useMemo, useState } from "react"
+import { isAxiosError } from "axios"
 import { toast } from "sonner"
 import { AlertTriangle, CheckCircle2, Info, Target } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -70,9 +77,11 @@ export type GapAnalysisPanelProps = {
   matches: CareerMatch[]
   /** Pre-select a target blueprint (e.g. "Set as target" from Career Matches). */
   initialTargetId?: string
+  /** S-7: the dossier says the member has not shared `development` with you. */
+  notShared?: boolean
 }
 
-export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnalysisPanelProps) {
+export function GapAnalysisPanel({ memberId, matches, initialTargetId, notShared }: GapAnalysisPanelProps) {
   const sk = useDevSkin()
   const targetOptions = useMemo(
     () => matches.filter((m) => m.blueprintId),
@@ -86,7 +95,17 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnal
     if (initialTargetId) setTargetId(initialTargetId)
   }, [initialTargetId])
 
-  const { data: gaps, isLoading } = useGapAnalysis(memberId, targetId)
+  const { data: gaps, isLoading, error } = useGapAnalysis(memberId, targetId)
+  const forbidden = isAxiosError(error) && error.response?.status === 403
+  const view: "not_shared" | "unavailable" | "loading" | "none" | "list" = notShared || forbidden
+    ? "not_shared"
+    : error
+      ? "unavailable"
+      : isLoading
+        ? "loading"
+        : (gaps?.length ?? 0) === 0
+          ? "none"
+          : "list"
   const closePlan = useCloseGapPlan(memberId)
   // Per-gap, not one shared `isPending`: the old code disabled every row's
   // button while any one of them was in flight.
@@ -155,9 +174,21 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnal
 
       <DisclaimerNote />
 
-      {isLoading ? (
+      {view === "not_shared" ? (
+        <Card className="border-dashed">
+          <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="gaps-not-shared">
+            These development gaps haven&apos;t been shared with you. That isn&apos;t the same as having none.
+          </CardContent>
+        </Card>
+      ) : view === "unavailable" ? (
+        <Card className="border-dashed">
+          <CardContent className="p-6 text-center text-sm text-amber-700" role="status" data-testid="gaps-unavailable">
+            Gaps couldn&apos;t be loaded right now. That isn&apos;t the same as having none.
+          </CardContent>
+        </Card>
+      ) : view === "loading" ? (
         <div className={cn("py-10 text-center text-sm", sk.text400)}>Analyzing gaps…</div>
-      ) : (gaps?.length ?? 0) === 0 ? (
+      ) : view === "none" ? (
         <Card className="border-dashed">
           <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
             No gaps identified against this target.
