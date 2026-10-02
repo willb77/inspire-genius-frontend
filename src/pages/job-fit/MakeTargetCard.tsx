@@ -27,6 +27,11 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
   const already = (targets.data ?? []).filter((t) => t.jobId === data.jobId)
   const titleOf = (goalId: string) => goals.find((g) => g.goalId === goalId)?.title ?? "A goal"
   const done = make.data
+  // Feeds-F5: once a goal targets this role, the card offers the roadmap, not a
+  // second create (which only re-aimed the same goal and rebuilt its roadmap).
+  // Held back while the targets list loads so it cannot be clicked first; if
+  // that read fails the form stays, since a create then reuses the goal.
+  const showForm = !targets.isLoading && already.length === 0
 
   return (
     <section
@@ -55,6 +60,8 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
         </ul>
       )}
 
+      {showForm && (
+      <>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <label className="text-sm text-[#475569]" htmlFor="target-goal">
           Goal
@@ -93,6 +100,8 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
         <p className="mt-2 text-xs text-[#475569]">
           Couldn&apos;t read your goals — you can still create a new one for this role.
         </p>
+      )}
+      </>
       )}
 
       {done && (

@@ -126,7 +126,8 @@ describe("MakeTargetCard", () => {
     let resolve: (v: unknown) => void = () => {}
     mockMake.mockReturnValue(new Promise((r) => { resolve = r }))
     renderAt(<MakeTargetCard data={FIT} />)
-    fireEvent.click(screen.getByRole("button", { name: /make this my target/i }))
+    // Feeds-F5: the form waits for the targets read, so it cannot be clicked first.
+    fireEvent.click(await screen.findByRole("button", { name: /make this my target/i }))
     await waitFor(() => expect(mockMake).toHaveBeenCalled())
     expect(mockMake.mock.calls[0][0]).toEqual({ jobId: "job-analyst", fitSnapshot: FIT })
     expect(screen.queryByRole("status")).not.toBeInTheDocument()
@@ -146,13 +147,18 @@ describe("MakeTargetCard", () => {
     expect(mockMake.mock.calls[0][0]).toMatchObject({ goalId: "b1", jobId: "job-analyst" })
   })
 
-  test("a failure is rendered as words, and a goal already aimed here is named", async () => {
-    mockMine.mockResolvedValue([TARGET])
+  test("a failure is rendered as words", async () => {
     mockMake.mockRejectedValue({ response: { status: 403, data: { detail: "Goal targets are not enabled on this tier." } } })
     renderAt(<MakeTargetCard data={FIT} />)
-    expect(await screen.findByText(/already targets this role/)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: /make this my target/i }))
+    fireEvent.click(await screen.findByRole("button", { name: /make this my target/i }))
     expect(await screen.findByRole("alert")).toHaveTextContent("Goal targets are not enabled on this tier.")
+  })
+
+  test("a goal already aimed here is named, with its roadmap and no second create (Feeds-F5)", async () => {
+    mockMine.mockResolvedValue([TARGET])
+    renderAt(<MakeTargetCard data={FIT} />)
+    expect(await screen.findByText(/already targets this role/)).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /make this my target/i })).not.toBeInTheDocument()
   })
 })
 
