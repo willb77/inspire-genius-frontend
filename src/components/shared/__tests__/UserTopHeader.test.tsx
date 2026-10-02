@@ -41,7 +41,7 @@ import { render, screen } from "@testing-library/react";
 import UserTopHeader from "@/components/shared/UserTopHeader";
 
 const GUIDE_URL =
-  "https://ig-demo-public-videos.s3.amazonaws.com/My_Workspace_Orientation.mp4";
+  "https://ig-demo-public-videos.s3.amazonaws.com/IG_My_Workspace.mp4";
 
 beforeEach(() => {
   mockPathname = "/home";
@@ -78,6 +78,8 @@ describe("UserTopHeader — My Workspace guide pill", () => {
     // about a stale-but-valid URL looks wrong at runtime — the pill would open
     // a working film that is simply the previous one.
     expect(pill.getAttribute("href")).not.toContain("My_Workspace_userguide");
+    // Same for the 2026-08-26 cut this replaced on 2026-10-02.
+    expect(pill.getAttribute("href")).not.toContain("My_Workspace_Orientation");
     expect(pill).toHaveAttribute("target", "_blank");
     // Both tokens matter: noopener stops the opened tab reaching
     // window.opener, and it is why this is an anchor rather than
