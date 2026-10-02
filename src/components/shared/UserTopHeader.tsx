@@ -15,7 +15,7 @@ import { ROLES, ROUTES } from "@/constants/routes";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 /**
- * The My Workspace orientation film (8:06), narrated.
+ * The My Workspace tour (4:13), narrated: Home and the seven sidebar pages.
  *
  * A durable object URL on the public demo bucket the Home videos already play
  * from: no auth, no expiry. A presigned link would lapse and leave a dead pill
@@ -27,9 +27,12 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
  * invalidation path — anyone who had already played the old film would keep
  * getting it for up to a day, with nothing anyone could do about it. A new key
  * is correct for every viewer the moment this deploys.
+ *
+ * Replaced again 2026-10-02 by `IG_My_Workspace.mp4`, a new key for the same
+ * reason. `My_Workspace_Orientation.mp4` stays in the bucket untouched.
  */
 const WORKSPACE_GUIDE_VIDEO_URL =
-  "https://ig-demo-public-videos.s3.amazonaws.com/My_Workspace_Orientation.mp4";
+  "https://ig-demo-public-videos.s3.amazonaws.com/IG_My_Workspace.mp4";
 
 /**
  * Route prefixes where the guide pill is NOT shown.
