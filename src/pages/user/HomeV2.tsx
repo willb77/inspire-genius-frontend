@@ -89,6 +89,11 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  *     navigated to the assessment page and never showed the report.
  */
 
+/**
+ * The Videos dropdown. PRISM Survey — Introduction is kept; the other four were
+ * replaced on 2026-10-02 (request) by the studio tours, all durable objects on
+ * the public demo bucket. The films they replaced are still in that bucket.
+ */
 const VIDEOS: DashboardVideo[] = [
   {
     id: "prism-survey",
@@ -96,24 +101,24 @@ const VIDEOS: DashboardVideo[] = [
     src: "https://dj7od5nj42063.cloudfront.net/demo/PRISM_Survey_Intro.mp4",
   },
   {
-    id: "neuroscience",
-    title: "The Neuroscience of Behavior",
-    src: "https://ig-demo-public-videos.s3.amazonaws.com/IG_Neuroscience_of_Behavior_Narrated.mp4",
+    id: "goals-studio",
+    title: "Goals Studio",
+    src: "https://ig-demo-public-videos.s3.amazonaws.com/Goals_studio.mp4",
   },
   {
-    id: "brainmap-quiz",
-    title: "Brain-Map Quiz",
-    src: "https://ig-demo-public-videos.s3.amazonaws.com/IG-BrainMap_quiz.mp4",
+    id: "interview-studio",
+    title: "Interview Studio",
+    src: "https://ig-demo-public-videos.s3.amazonaws.com/IG_Interview_Studio.mp4",
   },
   {
-    id: "journey-map",
-    title: "Journey Map Demo",
-    src: "https://ig-demo-public-videos.s3.amazonaws.com/Journey_Map_Demos.mp4",
+    id: "career-studio",
+    title: "Career Studio",
+    src: "https://ig-demo-public-videos.s3.amazonaws.com/IG_Career_Studio.mp4",
   },
   {
-    id: "people-transition",
-    title: "People in Transition",
-    src: "https://dj7od5nj42063.cloudfront.net/demo/People_in_Transition.mp4",
+    id: "team-development-studio",
+    title: "Team Development Studio",
+    src: "https://ig-demo-public-videos.s3.amazonaws.com/IG_Team_Development_Studio.mp4",
   },
 ];
 
