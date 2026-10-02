@@ -135,3 +135,55 @@ describe("UserTopHeader — My Workspace guide pill", () => {
     expect(screen.getByText(/Welcome! User/)).toBeInTheDocument();
   });
 });
+
+describe("UserTopHeader — Interview Studio guide pill", () => {
+  const INTERVIEW_URL =
+    "https://ig-demo-public-videos.s3.amazonaws.com/IG_Interview_Studio.mp4";
+
+  it.each([
+    "/super-admin/interview-studio",
+    "/super-admin/interview-live",
+    "/manager/interview-studio",
+    "/manager/interview-live",
+    "/practitioner/interview-studio",
+    "/practitioner/interview-live",
+    "/interview-practice",
+  ])("replaces the My Workspace pill on %s", (path) => {
+    mockPathname = path;
+    render(<UserTopHeader />);
+    const pill = screen.getByTestId("interview-studio-guide-video");
+    expect(pill).toHaveTextContent("Watch: Interview Studio");
+    expect(pill).toHaveAttribute("href", INTERVIEW_URL);
+    expect(pill).toHaveAttribute("target", "_blank");
+    expect(pill.getAttribute("rel")).toContain("noopener");
+    // One pill, not two: the My Workspace film is replaced, not joined.
+    expect(
+      screen.queryByTestId("workspace-guide-video"),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    // Look-alike routes outside the Interview Studio group.
+    "/manager/interviews",
+    "/manager/interview-prep",
+    "/practitioner/interview-prep",
+    "/super-admin/interview-studios-archive",
+  ])("does not show on %s", (path) => {
+    mockPathname = path;
+    render(<UserTopHeader />);
+    expect(
+      screen.queryByTestId("interview-studio-guide-video"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("leaves the My Workspace pill on the other user pages", () => {
+    mockPathname = "/home";
+    render(<UserTopHeader />);
+    expect(screen.getByTestId("workspace-guide-video")).toHaveTextContent(
+      "Watch: My Workspace guide",
+    );
+    expect(
+      screen.queryByTestId("interview-studio-guide-video"),
+    ).not.toBeInTheDocument();
+  });
+});
