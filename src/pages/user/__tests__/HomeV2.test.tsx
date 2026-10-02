@@ -291,7 +291,7 @@ describe("HomeV2", () => {
       expect(videoMenu().getByText("Goals Studio")).toBeInTheDocument();
     });
 
-    it("lists the PRISM intro and the five studio tours, in order", () => {
+    it("lists the PRISM intro and the six studio tours, in order", () => {
       wrap();
       fireEvent.click(screen.getByTestId("homev2-quick-videos"));
       // Scoped to the dropdown: Home also has a "Goals Studio" quick action.
@@ -303,6 +303,7 @@ describe("HomeV2", () => {
         "Career Studio",
         "Team Development Studio",
         "Bio Capture Studio",
+        "Knowledge Capture Studio",
       ];
       const nodes = titles.map((t) => menu.getByText(t));
       for (let i = 1; i < nodes.length; i++) {
