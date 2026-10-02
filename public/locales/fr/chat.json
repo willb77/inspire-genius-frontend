@@ -28,6 +28,9 @@
     "viaAgent": "via {{agent}}",
     "profileLabel": "Profil : {{frameworks}}",
     "reviewingBanner": "Examen de {{count}} conversation supplémentaire en parallèle du chat actif.",
+    "reviewPending": "{{count}} conversation(s) sélectionnée(s). Meridian la/les lira avec votre prochain message.",
+    "reviewLoaded": "Meridian a lu {{count}} conversation(s) sélectionnée(s) avec votre dernier message.",
+    "reviewMissing": "Meridian n'a pas pu charger {{missing}} des {{count}} conversations sélectionnées. Il en lit 3 au maximum, et uniquement les vôtres.",
     "profileIndicator": {
       "title": "Cadres que Meridian peut consulter dans cette conversation"
     },

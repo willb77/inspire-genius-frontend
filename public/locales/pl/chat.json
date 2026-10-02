@@ -28,6 +28,9 @@
     "viaAgent": "przez {{agent}}",
     "profileLabel": "Profil: {{frameworks}}",
     "reviewingBanner": "Przeglądam dodatkowe rozmowy ({{count}}) obok aktywnego czatu.",
+    "reviewPending": "Wybrane rozmowy: {{count}}. Meridian odczyta je razem z Twoją następną wiadomością.",
+    "reviewLoaded": "Meridian odczytał wybrane rozmowy ({{count}}) razem z Twoją ostatnią wiadomością.",
+    "reviewMissing": "Meridian nie mógł wczytać {{missing}} z {{count}} wybranych rozmów. Odczytuje maksymalnie 3 i tylko Twoje własne.",
     "profileIndicator": {
       "title": "Frameworki, do których Meridian może się odwołać w tej rozmowie"
     },

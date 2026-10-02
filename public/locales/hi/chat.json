@@ -28,6 +28,9 @@
     "viaAgent": "{{agent}} के माध्यम से",
     "profileLabel": "प्रोफ़ाइल: {{frameworks}}",
     "reviewingBanner": "सक्रिय चैट के साथ-साथ {{count}} अतिरिक्त बातचीत की समीक्षा की जा रही है।",
+    "reviewPending": "{{count}} बातचीत चुनी गई। Meridian इसे आपके अगले संदेश के साथ पढ़ेगा।",
+    "reviewLoaded": "Meridian ने आपके पिछले संदेश के साथ चुनी गई {{count}} बातचीत पढ़ी।",
+    "reviewMissing": "Meridian चुनी गई {{count}} में से {{missing}} बातचीत लोड नहीं कर सका। यह अधिकतम 3, और केवल आपकी अपनी बातचीत पढ़ता है।",
     "profileIndicator": {
       "title": "इस बातचीत में Meridian जिन फ्रेमवर्क का संदर्भ ले सकता है"
     },

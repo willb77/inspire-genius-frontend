@@ -28,6 +28,9 @@
     "viaAgent": "über {{agent}}",
     "profileLabel": "Profil: {{frameworks}}",
     "reviewingBanner": "Überprüft {{count}} weitere Unterhaltungen neben dem aktiven Chat.",
+    "reviewPending": "{{count}} Unterhaltung(en) ausgewählt. Meridian liest sie mit Ihrer nächsten Nachricht.",
+    "reviewLoaded": "Meridian hat {{count}} ausgewählte Unterhaltung(en) mit Ihrer letzten Nachricht gelesen.",
+    "reviewMissing": "Meridian konnte {{missing}} von {{count}} ausgewählten Unterhaltungen nicht laden. Es liest bis zu 3, und nur Ihre eigenen.",
     "profileIndicator": {
       "title": "Frameworks, auf die sich Meridian in dieser Unterhaltung beziehen kann"
     },

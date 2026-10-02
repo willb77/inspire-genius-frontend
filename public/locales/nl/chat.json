@@ -28,6 +28,9 @@
     "viaAgent": "via {{agent}}",
     "profileLabel": "Profiel: {{frameworks}}",
     "reviewingBanner": "{{count}} extra gesprekken worden naast de actieve chat bekeken.",
+    "reviewPending": "{{count}} gesprek(ken) geselecteerd. Meridian leest ze bij je volgende bericht.",
+    "reviewLoaded": "Meridian heeft {{count}} geselecteerd(e) gesprek(ken) gelezen bij je laatste bericht.",
+    "reviewMissing": "Meridian kon {{missing}} van de {{count}} geselecteerde gesprekken niet laden. Het leest er maximaal 3, en alleen je eigen gesprekken.",
     "profileIndicator": {
       "title": "Frameworks waarnaar Meridian in dit gesprek kan verwijzen"
     },

@@ -28,6 +28,9 @@
     "viaAgent": "via {{agent}}",
     "profileLabel": "Profil: {{frameworks}}",
     "reviewingBanner": "Granskar {{count}} ytterligare konversationer vid sidan av den aktiva chatten.",
+    "reviewPending": "{{count}} konversation(er) vald(a). Meridian läser dem med ditt nästa meddelande.",
+    "reviewLoaded": "Meridian läste {{count}} vald(a) konversation(er) med ditt senaste meddelande.",
+    "reviewMissing": "Meridian kunde inte läsa in {{missing}} av {{count}} valda konversationer. Den läser upp till 3, och bara dina egna.",
     "profileIndicator": {
       "title": "Ramverk som Meridian kan hänvisa till i den här konversationen"
     },

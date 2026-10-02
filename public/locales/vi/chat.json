@@ -28,6 +28,9 @@
     "viaAgent": "qua {{agent}}",
     "profileLabel": "Hồ sơ: {{frameworks}}",
     "reviewingBanner": "Đang xem lại {{count}} cuộc trò chuyện bổ sung cùng với cuộc trò chuyện đang hoạt động.",
+    "reviewPending": "Đã chọn {{count}} cuộc trò chuyện. Meridian sẽ đọc cùng tin nhắn tiếp theo của bạn.",
+    "reviewLoaded": "Meridian đã đọc {{count}} cuộc trò chuyện đã chọn cùng tin nhắn gần nhất của bạn.",
+    "reviewMissing": "Meridian không thể tải {{missing}} trong số {{count}} cuộc trò chuyện đã chọn. Meridian đọc tối đa 3 cuộc, và chỉ của riêng bạn.",
     "profileIndicator": {
       "title": "Các khung mà Meridian có thể tham chiếu trong cuộc trò chuyện này"
     },

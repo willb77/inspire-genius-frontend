@@ -28,6 +28,9 @@
     "viaAgent": "通过 {{agent}}",
     "profileLabel": "画像：{{frameworks}}",
     "reviewingBanner": "正在与当前聊天一起查看另外 {{count}} 个对话。",
+    "reviewPending": "已选择 {{count}} 个对话。Meridian 将在您发送下一条消息时读取。",
+    "reviewLoaded": "Meridian 已在您上一条消息中读取所选的 {{count}} 个对话。",
+    "reviewMissing": "Meridian 无法加载所选 {{count}} 个对话中的 {{missing}} 个。它最多读取 3 个，且只读取您自己的对话。",
     "profileIndicator": {
       "title": "Meridian 在此对话中可参考的框架"
     },

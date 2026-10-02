@@ -46,6 +46,9 @@ export type MeridianResponse = {
     rag_avg_similarity?: number;
     contributing_agents?: string[];
     synthesized?: boolean;
+    // Past conversations the server actually loaded this turn (History review or
+    // a pasted id). The History banner reads this; see src/lib/chat/reviewSelection.ts.
+    referenced_conversation_ids?: string[];
     // IG Core document-generation skill — files produced this turn, each with
     // a presigned download URL. Rendered as a download button in the bubble.
     attachments?: {

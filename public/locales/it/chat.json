@@ -28,6 +28,9 @@
     "viaAgent": "tramite {{agent}}",
     "profileLabel": "Profilo: {{frameworks}}",
     "reviewingBanner": "Revisione di {{count}} conversazione aggiuntiva insieme alla chat attiva.",
+    "reviewPending": "{{count}} conversazione/i selezionata/e. Meridian la/le leggerà con il tuo prossimo messaggio.",
+    "reviewLoaded": "Meridian ha letto {{count}} conversazione/i selezionata/e con il tuo ultimo messaggio.",
+    "reviewMissing": "Meridian non è riuscito a caricare {{missing}} delle {{count}} conversazioni selezionate. Ne legge al massimo 3, e solo le tue.",
     "profileIndicator": {
       "title": "Framework che Meridian può consultare in questa conversazione"
     },

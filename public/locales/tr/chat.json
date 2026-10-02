@@ -28,6 +28,9 @@
     "viaAgent": "{{agent}} aracılığıyla",
     "profileLabel": "Profil: {{frameworks}}",
     "reviewingBanner": "Aktif sohbetin yanında ek görüşmeler ({{count}}) inceleniyor.",
+    "reviewPending": "{{count}} görüşme seçildi. Meridian bunları bir sonraki mesajınızla okuyacak.",
+    "reviewLoaded": "Meridian seçilen {{count}} görüşmeyi son mesajınızla okudu.",
+    "reviewMissing": "Meridian seçilen {{count}} görüşmeden {{missing}} tanesini yükleyemedi. En fazla 3 görüşme ve yalnızca sizinkileri okur.",
     "profileIndicator": {
       "title": "Meridian'ın bu görüşmede başvurabileceği çerçeveler"
     },
