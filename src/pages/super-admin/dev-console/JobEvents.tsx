@@ -1,10 +1,9 @@
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { useTranslation } from "react-i18next";
 import { AlertOctagon, CircleDollarSign, FileCode2, ListChecks, ShieldAlert, Wrench } from "lucide-react";
 
 import type { AnswerEvent, Citation, JobEvent } from "@/types/devConsole";
 import { safeCitationUrl } from "./devConsoleView";
+import { SafeMarkdown } from "./SafeMarkdown";
 
 function citationLabel(c: Citation): string {
   if (!c.line_start) return c.path;
@@ -51,7 +50,7 @@ function Answer({ event }: { event: AnswerEvent }) {
         {t("events.answer")}
       </div>
       <div className="space-y-2 text-sm leading-relaxed [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-2">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{event.markdown}</ReactMarkdown>
+        <SafeMarkdown>{event.markdown}</SafeMarkdown>
       </div>
       <Citations citations={event.citations ?? []} />
     </div>

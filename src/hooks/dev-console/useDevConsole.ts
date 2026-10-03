@@ -81,6 +81,10 @@ export function useDevConsoleMe() {
     queryKey: DEV_CONSOLE_QK.me,
     queryFn: getDevConsoleAccess,
     enabled: isDevConsoleConfigured(),
+    // A token that has expired at page load makes this probe 401, which hides
+    // the tab (the probe deliberately skips the refresh cascade). It comes back
+    // after the 60 s staleTime or on the next window-focus refetch, once the
+    // ticket queue's own calls have refreshed the token.
     staleTime: 60_000,
     retry: false,
   });
