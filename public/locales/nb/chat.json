@@ -28,6 +28,9 @@
     "viaAgent": "via {{agent}}",
     "profileLabel": "Profil: {{frameworks}}",
     "reviewingBanner": "Gjennomgår {{count}} flere samtaler ved siden av den aktive chatten.",
+    "reviewPending": "{{count}} samtale(r) valgt. Meridian leser den/dem sammen med neste melding.",
+    "reviewLoaded": "Meridian leste {{count}} valgte samtale(r) sammen med din forrige melding.",
+    "reviewMissing": "Meridian kunne ikke laste {{missing}} av {{count}} valgte samtaler. Den leser opptil 3, og bare dine egne.",
     "profileIndicator": {
       "title": "Rammeverk som Meridian kan referere til i denne samtalen"
     },

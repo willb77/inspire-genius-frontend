@@ -28,6 +28,9 @@
     "viaAgent": "përmes {{agent}}",
     "profileLabel": "Profili: {{frameworks}}",
     "reviewingBanner": "Po shqyrtohen biseda shtesë ({{count}}) krahas bisedës aktive.",
+    "reviewPending": "U zgjodhën {{count}} biseda. Meridian do t'i lexojë me mesazhin tuaj të radhës.",
+    "reviewLoaded": "Meridian lexoi {{count}} bisedat e zgjedhura me mesazhin tuaj të fundit.",
+    "reviewMissing": "Meridian nuk mundi të ngarkonte {{missing}} nga {{count}} bisedat e zgjedhura. Lexon deri në 3, dhe vetëm bisedat tuaja.",
     "profileIndicator": {
       "title": "Kornizat që Meridian mund t'u referohet në këtë bisedë"
     },

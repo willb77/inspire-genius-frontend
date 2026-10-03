@@ -28,6 +28,9 @@
     "viaAgent": "via {{agent}}",
     "profileLabel": "Perfil: {{frameworks}}",
     "reviewingBanner": "Analisando {{count}} conversa adicional junto com o chat ativo.",
+    "reviewPending": "{{count}} conversa(s) selecionada(s). A Meridian vai lê-la(s) com sua próxima mensagem.",
+    "reviewLoaded": "A Meridian leu {{count}} conversa(s) selecionada(s) com sua última mensagem.",
+    "reviewMissing": "A Meridian não conseguiu carregar {{missing}} de {{count}} conversas selecionadas. Ela lê até 3, e apenas as suas.",
     "profileIndicator": {
       "title": "Estruturas que o Meridian pode consultar nesta conversa"
     },

@@ -76,6 +76,12 @@ import {
 } from "lucide-react";
 import { ttsLanguage } from "@/lib/voiceLanguage"
 import { createTurnLanguageLatch, replyLanguage } from "@/lib/detectLanguage"
+import {
+  loadedReviewIds,
+  reviewBannerState,
+  reviewContext,
+  type ReviewOutcome,
+} from "@/lib/chat/reviewSelection"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -456,6 +462,18 @@ export default function MeridianChat({
   // 30s staleTime — fresh chats now appear in History immediately.
   const queryClientWs = useQueryClient();
 
+  // History "review" — what the last turn sent and what the server says it
+  // loaded (`metadata.referenced_conversation_ids`). The banner reads this, so
+  // it states what happened rather than what was ticked. See
+  // src/lib/chat/reviewSelection.ts for why that distinction exists.
+  const [reviewOutcome, setReviewOutcome] = useState<ReviewOutcome | null>(null);
+  const reviewSentRef = useRef<string[]>([]);
+  const settleReview = useCallback((metadata: unknown) => {
+    if (reviewSentRef.current.length === 0) return;
+    setReviewOutcome({ sent: reviewSentRef.current, loaded: loadedReviewIds(metadata) });
+    reviewSentRef.current = [];
+  }, []);
+
   // Single rendering path for a settled assistant turn. Used by both
   // the WS `complete` frame and the async-jobs `job_complete` / poll
   // settlement path so the in-flight bubble swap happens identically
@@ -468,6 +486,7 @@ export default function MeridianChat({
     }) => {
       const { content, agent, metadata } = input;
       if (agent) setAgentAttribution(agent);
+      settleReview(metadata);
       const ragSources = metadata?.rag_sources?.filter((s) => s.filename) ?? [];
       const contributingAgents = metadata?.contributing_agents;
       const synthesized = metadata?.synthesized;
@@ -537,7 +556,7 @@ export default function MeridianChat({
         // never break over a cache miss
       }
     },
-    [queryClientWs],
+    [queryClientWs, settleReview],
   );
 
   // -------------------------------------------------------------------
@@ -1219,6 +1238,7 @@ export default function MeridianChat({
       lastSpokenTextRef.current = _sseLastComplete.content.trim();
     }
     sseTtsSpokeRef.current = false;
+    settleReview(_sseLastComplete.metadata);
     const placeholderId = sseStreamingMessageIdRef.current;
     if (!placeholderId) return;
     setMessages((prev) =>
@@ -1234,7 +1254,7 @@ export default function MeridianChat({
       ),
     );
     sseStreamingMessageIdRef.current = null;
-  }, [_sseLastComplete]);
+  }, [_sseLastComplete, settleReview]);
 
   // Keep attribution in sync with WS-reported agent
   useEffect(() => {
@@ -1778,6 +1798,10 @@ export default function MeridianChat({
     // handleJobSettled → renderAssistantComplete via the
     // shared rendering path.
     const sessionForJob = conversationId || "default";
+    // History "review" selection rides every send path (SSE, its async
+    // redirect, async-jobs). Empty selection adds nothing to the body.
+    const review = reviewContext(reviewConversationIds);
+    reviewSentRef.current = review.review_conversation_ids ?? [];
 
     // T22 — SSE fallback branch. Fires only when the WS
     // reconnect budget is fully exhausted; the happy path
@@ -1804,7 +1828,7 @@ export default function MeridianChat({
         .send({
           message: text,
           sessionId: sessionForJob,
-          context: { conversation_id: conversationId, session_id: sessionForJob },
+          context: { conversation_id: conversationId, session_id: sessionForJob, ...review },
           fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
         })
         .catch((err: unknown) => {
@@ -1824,6 +1848,7 @@ export default function MeridianChat({
                   conversation_id: conversationId,
                   session_id: sessionForJob,
                   preflight_redirect_job_id: err.redirect.jobId,
+                  ...review,
                 },
               })
               .catch(() => {
@@ -1842,7 +1867,7 @@ export default function MeridianChat({
           message: text,
           sessionId: sessionForJob,
           fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
-          context: { conversation_id: conversationId, session_id: sessionForJob },
+          context: { conversation_id: conversationId, session_id: sessionForJob, ...review },
         })
         .catch(() => {
           setStatusBanner({ type: "error", text: t("meridian.error.unreachableShort", { defaultValue: "Couldn't reach Meridian" }) });
@@ -1996,7 +2021,10 @@ export default function MeridianChat({
               History · Documents · Export. */}
           <HistoryDropdown
             selectedIds={reviewConversationIds}
-            onChange={setReviewConversationIds}
+            onChange={(ids) => {
+              setReviewConversationIds(ids);
+              setReviewOutcome(null);
+            }}
             activeId={selectedId ?? null}
             onSelectActive={(id) => {
               void handleSelectConversation(id);
@@ -2181,13 +2209,26 @@ export default function MeridianChat({
         >
           {reviewConversationIds.length > 0 && (
             <div
+              role="status"
+              data-testid="meridian-review-banner"
               className={
                 isV2
                   ? "mb-2 rounded-lg border border-hairline bg-panel px-3 py-2 text-xs text-mute"
                   : "mb-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
               }
             >
-              {t("meridian.reviewingBanner", { defaultValue: "Reviewing {{count}} additional conversation{{plural}} alongside the active chat.", count: reviewConversationIds.length, plural: reviewConversationIds.length === 1 ? "" : "s" })}
+              {(() => {
+                // Only what the server confirmed — never the tick alone.
+                const st = reviewBannerState(reviewConversationIds, reviewOutcome);
+                const plural = (n: number) => (n === 1 ? "" : "s");
+                if (st.kind === "loaded") {
+                  return t("meridian.reviewLoaded", { defaultValue: "Meridian read {{count}} selected conversation{{plural}} with your last message.", count: st.count, plural: plural(st.count) });
+                }
+                if (st.kind === "missing") {
+                  return t("meridian.reviewMissing", { defaultValue: "Meridian could not load {{missing}} of {{count}} selected conversation{{plural}}. It reads up to 3, and only your own.", missing: st.missing, count: st.count, plural: plural(st.count) });
+                }
+                return t("meridian.reviewPending", { defaultValue: "{{count}} conversation{{plural}} selected. Meridian will read {{them}} with your next message.", count: reviewConversationIds.length, plural: plural(reviewConversationIds.length), them: reviewConversationIds.length === 1 ? "it" : "them" });
+              })()}
             </div>
           )}
           <ChatWindow

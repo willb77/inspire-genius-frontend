@@ -28,6 +28,9 @@
     "viaAgent": "{{agent}}経由",
     "profileLabel": "プロファイル: {{frameworks}}",
     "reviewingBanner": "アクティブなチャットとあわせて、追加の{{count}}件の会話を確認しています。",
+    "reviewPending": "{{count}}件の会話を選択しました。次のメッセージでMeridianが読み込みます。",
+    "reviewLoaded": "前回のメッセージで、選択した{{count}}件の会話をMeridianが読み込みました。",
+    "reviewMissing": "選択した{{count}}件のうち{{missing}}件の会話をMeridianは読み込めませんでした。読み込めるのは最大3件、ご自身の会話のみです。",
     "profileIndicator": {
       "title": "この会話でMeridianが参照できるフレームワーク"
     },

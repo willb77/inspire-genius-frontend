@@ -28,6 +28,9 @@
     "viaAgent": "عبر {{agent}}",
     "profileLabel": "الملف الشخصي: {{frameworks}}",
     "reviewingBanner": "مراجعة {{count}} محادثة إضافية إلى جانب المحادثة النشطة.",
+    "reviewPending": "تم تحديد {{count}} محادثة. ستقرأها Meridian مع رسالتك التالية.",
+    "reviewLoaded": "قرأت Meridian {{count}} محادثة محددة مع رسالتك الأخيرة.",
+    "reviewMissing": "تعذّر على Meridian تحميل {{missing}} من أصل {{count}} محادثة محددة. تقرأ حتى 3 محادثات، ومحادثاتك فقط.",
     "profileIndicator": {
       "title": "الأطر التي يمكن لـ Meridian الرجوع إليها في هذه المحادثة"
     },

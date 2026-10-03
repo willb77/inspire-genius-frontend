@@ -28,6 +28,9 @@
     "viaAgent": "melalui {{agent}}",
     "profileLabel": "Profil: {{frameworks}}",
     "reviewingBanner": "Meninjau {{count}} percakapan tambahan bersama obrolan aktif.",
+    "reviewPending": "{{count}} percakapan dipilih. Meridian akan membacanya bersama pesan Anda berikutnya.",
+    "reviewLoaded": "Meridian membaca {{count}} percakapan terpilih bersama pesan terakhir Anda.",
+    "reviewMissing": "Meridian tidak dapat memuat {{missing}} dari {{count}} percakapan terpilih. Meridian membaca hingga 3, dan hanya milik Anda.",
     "profileIndicator": {
       "title": "Kerangka kerja yang dapat dirujuk Meridian dalam percakapan ini"
     },

@@ -28,6 +28,9 @@
     "viaAgent": "ผ่าน {{agent}}",
     "profileLabel": "โปรไฟล์: {{frameworks}}",
     "reviewingBanner": "กำลังตรวจสอบอีก {{count}} การสนทนาควบคู่กับแชทที่ใช้งานอยู่",
+    "reviewPending": "เลือกบทสนทนา {{count}} รายการแล้ว Meridian จะอ่านพร้อมข้อความถัดไปของคุณ",
+    "reviewLoaded": "Meridian อ่านบทสนทนาที่เลือก {{count}} รายการพร้อมข้อความล่าสุดของคุณแล้ว",
+    "reviewMissing": "Meridian โหลดบทสนทนาที่เลือกไม่ได้ {{missing}} จาก {{count}} รายการ อ่านได้สูงสุด 3 รายการ และเฉพาะของคุณเท่านั้น",
     "profileIndicator": {
       "title": "เฟรมเวิร์กที่ Meridian สามารถอ้างอิงได้ในการสนทนานี้"
     },

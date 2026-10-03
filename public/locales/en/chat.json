@@ -28,6 +28,9 @@
     "viaAgent": "via {{agent}}",
     "profileLabel": "Profile: {{frameworks}}",
     "reviewingBanner": "Reviewing {{count}} additional conversation{{plural}} alongside the active chat.",
+    "reviewPending": "{{count}} conversation{{plural}} selected. Meridian will read {{them}} with your next message.",
+    "reviewLoaded": "Meridian read {{count}} selected conversation{{plural}} with your last message.",
+    "reviewMissing": "Meridian could not load {{missing}} of {{count}} selected conversation{{plural}}. It reads up to 3, and only your own.",
     "profileIndicator": {
       "title": "Frameworks Meridian can reference in this conversation"
     },
