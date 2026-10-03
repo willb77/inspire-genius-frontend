@@ -21,6 +21,7 @@ import {
   useResolveTicket,
 } from "@/hooks/support/useSupportTickets";
 import type { AdminTicketOut } from "@/services/support/support.service";
+import { SupportTabs } from "@/pages/super-admin/dev-console/SupportTabs";
 
 /**
  * Help and Support Management — Administration.
@@ -479,7 +480,7 @@ export default function HelpSupportManagement() {
   const { ticketId } = useParams<{ ticketId: string }>();
   return (
     <SuperAdminLayout>
-      {ticketId ? <TicketDetail ticketId={ticketId} /> : <TicketList />}
+      {ticketId ? <TicketDetail ticketId={ticketId} /> : <SupportTabs tickets={<TicketList />} />}
     </SuperAdminLayout>
   );
 }

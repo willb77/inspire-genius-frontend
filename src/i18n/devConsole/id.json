@@ -1,0 +1,110 @@
+{
+  "tabs": {
+    "label": "Bagian Bantuan dan dukungan",
+    "tickets": "Tiket",
+    "console": "Claude Code"
+  },
+  "panel": {
+    "title": "Claude Code",
+    "subtitle": "Ajukan pertanyaan baca-saja tentang repositori IG. Jawaban mengutip file pada commit tempat file itu dibaca.",
+    "mode": "Mode: {{mode}}",
+    "budget": "Hari ini: ${{spent}} dari ${{cap}}",
+    "jobCap": "Hingga ${{cap}} per tugas",
+    "loading": "Memuat konsol…"
+  },
+  "form": {
+    "repo": "Repositori",
+    "model": "Model",
+    "ref": "Branch atau commit",
+    "refPlaceholder": "Bawaan: {{branch}}",
+    "prompt": "Pertanyaan",
+    "promptPlaceholder": "Tanyakan tentang kode, pemeriksaan yang gagal, pull request, atau riwayat file.",
+    "shortcuts": "Pintasan",
+    "send": "Kirim",
+    "sending": "Mengirim…",
+    "newSession": "Sesi baru",
+    "continuing": "Ini menambahkan giliran ke sesi saat ini.",
+    "count": "{{count}} / {{max}}",
+    "promptRequired": "Masukkan pertanyaan.",
+    "promptTooLong": "Pertanyaan harus kurang dari {{max}} karakter.",
+    "repoRequired": "Pilih repositori.",
+    "noRepos": "Tidak ada repositori yang tersedia."
+  },
+  "models": {
+    "auto": "Otomatis",
+    "haiku": "Haiku",
+    "sonnet": "Sonnet",
+    "opus": "Opus"
+  },
+  "shortcuts": {
+    "where": "Temukan letak sesuatu",
+    "explain": "Jelaskan cara kerja sesuatu",
+    "whyFailing": "Jelaskan mengapa pemeriksaan gagal",
+    "review": "Tinjau pull request",
+    "history": "Telusuri riwayat file"
+  },
+  "status": {
+    "queued": "Dalam antrean",
+    "running": "Berjalan",
+    "awaiting_continue": "Dijeda",
+    "complete": "Selesai",
+    "error": "Gagal",
+    "cancelled": "Dibatalkan"
+  },
+  "job": {
+    "steps": "Langkah {{steps}} dari {{cap}}",
+    "cost": "${{cost}}",
+    "commit": "pada {{sha}}",
+    "continue": "Lanjutkan",
+    "cancel": "Batalkan",
+    "paused": "Dijeda pada batas langkah ({{cap}} langkah). Lanjutkan untuk mengizinkan langkah tambahan dalam anggaran tugas ini.",
+    "blockedOnly": "Tugas berakhir pada tindakan yang diblokir, ditampilkan di atas. Tidak ada jawaban yang dihasilkan.",
+    "noAnswer": "Tugas selesai tanpa jawaban.",
+    "cancelledNote": "Tugas dibatalkan.",
+    "waiting": "Menunggu langkah pertama…"
+  },
+  "events": {
+    "step": "Langkah {{step}}",
+    "blocked": "Diblokir: {{tool}}",
+    "answer": "Jawaban",
+    "citations": "Sumber",
+    "cost": "Biaya sejauh ini: ${{cost}}",
+    "error": "Tugas melaporkan kesalahan"
+  },
+  "sessions": {
+    "title": "Sesi Anda",
+    "empty": "Belum ada sesi.",
+    "turns": "{{count}} giliran",
+    "ticket": "Tiket {{ticket}}"
+  },
+  "attach": {
+    "title": "Lampirkan sesi ini ke tiket",
+    "ticketId": "Id tiket",
+    "submit": "Lampirkan",
+    "done": "Dilampirkan ke tiket sebagai catatan internal.",
+    "required": "Masukkan id tiket."
+  },
+  "access": {
+    "title": "Siapa yang dapat memakai konsol",
+    "ownerNote": "Hanya pemilik yang dapat memberi atau mencabut akses.",
+    "email": "Email",
+    "grant": "Beri",
+    "revoke": "Cabut",
+    "empty": "Tidak ada orang lain yang memiliki akses.",
+    "invalidEmail": "Masukkan alamat email yang valid."
+  },
+  "errors": {
+    "OWNER_ONLY": "Hanya pemilik yang dapat mengelola akses.",
+    "NOT_FOUND": "Tidak ditemukan.",
+    "NOT_AWAITING_CONTINUE": "Tugas ini tidak dijeda pada batas langkah, jadi tidak ada yang perlu dilanjutkan.",
+    "VALIDATION": "Periksa permintaan lalu coba lagi.",
+    "PROMPT_CONTAINS_SECRET": "Prompt Anda tampaknya berisi kunci atau token. Hapus lalu kirim ulang.",
+    "BUSY": "Satu tugas dalam satu waktu.",
+    "BUDGET_EXCEEDED": "Anggaran hari ini sudah habis (${{spent}} dari ${{cap}}).",
+    "BUDGET_EXCEEDED_UNKNOWN": "Anggaran hari ini sudah habis.",
+    "CONSOLE_DISABLED": "Konsol dimatikan.",
+    "network": "Tidak dapat menjangkau konsol. Periksa koneksi Anda lalu coba lagi.",
+    "generic": "Konsol mengembalikan kesalahan ({{code}}).",
+    "unexpected": "Terjadi kesalahan: {{message}}"
+  }
+}

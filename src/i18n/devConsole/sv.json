@@ -1,0 +1,110 @@
+{
+  "tabs": {
+    "label": "Avsnitt i Hjälp och support",
+    "tickets": "Ärenden",
+    "console": "Claude Code"
+  },
+  "panel": {
+    "title": "Claude Code",
+    "subtitle": "Ställ skrivskyddade frågor om IG-repositorierna. Svaren citerar filer vid den commit de lästes från.",
+    "mode": "Läge: {{mode}}",
+    "budget": "I dag: ${{spent}} av ${{cap}}",
+    "jobCap": "Upp till ${{cap}} per jobb",
+    "loading": "Läser in konsolen…"
+  },
+  "form": {
+    "repo": "Repository",
+    "model": "Modell",
+    "ref": "Gren eller commit",
+    "refPlaceholder": "Standard: {{branch}}",
+    "prompt": "Fråga",
+    "promptPlaceholder": "Fråga om koden, en misslyckad kontroll, en pull request eller historiken för en fil.",
+    "shortcuts": "Genvägar",
+    "send": "Skicka",
+    "sending": "Skickar…",
+    "newSession": "Ny session",
+    "continuing": "Detta lägger till en tur i den aktuella sessionen.",
+    "count": "{{count}} / {{max}}",
+    "promptRequired": "Skriv en fråga.",
+    "promptTooLong": "Frågan måste vara kortare än {{max}} tecken.",
+    "repoRequired": "Välj ett repository.",
+    "noRepos": "Inga repositorier är tillgängliga."
+  },
+  "models": {
+    "auto": "Automatisk",
+    "haiku": "Haiku",
+    "sonnet": "Sonnet",
+    "opus": "Opus"
+  },
+  "shortcuts": {
+    "where": "Hitta var något finns",
+    "explain": "Förklara hur något fungerar",
+    "whyFailing": "Förklara varför en kontroll misslyckas",
+    "review": "Granska en pull request",
+    "history": "Spåra historiken för en fil"
+  },
+  "status": {
+    "queued": "I kö",
+    "running": "Körs",
+    "awaiting_continue": "Pausad",
+    "complete": "Klar",
+    "error": "Misslyckades",
+    "cancelled": "Avbruten"
+  },
+  "job": {
+    "steps": "Steg {{steps}} av {{cap}}",
+    "cost": "${{cost}}",
+    "commit": "vid {{sha}}",
+    "continue": "Fortsätt",
+    "cancel": "Avbryt",
+    "paused": "Pausad vid steggränsen ({{cap}} steg). Fortsätt för att tillåta fler steg inom jobbets budget.",
+    "blockedOnly": "Jobbet slutade med en blockerad åtgärd, som visas ovan. Inget svar togs fram.",
+    "noAnswer": "Jobbet avslutades utan svar.",
+    "cancelledNote": "Jobbet avbröts.",
+    "waiting": "Väntar på första steget…"
+  },
+  "events": {
+    "step": "Steg {{step}}",
+    "blocked": "Blockerad: {{tool}}",
+    "answer": "Svar",
+    "citations": "Källor",
+    "cost": "Kostnad hittills: ${{cost}}",
+    "error": "Jobbet rapporterade ett fel"
+  },
+  "sessions": {
+    "title": "Dina sessioner",
+    "empty": "Inga sessioner än.",
+    "turns": "{{count}} turer",
+    "ticket": "Ärende {{ticket}}"
+  },
+  "attach": {
+    "title": "Bifoga den här sessionen till ett ärende",
+    "ticketId": "Ärende-id",
+    "submit": "Bifoga",
+    "done": "Bifogad till ärendet som en intern anteckning.",
+    "required": "Ange ett ärende-id."
+  },
+  "access": {
+    "title": "Vem som får använda konsolen",
+    "ownerNote": "Endast ägaren kan ge eller återkalla åtkomst.",
+    "email": "E-post",
+    "grant": "Ge",
+    "revoke": "Återkalla",
+    "empty": "Ingen annan har åtkomst.",
+    "invalidEmail": "Ange en giltig e-postadress."
+  },
+  "errors": {
+    "OWNER_ONLY": "Endast ägaren kan hantera åtkomst.",
+    "NOT_FOUND": "Hittades inte.",
+    "NOT_AWAITING_CONTINUE": "Jobbet är inte pausat vid steggränsen, så det finns inget att fortsätta.",
+    "VALIDATION": "Kontrollera begäran och försök igen.",
+    "PROMPT_CONTAINS_SECRET": "Din fråga verkar innehålla en nyckel eller token. Ta bort den och skicka igen.",
+    "BUSY": "Ett jobb i taget.",
+    "BUDGET_EXCEEDED": "Dagens budget är förbrukad (${{spent}} av ${{cap}}).",
+    "BUDGET_EXCEEDED_UNKNOWN": "Dagens budget är förbrukad.",
+    "CONSOLE_DISABLED": "Konsolen är avstängd.",
+    "network": "Det gick inte att nå konsolen. Kontrollera anslutningen och försök igen.",
+    "generic": "Konsolen returnerade ett fel ({{code}}).",
+    "unexpected": "Något gick fel: {{message}}"
+  }
+}

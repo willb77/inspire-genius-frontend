@@ -1,0 +1,110 @@
+{
+  "tabs": {
+    "label": "Secciones de Ayuda y soporte",
+    "tickets": "Tickets",
+    "console": "Claude Code"
+  },
+  "panel": {
+    "title": "Claude Code",
+    "subtitle": "Haz preguntas de solo lectura sobre los repositorios de IG. Las respuestas citan archivos en el commit del que se leyeron.",
+    "mode": "Modo: {{mode}}",
+    "budget": "Hoy: ${{spent}} de ${{cap}}",
+    "jobCap": "Hasta ${{cap}} por trabajo",
+    "loading": "Cargando la consola…"
+  },
+  "form": {
+    "repo": "Repositorio",
+    "model": "Modelo",
+    "ref": "Rama o commit",
+    "refPlaceholder": "Por defecto, {{branch}}",
+    "prompt": "Pregunta",
+    "promptPlaceholder": "Pregunta sobre el código, una comprobación fallida, una pull request o el historial de un archivo.",
+    "shortcuts": "Atajos",
+    "send": "Enviar",
+    "sending": "Enviando…",
+    "newSession": "Nueva sesión",
+    "continuing": "Esto añade un turno a la sesión actual.",
+    "count": "{{count}} / {{max}}",
+    "promptRequired": "Escribe una pregunta.",
+    "promptTooLong": "La pregunta debe tener menos de {{max}} caracteres.",
+    "repoRequired": "Elige un repositorio.",
+    "noRepos": "No hay repositorios disponibles."
+  },
+  "models": {
+    "auto": "Automático",
+    "haiku": "Haiku",
+    "sonnet": "Sonnet",
+    "opus": "Opus"
+  },
+  "shortcuts": {
+    "where": "Encontrar dónde está algo",
+    "explain": "Explicar cómo funciona algo",
+    "whyFailing": "Explicar por qué falla una comprobación",
+    "review": "Revisar una pull request",
+    "history": "Rastrear el historial de un archivo"
+  },
+  "status": {
+    "queued": "En cola",
+    "running": "En curso",
+    "awaiting_continue": "En pausa",
+    "complete": "Completado",
+    "error": "Fallido",
+    "cancelled": "Cancelado"
+  },
+  "job": {
+    "steps": "Paso {{steps}} de {{cap}}",
+    "cost": "${{cost}}",
+    "commit": "en {{sha}}",
+    "continue": "Continuar",
+    "cancel": "Cancelar",
+    "paused": "En pausa al alcanzar el límite de pasos ({{cap}} pasos). Continúa para permitir más pasos dentro del presupuesto de este trabajo.",
+    "blockedOnly": "El trabajo terminó en una acción bloqueada, mostrada arriba. No se produjo ninguna respuesta.",
+    "noAnswer": "El trabajo terminó sin respuesta.",
+    "cancelledNote": "El trabajo se canceló.",
+    "waiting": "Esperando el primer paso…"
+  },
+  "events": {
+    "step": "Paso {{step}}",
+    "blocked": "Bloqueado: {{tool}}",
+    "answer": "Respuesta",
+    "citations": "Fuentes",
+    "cost": "Coste hasta ahora: ${{cost}}",
+    "error": "El trabajo informó de un error"
+  },
+  "sessions": {
+    "title": "Tus sesiones",
+    "empty": "Aún no hay sesiones.",
+    "turns": "{{count}} turnos",
+    "ticket": "Ticket {{ticket}}"
+  },
+  "attach": {
+    "title": "Adjuntar esta sesión a un ticket",
+    "ticketId": "Id del ticket",
+    "submit": "Adjuntar",
+    "done": "Adjuntado al ticket como nota interna.",
+    "required": "Introduce un id de ticket."
+  },
+  "access": {
+    "title": "Quién puede usar la consola",
+    "ownerNote": "Solo el propietario puede conceder o revocar el acceso.",
+    "email": "Correo electrónico",
+    "grant": "Conceder",
+    "revoke": "Revocar",
+    "empty": "Nadie más tiene acceso.",
+    "invalidEmail": "Introduce una dirección de correo válida."
+  },
+  "errors": {
+    "OWNER_ONLY": "Solo el propietario puede gestionar el acceso.",
+    "NOT_FOUND": "No encontrado.",
+    "NOT_AWAITING_CONTINUE": "Este trabajo no está en pausa por el límite de pasos, así que no hay nada que continuar.",
+    "VALIDATION": "Revisa la solicitud e inténtalo de nuevo.",
+    "PROMPT_CONTAINS_SECRET": "Parece que tu mensaje contiene una clave o un token. Elimínalo y vuelve a enviarlo.",
+    "BUSY": "Un trabajo a la vez.",
+    "BUDGET_EXCEEDED": "El presupuesto de hoy está agotado (${{spent}} de ${{cap}}).",
+    "BUDGET_EXCEEDED_UNKNOWN": "El presupuesto de hoy está agotado.",
+    "CONSOLE_DISABLED": "La consola está desactivada.",
+    "network": "No se pudo conectar con la consola. Comprueba tu conexión e inténtalo de nuevo.",
+    "generic": "La consola devolvió un error ({{code}}).",
+    "unexpected": "Algo salió mal: {{message}}"
+  }
+}

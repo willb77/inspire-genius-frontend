@@ -1,0 +1,110 @@
+{
+  "tabs": {
+    "label": "Seksionet e Ndihmës dhe mbështetjes",
+    "tickets": "Kërkesat",
+    "console": "Claude Code"
+  },
+  "panel": {
+    "title": "Claude Code",
+    "subtitle": "Bëni pyetje vetëm për lexim rreth depove të IG. Përgjigjet citojnë skedarë në commit-in nga i cili u lexuan.",
+    "mode": "Modaliteti: {{mode}}",
+    "budget": "Sot: ${{spent}} nga ${{cap}}",
+    "jobCap": "Deri në ${{cap}} për punë",
+    "loading": "Po ngarkohet konsola…"
+  },
+  "form": {
+    "repo": "Depoja",
+    "model": "Modeli",
+    "ref": "Dega ose commit-i",
+    "refPlaceholder": "Parazgjedhja: {{branch}}",
+    "prompt": "Pyetja",
+    "promptPlaceholder": "Pyetni për kodin, një kontroll të dështuar, një pull request ose historikun e një skedari.",
+    "shortcuts": "Shkurtore",
+    "send": "Dërgo",
+    "sending": "Po dërgohet…",
+    "newSession": "Seancë e re",
+    "continuing": "Kjo shton një radhë në seancën aktuale.",
+    "count": "{{count}} / {{max}}",
+    "promptRequired": "Shkruani një pyetje.",
+    "promptTooLong": "Pyetja duhet të jetë më e shkurtër se {{max}} karaktere.",
+    "repoRequired": "Zgjidhni një depo.",
+    "noRepos": "Nuk ka depo të disponueshme."
+  },
+  "models": {
+    "auto": "Automatik",
+    "haiku": "Haiku",
+    "sonnet": "Sonnet",
+    "opus": "Opus"
+  },
+  "shortcuts": {
+    "where": "Gjej ku ndodhet diçka",
+    "explain": "Shpjego si funksionon diçka",
+    "whyFailing": "Shpjego pse dështon një kontroll",
+    "review": "Rishiko një pull request",
+    "history": "Gjurmo historikun e një skedari"
+  },
+  "status": {
+    "queued": "Në radhë",
+    "running": "Në ekzekutim",
+    "awaiting_continue": "Në pauzë",
+    "complete": "E përfunduar",
+    "error": "Dështoi",
+    "cancelled": "E anuluar"
+  },
+  "job": {
+    "steps": "Hapi {{steps}} nga {{cap}}",
+    "cost": "${{cost}}",
+    "commit": "te {{sha}}",
+    "continue": "Vazhdo",
+    "cancel": "Anulo",
+    "paused": "Në pauzë te kufiri i hapave ({{cap}} hapa). Vazhdoni për të lejuar më shumë hapa brenda buxhetit të kësaj pune.",
+    "blockedOnly": "Puna përfundoi me një veprim të bllokuar, të shfaqur më sipër. Nuk u prodhua asnjë përgjigje.",
+    "noAnswer": "Puna përfundoi pa përgjigje.",
+    "cancelledNote": "Puna u anulua.",
+    "waiting": "Në pritje të hapit të parë…"
+  },
+  "events": {
+    "step": "Hapi {{step}}",
+    "blocked": "U bllokua: {{tool}}",
+    "answer": "Përgjigja",
+    "citations": "Burimet",
+    "cost": "Kostoja deri tani: ${{cost}}",
+    "error": "Puna raportoi një gabim"
+  },
+  "sessions": {
+    "title": "Seancat tuaja",
+    "empty": "Ende nuk ka seanca.",
+    "turns": "{{count}} radhë",
+    "ticket": "Kërkesa {{ticket}}"
+  },
+  "attach": {
+    "title": "Bashkëngjite këtë seancë te një kërkesë",
+    "ticketId": "Id e kërkesës",
+    "submit": "Bashkëngjit",
+    "done": "U bashkëngjit te kërkesa si shënim i brendshëm.",
+    "required": "Shkruani një id kërkese."
+  },
+  "access": {
+    "title": "Kush mund ta përdorë konsolën",
+    "ownerNote": "Vetëm pronari mund të japë ose të heqë qasjen.",
+    "email": "Email",
+    "grant": "Jep",
+    "revoke": "Hiq",
+    "empty": "Askush tjetër nuk ka qasje.",
+    "invalidEmail": "Shkruani një adresë email të vlefshme."
+  },
+  "errors": {
+    "OWNER_ONLY": "Vetëm pronari mund të menaxhojë qasjen.",
+    "NOT_FOUND": "Nuk u gjet.",
+    "NOT_AWAITING_CONTINUE": "Kjo punë nuk është në pauzë te kufiri i hapave, prandaj nuk ka asgjë për të vazhduar.",
+    "VALIDATION": "Kontrolloni kërkesën dhe provoni sërish.",
+    "PROMPT_CONTAINS_SECRET": "Mesazhi juaj duket se përmban një çelës ose token. Hiqeni dhe dërgojeni sërish.",
+    "BUSY": "Një punë në një kohë.",
+    "BUDGET_EXCEEDED": "Buxheti i sotëm është përdorur (${{spent}} nga ${{cap}}).",
+    "BUDGET_EXCEEDED_UNKNOWN": "Buxheti i sotëm është përdorur.",
+    "CONSOLE_DISABLED": "Konsola është e fikur.",
+    "network": "Konsola nuk u arrit. Kontrolloni lidhjen dhe provoni sërish.",
+    "generic": "Konsola ktheu një gabim ({{code}}).",
+    "unexpected": "Diçka shkoi keq: {{message}}"
+  }
+}
