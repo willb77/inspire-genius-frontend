@@ -2,7 +2,10 @@ import { Link } from "react-router-dom"
 import { Route, ArrowUpRight, ListChecks } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useFitPathway } from "@/hooks/job-fit/useFitPathway"
+import { useGoalTargetsEnabled } from "@/hooks/switches/useGoalTargetsEnabled"
+import { useMyTargets } from "@/hooks/goals/useGoalTargets"
 import type { PathwaySuggestion } from "@/types/job-fit"
+import { MyRoadmaps, TargetRoleAction } from "./PathwayTargets"
 import {
   FitPageHeader,
   FitCard,
@@ -28,7 +31,14 @@ function difficultyTone(difficulty?: string): Tone {
   }
 }
 
-function SuggestionCard({ s }: { s: PathwaySuggestion }) {
+function SuggestionCard({
+  s,
+  targets,
+}: {
+  s: PathwaySuggestion
+  /** Present only while the goal_targets switch is on (JS-7). */
+  targets?: ReturnType<typeof useMyTargets>
+}) {
   const body = (
     <>
       <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -41,6 +51,26 @@ function SuggestionCard({ s }: { s: PathwaySuggestion }) {
       {s.rationale && <p className="mt-1.5 text-sm text-[#6b7280]">{s.rationale}</p>}
     </>
   )
+
+  // With targets on, the card is not one big link (a button cannot sit inside
+  // one): the title links to the fit page and the action sits below.
+  if (s.jobId && targets) {
+    return (
+      <div className="rounded-lg border border-[#e5e7eb] p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">{body}</div>
+          <Link
+            to={ROUTES.JOB_FIT.detail(s.jobId)}
+            aria-label={`Open ${s.roleTitle} fit`}
+            className="shrink-0 text-[#9ca3af] hover:text-[#0D9488]"
+          >
+            <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <TargetRoleAction jobId={s.jobId} roleTitle={s.roleTitle} targets={targets} />
+      </div>
+    )
+  }
 
   if (s.jobId) {
     return (
@@ -66,9 +96,15 @@ function SuggestionCard({ s }: { s: PathwaySuggestion }) {
  */
 export default function PathwayPage() {
   const { data, isLoading, isError } = useFitPathway()
+  // JS-7: with the server's goal_targets switch on, the skill ladders (three
+  // template sentences per skill) give way to the person's roadmaps from the
+  // roadmap engine, and each suggested role can be made a target. Off, loading
+  // and error all read as off, so this is today's page until the server says so.
+  const targetsOn = useGoalTargetsEnabled()
+  const targets = useMyTargets(targetsOn)
 
   const suggestions = data?.suggestions ?? []
-  const ladders = data?.skillLadders ?? []
+  const ladders = targetsOn ? [] : (data?.skillLadders ?? [])
   const hasContent = suggestions.length > 0 || ladders.length > 0
 
   return (
@@ -96,7 +132,11 @@ export default function PathwayPage() {
           </li>
           <li className="flex items-start gap-2">
             <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-[#0D9488]" />
-            <span><span className="font-medium text-[#374151]">Skill ladders</span> — a few practical steps to close the gap toward those roles.</span>
+            {targetsOn ? (
+              <span><span className="font-medium text-[#374151]">Roadmaps</span> — make a role your target and the gaps between your profile and its benchmark become the steps, in the order to close them.</span>
+            ) : (
+              <span><span className="font-medium text-[#374151]">Skill ladders</span> — a few practical steps to close the gap toward those roles.</span>
+            )}
           </li>
         </ul>
         <p className="mt-3 text-xs text-[#9ca3af]">
@@ -124,6 +164,9 @@ export default function PathwayPage() {
         </FitEmptyState>
       )}
 
+      {/* A roadmap can exist without a suggestion (targeted from the fit page). */}
+      {!isLoading && !isError && !hasContent && targetsOn && <MyRoadmaps targets={targets} />}
+
       {!isLoading && !isError && hasContent && (
         <>
           {suggestions.length > 0 && (
@@ -131,7 +174,11 @@ export default function PathwayPage() {
               <FitSectionTitle>Adjacent roles</FitSectionTitle>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {suggestions.map((s, i) => (
-                  <SuggestionCard key={s.jobId ?? `${s.roleTitle}-${i}`} s={s} />
+                  <SuggestionCard
+                    key={s.jobId ?? `${s.roleTitle}-${i}`}
+                    s={s}
+                    targets={targetsOn ? targets : undefined}
+                  />
                 ))}
               </div>
             </FitCard>
@@ -157,6 +204,8 @@ export default function PathwayPage() {
               </div>
             </FitCard>
           )}
+
+          {targetsOn && <MyRoadmaps targets={targets} />}
 
           {data?.note && <p className="mb-4 text-sm text-[#6b7280]">{data.note}</p>}
 
