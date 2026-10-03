@@ -1,0 +1,110 @@
+{
+  "tabs": {
+    "label": "Yardım ve Destek bölümleri",
+    "tickets": "Talepler",
+    "console": "Claude Code"
+  },
+  "panel": {
+    "title": "Claude Code",
+    "subtitle": "IG depoları hakkında salt okunur sorular sorun. Yanıtlar dosyaları okundukları commit üzerinden kaynak gösterir.",
+    "mode": "Mod: {{mode}}",
+    "budget": "Bugün: ${{cap}} bütçenin ${{spent}} kadarı",
+    "jobCap": "İş başına en fazla ${{cap}}",
+    "loading": "Konsol yükleniyor…"
+  },
+  "form": {
+    "repo": "Depo",
+    "model": "Model",
+    "ref": "Dal veya commit",
+    "refPlaceholder": "Varsayılan: {{branch}}",
+    "prompt": "Soru",
+    "promptPlaceholder": "Kod, başarısız bir kontrol, bir pull request veya bir dosyanın geçmişi hakkında sorun.",
+    "shortcuts": "Kısayollar",
+    "send": "Gönder",
+    "sending": "Gönderiliyor…",
+    "newSession": "Yeni oturum",
+    "continuing": "Bu, mevcut oturuma bir tur ekler.",
+    "count": "{{count}} / {{max}}",
+    "promptRequired": "Bir soru girin.",
+    "promptTooLong": "Soru {{max}} karakterden kısa olmalıdır.",
+    "repoRequired": "Bir depo seçin.",
+    "noRepos": "Kullanılabilir depo yok."
+  },
+  "models": {
+    "auto": "Otomatik",
+    "haiku": "Haiku",
+    "sonnet": "Sonnet",
+    "opus": "Opus"
+  },
+  "shortcuts": {
+    "where": "Bir şeyin nerede olduğunu bul",
+    "explain": "Bir şeyin nasıl çalıştığını açıkla",
+    "whyFailing": "Bir kontrolün neden başarısız olduğunu açıkla",
+    "review": "Bir pull request'i incele",
+    "history": "Bir dosyanın geçmişini izle"
+  },
+  "status": {
+    "queued": "Sırada",
+    "running": "Çalışıyor",
+    "awaiting_continue": "Duraklatıldı",
+    "complete": "Tamamlandı",
+    "error": "Başarısız",
+    "cancelled": "İptal edildi"
+  },
+  "job": {
+    "steps": "Adım {{steps}} / {{cap}}",
+    "cost": "${{cost}}",
+    "commit": "{{sha}} üzerinde",
+    "continue": "Devam et",
+    "cancel": "İptal et",
+    "paused": "Adım sınırında duraklatıldı ({{cap}} adım). Bu işin bütçesi içinde daha fazla adıma izin vermek için devam edin.",
+    "blockedOnly": "İş, yukarıda gösterilen engellenmiş bir eylemle sona erdi. Yanıt üretilmedi.",
+    "noAnswer": "İş yanıt olmadan tamamlandı.",
+    "cancelledNote": "İş iptal edildi.",
+    "waiting": "İlk adım bekleniyor…"
+  },
+  "events": {
+    "step": "Adım {{step}}",
+    "blocked": "Engellendi: {{tool}}",
+    "answer": "Yanıt",
+    "citations": "Kaynaklar",
+    "cost": "Şu ana kadarki maliyet: ${{cost}}",
+    "error": "İş bir hata bildirdi"
+  },
+  "sessions": {
+    "title": "Oturumlarınız",
+    "empty": "Henüz oturum yok.",
+    "turns": "{{count}} tur",
+    "ticket": "Talep {{ticket}}"
+  },
+  "attach": {
+    "title": "Bu oturumu bir talebe ekle",
+    "ticketId": "Talep kimliği",
+    "submit": "Ekle",
+    "done": "Talebe dahili not olarak eklendi.",
+    "required": "Bir talep kimliği girin."
+  },
+  "access": {
+    "title": "Konsolu kimler kullanabilir",
+    "ownerNote": "Erişimi yalnızca sahip verebilir veya kaldırabilir.",
+    "email": "E-posta",
+    "grant": "Ver",
+    "revoke": "Kaldır",
+    "empty": "Başka kimsenin erişimi yok.",
+    "invalidEmail": "Geçerli bir e-posta adresi girin."
+  },
+  "errors": {
+    "OWNER_ONLY": "Erişimi yalnızca sahip yönetebilir.",
+    "NOT_FOUND": "Bulunamadı.",
+    "NOT_AWAITING_CONTINUE": "Bu iş adım sınırında duraklatılmadı, bu yüzden devam ettirilecek bir şey yok.",
+    "VALIDATION": "İsteği kontrol edip yeniden deneyin.",
+    "PROMPT_CONTAINS_SECRET": "İsteminiz bir anahtar veya belirteç içeriyor gibi görünüyor. Kaldırıp yeniden gönderin.",
+    "BUSY": "Aynı anda tek iş.",
+    "BUDGET_EXCEEDED": "Bugünkü bütçe kullanıldı (${{cap}} bütçenin ${{spent}} kadarı).",
+    "BUDGET_EXCEEDED_UNKNOWN": "Bugünkü bütçe kullanıldı.",
+    "CONSOLE_DISABLED": "Konsol kapalı.",
+    "network": "Konsola ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
+    "generic": "Konsol bir hata döndürdü ({{code}}).",
+    "unexpected": "Bir şeyler ters gitti: {{message}}"
+  }
+}

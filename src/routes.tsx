@@ -546,6 +546,10 @@ export const routes: RouteObject[] = [
       // :ticketId route with ?claim=1 and assigns the admin who opened it.
       { path: "/super-admin/support", element: withSuspense(<HelpSupportManagement />) },
       { path: "/super-admin/support/:ticketId", element: withSuspense(<HelpSupportManagement />) },
+      // Help & Support → Claude Code tab (CC.3). A static segment, so React Router
+      // ranks it above :ticketId. The page hides the tab, and redirects this
+      // route to the queue, unless GET /v1/dev-console/me grants access.
+      { path: "/super-admin/support/claude-code", element: withSuspense(<HelpSupportManagement />) },
       { path: "/super-admin/dashboard/licences", element: withSuspense(<LicenceDetailsPage />) },
       { path: "/super-admin/settings", element: withSuspense(<SuperAdminSettingsPage />) },
       { path: "/super-admin/project-log", element: withSuspense(<ProjectLog />) },

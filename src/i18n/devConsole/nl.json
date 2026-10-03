@@ -1,0 +1,110 @@
+{
+  "tabs": {
+    "label": "Onderdelen van Help en ondersteuning",
+    "tickets": "Tickets",
+    "console": "Claude Code"
+  },
+  "panel": {
+    "title": "Claude Code",
+    "subtitle": "Stel alleen-lezen vragen over de IG-repositories. Antwoorden citeren bestanden bij de commit waaruit ze zijn gelezen.",
+    "mode": "Modus: {{mode}}",
+    "budget": "Vandaag: ${{spent}} van ${{cap}}",
+    "jobCap": "Tot ${{cap}} per taak",
+    "loading": "Console laden…"
+  },
+  "form": {
+    "repo": "Repository",
+    "model": "Model",
+    "ref": "Branch of commit",
+    "refPlaceholder": "Standaard: {{branch}}",
+    "prompt": "Vraag",
+    "promptPlaceholder": "Vraag naar de code, een mislukte controle, een pull request of de geschiedenis van een bestand.",
+    "shortcuts": "Snelkoppelingen",
+    "send": "Versturen",
+    "sending": "Versturen…",
+    "newSession": "Nieuwe sessie",
+    "continuing": "Dit voegt een beurt toe aan de huidige sessie.",
+    "count": "{{count}} / {{max}}",
+    "promptRequired": "Voer een vraag in.",
+    "promptTooLong": "Houd de vraag korter dan {{max}} tekens.",
+    "repoRequired": "Kies een repository.",
+    "noRepos": "Er zijn geen repositories beschikbaar."
+  },
+  "models": {
+    "auto": "Automatisch",
+    "haiku": "Haiku",
+    "sonnet": "Sonnet",
+    "opus": "Opus"
+  },
+  "shortcuts": {
+    "where": "Vinden waar iets staat",
+    "explain": "Uitleggen hoe iets werkt",
+    "whyFailing": "Uitleggen waarom een controle mislukt",
+    "review": "Een pull request beoordelen",
+    "history": "De geschiedenis van een bestand nagaan"
+  },
+  "status": {
+    "queued": "In wachtrij",
+    "running": "Bezig",
+    "awaiting_continue": "Gepauzeerd",
+    "complete": "Voltooid",
+    "error": "Mislukt",
+    "cancelled": "Geannuleerd"
+  },
+  "job": {
+    "steps": "Stap {{steps}} van {{cap}}",
+    "cost": "${{cost}}",
+    "commit": "bij {{sha}}",
+    "continue": "Doorgaan",
+    "cancel": "Annuleren",
+    "paused": "Gepauzeerd bij de staplimiet ({{cap}} stappen). Ga door om meer stappen toe te staan binnen het budget van deze taak.",
+    "blockedOnly": "De taak eindigde met een geblokkeerde actie, hierboven getoond. Er is geen antwoord gegeven.",
+    "noAnswer": "De taak is zonder antwoord beëindigd.",
+    "cancelledNote": "De taak is geannuleerd.",
+    "waiting": "Wachten op de eerste stap…"
+  },
+  "events": {
+    "step": "Stap {{step}}",
+    "blocked": "Geblokkeerd: {{tool}}",
+    "answer": "Antwoord",
+    "citations": "Bronnen",
+    "cost": "Kosten tot nu toe: ${{cost}}",
+    "error": "De taak meldde een fout"
+  },
+  "sessions": {
+    "title": "Je sessies",
+    "empty": "Nog geen sessies.",
+    "turns": "{{count}} beurten",
+    "ticket": "Ticket {{ticket}}"
+  },
+  "attach": {
+    "title": "Deze sessie aan een ticket koppelen",
+    "ticketId": "Ticket-id",
+    "submit": "Koppelen",
+    "done": "Als interne notitie aan het ticket gekoppeld.",
+    "required": "Voer een ticket-id in."
+  },
+  "access": {
+    "title": "Wie de console mag gebruiken",
+    "ownerNote": "Alleen de eigenaar kan toegang verlenen of intrekken.",
+    "email": "E-mail",
+    "grant": "Verlenen",
+    "revoke": "Intrekken",
+    "empty": "Niemand anders heeft toegang.",
+    "invalidEmail": "Voer een geldig e-mailadres in."
+  },
+  "errors": {
+    "OWNER_ONLY": "Alleen de eigenaar kan de toegang beheren.",
+    "NOT_FOUND": "Niet gevonden.",
+    "NOT_AWAITING_CONTINUE": "Deze taak is niet gepauzeerd bij de staplimiet, dus er valt niets voort te zetten.",
+    "VALIDATION": "Controleer het verzoek en probeer het opnieuw.",
+    "PROMPT_CONTAINS_SECRET": "Je prompt lijkt een sleutel of token te bevatten. Verwijder die en verstuur opnieuw.",
+    "BUSY": "Eén taak tegelijk.",
+    "BUDGET_EXCEEDED": "Het budget van vandaag is op (${{spent}} van ${{cap}}).",
+    "BUDGET_EXCEEDED_UNKNOWN": "Het budget van vandaag is op.",
+    "CONSOLE_DISABLED": "De console staat uit.",
+    "network": "De console is niet bereikbaar. Controleer je verbinding en probeer het opnieuw.",
+    "generic": "De console gaf een fout terug ({{code}}).",
+    "unexpected": "Er ging iets mis: {{message}}"
+  }
+}

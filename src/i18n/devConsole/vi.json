@@ -1,0 +1,110 @@
+{
+  "tabs": {
+    "label": "Các mục Trợ giúp và hỗ trợ",
+    "tickets": "Phiếu hỗ trợ",
+    "console": "Claude Code"
+  },
+  "panel": {
+    "title": "Claude Code",
+    "subtitle": "Đặt câu hỏi chỉ đọc về các kho mã IG. Câu trả lời trích dẫn tệp tại commit mà chúng được đọc.",
+    "mode": "Chế độ: {{mode}}",
+    "budget": "Hôm nay: ${{spent}} / ${{cap}}",
+    "jobCap": "Tối đa ${{cap}} mỗi tác vụ",
+    "loading": "Đang tải bảng điều khiển…"
+  },
+  "form": {
+    "repo": "Kho mã",
+    "model": "Mô hình",
+    "ref": "Nhánh hoặc commit",
+    "refPlaceholder": "Mặc định: {{branch}}",
+    "prompt": "Câu hỏi",
+    "promptPlaceholder": "Hỏi về mã, một kiểm tra bị lỗi, một pull request hoặc lịch sử của một tệp.",
+    "shortcuts": "Lối tắt",
+    "send": "Gửi",
+    "sending": "Đang gửi…",
+    "newSession": "Phiên mới",
+    "continuing": "Thao tác này thêm một lượt vào phiên hiện tại.",
+    "count": "{{count}} / {{max}}",
+    "promptRequired": "Nhập câu hỏi.",
+    "promptTooLong": "Câu hỏi phải ngắn hơn {{max}} ký tự.",
+    "repoRequired": "Chọn một kho mã.",
+    "noRepos": "Không có kho mã nào."
+  },
+  "models": {
+    "auto": "Tự động",
+    "haiku": "Haiku",
+    "sonnet": "Sonnet",
+    "opus": "Opus"
+  },
+  "shortcuts": {
+    "where": "Tìm vị trí của một thứ",
+    "explain": "Giải thích cách một thứ hoạt động",
+    "whyFailing": "Giải thích vì sao một kiểm tra thất bại",
+    "review": "Xem xét một pull request",
+    "history": "Truy vết lịch sử của một tệp"
+  },
+  "status": {
+    "queued": "Đang chờ",
+    "running": "Đang chạy",
+    "awaiting_continue": "Tạm dừng",
+    "complete": "Hoàn tất",
+    "error": "Thất bại",
+    "cancelled": "Đã hủy"
+  },
+  "job": {
+    "steps": "Bước {{steps}} / {{cap}}",
+    "cost": "${{cost}}",
+    "commit": "tại {{sha}}",
+    "continue": "Tiếp tục",
+    "cancel": "Hủy",
+    "paused": "Tạm dừng ở giới hạn bước ({{cap}} bước). Tiếp tục để cho phép thêm bước trong ngân sách của tác vụ này.",
+    "blockedOnly": "Tác vụ kết thúc ở một hành động bị chặn, hiển thị ở trên. Không có câu trả lời nào.",
+    "noAnswer": "Tác vụ kết thúc mà không có câu trả lời.",
+    "cancelledNote": "Tác vụ đã bị hủy.",
+    "waiting": "Đang chờ bước đầu tiên…"
+  },
+  "events": {
+    "step": "Bước {{step}}",
+    "blocked": "Bị chặn: {{tool}}",
+    "answer": "Câu trả lời",
+    "citations": "Nguồn",
+    "cost": "Chi phí đến nay: ${{cost}}",
+    "error": "Tác vụ báo lỗi"
+  },
+  "sessions": {
+    "title": "Phiên của bạn",
+    "empty": "Chưa có phiên nào.",
+    "turns": "{{count}} lượt",
+    "ticket": "Phiếu {{ticket}}"
+  },
+  "attach": {
+    "title": "Đính kèm phiên này vào phiếu hỗ trợ",
+    "ticketId": "Mã phiếu",
+    "submit": "Đính kèm",
+    "done": "Đã đính kèm vào phiếu dưới dạng ghi chú nội bộ.",
+    "required": "Nhập mã phiếu."
+  },
+  "access": {
+    "title": "Ai có thể dùng bảng điều khiển",
+    "ownerNote": "Chỉ chủ sở hữu mới có thể cấp hoặc thu hồi quyền truy cập.",
+    "email": "Email",
+    "grant": "Cấp",
+    "revoke": "Thu hồi",
+    "empty": "Không ai khác có quyền truy cập.",
+    "invalidEmail": "Nhập địa chỉ email hợp lệ."
+  },
+  "errors": {
+    "OWNER_ONLY": "Chỉ chủ sở hữu mới có thể quản lý quyền truy cập.",
+    "NOT_FOUND": "Không tìm thấy.",
+    "NOT_AWAITING_CONTINUE": "Tác vụ này không tạm dừng ở giới hạn bước nên không có gì để tiếp tục.",
+    "VALIDATION": "Kiểm tra yêu cầu và thử lại.",
+    "PROMPT_CONTAINS_SECRET": "Lời nhắc của bạn có vẻ chứa khóa hoặc token. Hãy xóa và gửi lại.",
+    "BUSY": "Mỗi lần một tác vụ.",
+    "BUDGET_EXCEEDED": "Ngân sách hôm nay đã hết (${{spent}} / ${{cap}}).",
+    "BUDGET_EXCEEDED_UNKNOWN": "Ngân sách hôm nay đã hết.",
+    "CONSOLE_DISABLED": "Bảng điều khiển đang tắt.",
+    "network": "Không thể kết nối bảng điều khiển. Kiểm tra kết nối và thử lại.",
+    "generic": "Bảng điều khiển trả về lỗi ({{code}}).",
+    "unexpected": "Đã xảy ra lỗi: {{message}}"
+  }
+}

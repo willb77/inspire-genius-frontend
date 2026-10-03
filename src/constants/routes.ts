@@ -99,6 +99,8 @@ export const ROUTES = {
     CLIENT_SIGNUP_ENGAGEMENT: "/super-admin/client-signup/:engagementId",
     SUPPORT_MANAGEMENT: "/super-admin/support",
     SUPPORT_TICKET: "/super-admin/support/:ticketId",
+    /** Help & Support → Claude Code tab (CC.3). Static, so it outranks `:ticketId`. Shown only when the console grants access. */
+    SUPPORT_CLAUDE_CODE: "/super-admin/support/claude-code",
     RESEARCH: "/super-admin/research",
     RESEARCH_LIBRARY: "/super-admin/research-library",
     EXPLAINABILITY: "/super-admin/explainability",

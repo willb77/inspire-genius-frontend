@@ -1,0 +1,110 @@
+{
+  "tabs": {
+    "label": "ヘルプとサポートのセクション",
+    "tickets": "チケット",
+    "console": "Claude Code"
+  },
+  "panel": {
+    "title": "Claude Code",
+    "subtitle": "IG のリポジトリについて読み取り専用で質問できます。回答は、読み取ったコミット時点のファイルを引用します。",
+    "mode": "モード: {{mode}}",
+    "budget": "本日: ${{spent}} / ${{cap}}",
+    "jobCap": "1 ジョブあたり最大 ${{cap}}",
+    "loading": "コンソールを読み込んでいます…"
+  },
+  "form": {
+    "repo": "リポジトリ",
+    "model": "モデル",
+    "ref": "ブランチまたはコミット",
+    "refPlaceholder": "既定: {{branch}}",
+    "prompt": "質問",
+    "promptPlaceholder": "コード、失敗しているチェック、プルリクエスト、ファイルの履歴について質問してください。",
+    "shortcuts": "ショートカット",
+    "send": "送信",
+    "sending": "送信中…",
+    "newSession": "新しいセッション",
+    "continuing": "現在のセッションにターンを追加します。",
+    "count": "{{count}} / {{max}}",
+    "promptRequired": "質問を入力してください。",
+    "promptTooLong": "質問は {{max}} 文字未満にしてください。",
+    "repoRequired": "リポジトリを選択してください。",
+    "noRepos": "利用できるリポジトリがありません。"
+  },
+  "models": {
+    "auto": "自動",
+    "haiku": "Haiku",
+    "sonnet": "Sonnet",
+    "opus": "Opus"
+  },
+  "shortcuts": {
+    "where": "どこにあるかを探す",
+    "explain": "仕組みを説明する",
+    "whyFailing": "チェックが失敗する理由を説明する",
+    "review": "プルリクエストをレビューする",
+    "history": "ファイルの履歴をたどる"
+  },
+  "status": {
+    "queued": "待機中",
+    "running": "実行中",
+    "awaiting_continue": "一時停止",
+    "complete": "完了",
+    "error": "失敗",
+    "cancelled": "キャンセル済み"
+  },
+  "job": {
+    "steps": "ステップ {{steps}} / {{cap}}",
+    "cost": "${{cost}}",
+    "commit": "{{sha}} 時点",
+    "continue": "続行",
+    "cancel": "キャンセル",
+    "paused": "ステップ上限 ({{cap}} ステップ) で一時停止しました。続行すると、このジョブの予算内でさらにステップを実行できます。",
+    "blockedOnly": "ジョブはブロックされた操作 (上に表示) で終了しました。回答は生成されていません。",
+    "noAnswer": "ジョブは回答なしで終了しました。",
+    "cancelledNote": "ジョブはキャンセルされました。",
+    "waiting": "最初のステップを待っています…"
+  },
+  "events": {
+    "step": "ステップ {{step}}",
+    "blocked": "ブロック: {{tool}}",
+    "answer": "回答",
+    "citations": "出典",
+    "cost": "これまでの費用: ${{cost}}",
+    "error": "ジョブがエラーを報告しました"
+  },
+  "sessions": {
+    "title": "あなたのセッション",
+    "empty": "まだセッションはありません。",
+    "turns": "{{count}} ターン",
+    "ticket": "チケット {{ticket}}"
+  },
+  "attach": {
+    "title": "このセッションをチケットに添付",
+    "ticketId": "チケット ID",
+    "submit": "添付",
+    "done": "内部メモとしてチケットに添付しました。",
+    "required": "チケット ID を入力してください。"
+  },
+  "access": {
+    "title": "コンソールを使用できるユーザー",
+    "ownerNote": "アクセス権の付与と取り消しはオーナーのみが行えます。",
+    "email": "メール",
+    "grant": "付与",
+    "revoke": "取り消し",
+    "empty": "他にアクセス権を持つユーザーはいません。",
+    "invalidEmail": "有効なメールアドレスを入力してください。"
+  },
+  "errors": {
+    "OWNER_ONLY": "アクセスを管理できるのはオーナーのみです。",
+    "NOT_FOUND": "見つかりません。",
+    "NOT_AWAITING_CONTINUE": "このジョブはステップ上限で一時停止していないため、続行するものはありません。",
+    "VALIDATION": "リクエストを確認して、もう一度お試しください。",
+    "PROMPT_CONTAINS_SECRET": "プロンプトにキーまたはトークンが含まれているようです。削除してから再送信してください。",
+    "BUSY": "同時に実行できるジョブは 1 つです。",
+    "BUDGET_EXCEEDED": "本日の予算を使い切りました (${{spent}} / ${{cap}})。",
+    "BUDGET_EXCEEDED_UNKNOWN": "本日の予算を使い切りました。",
+    "CONSOLE_DISABLED": "コンソールはオフになっています。",
+    "network": "コンソールに接続できませんでした。接続を確認して、もう一度お試しください。",
+    "generic": "コンソールがエラーを返しました ({{code}})。",
+    "unexpected": "問題が発生しました: {{message}}"
+  }
+}

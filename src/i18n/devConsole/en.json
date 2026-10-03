@@ -1,0 +1,110 @@
+{
+  "tabs": {
+    "label": "Help and Support sections",
+    "tickets": "Tickets",
+    "console": "Claude Code"
+  },
+  "panel": {
+    "title": "Claude Code",
+    "subtitle": "Ask read-only questions about the IG repositories. Answers cite files at the commit they were read from.",
+    "mode": "Mode: {{mode}}",
+    "budget": "Today: ${{spent}} of ${{cap}}",
+    "jobCap": "Up to ${{cap}} per job",
+    "loading": "Loading the console…"
+  },
+  "form": {
+    "repo": "Repository",
+    "model": "Model",
+    "ref": "Branch or commit",
+    "refPlaceholder": "Defaults to {{branch}}",
+    "prompt": "Question",
+    "promptPlaceholder": "Ask about the code, a failing check, a pull request or the history of a file.",
+    "shortcuts": "Shortcuts",
+    "send": "Send",
+    "sending": "Sending…",
+    "newSession": "New session",
+    "continuing": "This adds a turn to the current session.",
+    "count": "{{count}} / {{max}}",
+    "promptRequired": "Enter a question.",
+    "promptTooLong": "Keep the question under {{max}} characters.",
+    "repoRequired": "Choose a repository.",
+    "noRepos": "No repositories are available."
+  },
+  "models": {
+    "auto": "Auto",
+    "haiku": "Haiku",
+    "sonnet": "Sonnet",
+    "opus": "Opus"
+  },
+  "shortcuts": {
+    "where": "Find where something lives",
+    "explain": "Explain how something works",
+    "whyFailing": "Explain why a check is failing",
+    "review": "Review a pull request",
+    "history": "Trace the history of a file"
+  },
+  "status": {
+    "queued": "Queued",
+    "running": "Running",
+    "awaiting_continue": "Paused",
+    "complete": "Complete",
+    "error": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "job": {
+    "steps": "Step {{steps}} of {{cap}}",
+    "cost": "${{cost}}",
+    "commit": "at {{sha}}",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "paused": "Paused at the step cap ({{cap}} steps). Continue to allow more steps within this job's budget.",
+    "blockedOnly": "The job ended on a blocked action, shown above. No answer was produced.",
+    "noAnswer": "The job finished without an answer.",
+    "cancelledNote": "The job was cancelled.",
+    "waiting": "Waiting for the first step…"
+  },
+  "events": {
+    "step": "Step {{step}}",
+    "blocked": "Blocked: {{tool}}",
+    "answer": "Answer",
+    "citations": "Sources",
+    "cost": "Cost so far: ${{cost}}",
+    "error": "The job reported an error"
+  },
+  "sessions": {
+    "title": "Your sessions",
+    "empty": "No sessions yet.",
+    "turns": "{{count}} turns",
+    "ticket": "Ticket {{ticket}}"
+  },
+  "attach": {
+    "title": "Attach this session to a ticket",
+    "ticketId": "Ticket id",
+    "submit": "Attach",
+    "done": "Attached to the ticket as an internal note.",
+    "required": "Enter a ticket id."
+  },
+  "access": {
+    "title": "Who can use the console",
+    "ownerNote": "Only the owner can grant or revoke access.",
+    "email": "Email",
+    "grant": "Grant",
+    "revoke": "Revoke",
+    "empty": "No one else has access.",
+    "invalidEmail": "Enter a valid email address."
+  },
+  "errors": {
+    "OWNER_ONLY": "Only the owner can manage access.",
+    "NOT_FOUND": "Not found.",
+    "NOT_AWAITING_CONTINUE": "This job is not paused at the step cap, so there is nothing to continue.",
+    "VALIDATION": "Check the request and try again.",
+    "PROMPT_CONTAINS_SECRET": "Your prompt looks like it contains a key or token. Remove it and resend.",
+    "BUSY": "One job at a time.",
+    "BUDGET_EXCEEDED": "Today's budget is used (${{spent}} of ${{cap}}).",
+    "BUDGET_EXCEEDED_UNKNOWN": "Today's budget is used.",
+    "CONSOLE_DISABLED": "The console is switched off.",
+    "network": "Could not reach the console. Check your connection and try again.",
+    "generic": "The console returned an error ({{code}}).",
+    "unexpected": "Something went wrong: {{message}}"
+  }
+}
