@@ -104,8 +104,8 @@ export default function PathwayPage() {
         <p className="text-sm leading-relaxed text-[#374151]">
           Career Pathways looks beyond the roles you already match closely and highlights the ones
           you&apos;re <span className="font-medium text-[#0f766e]">developing toward</span> — roles a
-          step or two out where your profile is a workable-but-growing fit. For each, it shows how
-          big the stretch is and the specific behaviors to build; the <span className="font-medium">skill
+          step or two out where your profile is a workable-but-growing fit. For each, it shows the
+          specific behaviors to build; the <span className="font-medium">skill
           ladders</span> break those into small, concrete steps.
         </p>
         <ul className="mt-3 space-y-1.5 text-sm text-[#6b7280]">

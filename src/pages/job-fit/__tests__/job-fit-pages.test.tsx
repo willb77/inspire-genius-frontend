@@ -153,6 +153,13 @@ describe("4.1 option D — no fit tier on person-facing Job-Fit surfaces", () =>
     expect(screen.getByText("Close overlap.")).toBeInTheDocument()
     expect(container.textContent).not.toMatch(FORBIDDEN_TIER_TEXT)
   })
+
+  test("PathwayPage copy no longer claims to show how big the stretch is", () => {
+    mockUseFitPathway.mockReturnValue({ data: {}, isLoading: false, isError: false })
+    const { container } = renderRouted(<PathwayPage />)
+    expect(container.textContent).toMatch(/specific behaviors to build/i)
+    expect(container.textContent).not.toMatch(/how\s+big the stretch is/i)
+  })
 })
 
 describe("_fit helpers", () => {
