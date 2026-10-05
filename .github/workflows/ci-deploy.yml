@@ -112,9 +112,8 @@ jobs:
           # Claude Code console (CC.3) — dev only. The console API is its own
           # HTTP API (ig-dev-dev-console); its URL is a repo VARIABLE so the
           # gateway id stays out of this public file. Unset → the Help & Support
-          # tab never renders and the /me probe never fires. staging-b does NOT
-          # get it: that job rebuilds from .env.staging-b, and the console has
-          # no staging-b stack until its own promote word.
+          # tab never renders and the /me probe never fires. staging-b reads its
+          # own variable, STAGING_B_DEV_CONSOLE_URL, in the staging-b job below.
           echo "VITE_DEV_CONSOLE_URL=${{ vars.VITE_DEV_CONSOLE_URL }}" >> .env
 
       - name: Install dependencies
@@ -525,6 +524,12 @@ jobs:
             # so purchase/allocate/use call real endpoints here. Remove this line to
             # keep the controls inert (wireframe buttons) on staging-b.
             echo "VITE_CREDITS_WRITE=true"
+            # Claude Code console (CC.6). Like dev, its URL is a repo VARIABLE and
+            # never a line in the tracked .env.staging-b, so the gateway id stays
+            # out of this public repo. While STAGING_B_DEV_CONSOLE_URL is unset
+            # this writes an empty value: isDevConsoleConfigured() is false, the
+            # Help & Support tab never renders and the /me probe never fires.
+            echo "VITE_DEV_CONSOLE_URL=${{ vars.STAGING_B_DEV_CONSOLE_URL }}"
           } >> .env
 
       - name: Install dependencies
