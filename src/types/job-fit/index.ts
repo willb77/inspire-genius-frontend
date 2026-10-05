@@ -2,10 +2,10 @@
 //
 // The logged-in user matches their OWN PRISM profile against published Job DNAs.
 // These mirror the blueprint-service `/v1/blueprint/fit/*` contract exactly.
-// Domain primitives (DimensionCategory, JobTier) are reused from job-blueprint
-// so the person-side and recruiter-side share one vocabulary.
+// Domain primitives (DimensionCategory) are reused from job-blueprint so the
+// person-side and recruiter-side share one vocabulary.
 
-import type { DimensionCategory, JobTier } from '@/types/job-blueprint'
+import type { DimensionCategory } from '@/types/job-blueprint'
 import type { TargetBenchmarkInput } from '@/types/targets'
 
 /**
@@ -14,6 +14,20 @@ import type { TargetBenchmarkInput } from '@/types/targets'
  * still renders — the UI maps known bands to a tone and falls back gracefully.
  */
 export type FitBand = string
+
+/**
+ * The four-value FIT tier the scoring engine assigns (strong-fit … misalignment),
+ * possibly capped by the critical-gap guardrail. This is NOT role seniority
+ * (`JobTier`: front-line / professional / executive) — these fields were once
+ * typed as `JobTier`, and `tierLabel` fell through to the raw value, so a person
+ * read "misalignment role".
+ *
+ * Person-facing surfaces do not render it (4.1, option D): the four-tier label
+ * rests on an uncalibrated cut, so people see the 1–100 score and the ranking
+ * only. It stays on the type because the history snapshot and the explain-fit
+ * request still carry it to the server.
+ */
+export type FitTier = 'strong-fit' | 'potential-fit' | 'moderate-fit' | 'misalignment'
 
 /**
  * Scoring formula the user can choose (Decision D4). "gap" is gap-vs-benchmark
@@ -30,8 +44,9 @@ export type FitMatch = {
   jobId: string
   roleTitle: string
   department: string | null
-  tier: JobTier
-  baseTier: JobTier
+  /** Fit tier — carried, never rendered on a person-facing surface. See `FitTier`. */
+  tier: FitTier
+  baseTier: FitTier
   fitBand: FitBand
   totalVariation: number
   behaviorVariation: number
@@ -106,8 +121,9 @@ export type FitDetail = {
   benchmarkSource?: string | null
   jobId: string
   roleTitle: string
-  tier: JobTier
-  baseTier: JobTier
+  /** Fit tier — carried, never rendered on a person-facing surface. See `FitTier`. */
+  tier: FitTier
+  baseTier: FitTier
   totalVariation: number
   /**
    * Explicit 1-100 fit score (higher = closer to the role's profile), from

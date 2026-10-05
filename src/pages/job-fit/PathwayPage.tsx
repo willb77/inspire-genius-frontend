@@ -9,27 +9,11 @@ import { MyRoadmaps, TargetRoleAction } from "./PathwayTargets"
 import {
   FitPageHeader,
   FitCard,
-  FitPill,
   FitSectionTitle,
   FitEmptyState,
   FitLoading,
   FitMethodologyNote,
 } from "./_shared"
-import type { Tone } from "./_fit"
-
-function difficultyTone(difficulty?: string): Tone {
-  switch ((difficulty ?? "").toLowerCase()) {
-    case "low":
-      return "green"
-    case "moderate":
-    case "medium":
-      return "teal"
-    case "high":
-      return "amber"
-    default:
-      return "gray"
-  }
-}
 
 function SuggestionCard({
   s,
@@ -43,9 +27,8 @@ function SuggestionCard({
     <>
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-[#1f2937]">{s.roleTitle}</span>
-        {s.pivotDifficulty && (
-          <FitPill tone={difficultyTone(s.pivotDifficulty)}>{s.pivotDifficulty} pivot</FitPill>
-        )}
+        {/* No "{pivotDifficulty} pivot" pill (4.1, option D): the server derives
+            it one-to-one from the fit tier, so it is the tier in other words. */}
       </div>
       {s.roleFamily && <p className="text-xs text-[#9ca3af]">{s.roleFamily}</p>}
       {s.rationale && <p className="mt-1.5 text-sm text-[#6b7280]">{s.rationale}</p>}

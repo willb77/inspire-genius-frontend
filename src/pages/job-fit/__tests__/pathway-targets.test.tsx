@@ -58,8 +58,8 @@ const PATHWAY: FitPathway = {
 const DETAIL: FitDetail = {
   jobId: "j1",
   roleTitle: "Operations Manager",
-  tier: "professional",
-  baseTier: "professional",
+  tier: "strong-fit",
+  baseTier: "strong-fit",
   totalVariation: 22,
   fitScore: 64,
   perDimension: [

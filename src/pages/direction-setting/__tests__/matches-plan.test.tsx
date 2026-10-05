@@ -76,8 +76,8 @@ const MATCH: FitMatch = {
   jobId: "j1",
   roleTitle: "Customer Success Lead",
   department: "Revenue",
-  tier: "professional",
-  baseTier: "professional",
+  tier: "strong-fit",
+  baseTier: "strong-fit",
   fitBand: "strong",
   totalVariation: 14,
   behaviorVariation: 8,
@@ -99,8 +99,8 @@ const MATCH_2: FitMatch = {
 const DETAIL: FitDetail = {
   jobId: "j1",
   roleTitle: "Customer Success Lead",
-  tier: "professional",
-  baseTier: "professional",
+  tier: "strong-fit",
+  baseTier: "strong-fit",
   totalVariation: 14,
   fitScore: 73,
   perDimension: [
@@ -290,7 +290,7 @@ describe("MatchesPage — with matches", () => {
     })
   })
 
-  test("lists ranked roles with a fit percentage and a plain-language band", () => {
+  test("lists ranked roles with a fit percentage and no band (4.1 option D)", () => {
     renderRouted(<MatchesPage />)
     // The role title appears twice once its breakdown is open (row + summary), so
     // assert presence rather than uniqueness.
@@ -299,7 +299,7 @@ describe("MatchesPage — with matches", () => {
     expect(screen.getByText("Revenue")).toBeInTheDocument()
     expect(screen.getAllByText("73").length).toBeGreaterThan(0)
     expect(screen.getByText("58")).toBeInTheDocument()
-    expect(screen.getByText("Strong")).toBeInTheDocument()
+    expect(screen.queryByText("Strong")).not.toBeInTheDocument()
   })
 
   test("opens the best match by default, so the breakdown costs no clicks", () => {
@@ -366,7 +366,7 @@ describe("MatchesPage — with matches", () => {
     expect(screen.queryByText("Poor")).not.toBeInTheDocument()
   })
 
-  test("under a closeness read, the backend's displayBand is shown instead", () => {
+  test("under a closeness read, the backend's displayBand is not shown either (4.1 option D)", () => {
     mockUseMatches.mockReturnValue({
       data: {
         matches: [
@@ -385,13 +385,46 @@ describe("MatchesPage — with matches", () => {
       isError: false,
     })
     renderRouted(<MatchesPage />)
-    expect(screen.getByText("Excellent")).toBeInTheDocument()
+    expect(screen.getByText("81")).toBeInTheDocument()
+    expect(screen.queryByText(/excellent/i)).not.toBeInTheDocument()
     expect(screen.queryByText("Poor")).not.toBeInTheDocument()
   })
 
-  test("under the gap read, the band is unchanged", () => {
-    renderRouted(<MatchesPage />)
-    expect(screen.getByText("Strong")).toBeInTheDocument()
+  test("4.1 option D — a capped match shows score, order and critical gaps, and no tier or band", () => {
+    mockUseMatches.mockReturnValue({
+      data: {
+        matches: [
+          {
+            ...MATCH,
+            tier: "misalignment",
+            baseTier: "potential-fit",
+            fitBand: "poor",
+            displayBand: "Excellent",
+            fitScore: 81,
+            criticalGapCount: 2,
+          },
+          MATCH_2,
+        ],
+        gated: false,
+        methodologyNote: "This compares your profile with a role's published benchmark.",
+      },
+      isLoading: false,
+      isError: false,
+    })
+    mockUseFitDetail.mockReturnValue({
+      data: { ...DETAIL, tier: "misalignment", baseTier: "potential-fit", fitScore: 81 },
+      isLoading: false,
+      isError: false,
+    })
+    const { container } = renderRouted(<MatchesPage />)
+    // Order kept: the capped role is still first.
+    const rows = screen.getAllByRole("button").filter((b) => b.hasAttribute("aria-pressed"))
+    expect(rows[0]).toHaveTextContent("Customer Success Lead")
+    expect(screen.getAllByText("81").length).toBeGreaterThan(0)
+    expect(screen.getByText(/2 critical gaps to close/i)).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(
+      /misalignment|potential[ -]fit|strong[ -]fit|moderate[ -]fit|excellent|poor|base tier|(front-line|professional|executive) role/i,
+    )
   })
 
   test("carries the not-a-hiring-decision note from the backend", () => {

@@ -19,14 +19,12 @@ import { ROUTES } from "@/constants/routes"
 import { useMatches } from "@/hooks/direction-setting/useMatches"
 import { useAdvanceJourney } from "@/hooks/direction-setting/useJourney"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
-import type { FitBand, FitDetail, FitMatch, FitMethod } from "@/types/job-fit"
+import type { FitDetail, FitMatch, FitMethod } from "@/types/job-fit"
 import {
-  bandLabel,
   fitPercent,
   fitPercentLabel,
   fitPercentTone,
   formatGap,
-  tierLabel,
   type Tone,
 } from "@/pages/job-fit/_fit"
 
@@ -107,23 +105,13 @@ function rowPercent(match: FitMatch): number {
   return fitPercent(match.fitScore, match.totalVariation, 22)
 }
 
-/**
- * The band to show beside that percentage.
- *
- * `fitBand` comes from the gap engine and bands total variation; the percentage
- * beside it, under the closeness read, comes from a different engine on a
- * different scale. Showing them together produced rows reading "81% · Poor" —
- * the ranking was fine, the label buried it. The backend now resolves the right
- * band for the method in force, so prefer that and keep `fitBand` only as the
- * fallback for a backend that predates the field.
+/*
+ * No fit tier and no Excellent/Good/Moderate/Poor band on this page (4.1,
+ * option D). The band is the fit tier in other words, and the four-tier cut is
+ * not calibrated; the percentage and the order carry the read. `fitBand`,
+ * `displayBand`, `tier` and `baseTier` still arrive on the wire — they are just
+ * not rendered here.
  */
-function rowBand(match: FitMatch): FitBand | null {
-  if (match.displayBand) return match.displayBand
-  // Older backend: under a closeness read there is no honest band to show, and
-  // showing the gap band would be worse than showing none.
-  if (match.method === "closeness" && match.closenessScore != null) return null
-  return match.fitBand ?? null
-}
 
 /** One ranked role. Selecting it opens its breakdown below, in place. */
 function MatchRow({
@@ -158,13 +146,8 @@ function MatchRow({
                 {match.department}
               </span>
             )}
-            <span>{tierLabel(match.tier)} role</span>
-            {rowBand(match) && <span>{bandLabel(rowBand(match) as FitBand)}</span>}
-            {/* The band reflects how close the profile is overall. The tier can
-                still be capped to misalignment by critical gaps, and saying so
-                is the difference between "you are a poor match" and "you are
-                close, with N specific things to close". Both are true; only the
-                second is useful. */}
+            {/* The critical-gap count stays: "you are close, with N specific
+                things to close" is useful where a tier label is not. */}
             {(match.criticalGapCount ?? 0) > 0 && (
               <span className="inline-flex items-center gap-1 text-amber-700">
                 <AlertTriangle className="h-3 w-3" aria-hidden />
@@ -314,7 +297,7 @@ function OverdoneCard({ flags }: { flags: { dimensionName: string; candidateScor
 }
 
 /** Stage 8 — the full breakdown for the selected role. */
-function FitBreakdown({ match, detail }: { match: FitMatch; detail: FitDetail }) {
+function FitBreakdown({ detail }: { detail: FitDetail }) {
   const pct = fitPercent(
     detail.fitScore,
     detail.totalVariation,
@@ -334,7 +317,6 @@ function FitBreakdown({ match, detail }: { match: FitMatch; detail: FitDetail })
             <span className="block font-medium">{detail.roleTitle}</span>
             <span className="block text-sm text-muted-foreground">
               {fitPercentLabel(pct)}
-              {rowBand(match) ? ` · ${bandLabel(rowBand(match) as FitBand)}` : ""}
             </span>
           </span>
         </CardContent>
@@ -665,7 +647,7 @@ export default function MatchesPage() {
               </div>
             )}
             {!detailLoading && detail && selected && (
-              <FitBreakdown match={selected} detail={detail} />
+              <FitBreakdown detail={detail} />
             )}
             {!detailLoading && !detail && (
               <Card>

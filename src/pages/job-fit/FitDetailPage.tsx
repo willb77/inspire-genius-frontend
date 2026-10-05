@@ -10,7 +10,7 @@ import {
   FitLoading,
   FitError,
 } from "./_shared"
-import { tierLabel, jobFitNarrativeEnabled, fitPercent } from "./_fit"
+import { jobFitNarrativeEnabled, fitPercent } from "./_fit"
 import { FitComponentsCard } from "./FitComponentsCard"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
@@ -93,15 +93,13 @@ export default function FitDetailPage() {
             />
           </div>
 
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
-            <FitPill tone="teal">{tierLabel(data.tier)} role</FitPill>
-            {typeof data.blueprintVersion === "number" && (
+          {/* No fit tier or base tier here (4.1, option D): the four-tier label
+              rests on an uncalibrated cut, so the person sees the score only. */}
+          {typeof data.blueprintVersion === "number" && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
               <FitPill tone="gray">Scored against benchmark v{data.blueprintVersion}</FitPill>
-            )}
-            {data.baseTier !== data.tier && (
-              <FitPill tone="gray">Base tier: {tierLabel(data.baseTier)}</FitPill>
-            )}
-          </div>
+            </div>
+          )}
 
           {componentsOn && (
             <FitComponentsCard

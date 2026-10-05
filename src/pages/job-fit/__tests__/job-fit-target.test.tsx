@@ -80,10 +80,9 @@ const SCORED: FitDetail = {
   jobId: "",
   roleTitle: "This job description",
   // The wire carries the FIT tier here (blueprint-service sets `tier=ev.tier`:
-  // strong-fit | potential-fit | moderate-fit | misalignment); the FE type still
-  // says JobTier. Cast rather than widen the type inside this change.
-  tier: "potential-fit" as FitDetail["tier"],
-  baseTier: "potential-fit" as FitDetail["baseTier"],
+  // strong-fit | potential-fit | moderate-fit | misalignment) — now typed FitTier.
+  tier: "potential-fit",
+  baseTier: "potential-fit",
   totalVariation: 210,
   fitScore: 62,
   perDimension: [
@@ -200,13 +199,29 @@ describe("TargetPreviewPage — score my fit (JS-5)", () => {
     renderDrafted()
     expect(screen.getByText("Your fit against this target")).toBeInTheDocument()
     expect(screen.getByText("62")).toBeInTheDocument()
-    expect(screen.getByText(/^potential fit$/i)).toBeInTheDocument()
+    // 4.1 option D — the fit tier is not rendered beside the score.
+    expect(screen.queryByText(/^potential fit$/i)).not.toBeInTheDocument()
     // the same block FitDetailPage renders
     expect(screen.getByTestId("radar")).toBeInTheDocument()
     expect(screen.getByText("Where you stand, dimension by dimension")).toBeInTheDocument()
     expect(screen.getByText("Growth focus")).toBeInTheDocument()
     expect(screen.getByText(/lead with how you generate/i)).toBeInTheDocument()
     expect(screen.getAllByText(/not a validated selection instrument/i).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it("4.1 option D — a capped tier shows the score and no tier, band or pre-cap tier", () => {
+    mockScore = {
+      ...idleScore(),
+      isSuccess: true,
+      data: { ...SCORED, tier: "misalignment", baseTier: "potential-fit", fitScore: 81 },
+    }
+    renderDrafted()
+    expect(screen.getByText("Your fit against this target")).toBeInTheDocument()
+    expect(screen.getByText("81")).toBeInTheDocument()
+    expect(screen.getByText("Priority focus")).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(
+      /misalignment|potential[ -]fit|strong[ -]fit|moderate[ -]fit|before the critical-gap cap|base tier/i,
+    )
   })
 
   it("no PRISM on file → the honest state, not a score", () => {
