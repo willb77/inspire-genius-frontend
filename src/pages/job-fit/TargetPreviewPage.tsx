@@ -26,8 +26,6 @@ import {
   FitStat,
 } from "./_shared"
 import {
-  bandLabel,
-  bandTone,
   confidenceTone,
   fitPercent,
   fitPercentLabel,
@@ -72,7 +70,7 @@ function DimensionRow({ dim }: { dim: ExtractedDimension }) {
 
 /**
  * The scored read of a drafted target: the same headline the role detail page
- * leads with (fit %, closeness, growth areas, priority focus, tier), then the
+ * leads with (fit %, closeness, growth areas, priority focus), then the
  * shared breakdown. No narrative cards — those need a published role id.
  */
 function TargetFitResult({ data }: { data: FitDetail }) {
@@ -92,13 +90,12 @@ function TargetFitResult({ data }: { data: FitDetail }) {
           <Gauge className="h-8 w-8 text-[#0D9488]" aria-hidden />
         </div>
         <FitMeter value={pct} tone={fitPercentTone(pct)} className="mb-4" />
-        <div className="flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
-          <FitPill tone={bandTone(data.tier)}>{bandLabel(data.tier)}</FitPill>
-          {data.baseTier !== data.tier && (
-            <FitPill tone="gray">Before the critical-gap cap: {bandLabel(data.baseTier)}</FitPill>
-          )}
-          {data.gated && <FitPill tone="amber">Decision support only</FitPill>}
-        </div>
+        {/* No fit tier or pre-cap tier here (4.1, option D) — score only. */}
+        {data.gated && (
+          <div className="flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
+            <FitPill tone="amber">Decision support only</FitPill>
+          </div>
+        )}
       </FitCard>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

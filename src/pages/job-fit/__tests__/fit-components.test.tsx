@@ -39,8 +39,8 @@ import FitDetailPage from "../FitDetailPage"
 import { FitComponentsCard } from "../FitComponentsCard"
 
 const base: FitMatch = {
-  jobId: "j1", roleTitle: "Research Analyst", department: "Research", tier: "professional",
-  baseTier: "professional", fitBand: "strong", totalVariation: 14, behaviorVariation: 8,
+  jobId: "j1", roleTitle: "Research Analyst", department: "Research", tier: "strong-fit",
+  baseTier: "strong-fit", fitBand: "strong", totalVariation: 14, behaviorVariation: 8,
   aptitudeVariation: 12, coreTraitVariation: 20, confidence: 0.8, fitScore: 72,
 }
 const MATCHES: FitMatch[] = [

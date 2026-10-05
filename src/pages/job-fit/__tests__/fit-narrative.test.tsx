@@ -22,8 +22,8 @@ import type { FitDetail } from "@/types/job-fit"
 const DATA: FitDetail = {
   jobId: "j1",
   roleTitle: "Operations Program Manager",
-  tier: "professional",
-  baseTier: "professional",
+  tier: "strong-fit",
+  baseTier: "strong-fit",
   totalVariation: 140,
   fitScore: 72,
   perDimension: [

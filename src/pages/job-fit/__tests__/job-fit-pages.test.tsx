@@ -43,8 +43,8 @@ const MATCH: FitMatch = {
   jobId: "j1",
   roleTitle: "Customer Success Lead",
   department: "Revenue",
-  tier: "professional",
-  baseTier: "professional",
+  tier: "strong-fit",
+  baseTier: "strong-fit",
   fitBand: "strong",
   totalVariation: 14,
   behaviorVariation: 8,
@@ -65,8 +65,8 @@ const MATCH_2: FitMatch = {
 const DETAIL: FitDetail = {
   jobId: "j1",
   roleTitle: "Customer Success Lead",
-  tier: "professional",
-  baseTier: "front-line",
+  tier: "strong-fit",
+  baseTier: "potential-fit",
   totalVariation: 14,
   perDimension: [
     { category: "behavior", dimensionId: 1, dimensionName: "Innovating", candidateScore: 70, benchmarkScore: 60, gap: 10, coaching: "Keep leaning on your ideas." },
@@ -96,6 +96,71 @@ function renderRouted(ui: React.ReactNode, path = "/") {
 }
 
 beforeEach(() => jest.clearAllMocks())
+
+/*
+ * 4.1 option D — no fit tier on a person-facing surface. The payload below
+ * carries every value that used to be printed (tier "misalignment", baseTier
+ * "potential-fit", band "poor"/"Excellent", a "high" pivot), so a regression of
+ * any one render shows up as one of these strings in the page text.
+ *
+ * No \b anchors: textContent concatenates adjacent elements ("Team Leadhigh
+ * pivotClose overlap."), so a word boundary would let a restored pill pass.
+ */
+const FORBIDDEN_TIER_TEXT =
+  /misalignment|potential[ -]fit|strong[ -]fit|moderate[ -]fit|excellent|poor|base tier|critical-gap cap|pivot|(front-line|professional|executive) role/i
+
+const CAPPED_MATCH: FitMatch = {
+  ...MATCH,
+  tier: "misalignment",
+  baseTier: "potential-fit",
+  fitBand: "poor",
+  displayBand: "Excellent",
+  fitScore: 81,
+  criticalGapCount: 2,
+}
+const CAPPED_DETAIL: FitDetail = { ...DETAIL, tier: "misalignment", baseTier: "potential-fit", fitScore: 81 }
+
+describe("4.1 option D — no fit tier on person-facing Job-Fit surfaces", () => {
+  test("MatchesPage shows the score and no tier or band", () => {
+    mockUseFitMatches.mockReturnValue({ data: [CAPPED_MATCH], isLoading: false, isError: false })
+    const { container } = renderRouted(<MatchesPage />)
+    expect(screen.getByText("Customer Success Lead")).toBeInTheDocument()
+    expect(screen.getByText("81")).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(FORBIDDEN_TIER_TEXT)
+  })
+
+  test("FitDetailPage shows the score and priority focus, and no tier or base tier", () => {
+    mockUseFitDetail.mockReturnValue({ data: CAPPED_DETAIL, isLoading: false, isError: false })
+    const { container } = renderRouted(
+      <Routes>
+        <Route path="/vertical/job-fit/fit/:jobId" element={<FitDetailPage />} />
+      </Routes>,
+      "/vertical/job-fit/fit/j1"
+    )
+    expect(screen.getByText("Priority focus")).toBeInTheDocument()
+    expect(container.textContent).toMatch(/81/)
+    expect(container.textContent).not.toMatch(FORBIDDEN_TIER_TEXT)
+  })
+
+  test("PathwayPage shows the suggestion and no pivot pill", () => {
+    mockUseFitPathway.mockReturnValue({
+      data: { suggestions: [{ roleTitle: "Team Lead", pivotDifficulty: "high", rationale: "Close overlap.", jobId: "j9" }] },
+      isLoading: false,
+      isError: false,
+    })
+    const { container } = renderRouted(<PathwayPage />)
+    expect(screen.getByText("Team Lead")).toBeInTheDocument()
+    expect(screen.getByText("Close overlap.")).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(FORBIDDEN_TIER_TEXT)
+  })
+
+  test("PathwayPage copy no longer claims to show how big the stretch is", () => {
+    mockUseFitPathway.mockReturnValue({ data: {}, isLoading: false, isError: false })
+    const { container } = renderRouted(<PathwayPage />)
+    expect(container.textContent).toMatch(/specific behaviors to build/i)
+    expect(container.textContent).not.toMatch(/how\s+big the stretch is/i)
+  })
+})
 
 describe("_fit helpers", () => {
   test("bandTone maps known bands and falls back", () => {
@@ -250,10 +315,10 @@ describe("FitDetailPage", () => {
     expect(screen.getByTestId("radar")).toBeInTheDocument()
     // per-dimension coaching text
     expect(screen.getByText(/practice structured analysis/i)).toBeInTheDocument()
-    // over-use flag + interview prep + base-tier pill (baseTier != tier)
+    // over-use flag + interview prep; no base-tier pill even though baseTier != tier (4.1 D)
     expect(screen.getByText(/watch for over-use/i)).toBeInTheDocument()
     expect(screen.getByText(/track record of new ideas/i)).toBeInTheDocument()
-    expect(screen.getByText(/base tier/i)).toBeInTheDocument()
+    expect(screen.queryByText(/base tier/i)).not.toBeInTheDocument()
     // The decision-support disclaimer banner was removed from the fit surfaces.
     expect(screen.queryByText(/not a validated selection instrument/i)).not.toBeInTheDocument()
   })

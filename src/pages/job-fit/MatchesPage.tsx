@@ -14,7 +14,7 @@ import {
 } from "./_shared"
 import FitPurpose from "./FitPurpose"
 import { FitHistoryPanel } from "./FitHistoryPanel"
-import { tierLabel, fitPercent, fitPercentTone } from "./_fit"
+import { fitPercent, fitPercentTone } from "./_fit"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
 import type { JobComponents } from "@/types/job-fit/components"
@@ -67,7 +67,7 @@ function MatchRow({ match, components }: { match: FitMatch; components?: JobComp
               {match.department}
             </span>
           )}
-          <span>{tierLabel(match.tier)} role</span>
+          {/* No fit tier here (4.1, option D): the score and the order carry it. */}
         </div>
       </div>
       <div className="shrink-0 text-right">

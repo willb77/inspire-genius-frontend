@@ -9,27 +9,11 @@ import { MyRoadmaps, TargetRoleAction } from "./PathwayTargets"
 import {
   FitPageHeader,
   FitCard,
-  FitPill,
   FitSectionTitle,
   FitEmptyState,
   FitLoading,
   FitMethodologyNote,
 } from "./_shared"
-import type { Tone } from "./_fit"
-
-function difficultyTone(difficulty?: string): Tone {
-  switch ((difficulty ?? "").toLowerCase()) {
-    case "low":
-      return "green"
-    case "moderate":
-    case "medium":
-      return "teal"
-    case "high":
-      return "amber"
-    default:
-      return "gray"
-  }
-}
 
 function SuggestionCard({
   s,
@@ -43,9 +27,8 @@ function SuggestionCard({
     <>
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-[#1f2937]">{s.roleTitle}</span>
-        {s.pivotDifficulty && (
-          <FitPill tone={difficultyTone(s.pivotDifficulty)}>{s.pivotDifficulty} pivot</FitPill>
-        )}
+        {/* No "{pivotDifficulty} pivot" pill (4.1, option D): the server derives
+            it one-to-one from the fit tier, so it is the tier in other words. */}
       </div>
       {s.roleFamily && <p className="text-xs text-[#9ca3af]">{s.roleFamily}</p>}
       {s.rationale && <p className="mt-1.5 text-sm text-[#6b7280]">{s.rationale}</p>}
@@ -121,8 +104,8 @@ export default function PathwayPage() {
         <p className="text-sm leading-relaxed text-[#374151]">
           Career Pathways looks beyond the roles you already match closely and highlights the ones
           you&apos;re <span className="font-medium text-[#0f766e]">developing toward</span> — roles a
-          step or two out where your profile is a workable-but-growing fit. For each, it shows how
-          big the stretch is and the specific behaviors to build; the <span className="font-medium">skill
+          step or two out where your profile is a workable-but-growing fit. For each, it shows the
+          specific behaviors to build; the <span className="font-medium">skill
           ladders</span> break those into small, concrete steps.
         </p>
         <ul className="mt-3 space-y-1.5 text-sm text-[#6b7280]">

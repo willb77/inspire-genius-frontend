@@ -36,13 +36,13 @@ const mockListEntitled = listEntitledVerticals as jest.MockedFunction<typeof lis
 
 const MATCH: FitMatch = {
   jobId: "j1", roleTitle: "Director of Operations", department: null,
-  tier: "professional", baseTier: "professional", fitBand: "strong",
+  tier: "strong-fit", baseTier: "strong-fit", fitBand: "strong",
   totalVariation: 20, behaviorVariation: 8, aptitudeVariation: 6,
   coreTraitVariation: 6, confidence: null,
 }
 const DETAIL: FitDetail = {
-  jobId: "j1", roleTitle: "Director of Operations", tier: "professional",
-  baseTier: "professional", totalVariation: 20, fitScore: 91,
+  jobId: "j1", roleTitle: "Director of Operations", tier: "strong-fit",
+  baseTier: "strong-fit", totalVariation: 20, fitScore: 91,
   perDimension: [
     { category: "behavior", dimensionId: 4, dimensionName: "Coordinating", candidateScore: 70, benchmarkScore: 78, gap: -8, coaching: "x" },
   ],
