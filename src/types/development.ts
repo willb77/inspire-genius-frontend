@@ -258,9 +258,28 @@ export type DevelopmentGap = {
   currentLevel: number
   targetLevel: number
   severity: GapSeverity
-  source: "behavioral" | "skill"
+  /** `coaching` (TDS-8): an indicative gap from the dossier's coaching step.
+   *  `source` alone never means "measured" — see `engineVersion`. */
+  source: "behavioral" | "skill" | "coaching"
   status: "open" | "in_progress" | "closed"
+  /** TDS-8: set ONLY on a row the fit engine measured. A backend that
+   *  classifies gaps always sends the key (null when unmeasured); an older
+   *  backend omits it — `classifyGap` reads that as "unclassified" and the
+   *  surface renders as it did before. */
+  engineVersion?: string | null
+  /** TDS-8: `resolved_by_engine` when the system closed a measured row. */
+  closedReason?: string | null
 }
+
+/** TDS-8: why the Gaps tab has, or has no, measured rows for this member. */
+export type GapsState =
+  | "ok"
+  | "not_shared"
+  | "no_account"
+  | "no_target"
+  | "no_prism"
+  | "no_fit"
+  | "unavailable"
 
 export type LearningItemStatus = "not_started" | "in_progress" | "complete"
 
@@ -395,6 +414,12 @@ export type MemberDossier = {
    *  "none yet" empty list. Absent until development is enforced. */
   developmentNotShared?: boolean
   gaps: DevelopmentGap[]
+  /** TDS-8: the measured-gap state, read live. Absent on an older backend —
+   *  the Gaps tab then renders exactly as it did before TDS-8. */
+  gapsState?: GapsState
+  /** TDS-8: the role measured against; set only when `gapsState === "ok"`. */
+  gapsTargetJobId?: string | null
+  gapsTargetRole?: string | null
   learning: LearningItem[]
   milestones: Milestone[]
   matches: CareerMatch[]

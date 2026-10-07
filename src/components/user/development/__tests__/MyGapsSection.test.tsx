@@ -143,3 +143,33 @@ it("renders a failed close too", () => {
   render(<MyGapsSection />)
   expect(screen.getByRole("alert")).toHaveTextContent("Gap not found")
 })
+
+describe("TDS-8: only a measured row is called an assessment", () => {
+  it("labels a coaching row as a suggestion and shows no levels", () => {
+    useMyGaps.mockReturnValue(query({ data: [gap({ source: "coaching", engineVersion: null })] }))
+    render(<MyGapsSection />)
+    expect(screen.getByText(/Suggested by coaching/)).toBeInTheDocument()
+    expect(screen.queryByText(/now 2 of 4/)).not.toBeInTheDocument()
+  })
+
+  it("labels a legacy behavioral row with no engine version as a suggestion too", () => {
+    useMyGaps.mockReturnValue(query({ data: [gap({ engineVersion: null })] }))
+    render(<MyGapsSection />)
+    expect(screen.getByText(/Suggested by coaching/)).toBeInTheDocument()
+    expect(screen.queryByText(/From your assessment/)).not.toBeInTheDocument()
+  })
+
+  it("labels a measured row against the target role, with its levels", () => {
+    useMyGaps.mockReturnValue(query({ data: [gap({ engineVersion: "fit/7" })] }))
+    render(<MyGapsSection />)
+    expect(screen.getByText(/Measured against your target role/)).toBeInTheDocument()
+    expect(screen.getByText(/now 2 of 4/)).toBeInTheDocument()
+  })
+
+  it("renders an older backend's row as it always did", () => {
+    useMyGaps.mockReturnValue(query({ data: [gap()] }))
+    render(<MyGapsSection />)
+    expect(screen.getByText(/From your assessment/)).toBeInTheDocument()
+    expect(screen.getByText(/now 2 of 4/)).toBeInTheDocument()
+  })
+})

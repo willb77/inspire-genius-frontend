@@ -24,8 +24,25 @@
  * sentence that is false in that case. Three states now, each said in words:
  * not shared (the dossier says so, or the read is 403), couldn't load (any other
  * failure), and none (a successful empty list).
+ *
+ * TDS-8 (3.2): one gap engine. When the dossier carries `gapsState` (a backend
+ * that classifies gaps), the list splits into three groups, each said in words:
+ *
+ *  - **Measured against <role>** — rows the fit engine wrote (`engineVersion`
+ *    set), with current vs benchmark levels. Shown only when `gapsState` is
+ *    `ok`; every other state is a card that says why there is nothing measured
+ *    ("pick a target role", "not shared", …), never an empty list.
+ *  - **Indicative (coaching)** — everything the coaching step suggested,
+ *    including every legacy `behavioral` row. NO level bars: those levels were
+ *    never a measurement.
+ *  - **Added by you** — manager/self-authored skill gaps, as before.
+ *
+ * In that mode the list is read unfiltered: a coaching row has no target, so
+ * filtering by the selected career match would hide it. Without `gapsState`
+ * (an older backend — staging-b until its promote) the tab renders exactly as
+ * it did before, which is what keeps the one FE deploy inert there.
  */
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { isAxiosError } from "axios"
 import { toast } from "sonner"
 import { AlertTriangle, CheckCircle2, Info, Target } from "lucide-react"
@@ -45,9 +62,29 @@ import {
   FIT_CLASSIFICATION_LABEL,
   GAP_SEVERITY_LABEL,
 } from "@/constants/development"
-import type { CareerMatch, DevelopmentGap, FitClassification, GapSeverity } from "@/types/development"
+import type {
+  CareerMatch,
+  DevelopmentGap,
+  FitClassification,
+  GapSeverity,
+  GapsState,
+} from "@/types/development"
 import { useCloseGapPlan, useGapAnalysis } from "@/hooks/manager/development"
+import { classifyGap } from "@/lib/developmentGaps"
 import { useDevSkin } from "../skin"
+
+/** TDS-8: why there is nothing in the measured group, in words. */
+const MEASURED_STATE_COPY: Record<Exclude<GapsState, "ok">, string> = {
+  not_shared:
+    "Their PRISM hasn't been shared with you, so there are no measured gaps to show. That isn't the same as having none.",
+  no_account:
+    "This person has no platform account, so nothing can be measured against a role.",
+  no_target: "Pick a target role to see measured gaps.",
+  no_prism: "There's no PRISM profile on file yet, so nothing can be measured.",
+  no_fit:
+    "Their target role hasn't been scored yet. Measured gaps appear once they open My fit for it.",
+  unavailable: "Measured gaps couldn't be loaded right now. That isn't the same as having none.",
+}
 
 const SEVERITY_META: Record<GapSeverity, { className: string; icon: typeof AlertTriangle }> = {
   critical: { className: "text-red-600", icon: AlertTriangle },
@@ -79,9 +116,21 @@ export type GapAnalysisPanelProps = {
   initialTargetId?: string
   /** S-7: the dossier says the member has not shared `development` with you. */
   notShared?: boolean
+  /** TDS-8: the dossier's measured-gap state. Absent → pre-TDS-8 rendering. */
+  gapsState?: GapsState
+  /** TDS-8: the role measured against (only when `gapsState === "ok"`). */
+  gapsTargetRole?: string | null
 }
 
-export function GapAnalysisPanel({ memberId, matches, initialTargetId, notShared }: GapAnalysisPanelProps) {
+export function GapAnalysisPanel({
+  memberId,
+  matches,
+  initialTargetId,
+  notShared,
+  gapsState,
+  gapsTargetRole,
+}: GapAnalysisPanelProps) {
+  const classified = gapsState !== undefined
   const sk = useDevSkin()
   const targetOptions = useMemo(
     () => matches.filter((m) => m.blueprintId),
@@ -95,7 +144,8 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId, notShared
     if (initialTargetId) setTargetId(initialTargetId)
   }, [initialTargetId])
 
-  const { data: gaps, isLoading, error } = useGapAnalysis(memberId, targetId)
+  // TDS-8: unfiltered in classified mode — a coaching row carries no target.
+  const { data: gaps, isLoading, error } = useGapAnalysis(memberId, classified ? undefined : targetId)
   const forbidden = isAxiosError(error) && error.response?.status === 403
   const view: "not_shared" | "unavailable" | "loading" | "none" | "list" = notShared || forbidden
     ? "not_shared"
@@ -103,9 +153,11 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId, notShared
       ? "unavailable"
       : isLoading
         ? "loading"
-        : (gaps?.length ?? 0) === 0
-          ? "none"
-          : "list"
+        : classified
+          ? "list"
+          : (gaps?.length ?? 0) === 0
+            ? "none"
+            : "list"
   const closePlan = useCloseGapPlan(memberId)
   // Per-gap, not one shared `isPending`: the old code disabled every row's
   // button while any one of them was in flight.
@@ -194,53 +246,142 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId, notShared
             No gaps identified against this target.
           </CardContent>
         </Card>
+      ) : classified ? (
+        <ClassifiedGroups
+          gaps={gaps ?? []}
+          gapsState={gapsState}
+          gapsTargetRole={gapsTargetRole}
+          renderGap={renderGap}
+        />
       ) : (
-        <div className="space-y-3">
-          {gaps?.map((gap) => {
-            const meta = SEVERITY_META[gap.severity]
-            const Icon = meta.icon
-            const pct = gap.targetLevel > 0 ? (gap.currentLevel / gap.targetLevel) * 100 : 0
-            return (
-              <Card key={gap.gapId}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-sm">{gap.competency}</CardTitle>
-                    <Badge variant="outline" className={cn("gap-1", meta.className)}>
-                      <Icon className="h-3 w-3" aria-hidden="true" />
-                      {GAP_SEVERITY_LABEL[gap.severity]}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className={cn("flex items-center gap-3 text-xs", sk.text500)}>
-                    <span>Current {gap.currentLevel}</span>
-                    <div className={cn("h-2 flex-1 overflow-hidden rounded", sk.bgMuted100)}>
-                      <div className={cn("h-full rounded", sk.accentBg)} style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
-                    </div>
-                    <span>Target {gap.targetLevel}</span>
-                    <Badge variant="secondary" className="capitalize">{gap.source}</Badge>
-                  </div>
-                  {gap.status === "closed" ? (
-                    <p className={cn("flex items-center gap-1.5 text-xs", sk.text500)}>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
-                      Closed. The learning item and milestone stay on the plan.
-                    </p>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleClose(gap)}
-                      disabled={closingGapId === gap.gapId}
-                    >
-                      {closingGapId === gap.gapId ? "Closing…" : "Close this gap"}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+        <div className="space-y-3">{gaps?.map((gap) => renderGap(gap, { levels: true }))}</div>
       )}
+    </div>
+  )
+
+  function renderGap(gap: DevelopmentGap, opts: { levels: boolean; label?: string }) {
+    const meta = SEVERITY_META[gap.severity]
+    const Icon = meta.icon
+    const pct = gap.targetLevel > 0 ? (gap.currentLevel / gap.targetLevel) * 100 : 0
+    return (
+      <Card key={gap.gapId}>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-sm">{gap.competency}</CardTitle>
+            <Badge variant="outline" className={cn("gap-1", meta.className)}>
+              <Icon className="h-3 w-3" aria-hidden="true" />
+              {GAP_SEVERITY_LABEL[gap.severity]}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {opts.levels ? (
+            <div className={cn("flex items-center gap-3 text-xs", sk.text500)} data-testid="gap-levels">
+              <span>Current {gap.currentLevel}</span>
+              <div className={cn("h-2 flex-1 overflow-hidden rounded", sk.bgMuted100)}>
+                <div className={cn("h-full rounded", sk.accentBg)} style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
+              </div>
+              <span>Target {gap.targetLevel}</span>
+              <Badge variant="secondary" className="capitalize">{opts.label ?? gap.source}</Badge>
+            </div>
+          ) : (
+            <div className={cn("text-xs", sk.text500)}>
+              <Badge variant="secondary">{opts.label ?? gap.source}</Badge>
+            </div>
+          )}
+          {gap.status === "closed" ? (
+            <p className={cn("flex items-center gap-1.5 text-xs", sk.text500)}>
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+              {gap.closedReason === "resolved_by_engine"
+                ? "Closed: the latest fit no longer shows this gap."
+                : "Closed. The learning item and milestone stay on the plan."}
+            </p>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleClose(gap)}
+              disabled={closingGapId === gap.gapId}
+            >
+              {closingGapId === gap.gapId ? "Closing…" : "Close this gap"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+}
+
+type RenderGap = (gap: DevelopmentGap, opts: { levels: boolean; label?: string }) => ReactNode
+
+/** TDS-8: the three groups. Every group says what it is; none is a bare empty list. */
+function ClassifiedGroups({
+  gaps,
+  gapsState,
+  gapsTargetRole,
+  renderGap,
+}: {
+  gaps: DevelopmentGap[]
+  gapsState?: GapsState
+  gapsTargetRole?: string | null
+  renderGap: RenderGap
+}) {
+  const sk = useDevSkin()
+  // A row is filed by `engineVersion`, never by `source` — a legacy
+  // `behavioral` row is indicative. `unclassified` (a row from an older
+  // backend) cannot occur with `gapsState` present; it is filed as indicative,
+  // the honest side.
+  const measured = gaps.filter((g) => classifyGap(g) === "measured")
+  const indicative = gaps.filter((g) => {
+    const k = classifyGap(g)
+    return k === "indicative" || k === "unclassified"
+  })
+  const skill = gaps.filter((g) => classifyGap(g) === "skill")
+  const heading = cn("text-sm font-medium", sk.text600)
+
+  return (
+    <div className="space-y-6">
+      <section className="space-y-3" aria-label="Measured gaps" data-testid="gaps-measured">
+        <h3 className={heading}>
+          {gapsState === "ok" && gapsTargetRole ? `Measured against ${gapsTargetRole}` : "Measured gaps"}
+        </h3>
+        {gapsState === "ok" ? (
+          measured.length > 0 ? (
+            measured.map((g) => renderGap(g, { levels: true, label: "Measured" }))
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
+                The latest fit shows no gaps against this role.
+              </CardContent>
+            </Card>
+          )
+        ) : (
+          <Card className="border-dashed">
+            <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="gaps-measured-state">
+              {MEASURED_STATE_COPY[gapsState ?? "unavailable"]}
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      <section className="space-y-3" aria-label="Indicative gaps" data-testid="gaps-indicative">
+        <h3 className={heading}>Indicative (coaching)</h3>
+        <p className={cn("text-xs", sk.text500)}>
+          Suggested from goals and coaching conversations. These are not measurements, so no levels are shown.
+        </p>
+        {indicative.length > 0 ? (
+          indicative.map((g) => renderGap(g, { levels: false, label: "Indicative" }))
+        ) : (
+          <p className={cn("text-xs", sk.text400)}>No coaching suggestions yet.</p>
+        )}
+      </section>
+
+      {skill.length > 0 ? (
+        <section className="space-y-3" aria-label="Added gaps" data-testid="gaps-skill">
+          <h3 className={heading}>Added by hand</h3>
+          {skill.map((g) => renderGap(g, { levels: true, label: "Skill" }))}
+        </section>
+      ) : null}
     </div>
   )
 }
