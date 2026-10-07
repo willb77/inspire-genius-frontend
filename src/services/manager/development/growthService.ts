@@ -22,6 +22,7 @@ import type {
   MemberCreateInput,
   MemberCreateResult,
   MemberDossier,
+  MemberFitMatches,
   OrgChartResponse,
   Milestone,
   RosterMember,
@@ -488,6 +489,17 @@ export function getCareerMatches(memberId: string, kind: "internal" | "external"
   return getApi().get<BaseApiResponse<CareerMatch[]>>(
     `${BASE}/members/${memberId}/matches`,
     { params: { kind } },
+  )
+}
+
+/**
+ * 3.3a: GET /members/{id}/fit-matches → MemberFitMatches. The fit engine's
+ * measured matches from the member's own My fit, under their `prism` grant.
+ * Always a `state`; only called when FIT_ENGINE_MATCHES_ENABLED.
+ */
+export function getMemberFitMatches(memberId: string) {
+  return getApi().get<BaseApiResponse<MemberFitMatches>>(
+    `${BASE}/members/${memberId}/fit-matches`,
   )
 }
 

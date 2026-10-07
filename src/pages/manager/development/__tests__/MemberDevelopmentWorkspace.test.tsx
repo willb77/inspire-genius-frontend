@@ -23,9 +23,14 @@ jest.mock("@/layouts/PractitionerLayout", () => ({
 }))
 
 /* ---- the Studio tabs are ON for this suite (build-time flag, default off) ---- */
+/* ---- 3.3a: the fit-engine matches flag is driven per test (default off) ---- */
+let mockFitEngineFlag = false
 jest.mock("@/constants/development", () => ({
   ...jest.requireActual("@/constants/development"),
   TDS_STUDIO_ENABLED: true,
+  get FIT_ENGINE_MATCHES_ENABLED() {
+    return mockFitEngineFlag
+  },
 }))
 
 /* ---- data hooks ---- */
@@ -37,10 +42,19 @@ let dossierState: { data: MemberDossier | null | undefined; isLoading: boolean; 
 const refreshMutate = jest.fn()
 const shareMutate = jest.fn()
 const sessionMutate = jest.fn()
+const mockFitCalls: Array<[string | undefined, boolean]> = []
 jest.mock("@/hooks/manager/development", () => {
   const { DEV_TEXT } = jest.requireActual("@/constants/development")
   return {
     useMemberDossier: () => dossierState,
+    useMemberFitMatches: (id: string | undefined, enabled: boolean) => {
+      mockFitCalls.push([id, enabled])
+      return {
+        data: enabled ? { state: "no_snapshot", matches: [], asOf: null, ageDays: null } : undefined,
+        isLoading: false,
+        isError: false,
+      }
+    },
     useRefreshDossier: () => ({ mutate: refreshMutate, isPending: false }),
     useSharePlan: () => ({ mutate: shareMutate, isPending: false }),
     useGoalSession: () => ({ mutate: sessionMutate, isPending: false }),
@@ -104,6 +118,11 @@ jest.mock("@/components/manager/development/tabs/LearningPlanPanel", () => ({
 }))
 jest.mock("@/components/manager/development/tabs/CareerMatchPanel", () => ({
   CareerMatchPanel: () => <div data-testid="careers-panel" />,
+}))
+jest.mock("@/components/manager/development/tabs/FitEngineMatchPanel", () => ({
+  FitEngineMatchPanel: (props: { result?: { state: string } }) => (
+    <div data-testid="fit-engine-careers-panel">{props.result?.state}</div>
+  ),
 }))
 jest.mock("@/components/manager/development/tabs/RoadmapTimeline", () => ({
   RoadmapTimeline: () => <div data-testid="roadmap-panel" />,
@@ -170,6 +189,28 @@ beforeEach(() => {
   received.meridian = undefined
   received.notes = undefined
   dossierState = { data: undefined, isLoading: true, isError: false }
+  mockFitEngineFlag = false
+  mockFitCalls.length = 0
+})
+
+describe("MemberDevelopmentWorkspace — Careers source (3.3a)", () => {
+  it("flag off (the default): the dossier's matches panel, and the fit read stays disabled", async () => {
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=careers")
+    expect(await screen.findByTestId("careers-panel")).toBeInTheDocument()
+    expect(screen.queryByTestId("fit-engine-careers-panel")).not.toBeInTheDocument()
+    expect(mockFitCalls.length).toBeGreaterThan(0)
+    expect(mockFitCalls.every(([, enabled]) => enabled === false)).toBe(true)
+  })
+
+  it("flag on: the fit-engine panel, fed the member's block", async () => {
+    mockFitEngineFlag = true
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=careers")
+    expect(await screen.findByTestId("fit-engine-careers-panel")).toHaveTextContent("no_snapshot")
+    expect(screen.queryByTestId("careers-panel")).not.toBeInTheDocument()
+    expect(mockFitCalls).toContainEqual(["m-1", true])
+  })
 })
 
 describe("MemberDevelopmentWorkspace — shell states", () => {

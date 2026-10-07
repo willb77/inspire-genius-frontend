@@ -335,6 +335,37 @@ export type CareerMatch = {
   requiredEducation?: string
 }
 
+/**
+ * 3.3a — one ranked role from the fit engine (growth `GET /members/{id}/fit-matches`).
+ * Score and rank only: no tier, base tier, band or classification, by design
+ * (4.1 option D, extended to manager surfaces).
+ */
+export type FitEngineMatch = {
+  rank: number
+  roleTitle: string
+  jobId: string
+  /** 1–100, higher = closer to the role's benchmark. */
+  fitScore: number
+}
+
+/** Why there is (or is not) a list. Never collapsed into an empty array. */
+export type FitEngineMatchesState =
+  | "ok"
+  | "no_account"
+  | "not_shared"
+  | "no_prism"
+  | "not_entitled"
+  | "unavailable"
+  | "no_snapshot"
+
+export type MemberFitMatches = {
+  state: FitEngineMatchesState
+  matches: FitEngineMatch[]
+  /** When the member last opened My fit (the snapshot's time), ISO 8601. */
+  asOf: string | null
+  ageDays: number | null
+}
+
 export type PlanStatus = "no_plan" | "draft" | "active" | "on_track" | "at_risk"
 
 /** A member tile on the roster grid. */
