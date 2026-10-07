@@ -53,6 +53,26 @@ export const DEVELOPMENT_INPUT_DISCLAIMER =
  */
 export const TDS_STUDIO_ENABLED = import.meta.env.VITE_FEATURE_TDS_STUDIO === "true"
 
+/**
+ * 3.3a (TDS-5 read switch): where the Careers tab and the roster card's match
+ * line read from.
+ *
+ * OFF (the default — the env var missing or anything but "true"): the
+ * dossier's `matches` and the roster's `topMatch`, exactly as before.
+ * ON: growth-service `GET /members/{id}/fit-matches` — the fit engine's
+ * measured score and rank from the member's own My fit, under their `prism`
+ * grant, with an explicit state card when there is nothing to show.
+ *
+ * Default OFF because one frontend deploy reaches BOTH tiers and the backend
+ * route does not exist on staging-b until its promote (step 1.2). The flag is
+ * set per tier in the FE repo's build variables, never in code.
+ *
+ * Like `TDS_STUDIO_ENABLED`, this decides what the browser asks for. It is not
+ * a security boundary — the `prism` grant check on the server is.
+ */
+export const FIT_ENGINE_MATCHES_ENABLED =
+  import.meta.env.VITE_FEATURE_FIT_ENGINE_MATCHES === "true"
+
 export const DEV_TEXT: Record<string, string> = {
   "dev.studio.title": "Team Development Studio",
   "dev.studio.subtitle":

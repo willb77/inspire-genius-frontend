@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
+import { FIT_ENGINE_MATCHES_ENABLED } from "@/constants/development"
+import { useMemberFitMatches } from "@/hooks/manager/development/useMemberFitMatches"
 import type { RosterMember } from "@/types/development"
 import { CoverageChips } from "./CoverageChips"
 import { PlanStatusBadge } from "./PlanStatusBadge"
@@ -19,6 +21,35 @@ function initials(name: string): string {
     .join("")
     .slice(0, 2)
     .toUpperCase()
+}
+
+function TopMatchLine({ title, fitScore }: { title: string; fitScore: number }) {
+  const sk = useDevSkin()
+  return (
+    <div
+      className={cn("mt-auto flex items-center gap-1.5 border-t pt-2 text-xs", sk.border100, sk.text600)}
+      data-testid="member-card-top-match"
+    >
+      <Briefcase className={cn("h-3.5 w-3.5", sk.text400)} aria-hidden="true" />
+      <span className="truncate">{title}</span>
+      <span className={cn("ml-auto inline-flex items-center gap-0.5 font-medium", sk.text700)}>
+        <TrendingUp className="h-3 w-3 text-emerald-500" aria-hidden="true" />
+        {Math.round(fitScore)}%
+      </span>
+    </div>
+  )
+}
+
+/**
+ * 3.3a — the roster line from the fit engine: the member's rank-1 role, the
+ * same number the Careers tab shows. Only rendered when
+ * FIT_ENGINE_MATCHES_ENABLED. Any state but `ok` shows no line; the reason is
+ * on the Careers tab, where there is room to say it.
+ */
+function FitTopMatchLine({ memberId }: { memberId: string }) {
+  const { data } = useMemberFitMatches(memberId, true)
+  const top = data?.state === "ok" ? data.matches[0] : undefined
+  return top ? <TopMatchLine title={top.roleTitle} fitScore={top.fitScore} /> : null
 }
 
 export type MemberCardProps = {
@@ -96,15 +127,10 @@ export function MemberCard({ member, onInvite }: MemberCardProps) {
         <p className={cn("text-xs italic", sk.text400)}>Invite to complete PRISM to build a profile.</p>
       ) : null}
 
-      {member.topMatch ? (
-        <div className={cn("mt-auto flex items-center gap-1.5 border-t pt-2 text-xs", sk.border100, sk.text600)}>
-          <Briefcase className={cn("h-3.5 w-3.5", sk.text400)} aria-hidden="true" />
-          <span className="truncate">{member.topMatch.title}</span>
-          <span className={cn("ml-auto inline-flex items-center gap-0.5 font-medium", sk.text700)}>
-            <TrendingUp className="h-3 w-3 text-emerald-500" aria-hidden="true" />
-            {Math.round(member.topMatch.fitScore)}%
-          </span>
-        </div>
+      {FIT_ENGINE_MATCHES_ENABLED ? (
+        <FitTopMatchLine memberId={member.memberId} />
+      ) : member.topMatch ? (
+        <TopMatchLine title={member.topMatch.title} fitScore={member.topMatch.fitScore} />
       ) : null}
     </Card>
   )

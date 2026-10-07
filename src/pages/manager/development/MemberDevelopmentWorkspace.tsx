@@ -31,11 +31,13 @@ import { ROUTES } from "@/constants/routes"
 import {
   CONFIDENCE_BADGE_VARIANT,
   CONFIDENCE_LABEL,
+  FIT_ENGINE_MATCHES_ENABLED,
   TDS_STUDIO_ENABLED,
 } from "@/constants/development"
 import type { CareerMatch } from "@/types/development"
 import {
   useMemberDossier,
+  useMemberFitMatches,
   useRefreshDossier,
   useGoalSession,
   useSharePlan,
@@ -64,6 +66,9 @@ const GapAnalysisPanel = lazy(() =>
 )
 const LearningPlanPanel = lazy(() =>
   import("@/components/manager/development/tabs/LearningPlanPanel").then((m) => ({ default: m.LearningPlanPanel })),
+)
+const FitEngineMatchPanel = lazy(() =>
+  import("@/components/manager/development/tabs/FitEngineMatchPanel").then((m) => ({ default: m.FitEngineMatchPanel })),
 )
 const CareerMatchPanel = lazy(() =>
   import("@/components/manager/development/tabs/CareerMatchPanel").then((m) => ({ default: m.CareerMatchPanel })),
@@ -182,6 +187,9 @@ export default function MemberDevelopmentWorkspace({
   const refresh = useRefreshDossier(memberId)
   const share = useSharePlan(memberId)
   const session = useGoalSession(memberId)
+  // 3.3a. Fires only when FIT_ENGINE_MATCHES_ENABLED — off by default, so a
+  // tier whose growth-service has no /fit-matches route is never asked.
+  const fitMatches = useMemberFitMatches(memberId, FIT_ENGINE_MATCHES_ENABLED)
   // TDS-1b. Reuses Member Oversight's existing ask — POST
   // /v1/agents/consent/visibility/request — rather than inventing a second
   // way to request the same grant. Asking grants nothing; the member decides.
@@ -472,12 +480,21 @@ export default function MemberDevelopmentWorkspace({
                 />
               </TabsContent>
               <TabsContent value="careers">
-                <CareerMatchPanel
-                  internal={internal}
-                  external={external}
-                  onSetTarget={goToGapsFor}
-                  onViewGaps={goToGapsFor}
-                />
+                {FIT_ENGINE_MATCHES_ENABLED ? (
+                  <FitEngineMatchPanel
+                    memberName={member.name}
+                    result={fitMatches.data}
+                    loading={fitMatches.isLoading}
+                    error={fitMatches.isError}
+                  />
+                ) : (
+                  <CareerMatchPanel
+                    internal={internal}
+                    external={external}
+                    onSetTarget={goToGapsFor}
+                    onViewGaps={goToGapsFor}
+                  />
+                )}
               </TabsContent>
               <TabsContent value="roadmap">
                 <RoadmapTimeline

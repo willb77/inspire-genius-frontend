@@ -95,6 +95,11 @@ jobs:
           # on staging-b (the backend was promoted + demo data seeded — see
           # .env.staging-b). Remove this line to hide the feature in dev again.
           echo "VITE_FEATURE_TEAM_DEVELOPMENT=true" >> .env
+          # 3.3a: Careers tab + roster match line read the fit engine. DEV ONLY,
+          # from a repo VARIABLE so it flips without a code change; unset writes
+          # an empty value, which reads as OFF (only the literal "true" enables
+          # it). staging-b never reads this variable — .env.staging-b pins false.
+          echo "VITE_FEATURE_FIT_ENGINE_MATCHES=${{ vars.DEV_FIT_ENGINE_MATCHES }}" >> .env
           # Practitioner coach client backend (/v1/agents/coach/*) — ON in dev
           # only. Flag-off (staging-b, which does NOT set this) keeps the
           # coachClient service on its wireframe fixtures, so staging-b's
