@@ -468,6 +468,8 @@ export default function MemberDevelopmentWorkspace({
                   matches={dossier.matches}
                   initialTargetId={targetFromQuery}
                   notShared={dossier.developmentNotShared}
+                  gapsState={dossier.gapsState}
+                  gapsTargetRole={dossier.gapsTargetRole}
                 />
               </TabsContent>
               <TabsContent value="learning">

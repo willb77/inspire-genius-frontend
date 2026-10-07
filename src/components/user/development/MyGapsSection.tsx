@@ -35,12 +35,21 @@ import {
 import { GAP_SEVERITY_LABEL } from "@/constants/development"
 import apiErrorMessage from "@/lib/apiErrorMessage"
 import { useCloseMyGap, useCreateMyGap, useMyGaps } from "@/hooks/me/useMyDevelopment"
+import { classifyGap, type GapKind } from "@/lib/developmentGaps"
 import type { DevelopmentGap } from "@/types/development"
 import SelfSection from "./SelfSection"
 import { selfGapSchema } from "./myDevelopment.schema"
 
 type GapInput = z.input<typeof selfGapSchema>
 type GapOutput = z.output<typeof selfGapSchema>
+
+/** TDS-8: "From your assessment" is said only of a row the fit engine measured. */
+const SOURCE_LABEL: Record<GapKind, string> = {
+  skill: "You added this",
+  measured: "Measured against your target role",
+  indicative: "Suggested by coaching",
+  unclassified: "From your assessment",
+}
 
 const STATUS_LABEL: Record<DevelopmentGap["status"], string> = {
   open: "Open",
@@ -57,14 +66,17 @@ function GapRow({
   onClose: (gapId: string) => void
   closing: boolean
 }) {
+  // TDS-8: an indicative (coaching) row carries no real levels, so none are
+  // shown; an older backend's rows ("unclassified") render as they always did.
+  const kind = classifyGap(gap)
+  const showLevels = kind !== "indicative"
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3">
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{gap.competency}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {STATUS_LABEL[gap.status]} · {GAP_SEVERITY_LABEL[gap.severity]} ·{" "}
-          {gap.source === "skill" ? "You added this" : "From your assessment"}
-          {gap.targetLevel > 0 ? ` · now ${gap.currentLevel} of ${gap.targetLevel}` : ""}
+          {STATUS_LABEL[gap.status]} · {GAP_SEVERITY_LABEL[gap.severity]} · {SOURCE_LABEL[kind]}
+          {showLevels && gap.targetLevel > 0 ? ` · now ${gap.currentLevel} of ${gap.targetLevel}` : ""}
         </p>
       </div>
       {gap.status !== "closed" && (
