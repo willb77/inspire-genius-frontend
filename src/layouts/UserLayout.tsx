@@ -2,7 +2,9 @@ import React, { useMemo } from "react";
 import { ROUTES } from "@/constants/routes";
 import { getUserNavItems, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation";
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
-import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
+import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
+import { isUserRole } from "@/types/roles";
+import type { UserRole } from "@/types/roles";
 // AlexFloating retired (monolith sunset): its device-id call hit the deprecated
 // monolith route GET /v1/chat/AlexChat/device-id, which 404s + fails CORS on the
 // API Gateway. The floating Alex assistant is no longer rendered.
@@ -21,6 +23,11 @@ export type UserLayoutProps = {
   collapseSidebarOnMount?: boolean;
 };
 
+/** Every destination a list reaches, including the children of a group row. */
+function destinations(items: NavItemDef[]): string[] {
+  return items.flatMap((item) => [item.to, ...destinations(item.children ?? [])]).filter(Boolean);
+}
+
 export default function UserLayout({
   children,
   className,
@@ -32,10 +39,16 @@ export default function UserLayout({
   // My Workspace = the user menu plus the workspace verticals (Job Fit, Lumen),
   // spliced in above Settings/Help — greyed when unentitled.
   const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
-  // The consolidated Tools section — null for every role except super-admin
-  // (2026-08-12, request). Bio Capture and the vertical catalogue moved inside
-  // it, so a plain user no longer gets a Tools group here at all.
-  const toolsSection = useToolsSection(isSuperAdmin ? "super-admin" : "user");
+  // The consolidated Tools section, gated by the SIGNED-IN role. Until
+  // 2026-10-07 this passed "user" for everyone but super-admin, so a manager or
+  // practitioner lost their Tools section the moment they opened Home, My
+  // Workspace or Chat — it existed only on their own role pages (request:
+  // "make it visible at all times"). useToolsSection owns the gate and still
+  // returns null for user, company-admin and distributor, whose sidebars are
+  // unchanged.
+  const signedInRole = user?.role;
+  const role: UserRole = isUserRole(signedInRole) ? signedInRole : "user";
+  const toolsSection = useToolsSection(isSuperAdmin ? "super-admin" : role);
 
   const toolsSections: NavSectionDef[] = useMemo(
     () => (toolsSection ? [toolsSection] : []),
@@ -45,14 +58,22 @@ export default function UserLayout({
   /** Plain user: the flat workspace menu, with no Tools group beneath it —
    *  `navItems` already carries the same list, so returning undefined here
    *  leaves SidebarScaffold rendering the flat menu rather than an empty
-   *  header-less section wrapper. */
-  const userSections: NavSectionDef[] | undefined = useMemo(
-    () =>
-      toolsSections.length
-        ? [{ label: "", items: userNavItems }, ...toolsSections]
-        : undefined,
-    [userNavItems, toolsSections],
-  );
+   *  header-less section wrapper.
+   *
+   *  Manager / practitioner: the workspace menu, then Tools. Any workspace row
+   *  whose destination Tools already lists (Goals Studio; Interview Practice,
+   *  which Tools carries as "Practice Interview" under Interview Studio) is
+   *  dropped from the workspace half, so each destination appears once. Tools
+   *  keeps it because Tools is the one place these roles find it on every page,
+   *  including their own role pages where the workspace menu is not shown. */
+  const userSections: NavSectionDef[] | undefined = useMemo(() => {
+    if (!toolsSections.length) return undefined;
+    const inTools = new Set(toolsSections.flatMap((s) => destinations(s.items)));
+    return [
+      { label: "", items: userNavItems.filter((item) => !inTools.has(item.to)) },
+      ...toolsSections,
+    ];
+  }, [userNavItems, toolsSections]);
 
   /** Super-admin viewing user pages: lead with "My Workspace" (user nav) so the
    *  simpler user experience is primary, then Role Views → Verticals →
