@@ -1,5 +1,5 @@
 import { act, render, screen, fireEvent, waitFor } from "@testing-library/react"
-import CharacterLab from "../CharacterLab"
+import CharacterLab, { CharacterLabBody } from "../CharacterLab"
 import type { Rubric } from "@/types/character-lab"
 
 jest.mock("@/layouts/SuperAdminLayout", () => ({
@@ -501,5 +501,62 @@ describe("CharacterLab — a 422 is reported, not rendered", () => {
 
     // And the page is still standing.
     expect(screen.getByRole("button", { name: /Save to library/i })).toBeInTheDocument()
+  })
+})
+
+// Who gets CSV (2026-10-07). The wide CSV matches a real PRISM report column for
+// column with no synthetic marker, so only super-admin may export or import CSV;
+// manager and practitioner get the same page with PDF and Word only.
+describe("CharacterLab access by role", () => {
+  beforeEach(() => {
+    rubricResult = { data: RUBRIC, isLoading: false, error: null }
+    generateMutate.mockReset().mockResolvedValue(GENERATED)
+    batteryMutate.mockReset().mockResolvedValue({
+      group: "Core Traits", part: 0, parts: 1,
+      scores: { decisiveness: { Underlying: 90 } }, evidence: {}, missing: [],
+    })
+  })
+
+  async function buildAndOpenExport(ui: React.ReactElement) {
+    render(ui)
+    await act(async () => {
+      fillAndSubmit()
+    })
+    await screen.findByText(/Sonny Corleone/)
+  }
+
+  async function openLibrary() {
+    await act(async () => {
+      fireEvent.mouseDown(screen.getByRole("tab", { name: /Library/i }))
+    })
+    await screen.findByRole("button", { name: /load saved/i })
+  }
+
+  it("super-admin page offers both CSVs as well as PDF and Word", async () => {
+    await buildAndOpenExport(<CharacterLab />)
+    for (const name of [/PDF profile/i, /Word profile/i, /Wide CSV/i, /Long CSV/i]) {
+      expect(screen.getByRole("button", { name })).toBeInTheDocument()
+    }
+  })
+
+  it("super-admin page offers CSV import in the library", async () => {
+    render(<CharacterLab />)
+    await openLibrary()
+    expect(screen.getByText("import stub")).toBeInTheDocument()
+  })
+
+  it("restricted body offers PDF and Word but no CSV", async () => {
+    await buildAndOpenExport(<CharacterLabBody fullAccess={false} />)
+    expect(screen.getByRole("button", { name: /PDF profile/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Word profile/i })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Wide CSV/i })).toBeNull()
+    expect(screen.queryByRole("button", { name: /Long CSV/i })).toBeNull()
+    expect(screen.queryByText(/wide CSV matches the PRISM report/i)).toBeNull()
+  })
+
+  it("restricted body has no CSV import in the library", async () => {
+    render(<CharacterLabBody fullAccess={false} />)
+    await openLibrary()
+    expect(screen.queryByText("import stub")).toBeNull()
   })
 })

@@ -162,6 +162,9 @@ const ManagerInterviewStudio = React.lazy(() => import("@/pages/manager/Intervie
 const SuperAdminInterviewStudio = React.lazy(() => import("@/pages/super-admin/InterviewStudioPage"));
 const SuperAdminInterviewLive = React.lazy(() => import("@/pages/super-admin/InterviewLivePage"));
 const PractitionerInterviewStudio = React.lazy(() => import("@/pages/practitioner/InterviewStudioPage"));
+// Character Lab for the coach roles — same body as the super-admin page, minus CSV.
+const ManagerCharacterLab = React.lazy(() => import("@/pages/manager/CharacterLabPage"));
+const PractitionerCharacterLab = React.lazy(() => import("@/pages/practitioner/CharacterLabPage"));
 const ManagerTeamComposition = React.lazy(() => import("@/pages/manager/TeamCompositionPage"));
 const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
 const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/ResearchPage"));
@@ -634,6 +637,7 @@ export const routes: RouteObject[] = [
       // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
       { path: "/manager/interview-live", element: withSuspense(<ManagerInterviewLive />) },
       { path: "/manager/interview-studio", element: withSuspense(<ManagerInterviewStudio />) },
+      { path: "/manager/character-lab", element: withSuspense(<ManagerCharacterLab />) },
       { path: "/manager/team-composition", element: withSuspense(<ManagerTeamComposition />) },
       // Team Development Studio (roster + per-member workspace)
       // Team Development Studio. The page resolves classic vs the HomeV2 look
@@ -696,6 +700,7 @@ export const routes: RouteObject[] = [
       // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
       { path: "/practitioner/interview-live", element: withSuspense(<PractitionerInterviewLive />) },
       { path: "/practitioner/interview-studio", element: withSuspense(<PractitionerInterviewStudio />) },
+      { path: "/practitioner/character-lab", element: withSuspense(<PractitionerCharacterLab />) },
       { path: "/practitioner/team-composition", element: withSuspense(<PractitionerTeamComposition />) },
 
       // Distributor pages

@@ -161,6 +161,8 @@ export const ROUTES = {
     INTERVIEW_LIVE: "/manager/interview-live",
     /** Interview Studio — custom / topic-generated scored interview (career discovery, values, etc.). */
     INTERVIEW_STUDIO: "/manager/interview-studio",
+    /** Character Lab — fictional PRISM profiles; no CSV export or import for this role. */
+    CHARACTER_LAB: "/manager/character-lab",
     TEAM_COMPOSITION: "/manager/team-composition",
     // Team Development Studio (behind VITE_FEATURE_TEAM_DEVELOPMENT)
     DEVELOPMENT: "/manager/development",
@@ -210,6 +212,8 @@ export const ROUTES = {
     INTERVIEW_LIVE: "/practitioner/interview-live",
     /** Interview Studio — custom / topic-generated scored interview. */
     INTERVIEW_STUDIO: "/practitioner/interview-studio",
+    /** Character Lab — fictional PRISM profiles; no CSV export or import for this role. */
+    CHARACTER_LAB: "/practitioner/character-lab",
     TEAM_COMPOSITION: "/practitioner/team-composition",
   },
   DISTRIBUTOR: {

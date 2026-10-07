@@ -66,8 +66,35 @@ type BatteryState = "idle" | "running" | "done" | "partial" | "error"
  * A demonstration surface, and a deliberately honest one: everything it
  * produces is labelled synthetic, and nothing it produces is written to the
  * PRISM stores. See `services/agent-engine/app/routes/character_lab.py`.
+ *
+ * The super-admin page — the full surface, including both CSV formats and CSV
+ * import. Manager and practitioner reach the same body through their own
+ * role-prefixed pages with `fullAccess={false}`.
  */
 export default function CharacterLab() {
+  return (
+    <SuperAdminLayout>
+      <CharacterLabBody fullAccess />
+    </SuperAdminLayout>
+  )
+}
+
+export interface CharacterLabBodyProps {
+  /**
+   * Super-admin only: the two CSV exports and CSV import.
+   *
+   * CSV is withheld from everyone else because the wide CSV matches a real
+   * PRISM report column for column and carries no synthetic-data marker, so a
+   * fictional profile could leave as if it were a real report. PDF and Word
+   * stay: both print the synthetic notice. Import stays super-admin because it
+   * reads a PRISM CSV in, and a real person's report is exactly that file.
+   * The server refuses the same calls for these roles; this keeps the page
+   * from offering a button that can only fail.
+   */
+  fullAccess: boolean
+}
+
+export function CharacterLabBody({ fullAccess }: CharacterLabBodyProps) {
   const [name, setName] = useState("")
   const [source, setSource] = useState("")
   const [notes, setNotes] = useState("")
@@ -375,7 +402,6 @@ export default function CharacterLab() {
   const batteriesRunning = Object.values(batteryState).filter((s) => s === "running").length
 
   return (
-    <SuperAdminLayout>
       <div className="space-y-6 p-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -421,7 +447,7 @@ export default function CharacterLab() {
               to re-read, re-analyse or export. <strong>Edit</strong> changes the record without
               re-scoring — add what you know, then load and rebuild.
             </p>
-            <ImportCsvButton />
+            {fullAccess && <ImportCsvButton />}
             <ProfileLibrary onLoad={onLoadProfile} loadingId={loadingId} />
           </TabsContent>
 
@@ -646,17 +672,22 @@ export default function CharacterLab() {
                   <Button variant="outline" onClick={onExportWord}>
                     <FileText className="mr-2 h-4 w-4" /> Word profile
                   </Button>
-                  <Button variant="outline" onClick={() => onExportCsv("wide")} disabled={exporter.isPending}>
-                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Wide CSV (report layout)
-                  </Button>
-                  <Button variant="outline" onClick={() => onExportCsv("long")} disabled={exporter.isPending}>
-                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Long CSV (one row per score)
-                  </Button>
+                  {fullAccess && (
+                    <>
+                      <Button variant="outline" onClick={() => onExportCsv("wide")} disabled={exporter.isPending}>
+                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Wide CSV (report layout)
+                      </Button>
+                      <Button variant="outline" onClick={() => onExportCsv("long")} disabled={exporter.isPending}>
+                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Long CSV (one row per score)
+                      </Button>
+                    </>
+                  )}
                   <p className="w-full text-xs text-muted-foreground">
-                    The wide CSV matches the PRISM report export column-for-column, so it can be
-                    reshaped and compared with a real one. Every format carries the synthetic-data
-                    notice — the PDF prints it in full on page one, because a PDF travels further
-                    than the tab it came from.
+                    {fullAccess
+                      ? "The wide CSV matches the PRISM report export column-for-column, so it can be reshaped and compared with a real one. "
+                      : ""}
+                    The PDF and Word profiles carry the synthetic-data notice — the PDF prints it
+                    in full on page one, because a PDF travels further than the tab it came from.
                   </p>
                 </CardContent>
               </Card>
@@ -665,6 +696,5 @@ export default function CharacterLab() {
           </TabsContent>
         </Tabs>
       </div>
-    </SuperAdminLayout>
   )
 }

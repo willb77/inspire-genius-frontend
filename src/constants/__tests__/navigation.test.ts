@@ -406,6 +406,29 @@ describe("My Workspace menu order + switched-off entries", () => {
       const dupes = labels.filter((l, i) => labels.indexOf(l) !== i)
       expect(dupes).toEqual([])
     })
+
+    // 2026-10-07 (request): manager and practitioner get it too, each on its
+    // own role-prefixed route — a /super-admin/* link would bounce them home.
+    it("is in the manager and practitioner Tools, on their own routes", () => {
+      const toolTo = (role: "manager" | "practitioner") =>
+        (TOOL_ITEMS_BY_ROLE[role] ?? []).filter((i) => i.label === "Character Lab").map((i) => i.to)
+      expect(toolTo("manager")).toEqual([ROUTES.MANAGER.CHARACTER_LAB])
+      expect(toolTo("practitioner")).toEqual([ROUTES.PRACTITIONER.CHARACTER_LAB])
+    })
+
+    it("is offered to no other role", () => {
+      for (const role of ["user", "company-admin", "distributor"] as const) {
+        const all = [...(NAV_ITEMS_BY_ROLE[role] ?? []), ...(TOOL_ITEMS_BY_ROLE[role] ?? [])]
+        expect(all.filter((i) => i.label === "Character Lab")).toEqual([])
+      }
+    })
+
+    it("has a unique label in the manager and practitioner menus", () => {
+      for (const role of ["manager", "practitioner"] as const) {
+        const labels = [...NAV_ITEMS_BY_ROLE[role], ...(TOOL_ITEMS_BY_ROLE[role] ?? [])].map((i) => i.label)
+        expect(labels.filter((l) => l === "Character Lab")).toHaveLength(1)
+      }
+    })
   })
 
   it("leaves the four usable entries usable", () => {
@@ -448,7 +471,8 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
 
   // Live Interview and Practice Interview are children of Interview Studio
   // since 2026-09-23, so they are not in the top-level label set any more.
-  const UNGATED = ["Interview Studio", "Goals Studio", "Job Blueprint"].sort()
+  // Character Lab joined both roles on 2026-10-07 (request).
+  const UNGATED = ["Interview Studio", "Goals Studio", "Job Blueprint", "Character Lab"].sort()
 
   it("gives the practitioner every requested tool, ungated", () => {
     expect(labelsFor("practitioner")).toEqual(
