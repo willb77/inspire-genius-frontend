@@ -40,6 +40,38 @@ describe("FitEngineMatchPanel (3.3a) — every state says what it means", () => 
     expect(fitStateMessage("not_shared", "Ada")).toMatch(/hasn't shared their PRISM/)
   })
 
+  describe("item 2 / A2 — not_shared names the switch that is off", () => {
+    it.each([
+      [["development"], /hasn't shared Development with you/, /PRISM profile alone doesn't include them/],
+      [["prism"], /hasn't shared their PRISM with you/, /Career matches come from it/],
+      [["prism", "development"], /PRISM profile or Development/, /need both/],
+    ] as const)("missing %j", (missing, first, second) => {
+      render(
+        <FitEngineMatchPanel
+          memberName="Ada"
+          result={{ state: "not_shared", matches: [], asOf: null, ageDays: null, missingCategories: [...missing] }}
+        />,
+      )
+      const card = screen.getByTestId("fit-matches-not_shared")
+      expect(card).toHaveTextContent(first)
+      expect(card).toHaveTextContent(second)
+    })
+
+    it("each missing set reads differently", () => {
+      const texts = [["prism"], ["development"], ["prism", "development"]].map((m) =>
+        fitStateMessage("not_shared", "Ada", m as ("prism" | "development")[]),
+      )
+      expect(new Set(texts).size).toBe(3)
+    })
+
+    it("a backend that predates A2 (no missingCategories) keeps the PRISM sentence", () => {
+      render(
+        <FitEngineMatchPanel memberName="Ada" result={{ state: "not_shared", matches: [], asOf: null, ageDays: null }} />,
+      )
+      expect(screen.getByTestId("fit-matches-not_shared")).toHaveTextContent(/hasn't shared their PRISM with you/)
+    })
+  })
+
   it("unavailable is an alert and never presented as 'none'", () => {
     render(<FitEngineMatchPanel memberName="Ada" error />)
     const card = screen.getByTestId("fit-matches-unavailable")

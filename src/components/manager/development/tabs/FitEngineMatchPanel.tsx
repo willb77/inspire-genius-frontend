@@ -56,7 +56,7 @@ export function FitEngineMatchPanel({ memberName, result, loading, error }: FitE
             data-testid={`fit-matches-${state}`}
             role={state === "unavailable" ? "alert" : undefined}
           >
-            {fitStateMessage(state, memberName)}
+            {fitStateMessage(state, memberName, result?.missingCategories ?? [])}
           </CardContent>
         </Card>
       ) : (
