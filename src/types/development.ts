@@ -364,7 +364,15 @@ export type MemberFitMatches = {
   /** When the member last opened My fit (the snapshot's time), ISO 8601. */
   asOf: string | null
   ageDays: number | null
+  /**
+   * Item 2 / A2: on `not_shared`, which of the member's switches are off.
+   * Optional because a backend that predates A2 does not send it.
+   */
+  missingCategories?: FitMissingCategory[]
 }
+
+/** The two sharing categories career matches need (item 2 / A2). */
+export type FitMissingCategory = "prism" | "development"
 
 export type PlanStatus = "no_plan" | "draft" | "active" | "on_track" | "at_risk"
 

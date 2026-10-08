@@ -2,16 +2,38 @@
  * 3.3a — the words FitEngineMatchPanel says for each state, and the as-of date.
  * Kept out of the component file so the panel exports components only.
  */
-import type { FitEngineMatchesState } from "@/types/development"
+import type { FitEngineMatchesState, FitMissingCategory } from "@/types/development"
 
 export type FitEmptyState = Exclude<FitEngineMatchesState, "ok">
 
-export function fitStateMessage(state: FitEmptyState, name: string): string {
+/**
+ * Item 2 / A2: matches need the member's "PRISM profile" AND "Development"
+ * switches (the labels on their Sharing page). `not_shared` names which are
+ * off. An empty list is a backend that predates A2, which gated on PRISM alone,
+ * so it keeps that sentence.
+ */
+function notSharedMessage(name: string, missing: readonly FitMissingCategory[]): string {
+  const prism = missing.includes("prism")
+  const development = missing.includes("development")
+  if (prism && development) {
+    return `${name} hasn't shared their PRISM profile or Development with you. Career matches need both, so they stay private until ${name} shares them.`
+  }
+  if (development) {
+    return `${name} hasn't shared Development with you. Career matches sit under Development, so they stay private until ${name} shares it — sharing their PRISM profile alone doesn't include them.`
+  }
+  return `${name} hasn't shared their PRISM with you. Career matches come from it, so they stay private until ${name} shares it.`
+}
+
+export function fitStateMessage(
+  state: FitEmptyState,
+  name: string,
+  missing: readonly FitMissingCategory[] = [],
+): string {
   switch (state) {
     case "no_account":
       return `${name} doesn't have an Inspire Genius account yet, so there is no My fit to read.`
     case "not_shared":
-      return `${name} hasn't shared their PRISM with you. Career matches come from it, so they stay private until ${name} shares it.`
+      return notSharedMessage(name, missing)
     case "no_prism":
       return `${name} has no PRISM on file yet. Career matches are measured from it.`
     case "not_entitled":
