@@ -9,6 +9,7 @@ import {
   FitEmptyState,
   FitLoading,
   FitError,
+  PartialProfileNote,
 } from "./_shared"
 import { jobFitNarrativeEnabled, fitPercent } from "./_fit"
 import { FitComponentsCard } from "./FitComponentsCard"
@@ -65,6 +66,9 @@ export default function FitDetailPage() {
             title={data.roleTitle}
             description="How your behavioral profile compares with this role, dimension by dimension."
           />
+
+          {/* BP-F5: a partial-profile score says what it rests on. */}
+          <PartialProfileNote coverage={data} />
 
           {/* Action toolbar: Download PDF · Export As · Print · Save · Email · Copy link · Write Résumé */}
           {narrative && <FitActionsBar data={data} />}

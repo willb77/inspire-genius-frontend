@@ -20,9 +20,14 @@ import { Info, TrendingUp } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { DEVELOPMENT_INPUT_DISCLAIMER } from "@/constants/development"
-import type { FitEngineMatchesState, MemberFitMatches } from "@/types/development"
+import type { FitEngineMatch, FitEngineMatchesState, MemberFitMatches } from "@/types/development"
 import { useDevSkin } from "../skin"
-import { fitStateMessage, formatAsOf } from "./fitEngineMatchCopy"
+import {
+  fitMatchCoverage,
+  fitStateMessage,
+  formatAsOf,
+  partialMatchesMessage,
+} from "./fitEngineMatchCopy"
 
 export interface FitEngineMatchPanelProps {
   memberName: string
@@ -30,6 +35,17 @@ export interface FitEngineMatchPanelProps {
   loading?: boolean
   /** The request itself failed (network, 5xx). Rendered, never swallowed. */
   error?: boolean
+}
+
+/** BP-F5: "8 of 22 measured" beside a partial-profile score; nothing otherwise. */
+function CoverageLabel({ match }: { match: FitEngineMatch }) {
+  const p = fitMatchCoverage(match)
+  if (!p) return null
+  return (
+    <span className="ml-1 text-[11px] font-normal text-amber-700" data-testid="fit-match-coverage">
+      {p.evaluated} of {p.total} measured
+    </span>
+  )
 }
 
 export function FitEngineMatchPanel({ memberName, result, loading, error }: FitEngineMatchPanelProps) {
@@ -41,6 +57,8 @@ export function FitEngineMatchPanel({ memberName, result, loading, error }: FitE
 
   const state: FitEngineMatchesState = error || !result ? "unavailable" : result.state
   const asOf = formatAsOf(result?.asOf ?? null)
+  // BP-F5: one member, one PRISM — the first partial match speaks for the list.
+  const partial = result?.matches.map(fitMatchCoverage).find((p) => p !== null) ?? null
 
   return (
     <div className="space-y-4">
@@ -64,6 +82,12 @@ export function FitEngineMatchPanel({ memberName, result, loading, error }: FitE
           <p className={cn("text-xs", sk.text500)} data-testid="fit-matches-as-of">
             From {memberName}&rsquo;s own My fit{asOf ? `, as of ${asOf}` : ""}.
           </p>
+          {partial && (
+            // BP-F5: say what a partial-profile score rests on, once.
+            <p role="note" className="rounded-md border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900" data-testid="fit-matches-partial">
+              {partialMatchesMessage(memberName, partial)}
+            </p>
+          )}
           {result && result.matches.length > 0 ? (
             <ol className="grid gap-3 lg:grid-cols-2">
               {result.matches.map((m) => (
@@ -77,6 +101,7 @@ export function FitEngineMatchPanel({ memberName, result, loading, error }: FitE
                       <span className={cn("inline-flex items-center gap-1 text-sm font-semibold", sk.text700)}>
                         <TrendingUp className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />
                         {Math.round(m.fitScore)}%
+                        <CoverageLabel match={m} />
                       </span>
                     </CardContent>
                   </Card>

@@ -36,17 +36,35 @@ export type FitTier = 'strong-fit' | 'potential-fit' | 'moderate-fit' | 'misalig
  */
 export type FitMethod = 'gap' | 'closeness'
 
+/**
+ * BP-F5 — how much of the role's benchmark a score rests on. A dimension the
+ * person was never measured on is LEFT OUT of the score (it used to count as
+ * 0), so the score is the mean over `dimensionsEvaluated`. Below full coverage
+ * the verdict is withheld: `tier` / `baseTier` are null and the band reads
+ * "Partial". All optional: older backends and stored snapshots omit them, and
+ * absent means a pre-BP-F5 full read.
+ */
+export type FitCoverage = {
+  dimensionsEvaluated?: number | null
+  dimensionsTotal?: number | null
+  coverage?: "full" | "partial"
+  verdictWithheld?: boolean
+}
+
 /** One published role ranked against the user's profile (best-first). */
-export type FitMatch = {
+export type FitMatch = FitCoverage & {
   /** V2 — the benchmark version and source this score is against (absent on older backends). */
   blueprintVersion?: number | null
   benchmarkSource?: string | null
   jobId: string
   roleTitle: string
   department: string | null
-  /** Fit tier — carried, never rendered on a person-facing surface. See `FitTier`. */
-  tier: FitTier
-  baseTier: FitTier
+  /**
+   * Fit tier — carried, never rendered on a person-facing surface. See `FitTier`.
+   * Null when the verdict is withheld for a partial profile (BP-F5).
+   */
+  tier: FitTier | null
+  baseTier: FitTier | null
   fitBand: FitBand
   totalVariation: number
   behaviorVariation: number
@@ -95,10 +113,18 @@ export type PerDimensionFit = {
   category: DimensionCategory
   dimensionId: number
   dimensionName: string
-  candidateScore: number
+  /**
+   * The person's score. Null when they were never measured on this dimension
+   * (BP-F5): it is left out of the score, and there is no gap to show. Stored
+   * pre-BP-F5 snapshots carry 0 here instead, with `measured` false or absent.
+   */
+  candidateScore: number | null
   benchmarkScore: number
-  gap: number
+  /** Signed (candidate − benchmark). Null when unmeasured. */
+  gap: number | null
   coaching: string
+  /** TDS-F-3.2g: true only when the person has a score for this dimension. */
+  measured?: boolean
 }
 
 /** A dimension where the user sits below the benchmark — a growth focus. */
@@ -115,15 +141,18 @@ export type OverdoneFlag = {
 }
 
 /** Full fit breakdown for one role. */
-export type FitDetail = {
+export type FitDetail = FitCoverage & {
   /** V2 — the benchmark version and source this score is against (absent on older backends). */
   blueprintVersion?: number | null
   benchmarkSource?: string | null
   jobId: string
   roleTitle: string
-  /** Fit tier — carried, never rendered on a person-facing surface. See `FitTier`. */
-  tier: FitTier
-  baseTier: FitTier
+  /**
+   * Fit tier — carried, never rendered on a person-facing surface. See `FitTier`.
+   * Null when the verdict is withheld for a partial profile (BP-F5).
+   */
+  tier: FitTier | null
+  baseTier: FitTier | null
   totalVariation: number
   /**
    * Explicit 1-100 fit score (higher = closer to the role's profile), from

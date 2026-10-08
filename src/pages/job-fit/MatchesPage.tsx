@@ -11,7 +11,9 @@ import {
   FitLoading,
   FitError,
   FitPill,
+  PartialProfileNote,
 } from "./_shared"
+import { partialCoverage, partialProfileDetail } from "@/lib/job-fit/coverage"
 import FitPurpose from "./FitPurpose"
 import { FitHistoryPanel } from "./FitHistoryPanel"
 import { fitPercent, fitPercentTone } from "./_fit"
@@ -48,6 +50,8 @@ function MatchRow({ match, components }: { match: FitMatch; components?: JobComp
   const goal = components?.status === "ok" ? components.goalAlignment : undefined
   const composite = components?.status === "ok" ? components.composite : undefined
   const pctColor = PCT_COLOR[fitPercentTone(pct)] ?? PCT_COLOR.teal
+  // BP-F5: a partial-profile score says how much it rests on.
+  const partial = partialCoverage(match)
   return (
     <Link
       to={ROUTES.JOB_FIT.detail(match.jobId)}
@@ -76,6 +80,11 @@ function MatchRow({ match, components }: { match: FitMatch; components?: JobComp
           <span className="text-sm font-semibold text-[#9ca3af]">%</span>
         </div>
         <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">fit</div>
+        {partial && (
+          <div className="mt-1 text-[11px] text-[#b45309]" title={partialProfileDetail(partial)}>
+            {partial.evaluated} of {partial.total} measured
+          </div>
+        )}
         {composite?.score != null && (
           <div className="mt-1 text-[11px] text-[#6b7280]" title="Behavioural fit, goals and experience combined">
             {Math.round(composite.score)}% composite
@@ -208,6 +217,11 @@ export default function MatchesPage() {
           No published roles are available to match against yet. Check back once your organization
           publishes role benchmarks.
         </FitEmptyState>
+      )}
+
+      {!isLoading && !isError && (data?.length ?? 0) > 0 && (
+        // BP-F5: one explanation for the page, from the first partial row.
+        <PartialProfileNote coverage={(data ?? []).find((m) => partialCoverage(m))} />
       )}
 
       {!isLoading && !isError && (data?.length ?? 0) > 0 && (

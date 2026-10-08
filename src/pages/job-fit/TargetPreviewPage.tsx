@@ -24,6 +24,7 @@ import {
   FitPill,
   FitSectionTitle,
   FitStat,
+  PartialProfileNote,
 } from "./_shared"
 import {
   confidenceTone,
@@ -90,6 +91,8 @@ function TargetFitResult({ data }: { data: FitDetail }) {
           <Gauge className="h-8 w-8 text-[#0D9488]" aria-hidden />
         </div>
         <FitMeter value={pct} tone={fitPercentTone(pct)} className="mb-4" />
+        {/* BP-F5: a partial-profile score says what it rests on. */}
+        <PartialProfileNote coverage={data} />
         {/* No fit tier or pre-cap tier here (4.1, option D) — score only. */}
         {data.gated && (
           <div className="flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">

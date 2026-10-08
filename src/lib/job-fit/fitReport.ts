@@ -6,6 +6,13 @@
 // `overview` (the agent-engine narrative) is included when available.
 
 import type { FitDetail } from "@/types/job-fit"
+import {
+  NOT_MEASURED,
+  isMeasured,
+  partialCoverage,
+  partialProfileDetail,
+  partialProfileLabel,
+} from "./coverage"
 
 export type FitReportInput = {
   data: FitDetail
@@ -25,13 +32,30 @@ export function fitReportFileBase(data: FitDetail): string {
   return `job-fit_${slug || "role"}`
 }
 
-function gapLines(data: FitDetail): Array<{ name: string; you: number; role: number; gap: number }> {
-  return data.perDimension.map((d) => ({
-    name: d.dimensionName,
-    you: Math.round(d.candidateScore),
-    role: Math.round(d.benchmarkScore),
-    gap: Math.round(d.gap),
-  }))
+/**
+ * One row per dimension, already formatted. BP-F5: a dimension the person was
+ * never measured on reads "Not measured" with no difference — never "you 0".
+ */
+function gapLines(data: FitDetail): Array<{ name: string; you: string; role: number; sign: string }> {
+  return data.perDimension.map((d) => {
+    const role = Math.round(d.benchmarkScore)
+    if (!isMeasured(d) || d.candidateScore === null || d.gap === null) {
+      return { name: d.dimensionName, you: NOT_MEASURED, role, sign: "—" }
+    }
+    const gap = Math.round(d.gap)
+    return {
+      name: d.dimensionName,
+      you: String(Math.round(d.candidateScore)),
+      role,
+      sign: gap > 0 ? `+${gap}` : `${gap}`,
+    }
+  })
+}
+
+/** BP-F5: the partial-profile line for a report, or null for a full read. */
+function partialLine(data: FitDetail): string | null {
+  const p = partialCoverage(data)
+  return p ? `${partialProfileLabel(p)}. ${partialProfileDetail(p)}` : null
 }
 
 /** Plain-text report. */
@@ -40,11 +64,16 @@ export function buildFitReportText({ data, pct, overview }: FitReportInput): str
   L.push(`Job Fit — ${data.roleTitle}`)
   L.push("")
   L.push(`Overall fit: ${pct}% aligned`)
+  const partial = partialLine(data)
+  if (partial) L.push(partial)
   if (overview) L.push("", overview)
   L.push("", "Where you stand, dimension by dimension:")
   for (const g of gapLines(data)) {
-    const sign = g.gap > 0 ? `+${g.gap}` : `${g.gap}`
-    L.push(`  - ${g.name}: you ${g.you} vs role ${g.role} (${sign})`)
+    L.push(
+      g.you === NOT_MEASURED
+        ? `  - ${g.name}: ${NOT_MEASURED.toLowerCase()} (role ${g.role})`
+        : `  - ${g.name}: you ${g.you} vs role ${g.role} (${g.sign})`
+    )
   }
   if (data.coachingGaps.length) {
     L.push("", "Growth focus:")
@@ -69,11 +98,12 @@ export function buildFitReportMarkdown({ data, pct, overview }: FitReportInput):
   const L: string[] = []
   L.push(`# Job Fit — ${data.roleTitle}`, "")
   L.push(`**Overall fit: ${pct}% aligned**`, "")
+  const partial = partialLine(data)
+  if (partial) L.push(`_${partial}_`, "")
   if (overview) L.push(overview, "")
   L.push("## Where you stand", "", "| Dimension | You | Role benchmark | Difference |", "| --- | --- | --- | --- |")
   for (const g of gapLines(data)) {
-    const sign = g.gap > 0 ? `+${g.gap}` : `${g.gap}`
-    L.push(`| ${g.name} | ${g.you} | ${g.role} | ${sign} |`)
+    L.push(`| ${g.name} | ${g.you} | ${g.role} | ${g.sign} |`)
   }
   if (data.coachingGaps.length) {
     L.push("", "## Growth focus", "")
@@ -96,11 +126,12 @@ export function buildFitReportMarkdown({ data, pct, overview }: FitReportInput):
 /** Self-contained HTML report (used for the client PDF + the .html export). */
 export function buildFitReportHtml({ data, pct, overview }: FitReportInput): string {
   const rows = gapLines(data)
-    .map((g) => {
-      const sign = g.gap > 0 ? `+${g.gap}` : `${g.gap}`
-      return `<tr><td>${esc(g.name)}</td><td>${g.you}</td><td>${g.role}</td><td>${sign}</td></tr>`
-    })
+    .map(
+      (g) =>
+        `<tr><td>${esc(g.name)}</td><td>${esc(g.you)}</td><td>${g.role}</td><td>${esc(g.sign)}</td></tr>`
+    )
     .join("")
+  const partial = partialLine(data)
   const growth = data.coachingGaps.length
     ? `<h2>Growth focus</h2><ul>${data.coachingGaps
         .map(
@@ -128,6 +159,7 @@ export function buildFitReportHtml({ data, pct, overview }: FitReportInput): str
   </style></head><body>
     <h1>Job Fit — ${esc(data.roleTitle)}</h1>
     <div class="pct">${pct}% <span style="font-size:16px;color:#6b7280">aligned</span></div>
+    ${partial ? `<p style="color:#b45309;font-size:12px">${esc(partial)}</p>` : ""}
     ${overview ? `<p>${esc(overview)}</p>` : ""}
     <h2>Where you stand</h2>
     <table><thead><tr><th>Dimension</th><th>You</th><th>Role benchmark</th><th>Difference</th></tr></thead>

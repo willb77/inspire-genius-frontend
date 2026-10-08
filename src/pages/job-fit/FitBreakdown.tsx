@@ -10,10 +10,17 @@ import { BenchmarkRadarChart } from "@/components/job-blueprint/job-dna/Benchmar
 import { ScoreBar } from "@/components/job-blueprint/shared/ScoreBar"
 import { FitCard, FitPill, FitSectionTitle } from "./_shared"
 import { gapTone, formatGap } from "./_fit"
+import { NOT_MEASURED, isMeasured } from "@/lib/job-fit/coverage"
 
 const NEUTRAL_BAND: InterpretationBand = "moderate"
 
-/** Map the API's per-dimension rows into the radar chart's benchmark/score shapes. */
+/**
+ * Map the API's per-dimension rows into the radar chart's benchmark/score shapes.
+ *
+ * BP-F5: a dimension the person was never measured on is left off the radar
+ * entirely. The chart plots a missing candidate score as 0, which would draw
+ * exactly the false read the scoring change removed.
+ */
 function toRadarInputs(perDimension: PerDimensionFit[]): {
   behaviors: DimensionBenchmark[]
   aptitudes: DimensionBenchmark[]
@@ -26,6 +33,7 @@ function toRadarInputs(perDimension: PerDimensionFit[]): {
   const candidateScores: DimensionScore[] = []
 
   for (const d of perDimension) {
+    if (!isMeasured(d) || d.candidateScore === null) continue
     const benchmark: DimensionBenchmark = {
       dimensionId: d.dimensionId,
       dimensionName: d.dimensionName,
@@ -80,19 +88,30 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
       <FitCard className="mb-6">
         <FitSectionTitle>Where you stand, dimension by dimension</FitSectionTitle>
         <div className="space-y-4">
-          {data.perDimension.map((d) => (
-            <div key={`${d.category}-${d.dimensionId}`} className="border-b border-[#f1f3f5] pb-4 last:border-0 last:pb-0">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="font-medium text-[#1f2937]">{d.dimensionName}</span>
-                <FitPill tone={gapTone(d.gap)}>{formatGap(d.gap)}</FitPill>
+          {data.perDimension.map((d) =>
+            isMeasured(d) && d.candidateScore !== null && d.gap !== null ? (
+              <div key={`${d.category}-${d.dimensionId}`} className="border-b border-[#f1f3f5] pb-4 last:border-0 last:pb-0">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className="font-medium text-[#1f2937]">{d.dimensionName}</span>
+                  <FitPill tone={gapTone(d.gap)}>{formatGap(d.gap)}</FitPill>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <ScoreBar score={d.candidateScore} label="You" size="sm" showValue />
+                  <ScoreBar score={d.benchmarkScore} label="Role benchmark" size="sm" showValue color="bg-[#0D9488]" />
+                </div>
+                {d.coaching && <p className="mt-2 text-sm text-[#6b7280]">{d.coaching}</p>}
               </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <ScoreBar score={d.candidateScore} label="You" size="sm" showValue />
-                <ScoreBar score={d.benchmarkScore} label="Role benchmark" size="sm" showValue color="bg-[#0D9488]" />
+            ) : (
+              // BP-F5: never measured — no score and no gap to show, and it is
+              // not counted in the fit above.
+              <div key={`${d.category}-${d.dimensionId}`} className="border-b border-[#f1f3f5] pb-4 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-medium text-[#6b7280]">{d.dimensionName}</span>
+                  <FitPill tone="gray">{NOT_MEASURED}</FitPill>
+                </div>
               </div>
-              {d.coaching && <p className="mt-2 text-sm text-[#6b7280]">{d.coaching}</p>}
-            </div>
-          ))}
+            )
+          )}
         </div>
       </FitCard>
 

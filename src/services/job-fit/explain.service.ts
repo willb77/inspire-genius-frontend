@@ -1,4 +1,5 @@
 import { getApi } from "@/lib/agentApi"
+import { isMeasured } from "@/lib/job-fit/coverage"
 import type { ExplainFitResult, FitDetail } from "@/types/job-fit"
 
 /**
@@ -35,16 +36,26 @@ export function toExplainBody(data: FitDetail, fitScore: number, question?: stri
     jobId: data.jobId,
     roleTitle: data.roleTitle,
     fitScore,
-    tier: data.tier,
+    // BP-F5: the tier is null when the verdict is withheld; the endpoint's
+    // field is a string (default ""), so null would 422.
+    tier: data.tier ?? "",
     totalVariation: data.totalVariation,
-    perDimension: data.perDimension.map((d) => ({
-      category: d.category,
-      dimensionName: d.dimensionName,
-      candidateScore: d.candidateScore,
-      benchmarkScore: d.benchmarkScore,
-      gap: d.gap,
-      coaching: d.coaching,
-    })),
+    // BP-F5: only measured dimensions are narrated — an unmeasured one has no
+    // score and no gap, and must not be explained as a shortfall.
+    perDimension: data.perDimension.flatMap((d) =>
+      isMeasured(d) && d.candidateScore !== null && d.gap !== null
+        ? [
+            {
+              category: d.category,
+              dimensionName: d.dimensionName,
+              candidateScore: d.candidateScore,
+              benchmarkScore: d.benchmarkScore,
+              gap: d.gap,
+              coaching: d.coaching,
+            },
+          ]
+        : []
+    ),
     criticalGaps: data.criticalGaps,
     coachingGaps: data.coachingGaps,
     overdoneFlags: data.overdoneFlags,

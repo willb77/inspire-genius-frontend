@@ -27,6 +27,11 @@ import {
   formatGap,
   type Tone,
 } from "@/pages/job-fit/_fit"
+import {
+  partialCoverage,
+  partialProfileDetail,
+  partialProfileLabel,
+} from "@/lib/job-fit/coverage"
 
 /**
  * Stages 7 and 8 — "which roles actually suit me?" and "how far off am I?".
@@ -124,6 +129,8 @@ function MatchRow({
   onSelect: (jobId: string) => void
 }) {
   const pct = rowPercent(match)
+  // BP-F5: a partial-profile score says how much it rests on.
+  const partial = partialCoverage(match)
   return (
     <li>
       <button
@@ -168,6 +175,11 @@ function MatchRow({
           <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
             fit
           </span>
+          {partial && (
+            <span className="mt-1 block text-[11px] text-amber-700" title={partialProfileDetail(partial)}>
+              {partial.evaluated} of {partial.total} measured
+            </span>
+          )}
         </span>
       </button>
     </li>
@@ -303,6 +315,7 @@ function FitBreakdown({ detail }: { detail: FitDetail }) {
     detail.totalVariation,
     detail.perDimension.length || 22
   )
+  const partial = partialCoverage(detail)
   return (
     <div className="space-y-4">
       <Card>
@@ -319,6 +332,13 @@ function FitBreakdown({ detail }: { detail: FitDetail }) {
               {fitPercentLabel(pct)}
             </span>
           </span>
+          {/* BP-F5: a partial-profile score says what it rests on. */}
+          {partial && (
+            <span role="note" className="block w-full text-xs text-muted-foreground">
+              <span className="font-medium text-amber-700">{partialProfileLabel(partial)}.</span>{" "}
+              {partialProfileDetail(partial)}
+            </span>
+          )}
         </CardContent>
       </Card>
 
