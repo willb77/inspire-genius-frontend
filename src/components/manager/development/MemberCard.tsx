@@ -7,6 +7,8 @@ import { ROUTES } from "@/constants/routes"
 import { FIT_ENGINE_MATCHES_ENABLED } from "@/constants/development"
 import { useMemberFitMatches } from "@/hooks/manager/development/useMemberFitMatches"
 import type { RosterMember } from "@/types/development"
+import type { PartialCoverage } from "@/lib/job-fit/coverage"
+import { fitMatchCoverage } from "./tabs/fitEngineMatchCopy"
 import { CoverageChips } from "./CoverageChips"
 import { PlanStatusBadge } from "./PlanStatusBadge"
 import { ProgressRing } from "./ProgressRing"
@@ -23,7 +25,16 @@ function initials(name: string): string {
     .toUpperCase()
 }
 
-function TopMatchLine({ title, fitScore }: { title: string; fitScore: number }) {
+function TopMatchLine({
+  title,
+  fitScore,
+  coverage,
+}: {
+  title: string
+  fitScore: number
+  /** BP-F5: set when the score rests on fewer than all of the role's dimensions. */
+  coverage?: PartialCoverage | null
+}) {
   const sk = useDevSkin()
   return (
     <div
@@ -35,6 +46,15 @@ function TopMatchLine({ title, fitScore }: { title: string; fitScore: number }) 
       <span className={cn("ml-auto inline-flex items-center gap-0.5 font-medium", sk.text700)}>
         <TrendingUp className="h-3 w-3 text-emerald-500" aria-hidden="true" />
         {Math.round(fitScore)}%
+        {coverage && (
+          <span
+            className="ml-1 font-normal text-amber-700"
+            title={`Partial profile: ${coverage.evaluated} of ${coverage.total} dimensions measured`}
+            data-testid="member-card-top-match-coverage"
+          >
+            · {coverage.evaluated}/{coverage.total}
+          </span>
+        )}
       </span>
     </div>
   )
@@ -49,7 +69,9 @@ function TopMatchLine({ title, fitScore }: { title: string; fitScore: number }) 
 function FitTopMatchLine({ memberId }: { memberId: string }) {
   const { data } = useMemberFitMatches(memberId, true)
   const top = data?.state === "ok" ? data.matches[0] : undefined
-  return top ? <TopMatchLine title={top.roleTitle} fitScore={top.fitScore} /> : null
+  return top ? (
+    <TopMatchLine title={top.roleTitle} fitScore={top.fitScore} coverage={fitMatchCoverage(top)} />
+  ) : null
 }
 
 export type MemberCardProps = {

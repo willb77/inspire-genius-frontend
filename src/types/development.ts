@@ -346,6 +346,13 @@ export type FitEngineMatch = {
   jobId: string
   /** 1–100, higher = closer to the role's benchmark. */
   fitScore: number
+  /**
+   * BP-F5: how many of the role's benchmark dimensions the score rests on. A
+   * dimension the member was never measured on is left out (not counted as 0).
+   * Null/absent on matches recorded before BP-F5.
+   */
+  dimensionsEvaluated?: number | null
+  dimensionsTotal?: number | null
 }
 
 /** Why there is (or is not) a list. Never collapsed into an empty array. */

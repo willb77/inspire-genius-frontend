@@ -6,6 +6,12 @@
 
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+  partialCoverage,
+  partialProfileDetail,
+  partialProfileLabel,
+} from "@/lib/job-fit/coverage"
+import type { FitCoverage } from "@/types/job-fit"
 import type { Tone } from "./_fit"
 
 /**
@@ -176,6 +182,25 @@ export function FitMethodologyNote({ note }: { note?: string }) {
       {note ??
         "This is a self-guided development aid, not a hiring decision. It compares your PRISM profile to a role's published benchmark — a profile drafted for the role and reviewed by a person, not a validated PRISM benchmark — to help you focus your growth and interview prep."}
     </p>
+  )
+}
+
+/**
+ * BP-F5 — a partial-profile read says so: how many dimensions the score rests
+ * on, that the rest are left out (not counted against the person), and that the
+ * overall rating is held back. Renders nothing for a full read.
+ */
+export function PartialProfileNote({ coverage }: { coverage: FitCoverage | null | undefined }) {
+  const p = partialCoverage(coverage)
+  if (!p) return null
+  return (
+    <div
+      role="note"
+      className="mb-4 rounded-lg border border-[rgba(180,83,9,0.3)] bg-[rgba(245,158,11,0.06)] p-3 text-sm text-[#374151]"
+    >
+      <p className="mb-1 font-semibold text-[#b45309]">{partialProfileLabel(p)}</p>
+      <p className="text-xs leading-relaxed text-[#6b7280]">{partialProfileDetail(p)}</p>
+    </div>
   )
 }
 

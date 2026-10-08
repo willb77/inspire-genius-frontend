@@ -25,6 +25,7 @@ import {
   fitReportFileBase,
 } from "@/lib/job-fit/fitReport"
 import { fitPercent } from "./_fit"
+import { isMeasured } from "@/lib/job-fit/coverage"
 
 const BTN =
   "inline-flex items-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50"
@@ -159,11 +160,13 @@ export function FitActionsBar({ data, overview }: { data: FitDetail; overview?: 
   async function handleWriteResume() {
     setShowResume(true)
     if (writeResume.data || writeResume.isPending) return
+    // BP-F5: only measured dimensions can be strengths — an unmeasured one has
+    // no gap (and `null >= 0` is true in JS, so it must be filtered explicitly).
     const topDimensions = data.perDimension
-      .filter((d) => d.gap >= 0)
+      .flatMap((d) => (isMeasured(d) && d.gap !== null && d.gap >= 0 ? [{ name: d.dimensionName, gap: d.gap }] : []))
       .sort((a, b) => b.gap - a.gap)
       .slice(0, 6)
-      .map((d) => d.dimensionName)
+      .map((d) => d.name)
     try {
       await writeResume.mutateAsync({
         roleTitle: data.roleTitle,

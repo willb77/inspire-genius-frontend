@@ -2,7 +2,8 @@
  * 3.3a — the words FitEngineMatchPanel says for each state, and the as-of date.
  * Kept out of the component file so the panel exports components only.
  */
-import type { FitEngineMatchesState, FitMissingCategory } from "@/types/development"
+import type { FitEngineMatch, FitEngineMatchesState, FitMissingCategory } from "@/types/development"
+import type { PartialCoverage } from "@/lib/job-fit/coverage"
 
 export type FitEmptyState = Exclude<FitEngineMatchesState, "ok">
 
@@ -43,6 +44,28 @@ export function fitStateMessage(
     case "unavailable":
       return "Career matches couldn't be loaded just now. That isn't the same as having none — try again shortly."
   }
+}
+
+/**
+ * BP-F5: the coverage of a match that rests on fewer than all of the role's
+ * dimensions, else null. Older matches carry no counts and are not guessed at.
+ */
+export function fitMatchCoverage(m: FitEngineMatch): PartialCoverage | null {
+  const evaluated = m.dimensionsEvaluated
+  const total = m.dimensionsTotal
+  if (typeof evaluated !== "number" || typeof total !== "number") return null
+  if (total <= 0 || evaluated >= total) return null
+  return { evaluated, total }
+}
+
+/** BP-F5: the manager-facing sentence for a partial profile. */
+export function partialMatchesMessage(name: string, p: PartialCoverage): string {
+  return (
+    `Partial profile: these scores are based on the ${p.evaluated} of ${p.total} dimensions ` +
+    `${name}'s PRISM on file measures. The other ${p.total - p.evaluated} are left out rather ` +
+    `than counted against ${name}, and no overall fit rating is given until every dimension ` +
+    `is measured.`
+  )
 }
 
 export function formatAsOf(iso: string | null): string | null {
