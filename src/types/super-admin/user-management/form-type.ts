@@ -10,4 +10,6 @@ export type UserRow = {
   invitation_status: string;
   created_at?: string;
   is_email_verified?: boolean;
+  // undefined = unknown (older backend); null = no organisation.
+  organization_id?: string | null;
 };

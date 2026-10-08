@@ -14,7 +14,10 @@ import { IconInput } from "@/components/ui/icon-input";
 import ActionMenu from "@/components/shared/ActionMenu";
 import Pagination from "@/components/shared/Pagination";
 import UserFormModal from "@/components/shared/forms/UserFormModal";
-import type { UserFormValues } from "@/components/shared/forms/userForm.constants";
+import {
+  NO_ORG_VALUE,
+  type UserFormValues,
+} from "@/components/shared/forms/userForm.constants";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
 import DestructiveConfirmModal from "@/components/shared/forms/DestructiveConfirmModal";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
@@ -31,6 +34,20 @@ import {
 } from "@/hooks/super-admin/user-management/useUserManagement";
 import { deleteUserByEmail } from "@/services/super-admin/user-management/user-management.service";
 import { useRoles } from "@/hooks/super-admin/useRoles";
+import {
+  needsMoveConfirmation,
+  useChangeUserOrg,
+  useOrgDirectory,
+} from "@/hooks/super-admin/user-management/useOrgAssignment";
+import { useAuth } from "@/context/useAuth";
+import { ROLES } from "@/constants/routes";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import type { UserRow } from "@/types/super-admin/user-management";
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
@@ -88,6 +105,52 @@ export default function UserManagement() {
   const { data: rolesData } = useRoles();
   const roles = useMemo(() => rolesData?.data?.roles ?? [], [rolesData]);
 
+  // Organisation assignment — super-admin only. The page is already
+  // super-admin-routed; this is the component-level gate so the picker can
+  // never render for anyone else, and the directory is never fetched.
+  const { hasRole } = useAuth();
+  const canAssignOrg = hasRole(ROLES.SUPER_ADMIN);
+  const { data: orgDirectory } = useOrgDirectory(canAssignOrg);
+  const orgOptions = useMemo(() => orgDirectory ?? [], [orgDirectory]);
+  const orgNameById = useMemo(
+    () => new Map(orgOptions.map((o) => [o.id, o.name] as const)),
+    [orgOptions],
+  );
+  const orgLabel = useCallback(
+    (orgId: string | null | undefined) => {
+      if (orgId === undefined) return "Unknown";
+      if (orgId === null) return "No organization";
+      return orgNameById.get(orgId) ?? orgId;
+    },
+    [orgNameById],
+  );
+  const changeOrgMutation = useChangeUserOrg();
+  const [pendingOrgChange, setPendingOrgChange] = useState<{
+    userId: string;
+    name: string;
+    fromOrgId: string | null | undefined;
+    toOrgId: string | null;
+  } | null>(null);
+
+  // Assign straight away when the user has no organisation; ask first when
+  // it would take them OUT of one (a move or a clear), naming both sides.
+  const requestOrgChange = useCallback(
+    (row: UserRow, toOrgId: string | null) => {
+      const fromOrgId = row.organization_id;
+      if (fromOrgId !== undefined && fromOrgId === toOrgId) return;
+      if (fromOrgId === undefined && toOrgId === null) {
+        toast.error("This user's current organization is unknown, so it cannot be cleared here.");
+        return;
+      }
+      if (needsMoveConfirmation(fromOrgId, toOrgId)) {
+        setPendingOrgChange({ userId: row.id, name: row.name || row.email, fromOrgId, toOrgId });
+        return;
+      }
+      changeOrgMutation.mutate({ userId: row.id, fromOrgId: fromOrgId ?? null, toOrgId });
+    },
+    [changeOrgMutation],
+  );
+
   const users = useMemo(() => data?.data?.users ?? [], [data]);
   const pagination = data?.data?.pagination ?? {
     total: 0,
@@ -119,6 +182,10 @@ export default function UserManagement() {
           u.invitation_status?.toLowerCase?.() || "not_applicable",
         created_at: u.created_at,
         is_email_verified: u.is_email_verified,
+        // Absent field (older backend) stays undefined = "Unknown", never
+        // "no organisation".
+        organization_id:
+          "organization_id" in u ? (u.organization_id ?? null) : undefined,
       };
     });
   }, [users]);
@@ -248,6 +315,11 @@ export default function UserManagement() {
       // "Skip onboarding" checkbox → auth-service demo_account. Only sent when
       // ticked so normal invites keep the default password-setup + onboarding.
       ...(values.skip_onboarding ? { demo_account: true } : {}),
+      // Super-admin org picker. auth-service writes it to user_profiles.org_id
+      // at create; before this no invite ever carried an org (ORG-F3).
+      ...(canAssignOrg && values.organization_id
+        ? { organization_id: values.organization_id }
+        : {}),
     };
 
     await inviteMutation.mutateAsync(body);
@@ -284,6 +356,15 @@ export default function UserManagement() {
     }
 
     await Promise.all(promises);
+
+    // Organisation: written through org-service, never the edit route. Only
+    // when the picker value actually differs from what the form opened with
+    // ("" for an unknown org), so saving a name change never touches it.
+    if (canAssignOrg) {
+      const opened = selected.organization_id ?? "";
+      const chosen = values.organization_id ?? "";
+      if (chosen !== opened) requestOrgChange(selected, chosen || null);
+    }
   };
 
   const handleDeactivate = async () => {
@@ -462,6 +543,46 @@ export default function UserManagement() {
         </span>
       ),
     },
+    ...(canAssignOrg
+      ? [
+          {
+            key: "organization_id",
+            header: "Organization",
+            render: (row: UserRow) =>
+              orgOptions.length === 0 ? (
+                <span className="text-sm">{orgLabel(row.organization_id)}</span>
+              ) : (
+                <Select
+                  value={
+                    row.organization_id === undefined
+                      ? undefined
+                      : row.organization_id ?? NO_ORG_VALUE
+                  }
+                  onValueChange={(v) =>
+                    requestOrgChange(row, v === NO_ORG_VALUE ? null : v)
+                  }
+                  disabled={changeOrgMutation.isPending}
+                >
+                  <SelectTrigger
+                    className="h-8 w-44"
+                    aria-label={`Organization for ${row.email}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <SelectValue placeholder="Unknown" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_ORG_VALUE}>No organization</SelectItem>
+                    {orgOptions.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {o.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ),
+          } satisfies Column<UserRow>,
+        ]
+      : []),
     {
       key: "status",
       header: "Status",
@@ -524,7 +645,7 @@ export default function UserManagement() {
           align="end"
           showView={true}
           showActivity={true}
-          showEdit={row.status !== "Awaiting"}
+          showEdit={true}
           showResend={row.status === "Awaiting"}
           showDeactivate={row.status === "Active"}
           showActivate={row.status === "Deactivated"}
@@ -721,6 +842,7 @@ export default function UserManagement() {
         onSubmit={handleAdd}
         submitLabel={inviteMutation.isPending ? "Adding User..." : "Add User"}
         allowStatusEdit={false}
+        organizations={canAssignOrg && orgOptions.length > 0 ? orgOptions : undefined}
       />
 
       {/* Edit User Modal */}
@@ -737,9 +859,11 @@ export default function UserManagement() {
                 role: selected.role ?? "",
                 status:
                   selected.status === "Deactivated" ? "Deactivated" : "Active",
+                organization_id: selected.organization_id ?? "",
               }
             : undefined
         }
+        organizations={canAssignOrg && orgOptions.length > 0 ? orgOptions : undefined}
         onSubmit={handleEdit}
         title="Edit User"
         submitLabel={
@@ -755,6 +879,36 @@ export default function UserManagement() {
               }
             : undefined
         }
+      />
+
+      {/* Organisation move confirmation — names both organisations */}
+      <ConfirmActionModal
+        open={pendingOrgChange !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingOrgChange(null);
+        }}
+        title="Change organization?"
+        description="This moves the user out of their current organization. What they can see, and who can see their data, changes with it."
+        fields={
+          pendingOrgChange
+            ? [
+                { label: "User", value: pendingOrgChange.name },
+                { label: "From", value: orgLabel(pendingOrgChange.fromOrgId) },
+                { label: "To", value: orgLabel(pendingOrgChange.toOrgId) },
+              ]
+            : []
+        }
+        confirmLabel="Move user"
+        confirmLoading={changeOrgMutation.isPending}
+        onConfirm={async () => {
+          if (!pendingOrgChange) return;
+          await changeOrgMutation.mutateAsync({
+            userId: pendingOrgChange.userId,
+            fromOrgId: pendingOrgChange.fromOrgId ?? null,
+            toOrgId: pendingOrgChange.toOrgId,
+          }).catch(() => undefined);
+          setPendingOrgChange(null);
+        }}
       />
 
       {/* Deactivate Confirmation */}

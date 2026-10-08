@@ -17,6 +17,7 @@ describe("User Form Constants", () => {
         role: "",
         status: "Active",
         skip_onboarding: false,
+        organization_id: "",
       });
     });
   });

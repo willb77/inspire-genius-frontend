@@ -9,6 +9,9 @@ export type UserFormValues = {
   // invitation (maps to the auth-service `demo_account` flag; honored on
   // Dev/Staging-B, rejected in production). Default false = normal onboarding.
   skip_onboarding: boolean;
+  // Super-admin only. "" = no organisation. Written through org-service, not
+  // the user edit route (membership is user_profiles.org_id).
+  organization_id: string;
 };
 
 export const User_FORM_DEFAULTS: UserFormValues = {
@@ -18,6 +21,7 @@ export const User_FORM_DEFAULTS: UserFormValues = {
   role: "",
   status: "Active",
   skip_onboarding: false,
+  organization_id: "",
 };
 
 export const User_FORM_RULES = {
@@ -44,4 +48,7 @@ export const User_FORM_RULES = {
   role: { required: "Role is required" },
   status: {},
   skip_onboarding: {},
+  organization_id: {},
 } as const;
+/** Radix Select cannot use "" as an item value; this stands for "no organisation". */
+export const NO_ORG_VALUE = "__no_org__";
