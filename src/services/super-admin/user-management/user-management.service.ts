@@ -18,6 +18,9 @@ export type UserManagementUser = {
   invitation_status: 'accepted' | 'pending' | 'expired' | string | null
   main_invite_status: 'accepted' | 'pending' | 'expired' | string | null
   invitation_expires_at: string | null
+  // user_profiles.org_id. Absent on a backend older than the org picker,
+  // which the UI reads as "unknown" — never as "no organisation".
+  organization_id?: string | null
 }
 
 export type UserManagementPagination = {

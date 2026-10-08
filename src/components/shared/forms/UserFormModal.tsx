@@ -24,6 +24,7 @@ import {
 import {
   User_FORM_DEFAULTS,
   User_FORM_RULES,
+  NO_ORG_VALUE,
   type UserFormValues,
 } from "./userForm.constants";
 import {
@@ -61,6 +62,12 @@ export type UserFormModalProps = {
    * renders the invitation lifecycle controls (status, expiry, resend).
    */
   invitationContext?: InvitationContext;
+  /**
+   * Super-admin only: when set, renders the Organization picker. The caller
+   * passes it only for a super-admin, and writes the choice through
+   * org-service — the form itself never decides who may assign.
+   */
+  organizations?: ReadonlyArray<{ id: string; name: string }>;
 };
 
 const INVITATION_STATUS_BADGES: Record<string, { label: string; className: string }> = {
@@ -254,6 +261,7 @@ export default function UserFormModal({
   submitLabel,
   allowStatusEdit,
   invitationContext,
+  organizations,
 }: UserFormModalProps) {
   const defaultValuesMerged: UserFormValues = {
     ...User_FORM_DEFAULTS,
@@ -361,6 +369,40 @@ export default function UserFormModal({
               </FormItem>
             )}
           />
+
+          {organizations && (
+            <FormField
+              control={control}
+              name="organization_id"
+              rules={User_FORM_RULES.organization_id}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="block text-xs">Organization</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value || NO_ORG_VALUE}
+                      onValueChange={(v) =>
+                        field.onChange(v === NO_ORG_VALUE ? "" : v)
+                      }
+                    >
+                      <SelectTrigger className="w-full" aria-label="Organization">
+                        <SelectValue placeholder="Select organization" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_ORG_VALUE}>No organization</SelectItem>
+                        {organizations.map((o) => (
+                          <SelectItem key={o.id} value={o.id}>
+                            {o.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {mode === "add" && (
             <FormField

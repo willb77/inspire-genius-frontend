@@ -82,7 +82,14 @@ jest.mock(
 jest.mock(
   "@/components/shared/forms/ConfirmActionModal",
   () => (props: any) =>
-    props.open ? <button onClick={props.onConfirm}>Confirm</button> : null
+    props.open ? (
+      <div>
+        {props.fields?.map((f: any) => (
+          <span key={f.label}>{`${f.label}: ${f.value}`}</span>
+        ))}
+        <button onClick={props.onConfirm}>Confirm</button>
+      </div>
+    ) : null
 );
 
 // Delete is permanent for EVERY status as of 2026-08-14, so it always routes
@@ -128,6 +135,58 @@ jest.mock("@/hooks/super-admin/useRoles", () => ({
   }),
 }));
 
+
+/* -------------------------------------------------
+ MOCK AUTH + ORG ASSIGNMENT (org dropdown, option 2)
+------------------------------------------------- */
+let mockIsSuperAdmin = true;
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({
+    hasRole: (role: string) => role === "super-admin" && mockIsSuperAdmin,
+  }),
+}));
+
+const mockChangeOrg = jest.fn();
+const mockChangeOrgAsync = jest.fn().mockResolvedValue({});
+let mockOrgDirectory = [
+  { id: "org-a", name: "Org A" },
+  { id: "org-b", name: "Org B" },
+];
+jest.mock("@/hooks/super-admin/user-management/useOrgAssignment", () => {
+  const actual = jest.requireActual(
+    "@/hooks/super-admin/user-management/useOrgAssignment"
+  );
+  return {
+    needsMoveConfirmation: actual.needsMoveConfirmation,
+    useOrgDirectory: (enabled: boolean) => ({
+      data: enabled ? mockOrgDirectory : undefined,
+    }),
+    useChangeUserOrg: () => ({
+      mutate: mockChangeOrg,
+      mutateAsync: mockChangeOrgAsync,
+      isPending: false,
+    }),
+  };
+});
+
+// Native <select> stand-in for the Radix Select, so a test can pick a value.
+jest.mock("@/components/ui/select", () => ({
+  Select: ({ value, onValueChange, children, disabled }: any) => (
+    <select
+      data-testid="org-select"
+      value={value ?? ""}
+      disabled={disabled}
+      onChange={(e) => onValueChange(e.target.value)}
+    >
+      <option value="">Unknown</option>
+      {children}
+    </select>
+  ),
+  SelectTrigger: () => null,
+  SelectValue: () => null,
+  SelectContent: ({ children }: any) => <>{children}</>,
+  SelectItem: ({ value, children }: any) => <option value={value}>{children}</option>,
+}));
 /* -------------------------------------------------
  MOCK USER MANAGEMENT HOOKS
 ------------------------------------------------- */
@@ -366,11 +425,12 @@ describe("UserManagement Page", () => {
     });
   });
 
-  it("shows Resend instead of Edit for Awaiting status users", async () => {
+  it("shows Edit AND Resend for Awaiting status users", async () => {
     renderPage();
 
-    // Awaiting users should show Resend, not Edit
-    expect(screen.queryByText("Edit")).not.toBeInTheDocument();
+    // Org dropdown option 2: an invited user can be edited (name, role,
+    // organisation) before they accept. Resend stays available.
+    expect(screen.getByText("Edit")).toBeInTheDocument();
     expect(screen.getByText("Resend")).toBeInTheDocument();
   });
 
@@ -982,5 +1042,207 @@ describe("UserManagement Page", () => {
 
     renderPage();
     expect(screen.getByText("Show 21 to 25 of 25 results")).toBeInTheDocument();
+  });
+});
+/* -------------------------------------------------
+ ORG DROPDOWN (option 2): super-admin organisation assignment
+------------------------------------------------- */
+function oneUser(extra: Record<string, unknown>) {
+  const { useUserManagement } = require(
+    "@/hooks/super-admin/user-management/useUserManagement"
+  );
+  useUserManagement.mockReturnValue({
+    isLoading: false,
+    isRefetching: false,
+    data: {
+      data: {
+        users: [
+          {
+            user_id: "u-9",
+            email: "test@example.com",
+            full_name: "Placed Person",
+            first_name: "Placed",
+            last_name: "Person",
+            user_status: "active",
+            is_active: true,
+            invitation_id: null,
+            invitation_status: null,
+            ...extra,
+          },
+        ],
+        pagination: { total: 1, page: 1, limit: 10 },
+      },
+    },
+  });
+}
+
+describe("UserManagement organisation picker", () => {
+  afterEach(() => {
+    mockIsSuperAdmin = true;
+    mockOrgDirectory = [
+      { id: "org-a", name: "Org A" },
+      { id: "org-b", name: "Org B" },
+    ];
+    mockChangeOrg.mockClear();
+    mockChangeOrgAsync.mockClear();
+    const { useUserManagement } = require(
+      "@/hooks/super-admin/user-management/useUserManagement"
+    );
+    useUserManagement.mockReset();
+  });
+
+  it("is hidden for anyone who is not a super-admin", () => {
+    mockIsSuperAdmin = false;
+    oneUser({ organization_id: "org-a" });
+    renderPage();
+    expect(screen.queryByTestId("org-select")).not.toBeInTheDocument();
+  });
+
+  it("shows the user's current organisation", () => {
+    oneUser({ organization_id: "org-a" });
+    renderPage();
+    expect((screen.getByTestId("org-select") as HTMLSelectElement).value).toBe("org-a");
+  });
+
+  it("assigns an unaffiliated user straight away, with no confirm step", async () => {
+    oneUser({ organization_id: null });
+    renderPage();
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("org-select"), { target: { value: "org-b" } });
+    });
+    expect(mockChangeOrg).toHaveBeenCalledWith({
+      userId: "u-9",
+      fromOrgId: null,
+      toOrgId: "org-b",
+    });
+    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+  });
+
+  it("asks before moving a user out of another organisation, naming both", async () => {
+    oneUser({ organization_id: "org-a" });
+    renderPage();
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("org-select"), { target: { value: "org-b" } });
+    });
+    // Nothing written yet: the move waits for the confirm.
+    expect(mockChangeOrg).not.toHaveBeenCalled();
+    expect(mockChangeOrgAsync).not.toHaveBeenCalled();
+    expect(screen.getByText("From: Org A")).toBeInTheDocument();
+    expect(screen.getByText("To: Org B")).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByText("Confirm"));
+    });
+    expect(mockChangeOrgAsync).toHaveBeenCalledWith({
+      userId: "u-9",
+      fromOrgId: "org-a",
+      toOrgId: "org-b",
+    });
+  });
+
+  it("refuses to clear an organisation it cannot see", async () => {
+    // An older backend sends no organization_id: that is UNKNOWN, not "none".
+    oneUser({});
+    renderPage();
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("org-select"), {
+        target: { value: "__no_org__" },
+      });
+    });
+    expect(toast.error).toHaveBeenCalledWith(
+      "This user's current organization is unknown, so it cannot be cleared here."
+    );
+    expect(mockChangeOrg).not.toHaveBeenCalled();
+    expect(mockChangeOrgAsync).not.toHaveBeenCalled();
+  });
+
+  it("sends the chosen organisation with an invite", async () => {
+    oneUser({ organization_id: null });
+    inviteMutate.mockResolvedValueOnce({});
+    mockFormSubmitData = {
+      first_name: "New",
+      last_name: "Person",
+      email: "test@example.com",
+      status: "Active",
+      role: "user",
+      organization_id: "org-b",
+    } as typeof mockFormSubmitData;
+    renderPage();
+    await act(async () => {
+      fireEvent.click(screen.getByText("Add User"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Submit"));
+    });
+    expect(inviteMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "test@example.com", organization_id: "org-b" })
+    );
+  });
+
+  it("edit writes an organisation change through org-service only when it changed", async () => {
+    oneUser({ organization_id: null });
+    updateMutate.mockResolvedValue({});
+    mockFormSubmitData = {
+      first_name: "Placed",
+      last_name: "Person",
+      email: "test@example.com",
+      status: "Active",
+      organization_id: "org-a",
+    } as typeof mockFormSubmitData;
+    renderPage();
+    await act(async () => {
+      fireEvent.click(screen.getByText("Edit"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Submit"));
+    });
+    expect(mockChangeOrg).toHaveBeenCalledWith({
+      userId: "u-9",
+      fromOrgId: null,
+      toOrgId: "org-a",
+    });
+  });
+
+  it("edit of an unknown-org user (older backend) never touches the organisation", async () => {
+    oneUser({});
+    updateMutate.mockResolvedValue({});
+    (toast.error as jest.Mock).mockClear();
+    mockFormSubmitData = {
+      first_name: "Renamed",
+      last_name: "Person",
+      email: "test@example.com",
+      status: "Active",
+      organization_id: "",
+    } as typeof mockFormSubmitData;
+    renderPage();
+    await act(async () => {
+      fireEvent.click(screen.getByText("Edit"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Submit"));
+    });
+    expect(updateMutate).toHaveBeenCalled();
+    expect(mockChangeOrg).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("edit leaves the organisation alone when the picker was not touched", async () => {
+    oneUser({ organization_id: "org-a" });
+    updateMutate.mockResolvedValue({});
+    mockFormSubmitData = {
+      first_name: "Renamed",
+      last_name: "Person",
+      email: "test@example.com",
+      status: "Active",
+      organization_id: "org-a",
+    } as typeof mockFormSubmitData;
+    renderPage();
+    await act(async () => {
+      fireEvent.click(screen.getByText("Edit"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Submit"));
+    });
+    expect(mockChangeOrg).not.toHaveBeenCalled();
+    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
   });
 });

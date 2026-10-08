@@ -446,6 +446,9 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
 export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.SUPER_ADMIN.USERS, icon: UsersRound, label: "User Management" },
+  // The Organizations page existed with no nav entry (reachable only from a
+  // Dashboard card). Label must stay unique: SidebarScaffold keys by label.
+  { to: ROUTES.SUPER_ADMIN.ORGANIZATIONS, icon: Building2, label: "Organizations" },
   { to: ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT, icon: Wand2, label: "Agent Management" },
   { to: ROUTES.SUPER_ADMIN.RLHF_TRAINING, icon: MessageSquarePlus, label: "RLHF Training" },
   { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics & Logs" },

@@ -203,6 +203,7 @@ describe("UserFormModal", () => {
       role: "",
       status: "Active",
       skip_onboarding: false,
+      organization_id: "",
     });
   });
 
@@ -210,6 +211,27 @@ describe("UserFormModal", () => {
     render(<UserFormModal {...baseProps} open={false} mode="add" />);
 
     expect(screen.queryByText("Add User")).not.toBeInTheDocument();
+  });
+
+  it("renders the Organization picker only when organizations are passed", () => {
+    const { unmount } = render(<UserFormModal {...baseProps} mode="add" />);
+    expect(screen.queryByText("Organization")).not.toBeInTheDocument();
+    unmount();
+
+    render(
+      <UserFormModal
+        {...baseProps}
+        mode="edit"
+        organizations={[
+          { id: "o1", name: "Org One" },
+          { id: "o2", name: "Org Two" },
+        ]}
+      />,
+    );
+    expect(screen.getByText("Organization")).toBeInTheDocument();
+    expect(screen.getByText("No organization")).toBeInTheDocument();
+    expect(screen.getByText("Org One")).toBeInTheDocument();
+    expect(screen.getByText("Org Two")).toBeInTheDocument();
   });
 
   it("renders the Skip onboarding toggle in add mode only", () => {
@@ -255,6 +277,7 @@ describe("UserFormModal", () => {
       role: "",
       status: "Deactivated",
       skip_onboarding: false,
+      organization_id: "",
     });
   });
 
