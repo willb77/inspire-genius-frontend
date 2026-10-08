@@ -148,6 +148,8 @@ const pageModules: Record<string, string> = {
   "@/pages/manager/WorkbenchDashboard": "ManagerWorkbenchPage",
   "@/pages/manager/Team": "ManagerTeamPage",
   "@/pages/manager/Hiring": "ManagerHiringPage",
+  "@/pages/manager/CharacterLabPage": "ManagerCharacterLabPage",
+  "@/pages/practitioner/CharacterLabPage": "PractitionerCharacterLabPage",
   "@/pages/manager/Candidates": "ManagerCandidatesPage",
   "@/pages/manager/Interviews": "ManagerInterviewsPage",
   "@/pages/manager/JobDna": "ManagerJobDnaPage",
@@ -415,6 +417,7 @@ describe("Route Integration Tests", () => {
       { path: "/manager/dashboard", testId: "ManagerDashboardPage" },
       { path: "/manager/team", testId: "ManagerTeamPage" },
       { path: "/manager/hiring", testId: "ManagerHiringPage" },
+      { path: "/manager/character-lab", testId: "ManagerCharacterLabPage" },
     ];
 
     it.each(managerAccessible)(
@@ -480,6 +483,14 @@ describe("Route Integration Tests", () => {
       renderWithRouter("/practitioner/prism-clients", ctx);
       await advancePastBoot();
       expect(await screen.findByTestId("PrismClientsPage")).toBeInTheDocument();
+    });
+
+    it("practitioner can access /practitioner/character-lab", async () => {
+      const user = makeAuthUser({ role: "practitioner" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter("/practitioner/character-lab", ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("PractitionerCharacterLabPage")).toBeInTheDocument();
     });
 
     // X-3 — credits are retired; an old bookmark lands on Home, not a 404.

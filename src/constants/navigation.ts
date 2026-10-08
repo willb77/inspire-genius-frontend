@@ -370,6 +370,21 @@ const CHARACTER_LAB_ITEM: NavItemDef = {
   label: "Character Lab",
 }
 
+// Character Lab for the coach roles (2026-10-07, request). Role-prefixed
+// routes, one item each, because ProtectedRoute gates by path prefix and
+// neither role can open /super-admin/*. Same body as the super-admin page but
+// without CSV export or CSV import — see CharacterLabBodyProps.fullAccess.
+const CHARACTER_LAB_ITEM_MANAGER: NavItemDef = {
+  to: ROUTES.MANAGER.CHARACTER_LAB,
+  icon: Drama,
+  label: "Character Lab",
+}
+const CHARACTER_LAB_ITEM_PRACTITIONER: NavItemDef = {
+  to: ROUTES.PRACTITIONER.CHARACTER_LAB,
+  icon: Drama,
+  label: "Character Lab",
+}
+
 /**
  * Per-role "Tools" rollup items. Rendered as a collapsible "Tools" section in
  * the sidebar (see UnifiedLayout for manager et al.; SuperAdminLayout for
@@ -393,6 +408,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     GOALS_STUDIO_ITEM,
     JOB_BLUEPRINT_ITEM_MANAGER,
     INTERVIEW_STUDIO_GROUP_MANAGER,
+    CHARACTER_LAB_ITEM_MANAGER,
   ],
   practitioner: [
     // Not gated on TEAM_DEVELOPMENT_ENABLED: that build flag scopes the manager
@@ -402,6 +418,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     GOALS_STUDIO_ITEM,
     JOB_BLUEPRINT_ITEM_PRACTITIONER,
     INTERVIEW_STUDIO_GROUP_PRACTITIONER,
+    CHARACTER_LAB_ITEM_PRACTITIONER,
   ],
   // Super-admin is entitled to all four unconditionally (2026-08-12, request:
   // "add Live Interview, Interview Studio, Team Development Studio to super
