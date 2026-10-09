@@ -126,6 +126,26 @@ jest.mock("@/hooks/agents/useMeridianJob", () => ({
   },
 }))
 
+// 3.4 P4 — scored practice. The switch and the network are stubbed; the hook
+// (useScoredPractice) stays REAL so the page exercises its no-op-when-off and
+// never-block-the-coaching behaviour.
+let scoredOn = false
+jest.mock("@/hooks/switches/usePracticeScoredEnabled", () => ({
+  usePracticeScoredEnabled: () => scoredOn,
+}))
+const createScored = jest.fn()
+const postScored = jest.fn()
+const finalizeScored = jest.fn()
+jest.mock("@/services/interview/scoredPractice.service", () => ({
+  createScoredPractice: (...a: unknown[]) => createScored(...a),
+  postScoredPracticeAnswer: (...a: unknown[]) => postScored(...a),
+  finalizeScoredPractice: (...a: unknown[]) => finalizeScored(...a),
+}))
+const createGoal = jest.fn()
+jest.mock("@/hooks/summit/useMyGoals", () => ({
+  useCreateGoal: () => ({ mutate: createGoal, isPending: false, isSuccess: false }),
+}))
+
 import InterviewPracticePage from "../InterviewPracticePage"
 
 let frameToConfirm: Record<string, unknown> = { numQuestions: 2, lengthMinutes: 20 }
@@ -139,6 +159,17 @@ beforeEach(() => {
   getTailored.mockResolvedValue({ ...BANK, tailored: true })
   getRolePack.mockResolvedValue({ ...BANK, role: null })
   startJob.mockResolvedValue(undefined)
+  scoredOn = false
+  createScored.mockResolvedValue({ session_id: "ps-1", notice: "Simulated result — practice only." })
+  postScored.mockResolvedValue({ answer_id: "a1", score: 4, final_source: "model", notice: "" })
+  finalizeScored.mockResolvedValue({
+    session_id: "ps-1", overall_score: 3.5, overall_mean: 3.5, recommendation: "good-alignment",
+    section_scores: {}, answered: 2, notice: "Simulated result — practice only. Not a hiring decision.",
+    answers: [
+      { competency_id: "v1", question_text: "Where do you want to be?", score: 4 },
+      { competency_id: "b1", question_text: "A disagreement you handled?", score: 2 },
+    ],
+  })
 })
 
 const start = async (user: ReturnType<typeof userEvent.setup>) => {
@@ -464,3 +495,62 @@ describe("export, restart and voice", () => {
     expect(speak).not.toHaveBeenCalledWith("Name the result.")
   })
 })
+
+describe("3.4 P4 — scored practice", () => {
+  const answerAndNext = async (user: ReturnType<typeof userEvent.setup>, text: string) => {
+    await user.type(screen.getByRole("textbox"), text)
+    await user.click(screen.getByRole("button", { name: /submit|get coaching/i }))
+    settle?.({ status: "done", content: "Good." })
+  }
+
+  it("off: creates nothing and the findings carry no simulated result", async () => {
+    const user = userEvent.setup()
+    render(<InterviewPracticePage />)
+    await start(user)
+    expect(createScored).not.toHaveBeenCalled()
+    expect(screen.queryByTestId("simulated-result")).not.toBeInTheDocument()
+  })
+
+  it("on: the session is created from the plan the candidate sees", async () => {
+    scoredOn = true
+    const user = userEvent.setup()
+    render(<InterviewPracticePage />)
+    await start(user)
+    await waitFor(() => expect(createScored).toHaveBeenCalledTimes(1))
+    const body = createScored.mock.calls[0][0] as { items: { id: string; question: string }[] }
+    expect(body.items).toHaveLength(2)
+    expect(body.items.map((i) => i.id).every((id) => ["v1", "v2", "b1", "p1"].includes(id))).toBe(true)
+  })
+
+  it("on: an answer is posted against its competency while the coaching runs", async () => {
+    scoredOn = true
+    const user = userEvent.setup()
+    render(<InterviewPracticePage />)
+    await start(user)
+    await answerAndNext(user, "I set the plan.")
+    await waitFor(() => expect(postScored).toHaveBeenCalledWith("ps-1", expect.any(String), "I set the plan."))
+    expect(startJob).toHaveBeenCalled()
+  })
+
+  it("on: a role set is coached, not scored, and the page says so", async () => {
+    scoredOn = true
+    frameToConfirm = { numQuestions: 2, lengthMinutes: 20, rolePackSlug: "nurse" }
+    getRolePack.mockResolvedValue({ ...BANK, role: { slug: "nurse", title: "Nurse" } })
+    const user = userEvent.setup()
+    render(<InterviewPracticePage />)
+    await start(user)
+    expect(createScored).not.toHaveBeenCalled()
+  })
+
+  it("on: a failed save never blocks the interview", async () => {
+    scoredOn = true
+    createScored.mockRejectedValue(new Error("403"))
+    const user = userEvent.setup()
+    render(<InterviewPracticePage />)
+    await start(user)
+    await answerAndNext(user, "I set the plan.")
+    expect(startJob).toHaveBeenCalled()
+    expect(postScored).not.toHaveBeenCalled()
+  })
+})
+

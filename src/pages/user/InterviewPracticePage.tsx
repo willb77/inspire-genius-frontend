@@ -39,6 +39,8 @@ import { usePracticeQuestions } from "@/hooks/interview/usePracticeQuestions"
 import { useSpeechDictation } from "@/hooks/interview/useSpeechDictation"
 import { useMeridianJob, type ChatJob } from "@/hooks/agents/useMeridianJob"
 import { useMeridianVoice } from "@/hooks/interview/useMeridianVoice"
+import { useScoredPractice } from "@/hooks/interview/useScoredPractice"
+import SimulatedResultCard from "@/components/interview/SimulatedResultCard"
 import { ProvenanceNote, type ProvenanceSources } from "@/components/shared/ProvenanceNote"
 import {
   buildCoachMessage,
@@ -124,6 +126,9 @@ export default function InterviewPracticePage() {
   const [rolePack, setRolePack] = useState<RolePackMatch | null>(null)
 
   const pendingRef = useRef<{ kind: "coach"; number: number } | { kind: "findings" } | null>(null)
+  // 3.4 P4 — scored practice beside the coaching; a no-op when the tier's
+  // switch is off, and never something the coaching waits on.
+  const scored = useScoredPractice()
 
   const voice = useMeridianVoice("nova")
   const dictation = useSpeechDictation({
@@ -244,7 +249,15 @@ export default function InterviewPracticePage() {
       }
     }
     setPersonalContext(pctx)
-    setFrame(f); setPlan(buildInterviewPlan(bank, f)); setIdx(0)
+    const builtPlan = buildInterviewPlan(bank, f)
+    // A role set has its own competencies, not the STAR bank the scorer reads,
+    // so it is coached and not scored.
+    if (picked) scored.reset()
+    else scored.start(builtPlan.map((q) => ({ id: q.id, question: q.question })), {
+      roleTitle: jobTitle || undefined, company: company || undefined,
+      industry: industry || undefined, goalId: roleSeed?.goalId,
+    })
+    setFrame(f); setPlan(builtPlan); setIdx(0)
     setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null)
     setPhase("interview"); setStarting(false)
   }
@@ -260,6 +273,7 @@ export default function InterviewPracticePage() {
         competency: current.competency, question: current.question, answer: answer.trim(),
       }].sort((a, b) => a.number - b.number)
     })
+    scored.record(current.id, answer.trim())
     pendingRef.current = { kind: "coach", number: current.number }
     try {
       await startJob({
@@ -279,6 +293,7 @@ export default function InterviewPracticePage() {
   const finish = async () => {
     if (!frame) return
     dictation.stop(); voice.stop(); setPhase("findings")
+    void scored.finish()
     if (exchanges.length === 0) {
       setFindings("You ended the interview before answering any questions, so there's nothing to summarize yet. Start again whenever you're ready.")
       return
@@ -300,6 +315,7 @@ export default function InterviewPracticePage() {
     setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null); spokenRef.current = null
     setPersonalContext(""); setTailoredApplied(false)
     setPracticeSources({})
+    scored.reset()
     voice.stop()
   }
 
@@ -414,6 +430,26 @@ export default function InterviewPracticePage() {
               <Button variant="ghost" size="sm" onClick={restart}><RefreshCw className="mr-2 h-4 w-4" /> New</Button>
             </div>
           </header>
+
+          {scored.result ? (
+            <SimulatedResultCard
+              result={scored.result}
+              competencyNames={Object.fromEntries(plan.map((q) => [q.id, q.competency]))}
+              roleTitle={frame.roleTitle || undefined}
+            />
+          ) : scored.finishing ? (
+            <p className="flex items-center text-sm text-slate-500">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Producing your simulated result…
+            </p>
+          ) : null}
+          {scored.error ? (
+            <p role="alert" className="text-sm text-amber-700">{scored.error}</p>
+          ) : null}
+          {scored.enabled && rolePack ? (
+            <p className="text-xs text-slate-500" data-testid="role-set-unscored">
+              Role sets are coached, not scored: their questions are not from the standard interview bank.
+            </p>
+          ) : null}
 
           <Card>
             <CardHeader className="flex-row items-center justify-between">
