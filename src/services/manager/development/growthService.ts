@@ -112,6 +112,22 @@ export type DevelopmentGoalsResponse = {
    *  only on the shared path while the tier's switch is on; null otherwise.
    *  Carries nothing PRISM-derived (no fit score, no gap names). */
   goalTargets?: GoalTargetSummary[] | null
+  /** 3.4 5b-strip — the member's finished practice per goal. Present only when
+   *  the member shares BOTH goals and interviews with this viewer and the
+   *  tier's switch is on; null otherwise. A count and the latest session's
+   *  date, role, score and alignment band — no answers or questions. */
+  goalPractice?: GoalPracticeSummary[] | null
+}
+
+export type GoalPracticeSummary = {
+  goalId: string
+  sessions: number
+  latest?: {
+    finishedAt?: string | null
+    roleTitle?: string | null
+    overallScore?: number | null
+    band?: string | null
+  } | null
 }
 
 export type GoalTargetSummary = {
