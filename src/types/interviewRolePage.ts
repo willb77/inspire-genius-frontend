@@ -90,7 +90,12 @@ export function buildRoleJobDescription(page: InterviewRolePage): string {
 }
 
 /** Router-state shape passed from a role page into `/interview-practice`. */
-export type PracticeRoleSeed = { roleTitle: string; jobDescription: string }
+export type PracticeRoleSeed = {
+  roleTitle: string
+  jobDescription: string
+  /** 3.4 P4 — the goal this practice is for, when started from Goals Studio. */
+  goalId?: string
+}
 
 /** Compact index rows for the roles listing page. */
 export const ROLE_PAGE_INDEX = ROLE_PAGES.map((p) => ({

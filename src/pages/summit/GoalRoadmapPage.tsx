@@ -10,11 +10,13 @@
  * Dark unless the server's `goal_targets` switch is on.
  */
 import { Link, useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Flag, Loader2, RefreshCw, X } from "lucide-react"
+import { ArrowLeft, Flag, Loader2, MessageSquareText, RefreshCw, X } from "lucide-react"
 import { PageHead, Card, CardH, Callout, MiniLabel } from "@/pages/summit/components/ui"
 import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/constants/routes"
 import { useGoalTargetsEnabled } from "@/hooks/switches/useGoalTargetsEnabled"
+import { usePracticeScoredEnabled } from "@/hooks/switches/usePracticeScoredEnabled"
+import type { PracticeRoleSeed } from "@/types/interviewRolePage"
 import { useRebuildRoadmap, useRemoveTarget, useRoadmap } from "@/hooks/goals/useGoalTargets"
 import { targetErrorText } from "@/pages/summit/_targets"
 import type { RoadmapMilestone } from "@/types/goals/targets"
@@ -42,6 +44,7 @@ export default function GoalRoadmapPage() {
   const { goalId } = useParams<{ goalId: string }>()
   const navigate = useNavigate()
   const on = useGoalTargetsEnabled()
+  const practiceOn = usePracticeScoredEnabled()
   const q = useRoadmap(goalId, on)
   const rebuild = useRebuildRoadmap()
   const remove = useRemoveTarget()
@@ -177,6 +180,18 @@ export default function GoalRoadmapPage() {
         >
           <X className="mr-1 h-3.5 w-3.5" aria-hidden /> Stop targeting this role
         </Button>
+        {practiceOn && goalId && (
+          // 3.4 P4 — practise an interview for this role; the result is linked
+          // to this goal. Shown only while scored practice is on for the tier.
+          <Button asChild variant="outline" size="sm">
+            <Link
+              to={ROUTES.INTERVIEW_PRACTICE}
+              state={{ roleTitle: r?.targetRole?.title || target.roleTitle || "", jobDescription: "", goalId } satisfies PracticeRoleSeed}
+            >
+              <MessageSquareText className="mr-1 h-3.5 w-3.5" aria-hidden /> Practise for this role
+            </Link>
+          </Button>
+        )}
         {(rebuild.isPending || remove.isPending) && (
           <Loader2 className="h-4 w-4 animate-spin text-[#7C93B5]" aria-hidden />
         )}

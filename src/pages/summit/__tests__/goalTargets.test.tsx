@@ -19,6 +19,10 @@ const mockSwitch = jest.fn()
 jest.mock("@/services/switches/goalTargets.service", () => ({
   getGoalTargetsEnabled: () => mockSwitch(),
 }))
+const mockPracticeSwitch = jest.fn().mockResolvedValue(false)
+jest.mock("@/services/switches/practiceScored.service", () => ({
+  getPracticeScoredEnabled: () => mockPracticeSwitch(),
+}))
 const mockMake = jest.fn()
 const mockMine = jest.fn()
 const mockRoadmap = jest.fn()
@@ -188,6 +192,20 @@ describe("GoalRoadmapPage", () => {
     expect(screen.getByText(/has no first step yet/)).toBeInTheDocument()
     expect(screen.getByText("An offer by June")).toBeInTheDocument()
     expect(screen.getByText("Priority")).toBeInTheDocument()
+  })
+
+  test("3.4 P4: 'Practise for this role' only while scored practice is on", async () => {
+    mockSwitch.mockResolvedValue(true)
+    mockRoadmap.mockResolvedValue({ target: TARGET, roadmap: RECORD })
+    mockPracticeSwitch.mockResolvedValue(false)
+    const off = at()
+    expect(await screen.findByText("Evaluating")).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: /Practise for this role/ })).not.toBeInTheDocument()
+    off.unmount()
+    mockPracticeSwitch.mockResolvedValue(true)
+    at()
+    const link = await screen.findByRole("link", { name: /Practise for this role/ })
+    expect(link).toHaveAttribute("href", "/interview-practice")
   })
 
   test("a goal with no target explains how to make one", async () => {
