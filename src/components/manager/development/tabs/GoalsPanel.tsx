@@ -49,7 +49,10 @@ import type {
   PrismAlignment,
   SummitGoal,
 } from "@/types/development"
-import type { CoachingNoteKind } from "@/services/manager/development/growthService"
+import type {
+  CoachingNoteKind,
+  GoalTargetSummary,
+} from "@/services/manager/development/growthService"
 import {
   useCreateCoachingNote,
   useDevelopmentGoals,
@@ -286,6 +289,7 @@ export function CoachGoalCard({
   reviewing = false,
   onNote,
   noting = false,
+  target,
 }: {
   goal: SummitGoal
   onRatify: (goalId: string) => void
@@ -295,6 +299,9 @@ export function CoachGoalCard({
   reviewing?: boolean
   onNote?: NoteSubmit
   noting?: boolean
+  /** 3.4 P5a — the role this goal is aimed at, when the member has one and it
+   *  is shared. The member's own preview passes none. */
+  target?: GoalTargetSummary
 }) {
   const sk = useDevSkin()
   const confirmed = goal.status === "confirmed"
@@ -337,6 +344,7 @@ export function CoachGoalCard({
           <div className="text-xs font-semibold text-emerald-700">Reward-framed first step</div>
           <p className="text-emerald-800">{goal.firstStep}</p>
         </div>
+        {target ? <TargetLine target={target} /> : null}
         {goal.provenanceQuotes.length > 0 ? (
           <details className={cn("text-xs", sk.text500)}>
             <summary className="cursor-pointer font-medium">Provenance ({goal.provenanceQuotes.length})</summary>
@@ -365,6 +373,29 @@ export function CoachGoalCard({
         {onNote ? <NoteComposer goalId={goal.goalId} onSubmit={onNote} pending={noting} /> : null}
       </CardContent>
     </Card>
+  )
+}
+
+/** 3.4 P5a — the target role and the shape of the roadmap toward it. Names
+ *  the member's own first step and success metric; nothing PRISM-derived. */
+function TargetLine({ target }: { target: GoalTargetSummary }) {
+  const sk = useDevSkin()
+  const road = target.roadmap
+  return (
+    <div className="rounded-lg border p-2.5" data-testid="goal-target">
+      <div className={cn("text-xs font-semibold", sk.text500)}>Aiming at</div>
+      <p className={sk.text700}>{target.roleTitle || "A role (title not recorded)"}</p>
+      {road ? (
+        <p className={cn("mt-1 text-xs", sk.text500)} data-testid="goal-target-roadmap">
+          Roadmap: {road.steps} {road.steps === 1 ? "step" : "steps"}
+          {road.gapsPending ? " (gaps still being worked out)" : ""}
+          {road.firstStep ? `, starting with “${road.firstStep}”` : ""}
+          {road.successMetric ? `; done when “${road.successMetric}”` : ""}.
+        </p>
+      ) : (
+        <p className={cn("mt-1 text-xs", sk.text500)}>No roadmap built yet.</p>
+      )}
+    </div>
   )
 }
 
@@ -487,6 +518,8 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
     )
   }
 
+  const targetsByGoal = new Map<string, GoalTargetSummary>()
+  for (const t of data?.goalTargets ?? []) targetsByGoal.set(t.goalId, t)
   const reviewsByGoal = new Map<string, GoalReview[]>()
   for (const r of reviews.data?.reviews ?? []) {
     reviewsByGoal.set(r.goalId, [...(reviewsByGoal.get(r.goalId) ?? []), r])
@@ -528,6 +561,7 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
             reviewing={ratify.isPending}
             onNote={submitNote}
             noting={note.isPending}
+            target={targetsByGoal.get(goal.goalId)}
           />
         ))}
       </div>

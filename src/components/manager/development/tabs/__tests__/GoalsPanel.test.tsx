@@ -165,3 +165,48 @@ describe("formatShareDate", () => {
     expect(formatShareDate("not a date")).toBe("")
   })
 })
+
+describe("3.4 P5a — the target role on a shared goal", () => {
+  const target = {
+    goalId: "g1",
+    roleTitle: "Data Scientist",
+    jobId: "job-ds",
+    setAt: "2026-10-01T00:00:00Z",
+    roadmap: { steps: 3, firstStep: "Book a mentor", successMetric: "An offer", gapsPending: false, builtAt: null },
+  }
+
+  it("names the role and the roadmap's shape on the goal it belongs to", () => {
+    goalsState.data = { goals: [goal], coverage: [], goalsSharedUntil: null, goalTargets: [target] }
+    renderAt("/manager/development/m1")
+    expect(screen.getByTestId("goal-target")).toHaveTextContent("Aiming at")
+    expect(screen.getByTestId("goal-target")).toHaveTextContent("Data Scientist")
+    expect(screen.getByTestId("goal-target-roadmap")).toHaveTextContent(
+      "Roadmap: 3 steps, starting with “Book a mentor”; done when “An offer”.",
+    )
+  })
+
+  it("renders nothing for a goal without a target, or when the tier sends none", () => {
+    goalsState.data = { goals: [goal], coverage: [], goalTargets: [{ ...target, goalId: "other" }] }
+    const { unmount } = renderAt("/manager/development/m1")
+    expect(screen.queryByTestId("goal-target")).not.toBeInTheDocument()
+    unmount()
+    goalsState.data = { goals: [goal], coverage: [], goalTargets: null }
+    renderAt("/manager/development/m1")
+    expect(screen.queryByTestId("goal-target")).not.toBeInTheDocument()
+    expect(screen.getByText("Run a weekly ops cadence")).toBeInTheDocument()
+  })
+
+  it("says when no roadmap is built yet rather than showing an empty one", () => {
+    goalsState.data = { goals: [goal], coverage: [], goalTargets: [{ ...target, roadmap: null }] }
+    renderAt("/manager/development/m1")
+    expect(screen.getByTestId("goal-target")).toHaveTextContent("No roadmap built yet.")
+    expect(screen.queryByTestId("goal-target-roadmap")).not.toBeInTheDocument()
+  })
+
+  it("the not-shared state is unchanged even if targets were somehow sent", () => {
+    goalsState.data = { goals: [], coverage: [], goalsNotShared: true, goalTargets: [target] }
+    renderAt("/manager/development/m1")
+    expect(screen.getByTestId("goals-state-not-shared")).toBeInTheDocument()
+    expect(screen.queryByTestId("goal-target")).not.toBeInTheDocument()
+  })
+})

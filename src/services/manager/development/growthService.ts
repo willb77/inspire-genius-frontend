@@ -108,6 +108,24 @@ export type DevelopmentGoalsResponse = {
   goalsNotShared?: boolean
   goalsSharedUntil?: string | null
   goalsNoAccount?: boolean
+  /** 3.4 P5a — the role each goal is aimed at and its roadmap's shape. Present
+   *  only on the shared path while the tier's switch is on; null otherwise.
+   *  Carries nothing PRISM-derived (no fit score, no gap names). */
+  goalTargets?: GoalTargetSummary[] | null
+}
+
+export type GoalTargetSummary = {
+  goalId: string
+  roleTitle?: string | null
+  jobId?: string | null
+  setAt?: string | null
+  roadmap?: {
+    steps: number
+    firstStep?: string | null
+    successMetric?: string | null
+    gapsPending: boolean
+    builtAt?: string | null
+  } | null
 }
 
 /** GET /members/{id}/goals → { goals, coverage, goalsPending?, prismNeeded? } */
