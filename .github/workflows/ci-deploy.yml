@@ -98,7 +98,7 @@ jobs:
           # 3.3a: Careers tab + roster match line read the fit engine. DEV ONLY,
           # from a repo VARIABLE so it flips without a code change; unset writes
           # an empty value, which reads as OFF (only the literal "true" enables
-          # it). staging-b never reads this variable — .env.staging-b pins false.
+          # it). staging-b never reads this variable — .env.staging-b sets its own (true since 2026-10-08).
           echo "VITE_FEATURE_FIT_ENGINE_MATCHES=${{ vars.DEV_FIT_ENGINE_MATCHES }}" >> .env
           # Practitioner coach client backend (/v1/agents/coach/*) — ON in dev
           # only. Flag-off (staging-b, which does NOT set this) keeps the
