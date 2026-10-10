@@ -51,6 +51,7 @@ import type {
 } from "@/types/development"
 import type {
   CoachingNoteKind,
+  GoalPracticeSummary,
   GoalTargetSummary,
 } from "@/services/manager/development/growthService"
 import {
@@ -290,6 +291,7 @@ export function CoachGoalCard({
   onNote,
   noting = false,
   target,
+  practice,
 }: {
   goal: SummitGoal
   onRatify: (goalId: string) => void
@@ -302,6 +304,9 @@ export function CoachGoalCard({
   /** 3.4 P5a — the role this goal is aimed at, when the member has one and it
    *  is shared. The member's own preview passes none. */
   target?: GoalTargetSummary
+  /** 3.4 5b-strip — the member's practice for this goal, when they share both
+   *  their goals and their interviews. */
+  practice?: GoalPracticeSummary
 }) {
   const sk = useDevSkin()
   const confirmed = goal.status === "confirmed"
@@ -345,6 +350,7 @@ export function CoachGoalCard({
           <p className="text-emerald-800">{goal.firstStep}</p>
         </div>
         {target ? <TargetLine target={target} /> : null}
+        {practice ? <PracticeStrip practice={practice} /> : null}
         {goal.provenanceQuotes.length > 0 ? (
           <details className={cn("text-xs", sk.text500)}>
             <summary className="cursor-pointer font-medium">Provenance ({goal.provenanceQuotes.length})</summary>
@@ -395,6 +401,43 @@ function TargetLine({ target }: { target: GoalTargetSummary }) {
       ) : (
         <p className={cn("mt-1 text-xs", sk.text500)}>No roadmap built yet.</p>
       )}
+    </div>
+  )
+}
+
+const PRACTICE_BAND_LABEL: Record<string, string> = {
+  "strong-alignment": "strong alignment",
+  "good-alignment": "good alignment",
+  "partial-alignment": "partial alignment",
+  "limited-alignment": "limited alignment",
+}
+
+/** 3.4 5b-strip — how the member has practised for this goal. Every number is
+ *  a simulated practice result, and says so; the band is an alignment band,
+ *  never a hiring instruction, and anything else is not shown. */
+function PracticeStrip({ practice }: { practice: GoalPracticeSummary }) {
+  const sk = useDevSkin()
+  const latest = practice.latest
+  const band = latest?.band ? PRACTICE_BAND_LABEL[latest.band] : undefined
+  const when = latest?.finishedAt ? new Date(latest.finishedAt) : null
+  const parts = [
+    latest?.roleTitle ? `for ${latest.roleTitle}` : null,
+    when && !Number.isNaN(when.getTime()) ? when.toLocaleDateString() : null,
+    typeof latest?.overallScore === "number" ? `scored ${latest.overallScore.toFixed(1)}` : null,
+    band ?? null,
+  ].filter(Boolean)
+  return (
+    <div className="rounded-lg border p-2.5" data-testid="goal-practice">
+      <div className={cn("text-xs font-semibold", sk.text500)}>Interview practice</div>
+      <p className={sk.text700}>
+        {practice.sessions} practice {practice.sessions === 1 ? "session" : "sessions"} finished
+      </p>
+      {parts.length > 0 ? (
+        <p className={cn("mt-1 text-xs", sk.text500)} data-testid="goal-practice-latest">
+          Latest: {parts.join(" · ")}.
+        </p>
+      ) : null}
+      <p className={cn("mt-1 text-[11px]", sk.text400)}>Simulated practice results, not a hiring decision.</p>
     </div>
   )
 }
@@ -520,6 +563,8 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
 
   const targetsByGoal = new Map<string, GoalTargetSummary>()
   for (const t of data?.goalTargets ?? []) targetsByGoal.set(t.goalId, t)
+  const practiceByGoal = new Map<string, GoalPracticeSummary>()
+  for (const p of data?.goalPractice ?? []) practiceByGoal.set(p.goalId, p)
   const reviewsByGoal = new Map<string, GoalReview[]>()
   for (const r of reviews.data?.reviews ?? []) {
     reviewsByGoal.set(r.goalId, [...(reviewsByGoal.get(r.goalId) ?? []), r])
@@ -562,6 +607,7 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
             onNote={submitNote}
             noting={note.isPending}
             target={targetsByGoal.get(goal.goalId)}
+            practice={practiceByGoal.get(goal.goalId)}
           />
         ))}
       </div>

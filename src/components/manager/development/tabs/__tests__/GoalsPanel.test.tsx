@@ -210,3 +210,51 @@ describe("3.4 P5a — the target role on a shared goal", () => {
     expect(screen.queryByTestId("goal-target")).not.toBeInTheDocument()
   })
 })
+
+describe("3.4 5b-strip — practice on a shared goal", () => {
+  const practice = {
+    goalId: "g1",
+    sessions: 2,
+    latest: { finishedAt: "2026-10-09T20:00:00Z", roleTitle: "Data Scientist", overallScore: 3.4, band: "good-alignment" },
+  }
+
+  it("shows the count and the latest simulated result on the goal it belongs to", () => {
+    goalsState.data = { goals: [goal], coverage: [], goalPractice: [practice] }
+    renderAt("/manager/development/m1")
+    const strip = screen.getByTestId("goal-practice")
+    expect(strip).toHaveTextContent("2 practice sessions finished")
+    expect(strip).toHaveTextContent("Simulated practice results, not a hiring decision.")
+    const latest = screen.getByTestId("goal-practice-latest")
+    expect(latest).toHaveTextContent("for Data Scientist")
+    expect(latest).toHaveTextContent("scored 3.4")
+    expect(latest).toHaveTextContent("good alignment")
+  })
+
+  it("renders nothing for another goal's practice, or when none is sent", () => {
+    goalsState.data = { goals: [goal], coverage: [], goalPractice: [{ ...practice, goalId: "other" }] }
+    const { unmount } = renderAt("/manager/development/m1")
+    expect(screen.queryByTestId("goal-practice")).not.toBeInTheDocument()
+    unmount()
+    goalsState.data = { goals: [goal], coverage: [], goalPractice: null }
+    renderAt("/manager/development/m1")
+    expect(screen.queryByTestId("goal-practice")).not.toBeInTheDocument()
+    expect(screen.getByText("Run a weekly ops cadence")).toBeInTheDocument()
+  })
+
+  it("never shows a band that is not an alignment band", () => {
+    goalsState.data = {
+      goals: [goal], coverage: [],
+      goalPractice: [{ ...practice, sessions: 1, latest: { ...practice.latest, band: "strong-hire" } }],
+    }
+    renderAt("/manager/development/m1")
+    expect(screen.getByTestId("goal-practice")).toHaveTextContent("1 practice session finished")
+    expect(screen.getByTestId("goal-practice")).not.toHaveTextContent(/hire/i)
+  })
+
+  it("the not-shared state is unchanged even if practice was somehow sent", () => {
+    goalsState.data = { goals: [], coverage: [], goalsNotShared: true, goalPractice: [practice] }
+    renderAt("/manager/development/m1")
+    expect(screen.getByTestId("goals-state-not-shared")).toBeInTheDocument()
+    expect(screen.queryByTestId("goal-practice")).not.toBeInTheDocument()
+  })
+})
