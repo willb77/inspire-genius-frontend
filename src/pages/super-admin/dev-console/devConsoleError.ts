@@ -64,6 +64,9 @@ export function describeDevConsoleError(
     case "PROMPT_CONTAINS_SECRET":
     case "BUSY":
     case "CONSOLE_DISABLED":
+    case "LOOKUP_NOT_GRANTED":
+    case "LOOKUP_DISABLED":
+    case "RATE_LIMITED":
       return { kind: "message", code: p.code, text: t(`errors.${p.code}`) };
     case "VALIDATION":
       // `description` names the field — that IS the field error.

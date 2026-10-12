@@ -41,3 +41,8 @@ export function safeCitationUrl(url: string | undefined): string | null {
     return null;
   }
 }
+
+/** The User lookup card shows only when the server says both: granted to this caller, and switched on (A7c). */
+export function lookupVisible(me: DevConsoleMe): boolean {
+  return Boolean(me.lookup?.granted && me.lookup?.enabled && me.enabled);
+}

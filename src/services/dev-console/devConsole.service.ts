@@ -19,6 +19,7 @@ import type {
   DevConsoleSessionSummary,
   StartJobRequest,
   StartJobResponse,
+  UserLookupCard,
 } from "@/types/devConsole";
 
 const BASE = "/v1/dev-console";
@@ -138,6 +139,20 @@ export async function attachSessionToTicket(sessionId: string, ticketId: string)
   await devConsoleApi.post(`${BASE}/sessions/${encodeURIComponent(sessionId)}/attach`, {
     ticket_id: ticketId,
   });
+}
+
+// ─── User lookup card (contract A7) ────────────────────────────────────────
+
+/** `POST /lookup` — one email, a fixed set of read-only checks. Gated server-side. */
+export async function lookupUser(email: string): Promise<UserLookupCard> {
+  const res = await devConsoleApi.post<BaseApiResponse<UserLookupCard>>(`${BASE}/lookup`, { email });
+  const data = res.data?.data;
+  if (!data || typeof data.found !== "boolean") throw new Error("The console returned no lookup result.");
+  return {
+    ...data,
+    checks_run: Array.isArray(data.checks_run) ? data.checks_run : [],
+    unavailable: Array.isArray(data.unavailable) ? data.unavailable : [],
+  };
 }
 
 // ─── Owner only ────────────────────────────────────────────────────────────

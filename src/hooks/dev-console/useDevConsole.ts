@@ -19,6 +19,7 @@ import {
   listConsoleAdmins,
   listRepos,
   listSessions,
+  lookupUser,
   revokeConsoleAdmin,
   startJob,
 } from "@/services/dev-console/devConsole.service";
@@ -241,4 +242,13 @@ export function useRevoke() {
       void qc.invalidateQueries({ queryKey: DEV_CONSOLE_QK.admins });
     },
   });
+}
+
+/**
+ * User lookup card (contract A7). A mutation, never a query: a lookup is an
+ * audited action, so it runs only when the person presses the button and is
+ * never refetched or cached across emails.
+ */
+export function useUserLookup() {
+  return useMutation({ mutationFn: (email: string) => lookupUser(email.trim()) });
 }

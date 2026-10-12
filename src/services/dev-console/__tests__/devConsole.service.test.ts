@@ -11,6 +11,7 @@ import {
   listConsoleAdmins,
   listRepos,
   listSessions,
+  lookupUser,
   revokeConsoleAdmin,
   startJob,
 } from "@/services/dev-console/devConsole.service";
@@ -187,5 +188,19 @@ describe("routes", () => {
     await revokeConsoleAdmin("test@example.com");
     expect(api.post).toHaveBeenCalledWith("/v1/dev-console/admins", { email: "test@example.com" });
     expect(api.delete).toHaveBeenCalledWith("/v1/dev-console/admins/test%40example.com");
+  });
+
+  it("user lookup posts the email and normalises missing lists", async () => {
+    api.post.mockResolvedValue({ data: { success: true, data: { found: false, account: null } } });
+    const card = await lookupUser("person@example.com");
+    expect(api.post).toHaveBeenCalledWith("/v1/dev-console/lookup", { email: "person@example.com" });
+    expect(card.found).toBe(false);
+    expect(card.checks_run).toEqual([]);
+    expect(card.unavailable).toEqual([]);
+  });
+
+  it("user lookup rejects a body with no result", async () => {
+    api.post.mockResolvedValue({ data: { success: true, data: {} } });
+    await expect(lookupUser("person@example.com")).rejects.toThrow("no lookup result");
   });
 });
