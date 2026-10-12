@@ -4,7 +4,10 @@ import {
   QueryClientProvider,
   type InfiniteData,
 } from "@tanstack/react-query";
-import { useConversationMessagesInfinite } from "../useConversationMessagesInfinite";
+import {
+  nextMessagesPageParam,
+  useConversationMessagesInfinite,
+} from "../useConversationMessagesInfinite";
 import type { ConversationMessagesPage } from "../useConversationMessagesInfinite";
 import * as agentService from "@/services/agent/agentService";
 
@@ -242,5 +245,106 @@ describe("useConversationMessagesInfinite", () => {
         .data as InfiniteData<ConversationMessagesPage>;
       expect(data.pages).toHaveLength(2);
     });
+  });
+});
+
+/*
+ * The shape GET /v1/chat/conversations/{id}/messages really returns
+ * (services/agent-engine/app/routes/conversations.py, get_messages):
+ * {messages, total, page, pages} — oldest first, and NO has_next. The tests
+ * above mock a has_next the server has never sent, which is how a reopened
+ * conversation came to stop at its first 50 messages without failing any test.
+ */
+const serverPage = (page: number, count: number, total: number, pageSize = 50) => ({
+  status: true,
+  data: {
+    messages: Array.from({ length: count }, (_, i) => ({
+      id: `m-${(page - 1) * pageSize + i}`,
+    })),
+    total,
+    page,
+    pages: Math.max(1, Math.ceil(total / pageSize)),
+  },
+});
+
+describe("useConversationMessagesInfinite — the server's real page shape", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("offers page 2 of a 78-message conversation, then stops", async () => {
+    mockedGetConversationDetail
+      .mockResolvedValueOnce(serverPage(1, 50, 78))
+      .mockResolvedValueOnce(serverPage(2, 28, 78));
+
+    const { result } = renderHook(
+      () => useConversationMessagesInfinite("conv-78"),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(result.current.hasNextPage).toBe(true);
+
+    await result.current.fetchNextPage();
+
+    await waitFor(() => {
+      const data = result.current.data as InfiniteData<ConversationMessagesPage>;
+      expect(data.pages).toHaveLength(2);
+    });
+    const data = result.current.data as InfiniteData<ConversationMessagesPage>;
+    expect(data.pages.flatMap((p) => p.data?.messages ?? [])).toHaveLength(78);
+    expect(mockedGetConversationDetail).toHaveBeenLastCalledWith("conv-78", 2, 50);
+    expect(result.current.hasNextPage).toBe(false);
+  });
+
+  it("makes one request for a conversation of 50 messages or fewer", async () => {
+    mockedGetConversationDetail.mockResolvedValueOnce(serverPage(1, 50, 50));
+
+    const { result } = renderHook(
+      () => useConversationMessagesInfinite("conv-50"),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(result.current.hasNextPage).toBe(false);
+    expect(mockedGetConversationDetail).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("nextMessagesPageParam", () => {
+  const page = (data: ConversationMessagesPage["data"]): ConversationMessagesPage => ({ data });
+
+  it("honours has_next when the server sends it, over pages", () => {
+    const last = page({ page: 1, pages: 3, has_next: false, messages: [{}] });
+    expect(nextMessagesPageParam(last, [last])).toBeUndefined();
+  });
+
+  it("derives from pages when has_next is absent", () => {
+    const p1 = page({ page: 1, pages: 3, messages: [{}] });
+    const p3 = page({ page: 3, pages: 3, messages: [{}] });
+    expect(nextMessagesPageParam(p1, [p1])).toBe(2);
+    expect(nextMessagesPageParam(p3, [p3])).toBeUndefined();
+  });
+
+  it("falls back to total against what has loaded", () => {
+    const p1 = page({ page: 1, total: 3, messages: [{}, {}] });
+    expect(nextMessagesPageParam(p1, [p1])).toBe(2);
+    const p2 = page({ page: 2, total: 3, messages: [{}] });
+    expect(nextMessagesPageParam(p2, [p1, p2])).toBeUndefined();
+  });
+
+  it("stops on an empty page even when total says more, so it cannot loop", () => {
+    const p1 = page({ page: 1, total: 10, messages: [] });
+    expect(nextMessagesPageParam(p1, [p1])).toBeUndefined();
+  });
+
+  it("stops when the page carries no count at all", () => {
+    const p1 = page({ page: 1, messages: [{}] });
+    expect(nextMessagesPageParam(p1, [p1])).toBeUndefined();
+    expect(nextMessagesPageParam(undefined, [])).toBeUndefined();
   });
 });
