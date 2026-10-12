@@ -19,7 +19,9 @@ import {
   listConsoleAdmins,
   listRepos,
   listSessions,
+  lookupUser,
   revokeConsoleAdmin,
+  setConsoleCapability,
   startJob,
 } from "@/services/dev-console/devConsole.service";
 import { isDevConsoleConfigured } from "@/lib/devConsoleApi";
@@ -239,6 +241,28 @@ export function useRevoke() {
     mutationFn: (email: string) => revokeConsoleAdmin(email),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: DEV_CONSOLE_QK.admins });
+    },
+  });
+}
+
+/**
+ * User lookup card (contract A7). A mutation, never a query: a lookup is an
+ * audited action, so it runs only when the person presses the button and is
+ * never refetched or cached across emails.
+ */
+export function useUserLookup() {
+  return useMutation({ mutationFn: (email: string) => lookupUser(email.trim()) });
+}
+
+/** The Access panel's lookup grant toggle (contract A7d). Root owner only, server-enforced. */
+export function useSetCapability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ email, capability, on }: { email: string; capability: string; on: boolean }) =>
+      setConsoleCapability(email, capability, on),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: DEV_CONSOLE_QK.admins });
+      void qc.invalidateQueries({ queryKey: DEV_CONSOLE_QK.me });
     },
   });
 }

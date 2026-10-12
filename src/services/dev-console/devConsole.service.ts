@@ -19,6 +19,7 @@ import type {
   DevConsoleSessionSummary,
   StartJobRequest,
   StartJobResponse,
+  UserLookupCard,
 } from "@/types/devConsole";
 
 const BASE = "/v1/dev-console";
@@ -140,6 +141,20 @@ export async function attachSessionToTicket(sessionId: string, ticketId: string)
   });
 }
 
+// ─── User lookup card (contract A7) ────────────────────────────────────────
+
+/** `POST /lookup` — one email, a fixed set of read-only checks. Gated server-side. */
+export async function lookupUser(email: string): Promise<UserLookupCard> {
+  const res = await devConsoleApi.post<BaseApiResponse<UserLookupCard>>(`${BASE}/lookup`, { email });
+  const data = res.data?.data;
+  if (!data || typeof data.found !== "boolean") throw new Error("The console returned no lookup result.");
+  return {
+    ...data,
+    checks_run: Array.isArray(data.checks_run) ? data.checks_run : [],
+    unavailable: Array.isArray(data.unavailable) ? data.unavailable : [],
+  };
+}
+
 // ─── Owner only ────────────────────────────────────────────────────────────
 
 export async function listAdminSessions(params?: {
@@ -164,6 +179,13 @@ export async function listConsoleAdmins(): Promise<DevConsoleAdmin[]> {
 
 export async function grantConsoleAdmin(email: string): Promise<void> {
   await devConsoleApi.post(`${BASE}/admins`, { email });
+}
+
+/** Root owner only (contract A7d). The server refuses anyone else with 403 OWNER_ONLY. */
+export async function setConsoleCapability(email: string, capability: string, on: boolean): Promise<void> {
+  const url = `${BASE}/admins/${encodeURIComponent(email)}/capabilities/${encodeURIComponent(capability)}`;
+  if (on) await devConsoleApi.put(url);
+  else await devConsoleApi.delete(url);
 }
 
 export async function revokeConsoleAdmin(email: string): Promise<void> {

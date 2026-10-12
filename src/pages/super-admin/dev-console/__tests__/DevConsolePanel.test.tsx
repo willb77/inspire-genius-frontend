@@ -322,4 +322,31 @@ describe("DevConsolePanel — sessions, tickets and access", () => {
     await userEvent.click(screen.getByRole("button", { name: "Grant" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Only the owner can manage access.");
   });
+
+  it("the lookup toggle shows each row's grant and turns it on and off", async () => {
+    m.listConsoleAdmins.mockResolvedValue([
+      { email: "on@example.com", capabilities: ["lookup"] },
+      { email: "off@example.com", capabilities: [] },
+      { email: "older@example.com" },
+    ]);
+    m.setConsoleCapability.mockResolvedValue();
+    renderPanel({ ...ME, owner: true });
+    const on = await screen.findByRole("switch", { name: "User lookup for on@example.com" });
+    const off = screen.getByRole("switch", { name: "User lookup for off@example.com" });
+    expect(on).toBeChecked();
+    expect(off).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "User lookup for older@example.com" })).not.toBeChecked();
+    await userEvent.click(off);
+    await waitFor(() => expect(m.setConsoleCapability).toHaveBeenCalledWith("off@example.com", "lookup", true));
+    await userEvent.click(on);
+    await waitFor(() => expect(m.setConsoleCapability).toHaveBeenCalledWith("on@example.com", "lookup", false));
+  });
+
+  it("a refused toggle (not the root owner) is shown, not swallowed", async () => {
+    m.listConsoleAdmins.mockResolvedValue([{ email: "off@example.com", capabilities: [] }]);
+    m.setConsoleCapability.mockRejectedValue(apiError(403, "OWNER_ONLY"));
+    renderPanel({ ...ME, owner: true });
+    await userEvent.click(await screen.findByRole("switch", { name: "User lookup for off@example.com" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Only the owner can manage access.");
+  });
 });

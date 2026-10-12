@@ -11,18 +11,21 @@ import {
   listConsoleAdmins,
   listRepos,
   listSessions,
+  lookupUser,
   revokeConsoleAdmin,
+  setConsoleCapability,
   startJob,
 } from "@/services/dev-console/devConsole.service";
 
 jest.mock("@/lib/devConsoleApi", () => ({
-  devConsoleApi: { get: jest.fn(), post: jest.fn(), delete: jest.fn() },
+  devConsoleApi: { get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn() },
   isDevConsoleConfigured: jest.fn(() => true),
 }));
 
 const api = devConsoleApi as unknown as {
   get: jest.Mock;
   post: jest.Mock;
+  put: jest.Mock;
   delete: jest.Mock;
 };
 const configured = isDevConsoleConfigured as jest.Mock;
@@ -187,5 +190,28 @@ describe("routes", () => {
     await revokeConsoleAdmin("test@example.com");
     expect(api.post).toHaveBeenCalledWith("/v1/dev-console/admins", { email: "test@example.com" });
     expect(api.delete).toHaveBeenCalledWith("/v1/dev-console/admins/test%40example.com");
+  });
+
+  it("user lookup posts the email and normalises missing lists", async () => {
+    api.post.mockResolvedValue({ data: { success: true, data: { found: false, account: null } } });
+    const card = await lookupUser("person@example.com");
+    expect(api.post).toHaveBeenCalledWith("/v1/dev-console/lookup", { email: "person@example.com" });
+    expect(card.found).toBe(false);
+    expect(card.checks_run).toEqual([]);
+    expect(card.unavailable).toEqual([]);
+  });
+
+  it("user lookup rejects a body with no result", async () => {
+    api.post.mockResolvedValue({ data: { success: true, data: {} } });
+    await expect(lookupUser("person@example.com")).rejects.toThrow("no lookup result");
+  });
+
+  it("owner: a capability is turned on with PUT and off with DELETE", async () => {
+    api.put.mockResolvedValue({});
+    api.delete.mockResolvedValue({});
+    await setConsoleCapability("a@example.com", "lookup", true);
+    await setConsoleCapability("a@example.com", "lookup", false);
+    expect(api.put).toHaveBeenCalledWith("/v1/dev-console/admins/a%40example.com/capabilities/lookup");
+    expect(api.delete).toHaveBeenCalledWith("/v1/dev-console/admins/a%40example.com/capabilities/lookup");
   });
 });

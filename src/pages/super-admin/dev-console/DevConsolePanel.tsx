@@ -21,6 +21,8 @@ import { DevConsoleErrorAlert } from "./DevConsoleErrorAlert";
 import { JobCard, JobView } from "./JobView";
 import { PromptForm, type PromptValues } from "./PromptForm";
 import { SessionsList } from "./SessionsList";
+import { UserLookupCard } from "./UserLookupCard";
+import { lookupVisible } from "./devConsoleView";
 
 // Idempotent; SupportTabs has normally registered the namespace already.
 registerDevConsoleI18n();
@@ -163,6 +165,13 @@ export default function DevConsolePanel({ me }: DevConsolePanelProps) {
             {sessionId ? <AttachToTicket sessionId={sessionId} me={me} /> : null}
           </CardContent>
         </Card>
+        {lookupVisible(me) ? (
+          <Card>
+            <CardContent className="p-4">
+              <UserLookupCard me={me} />
+            </CardContent>
+          </Card>
+        ) : null}
         {me.owner ? (
           <Card>
             <CardContent className="p-4">

@@ -8,7 +8,8 @@ import { UserMinus, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAdmins, useGrant, useRevoke } from "@/hooks/dev-console/useDevConsole";
+import { Switch } from "@/components/ui/switch";
+import { useAdmins, useGrant, useRevoke, useSetCapability } from "@/hooks/dev-console/useDevConsole";
 import type { DevConsoleMe } from "@/types/devConsole";
 import { DevConsoleErrorAlert } from "./DevConsoleErrorAlert";
 
@@ -25,6 +26,7 @@ export function AccessPanel({ me }: AccessPanelProps) {
   const admins = useAdmins(me.owner);
   const grant = useGrant();
   const revoke = useRevoke();
+  const setCap = useSetCapability();
 
   const schema = useMemo(() => z.object({ email: z.email(t("access.invalidEmail")) }), [t]);
   const { register, handleSubmit, formState, reset } = useForm<{ email: string }>({
@@ -50,6 +52,16 @@ export function AccessPanel({ me }: AccessPanelProps) {
         {(admins.data ?? []).map((a) => (
           <li key={a.email} className="flex items-center justify-between gap-2 text-xs">
             <span className="truncate">{a.email}</span>
+            {/* User lookup grant (A7d): off for everyone until the root owner turns it on. */}
+            <label className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
+              <Switch
+                checked={(a.capabilities ?? []).includes("lookup")}
+                disabled={setCap.isPending}
+                onCheckedChange={(on) => setCap.mutate({ email: a.email, capability: "lookup", on })}
+                aria-label={t("access.lookupToggle", { email: a.email })}
+              />
+              {t("access.lookup")}
+            </label>
             <Button
               type="button"
               size="sm"
@@ -65,6 +77,7 @@ export function AccessPanel({ me }: AccessPanelProps) {
         ))}
       </ul>
       <DevConsoleErrorAlert error={revoke.error} me={me} />
+      <DevConsoleErrorAlert error={setCap.error} me={me} />
       <form onSubmit={submit} className="space-y-1" noValidate>
         <Label htmlFor="dc-grant" className="sr-only">
           {t("access.email")}
