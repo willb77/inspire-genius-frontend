@@ -189,3 +189,27 @@ export function setUIFlag(key: string, value: boolean): void {
     else localStorage.removeItem(key)
   } catch { /* storage blocked */ }
 }
+
+/**
+ * A small `name -> boolean` map stored as JSON (non-sensitive UI state, e.g.
+ * which sidebar groups the user has opened). Anything unreadable — missing,
+ * malformed, blocked storage, a non-boolean value — reads as absent, never throws.
+ */
+export function getUIFlagMap(key: string): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return {}
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    const out: Record<string, boolean> = {}
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof v === 'boolean') out[k] = v
+    }
+    return out
+  } catch { return {} }
+}
+export function setUIFlagMapEntry(key: string, name: string, value: boolean): void {
+  try {
+    localStorage.setItem(key, JSON.stringify({ ...getUIFlagMap(key), [name]: value }))
+  } catch { /* storage blocked */ }
+}

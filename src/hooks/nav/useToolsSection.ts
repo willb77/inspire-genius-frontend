@@ -110,10 +110,11 @@ function splitCareerStudio(items: NavItemDef[]): { group: NavItemDef | null; res
 /**
  * The consolidated Tools section, or `null` when this role does not get one.
  *
- * Expanded by default (2026-08-12, request): a super-admin must be able to see
- * and click every tool without first expanding anything. It was previously
- * `defaultCollapsed: true`, which — combined with the duplicate-label collision
- * above — is what made the tools feel hidden.
+ * Closed by default again (Bill, 2026-10-12: "collapse the 'Tools' and other
+ * menus … so they only show when the > is clicked"). This reverses the
+ * 2026-08-12 request that kept it expanded. Two things in SidebarScaffold keep
+ * it from feeling hidden this time: the group opens by itself on any page it
+ * holds, and a group the user opens stays open (saved per browser).
  */
 export function useToolsSection(role: UserRole): NavSectionDef | null {
   // Hooks run unconditionally: the role gate is applied to the RESULT, never by
@@ -159,7 +160,7 @@ export function useToolsSection(role: UserRole): NavSectionDef | null {
     return {
       label: TOOLS_SECTION_LABEL,
       items,
-      defaultCollapsed: false,
+      defaultCollapsed: true,
     }
   }, [role, launcherSection, broadcastAccess])
 }

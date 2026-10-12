@@ -113,14 +113,13 @@ describe("UnifiedLayout", () => {
     expect(props.navSections).toBeUndefined();
   });
 
-  test("adds an EXPANDED 'Tools' section beneath the role menu", () => {
+  test("adds the 'Tools' section beneath the role menu, default passed through", () => {
     // Was a separate "Verticals" section until 2026-08-12; verticals now live
-    // inside the one Tools section. Expanded either way — the section lists the
-    // full catalogue with unentitled entries greyed, so it is a menu to browse
-    // rather than a drawer to remember to open.
+    // inside the one Tools section. Its default comes from useToolsSection
+    // (closed since 2026-10-12) and the layout must not override it.
     mockTools.mockReturnValue({
       label: "Tools",
-      defaultCollapsed: false,
+      defaultCollapsed: true,
       items: [{ to: "/vertical/grant", icon: () => null, label: "Financial Aid" }],
     });
     render(<UnifiedLayout role="user"><div /></UnifiedLayout>);
@@ -128,7 +127,7 @@ describe("UnifiedLayout", () => {
     expect(props.navSections).toHaveLength(2);
     expect(props.navSections[0].label).toBe(""); // header-less role menu
     expect(props.navSections[1].label).toBe("Tools");
-    expect(props.navSections[1].defaultCollapsed).toBe(false);
+    expect(props.navSections[1].defaultCollapsed).toBe(true);
     expect(props.navSections[1].items[0].label).toBe("Financial Aid");
   });
 
@@ -137,7 +136,7 @@ describe("UnifiedLayout", () => {
     // unentitled vertical stays disabled all the way to the sidebar.
     mockTools.mockReturnValue({
       label: "Tools",
-      defaultCollapsed: false,
+      defaultCollapsed: true,
       items: [
         { to: "/vertical/grant", icon: () => null, label: "Financial Aid", disabled: true },
       ],
