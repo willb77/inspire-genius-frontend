@@ -91,7 +91,9 @@
     "grant": "Gi",
     "revoke": "Trekk tilbake",
     "empty": "Ingen andre har tilgang.",
-    "invalidEmail": "Skriv inn en gyldig e-postadresse."
+    "invalidEmail": "Skriv inn en gyldig e-postadresse.",
+    "lookup": "Brukeroppslag",
+    "lookupToggle": "Brukeroppslag for {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Bare eieren kan administrere tilgang.",

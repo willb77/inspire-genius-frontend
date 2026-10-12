@@ -91,7 +91,9 @@
     "grant": "Przyznaj",
     "revoke": "Odbierz",
     "empty": "Nikt inny nie ma dostępu.",
-    "invalidEmail": "Wpisz prawidłowy adres e-mail."
+    "invalidEmail": "Wpisz prawidłowy adres e-mail.",
+    "lookup": "Wyszukiwanie użytkownika",
+    "lookupToggle": "Wyszukiwanie użytkownika dla {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Tylko właściciel może zarządzać dostępem.",

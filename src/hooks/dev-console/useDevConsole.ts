@@ -21,6 +21,7 @@ import {
   listSessions,
   lookupUser,
   revokeConsoleAdmin,
+  setConsoleCapability,
   startJob,
 } from "@/services/dev-console/devConsole.service";
 import { isDevConsoleConfigured } from "@/lib/devConsoleApi";
@@ -251,4 +252,17 @@ export function useRevoke() {
  */
 export function useUserLookup() {
   return useMutation({ mutationFn: (email: string) => lookupUser(email.trim()) });
+}
+
+/** The Access panel's lookup grant toggle (contract A7d). Root owner only, server-enforced. */
+export function useSetCapability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ email, capability, on }: { email: string; capability: string; on: boolean }) =>
+      setConsoleCapability(email, capability, on),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: DEV_CONSOLE_QK.admins });
+      void qc.invalidateQueries({ queryKey: DEV_CONSOLE_QK.me });
+    },
+  });
 }

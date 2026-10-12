@@ -91,7 +91,9 @@
     "grant": "Ver",
     "revoke": "Kaldır",
     "empty": "Başka kimsenin erişimi yok.",
-    "invalidEmail": "Geçerli bir e-posta adresi girin."
+    "invalidEmail": "Geçerli bir e-posta adresi girin.",
+    "lookup": "Kullanıcı arama",
+    "lookupToggle": "{{email}} için kullanıcı arama"
   },
   "errors": {
     "OWNER_ONLY": "Erişimi yalnızca sahip yönetebilir.",

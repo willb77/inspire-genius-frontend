@@ -91,7 +91,9 @@
     "grant": "Accorder",
     "revoke": "Révoquer",
     "empty": "Personne d'autre n'a accès.",
-    "invalidEmail": "Saisissez une adresse e-mail valide."
+    "invalidEmail": "Saisissez une adresse e-mail valide.",
+    "lookup": "Recherche d'utilisateur",
+    "lookupToggle": "Recherche d'utilisateur pour {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Seul le propriétaire peut gérer l'accès.",

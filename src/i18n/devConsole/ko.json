@@ -91,7 +91,9 @@
     "grant": "부여",
     "revoke": "취소",
     "empty": "다른 사람은 액세스 권한이 없습니다.",
-    "invalidEmail": "올바른 이메일 주소를 입력하세요."
+    "invalidEmail": "올바른 이메일 주소를 입력하세요.",
+    "lookup": "사용자 조회",
+    "lookupToggle": "{{email}}의 사용자 조회"
   },
   "errors": {
     "OWNER_ONLY": "소유자만 액세스를 관리할 수 있습니다.",

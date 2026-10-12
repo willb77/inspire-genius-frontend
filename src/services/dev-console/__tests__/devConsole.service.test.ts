@@ -13,17 +13,19 @@ import {
   listSessions,
   lookupUser,
   revokeConsoleAdmin,
+  setConsoleCapability,
   startJob,
 } from "@/services/dev-console/devConsole.service";
 
 jest.mock("@/lib/devConsoleApi", () => ({
-  devConsoleApi: { get: jest.fn(), post: jest.fn(), delete: jest.fn() },
+  devConsoleApi: { get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn() },
   isDevConsoleConfigured: jest.fn(() => true),
 }));
 
 const api = devConsoleApi as unknown as {
   get: jest.Mock;
   post: jest.Mock;
+  put: jest.Mock;
   delete: jest.Mock;
 };
 const configured = isDevConsoleConfigured as jest.Mock;
@@ -202,5 +204,14 @@ describe("routes", () => {
   it("user lookup rejects a body with no result", async () => {
     api.post.mockResolvedValue({ data: { success: true, data: {} } });
     await expect(lookupUser("person@example.com")).rejects.toThrow("no lookup result");
+  });
+
+  it("owner: a capability is turned on with PUT and off with DELETE", async () => {
+    api.put.mockResolvedValue({});
+    api.delete.mockResolvedValue({});
+    await setConsoleCapability("a@example.com", "lookup", true);
+    await setConsoleCapability("a@example.com", "lookup", false);
+    expect(api.put).toHaveBeenCalledWith("/v1/dev-console/admins/a%40example.com/capabilities/lookup");
+    expect(api.delete).toHaveBeenCalledWith("/v1/dev-console/admins/a%40example.com/capabilities/lookup");
   });
 });

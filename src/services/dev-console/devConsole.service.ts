@@ -181,6 +181,13 @@ export async function grantConsoleAdmin(email: string): Promise<void> {
   await devConsoleApi.post(`${BASE}/admins`, { email });
 }
 
+/** Root owner only (contract A7d). The server refuses anyone else with 403 OWNER_ONLY. */
+export async function setConsoleCapability(email: string, capability: string, on: boolean): Promise<void> {
+  const url = `${BASE}/admins/${encodeURIComponent(email)}/capabilities/${encodeURIComponent(capability)}`;
+  if (on) await devConsoleApi.put(url);
+  else await devConsoleApi.delete(url);
+}
+
 export async function revokeConsoleAdmin(email: string): Promise<void> {
   await devConsoleApi.delete(`${BASE}/admins/${encodeURIComponent(email)}`);
 }

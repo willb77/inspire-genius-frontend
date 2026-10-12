@@ -91,7 +91,9 @@
     "grant": "授予",
     "revoke": "撤销",
     "empty": "没有其他人拥有访问权限。",
-    "invalidEmail": "请输入有效的电子邮件地址。"
+    "invalidEmail": "请输入有效的电子邮件地址。",
+    "lookup": "用户查询",
+    "lookupToggle": "{{email}} 的用户查询"
   },
   "errors": {
     "OWNER_ONLY": "只有所有者可以管理访问权限。",

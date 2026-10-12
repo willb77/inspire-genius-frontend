@@ -91,7 +91,9 @@
     "grant": "Gewähren",
     "revoke": "Entziehen",
     "empty": "Niemand sonst hat Zugriff.",
-    "invalidEmail": "Geben Sie eine gültige E-Mail-Adresse ein."
+    "invalidEmail": "Geben Sie eine gültige E-Mail-Adresse ein.",
+    "lookup": "Nutzersuche",
+    "lookupToggle": "Nutzersuche für {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Nur der Eigentümer kann den Zugriff verwalten.",

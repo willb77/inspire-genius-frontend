@@ -160,8 +160,11 @@ export type DevConsoleSessionDetail = {
 /** A row of `GET /v1/dev-console/admins` (owner only), normalised by the service. */
 export type DevConsoleAdmin = {
   email: string;
+  owner?: boolean;
   granted_by?: string | null;
   granted_at?: string | null;
+  /** Capabilities held (contract A7d), e.g. `["lookup"]`. Absent on an older backend. */
+  capabilities?: string[];
 };
 
 /** The error codes the contract names. Anything else is rendered generically. */

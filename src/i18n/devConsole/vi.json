@@ -91,7 +91,9 @@
     "grant": "Cấp",
     "revoke": "Thu hồi",
     "empty": "Không ai khác có quyền truy cập.",
-    "invalidEmail": "Nhập địa chỉ email hợp lệ."
+    "invalidEmail": "Nhập địa chỉ email hợp lệ.",
+    "lookup": "Tra cứu người dùng",
+    "lookupToggle": "Tra cứu người dùng cho {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Chỉ chủ sở hữu mới có thể quản lý quyền truy cập.",

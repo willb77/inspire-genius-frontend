@@ -91,7 +91,9 @@
     "grant": "Verlenen",
     "revoke": "Intrekken",
     "empty": "Niemand anders heeft toegang.",
-    "invalidEmail": "Voer een geldig e-mailadres in."
+    "invalidEmail": "Voer een geldig e-mailadres in.",
+    "lookup": "Gebruiker opzoeken",
+    "lookupToggle": "Gebruiker opzoeken voor {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Alleen de eigenaar kan de toegang beheren.",

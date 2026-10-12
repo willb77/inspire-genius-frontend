@@ -91,7 +91,9 @@
     "grant": "Conceder",
     "revoke": "Revocar",
     "empty": "Nadie más tiene acceso.",
-    "invalidEmail": "Introduce una dirección de correo válida."
+    "invalidEmail": "Introduce una dirección de correo válida.",
+    "lookup": "Búsqueda de usuarios",
+    "lookupToggle": "Búsqueda de usuarios para {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Solo el propietario puede gestionar el acceso.",

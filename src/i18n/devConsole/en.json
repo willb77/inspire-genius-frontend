@@ -91,7 +91,9 @@
     "grant": "Grant",
     "revoke": "Revoke",
     "empty": "No one else has access.",
-    "invalidEmail": "Enter a valid email address."
+    "invalidEmail": "Enter a valid email address.",
+    "lookup": "User lookup",
+    "lookupToggle": "User lookup for {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Only the owner can manage access.",

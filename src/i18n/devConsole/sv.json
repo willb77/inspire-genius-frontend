@@ -91,7 +91,9 @@
     "grant": "Ge",
     "revoke": "Återkalla",
     "empty": "Ingen annan har åtkomst.",
-    "invalidEmail": "Ange en giltig e-postadress."
+    "invalidEmail": "Ange en giltig e-postadress.",
+    "lookup": "Användarsökning",
+    "lookupToggle": "Användarsökning för {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Endast ägaren kan hantera åtkomst.",

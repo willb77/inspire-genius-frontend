@@ -91,7 +91,9 @@
     "grant": "Beri",
     "revoke": "Cabut",
     "empty": "Tidak ada orang lain yang memiliki akses.",
-    "invalidEmail": "Masukkan alamat email yang valid."
+    "invalidEmail": "Masukkan alamat email yang valid.",
+    "lookup": "Pencarian pengguna",
+    "lookupToggle": "Pencarian pengguna untuk {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Hanya pemilik yang dapat mengelola akses.",

@@ -91,7 +91,9 @@
     "grant": "Conceder",
     "revoke": "Revogar",
     "empty": "Ninguém mais tem acesso.",
-    "invalidEmail": "Informe um endereço de e-mail válido."
+    "invalidEmail": "Informe um endereço de e-mail válido.",
+    "lookup": "Pesquisa de utilizador",
+    "lookupToggle": "Pesquisa de utilizador para {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Somente o proprietário pode gerenciar o acesso.",

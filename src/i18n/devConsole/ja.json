@@ -91,7 +91,9 @@
     "grant": "付与",
     "revoke": "取り消し",
     "empty": "他にアクセス権を持つユーザーはいません。",
-    "invalidEmail": "有効なメールアドレスを入力してください。"
+    "invalidEmail": "有効なメールアドレスを入力してください。",
+    "lookup": "ユーザー検索",
+    "lookupToggle": "{{email}} のユーザー検索"
   },
   "errors": {
     "OWNER_ONLY": "アクセスを管理できるのはオーナーのみです。",

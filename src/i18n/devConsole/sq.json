@@ -91,7 +91,9 @@
     "grant": "Jep",
     "revoke": "Hiq",
     "empty": "Askush tjetër nuk ka qasje.",
-    "invalidEmail": "Shkruani një adresë email të vlefshme."
+    "invalidEmail": "Shkruani një adresë email të vlefshme.",
+    "lookup": "Kërkimi i përdoruesit",
+    "lookupToggle": "Kërkimi i përdoruesit për {{email}}"
   },
   "errors": {
     "OWNER_ONLY": "Vetëm pronari mund të menaxhojë qasjen.",
