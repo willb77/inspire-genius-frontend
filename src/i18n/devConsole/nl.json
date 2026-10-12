@@ -151,7 +151,7 @@
     "onboardedNote": "Elke aanmelding via magic-link stelt deze vlag in op true, ongeacht de werkelijke status van het account.",
     "lockout": "Aanmelding vergrendeld",
     "lockoutCount": "{{count}} mislukte pogingen in de afgelopen {{minutes}} minuten; vergrendeld bij {{limit}}.",
-    "locked": "Vergrendeld. Dit wordt wist na een geslaagde aanmelding.",
+    "locked": "Geblokkeerd. De blokkade vervalt vanzelf zodra de mislukte pogingen ouder zijn dan {{minutes}} minuten; opnieuw inloggen heft hem niet op.",
     "notLocked": "Niet vergrendeld.",
     "magicLink": "Magic-link e-mailbezorging is hier niet beschikbaar.",
     "unavailable": "Kon niet worden gecontroleerd: {{checks}}",

@@ -151,7 +151,7 @@
     "onboardedNote": "Varje inloggning via magisk länk ställer denna flagga till true, oavsett kontos faktiska tillstånd.",
     "lockout": "Inloggning låst",
     "lockoutCount": "{{count}} misslyckade försök under de senaste {{minutes}} minuterna; låst vid {{limit}}.",
-    "locked": "Låst. Det rensas efter en lyckad inloggning.",
+    "locked": "Låst. Låsningen hävs av sig själv när de misslyckade försöken är äldre än {{minutes}} minuter; att logga in igen häver den inte.",
     "notLocked": "Inte låst.",
     "magicLink": "E-postleverans för magisk länk är inte tillgänglig här.",
     "unavailable": "Kunde inte kontrolleras: {{checks}}",

@@ -151,7 +151,7 @@
     "onboardedNote": "Mọi đăng nhập qua liên kết kỳ diệu đều đặt cờ này thành true, bất kể trạng thái thực tế của tài khoản.",
     "lockout": "Khóa đăng nhập",
     "lockoutCount": "{{count}} lần thử không thành công trong {{minutes}} phút qua; bị khóa ở {{limit}}.",
-    "locked": "Bị khóa. Nó được xóa sau khi đăng nhập thành công.",
+    "locked": "Đã bị khóa. Khóa tự mở khi các lần thử thất bại đã quá {{minutes}} phút; đăng nhập lại không mở khóa.",
     "notLocked": "Không bị khóa.",
     "magicLink": "Giao hàng email liên kết kỳ diệu không có sẵn ở đây.",
     "unavailable": "Không thể kiểm tra: {{checks}}",

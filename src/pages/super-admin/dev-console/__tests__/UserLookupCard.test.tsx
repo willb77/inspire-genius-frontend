@@ -162,9 +162,12 @@ describe("honest states", () => {
     expect(screen.getByText(/Every magic-link sign-in sets this flag to true/)).toBeInTheDocument();
   });
 
-  it("a locked account says how it clears", () => {
+  it("a locked account says it clears with time, not by signing in (auth checks the limit first)", () => {
     view({ ...FOUND, lockout: { failed_attempts: 5, locked: true, limit: 5, window_minutes: 15 } });
-    expect(screen.getByText("Locked out. It clears after a successful sign-in.")).toBeInTheDocument();
+    const text = screen.getByText(/^Locked out\./).textContent ?? "";
+    expect(text).toContain("more than 15 minutes old");
+    expect(text).toContain("signing in again does not clear it");
+    expect(text).not.toMatch(/clears (after|on) a successful sign-in/);
   });
 
   it("a deleted account says deleted, not deactivated", () => {

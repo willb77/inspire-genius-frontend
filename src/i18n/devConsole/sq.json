@@ -151,7 +151,7 @@
     "onboardedNote": "Çdo hyrje përmes lidhjes magjike e vendos këtë flamuj në true, pavarësisht nga gjendja aktuale e llogarisë.",
     "lockout": "Blokimi i hyrjes",
     "lockoutCount": "{{count}} përpjekje të dështuara në {{minutes}} minutat e fundit; bllokuar në {{limit}}.",
-    "locked": "Bllokuar. Pastrohet pas hyrjes të suksesshme.",
+    "locked": "I bllokuar. Bllokimi hiqet vetë kur përpjekjet e dështuara janë më të vjetra se {{minutes}} minuta; hyrja përsëri nuk e heq.",
     "notLocked": "Jo i bllokuar.",
     "magicLink": "Dorëzimi i e-mailit të lidhjes magjike nuk është i disponueshëm këtu.",
     "unavailable": "Nuk mund të verifikohej: {{checks}}",

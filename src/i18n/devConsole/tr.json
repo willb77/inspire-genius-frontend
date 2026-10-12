@@ -151,7 +151,7 @@
     "onboardedNote": "Her sihirli bağlantı oturum açması bu bayrağı true olarak ayarlar; hesabın gerçek durumu ne olursa olsun.",
     "lockout": "Oturum açma kilitlendi",
     "lockoutCount": "Son {{minutes}} dakikada {{count}} başarısız deneme; {{limit}} olarak kilitlendi.",
-    "locked": "Kilitlendi. Başarılı oturum açmadan sonra temizlenir.",
+    "locked": "Kilitli. Başarısız denemeler {{minutes}} dakikadan eski olduğunda kilit kendiliğinden kalkar; yeniden oturum açmak kilidi kaldırmaz.",
     "notLocked": "Kilitli değil.",
     "magicLink": "Sihirli bağlantı e-posta teslimi burada kullanılamaz.",
     "unavailable": "Kontrol edilemedi: {{checks}}",

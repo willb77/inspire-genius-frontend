@@ -151,7 +151,7 @@
     "onboardedNote": "Hver magic-link-pålogging setter dette flagget til true, uavhengig av kontoens faktiske tilstand.",
     "lockout": "Pålogging låst",
     "lockoutCount": "{{count}} mislykkede forsøk de siste {{minutes}} minuttene; låst ved {{limit}}.",
-    "locked": "Låst. Det klareres etter vellykket pålogging.",
+    "locked": "Låst. Låsen oppheves av seg selv når de mislykkede forsøkene er mer enn {{minutes}} minutter gamle; å logge inn på nytt opphever den ikke.",
     "notLocked": "Ikke låst.",
     "magicLink": "Magic-link e-postlevering er ikke tilgjengelig her.",
     "unavailable": "Kunne ikke kontrolleres: {{checks}}",

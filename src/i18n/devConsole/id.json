@@ -151,7 +151,7 @@
     "onboardedNote": "Setiap masuk dengan tautan ajaib menetapkan bendera ini ke true, berapa pun status aktual akun.",
     "lockout": "Penguncian masuk",
     "lockoutCount": "{{count}} upaya gagal dalam {{minutes}} menit terakhir; terkunci di {{limit}}.",
-    "locked": "Terkunci. Ini dihapus setelah masuk berhasil.",
+    "locked": "Terkunci. Kunci terbuka sendiri setelah percobaan gagal berumur lebih dari {{minutes}} menit; masuk lagi tidak membukanya.",
     "notLocked": "Tidak terkunci.",
     "magicLink": "Pengiriman email tautan ajaib tidak tersedia di sini.",
     "unavailable": "Tidak dapat diperiksa: {{checks}}",

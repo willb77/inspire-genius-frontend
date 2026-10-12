@@ -151,7 +151,7 @@
     "onboardedNote": "모든 마직 링크 로그인은 이 플래그를 true로 설정합니다. 계정의 실제 상태와 관계없이.",
     "lockout": "로그인 잠금",
     "lockoutCount": "지난 {{minutes}}분간 {{count}}회 실패; {{limit}}에서 잠금.",
-    "locked": "잠금 상태입니다. 성공적인 로그인 후 해제됩니다.",
+    "locked": "잠겨 있습니다. 실패한 시도가 {{minutes}}분이 지나면 자동으로 풀립니다. 다시 로그인해도 풀리지 않습니다.",
     "notLocked": "잠금 상태 아님.",
     "magicLink": "매직 링크 이메일 배송은 여기서 사용할 수 없습니다.",
     "unavailable": "확인할 수 없음: {{checks}}",

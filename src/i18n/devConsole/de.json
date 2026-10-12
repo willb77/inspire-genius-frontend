@@ -151,7 +151,7 @@
     "onboardedNote": "Jede Magic-Link-Anmeldung setzt dieses Flag auf true, unabhängig vom tatsächlichen Status des Kontos.",
     "lockout": "Anmeldesperrung",
     "lockoutCount": "{{count}} fehlgeschlagene Versuche in den letzten {{minutes}} Minuten; gesperrt bei {{limit}}.",
-    "locked": "Gesperrt. Dies wird nach einer erfolgreichen Anmeldung aufgehoben.",
+    "locked": "Gesperrt. Die Sperre endet von selbst, sobald die Fehlversuche älter als {{minutes}} Minuten sind; erneutes Anmelden hebt sie nicht auf.",
     "notLocked": "Nicht gesperrt.",
     "magicLink": "Magic-Link-E-Mail-Zustellung ist hier nicht verfügbar.",
     "unavailable": "Konnte nicht überprüft werden: {{checks}}",

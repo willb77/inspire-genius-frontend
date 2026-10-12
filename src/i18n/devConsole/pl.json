@@ -151,7 +151,7 @@
     "onboardedNote": "Każde logowanie za pomocą linku magicznego ustawia tę flagę na true, niezależnie od rzeczywistego stanu konta.",
     "lockout": "Blokada logowania",
     "lockoutCount": "{{count}} nieudanych prób w ciągu ostatnich {{minutes}} minut; zablokowane przy {{limit}}.",
-    "locked": "Zablokowane. Jest czyszczony po pomyślnym logowaniu.",
+    "locked": "Zablokowane. Blokada znika sama, gdy nieudane próby są starsze niż {{minutes}} minut; ponowne zalogowanie jej nie usuwa.",
     "notLocked": "Niezablokowane.",
     "magicLink": "Dostarczanie wiadomości e-mail z linkiem magicznym nie jest dostępne tutaj.",
     "unavailable": "Nie można było sprawdzić: {{checks}}",

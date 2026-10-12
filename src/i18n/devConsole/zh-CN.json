@@ -151,7 +151,7 @@
     "onboardedNote": "每次魔法链接登录都会将此标志设置为true，无论账户的实际状态如何。",
     "lockout": "登录锁定",
     "lockoutCount": "最近{{minutes}}分钟内{{count}}次失败尝试；在{{limit}}处锁定。",
-    "locked": "已锁定。登录成功后将清除。",
+    "locked": "已锁定。失败尝试超过 {{minutes}} 分钟后会自动解除；再次登录不会解除锁定。",
     "notLocked": "未锁定。",
     "magicLink": "魔法链接电子邮件发送在此不可用。",
     "unavailable": "无法检查: {{checks}}",

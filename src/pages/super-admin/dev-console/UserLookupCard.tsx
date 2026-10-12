@@ -193,7 +193,9 @@ function LockoutView({ result }: { result: LookupResult }) {
       <p className="text-xs">
         {t("lookup.lockoutCount", { count: l.failed_attempts, minutes: l.window_minutes ?? 15, limit: l.limit ?? 5 })}
       </p>
-      <p className="text-xs">{l.locked ? t("lookup.locked") : t("lookup.notLocked")}</p>
+      <p className="text-xs">
+        {l.locked ? t("lookup.locked", { minutes: l.window_minutes ?? 15 }) : t("lookup.notLocked")}
+      </p>
     </div>
   );
 }

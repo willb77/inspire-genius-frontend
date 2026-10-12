@@ -151,7 +151,7 @@
     "onboardedNote": "Cada login com link mágico define este sinalizador como true, seja qual for o estado real da conta.",
     "lockout": "Bloqueio de login",
     "lockoutCount": "{{count}} tentativas falhadas nos últimos {{minutes}} minutos; bloqueado em {{limit}}.",
-    "locked": "Bloqueado. É limpo após um login bem-sucedido.",
+    "locked": "Bloqueado. O bloqueio termina sozinho quando as tentativas falhadas têm mais de {{minutes}} minutos; entrar novamente não o remove.",
     "notLocked": "Não bloqueado.",
     "magicLink": "Entrega de e-mail com link mágico não está disponível aqui.",
     "unavailable": "Não foi possível verificar: {{checks}}",

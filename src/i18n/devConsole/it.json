@@ -151,7 +151,7 @@
     "onboardedNote": "Ogni accesso tramite collegamento magico imposta questo flag a true, indipendentemente dallo stato effettivo dell'account.",
     "lockout": "Blocco dell'accesso",
     "lockoutCount": "{{count}} tentativi non riusciti negli ultimi {{minutes}} minuti; bloccato a {{limit}}.",
-    "locked": "Bloccato. Si cancella dopo un accesso riuscito.",
+    "locked": "Bloccato. Si sblocca da solo quando i tentativi falliti hanno più di {{minutes}} minuti; accedere di nuovo non lo sblocca.",
     "notLocked": "Non bloccato.",
     "magicLink": "La consegna del collegamento magico tramite email non è disponibile qui.",
     "unavailable": "Non poteva essere controllato: {{checks}}",

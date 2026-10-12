@@ -151,7 +151,7 @@
     "onboardedNote": "Todo inicio de sesión con enlace mágico establece este indicador en verdadero, sea cual sea el estado real de la cuenta.",
     "lockout": "Bloqueo de inicio de sesión",
     "lockoutCount": "{{count}} intentos fallidos en los últimos {{minutes}} minutos; bloqueado en {{limit}}.",
-    "locked": "Bloqueado. Se borra tras un inicio de sesión exitoso.",
+    "locked": "Bloqueado. Se desbloquea solo cuando los intentos fallidos tienen más de {{minutes}} minutos; volver a iniciar sesión no lo desbloquea.",
     "notLocked": "Sin bloqueo.",
     "magicLink": "La entrega de correo de enlace mágico no está disponible aquí.",
     "unavailable": "No se pudo verificar: {{checks}}",

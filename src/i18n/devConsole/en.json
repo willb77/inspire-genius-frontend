@@ -151,7 +151,7 @@
     "onboardedNote": "Every magic-link sign-in sets this flag to true, whatever the account's real state.",
     "lockout": "Sign-in lockout",
     "lockoutCount": "{{count}} failed attempts in the last {{minutes}} minutes; locked at {{limit}}.",
-    "locked": "Locked out. It clears after a successful sign-in.",
+    "locked": "Locked out. It clears on its own once the failed attempts are more than {{minutes}} minutes old; signing in again does not clear it.",
     "notLocked": "Not locked out.",
     "magicLink": "Magic-link email delivery is not available here.",
     "unavailable": "Could not be checked: {{checks}}",

@@ -151,7 +151,7 @@
     "onboardedNote": "Chaque connexion par lien magique définit cet indicateur sur true, quel que soit l'état réel du compte.",
     "lockout": "Verrouillage de connexion",
     "lockoutCount": "{{count}} tentatives échouées au cours des {{minutes}} dernières minutes; verrouillé à {{limit}}.",
-    "locked": "Verrouillé. Il s'efface après une connexion réussie.",
+    "locked": "Verrouillé. Le blocage se lève seul lorsque les tentatives échouées datent de plus de {{minutes}} minutes ; se reconnecter ne le lève pas.",
     "notLocked": "Non verrouillé.",
     "magicLink": "La livraison de courrier de lien magique n'est pas disponible ici.",
     "unavailable": "N'a pas pu être vérifié: {{checks}}",
