@@ -6,9 +6,16 @@
 
 const mockSetUIFlag = jest.fn();
 const mockGetUIFlag = jest.fn(() => true);
+// Saved group state: an in-memory stand-in for the `ui_nav_sections_open` map.
+let mockSectionMap: Record<string, boolean> = {};
+const mockSetSection = jest.fn((_k: string, name: string, v: boolean) => {
+  mockSectionMap = { ...mockSectionMap, [name]: v };
+});
 jest.mock("@/lib/storage", () => ({
   setUIFlag: (k: string, v: boolean) => mockSetUIFlag(k, v),
   getUIFlag: () => mockGetUIFlag(),
+  getUIFlagMap: () => mockSectionMap,
+  setUIFlagMapEntry: (k: string, name: string, v: boolean) => mockSetSection(k, name, v),
 }));
 
 const mockNavigate = jest.fn();
@@ -170,6 +177,9 @@ describe("SidebarScaffold — collapseOnMount", () => {
 
   it("renders a `collapsible` section OPEN but with a clickable header", () => {
     // The active vertical's sub-nav: opens on arrival, can still be rolled up.
+    // On a page outside the section, so the active-route rule is not what opens it.
+    mockPathname = "/elsewhere";
+    mockSectionMap = {};
     renderScaffold({
       navSections: [{ label: "Aid pages", items: ITEMS, collapsible: true }],
     });
@@ -182,6 +192,8 @@ describe("SidebarScaffold — collapseOnMount", () => {
   });
 
   it("`defaultCollapsed` still wins — collapsible-and-closed", () => {
+    mockPathname = "/elsewhere";
+    mockSectionMap = {};
     renderScaffold({
       navSections: [
         { label: "My Workspace", items: ITEMS, defaultCollapsed: true, collapsible: true },
@@ -270,5 +282,100 @@ describe("SidebarScaffold — nested items (2026-09-23 studio groups)", () => {
     renderScaffold({ navItems: GROUPED });
     expect(screen.getByRole("button", { name: "Career Blueprint" })).toHaveAttribute("data-active", "true");
     expect(screen.getByRole("button", { name: "Career Studio" })).toHaveAttribute("aria-expanded", "true");
+  });
+});
+
+describe("SidebarScaffold — group state across pages (2026-10-12)", () => {
+  // Every page mounts its own layout, so each test's render is "arriving on a
+  // page"; a second render is the next navigation.
+  const TOOLS = [
+    { to: "/goals", icon: Wallet, label: "Goals Studio" },
+    {
+      to: "",
+      icon: Wallet,
+      label: "Career Studio",
+      children: [{ to: "/vertical/job-fit/matches", icon: Wallet, label: "Career Fit", activePrefix: "/vertical/job-fit" }],
+    },
+  ];
+  const SECTIONS = [
+    { label: "My Workspace", items: ITEMS },
+    { label: "Tools", items: TOOLS, defaultCollapsed: true },
+  ];
+  const toolsHeader = () => screen.getByRole("button", { name: /^tools$/i });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetUIFlag.mockReturnValue(true);
+    mockSectionMap = {};
+    mockPathname = "/home";
+  });
+
+  it("starts a closed group closed on a page outside it; the plain group stays visible", () => {
+    renderScaffold({ navSections: SECTIONS });
+    expect(toolsHeader()).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Goals Studio")).toBeNull();
+    expect(screen.getByText("Home")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /my workspace/i })).toBeNull();
+  });
+
+  it("opens the group that holds the current page, and does not save that", () => {
+    mockPathname = "/goals";
+    renderScaffold({ navSections: SECTIONS });
+    expect(toolsHeader()).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Goals Studio" })).toHaveAttribute("data-active", "true");
+    expect(mockSetSection).not.toHaveBeenCalled();
+  });
+
+  it("opens the group when the current page is a nested child of one of its items", () => {
+    mockPathname = "/vertical/job-fit/matches/42";
+    renderScaffold({ navSections: SECTIONS });
+    expect(toolsHeader()).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Career Fit" })).toHaveAttribute("data-active", "true");
+  });
+
+  it("the current page wins over a saved 'closed'", () => {
+    mockSectionMap = { Tools: false };
+    mockPathname = "/goals";
+    renderScaffold({ navSections: SECTIONS });
+    expect(toolsHeader()).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("a group the user opens stays open on the next page", () => {
+    const first = renderScaffold({ navSections: SECTIONS });
+    fireEvent.click(toolsHeader());
+    expect(mockSetSection).toHaveBeenCalledWith("ui_nav_sections_open", "Tools", true);
+    first.unmount();
+    renderScaffold({ navSections: SECTIONS });
+    expect(toolsHeader()).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Goals Studio")).toBeInTheDocument();
+  });
+
+  it("a group the user closes stays closed, even one that defaults open", () => {
+    const sections = [{ label: "Aid pages", items: TOOLS, collapsible: true }];
+    const first = renderScaffold({ navSections: sections });
+    fireEvent.click(screen.getByRole("button", { name: /aid pages/i }));
+    expect(mockSetSection).toHaveBeenCalledWith("ui_nav_sections_open", "Aid pages", false);
+    first.unmount();
+    renderScaffold({ navSections: sections });
+    expect(screen.getByRole("button", { name: /aid pages/i })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("opens when the page moves into the group without a remount (VerticalShell keeps the scaffold mounted)", () => {
+    const view = renderScaffold({ navSections: SECTIONS });
+    expect(toolsHeader()).toHaveAttribute("aria-expanded", "false");
+    mockPathname = "/goals";
+    view.rerender(
+      <SidebarScaffold navItems={ITEMS} navSections={SECTIONS}>
+        <div data-testid="child" />
+      </SidebarScaffold>,
+    );
+    expect(toolsHeader()).toHaveAttribute("aria-expanded", "true");
+    expect(mockSetSection).not.toHaveBeenCalled();
+  });
+
+  it("a saved state belongs to its own label only", () => {
+    mockSectionMap = { "Role Views": true };
+    renderScaffold({ navSections: SECTIONS });
+    expect(toolsHeader()).toHaveAttribute("aria-expanded", "false");
   });
 });

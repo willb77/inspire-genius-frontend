@@ -54,7 +54,8 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
         items: gate(s.items),
       }));
     return [
-      { label: "My Workspace", items: userNavItems, defaultCollapsed: true },
+      // Always visible: a plain group, no header toggle (Bill, 2026-10-12).
+      { label: "My Workspace", items: userNavItems },
       ...bySection("Role Views"),
       // ONE "Tools" section, assembled in useToolsSection rather than here.
       // Two groups both labelled "Tools" used to be built inline; duplicate
@@ -64,8 +65,9 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
       // hook is what stops that recurring in the next layout, rather than
       // fixing it only in this one.
       ...(toolsSection ? [toolsSection] : []),
-      // Administration stays expanded — a super-admin on an admin page is mid-task.
-      ...bySection("Administration").map((s) => ({ ...s, defaultCollapsed: false })),
+      // Administration keeps its closed default (2026-10-12). It still opens on
+      // any admin page, because SidebarScaffold opens the group holding the page.
+      ...bySection("Administration"),
     ];
   }, [userNavItems, toolsSection, isOwner]);
 

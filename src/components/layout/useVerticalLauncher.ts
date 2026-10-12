@@ -163,8 +163,8 @@ function toNavItem(
  *
  * Renamed from "Verticals" on 2026-07-31 — "vertical" is our internal word for
  * how the product is partitioned; "Tools" is what the thing is from the user's
- * side. The section id is unchanged so stored collapse state survives the
- * rename.
+ * side. Nothing reads the section id: SidebarScaffold saves a group's
+ * open/closed state per browser keyed by its LABEL.
  */
 export function useVerticalLauncherSection(): SidebarSection | null {
   const { data: enabled } = useEnabledVerticals()
@@ -178,7 +178,8 @@ export function useVerticalLauncherSection(): SidebarSection | null {
       id: "verticals-launcher",
       label: "Tools",
       // Rolled up by default: Tools is a catalogue you go looking for, not a
-      // list you navigate by. The user can expand it and the choice persists.
+      // list you navigate by. Once the user opens it, it stays open in that
+      // browser (SidebarScaffold saves it by label).
       defaultCollapsed: true,
       roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
       items: verticals.map((v) => toNavItem(v, entitlements.includes(v.key))),

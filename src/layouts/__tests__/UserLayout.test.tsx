@@ -176,10 +176,10 @@ describe("UserLayout", () => {
 
   test("renders the Tools section when the hook supplies one", () => {
     // Drives the layout's placement, not the gate: the hook is mocked, so this
-    // asserts that whatever section it returns is rendered intact and expanded.
+    // asserts that whatever section it returns is rendered intact, default included.
     mockLauncher.mockReturnValue({
       label: "Tools",
-      defaultCollapsed: false,
+      defaultCollapsed: true,
       items: [
         { to: "/bio", label: "Bio Capture" },
         { to: "/vertical/grant/dashboard", label: "GRANT" },
@@ -193,7 +193,7 @@ describe("UserLayout", () => {
     expect(tools[0].label).toBe("Bio Capture");
     // Unentitled catalogue entries are listed, not hidden — greyed via `disabled`.
     expect(tools.find((i) => i.label === "Honor Foundation")?.disabled).toBe(true);
-    expect(props.navSections[1].defaultCollapsed).toBe(false);
+    expect(props.navSections[1].defaultCollapsed).toBe(true);
   });
 
   test("super-admin order is My Workspace → Role Views → Tools → Administration", () => {
@@ -203,7 +203,7 @@ describe("UserLayout", () => {
     mockUseAuth.mockReturnValue({ user: { role: "super-admin" } });
     mockLauncher.mockReturnValue({
       label: "Tools",
-      defaultCollapsed: false,
+      defaultCollapsed: true,
       items: [{ to: "/vertical/grant/dashboard", label: "GRANT" }],
     });
     render(<UserLayout><div /></UserLayout>);

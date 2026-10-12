@@ -93,12 +93,14 @@ describe("useVerticalPageSections", () => {
     expect(result.current.map((s) => s.label)).toEqual(["My Workspace", "Lumen", "Tools"])
   })
 
-  it("rolls up everything EXCEPT the vertical you entered", () => {
+  it("rolls up everything EXCEPT My Workspace and the vertical you entered", () => {
     const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "user"))
     const byLabel = Object.fromEntries(
       result.current.map((s) => [s.label, { closed: s.defaultCollapsed, open: s.collapsible }]),
     )
-    expect(byLabel["My Workspace"].closed).toBe(true)
+    // Always visible since 2026-10-12: a plain group, no header toggle.
+    expect(byLabel["My Workspace"].closed).toBeUndefined()
+    expect(byLabel["My Workspace"].open).toBeUndefined()
     // Tools carries its own collapse default rather than one forced here, so it
     // does not expand and collapse as you move between vertical pages and the
     // rest of the app.

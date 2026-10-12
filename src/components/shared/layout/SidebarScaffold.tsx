@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ROUTES, STORAGE_KEYS } from "@/constants/routes";
 import { useSidebar } from "@/context/sidebar-context";
-import { getUIFlag, setUIFlag } from "@/lib/storage";
+import { getUIFlag, getUIFlagMap, setUIFlag, setUIFlagMapEntry } from "@/lib/storage";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronRight, Lock, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -109,6 +109,13 @@ export type SidebarScaffoldProps = {
 
 function isItemActive(pathname: string, item: Pick<NavItemDef, "to" | "activePrefix">): boolean {
   return item.activePrefix ? pathname.startsWith(item.activePrefix) : item.to !== "" && pathname === item.to;
+}
+
+/** True when the current page is one of the section's items, or a child of one. */
+function sectionHoldsActiveRoute(pathname: string, section: Pick<NavSectionDef, "items">): boolean {
+  return section.items.some(
+    (item) => isItemActive(pathname, item) || (item.children ?? []).some((c) => isItemActive(pathname, c)),
+  );
 }
 
 /** A nested entry: same lock / active semantics as {@link NavItem}, rendered in the sub-menu. */
@@ -241,15 +248,36 @@ function CollapsibleNavSection({
   showSeparator: boolean;
   expandOnPath?: string;
 }) {
-  // `defaultCollapsed` wins: a section is either collapsible-and-closed or
-  // (via `collapsible`) collapsible-and-open.
-  const [open, setOpen] = React.useState(!section.defaultCollapsed);
+  const location = useLocation();
+  // The page you are on is in this section: open it, whatever was saved, so a
+  // deep link or a click from another group never lands with nothing
+  // highlighted. Not saved — arriving somewhere is not a preference.
+  const holdsActive = sectionHoldsActiveRoute(location.pathname, section);
+  // Otherwise the user's last choice for this label in this browser, else the
+  // default. `defaultCollapsed` wins over `collapsible`: closed vs open. The
+  // state has to live in storage because every page mounts its own layout, so
+  // this component remounts on every navigation (CSA 2026-10-12, F5).
+  const [open, setOpen] = React.useState(() => {
+    if (holdsActive) return true;
+    const saved = section.label ? getUIFlagMap(STORAGE_KEYS.UI_NAV_SECTIONS_OPEN)[section.label] : undefined;
+    return saved ?? !section.defaultCollapsed;
+  });
+  React.useEffect(() => {
+    if (holdsActive) setOpen(true);
+  }, [holdsActive]);
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    // Keyed by label, which SidebarScaffold already requires to be unique; an
+    // unlabelled group never reaches here (it renders as a plain group).
+    if (section.label) setUIFlagMapEntry(STORAGE_KEYS.UI_NAV_SECTIONS_OPEN, section.label, next);
+  };
   const Chevron = open ? ChevronDown : ChevronRight;
   return (
     <SidebarGroup>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         aria-expanded={open}
         className="w-full flex items-center justify-between px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden"
       >

@@ -49,7 +49,7 @@ import UnifiedLayout from "../UnifiedLayout";
 
 const TOOLS_SECTION = {
   label: "Tools",
-  defaultCollapsed: false,
+  defaultCollapsed: true,
   items: [
     { to: "/manager/development", icon: () => null, label: "Team Development Studio" },
     { to: "/vertical/grant/dashboard", icon: () => null, label: "Financial Aid" },
@@ -103,7 +103,7 @@ describe("UnifiedLayout — Tools gating", () => {
     expect(labels.filter((l: string) => l === "Tools")).toHaveLength(1);
   });
 
-  test("keeps the section EXPANDED and its items intact", () => {
+  test("keeps the section's default and its items intact", () => {
     mockToolsSection.mockReturnValue(TOOLS_SECTION);
     render(
       <UnifiedLayout role="super-admin">
@@ -112,7 +112,7 @@ describe("UnifiedLayout — Tools gating", () => {
     );
     const props = mockSidebarScaffold.mock.calls[0][0];
     const tools = props.navSections.find((s: MockSection) => s.label === "Tools");
-    expect(tools.defaultCollapsed).toBe(false);
+    expect(tools.defaultCollapsed).toBe(true);
     expect(tools.items.map((i: MockItem) => i.label)).toEqual([
       "Team Development Studio",
       "Financial Aid",

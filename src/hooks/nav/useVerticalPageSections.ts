@@ -56,7 +56,8 @@ export function useVerticalPageSections(
 
   return useMemo(() => {
     const sections: NavSectionDef[] = [
-      { label: "My Workspace", items: workspaceItems, defaultCollapsed: true },
+      // Always visible: a plain group, no header toggle (Bill, 2026-10-12).
+      { label: "My Workspace", items: workspaceItems },
     ]
 
     const gate = (items: NavSectionDef["items"]) =>

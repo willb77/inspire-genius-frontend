@@ -52,6 +52,8 @@ import {
   setUser,
   getUIFlag,
   setUIFlag,
+  getUIFlagMap,
+  setUIFlagMapEntry,
 } from "../storage";
 
 describe("storage.ts — encrypted localStorage wrappers", () => {
@@ -176,3 +178,35 @@ describe("storage.ts — encrypted localStorage wrappers", () => {
     expect(getUIFlag("test_flag")).toBe(false);
   });
 });
+
+describe("getUIFlagMap / setUIFlagMapEntry", () => {
+  const KEY = "ui_nav_sections_open"
+  beforeEach(() => localStorage.clear())
+
+  it("reads absent as an empty map", () => {
+    expect(getUIFlagMap(KEY)).toEqual({})
+  })
+
+  it("adds an entry without dropping the others", () => {
+    setUIFlagMapEntry(KEY, "Tools", true)
+    setUIFlagMapEntry(KEY, "Administration", false)
+    expect(getUIFlagMap(KEY)).toEqual({ Tools: true, Administration: false })
+    setUIFlagMapEntry(KEY, "Tools", false)
+    expect(getUIFlagMap(KEY)).toEqual({ Tools: false, Administration: false })
+  })
+
+  it("reads malformed or wrongly shaped values as absent", () => {
+    localStorage.setItem(KEY, "{not json")
+    expect(getUIFlagMap(KEY)).toEqual({})
+    localStorage.setItem(KEY, "[true]")
+    expect(getUIFlagMap(KEY)).toEqual({})
+    localStorage.setItem(KEY, JSON.stringify({ Tools: "yes", Admin: true }))
+    expect(getUIFlagMap(KEY)).toEqual({ Admin: true })
+  })
+
+  it("recovers from a malformed value on the next write", () => {
+    localStorage.setItem(KEY, "{not json")
+    setUIFlagMapEntry(KEY, "Tools", true)
+    expect(getUIFlagMap(KEY)).toEqual({ Tools: true })
+  })
+})

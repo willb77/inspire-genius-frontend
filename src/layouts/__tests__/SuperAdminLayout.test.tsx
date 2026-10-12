@@ -148,7 +148,7 @@ jest.mock("@/context/useAuth", () => ({
 
 // 🔹 Capture props passed to SidebarScaffold
 type MockNavItem = { to: string; label: string; disabled?: boolean };
-type MockNavSection = { label: string; items: MockNavItem[]; defaultCollapsed?: boolean };
+type MockNavSection = { label: string; items: MockNavItem[]; defaultCollapsed?: boolean; collapsible?: boolean };
 type MockScaffoldProps = {
   navSections?: MockNavSection[];
   className?: string;
@@ -218,15 +218,18 @@ describe("SuperAdminLayout", () => {
     // defaults to null in this test's beforeEach.
     expect(props.navSections).toHaveLength(3);
     expect(props.navSections[0].label).toBe("My Workspace");
-    expect(props.navSections[0].defaultCollapsed).toBe(true);
+    // Always visible since 2026-10-12: a plain group, neither closed nor collapsible.
+    expect(props.navSections[0].defaultCollapsed).toBeUndefined();
+    expect(props.navSections[0].collapsible).toBeUndefined();
     expect(props.navSections[1].label).toBe("Role Views");
     expect(props.navSections[1].items).toHaveLength(5);
     expect(props.navSections[1].defaultCollapsed).toBe(true);
     expect(props.navSections[2].label).toBe("Administration");
     // 10 mock items minus the owner-only Dev Traffic Report (non-owner default) = 9.
     expect(props.navSections[2].items).toHaveLength(9);
-    // Administration is expanded on super-admin pages (the user is mid-task)
-    expect(props.navSections[2].defaultCollapsed).toBe(false);
+    // Closed by default since 2026-10-12; SidebarScaffold opens it on an admin
+    // page because that page is in it.
+    expect(props.navSections[2].defaultCollapsed).toBe(true);
   });
 
   test("renders administration and role view labels", () => {
@@ -317,7 +320,7 @@ describe("SuperAdminLayout", () => {
     expect(tools.items[0].disabled).toBe(true);
   });
 
-  test("renders exactly ONE 'Tools' section, expanded, in hook order", () => {
+  test("renders exactly ONE 'Tools' section, closed, in hook order", () => {
     // The merge itself moved into useToolsSection (2026-08-12) and is covered
     // there. What this layout still owns is placing that ONE section: two
     // same-labelled sections collided on SidebarScaffold's key={section.label},
@@ -325,7 +328,7 @@ describe("SuperAdminLayout", () => {
     // toggled. Count, not lookup, is the assertion that catches a regression.
     mockLauncher.mockReturnValue({
       label: "Tools",
-      defaultCollapsed: false,
+      defaultCollapsed: true,
       items: [
         { to: "/bio", icon: () => null, label: "Bio Capture" },
         { to: "/manager/development", icon: () => null, label: "Team Development Studio" },
@@ -348,9 +351,9 @@ describe("SuperAdminLayout", () => {
       "Live Interview",
       "Lumen",
     ]);
-    // Expanded — a super-admin must see and click the tools without first
-    // expanding anything, and without touching Administration.
-    expect(toolsSections[0].defaultCollapsed).toBe(false);
+    // The layout passes the hook's default through untouched (closed since
+    // 2026-10-12); it must not force Tools open the way it used to.
+    expect(toolsSections[0].defaultCollapsed).toBe(true);
     expect(screen.getByText("Team Development Studio")).toBeInTheDocument();
     expect(screen.getByText("Live Interview")).toBeInTheDocument();
   });

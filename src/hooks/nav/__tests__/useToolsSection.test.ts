@@ -108,12 +108,12 @@ describe("useToolsSection", () => {
     }
   })
 
-  it("builds exactly one section, labelled Tools and EXPANDED", () => {
-    // Expanded is the point of the request: a super-admin must see and click
-    // the tools without first expanding anything.
+  it("builds exactly one section, labelled Tools and CLOSED", () => {
+    // Closed by default (Bill, 2026-10-12), reversing the 2026-08-12 request
+    // that kept it expanded. SidebarScaffold opens it on any page it holds.
     const { result } = renderHook(() => useToolsSection("super-admin"))
     expect(result.current?.label).toBe(TOOLS_SECTION_LABEL)
-    expect(result.current?.defaultCollapsed).toBe(false)
+    expect(result.current?.defaultCollapsed).toBe(true)
   })
 
   it("gives super-admin Team Development Studio, Live Interview and Interview Studio", () => {
