@@ -484,6 +484,19 @@ export type MemberCreateInput = {
   title?: string
   department?: string
   prism?: { id: number; score: number }[]
+  /**
+   * The person's account id, set when they were picked from "Find a person".
+   * growth-service resolves on it when the email matches nothing (TDS-11).
+   */
+  memberSub?: string
+}
+
+/** What the server did about WHO the row is (growth `MemberIdentityOutcome`). */
+export type MemberIdentityOutcome = {
+  decision: string
+  reason: string
+  resolvedAccount?: boolean
+  needsReview?: boolean
 }
 
 export type MemberCreateResult = {
@@ -492,6 +505,8 @@ export type MemberCreateResult = {
   title?: string
   department?: string
   prismWritten: boolean
+  created?: boolean
+  identity?: MemberIdentityOutcome | null
 }
 
 export type BulkMemberRow = {
@@ -499,11 +514,20 @@ export type BulkMemberRow = {
   memberId?: string
   name?: string
   error?: string
+  /**
+   * T1: the row names a platform account the caller may not add (only their
+   * manager, a company admin of their org or a super admin may). `error` says so.
+   */
+  refused?: boolean
 }
 
 export type BulkMembersResult = {
   created: number
+  /** Rows not created — includes `refused`. */
   failed: number
+  existing?: number
+  /** T1: rows refused by the who-may-add guard. A subset of `failed`. */
+  refused?: number
   rows: BulkMemberRow[]
 }
 

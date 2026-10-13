@@ -48,8 +48,13 @@ jest.mock("@/hooks/manager/development", () => {
     // entry point, and a mocked-out dialog would assert nothing about it.
     useAddTeamMember: () => ({ mutateAsync: addOneMutateAsync, isPending: false }),
     useBulkAddTeamMembers: () => ({ mutateAsync: addBulkMutateAsync, isPending: false }),
+    // T1's "Find a person" — its own suite (AddMemberDialog.lookup.test) covers it.
+    usePersonLookup: () => ({ results: [], isLoading: false, isError: false }),
   }
 })
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({ hasRole: () => false }),
+}))
 
 /* ---- the org chart is a probe: its own suite covers the tree ---- */
 const orgChartProps: { memberRoute?: string } = {}

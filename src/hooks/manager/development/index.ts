@@ -29,3 +29,4 @@ export {
   useBulkAddTeamMembers,
   useDeleteTeamMember,
 } from "./useAddTeamMember"
+export { usePersonLookup, type PersonOption } from "./usePersonLookup"
