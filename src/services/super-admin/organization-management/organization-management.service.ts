@@ -227,15 +227,90 @@ export type RemoveOrganizationAgentsResponse =
 export type RemoveBusinessAgentsResponse =
   BaseApiResponse<RemoveBusinessAgentsData>;
 
+// ── org-service (/v1/orgs/*) ──────────────────────────────────────
+//
+// The page used to call the monolith's /v1/organizations/*. On every tier
+// that prefix is routed to org-service, which serves only /v1/orgs/*, so the
+// list never once returned 200 in the 30 days before 2026-10-13 and the page
+// rendered "No organizations found" over 26 organizations on dev. These are
+// the routes org-service actually serves; all four are platform-only for
+// create/delete/directory and membership-gated for a single read.
+
+/** A `public.organization` row as org-service returns it (`OrgOut`). */
+export type OrgRecord = {
+  id: string;
+  name: string;
+  contact: string;
+  type?: string | null;
+  active: boolean;
+  is_deleted?: boolean;
+  email?: string | null;
+  website_url?: string | null;
+  created_at?: string | null;
+};
+
+type OrgEnvelope<T> = { success?: boolean; data: T; message?: string };
+
+/** Every live organization, by name. GET /v1/orgs/directory (platform-only). */
+export async function listOrgs(): Promise<OrgRecord[]> {
+  const { data } = await api.get<OrgEnvelope<OrgRecord[]>>("/v1/orgs/directory");
+  return data.data ?? [];
+}
+
+function toOrganizationItem(o: OrgRecord): OrganizationItem {
+  return {
+    id: o.id,
+    name: o.name ?? "",
+    contact: o.contact ?? undefined,
+    email: o.email ?? undefined,
+    website_url: o.website_url ?? undefined,
+    status: Boolean(o.active),
+    created_at: o.created_at ?? undefined,
+    type: o.type ?? undefined,
+    // org-service has no admin fields; the page no longer shows them.
+    admin_email: "",
+  };
+}
+
+/**
+ * The organization list, paged in the browser. The directory route returns
+ * every live organization in one response (tens, not thousands), so paging
+ * here keeps the shape the list page and the Analytics card already read.
+ */
 export async function getOrganizations(params?: {
   page?: number;
   limit?: number;
-}) {
-  const { data } = await api.get<GetOrganizationsResponse>(
-    "/v1/organizations/",
-    { params }
-  );
-  return data;
+}): Promise<GetOrganizationsResponse> {
+  const page = Math.max(1, params?.page ?? 1);
+  const limit = Math.max(1, params?.limit ?? 10);
+  const all = await listOrgs();
+  const start = (page - 1) * limit;
+  return {
+    success: true,
+    data: {
+      organizations: all.slice(start, start + limit).map(toOrganizationItem),
+      total: all.length,
+      page,
+      limit,
+    },
+  };
+}
+
+/** Create an organization. POST /v1/orgs (platform-only). */
+export async function createOrg(name: string): Promise<OrgRecord> {
+  const trimmed = name.trim();
+  const slug = trimmed
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  // org-service requires owner_id in the body but does not store it (there is
+  // no owner column on public.organization); the slug is stored as `contact`.
+  const { data } = await api.post<OrgEnvelope<OrgRecord>>("/v1/orgs", {
+    name: trimmed,
+    slug: slug || "org",
+    owner_id: "",
+  });
+  return data.data;
 }
 
 export async function getRoles() {
@@ -282,6 +357,15 @@ export async function createLicense(payload: CreateLicenseRequest) {
   return data;
 }
 
+/** One organization. GET /v1/orgs/{id}. */
+export async function getOrg(orgId: string): Promise<OrgRecord> {
+  const { data } = await api.get<OrgEnvelope<OrgRecord>>(
+    `/v1/orgs/${encodeURIComponent(orgId)}`
+  );
+  return data.data;
+}
+
+/** @deprecated The monolith route this read never answers on any tier; use getOrg. */
 export async function getOrganizationViewDetail(orgId: string) {
   const { data } = await api.get<GetOrganizationViewResponse>(
     `/v1/organizations/${orgId}`
@@ -289,9 +373,10 @@ export async function getOrganizationViewDetail(orgId: string) {
   return data;
 }
 
+/** Deactivate (soft-delete) an organization. DELETE /v1/orgs/{id} (platform-only). */
 export async function deactivateOrganization(orgId: string) {
   const { data } = await api.delete<DeactivateOrganizationResponse>(
-    `/v1/organizations/${orgId}`
+    `/v1/orgs/${encodeURIComponent(orgId)}`
   );
   return data;
 }

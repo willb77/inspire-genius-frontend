@@ -114,7 +114,7 @@ function AnalyticsTab() {
   const { data: coachesData, isLoading: coachesLoading } = useCoachesList({ page: 1, limit: 20 })
   const { data: auditData, isLoading: auditLoading } = useAuditStats()
   const { data: feedbackData, isLoading: feedbackLoading } = useFeedbackStats()
-  const { data: orgsData, isLoading: orgsLoading } = useOrganizationManagement({ page: 1, limit: 10 })
+  const { data: orgsData, isLoading: orgsLoading, isError: orgsError } = useOrganizationManagement({ page: 1, limit: 10 })
 
   const totalUsers = usersData?.data?.pagination?.total
   const feedbackCount = feedbackData?.data?.total_count
@@ -175,6 +175,8 @@ function AnalyticsTab() {
         <DataCard title="Organizations" className="!mt-0">
           {orgsLoading ? (
             <div className="flex items-center justify-center h-[220px] text-sm text-[#6b7280]">Loading organizations...</div>
+          ) : orgsError ? (
+            <div role="alert" className="flex items-center justify-center h-[220px] text-sm text-red-600">Couldn&apos;t load organizations</div>
           ) : orgCompare.length === 0 ? (
             <div className="flex items-center justify-center h-[220px] text-sm text-[#6b7280]">No organizations yet</div>
           ) : (

@@ -10,6 +10,9 @@ import {
   getOrganizationAgents,
   removeCoachesFromOrganization,
   removeCoachesFromBusiness,
+  listOrgs,
+  getOrg,
+  createOrg,
 } from "../organization-management.service"; // adjust path if needed
 
 import { api } from "@/lib/axios";
@@ -40,28 +43,52 @@ describe("Organizations Service API", () => {
   /* ---------------------------------- */
   /* getOrganizations                   */
   /* ---------------------------------- */
-  it("should fetch organizations with pagination params", async () => {
-    mockedApi.get.mockResolvedValueOnce({
-      data: {
-        ...mockBaseResponse,
-        data: {
-          organizations: [],
-          total: 0,
-          page: 1,
-          limit: 10,
-        },
-      },
+  it("lists organizations from org-service's directory and pages them in the browser", async () => {
+    const orgs = Array.from({ length: 12 }, (_, i) => ({
+      id: `o${i}`,
+      name: `Org ${i}`,
+      contact: "c",
+      type: "CORPORATE",
+      active: i !== 11,
+    }));
+    mockedApi.get.mockResolvedValueOnce({ data: { success: true, data: orgs } });
+
+    const result = await getOrganizations({ page: 2, limit: 10 });
+
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/orgs/directory");
+    expect(result.data!.total).toBe(12);
+    expect(result.data!.page).toBe(2);
+    expect(result.data!.organizations.map((o) => o.id)).toEqual(["o10", "o11"]);
+    expect(result.data!.organizations[1].status).toBe(false);
+    expect(result.data!.organizations[0]).toMatchObject({ name: "Org 10", type: "CORPORATE", status: true });
+  });
+
+  it("propagates a failed directory read instead of returning an empty list", async () => {
+    mockedApi.get.mockRejectedValueOnce(Object.assign(new Error("Forbidden"), { response: { status: 403 } }));
+    await expect(getOrganizations({ page: 1, limit: 10 })).rejects.toThrow("Forbidden");
+  });
+
+  it("listOrgs returns [] only when the directory itself is empty", async () => {
+    mockedApi.get.mockResolvedValueOnce({ data: { success: true, data: [] } });
+    await expect(listOrgs()).resolves.toEqual([]);
+  });
+
+  it("getOrg reads one organization from org-service", async () => {
+    mockedApi.get.mockResolvedValueOnce({ data: { success: true, data: { id: "a b", name: "A", contact: "", active: true } } });
+    const org = await getOrg("a b");
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/orgs/a%20b");
+    expect(org.name).toBe("A");
+  });
+
+  it("createOrg posts name and a derived slug to org-service", async () => {
+    mockedApi.post.mockResolvedValueOnce({ data: { success: true, data: { id: "n", name: "Three PP Inc.", contact: "three-pp-inc", active: true } } });
+    const org = await createOrg("  Three PP Inc.  ");
+    expect(mockedApi.post).toHaveBeenCalledWith("/v1/orgs", {
+      name: "Three PP Inc.",
+      slug: "three-pp-inc",
+      owner_id: "",
     });
-
-    const result = await getOrganizations({ page: 1, limit: 10 });
-
-    expect(mockedApi.get).toHaveBeenCalledWith("/v1/organizations/", {
-      params: { page: 1, limit: 10 },
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.data).toBeDefined();
-    expect(result.data!.organizations).toEqual([]);
+    expect(org.id).toBe("n");
   });
 
   /* ---------------------------------- */
@@ -234,7 +261,7 @@ describe("Organizations Service API", () => {
 
     const result = await deactivateOrganization("org-1");
 
-    expect(mockedApi.delete).toHaveBeenCalledWith("/v1/organizations/org-1");
+    expect(mockedApi.delete).toHaveBeenCalledWith("/v1/orgs/org-1");
 
     expect(result.success).toBe(true);
   });

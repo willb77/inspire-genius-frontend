@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import SuperAdminOrganizations from "../OrganizationManagement"
 import React from "react"
 
@@ -38,6 +38,11 @@ jest.mock("@/components/shared/forms/ConfirmActionModal", () => ({
 jest.mock("@/components/super-admin/organization/AddOrganizations", () => ({
   __esModule: true,
   default: () => <div data-testid="add-organization" />,
+}))
+
+jest.mock("@/components/super-admin/organization/CreateOrganizationDialog", () => ({
+  __esModule: true,
+  default: () => <div data-testid="create-organization" />,
 }))
 
 jest.mock("@/components/super-admin/ManagementHeader", () => ({
@@ -100,7 +105,38 @@ describe("SuperAdminOrganizations", () => {
       refetch: jest.fn(),
     })
     render(<SuperAdminOrganizations />)
-    expect(screen.getByText("No organizations found")).toBeInTheDocument()
+    expect(screen.getByText("There are no organizations yet.")).toBeInTheDocument()
+  })
+
+  // OM-F1: every read failed for 30 days and the page said "No organizations
+  // found". A failed read must say so, and must not look like an empty list.
+  it("shows an error, not an empty list, when the read fails", () => {
+    mockUseOrganizationManagement.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 404 } },
+      refetch: jest.fn(),
+    })
+    render(<SuperAdminOrganizations />)
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't load organizations (HTTP 404)")
+    expect(screen.queryByText("There are no organizations yet.")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("data-table")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("pagination")).not.toBeInTheDocument()
+  })
+
+  it("retries the read from the error state", () => {
+    const refetch = jest.fn()
+    mockUseOrganizationManagement.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: {},
+      refetch,
+    })
+    render(<SuperAdminOrganizations />)
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }))
+    expect(refetch).toHaveBeenCalled()
   })
 
   it("wraps content in SuperAdminLayout", () => {
