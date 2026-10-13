@@ -259,3 +259,17 @@ it("offers prompts on the Notes tab — the prompt lookup is indexed, not defaul
   render(<MeridianDevelopmentPanel memberId="m1" memberName="Dana Whitfield" tab="notes" goals={[]} gaps={[]} />)
   expect(screen.getByRole("button", { name: /turn my last observation into a plan/i })).toBeInTheDocument()
 })
+
+describe("Export (T2)", () => {
+  it("shows Export in the tile header, disabled while the conversation is empty", () => {
+    renderPanel()
+    expect(screen.getByTestId("meridian-export-trigger")).toBeDisabled()
+  })
+
+  it("enables Export once there is a conversation on screen", () => {
+    renderPanel()
+    fireEvent.change(screen.getByLabelText(/ask meridian about this member/i), { target: { value: "Hello" } })
+    fireEvent.click(screen.getByRole("button", { name: /send/i }))
+    expect(screen.getByTestId("meridian-export-trigger")).toBeEnabled()
+  })
+})

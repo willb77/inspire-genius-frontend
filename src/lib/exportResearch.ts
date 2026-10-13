@@ -131,7 +131,7 @@ export async function exportResearchPdf(payload: ResearchExportPayload): Promise
  * would be worse than plainly rendered text: the operator would not know
  * anything was missing.
  */
-async function markdownToDocxParagraphs(markdown: string) {
+export async function markdownToDocxParagraphs(markdown: string) {
   const { Paragraph, HeadingLevel, TextRun } = await import("docx")
   const out: InstanceType<typeof Paragraph>[] = []
   for (const rawLine of markdown.split(/\r?\n/)) {
