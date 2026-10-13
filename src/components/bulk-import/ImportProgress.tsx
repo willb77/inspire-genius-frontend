@@ -42,6 +42,14 @@ export function ImportProgress({ isLoading, data, onContinue }: ImportProgressPr
   const employmentLinked =
     data?.employment_linked ??
     (data?.results ?? []).filter((r) => r.employment === "linked").length
+  // Rows ready for the Invitation Composer. Only shown when the server reports
+  // it: counting it here would just repeat `succeeded`, which is how a staging
+  // failure hid behind "0 emails sent" until 2026-10-13.
+  const invitationsStaged = data?.invitations_staged
+  const invitationsFailed = data?.invitations_failed
+  const hasInvitationCount =
+    typeof invitationsStaged === "number" && typeof invitationsFailed === "number"
+  const invitationsTotal = hasInvitationCount ? invitationsStaged + invitationsFailed : 0
   const progressPercent = total > 0 ? Math.round((processed / total) * 100) : 0
   const isComplete = !isLoading && !!data
 
@@ -108,7 +116,26 @@ export function ImportProgress({ isLoading, data, onContinue }: ImportProgressPr
               Reporting line set: {employmentLinked}/{employmentRequested}
             </Badge>
           )}
+          {hasInvitationCount && invitationsTotal > 0 && (
+            <Badge
+              className={cn(
+                "text-sm",
+                invitationsFailed === 0
+                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                  : "bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300"
+              )}
+            >
+              Invitations ready: {invitationsStaged} of {invitationsTotal}
+            </Badge>
+          )}
         </div>
+        {hasInvitationCount && (invitationsFailed ?? 0) > 0 && (
+          <p role="alert" className="text-sm text-amber-800 dark:text-amber-300">
+            {invitationsFailed === 1 ? "1 imported person" : `${invitationsFailed} imported people`} could
+            not be prepared for an invitation, so an invitation sent from this import will not reach
+            them. Their accounts were still created.
+          </p>
+        )}
 
         {/* Per-user result list */}
         {data?.results && data.results.length > 0 && (
