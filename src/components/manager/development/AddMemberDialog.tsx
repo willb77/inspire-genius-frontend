@@ -4,6 +4,11 @@
  * Members are created under the calling manager (growth-service
  * `POST /v1/growth/members` and `/members/bulk`); the roster query is
  * invalidated on success so new cards appear immediately.
+ *
+ * T1: "Find a person" picks someone with an account and sends their id as
+ * `memberSub`. The server adds a person who has an account only for their
+ * manager, a company admin of their organisation or a super admin, and says
+ * so in words otherwise — that refusal is rendered here, never swallowed.
  */
 import { useRef, useState } from "react"
 import { toast } from "sonner"
@@ -25,8 +30,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   useAddTeamMember,
   useBulkAddTeamMembers,
+  type PersonOption,
 } from "@/hooks/manager/development"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import type { MemberCreateInput } from "@/types/development"
+import { PersonLookup } from "./PersonLookup"
 
 /** Parse a simple `name,email,title,department` CSV (optional header row). */
 export function parseMemberCsv(text: string): MemberCreateInput[] {
@@ -58,6 +66,8 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
   const [title, setTitle] = useState("")
   const [department, setDepartment] = useState("")
   const [csv, setCsv] = useState("")
+  const [picked, setPicked] = useState<PersonOption | null>(null)
+  const [addError, setAddError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const addOne = useAddTeamMember()
@@ -68,6 +78,18 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
     setEmail("")
     setTitle("")
     setDepartment("")
+    setPicked(null)
+    setAddError(null)
+  }
+
+  const pick = (person: PersonOption | null) => {
+    setPicked(person)
+    setAddError(null)
+    if (!person) return
+    setName(person.name)
+    setEmail(person.email ?? "")
+    setTitle(person.title ?? "")
+    setDepartment(person.department ?? "")
   }
 
   const submitSingle = async () => {
@@ -75,18 +97,31 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
       toast.error("Name is required")
       return
     }
+    setAddError(null)
     try {
-      await addOne.mutateAsync({
+      const result = await addOne.mutateAsync({
         name: name.trim(),
         email: email.trim() || undefined,
         title: title.trim() || undefined,
         department: department.trim() || undefined,
+        memberSub: picked?.id,
       })
-      toast.success(`Added ${name.trim()} to your team`)
+      if (picked && result?.identity && result.identity.resolvedAccount === false) {
+        // Resolution is scoped to the caller's own organisation, so a person
+        // picked from another one is added as a card that is not linked to
+        // their account. Say so rather than imply the link was made.
+        toast.success(
+          `Added ${name.trim()} to your team, but not linked to their account: ${result.identity.reason}`,
+        )
+      } else {
+        toast.success(`Added ${name.trim()} to your team`)
+      }
       resetSingle()
       setOpen(false)
-    } catch {
-      toast.error("Couldn't add the member. Please try again.")
+    } catch (err) {
+      const message = apiErrorMessage(err, "Couldn't add the member. Please try again.")
+      setAddError(message)
+      toast.error(message)
     }
   }
 
@@ -100,9 +135,16 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
       const result = await addBulk.mutateAsync(members)
       const created = result?.created ?? 0
       const failed = result?.failed ?? 0
+      const refused = result?.refused ?? 0
       toast.success(
         `Added ${created} member${created === 1 ? "" : "s"}${failed ? ` — ${failed} skipped` : ""}`,
       )
+      if (refused) {
+        toast.error(
+          `${refused} ${refused === 1 ? "person has" : "people have"} an account you can't add: ` +
+            "only their manager, a company admin of their organisation or a super admin can.",
+        )
+      }
       setCsv("")
       setOpen(false)
     } catch {
@@ -142,6 +184,7 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
           </TabsList>
 
           <TabsContent value="single" className="space-y-3 pt-3">
+            <PersonLookup selected={picked} onSelect={pick} />
             <div className="space-y-1.5">
               <Label htmlFor="member-name">Name</Label>
               <Input
@@ -181,6 +224,11 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
                 placeholder="jordan@company.com"
               />
             </div>
+            {addError && (
+              <p role="alert" className="text-sm text-destructive">
+                {addError}
+              </p>
+            )}
             <DialogFooter>
               <Button onClick={submitSingle} disabled={addOne.isPending}>
                 {addOne.isPending ? "Adding…" : "Add member"}

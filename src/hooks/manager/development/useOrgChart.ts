@@ -10,8 +10,9 @@ import { developmentKeys } from "./queryKeys"
  * round trip rather than the ~60s a member dossier can cost. Cached for the
  * session: reporting lines change on the scale of weeks, not clicks.
  */
-export function useOrgChart() {
+export function useOrgChart(options: { enabled?: boolean } = {}) {
   return useQuery<OrgChartResponse>({
+    enabled: options.enabled ?? true,
     queryKey: developmentKeys.orgChart(),
     queryFn: async () => {
       const r = await getOrgChart()
