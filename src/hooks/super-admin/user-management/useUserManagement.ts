@@ -17,6 +17,8 @@ import {
   changeUserRole,
   getUserInvitation,
   updateInvitationExpiry,
+  setUserManager,
+  type SetUserManagerData,
   type GetUsersParams,
   type GetUsersResponse,
   type InviteUserPayload,
@@ -149,6 +151,33 @@ export function useChangeUserRole() {
         error.message ||
         "Failed to change user role";
       toast.error(msg);
+    },
+  });
+}
+
+/** Set or clear one user's manager; refreshes the user lists. */
+export function useSetUserManager() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    BaseApiResponse<SetUserManagerData>,
+    AxiosError<BaseApiResponse<null> & { detail?: string }>,
+    { user_id: string; manager_user_id: string | null }
+  >({
+    mutationFn: ({ user_id, manager_user_id }) => setUserManager(user_id, manager_user_id),
+    onSuccess: (resp) => {
+      toast.success(
+        resp.data?.manager_user_id
+          ? `Manager set to ${resp.data.manager_name ?? "the selected person"}`
+          : "Manager cleared"
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["super-admin", "user-management"],
+        exact: false,
+      });
+    },
+    onError: (error) => {
+      const data = error.response?.data;
+      toast.error(data?.message || data?.detail || error.message || "Failed to update manager");
     },
   });
 }

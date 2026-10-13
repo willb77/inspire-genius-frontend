@@ -21,6 +21,10 @@ export type UserManagementUser = {
   // user_profiles.org_id. Absent on a backend older than the org picker,
   // which the UI reads as "unknown" — never as "no organisation".
   organization_id?: string | null
+  // The reporting line (employee_profiles.manager_id) as the manager's user
+  // id and name. Absent on an older backend; null when there is no line.
+  manager_user_id?: string | null
+  manager_name?: string | null
 }
 
 export type UserManagementPagination = {
@@ -173,6 +177,29 @@ export async function changeUserRole(user_id: string, payload: ChangeUserRolePay
   const { data } = await api.put<ChangeUserRoleResponse>(
     `/v1/user-management/users/${encodeURIComponent(user_id)}/role`,
     payload
+  )
+  return data
+}
+
+// ------------------ SET / CLEAR MANAGER (auth-service) ------------------
+//
+// PUT /v1/user-management/users/{user_id}/manager. Super-admin only. null
+// clears the line. The server refuses a manager outside the user's
+// organization (409) and a user managing themself (400), with words.
+
+export type SetUserManagerData = {
+  user_id: string
+  changed: boolean
+  previous_manager_user_id: string | null
+  previous_manager_name: string | null
+  manager_user_id: string | null
+  manager_name: string | null
+}
+
+export async function setUserManager(user_id: string, manager_user_id: string | null) {
+  const { data } = await api.put<BaseApiResponse<SetUserManagerData>>(
+    `/v1/user-management/users/${encodeURIComponent(user_id)}/manager`,
+    { manager_user_id }
   )
   return data
 }
