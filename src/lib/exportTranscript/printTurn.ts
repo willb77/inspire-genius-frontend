@@ -19,8 +19,15 @@ export function printTurn(input: TurnExportInput): void {
   if (!input.body?.trim()) {
     throw new Error("Nothing to print — this response has no text.");
   }
-  const html = buildTurnHtml(input);
+  printHtml(buildTurnHtml(input));
+}
 
+/**
+ * Print a complete HTML document through the hidden iframe. Shared by
+ * `printTurn` and any export that builds its own document (the TDS Meridian
+ * conversation export), so every printout takes the same popup-safe path.
+ */
+export function printHtml(html: string): void {
   const frame = document.createElement("iframe");
   // Off-screen rather than `display:none` — Safari refuses to print a frame
   // that was never laid out.
