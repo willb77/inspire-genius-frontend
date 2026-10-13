@@ -84,6 +84,12 @@ export type BulkImportResponse = {
    *  `succeeded` because "50 imported, 0 attached to a manager" is the failure
    *  the Manager column exists to prevent, and one number cannot show it. */
   employment_linked?: number
+  /** Imported rows staged for the Invitation Composer, and rows that were not.
+   *  Staging never fails the import, so this is the only place its outcome
+   *  shows: an unstaged row has no recipient in a later send. Absent until the
+   *  tier's user-service carries the field — show nothing rather than guess. */
+  invitations_staged?: number
+  invitations_failed?: number
 }
 
 export type BulkImportStatusResponse = {
