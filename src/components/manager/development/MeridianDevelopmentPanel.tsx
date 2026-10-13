@@ -37,6 +37,7 @@ import {
 } from "@/hooks/manager/development"
 import type { Milestone, SummitGoal, DevelopmentGap } from "@/types/development"
 import { useDevSkin } from "./skin"
+import { MeridianExportMenu } from "./MeridianExportMenu"
 
 type DevTab =
   | "profile"
@@ -311,10 +312,18 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
           </div>
         </div>
         {/* Continue a Summit goal-discovery session (resume = continue, not a CV). */}
+        {/* T2: export the conversation on screen. Browser-only; "Email" opens
+            the manager's mail client, never a server send. */}
+        <div className="ml-auto">
+          <MeridianExportMenu
+            memberName={memberName}
+            managerName={user?.fullName || user?.name || user?.email || ""}
+            turns={turns}
+          />
+        </div>
         <Button
           size="sm"
           variant="outline"
-          className="ml-auto"
           onClick={() => session.mutate("resume")}
           disabled={session.isPending}
         >
