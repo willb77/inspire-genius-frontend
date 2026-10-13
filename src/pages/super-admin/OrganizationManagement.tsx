@@ -8,11 +8,12 @@ import {
   type Column,
 } from "@/components/super-admin/organization/DataTable";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 // NOTE: Removed unused duplicate import; restore via git history if needed.
 import ActionMenu from "@/components/shared/ActionMenu";
 import Pagination from "@/components/shared/Pagination";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
-import AddOrganization from "@/components/super-admin/organization/AddOrganizations";
+import CreateOrganizationDialog from "@/components/super-admin/organization/CreateOrganizationDialog";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
 import {
   useOrganizationManagement,
@@ -27,7 +28,7 @@ export default function SuperAdminOrganizations() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const { data, isLoading, refetch } = useOrganizationManagement({
+  const { data, isLoading, isError, error, refetch } = useOrganizationManagement({
     page,
     limit: pageSize,
   });
@@ -48,7 +49,7 @@ export default function SuperAdminOrganizations() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const [selected, setSelected] = useState<OrganizationRow | null>(null);
-  const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [confirmMode, setConfirmMode] = useState(false);
 
   const { mutate: deactivateOrg, isPending } = useDeactivateOrganization({
@@ -59,7 +60,8 @@ export default function SuperAdminOrganizations() {
       setSelected(null);
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to deactivate organization");
+      const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
+      toast.error(detail || err.message || "Failed to deactivate organization");
     },
   });
 
@@ -103,13 +105,9 @@ export default function SuperAdminOrganizations() {
           align="end"
           showView
           showEdit={false}
-          showDeactivate
-          showResend={!row.admin_is_active}
+          showDeactivate={row.status === "Active"}
+          showResend={false}
           onView={() => handleView(row)}
-          onEdit={() => {
-            setSelected(row);
-            setModalMode("edit");
-          }}
           onDeactivate={() => {
             setSelected(row);
             setConfirmMode(true);
@@ -125,7 +123,7 @@ export default function SuperAdminOrganizations() {
         <ManagementHeader
           title="Organization Management"
           addLabel="Add Organization"
-          onAdd={() => setModalMode("add")}
+          onAdd={() => setCreateOpen(true)}
         />
 
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
@@ -136,19 +134,35 @@ export default function SuperAdminOrganizations() {
               </div>
             </div>
           )}
-          {!isLoading && rows.length === 0 && (
+          {/* A failed read is never shown as an empty list: until 2026-10-13
+              this page said "No organizations found" over every 401/404. */}
+          {!isLoading && isError && (
+            <div
+              role="alert"
+              className="flex flex-col items-center justify-center h-full gap-3"
+            >
+              <div className="text-sm text-red-600">
+                Couldn&apos;t load organizations
+                {error?.response?.status ? ` (HTTP ${error.response.status})` : ""}.
+              </div>
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                Try again
+              </Button>
+            </div>
+          )}
+          {!isLoading && !isError && rows.length === 0 && (
             <div className="flex items-center justify-center h-full">
               <div className="text-sm text-muted-foreground">
-                No organizations found
+                There are no organizations yet.
               </div>
             </div>
           )}
-          {!isLoading && rows.length > 0 && (
+          {!isLoading && !isError && rows.length > 0 && (
             <DataTable columns={columns} data={rows} />
           )}
         </div>
 
-        {!isLoading && rows.length > 0 && (
+        {!isLoading && !isError && rows.length > 0 && (
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div>
               Showing {Math.min(pageSize, total - (page - 1) * pageSize)} of{" "}
@@ -163,27 +177,10 @@ export default function SuperAdminOrganizations() {
         )}
       </div>
 
-      {/* Add Organization Modal - Only Step 1 */}
-      <AddOrganization
-        open={!!modalMode}
-        onOpenChange={(open) => {
-          if (!open) {
-            setModalMode(null);
-            setSelected(null);
-          }
-        }}
-        mode={modalMode ?? "add"}
-        flowType="organization-only" // Only show organization info step
-        initialData={
-          modalMode === "edit" && selected
-            ? {
-                organization_name: selected.name,
-              }
-            : undefined
-        }
-        onSubmit={() => {
-          refetch();
-        }}
+      <CreateOrganizationDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={() => refetch()}
       />
 
       {/* Confirm Deactivate Modal */}
@@ -196,7 +193,7 @@ export default function SuperAdminOrganizations() {
           }
         }}
         title="Deactivate Organization?"
-        description="Are you sure you want to deactivate this organization?"
+        description="The organization is hidden from every list. Its members keep their accounts and stay linked to it."
         fields={[{ label: "Organization Name", value: selected?.name ?? "" }]}
         confirmLabel={isPending ? "Deactivating..." : "Deactivate"}
         confirmVariant="destructive"

@@ -130,11 +130,13 @@ jest.mock("@/hooks/feedback/useFeedback", () => ({
   }),
 }))
 
+const mockOrgs = jest.fn(() => ({
+  data: { data: { organizations: [{ name: "TestOrg", status: true }], total: 1 } },
+  isLoading: false,
+  isError: false,
+}))
 jest.mock("@/hooks/super-admin/organization-management/useOrganizationManagement", () => ({
-  useOrganizationManagement: () => ({
-    data: { data: { organizations: [{ name: "TestOrg", status: true }], total: 1 } },
-    isLoading: false,
-  }),
+  useOrganizationManagement: () => mockOrgs(),
 }))
 
 function renderWithProviders(
@@ -187,5 +189,12 @@ describe("SuperAdminAnalytics", () => {
     renderWithProviders(<SuperAdminAnalytics />)
     expect(screen.getByText("TestOrg")).toBeInTheDocument()
     expect(screen.getByText("1 total organizations")).toBeInTheDocument()
+  })
+
+  it("says the organization read failed instead of 'No organizations yet'", () => {
+    mockOrgs.mockReturnValueOnce({ data: undefined as never, isLoading: false, isError: true })
+    renderWithProviders(<SuperAdminAnalytics />)
+    expect(screen.getByText("Couldn't load organizations")).toBeInTheDocument()
+    expect(screen.queryByText("No organizations yet")).not.toBeInTheDocument()
   })
 })

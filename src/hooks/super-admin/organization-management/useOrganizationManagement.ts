@@ -32,7 +32,30 @@ import {
   removeCoachesFromOrganization,
   type RemoveBusinessAgentsResponse,
   removeCoachesFromBusiness,
+  getOrg,
+  createOrg,
+  type OrgRecord,
 } from "@/services/super-admin/organization-management/organization-management.service";
+
+/** One organization from org-service. Off until `orgId` is known. */
+export function useOrg(orgId?: string) {
+  return useQuery<OrgRecord, AxiosError>({
+    queryKey: ["org", orgId],
+    queryFn: () => getOrg(orgId as string),
+    enabled: !!orgId,
+    retry: false,
+  });
+}
+
+/** Create an organization by name (POST /v1/orgs). */
+export function useCreateOrg(
+  options?: UseMutationOptions<OrgRecord, AxiosError<{ detail?: string }>, string>
+) {
+  return useMutation<OrgRecord, AxiosError<{ detail?: string }>, string>({
+    mutationFn: (name: string) => createOrg(name),
+    ...options,
+  });
+}
 
 export function useOrganizationManagement(
   params: { page: number; limit: number },
