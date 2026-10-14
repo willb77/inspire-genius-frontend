@@ -11,6 +11,11 @@ const shareMutate = jest.fn()
 const updateMutate = jest.fn()
 let sharePending = false
 
+jest.mock("sonner", () => ({
+  toast: { success: jest.fn(), error: jest.fn(), warning: jest.fn() },
+}))
+import { toast } from "sonner"
+
 jest.mock("@/hooks/manager/development", () => ({
   useSharePlan: jest.fn(() => ({ mutate: shareMutate, isPending: sharePending })),
   useUpdateMilestone: jest.fn(() => ({ mutate: updateMutate, isPending: false })),
@@ -59,7 +64,10 @@ function ms(over: Partial<Milestone> & Pick<Milestone, "milestoneId" | "title" |
 }
 
 beforeEach(() => {
-  shareMutate.mockClear()
+  jest.mocked(toast.success).mockClear()
+  jest.mocked(toast.error).mockClear()
+  jest.mocked(toast.warning).mockClear()
+  shareMutate.mockReset()
   updateMutate.mockClear()
   sharePending = false
 })
@@ -182,16 +190,54 @@ describe("RoadmapTimeline", () => {
     expect(screen.getByText("1 learning item(s)")).toBeInTheDocument()
   })
 
-  it("Share plan asks for the PDF and is disabled while a share is pending", () => {
+  it("Share plan sends no PDF request and is disabled while a share is pending", () => {
     const one = [ms({ milestoneId: "a", title: "A", horizon: "d30", status: "planned" })]
     const { unmount } = render(<RoadmapTimeline memberId="m-1" milestones={one} goals={goals} />)
     fireEvent.click(screen.getByRole("button", { name: /Share plan/i }))
-    expect(shareMutate).toHaveBeenCalledWith({ includePdf: true })
+    // OM-F3: no PDF exists on the server side; the T2 export covers documents.
+    expect(shareMutate).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ onSuccess: expect.any(Function), onError: expect.any(Function) }),
+    )
     unmount()
 
     sharePending = true
     render(<RoadmapTimeline memberId="m-1" milestones={one} goals={goals} />)
     expect(screen.getByRole("button", { name: /Share plan/i })).toBeDisabled()
+  })
+
+  it.each([
+    [{ notified: true, alreadySent: false }, "success", "Sent to Test Member's notifications."],
+    [{ notified: false, alreadySent: true }, "success", "Already sent to Test Member today."],
+    [
+      { notified: false, alreadySent: false },
+      "warning",
+      "Couldn't notify Test Member; their plan is still on their My Development page.",
+    ],
+  ] as const)("Share plan says what the server did: %j", (result, kind, text) => {
+    shareMutate.mockImplementation((_v: unknown, opts: { onSuccess: (r: unknown) => void }) =>
+      opts.onSuccess(result),
+    )
+    const one = [ms({ milestoneId: "a", title: "A", horizon: "d30", status: "planned" })]
+    render(<RoadmapTimeline memberId="m-1" memberName="Test Member" milestones={one} goals={goals} />)
+    fireEvent.click(screen.getByRole("button", { name: /Share plan/i }))
+    expect(toast[kind]).toHaveBeenCalledWith(text)
+  })
+
+  it("Share plan reports a failure, and names 'the member' when no name is given", () => {
+    const one = [ms({ milestoneId: "a", title: "A", horizon: "d30", status: "planned" })]
+    shareMutate.mockImplementation((_v: unknown, opts: { onError: () => void }) => opts.onError())
+    const { unmount } = render(<RoadmapTimeline memberId="m-1" milestones={one} goals={goals} />)
+    fireEvent.click(screen.getByRole("button", { name: /Share plan/i }))
+    expect(toast.error).toHaveBeenCalledWith("Couldn't share the plan. Try again.")
+    unmount()
+
+    shareMutate.mockImplementation((_v: unknown, opts: { onSuccess: (r: unknown) => void }) =>
+      opts.onSuccess({ notified: true }),
+    )
+    render(<RoadmapTimeline memberId="m-1" milestones={one} goals={goals} />)
+    fireEvent.click(screen.getByRole("button", { name: /Share plan/i }))
+    expect(toast.success).toHaveBeenCalledWith("Sent to the member's notifications.")
   })
 
   it("changing a milestone's status sends that milestone id and the new status", () => {

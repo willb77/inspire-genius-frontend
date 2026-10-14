@@ -539,12 +539,19 @@ export function getMemberFitMatches(memberId: string) {
 
 export type SharePlanInput = {
   message?: string
-  includePdf?: boolean
 }
 
-/** POST /members/{id}/share — share the plan with the member. */
+/** What the server says a share did (growth `ShareResult`). `notified` and
+ *  `alreadySent` are absent on a server that predates OM-F3. */
+export type SharePlanResult = {
+  memberId?: string
+  notified?: boolean
+  alreadySent?: boolean
+}
+
+/** POST /members/{id}/share — notify the member that their plan was shared (in-app). */
 export function sharePlan(memberId: string, input: SharePlanInput = {}) {
-  return getApi().post<BaseApiResponse<{ shared: boolean; sharedAt?: string }>>(
+  return getApi().post<BaseApiResponse<SharePlanResult>>(
     `${BASE}/members/${memberId}/share`,
     input,
   )

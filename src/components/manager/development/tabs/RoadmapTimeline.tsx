@@ -5,6 +5,7 @@
  * for accessibility and narrow viewports.
  */
 import { AlertTriangle, CheckCircle2, Share2 } from "lucide-react"
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -24,6 +25,7 @@ import {
 import type { Milestone, MilestoneStatus, SummitGoal } from "@/types/development"
 import { useSharePlan, useUpdateMilestone } from "@/hooks/manager/development"
 import { useDevSkin } from "../skin"
+import { sharePlanToast, SHARE_PLAN_ERROR } from "../sharePlanToast"
 
 const STATUS_BADGE: Record<MilestoneStatus, "default" | "secondary" | "destructive" | "outline"> = {
   planned: "outline",
@@ -81,12 +83,20 @@ function MilestoneItem({
 
 export type RoadmapTimelineProps = {
   memberId: string
+  /** Named in the share toast; falls back to "the member". */
+  memberName?: string
   milestones: Milestone[]
   goals: SummitGoal[]
   trajectory?: "on_track" | "at_risk"
 }
 
-export function RoadmapTimeline({ memberId, milestones, goals, trajectory }: RoadmapTimelineProps) {
+export function RoadmapTimeline({
+  memberId,
+  memberName,
+  milestones,
+  goals,
+  trajectory,
+}: RoadmapTimelineProps) {
   const sk = useDevSkin()
   const share = useSharePlan(memberId)
   const update = useUpdateMilestone(memberId)
@@ -130,7 +140,16 @@ export function RoadmapTimeline({ memberId, milestones, goals, trajectory }: Roa
             <div className={cn("text-xs", sk.text500)}>Next best action: {nextBestAction}</div>
           </div>
         </div>
-        <Button size="sm" onClick={() => share.mutate({ includePdf: true })} disabled={share.isPending}>
+        <Button
+          size="sm"
+          onClick={() =>
+            share.mutate(undefined, {
+              onSuccess: (result) => sharePlanToast(result, memberName),
+              onError: () => toast.error(SHARE_PLAN_ERROR),
+            })
+          }
+          disabled={share.isPending}
+        >
           <Share2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
           Share plan
         </Button>
