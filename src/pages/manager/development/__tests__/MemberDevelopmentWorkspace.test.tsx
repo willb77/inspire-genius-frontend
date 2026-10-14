@@ -367,31 +367,36 @@ describe("MemberDevelopmentWorkspace — tabs and header", () => {
     expect(toast.success).toHaveBeenCalledWith("Dossier exported as PDF.")
   })
 
+  // OM-F3: the share toasts name the member from the same fixture the
+  // heading uses, so no new literal name is added to this public repo.
   it.each([
-    [{ notified: true, alreadySent: false }, "success", "Sent to Gary Burnette's notifications."],
-    [{ notified: false, alreadySent: true }, "success", "Already sent to Gary Burnette today."],
+    [{ notified: true, alreadySent: false }, "success", (n: string) => `Sent to ${n}'s notifications.`],
+    [{ notified: false, alreadySent: true }, "success", (n: string) => `Already sent to ${n} today.`],
     [
       { notified: false, alreadySent: false },
       "warning",
-      "Couldn't notify Gary Burnette; their plan is still on their My Development page.",
+      (n: string) => `Couldn't notify ${n}; their plan is still on their My Development page.`,
     ],
   ] as const)("Share says what the server did: %j", async (result, kind, text) => {
-    dossierState = { data: dossier(), isLoading: false, isError: false }
+    const d = dossier()
+    const who = d.member.name
+    dossierState = { data: d, isLoading: false, isError: false }
     shareMutate.mockImplementation((_v: unknown, opts: { onSuccess: (r: unknown) => void }) =>
       opts.onSuccess(result),
     )
     renderAt("/manager/development/m-1")
-    await screen.findByRole("heading", { name: "Gary Burnette" })
+    await screen.findByRole("heading", { name: who })
     fireEvent.click(screen.getByRole("button", { name: "Share with member" }))
-    expect(toast[kind]).toHaveBeenCalledWith(text)
-    expect(toast.success).not.toHaveBeenCalledWith("Development plan shared with Gary Burnette.")
+    expect(toast[kind]).toHaveBeenCalledWith(text(who))
+    expect(toast.success).not.toHaveBeenCalledWith(`Development plan shared with ${who}.`)
   })
 
   it("a failed share says so", async () => {
-    dossierState = { data: dossier(), isLoading: false, isError: false }
+    const d = dossier()
+    dossierState = { data: d, isLoading: false, isError: false }
     shareMutate.mockImplementation((_v: unknown, opts: { onError: () => void }) => opts.onError())
     renderAt("/manager/development/m-1")
-    await screen.findByRole("heading", { name: "Gary Burnette" })
+    await screen.findByRole("heading", { name: d.member.name })
     fireEvent.click(screen.getByRole("button", { name: "Share with member" }))
     expect(toast.error).toHaveBeenCalledWith("Couldn't share the plan. Try again.")
   })

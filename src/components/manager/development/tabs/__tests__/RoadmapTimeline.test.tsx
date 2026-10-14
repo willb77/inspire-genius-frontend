@@ -207,19 +207,19 @@ describe("RoadmapTimeline", () => {
   })
 
   it.each([
-    [{ notified: true, alreadySent: false }, "success", "Sent to Gary Burnette's notifications."],
-    [{ notified: false, alreadySent: true }, "success", "Already sent to Gary Burnette today."],
+    [{ notified: true, alreadySent: false }, "success", "Sent to Test Member's notifications."],
+    [{ notified: false, alreadySent: true }, "success", "Already sent to Test Member today."],
     [
       { notified: false, alreadySent: false },
       "warning",
-      "Couldn't notify Gary Burnette; their plan is still on their My Development page.",
+      "Couldn't notify Test Member; their plan is still on their My Development page.",
     ],
   ] as const)("Share plan says what the server did: %j", (result, kind, text) => {
     shareMutate.mockImplementation((_v: unknown, opts: { onSuccess: (r: unknown) => void }) =>
       opts.onSuccess(result),
     )
     const one = [ms({ milestoneId: "a", title: "A", horizon: "d30", status: "planned" })]
-    render(<RoadmapTimeline memberId="m-1" memberName="Gary Burnette" milestones={one} goals={goals} />)
+    render(<RoadmapTimeline memberId="m-1" memberName="Test Member" milestones={one} goals={goals} />)
     fireEvent.click(screen.getByRole("button", { name: /Share plan/i }))
     expect(toast[kind]).toHaveBeenCalledWith(text)
   })
