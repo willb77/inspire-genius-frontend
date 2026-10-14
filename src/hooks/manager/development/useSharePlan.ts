@@ -1,12 +1,17 @@
 import { useMutation } from "@tanstack/react-query"
-import { sharePlan, type SharePlanInput } from "@/services/manager/development/growthService"
+import {
+  sharePlan,
+  type SharePlanInput,
+  type SharePlanResult,
+} from "@/services/manager/development/growthService"
 
-/** Share a member's development plan with them (member-facing export). */
+/** Share a member's development plan with them: the server writes the member
+ *  an in-app notice and reports whether it did (`notified` / `alreadySent`). */
 export function useSharePlan(memberId: string | undefined) {
-  return useMutation<{ shared: boolean; sharedAt?: string }, Error, SharePlanInput | void>({
+  return useMutation<SharePlanResult, Error, SharePlanInput | void>({
     mutationFn: async (input) => {
       const r = await sharePlan(memberId as string, input ?? {})
-      return r.data?.data ?? { shared: false }
+      return r.data?.data ?? {}
     },
   })
 }

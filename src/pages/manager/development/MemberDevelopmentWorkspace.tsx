@@ -44,6 +44,7 @@ import {
   useDevelopmentText,
 } from "@/hooks/manager/development"
 import { CoverageChips } from "@/components/manager/development/CoverageChips"
+import { sharePlanToast, SHARE_PLAN_ERROR } from "@/components/manager/development/sharePlanToast"
 import { ConfidenceDot } from "@/components/manager/development/ConfidenceDot"
 import { MeridianDevelopmentPanel } from "@/components/manager/development/MeridianDevelopmentPanel"
 import {
@@ -387,9 +388,8 @@ export default function MemberDevelopmentWorkspace({
                 share.mutate(
                   {},
                   {
-                    onSuccess: () =>
-                      toast.success(`Development plan shared with ${member.name || "the member"}.`),
-                    onError: () => toast.error("Couldn't share the plan. Try again."),
+                    onSuccess: (result) => sharePlanToast(result, member.name),
+                    onError: () => toast.error(SHARE_PLAN_ERROR),
                   },
                 )
               }
@@ -501,6 +501,7 @@ export default function MemberDevelopmentWorkspace({
               <TabsContent value="roadmap">
                 <RoadmapTimeline
                   memberId={dossier.memberId}
+                  memberName={member.name}
                   milestones={dossier.milestones}
                   goals={dossier.goals}
                   trajectory={dossier.trajectory}
