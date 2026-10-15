@@ -18,9 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useCoachSchedule, useCreateSessionsBulk } from "@/hooks/practitioner/useCoachClient"
 import { useManagerTeam } from "@/hooks/manager/useManagerTeam"
-import type { BulkScheduleInput } from "@/types/practitioner/coachClient"
+import { useCreateTeamSessions, useTeamSchedule } from "@/hooks/manager/useTeamSchedule"
+import { toUtcInstant } from "@/services/manager/teamSchedule.service"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
+import type { TeamScheduleInput, TeamScheduleResult } from "@/types/manager/teamSchedule"
 
 const DURATION_OPTIONS = [30, 45, 60, 90] as const
 const SPACING_OPTIONS = [0, 5, 10, 15, 30] as const
@@ -30,12 +32,13 @@ const SPACING_OPTIONS = [0, 5, 10, 15, 30] as const
  *
  * ## Two seams, deliberately different
  *
- * The SCHEDULE itself reuses the coach endpoints wholesale (`GET
- * /v1/agents/coach/schedule`, `POST /v1/agents/coach/schedule/sessions` via
- * `useCoachSchedule` / `useCreateSessionsBulk`). Bill's call, 2026-08-16:
- * reuse rather than build a manager-scoped twin. A second scheduling backend
- * would be a second place for a session to exist, and sessions that exist in
- * one place are sessions somebody does not turn up to.
+ * The SCHEDULE is the agent-engine's manager routes (`/v1/agents/coach/
+ * team-schedule*`, MSCH-1). Until 2026-10-15 this page called the
+ * practitioner scheduler (`/v1/agents/coach/schedule*`), which admits only
+ * practitioners and super-admins and books only paying clients — so every
+ * manager request was a 403, shown as "please try again". The sessions still
+ * live in the same table; the manager routes book only people whose manager of
+ * record is the caller, and say who was skipped and why.
  *
  * The COHORT does not come from there. `/v1/agents/coach/clients` is the
  * practitioner's paying client list; a manager's cohort is their direct
@@ -50,8 +53,8 @@ const SPACING_OPTIONS = [0, 5, 10, 15, 30] as const
  */
 export default function ManagerSchedule() {
   const teamQuery = useManagerTeam()
-  const scheduleQuery = useCoachSchedule()
-  const createSessions = useCreateSessionsBulk()
+  const scheduleQuery = useTeamSchedule()
+  const createSessions = useCreateTeamSessions()
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [startsAt, setStartsAt] = useState("")
@@ -60,9 +63,12 @@ export default function ManagerSchedule() {
   const [topic, setTopic] = useState("")
   const [message, setMessage] = useState("")
   const [sendInvites, setSendInvites] = useState(true)
+  const [lastResult, setLastResult] = useState<TeamScheduleResult | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const members = teamQuery.data?.members ?? []
   const entries = scheduleQuery.data ?? []
+  const nameOf = (id: string) => members.find((m) => m.user_id === id)?.name ?? id
 
   const toggleMember = (id: string, checked: boolean) => {
     setSelectedIds((prev) => {
@@ -94,21 +100,37 @@ export default function ManagerSchedule() {
 
   const handleSubmit = () => {
     if (!canSubmit) return
-    const input: BulkScheduleInput = {
-      clientIds: [...selectedIds],
-      startsAt,
+    setSubmitError(null)
+    setLastResult(null)
+    let startsAtUtc: string
+    try {
+      startsAtUtc = toUtcInstant(startsAt)
+    } catch (err) {
+      setSubmitError(apiErrorMessage(err, "Start time is not a valid date."))
+      return
+    }
+    const input: TeamScheduleInput = {
+      personIds: [...selectedIds],
+      startsAt: startsAtUtc,
       durationMin,
       spacingMin,
       topic: topic.trim(),
-      message: message.trim(),
+      message: message.trim() || undefined,
       sendInvites,
     }
     createSessions.mutate(input, {
       onSuccess: (result) => {
-        toast.success(`${result.created} sessions created, ${result.emailed} invites emailed`)
+        setLastResult(result)
+        const emailed = sendInvites ? `, ${result.emailed} invites emailed` : ""
+        if (result.created > 0) toast.success(`${result.created} sessions created${emailed}`)
+        else toast.error("No sessions were created — see the reasons below.")
         resetForm()
       },
-      onError: () => toast.error("Could not create sessions. Please try again."),
+      onError: (err) => {
+        const text = apiErrorMessage(err, "Could not create sessions.")
+        setSubmitError(text)
+        toast.error(text)
+      },
     })
   }
 
@@ -289,6 +311,41 @@ export default function ManagerSchedule() {
               >
                 {createSessions.isPending ? "Scheduling…" : "Schedule sessions"}
               </Button>
+
+              {submitError && (
+                <p role="alert" className="text-sm text-[#EF4444]">
+                  {submitError}
+                </p>
+              )}
+
+              {lastResult && (lastResult.skipped.length > 0 || lastResult.notEmailed.length > 0) && (
+                <div role="status" className="text-sm space-y-2 rounded-md border border-[#e5e7eb] p-3">
+                  {lastResult.skipped.length > 0 && (
+                    <div>
+                      <p className="font-medium text-[#111827]">Not scheduled</p>
+                      <ul className="list-disc pl-5 text-[#6b7280]">
+                        {lastResult.skipped.map((s, i) => (
+                          <li key={`skip-${s.personId}-${i}`}>
+                            {nameOf(s.personId)}: {skipReason(s.reason)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {lastResult.notEmailed.length > 0 && (
+                    <div>
+                      <p className="font-medium text-[#111827]">Scheduled, but no invite sent</p>
+                      <ul className="list-disc pl-5 text-[#6b7280]">
+                        {lastResult.notEmailed.map((s, i) => (
+                          <li key={`mail-${s.personId}-${i}`}>
+                            {nameOf(s.personId)}: {s.reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </DataCard>
 
@@ -299,6 +356,13 @@ export default function ManagerSchedule() {
                   <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
+            ) : scheduleQuery.error ? (
+              <div role="alert" className="text-sm text-[#EF4444] py-8 text-center">
+                {apiErrorMessage(scheduleQuery.error, "Could not load your sessions.")}{" "}
+                <button onClick={() => void scheduleQuery.refetch()} className="underline">
+                  Retry
+                </button>
+              </div>
             ) : entries.length === 0 ? (
               <div className="text-sm text-[#6b7280] py-8 text-center">
                 No sessions scheduled yet.
@@ -306,11 +370,11 @@ export default function ManagerSchedule() {
             ) : (
               <ul className="divide-y divide-[#e5e7eb]">
                 {entries.map((entry) => (
-                  <li key={entry.id} className="py-3 first:pt-0">
+                  <li key={entry.sessionId} className="py-3 first:pt-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-[#111827] truncate">
-                          {entry.clientName}
+                          {entry.personName}
                         </p>
                         <p className="text-xs text-[#6b7280] mt-0.5 truncate">{entry.topic}</p>
                       </div>
@@ -330,6 +394,18 @@ export default function ManagerSchedule() {
       </div>
     </ManagerLayout>
   )
+}
+
+const SKIP_REASONS: Record<string, string> = {
+  not_your_report: "doesn't report to you",
+  unknown_person: "no account found",
+  duplicate: "listed twice",
+  empty_id: "missing id",
+  check_failed: "couldn't confirm they report to you — try again",
+}
+
+function skipReason(reason: string): string {
+  return SKIP_REASONS[reason] ?? reason
 }
 
 function formatStart(iso: string): string {
