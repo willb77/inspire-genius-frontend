@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { format } from "date-fns"
 import { toast } from "sonner"
-import { CalendarClock, Users } from "lucide-react"
+import { CalendarClock, MapPin, Users } from "lucide-react"
 
 import ManagerLayout from "@/layouts/ManagerLayout"
 import DataCard from "@/components/dashboard/DataCard"
@@ -19,9 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useManagerTeam } from "@/hooks/manager/useManagerTeam"
-import { useCreateTeamSessions, useTeamSchedule } from "@/hooks/manager/useTeamSchedule"
+import {
+  useCreateTeamSessions,
+  useTeamSchedule,
+  useTeamSchedulePreferences,
+} from "@/hooks/manager/useTeamSchedule"
 import { toUtcInstant } from "@/services/manager/teamSchedule.service"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
+import { MAX_LOCATION } from "@/types/manager/teamSchedule"
 import type { TeamScheduleInput, TeamScheduleResult } from "@/types/manager/teamSchedule"
 
 const DURATION_OPTIONS = [30, 45, 60, 90] as const
@@ -55,6 +60,7 @@ export default function ManagerSchedule() {
   const teamQuery = useManagerTeam()
   const scheduleQuery = useTeamSchedule()
   const createSessions = useCreateTeamSessions()
+  const prefsQuery = useTeamSchedulePreferences()
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [startsAt, setStartsAt] = useState("")
@@ -62,10 +68,14 @@ export default function ManagerSchedule() {
   const [spacingMin, setSpacingMin] = useState<number>(10)
   const [topic, setTopic] = useState("")
   const [message, setMessage] = useState("")
+  // MSCH-2: null = not edited, so the box shows the default saved in Settings.
+  const [locationDraft, setLocationDraft] = useState<string | null>(null)
   const [sendInvites, setSendInvites] = useState(true)
   const [lastResult, setLastResult] = useState<TeamScheduleResult | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  const location = locationDraft ?? prefsQuery.data?.defaultLocation ?? ""
+  const locationTooLong = location.trim().length > MAX_LOCATION
   const members = teamQuery.data?.members ?? []
   const entries = scheduleQuery.data ?? []
   const nameOf = (id: string) => members.find((m) => m.user_id === id)?.name ?? id
@@ -89,6 +99,7 @@ export default function ManagerSchedule() {
     setSpacingMin(10)
     setTopic("")
     setMessage("")
+    setLocationDraft(null)
     setSendInvites(true)
   }
 
@@ -96,6 +107,7 @@ export default function ManagerSchedule() {
     selectedIds.size > 0 &&
     startsAt.trim().length > 0 &&
     topic.trim().length > 0 &&
+    !locationTooLong &&
     !createSessions.isPending
 
   const handleSubmit = () => {
@@ -116,6 +128,7 @@ export default function ManagerSchedule() {
       spacingMin,
       topic: topic.trim(),
       message: message.trim() || undefined,
+      location: location.trim() || undefined,
       sendInvites,
     }
     createSessions.mutate(input, {
@@ -293,6 +306,24 @@ export default function ManagerSchedule() {
                 />
               </div>
 
+              <div className="space-y-1.5">
+                <Label htmlFor="schedule-location" className="text-[#111827]">
+                  Location
+                </Label>
+                <Input
+                  id="schedule-location"
+                  value={location}
+                  onChange={(e) => setLocationDraft(e.target.value)}
+                  placeholder="A video meeting link, a phone number or an address"
+                  aria-invalid={locationTooLong}
+                />
+                <p className="text-xs text-[#6b7280]">
+                  {locationTooLong
+                    ? `At most ${MAX_LOCATION} characters.`
+                    : "Your default comes from Settings. It goes in the invite."}
+                </p>
+              </div>
+
               <label htmlFor="schedule-invite" className="flex items-center gap-2.5 cursor-pointer">
                 <Checkbox
                   id="schedule-invite"
@@ -377,6 +408,12 @@ export default function ManagerSchedule() {
                           {entry.personName}
                         </p>
                         <p className="text-xs text-[#6b7280] mt-0.5 truncate">{entry.topic}</p>
+                        {entry.location && (
+                          <p className="text-xs text-[#6b7280] mt-0.5 truncate flex items-center gap-1">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            {entry.location}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-xs font-medium text-[#111827]">
