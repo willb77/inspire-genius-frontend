@@ -171,6 +171,11 @@ jest.mock("@/components/settings/PractitionerCodeCard", () => ({
   default: () => <div data-testid="practitioner-code-card" />,
 }));
 
+jest.mock("@/components/settings/MeetingLocationSettings", () => ({
+  __esModule: true,
+  default: () => <div data-testid="meeting-location-card" />,
+}));
+
 jest.mock("@/components/settings/AgentEngineToggle", () => ({
   __esModule: true,
   default: () => <div data-testid="agent-engine-toggle" />,
@@ -659,6 +664,19 @@ describe("Settings Component", () => {
       mockUseAuth.mockReturnValue({ user: { role }, markFullName: mockMarkFullName } as unknown as ReturnType<typeof useAuth>);
       const r = render(<Settings />, { wrapper: createWrapper() });
       expect(screen.queryByTestId("practitioner-code-card")).not.toBeInTheDocument();
+      r.unmount();
+    }
+  });
+
+  // MSCH-2: the default meeting location is for the roles the team scheduler admits.
+  it("shows the meeting-location card to manager, company-admin and super-admin only", () => {
+    const visibleTo: string[] = [ROLES.MANAGER, ROLES.COMPANY_ADMIN, ROLES.SUPER_ADMIN];
+    for (const role of [...visibleTo, ROLES.USER, ROLES.PRACTITIONER, ROLES.DISTRIBUTOR]) {
+      mockUseAuth.mockReturnValue({ user: { role }, markFullName: mockMarkFullName } as unknown as ReturnType<typeof useAuth>);
+      const r = render(<Settings />, { wrapper: createWrapper() });
+      const card = screen.queryByTestId("meeting-location-card");
+      if (visibleTo.includes(role)) expect(card).toBeInTheDocument();
+      else expect(card).not.toBeInTheDocument();
       r.unmount();
     }
   });

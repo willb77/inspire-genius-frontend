@@ -13,6 +13,7 @@
 import { agentApi } from "@/lib/agentApi"
 import type {
   TeamScheduleInput,
+  TeamSchedulePreferences,
   TeamScheduleResult,
   TeamSession,
 } from "@/types/manager/teamSchedule"
@@ -33,6 +34,23 @@ export function toUtcInstant(localDateTime: string): string {
   const d = new Date(localDateTime)
   if (Number.isNaN(d.getTime())) throw new Error("Start time is not a valid date")
   return d.toISOString()
+}
+
+const PREFERENCES_PATH = "/v1/agents/coach/team-schedule/preferences"
+
+/** The caller's own saved default location. No user id is sent: the server keys it on the token. */
+export async function getTeamSchedulePreferences(): Promise<TeamSchedulePreferences> {
+  const r = await agentApi.get<Envelope<TeamSchedulePreferences>>(PREFERENCES_PATH)
+  return { defaultLocation: r.data?.data?.defaultLocation ?? null }
+}
+
+export async function saveTeamSchedulePreferences(
+  prefs: TeamSchedulePreferences,
+): Promise<TeamSchedulePreferences> {
+  const r = await agentApi.put<Envelope<TeamSchedulePreferences>>(PREFERENCES_PATH, prefs)
+  const d = r.data?.data
+  if (!d) throw new Error("The server returned no saved preference")
+  return { defaultLocation: d.defaultLocation ?? null }
 }
 
 export async function createTeamSessions(input: TeamScheduleInput): Promise<TeamScheduleResult> {

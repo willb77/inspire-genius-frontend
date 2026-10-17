@@ -20,6 +20,7 @@ import { NotificationPreferences } from "@/components/NotificationPreferences";
 import AgentEngineToggle from "@/components/settings/AgentEngineToggle";
 import PrivacySettings from "@/components/settings/PrivacySettings";
 import RetentionSettings from "@/components/settings/RetentionSettings";
+import MeetingLocationSettings from "@/components/settings/MeetingLocationSettings";
 import PersonalDataSettings from "@/components/shared/settings/PersonalDataSettings";
 import AssessmentsSettings from "@/components/shared/settings/AssessmentsSettings";
 import { V2Panel, SectionLabel } from "@/components/v2";
@@ -331,6 +332,16 @@ export default function Settings({
           || role === ROLES.MANAGER) && (
           <div data-tour="settings-retention">
             <RetentionSettings />
+          </div>
+        )}
+
+        {/* Default meeting location (MSCH-2): the roles the team scheduler admits.
+            The Schedule form pre-fills its Location box from it. */}
+        {(role === ROLES.SUPER_ADMIN
+          || role === ROLES.COMPANY_ADMIN
+          || role === ROLES.MANAGER) && (
+          <div data-tour="settings-meeting-location">
+            <MeetingLocationSettings />
           </div>
         )}
 

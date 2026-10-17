@@ -36,11 +36,13 @@ jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 
 const mockMutate = jest.fn()
 const mockScheduleState: { data?: unknown; error?: unknown; isLoading: boolean } = { isLoading: false }
+const mockPrefsState: { data?: { defaultLocation: string | null } } = {}
 
 jest.mock("@/hooks/manager/useManagerTeam", () => ({ useManagerTeam: jest.fn() }))
 jest.mock("@/hooks/manager/useTeamSchedule", () => ({
   useTeamSchedule: () => ({ ...mockScheduleState, refetch: jest.fn() }),
   useCreateTeamSessions: () => ({ mutate: mockMutate, isPending: false }),
+  useTeamSchedulePreferences: () => ({ ...mockPrefsState, isLoading: false }),
 }))
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factory hoisting
@@ -67,6 +69,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockScheduleState.data = []
   mockScheduleState.error = undefined
+  mockPrefsState.data = { defaultLocation: null }
   useManagerTeam.mockReturnValue({
     data: { members: [member("u-riley", "Test Member A"), member("u-jordan", "Test Member B")] },
     isLoading: false,
@@ -143,4 +146,57 @@ it("says so when the session list cannot load, instead of showing an empty list"
   const upcoming = screen.getByRole("region", { name: "Upcoming sessions" })
   expect(upcoming).toHaveTextContent("needs a manager role")
   expect(upcoming).not.toHaveTextContent("No sessions scheduled yet")
+})
+
+// ── MSCH-2: location ──────────────────────────────────────────────
+const LINK = "https://meet.example.test/abc-defg-hij"
+
+it("pre-fills Location from the default saved in Settings and sends it", () => {
+  mockPrefsState.data = { defaultLocation: LINK }
+  render(<Schedule />)
+  expect(screen.getByLabelText("Location")).toHaveValue(LINK)
+  fillAndSubmit()
+  expect(mockMutate.mock.calls[0][0].location).toBe(LINK)
+})
+
+it("sends the location typed for this booking instead of the default", () => {
+  mockPrefsState.data = { defaultLocation: LINK }
+  render(<Schedule />)
+  fireEvent.change(screen.getByLabelText("Location"), { target: { value: "  +1 555 0100  " } })
+  fillAndSubmit()
+  expect(mockMutate.mock.calls[0][0].location).toBe("+1 555 0100")
+})
+
+it("sends no location when the box is cleared", () => {
+  mockPrefsState.data = { defaultLocation: LINK }
+  render(<Schedule />)
+  fireEvent.change(screen.getByLabelText("Location"), { target: { value: "" } })
+  fillAndSubmit()
+  expect(mockMutate.mock.calls[0][0]).not.toHaveProperty("location", expect.anything())
+})
+
+it("puts the default back after a booking", () => {
+  mockPrefsState.data = { defaultLocation: LINK }
+  render(<Schedule />)
+  fireEvent.change(screen.getByLabelText("Location"), { target: { value: "Room 4" } })
+  fillAndSubmit()
+  const opts = mockMutate.mock.calls[0][1]
+  act(() => opts.onSuccess({ created: 2, sessions: [], skipped: [], emailed: 2, notEmailed: [] }))
+  expect(screen.getByLabelText("Location")).toHaveValue(LINK)
+})
+
+it("will not submit a location longer than the server accepts", () => {
+  render(<Schedule />)
+  fireEvent.change(screen.getByLabelText("Location"), { target: { value: "x".repeat(501) } })
+  fillAndSubmit()
+  expect(mockMutate).not.toHaveBeenCalled()
+  expect(screen.getByText("At most 500 characters.")).toBeInTheDocument()
+})
+
+it("shows each upcoming session's location", () => {
+  mockScheduleState.data = [
+    { sessionId: "s1", personId: "u-riley", personName: "Test Member A", startsAt: "2026-10-20T14:00:00+00:00", durationMin: 30, topic: "Check-in", location: LINK, status: "scheduled" },
+  ]
+  render(<Schedule />)
+  expect(screen.getByRole("region", { name: "Upcoming sessions" })).toHaveTextContent(LINK)
 })

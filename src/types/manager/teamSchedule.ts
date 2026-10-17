@@ -13,6 +13,8 @@ export type TeamSession = {
   startsAt: string
   durationMin: number
   topic: string
+  /** MSCH-2: a meeting link, phone number or address; null when none was given. */
+  location?: string | null
   status: string
 }
 
@@ -24,8 +26,16 @@ export type TeamScheduleInput = {
   spacingMin: number
   topic: string
   message?: string
+  /** MSCH-2: one free-text field, up to {@link MAX_LOCATION} characters. */
+  location?: string
   sendInvites: boolean
 }
+
+/** The server refuses a longer location rather than cutting a link short. */
+export const MAX_LOCATION = 500
+
+/** The caller's own scheduling defaults (MSCH-2). */
+export type TeamSchedulePreferences = { defaultLocation: string | null }
 
 /** Why a person was not booked. */
 export type TeamScheduleSkip = { personId: string; reason: string }
