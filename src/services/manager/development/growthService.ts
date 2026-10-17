@@ -510,11 +510,17 @@ export type UpdateMilestoneInput = {
   dueDate?: string
 }
 
-/** PATCH /members/{id}/milestones → Milestone */
+/** PATCH /members/{id}/milestones/{milestoneId} → Milestone
+ *
+ *  TDS-P1 (a): this PATCHed `/members/{id}/milestones` with the id in the body.
+ *  growth-service has no route there — only `/milestones/{milestone_id}` — so
+ *  every status change from the roadmap was a 405. The id goes in the path and
+ *  stays out of the body. */
 export function updateMilestone(memberId: string, input: UpdateMilestoneInput) {
+  const { milestoneId, ...fields } = input
   return getApi().patch<BaseApiResponse<Milestone>>(
-    `${BASE}/members/${memberId}/milestones`,
-    input,
+    `${BASE}/members/${memberId}/milestones/${encodeURIComponent(milestoneId)}`,
+    fields,
   )
 }
 
