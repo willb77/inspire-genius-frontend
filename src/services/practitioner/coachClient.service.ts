@@ -13,6 +13,7 @@ import {
   uploadToS3,
   triggerProcessing,
 } from "@/services/documents/documentService"
+import { toUtcInstant } from "@/services/manager/teamSchedule.service"
 import {
   CLIENT_RESOURCES,
   type ClientSummary,
@@ -372,16 +373,24 @@ export function listSchedule(): Promise<ScheduleEntry[]> {
 
 export function createSessionsBulk(input: BulkScheduleInput): Promise<BulkScheduleResult> {
   if (USE_COACH_BACKEND) {
-    return agentApi
-      .post<Envelope<{ created?: number; sessions?: BeSession[] }>>("/v1/agents/coach/schedule/sessions", {
-        clientIds: input.clientIds,
-        startsAt: input.startsAt,
-        durationMin: input.durationMin,
-        spacingMin: input.spacingMin,
-        topic: input.topic,
-        message: input.message,
-        sendInvites: input.sendInvites,
-      })
+    // MSCH-F1: the page's `datetime-local` value has no offset, and the server
+    // refuses a time without one rather than guess the zone. Convert here, in
+    // the browser that knows the practitioner's timezone — the same rule as
+    // the manager's team scheduler. Inside the chain so a bad date rejects the
+    // promise (the page's onError) instead of throwing synchronously.
+    return Promise.resolve()
+      .then(() => toUtcInstant(input.startsAt))
+      .then((startsAt) =>
+        agentApi.post<Envelope<{ created?: number; sessions?: BeSession[] }>>("/v1/agents/coach/schedule/sessions", {
+          clientIds: input.clientIds,
+          startsAt,
+          durationMin: input.durationMin,
+          spacingMin: input.spacingMin,
+          topic: input.topic,
+          message: input.message,
+          sendInvites: input.sendInvites,
+        }),
+      )
       .then((r) => {
         const entries = (r.data?.data?.sessions ?? []).map(toScheduleEntry)
         return { created: Number(r.data?.data?.created ?? entries.length), emailed: 0, entries }

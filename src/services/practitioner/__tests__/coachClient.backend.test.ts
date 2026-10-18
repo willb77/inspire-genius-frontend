@@ -105,6 +105,39 @@ describe("coachClient.service (backend mode)", () => {
     expect(result.entries).toHaveLength(1)
   })
 
+  // MSCH-F1: the page's <input type="datetime-local"> has no offset, and the
+  // server refuses a time without one. The service sends the browser's instant.
+  test("createSessionsBulk sends the local start time as a UTC instant", async () => {
+    mockPost.mockResolvedValueOnce(env({ created: 0, sessions: [] }))
+    await svc.createSessionsBulk({
+      clientIds: ["u1"],
+      startsAt: "2026-10-20T10:00",
+      durationMin: 30,
+      spacingMin: 0,
+      topic: "K",
+      message: "",
+      sendInvites: false,
+    })
+    const sent = mockPost.mock.calls[0][1].startsAt as string
+    expect(sent).toBe(new Date("2026-10-20T10:00").toISOString())
+    expect(sent).toMatch(/Z$/)
+  })
+
+  test("createSessionsBulk rejects an invalid start time without posting", async () => {
+    await expect(
+      svc.createSessionsBulk({
+        clientIds: ["u1"],
+        startsAt: "not a date",
+        durationMin: 30,
+        spacingMin: 0,
+        topic: "K",
+        message: "",
+        sendInvites: false,
+      }),
+    ).rejects.toThrow("Start time is not a valid date")
+    expect(mockPost).not.toHaveBeenCalled()
+  })
+
   test("getCreditsSummary reads clients under management and ignores the legacy balance keys", async () => {
     mockGet.mockResolvedValueOnce(
       env({ clients_under_management: 0, balance: 0, allocated: 0, used: 0, provisioned: false }),
