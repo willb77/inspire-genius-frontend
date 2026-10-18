@@ -28,6 +28,8 @@ export type CareerMatchPanelProps = {
   onSetTarget?: (match: CareerMatch) => void
   /** Jump to the Gap Analysis tab focused on this role. */
   onViewGaps?: (match: CareerMatch) => void
+  /** FS-1.14: the member hasn't shared ``development`` with this viewer. */
+  notShared?: boolean
 }
 
 export function CareerMatchPanel({
@@ -36,6 +38,7 @@ export function CareerMatchPanel({
   loading,
   onSetTarget,
   onViewGaps,
+  notShared,
 }: CareerMatchPanelProps) {
   const sk = useDevSkin()
   const [kind, setKind] = useState<"internal" | "external">("internal")
@@ -67,7 +70,13 @@ export function CareerMatchPanel({
         <span>{DEVELOPMENT_INPUT_DISCLAIMER}</span>
       </p>
 
-      {loading ? (
+      {notShared ? (
+        <Card className="border-dashed">
+          <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="matches-not-shared">
+            These career matches haven&apos;t been shared with you. That isn&apos;t the same as having none.
+          </CardContent>
+        </Card>
+      ) : loading ? (
         <div className={cn("py-10 text-center text-sm", sk.text400)}>Loading matches…</div>
       ) : sorted.length === 0 ? (
         <Card className="border-dashed">

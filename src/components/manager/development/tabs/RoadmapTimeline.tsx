@@ -92,6 +92,8 @@ export type RoadmapTimelineProps = {
   milestones: Milestone[]
   goals: SummitGoal[]
   trajectory?: "on_track" | "at_risk"
+  /** FS-1.14: the member hasn't shared ``development`` with this viewer. */
+  notShared?: boolean
 }
 
 export function RoadmapTimeline({
@@ -100,6 +102,7 @@ export function RoadmapTimeline({
   milestones,
   goals,
   trajectory,
+  notShared,
 }: RoadmapTimelineProps) {
   const sk = useDevSkin()
   const share = useSharePlan(memberId)
@@ -117,6 +120,16 @@ export function RoadmapTimeline({
   })()
 
   const atRisk = trajectory === "at_risk"
+
+  if (notShared) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="roadmap-not-shared">
+          This roadmap hasn&apos;t been shared with you. That isn&apos;t the same as having none.
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (milestones.length === 0) {
     return (
