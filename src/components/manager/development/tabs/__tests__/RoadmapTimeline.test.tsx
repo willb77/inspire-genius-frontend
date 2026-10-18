@@ -296,3 +296,17 @@ describe("RoadmapTimeline", () => {
     ])
   })
 })
+
+describe("FS-1.14 — development not shared", () => {
+  it("says not shared, never 'no milestones', even with an empty list", () => {
+    render(<RoadmapTimeline memberId="m-1" milestones={[]} goals={goals} notShared />)
+    expect(screen.getByTestId("roadmap-not-shared")).toHaveTextContent("hasn't been shared with you")
+    expect(screen.queryByText("No milestones planned yet.")).not.toBeInTheDocument()
+  })
+
+  it("is unchanged when the flag is absent", () => {
+    render(<RoadmapTimeline memberId="m-1" milestones={[]} goals={goals} />)
+    expect(screen.queryByTestId("roadmap-not-shared")).not.toBeInTheDocument()
+    expect(screen.getByText("No milestones planned yet.")).toBeInTheDocument()
+  })
+})

@@ -118,3 +118,18 @@ describe("CareerMatchPanel", () => {
     expect(onViewGaps).toHaveBeenCalledWith(expect.objectContaining({ matchId: "i-mis", title: "Field Sales" }))
   })
 })
+
+describe("FS-1.14 — development not shared", () => {
+  it("says not shared instead of 'no matches yet', and lists nothing", () => {
+    render(<CareerMatchPanel internal={internal} external={external} notShared />)
+    expect(screen.getByTestId("matches-not-shared")).toHaveTextContent("haven't been shared with you")
+    expect(screen.queryByText(/No internal matches yet/)).not.toBeInTheDocument()
+    expect(screen.queryByText("Senior CSM")).not.toBeInTheDocument()
+  })
+
+  it("is unchanged when the flag is absent", () => {
+    render(<CareerMatchPanel internal={[]} external={[]} />)
+    expect(screen.queryByTestId("matches-not-shared")).not.toBeInTheDocument()
+    expect(screen.getByText(/No internal matches yet/)).toBeInTheDocument()
+  })
+})

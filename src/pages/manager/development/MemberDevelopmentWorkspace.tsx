@@ -571,6 +571,7 @@ export default function MemberDevelopmentWorkspace({
                     external={external}
                     onSetTarget={goToGapsFor}
                     onViewGaps={goToGapsFor}
+                    notShared={dossier.developmentNotShared}
                   />
                 )}
               </TabsContent>
@@ -581,6 +582,7 @@ export default function MemberDevelopmentWorkspace({
                   milestones={dossier.milestones}
                   goals={dossier.goals}
                   trajectory={dossier.trajectory}
+                  notShared={dossier.developmentNotShared}
                 />
               </TabsContent>
               <TabsContent value="notes">
