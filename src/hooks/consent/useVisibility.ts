@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import {
   extendGrant,
+  getCategories,
   getAccessLog,
   getMyGrants,
   getPeople,
@@ -12,6 +13,7 @@ import {
 } from "@/services/consent/visibility.service"
 import type {
   AccessLogRow,
+  CategoriesResponse,
   ExtendResult,
   LookupResult,
   MyGrantRow,
@@ -32,6 +34,16 @@ export const consentKeys = {
   people: ["consent", "people"] as const,
   myGrants: ["consent", "my-grants"] as const,
   accessLog: ["consent", "access-log"] as const,
+  categories: ["consent", "categories"] as const,
+}
+
+/** SHARE-1: the labels' source of truth. Static per deploy, so cached for a while. */
+export function useCategoryDetails() {
+  return useQuery<CategoriesResponse, AxiosError>({
+    queryKey: consentKeys.categories,
+    queryFn: getCategories,
+    staleTime: 5 * 60 * 1000,
+  })
 }
 
 export function usePeople() {

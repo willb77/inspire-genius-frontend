@@ -19,6 +19,28 @@ export type VisibilityCategory =
 
 export type VisibilityCategories = Partial<Record<VisibilityCategory, boolean>>
 
+/**
+ * SHARE-1: what sharing a category actually decides today, from the server
+ * (`GET /categories` → `details`). "yes": sharing decides who sees it.
+ * "partial": some readers check it (`note` says which). "no": nothing checks it
+ * yet, so a reporting line sees it whether or not it is shared.
+ */
+export type CategoryEnforcement = "yes" | "partial" | "no"
+
+export type CategoryDetail = {
+  key: string
+  label: string
+  enforced: CategoryEnforcement
+  note: string
+}
+
+export type CategoriesResponse = {
+  categories: string[]
+  /** Absent on a server older than SHARE-1. */
+  details?: CategoryDetail[]
+  notGrantable: string[]
+}
+
 export type GrantStatus = "pending" | "granted" | "declined" | "revoked" | "expired"
 
 /** How a person on the list relates to the subject. A person can have several. */

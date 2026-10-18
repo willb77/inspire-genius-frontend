@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { Suspense, lazy, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,6 +18,12 @@ import { toast } from "sonner"
 import { Download, Trash2, Shield, Flag } from "lucide-react"
 import { Link } from "react-router-dom"
 import { ROUTES } from "@/constants/routes"
+
+// SHARE-1 (a): the same panel as /my/goals/sharing, lazily — it brings the
+// consent reads with it, and Settings should not pay for them until shown.
+const SharingCore = lazy(() =>
+  import("@/pages/summit/SummitSharing").then((m) => ({ default: m.SharingCore })),
+)
 
 export default function PrivacySettings() {
   const { user, logout } = useAuth()
@@ -109,23 +115,28 @@ export default function PrivacySettings() {
           </ul>
         </div>
 
-        {/* Who can see my goals and PRISM profile — the sharing panel (Goals
-            offering, Phase 3; PRISM added by TDS-1c). Both are shared per person,
-            by your choice, for a fixed term; nobody sees them by rank. */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h4 className="font-medium text-sm">Who can see my goals and PRISM profile</h4>
-            <p className="text-sm text-muted-foreground">
-              Your goals and your PRISM profile are private until you share them with a
-              specific person. Turn each on or off per person, see when it expires, and renew it.
-            </p>
+        {/* Who can see my record — the sharing panel itself (SHARE-1), the same
+            component the Goals sharing page renders. Shared per person, by your
+            choice, for a fixed term; nobody sees it by rank. */}
+        <div className="space-y-3" data-testid="settings-sharing">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h4 className="font-medium text-sm">Who can see my goals, PRISM profile and more</h4>
+              <p className="text-sm text-muted-foreground">
+                Private until you share with a specific person. Turn each part on or off per
+                person, or share all of it; see when it expires, and renew it.
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm" className="shrink-0">
+              <Link to={ROUTES.MY_GOALS.SHARING}>
+                <Flag className="mr-2 h-4 w-4" />
+                Open the full page
+              </Link>
+            </Button>
           </div>
-          <Button asChild variant="outline" size="sm" className="shrink-0">
-            <Link to={ROUTES.MY_GOALS.SHARING}>
-              <Flag className="mr-2 h-4 w-4" />
-              Manage sharing
-            </Link>
-          </Button>
+          <Suspense fallback={<p className="text-sm text-muted-foreground">Loading your sharing settings…</p>}>
+            <SharingCore />
+          </Suspense>
         </div>
 
         {/* Export data */}

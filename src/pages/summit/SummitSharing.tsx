@@ -39,6 +39,7 @@ import { CoachGoalCard } from "@/components/manager/development/tabs/GoalsPanel"
 import { useMyGoals } from "@/hooks/summit/useMyGoals";
 import {
   useAccessLog,
+  useCategoryDetails,
   useExtendGrant,
   useLookupPerson,
   useMyGrants,
@@ -47,7 +48,15 @@ import {
   useRespondToRequest,
   useRevokeGrant,
 } from "@/hooks/consent/useVisibility";
-import type { AccessLogRow, LookupResult, MyGrantRow, PersonKind, VisibilityCategories, VisibilityPerson } from "@/types/consent";
+import type {
+  AccessLogRow,
+  CategoryDetail,
+  LookupResult,
+  MyGrantRow,
+  PersonKind,
+  VisibilityCategories,
+  VisibilityPerson,
+} from "@/types/consent";
 
 /**
  * Where each candidate's claim comes from, said in the member's words.
@@ -122,21 +131,37 @@ const GOALS_ONLY = { goals: true } as const;
 /**
  * The categories a member can share from this page, in display order.
  *
- * `enforced: false` means the member's choice is RECORDED but not yet what
- * decides access: those readers still release on the reporting line until
- * enforcement lands (S-7). The switch says so — a switch that looks like
- * protection and is not would be worse than no switch (S-2 CSA, S2-F1).
+ * What each one PROTECTS is not written here. SHARE-1: it comes from the server
+ * (`GET /categories` → `details`), next to the readers that decide it, because
+ * a hard-coded flag here went stale — by 2026-10-17 this list called PRISM
+ * protected (it is partly) and interviews unprotected (they are). A switch that
+ * looks like protection and is not would be worse than no switch (S-2 CSA,
+ * S2-F1).
  */
 type ShareCategory = "goals" | "prism" | "assessments" | "artefacts" | "interviews" | "development";
-const SHARE_CATEGORIES: { key: ShareCategory; label: string; noun: string; enforced: boolean }[] = [
-  { key: "goals", label: "Goals", noun: "goals", enforced: true },
-  { key: "prism", label: "PRISM profile", noun: "PRISM profile", enforced: true },
-  { key: "assessments", label: "Assessments", noun: "assessments", enforced: false },
-  { key: "artefacts", label: "Profile", noun: "profile documents", enforced: false },
-  { key: "interviews", label: "Interviews", noun: "interview results", enforced: false },
-  { key: "development", label: "Development", noun: "development plan", enforced: false },
+const SHARE_CATEGORIES: { key: ShareCategory; label: string; noun: string }[] = [
+  { key: "goals", label: "Goals", noun: "goals" },
+  { key: "prism", label: "PRISM profile", noun: "PRISM profile" },
+  { key: "assessments", label: "Assessments", noun: "assessments" },
+  { key: "artefacts", label: "Profile", noun: "profile documents" },
+  { key: "interviews", label: "Interviews", noun: "interview results" },
+  { key: "development", label: "Development", noun: "development plan" },
 ];
-const NOT_YET_ENFORCED = SHARE_CATEGORIES.filter((c) => !c.enforced);
+const PAGE_KEYS = new Set<string>(SHARE_CATEGORIES.map((c) => c.key));
+
+type Enforcement = Pick<CategoryDetail, "enforced" | "note">;
+
+/**
+ * What sharing `key` decides, from the server's details. When the details could
+ * not be read, goals (enforced since the Goals offering) says so and every
+ * other category reads "not protected yet": a fallback errs towards telling the
+ * member less is protected, never more.
+ */
+function enforcementOf(details: CategoryDetail[] | undefined, key: ShareCategory): Enforcement {
+  const row = details?.find((d) => d.key === key);
+  if (row) return { enforced: row.enforced, note: row.note };
+  return { enforced: key === "goals" ? "yes" : "no", note: "" };
+}
 
 /** The grant rows arrive with `categories` as an object or as a JSON string. */
 function parseCategories(raw: VisibilityCategories | string | null | undefined): VisibilityCategories {
@@ -185,8 +210,8 @@ function liveCategories(p: VisibilityPerson): VisibilityCategories {
   return parseCategories(g.categories);
 }
 
-/** One person: name, relation, one switch per category, the term, Renew. */
-function PersonRow({ person }: { person: VisibilityPerson }) {
+/** One person: name, relation, "Share all", one switch per category, the term, Renew. */
+function PersonRow({ person, details }: { person: VisibilityPerson; details: CategoryDetail[] | undefined }) {
   const offer = useOfferAccess();
   const revoke = useRevokeGrant();
   const extend = useExtendGrant();
@@ -209,6 +234,27 @@ function PersonRow({ person }: { person: VisibilityPerson }) {
     }
     offer.mutate({ granteeUserId: person.userId, categories: Object.fromEntries(remaining) });
   };
+
+  // SHARE-1 (b): every category on this page in ONE offer, or none of them.
+  // Keys not on this page (engagement, topics) are kept exactly as they are —
+  // "Share all" means all of what the member can see here, nothing more.
+  const allOn = SHARE_CATEGORIES.every((c) => live[c.key] === true);
+  const shareAll = (checked: boolean) => {
+    const offPage = Object.fromEntries(
+      Object.entries(live).filter(([k, v]) => v === true && !PAGE_KEYS.has(k)),
+    );
+    if (checked) {
+      const pageAll = Object.fromEntries(SHARE_CATEGORIES.map((c) => [c.key, true]));
+      offer.mutate({ granteeUserId: person.userId, categories: { ...offPage, ...pageAll } });
+      return;
+    }
+    if (Object.keys(offPage).length === 0) {
+      if (person.grant) revoke.mutate(person.grant.id);
+      return;
+    }
+    offer.mutate({ granteeUserId: person.userId, categories: offPage });
+  };
+  const unprotected = SHARE_CATEGORIES.filter((c) => enforcementOf(details, c.key).enforced !== "yes");
 
   return (
     <li className="flex flex-col gap-2 border-b border-[#F1ECE2] py-3 last:border-b-0">
@@ -239,25 +285,48 @@ function PersonRow({ person }: { person: VisibilityPerson }) {
           </span>
         ) : (
           <div className="flex flex-wrap items-center gap-4" data-testid={`share-switches-${person.userId}`}>
-            {SHARE_CATEGORIES.map((c) => (
-              <label key={c.key} className="flex items-center gap-2 text-[12.5px] font-semibold text-[#13294B]">
-                <Switch
-                  checked={live[c.key] === true}
-                  disabled={pending}
-                  aria-label={`Share ${c.noun} with ${who}`}
-                  onCheckedChange={(checked) => toggle(c.key, checked)}
-                />
-                {c.label}
-                {!c.enforced && (
-                  <span className="text-[11px] font-normal text-[#A9720F]" data-testid={`not-enforced-${c.key}`}>
-                    (not enforced yet)
-                  </span>
-                )}
-              </label>
-            ))}
+            <label className="flex items-center gap-2 text-[12.5px] font-bold text-[#0B1B33]">
+              <Switch
+                checked={allOn}
+                disabled={pending}
+                aria-label={`Share everything on this page with ${who}`}
+                onCheckedChange={shareAll}
+              />
+              Share all
+            </label>
+            {SHARE_CATEGORIES.map((c) => {
+              const e = enforcementOf(details, c.key);
+              return (
+                <label key={c.key} className="flex items-center gap-2 text-[12.5px] font-semibold text-[#13294B]">
+                  <Switch
+                    checked={live[c.key] === true}
+                    disabled={pending}
+                    aria-label={`Share ${c.noun} with ${who}`}
+                    onCheckedChange={(checked) => toggle(c.key, checked)}
+                  />
+                  {c.label}
+                  {e.enforced === "partial" && (
+                    <span className="text-[11px] font-normal text-[#A9720F]" data-testid={`partly-${c.key}`} title={e.note}>
+                      (partly protected)
+                    </span>
+                  )}
+                  {e.enforced === "no" && (
+                    <span className="text-[11px] font-normal text-[#A9720F]" data-testid={`not-enforced-${c.key}`}>
+                      (not protected yet)
+                    </span>
+                  )}
+                </label>
+              );
+            })}
             <span className="text-[12px] text-[#13294B]/70" data-testid={`share-state-${person.userId}`}>
               {sharedAny ? `Sharing ${describeCategories(live, "")}` : "Not shared"}
             </span>
+            {unprotected.length > 0 && (
+              <span className="basis-full text-[11.5px] text-[#13294B]/65" data-testid={`share-all-note-${person.userId}`}>
+                &ldquo;Share all&rdquo; includes {unprotected.map((c) => c.label).join(", ")}, which
+                {unprotected.length === 1 ? " is" : " are"} not fully protected yet.
+              </span>
+            )}
           </div>
         )}
         {pending && <Loader2 className="h-4 w-4 animate-spin text-[#7C93B5]" aria-hidden />}
@@ -476,10 +545,39 @@ function AddPerson() {
   );
 }
 
-export default function SummitSharing() {
+/** The honest summary over the switches: what is not (fully) protected yet. */
+function EnforcementNote({ details }: { details: CategoryDetail[] | undefined }) {
+  const none = SHARE_CATEGORIES.filter((c) => enforcementOf(details, c.key).enforced === "no");
+  const partly = SHARE_CATEGORIES.filter((c) => enforcementOf(details, c.key).enforced === "partial");
+  if (none.length === 0 && partly.length === 0) return null;
+  return (
+    <div className="mt-1 flex flex-col gap-1 text-[12.5px] leading-relaxed text-[#13294B]/75" data-testid="not-enforced-note">
+      {none.length > 0 && (
+        <p>
+          Not protected yet &mdash; {none.map((c) => c.label).join(", ")}: people on your reporting
+          line can see these whether or not you share them. Your choice is saved and takes effect
+          when protection for them launches.
+        </p>
+      )}
+      {partly.map((c) => (
+        <p key={c.key} data-testid={`partly-note-${c.key}`}>
+          {c.label}, partly protected: {enforcementOf(details, c.key).note}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The sharing panel itself — requests, people, add a person, who has looked.
+ * SHARE-1 (a): rendered by this page AND by Settings → Privacy, so the two
+ * cannot drift. The page adds its heading and the "what they see" preview.
+ */
+export function SharingCore() {
   const people = usePeople();
   const grants = useMyGrants();
-  const mine = useMyGoals();
+  const categories = useCategoryDetails();
+  const details = categories.data?.details;
 
   const loading = people.isLoading || grants.isLoading;
   const failed = people.isError || grants.isError;
@@ -489,16 +587,9 @@ export default function SummitSharing() {
   const unavailable = Object.entries(people.data?.sources ?? {})
     .filter(([, state]) => state === "unavailable")
     .map(([name]) => SOURCE_LABEL[name] ?? name);
-  const preview = (mine.data?.goals ?? []).find((g) => g.visibility === "shareable");
 
   return (
     <div className="flex flex-col gap-[18px]">
-      <PageHead
-        eyebrow="Your choice, person by person"
-        title="Who can see my goals and PRISM profile"
-        sub="Nobody sees your goals or your PRISM profile by rank. You share each with a specific person for a year, can renew, and can take it back at any time. Turning a switch on renews the term for a year. A goal you mark private stays hidden even from them."
-      />
-
       {loading && (
         <div className="flex items-center gap-2 text-[13.5px] text-[#13294B]/70" data-testid="sharing-loading">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -549,14 +640,10 @@ export default function SummitSharing() {
           <p className="mt-1 text-[12.5px] leading-relaxed text-[#13294B]/75" data-testid="basis-note">
             Under each name is how they came to be on this list.
           </p>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-[#13294B]/75" data-testid="not-enforced-note">
-            {NOT_YET_ENFORCED.map((c) => c.label).join(", ")}: your choice is saved now, but a
-            manager or coach you report to can currently still see these through their role. Your
-            choice takes effect when sharing for them launches.
-          </p>
+          <EnforcementNote details={details} />
           <ul className="mt-1">
             {list.map((p) => (
-              <PersonRow key={p.userId} person={p} />
+              <PersonRow key={p.userId} person={p} details={details} />
             ))}
           </ul>
         </Card>
@@ -565,6 +652,23 @@ export default function SummitSharing() {
       {!loading && !failed && <AddPerson />}
 
       {!loading && !failed && <WhoHasLooked nameById={nameById} />}
+    </div>
+  );
+}
+
+export default function SummitSharing() {
+  const mine = useMyGoals();
+  const preview = (mine.data?.goals ?? []).find((g) => g.visibility === "shareable");
+
+  return (
+    <div className="flex flex-col gap-[18px]">
+      <PageHead
+        eyebrow="Your choice, person by person"
+        title="Who can see my goals and PRISM profile"
+        sub="Nobody sees your goals or your PRISM profile by rank. You share each with a specific person for a year, can renew, and can take it back at any time. Turning a switch on renews the term for a year. A goal you mark private stays hidden even from them."
+      />
+
+      <SharingCore />
 
       <section aria-labelledby="preview-heading" className="flex flex-col gap-2">
         <h2 id="preview-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">

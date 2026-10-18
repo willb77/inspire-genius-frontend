@@ -8,6 +8,7 @@
  */
 import {
   extendGrant,
+  getCategories,
   getMyGrants,
   getPeople,
   lookupPerson,
@@ -84,4 +85,18 @@ it("reads my grants as a list", async () => {
   const rows = await getMyGrants()
   expect(mockGet).toHaveBeenCalledWith("/v1/agents/consent/visibility/my-grants")
   expect(rows).toHaveLength(1)
+})
+
+// SHARE-1: the labels' source of truth.
+it("reads the category details from the agent engine", async () => {
+  const details = [{ key: "goals", label: "Goals", enforced: "yes", note: "" }]
+  mockGet.mockResolvedValue({ data: { status: true, data: { categories: ["goals"], details, notGrantable: ["safety"] } } })
+  const out = await getCategories()
+  expect(mockGet).toHaveBeenCalledWith("/v1/agents/consent/visibility/categories")
+  expect(out.details).toEqual(details)
+})
+
+it("an empty categories envelope throws, so the panel falls back to 'not protected yet'", async () => {
+  mockGet.mockResolvedValue({ data: {} })
+  await expect(getCategories()).rejects.toThrow(/empty envelope/)
 })
