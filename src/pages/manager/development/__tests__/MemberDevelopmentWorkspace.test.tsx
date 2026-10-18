@@ -573,3 +573,77 @@ describe("MemberDevelopmentWorkspace — the Notes tab (TDS-2)", () => {
     expect(received.meridian?.tab).toBe("notes")
   })
 })
+
+describe("MemberDevelopmentWorkspace — while the dossier computes (TDS-P1 c)", () => {
+  function renderComputing(path: string, roster?: Array<{ memberId: string; name: string }>) {
+    dossierState = { data: null, isLoading: false, isError: false }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    if (roster) client.setQueryData(["development", "roster"], roster)
+    return render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>
+            <Route path="/manager/development/:memberId" element={<MemberDevelopmentWorkspace />} />
+            <Route path={ROUTES.MANAGER.DEVELOPMENT} element={<div>manager roster</div>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+  }
+
+  it("offers only the tabs that need no dossier, and keeps the rail away", () => {
+    renderComputing("/manager/development/m-1")
+    const tabs = screen.getAllByRole("tab").map((x) => x.textContent)
+    expect(tabs).toEqual(["Goals", "Notes", "Compare", "Scenarios"])
+    expect(screen.getByRole("status")).toHaveTextContent(/Generating the development dossier/)
+    expect(screen.queryByTestId("meridian-panel")).not.toBeInTheDocument()
+  })
+
+  it("the default tab is not on offer, so it says so instead of rendering it", () => {
+    renderComputing("/manager/development/m-1?tab=profile")
+    expect(screen.queryByTestId("profile-panel")).not.toBeInTheDocument()
+    expect(screen.getByText(/This tab needs the dossier/)).toBeInTheDocument()
+  })
+
+  it.each([
+    ["goals", "goals-panel"],
+    ["notes", "notes-panel"],
+    ["compare", "compare-panel"],
+    ["scenarios", "scenarios-panel"],
+  ])("?tab=%s works now", async (tab, testId) => {
+    renderComputing(`/manager/development/m-1?tab=${tab}`)
+    expect(await screen.findByTestId(testId)).toBeInTheDocument()
+    expect(screen.queryByText(/This tab needs the dossier/)).not.toBeInTheDocument()
+  })
+
+  it("Notes gets the member and nothing to point at yet", async () => {
+    renderComputing("/manager/development/m-1?tab=notes", [{ memberId: "m-1", name: "Pat Member" }])
+    await screen.findByTestId("notes-panel")
+    expect(received.notes).toMatchObject({ memberId: "m-1", memberName: "Pat Member" })
+    expect(received.notes?.goals).toBeUndefined()
+    expect(received.notes?.milestones).toBeUndefined()
+  })
+
+  it("names the member from the roster cache, and says 'This member' without one", () => {
+    const { unmount } = renderComputing("/manager/development/m-1", [
+      { memberId: "m-2", name: "Someone Else" },
+      { memberId: "m-1", name: "Pat Member" },
+    ])
+    expect(screen.getByRole("heading", { name: "Pat Member" })).toBeInTheDocument()
+    unmount()
+    renderComputing("/manager/development/m-1")
+    expect(screen.getByRole("heading", { name: "This member" })).toBeInTheDocument()
+  })
+
+  it("clicking a tab moves ?tab= so it stays open when the dossier lands", async () => {
+    renderComputing("/manager/development/m-1")
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Goals" }))
+    expect(await screen.findByTestId("goals-panel")).toBeInTheDocument()
+  })
+
+  it("the way back works while it computes", () => {
+    renderComputing("/manager/development/m-1")
+    fireEvent.click(screen.getByRole("button", { name: "Back to roster" }))
+    expect(screen.getByText("manager roster")).toBeInTheDocument()
+  })
+})

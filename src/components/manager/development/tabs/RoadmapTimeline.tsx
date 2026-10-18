@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import {
   MILESTONE_HORIZON_LABEL,
   MILESTONE_HORIZON_ORDER,
@@ -26,6 +27,9 @@ import type { Milestone, MilestoneStatus, SummitGoal } from "@/types/development
 import { useSharePlan, useUpdateMilestone } from "@/hooks/manager/development"
 import { useDevSkin } from "../skin"
 import { sharePlanToast, SHARE_PLAN_ERROR } from "../sharePlanToast"
+
+/** TDS-P1 (a): shown when the server gives no reason of its own. */
+const MILESTONE_STATUS_ERROR = "That status didn't save. Nothing changed — try again in a moment."
 
 const STATUS_BADGE: Record<MilestoneStatus, "default" | "secondary" | "destructive" | "outline"> = {
   planned: "outline",
@@ -176,7 +180,17 @@ export function RoadmapTimeline({
                         key={m.milestoneId}
                         milestone={m}
                         goalTitle={goalTitle.get(m.goalId)}
-                        onStatusChange={(status) => update.mutate({ milestoneId: m.milestoneId, status })}
+                        onStatusChange={(status) =>
+                          // TDS-P1 (a): a failed change used to say nothing and
+                          // snap back on the next read.
+                          update.mutate(
+                            { milestoneId: m.milestoneId, status },
+                            {
+                              onError: (err) =>
+                                toast.error(apiErrorMessage(err, MILESTONE_STATUS_ERROR)),
+                            },
+                          )
+                        }
                       />
                     ))
                   )}

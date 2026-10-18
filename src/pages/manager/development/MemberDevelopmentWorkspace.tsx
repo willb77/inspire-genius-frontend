@@ -21,7 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { requestStudentAccess } from "@/services/manager/studentRoster.service"
@@ -34,7 +34,8 @@ import {
   FIT_ENGINE_MATCHES_ENABLED,
   TDS_STUDIO_ENABLED,
 } from "@/constants/development"
-import type { CareerMatch } from "@/types/development"
+import type { CareerMatch, RosterMember } from "@/types/development"
+import { developmentKeys } from "@/hooks/manager/development/queryKeys"
 import {
   useMemberDossier,
   useMemberFitMatches,
@@ -134,6 +135,19 @@ type DevTab =
   | (typeof BASE_TABS)[number]["value"]
   | (typeof STUDIO_TABS)[number]["value"]
 
+/**
+ * TDS-P1 (c): the tabs that work while the dossier is still computing (~60s).
+ *
+ * Each makes its own call and needs only the member's id and name — Goals
+ * (`/members/{id}/goals`), Notes (`/members/{id}/notes`; its "link to" pickers
+ * are empty until the dossier arrives) and the two Studio runs. Every other
+ * tab, and the Meridian rail, reads dossier fields and waits, as before.
+ */
+const COMPUTING_TAB_VALUES: readonly DevTab[] = TDS_STUDIO_ENABLED
+  ? ["goals", "notes", "compare", "scenarios"]
+  : ["goals", "notes"]
+const COMPUTING_TABS = TABS.filter((x) => COMPUTING_TAB_VALUES.includes(x.value))
+
 function initials(name: string): string {
   return name.trim().split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase()
 }
@@ -185,6 +199,12 @@ export default function MemberDevelopmentWorkspace({
   const activeTab: DevTab = TABS.some((x) => x.value === tabParam) ? tabParam : "profile"
 
   const { data: dossier, isLoading, isError } = useMemberDossier(memberId)
+  // TDS-P1 (c): the name for the computing header, from the roster the manager
+  // came from. Read from the cache only — never a fetch of its own.
+  const queryClient = useQueryClient()
+  const cachedName = queryClient
+    .getQueryData<RosterMember[]>(developmentKeys.roster())
+    ?.find((m) => m.memberId === memberId)?.name
   const refresh = useRefreshDossier(memberId)
   const share = useSharePlan(memberId)
   const session = useGoalSession(memberId)
@@ -269,12 +289,68 @@ export default function MemberDevelopmentWorkspace({
   // backend returns 202 while the job runs and useMemberDossier polls. `null`
   // = computing (distinct from `undefined`/error below).
   if (dossier === null) {
+    // TDS-P1 (c). This was the spinner and nothing else for the whole compute.
+    // The tabs that need no dossier work now; the rest appear when it lands.
+    const computingTab = COMPUTING_TAB_VALUES.includes(activeTab) ? activeTab : undefined
+    const name = cachedName || "This member"
     return frame(
-      <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
-        <RefreshCw className={cn("h-6 w-6 animate-spin", sk.text400)} aria-hidden="true" />
-        <p className={cn("text-sm", sk.text500)}>
-          Generating the development dossier — this can take up to a minute…
-        </p>
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => navigate(studioRoute)}
+          className={cn("inline-flex items-center gap-1 text-xs hover:text-slate-800", sk.text500)}
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          Back to roster
+        </button>
+        <header className={cn("border bg-white p-4", sk.radius, sk.border200)}>
+          <h1 className={cn("text-lg font-semibold", sk.heading)}>{name}</h1>
+          <p role="status" className={cn("mt-1 flex items-center gap-2 text-sm", sk.text500)}>
+            <RefreshCw className={cn("h-4 w-4 animate-spin", sk.text400)} aria-hidden="true" />
+            Generating the development dossier — this can take up to a minute…
+          </p>
+          <p className={cn("mt-1 text-xs", sk.text400)}>
+            Goals and Notes work now; the other tabs appear when it&apos;s ready.
+          </p>
+        </header>
+        <Tabs value={computingTab ?? ""} onValueChange={setTab}>
+          <TabsList className="flex w-full flex-wrap justify-start">
+            {COMPUTING_TABS.map((tabDef) => (
+              <TabsTrigger key={tabDef.value} value={tabDef.value}>
+                {t(tabDef.labelKey)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <div className="mt-4">
+            {computingTab && memberId ? (
+              <Suspense fallback={<TabFallback />}>
+                <TabsContent value="goals">
+                  <GoalsPanel memberId={memberId} memberName={name} />
+                </TabsContent>
+                <TabsContent value="notes">
+                  <NotesPanel memberId={memberId} memberName={name} />
+                </TabsContent>
+                {TDS_STUDIO_ENABLED ? (
+                  <>
+                    <TabsContent value="compare">
+                      <TeamComparePanel memberId={memberId} memberName={name} />
+                    </TabsContent>
+                    <TabsContent value="scenarios">
+                      <TeamScenarioPanel memberId={memberId} />
+                    </TabsContent>
+                  </>
+                ) : null}
+              </Suspense>
+            ) : (
+              <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
+                <RefreshCw className={cn("h-6 w-6 animate-spin", sk.text400)} aria-hidden="true" />
+                <p className={cn("text-sm", sk.text500)}>
+                  This tab needs the dossier. Open Goals or Notes while it&apos;s generated.
+                </p>
+              </div>
+            )}
+          </div>
+        </Tabs>
       </div>,
     )
   }

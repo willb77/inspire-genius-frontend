@@ -251,7 +251,29 @@ describe("RoadmapTimeline", () => {
     expect(screen.getByRole("button", { name: "Update status for Draft the plan" })).toBeInTheDocument()
     const listbox = screen.getByRole("listbox")
     fireEvent.click(within(listbox).getByRole("option", { name: "Blocked" }))
-    expect(updateMutate).toHaveBeenCalledWith({ milestoneId: "ms-7", status: "blocked" })
+    expect(updateMutate).toHaveBeenCalledWith(
+      { milestoneId: "ms-7", status: "blocked" },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    )
+  })
+
+  // TDS-P1 (a): a failed status change used to say nothing.
+  it("a failed status change says so, in the server's words when it has some", () => {
+    render(
+      <RoadmapTimeline
+        memberId="m-1"
+        milestones={[ms({ milestoneId: "ms-7", title: "Draft the plan", horizon: "d30", status: "planned" })]}
+        goals={goals}
+      />,
+    )
+    fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: "Done" }))
+    const { onError } = updateMutate.mock.calls[0][1] as { onError: (e: unknown) => void }
+    onError({ isAxiosError: true, response: { data: { detail: "Milestone not found" } } })
+    expect(toast.error).toHaveBeenLastCalledWith("Milestone not found")
+    onError({})
+    expect(toast.error).toHaveBeenLastCalledWith(
+      "That status didn't save. Nothing changed — try again in a moment.",
+    )
   })
 
   it("the accessible list orders by horizon then sequence", () => {
