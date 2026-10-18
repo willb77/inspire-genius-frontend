@@ -192,6 +192,13 @@ describe("constants/navigation", () => {
       }
     })
   })
+
+    // The two home definitions drifted once (practitioner: /dashboard vs /home).
+    it("agrees with HOME_ROUTE_BY_ROLE for every role", () => {
+      for (const role of ALL_ROLES) {
+        expect(DEFAULT_ROLE_CONFIGS[role].homeRoute).toBe(HOME_ROUTE_BY_ROLE[role])
+      }
+    })
 })
 
 describe("Document Library in My Workspace", () => {

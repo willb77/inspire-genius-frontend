@@ -148,24 +148,24 @@ const DevelopmentStudio = React.lazy(() => import("@/pages/manager/development/D
 const MemberDevelopmentWorkspace = React.lazy(() => import("@/pages/manager/development/MemberDevelopmentWorkspace"));
 const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
 const StudentRoster = React.lazy(() => import("@/pages/manager/StudentRoster"));
-const ManagerSettings = React.lazy(() => import("@/pages/manager/Settings"));
+const WorkspaceSettings = React.lazy(() => import("@/pages/workspace/SettingsPage"));
 const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
 const ManagerBulkImport = React.lazy(() => import("@/pages/manager/BulkImport"));
 const ManagerSchedule = React.lazy(() => import("@/pages/manager/Schedule"));
-// Combined Plan §A.E3.4 — task-agent pages
-const ManagerJobBlueprint = React.lazy(() => import("@/pages/manager/JobBlueprintPage"));
-const ManagerInterviewPrep = React.lazy(() => import("@/pages/manager/InterviewPrepPage"));
+// Combined Plan §A.E3.4 — task-agent pages.
+// ROLE-C: the Workspace* pages are shared by manager and practitioner; each
+// route passes `audience` for its prefix, which picks the chrome.
+const WorkspaceJobBlueprint = React.lazy(() => import("@/pages/workspace/JobBlueprintPage"));
+const WorkspaceInterviewPrep = React.lazy(() => import("@/pages/workspace/InterviewPrepPage"));
 // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
-const ManagerInterviewLive = React.lazy(() => import("@/pages/manager/InterviewLivePage"));
+const WorkspaceInterviewLive = React.lazy(() => import("@/pages/workspace/InterviewLivePage"));
 // Interview Studio — custom / topic-generated scored interview.
-const ManagerInterviewStudio = React.lazy(() => import("@/pages/manager/InterviewStudioPage"));
+const WorkspaceInterviewStudio = React.lazy(() => import("@/pages/workspace/InterviewStudioPage"));
 const SuperAdminInterviewStudio = React.lazy(() => import("@/pages/super-admin/InterviewStudioPage"));
 const SuperAdminInterviewLive = React.lazy(() => import("@/pages/super-admin/InterviewLivePage"));
-const PractitionerInterviewStudio = React.lazy(() => import("@/pages/practitioner/InterviewStudioPage"));
 // Character Lab for the coach roles — same body as the super-admin page, minus CSV.
-const ManagerCharacterLab = React.lazy(() => import("@/pages/manager/CharacterLabPage"));
-const PractitionerCharacterLab = React.lazy(() => import("@/pages/practitioner/CharacterLabPage"));
-const ManagerTeamComposition = React.lazy(() => import("@/pages/manager/TeamCompositionPage"));
+const WorkspaceCharacterLab = React.lazy(() => import("@/pages/workspace/CharacterLabPage"));
+const WorkspaceTeamComposition = React.lazy(() => import("@/pages/workspace/TeamCompositionPage"));
 const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
 const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/ResearchPage"));
 const SuperAdminResearchLibrary = React.lazy(() => import("@/pages/super-admin/ResearchLibraryPage"));
@@ -197,14 +197,10 @@ const Explainability = React.lazy(() => import("@/pages/super-admin/Explainabili
 // /api/practitioner/sessions call was 500-ing; Home uses the coachClient seam.
 const PractitionerClients = React.lazy(() => import("@/pages/practitioner/Clients"));
 const PrismClients = React.lazy(() => import("@/pages/practitioner/PrismClients"));
-const PractitionerSettings = React.lazy(() => import("@/pages/practitioner/Settings"));
 const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Analytics"));
-// Wave 4 Lane 4.D — practitioner task-agent forms (mirrors manager)
-const PractitionerJobBlueprint = React.lazy(() => import("@/pages/practitioner/JobBlueprintPage"));
-const PractitionerInterviewPrep = React.lazy(() => import("@/pages/practitioner/InterviewPrepPage"));
-// Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
-const PractitionerInterviewLive = React.lazy(() => import("@/pages/practitioner/InterviewLivePage"));
-const PractitionerTeamComposition = React.lazy(() => import("@/pages/practitioner/TeamCompositionPage"));
+// Settings, the task-agent forms, Interview Live/Studio, Character Lab and Team
+// Composition are shared with the manager (ROLE-C): the Workspace* pages above,
+// mounted below with audience="practitioner".
 // Phase 2 (Practitioner page wireframes) — Home, Meridian chat, and clickable
 // placeholders for the Schedule/Meeting surfaces (built out in later phases).
 const PractitionerHome = React.lazy(() => import("@/pages/practitioner/HomeSwitch"));
@@ -632,13 +628,13 @@ export const routes: RouteObject[] = [
       { path: "/manager/interviews", element: withSuspense(<ManagerInterviews />) },
       { path: "/manager/job-dna", element: withSuspense(<ManagerJobDna />) },
       // Combined Plan §A.E3.4 — task-agent pages
-      { path: "/manager/job-blueprint", element: withSuspense(<ManagerJobBlueprint />) },
-      { path: "/manager/interview-prep", element: withSuspense(<ManagerInterviewPrep />) },
+      { path: "/manager/job-blueprint", element: withSuspense(<WorkspaceJobBlueprint audience="manager" />) },
+      { path: "/manager/interview-prep", element: withSuspense(<WorkspaceInterviewPrep audience="manager" />) },
       // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
-      { path: "/manager/interview-live", element: withSuspense(<ManagerInterviewLive />) },
-      { path: "/manager/interview-studio", element: withSuspense(<ManagerInterviewStudio />) },
-      { path: "/manager/character-lab", element: withSuspense(<ManagerCharacterLab />) },
-      { path: "/manager/team-composition", element: withSuspense(<ManagerTeamComposition />) },
+      { path: "/manager/interview-live", element: withSuspense(<WorkspaceInterviewLive audience="manager" />) },
+      { path: "/manager/interview-studio", element: withSuspense(<WorkspaceInterviewStudio audience="manager" />) },
+      { path: "/manager/character-lab", element: withSuspense(<WorkspaceCharacterLab audience="manager" />) },
+      { path: "/manager/team-composition", element: withSuspense(<WorkspaceTeamComposition audience="manager" />) },
       // Team Development Studio (roster + per-member workspace)
       // Team Development Studio. The page resolves classic vs the HomeV2 look
       // from the `new_user_surfaces` flag internally; /classic forces the
@@ -654,7 +650,7 @@ export const routes: RouteObject[] = [
       { path: "/manager/leadership", element: withSuspense(<ManagerLeadership />) },
       { path: "/manager/prism-team", element: withSuspense(<PrismTeam />) },
       { path: "/manager/students", element: withSuspense(<StudentRoster />) },
-      { path: "/manager/settings", element: withSuspense(<ManagerSettings />) },
+      { path: "/manager/settings", element: withSuspense(<WorkspaceSettings audience="manager" />) },
       { path: "/manager/analytics", element: withSuspense(<ManagerAnalytics />) },
       { path: "/manager/bulk-import", element: withSuspense(<ManagerBulkImport />) },
       { path: "/manager/schedule", element: withSuspense(<ManagerSchedule />) },
@@ -692,16 +688,16 @@ export const routes: RouteObject[] = [
       // bookmark lands somewhere real instead of a 404.
       { path: "/practitioner/credits", element: <Navigate to="/practitioner/home" replace /> },
       { path: "/practitioner/prism-clients", element: withSuspense(<PrismClients />) },
-      { path: "/practitioner/settings", element: withSuspense(<PractitionerSettings />) },
+      { path: "/practitioner/settings", element: withSuspense(<WorkspaceSettings audience="practitioner" />) },
       { path: "/practitioner/analytics", element: withSuspense(<PractitionerAnalytics />) },
       // Wave 4 Lane 4.D (P7.2) — task-agent forms now available to practitioner
-      { path: "/practitioner/job-blueprint", element: withSuspense(<PractitionerJobBlueprint />) },
-      { path: "/practitioner/interview-prep", element: withSuspense(<PractitionerInterviewPrep />) },
+      { path: "/practitioner/job-blueprint", element: withSuspense(<WorkspaceJobBlueprint audience="practitioner" />) },
+      { path: "/practitioner/interview-prep", element: withSuspense(<WorkspaceInterviewPrep audience="practitioner" />) },
       // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
-      { path: "/practitioner/interview-live", element: withSuspense(<PractitionerInterviewLive />) },
-      { path: "/practitioner/interview-studio", element: withSuspense(<PractitionerInterviewStudio />) },
-      { path: "/practitioner/character-lab", element: withSuspense(<PractitionerCharacterLab />) },
-      { path: "/practitioner/team-composition", element: withSuspense(<PractitionerTeamComposition />) },
+      { path: "/practitioner/interview-live", element: withSuspense(<WorkspaceInterviewLive audience="practitioner" />) },
+      { path: "/practitioner/interview-studio", element: withSuspense(<WorkspaceInterviewStudio audience="practitioner" />) },
+      { path: "/practitioner/character-lab", element: withSuspense(<WorkspaceCharacterLab audience="practitioner" />) },
+      { path: "/practitioner/team-composition", element: withSuspense(<WorkspaceTeamComposition audience="practitioner" />) },
 
       // Distributor pages
       { path: "/distributor/dashboard", element: withSuspense(<DistributorDashboard />) },

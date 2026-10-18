@@ -148,8 +148,6 @@ const pageModules: Record<string, string> = {
   "@/pages/manager/WorkbenchDashboard": "ManagerWorkbenchPage",
   "@/pages/manager/Team": "ManagerTeamPage",
   "@/pages/manager/Hiring": "ManagerHiringPage",
-  "@/pages/manager/CharacterLabPage": "ManagerCharacterLabPage",
-  "@/pages/practitioner/CharacterLabPage": "PractitionerCharacterLabPage",
   "@/pages/manager/Candidates": "ManagerCandidatesPage",
   "@/pages/manager/Interviews": "ManagerInterviewsPage",
   "@/pages/manager/JobDna": "ManagerJobDnaPage",
@@ -158,7 +156,6 @@ const pageModules: Record<string, string> = {
   "@/pages/manager/TeamBuilding": "ManagerTeamBuildingPage",
   "@/pages/manager/Leadership": "ManagerLeadershipPage",
   "@/pages/manager/PrismTeam": "PrismTeamPage",
-  "@/pages/manager/Settings": "ManagerSettingsPage",
   "@/pages/manager/Analytics": "ManagerAnalyticsPage",
   "@/pages/manager/BulkImport": "ManagerBulkImportPage",
   "@/pages/company-admin/Dashboard": "CompanyAdminDashboardPage",
@@ -179,7 +176,6 @@ const pageModules: Record<string, string> = {
   "@/pages/practitioner/Dashboard": "PractitionerDashboardPage",
   "@/pages/practitioner/Clients": "PractitionerClientsPage",
   "@/pages/practitioner/PrismClients": "PrismClientsPage",
-  "@/pages/practitioner/Settings": "PractitionerSettingsPage",
   "@/pages/practitioner/Analytics": "PractitionerAnalyticsPage",
   "@/pages/distributor/Dashboard": "DistributorDashboardPage",
   "@/pages/distributor/Practitioners": "DistributorPractitionersPage",
@@ -193,6 +189,31 @@ for (const [modulePath, testId] of Object.entries(pageModules)) {
   jest.mock(modulePath, () => {
     const Stub = () => <div data-testid={testId}>{testId}</div>;
     Stub.displayName = testId;
+    return { __esModule: true, default: Stub };
+  });
+}
+
+// ROLE-C — the screens managers and practitioners share are ONE module each,
+// mounted at both prefixes with an `audience` prop. The stub renders the
+// audience into its test id, so a route that passes the wrong audience (and
+// would show the other role's sidebar) fails here, not in the browser.
+const sharedWorkspaceModules: Record<string, string> = {
+  "@/pages/workspace/SettingsPage": "SettingsPage",
+  "@/pages/workspace/CharacterLabPage": "CharacterLabPage",
+  "@/pages/workspace/InterviewLivePage": "InterviewLivePage",
+  "@/pages/workspace/InterviewPrepPage": "InterviewPrepPage",
+  "@/pages/workspace/InterviewStudioPage": "InterviewStudioPage",
+  "@/pages/workspace/JobBlueprintPage": "JobBlueprintPage",
+  "@/pages/workspace/TeamCompositionPage": "TeamCompositionPage",
+};
+
+for (const [modulePath, name] of Object.entries(sharedWorkspaceModules)) {
+  jest.mock(modulePath, () => {
+    const Stub = ({ audience }: { audience?: string }) => {
+      const prefix = audience === "practitioner" ? "Practitioner" : audience === "manager" ? "Manager" : "NoAudience";
+      return <div data-testid={`${prefix}${name}`}>{`${prefix}${name}`}</div>;
+    };
+    Stub.displayName = `Workspace${name}`;
     return { __esModule: true, default: Stub };
   });
 }
@@ -527,6 +548,64 @@ describe("Route Integration Tests", () => {
       await advancePastBoot();
       // Redirected to the practitioner home route (now /practitioner/home).
       expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
+    });
+  });
+
+  describe("ROLE-C shared screens: each prefix passes its own audience", () => {
+    const sharedScreens = [
+      ["settings", "SettingsPage"],
+      ["character-lab", "CharacterLabPage"],
+      ["interview-live", "InterviewLivePage"],
+      ["interview-prep", "InterviewPrepPage"],
+      ["interview-studio", "InterviewStudioPage"],
+      ["job-blueprint", "JobBlueprintPage"],
+      ["team-composition", "TeamCompositionPage"],
+    ] as const;
+
+    const cases = sharedScreens.flatMap(([slug, name]) => [
+      { role: "manager" as const, path: `/manager/${slug}`, testId: `Manager${name}` },
+      { role: "practitioner" as const, path: `/practitioner/${slug}`, testId: `Practitioner${name}` },
+    ]);
+
+    it.each(cases)("$role opens $path with its own chrome", async ({ role, path, testId }) => {
+      const user = makeAuthUser({ role });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter(path, ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId(testId)).toBeInTheDocument();
+    });
+
+    // The chrome follows the URL, not the signed-in role: super-admin can
+    // open both prefixes and must keep seeing each prefix's own chrome.
+    it.each([
+      { path: "/manager/settings", testId: "ManagerSettingsPage" },
+      { path: "/practitioner/settings", testId: "PractitionerSettingsPage" },
+    ])("super-admin on $path gets that prefix's chrome", async ({ path, testId }) => {
+      const user = makeAuthUser({ role: "super-admin" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter(path, ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId(testId)).toBeInTheDocument();
+    });
+
+    // Sharing a component shares no access: the other role's prefix still
+    // bounces to the caller's own home.
+    it("practitioner on /manager/settings is sent home, not shown the screen", async () => {
+      const user = makeAuthUser({ role: "practitioner" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter("/manager/settings", ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
+      expect(screen.queryByTestId("ManagerSettingsPage")).not.toBeInTheDocument();
+    });
+
+    it("manager on /practitioner/settings is sent home, not shown the screen", async () => {
+      const user = makeAuthUser({ role: "manager" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter("/practitioner/settings", ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("ManagerDashboardPage")).toBeInTheDocument();
+      expect(screen.queryByTestId("PractitionerSettingsPage")).not.toBeInTheDocument();
     });
   });
 

@@ -711,7 +711,7 @@ export const DEFAULT_ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     role: "practitioner",
     label: "Practitioner",
     description: "PRISM-accredited coach managing clients",
-    homeRoute: ROUTES.PRACTITIONER.DASHBOARD,
+    homeRoute: ROUTES.PRACTITIONER.HOME,
     navItems: PRACTITIONER_NAV_ITEMS,
   },
   distributor: {
