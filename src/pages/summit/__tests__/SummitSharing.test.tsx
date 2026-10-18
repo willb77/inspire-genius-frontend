@@ -22,6 +22,7 @@ const svc = {
   extendGrant: jest.fn(),
   revokeGrant: jest.fn(),
   respondToRequest: jest.fn(),
+  getCategories: jest.fn(),
 };
 jest.mock("@/services/consent/visibility.service", () => ({
   getPeople: () => svc.getPeople(),
@@ -32,6 +33,7 @@ jest.mock("@/services/consent/visibility.service", () => ({
   extendGrant: (...a: unknown[]) => svc.extendGrant(...a),
   revokeGrant: (...a: unknown[]) => svc.revokeGrant(...a),
   respondToRequest: (...a: unknown[]) => svc.respondToRequest(...a),
+  getCategories: () => svc.getCategories(),
 }));
 
 const mockGetMyGoals = jest.fn();
@@ -100,8 +102,21 @@ function renderPage() {
   );
 }
 
+/** What the server's GET /categories says today (SHARE-1), switch off. */
+const DETAILS = [
+  { key: "goals", label: "Goals", enforced: "yes", note: "" },
+  { key: "prism", label: "PRISM profile", enforced: "partial", note: "Gap analysis needs it; the profile tab doesn't check it yet." },
+  { key: "assessments", label: "Assessments", enforced: "no", note: "" },
+  { key: "artefacts", label: "Profile", enforced: "no", note: "" },
+  { key: "interviews", label: "Interviews", enforced: "yes", note: "" },
+  { key: "development", label: "Development", enforced: "partial", note: "Job Fit matches need it." },
+  { key: "engagement", label: "Activity", enforced: "yes", note: "" },
+  { key: "topics", label: "Topics", enforced: "no", note: "" },
+];
+
 beforeEach(() => {
   jest.clearAllMocks();
+  svc.getCategories.mockResolvedValue({ categories: [], details: DETAILS, notGrantable: ["safety"] });
   svc.getMyGrants.mockResolvedValue([]);
   svc.getAccessLog.mockResolvedValue([]);
   mockGetMyGoals.mockResolvedValue({ memberId: "m1", goals: [], coverage: [] });
@@ -332,17 +347,55 @@ describe("six switches, each honest about enforcement (S-2)", () => {
     }
   });
 
-  it("marks exactly the four that do not yet decide access, and says why", async () => {
+  // SHARE-1 (c): the labels follow the server, not a list in this file.
+  it("labels each switch from the server: partly, not yet, or nothing", async () => {
     svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
     renderPage();
-    const note = await screen.findByTestId("not-enforced-note");
-    expect(note).toHaveTextContent(/Assessments, Profile, Interviews, Development: your choice is saved now/);
-    expect(note).toHaveTextContent(/can currently still see these through their role/);
+    expect(await screen.findByTestId("partly-prism")).toHaveTextContent("(partly protected)");
+    expect(screen.getByTestId("partly-development")).toBeInTheDocument();
+    expect(screen.getByTestId("not-enforced-assessments")).toHaveTextContent("(not protected yet)");
+    expect(screen.getByTestId("not-enforced-artefacts")).toBeInTheDocument();
+    for (const key of ["goals", "interviews"]) {
+      expect(screen.queryByTestId(`not-enforced-${key}`)).toBeNull();
+      expect(screen.queryByTestId(`partly-${key}`)).toBeNull();
+    }
+    const note = screen.getByTestId("not-enforced-note");
+    expect(note).toHaveTextContent(/Not protected yet — Assessments, Profile: people on your reporting line can see these whether or not you share them/);
+    expect(screen.getByTestId("partly-note-prism")).toHaveTextContent("PRISM profile, partly protected: Gap analysis needs it");
+    expect(screen.getByTestId("partly-note-development")).toHaveTextContent("Job Fit matches need it.");
+  });
+
+  it("PRISM loses its warning when the server says it is protected (the grant gate is on)", async () => {
+    svc.getCategories.mockResolvedValue({
+      categories: [],
+      details: DETAILS.map((d) => (d.key === "prism" ? { ...d, enforced: "yes", note: "" } : d)),
+      notGrantable: ["safety"],
+    });
+    svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
+    renderPage();
+    await screen.findByTestId("partly-development");
+    expect(screen.queryByTestId("partly-prism")).toBeNull();
+    expect(screen.queryByTestId("not-enforced-prism")).toBeNull();
+  });
+
+  it("when the details cannot be read, only goals is shown as protected", async () => {
+    svc.getCategories.mockRejectedValue(new Error("down"));
+    svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
+    renderPage();
+    await screen.findByRole("switch", { name: /share goals with/i });
+    await waitFor(() => expect(screen.getByTestId("not-enforced-prism")).toBeInTheDocument());
     for (const key of ["assessments", "artefacts", "interviews", "development"]) {
       expect(screen.getByTestId(`not-enforced-${key}`)).toBeInTheDocument();
     }
     expect(screen.queryByTestId("not-enforced-goals")).toBeNull();
-    expect(screen.queryByTestId("not-enforced-prism")).toBeNull();
+  });
+
+  it("a server older than SHARE-1 (no details) reads the same way", async () => {
+    svc.getCategories.mockResolvedValue({ categories: [], notGrantable: ["safety"] });
+    svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId("not-enforced-interviews")).toBeInTheDocument());
+    expect(screen.queryByTestId("not-enforced-goals")).toBeNull();
   });
 
   it("turning Development on keeps what is already shared", async () => {
@@ -566,5 +619,67 @@ describe("the basis of each candidate's claim", () => {
     renderPage();
     expect(await screen.findByText(/managers who added you to their team list/i)).toBeInTheDocument();
     expect(screen.getByText(/It is not empty — it is unread/i)).toBeInTheDocument();
+  });
+});
+
+// SHARE-1 (b): one switch per person for everything on the page.
+describe("Share all", () => {
+  const withGrant = (categories: Record<string, boolean>) =>
+    person({ grant: { id: "g1", status: "granted", categories: categories as never, expiresAt: IN_A_YEAR, requestedAt: null } });
+  const ALL_SIX = { goals: true, prism: true, assessments: true, artefacts: true, interviews: true, development: true };
+
+  it("is off until all six are shared", async () => {
+    svc.getPeople.mockResolvedValue({ people: [withGrant({ goals: true, prism: true })], sources: PEOPLE_OK });
+    renderPage();
+    expect(await screen.findByRole("switch", { name: /share everything on this page with morgan manager/i })).not.toBeChecked();
+  });
+
+  it("is on when all six are shared", async () => {
+    svc.getPeople.mockResolvedValue({ people: [withGrant(ALL_SIX)], sources: PEOPLE_OK });
+    renderPage();
+    expect(await screen.findByRole("switch", { name: /share everything on this page with/i })).toBeChecked();
+  });
+
+  it("turning it on offers all six in ONE call, keeping what is shared off this page", async () => {
+    svc.getPeople.mockResolvedValue({ people: [withGrant({ goals: true, engagement: true })], sources: PEOPLE_OK });
+    svc.offerAccess.mockResolvedValue({ id: "g1", status: "granted", mode: "refreshed" });
+    renderPage();
+    fireEvent.click(await screen.findByRole("switch", { name: /share everything on this page with/i }));
+    await waitFor(() => expect(svc.offerAccess).toHaveBeenCalledTimes(1));
+    expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u-mgr", categories: { engagement: true, ...ALL_SIX } });
+  });
+
+  it("someone with no grant gets all six", async () => {
+    svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
+    svc.offerAccess.mockResolvedValue({ id: "g9", status: "granted", mode: "offered" });
+    renderPage();
+    fireEvent.click(await screen.findByRole("switch", { name: /share everything on this page with/i }));
+    await waitFor(() => expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u-mgr", categories: ALL_SIX }));
+  });
+
+  it("turning it off revokes when nothing else is shared", async () => {
+    svc.getPeople.mockResolvedValue({ people: [withGrant(ALL_SIX)], sources: PEOPLE_OK });
+    svc.revokeGrant.mockResolvedValue({ id: "g1", status: "revoked" });
+    renderPage();
+    fireEvent.click(await screen.findByRole("switch", { name: /share everything on this page with/i }));
+    await waitFor(() => expect(svc.revokeGrant).toHaveBeenCalledWith("g1"));
+    expect(svc.offerAccess).not.toHaveBeenCalled();
+  });
+
+  it("turning it off keeps a category shared from elsewhere, instead of revoking it", async () => {
+    svc.getPeople.mockResolvedValue({ people: [withGrant({ ...ALL_SIX, engagement: true })], sources: PEOPLE_OK });
+    svc.offerAccess.mockResolvedValue({ id: "g1", status: "granted", mode: "refreshed" });
+    renderPage();
+    fireEvent.click(await screen.findByRole("switch", { name: /share everything on this page with/i }));
+    await waitFor(() => expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u-mgr", categories: { engagement: true } }));
+    expect(svc.revokeGrant).not.toHaveBeenCalled();
+  });
+
+  it("says which of the six are not fully protected", async () => {
+    svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
+    renderPage();
+    expect(await screen.findByTestId("share-all-note-u-mgr")).toHaveTextContent(
+      "“Share all” includes PRISM profile, Assessments, Profile, Development, which are not fully protected yet.",
+    );
   });
 });

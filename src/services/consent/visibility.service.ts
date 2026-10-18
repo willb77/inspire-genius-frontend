@@ -1,6 +1,7 @@
 import { agentApi } from "@/lib/agentApi"
 import type {
   AccessLogRow,
+  CategoriesResponse,
   ExtendResult,
   LookupResult,
   MyGrantRow,
@@ -29,6 +30,12 @@ function unwrap<T>(body: Envelope<T> | undefined): T {
     throw new Error("Consent service returned an empty envelope")
   }
   return body.data
+}
+
+/** GET /categories — the grantable categories and (SHARE-1) what each protects. */
+export async function getCategories(): Promise<CategoriesResponse> {
+  const { data } = await agentApi.get<Envelope<CategoriesResponse>>(`${BASE}/categories`)
+  return unwrap(data)
 }
 
 /** GET /people — who I could share with, with each source's read state. */
