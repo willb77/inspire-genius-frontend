@@ -36,8 +36,8 @@ export default function UserLayout({
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super-admin";
   const agentEngineOn = useAgentEngine();
-  // My Workspace = the user menu plus the workspace verticals (Job Fit, Lumen),
-  // spliced in above Settings/Help — greyed when unentitled.
+  // My Workspace = the user menu plus the workspace verticals (Career Fit),
+  // spliced in above Settings/Help — omitted when unentitled.
   const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
   // The consolidated Tools section, gated by the SIGNED-IN role. Until
   // 2026-10-07 this passed "user" for everyone but super-admin, so a manager or
@@ -61,9 +61,9 @@ export default function UserLayout({
    *  header-less section wrapper.
    *
    *  Manager / practitioner: the workspace menu, then Tools. Any workspace row
-   *  whose destination Tools already lists (Goals Studio; Interview Practice,
-   *  which Tools carries as "Practice Interview" under Interview Studio) is
-   *  dropped from the workspace half, so each destination appears once. Tools
+   *  whose destination Tools already lists (Goals Studio) is dropped from the
+   *  workspace half, so each destination appears once. Role Play and Career
+   *  Fit are not in Tools since 2026-10-18, so they stay in this half. Tools
    *  keeps it because Tools is the one place these roles find it on every page,
    *  including their own role pages where the workspace menu is not shown. */
   const userSections: NavSectionDef[] | undefined = useMemo(() => {

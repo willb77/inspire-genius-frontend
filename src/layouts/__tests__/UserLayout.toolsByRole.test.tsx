@@ -35,22 +35,27 @@ jest.mock("@/hooks/super-admin/useBroadcast", () => ({
   useBroadcastAccess: () => ({ data: { authorized: false } }),
 }));
 
-// The vertical catalogue as an entitled manager sees it: the two Career Studio
-// verticals plus Lumen. Workspace splice is identity (WORKSPACE_VERTICALS is
-// empty in the app too).
-jest.mock("@/components/layout/useVerticalLauncher", () => ({
-  useWorkspaceNavItems: (items: unknown) => items,
-  useVerticalLauncherSection: () => ({
-    id: "verticals-launcher",
-    label: "Tools",
-    defaultCollapsed: true,
-    items: [
-      { to: "/vertical/job-blueprint", icon: () => null, label: "Job Blueprint Studio" },
-      { to: "/vertical/job-fit/matches", icon: () => null, label: "Job Fit" },
-      { to: "/vertical/lumen/dashboard", icon: () => null, label: "Lumen" },
-    ],
-  }),
-}));
+// The vertical catalogue as an account entitled to job-fit sees it since
+// 2026-10-18 (request): job-fit is in WORKSPACE_VERTICALS, so the launcher
+// filters it OUT of the catalogue and the workspace splice puts "Career Fit" in
+// the main menu instead. The splice uses the REAL withWorkspaceVerticals, so
+// its position (above the Document Library/Settings/Help tail) is real too.
+jest.mock("@/components/layout/useVerticalLauncher", () => {
+  const actual = jest.requireActual("@/components/layout/useVerticalLauncher");
+  const careerFit = { to: "/vertical/job-fit/matches", icon: () => null, label: "Career Fit" };
+  return {
+    useWorkspaceNavItems: (items: NavItemDef[]) => actual.withWorkspaceVerticals(items, [careerFit]),
+    useVerticalLauncherSection: () => ({
+      id: "verticals-launcher",
+      label: "Tools",
+      defaultCollapsed: true,
+      items: [
+        { to: "/vertical/job-blueprint", icon: () => null, label: "Job Blueprint Studio" },
+        { to: "/vertical/lumen/dashboard", icon: () => null, label: "Lumen" },
+      ],
+    }),
+  };
+});
 
 import UserLayout from "../UserLayout";
 
@@ -103,16 +108,20 @@ describe("UserLayout — Tools on workspace pages, by role", () => {
   );
 
   test.each(["manager", "practitioner"] as const)(
-    "%s keeps Goals Studio and practice interviews — once, under Tools",
+    "%s keeps Goals Studio once under Tools, and Role Play + Career Fit once in the workspace half",
     (role) => {
       const props = renderAs(role);
       const [workspace, tools] = props.navSections ?? [];
       expect(workspace.items.map((i) => i.to)).not.toContain("/my/goals");
-      expect(workspace.items.map((i) => i.to)).not.toContain("/interview-practice");
       const toolRows = renderedRows({ navItems: [], navSections: [tools] });
-      expect(toolRows.map((r) => r.to)).toEqual(
-        expect.arrayContaining(["/my/goals", "/interview-practice"]),
-      );
+      expect(toolRows.map((r) => r.to)).toContain("/my/goals");
+      // 2026-10-18 (request): Role Play and Career Fit are main-menu rows, NOT
+      // Tools rows, so the workspace half keeps them and Tools lists neither.
+      for (const to of ["/interview-practice", "/vertical/job-fit/matches"]) {
+        expect(workspace.items.filter((i) => i.to === to)).toHaveLength(1);
+        expect(toolRows.map((r) => r.to)).not.toContain(to);
+      }
+      expect(workspace.items.find((i) => i.to === "/interview-practice")?.label).toBe("Role Play");
       // The rest of the workspace menu survives the de-duplication.
       expect(workspace.items.map((i) => i.label)).toEqual(
         expect.arrayContaining(["Home", "Chat with Meridian", "Settings"]),

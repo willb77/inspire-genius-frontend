@@ -356,9 +356,9 @@ export default function InterviewPracticePage() {
       <UserLayout>
         <div className="mx-auto max-w-3xl py-8 space-y-4">
           <header>
-            <h1 className="text-2xl font-semibold">Interview Practice</h1>
+            <h1 className="text-2xl font-semibold">Role Play</h1>
             <p className="text-sm text-slate-600">
-              A structured practice interview with supportive coaching — no scores,
+              A structured interview role play with supportive coaching — no scores,
               just tips to help your story land. You choose how many questions.
             </p>
             <p className="mt-1 text-sm">
@@ -496,7 +496,7 @@ export default function InterviewPracticePage() {
       <div className="mx-auto max-w-3xl py-8 space-y-4">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Interview Practice</h1>
+            <h1 className="text-2xl font-semibold">Role Play</h1>
             <p className="text-sm text-slate-600">{frame?.roleTitle} · {frame?.company}</p>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
               {tailoredApplied && (

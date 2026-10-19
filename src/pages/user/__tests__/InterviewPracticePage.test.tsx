@@ -180,7 +180,7 @@ const start = async (user: ReturnType<typeof userEvent.setup>) => {
 describe("setup", () => {
   it("opens on setup with personalization on by default", () => {
     render(<InterviewPracticePage />)
-    expect(screen.getByRole("heading", { name: /interview practice/i })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: /^role play$/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/personalize coaching to my profile/i)).toBeChecked()
   })
 
@@ -465,7 +465,7 @@ describe("export, restart and voice", () => {
     await reachFindings(user)
 
     await user.click(screen.getByRole("button", { name: /^new$/i }))
-    expect(screen.getByRole("heading", { name: /interview practice/i })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: /^role play$/i })).toBeInTheDocument()
     expect(screen.queryByText("You interview well.")).not.toBeInTheDocument()
     expect(screen.queryByText("I rebuilt the rota.")).not.toBeInTheDocument()
     expect(screen.getByLabelText(/personalize coaching to my profile/i)).toBeChecked()
