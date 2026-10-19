@@ -70,8 +70,22 @@ import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation"
  * Putting "job-fit" back in this set restores the My Workspace shortcut and
  * removes it from the Tools catalogue again — the two are mutually exclusive by
  * construction, which is the point of the filter.
+ *
+ * **"job-fit" is back as of 2026-10-18** (request: "add Career Fit only … and
+ * add both to each users menu"). It is the vertical's ONE link, titled "Career
+ * Fit", opening on My fit (its `homePath`, `ROUTES.JOB_FIT.MATCHES`) — none of
+ * its sub-pages. Because `useGatedNavItems`, `UserLayout`, `SuperAdminLayout`
+ * and `useVerticalPageSections` all route their menu through
+ * {@link useWorkspaceNavItems}, this one word puts it in every role's main
+ * menu. It also leaves the Tools catalogue, so the Career Studio group there
+ * now holds Career Blueprint alone — the same no-duplicate rule that took Role
+ * Play out of the Interview Studio group.
+ *
+ * Unlike every other launcher entry, a workspace vertical is now HIDDEN rather
+ * than greyed when the account is not entitled — see
+ * {@link useWorkspaceVerticalItems}.
  */
-export const WORKSPACE_VERTICALS = new Set<VerticalKey>([])
+export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit"])
 
 /**
  * Verticals hidden from the Tools section entirely (2026-07-31).
@@ -239,9 +253,19 @@ export function useWorkspaceVerticalLinks(): NavItemDef[] {
 }
 
 /**
- * Workspace verticals (Job Fit, Lumen) as nav items, in registry order — shown
- * to everyone, `disabled` when the user has no entitlement. Consumers merge
- * these into the My Workspace menu — see {@link withWorkspaceVerticals}.
+ * Workspace verticals (Career Fit) as nav items, in registry order. Consumers
+ * merge these into the My Workspace menu — see {@link withWorkspaceVerticals}.
+ *
+ * **Entitled accounts only** (2026-10-18, request: Career Fit shows "ONLY for
+ * accounts entitled to the job-fit vertical"). An unentitled vertical is left
+ * OUT, not greyed — the opposite of the Tools catalogue, where greying keeps
+ * the catalogue legible. This is a person's own menu, not a catalogue. While
+ * the entitlement read is loading `data` is undefined, and on failure
+ * `useEnabledVerticals` resolves to `[]`, so both hide the row: the menu never
+ * offers a link that `VerticalShell` would bounce to /home.
+ *
+ * A force-disabled vertical the account IS entitled to still renders greyed
+ * with the "Temporarily unavailable" reason, as before.
  */
 export function useWorkspaceVerticalItems(): NavItemDef[] {
   const { data: enabled } = useEnabledVerticals()
@@ -250,8 +274,8 @@ export function useWorkspaceVerticalItems(): NavItemDef[] {
   return useMemo(() => {
     const entitlements = enabled ?? []
     return listVerticals()
-      .filter((v) => WORKSPACE_VERTICALS.has(v.key))
-      .map((v) => toNavItem(v, entitlements.includes(v.key)))
+      .filter((v) => WORKSPACE_VERTICALS.has(v.key) && entitlements.includes(v.key))
+      .map((v) => toNavItem(v, true))
   }, [enabled])
 }
 
@@ -290,8 +314,8 @@ export function withWorkspaceVerticals(
 }
 
 /**
- * A My Workspace menu with the workspace verticals (Job Fit, Lumen) spliced in
- * above Settings/Help.
+ * A My Workspace menu with the workspace verticals (Career Fit, when entitled)
+ * spliced in above Settings/Help.
  *
  * Used by every layout that renders a workspace menu — `UserLayout` and
  * `SuperAdminLayout` build theirs from `getUserNavItems()`, and

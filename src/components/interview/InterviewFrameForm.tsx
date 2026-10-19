@@ -58,7 +58,9 @@ type FormValues = z.infer<typeof schema>
 export default function InterviewFrameForm({
   initial,
   onConfirm,
-  title = "Set up your practice interview",
+  // "Role Play" since 2026-10-18 (request) — the /interview-practice page's
+  // user-facing name. The live-interview surface passes its own title.
+  title = "Set up your role play",
   description = "Before we begin, please confirm a few things so the questions and coaching fit the actual seat you're preparing for.",
   submitLabel = "Confirm & start the interview",
   showEmployerPacks = false,

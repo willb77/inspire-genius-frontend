@@ -53,9 +53,10 @@ describe("MANAGER_NAV_ITEMS — the six-item sidebar", () => {
 
   it("always offers a landing surface, even with the pilot flag off", () => {
     // VITE_FEATURE_TEAM_DEVELOPMENT scopes the pilot cohort and .env.example
-    // ships it FALSE. Without the fallback that build gives a manager five
-    // entries and no home page.
-    expect(MANAGER_NAV_ITEMS).toHaveLength(6)
+    // ships it FALSE. Without the fallback that build gives a manager no home
+    // page. Seven since 2026-10-18 (request), when Role Play joined; Career Fit
+    // is spliced in at render time for entitled accounts and is not counted.
+    expect(MANAGER_NAV_ITEMS).toHaveLength(7)
     expect([ROUTES.MANAGER.DEVELOPMENT, ROUTES.MANAGER.DASHBOARD]).toContain(
       MANAGER_NAV_ITEMS[0].to,
     )

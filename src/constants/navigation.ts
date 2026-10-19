@@ -53,11 +53,35 @@ import {
 export const WORKSPACE_ITEM_UNAVAILABLE_REASON = "Temporarily unavailable"
 
 /**
- * The user role's menu, in order. **Exactly eight entries** as of 2026-09-30.
- * Six were fixed on 2026-08-12 (request: "for all User roles only show these
- * menu items on the left side menu — Home, Chat with Meridian, Interview
- * Practice, Document Library, Settings, Help & Support"); Goals Studio
- * returned on 2026-09-04 and My development joined on 2026-09-30 (TDS-4c).
+ * Role Play — the candidate-side interview rehearsal at /interview-practice
+ * (Alex interview-coach, voice-capable). Universal and un-gated.
+ *
+ * Renamed 2026-10-18 (request: "Change Practice Interview to Role Play and add
+ * both to each users menu"). It was "Interview Practice" in the user menu and
+ * "Practice Interview" under the coach roles' Interview Studio group; it is now
+ * ONE item, "Role Play", in EVERY role's main menu, and it left the Interview
+ * Studio group so no sidebar lists it twice. Only the label changed — the route,
+ * page, files and API paths keep their interview-practice names.
+ *
+ * The label must stay unique within a menu: `SidebarScaffold` keys nav items by
+ * label, so a duplicate collides during reconciliation.
+ */
+export const ROLE_PLAY_ITEM: NavItemDef = {
+  to: ROUTES.INTERVIEW_PRACTICE,
+  icon: MessagesSquare,
+  label: "Role Play",
+}
+
+/**
+ * The user role's menu, in order. **Eight fixed entries** as of 2026-09-30,
+ * plus Career Fit for accounts entitled to the `job-fit` vertical (2026-10-18,
+ * request) — spliced in by `useWorkspaceNavItems`, not listed here, because it
+ * depends on the entitlement read. Six were fixed on 2026-08-12 (request: "for
+ * all User roles only show these menu items on the left side menu — Home, Chat
+ * with Meridian, Interview Practice, Document Library, Settings, Help &
+ * Support"); Goals Studio returned on 2026-09-04, My development joined on
+ * 2026-09-30 (TDS-4c), and "Interview Practice" became "Role Play" on
+ * 2026-10-18 (request).
  *
  * Kept in step with {@link getUserNavItems}, which is the toggle-aware version
  * the layouts actually call. Both must yield the same six labels, because which
@@ -67,16 +91,16 @@ export const WORKSPACE_ITEM_UNAVAILABLE_REASON = "Temporarily unavailable"
  * Assessment and Feedback long after the other had dropped them — and a menu
  * that changes depending on which page you are on is the bug that creates.
  *
- * Nothing is spliced in any more either: `WORKSPACE_VERTICALS` and
- * `WORKSPACE_VERTICAL_LINKS` (Job Fit, Resume Writer) were emptied in the same
- * change, so this list is the whole menu rather than most of it.
+ * One thing is spliced in: Career Fit (`job-fit` is in `WORKSPACE_VERTICALS`
+ * again as of 2026-10-18), above the Document Library/Settings/Help tail, and
+ * only for an account entitled to it. `WORKSPACE_VERTICAL_LINKS` stays empty.
  */
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
   { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals Studio" },
   { to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" },
-  { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
+  ROLE_PLAY_ITEM,
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
@@ -85,14 +109,20 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
 /**
  * The user role's menu — the toggle-aware version the layouts call.
  *
- * **Exactly eight entries** as of 2026-09-30. Six were fixed on 2026-08-12
+ * **Eight fixed entries** as of 2026-09-30. Six were fixed on 2026-08-12
  * (request: "for all User roles only show these menu items on the left side
  * menu"); Goals returned on 2026-09-04 as the ungated My Goals surface
  * (Goals offering, Phase 3 — decision D8: base product, not a vertical); My
  * development joined on 2026-09-30 (TDS-4c), on the same footing:
  *
- *   Home · Chat with Meridian · Goals Studio · My development · Interview
- *   Practice · Document Library · Settings · Help & Support
+ *   Home · Chat with Meridian · Goals Studio · My development · Role Play ·
+ *   [Career Fit] · Document Library · Settings · Help & Support
+ *
+ * "Interview Practice" became "Role Play" on 2026-10-18 (request). Career Fit
+ * (2026-10-18, request) is the bracketed ninth row: it is NOT in this list but
+ * spliced in by `useWorkspaceNavItems`, and only for an account entitled to the
+ * `job-fit` vertical — hidden, not greyed, otherwise, and hidden while the
+ * entitlement read is loading or has failed.
  *
  * "Goals" became "Goals Studio" on 2026-09-04 (request) — the same name the
  * coach roles see under Tools, so a member and their coach are talking about
@@ -104,12 +134,12 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
  * when it is off. Eight items either way — the toggle changes the
  * destination, not the shape of the menu.
  *
- * ## Nothing is spliced in
+ * ## One thing is spliced in
  *
- * `useWorkspaceNavItems` used to merge workspace verticals into this list, so
- * the rendered menu was longer than what you read here. `WORKSPACE_VERTICALS`
- * (Job Fit) and `WORKSPACE_VERTICAL_LINKS` (Resume Writer) were emptied in the
- * same change, so this IS the menu now.
+ * `useWorkspaceNavItems` merges workspace verticals into this list.
+ * `WORKSPACE_VERTICALS` was emptied on 2026-08-12 and holds `job-fit` again as
+ * of 2026-10-18, so an entitled account sees Career Fit between Role Play and
+ * Document Library. `WORKSPACE_VERTICAL_LINKS` (Resume Writer) stays empty.
  *
  * ## What was removed, and why the pages are fine
  *
@@ -128,13 +158,9 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
  *   - **Bio Capture** (2026-08-04) — moved into the Tools rollup, which is
  *     super-admin only as of 2026-08-12.
  *
- * **Job Fit is the one to watch.** It was spliced in from `WORKSPACE_VERTICALS`,
- * which is now empty — so it falls back into the Tools catalogue rather than
- * disappearing. Tools is super-admin only, which means a super-admin still
- * reaches Job Fit and the `user` role no longer can: nothing on Home or the
- * Meridian header links to it either. The routes resolve, so it is reachable by
- * URL and from the vertical's own pill row once inside, but it is effectively
- * undiscoverable for this role until something links to it again.
+ * **Job Fit** (titled "Career Fit") was undiscoverable for the `user` role
+ * from 2026-08-12, when `WORKSPACE_VERTICALS` was emptied, until 2026-10-18,
+ * when it returned to every role's menu as "Career Fit" for entitled accounts.
  */
 export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
   return [
@@ -163,8 +189,9 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // those two is asserted as exactly one apart (navigation.test.ts), which is
     // what caught the workspace-vertical splice landing in that gap.
     { to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" },
-    // Candidate-side STAR rehearsal with Alex (voice-capable).
-    { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
+    // Candidate-side STAR rehearsal with Alex (voice-capable). "Role Play"
+    // since 2026-10-18 (request); Career Fit, when entitled, splices in after it.
+    ROLE_PLAY_ITEM,
     // Document Library sits directly above Settings (2026-08-06 request). It is
     // a reference surface you go to occasionally, not a daily shortcut, so it
     // sits with the Settings/Help tail rather than among the primary actions.
@@ -198,11 +225,9 @@ export const HIDDEN_WORKSPACE_ROUTES = [
   // Joined 2026-08-12, when the greyed row was removed rather than left as a
   // permanently-disabled entry. Page and route untouched, as with the rest.
   ROUTES.ANALYTICS,
-  // Job Fit stopped being spliced in on 2026-08-12 (WORKSPACE_VERTICALS was
-  // emptied). Listed here because this constant tracks what is ABSENT from the
-  // menu regardless of how it used to get there — but note it is the one entry
-  // with no remaining link from any user-facing surface. See getUserNavItems.
-  ROUTES.JOB_FIT.MATCHES,
+  // ROUTES.JOB_FIT.MATCHES left this list on 2026-10-18 (request): it is in the
+  // menu again as "Career Fit" for accounts entitled to `job-fit`, spliced in by
+  // useWorkspaceNavItems. Listing it here as well would make this constant lie.
 ] as const
 
 /**
@@ -270,17 +295,10 @@ const JOB_BLUEPRINT_ITEM_PRACTITIONER: NavItemDef = {
   label: "Job Blueprint",
 }
 
-// Candidate-side interview rehearsal (Alex interview-coach). A universal,
-// un-gated feature. Since 2026-09-23 (request) it sits UNDER the Interview
-// Studio entry in the Tools rollup, labelled "Practice Interview" as named in
-// that request. The user role's flat menu keeps its own "Interview Practice"
-// row: that menu's six entries were fixed by name on 2026-08-12 and were not
-// part of this change.
-const PRACTICE_INTERVIEW_ITEM: NavItemDef = {
-  to: ROUTES.INTERVIEW_PRACTICE,
-  icon: MessagesSquare,
-  label: "Practice Interview",
-}
+// The candidate-side interview rehearsal sat UNDER the Interview Studio entry
+// in the Tools rollup as "Practice Interview" from 2026-09-23 until 2026-10-18,
+// when it became "Role Play" in every role's main menu (ROLE_PLAY_ITEM above)
+// and left the group, so no sidebar lists it twice.
 
 // Live Scored Candidate Interview (Phase 3) — a REAL, scored interview an
 // interviewer (manager/practitioner) runs of a candidate who is NOT the
@@ -337,20 +355,20 @@ const INTERVIEW_LIVE_ITEM_SUPER_ADMIN: NavItemDef = {
 // Interview Studio as a GROUP (2026-09-23, request: "move Live Interview, and
 // add a link to Practice Interview under Interview Studio"). The parent row is
 // still the Interview Studio page — clicking it navigates and opens the group;
-// the two children sit indented beneath it. One group per role because the
-// parent and Live Interview are role-prefixed routes; Practice Interview is the
-// shared /interview-practice page for all three.
+// Live Interview sits indented beneath it. One group per role because the
+// parent and Live Interview are role-prefixed routes. Practice Interview left
+// the group on 2026-10-18 (request) and is "Role Play" in the main menu.
 const INTERVIEW_STUDIO_GROUP_MANAGER: NavItemDef = {
   ...INTERVIEW_STUDIO_ITEM_MANAGER,
-  children: [INTERVIEW_LIVE_ITEM_MANAGER, PRACTICE_INTERVIEW_ITEM],
+  children: [INTERVIEW_LIVE_ITEM_MANAGER],
 }
 const INTERVIEW_STUDIO_GROUP_PRACTITIONER: NavItemDef = {
   ...INTERVIEW_STUDIO_ITEM_PRACTITIONER,
-  children: [INTERVIEW_LIVE_ITEM_PRACTITIONER, PRACTICE_INTERVIEW_ITEM],
+  children: [INTERVIEW_LIVE_ITEM_PRACTITIONER],
 }
 const INTERVIEW_STUDIO_GROUP_SUPER_ADMIN: NavItemDef = {
   ...INTERVIEW_STUDIO_ITEM_SUPER_ADMIN,
-  children: [INTERVIEW_LIVE_ITEM_SUPER_ADMIN, PRACTICE_INTERVIEW_ITEM],
+  children: [INTERVIEW_LIVE_ITEM_SUPER_ADMIN],
 }
 
 /**
@@ -392,8 +410,8 @@ const CHARACTER_LAB_ITEM_PRACTITIONER: NavItemDef = {
  * flag is off, which collapses the section away entirely.
  */
 // NOTE: `user` intentionally omitted — the user role renders UserLayout (flat
-// sidebar) which already carries "Interview Practice" in USER_NAV_ITEMS; adding
-// it here would also give the user a UnifiedLayout Tools section it never uses.
+// sidebar) which already carries "Role Play" in USER_NAV_ITEMS; adding it here
+// would also give the user a UnifiedLayout Tools section it never uses.
 // These roles render UnifiedLayout / SuperAdminLayout, which show the Tools rollup.
 export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
   // 2026-08-31 (request): manager and practitioner do the same job — they hold
@@ -442,7 +460,14 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
 // second thing that built a "Tools" section is precisely what produced two
 // same-labelled sections and the reconciliation bug documented there.
 
-/** Navigation items for the super-admin role */
+/**
+ * Navigation items for the super-admin role — the Administration section.
+ *
+ * Role Play and Career Fit are deliberately NOT here (2026-10-18): a
+ * super-admin's main menu is the "My Workspace" section, built from
+ * {@link getUserNavItems}, which carries both. Listing them here too would put
+ * each in the same sidebar twice.
+ */
 export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.SUPER_ADMIN.USERS, icon: UsersRound, label: "User Management" },
@@ -563,6 +588,10 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   // entry, not better.
   { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Team Import" },
   { to: ROUTES.MANAGER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
+  // Role Play joined every role's main menu on 2026-10-18 (request), leaving
+  // the Interview Studio group in Tools. Career Fit, for an account entitled to
+  // `job-fit`, is spliced in after it by useWorkspaceNavItems (above Settings).
+  ROLE_PLAY_ITEM,
   { to: ROUTES.MANAGER.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
@@ -577,6 +606,9 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.COMPANY_ADMIN.OBSERVABILITY, icon: Eye, label: "AI Observability" },
   { to: ROUTES.COMPANY_ADMIN.CULTURE, icon: BookHeart, label: "Culture Docs" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
+  // Role Play + entitlement-gated Career Fit (2026-10-18, request) — see
+  // ROLE_PLAY_ITEM. Career Fit is spliced in above Settings when entitled.
+  ROLE_PLAY_ITEM,
   { to: ROUTES.COMPANY_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
@@ -603,6 +635,9 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  // Role Play (2026-10-18, request) — see ROLE_PLAY_ITEM. This menu has no
+  // Settings/Help tail, so Career Fit, when entitled, is appended after it.
+  ROLE_PLAY_ITEM,
 ]
 
 /** Navigation items for the distributor role */
@@ -611,6 +646,9 @@ export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DISTRIBUTOR.NETWORK, icon: Network, label: "Network" },
   { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
+  // Role Play + entitlement-gated Career Fit (2026-10-18, request) — see
+  // ROLE_PLAY_ITEM. Career Fit is spliced in above Settings when entitled.
+  ROLE_PLAY_ITEM,
   { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
 ]
 

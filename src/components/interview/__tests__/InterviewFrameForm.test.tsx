@@ -67,9 +67,10 @@ describe("InterviewFrameForm — job description field", () => {
 })
 
 describe("InterviewFrameForm — heading + upload dialog", () => {
-  it("shows the default practice heading + submit label", () => {
+  it("shows the default Role Play heading + submit label", () => {
     renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
-    expect(screen.getByText(/set up your practice interview/i)).toBeInTheDocument()
+    // "Role Play" since 2026-10-18 (request).
+    expect(screen.getByText(/set up your role play/i)).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: /confirm & start the interview/i }),
     ).toBeInTheDocument()
@@ -84,7 +85,7 @@ describe("InterviewFrameForm — heading + upload dialog", () => {
       />,
     )
     expect(screen.getByText(/set up a live interview/i)).toBeInTheDocument()
-    expect(screen.queryByText(/set up your practice interview/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/set up your role play/i)).not.toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: /confirm & start the live interview/i }),
     ).toBeInTheDocument()

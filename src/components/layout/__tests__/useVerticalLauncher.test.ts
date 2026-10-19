@@ -67,6 +67,7 @@ beforeEach(() => {
 // The section is now labelled "Tools" and ships rolled up. As of 2026-08-04
 // WORKSPACE_VERTICALS = {job-fit}, so Job Fit is promoted to My Workspace and
 // drops OUT of Tools; Lumen (and the rest) still fall through to Tools.
+// (Emptied 2026-08-12; {job-fit} again since 2026-10-18, request.)
 describe("useVerticalLauncherSection", () => {
   test("is labelled Tools and ships rolled up", () => {
     setEnabled(["grant"])
@@ -77,20 +78,14 @@ describe("useVerticalLauncherSection", () => {
   })
 
   test("lists every visible vertical and links to homePath", () => {
-    // Job Fit is back in this catalogue as of 2026-08-12: WORKSPACE_VERTICALS
-    // was emptied when the user menu was cut to six entries, and this section
-    // filters on that set — so removing its My Workspace shortcut put it here
-    // rather than nowhere. Registry order.
+    // Job Fit left this catalogue again on 2026-10-18 (request): "job-fit" is
+    // back in WORKSPACE_VERTICALS, so it is a main-menu row ("Career Fit") and
+    // this section filters it out. Registry order.
     setEnabled(["grant", "job-fit"])
     const { result } = renderHook(() => useVerticalLauncherSection())
-    expect(result.current!.items.map((i) => i.label)).toEqual([
-      "GRANT",
-      "Job Fit",
-      "Lumen",
-    ])
+    expect(result.current!.items.map((i) => i.label)).toEqual(["GRANT", "Lumen"])
     expect(result.current!.items.map((i) => i.to)).toEqual([
       "/vertical/grant/dashboard",
-      "/vertical/job-fit/matches",
       "/vertical/lumen/dashboard",
     ])
   })
@@ -121,78 +116,82 @@ describe("useVerticalLauncherSection", () => {
     )
     expect(byLabel["GRANT"]).toBe(false)
     expect(byLabel["Lumen"]).toBe(true)
-    // Job Fit rejoined the catalogue 2026-08-12 and is greyed like any other
-    // unentitled entry.
-    expect(byLabel["Job Fit"]).toBe(true)
   })
 
   test("still lists the catalogue when the user is entitled to nothing", () => {
     setEnabled([])
     const { result } = renderHook(() => useVerticalLauncherSection())
-    expect(result.current!.items.map((i) => i.label)).toEqual([
-      "GRANT",
-      "Job Fit",
-      "Lumen",
-    ])
+    expect(result.current!.items.map((i) => i.label)).toEqual(["GRANT", "Lumen"])
     expect(result.current!.items.every((i) => i.disabled)).toBe(true)
   })
 
   test("entitlement keys that aren't registered verticals invent nothing", () => {
     setEnabled(["not-a-vertical", "grant"])
     const { result } = renderHook(() => useVerticalLauncherSection())
-    expect(result.current!.items.map((i) => i.label)).toEqual([
-      "GRANT",
-      "Job Fit",
-      "Lumen",
-    ])
+    expect(result.current!.items.map((i) => i.label)).toEqual(["GRANT", "Lumen"])
   })
 
-  test("Lumen and Job Fit both sit in Tools now", () => {
-    // Job Fit was promoted out to My Workspace on 2026-08-04 and returned here
-    // on 2026-08-12 when that shortcut was withdrawn. The two placements are
-    // mutually exclusive by construction — this section filters on
-    // WORKSPACE_VERTICALS — so a vertical in both would be a bug.
-    setEnabled(["job-fit", "lumen"])
-    const { result } = renderHook(() => useVerticalLauncherSection())
-    const labels = result.current!.items.map((i) => i.label)
-    expect(labels).toContain("Lumen")
-    expect(labels).toContain("Job Fit")
+  test("Job Fit is in the main menu, never ALSO in Tools", () => {
+    // The two placements are mutually exclusive by construction — this section
+    // filters on WORKSPACE_VERTICALS — so a vertical in both would be a bug.
+    // Asserted entitled AND unentitled: an unentitled account sees Job Fit in
+    // neither place (hidden from the menu, filtered from here).
+    for (const ents of [["job-fit", "lumen"], ["lumen"], []]) {
+      setEnabled(ents)
+      const { result } = renderHook(() => useVerticalLauncherSection())
+      const tos = result.current!.items.map((i) => i.to)
+      expect(tos).not.toContain("/vertical/job-fit/matches")
+      expect(tos).toContain("/vertical/lumen/dashboard")
+    }
   })
 })
 
-// WORKSPACE_VERTICALS is EMPTY as of 2026-08-12: the user menu is a fixed
-// six entries and Job Fit is not one of them, so nothing is promoted into My
-// Workspace any more. The mechanism is retained rather than deleted (see the
-// file's own note), which is what these cases now cover — a no-op that stays a
-// no-op, so re-promoting later is a one-word edit and not a rebuild.
-describe("useWorkspaceVerticalItems (nothing promoted to My Workspace)", () => {
-  test("returns nothing, whatever the user is entitled to", () => {
-    for (const ents of [[], ["grant"], ["job-fit"], ["grant", "honor", "job-fit", "lumen"]]) {
+// WORKSPACE_VERTICALS = {job-fit} again as of 2026-10-18 (request: Career Fit
+// in every role's menu, ONLY for accounts entitled to `job-fit`). Unlike the
+// Tools catalogue, an unentitled workspace vertical is HIDDEN, not greyed —
+// and so is an entitled one whose entitlement read has not landed yet.
+describe("useWorkspaceVerticalItems (Career Fit, entitled accounts only)", () => {
+  test("returns the job-fit row, live, when the account is entitled", () => {
+    setEnabled(["job-fit"])
+    const { result } = renderHook(() => useWorkspaceVerticalItems())
+    expect(result.current.map((i) => i.to)).toEqual(["/vertical/job-fit/matches"])
+    expect(result.current[0].disabled).toBe(false)
+  })
+
+  test("returns nothing when the account is not entitled to job-fit", () => {
+    for (const ents of [[], ["grant"], ["grant", "honor", "lumen"]]) {
       setEnabled(ents)
       const { result } = renderHook(() => useWorkspaceVerticalItems())
       expect(result.current).toEqual([])
     }
   })
 
-  test("keeps a stable identity so the splice stays a cheap no-op", () => {
-    // It feeds a navSections memo in every layout; a fresh [] each render would
-    // churn them all for nothing.
+  test("returns nothing while the entitlement read is loading", () => {
+    mockUseEnabledVerticals.mockReturnValue({ data: undefined, isLoading: true })
+    const { result } = renderHook(() => useWorkspaceVerticalItems())
+    expect(result.current).toEqual([])
+  })
+
+  test("returns nothing when the entitlement read failed", () => {
+    mockUseEnabledVerticals.mockReturnValue({ data: undefined, isLoading: false, isError: true })
+    const { result } = renderHook(() => useWorkspaceVerticalItems())
+    expect(result.current).toEqual([])
+  })
+
+  test("promotes ONLY job-fit, whatever else the account is entitled to", () => {
+    setEnabled(["grant", "honor", "job-fit", "lumen"])
+    const { result } = renderHook(() => useWorkspaceVerticalItems())
+    expect(result.current.map((i) => i.to)).toEqual(["/vertical/job-fit/matches"])
+  })
+
+  test("keeps a stable identity so the splice stays cheap", () => {
+    // It feeds a navSections memo in every layout; a fresh array each render
+    // would churn them all for nothing.
     setEnabled(["job-fit"])
     const { result, rerender } = renderHook(() => useWorkspaceVerticalItems())
     const first = result.current
     rerender()
     expect(result.current).toBe(first)
-  })
-
-  test("the vertical itself is untouched — only the menu entry went", () => {
-    // Re-promoting must be a one-line change to WORKSPACE_VERTICALS, not a
-    // route restoration. Job Fit still resolves and still appears in the Tools
-    // catalogue, which is asserted above.
-    setEnabled(["job-fit"])
-    const { result } = renderHook(() => useVerticalLauncherSection())
-    expect(result.current!.items.find((i) => i.label === "Job Fit")!.to).toBe(
-      "/vertical/job-fit/matches",
-    )
   })
 })
 
@@ -248,24 +247,23 @@ describe("useWorkspaceNavItems", () => {
     expect(result.current).toBe(first)
   })
 
-  test("leaves the menu untouched — nothing is spliced any more", () => {
-    // Both WORKSPACE_VERTICALS and WORKSPACE_VERTICAL_LINKS are empty as of
-    // 2026-08-12, so this hook is now an identity over its input. Asserted with
-    // a fully-entitled user: if either set is repopulated, this fails.
+  test("splices Career Fit above the tail for an entitled account", () => {
     setEnabled(["grant", "honor", "job-fit", "lumen"])
     const { result } = renderHook(() => useWorkspaceNavItems(MENU))
     expect(result.current.map((i) => i.label)).toEqual([
       "Home",
       "My Documents",
+      // The registry title in this fixture; the real manifest says "Career Fit".
+      "Job Fit",
       "Settings",
       "Help & Support",
     ])
   })
 
-  test("returns the input array itself, not a copy", () => {
+  test("returns the input array itself, not a copy, when not entitled", () => {
     // withWorkspaceVerticals short-circuits when there is nothing to merge.
     // Identity, not just equality — the layouts memoise on it.
-    setEnabled(["job-fit", "honor"])
+    setEnabled(["honor"])
     const { result } = renderHook(() => useWorkspaceNavItems(MENU))
     expect(result.current).toBe(MENU)
   })

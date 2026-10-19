@@ -68,6 +68,8 @@ describe("constants/navigation", () => {
         "Member Oversight",
         "Team Import",
         "Schedule",
+        // 2026-10-18 (request): Role Play joins every role's main menu.
+        "Role Play",
         "Settings",
         "Help & Support",
       ])
@@ -149,17 +151,20 @@ describe("constants/navigation", () => {
         "Goals Studio",
         // 2026-09-23: Live Interview and Practice Interview moved UNDER this
         // entry (see the group test below); they are no longer top-level rows.
+        // 2026-10-18: Practice Interview left the group as "Role Play" in the
+        // main menu.
         "Interview Studio",
         "Character Lab",
       ])
     })
 
-    it("nests Live Interview and Practice Interview under Interview Studio, in that order", () => {
+    it("nests only Live Interview under Interview Studio (Role Play left the group 2026-10-18)", () => {
       for (const role of ["manager", "practitioner", "super-admin"] as const) {
         const studio = (TOOL_ITEMS_BY_ROLE[role] ?? []).find((i) => i.label === "Interview Studio")
-        expect(studio?.children?.map((c) => c.label)).toEqual(["Live Interview", "Practice Interview"])
-        // Practice Interview is the one shared page; the parent keeps its own route.
-        expect(studio?.children?.[1].to).toBe(ROUTES.INTERVIEW_PRACTICE)
+        expect(studio?.children?.map((c) => c.label)).toEqual(["Live Interview"])
+        // The rehearsal page is in the main menu as "Role Play" now; listing it
+        // here as well would put it in the same sidebar twice.
+        expect(studio?.children?.some((c) => c.to === ROUTES.INTERVIEW_PRACTICE)).toBe(false)
         expect(studio?.to).not.toBe("")
       }
     })
@@ -241,7 +246,7 @@ describe("My Workspace menu order + switched-off entries", () => {
   const labels = (agentEngineOn: boolean) =>
     getUserNavItems(agentEngineOn).map((i) => i.label)
 
-  it("orders the usable entries Home → Chat → Interview Practice → Document Library → Help", () => {
+  it("orders the usable entries Home → Chat → Role Play → Document Library → Help", () => {
     // Asserted as a subsequence, not the whole array: the greyed entries and
     // Settings sit between them, and Job Fit is spliced in later by
     // useWorkspaceNavItems. What was specified is the RELATIVE order, so that
@@ -251,7 +256,7 @@ describe("My Workspace menu order + switched-off entries", () => {
     const wanted = [
       "Home",
       "Chat with Meridian",
-      "Interview Practice",
+      "Role Play",
       "Document Library",
       "Help & Support",
     ]
@@ -294,12 +299,12 @@ describe("My Workspace menu order + switched-off entries", () => {
     // HIDDEN_WORKSPACE_ROUTES means "absent from the menu". It has to stay in
     // step with getUserNavItems or the invariant test above ("never contradicts
     // the rendered menu") is asserting against a lie.
-    for (const route of [
-      ROUTES.ANALYTICS,
-      ROUTES.JOB_FIT.MATCHES,
-    ]) {
+    for (const route of [ROUTES.ANALYTICS]) {
       expect(HIDDEN_WORKSPACE_ROUTES).toContain(route)
     }
+    // 2026-10-18 (request): Career Fit (ROUTES.JOB_FIT.MATCHES) is in the menu
+    // again for entitled accounts, so it is no longer declared hidden.
+    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.JOB_FIT.MATCHES)
     // 2026-09-04: Summit and the Direction Setting goals page left the hidden
     // list — the surface is back in the menu at MY_GOALS.BASE, so listing
     // either here would make the constant lie about the menu.
@@ -321,7 +326,10 @@ describe("My Workspace menu order + switched-off entries", () => {
       "Chat with Meridian",
       "Goals Studio",
       "My development",
-      "Interview Practice",
+      // "Interview Practice" until 2026-10-18 (request). Career Fit, for an
+      // entitled account, is spliced in after this row by useWorkspaceNavItems —
+      // pinned in workspace-menu.render.test.tsx, since it is not in this list.
+      "Role Play",
       "Document Library",
       "Settings",
       "Help & Support",
@@ -336,7 +344,10 @@ describe("My Workspace menu order + switched-off entries", () => {
       "Chat with Coaches",
       "Goals Studio",
       "My development",
-      "Interview Practice",
+      // "Interview Practice" until 2026-10-18 (request). Career Fit, for an
+      // entitled account, is spliced in after this row by useWorkspaceNavItems —
+      // pinned in workspace-menu.render.test.tsx, since it is not in this list.
+      "Role Play",
       "Document Library",
       "Settings",
       "Help & Support",
@@ -366,7 +377,7 @@ describe("My Workspace menu order + switched-off entries", () => {
     expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.MY_DEVELOPMENT)
   })
 
-  it("carries Goals at the ungated My Goals route, and still drops Job Fit", () => {
+  it("carries Goals at the ungated My Goals route, and lists no Job Fit row of its own", () => {
     const items = getUserNavItems(true)
     const goals = items.find((i) => i.label === "Goals Studio")
     // The row points at the base-product surface, not the Direction Setting
@@ -376,6 +387,9 @@ describe("My Workspace menu order + switched-off entries", () => {
     expect(items.find((i) => i.to === ROUTES.DIRECTION_SETTING.GOALS)).toBeUndefined()
     expect(items.find((i) => i.to === "/summit")).toBeUndefined()
     expect(labels(true)).not.toContain("Job Fit")
+    // Career Fit is spliced in by useWorkspaceNavItems for entitled accounts
+    // only; it must never be a static row here, or it would show unentitled.
+    expect(labels(true)).not.toContain("Career Fit")
   })
 
   it("keeps USER_NAV_ITEMS in step with getUserNavItems", () => {
@@ -444,7 +458,7 @@ describe("My Workspace menu order + switched-off entries", () => {
       "Home",
       "Chat with Meridian",
       "Document Library",
-      "Interview Practice",
+      "Role Play",
       "Settings",
       "Help & Support",
     ]) {
@@ -476,8 +490,9 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
   const labelsFor = (role: "manager" | "practitioner") =>
     (TOOL_ITEMS_BY_ROLE[role] ?? []).map((i) => i.label).sort()
 
-  // Live Interview and Practice Interview are children of Interview Studio
-  // since 2026-09-23, so they are not in the top-level label set any more.
+  // Live Interview is a child of Interview Studio since 2026-09-23, so it is
+  // not in the top-level label set. Practice Interview was too, until it became
+  // "Role Play" in the main menu on 2026-10-18.
   // Character Lab joined both roles on 2026-10-07 (request).
   const UNGATED = ["Interview Studio", "Goals Studio", "Job Blueprint", "Character Lab"].sort()
 

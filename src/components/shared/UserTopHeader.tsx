@@ -38,6 +38,9 @@ const WORKSPACE_GUIDE_VIDEO_URL =
  * The Interview Studio tour (2:52), narrated: Interview Studio, Recording &
  * consent, Live Interview and its setup, and Practice Interview. Same public
  * demo bucket and the same new-key-not-overwrite rule as the film above.
+ * The film predates 2026-10-18, when that menu row was renamed "Role Play"
+ * (request) and moved out of the Interview Studio group; the narration still
+ * says "Practice Interview".
  */
 const INTERVIEW_STUDIO_GUIDE_VIDEO_URL =
   "https://ig-demo-public-videos.s3.amazonaws.com/IG_Interview_Studio.mp4";

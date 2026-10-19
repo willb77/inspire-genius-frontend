@@ -23,8 +23,8 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
   // Read before the nav build below — My Workspace's owner-gated Goals entry
   // needs the viewer's email.
   const { user } = useAuth();
-  // My Workspace = the user menu plus the workspace verticals (Job Fit, Lumen),
-  // spliced in above Settings/Help — greyed when unentitled.
+  // My Workspace = the user menu plus the workspace verticals (Career Fit),
+  // spliced in above Settings/Help — omitted when unentitled.
   const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
   // The single consolidated Tools section — see hooks/nav/useToolsSection.
   const toolsSection = useToolsSection("super-admin");

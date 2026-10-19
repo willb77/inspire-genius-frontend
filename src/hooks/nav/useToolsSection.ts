@@ -92,6 +92,12 @@ const BIO_CAPTURE_ITEM: NavItemDef = {
  * are exactly what the flat catalogue would have shown; they are lifted out of
  * the catalogue and nested here instead of listed twice. The parent has no
  * page of its own (`to: ""`), so the row only opens and closes the group.
+ *
+ * Since 2026-10-18 (request) Career Fit is in every role's MAIN menu instead
+ * (`job-fit` is in `WORKSPACE_VERTICALS`, which the launcher filters out of
+ * this catalogue), so the group holds Career Blueprint alone. The job-fit
+ * prefix is kept so that taking it back out of `WORKSPACE_VERTICALS` returns it
+ * here rather than loose in the catalogue.
  */
 export const CAREER_STUDIO_LABEL = "Career Studio"
 const CAREER_STUDIO_PREFIXES = ["/vertical/job-blueprint", "/vertical/job-fit"] as const
@@ -145,9 +151,10 @@ export function useToolsSection(role: UserRole): NavSectionDef | null {
       ...(broadcastAccess?.authorized ? BROADCAST_SIDEBAR_SECTION.items : []),
     ]
 
-    // Dedupe by destination. The sources genuinely overlap — Interview Practice
-    // is both a role tool item and, for the user role, a workspace entry — and a
-    // repeated `to` would render twice and double-highlight when active.
+    // Dedupe by destination. A repeated `to` would render twice and
+    // double-highlight when active. (The overlap this was written for — the
+    // interview rehearsal page as both a Tools item and a workspace row — ended
+    // on 2026-10-18 when it became "Role Play" in the main menu only.)
     const seen = new Set<string>()
     const items = candidates.filter((item) => {
       if (seen.has(item.to)) return false

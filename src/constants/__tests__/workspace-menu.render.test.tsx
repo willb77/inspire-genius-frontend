@@ -55,18 +55,25 @@ Object.defineProperty(window, "matchMedia", {
 /**
  * Render the menu for a user with the given entitlements. Job Fit is entitled
  * by default, which since 2026-08-11 is the LIVE case — the force-disable that
- * used to grey it for entitled users too was lifted.
+ * used to grey it for entitled users too was lifted. Pass `null` for "the
+ * entitlement read has not landed yet".
+ *
+ * The fixture uses the real manifest's title, "Career Fit".
  */
-function renderMenu(entitlements: string[] = ["job-fit"]) {
+function renderMenu(entitlements: string[] | null = ["job-fit"]) {
   __resetRegistry()
   registerVertical({
     key: "job-fit",
-    title: "Job Fit",
+    title: "Career Fit",
     description: "fit ranking",
     routePrefix: "/vertical/job-fit",
     homePath: "/vertical/job-fit/matches",
   })
-  mockUseEnabledVerticals.mockReturnValue({ data: entitlements, isLoading: false })
+  mockUseEnabledVerticals.mockReturnValue(
+    entitlements === null
+      ? { data: undefined, isLoading: true }
+      : { data: entitlements, isLoading: false },
+  )
 
   // Composed through `useWorkspaceNavItems` — the hook the layouts actually
   // call — rather than by hand from its two primitives. Building it by hand is
@@ -89,25 +96,42 @@ const row = (label: string) => screen.getByRole("button", { name: label })
 const isGreyed = (label: string) =>
   (row(label).className || "").includes("text-[#1A1A1A]/40")
 
+/** The eight fixed rows; Career Fit is spliced in after Role Play when entitled. */
+const FIXED = [
+  "Home",
+  "Chat with Meridian",
+  "Goals Studio",
+  "My development",
+  // "Interview Practice" until 2026-10-18 (request).
+  "Role Play",
+  "Document Library",
+  "Settings",
+  "Help & Support",
+]
+
 describe("My Workspace — rendered menu", () => {
-  it("renders in the specified order", () => {
+  it("renders in the specified order for an account entitled to job-fit", () => {
     const menu = renderMenu()
     expect(menu.map((i) => i.label)).toEqual([
       // Exactly six as of 2026-08-12 (request), seven since 2026-09-04 when
       // Goals returned (Goals offering, Phase 3), eight since 2026-09-30 when
-      // My development joined (TDS-4c). Nothing is spliced in any more —
-      // WORKSPACE_VERTICALS and WORKSPACE_VERTICAL_LINKS are both empty — so
-      // the rendered menu is the nav array, with nothing added between
-      // building it and drawing it.
+      // My development joined (TDS-4c). 2026-10-18 (request): "Interview
+      // Practice" became "Role Play", and Career Fit is spliced in after it for
+      // an account entitled to `job-fit` — the one workspace vertical.
       "Home",
       "Chat with Meridian",
       "Goals Studio",
       "My development",
-      "Interview Practice",
+      "Role Play",
+      "Career Fit",
       "Document Library",
       "Settings",
       "Help & Support",
     ])
+    // Opens on My fit, not on any other Career Fit page.
+    expect(menu.find((i) => i.label === "Career Fit")?.to).toBe("/vertical/job-fit/matches")
+    expect(row("Career Fit")).toBeEnabled()
+    expect(isGreyed("Career Fit")).toBe(false)
   })
 
   it("does not render Analytics at all", () => {
@@ -118,13 +142,13 @@ describe("My Workspace — rendered menu", () => {
     expect(screen.queryByText("Analytics")).not.toBeInTheDocument()
   })
 
-  it("leaves the four usable shortcuts (and the tail) fully interactive", () => {
+  it("leaves the usable shortcuts (and the tail) fully interactive", () => {
     renderMenu()
     for (const label of [
       "Home",
       "Chat with Meridian",
       "Document Library",
-      "Interview Practice",
+      "Role Play",
       // 2026-09-30 (TDS-4c): named explicitly, not left to the "no
       // permanently-greyed rows" sweep below. A greyed My development would
       // carry the "Temporarily unavailable" hover text, which would be a lie
@@ -138,25 +162,41 @@ describe("My Workspace — rendered menu", () => {
     }
   })
 
-  it("shows neither Job Fit nor Resume Writer, at ANY entitlement level", () => {
-    // Both were spliced into this menu earlier on 2026-08-12 and removed the
-    // same day when the list was fixed at six. Checked across entitlement
-    // states because the splice was entitlement-aware — an entry could have
-    // come back greyed rather than not at all, which the exact-order assertion
-    // above would catch but this names.
+  it("HIDES Career Fit — not greyed — for an account not entitled to job-fit", () => {
+    // 2026-10-18 (request): Career Fit shows ONLY for entitled accounts. A
+    // greyed row would still show, so this asserts the row is absent from the
+    // DOM, across entitlement lists that lack job-fit.
+    for (const ents of [[], ["honor"], ["grant", "lumen"]]) {
+      const menu = renderMenu(ents)
+      expect(menu.map((i) => i.label)).toEqual(FIXED)
+      expect(screen.queryByText("Career Fit")).not.toBeInTheDocument()
+      cleanup()
+    }
+  })
+
+  it("HIDES Career Fit while the entitlement read is loading", () => {
+    const menu = renderMenu(null)
+    expect(menu.map((i) => i.label)).toEqual(FIXED)
+    expect(screen.queryByText("Career Fit")).not.toBeInTheDocument()
+  })
+
+  it("never shows Job Fit's old label or Resume Writer, at ANY entitlement level", () => {
+    // Resume Writer was spliced into this menu on 2026-08-12 and removed the
+    // same day. The vertical is "Career Fit" in its manifest; "Job Fit" is the
+    // retired label and must not come back as a second row.
     for (const ents of [[], ["job-fit"], ["honor"], ["job-fit", "honor"]]) {
       renderMenu(ents)
       expect(screen.queryByText("Job Fit")).not.toBeInTheDocument()
       expect(screen.queryByText("Resume Writer")).not.toBeInTheDocument()
+      expect(screen.queryAllByText("Career Fit").length).toBeLessThanOrEqual(1)
       cleanup()
     }
   })
 
   it("has no permanently-greyed rows left in the menu", () => {
     // Analytics was the last entry that was greyed for EVERYONE regardless of
-    // entitlement. Job Fit and Resume Writer grey per-entitlement, so with a
-    // fully-entitled user every row must be live — if a new always-off row
-    // appears, this fails rather than it quietly becoming normal.
+    // entitlement. With a fully-entitled user every row must be live — if a new
+    // always-off row appears, this fails rather than it quietly becoming normal.
     const menu = renderMenu(["job-fit", "honor"])
     for (const item of menu) {
       expect(row(item.label)).toBeEnabled()
@@ -164,28 +204,17 @@ describe("My Workspace — rendered menu", () => {
   })
 })
 
-// ── 2026-08-12 — the menu is exactly six entries ─────────────────────────
+// ── 2026-08-12 — the menu is exactly six entries (eight fixed since 09-30) ──
 // Rendered, not just asserted on the nav array: the greying lives in
-// SidebarScaffold's NavItem, and entries used to be spliced in after the array
-// was built, so only a render proves what a user actually sees.
-describe("My Workspace — the eight entries", () => {
-  it("renders the same eight regardless of entitlements", () => {
+// SidebarScaffold's NavItem, and entries are spliced in after the array is
+// built, so only a render proves what a user actually sees.
+describe("My Workspace — the eight fixed entries", () => {
+  it("renders the same eight with no entitlements at all", () => {
+    // Goals Studio, My development and Role Play render with NO entitlement,
+    // which is the point of asserting on an empty entitlement list here. Every
+    // read behind My development is a `/v1/growth/me/*` route resolved from
+    // the caller's own token, so there is nothing to entitle.
     const menu = renderMenu([])
-    expect(menu.map((i) => i.label)).toEqual([
-      // Exactly six as of 2026-08-12 (request), seven since 2026-09-04 when
-      // Goals returned, eight since 2026-09-30 (TDS-4c) — and both Goals
-      // Studio and My development render with NO entitlement, which is the
-      // point of asserting on an empty entitlement list here. Every read
-      // behind My development is a `/v1/growth/me/*` route resolved from the
-      // caller's own token, so there is nothing to entitle.
-      "Home",
-      "Chat with Meridian",
-      "Goals Studio",
-      "My development",
-      "Interview Practice",
-      "Document Library",
-      "Settings",
-      "Help & Support",
-    ])
+    expect(menu.map((i) => i.label)).toEqual(FIXED)
   })
 })
