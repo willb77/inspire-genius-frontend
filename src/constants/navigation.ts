@@ -15,6 +15,7 @@ import {
   UsersRound,
   MessageSquarePlus,
   MessagesSquare,
+  ScrollText,
   Wand2,
   Users,
   Building2,
@@ -73,6 +74,24 @@ export const ROLE_PLAY_ITEM: NavItemDef = {
 }
 
 /**
+ * Résumé Writer — the person's OWN résumé, drafted from their own résumé/bio
+ * and PRISM, at /my/resume. Universal and un-gated (2026-10-19, request: "add
+ * Résumé Writer to every user's menu but give it a UI that matches the platform
+ * under My Workspace"; Résumé Writer CSA, option 1).
+ *
+ * Not the Honor coach tool at /vertical/honor/resume, which writes for a Fellow
+ * and stays where it is. Sits directly after {@link ROLE_PLAY_ITEM} in every
+ * role's main menu, so the Career Fit splice (above the Document Library /
+ * Settings / Help tail) now lands after it. Generation is server-switched and
+ * capped per person per day; the page says so when either applies.
+ */
+export const RESUME_WRITER_ITEM: NavItemDef = {
+  to: ROUTES.MY_RESUME,
+  icon: ScrollText,
+  label: "Résumé Writer",
+}
+
+/**
  * The user role's menu, in order. **Eight fixed entries** as of 2026-09-30,
  * plus Career Fit for accounts entitled to the `job-fit` vertical (2026-10-18,
  * request) — spliced in by `useWorkspaceNavItems`, not listed here, because it
@@ -101,6 +120,7 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals Studio" },
   { to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" },
   ROLE_PLAY_ITEM,
+  RESUME_WRITER_ITEM,
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
@@ -192,6 +212,7 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // Candidate-side STAR rehearsal with Alex (voice-capable). "Role Play"
     // since 2026-10-18 (request); Career Fit, when entitled, splices in after it.
     ROLE_PLAY_ITEM,
+    RESUME_WRITER_ITEM,
     // Document Library sits directly above Settings (2026-08-06 request). It is
     // a reference surface you go to occasionally, not a daily shortcut, so it
     // sits with the Settings/Help tail rather than among the primary actions.
@@ -592,6 +613,7 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   // the Interview Studio group in Tools. Career Fit, for an account entitled to
   // `job-fit`, is spliced in after it by useWorkspaceNavItems (above Settings).
   ROLE_PLAY_ITEM,
+  RESUME_WRITER_ITEM,
   { to: ROUTES.MANAGER.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
@@ -609,6 +631,7 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   // Role Play + entitlement-gated Career Fit (2026-10-18, request) — see
   // ROLE_PLAY_ITEM. Career Fit is spliced in above Settings when entitled.
   ROLE_PLAY_ITEM,
+  RESUME_WRITER_ITEM,
   { to: ROUTES.COMPANY_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
@@ -638,6 +661,7 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   // Role Play (2026-10-18, request) — see ROLE_PLAY_ITEM. This menu has no
   // Settings/Help tail, so Career Fit, when entitled, is appended after it.
   ROLE_PLAY_ITEM,
+  RESUME_WRITER_ITEM,
 ]
 
 /** Navigation items for the distributor role */
@@ -649,6 +673,7 @@ export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
   // Role Play + entitlement-gated Career Fit (2026-10-18, request) — see
   // ROLE_PLAY_ITEM. Career Fit is spliced in above Settings when entitled.
   ROLE_PLAY_ITEM,
+  RESUME_WRITER_ITEM,
   { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
 ]
 

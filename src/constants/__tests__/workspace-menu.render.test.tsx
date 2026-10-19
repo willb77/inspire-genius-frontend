@@ -96,7 +96,7 @@ const row = (label: string) => screen.getByRole("button", { name: label })
 const isGreyed = (label: string) =>
   (row(label).className || "").includes("text-[#1A1A1A]/40")
 
-/** The eight fixed rows; Career Fit is spliced in after Role Play when entitled. */
+/** The nine fixed rows (Résumé Writer since 2026-10-19); Career Fit is spliced in after it when entitled. */
 const FIXED = [
   "Home",
   "Chat with Meridian",
@@ -104,6 +104,7 @@ const FIXED = [
   "My development",
   // "Interview Practice" until 2026-10-18 (request).
   "Role Play",
+  "Résumé Writer",
   "Document Library",
   "Settings",
   "Help & Support",
@@ -123,6 +124,7 @@ describe("My Workspace — rendered menu", () => {
       "Goals Studio",
       "My development",
       "Role Play",
+      "Résumé Writer",
       "Career Fit",
       "Document Library",
       "Settings",
@@ -208,8 +210,8 @@ describe("My Workspace — rendered menu", () => {
 // Rendered, not just asserted on the nav array: the greying lives in
 // SidebarScaffold's NavItem, and entries are spliced in after the array is
 // built, so only a render proves what a user actually sees.
-describe("My Workspace — the eight fixed entries", () => {
-  it("renders the same eight with no entitlements at all", () => {
+describe("My Workspace — the nine fixed entries", () => {
+  it("renders the same nine with no entitlements at all", () => {
     // Goals Studio, My development and Role Play render with NO entitlement,
     // which is the point of asserting on an empty entitlement list here. Every
     // read behind My development is a `/v1/growth/me/*` route resolved from

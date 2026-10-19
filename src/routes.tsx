@@ -86,6 +86,7 @@ const GoalRoadmapPage = React.lazy(() => import("@/pages/summit/GoalRoadmapPage"
 // My development — the member's own view of their Team Development Studio rows
 // (TDS-4c). Self-scoped; needs no manager and carries no role prefix.
 const MyDevelopment = React.lazy(() => import("@/pages/user/MyDevelopment"));
+const MyResume = React.lazy(() => import("@/pages/user/MyResumePage"));
 const DiagnosticChat = React.lazy(() => import("@/pages/user/DiagnosticChat"));
 
 // ── Super Admin pages ───────────────────────────────────────────────────────
@@ -485,6 +486,9 @@ export const routes: RouteObject[] = [
       // imports ROUTES); `ROUTES.MY_DEVELOPMENT` is the same string and a test
       // asserts the two agree.
       { path: "/my/development", element: withSuspense(<MyDevelopment />) },
+      // Résumé Writer (2026-10-19) — the person's own résumé, in the same `/my/*`
+      // namespace so every role reaches it (ProtectedRoute gates role prefixes only).
+      { path: "/my/resume", element: withSuspense(<MyResume />) },
       // /summit/* — the surface's old home — redirected here for one release
       // after Phase 3 (2026-09-04) and was retired the same day the surface
       // became Goals Studio (request: "I will deprecate the Summit interface").
