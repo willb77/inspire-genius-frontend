@@ -49,6 +49,33 @@ export const JOB_FIT_TOOLS: NavItemDef[] = [
   { to: ROUTES.JOB_FIT.COACH, icon: MessagesSquare, label: "Coaching" },
 ]
 
+/** Hover/aria text on the greyed "Blueprint a role" entry for the `user` role. */
+export const JOB_FIT_BLUEPRINT_USER_DISABLED_REASON = "Not available for the User role"
+
+/**
+ * Job Fit tools as the given role sees them (2026-10-18, request: "For the Role
+ * 'User' gray out Blueprint a role"). For `user`, "Blueprint a role" stays
+ * listed but greyed and non-navigating; every other role gets `JOB_FIT_TOOLS`
+ * unchanged. Built once at module load so the sidebar's `useMemo` sees a stable
+ * array.
+ *
+ * This is a visibility change only — the route is NOT gated, so a `user` who
+ * types `/vertical/job-fit/blueprint` still reaches the page.
+ *
+ * Both the sidebar (`verticalSubNavItems`) and the in-page pill row (`FitNav`)
+ * read this, so one account never sees the entry enabled in one place and
+ * greyed in the other.
+ */
+const JOB_FIT_TOOLS_FOR_USER: NavItemDef[] = JOB_FIT_TOOLS.map((item) =>
+  item.to === ROUTES.JOB_FIT.BLUEPRINT
+    ? { ...item, disabled: true, disabledReason: JOB_FIT_BLUEPRINT_USER_DISABLED_REASON }
+    : item,
+)
+
+export function jobFitToolsForRole(role: UserRole): NavItemDef[] {
+  return role === "user" ? JOB_FIT_TOOLS_FOR_USER : JOB_FIT_TOOLS
+}
+
 /** Lumen — also rendered as the in-page pill row by `LumenNav`. */
 export const LUMEN_TOOLS: NavItemDef[] = [
   { to: ROUTES.LUMEN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
@@ -129,7 +156,7 @@ export function verticalSubNavItems(
     case "knowledge-continuity":
       return { label: KCE_SIDEBAR_SECTION.label, items: KCE_SIDEBAR_SECTION.items }
     case "job-fit":
-      return { items: JOB_FIT_TOOLS }
+      return { items: jobFitToolsForRole(role) }
     case "lumen":
       return { items: LUMEN_TOOLS }
     case "job-blueprint":
