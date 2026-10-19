@@ -3,7 +3,6 @@ import { Link } from "react-router-dom"
 import { Layers, ChevronRight } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useFitMatches } from "@/hooks/job-fit/useFitMatches"
-import type { FitMatch } from "@/types/job-fit"
 import {
   FitPageHeader,
   FitCard,
@@ -14,39 +13,7 @@ import {
   FitLoading,
   FitError,
 } from "./_shared"
-import type { Tone } from "./_fit"
-
-type DomainAggregate = {
-  key: "behavior" | "aptitude" | "coreTrait"
-  label: string
-  avg: number
-}
-
-/** Average each variation domain across every matched role. */
-function aggregate(matches: FitMatch[]): DomainAggregate[] {
-  if (matches.length === 0) return []
-  const sum = matches.reduce(
-    (acc, m) => ({
-      behavior: acc.behavior + m.behaviorVariation,
-      aptitude: acc.aptitude + m.aptitudeVariation,
-      coreTrait: acc.coreTrait + m.coreTraitVariation,
-    }),
-    { behavior: 0, aptitude: 0, coreTrait: 0 }
-  )
-  const n = matches.length
-  return [
-    { key: "behavior", label: "Behavioral style", avg: Math.round(sum.behavior / n) },
-    { key: "aptitude", label: "Aptitudes", avg: Math.round(sum.aptitude / n) },
-    { key: "coreTrait", label: "Core traits", avg: Math.round(sum.coreTrait / n) },
-  ]
-}
-
-function meterTone(avg: number): Tone {
-  if (avg <= 12) return "green"
-  if (avg <= 25) return "teal"
-  if (avg <= 40) return "amber"
-  return "red"
-}
+import { aggregateDomains, hasFullDomainSplit, meterTone, perDimensionMean } from "./_gaps"
 
 /**
  * Aggregate view of where the user's profile diverges from role benchmarks,
@@ -54,12 +21,19 @@ function meterTone(avg: number): Tone {
  * list so it stays a single query — a bird's-eye complement to per-role detail.
  */
 export default function GapsPage() {
-  const { data, isLoading, isError } = useFitMatches()
+  const { data, isLoading, isError, error } = useFitMatches()
 
   const matches = useMemo(() => data ?? [], [data])
-  const domains = useMemo(() => aggregate(matches), [matches])
+  const domains = useMemo(() => aggregateDomains(matches), [matches])
+  const splitCount = useMemo(() => matches.filter(hasFullDomainSplit).length, [matches])
+  // Ranked by the per-dimension mean, not the raw total: a role read on fewer
+  // dimensions has a smaller total without being any closer.
   const widestRoles = useMemo(
-    () => [...matches].sort((a, b) => b.totalVariation - a.totalVariation).slice(0, 5),
+    () =>
+      matches
+        .map((m) => ({ m, mean: perDimensionMean(m) }))
+        .sort((a, b) => b.mean - a.mean || b.m.totalVariation - a.m.totalVariation)
+        .slice(0, 5),
     [matches]
   )
   const topDomain = useMemo(
@@ -77,7 +51,14 @@ export default function GapsPage() {
 
       {isLoading && <FitLoading label="Aggregating gaps across your matches…" />}
 
-      {isError && <FitError>We couldn&apos;t load your gap summary right now.</FitError>}
+      {isError && (
+        <FitError>
+          <span role="alert">
+            We couldn&apos;t load your gap summary right now.
+            {error?.message ? ` (${error.message})` : ""}
+          </span>
+        </FitError>
+      )}
 
       {!isLoading && !isError && matches.length === 0 && (
         <FitEmptyState>
@@ -88,25 +69,43 @@ export default function GapsPage() {
 
       {!isLoading && !isError && matches.length > 0 && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {domains.map((d) => (
-              <FitStat
-                key={d.key}
-                icon={Layers}
-                label={d.label}
-                value={d.avg}
-                hint="Avg. distance from benchmark"
-                tone={meterTone(d.avg)}
-              />
-            ))}
-          </div>
+          {domains.length > 0 ? (
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {domains.map((d) => (
+                <FitStat
+                  key={d.key}
+                  icon={Layers}
+                  label={d.label}
+                  value={d.avg}
+                  hint="Avg. distance from benchmark, per dimension"
+                  tone={meterTone(d.avg)}
+                />
+              ))}
+            </div>
+          ) : (
+            <FitCard className="mb-6">
+              <p className="text-sm text-[#374151]">
+                Your matches rest on a partial profile, so your gaps can&apos;t be split into
+                behavioral style, aptitudes and core traits yet. The roles below still show how far
+                you are from each benchmark on what was measured.
+              </p>
+            </FitCard>
+          )}
+
+          {domains.length > 0 && splitCount < matches.length && (
+            <p className="-mt-3 mb-6 text-xs text-[#9ca3af]">
+              Based on {splitCount} of {matches.length} roles. The others are scored on a partial profile,
+              so their gap can&apos;t be split by area.
+            </p>
+          )}
 
           {topDomain && (
             <FitCard className="mb-6">
               <p className="text-sm text-[#374151]">
                 Across your matches, your biggest average distance is in{" "}
                 <span className="font-semibold text-[#0f766e]">{topDomain.label.toLowerCase()}</span>.
-                Focusing development there tends to lift your fit across the most roles.
+                Focusing development there tends to lift your fit across the most roles. Open any
+                role below to see which dimensions make up its gap.
               </p>
             </FitCard>
           )}
@@ -114,7 +113,7 @@ export default function GapsPage() {
           <FitCard className="mb-6">
             <FitSectionTitle>Roles with the widest gap</FitSectionTitle>
             <div className="space-y-3">
-              {widestRoles.map((m) => (
+              {widestRoles.map(({ m, mean }) => (
                 <Link
                   key={m.jobId}
                   to={ROUTES.JOB_FIT.detail(m.jobId)}
@@ -123,11 +122,11 @@ export default function GapsPage() {
                   <div className="mb-1.5 flex items-center justify-between gap-3">
                     <span className="truncate text-sm font-medium text-[#1f2937]">{m.roleTitle}</span>
                     <span className="inline-flex items-center gap-1 text-xs text-[#9ca3af] group-hover:text-[#0D9488]">
-                      {m.totalVariation}
+                      avg. {Math.round(mean)} per dimension
                       <ChevronRight className="h-4 w-4" />
                     </span>
                   </div>
-                  <FitMeter value={Math.min(100, m.totalVariation)} tone={meterTone(m.totalVariation)} />
+                  <FitMeter value={mean} tone={meterTone(mean)} />
                 </Link>
               ))}
             </div>
