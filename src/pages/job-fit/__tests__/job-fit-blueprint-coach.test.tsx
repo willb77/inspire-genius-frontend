@@ -12,6 +12,13 @@ jest.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }))
 
+// FitNav reads the role (2026-10-18: "Blueprint a role" is greyed for `user`).
+// A manager sees every tool as a link, which is what this suite asserts; the
+// per-role behaviour is covered in fit-nav-blueprint-role.test.tsx.
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({ user: { id: "me", role: "manager" } }),
+}))
+
 // Coaching now answers INLINE via the fit hooks (not saved-roles → Meridian).
 const mockUseFitMatches = jest.fn()
 const mockUseFitDetail = jest.fn()
