@@ -4,6 +4,7 @@ import {
   Briefcase,
   BookOpen,
   Compass,
+  GraduationCap,
   Lightbulb,
   Wallet,
 } from "lucide-react"
@@ -85,7 +86,14 @@ import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation"
  * than greyed when the account is not entitled — see
  * {@link useWorkspaceVerticalItems}.
  */
-export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit"])
+export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit", "career-discovery"])
+//
+// "career-discovery" joined 2026-10-20 (DISC-1). Its door is the person's own
+// menu, shown ONLY to an entitled account (see useWorkspaceVerticalItems) —
+// which is also what keeps it OUT of the Tools catalogue, where an unentitled
+// vertical would otherwise appear greyed to every manager, practitioner and
+// super-admin the moment this merged. With no `career-discovery` entitlement
+// rows on a tier, no menu anywhere changes.
 
 /**
  * Verticals hidden from the Tools section entirely (2026-07-31).
@@ -146,6 +154,7 @@ const VERTICAL_ICONS: Partial<Record<VerticalKey, NavItemDef["icon"]>> = {
   "job-fit": Briefcase,
   lumen: Lightbulb,
   "direction-setting": Compass,
+  "career-discovery": GraduationCap,
   grant: Wallet,
   "knowledge-continuity": BookOpen,
   honor: Award,
