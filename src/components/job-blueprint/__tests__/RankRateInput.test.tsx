@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { RankRateInput } from '../job-dna/RankRateInput'
-import { BEHAVIORS, CORE_TRAITS } from '@/constants/job-blueprint/dimensions'
+import { APTITUDES, BEHAVIORS, CORE_TRAITS } from '@/constants/job-blueprint/dimensions'
+import { calculateBenchmark as calcBenchmark } from '@/lib/job-blueprint/scoring'
+import { getRankTable } from '@/constants/job-blueprint/scoring-tables'
 import type { DimensionBenchmark } from '@/types/job-blueprint'
 
 describe('RankRateInput', () => {
@@ -116,5 +118,50 @@ describe('RankRateInput', () => {
     )
     const downButtons = screen.getAllByLabelText(/Move .+ down/)
     expect(downButtons[downButtons.length - 1]).toBeDisabled()
+  })
+})
+
+// ── Guard: the manual wizard's output IS Rank-then-Rate (2026-10-20) ──────────
+// Every emitted row must reproduce its own target from its stored inputs, with
+// rankPosition 1-based and rankPercent the licensed rank-table value — the
+// same relationship the drafter and the global library are held to in the
+// monorepo. rankPercent used to be a literal 0 that nothing filled in.
+
+describe('RankRateInput — stored fields are a coherent Rank-then-Rate record', () => {
+  it.each([
+    ['behavior', BEHAVIORS],
+    ['aptitude', APTITUDES],
+    ['core-trait', CORE_TRAITS],
+  ] as const)('%s: target = calculateBenchmark(rankPosition - 1, rateValue), rankPercent = table[rankPosition - 1]', (category, dims) => {
+    const onChange = jest.fn()
+    render(<RankRateInput dimensions={dims} category={category} onChange={onChange} />)
+    const out: DimensionBenchmark[] = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    expect(out).toHaveLength(dims.length)
+    expect(out.map((b) => b.rankPosition).sort((a, b) => a - b)).toEqual(dims.map((_, i) => i + 1))
+    for (const b of out) {
+      expect(b.rankPercent).toBe(getRankTable(category)[b.rankPosition - 1])
+      expect(b.finalBenchmarkPercent).toBe(calcBenchmark(b.rankPosition - 1, b.rateValue, category))
+    }
+  })
+
+  it('round-trips a saved 1-based record without shifting it', () => {
+    const onChange = jest.fn()
+    const saved: DimensionBenchmark[] = BEHAVIORS.map((d, i) => ({
+      dimensionId: d.id,
+      dimensionName: d.name,
+      category: 'behavior',
+      rankPosition: i + 1,
+      rankPercent: getRankTable('behavior')[i],
+      rateValue: 3,
+      finalBenchmarkPercent: calcBenchmark(i, 3, 'behavior'),
+      interpretation: 'moderate',
+    }))
+    render(<RankRateInput dimensions={BEHAVIORS} category="behavior" value={saved} onChange={onChange} />)
+    const out: DimensionBenchmark[] = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    for (const b of out) {
+      const before = saved.find((s) => s.dimensionId === b.dimensionId)
+      expect(b.rankPosition).toBe(before?.rankPosition)
+      expect(b.finalBenchmarkPercent).toBe(before?.finalBenchmarkPercent)
+    }
   })
 })

@@ -31,8 +31,20 @@ export type DraftDimension = {
   final_benchmark_percent: number
   rank_percent: number
   rate_value: number
+  /** 1-based: 1 = the dimension the model rated most important in its block. */
   rank_position: number
   interpretation: DraftInterpretation
+  // ── Rank-then-Rate (drafter `method: "rank-then-rate"`, 2026-10-20). Absent on older backends. ──
+  /** "ai-proposed" — the rate is the model's proposal until a reviewer saves it. */
+  rate_source?: string
+  /** The model's raw 0-100 importance score. */
+  ai_score?: number
+  /** The model's score on the 1..max_rate scale, before the §3 clamp. */
+  ai_rate?: number
+  /** Lowest / highest rate that keeps this rank position in its §3 tier. */
+  rate_min?: number
+  rate_max?: number
+  max_rate?: number
 }
 
 /** POST /v1/agents/blueprint/draft-benchmark response. */
@@ -42,6 +54,10 @@ export type DraftBenchmarkResponse = {
   role_title: string
   archetype: string
   rationale: string
+  /** "rank-then-rate" when targets are calculateBenchmark(rank, rate); absent on older backends. */
+  method?: string
+  /** "ai-proposed" — every rate awaits the reviewer's confirmation. */
+  rate_status?: string
   behaviors: DraftDimension[]
   aptitudes: DraftDimension[]
   core_traits: DraftDimension[]
