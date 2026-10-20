@@ -47,6 +47,11 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { id: "u1", role: mockRole() } }),
 }))
 
+/* ── N-4: the validation panel has its own suite (validation/__tests__); here it renders nothing ── */
+jest.mock("@/components/job-blueprint/validation/BlueprintValidationPanel", () => ({
+  BlueprintValidationPanel: () => null,
+}))
+
 /* ── Hooks ── */
 jest.mock("@/hooks/job-blueprint/useJobDna")
 jest.mock("@/hooks/job-blueprint/useTriage")

@@ -6,6 +6,7 @@ import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
 import type { DimensionBenchmark } from "@/types/job-blueprint"
 import { useState } from "react"
 import { ChevronDown, ChevronRight } from "lucide-react"
+import { ValidationReviewQueue } from "@/components/job-blueprint/validation/ValidationReviewQueue"
 
 /** Top-N benchmark dimensions by rank, used for the collapsed "key traits" line. */
 function topDimensions(dims: DimensionBenchmark[], n: number): DimensionBenchmark[] {
@@ -29,6 +30,9 @@ export default function ManagerJobDna() {
       <p className="text-[13px] text-[#6b7280] mb-5">
         PRISM-based job profiles and candidate matching criteria.
       </p>
+
+      {/* N-4: the reviewer's queue; renders nothing unless blueprint_validation is on and a request names this manager */}
+      <ValidationReviewQueue />
 
       <DataCard title="Job DNA Profiles" badge={rows.length}>
         {error && (

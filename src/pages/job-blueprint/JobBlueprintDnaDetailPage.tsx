@@ -14,6 +14,8 @@ import { ClassificationBadge } from "@/components/job-blueprint/shared/Classific
 import type { JobTier } from "@/types/job-blueprint"
 import { ROUTES } from "@/constants/routes"
 import { JobDnaPageHeader, JobDnaLoading, JobDnaError } from "./_shared"
+import { BlueprintValidationPanel } from "@/components/job-blueprint/validation/BlueprintValidationPanel"
+import { noteDimensions } from "@/components/job-blueprint/validation/noteDimensions"
 
 const TIERS: JobTier[] = ["front-line", "professional", "executive"]
 
@@ -162,6 +164,9 @@ export default function JobBlueprintDnaDetailPage() {
           <ClassificationBadge tier="misalignment" size="sm" />
         ) : null}
       </div>
+
+      {/* N-4: renders nothing unless blueprint_validation is on for the caller */}
+      <BlueprintValidationPanel blueprintId={jobDna.id} dims={noteDimensions(jobDna)} />
 
       <Card className="mb-6">
         <CardHeader>
