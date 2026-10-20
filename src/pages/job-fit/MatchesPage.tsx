@@ -19,7 +19,17 @@ import { displayFitPercent, fitDetailPath, fitPercentTone } from "./_fit"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
 import type { JobComponents } from "@/types/job-fit/components"
-import { VERDICT_LABEL, VERDICT_TONE, goalSortRank } from "./_components"
+import {
+  VERDICT_LABEL,
+  VERDICT_TONE,
+  asOverall,
+  asV1,
+  goalSortRank,
+  orderRows,
+  readOrder,
+  writeOrder,
+  type ListOrder,
+} from "./_components"
 
 const PCT_COLOR: Record<string, string> = {
   green: "text-[#15803d]",
@@ -46,7 +56,9 @@ function MatchRow({ match, components }: { match: FitMatch; components?: JobComp
   // Feeds Phase 2: a verdict chip only when the role is scored against a goal —
   // an unlinked role shows nothing rather than a warning.
   const goal = components?.status === "ok" ? components.goalAlignment : undefined
-  const composite = components?.status === "ok" ? components.composite : undefined
+  const composite = asV1(components)?.composite
+  // FIT-3: present only while the server's overall_fit switch is on.
+  const overall = asOverall(components)?.overall
   const pctColor = PCT_COLOR[fitPercentTone(pct)] ?? PCT_COLOR.teal
   // BP-F5: a partial-profile score says how much it rests on.
   const partial = partialCoverage(match)
@@ -72,6 +84,9 @@ function MatchRow({ match, components }: { match: FitMatch; components?: JobComp
           {/* No fit tier here (4.1, option D): the score and the order carry it. */}
         </div>
       </div>
+      {overall ? (
+        <OverallFitFigure overall={overall} pct={pct} pctColor={pctColor} partial={partial} />
+      ) : (
       <div className="shrink-0 text-right">
         <div className={`text-2xl font-bold leading-none ${pctColor}`}>
           {pct}
@@ -89,8 +104,62 @@ function MatchRow({ match, components }: { match: FitMatch; components?: JobComp
           </div>
         )}
       </div>
+      )}
       <ChevronRight className="h-5 w-5 shrink-0 text-[#9ca3af] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0D9488]" />
     </Link>
+  )
+}
+
+/**
+ * FIT-3 — the row's figure while Overall fit is on: "Overall fit N%" as the
+ * headline with "PRISM fit N%" beneath. A role with no Overall fit (too little
+ * known about the person to combine) shows its PRISM fit, labelled as such.
+ */
+function OverallFitFigure({
+  overall,
+  pct,
+  pctColor,
+  partial,
+}: {
+  overall: NonNullable<ReturnType<typeof asOverall>>["overall"]
+  pct: number
+  pctColor: string
+  partial: ReturnType<typeof partialCoverage>
+}) {
+  const score = overall.score
+  return (
+    <div className="shrink-0 text-right">
+      {score != null ? (
+        <>
+          <div
+            className={`text-2xl font-bold leading-none ${PCT_COLOR[fitPercentTone(Math.round(score))] ?? PCT_COLOR.teal}`}
+          >
+            {Math.round(score)}
+            <span className="text-sm font-semibold text-[#9ca3af]">%</span>
+          </div>
+          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">Overall fit</div>
+          <div className="mt-1 text-[11px] text-[#6b7280]">PRISM fit {pct}%</div>
+        </>
+      ) : (
+        <>
+          <div className={`text-2xl font-bold leading-none ${pctColor}`}>
+            {pct}
+            <span className="text-sm font-semibold text-[#9ca3af]">%</span>
+          </div>
+          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">PRISM fit</div>
+          {overall.status !== "not_set_up" && (
+            <div className="mt-1 max-w-[11rem] text-[11px] text-[#6b7280]">
+              Not enough about you to combine — add a résumé
+            </div>
+          )}
+        </>
+      )}
+      {partial && (
+        <div className="mt-1 text-[11px] text-[#b45309]" title={partialProfileDetail(partial)}>
+          {partial.evaluated} of {partial.total} measured
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -98,10 +167,50 @@ function MatchRow({ match, components }: { match: FitMatch; components?: JobComp
  * Job-Fit home — the user's own PRISM profile ranked against every published
  * Job DNA, best-first. Each row links to a full per-role breakdown.
  */
+// FIT-3 (owner, Q2): "Overall" means the Overall fit only, so the D4 method
+// that is a PRISM formula says so.
 const METHOD_OPTIONS: { value: FitMethod; label: string; hint: string }[] = [
   { value: "gap", label: "Gap to benchmark", hint: "Distance from the role's target profile" },
-  { value: "closeness", label: "Overall closeness", hint: "Weighted similarity to the role" },
+  { value: "closeness", label: "PRISM closeness", hint: "Weighted similarity to the role" },
 ]
+
+function OrderToggle({ order, onChange }: { order: ListOrder; onChange: (o: ListOrder) => void }) {
+  const options: { value: ListOrder; label: string }[] = [
+    { value: "overall", label: "Overall fit" },
+    { value: "prism", label: "PRISM fit" },
+  ]
+  return (
+    <div className="inline-flex items-center gap-2 text-xs text-[#374151]">
+      <span>Order by:</span>
+      <div
+        role="radiogroup"
+        aria-label="Order by"
+        className="inline-flex rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-0.5"
+      >
+        {options.map((opt) => {
+          const active = order === opt.value
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(opt.value)}
+              className={
+                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
+                (active
+                  ? "bg-white text-[#0D9488] shadow-sm"
+                  : "text-[#6b7280] hover:text-[#374151]")
+              }
+            >
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 /** Decision D4 — let the user choose which scoring formula ranks their matches. */
 function MethodToggle({
@@ -154,8 +263,15 @@ export default function MatchesPage() {
     [data],
   )
   const components = useFitComponents(jobs, componentsOn)
+  // FIT-3: Overall fit is on exactly when the server answered in that shape.
+  const overallOn = components.data?.mode === "overall"
+  const [order, setOrderState] = useState<ListOrder>(readOrder)
+  const setOrder = (o: ListOrder) => {
+    setOrderState(o)
+    writeOrder(o)
+  }
   const rows = useMemo(() => {
-    const list = data ?? []
+    const list = overallOn ? orderRows(data ?? [], components.data?.jobs, order) : (data ?? [])
     if (!byGoals || !components.data) return list
     const jobsC = components.data.jobs
     // Stable: ties keep the fit order the list arrived in.
@@ -169,7 +285,7 @@ export default function MatchesPage() {
         return ra - rb || a.i - b.i
       })
       .map(({ m }) => m)
-  }, [data, byGoals, components.data])
+  }, [data, byGoals, components.data, overallOn, order])
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -193,6 +309,7 @@ export default function MatchesPage() {
             Sort by my goals
           </label>
         )}
+        {overallOn && <OrderToggle order={order} onChange={setOrder} />}
         <MethodToggle method={method} onChange={setMethod} />
       </div>
 

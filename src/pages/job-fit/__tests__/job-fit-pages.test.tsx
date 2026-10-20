@@ -244,10 +244,10 @@ describe("MatchesPage", () => {
     expect(screen.queryByText("99")).not.toBeInTheDocument()
   })
 
-  test("choosing 'Overall closeness' refetches with the closeness method", () => {
+  test("choosing 'PRISM closeness' (FIT-3, owner Q2) refetches with the closeness method", () => {
     mockUseFitMatches.mockReturnValue({ data: [MATCH], isLoading: false, isError: false })
     renderRouted(<MatchesPage />)
-    fireEvent.click(screen.getByRole("radio", { name: /overall closeness/i }))
+    fireEvent.click(screen.getByRole("radio", { name: /prism closeness/i }))
     expect(mockUseFitMatches).toHaveBeenLastCalledWith("closeness")
   })
 

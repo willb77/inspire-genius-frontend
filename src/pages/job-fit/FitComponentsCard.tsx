@@ -5,15 +5,21 @@ import {
   COMPONENT_LABEL,
   VERDICT_LABEL,
   VERDICT_TONE,
+  asOverall,
+  asV1,
   experienceAbsentReason,
   goalAbsentReason,
 } from "./_components"
+import { OverallFitCard } from "./OverallFitCard"
 
 type Props = {
   fitPct: number
   job: JobComponents | undefined
   weights: FitComponentsResponse["weights"] | undefined
   isError: boolean
+  /** FIT-3: present only while the server's overall_fit switch is on. */
+  person?: FitComponentsResponse["person"]
+  benchmarksValidated?: FitComponentsResponse["benchmarksValidated"]
 }
 
 /**
@@ -22,7 +28,14 @@ type Props = {
  * their résumé already shows. The fit % above is never changed; the composite is
  * shown beside it, and a missing part is named rather than counted as zero.
  */
-export function FitComponentsCard({ fitPct, job, weights, isError }: Props) {
+export function FitComponentsCard({
+  fitPct,
+  job,
+  weights,
+  isError,
+  person,
+  benchmarksValidated,
+}: Props) {
   if (isError) {
     return (
       <FitCard className="mb-6">
@@ -33,8 +46,21 @@ export function FitComponentsCard({ fitPct, job, weights, isError }: Props) {
       </FitCard>
     )
   }
-  if (!job || job.status !== "ok") return null
-  const { goalAlignment: goal, experienceMatch: exp, composite } = job
+  // FIT-3: with Overall fit on, this slot is the Overall fit card instead.
+  const overallJob = asOverall(job)
+  if (overallJob) {
+    return (
+      <OverallFitCard
+        job={overallJob}
+        weights={weights}
+        person={person}
+        benchmarksValidated={benchmarksValidated}
+      />
+    )
+  }
+  const v1 = asV1(job)
+  if (!v1) return null
+  const { goalAlignment: goal, experienceMatch: exp, composite } = v1
   const goalReason = goalAbsentReason(goal)
   const expReason = experienceAbsentReason(exp)
 
