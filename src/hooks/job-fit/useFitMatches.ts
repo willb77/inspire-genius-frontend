@@ -1,7 +1,21 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query"
+import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { fitService } from "@/services/job-fit/fit.service"
+import { normalizeMatches, type MatchesEnvelope, type MatchesResult } from "@/lib/job-fit/matches"
 import type { FitMatch, FitMethod } from "@/types/job-fit"
+
+/**
+ * The query, exactly as before (`data` is the ranked rows), plus `gated`.
+ *
+ * `gated` is additive on purpose (FIT-1): every existing consumer reads `data`
+ * as a `FitMatch[]` and keeps doing so. It is true when the backend tagged the
+ * response `gated: true` (role matching switched off platform-side), which used
+ * to be thrown away with the envelope — so a paused feature read as "no roles".
+ */
+export type FitMatchesQuery = Omit<UseQueryResult<MatchesResult, AxiosError>, "data"> & {
+  data: FitMatch[] | undefined
+  gated: boolean
+}
 
 /**
  * The user's ranked role matches (GET /v1/blueprint/fit/matches).
@@ -11,14 +25,19 @@ import type { FitMatch, FitMethod } from "@/types/job-fit"
  */
 export function useFitMatches(
   method: FitMethod = "gap",
-  options?: Partial<UseQueryOptions<FitMatch[], AxiosError>>
-) {
-  return useQuery<FitMatch[], AxiosError>({
+  options?: Partial<UseQueryOptions<MatchesResult, AxiosError>>
+): FitMatchesQuery {
+  const query = useQuery<MatchesResult, AxiosError>({
     queryKey: ["job-fit", "matches", method],
     queryFn: async () => {
       const res = await fitService.getMatches(method)
-      return res.data.data ?? []
+      return normalizeMatches(res.data as MatchesEnvelope)
     },
     ...options,
   })
+  return {
+    ...query,
+    data: query.data?.matches,
+    gated: query.data?.gated === true,
+  }
 }

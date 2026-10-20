@@ -4,7 +4,7 @@ import type { FitDetail } from "@/types/job-fit"
 import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
 import { FitCard, FitSectionTitle } from "./_shared"
-import { fitPercent } from "./_fit"
+import { displayFitPercent } from "./_fit"
 
 type QA = { question: string; answer: string }
 
@@ -19,7 +19,7 @@ export function FitFollowUpCard({ data }: { data: FitDetail }) {
   const [question, setQuestion] = useState("")
   const [history, setHistory] = useState<QA[]>([])
   const [error, setError] = useState(false)
-  const pct = fitPercent(data.fitScore, data.totalVariation, data.perDimension.length || 22)
+  const pct = displayFitPercent(data)
 
   async function ask() {
     const q = question.trim()

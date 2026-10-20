@@ -12,7 +12,7 @@ import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
 import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
 import { FitCard, FitEmptyState, FitPageHeader, FitLoading } from "./_shared"
-import { fitPercent } from "./_fit"
+import { displayFitPercent } from "./_fit"
 
 /**
  * Job-Fit coaching — every question is about **you against one of your matched
@@ -56,7 +56,7 @@ export default function CoachPage() {
     const q = withRole(raw, roleTitle).trim()
     if (!q || !detail) return
     setError(false)
-    const pct = fitPercent(detail.fitScore, detail.totalVariation, detail.perDimension.length || 22)
+    const pct = displayFitPercent(detail)
     try {
       const res = await explain.mutateAsync(toExplainBody(detail, pct, q))
       const answer = (res.answer || "").trim() || res.overview

@@ -24,7 +24,7 @@ import {
   buildFitReportText,
   fitReportFileBase,
 } from "@/lib/job-fit/fitReport"
-import { fitPercent } from "./_fit"
+import { displayFitPercent } from "./_fit"
 import { isMeasured } from "@/lib/job-fit/coverage"
 
 const BTN =
@@ -70,7 +70,7 @@ function printBlob(blob: Blob) {
  * breakdown as rendered; it used to write browser storage and report success.
  */
 export function FitActionsBar({ data, overview }: { data: FitDetail; overview?: string }) {
-  const pct = fitPercent(data.fitScore, data.totalVariation, data.perDimension.length || 22)
+  const pct = displayFitPercent(data)
   const reportInput = { data, pct, overview }
   const [busy, setBusy] = useState<null | "pdf" | "print" | "export">(null)
   const [menuOpen, setMenuOpen] = useState(false)
