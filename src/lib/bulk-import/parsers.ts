@@ -61,6 +61,13 @@ const FIELD_ALIASES: Record<string, KnownField> = {
   job_title: "position",
   jobtitle: "position",
   title: "position",
+  // ── Organisation (super-admin + Skip onboarding only; see validation.ts) ──
+  // Deliberately NOT "org" or "company": files already carrying those headers
+  // imported with the column ignored, and must keep importing the same way.
+  organization: "organization",
+  organisation: "organization",
+  organization_name: "organization",
+  organisation_name: "organization",
 }
 
 /** Fields the importer actually consumes. Anything else is surplus. */
@@ -73,6 +80,7 @@ export const KNOWN_FIELDS = [
   "manager_email",
   "department",
   "position",
+  "organization",
 ] as const
 export type KnownField = (typeof KNOWN_FIELDS)[number]
 

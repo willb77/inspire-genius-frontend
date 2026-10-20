@@ -156,6 +156,9 @@ export function useBulkDemoInvite(options?: {
         manager_email: r.manager_email || undefined,
         department: r.department || undefined,
         position: r.position || undefined,
+        // Resolved by validateRecords from the Organization column; the
+        // backend writes it to user_profiles.org_id, which IS membership.
+        organization_id: r.organization_id || undefined,
       }))
 
       return runChunkedBulkInvite(users, {

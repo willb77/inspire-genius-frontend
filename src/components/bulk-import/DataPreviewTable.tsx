@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertCircle, CheckCircle2, Info, Trash2, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { validateRecords } from "@/lib/bulk-import/validation"
+import { validateRecords, type OrganizationOptions } from "@/lib/bulk-import/validation"
 
 import type { RawUserRecord, ValidationResult, ValidationError, BulkUserRecord } from "@/types/bulk-import"
 
@@ -21,6 +21,7 @@ const FIELD_LABELS: Record<string, string> = {
   manager_email: "Manager",
   department: "Department",
   position: "Position",
+  organization: "Organization",
 }
 
 type DataPreviewTableProps = {
@@ -28,6 +29,10 @@ type DataPreviewTableProps = {
   onRecordsChange: (records: RawUserRecord[]) => void
   onProceed: (validRecords: BulkUserRecord[]) => void
   callerRole?: "manager" | "company-admin" | "super-admin"
+  /** Super-admin only: the organisation directory names are checked against. */
+  orgDirectory?: OrganizationOptions["orgDirectory"]
+  /** Super-admin only: true when this import applies organisations (Skip onboarding). */
+  organizationAllowed?: boolean
 }
 
 const PAGE_SIZE = 50
@@ -41,6 +46,7 @@ type EditableField =
   | "manager_email"
   | "department"
   | "position"
+  | "organization"
 
 type EditingCell = {
   row: number
@@ -59,7 +65,11 @@ export function DataPreviewTable({
   onRecordsChange,
   onProceed,
   callerRole = "company-admin",
+  orgDirectory,
+  organizationAllowed = false,
 }: DataPreviewTableProps) {
+  // Only a super-admin import acts on Organization, so only it shows the column.
+  const showOrganization = callerRole === "super-admin"
   const [validation, setValidation] = useState<ValidationResult>({
     valid: [],
     invalid: [],
@@ -71,8 +81,8 @@ export function DataPreviewTable({
   const [currentPage, setCurrentPage] = useState(0)
 
   useEffect(() => {
-    setValidation(validateRecords(records, callerRole))
-  }, [records, callerRole])
+    setValidation(validateRecords(records, callerRole, { orgDirectory, organizationAllowed }))
+  }, [records, callerRole, orgDirectory, organizationAllowed])
 
   // Build a per-row error map for quick lookup
   const rowErrors = useMemo(() => {
@@ -137,8 +147,8 @@ export function DataPreviewTable({
   }, [records, validation, onRecordsChange])
 
   const handleRevalidateAll = useCallback(() => {
-    setValidation(validateRecords(records, callerRole))
-  }, [records, callerRole])
+    setValidation(validateRecords(records, callerRole, { orgDirectory, organizationAllowed }))
+  }, [records, callerRole, orgDirectory, organizationAllowed])
 
   const handleProceed = useCallback(() => {
     onProceed(validation.valid.map((v) => v.record))
@@ -276,6 +286,7 @@ export function DataPreviewTable({
               <TableHead>Manager</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Position</TableHead>
+              {showOrganization && <TableHead>Organization</TableHead>}
               <TableHead className="w-24">Status</TableHead>
               <TableHead className="w-12" />
             </TableRow>
@@ -302,6 +313,9 @@ export function DataPreviewTable({
                   <TableCell>{renderCell(rowIndex, "manager_email", record.manager_email)}</TableCell>
                   <TableCell>{renderCell(rowIndex, "department", record.department)}</TableCell>
                   <TableCell>{renderCell(rowIndex, "position", record.position)}</TableCell>
+                  {showOrganization && (
+                    <TableCell>{renderCell(rowIndex, "organization", record.organization)}</TableCell>
+                  )}
                   <TableCell>
                     {isInvalid ? (
                       <TooltipProvider>
@@ -349,7 +363,7 @@ export function DataPreviewTable({
             })}
             {records.length === 0 && (
               <TableRow>
-                <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={showOrganization ? 12 : 11} className="py-8 text-center text-muted-foreground">
                   No records to display. Upload a file to get started.
                 </TableCell>
               </TableRow>

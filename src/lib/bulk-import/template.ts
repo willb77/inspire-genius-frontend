@@ -24,6 +24,7 @@ export const TEMPLATE_HEADERS = [
   "Manager",
   "Department",
   "Position",
+  "Organization",
 ] as const
 
 /** Illustrative rows. Kept obviously fake so nobody imports them by accident,
@@ -35,8 +36,11 @@ export const TEMPLATE_HEADERS = [
  *  is created in the same batch — but only if the manager's own row precedes
  *  the rows pointing at it. */
 export const TEMPLATE_ROWS: string[][] = [
-  ["Sam", "Rivera", "sam.rivera@example.com", "sam.personal@example.com", "manager", "", "Operations", "Team Lead"],
-  ["Jane", "Doe", "jane.doe@example.com", "", "user", "sam.rivera@example.com", "Operations", "Analyst"],
+  // Organization is left blank: it must name an organisation that already
+  // exists, and an example name would fail validation for anyone who imports
+  // the template unchanged.
+  ["Sam", "Rivera", "sam.rivera@example.com", "sam.personal@example.com", "manager", "", "Operations", "Team Lead", ""],
+  ["Jane", "Doe", "jane.doe@example.com", "", "user", "sam.rivera@example.com", "Operations", "Analyst", ""],
 ]
 
 export const TEMPLATE_FILENAME = "inspire-genius-bulk-import-template.csv"
