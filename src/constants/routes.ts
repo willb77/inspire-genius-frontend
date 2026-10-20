@@ -57,6 +57,8 @@ export const ROUTES = {
    * spelling would bounce the `user` account the page exists for.
    */
   MY_DEVELOPMENT: "/my/development",
+  /** Résumé Writer — the person's own résumé (2026-10-19). Same `/my/*` rule as above. */
+  MY_RESUME: "/my/resume",
   /** @deprecated Wave 2 Lane 2.A (P7.1) — moved under super-admin as `SUPER_ADMIN.AGENT_TRACE_CONSOLE`. The old path now redirects to the new one. */
   DIAGNOSTIC_CHAT: "/diagnostic-chat",
   SUPER_ADMIN: {

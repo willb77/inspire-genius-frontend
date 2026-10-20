@@ -70,6 +70,7 @@ describe("constants/navigation", () => {
         "Schedule",
         // 2026-10-18 (request): Role Play joins every role's main menu.
         "Role Play",
+        "Résumé Writer",
         "Settings",
         "Help & Support",
       ])
@@ -315,7 +316,7 @@ describe("My Workspace menu order + switched-off entries", () => {
   // ── 2026-08-12, user request: the menu is EXACTLY these six; 2026-09-04,
   // Goals offering Phase 3: Goals returns as the ungated My Goals surface;
   // 2026-09-30, TDS-4c: My development joins on the same footing ──
-  it("renders exactly eight entries, in the specified order", () => {
+  it("renders exactly nine entries, in the specified order (Résumé Writer joined 2026-10-19)", () => {
     // An exact-array assertion, deliberately: the request was a closed list, so
     // anything ADDED here should fail, not just anything removed. A subsequence
     // or arrayContaining check would let a ninth entry through silently. This
@@ -330,13 +331,14 @@ describe("My Workspace menu order + switched-off entries", () => {
       // entitled account, is spliced in after this row by useWorkspaceNavItems —
       // pinned in workspace-menu.render.test.tsx, since it is not in this list.
       "Role Play",
+      "Résumé Writer",
       "Document Library",
       "Settings",
       "Help & Support",
     ])
   })
 
-  it("is still eight entries with the agent-engine toggle OFF", () => {
+  it("is still nine entries with the agent-engine toggle OFF", () => {
     // The toggle swaps the chat row's destination and label, not the shape of
     // the menu.
     expect(labels(false)).toEqual([
@@ -348,6 +350,7 @@ describe("My Workspace menu order + switched-off entries", () => {
       // entitled account, is spliced in after this row by useWorkspaceNavItems —
       // pinned in workspace-menu.render.test.tsx, since it is not in this list.
       "Role Play",
+      "Résumé Writer",
       "Document Library",
       "Settings",
       "Help & Support",
