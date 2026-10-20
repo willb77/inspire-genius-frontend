@@ -29,6 +29,7 @@ import {
   useInvitationStatus,
   useResendInvitation,
 } from "@/hooks/useBulkImport"
+import { useOrgDirectory } from "@/hooks/super-admin/user-management/useOrgAssignment"
 
 import type {
   RawUserRecord,
@@ -124,6 +125,8 @@ export default function SuperAdminBulkImport() {
   // requests; without this the UI looks hung and invites a mid-import refresh.
   const [demoProgress, setDemoProgress] = useState<{ done: number; total: number } | null>(null)
   const demoMutation = useBulkDemoInvite({ onProgress: setDemoProgress })
+  // Names in an Organization column are resolved against this list.
+  const { data: orgDirectory } = useOrgDirectory(true)
   const sendMutation = useSendInvitations()
   const resendMutation = useResendInvitation()
   const { data: invitationStatus, isLoading: isTrackingLoading } = useInvitationStatus(
@@ -299,6 +302,8 @@ export default function SuperAdminBulkImport() {
             onRecordsChange={handleRecordsChange}
             onProceed={handleProceedToImport}
             callerRole="super-admin"
+            orgDirectory={orgDirectory}
+            organizationAllowed={state.skipOnboarding}
           />
         )}
 

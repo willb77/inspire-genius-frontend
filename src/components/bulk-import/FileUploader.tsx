@@ -231,7 +231,7 @@ export function FileUploader({ onParsed, disabled = false }: FileUploaderProps) 
               <p className="text-xs font-medium mb-1">Required columns:</p>
               <p className="text-xs text-muted-foreground font-mono">First Name, Last Name, Email</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Optional: Email 2, Role (user/manager/company-admin), Manager, Department, Position
+                Optional: Email 2, Role (user/manager/company-admin), Manager, Department, Position, Organization (super-admin with Skip onboarding)
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 <span className="font-mono">Manager</span> takes the manager&apos;s{" "}

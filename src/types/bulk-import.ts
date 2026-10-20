@@ -10,6 +10,9 @@ export type RawUserRecord = {
   manager_email?: string
   department?: string
   position?: string
+  /** Organisation NAME as typed in the file. Resolved to an id by
+   *  `validateRecords` (super-admin only); never sent as typed. */
+  organization?: string
   [key: string]: unknown
 }
 
@@ -36,9 +39,23 @@ export const bulkUserSchema = z.object({
   manager_email: z.string().email("Manager must be a valid email address").optional().or(z.literal("")),
   department: z.string().max(128).optional().or(z.literal("")),
   position: z.string().max(128).optional().or(z.literal("")),
+  /**
+   * The organisation the user joins, by NAME — what an operator can type.
+   * Optional, and only acted on by a super-admin import with Skip onboarding,
+   * the one path whose backend takes a per-row organisation. Validation
+   * resolves it to `organization_id` against the organisation directory, so
+   * an unknown or ambiguous name fails on a row the operator can see instead
+   * of producing a user who belongs to no organisation.
+   */
+  organization: z.string().max(255).optional().or(z.literal("")),
 })
 
-export type BulkUserRecord = z.infer<typeof bulkUserSchema>
+export type BulkUserRecord = z.infer<typeof bulkUserSchema> & {
+  /** Set by `validateRecords` from `organization`, never read from the file:
+   *  the schema strips a raw `organization_id` column, so a pasted id cannot
+   *  bypass the name check. */
+  organization_id?: string
+}
 
 // ── Validation types ──
 export type ValidationError = {

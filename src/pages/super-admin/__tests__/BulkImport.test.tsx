@@ -36,6 +36,10 @@ jest.mock("@/hooks/useBulkImport", () => ({
   useResendInvitation: () => ({ mutate: jest.fn(), isPending: false }),
 }))
 
+jest.mock("@/hooks/super-admin/user-management/useOrgAssignment", () => ({
+  useOrgDirectory: () => ({ data: [] }),
+}))
+
 describe("SuperAdminBulkImport", () => {
   it("renders the page title", () => {
     render(<SuperAdminBulkImport />)
