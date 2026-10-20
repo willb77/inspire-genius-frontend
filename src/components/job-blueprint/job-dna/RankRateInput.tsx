@@ -6,7 +6,7 @@ import { ScoreBar } from '@/components/job-blueprint/shared/ScoreBar'
 import { calculateBenchmark, getInterpretation } from '@/lib/job-blueprint/scoring'
 import type { DimensionCategory, DimensionBenchmark } from '@/types/job-blueprint'
 import type { DimensionDef } from '@/constants/job-blueprint/dimensions'
-import { MAX_RATE } from '@/constants/job-blueprint/scoring-tables'
+import { MAX_RATE, getRankTable } from '@/constants/job-blueprint/scoring-tables'
 import { INTERPRETATION_BANDS } from '@/constants/job-blueprint/classification'
 import { ArrowUp, ArrowDown, GripVertical } from 'lucide-react'
 
@@ -57,7 +57,10 @@ export function RankRateInput({ dimensions, category, value, onChange, className
         dimensionName: item.dimensionName,
         category,
         rankPosition: item.rankPosition + 1, // 1-indexed for output
-        rankPercent: 0, // will be filled by scoring
+        // The licensed rank-table value this target averaged in. Was a literal
+        // 0 ("will be filled by scoring") that nothing ever filled, so every
+        // wizard-authored row stored rank_percent = 0.
+        rankPercent: getRankTable(category)[item.rankPosition],
         rateValue: item.rateValue,
         finalBenchmarkPercent,
         interpretation: getInterpretation(finalBenchmarkPercent),

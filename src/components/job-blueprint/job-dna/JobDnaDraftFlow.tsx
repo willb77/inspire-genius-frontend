@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { ACCEPTED_ROLE_FILE_TYPES, extractRoleText } from "@/lib/extractRoleText"
 import { getSavedRoleBlueprint } from "@/services/knowledge-continuity/continuity.service"
-import { getInterpretation } from "@/lib/job-blueprint/scoring"
+import { calculateBenchmark, getInterpretation } from "@/lib/job-blueprint/scoring"
 import { useAllRoles, KCE_ORG_ID } from "@/hooks/job-blueprint/useAllRoles"
 import { useDraftBenchmark } from "@/hooks/job-blueprint/useDraftBenchmark"
 import { useCreateJobDna, useFinalizeBenchmark } from "@/hooks/job-blueprint/useJobDna"
@@ -82,6 +82,26 @@ const selectClass = cn(
 function roleOptionValue(r: AggregatedRole): string {
   return `${r.source}:${r.id ?? r.role_title}`
 }
+
+/**
+ * True when the drafter returned Rank-then-Rate: every target is
+ * calculateBenchmark(rank, rate) and each rate is an AI proposal with the range
+ * that keeps its §3 tier. Older drafters return a stamped ladder instead, and
+ * the review falls back to the percent editor they shipped with.
+ */
+function isRankThenRate(draft: DraftBenchmarkResponse): boolean {
+  if (draft.method !== "rank-then-rate") return false
+  return [...draft.behaviors, ...draft.aptitudes, ...draft.core_traits].every(
+    (d) => typeof d.rate_min === "number" && typeof d.rate_max === "number",
+  )
+}
+
+/** The live target for a rate, from the authoritative scoring.ts (rank is stored 1-based). */
+function targetFor(d: DraftDimension, rate: number): number {
+  return calculateBenchmark(d.rank_position - 1, rate, d.category)
+}
+
+const dimKey = (d: DraftDimension) => `${d.category}-${d.dimension_id}`
 
 /** Map a drafted dimension into the persisted benchmark shape (camelCase + band). */
 function toBenchmark(d: DraftDimension): DimensionBenchmark {
@@ -423,6 +443,85 @@ function DimensionRow({
   )
 }
 
+/**
+ * One dimension under Rank-then-Rate: its rank is fixed by the draft, its rate
+ * is the AI's proposal and is the reviewer's to change — but only within the
+ * range that keeps the dimension in its tier, so the block's required counts
+ * of critical / counter-productive dimensions always hold. The target shown is
+ * computed live from the rank and the chosen rate.
+ */
+function RateRow({
+  dim,
+  blockSize,
+  proposedRate,
+  onRateChange,
+}: {
+  dim: DraftDimension
+  blockSize: number
+  proposedRate: number
+  onRateChange: (rate: number) => void
+}) {
+  const lo = dim.rate_min ?? 1
+  const hi = dim.rate_max ?? lo
+  const maxRate = dim.max_rate ?? hi
+  const rates = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i)
+  const tier = DRAFT_TIER_LABEL[dim.interpretation].toLowerCase()
+  const heldBack = typeof dim.ai_rate === "number" && dim.ai_rate !== proposedRate
+  const changed = dim.rate_value !== proposedRate
+
+  return (
+    <div className="rounded-lg border border-border p-2.5">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium">{dim.dimension_name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <Badge variant="outline" className={cn("text-[10px]", DRAFT_TIER_STYLE[dim.interpretation])}>
+              {DRAFT_TIER_LABEL[dim.interpretation]}
+            </Badge>
+            <span className="text-[11px] text-muted-foreground">
+              Rank {dim.rank_position} of {blockSize}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label htmlFor={`rate-${dimKey(dim)}`} className="text-xs text-muted-foreground">
+            Rate
+          </Label>
+          <select
+            id={`rate-${dimKey(dim)}`}
+            aria-label={`${dim.dimension_name} rate`}
+            value={dim.rate_value}
+            onChange={(e) => onRateChange(Number(e.target.value))}
+            className={cn(selectClass, "h-8 w-28 py-1")}
+          >
+            {rates.map((r) => (
+              <option key={r} value={r}>
+                {r} of {maxRate}
+                {r === proposedRate ? " (AI)" : ""}
+              </option>
+            ))}
+          </select>
+          <div className="w-16 text-right">
+            <div
+              className="text-sm font-semibold tabular-nums"
+              aria-label={`${dim.dimension_name} target`}
+            >
+              {dim.final_benchmark_percent}%
+            </div>
+            <div className="text-[10px] text-muted-foreground">target</div>
+          </div>
+        </div>
+      </div>
+      <p className="mt-1.5 text-[11px] text-muted-foreground">
+        AI proposed {proposedRate} of {maxRate}
+        {heldBack ? ` (it suggested ${dim.ai_rate}; held at ${proposedRate} so this stays ${tier})` : ""}
+        {changed ? ` · you set ${dim.rate_value}` : ""}
+        {` · rates ${lo}–${hi} keep it ${tier}`}
+      </p>
+    </div>
+  )
+}
+
 function ReviewStep({
   draft,
   onStartOver,
@@ -434,12 +533,22 @@ function ReviewStep({
 }) {
   const createJobDna = useCreateJobDna()
   const finalizeBenchmark = useFinalizeBenchmark()
+  const rankRate = isRankThenRate(draft)
   const [saving, setSaving] = useState(false)
+  // Under Rank-then-Rate every rate is an AI proposal until a person confirms
+  // it; the save that follows is the publish that records who reviewed it.
+  const [confirmed, setConfirmed] = useState(false)
   const [blocks, setBlocks] = useState({
     behaviors: draft.behaviors,
     aptitudes: draft.aptitudes,
     core_traits: draft.core_traits,
   })
+  // The AI's proposal per dimension, kept so the row can say what changed.
+  const [proposed] = useState<Record<string, number>>(() =>
+    Object.fromEntries(
+      [...draft.behaviors, ...draft.aptitudes, ...draft.core_traits].map((d) => [dimKey(d), d.rate_value]),
+    ),
+  )
 
   const setPercent = (
     key: Block["key"],
@@ -455,6 +564,22 @@ function ReviewStep({
           : d,
       ),
     }))
+
+  // The select offers only rate_min..rate_max, so every rate reaching here
+  // keeps the dimension in its tier.
+  const setRate = (key: Block["key"], dim: DraftDimension, rate: number) => {
+    setBlocks((prev) => ({
+      ...prev,
+      [key]: prev[key].map((d) =>
+        dimKey(d) === dimKey(dim)
+          ? { ...d, rate_value: rate, final_benchmark_percent: targetFor(d, rate) }
+          : d,
+      ),
+    }))
+  }
+
+  const allDims = [...blocks.behaviors, ...blocks.aptitudes, ...blocks.core_traits]
+  const changedCount = allDims.filter((d) => d.rate_value !== proposed[dimKey(d)]).length
 
   const save = async () => {
     setSaving(true)
@@ -478,6 +603,10 @@ function ReviewStep({
         benchmarkSource: "llm-draft",
         sourceRef: `draft-benchmark: ${draft.archetype || "auto"} shape${
           draft.prism_reference?.applied ? `, PRISM reference ${draft.prism_reference.sections?.length ?? 0} sections` : ""
+        }${
+          rankRate
+            ? `; rank-then-rate, rates AI-proposed and confirmed in review (${changedCount} of ${allDims.length} changed)`
+            : ""
         }`,
       })
 
@@ -510,8 +639,10 @@ function ReviewStep({
             <div className="font-semibold">Blueprint drafted</div>
             <div className="text-sm text-muted-foreground">
               22 dimensions drafted · <span className="capitalize">{draft.archetype}</span> shape.
-              {draft.rationale ? ` ${draft.rationale}` : ""} This is a draft for you to review, not a
-              validated benchmark. Adjust the percents below, then save.
+              {draft.rationale ? ` ${draft.rationale}` : ""}{" "}
+              {rankRate
+                ? "Each target comes from the dimension's rank and a rate the AI proposed. Check every rate, change any you disagree with, then confirm and save. Nothing is saved until you do."
+                : "This is a draft for you to review, not a validated benchmark. Adjust the percents below, then save."}
             </div>
           </div>
         </CardContent>
@@ -523,22 +654,49 @@ function ReviewStep({
             <CardTitle className="text-base">{block.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {blocks[block.key].map((dim) => (
-              <DimensionRow
-                key={`${dim.category}-${dim.dimension_id}`}
-                dim={dim}
-                onPercentChange={(v) => setPercent(block.key, dim.dimension_id, dim.category, v)}
-              />
-            ))}
+            {blocks[block.key].map((dim) =>
+              rankRate ? (
+                <RateRow
+                  key={dimKey(dim)}
+                  dim={dim}
+                  blockSize={blocks[block.key].length}
+                  proposedRate={proposed[dimKey(dim)]}
+                  onRateChange={(r) => setRate(block.key, dim, r)}
+                />
+              ) : (
+                <DimensionRow
+                  key={dimKey(dim)}
+                  dim={dim}
+                  onPercentChange={(v) => setPercent(block.key, dim.dimension_id, dim.category, v)}
+                />
+              ),
+            )}
           </CardContent>
         </Card>
       ))}
+
+      {rankRate && (
+        <div className="flex items-start gap-2 rounded-lg border border-border p-3">
+          <input
+            id="confirm-rates"
+            type="checkbox"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+            className="mt-0.5 h-4 w-4"
+          />
+          <Label htmlFor="confirm-rates" className="text-sm font-normal leading-snug">
+            I have reviewed all {allDims.length} rates
+            {changedCount > 0 ? ` (${changedCount} changed from the AI's proposal)` : ""} and confirm
+            them. Saving publishes this benchmark with me recorded as its reviewer.
+          </Label>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button type="button" variant="ghost" onClick={onStartOver} disabled={saving}>
           <RotateCcw className="mr-2 h-4 w-4" /> Start over
         </Button>
-        <Button type="button" onClick={save} disabled={saving}>
+        <Button type="button" onClick={save} disabled={saving || (rankRate && !confirmed)}>
           {saving ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
           ) : (
