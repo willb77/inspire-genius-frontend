@@ -29,6 +29,11 @@ jest.mock("@/components/ui/skeleton", () => ({
 }));
 
 // The page reads live data through this hook.
+// N-4: the reviewer's queue has its own suite (validation/__tests__); here it renders nothing
+jest.mock("@/components/job-blueprint/validation/ValidationReviewQueue", () => ({
+  ValidationReviewQueue: () => null,
+}))
+
 jest.mock("@/hooks/job-blueprint/useJobDna", () => ({
   useJobDnaList: jest.fn(),
 }));
