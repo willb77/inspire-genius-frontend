@@ -133,7 +133,7 @@ export function PrismDataMenu(): JSX.Element {
             type="button"
             variant="outline"
             data-testid="homev2-prism-data"
-            className="w-full border-[rgba(11,27,51,0.10)] text-[#0B1B33] sm:w-auto"
+            className="w-full border-ig-line text-ig-ink sm:w-auto"
           >
             <FileText className="size-4" />
             Prism Data

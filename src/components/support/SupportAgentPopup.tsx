@@ -131,7 +131,7 @@ export default function SupportAgentPopup({
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 w-[min(26rem,calc(100vw-3rem))]"
+      className="ig-light-island fixed bottom-6 right-6 z-50 w-[min(26rem,calc(100vw-3rem))]"
       role="dialog"
       aria-label="Ask Meridian — support assistant"
       data-testid="support-agent-popup"

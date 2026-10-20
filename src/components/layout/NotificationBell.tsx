@@ -39,10 +39,10 @@ export default function NotificationBell() {
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
-            className="relative flex h-11 w-11 items-center justify-center rounded-lg hover:bg-[#f3f4f6] md:h-9 md:w-9"
+            className="relative flex h-11 w-11 items-center justify-center rounded-lg hover:bg-ig-icon-hover md:h-9 md:w-9"
             aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}
           >
-            <Bell className="h-[18px] w-[18px] text-[#4b5563]" />
+            <Bell className="h-[18px] w-[18px] text-ig-icon-muted" />
             {unread > 0 && (
               <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-[#EF4444] px-1 text-[10px] font-bold leading-none text-white">
                 {unread > 9 ? "9+" : unread}
@@ -50,7 +50,7 @@ export default function NotificationBell() {
             )}
           </button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-80 p-0">
+        <PopoverContent align="end" className="ig-light-island w-80 p-0">
           <div className="flex items-center justify-between border-b border-[#e5e7eb] px-3 py-2">
             <span className="text-sm font-semibold text-[#111827]">Notifications</span>
             {notifications.some((n) => !n.read_at) && (

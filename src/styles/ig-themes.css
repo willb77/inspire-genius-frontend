@@ -1,0 +1,346 @@
+/*
+ * IG themes — Phase A.
+ *
+ * Every --ig-* token below defaults to the exact colour the converted files
+ * hard-coded before this change, so with no theme set (or the "classic"
+ * theme) nothing renders differently. `igThemesCss.test.ts` holds each
+ * default to its legacy literal.
+ *
+ * A theme is applied by `applyIgTheme` (src/lib/theme/igThemes.ts):
+ *   - html[data-ig-theme="<id>"]  palette themes, set ONLY on routes listed in
+ *     THEMED_PATHS (the pages converted to these tokens). Every other page
+ *     keeps today's colours, because its hard-coded colours would clash.
+ *   - html[data-ig-overlay="amber|gray"]  Night Light / Grayscale, which are
+ *     whole-page filters and safe on every page.
+ *   - html[data-ig-tile]  a user-chosen tile (card) colour, scoped to .ig-tile.
+ *
+ * PRISM colours are canonical and are never themed here.
+ */
+
+:root {
+  --ig-page: #FBF7F0;
+  --ig-surface: #FFFFFF;
+  --ig-muted: #F1F1F1;
+  --ig-ink: #0B1B33;
+  --ig-on-ink: #FFFFFF;
+  --ig-body: #4B5F80;
+  --ig-faint: #7C93B5;
+  --ig-faint-2: #9AA3B0;
+  --ig-accent: #C9711A;
+  --ig-accent-hover: #E8932B;
+  --ig-accent-strong: #9C560F;
+  --ig-ok: #3E6B55;
+  --ig-ok-hover: #5B8A72;
+  --ig-line: rgba(11, 27, 51, 0.10);
+  --ig-line-soft: rgba(11, 27, 51, 0.06);
+  --ig-line-strong: rgba(11, 27, 51, 0.25);
+  --ig-nav-fg: #1A1A1A;
+  --ig-nav-active: #0B1B33;
+  --ig-nav-active-fg: #FFFFFF;
+  --ig-raised: var(--color-gray-50);
+  --ig-raised-hover: var(--color-gray-100);
+  --ig-icon: var(--color-gray-700);
+  --ig-icon-muted: #4B5563;
+  --ig-icon-hover: #F3F4F6;
+  --ig-avatar-ink: var(--foreground);
+}
+
+/* sonar-ignore-next-line */
+@theme inline { /*NOSONAR*/
+  --color-ig-page: var(--ig-page);
+  --color-ig-surface: var(--ig-surface);
+  --color-ig-muted: var(--ig-muted);
+  --color-ig-ink: var(--ig-ink);
+  --color-ig-on-ink: var(--ig-on-ink);
+  --color-ig-body: var(--ig-body);
+  --color-ig-faint: var(--ig-faint);
+  --color-ig-faint-2: var(--ig-faint-2);
+  --color-ig-accent: var(--ig-accent);
+  --color-ig-accent-hover: var(--ig-accent-hover);
+  --color-ig-accent-strong: var(--ig-accent-strong);
+  --color-ig-ok: var(--ig-ok);
+  --color-ig-ok-hover: var(--ig-ok-hover);
+  --color-ig-line: var(--ig-line);
+  --color-ig-line-soft: var(--ig-line-soft);
+  --color-ig-line-strong: var(--ig-line-strong);
+  --color-ig-nav-fg: var(--ig-nav-fg);
+  --color-ig-nav-active: var(--ig-nav-active);
+  --color-ig-nav-active-fg: var(--ig-nav-active-fg);
+  --color-ig-raised: var(--ig-raised);
+  --color-ig-raised-hover: var(--ig-raised-hover);
+  --color-ig-icon: var(--ig-icon);
+  --color-ig-icon-muted: var(--ig-icon-muted);
+  --color-ig-icon-hover: var(--ig-icon-hover);
+  --color-ig-avatar-ink: var(--ig-avatar-ink);
+}
+
+/* ── Palette themes ─────────────────────────────────────────────────────── */
+
+html[data-ig-theme="dark"] {
+  color-scheme: dark;
+  --ig-page: #0F1115; --ig-surface: #181B22; --ig-muted: #222630;
+  --ig-ink: #F3F4F6; --ig-on-ink: #0F1115; --ig-body: #B8C0CC;
+  --ig-faint: #9AA3B2; --ig-faint-2: #8E97A6;
+  --ig-accent: #F0A35E; --ig-accent-hover: #F5B87F; --ig-accent-strong: #F5B87F;
+  --ig-ok: #6EE7B7; --ig-ok-hover: #34D399;
+  --ig-line: #2A2F3A; --ig-line-soft: #22262E; --ig-line-strong: #3A404D;
+  --ig-nav-fg: #D1D5DB; --ig-nav-active: #F3F4F6; --ig-nav-active-fg: #0F1115;
+  --ig-raised: #1F232B; --ig-raised-hover: #2A2F3A;
+  --ig-icon: #D1D5DB; --ig-icon-muted: #C4CAD4; --ig-icon-hover: #2A2F3A;
+  --ig-avatar-ink: #0B1B33;
+  --background: #181B22; --foreground: #F3F4F6;
+  --card: #181B22; --card-foreground: #F3F4F6;
+  --popover: #181B22; --popover-foreground: #F3F4F6;
+  --secondary: #222630; --secondary-foreground: #F3F4F6;
+  --muted: #222630; --muted-foreground: #A3A9B5;
+  --accent: #222630; --accent-foreground: #F3F4F6;
+  --border: #2A2F3A; --input: #2A2F3A;
+  --sidebar: #14171D; --sidebar-foreground: #E5E7EB;
+  --sidebar-accent: #222630; --sidebar-accent-foreground: #F3F4F6;
+  --sidebar-border: #2A2F3A;
+}
+
+html[data-ig-theme="black"] {
+  color-scheme: dark;
+  --ig-page: #000000; --ig-surface: #0B0B0B; --ig-muted: #171717;
+  --ig-ink: #FFFFFF; --ig-on-ink: #000000; --ig-body: #C4C4C4;
+  --ig-faint: #A3A3A3; --ig-faint-2: #8A8A8A;
+  --ig-accent: #F0A35E; --ig-accent-hover: #F5B87F; --ig-accent-strong: #F5B87F;
+  --ig-ok: #6EE7B7; --ig-ok-hover: #34D399;
+  --ig-line: #262626; --ig-line-soft: #1C1C1C; --ig-line-strong: #3A3A3A;
+  --ig-nav-fg: #D4D4D4; --ig-nav-active: #FFFFFF; --ig-nav-active-fg: #000000;
+  --ig-raised: #111111; --ig-raised-hover: #1F1F1F;
+  --ig-icon: #D4D4D4; --ig-icon-muted: #C4C4C4; --ig-icon-hover: #1F1F1F;
+  --ig-avatar-ink: #0B1B33;
+  --background: #0B0B0B; --foreground: #FFFFFF;
+  --card: #0B0B0B; --card-foreground: #FFFFFF;
+  --popover: #0B0B0B; --popover-foreground: #FFFFFF;
+  --secondary: #171717; --secondary-foreground: #FFFFFF;
+  --muted: #171717; --muted-foreground: #A3A3A3;
+  --accent: #171717; --accent-foreground: #FFFFFF;
+  --border: #262626; --input: #262626;
+  --sidebar: #000000; --sidebar-foreground: #E5E5E5;
+  --sidebar-accent: #171717; --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #262626;
+}
+
+html[data-ig-theme="sepia"] {
+  --ig-page: #F4ECD8; --ig-surface: #FBF5E6; --ig-muted: #EADFC6;
+  --ig-ink: #3B2F2F; --ig-on-ink: #FBF5E6; --ig-body: #5E4B3C;
+  --ig-faint: #6F5A47; --ig-faint-2: #7E6852;
+  --ig-accent: #8A4B14; --ig-accent-hover: #A65B1A; --ig-accent-strong: #7A4210;
+  --ig-ok: #4D6B2F; --ig-ok-hover: #5E7F3A;
+  --ig-line: rgba(59, 47, 47, 0.14); --ig-line-soft: rgba(59, 47, 47, 0.08); --ig-line-strong: rgba(59, 47, 47, 0.30);
+  --ig-nav-fg: #3B2F2F; --ig-nav-active: #3B2F2F; --ig-nav-active-fg: #FBF5E6;
+  --ig-raised: #F1E7CF; --ig-raised-hover: #EADFC6;
+  --ig-icon: #3B2F2F; --ig-icon-muted: #5E4B3C; --ig-icon-hover: #EADFC6;
+  --ig-avatar-ink: #3B2F2F;
+  --background: #FBF5E6; --foreground: #3B2F2F;
+  --card: #FBF5E6; --card-foreground: #3B2F2F;
+  --popover: #FBF5E6; --popover-foreground: #3B2F2F;
+  --secondary: #F1E7CF; --secondary-foreground: #3B2F2F;
+  --muted: #F1E7CF; --muted-foreground: #6B5644;
+  --accent: #F1E7CF; --accent-foreground: #3B2F2F;
+  --border: #E2D5B8; --input: #E2D5B8;
+  --sidebar: #EFE5CC; --sidebar-foreground: #3B2F2F;
+  --sidebar-accent: #E6DABD; --sidebar-accent-foreground: #3B2F2F;
+  --sidebar-border: #E2D5B8;
+}
+
+html[data-ig-theme="contrast"] {
+  color-scheme: dark;
+  --ig-page: #000000; --ig-surface: #000000; --ig-muted: #000000;
+  --ig-ink: #FFFFFF; --ig-on-ink: #000000; --ig-body: #FFFFFF;
+  --ig-faint: #FFFFFF; --ig-faint-2: #FFFFFF;
+  --ig-accent: #FFE600; --ig-accent-hover: #FFF27A; --ig-accent-strong: #FFE600;
+  --ig-ok: #FFE600; --ig-ok-hover: #FFF27A;
+  --ig-line: #FFFFFF; --ig-line-soft: #FFFFFF; --ig-line-strong: #FFFFFF;
+  --ig-nav-fg: #FFFFFF; --ig-nav-active: #FFE600; --ig-nav-active-fg: #000000;
+  --ig-raised: #000000; --ig-raised-hover: #1A1A1A;
+  --ig-icon: #FFFFFF; --ig-icon-muted: #FFFFFF; --ig-icon-hover: #1A1A1A;
+  --ig-avatar-ink: #000000;
+  --background: #000000; --foreground: #FFFFFF;
+  --card: #000000; --card-foreground: #FFFFFF;
+  --popover: #000000; --popover-foreground: #FFFFFF;
+  --secondary: #000000; --secondary-foreground: #FFFFFF;
+  --muted: #000000; --muted-foreground: #FFFFFF;
+  --accent: #1A1A1A; --accent-foreground: #FFFFFF;
+  --border: #FFFFFF; --input: #FFFFFF; --ring: #FFE600;
+  --sidebar: #000000; --sidebar-foreground: #FFFFFF;
+  --sidebar-accent: #1A1A1A; --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #FFFFFF;
+}
+
+/* Colour-blind safe: today's palette with the orange/green meaning-carriers
+   moved to Okabe–Ito blue, and the pale grey darkened to pass contrast. */
+html[data-ig-theme="cvd"] {
+  --ig-faint: #5F6F86; --ig-faint-2: #6B7789;
+  --ig-accent: #0072B2; --ig-accent-hover: #005A8C; --ig-accent-strong: #005A8C;
+  --ig-ok: #0072B2; --ig-ok-hover: #005A8C;
+}
+
+html[data-ig-theme="midnight"] {
+  color-scheme: dark;
+  --ig-page: #0B1426; --ig-surface: #13203A; --ig-muted: #1B2B4B;
+  --ig-ink: #E6ECF7; --ig-on-ink: #0B1426; --ig-body: #B3C1DA;
+  --ig-faint: #97A7C6; --ig-faint-2: #8797B6;
+  --ig-accent: #F0A35E; --ig-accent-hover: #F5B87F; --ig-accent-strong: #F5B87F;
+  --ig-ok: #6EE7B7; --ig-ok-hover: #34D399;
+  --ig-line: #24365A; --ig-line-soft: #1B2B4B; --ig-line-strong: #33496F;
+  --ig-nav-fg: #CBD5E8; --ig-nav-active: #E6ECF7; --ig-nav-active-fg: #0B1426;
+  --ig-raised: #13203A; --ig-raised-hover: #1B2B4B;
+  --ig-icon: #CBD5E8; --ig-icon-muted: #B3C1DA; --ig-icon-hover: #1B2B4B;
+  --ig-avatar-ink: #0B1B33;
+  --background: #13203A; --foreground: #E6ECF7;
+  --card: #13203A; --card-foreground: #E6ECF7;
+  --popover: #13203A; --popover-foreground: #E6ECF7;
+  --secondary: #1B2B4B; --secondary-foreground: #E6ECF7;
+  --muted: #1B2B4B; --muted-foreground: #A3B3D1;
+  --accent: #1B2B4B; --accent-foreground: #E6ECF7;
+  --border: #24365A; --input: #24365A;
+  --sidebar: #0E1930; --sidebar-foreground: #E6ECF7;
+  --sidebar-accent: #1B2B4B; --sidebar-accent-foreground: #E6ECF7;
+  --sidebar-border: #24365A;
+}
+
+html[data-ig-theme="solarLight"] {
+  --ig-page: #EEE8D5; --ig-surface: #FDF6E3; --ig-muted: #F5EEDA;
+  --ig-ink: #073642; --ig-on-ink: #FDF6E3; --ig-body: #586E75;
+  --ig-faint: #586E75; --ig-faint-2: #657B83;
+  --ig-accent: #A8400F; --ig-accent-hover: #CB4B16; --ig-accent-strong: #93380D;
+  --ig-ok: #5F7A00; --ig-ok-hover: #718F00;
+  --ig-line: #E0D9C3; --ig-line-soft: #E9E2CD; --ig-line-strong: #CFC7AE;
+  --ig-nav-fg: #073642; --ig-nav-active: #073642; --ig-nav-active-fg: #FDF6E3;
+  --ig-raised: #F5EEDA; --ig-raised-hover: #EEE8D5;
+  --ig-icon: #073642; --ig-icon-muted: #586E75; --ig-icon-hover: #EEE8D5;
+  --ig-avatar-ink: #073642;
+  --background: #FDF6E3; --foreground: #073642;
+  --card: #FDF6E3; --card-foreground: #073642;
+  --popover: #FDF6E3; --popover-foreground: #073642;
+  --secondary: #F5EEDA; --secondary-foreground: #073642;
+  --muted: #F5EEDA; --muted-foreground: #586E75;
+  --accent: #EEE8D5; --accent-foreground: #073642;
+  --border: #E0D9C3; --input: #E0D9C3;
+  --sidebar: #EEE8D5; --sidebar-foreground: #073642;
+  --sidebar-accent: #E4DDC8; --sidebar-accent-foreground: #073642;
+  --sidebar-border: #E0D9C3;
+}
+
+html[data-ig-theme="solarDark"] {
+  color-scheme: dark;
+  --ig-page: #002B36; --ig-surface: #073642; --ig-muted: #0B4250;
+  --ig-ink: #EEE8D5; --ig-on-ink: #002B36; --ig-body: #A7B3B3;
+  --ig-faint: #93A1A1; --ig-faint-2: #93A1A1;
+  --ig-accent: #E58A54; --ig-accent-hover: #F0A47A; --ig-accent-strong: #F0A47A;
+  --ig-ok: #B5C934; --ig-ok-hover: #C8DA55;
+  --ig-line: #12505F; --ig-line-soft: #0B4250; --ig-line-strong: #1D6273;
+  --ig-nav-fg: #C9D1CF; --ig-nav-active: #EEE8D5; --ig-nav-active-fg: #002B36;
+  --ig-raised: #073642; --ig-raised-hover: #0B4250;
+  --ig-icon: #C9D1CF; --ig-icon-muted: #A7B3B3; --ig-icon-hover: #0B4250;
+  --ig-avatar-ink: #002B36;
+  --background: #073642; --foreground: #EEE8D5;
+  --card: #073642; --card-foreground: #EEE8D5;
+  --popover: #073642; --popover-foreground: #EEE8D5;
+  --secondary: #0B4250; --secondary-foreground: #EEE8D5;
+  --muted: #0B4250; --muted-foreground: #93A1A1;
+  --accent: #0B4250; --accent-foreground: #EEE8D5;
+  --border: #12505F; --input: #12505F;
+  --sidebar: #002B36; --sidebar-foreground: #EEE8D5;
+  --sidebar-accent: #0B4250; --sidebar-accent-foreground: #EEE8D5;
+  --sidebar-border: #12505F;
+}
+
+html[data-ig-theme="forest"] {
+  --ig-page: #EEF2EA; --ig-surface: #F8FAF5; --ig-muted: #E8EEE1;
+  --ig-ink: #1F2A1D; --ig-on-ink: #F8FAF5; --ig-body: #4F5D4A;
+  --ig-faint: #5E6B57; --ig-faint-2: #6E7A67;
+  --ig-accent: #3F6B2E; --ig-accent-hover: #4F8139; --ig-accent-strong: #355A26;
+  --ig-ok: #3F6B2E; --ig-ok-hover: #4F8139;
+  --ig-line: #D6DFCC; --ig-line-soft: #E2E9D9; --ig-line-strong: #BFCBB2;
+  --ig-nav-fg: #1F2A1D; --ig-nav-active: #1F2A1D; --ig-nav-active-fg: #F8FAF5;
+  --ig-raised: #E8EEE1; --ig-raised-hover: #DCE5D2;
+  --ig-icon: #1F2A1D; --ig-icon-muted: #4F5D4A; --ig-icon-hover: #DCE5D2;
+  --ig-avatar-ink: #1F2A1D;
+  --background: #F8FAF5; --foreground: #1F2A1D;
+  --card: #F8FAF5; --card-foreground: #1F2A1D;
+  --popover: #F8FAF5; --popover-foreground: #1F2A1D;
+  --secondary: #E8EEE1; --secondary-foreground: #1F2A1D;
+  --muted: #E8EEE1; --muted-foreground: #4F5D4A;
+  --accent: #E8EEE1; --accent-foreground: #1F2A1D;
+  --border: #D6DFCC; --input: #D6DFCC;
+  --sidebar: #E8EEE1; --sidebar-foreground: #1F2A1D;
+  --sidebar-accent: #DCE5D2; --sidebar-accent-foreground: #1F2A1D;
+  --sidebar-border: #D6DFCC;
+}
+
+/* Dynamic: the whole page tinted from IG's own accent orange. */
+html[data-ig-theme="dynamic"] {
+  --ig-page: color-mix(in srgb, #C9711A 8%, #FFFFFF);
+  --ig-muted: color-mix(in srgb, #C9711A 12%, #FFFFFF);
+  --ig-faint: #5F6F86; --ig-faint-2: #6B7789;
+  --ig-accent: #9A520F; --ig-accent-hover: #B5600F; --ig-accent-strong: #7F430C;
+  --ig-line: color-mix(in srgb, #C9711A 22%, #FFFFFF);
+  --ig-line-soft: color-mix(in srgb, #C9711A 12%, #FFFFFF);
+  --ig-nav-active: #7F430C;
+  --sidebar: color-mix(in srgb, #C9711A 5%, #FFFFFF);
+  --sidebar-accent: color-mix(in srgb, #C9711A 12%, #FFFFFF);
+  --border: color-mix(in srgb, #C9711A 22%, #FFFFFF);
+}
+
+/* ── Overlay themes: whole-page filters, safe on every page ─────────────── */
+
+/* On the root element a filter does not create a containing block, so fixed
+   headers and dialogs keep their positions. */
+html[data-ig-overlay="gray"] {
+  filter: grayscale(1);
+}
+
+html[data-ig-overlay="amber"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(255, 138, 30, 0.22);
+  mix-blend-mode: multiply;
+  z-index: 2147483647;
+}
+
+/* ── Tile colour: the user's card colour, on .ig-tile only ──────────────── */
+
+html[data-ig-theme][data-ig-tile] .ig-tile {
+  --ig-surface: var(--ig-tile-bg);
+  --ig-page: var(--ig-tile-alt);
+  --ig-muted: var(--ig-tile-alt);
+  --ig-ink: var(--ig-tile-ink);
+  --ig-body: var(--ig-tile-body);
+  --ig-faint: var(--ig-tile-faint);
+  --ig-faint-2: var(--ig-tile-faint);
+  --ig-accent: var(--ig-tile-accent);
+  --ig-accent-hover: var(--ig-tile-accent);
+  --ig-ok: var(--ig-tile-ink);
+  --ig-line: var(--ig-tile-line);
+  --ig-line-soft: var(--ig-tile-line);
+  color: var(--ig-tile-ink);
+}
+
+/* ── Light islands: floating widgets not yet converted keep today's colours
+      under any theme, so they stay readable. ───────────────────────────── */
+
+html[data-ig-theme] .ig-light-island {
+  color-scheme: light;
+  color: oklch(0.129 0.042 264.695);
+  --ig-page: #FBF7F0; --ig-surface: #FFFFFF; --ig-muted: #F1F1F1;
+  --ig-ink: #0B1B33; --ig-on-ink: #FFFFFF; --ig-body: #4B5F80;
+  --ig-faint: #7C93B5; --ig-faint-2: #9AA3B0;
+  --ig-accent: #C9711A; --ig-accent-hover: #E8932B; --ig-accent-strong: #9C560F;
+  --ig-ok: #3E6B55; --ig-ok-hover: #5B8A72;
+  --ig-line: rgba(11, 27, 51, 0.10); --ig-line-soft: rgba(11, 27, 51, 0.06); --ig-line-strong: rgba(11, 27, 51, 0.25);
+  --background: oklch(1 0 0); --foreground: oklch(0.129 0.042 264.695);
+  --card: oklch(1 0 0); --card-foreground: oklch(0.129 0.042 264.695);
+  --popover: oklch(1 0 0); --popover-foreground: oklch(0.129 0.042 264.695);
+  --secondary: oklch(0.968 0.007 247.896); --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896); --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896); --accent-foreground: oklch(0.208 0.042 265.755);
+  --border: oklch(0.929 0.013 255.508); --input: oklch(0.929 0.013 255.508);
+  --ring: #466bc4;
+}

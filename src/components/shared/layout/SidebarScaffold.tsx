@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useAuth } from "@/context/useAuth";
+import IgThemeApplier from "@/components/shared/theme/IgThemeApplier";
 import VoiceDeskWidget from "@/components/shared/VoiceDeskWidget";
 import { SupportAgentProvider } from "@/context/SupportAgentProvider";
 import { BroadcastAlertBanner } from "@/components/shared/BroadcastAlertBanner";
@@ -131,7 +132,7 @@ function NavSubItem({ to, icon: Icon, label, state, disabled, disabledReason, ac
         aria-disabled={disabled || undefined}
         className={cn(
           "cursor-pointer",
-          disabled && "!text-[#1A1A1A]/40 [&>svg]:!text-[#1A1A1A]/40 cursor-not-allowed hover:!bg-transparent",
+          disabled && "!text-ig-nav-fg/40 [&>svg]:!text-ig-nav-fg/40 cursor-not-allowed hover:!bg-transparent",
         )}
       >
         <button
@@ -163,12 +164,12 @@ function NavItem({ to, icon: Icon, label, state, disabled, disabledReason, activ
     if (childActive) setGroupOpen(true);
   }, [childActive]);
   const isActive = isItemActive(location.pathname, { to, activePrefix });
-  const activeClasses = "cursor-pointer !bg-ink !text-white [&>svg]:!text-white";
-  const inactiveClasses = "cursor-pointer !bg-transparent !text-[#1A1A1A] [&>svg]:!text-[#1A1A1A] glow-border-hover";
+  const activeClasses = "cursor-pointer !bg-ig-nav-active !text-ig-nav-active-fg [&>svg]:!text-ig-nav-active-fg";
+  const inactiveClasses = "cursor-pointer !bg-transparent !text-ig-nav-fg [&>svg]:!text-ig-nav-fg glow-border-hover";
   // Locked (no entitlement): still listed so the catalogue is discoverable, but
   // greyed, non-navigating, and announced as disabled to assistive tech.
   const lockedClasses =
-    "!bg-transparent !text-[#1A1A1A]/40 [&>svg]:!text-[#1A1A1A]/40 cursor-not-allowed hover:!bg-transparent";
+    "!bg-transparent !text-ig-nav-fg/40 [&>svg]:!text-ig-nav-fg/40 cursor-not-allowed hover:!bg-transparent";
   if (hasChildren) {
     const Chevron = groupOpen ? ChevronDown : ChevronRight;
     return (
@@ -436,8 +437,8 @@ export default function SidebarScaffold({ navItems, navSections, children, class
           new page inherits it instead of quietly shipping on white.
           HomeV2's own wrapper was removed at the same time — nesting the same
           colour twice just paid for an extra rounded box. */}
-      <SidebarInset className={cn("bg-[#FBF7F0]", className)}>
-        <div className="sticky top-0 z-20 bg-[#FBF7F0]/80 backdrop-blur">
+      <SidebarInset className={cn("bg-ig-page", className)}>
+        <div className="sticky top-0 z-20 bg-ig-page/80 backdrop-blur">
           <div className="h-14 flex items-center gap-2 px-3">
             <MobileMenuTrigger />
             <UserTopHeader />
@@ -447,6 +448,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
         <div className="flex-1 p-4 md:p-6">{children}</div>
         {renderAfterContent}
         <VoiceDeskWidget userId={user?.id} role={user?.role as string | undefined} />
+        <IgThemeApplier />
       </SidebarInset>
     </SidebarProvider>
     </SupportAgentProvider>

@@ -162,21 +162,21 @@ function CompletionRow({
       <span className="inline-flex min-w-0 items-center gap-2 text-[14px]">
         {isDone ? (
           <CheckCircle2
-            className="h-4 w-4 shrink-0 text-[#3E6B55]"
+            className="h-4 w-4 shrink-0 text-ig-ok"
             aria-hidden="true"
           />
         ) : isUnknown ? (
           <AlertCircle
-            className="h-4 w-4 shrink-0 text-[#C9711A]"
+            className="h-4 w-4 shrink-0 text-ig-accent"
             aria-hidden="true"
           />
         ) : (
-          <Circle className="h-4 w-4 shrink-0 text-[#7C93B5]" aria-hidden="true" />
+          <Circle className="h-4 w-4 shrink-0 text-ig-faint" aria-hidden="true" />
         )}
         <span
           className={cn(
             "truncate",
-            isDone ? "text-[#3E6B55]" : isUnknown ? "text-[#C9711A]" : "text-[#0B1B33]",
+            isDone ? "text-ig-ok" : isUnknown ? "text-ig-accent" : "text-ig-ink",
           )}
         >
           {name}
@@ -207,8 +207,8 @@ function CompletionRow({
         className={cn(
           "inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-semibold transition-colors",
           isDone
-            ? "cursor-default border-[rgba(11,27,51,0.06)] bg-[#F1F1F1] text-[#9AA3B0]"
-            : "border-[rgba(11,27,51,0.10)] bg-white text-[#C9711A] hover:bg-[#FBF7F0]",
+            ? "cursor-default border-ig-line-soft bg-ig-muted text-ig-faint-2"
+            : "border-ig-line bg-ig-surface text-ig-accent hover:bg-ig-page",
         )}
       >
         {isUnknown ? (
@@ -265,11 +265,11 @@ function CompletionDropdown({
         data-testid={testId}
         className={cn(
           QUICK_PILL,
-          "border-[rgba(11,27,51,0.10)] bg-[#FBF7F0] text-[#0B1B33] hover:bg-white",
+          "border-ig-line bg-ig-page text-ig-ink hover:bg-ig-surface",
         )}
       >
         <span className="font-semibold">{label}</span>
-        <span className="text-[12px] font-medium text-[#7C93B5]">
+        <span className="text-[12px] font-medium text-ig-faint">
           {t("homeV2.nOfM", {
             defaultValue: "{{done}} of {{total}}",
             done: doneCount,
@@ -279,7 +279,7 @@ function CompletionDropdown({
         {unknownCount > 0 ? (
           <AlertCircle
             data-testid={`${testId}-unknown-marker`}
-            className="h-3.5 w-3.5 shrink-0 text-[#C9711A]"
+            className="h-3.5 w-3.5 shrink-0 text-ig-accent"
             aria-label={t("homeV2.someChecksFailed", {
               defaultValue: "{{count}} item could not be checked",
               count: unknownCount,
@@ -289,7 +289,7 @@ function CompletionDropdown({
         <ChevronDown
           aria-hidden="true"
           className={cn(
-            "h-4 w-4 text-[#7C93B5] transition-transform",
+            "h-4 w-4 text-ig-faint transition-transform",
             open && "rotate-180",
           )}
         />
@@ -298,7 +298,7 @@ function CompletionDropdown({
       {open && (
         <ul
           data-testid={`${testId}-panel`}
-          className="absolute end-0 z-20 mt-1 flex w-72 flex-col gap-3 rounded-xl border border-[rgba(11,27,51,0.10)] bg-white px-4 py-3 shadow-lg"
+          className="absolute end-0 z-20 mt-1 flex w-72 flex-col gap-3 rounded-xl border border-ig-line bg-ig-surface px-4 py-3 shadow-lg"
         >
           {items.map((item) => (
             <CompletionRow
@@ -353,10 +353,10 @@ function QuickActions({
               data-testid={`homev2-quick-${key}`}
               className={cn(
                 QUICK_PILL,
-                "border-[rgba(11,27,51,0.10)] bg-white text-[#0B1B33] hover:bg-[#FBF7F0]",
+                "border-ig-line bg-ig-surface text-ig-ink hover:bg-ig-page",
               )}
             >
-              <Icon className="h-4 w-4 text-[#C9711A]" aria-hidden="true" />
+              <Icon className="h-4 w-4 text-ig-accent" aria-hidden="true" />
               <span>{label}</span>
             </Link>
           ) : (
@@ -373,7 +373,7 @@ function QuickActions({
               }
               className={cn(
                 QUICK_PILL,
-                "cursor-not-allowed border-[rgba(11,27,51,0.06)] bg-[#F1F1F1] text-[#9AA3B0]",
+                "cursor-not-allowed border-ig-line-soft bg-ig-muted text-ig-faint-2",
               )}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
@@ -392,22 +392,22 @@ function QuickActions({
               data-testid="homev2-quick-videos"
               className={cn(
                 QUICK_PILL,
-                "border-[rgba(11,27,51,0.10)] bg-white text-[#0B1B33] hover:bg-[#FBF7F0]",
+                "border-ig-line bg-ig-surface text-ig-ink hover:bg-ig-page",
               )}
             >
-              <Play className="h-4 w-4 text-[#C9711A]" aria-hidden="true" />
+              <Play className="h-4 w-4 text-ig-accent" aria-hidden="true" />
               <span>{t("homeV2.videos", { defaultValue: "Videos" })}</span>
               <ChevronDown
                 aria-hidden="true"
                 className={cn(
-                  "h-4 w-4 text-[#7C93B5] transition-transform",
+                  "h-4 w-4 text-ig-faint transition-transform",
                   videosOpen && "rotate-180",
                 )}
               />
             </button>
 
             {videosOpen && (
-              <ul className="absolute left-0 z-20 mt-1 w-72 overflow-hidden rounded-xl border border-[rgba(11,27,51,0.10)] bg-white py-1 shadow-lg">
+              <ul className="absolute left-0 z-20 mt-1 w-72 overflow-hidden rounded-xl border border-ig-line bg-ig-surface py-1 shadow-lg">
                 {videos.map((video) => (
                   <li key={video.id}>
                     <button
@@ -416,10 +416,10 @@ function QuickActions({
                         setPlaying(video);
                         setVideosOpen(false);
                       }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-start text-[13px] text-[#0B1B33] transition-colors hover:bg-[#FBF7F0]"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-start text-[13px] text-ig-ink transition-colors hover:bg-ig-page"
                     >
                       <Play
-                        className="h-3.5 w-3.5 shrink-0 text-[#7C93B5]"
+                        className="h-3.5 w-3.5 shrink-0 text-ig-faint"
                         aria-hidden="true"
                       />
                       <span className="truncate">{video.title}</span>
@@ -485,7 +485,7 @@ export function WelcomeBackTile({
   const { t } = useTranslation("dashboard");
 
   return (
-    <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-6 shadow-sm">
+    <div className="ig-tile rounded-2xl border border-ig-line bg-ig-surface p-6 shadow-sm">
       {/* 1. Header — what you worked on last visit.
           Replaced "Welcome back, {name}" on 2026-08-05: the greeting told the
           user their own name, where this hands back the thread they were on.
@@ -493,14 +493,14 @@ export function WelcomeBackTile({
       {/* `text-left` is explicit rather than relying on the default: the
           heading is the tile's first line and nothing downstream should be
           able to centre it by inheriting alignment from a future wrapper. */}
-      <h2 className="text-left font-serif text-[22px] leading-tight text-[#0B1B33]">
+      <h2 className="text-left font-serif text-[22px] leading-tight text-ig-ink">
         {t("homeV2.lastVisitHeading", {
           defaultValue: "Here's what you worked on last visit.",
         })}
       </h2>
 
       {lastActionsLoading ? (
-        <p className="mt-1.5 text-[13px] text-[#4b5f80]">
+        <p className="mt-1.5 text-[13px] text-ig-body">
           {t("homeV2.loadingActivity", { defaultValue: "Loading activity…" })}
         </p>
       ) : lastActions.length > 0 ? (
@@ -524,13 +524,13 @@ export function WelcomeBackTile({
                 type="button"
                 onClick={() => onResumeConversation(action.id)}
                 data-testid={`homev2-last-action-${action.id}`}
-                className="-mx-2 flex w-[calc(100%+1rem)] min-w-0 items-baseline gap-2 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-[#FBF7F0]"
+                className="-mx-2 flex w-[calc(100%+1rem)] min-w-0 items-baseline gap-2 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-ig-page"
               >
-                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#C9711A] underline underline-offset-2">
+                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ig-accent underline underline-offset-2">
                   {action.label}
                 </span>
                 {action.meta ? (
-                  <span className="shrink-0 text-[12px] text-[#7C93B5]">
+                  <span className="shrink-0 text-[12px] text-ig-faint">
                     {action.meta}
                   </span>
                 ) : null}
@@ -541,14 +541,14 @@ export function WelcomeBackTile({
       ) : (
         // No history yet: say so plainly and offer the one useful next step,
         // rather than an empty list that reads as a failed fetch.
-        <p className="mt-1.5 text-[13px] text-[#4b5f80]">
+        <p className="mt-1.5 text-[13px] text-ig-body">
           {t("homeV2.noLastVisit", {
             defaultValue: "Nothing yet —",
           })}{" "}
           <button
             type="button"
             onClick={() => onResumeConversation()}
-            className="font-medium text-[#C9711A] underline underline-offset-2 hover:text-[#E8932B]"
+            className="font-medium text-ig-accent underline underline-offset-2 hover:text-ig-accent-hover"
           >
             {t("homeV2.startConversation", {
               defaultValue: "start a conversation",
@@ -558,7 +558,7 @@ export function WelcomeBackTile({
       )}
 
       {/* 3. Divider */}
-      <div className="my-5 h-px w-full bg-[rgba(11,27,51,0.10)]" />
+      <div className="my-5 h-px w-full bg-ig-line" />
 
       {/* 4. Behavioral row.
           The three buttons that used to sit on the right — Chat with Meridian,
@@ -570,27 +570,27 @@ export function WelcomeBackTile({
           detached line below the row. */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="font-serif text-base text-[#0B1B33]">
+          <h3 className="font-serif text-base text-ig-ink">
             {t("homeV2.behavioralAssessment", {
               defaultValue: "Behavioral assessment",
             })}
           </h3>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-[#7C93B5]">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-ig-faint">
               {t("homeV2.poweredByPrism", { defaultValue: "Powered by PRISM" })}
             </p>
             {prismLoading ? (
-              <span className="text-[13px] text-[#4b5f80]">
+              <span className="text-[13px] text-ig-body">
                 {t("homeV2.checkingReport", {
                   defaultValue: "Checking your latest report…",
                 })}
               </span>
             ) : hasReport ? (
               <span
-                className="flex min-w-0 items-center gap-2 text-[13px] text-[#4b5f80]"
+                className="flex min-w-0 items-center gap-2 text-[13px] text-ig-body"
                 data-testid="homev2-latest-report"
               >
-                <FileText className="size-3.5 shrink-0 text-[#7C93B5]" />
+                <FileText className="size-3.5 shrink-0 text-ig-faint" />
                 <span className="min-w-0 truncate">
                   {t("homeV2.latestReportPrefix", {
                     defaultValue: "Latest report:",

@@ -128,7 +128,7 @@ export function ProfileDocViewerDialog({
           <DialogTitle className="truncate">
             {doc?.label}
             {doc?.fileName && doc.fileName !== doc.label ? (
-              <span className="ml-2 text-[13px] font-normal text-[#7C93B5]">
+              <span className="ml-2 text-[13px] font-normal text-ig-faint">
                 {doc.fileName}
               </span>
             ) : null}
@@ -137,7 +137,7 @@ export function ProfileDocViewerDialog({
 
         {loading ? (
           <div
-            className="flex h-64 items-center justify-center gap-2 text-[#4b5f80]"
+            className="flex h-64 items-center justify-center gap-2 text-ig-body"
             data-testid="doc-viewer-loading"
           >
             <Loader2 className="size-4 animate-spin" />
@@ -145,7 +145,7 @@ export function ProfileDocViewerDialog({
           </div>
         ) : error ? (
           <p
-            className="py-8 text-center text-sm text-[#4b5f80]"
+            className="py-8 text-center text-sm text-ig-body"
             data-testid="doc-viewer-error"
           >
             {t("homeV2.docOpenFailed", {
@@ -160,7 +160,7 @@ export function ProfileDocViewerDialog({
                 src={url}
                 title={doc?.label ?? "document"}
                 data-testid="doc-viewer-pdf"
-                className="h-[70vh] w-full rounded-xl border border-[rgba(11,27,51,0.10)] bg-white"
+                className="h-[70vh] w-full rounded-xl border border-ig-line bg-ig-surface"
               />
             ) : kind === "image" ? (
               <img
@@ -174,8 +174,8 @@ export function ProfileDocViewerDialog({
                 className="flex flex-col items-center gap-3 py-10 text-center"
                 data-testid="doc-viewer-fallback"
               >
-                <FileText className="size-8 text-[#7C93B5]" aria-hidden="true" />
-                <p className="text-sm text-[#4b5f80]">
+                <FileText className="size-8 text-ig-faint" aria-hidden="true" />
+                <p className="text-sm text-ig-body">
                   {t("homeV2.noInlinePreview", {
                     defaultValue:
                       "This file type can't be previewed here. Open it in a new tab instead.",
@@ -189,7 +189,7 @@ export function ProfileDocViewerDialog({
               target="_blank"
               rel="noopener noreferrer"
               data-testid="doc-viewer-open-tab"
-              className="inline-flex items-center gap-1.5 self-start text-[13px] font-medium text-[#C9711A] underline underline-offset-2 hover:text-[#E8932B]"
+              className="inline-flex items-center gap-1.5 self-start text-[13px] font-medium text-ig-accent underline underline-offset-2 hover:text-ig-accent-hover"
             >
               <ExternalLink className="size-3.5" aria-hidden="true" />
               {t("homeV2.openInNewTab", { defaultValue: "Open in a new tab" })}

@@ -41,7 +41,7 @@ export default function LanguageSwitcher() {
 
   return (
     <Select value={i18n.language?.split('-')[0] ?? 'en'} onValueChange={handleChange}>
-      <SelectTrigger size="sm" className="gap-1.5 border-none shadow-none bg-transparent hover:bg-gray-100 h-8 px-2">
+      <SelectTrigger size="sm" className="gap-1.5 border-none shadow-none bg-transparent hover:bg-ig-raised-hover h-8 px-2">
         <Globe className="size-4 text-muted-foreground" />
         <SelectValue />
       </SelectTrigger>
