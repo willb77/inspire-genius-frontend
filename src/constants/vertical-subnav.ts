@@ -1,10 +1,12 @@
 import {
+  Banknote,
   ClipboardCheck,
   ClipboardList,
   Compass,
   LayoutDashboard,
   MessagesSquare,
   Route as RouteIcon,
+  Scale,
   ScanSearch,
   Sparkles,
   Target,
@@ -116,7 +118,13 @@ export const DIRECTION_SETTING_TOOLS: NavItemDef[] = [
   { to: ROUTES.DIRECTION_SETTING.JOURNEY, icon: RouteIcon, label: "My journey" },
   { to: ROUTES.DIRECTION_SETTING.PORTRAIT, icon: UserRoundSearch, label: "Who I am" },
   { to: ROUTES.DIRECTION_SETTING.CAREERS, icon: Compass, label: "Career areas" },
+  // Salary (stage 4) and Alignment (stage 6) were routed but reachable only
+  // from a Journey-map tile. They sit here in journey order so the menu is the
+  // map's stage list, not a subset of it (DS-0, 2026-10-20). Visibility only:
+  // both pages were already routed and enterable by URL.
+  { to: ROUTES.DIRECTION_SETTING.SALARY, icon: Banknote, label: "What it pays" },
   { to: ROUTES.DIRECTION_SETTING.GOALS, icon: Target, label: "My goals" },
+  { to: ROUTES.DIRECTION_SETTING.ALIGNMENT, icon: Scale, label: "Goals vs wiring" },
   { to: ROUTES.DIRECTION_SETTING.MATCHES, icon: ScanSearch, label: "Job matches" },
   { to: ROUTES.DIRECTION_SETTING.PLAN, icon: ClipboardList, label: "My plan" },
   { to: ROUTES.DIRECTION_SETTING.INTERVIEW, icon: ClipboardCheck, label: "Interview prep" },
