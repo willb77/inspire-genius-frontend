@@ -4,7 +4,7 @@ import type { FitDetail } from "@/types/job-fit"
 import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
 import { FitCard, FitSectionTitle, FitMeter } from "./_shared"
-import { fitPercent, fitPercentTone, fitPercentLabel } from "./_fit"
+import { displayFitPercent, fitPercentTone, fitPercentLabel } from "./_fit"
 
 /**
  * Fit Summary — the plain-language read of the job↔person overlay.
@@ -18,7 +18,7 @@ import { fitPercent, fitPercentTone, fitPercentLabel } from "./_fit"
  */
 export function FitSummaryCard({ data }: { data: FitDetail }) {
   const explain = useExplainFit()
-  const pct = fitPercent(data.fitScore, data.totalVariation, data.perDimension.length || 22)
+  const pct = displayFitPercent(data)
   const firedFor = useRef<string | null>(null)
 
   // Fetch the overview once per role (no follow-up question). A ref guards

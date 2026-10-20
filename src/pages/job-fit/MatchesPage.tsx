@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { Target, ChevronRight, Building2 } from "lucide-react"
-import { ROUTES } from "@/constants/routes"
 import { useFitMatches } from "@/hooks/job-fit/useFitMatches"
 import type { FitMatch, FitMethod } from "@/types/job-fit"
 import {
@@ -16,7 +15,7 @@ import {
 import { partialCoverage, partialProfileDetail } from "@/lib/job-fit/coverage"
 import FitPurpose from "./FitPurpose"
 import { FitHistoryPanel } from "./FitHistoryPanel"
-import { fitPercent, fitPercentTone } from "./_fit"
+import { displayFitPercent, fitDetailPath, fitPercentTone } from "./_fit"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
 import type { JobComponents } from "@/types/job-fit/components"
@@ -30,12 +29,11 @@ const PCT_COLOR: Record<string, string> = {
   gray: "text-[#6b7280]",
 }
 
-/** The row's fit %, exactly as the row shows it (and as the detail page does). */
-function rowPercent(match: FitMatch): number {
-  return match.method === "closeness" && match.closenessScore != null
-    ? Math.max(1, Math.min(100, Math.round(match.closenessScore)))
-    : fitPercent(match.fitScore, match.totalVariation, 22)
-}
+/**
+ * The row's fit % — the shared rule, so the detail page (opened under the same
+ * read via the link below) shows the identical number (FIT-1).
+ */
+const rowPercent = (match: FitMatch): number => displayFitPercent(match)
 
 /** One ranked role match, linking through to its fit detail. */
 function MatchRow({ match, components }: { match: FitMatch; components?: JobComponents }) {
@@ -54,7 +52,7 @@ function MatchRow({ match, components }: { match: FitMatch; components?: JobComp
   const partial = partialCoverage(match)
   return (
     <Link
-      to={ROUTES.JOB_FIT.detail(match.jobId)}
+      to={fitDetailPath(match.jobId, match.method)}
       className="group flex items-center gap-4 rounded-xl border border-[#e5e7eb] bg-white p-4 transition-colors hover:border-[#0D9488]"
     >
       <div className="min-w-0 flex-1">
@@ -146,7 +144,7 @@ function MethodToggle({
 
 export default function MatchesPage() {
   const [method, setMethod] = useState<FitMethod>("gap")
-  const { data, isLoading, isError } = useFitMatches(method)
+  const { data, isLoading, isError, gated } = useFitMatches(method)
   // Feeds Phase 2 — dark unless the server switch is on: no request, no chip,
   // no sort control, today's list exactly.
   const componentsOn = useJobFitComponentsEnabled()
@@ -212,7 +210,22 @@ export default function MatchesPage() {
         </FitError>
       )}
 
-      {!isLoading && !isError && (data?.length ?? 0) === 0 && (
+      {/* FIT-1: matching switched off platform-side is not "no roles". */}
+      {!isLoading && !isError && gated && (data?.length ?? 0) === 0 && (
+        <FitEmptyState>
+          Role matching is paused for now. It&apos;s a deliberate hold, not a problem with your
+          profile — your matches will appear here once it&apos;s switched back on.
+        </FitEmptyState>
+      )}
+
+      {!isLoading && !isError && gated && (data?.length ?? 0) > 0 && (
+        <p role="note" className="mb-3 text-xs text-[#6b7280]">
+          Role matching is still in limited release, so treat these as a first draft rather than a
+          settled read.
+        </p>
+      )}
+
+      {!isLoading && !isError && !gated && (data?.length ?? 0) === 0 && (
         <FitEmptyState>
           No published roles are available to match against yet. Check back once your organization
           publishes role benchmarks.

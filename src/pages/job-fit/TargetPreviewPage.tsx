@@ -28,7 +28,7 @@ import {
 } from "./_shared"
 import {
   confidenceTone,
-  fitPercent,
+  displayFitPercent,
   fitPercentLabel,
   fitPercentTone,
   type Tone,
@@ -75,7 +75,7 @@ function DimensionRow({ dim }: { dim: ExtractedDimension }) {
  * shared breakdown. No narrative cards — those need a published role id.
  */
 function TargetFitResult({ data }: { data: FitDetail }) {
-  const pct = fitPercent(data.fitScore, data.totalVariation, data.perDimension.length || 22)
+  const pct = displayFitPercent(data)
   return (
     <div className="space-y-6">
       <FitCard>

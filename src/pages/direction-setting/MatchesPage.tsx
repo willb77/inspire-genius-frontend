@@ -21,7 +21,7 @@ import { useAdvanceJourney } from "@/hooks/direction-setting/useJourney"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
 import type { FitDetail, FitMatch, FitMethod } from "@/types/job-fit"
 import {
-  fitPercent,
+  displayFitPercent,
   fitPercentLabel,
   fitPercentTone,
   formatGap,
@@ -102,13 +102,11 @@ const ELSEWHERE: { to: string; label: string; blurb: string }[] = [
   },
 ]
 
-/** The fit percentage for a row: closeness score under the closeness read. */
-function rowPercent(match: FitMatch): number {
-  if (match.method === "closeness" && match.closenessScore != null) {
-    return Math.max(1, Math.min(100, Math.round(match.closenessScore)))
-  }
-  return fitPercent(match.fitScore, match.totalVariation, 22)
-}
+/**
+ * The fit percentage for a row: closeness score under the closeness read. The
+ * shared Job-Fit rule, so the breakdown below shows the same number (FIT-1).
+ */
+const rowPercent = (match: FitMatch): number => displayFitPercent(match)
 
 /*
  * No fit tier and no Excellent/Good/Moderate/Poor band on this page (4.1,
@@ -310,11 +308,9 @@ function OverdoneCard({ flags }: { flags: { dimensionName: string; candidateScor
 
 /** Stage 8 — the full breakdown for the selected role. */
 function FitBreakdown({ detail }: { detail: FitDetail }) {
-  const pct = fitPercent(
-    detail.fitScore,
-    detail.totalVariation,
-    detail.perDimension.length || 22
-  )
+  // FIT-1: the detail is fetched under the list's method, so read it the same
+  // way the row does — closeness under the closeness read, not always the gap.
+  const pct = displayFitPercent(detail)
   const partial = partialCoverage(detail)
   return (
     <div className="space-y-4">

@@ -5,7 +5,8 @@
 // to plain-language, person-facing copy — never raw PRISM jargon.
 
 import type { JobTier } from "@/types/job-blueprint"
-import type { FitBand } from "@/types/job-fit"
+import type { FitBand, FitCoverage, FitMethod } from "@/types/job-fit"
+import { ROUTES } from "@/constants/routes"
 
 export type Tone = "teal" | "green" | "amber" | "red" | "gray"
 
@@ -73,6 +74,58 @@ export function fitPercent(
   }
   const denom = Math.max(1, nDims)
   return Math.max(1, Math.min(100, Math.round(100 - totalVariation / denom)))
+}
+
+/** What `displayFitPercent` reads — a fit row (FitMatch) or a breakdown (FitDetail). */
+export type FitPercentSource = FitCoverage & {
+  fitScore?: number
+  totalVariation: number
+  method?: FitMethod
+  closenessScore?: number | null
+  perDimension?: readonly unknown[]
+}
+
+/**
+ * How many dimensions the fallback averages over — one rule for rows and
+ * breakdowns (FIT-1). The dimensions the score actually rests on
+ * (`dimensionsEvaluated`, BP-F5) win; an older breakdown without them counts
+ * its own per-dimension rows; an older row counts the benchmark
+ * (`dimensionsTotal`), and only a payload carrying none of these assumes 22.
+ */
+export function fitPercentDenominator(x: FitPercentSource): number {
+  if (typeof x.dimensionsEvaluated === "number" && x.dimensionsEvaluated > 0) return x.dimensionsEvaluated
+  if (x.perDimension && x.perDimension.length > 0) return x.perDimension.length
+  if (typeof x.dimensionsTotal === "number" && x.dimensionsTotal > 0) return x.dimensionsTotal
+  return 22
+}
+
+/**
+ * The fit % a surface shows for one role — the SAME number on the list row,
+ * the role's breakdown, a reopened report and Direction Setting (FIT-1).
+ *
+ * Under the closeness read the score is `closenessScore`; otherwise the gap
+ * read's authoritative `fitScore`, derived from total variation only when an
+ * older payload omits it.
+ */
+export function displayFitPercent(x: FitPercentSource): number {
+  if (x.method === "closeness" && typeof x.closenessScore === "number" && Number.isFinite(x.closenessScore)) {
+    return Math.max(1, Math.min(100, Math.round(x.closenessScore)))
+  }
+  return fitPercent(x.fitScore, x.totalVariation, fitPercentDenominator(x))
+}
+
+/** A `?method=` value from a link, or the backend default ("gap") for anything else. */
+export function parseFitMethod(raw: string | null | undefined): FitMethod {
+  return raw === "closeness" ? "closeness" : "gap"
+}
+
+/**
+ * The role's breakdown, opened under the read the link came from. The default
+ * (gap) read stays the bare path, so every existing link is unchanged.
+ */
+export function fitDetailPath(jobId: string, method: FitMethod | undefined): string {
+  const base = ROUTES.JOB_FIT.detail(jobId)
+  return method === "closeness" ? `${base}?method=closeness` : base
 }
 
 /** Tone for a fit percentage — encouraging, never binary. */

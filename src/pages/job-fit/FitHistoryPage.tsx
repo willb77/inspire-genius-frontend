@@ -4,7 +4,7 @@ import { ROUTES } from "@/constants/routes"
 import { useFitSnapshot } from "@/hooks/job-fit/useFitHistory"
 import type { FitDetail, FitMatch, FitSnapshot } from "@/types/job-fit"
 import { FitPageHeader, FitCard, FitEmptyState, FitError, FitLoading, FitMeter, FitPill, FitSectionTitle } from "./_shared"
-import { fitPercent, fitPercentLabel, fitPercentTone } from "./_fit"
+import { displayFitPercent, fitDetailPath, fitPercentLabel, fitPercentTone } from "./_fit"
 import { FitBreakdown } from "./FitBreakdown"
 
 function isFitDetail(p: FitSnapshot["payload"]): p is FitDetail {
@@ -81,7 +81,8 @@ export default function FitHistoryPage() {
 }
 
 function DetailSnapshot({ detail }: { detail: FitDetail }) {
-  const pct = fitPercent(detail.fitScore, detail.totalVariation, detail.perDimension.length || 22)
+  // FIT-1: the read the snapshot was served under (closeness or gap).
+  const pct = displayFitPercent(detail)
   return (
     <>
       <FitCard className="mb-6">
@@ -107,11 +108,12 @@ function MatchesSnapshot({ matches }: { matches: FitMatch[] }) {
       <FitSectionTitle>Roles as ranked that day</FitSectionTitle>
       <ul className="divide-y divide-[#f1f3f5]">
         {matches.map((m) => {
-          const pct = fitPercent(m.fitScore, m.totalVariation, 22)
+          // FIT-1: each row as it was ranked that day — its own read, not always the gap read.
+          const pct = displayFitPercent(m)
           return (
             <li key={m.jobId} className="flex items-center gap-3 py-2 text-sm">
               <Target className="h-4 w-4 shrink-0 text-[#9ca3af]" aria-hidden />
-              <Link to={ROUTES.JOB_FIT.detail(m.jobId)} className="min-w-0 flex-1 truncate font-medium text-[#1f2937] hover:text-[#0D9488]">
+              <Link to={fitDetailPath(m.jobId, m.method)} className="min-w-0 flex-1 truncate font-medium text-[#1f2937] hover:text-[#0D9488]">
                 {m.roleTitle}
               </Link>
               <FitPill tone={fitPercentTone(pct)}>{pct}% fit</FitPill>

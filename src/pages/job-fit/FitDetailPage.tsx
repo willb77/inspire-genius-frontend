@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom"
+import { Link, useParams, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Target, Sprout, AlertTriangle } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
@@ -11,7 +11,7 @@ import {
   FitError,
   PartialProfileNote,
 } from "./_shared"
-import { jobFitNarrativeEnabled, fitPercent } from "./_fit"
+import { jobFitNarrativeEnabled, displayFitPercent, parseFitMethod } from "./_fit"
 import { FitComponentsCard } from "./FitComponentsCard"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
@@ -29,12 +29,16 @@ import { FitActionsBar } from "./FitActionsBar"
  */
 export default function FitDetailPage() {
   const { jobId } = useParams<{ jobId: string }>()
-  const { data, isLoading, isError } = useFitDetail(jobId)
+  // FIT-1: open under the read the list row used (`?method=`), so the row and
+  // this page show the same %. No/unknown param = the backend default (gap).
+  const [searchParams] = useSearchParams()
+  const method = parseFitMethod(searchParams.get("method"))
+  const { data, isLoading, isError } = useFitDetail(jobId, method)
   const narrative = jobFitNarrativeEnabled()
   // Feeds Phase 2 — the components beside the fit. Idle (no request, no card)
   // unless the server switch is on, so the page is today's page by default.
   const componentsOn = useJobFitComponentsEnabled()
-  const fitPct = data ? fitPercent(data.fitScore, data.totalVariation, data.perDimension.length || 22) : 0
+  const fitPct = data ? displayFitPercent(data) : 0
   const components = useFitComponents(
     data && jobId ? [{ jobId, fitScore: fitPct }] : [],
     componentsOn,
