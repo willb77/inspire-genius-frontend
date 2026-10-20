@@ -31,19 +31,79 @@ export type CompositeResult = {
   weights?: Partial<Record<ComponentKey, number>>
 }
 
-export type JobComponents =
-  | {
-      status: "ok"
-      goalAlignment: GoalAlignmentComponent
-      experienceMatch: ExperienceMatchComponent
-      composite: CompositeResult
-    }
-  | { status: "not_found" }
+/**
+ * FIT-3 — Overall fit, beside the PRISM fit. Present only while the server's
+ * `overall_fit` switch is on; the response then carries `overall` per role and
+ * no `composite`. Each signal is 0-100 or absent, with a `status` saying why —
+ * never a zero. The ordering is done here, in the person's own browser.
+ */
+export type OverallSignalKey = "prism" | "function" | "seniority" | "skills" | "goal"
+
+export type OverallSignal = {
+  status: string
+  score?: number
+  roleFamily?: string | null
+  personFamily?: string
+  secondaryFamilies?: string[]
+  evidence?: string | null
+  source?: string
+  roleLevel?: number | null
+  personLevel?: number
+  goalFamilies?: string[]
+  covered?: number
+  total?: number
+  uncovered?: string[]
+}
+
+export type OverallResult = {
+  score: number | null
+  used: OverallSignalKey[]
+  missing: OverallSignalKey[]
+  weights?: Partial<Record<OverallSignalKey, number>>
+  status?: "not_set_up"
+  signals: Partial<Record<OverallSignalKey, OverallSignal>>
+}
+
+export type PersonClassification = {
+  status: string
+  primaryFamily?: string
+  secondaryFamilies?: string[]
+  level?: number
+  evidence?: string
+  source?: string
+}
+
+export type OverallPerson = {
+  function: PersonClassification
+  seniority: PersonClassification
+  classifier: string
+  otherAssessments: { framework: string; notUsed: string }[]
+}
+
+export type JobComponentsV1 = {
+  status: "ok"
+  goalAlignment: GoalAlignmentComponent
+  experienceMatch: ExperienceMatchComponent
+  composite: CompositeResult
+}
+
+export type JobOverall = {
+  status: "ok"
+  goalAlignment: GoalAlignmentComponent
+  overall: OverallResult
+}
+
+export type JobComponents = JobComponentsV1 | JobOverall | { status: "not_found" }
 
 export type FitComponentsResponse = {
-  weights: Record<ComponentKey, number>
+  /** v1: behavioural/goalAlignment/experienceMatch. Overall: the five signals. */
+  weights: Record<string, number>
   engineVersion: string
   jobs: Record<string, JobComponents>
+  /** FIT-3: present (and "overall") only while the overall_fit switch is on. */
+  mode?: "overall"
+  person?: OverallPerson
+  benchmarksValidated?: boolean
 }
 
 export type ComponentsJobIn = { jobId: string; fitScore?: number }

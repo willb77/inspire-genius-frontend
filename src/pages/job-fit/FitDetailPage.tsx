@@ -115,6 +115,8 @@ export default function FitDetailPage() {
               job={jobId ? components.data?.jobs[jobId] : undefined}
               weights={components.data?.weights}
               isError={components.isError}
+              person={components.data?.person}
+              benchmarksValidated={components.data?.benchmarksValidated}
             />
           )}
 
