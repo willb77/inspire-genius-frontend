@@ -265,6 +265,17 @@ const DirectionMatches = React.lazy(() => import("@/pages/direction-setting/Matc
 const DirectionPlan = React.lazy(() => import("@/pages/direction-setting/PlanPage"));
 const DirectionInterview = React.lazy(() => import("@/pages/direction-setting/InterviewPage"));
 const DirectionRehearse = React.lazy(() => import("@/pages/direction-setting/RehearsePage"));
+// Career & Education Discovery (DISC-1)
+const DiscoveryShell = React.lazy(() => import("@/pages/career-discovery/DiscoveryShell"));
+const DiscoveryJourney = React.lazy(() => import("@/pages/career-discovery/JourneyPage"));
+const DiscoveryAbout = React.lazy(() => import("@/pages/career-discovery/AboutPage"));
+const DiscoveryWho = React.lazy(() => import("@/pages/career-discovery/WhoPage"));
+const DiscoveryCareers = React.lazy(() => import("@/pages/career-discovery/CareersPage"));
+const DiscoveryPays = React.lazy(() => import("@/pages/career-discovery/PaysPage"));
+const DiscoveryGoals = React.lazy(() => import("@/pages/career-discovery/GoalsPage"));
+const DiscoveryAlignment = React.lazy(() => import("@/pages/career-discovery/AlignmentPage"));
+const DiscoveryComingNext = React.lazy(() => import("@/pages/career-discovery/ComingNextPage"));
+const DiscoveryPlan = React.lazy(() => import("@/pages/career-discovery/PlanPage"));
 
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
@@ -808,6 +819,32 @@ export const routes: RouteObject[] = [
               { path: "plan", element: withSuspense(<DirectionPlan />) },
               { path: "interview", element: withSuspense(<DirectionInterview />) },
               { path: "rehearse", element: withSuspense(<DirectionRehearse />) },
+            ],
+          },
+        ],
+      },
+
+      // Career & Education Discovery (DISC-1) — gated by VerticalShell on the
+      // `career-discovery` entitlement; the shell below adds the server
+      // switch and the age floor before any stage renders.
+      {
+        path: "/vertical/career-discovery",
+        element: <VerticalShell vertical="career-discovery" />,
+        children: [
+          { index: true, element: <Navigate to="/vertical/career-discovery/journey" replace /> },
+          {
+            element: withSuspense(<DiscoveryShell />),
+            children: [
+              { path: "journey", element: withSuspense(<DiscoveryJourney />) },
+              { path: "about", element: withSuspense(<DiscoveryAbout />) },
+              { path: "who", element: withSuspense(<DiscoveryWho />) },
+              { path: "careers", element: withSuspense(<DiscoveryCareers />) },
+              { path: "pays", element: withSuspense(<DiscoveryPays />) },
+              { path: "goals", element: withSuspense(<DiscoveryGoals />) },
+              { path: "alignment", element: withSuspense(<DiscoveryAlignment />) },
+              { path: "education", element: withSuspense(<DiscoveryComingNext stage="education" />) },
+              { path: "cost", element: withSuspense(<DiscoveryComingNext stage="cost" />) },
+              { path: "plan", element: withSuspense(<DiscoveryPlan />) },
             ],
           },
         ],

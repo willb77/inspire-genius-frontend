@@ -15,6 +15,9 @@ import {
   Wand2,
   BarChart3,
   BookOpenCheck,
+  GraduationCap,
+  PiggyBank,
+  UserRound,
 } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
@@ -135,6 +138,24 @@ export const DIRECTION_SETTING_TOOLS: NavItemDef[] = [
   { to: ROUTES.DIRECTION_SETTING.REHEARSE, icon: MessagesSquare, label: "Practise answers" },
 ]
 
+/**
+ * Career & Education Discovery (DISC-1) — also its in-page pill row. Journey
+ * order. Education paths and Cost and payback are listed honestly as "coming
+ * next" stages (DISC-2, DISC-3); their pages say so and show no data.
+ */
+export const CAREER_DISCOVERY_TOOLS: NavItemDef[] = [
+  { to: ROUTES.CAREER_DISCOVERY.JOURNEY, icon: RouteIcon, label: "My journey" },
+  { to: ROUTES.CAREER_DISCOVERY.ABOUT, icon: UserRound, label: "About me" },
+  { to: ROUTES.CAREER_DISCOVERY.WHO, icon: UserRoundSearch, label: "Who I am" },
+  { to: ROUTES.CAREER_DISCOVERY.CAREERS, icon: Compass, label: "Career areas" },
+  { to: ROUTES.CAREER_DISCOVERY.PAYS, icon: Banknote, label: "What it pays" },
+  { to: ROUTES.CAREER_DISCOVERY.GOALS, icon: Target, label: "My goals" },
+  { to: ROUTES.CAREER_DISCOVERY.ALIGNMENT, icon: Scale, label: "Goals vs wiring" },
+  { to: ROUTES.CAREER_DISCOVERY.EDUCATION, icon: GraduationCap, label: "Education paths" },
+  { to: ROUTES.CAREER_DISCOVERY.COST, icon: PiggyBank, label: "Cost and payback" },
+  { to: ROUTES.CAREER_DISCOVERY.PLAN, icon: ClipboardList, label: "My plan" },
+]
+
 export type VerticalSubNav = {
   /**
    * Section heading. GRANT and KCE keep the friendlier labels their sections
@@ -171,6 +192,8 @@ export function verticalSubNavItems(
       return { items: JOB_BLUEPRINT_TOOLS }
     case "direction-setting":
       return { items: DIRECTION_SETTING_TOOLS }
+    case "career-discovery":
+      return { items: CAREER_DISCOVERY_TOOLS }
     default:
       return null
   }

@@ -349,6 +349,22 @@ export const ROUTES = {
     INTERVIEW: "/vertical/direction-setting/interview",
     REHEARSE: "/vertical/direction-setting/rehearse",
   },
+  // Career & Education Discovery (DISC-1) — for someone choosing a career and
+  // the education to reach it. Gated by the `career-discovery` entitlement
+  // (VerticalShell) AND a server-side switch; the journey map is home.
+  CAREER_DISCOVERY: {
+    BASE: "/vertical/career-discovery",
+    JOURNEY: "/vertical/career-discovery/journey",
+    ABOUT: "/vertical/career-discovery/about",
+    WHO: "/vertical/career-discovery/who",
+    CAREERS: "/vertical/career-discovery/careers",
+    PAYS: "/vertical/career-discovery/pays",
+    GOALS: "/vertical/career-discovery/goals",
+    ALIGNMENT: "/vertical/career-discovery/alignment",
+    EDUCATION: "/vertical/career-discovery/education",
+    COST: "/vertical/career-discovery/cost",
+    PLAN: "/vertical/career-discovery/plan",
+  },
   ONBOARDING: {
     ONE: "/onboarding/one",
     TWO: "/onboarding/two",

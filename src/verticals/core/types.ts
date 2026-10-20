@@ -21,6 +21,7 @@ export type VerticalKey =
   | "knowledge-continuity"
   | "lumen"
   | "direction-setting"
+  | "career-discovery"
 
 /**
  * The envelope every vertical endpoint returns.

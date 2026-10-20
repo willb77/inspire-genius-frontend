@@ -14,6 +14,7 @@ export { JOB_FIT } from "./job-fit/manifest"
 export { KNOWLEDGE_CONTINUITY } from "./knowledge-continuity/manifest"
 export { LUMEN } from "./lumen/manifest"
 export { DIRECTION_SETTING } from "./direction-setting/manifest"
+export { CAREER_DISCOVERY } from "./career-discovery/manifest"
 
 // ── New verticals go here ────────────────────────────────────────
 // export { ACME } from "./acme/manifest"
