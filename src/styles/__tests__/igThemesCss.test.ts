@@ -60,6 +60,7 @@ const LEGACY: Record<string, string> = {
   "--ig-icon-muted": "#4B5563",
   "--ig-icon-hover": "#F3F4F6",
   "--ig-avatar-ink": "var(--foreground)",
+  "--ig-rail": "#F7F7F7",
 };
 
 const ROOT = decls(block(":root"));
@@ -106,6 +107,16 @@ describe("ig-themes.css", () => {
       if (legacy.startsWith("var(") || token.startsWith("--ig-nav") || token.startsWith("--ig-icon") || token.startsWith("--ig-raised")) continue;
       expect(island.get(token)?.toLowerCase()).toBe(legacy.toLowerCase());
     }
+  });
+
+  it("paints the nav rail from --ig-rail under any theme", () => {
+    expect(decls(block('html[data-ig-theme] [data-sidebar="sidebar"]')).size).toBe(0);
+    expect(block('html[data-ig-theme] [data-sidebar="sidebar"]')).toMatch(/background-color:\s*var\(--ig-rail\)/);
+  });
+
+  it.each(fullPalettes)("theme %s puts its rail on its own sidebar colour", (id) => {
+    const own = decls(block(`html[data-ig-theme="${id}"]`));
+    expect(own.get("--ig-rail")).toBe(own.get("--sidebar"));
   });
 
   it("never themes a PRISM colour", () => {

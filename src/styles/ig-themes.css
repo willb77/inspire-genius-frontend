@@ -43,6 +43,7 @@
   --ig-icon-muted: #4B5563;
   --ig-icon-hover: #F3F4F6;
   --ig-avatar-ink: var(--foreground);
+  --ig-rail: #F7F7F7;
 }
 
 /* sonar-ignore-next-line */
@@ -87,6 +88,7 @@ html[data-ig-theme="dark"] {
   --ig-nav-fg: #D1D5DB; --ig-nav-active: #F3F4F6; --ig-nav-active-fg: #0F1115;
   --ig-raised: #1F232B; --ig-raised-hover: #2A2F3A;
   --ig-icon: #D1D5DB; --ig-icon-muted: #C4CAD4; --ig-icon-hover: #2A2F3A;
+  --ig-rail: #14171D;
   --ig-avatar-ink: #0B1B33;
   --background: #181B22; --foreground: #F3F4F6;
   --card: #181B22; --card-foreground: #F3F4F6;
@@ -111,6 +113,7 @@ html[data-ig-theme="black"] {
   --ig-nav-fg: #D4D4D4; --ig-nav-active: #FFFFFF; --ig-nav-active-fg: #000000;
   --ig-raised: #111111; --ig-raised-hover: #1F1F1F;
   --ig-icon: #D4D4D4; --ig-icon-muted: #C4C4C4; --ig-icon-hover: #1F1F1F;
+  --ig-rail: #000000;
   --ig-avatar-ink: #0B1B33;
   --background: #0B0B0B; --foreground: #FFFFFF;
   --card: #0B0B0B; --card-foreground: #FFFFFF;
@@ -134,6 +137,7 @@ html[data-ig-theme="sepia"] {
   --ig-nav-fg: #3B2F2F; --ig-nav-active: #3B2F2F; --ig-nav-active-fg: #FBF5E6;
   --ig-raised: #F1E7CF; --ig-raised-hover: #EADFC6;
   --ig-icon: #3B2F2F; --ig-icon-muted: #5E4B3C; --ig-icon-hover: #EADFC6;
+  --ig-rail: #EFE5CC;
   --ig-avatar-ink: #3B2F2F;
   --background: #FBF5E6; --foreground: #3B2F2F;
   --card: #FBF5E6; --card-foreground: #3B2F2F;
@@ -158,6 +162,7 @@ html[data-ig-theme="contrast"] {
   --ig-nav-fg: #FFFFFF; --ig-nav-active: #FFE600; --ig-nav-active-fg: #000000;
   --ig-raised: #000000; --ig-raised-hover: #1A1A1A;
   --ig-icon: #FFFFFF; --ig-icon-muted: #FFFFFF; --ig-icon-hover: #1A1A1A;
+  --ig-rail: #000000;
   --ig-avatar-ink: #000000;
   --background: #000000; --foreground: #FFFFFF;
   --card: #000000; --card-foreground: #FFFFFF;
@@ -190,6 +195,7 @@ html[data-ig-theme="midnight"] {
   --ig-nav-fg: #CBD5E8; --ig-nav-active: #E6ECF7; --ig-nav-active-fg: #0B1426;
   --ig-raised: #13203A; --ig-raised-hover: #1B2B4B;
   --ig-icon: #CBD5E8; --ig-icon-muted: #B3C1DA; --ig-icon-hover: #1B2B4B;
+  --ig-rail: #0E1930;
   --ig-avatar-ink: #0B1B33;
   --background: #13203A; --foreground: #E6ECF7;
   --card: #13203A; --card-foreground: #E6ECF7;
@@ -213,6 +219,7 @@ html[data-ig-theme="solarLight"] {
   --ig-nav-fg: #073642; --ig-nav-active: #073642; --ig-nav-active-fg: #FDF6E3;
   --ig-raised: #F5EEDA; --ig-raised-hover: #EEE8D5;
   --ig-icon: #073642; --ig-icon-muted: #586E75; --ig-icon-hover: #EEE8D5;
+  --ig-rail: #EEE8D5;
   --ig-avatar-ink: #073642;
   --background: #FDF6E3; --foreground: #073642;
   --card: #FDF6E3; --card-foreground: #073642;
@@ -237,6 +244,7 @@ html[data-ig-theme="solarDark"] {
   --ig-nav-fg: #C9D1CF; --ig-nav-active: #EEE8D5; --ig-nav-active-fg: #002B36;
   --ig-raised: #073642; --ig-raised-hover: #0B4250;
   --ig-icon: #C9D1CF; --ig-icon-muted: #A7B3B3; --ig-icon-hover: #0B4250;
+  --ig-rail: #002B36;
   --ig-avatar-ink: #002B36;
   --background: #073642; --foreground: #EEE8D5;
   --card: #073642; --card-foreground: #EEE8D5;
@@ -260,6 +268,7 @@ html[data-ig-theme="forest"] {
   --ig-nav-fg: #1F2A1D; --ig-nav-active: #1F2A1D; --ig-nav-active-fg: #F8FAF5;
   --ig-raised: #E8EEE1; --ig-raised-hover: #DCE5D2;
   --ig-icon: #1F2A1D; --ig-icon-muted: #4F5D4A; --ig-icon-hover: #DCE5D2;
+  --ig-rail: #E8EEE1;
   --ig-avatar-ink: #1F2A1D;
   --background: #F8FAF5; --foreground: #1F2A1D;
   --card: #F8FAF5; --card-foreground: #1F2A1D;
@@ -305,6 +314,15 @@ html[data-ig-overlay="amber"] body::after {
   z-index: 2147483647;
 }
 
+/* ── Nav rail: the shared sidebar paints itself bg-gray-20 (#F7F7F7). Under a
+      theme the rail takes --ig-rail, which defaults to that same colour, so
+      Light, Colour-blind safe and Dynamic are unchanged and a dark theme
+      never puts its light nav icons on a white rail. ─────────────────────── */
+
+html[data-ig-theme] [data-sidebar="sidebar"] {
+  background-color: var(--ig-rail);
+}
+
 /* ── Tile colour: the user's card colour, on .ig-tile only ──────────────── */
 
 html[data-ig-theme][data-ig-tile] .ig-tile {
@@ -333,7 +351,7 @@ html[data-ig-theme] .ig-light-island {
   --ig-ink: #0B1B33; --ig-on-ink: #FFFFFF; --ig-body: #4B5F80;
   --ig-faint: #7C93B5; --ig-faint-2: #9AA3B0;
   --ig-accent: #C9711A; --ig-accent-hover: #E8932B; --ig-accent-strong: #9C560F;
-  --ig-ok: #3E6B55; --ig-ok-hover: #5B8A72;
+  --ig-ok: #3E6B55; --ig-ok-hover: #5B8A72; --ig-rail: #F7F7F7;
   --ig-line: rgba(11, 27, 51, 0.10); --ig-line-soft: rgba(11, 27, 51, 0.06); --ig-line-strong: rgba(11, 27, 51, 0.25);
   --background: oklch(1 0 0); --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0); --card-foreground: oklch(0.129 0.042 264.695);
