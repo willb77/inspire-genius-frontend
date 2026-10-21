@@ -91,7 +91,7 @@ export default function VoiceDeskWidget({
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2"
+      className="ig-light-island fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2"
       data-testid="voicedesk-widget"
     >
       {/* Expanded agent panel */}

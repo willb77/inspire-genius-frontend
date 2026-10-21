@@ -13,6 +13,8 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROLES, ROUTES } from "@/constants/routes";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import ThemeMenu from "@/components/shared/theme/ThemeMenu";
+import { useThemesAllowed } from "@/hooks/useIgTheme";
 
 /**
  * The My Workspace tour (4:13), narrated: Home and the seven sidebar pages.
@@ -126,6 +128,7 @@ export default function UserTopHeader() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const guide = guidePillFor(pathname);
+  const themesOn = useThemesAllowed();
   const email = user?.email ?? "";
   const role = user?.role ?? "";
   const fallbackName = (email && email.split("@")[0]) || "User";
@@ -139,8 +142,8 @@ export default function UserTopHeader() {
           name keep truncating instead of pushing the pill off the header. */}
       <div className="ml-1 flex-1 min-w-0 flex items-center gap-3">
         <div className="min-w-0 flex flex-col text-left">
-          <p className="font-serif text-sm sm:text-base md:text-2xl font-medium text-ink truncate">Welcome! {displayName}</p>
-          <p className="text-xs text-black-250 hidden sm:block">
+          <p className="font-serif text-sm sm:text-base md:text-2xl font-medium text-ig-ink truncate">Welcome! {displayName}</p>
+          <p className="text-xs text-ig-nav-fg hidden sm:block">
             Your AI coaches are ready—let’s begin!
           </p>
         </div>
@@ -158,7 +161,7 @@ export default function UserTopHeader() {
             target="_blank"
             rel="noopener noreferrer"
             data-testid={guide.testId}
-            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#C9711A]/35 bg-[#C9711A]/10 px-3 py-1 text-[13px] font-semibold text-[#9C560F] transition-colors hover:bg-[#C9711A]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9711A]"
+            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-ig-accent/35 bg-ig-accent/10 px-3 py-1 text-[13px] font-semibold text-ig-accent-strong transition-colors hover:bg-ig-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ig-accent"
           >
             <PlayCircle className="size-4" aria-hidden />
             {guide.label}
@@ -166,6 +169,7 @@ export default function UserTopHeader() {
         )}
       </div>
       <div className="flex items-center gap-2">
+        {themesOn && <ThemeMenu />}
         <LanguageSwitcher />
         <NotificationBell />
         <DropdownMenu>
@@ -173,18 +177,18 @@ export default function UserTopHeader() {
             <button
               type="button"
               aria-label="Open profile menu"
-              className="flex items-center gap-2 rounded-2xl bg-gray-50 px-2.5 py-1.5 shadow-sm hover:bg-gray-100"
+              className="flex items-center gap-2 rounded-2xl bg-ig-raised px-2.5 py-1.5 shadow-sm hover:bg-ig-raised-hover"
             >
-              <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-amber-200">
+              <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-amber-200 text-ig-avatar-ink">
                 <span className="text-sm font-semibold leading-none">{initial}</span>
               </span>
-              <ChevronDown className="h-4 w-4 text-gray-700" />
+              <ChevronDown className="h-4 w-4 text-ig-icon" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-72">
             <DropdownMenuLabel className="font-normal">
               <div className="flex items-center gap-3">
-                <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-amber-200">
+                <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-amber-200 text-ig-avatar-ink">
                   <span className="text-sm font-semibold leading-none">{initial}</span>
                 </span>
                 <div>

@@ -143,16 +143,16 @@ export function AddPersonalDocModal({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[rgba(11,27,51,0.25)] bg-[#FBF7F0] px-4 py-6 text-sm font-medium text-[#0B1B33] transition-colors hover:bg-[#5B8A72]/[0.06]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ig-line-strong bg-ig-page px-4 py-6 text-sm font-medium text-ig-ink transition-colors hover:bg-ig-ok-hover/[0.06]"
           >
             {file ? (
               <>
-                <FileText className="size-4 text-[#3E6B55]" />
+                <FileText className="size-4 text-ig-ok" />
                 <span className="truncate">{file.name}</span>
               </>
             ) : (
               <>
-                <Upload className="size-4 text-[#C9711A]" />
+                <Upload className="size-4 text-ig-accent" />
                 {t("homeV2.chooseFile", { defaultValue: "Choose a file" })}
               </>
             )}
@@ -172,7 +172,7 @@ export function AddPersonalDocModal({
             type="button"
             onClick={handleSubmit}
             disabled={!file || upload.isPending}
-            className="bg-[#0B1B33] text-white hover:bg-[#0B1B33]/90"
+            className="bg-ig-ink text-ig-on-ink hover:bg-ig-ink/90"
           >
             {upload.isPending ? (
               <>

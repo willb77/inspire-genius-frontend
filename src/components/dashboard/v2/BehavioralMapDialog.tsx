@@ -23,7 +23,7 @@ export function BehavioralMapDialog() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#E8932B]/40 bg-[#E8932B]/10 px-2 py-0.5 text-[11px] font-medium text-[#C9711A] transition-colors hover:bg-[#E8932B]/20"
+        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-ig-accent-hover/40 bg-ig-accent-hover/10 px-2 py-0.5 text-[11px] font-medium text-ig-accent transition-colors hover:bg-ig-accent-hover/20"
       >
         <Sparkles className="size-3" aria-hidden="true" />
         Behavioral map

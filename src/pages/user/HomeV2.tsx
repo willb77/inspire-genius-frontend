@@ -531,11 +531,11 @@ export default function HomeV2() {
                 It moved to UserTopHeader on 2026-08-25 (request), so it now
                 rides the app header beside "Welcome! {name}" and follows the
                 user across their pages instead of living only on Home. */}
-            <h1 className="font-serif text-[26px] leading-tight text-[#0B1B33]">
+            <h1 className="font-serif text-[26px] leading-tight text-ig-ink">
               {t("homeV2.welcomePrefix", { defaultValue: "Welcome" })}{" "}
-              <span className="text-[#C9711A]">{firstName}</span>
+              <span className="text-ig-accent">{firstName}</span>
               {" — "}
-              <span className="text-[#4b5f80]">
+              <span className="text-ig-body">
                 {t("homeV2.whatToday", {
                   defaultValue: "What are we working on today?",
                 })}
@@ -557,7 +557,7 @@ export default function HomeV2() {
                   variant="outline"
                   onClick={() => goToChat()}
                   data-testid="homev2-chat-with-meridian"
-                  className="w-full border-[rgba(11,27,51,0.10)] text-[#0B1B33] sm:w-auto"
+                  className="w-full border-ig-line text-ig-ink sm:w-auto"
                 >
                   <MessageSquare className="size-4" />
                   {t("homeV2.chatWithMeridian", {
@@ -582,7 +582,7 @@ export default function HomeV2() {
                   type="button"
                   onClick={goToAssessment}
                   data-testid="homev2-request-prism-survey"
-                  className="w-full bg-[#0B1B33] text-white hover:bg-[#0B1B33]/90 sm:w-auto"
+                  className="w-full bg-ig-ink text-ig-on-ink hover:bg-ig-ink/90 sm:w-auto"
                 >
                   <CalendarDays className="size-4" />
                   {t("homeV2.requestPrismInventory", {
