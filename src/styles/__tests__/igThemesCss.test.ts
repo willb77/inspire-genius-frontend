@@ -61,6 +61,7 @@ const LEGACY: Record<string, string> = {
   "--ig-icon-hover": "#F3F4F6",
   "--ig-avatar-ink": "var(--foreground)",
   "--ig-rail": "#F7F7F7",
+  "--ig-logo-filter": "none",
 };
 
 const ROOT = decls(block(":root"));
@@ -117,6 +118,20 @@ describe("ig-themes.css", () => {
   it.each(fullPalettes)("theme %s puts its rail on its own sidebar colour", (id) => {
     const own = decls(block(`html[data-ig-theme="${id}"]`));
     expect(own.get("--ig-rail")).toBe(own.get("--sidebar"));
+  });
+
+  it("inverts the rail logo on dark palettes only", () => {
+    expect(block("html[data-ig-theme] .ig-rail-logo")).toMatch(/filter:\s*var\(--ig-logo-filter\)/);
+    const dark = ["dark", "black", "contrast", "midnight", "solarDark"];
+    for (const id of fullPalettes) {
+      const own = decls(block(`html[data-ig-theme="${id}"]`));
+      expect([id, own.get("--ig-logo-filter")]).toEqual([id, dark.includes(id) ? "invert(1)" : "none"]);
+    }
+  });
+
+  it("the rail logo carries the class the rule targets", () => {
+    const scaffold = fs.readFileSync(path.resolve(__dirname, "../../components/shared/layout/SidebarScaffold.tsx"), "utf8");
+    expect(scaffold).toMatch(/src="\/Icon-Dark\.svg"[^>]*className="[^"]*\big-rail-logo\b/);
   });
 
   it("never themes a PRISM colour", () => {
