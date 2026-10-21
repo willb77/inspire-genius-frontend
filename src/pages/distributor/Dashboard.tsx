@@ -7,6 +7,7 @@ import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDistributorPractitioners, useDistributorCredits, useDistributorTransactions } from "@/hooks/distributor/useDistributor"
+import { ValidationReviewQueue } from "@/components/job-blueprint/validation/ValidationReviewQueue"
 
 type NetworkEntry = { name: string; region: string; alloc: number; used: number; util: number; status: string }
 type Transaction = { date: string; type: string; amount: string; amountClass: string; balance: string }
@@ -104,6 +105,8 @@ export default function DistributorDashboard() {
 
   const primary = (
     <>
+      {/* N-4: the reviewer's queue; renders nothing unless blueprint_validation is on and a request names this distributor */}
+      <ValidationReviewQueue />
       {/* Credit Usage Trend */}
       <DataCard title={t("admin:distributor.creditUsageTrend")}>
         <div className="flex items-end justify-around h-[180px] pt-2">

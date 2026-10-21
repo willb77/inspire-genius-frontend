@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useCompanyDepartments, useCompanyAnalytics as useCompanyAdminAnalytics } from "@/hooks/company-admin/useCompanyAdmin"
 import { useObservabilityRollup } from "@/hooks/company-admin/useObservabilityRollup"
 import { ROUTES } from "@/constants/routes"
+import { ValidationReviewQueue } from "@/components/job-blueprint/validation/ValidationReviewQueue"
 
 type Dept = { name: string; count: number; color: string }
 
@@ -174,6 +175,8 @@ export default function CompanyAdminDashboard() {
 
   const primary = (
     <>
+      {/* N-4: the reviewer's queue; renders nothing unless blueprint_validation is on and a request names this admin */}
+      <ValidationReviewQueue />
       {departmentsCard}
       {adminSurfacesCard}
       {rollupsKpiRow}

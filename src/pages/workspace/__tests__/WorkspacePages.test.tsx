@@ -82,3 +82,57 @@ describe("ROLE-C shared workspace pages", () => {
     expect(screen.getByTestId("body")).toHaveTextContent("character-lab restricted")
   })
 })
+
+// N-4 — a practitioner can be a blueprint-validation reviewer (backend #1830),
+// so the reviewer's queue is mounted on the practitioner's Job Blueprint page.
+// The manager's queue stays on /manager/job-dna, so /manager/job-blueprint must
+// not grow a second one. The REAL ValidationReviewQueue runs; only its data
+// hooks are stubbed.
+const mockValidationEnabled = jest.fn(() => false)
+const mockAwaitingValidation = jest.fn<{ data: unknown[] | undefined }, []>(() => ({ data: undefined }))
+jest.mock("@/hooks/job-blueprint/useBlueprintValidation", () => ({
+  useValidationEnabled: () => mockValidationEnabled(),
+  useAwaitingValidation: () => mockAwaitingValidation(),
+  useRationale: () => ({ data: undefined, isLoading: false, isError: false }),
+}))
+jest.mock("@/components/dashboard/DataCard", () => ({
+  __esModule: true,
+  default: ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <section>
+      <h2>{title}</h2>
+      {children}
+    </section>
+  ),
+}))
+
+describe("Job Blueprint — N-4 reviewer queue", () => {
+  const waiting = {
+    blueprintId: "bp1", roleTitle: "Line Supervisor", version: 1, requestedBy: "Test Editor",
+    requestedAt: "2026-10-19T10:00:00", note: null,
+  }
+
+  it("shows the queue to a practitioner when blueprint_validation is on and a request is waiting", () => {
+    mockValidationEnabled.mockReturnValue(true)
+    mockAwaitingValidation.mockReturnValue({ data: [waiting] })
+    render(<WorkspaceJobBlueprintPage audience="practitioner" />)
+    expect(screen.getByTestId("practitioner-layout")).toContainElement(screen.getByTestId("validation-review-queue"))
+    expect(screen.getByText("Awaiting your validation")).toBeInTheDocument()
+    expect(screen.getByTestId("body")).toHaveTextContent("job-blueprint")
+  })
+
+  it("renders no queue for a practitioner when blueprint_validation is off", () => {
+    mockValidationEnabled.mockReturnValue(false)
+    mockAwaitingValidation.mockReturnValue({ data: [waiting] })
+    render(<WorkspaceJobBlueprintPage audience="practitioner" />)
+    expect(screen.queryByTestId("validation-review-queue")).not.toBeInTheDocument()
+    expect(screen.getByTestId("body")).toHaveTextContent("job-blueprint")
+  })
+
+  it("leaves /manager/job-blueprint unchanged even with the switch on", () => {
+    mockValidationEnabled.mockReturnValue(true)
+    mockAwaitingValidation.mockReturnValue({ data: [waiting] })
+    render(<WorkspaceJobBlueprintPage audience="manager" />)
+    expect(screen.queryByTestId("validation-review-queue")).not.toBeInTheDocument()
+    expect(screen.getByTestId("body")).toHaveTextContent("job-blueprint")
+  })
+})
