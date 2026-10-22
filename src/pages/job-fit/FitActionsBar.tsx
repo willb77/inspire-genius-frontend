@@ -24,7 +24,7 @@ import {
   buildFitReportText,
   fitReportFileBase,
 } from "@/lib/job-fit/fitReport"
-import { displayFitPercent } from "./_fit"
+import { displayFitPercent } from "@/components/fit/fit"
 import { isMeasured } from "@/lib/job-fit/coverage"
 
 const BTN =

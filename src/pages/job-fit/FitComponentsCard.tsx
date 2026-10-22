@@ -1,6 +1,6 @@
 import { Layers } from "lucide-react"
 import type { FitComponentsResponse, JobComponents } from "@/types/job-fit/components"
-import { FitCard, FitPill, FitSectionTitle, FitMeter } from "./_shared"
+import { FitCard, FitPill, FitSectionTitle, FitMeter } from "@/components/fit/primitives"
 import {
   COMPONENT_LABEL,
   VERDICT_LABEL,
@@ -9,7 +9,7 @@ import {
   asV1,
   experienceAbsentReason,
   goalAbsentReason,
-} from "./_components"
+} from "@/components/fit/components"
 import { OverallFitCard } from "./OverallFitCard"
 
 type Props = {

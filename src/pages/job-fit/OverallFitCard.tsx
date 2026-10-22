@@ -1,7 +1,7 @@
 import { Layers } from "lucide-react"
 import type { JobOverall, OverallPerson, OverallSignal, OverallSignalKey } from "@/types/job-fit/components"
-import { FitCard, FitSectionTitle } from "./_shared"
-import { LEVEL_NAME, OVERALL_LABEL, OVERALL_SIGNALS, overallAbsentReason } from "./_components"
+import { FitCard, FitSectionTitle } from "@/components/fit/primitives"
+import { LEVEL_NAME, OVERALL_LABEL, OVERALL_SIGNALS, overallAbsentReason } from "@/components/fit/components"
 
 type Props = {
   job: JobOverall

@@ -1,50 +1,15 @@
-// Job-Fit vertical — pure presentation helpers.
+// Fit — pure presentation helpers, shared by every surface that shows a fit
+// (Career Fit, Direction Setting, Fit a JD, history). Moved from
+// `pages/job-fit/_fit.ts` by FIT-5a.
 //
 // Component-free so the react-refresh/only-export-components rule stays happy
-// (UI primitives live in ./_shared). Everything here maps backend numbers/labels
+// (UI primitives live in ./primitives). Everything here maps backend numbers/labels
 // to plain-language, person-facing copy — never raw PRISM jargon.
 
-import type { JobTier } from "@/types/job-blueprint"
-import type { FitBand, FitCoverage, FitMethod } from "@/types/job-fit"
+import type { FitCoverage, FitMethod } from "@/types/job-fit"
 import { ROUTES } from "@/constants/routes"
 
 export type Tone = "teal" | "green" | "amber" | "red" | "gray"
-
-/** Plain-language label for a role tier. */
-export function tierLabel(tier: JobTier): string {
-  switch (tier) {
-    case "front-line":
-      return "Front-line"
-    case "professional":
-      return "Professional"
-    case "executive":
-      return "Executive"
-    default:
-      return tier
-  }
-}
-
-/**
- * Map a fit band to a tone. Bands are backend-authored strings; we normalise
- * a handful of well-known shapes and fall back to neutral so an unrecognised
- * band still renders.
- */
-export function bandTone(band: FitBand): Tone {
-  const b = band.toLowerCase()
-  if (/(excellent|strong|high)/.test(b)) return "green"
-  if (/(good|solid|moderate|medium)/.test(b)) return "teal"
-  if (/(develop|emerging|partial|stretch)/.test(b)) return "amber"
-  if (/(low|weak|misalign|poor)/.test(b)) return "red"
-  return "gray"
-}
-
-/** Human-readable band label (title-cased, hyphens → spaces). */
-export function bandLabel(band: FitBand): string {
-  if (!band) return "Unrated"
-  return band
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
 
 /** Tone for a per-dimension gap: negative gap (below benchmark) = growth area. */
 export function gapTone(gap: number): Tone {
@@ -163,4 +128,23 @@ export function confidenceTone(confidence: number): Tone {
   if (confidence >= 0.5) return "teal"
   if (confidence >= 0.25) return "amber"
   return "gray"
+}
+
+/**
+ * Where one row sits in the list it was shown in — computed once by
+ * `FitMatchList` and handed to each row's figure. FIT-5 builds this seam and
+ * renders nothing with it; FIT-4a/4b decide whether a rank ("3rd of 42") or a
+ * range-relative read is ever drawn. `best` and `median` are fit percentages
+ * (`displayFitPercent`), so a later figure can never disagree with the number.
+ */
+export type FitListContext = { rank: number; of: number; best: number; median: number }
+
+export function fitListContexts(rows: readonly FitPercentSource[]): FitListContext[] {
+  const pcts = rows.map(displayFitPercent)
+  if (pcts.length === 0) return []
+  const sorted = [...pcts].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  const median = sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  const best = sorted[sorted.length - 1]
+  return pcts.map((_, i) => ({ rank: i + 1, of: pcts.length, best, median }))
 }

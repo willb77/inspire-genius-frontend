@@ -9,7 +9,7 @@ import { fitService } from "@/services/job-fit/fit.service"
 import { targetErrorText } from "@/pages/summit/_targets"
 import type { FitDetail } from "@/types/job-fit"
 import type { GoalTargetWithRoadmap, RoadmapMilestone } from "@/types/goals/targets"
-import { FitCard, FitSectionTitle } from "./_shared"
+import { FitCard, FitSectionTitle } from "@/components/fit/primitives"
 
 /**
  * JS-7 (D-JS2): the Pathway page reads the roadmap engine. Everything here is

@@ -9,8 +9,8 @@ import {
   readLegacySavedReports,
 } from "@/lib/job-fit/legacySavedReports"
 import type { FitSnapshotSource, FitSnapshotSummary } from "@/types/job-fit"
-import { FitCard, FitEmptyState, FitPill, FitSectionTitle } from "./_shared"
-import { fitPercentTone } from "./_fit"
+import { FitCard, FitEmptyState, FitPill, FitSectionTitle } from "@/components/fit/primitives"
+import { fitPercentTone } from "@/components/fit/fit"
 
 const SOURCE_LABEL: Record<FitSnapshotSource, string> = {
   matches: "Role matches",

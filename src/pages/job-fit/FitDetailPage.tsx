@@ -1,17 +1,17 @@
 import { Link, useParams, useSearchParams } from "react-router-dom"
-import { ArrowLeft, Target, Sprout, AlertTriangle } from "lucide-react"
+import { ArrowLeft, Target } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
 import {
   FitPageHeader,
-  FitStat,
   FitPill,
   FitEmptyState,
   FitLoading,
   FitError,
   PartialProfileNote,
-} from "./_shared"
-import { jobFitNarrativeEnabled, displayFitPercent, parseFitMethod } from "./_fit"
+} from "@/components/fit/primitives"
+import { jobFitNarrativeEnabled, displayFitPercent, parseFitMethod } from "@/components/fit/fit"
+import { FitStatTiles } from "@/components/fit/FitResult"
 import { FitComponentsCard } from "./FitComponentsCard"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
@@ -78,28 +78,7 @@ export default function FitDetailPage() {
           {narrative && <FitActionsBar data={data} />}
 
           {/* Closeness summary */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <FitStat
-              icon={Target}
-              label="Overall closeness"
-              value={data.totalVariation}
-              hint="Lower means closer to this role's benchmark"
-            />
-            <FitStat
-              icon={Sprout}
-              label="Growth areas"
-              value={data.coachingGaps.length}
-              hint="Dimensions to develop toward the benchmark"
-              tone="amber"
-            />
-            <FitStat
-              icon={AlertTriangle}
-              label="Priority focus"
-              value={data.criticalGaps.length}
-              hint="Larger gaps worth prioritizing"
-              tone={data.criticalGaps.length > 0 ? "red" : "green"}
-            />
-          </div>
+          <FitStatTiles data={data} subject="role" className="mb-6" />
 
           {/* No fit tier or base tier here (4.1, option D): the four-tier label
               rests on an uncalibrated cut, so the person sees the score only. */}

@@ -1,17 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
-import {
-  AlertTriangle,
-  ArrowRight,
-  Building2,
-  Info,
-  Loader2,
-  MessagesSquare,
-  Pause,
-  SearchX,
-  Sprout,
-  Target,
-} from "lucide-react"
+import { ArrowRight, Loader2, Pause, SearchX, Target } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -19,19 +8,9 @@ import { ROUTES } from "@/constants/routes"
 import { useMatches } from "@/hooks/direction-setting/useMatches"
 import { useAdvanceJourney } from "@/hooks/direction-setting/useJourney"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
-import type { FitDetail, FitMatch, FitMethod } from "@/types/job-fit"
-import {
-  displayFitPercent,
-  fitPercentLabel,
-  fitPercentTone,
-  formatGap,
-  type Tone,
-} from "@/pages/job-fit/_fit"
-import {
-  partialCoverage,
-  partialProfileDetail,
-  partialProfileLabel,
-} from "@/lib/job-fit/coverage"
+import type { FitMethod } from "@/types/job-fit"
+import { FitMatchList } from "@/components/fit/FitMatchList"
+import { FitResult } from "@/components/fit/FitResult"
 
 /**
  * Stages 7 and 8 — "which roles actually suit me?" and "how far off am I?".
@@ -46,7 +25,8 @@ import {
  * 1. **It reuses Job-Fit outright.** The rows come from the same
  *    `/v1/blueprint/fit/matches` read the Job-Fit vertical uses, the breakdown
  *    from the same `/v1/blueprint/fit/{jobId}`, and the percentages from the same
- *    `fitPercent` helper — so a number here and the same number over there can
+ *    `displayFitPercent` helper, drawn by the shared `@/components/fit` list and
+ *    result (FIT-5) — so a number here and the same number over there can
  *    never drift. Only the chrome is Direction Setting's, because this vertical's
  *    surfaces are calm and neutral where Job-Fit's are teal-branded.
  * 2. **Self-advocacy leads the breakdown, gaps follow.** Someone using this page
@@ -65,17 +45,8 @@ import {
  *    sample roles.
  *
  * One thing this page must NOT show: the gap engine's band beside a closeness
- * percentage. See `rowBand`.
+ * percentage (4.1, option D; see below).
  */
-
-/** Tone → text colour. Local to this vertical; Job-Fit's palette is its own. */
-const TONE_TEXT: Record<Tone, string> = {
-  green: "text-emerald-600",
-  teal: "text-teal-600",
-  amber: "text-amber-600",
-  red: "text-rose-600",
-  gray: "text-muted-foreground",
-}
 
 /** How the list is ordered. Both reads are live; the wording avoids jargon. */
 const METHODS: { value: FitMethod; label: string }[] = [
@@ -102,12 +73,6 @@ const ELSEWHERE: { to: string; label: string; blurb: string }[] = [
   },
 ]
 
-/**
- * The fit percentage for a row: closeness score under the closeness read. The
- * shared Job-Fit rule, so the breakdown below shows the same number (FIT-1).
- */
-const rowPercent = (match: FitMatch): number => displayFitPercent(match)
-
 /*
  * No fit tier and no Excellent/Good/Moderate/Poor band on this page (4.1,
  * option D). The band is the fit tier in other words, and the four-tier cut is
@@ -115,262 +80,6 @@ const rowPercent = (match: FitMatch): number => displayFitPercent(match)
  * `displayBand`, `tier` and `baseTier` still arrive on the wire — they are just
  * not rendered here.
  */
-
-/** One ranked role. Selecting it opens its breakdown below, in place. */
-function MatchRow({
-  match,
-  selected,
-  onSelect,
-}: {
-  match: FitMatch
-  selected: boolean
-  onSelect: (jobId: string) => void
-}) {
-  const pct = rowPercent(match)
-  // BP-F5: a partial-profile score says how much it rests on.
-  const partial = partialCoverage(match)
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={() => onSelect(match.jobId)}
-        aria-pressed={selected}
-        className={cn(
-          "flex w-full items-center gap-4 rounded-lg border p-3 text-left transition-colors",
-          selected
-            ? "border-primary bg-primary/5"
-            : "border-border bg-background hover:border-primary/50"
-        )}
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium">{match.roleTitle}</span>
-          <span className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            {match.department && (
-              <span className="inline-flex items-center gap-1">
-                <Building2 className="h-3 w-3" aria-hidden />
-                {match.department}
-              </span>
-            )}
-            {/* The critical-gap count stays: "you are close, with N specific
-                things to close" is useful where a tier label is not. */}
-            {(match.criticalGapCount ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1 text-amber-700">
-                <AlertTriangle className="h-3 w-3" aria-hidden />
-                {match.criticalGapCount} critical gap
-                {match.criticalGapCount === 1 ? "" : "s"} to close
-              </span>
-            )}
-          </span>
-        </span>
-
-        <span className="shrink-0 text-right">
-          <span
-            className={cn("block text-2xl font-semibold leading-none", TONE_TEXT[fitPercentTone(pct)])}
-          >
-            {pct}
-            <span className="text-sm text-muted-foreground">%</span>
-          </span>
-          <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
-            fit
-          </span>
-          {partial && (
-            <span className="mt-1 block text-[11px] text-amber-700" title={partialProfileDetail(partial)}>
-              {partial.evaluated} of {partial.total} measured
-            </span>
-          )}
-        </span>
-      </button>
-    </li>
-  )
-}
-
-/**
- * The self-advocacy card — the quiet star of the page.
- *
- * These are the dimensions where the person already meets or beats the role's
- * benchmark, written as things to say. Deliberately the first and largest card
- * in the breakdown: a gap list is useful, but it is not what someone job-hunting
- * needs to read first.
- */
-function SelfAdvocacyCard({ lines }: { lines: string[] }) {
-  if (lines.length === 0) return null
-  return (
-    <Card className="border-primary/30 bg-primary/[0.03]">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <MessagesSquare className="h-4 w-4 text-primary" aria-hidden />
-          What to say out loud about this one
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="mb-3 text-sm text-muted-foreground">
-          These are the places you already match or beat what the role asks for.
-          They&apos;re yours to claim — worth having ready before an interview.
-        </p>
-        <ul className="space-y-2.5">
-          {lines.map((line, i) => (
-            <li key={i} className="flex items-start gap-2.5">
-              <span
-                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
-                aria-hidden
-              />
-              <span className="text-sm leading-relaxed">{line}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  )
-}
-
-/** A gap group: the priority ones first, then the steadier ones. */
-function GapList({
-  title,
-  hint,
-  gaps,
-  tone,
-}: {
-  title: string
-  hint: string
-  gaps: { dimensionName: string; gap: number }[]
-  tone: Tone
-}) {
-  if (gaps.length === 0) return null
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          {tone === "red" ? (
-            <AlertTriangle className={cn("h-4 w-4", TONE_TEXT[tone])} aria-hidden />
-          ) : (
-            <Sprout className={cn("h-4 w-4", TONE_TEXT[tone])} aria-hidden />
-          )}
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="mb-3 text-sm text-muted-foreground">{hint}</p>
-        <ul className="space-y-2">
-          {gaps.map((g) => (
-            <li
-              key={g.dimensionName}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border p-2.5 text-sm"
-            >
-              <span>{g.dimensionName}</span>
-              <span className={cn("font-medium", TONE_TEXT[tone])}>{formatGap(g.gap)}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  )
-}
-
-/**
- * Over-expressed strengths.
- *
- * Framed as information, never as a fault: these are things the person is good
- * at, turned up higher than this particular role tends to need — usually the way
- * someone behaves under pressure. Knowing it is useful. Being told off for it is
- * not, so the copy says so explicitly.
- */
-function OverdoneCard({ flags }: { flags: { dimensionName: string; candidateScore: number }[] }) {
-  if (flags.length === 0) return null
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Info className="h-4 w-4 text-muted-foreground" aria-hidden />
-          Strengths you turn up high
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="mb-3 text-sm text-muted-foreground">
-          These are strengths, not faults. You express them more strongly than this
-          role typically calls for — which often shows up under pressure. Nothing
-          here needs fixing; it&apos;s just useful to know which dial you reach for
-          first.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {flags.map((f) => (
-            <span
-              key={f.dimensionName}
-              className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground"
-            >
-              {f.dimensionName} · {f.candidateScore}
-            </span>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-/** Stage 8 — the full breakdown for the selected role. */
-function FitBreakdown({ detail }: { detail: FitDetail }) {
-  // FIT-1: the detail is fetched under the list's method, so read it the same
-  // way the row does — closeness under the closeness read, not always the gap.
-  const pct = displayFitPercent(detail)
-  const partial = partialCoverage(detail)
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardContent className="flex flex-wrap items-baseline gap-x-4 gap-y-2 p-5">
-          <span
-            className={cn("text-4xl font-semibold leading-none", TONE_TEXT[fitPercentTone(pct)])}
-          >
-            {pct}
-            <span className="text-xl text-muted-foreground">%</span>
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-medium">{detail.roleTitle}</span>
-            <span className="block text-sm text-muted-foreground">
-              {fitPercentLabel(pct)}
-            </span>
-          </span>
-          {/* BP-F5: a partial-profile score says what it rests on. */}
-          {partial && (
-            <span role="note" className="block w-full text-xs text-muted-foreground">
-              <span className="font-medium text-amber-700">{partialProfileLabel(partial)}.</span>{" "}
-              {partialProfileDetail(partial)}
-            </span>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Strengths first — see the note on SelfAdvocacyCard. */}
-      <SelfAdvocacyCard lines={detail.interviewSelfAdvocacy} />
-
-      <GapList
-        title="Worth putting first"
-        hint="The furthest from what this role leans on. Closing one of these moves your fit more than anything else you could do."
-        gaps={detail.criticalGaps}
-        tone="red"
-      />
-
-      <GapList
-        title="Worth building over time"
-        hint="Smaller distances. Steady practice closes these — no leap required."
-        gaps={detail.coachingGaps}
-        tone="amber"
-      />
-
-      <OverdoneCard flags={detail.overdoneFlags} />
-
-      {detail.gated && (
-        <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-          Matching for this role is still in limited release, so treat this read as
-          a first draft rather than a settled answer.
-        </p>
-      )}
-
-      <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
-        {detail.methodologyNote ||
-          "This compares your profile with a role's published benchmark to help you aim your effort. It is not a hiring decision, and no one else sees it."}
-      </p>
-    </div>
-  )
-}
 
 /**
  * Nothing to match against.
@@ -584,100 +293,93 @@ export default function MatchesPage() {
           there&apos;s ground to make up.
         </p>
       </header>
-
-      {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Lining your profile up against published roles…
-        </div>
-      )}
-
-      {isError && (
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">
-              We couldn&apos;t load your matches just now. Refresh to try again —
-              nothing you&apos;ve done has been lost.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {!isLoading && !isError && gated && <MatchingPaused />}
-
-      {!isLoading && !isError && !gated && matches.length === 0 && <NothingToMatchYet />}
-
-      {!isLoading && !isError && !gated && matches.length > 0 && (
-        <>
-          <section aria-labelledby="ds-matches-heading">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h2 id="ds-matches-heading" className="flex items-center gap-2 text-sm font-medium">
-                <Target className="h-4 w-4 text-muted-foreground" aria-hidden />
-                {matches.length} role{matches.length === 1 ? "" : "s"} to compare with
-              </h2>
-              <div
-                role="radiogroup"
-                aria-label="How to order your matches"
-                className="inline-flex rounded-lg border border-border p-0.5"
-              >
-                {METHODS.map((m) => (
-                  <button
-                    key={m.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={method === m.value}
-                    onClick={() => setMethod(m.value)}
-                    className={cn(
-                      "rounded-md px-2.5 py-1 text-xs transition-colors",
-                      method === m.value
-                        ? "bg-primary/10 font-medium text-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
+      <FitMatchList
+        variant="ds"
+        matches={matches}
+        selectedId={selectedId}
+        onSelect={setPicked}
+        state={{ isLoading, isError, gated, gatedHidesRows: true }}
+        slots={{
+          loading: (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              Lining your profile up against published roles…
             </div>
+          ),
+          error: (
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-sm text-muted-foreground">
+                  We couldn&apos;t load your matches just now. Refresh to try again —
+                  nothing you&apos;ve done has been lost.
+                </p>
+              </CardContent>
+            </Card>
+          ),
+          gated: <MatchingPaused />,
+          empty: <NothingToMatchYet />,
+          wrapList: (list) => (
+            <>
+              <section aria-labelledby="ds-matches-heading">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <h2 id="ds-matches-heading" className="flex items-center gap-2 text-sm font-medium">
+                    <Target className="h-4 w-4 text-muted-foreground" aria-hidden />
+                    {matches.length} role{matches.length === 1 ? "" : "s"} to compare with
+                  </h2>
+                  <div
+                    role="radiogroup"
+                    aria-label="How to order your matches"
+                    className="inline-flex rounded-lg border border-border p-0.5"
+                  >
+                    {METHODS.map((m) => (
+                      <button
+                        key={m.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={method === m.value}
+                        onClick={() => setMethod(m.value)}
+                        className={cn(
+                          "rounded-md px-2.5 py-1 text-xs transition-colors",
+                          method === m.value
+                            ? "bg-primary/10 font-medium text-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <ul className="space-y-2">
-              {matches.map((m) => (
-                <MatchRow
-                  key={m.jobId}
-                  match={m}
-                  selected={m.jobId === selectedId}
-                  onSelect={setPicked}
-                />
-              ))}
-            </ul>
-          </section>
+                {list}
+              </section>
 
-          <section aria-labelledby="ds-breakdown-heading">
-            <h2 id="ds-breakdown-heading" className="mb-2 text-sm font-medium">
-              Where you stand
-            </h2>
-            {detailLoading && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                Working out where you stand against this role…
-              </div>
-            )}
-            {!detailLoading && detail && selected && (
-              <FitBreakdown detail={detail} />
-            )}
-            {!detailLoading && !detail && (
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-sm text-muted-foreground">
-                    We couldn&apos;t open the breakdown for this role. Pick another,
-                    or try again in a moment.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </section>
-        </>
-      )}
+              <section aria-labelledby="ds-breakdown-heading">
+                <h2 id="ds-breakdown-heading" className="mb-2 text-sm font-medium">
+                  Where you stand
+                </h2>
+                {detailLoading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    Working out where you stand against this role…
+                  </div>
+                )}
+                {!detailLoading && detail && selected && <FitResult variant="ds" data={detail} />}
+                {!detailLoading && !detail && (
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm text-muted-foreground">
+                        We couldn&apos;t open the breakdown for this role. Pick another,
+                        or try again in a moment.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </section>
+            </>
+          ),
+        }}
+      />
     </div>
   )
 }
