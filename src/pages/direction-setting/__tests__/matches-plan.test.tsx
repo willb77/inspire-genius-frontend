@@ -29,6 +29,26 @@ jest.mock("@/hooks/job-fit/useFitDetail", () => ({
   useFitDetail: (...args: unknown[]) => mockUseFitDetail(...args),
 }))
 
+// FIT-5b: the hooks the page reads only while `fit_shared_display` is on. This
+// suite mounts no QueryClient, so they are stubbed: the switch defaults OFF
+// (every test below is FIT-5a's page, unedited); the ON twin at the bottom
+// flips it and serves the rows from Career Fit's hook instead.
+const mockShared = jest.fn(() => false)
+const mockUseFitMatches = jest.fn()
+jest.mock("@/hooks/switches/useFitSharedDisplayEnabled", () => ({
+  useFitSharedDisplayEnabled: () => mockShared(),
+}))
+jest.mock("@/hooks/job-fit/useFitMatches", () => ({
+  FIT_MATCHES_STALE_MS: 5 * 60_000,
+  useFitMatches: (...args: unknown[]) => mockUseFitMatches(...args),
+}))
+jest.mock("@/hooks/switches/useJobFitComponentsEnabled", () => ({
+  useJobFitComponentsEnabled: () => false,
+}))
+jest.mock("@/hooks/job-fit/useFitComponents", () => ({
+  useFitComponents: () => ({ data: undefined, isError: false }),
+}))
+
 // MatchesPage records stages 7 and 8 on the journey as soon as it has a role
 // and its fit detail — the write everything downstream is built from. Captured
 // here rather than stubbed away, so the assertions below can check what it
@@ -136,6 +156,8 @@ const matchesState = (over: Partial<{ data: MatchesResult; isLoading: boolean; i
 beforeEach(() => {
   jest.clearAllMocks()
   mockUseFitDetail.mockReturnValue({ data: undefined, isLoading: false, isError: false })
+  mockShared.mockReturnValue(false)
+  mockUseFitMatches.mockReturnValue({ data: undefined, gated: false, isLoading: false, isError: false })
 })
 
 describe("normalizeMatches", () => {
@@ -449,6 +471,54 @@ describe("MatchesPage — with matches", () => {
     })
     renderRouted(<MatchesPage />)
     expect(screen.getByText(/still in limited release/i)).toBeInTheDocument()
+  })
+})
+
+/* FIT-5b — the switch-ON twin of the stage 7/8 writes above (CSA §4). With
+   fit_shared_display on, the rows come from Career Fit's hook; the journey
+   must record exactly what it recorded before, from the server's first row. */
+describe("MatchesPage — with matches, fit_shared_display ON", () => {
+  beforeEach(() => {
+    mockAdvance.mockClear()
+    mockShared.mockReturnValue(true)
+    // The DS hook is idled; give it nothing so a leak would show as no rows.
+    mockUseMatches.mockReturnValue(matchesState({}))
+    mockUseFitMatches.mockReturnValue({ data: [MATCH, MATCH_2], gated: false, isLoading: false, isError: false })
+    mockUseFitDetail.mockReturnValue({ data: DETAIL, isLoading: false, isError: false })
+  })
+
+  test("reads Career Fit's hook at 5 minutes and idles its own", () => {
+    renderRouted(<MatchesPage />)
+    expect(mockUseFitMatches).toHaveBeenCalledWith("gap", { enabled: true, staleTime: 5 * 60_000 })
+    expect(mockUseMatches).toHaveBeenCalledWith("gap", { enabled: false })
+  })
+
+  test("stores the server's first row as stage 7 and its detail as stage 8, once", () => {
+    const { rerender } = renderRouted(<MatchesPage />)
+    rerender(
+      <MemoryRouter>
+        <MatchesPage />
+      </MemoryRouter>
+    )
+    const stage7 = mockAdvance.mock.calls.filter((c) => c[0]?.stageId === "7")
+    expect(stage7).toHaveLength(1)
+    expect(stage7[0][0].artefact.targetRole.jobId).toBe("j1")
+    const stage8 = mockAdvance.mock.calls.find((c) => c[0]?.stageId === "8")?.[0]
+    expect(stage8.artefact.criticalGaps).toHaveLength(1)
+  })
+
+  test("records nothing while matching is on hold", () => {
+    mockUseFitMatches.mockReturnValue({ data: [MATCH], gated: true, isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(mockAdvance).not.toHaveBeenCalled()
+    expect(screen.getByText(/switched off for now/i)).toBeInTheDocument()
+  })
+
+  test("the toggle reads PRISM: gap / PRISM: closeness and re-reads under the method", () => {
+    renderRouted(<MatchesPage />)
+    fireEvent.click(screen.getByRole("radio", { name: "PRISM: closeness" }))
+    expect(mockUseFitMatches).toHaveBeenLastCalledWith("closeness", { enabled: true, staleTime: 5 * 60_000 })
+    expect(screen.queryByRole("radio", { name: /best overall match/i })).toBeNull()
   })
 })
 

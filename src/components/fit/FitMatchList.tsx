@@ -37,7 +37,13 @@ type RowCommon = {
 
 export type FitMatchRowProps =
   | (RowCommon & { variant: "career"; components?: JobComponents })
-  | (RowCommon & { variant: "ds"; selected: boolean; onSelect: (jobId: string) => void })
+  | (RowCommon & {
+      variant: "ds"
+      selected: boolean
+      onSelect: (jobId: string) => void
+      /** FIT-5b: this role's components, passed only while `fit_shared_display` is on. */
+      components?: JobComponents
+    })
   | (RowCommon & { variant: "recorded" })
 
 /** One ranked role. Its % is always `displayFitPercent(match)` (FIT-1). */
@@ -61,6 +67,9 @@ export function FitMatchRow(props: FitMatchRowProps) {
 
   if (props.variant === "ds") {
     const { selected, onSelect } = props
+    // FIT-5b: Overall fit, present only while `fit_shared_display` AND the
+    // server's overall_fit are both on. Absent = FIT-5a's row exactly.
+    const dsOverall = asOverall(props.components)?.overall
     return (
       <li>
         <button
@@ -95,17 +104,21 @@ export function FitMatchRow(props: FitMatchRowProps) {
             </span>
           </span>
 
-          <span className="shrink-0 text-right">
-            <FitScoreFigure value={pct} variant="row-ds" />
-            <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
-              fit
-            </span>
-            {partial && (
-              <span className="mt-1 block text-[11px] text-amber-700" title={partialProfileDetail(partial)}>
-                {partial.evaluated} of {partial.total} measured
+          {dsOverall ? (
+            <DsOverallFitFigure overall={dsOverall} pct={pct} partial={partial} />
+          ) : (
+            <span className="shrink-0 text-right">
+              <FitScoreFigure value={pct} variant="row-ds" />
+              <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
+                fit
               </span>
-            )}
-          </span>
+              {partial && (
+                <span className="mt-1 block text-[11px] text-amber-700" title={partialProfileDetail(partial)}>
+                  {partial.evaluated} of {partial.total} measured
+                </span>
+              )}
+            </span>
+          )}
         </button>
       </li>
     )
@@ -208,6 +221,55 @@ function OverallFitFigure({
   )
 }
 
+/**
+ * FIT-5b — a Direction Setting row's figure while `fit_shared_display` and
+ * Overall fit are both on: the same read as Career Fit's row (Overall fit as
+ * the figure, PRISM fit beneath), in Direction Setting's neutral palette. The
+ * row stays where the server put it (decision 7): the figure changes, the
+ * order does not, so `matches[0]` is still the stage-7 target.
+ */
+function DsOverallFitFigure({
+  overall,
+  pct,
+  partial,
+}: {
+  overall: NonNullable<ReturnType<typeof asOverall>>["overall"]
+  pct: number
+  partial: ReturnType<typeof partialCoverage>
+}) {
+  const score = overall.score
+  return (
+    <span className="shrink-0 text-right" data-fit-figure="overall">
+      {score != null ? (
+        <>
+          <FitScoreFigure value={Math.round(score)} variant="row-ds" />
+          <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
+            Overall fit
+          </span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">PRISM fit {pct}%</span>
+        </>
+      ) : (
+        <>
+          <FitScoreFigure value={pct} variant="row-ds" />
+          <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
+            PRISM fit
+          </span>
+          {overall.status !== "not_set_up" && (
+            <span className="mt-1 block max-w-[11rem] text-[11px] text-muted-foreground">
+              Not enough about you to combine — add a résumé
+            </span>
+          )}
+        </>
+      )}
+      {partial && (
+        <span className="mt-1 block text-[11px] text-amber-700" title={partialProfileDetail(partial)}>
+          {partial.evaluated} of {partial.total} measured
+        </span>
+      )}
+    </span>
+  )
+}
+
 /** The page state a list is drawn in. Absent = loaded, not gated. */
 export type FitMatchListState = {
   isLoading?: boolean
@@ -242,7 +304,16 @@ type ListCommon = { matches: FitMatch[]; state?: FitMatchListState; slots?: FitM
 
 export type FitMatchListProps =
   | (ListCommon & { variant: "career"; components?: Record<string, JobComponents> })
-  | (ListCommon & { variant: "ds"; selectedId: string | null; onSelect: (jobId: string) => void })
+  | (ListCommon & {
+      variant: "ds"
+      selectedId: string | null
+      onSelect: (jobId: string) => void
+      /**
+       * FIT-5b: components per role, passed only while `fit_shared_display` is
+       * on. Changes each row's figure, never the order the rows are drawn in.
+       */
+      components?: Record<string, JobComponents>
+    })
   | (ListCommon & { variant: "recorded" })
 
 /**
@@ -278,6 +349,7 @@ export function FitMatchList(props: FitMatchListProps) {
             match={m}
             selected={m.jobId === props.selectedId}
             onSelect={props.onSelect}
+            components={props.components?.[m.jobId]}
             context={contexts[i]}
           />
         )

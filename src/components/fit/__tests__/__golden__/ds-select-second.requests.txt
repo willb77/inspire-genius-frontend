@@ -1,3 +1,4 @@
+switch.fitSharedDisplay()
 fit.getMatches(gap)
 fit.getDetail(j1,gap)
 journey.advance(7,j1)

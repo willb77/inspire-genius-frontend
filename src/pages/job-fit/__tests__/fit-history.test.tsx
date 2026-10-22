@@ -14,6 +14,11 @@ jest.mock("@/hooks/job-fit/useFitHistory", () => ({
   useFitSnapshot: (id: string) => mockSnapshot(id),
   useSaveFitReport: () => mockSave,
 }))
+// FIT-5b: this suite mounts no QueryClient, so the fit_shared_display read is
+// pinned OFF (FIT-5a's page). The ON side is fit5b-shared-display.test.tsx.
+jest.mock("@/hooks/switches/useFitSharedDisplayEnabled", () => ({
+  useFitSharedDisplayEnabled: () => false,
+}))
 jest.mock("@/components/job-blueprint/job-dna/BenchmarkRadarChart", () => ({
   BenchmarkRadarChart: () => <div data-testid="radar" />,
 }))

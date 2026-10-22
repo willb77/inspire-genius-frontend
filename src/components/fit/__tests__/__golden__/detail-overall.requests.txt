@@ -1,5 +1,6 @@
 fit.getDetail(j1,gap)
 switch.jobFitComponents()
 switch.goalTargets()
+switch.fitSharedDisplay()
 components.getFitComponents(j1:87)
 explain(j1,87,)

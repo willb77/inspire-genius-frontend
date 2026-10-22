@@ -18,6 +18,15 @@ export type FitMatchesQuery = Omit<UseQueryResult<MatchesResult, AxiosError>, "d
 }
 
 /**
+ * FIT-5b, decision 9: how long one read of the matches stays fresh on the
+ * shared key (`["job-fit","matches",method]`). Five minutes — the app-wide
+ * default Career Fit already runs on — because every GET writes a
+ * `job_fit_snapshots` row server-side, so fewer refetches mean fewer snapshot
+ * rows. Direction Setting passes it explicitly when it moves onto this key.
+ */
+export const FIT_MATCHES_STALE_MS = 5 * 60_000
+
+/**
  * The user's ranked role matches (GET /v1/blueprint/fit/matches).
  *
  * ``method`` (Decision D4) selects the scoring formula and is part of the query

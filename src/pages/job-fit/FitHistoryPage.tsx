@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom"
 import { ArrowLeft, History } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useFitSnapshot } from "@/hooks/job-fit/useFitHistory"
+import { useFitSharedDisplayEnabled } from "@/hooks/switches/useFitSharedDisplayEnabled"
 import type { FitDetail, FitMatch, FitSnapshot } from "@/types/job-fit"
 import { FitPageHeader, FitCard, FitEmptyState, FitError, FitLoading, FitPill, FitSectionTitle } from "@/components/fit/primitives"
 import { fitPercentTone } from "@/components/fit/fit"
@@ -27,6 +28,9 @@ function isMatchList(p: FitSnapshot["payload"]): p is FitMatch[] {
 export default function FitHistoryPage() {
   const { snapshotId } = useParams<{ snapshotId: string }>()
   const snap = useFitSnapshot(snapshotId)
+  // FIT-5b (decision 5): PRISM fit only, labelled "as recorded", with the
+  // partial-profile note. Off, loading or unreadable = FIT-5a's page exactly.
+  const sharedDisplay = useFitSharedDisplayEnabled()
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -57,7 +61,7 @@ export default function FitHistoryPage() {
           />
 
           {isFitDetail(snap.data.payload) ? (
-            <DetailSnapshot detail={snap.data.payload} />
+            <DetailSnapshot detail={snap.data.payload} shared={sharedDisplay} />
           ) : isMatchList(snap.data.payload) ? (
             <MatchesSnapshot matches={snap.data.payload} />
           ) : (
@@ -82,8 +86,10 @@ export default function FitHistoryPage() {
   )
 }
 
-function DetailSnapshot({ detail }: { detail: FitDetail }) {
-  return <FitResult variant="recorded" data={detail} breakdown={<FitBreakdown data={detail} />} />
+function DetailSnapshot({ detail, shared }: { detail: FitDetail; shared: boolean }) {
+  return (
+    <FitResult variant="recorded" data={detail} breakdown={<FitBreakdown data={detail} />} shared={shared} />
+  )
 }
 
 function MatchesSnapshot({ matches }: { matches: FitMatch[] }) {

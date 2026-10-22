@@ -60,6 +60,11 @@ jest.mock("@/hooks/job-fit/useWriteResume", () => ({
 jest.mock("@/hooks/switches/useJobFitComponentsEnabled", () => ({
   useJobFitComponentsEnabled: () => false,
 }))
+// FIT-5b: fit_shared_display, OFF unless a twin flips it.
+const mockShared = jest.fn(() => false)
+jest.mock("@/hooks/switches/useFitSharedDisplayEnabled", () => ({
+  useFitSharedDisplayEnabled: () => mockShared(),
+}))
 jest.mock("@/hooks/switches/useGoalTargetsEnabled", () => ({
   useGoalTargetsEnabled: () => false,
 }))
@@ -143,6 +148,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockUseFitMatches.mockReset()
   mockUseFitDetail.mockReturnValue({ data: undefined, ...idle })
+  mockShared.mockReturnValue(false)
 })
 
 /* ── The one rule ── */
@@ -244,6 +250,17 @@ describe("Direction Setting — the breakdown header matches the row", () => {
     mockUseFitDetail.mockReturnValue({ data: CLOSENESS_DETAIL, ...idle })
     const { container } = renderAt(<DsMatchesPage />)
     // Row and header both read 81; nothing on the page reads 40.
+    const big = Array.from(container.querySelectorAll("span.text-4xl")).map((n) => n.textContent)
+    expect(big).toEqual(["81%"])
+    expect(container.textContent).not.toMatch(/\b40%/)
+  })
+
+  test("FIT-5b twin: with fit_shared_display on (rows from Career Fit's hook), still 81 and never 40", () => {
+    mockShared.mockReturnValue(true)
+    mockUseMatches.mockReturnValue({ data: undefined, ...idle })
+    mockUseFitMatches.mockImplementation(() => ({ data: [CLOSENESS_ROW], gated: false, ...idle }))
+    mockUseFitDetail.mockReturnValue({ data: CLOSENESS_DETAIL, ...idle })
+    const { container } = renderAt(<DsMatchesPage />)
     const big = Array.from(container.querySelectorAll("span.text-4xl")).map((n) => n.textContent)
     expect(big).toEqual(["81%"])
     expect(container.textContent).not.toMatch(/\b40%/)

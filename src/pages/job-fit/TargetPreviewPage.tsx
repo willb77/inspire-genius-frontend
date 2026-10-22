@@ -10,6 +10,7 @@ import {
 } from "@/lib/extractRoleText"
 import { useTargetExtract } from "@/hooks/job-fit/useTargetExtract"
 import { isNoPrismError, useScoreTarget } from "@/hooks/job-fit/useScoreTarget"
+import { useFitSharedDisplayEnabled } from "@/hooks/switches/useFitSharedDisplayEnabled"
 import type { ExtractedDimension, TargetDraft } from "@/types/targets"
 import { flattenTargetDraft } from "@/types/targets"
 import {
@@ -83,6 +84,9 @@ export default function TargetPreviewPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const extract = useTargetExtract()
   const score = useScoreTarget()
+  // FIT-5b — "Total gap" and the reserved Overall fit slot (decisions 3, 4).
+  // Off, loading or unreadable = FIT-5a's page exactly.
+  const sharedDisplay = useFitSharedDisplayEnabled()
 
   const trimmed = jdText.trim()
   const canSubmit = trimmed.length > 0 && !extract.isPending
@@ -284,6 +288,7 @@ export default function TargetPreviewPage() {
               variant="target"
               data={score.data}
               breakdown={<FitBreakdown data={score.data} />}
+              shared={sharedDisplay}
             />
           )}
         </div>
