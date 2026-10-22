@@ -560,3 +560,78 @@ describe("CharacterLab access by role", () => {
     expect(screen.queryByText("import stub")).toBeNull()
   })
 })
+
+// ─── Field limits (2026-10-22) ─────────────────────────────────────────────
+// The server refuses name > 120, source > 200 and notes > 4000 with a 422
+// before the model is called. The page used to send them anyway and report
+// only "Request failed with status code 422" — three such failures on
+// staging-b on 10-22 with nothing to say which field.
+describe("CharacterLab — field limits match the server", () => {
+  beforeEach(() => {
+    rubricResult = { data: RUBRIC, isLoading: false, error: null }
+    generateMutate.mockReset().mockResolvedValue(GENERATED)
+    batteryMutate.mockReset().mockResolvedValue({
+      group: "Core Traits", part: 0, parts: 1,
+      scores: { decisiveness: { Underlying: 90 } }, evidence: {}, missing: [],
+    })
+    const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } }
+    toast.error.mockReset()
+  })
+
+  it("caps Name at 120 and Source at 200 characters", () => {
+    render(<CharacterLab />)
+    expect(screen.getByLabelText("Name")).toHaveAttribute("maxLength", "120")
+    expect(screen.getByLabelText("Source")).toHaveAttribute("maxLength", "200")
+  })
+
+  it("blocks Build while Notes are over 4,000 characters, and never sends them", async () => {
+    render(<CharacterLab />)
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Test A1" } })
+    fireEvent.change(screen.getByLabelText("Notes (optional)"), {
+      target: { value: "n".repeat(4001) },
+    })
+    const build = screen.getByRole("button", { name: /Build profile/i })
+    expect(build).toBeDisabled()
+    expect(screen.getByTestId("notes-counter-top")).toHaveTextContent("1 over the limit")
+    expect(generateMutate).not.toHaveBeenCalled()
+  })
+
+  it("builds again once the notes are trimmed to the limit", async () => {
+    render(<CharacterLab />)
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Test A1" } })
+    fireEvent.change(screen.getByLabelText("Notes (optional)"), {
+      target: { value: "n".repeat(4300) },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /keep the first 4,000 characters/i }))
+    const build = screen.getByRole("button", { name: /Build profile/i })
+    expect(build).toBeEnabled()
+    await act(async () => { fireEvent.click(build) })
+    expect(generateMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ notes: "n".repeat(4000) }),
+    )
+  })
+
+  it("names the field and the limit when the server still refuses (not 'status code 422')", async () => {
+    generateMutate.mockRejectedValue(
+      Object.assign(new Error("Request failed with status code 422"), {
+        response: {
+          data: {
+            detail: [
+              { type: "string_too_long", loc: ["body", "notes"],
+                msg: "String should have at most 4000 characters" },
+            ],
+          },
+        },
+      }),
+    )
+    render(<CharacterLab />)
+    await act(async () => { fillAndSubmit() })
+    const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } }
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+    const arg = toast.error.mock.calls.at(-1)![0]
+    expect(arg).toBe(
+      "Could not build the profile — notes: String should have at most 4000 characters",
+    )
+    expect(arg).not.toContain("status code 422")
+  })
+})

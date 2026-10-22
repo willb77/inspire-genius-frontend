@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import BrainMap from "@/components/prism/narrative/BrainMap"
@@ -26,6 +25,11 @@ import ProfileLibrary from "@/components/super-admin/character-lab/ProfileLibrar
 import ImportCsvButton from "@/components/super-admin/character-lab/ImportCsvButton"
 import ComparePanel from "@/components/super-admin/character-lab/ComparePanel"
 import ScenarioPanel from "@/components/super-admin/character-lab/ScenarioPanel"
+import NotesField from "@/components/super-admin/character-lab/NotesField"
+import {
+  CHARACTER_LIMITS,
+  notesOverLimit,
+} from "@/components/super-admin/character-lab/limits"
 import {
   useAnalyseProfile,
   useExportProfile,
@@ -217,8 +221,9 @@ export function CharacterLabBody({ fullAccess }: CharacterLabBodyProps) {
         others.map((g) => runBattery(g.group, Math.max(1, g.parts ?? 1), result.scores, req)),
       )
     } catch (err) {
-      const message = err instanceof Error ? err.message : "failed"
-      toast.error(`Could not build the profile — ${message}`)
+      // The server's reason, not axios's "status code 422": a validation
+      // failure names the field and the limit (see apiErrorMessage).
+      toast.error(`Could not build the profile — ${apiErrorMessage(err, "failed")}`)
     }
   }
 
@@ -479,6 +484,7 @@ export function CharacterLabBody({ fullAccess }: CharacterLabBodyProps) {
                     id="cl-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    maxLength={CHARACTER_LIMITS.name}
                     placeholder="Sonny Corleone"
                   />
                 </div>
@@ -488,22 +494,17 @@ export function CharacterLabBody({ fullAccess }: CharacterLabBodyProps) {
                     id="cl-source"
                     value={source}
                     onChange={(e) => setSource(e.target.value)}
+                    maxLength={CHARACTER_LIMITS.source}
                     placeholder="The Godfather (Puzo, 1969)"
                   />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="cl-notes">Notes (optional)</Label>
-                <Textarea
-                  id="cl-notes"
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Scenes, behaviour or context to ground the reading. Treated as evidence about the character."
-                />
-              </div>
+              <NotesField value={notes} onChange={setNotes} disabled={busy} />
               <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={onGenerate} disabled={busy || rubricLoading || !!rubricError}>
+                <Button
+                  onClick={onGenerate}
+                  disabled={busy || rubricLoading || !!rubricError || notesOverLimit(notes)}
+                >
                   {busy ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reading the character…
