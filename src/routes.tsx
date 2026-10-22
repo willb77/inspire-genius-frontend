@@ -301,6 +301,9 @@ const JobBlueprintCandidateDetailPage = React.lazy(() => import("@/pages/job-blu
 const JobBlueprintPipelinePage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintPipelinePage"));
 const JobBlueprintScorecardsPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintScorecardsPage"));
 const JobBlueprintAnalyticsPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintAnalyticsPage"));
+const DecisionPathPage = React.lazy(() => import("@/pages/job-blueprint/decision-path/DecisionPathPage"));
+const DecisionPathRuleSetsPage = React.lazy(() => import("@/pages/job-blueprint/decision-path/DecisionPathRuleSetsPage"));
+const DecisionPathCasePage = React.lazy(() => import("@/pages/job-blueprint/decision-path/DecisionPathCasePage"));
 
 // ── Job-Fit vertical — person-side profile↔role matching (entitlement-gated) ──
 const JobFitLayout = React.lazy(() => import("@/pages/job-fit/JobFitLayout"));
@@ -923,6 +926,11 @@ export const routes: RouteObject[] = [
           { path: "pipeline", element: withSuspense(<JobBlueprintPipelinePage />) },
           { path: "scorecards", element: withSuspense(<JobBlueprintScorecardsPage />) },
           { path: "analytics", element: withSuspense(<JobBlueprintAnalyticsPage />) },
+          // Decision path: every page renders "not enabled" unless the server's
+          // switch applies to the caller (all its routes 403 while off).
+          { path: "decision-path", element: withSuspense(<DecisionPathPage />) },
+          { path: "decision-path/rule-sets", element: withSuspense(<DecisionPathRuleSetsPage />) },
+          { path: "decision-path/cases/:caseId", element: withSuspense(<DecisionPathCasePage />) },
         ],
       },
     ],
