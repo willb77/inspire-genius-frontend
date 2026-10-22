@@ -30,6 +30,12 @@ jest.mock("@/hooks/job-fit/useScoreTarget", () => ({
   isNoPrismError: (err: { response?: { status: number } } | null) => err?.response?.status === 404,
 }))
 
+// FIT-5b: this suite mounts no QueryClient, so the fit_shared_display read is
+// pinned OFF (FIT-5a's page). The ON side is fit5b-shared-display.test.tsx.
+jest.mock("@/hooks/switches/useFitSharedDisplayEnabled", () => ({
+  useFitSharedDisplayEnabled: () => false,
+}))
+
 // recharts renders nothing at 0×0 in jsdom; stub the radar so the breakdown renders.
 jest.mock("@/components/job-blueprint/job-dna/BenchmarkRadarChart", () => ({
   BenchmarkRadarChart: () => <div data-testid="radar" />,

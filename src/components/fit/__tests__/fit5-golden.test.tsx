@@ -19,6 +19,13 @@
  *   jsdom). The fit hooks themselves run for real — mocking them would let a
  *   hook rewrite pass unseen.
  *
+ * FIT-5b (fit_shared_display, default off): the switch read is pinned OFF
+ * below. Every *.html golden is unchanged from FIT-5a. The 34 *.requests.txt
+ * files for the four pages that read the switch (Direction Setting Job
+ * matches, role detail, Fit a JD, history) each gained exactly one line,
+ * `switch.fitSharedDisplay()` — a server switch cannot be read without a
+ * request (CSA d01e9276 §3.5). That is the only reviewed golden update.
+ *
  * To re-record (only ever on the base, before a source change):
  *   FIT5_GOLDEN_WRITE=1 npx jest src/components/fit/__tests__/fit5-golden.test.tsx
  */
@@ -104,6 +111,16 @@ jest.mock("@/services/switches/jobFitComponents.service", () => ({
   getJobFitComponentsEnabled: () => {
     log("switch.jobFitComponents()")
     return Promise.resolve(componentsSwitch)
+  },
+}))
+// FIT-5b: the fit_shared_display read, pinned OFF. Off must render FIT-5a's
+// DOM byte for byte; the only allowed difference is this one logged request on
+// each page that reads the switch (DS Job matches, role detail, Fit a JD,
+// history). Recorded as a reviewed update to the *.requests.txt goldens only.
+jest.mock("@/services/switches/fitSharedDisplay.service", () => ({
+  getFitSharedDisplayEnabled: () => {
+    log("switch.fitSharedDisplay()")
+    return Promise.resolve(false)
   },
 }))
 jest.mock("@/services/switches/goalTargets.service", () => ({

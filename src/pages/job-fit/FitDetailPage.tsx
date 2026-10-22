@@ -16,6 +16,7 @@ import { FitComponentsCard } from "./FitComponentsCard"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
 import { useGoalTargetsEnabled } from "@/hooks/switches/useGoalTargetsEnabled"
+import { useFitSharedDisplayEnabled } from "@/hooks/switches/useFitSharedDisplayEnabled"
 import { MakeTargetCard } from "./MakeTargetCard"
 import { FitBreakdown } from "./FitBreakdown"
 import { FitSummaryCard } from "./FitSummaryCard"
@@ -46,6 +47,9 @@ export default function FitDetailPage() {
   // Feeds Phase 3 — "Make this my target". Same rule: nothing renders and no
   // request is made unless the server's goal_targets switch is on.
   const targetsOn = useGoalTargetsEnabled()
+  // FIT-5b — the shared fit display's wording (decision 3). Off, loading or
+  // unreadable = FIT-5a's page exactly.
+  const sharedDisplay = useFitSharedDisplayEnabled()
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -78,7 +82,7 @@ export default function FitDetailPage() {
           {narrative && <FitActionsBar data={data} />}
 
           {/* Closeness summary */}
-          <FitStatTiles data={data} subject="role" className="mb-6" />
+          <FitStatTiles data={data} subject="role" className="mb-6" shared={sharedDisplay} />
 
           {/* No fit tier or base tier here (4.1, option D): the four-tier label
               rests on an uncalibrated cut, so the person sees the score only. */}

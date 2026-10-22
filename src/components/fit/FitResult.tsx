@@ -1,8 +1,9 @@
 import type { ReactNode } from "react"
-import { AlertTriangle, Info, MessagesSquare, Sprout, Target } from "lucide-react"
+import { AlertTriangle, Info, Layers, MessagesSquare, Sprout, Target } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import type { FitDetail } from "@/types/job-fit"
+import type { JobOverall } from "@/types/job-fit/components"
 import { formatGap, type Tone } from "./fit"
 import { DS_TONE_TEXT } from "./palette"
 import {
@@ -25,16 +26,23 @@ export function FitStatTiles({
   data,
   subject,
   className,
+  shared = false,
 }: {
   data: FitDetail
   subject: "role" | "target"
   className?: string
+  /**
+   * FIT-5b, decision 3: "Overall" means Overall fit only, so while
+   * `fit_shared_display` is on `totalVariation` is called what it is — the
+   * total gap. Off = FIT-5a's "Overall closeness".
+   */
+  shared?: boolean
 }) {
   return (
     <div className={cn(className, "grid grid-cols-1 gap-4 sm:grid-cols-3")}>
       <FitStat
         icon={Target}
-        label="Overall closeness"
+        label={shared ? "Total gap" : "Overall closeness"}
         value={data.totalVariation}
         hint={subject === "role" ? "Lower means closer to this role's benchmark" : "Lower means closer to this target"}
       />
@@ -73,10 +81,21 @@ export function FitStatTiles({
  * `breakdown` is the Career Fit breakdown (radar, per-dimension, growth
  * focus, over-use, self-advocacy last), passed in by the page.
  */
+/**
+ * `shared` is FIT-5b's `fit_shared_display` switch, read by the page and passed
+ * down (absent = off = FIT-5a's output exactly):
+ * - `target`: the tiles say "Total gap", and an Overall fit slot is reserved —
+ *   empty of a number, because a pasted JD has no published role to combine
+ *   against yet (decision 4; the number arrives with FIT-5c).
+ * - `recorded`: the headline is labelled "PRISM fit as recorded" and carries
+ *   the partial-profile note (decision 5). No Overall fit: snapshots never
+ *   stored one, and today's would mislabel an old report.
+ * - `ds`: `overall` adds the selected role's Overall fit beneath the headline.
+ */
 export type FitResultProps =
-  | { variant: "target"; data: FitDetail; breakdown: ReactNode }
-  | { variant: "recorded"; data: FitDetail; breakdown: ReactNode }
-  | { variant: "ds"; data: FitDetail }
+  | { variant: "target"; data: FitDetail; breakdown: ReactNode; shared?: boolean }
+  | { variant: "recorded"; data: FitDetail; breakdown: ReactNode; shared?: boolean }
+  | { variant: "ds"; data: FitDetail; overall?: JobOverall["overall"] }
 
 export function FitResult(props: FitResultProps) {
   const { data } = props
@@ -91,6 +110,7 @@ export function FitResult(props: FitResultProps) {
             <FitScoreHeadline source={data} variant="summary" />
             {/* BP-F5: a partial-profile score says what it rests on. */}
             <PartialProfileNote coverage={data} />
+            {props.shared && <ReservedOverallSlot />}
             {/* No fit tier or pre-cap tier here (4.1, option D) — score only. */}
             {data.gated && (
               <div className="flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
@@ -99,7 +119,7 @@ export function FitResult(props: FitResultProps) {
             )}
           </FitCard>
 
-          <FitStatTiles data={data} subject="target" />
+          <FitStatTiles data={data} subject="target" shared={props.shared} />
 
           <div>{props.breakdown}</div>
 
@@ -111,7 +131,8 @@ export function FitResult(props: FitResultProps) {
       return (
         <>
           <FitCard className="mb-6">
-            <FitSectionTitle>Your fit as recorded</FitSectionTitle>
+            <FitSectionTitle>{props.shared ? "PRISM fit as recorded" : "Your fit as recorded"}</FitSectionTitle>
+            {props.shared && <PartialProfileNote coverage={data} />}
             <FitScoreHeadline source={data} variant="recorded" />
           </FitCard>
           {props.breakdown}
@@ -124,7 +145,7 @@ export function FitResult(props: FitResultProps) {
         <div className="space-y-4">
           <Card>
             <CardContent className="flex flex-wrap items-baseline gap-x-4 gap-y-2 p-5">
-              <FitScoreHeadline source={data} variant="ds" title={data.roleTitle} />
+              <FitScoreHeadline source={data} variant="ds" title={data.roleTitle} overall={props.overall} />
             </CardContent>
           </Card>
 
@@ -161,6 +182,26 @@ export function FitResult(props: FitResultProps) {
         </div>
       )
   }
+}
+
+/**
+ * FIT-5b, decision 4 — the place Fit a JD's Overall fit will go. Reserved and
+ * honest about why it is empty: the components route scores published roles
+ * only, and a pasted JD is not one. FIT-5c (a backend package) fills it.
+ */
+function ReservedOverallSlot() {
+  return (
+    <div
+      data-fit-slot="overall"
+      className="mb-4 flex items-center gap-2 rounded-lg border border-dashed border-[#e5e7eb] p-3 text-sm text-[#6b7280]"
+    >
+      <Layers className="h-4 w-4 shrink-0 text-[#9ca3af]" aria-hidden />
+      <span>
+        Overall fit isn&apos;t available for a pasted job description yet — your PRISM fit
+        above is your read.
+      </span>
+    </div>
+  )
 }
 
 /**

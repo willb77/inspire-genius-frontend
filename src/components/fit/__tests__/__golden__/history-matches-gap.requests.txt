@@ -1,1 +1,2 @@
 fit.getSnapshot(s1)
+switch.fitSharedDisplay()

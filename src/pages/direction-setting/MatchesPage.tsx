@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { ArrowRight, Loader2, Pause, SearchX, Target } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,12 @@ import { ROUTES } from "@/constants/routes"
 import { useMatches } from "@/hooks/direction-setting/useMatches"
 import { useAdvanceJourney } from "@/hooks/direction-setting/useJourney"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
+import { FIT_MATCHES_STALE_MS, useFitMatches } from "@/hooks/job-fit/useFitMatches"
+import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
+import { useFitSharedDisplayEnabled } from "@/hooks/switches/useFitSharedDisplayEnabled"
+import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
+import { displayFitPercent } from "@/components/fit/fit"
+import { asOverall } from "@/components/fit/components"
 import type { FitMethod } from "@/types/job-fit"
 import { FitMatchList } from "@/components/fit/FitMatchList"
 import { FitResult } from "@/components/fit/FitResult"
@@ -48,10 +54,23 @@ import { FitResult } from "@/components/fit/FitResult"
  * percentage (4.1, option D; see below).
  */
 
+/** A toggle option. `hint` is FIT-5b's (shared display on) and absent before it. */
+type MethodOption = { value: FitMethod; label: string; hint?: string }
+
 /** How the list is ordered. Both reads are live; the wording avoids jargon. */
-const METHODS: { value: FitMethod; label: string }[] = [
+const METHODS: MethodOption[] = [
   { value: "gap", label: "Closest to the role" },
   { value: "closeness", label: "Best overall match" },
+]
+
+/**
+ * FIT-5b, decision 3 — the same toggle while `fit_shared_display` is on.
+ * "Overall" means Overall fit only, so both reads are named for what they are:
+ * two PRISM reads. The plain-language framing stays, as the hint.
+ */
+const SHARED_METHODS: MethodOption[] = [
+  { value: "gap", label: "PRISM: gap", hint: "Closest to the role" },
+  { value: "closeness", label: "PRISM: closeness", hint: "Closest in shape to the role's profile" },
 ]
 
 /** The stages that still work when matching has nothing to show. */
@@ -215,7 +234,28 @@ function MatchingPaused() {
 export default function MatchesPage() {
   const [method, setMethod] = useState<FitMethod>("gap")
   const [picked, setPicked] = useState<string | null>(null)
-  const { data, isLoading, isError } = useMatches(method)
+  // FIT-5b — the shared fit display. Fails closed: off, loading or unreadable
+  // all read as off, and off is FIT-5a's page exactly.
+  const shared = useFitSharedDisplayEnabled()
+  // Off: exactly FIT-5a's call — `useMatches(method)`, its own key and its
+  // 60 s cache. On: idle, and the page reads Career Fit's key instead (one
+  // matches hook, one cache, 5 minutes — decision 9), so moving between Career
+  // Fit and here no longer costs a second GET and a second snapshot row.
+  //
+  // While the switch is still loading the page is OFF (fail closed), so a cold
+  // first visit may already have its own read in flight when the switch says
+  // on. Those rows come from the same endpoint under the same method, so they
+  // are shown until the shared read lands rather than flashing the spinner.
+  const dsArgs: Parameters<typeof useMatches> = shared ? [method, { enabled: false }] : [method]
+  const dsQuery = useMatches(...dsArgs)
+  const sharedQuery = useFitMatches(method, { enabled: shared, staleTime: FIT_MATCHES_STALE_MS })
+  const data = shared
+    ? sharedQuery.data
+      ? { matches: sharedQuery.data, gated: sharedQuery.gated }
+      : dsQuery.data
+    : dsQuery.data
+  const isLoading = shared ? sharedQuery.isLoading && !dsQuery.data : dsQuery.isLoading
+  const isError = shared ? sharedQuery.isError : dsQuery.isError
   const advance = useAdvanceJourney()
 
   const matches = data?.matches ?? []
@@ -226,6 +266,26 @@ export default function MatchesPage() {
   const selectedId =
     picked && matches.some((m) => m.jobId === picked) ? picked : (matches[0]?.jobId ?? null)
   const selected = matches.find((m) => m.jobId === selectedId) ?? null
+
+  // FIT-5b — Overall fit on the rows and the breakdown headline, read the way
+  // Career Fit reads it (same route, same query key, so the two share a cache).
+  // Only asked for while the shared display is on; the components switch is
+  // not even read otherwise, so the off path makes no new request. Decision 7:
+  // the rows stay in the server's order — Overall fit changes the figure on
+  // each row, never which row is first, because `matches[0]` is what stage 7
+  // records as the person's target role (FIT-3-F1, FIT-5-F3).
+  const componentsOn = useJobFitComponentsEnabled(shared)
+  const componentJobs = useMemo(
+    () =>
+      shared && !gated
+        ? (sharedQuery.data ?? []).map((m) => ({ jobId: m.jobId, fitScore: displayFitPercent(m) }))
+        : [],
+    [shared, gated, sharedQuery.data],
+  )
+  const components = useFitComponents(componentJobs, shared && componentsOn)
+  const overallJobs =
+    shared && components.data?.mode === "overall" ? components.data.jobs : undefined
+  const selectedOverall = selectedId ? asOverall(overallJobs?.[selectedId])?.overall : undefined
 
   const { data: detail, isLoading: detailLoading } = useFitDetail(
     selectedId ?? undefined,
@@ -298,6 +358,7 @@ export default function MatchesPage() {
         matches={matches}
         selectedId={selectedId}
         onSelect={setPicked}
+        components={overallJobs}
         state={{ isLoading, isError, gated, gatedHidesRows: true }}
         slots={{
           loading: (
@@ -331,11 +392,12 @@ export default function MatchesPage() {
                     aria-label="How to order your matches"
                     className="inline-flex rounded-lg border border-border p-0.5"
                   >
-                    {METHODS.map((m) => (
+                    {(shared ? SHARED_METHODS : METHODS).map((m) => (
                       <button
                         key={m.value}
                         type="button"
                         role="radio"
+                        title={m.hint}
                         aria-checked={method === m.value}
                         onClick={() => setMethod(m.value)}
                         className={cn(
@@ -364,7 +426,7 @@ export default function MatchesPage() {
                     Working out where you stand against this role…
                   </div>
                 )}
-                {!detailLoading && detail && selected && <FitResult variant="ds" data={detail} />}
+                {!detailLoading && detail && selected && <FitResult variant="ds" data={detail} overall={selectedOverall} />}
                 {!detailLoading && !detail && (
                   <Card>
                     <CardContent className="p-6">

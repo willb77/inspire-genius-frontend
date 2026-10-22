@@ -1,1 +1,2 @@
+switch.fitSharedDisplay()
 fit.getMatches(gap)
