@@ -35,6 +35,11 @@ const type = (label: string | RegExp, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } })
 
 describe("RequestValidationForm", () => {
+  it("says the reviewer may hold the manager role or above (matches the server's rule)", () => {
+    render(<RequestValidationForm blueprintId="bp1" />)
+    expect(screen.getByText(/must hold the manager role or above in this role's organisation/)).toBeInTheDocument()
+  })
+
   it("refuses a malformed email without calling the server", async () => {
     render(<RequestValidationForm blueprintId="bp1" />)
     type("Reviewer's email", "not-an-email")
@@ -44,13 +49,13 @@ describe("RequestValidationForm", () => {
   })
 
   it("shows the server's refusal", async () => {
-    mockRequest.mutateAsync.mockRejectedValueOnce({ response: { data: { detail: "No one with that address holds the manager role." } } })
+    mockRequest.mutateAsync.mockRejectedValueOnce({ response: { data: { detail: "A reviewer must hold the manager role or above in this role's organisation." } } })
     const done = jest.fn()
     render(<RequestValidationForm blueprintId="bp1" onDone={done} />)
     type("Reviewer's email", "x@example.test")
     type("Note to the reviewer (optional)", "Please")
     fireEvent.click(screen.getByRole("button", { name: "Request validation" }))
-    expect(await screen.findByRole("alert")).toHaveTextContent("No one with that address")
+    expect(await screen.findByRole("alert")).toHaveTextContent("manager role or above")
     expect(mockRequest.mutateAsync).toHaveBeenCalledWith({ id: "bp1", body: { reviewerEmail: "x@example.test", note: "Please" } })
     expect(done).not.toHaveBeenCalled()
   })

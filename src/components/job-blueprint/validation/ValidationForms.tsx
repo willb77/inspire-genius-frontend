@@ -97,7 +97,7 @@ export function RequestValidationForm({ blueprintId, onDone }: { blueprintId: st
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-3" aria-label="Request validation">
       <p className="text-xs text-[#6b7280]">
-        The reviewer must hold the manager role in this role&apos;s organisation and have an IG account. Nothing is
+        The reviewer must hold the manager role or above in this role&apos;s organisation and have an IG account. Nothing is
         emailed: they see the request when they sign in.
       </p>
       <div className="space-y-1">
