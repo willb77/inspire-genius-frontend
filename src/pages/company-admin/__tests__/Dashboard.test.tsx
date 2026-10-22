@@ -224,3 +224,37 @@ describe("CompanyAdminDashboard", () => {
     expect(screen.getAllByTestId("skeleton").length).toBeGreaterThanOrEqual(4);
   });
 });
+
+// N-4 — a company-admin can be a blueprint-validation reviewer (backend #1830),
+// so the reviewer's queue is mounted here. The REAL ValidationReviewQueue runs;
+// only its data hooks are stubbed, so these tests prove the mount and the gate.
+const mockValidationEnabled = jest.fn(() => false);
+const mockAwaitingValidation = jest.fn<{ data: unknown[] | undefined }, []>(() => ({ data: undefined }));
+jest.mock("@/hooks/job-blueprint/useBlueprintValidation", () => ({
+  useValidationEnabled: () => mockValidationEnabled(),
+  useAwaitingValidation: () => mockAwaitingValidation(),
+  useRationale: () => ({ data: undefined, isLoading: false, isError: false }),
+}));
+
+describe("CompanyAdminDashboard — N-4 reviewer queue", () => {
+  const waiting = {
+    blueprintId: "bp1", roleTitle: "Line Supervisor", version: 1, requestedBy: "Test Editor",
+    requestedAt: "2026-10-19T10:00:00", note: null,
+  };
+
+  it("shows the queue when blueprint_validation is on and a request is waiting", () => {
+    mockValidationEnabled.mockReturnValue(true);
+    mockAwaitingValidation.mockReturnValue({ data: [waiting] });
+    render(<CompanyAdminDashboard />);
+    expect(screen.getByTestId("validation-review-queue")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Line Supervisor/ })).toBeInTheDocument();
+  });
+
+  it("renders no queue when blueprint_validation is off", () => {
+    mockValidationEnabled.mockReturnValue(false);
+    mockAwaitingValidation.mockReturnValue({ data: [waiting] });
+    render(<CompanyAdminDashboard />);
+    expect(screen.queryByTestId("validation-review-queue")).not.toBeInTheDocument();
+    expect(screen.getByTestId("data-card-Admin Surfaces")).toBeInTheDocument();
+  });
+});
