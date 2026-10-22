@@ -1,4 +1,4 @@
-import type { Tone } from "./_fit"
+import type { Tone } from "./fit"
 import type {
   ComponentKey,
   ExperienceMatchComponent,

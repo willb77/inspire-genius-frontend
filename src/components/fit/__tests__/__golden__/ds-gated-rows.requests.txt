@@ -1,0 +1,2 @@
+fit.getMatches(gap)
+fit.getDetail(j1,gap)

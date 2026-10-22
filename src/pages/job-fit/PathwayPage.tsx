@@ -13,7 +13,7 @@ import {
   FitEmptyState,
   FitLoading,
   FitMethodologyNote,
-} from "./_shared"
+} from "@/components/fit/primitives"
 
 function SuggestionCard({
   s,

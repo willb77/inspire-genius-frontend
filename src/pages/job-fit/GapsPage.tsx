@@ -12,7 +12,7 @@ import {
   FitEmptyState,
   FitLoading,
   FitError,
-} from "./_shared"
+} from "@/components/fit/primitives"
 import { aggregateDomains, hasFullDomainSplit, meterTone, perDimensionMean } from "./_gaps"
 
 /**

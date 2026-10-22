@@ -76,7 +76,7 @@ import {
   fitDetailPath,
   fitPercentDenominator,
   parseFitMethod,
-} from "../_fit"
+} from "@/components/fit/fit"
 import { useFitMatches } from "@/hooks/job-fit/useFitMatches"
 import type { FitDetail, FitMatch } from "@/types/job-fit"
 

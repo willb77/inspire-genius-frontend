@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react"
-import { Gauge, Sprout } from "lucide-react"
+import { Sprout } from "lucide-react"
 import type { FitDetail } from "@/types/job-fit"
 import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
-import { FitCard, FitSectionTitle, FitMeter } from "./_shared"
-import { displayFitPercent, fitPercentTone, fitPercentLabel } from "./_fit"
+import { FitCard, FitSectionTitle } from "@/components/fit/primitives"
+import { FitScoreHeadline } from "@/components/fit/FitScoreHeadline"
+import { displayFitPercent, fitPercentLabel } from "@/components/fit/fit"
 
 /**
  * Fit Summary — the plain-language read of the job↔person overlay.
@@ -40,18 +41,7 @@ export function FitSummaryCard({ data }: { data: FitDetail }) {
     <FitCard className="mb-6">
       <FitSectionTitle>Your fit at a glance</FitSectionTitle>
 
-      <div className="mb-4 flex items-end justify-between gap-4">
-        <div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-bold text-[#1f2937]">{pct}</span>
-            <span className="text-lg font-semibold text-[#6b7280]">%</span>
-          </div>
-          <p className="text-sm font-medium text-[#374151]">{fitPercentLabel(pct)}</p>
-        </div>
-        <Gauge className="h-8 w-8 text-[#0D9488]" />
-      </div>
-
-      <FitMeter value={pct} tone={fitPercentTone(pct)} className="mb-4" />
+      <FitScoreHeadline source={data} variant="summary" />
 
       {explain.isPending ? (
         <div className="space-y-2" aria-hidden>

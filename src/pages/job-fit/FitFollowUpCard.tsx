@@ -3,8 +3,8 @@ import { MessagesSquare, Loader2, Send } from "lucide-react"
 import type { FitDetail } from "@/types/job-fit"
 import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
-import { FitCard, FitSectionTitle } from "./_shared"
-import { displayFitPercent } from "./_fit"
+import { FitCard, FitSectionTitle } from "@/components/fit/primitives"
+import { displayFitPercent } from "@/components/fit/fit"
 
 type QA = { question: string; answer: string }
 

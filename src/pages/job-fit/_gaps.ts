@@ -11,7 +11,7 @@
 
 import type { FitMatch } from "@/types/job-fit"
 import { APTITUDES, BEHAVIORS, CORE_TRAITS } from "@/constants/job-blueprint/dimensions"
-import type { Tone } from "./_fit"
+import type { Tone } from "@/components/fit/fit"
 
 export type DomainKey = "behavior" | "aptitude" | "coreTrait"
 

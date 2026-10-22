@@ -1,0 +1,4 @@
+fit.getHistory()
+fit.getMatches(gap)
+switch.jobFitComponents()
+fit.getMatches(closeness)

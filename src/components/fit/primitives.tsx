@@ -1,8 +1,8 @@
-// Job-Fit vertical — shared UI primitives.
+// Fit — shared UI primitives (moved from `pages/job-fit/_shared.tsx` by FIT-5a).
 //
-// Component-only module (pure helpers live in ./_fit) so react-refresh stays
+// Component-only module (pure helpers live in ./fit) so react-refresh stays
 // satisfied. Teal accent (#0D9488) distinguishes Job-Fit from GRANT (#3B5BFF)
-// and Job-Blueprint (#7C3AED). Reuses Core's AppShell chrome via VerticalShell.
+// and Job-Blueprint (#7C3AED). Rendered inside Core's SidebarScaffold via VerticalShell.
 
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -12,7 +12,7 @@ import {
   partialProfileLabel,
 } from "@/lib/job-fit/coverage"
 import type { FitCoverage } from "@/types/job-fit"
-import type { Tone } from "./_fit"
+import type { Tone } from "./fit"
 
 /**
  * Standard page header: icon chip + title + subtitle.

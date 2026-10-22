@@ -8,8 +8,8 @@ import type {
 } from "@/types/job-blueprint"
 import { BenchmarkRadarChart } from "@/components/job-blueprint/job-dna/BenchmarkRadarChart"
 import { ScoreBar } from "@/components/job-blueprint/shared/ScoreBar"
-import { FitCard, FitPill, FitSectionTitle } from "./_shared"
-import { gapTone, formatGap } from "./_fit"
+import { FitCard, FitPill, FitSectionTitle } from "@/components/fit/primitives"
+import { gapTone, formatGap } from "@/components/fit/fit"
 import { NOT_MEASURED, isMeasured } from "@/lib/job-fit/coverage"
 
 const NEUTRAL_BAND: InterpretationBand = "moderate"

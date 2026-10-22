@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react"
-import { AlertTriangle, FileUp, Gauge, Loader2, ScanSearch, Sparkles, Sprout, Target } from "lucide-react"
+import { FileUp, Gauge, Loader2, ScanSearch, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,7 +10,6 @@ import {
 } from "@/lib/extractRoleText"
 import { useTargetExtract } from "@/hooks/job-fit/useTargetExtract"
 import { isNoPrismError, useScoreTarget } from "@/hooks/job-fit/useScoreTarget"
-import type { FitDetail } from "@/types/job-fit"
 import type { ExtractedDimension, TargetDraft } from "@/types/targets"
 import { flattenTargetDraft } from "@/types/targets"
 import {
@@ -24,15 +23,9 @@ import {
   FitPill,
   FitSectionTitle,
   FitStat,
-  PartialProfileNote,
-} from "./_shared"
-import {
-  confidenceTone,
-  displayFitPercent,
-  fitPercentLabel,
-  fitPercentTone,
-  type Tone,
-} from "./_fit"
+} from "@/components/fit/primitives"
+import { confidenceTone, type Tone } from "@/components/fit/fit"
+import { FitResult } from "@/components/fit/FitResult"
 import { FitBreakdown } from "./FitBreakdown"
 
 /** Group definitions in a stable, human order. */
@@ -65,70 +58,6 @@ function DimensionRow({ dim }: { dim: ExtractedDimension }) {
         </FitPill>
         {dim.evidence && <span className="text-xs text-[#9ca3af]">{dim.evidence}</span>}
       </div>
-    </div>
-  )
-}
-
-/**
- * The scored read of a drafted target: the same headline the role detail page
- * leads with (fit %, closeness, growth areas, priority focus), then the
- * shared breakdown. No narrative cards — those need a published role id.
- */
-function TargetFitResult({ data }: { data: FitDetail }) {
-  const pct = displayFitPercent(data)
-  return (
-    <div className="space-y-6">
-      <FitCard>
-        <FitSectionTitle>Your fit against this target</FitSectionTitle>
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold text-[#1f2937]">{pct}</span>
-              <span className="text-lg font-semibold text-[#6b7280]">%</span>
-            </div>
-            <p className="text-sm font-medium text-[#374151]">{fitPercentLabel(pct)}</p>
-          </div>
-          <Gauge className="h-8 w-8 text-[#0D9488]" aria-hidden />
-        </div>
-        <FitMeter value={pct} tone={fitPercentTone(pct)} className="mb-4" />
-        {/* BP-F5: a partial-profile score says what it rests on. */}
-        <PartialProfileNote coverage={data} />
-        {/* No fit tier or pre-cap tier here (4.1, option D) — score only. */}
-        {data.gated && (
-          <div className="flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
-            <FitPill tone="amber">Decision support only</FitPill>
-          </div>
-        )}
-      </FitCard>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <FitStat
-          icon={Target}
-          label="Overall closeness"
-          value={data.totalVariation}
-          hint="Lower means closer to this target"
-        />
-        <FitStat
-          icon={Sprout}
-          label="Growth areas"
-          value={data.coachingGaps.length}
-          hint="Dimensions to develop toward the target"
-          tone="amber"
-        />
-        <FitStat
-          icon={AlertTriangle}
-          label="Priority focus"
-          value={data.criticalGaps.length}
-          hint="Larger gaps worth prioritizing"
-          tone={data.criticalGaps.length > 0 ? "red" : "green"}
-        />
-      </div>
-
-      <div>
-        <FitBreakdown data={data} />
-      </div>
-
-      <FitMethodologyNote note={data.methodologyNote} />
     </div>
   )
 }
@@ -350,7 +279,13 @@ export default function TargetPreviewPage() {
             </FitError>
           )}
 
-          {score.isSuccess && score.data && <TargetFitResult data={score.data} />}
+          {score.isSuccess && score.data && (
+            <FitResult
+              variant="target"
+              data={score.data}
+              breakdown={<FitBreakdown data={score.data} />}
+            />
+          )}
         </div>
       )}
     </div>

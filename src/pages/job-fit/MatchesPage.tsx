@@ -1,167 +1,28 @@
 import { useMemo, useState } from "react"
-import { Link } from "react-router-dom"
-import { Target, ChevronRight, Building2 } from "lucide-react"
+import { Target } from "lucide-react"
 import { useFitMatches } from "@/hooks/job-fit/useFitMatches"
-import type { FitMatch, FitMethod } from "@/types/job-fit"
+import type { FitMethod } from "@/types/job-fit"
 import {
   FitPageHeader,
-  FitCard,
   FitEmptyState,
   FitLoading,
   FitError,
-  FitPill,
   PartialProfileNote,
-} from "./_shared"
-import { partialCoverage, partialProfileDetail } from "@/lib/job-fit/coverage"
+} from "@/components/fit/primitives"
+import { partialCoverage } from "@/lib/job-fit/coverage"
 import FitPurpose from "./FitPurpose"
 import { FitHistoryPanel } from "./FitHistoryPanel"
-import { displayFitPercent, fitDetailPath, fitPercentTone } from "./_fit"
+import { displayFitPercent } from "@/components/fit/fit"
+import { FitMatchList } from "@/components/fit/FitMatchList"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
-import type { JobComponents } from "@/types/job-fit/components"
 import {
-  VERDICT_LABEL,
-  VERDICT_TONE,
-  asOverall,
-  asV1,
   goalSortRank,
   orderRows,
   readOrder,
   writeOrder,
   type ListOrder,
-} from "./_components"
-
-const PCT_COLOR: Record<string, string> = {
-  green: "text-[#15803d]",
-  teal: "text-[#0f766e]",
-  amber: "text-[#b45309]",
-  red: "text-[#b91c1c]",
-  gray: "text-[#6b7280]",
-}
-
-/**
- * The row's fit % — the shared rule, so the detail page (opened under the same
- * read via the link below) shows the identical number (FIT-1).
- */
-const rowPercent = (match: FitMatch): number => displayFitPercent(match)
-
-/** One ranked role match, linking through to its fit detail. */
-function MatchRow({ match, components }: { match: FitMatch; components?: JobComponents }) {
-  // Show an explicit 1-100 fit % on the row so the person sees their fit here on
-  // "My Fit" without opening the detail page. Under the closeness method, use the
-  // weighted-closeness score; otherwise prefer the backend's authoritative
-  // fitScore so this row shows the SAME number as the role's detail page (older
-  // backends omit it, so we fall back to the shared derivation).
-  const pct = rowPercent(match)
-  // Feeds Phase 2: a verdict chip only when the role is scored against a goal —
-  // an unlinked role shows nothing rather than a warning.
-  const goal = components?.status === "ok" ? components.goalAlignment : undefined
-  const composite = asV1(components)?.composite
-  // FIT-3: present only while the server's overall_fit switch is on.
-  const overall = asOverall(components)?.overall
-  const pctColor = PCT_COLOR[fitPercentTone(pct)] ?? PCT_COLOR.teal
-  // BP-F5: a partial-profile score says how much it rests on.
-  const partial = partialCoverage(match)
-  return (
-    <Link
-      to={fitDetailPath(match.jobId, match.method)}
-      className="group flex items-center gap-4 rounded-xl border border-[#e5e7eb] bg-white p-4 transition-colors hover:border-[#0D9488]"
-    >
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className="truncate text-base font-semibold text-[#1f2937]">{match.roleTitle}</span>
-          {goal?.status === "scored" && (
-            <FitPill tone={VERDICT_TONE[goal.verdict]}>{VERDICT_LABEL[goal.verdict]}</FitPill>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-[#6b7280]">
-          {match.department && (
-            <span className="inline-flex items-center gap-1">
-              <Building2 className="h-3.5 w-3.5" />
-              {match.department}
-            </span>
-          )}
-          {/* No fit tier here (4.1, option D): the score and the order carry it. */}
-        </div>
-      </div>
-      {overall ? (
-        <OverallFitFigure overall={overall} pct={pct} pctColor={pctColor} partial={partial} />
-      ) : (
-      <div className="shrink-0 text-right">
-        <div className={`text-2xl font-bold leading-none ${pctColor}`}>
-          {pct}
-          <span className="text-sm font-semibold text-[#9ca3af]">%</span>
-        </div>
-        <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">fit</div>
-        {partial && (
-          <div className="mt-1 text-[11px] text-[#b45309]" title={partialProfileDetail(partial)}>
-            {partial.evaluated} of {partial.total} measured
-          </div>
-        )}
-        {composite?.score != null && (
-          <div className="mt-1 text-[11px] text-[#6b7280]" title="Behavioural fit, goals and experience combined">
-            {Math.round(composite.score)}% composite
-          </div>
-        )}
-      </div>
-      )}
-      <ChevronRight className="h-5 w-5 shrink-0 text-[#9ca3af] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0D9488]" />
-    </Link>
-  )
-}
-
-/**
- * FIT-3 — the row's figure while Overall fit is on: "Overall fit N%" as the
- * headline with "PRISM fit N%" beneath. A role with no Overall fit (too little
- * known about the person to combine) shows its PRISM fit, labelled as such.
- */
-function OverallFitFigure({
-  overall,
-  pct,
-  pctColor,
-  partial,
-}: {
-  overall: NonNullable<ReturnType<typeof asOverall>>["overall"]
-  pct: number
-  pctColor: string
-  partial: ReturnType<typeof partialCoverage>
-}) {
-  const score = overall.score
-  return (
-    <div className="shrink-0 text-right">
-      {score != null ? (
-        <>
-          <div
-            className={`text-2xl font-bold leading-none ${PCT_COLOR[fitPercentTone(Math.round(score))] ?? PCT_COLOR.teal}`}
-          >
-            {Math.round(score)}
-            <span className="text-sm font-semibold text-[#9ca3af]">%</span>
-          </div>
-          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">Overall fit</div>
-          <div className="mt-1 text-[11px] text-[#6b7280]">PRISM fit {pct}%</div>
-        </>
-      ) : (
-        <>
-          <div className={`text-2xl font-bold leading-none ${pctColor}`}>
-            {pct}
-            <span className="text-sm font-semibold text-[#9ca3af]">%</span>
-          </div>
-          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">PRISM fit</div>
-          {overall.status !== "not_set_up" && (
-            <div className="mt-1 max-w-[11rem] text-[11px] text-[#6b7280]">
-              Not enough about you to combine — add a résumé
-            </div>
-          )}
-        </>
-      )}
-      {partial && (
-        <div className="mt-1 text-[11px] text-[#b45309]" title={partialProfileDetail(partial)}>
-          {partial.evaluated} of {partial.total} measured
-        </div>
-      )}
-    </div>
-  )
-}
+} from "@/components/fit/components"
 
 /**
  * Job-Fit home — the user's own PRISM profile ranked against every published
@@ -259,7 +120,7 @@ export default function MatchesPage() {
   const componentsOn = useJobFitComponentsEnabled()
   const [byGoals, setByGoals] = useState(false)
   const jobs = useMemo(
-    () => (data ?? []).map((m) => ({ jobId: m.jobId, fitScore: rowPercent(m) })),
+    () => (data ?? []).map((m) => ({ jobId: m.jobId, fitScore: displayFitPercent(m) })),
     [data],
   )
   const components = useFitComponents(jobs, componentsOn)
@@ -319,48 +180,41 @@ export default function MatchesPage() {
         </p>
       )}
 
-      {isLoading && <FitLoading label="Matching your profile to open roles…" />}
-
-      {isError && (
-        <FitError>
-          We couldn&apos;t load your matches right now. Please try again in a moment.
-        </FitError>
-      )}
-
-      {/* FIT-1: matching switched off platform-side is not "no roles". */}
-      {!isLoading && !isError && gated && (data?.length ?? 0) === 0 && (
-        <FitEmptyState>
-          Role matching is paused for now. It&apos;s a deliberate hold, not a problem with your
-          profile — your matches will appear here once it&apos;s switched back on.
-        </FitEmptyState>
-      )}
-
-      {!isLoading && !isError && gated && (data?.length ?? 0) > 0 && (
-        <p role="note" className="mb-3 text-xs text-[#6b7280]">
-          Role matching is still in limited release, so treat these as a first draft rather than a
-          settled read.
-        </p>
-      )}
-
-      {!isLoading && !isError && !gated && (data?.length ?? 0) === 0 && (
-        <FitEmptyState>
-          No published roles are available to match against yet. Check back once your organization
-          publishes role benchmarks.
-        </FitEmptyState>
-      )}
-
-      {!isLoading && !isError && (data?.length ?? 0) > 0 && (
-        // BP-F5: one explanation for the page, from the first partial row.
-        <PartialProfileNote coverage={(data ?? []).find((m) => partialCoverage(m))} />
-      )}
-
-      {!isLoading && !isError && (data?.length ?? 0) > 0 && (
-        <FitCard className="space-y-3 p-4">
-          {rows.map((m) => (
-            <MatchRow key={m.jobId} match={m} components={components.data?.jobs[m.jobId]} />
-          ))}
-        </FitCard>
-      )}
+      <FitMatchList
+        variant="career"
+        matches={rows}
+        components={components.data?.jobs}
+        state={{ isLoading, isError, gated, gatedHidesRows: false }}
+        slots={{
+          loading: <FitLoading label="Matching your profile to open roles…" />,
+          error: (
+            <FitError>
+              We couldn&apos;t load your matches right now. Please try again in a moment.
+            </FitError>
+          ),
+          // FIT-1: matching switched off platform-side is not "no roles".
+          gated: (
+            <FitEmptyState>
+              Role matching is paused for now. It&apos;s a deliberate hold, not a problem with your
+              profile — your matches will appear here once it&apos;s switched back on.
+            </FitEmptyState>
+          ),
+          gatedNote: (
+            <p role="note" className="mb-3 text-xs text-[#6b7280]">
+              Role matching is still in limited release, so treat these as a first draft rather than a
+              settled read.
+            </p>
+          ),
+          empty: (
+            <FitEmptyState>
+              No published roles are available to match against yet. Check back once your organization
+              publishes role benchmarks.
+            </FitEmptyState>
+          ),
+          // BP-F5: one explanation for the page, from the first partial row.
+          beforeList: <PartialProfileNote coverage={(data ?? []).find((m) => partialCoverage(m))} />,
+        }}
+      />
 
       {/* JS-3 — every fit read and every save, from the server */}
       <FitHistoryPanel />

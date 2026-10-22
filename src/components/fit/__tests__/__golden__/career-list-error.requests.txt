@@ -1,0 +1,3 @@
+fit.getHistory()
+fit.getMatches(gap)
+switch.jobFitComponents()

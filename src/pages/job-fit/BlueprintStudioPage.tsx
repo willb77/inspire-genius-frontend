@@ -41,7 +41,7 @@ import type {
   BlueprintSeedNode,
   SavedRoleBlueprint,
 } from "@/types/knowledge-continuity"
-import { FitPageHeader } from "./_shared"
+import { FitPageHeader } from "@/components/fit/primitives"
 
 /**
  * Job-Fit "Blueprint a role" studio.

@@ -36,7 +36,7 @@ import MatchesPage from "../MatchesPage"
 import FitDetailPage from "../FitDetailPage"
 import GapsPage from "../GapsPage"
 import PathwayPage from "../PathwayPage"
-import { bandTone, bandLabel, tierLabel, gapTone, formatGap } from "../_fit"
+import { gapTone, formatGap } from "@/components/fit/fit"
 import type { FitMatch, FitDetail, FitPathway } from "@/types/job-fit"
 
 const MATCH: FitMatch = {
@@ -162,26 +162,7 @@ describe("4.1 option D — no fit tier on person-facing Job-Fit surfaces", () =>
   })
 })
 
-describe("_fit helpers", () => {
-  test("bandTone maps known bands and falls back", () => {
-    expect(bandTone("Strong")).toBe("green")
-    expect(bandTone("moderate")).toBe("teal")
-    expect(bandTone("developing")).toBe("amber")
-    expect(bandTone("low")).toBe("red")
-    expect(bandTone("weird-band")).toBe("gray")
-  })
-
-  test("bandLabel title-cases and handles empty", () => {
-    expect(bandLabel("strong-fit")).toBe("Strong Fit")
-    expect(bandLabel("")).toBe("Unrated")
-  })
-
-  test("tierLabel humanizes tiers", () => {
-    expect(tierLabel("front-line")).toBe("Front-line")
-    expect(tierLabel("professional")).toBe("Professional")
-    expect(tierLabel("executive")).toBe("Executive")
-  })
-
+describe("fit helpers", () => {
   test("gapTone and formatGap reflect direction", () => {
     expect(gapTone(5)).toBe("green")
     expect(gapTone(-8)).toBe("amber")

@@ -36,7 +36,7 @@ jest.mock("@/components/job-blueprint/job-dna/BenchmarkRadarChart", () => ({
 }))
 
 import TargetPreviewPage from "../TargetPreviewPage"
-import { confidenceTone } from "../_fit"
+import { confidenceTone } from "@/components/fit/fit"
 import type { TargetDraft } from "@/types/targets"
 import { targetDraftToBenchmarks } from "@/types/targets"
 import type { FitDetail } from "@/types/job-fit"

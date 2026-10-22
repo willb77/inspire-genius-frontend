@@ -11,8 +11,8 @@ import { useFitMatches } from "@/hooks/job-fit/useFitMatches"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
 import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
-import { FitCard, FitEmptyState, FitPageHeader, FitLoading } from "./_shared"
-import { displayFitPercent } from "./_fit"
+import { FitCard, FitEmptyState, FitPageHeader, FitLoading } from "@/components/fit/primitives"
+import { displayFitPercent } from "@/components/fit/fit"
 
 /**
  * Job-Fit coaching — every question is about **you against one of your matched

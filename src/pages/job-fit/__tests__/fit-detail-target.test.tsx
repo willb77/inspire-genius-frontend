@@ -39,8 +39,8 @@ jest.mock("@/hooks/job-fit/useFitDetail", () => ({
   }),
 }))
 jest.mock("@/pages/job-fit/FitBreakdown", () => ({ FitBreakdown: () => <div data-testid="breakdown" /> }))
-jest.mock("@/pages/job-fit/_fit", () => ({
-  ...jest.requireActual("@/pages/job-fit/_fit"),
+jest.mock("@/components/fit/fit", () => ({
+  ...jest.requireActual("@/components/fit/fit"),
   jobFitNarrativeEnabled: () => false,
 }))
 

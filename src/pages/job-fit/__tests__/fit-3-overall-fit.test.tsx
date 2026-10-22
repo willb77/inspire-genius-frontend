@@ -41,7 +41,7 @@ jest.mock("@/hooks/job-fit/useFitHistory", () => ({
 
 import MatchesPage from "../MatchesPage"
 import { FitComponentsCard } from "../FitComponentsCard"
-import { orderRows } from "../_components"
+import { orderRows } from "@/components/fit/components"
 
 const base: FitMatch = {
   jobId: "j", roleTitle: "Role", department: null, tier: "strong-fit", baseTier: "strong-fit",
