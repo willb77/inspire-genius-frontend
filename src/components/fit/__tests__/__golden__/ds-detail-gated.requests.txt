@@ -1,0 +1,4 @@
+fit.getMatches(gap)
+fit.getDetail(j1,gap)
+journey.advance(7,j1)
+journey.advance(8,j1)

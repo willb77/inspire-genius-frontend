@@ -1,0 +1,4 @@
+fit.getDetail(j1,closeness)
+switch.jobFitComponents()
+switch.goalTargets()
+explain(j1,92,)
