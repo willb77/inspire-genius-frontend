@@ -53,11 +53,18 @@ export function useSubmitIntake() {
   })
 }
 
+/**
+ * Advance a candidate one step. Pass `{ candidateId, reason }` for the move to
+ * `hired`, which the server refuses without a reason (BP-F4); a bare id is
+ * still accepted for every other step.
+ */
 export function useAdvanceCandidate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (candidateId: string) =>
-      triageService.advanceCandidate(candidateId).then(r => r.data.data),
+    mutationFn: (vars: string | { candidateId: string; reason?: string }) => {
+      const { candidateId, reason } = typeof vars === 'string' ? { candidateId: vars, reason: undefined } : vars
+      return triageService.advanceCandidate(candidateId, reason).then(r => r.data.data)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all })
     },

@@ -8,7 +8,8 @@ import { useJobDnaList, useJobDnaDetail, useCreateJobDna } from "../useJobDna"
 import { useBlueprintFunnel, useBlueprintStats } from "../useAnalytics"
 import { useAssessmentDetail, useAssessmentStats, useCreateAssessment } from "../useAssessment"
 import { useScorecardDetail, useInterviewGuide } from "../useScorecard"
-import { usePipeline, usePipelineStats, useSubmitIntake } from "../useTriage"
+import { usePipeline, usePipelineStats, useSubmitIntake, useAdvanceCandidate } from "../useTriage"
+import { triageService } from "@/services/job-blueprint"
 
 jest.mock("@/services/job-blueprint", () => ({
   jobDnaService: {
@@ -133,6 +134,15 @@ describe("Job Blueprint hooks", () => {
       const { result } = renderHook(() => useSubmitIntake(), { wrapper })
       act(() => { result.current.mutate({ jobId: "j1", name: "John", email: "j@b.com" }) })
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    })
+
+    it("useAdvanceCandidate passes the reason through for the move to hired (BP-F4)", async () => {
+      const { result } = renderHook(() => useAdvanceCandidate(), { wrapper })
+      act(() => { result.current.mutate({ candidateId: "c1", reason: "offer accepted" }) })
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+      expect(triageService.advanceCandidate).toHaveBeenLastCalledWith("c1", "offer accepted")
+      act(() => { result.current.mutate("c2") })
+      await waitFor(() => expect(triageService.advanceCandidate).toHaveBeenLastCalledWith("c2", undefined))
     })
   })
 })

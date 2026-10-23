@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { GitBranch } from "lucide-react"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
 import { usePipeline, useAdvanceCandidate } from "@/hooks/job-blueprint/useTriage"
 import { PipelineDashboard } from "@/components/job-blueprint/triage/PipelineDashboard"
+import { HireReasonDialog } from "@/components/job-blueprint/triage/HireReasonDialog"
+import { advanceNeedsReason } from "@/components/job-blueprint/triage/hireReason"
 import {
   JobDnaPageHeader,
   JobDnaSelect,
@@ -20,21 +23,45 @@ import {
  * `POST /v1/blueprint/triage/advance/:id` (useAdvanceCandidate). Clicking a
  * card opens the candidate's detail page (it used to raise an info toast that
  * acted on nothing).
+ *
+ * BP-F4: the move to `hired` asks for a reason first, and a refusal (another
+ * organisation's role, no organisation, below manager) is shown as the
+ * server's own words — never as an empty board, which would read as "no
+ * candidates yet".
  */
 export default function JobBlueprintPipelinePage() {
   const { data: jobDnas, isLoading: loadingJobs } = useJobDnaList()
   const [jobId, setJobId] = useState("")
   const navigate = useNavigate()
 
-  const { data: candidates, isLoading, isError, refetch } = usePipeline(jobId)
+  const { data: candidates, isLoading, isError, error, refetch } = usePipeline(jobId)
   const advance = useAdvanceCandidate()
+  const [hiring, setHiring] = useState<{ id: string; code: string } | null>(null)
+  const [hireError, setHireError] = useState<string | null>(null)
 
   const handleAdvance = async (candidateId: string) => {
+    const c = candidates?.find((x) => x.id === candidateId)
+    if (c && advanceNeedsReason(c.status)) {
+      setHireError(null)
+      setHiring({ id: c.id, code: c.code ?? c.name })
+      return
+    }
     try {
       await advance.mutateAsync(candidateId)
       toast.success("Candidate advanced.")
-    } catch {
-      toast.error("Failed to advance candidate.")
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Failed to advance candidate."))
+    }
+  }
+
+  const confirmHire = async (reason: string) => {
+    if (!hiring) return
+    try {
+      await advance.mutateAsync({ candidateId: hiring.id, reason })
+      toast.success(`Candidate ${hiring.code} marked hired.`)
+      setHiring(null)
+    } catch (err) {
+      setHireError(apiErrorMessage(err, "Failed to mark this candidate hired."))
     }
   }
 
@@ -56,7 +83,10 @@ export default function JobBlueprintPipelinePage() {
       ) : isLoading ? (
         <JobDnaLoading label="Loading pipeline…" />
       ) : isError ? (
-        <JobDnaError message="Failed to load the pipeline." onRetry={() => void refetch()} />
+        <JobDnaError
+          message={apiErrorMessage(error, "Failed to load the pipeline.")}
+          onRetry={() => void refetch()}
+        />
       ) : !candidates || candidates.length === 0 ? (
         <JobDnaEmptyState>
           No candidates in this pipeline yet. Candidate intake and matching are gated for this
@@ -69,6 +99,17 @@ export default function JobBlueprintPipelinePage() {
           onAdvance={handleAdvance}
         />
       )}
+
+      <HireReasonDialog
+        open={hiring !== null}
+        onOpenChange={(open) => {
+          if (!open) setHiring(null)
+        }}
+        candidateCode={hiring?.code ?? ""}
+        pending={advance.isPending}
+        error={hireError}
+        onConfirm={(reason) => void confirmHire(reason)}
+      />
     </div>
   )
 }

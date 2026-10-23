@@ -68,6 +68,12 @@ describe("job-blueprint services", () => {
       expect(mockApi.post).toHaveBeenCalledWith("/v1/blueprint/triage/advance/c1")
     })
 
+    it("advanceCandidate sends the reason when there is one (BP-F4, the move to hired)", async () => {
+      mockApi.post.mockResolvedValueOnce({ data: { data: {} } })
+      await triageService.advanceCandidate("c1", "offer accepted")
+      expect(mockApi.post).toHaveBeenCalledWith("/v1/blueprint/triage/advance/c1", { reason: "offer accepted" })
+    })
+
     it("setInterviewStep posts the named step (JS-12)", async () => {
       await triageService.setInterviewStep("c1", { step: "interview-scheduled", interviewSessionId: "s1" })
       expect(api.post).toHaveBeenCalledWith("/v1/blueprint/triage/interview-step/c1", {

@@ -5,7 +5,8 @@ import type { InterviewScorecard, InterviewGuide, ScorecardDraft, ScorecardEntry
 export const scorecardService = {
   submitScorecard(candidateId: string, data: {
     jobId: string
-    interviewerId: string
+    /** Ignored by the server since BP-F4: the interviewer is the signed-in caller. */
+    interviewerId?: string
     interviewDate: string
     behaviorScores: ScorecardEntry[]
     counterProductiveScores: ScorecardEntry[]
