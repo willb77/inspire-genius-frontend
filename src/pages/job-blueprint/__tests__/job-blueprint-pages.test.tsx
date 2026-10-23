@@ -52,6 +52,11 @@ jest.mock("@/components/job-blueprint/validation/BlueprintValidationPanel", () =
   BlueprintValidationPanel: () => null,
 }))
 
+/* ── Decision path: its entry has its own suite (decision-path/__tests__); here it renders nothing ── */
+jest.mock("@/components/job-blueprint/decision-path/DecisionPathEntry", () => ({
+  DecisionPathEntry: () => null,
+}))
+
 /* ── Hooks ── */
 jest.mock("@/hooks/job-blueprint/useJobDna")
 jest.mock("@/hooks/job-blueprint/useTriage")

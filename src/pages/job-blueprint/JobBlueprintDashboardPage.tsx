@@ -4,6 +4,7 @@ import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
 import { useBlueprintStats } from "@/hooks/job-blueprint/useAnalytics"
 import { JobDnaCard } from "@/components/job-blueprint/job-dna/JobDnaCard"
 import { StatsGrid } from "@/components/job-blueprint/analytics/StatsGrid"
+import { DecisionPathEntry } from "@/components/job-blueprint/decision-path/DecisionPathEntry"
 import { ROUTES } from "@/constants/routes"
 import {
   JobDnaPageHeader,
@@ -39,6 +40,8 @@ export default function JobBlueprintDashboardPage() {
           </JobDnaLinkButton>
         }
       />
+
+      <DecisionPathEntry />
 
       {stats ? (
         <div className="mb-6">

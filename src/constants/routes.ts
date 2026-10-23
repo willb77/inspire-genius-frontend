@@ -266,6 +266,11 @@ export const ROUTES = {
     PIPELINE: "/vertical/job-blueprint/pipeline",
     SCORECARDS: "/vertical/job-blueprint/scorecards",
     ANALYTICS: "/vertical/job-blueprint/analytics",
+    /** Decision path (server-switch gated): cases, intake and the decision record. */
+    DECISION_PATH: "/vertical/job-blueprint/decision-path",
+    DECISION_PATH_RULE_SETS: "/vertical/job-blueprint/decision-path/rule-sets",
+    DECISION_PATH_CASE: "/vertical/job-blueprint/decision-path/cases/:caseId",
+    decisionPathCase: (id: string) => `/vertical/job-blueprint/decision-path/cases/${id}`,
   },
   // The Honor Foundation — Coach Workbench vertical
   // (entitlement-gated by enabled_verticals: "honor").
