@@ -250,6 +250,22 @@ describe("UserFormModal", () => {
     expect(screen.queryByText("Skip onboarding process")).not.toBeInTheDocument();
   });
 
+  it("a caller's skip_onboarding default reaches the submitted values", () => {
+    const onSubmit = jest.fn();
+    render(
+      <UserFormModal
+        {...baseProps}
+        mode="add"
+        onSubmit={onSubmit}
+        defaultValues={{ skip_onboarding: true }}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Add User" }));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ skip_onboarding: true }),
+    );
+  });
+
   it("merges defaultValues and submits them correctly", () => {
     const onSubmit = jest.fn();
 

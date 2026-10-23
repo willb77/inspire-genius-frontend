@@ -45,15 +45,16 @@ const lastProps = () => tableProps.mock.calls[tableProps.mock.calls.length - 1][
 
 beforeEach(() => tableProps.mockClear())
 
-test("with Skip onboarding ticked, organisations are allowed and the directory is passed", () => {
+// Skip onboarding starts ticked (2026-10-22), so these tests start from that.
+test("with Skip onboarding ticked (the default), organisations are allowed and the directory is passed", () => {
   render(<SuperAdminBulkImport />)
-  fireEvent.click(screen.getByRole("checkbox"))
   fireEvent.click(screen.getByText("parse"))
   expect(lastProps()).toMatchObject({ callerRole: "super-admin", organizationAllowed: true, orgDirectory: DIRECTORY })
 })
 
-test("without it, organisations are refused", () => {
+test("unticked, organisations are refused", () => {
   render(<SuperAdminBulkImport />)
+  fireEvent.click(screen.getByRole("checkbox"))
   fireEvent.click(screen.getByText("parse"))
   expect(lastProps()).toMatchObject({ organizationAllowed: false, orgDirectory: DIRECTORY })
 })

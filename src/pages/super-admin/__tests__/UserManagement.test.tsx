@@ -67,10 +67,12 @@ let mockFormSubmitData = {
   status: "Active",
 };
 
+const mockUserFormModalProps = jest.fn();
+
 jest.mock(
   "@/components/shared/forms/UserFormModal",
   () => (props: any) =>
-    props.open ? (
+    (mockUserFormModalProps(props), props.open) ? (
       <button
         onClick={() => props.onSubmit(mockFormSubmitData)}
       >
@@ -423,6 +425,33 @@ describe("UserManagement Page", () => {
       last_name: "Doe",
       email: "john@test.com",
     });
+  });
+
+  it("Add User opens with Skip onboarding ticked; Edit User does not carry it", () => {
+    mockUserFormModalProps.mockClear();
+    renderPage();
+    const byMode = (mode: string) =>
+      mockUserFormModalProps.mock.calls.map((c) => c[0]).filter((p) => p.mode === mode).pop();
+    expect(byMode("add").defaultValues).toEqual({ skip_onboarding: true });
+    expect(byMode("edit").defaultValues?.skip_onboarding).toBeUndefined();
+  });
+
+  it("Add User with Skip onboarding ticked sends demo_account", async () => {
+    inviteMutate.mockResolvedValueOnce({});
+    const original = mockFormSubmitData;
+    mockFormSubmitData = { ...original, skip_onboarding: true } as typeof original;
+    try {
+      renderPage();
+      await act(async () => {
+        fireEvent.click(screen.getByText("Add User"));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByText("Submit"));
+      });
+      expect(inviteMutate).toHaveBeenCalledWith(expect.objectContaining({ demo_account: true }));
+    } finally {
+      mockFormSubmitData = original;
+    }
   });
 
   it("shows Edit AND Resend for Awaiting status users", async () => {
