@@ -21,6 +21,11 @@ const mockUseEnabledVerticals = jest.fn()
 jest.mock("@/verticals/core/useEnabledVerticals", () => ({
   useEnabledVerticals: () => mockUseEnabledVerticals(),
 }))
+// WS-1's workspace_direction_setting switch, held OFF: this menu is the
+// switch-off contract, unchanged.
+jest.mock("@/hooks/switches/useWorkspaceDirectionSettingEnabled", () => ({
+  useWorkspaceDirectionSettingEnabled: () => false,
+}))
 
 jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { name: "Test", role: "user" }, logout: jest.fn() }),

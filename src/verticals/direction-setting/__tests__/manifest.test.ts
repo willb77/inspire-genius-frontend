@@ -24,18 +24,22 @@ describe("Direction Setting manifest", () => {
     expect(listVerticals().map((v) => v.key)).toContain("direction-setting")
   })
 
-  test("appears in the Tools catalogue rather than being hidden", async () => {
-    // This originally asserted membership of WORKSPACE_VERTICALS. That set was
-    // emptied on development (#321) when My Workspace became a fixed five-entry
-    // list and every vertical moved into the Tools catalogue, so asserting
-    // membership would now re-introduce a pattern that was deliberately
-    // removed. What still matters is the property the old test was really
-    // protecting: that Direction Setting is *listed*, not withheld like Honor.
-    const { WORKSPACE_VERTICALS, HIDDEN_VERTICALS } = await import(
+  test("is a workspace vertical only while workspace_direction_setting is on", async () => {
+    // WS-1 (2026-10-23, CSA 2026-10-22-ws-1, option 2). Entitled accounts that
+    // are not super-admin, manager or practitioner had no menu path into
+    // Direction Setting at all, so it becomes a My Workspace row — but only
+    // when the tier's switch is on, because a frontend merge reaches dev and
+    // stable together and customers must see it on the owner's word, not on
+    // the merge. So the STATIC set must not contain it (that would put it live
+    // on merge), and the EFFECTIVE set must contain it exactly when the switch
+    // is on. It is never withheld like Honor: off, it stays in Tools.
+    const { WORKSPACE_VERTICALS, HIDDEN_VERTICALS, effectiveWorkspaceVerticals } = await import(
       "@/components/layout/useVerticalLauncher"
     )
     expect(HIDDEN_VERTICALS.has("direction-setting")).toBe(false)
     expect(WORKSPACE_VERTICALS.has("direction-setting")).toBe(false)
+    expect(effectiveWorkspaceVerticals(false).has("direction-setting")).toBe(false)
+    expect(effectiveWorkspaceVerticals(true).has("direction-setting")).toBe(true)
   })
 
   test("the vertical sub-nav has a switch arm for it", async () => {

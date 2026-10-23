@@ -16,6 +16,7 @@ import {
 import type { SidebarSection } from "@/constants/sidebar-sections"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation"
+import { useWorkspaceDirectionSettingEnabled } from "@/hooks/switches/useWorkspaceDirectionSettingEnabled"
 
 /**
  * Registry-driven vertical launcher.
@@ -94,6 +95,46 @@ export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit", "career-disc
 // vertical would otherwise appear greyed to every manager, practitioner and
 // super-admin the moment this merged. With no `career-discovery` entitlement
 // rows on a tier, no menu anywhere changes.
+//
+// "direction-setting" is NOT in this static set (WS-1, 2026-10-23). It joins the
+// EFFECTIVE set only while the `workspace_direction_setting` switch is on — see
+// {@link effectiveWorkspaceVerticals}. Every reader of "is this a workspace
+// vertical?" goes through that one function, never this set directly, so the
+// menu splice and the Tools filter cannot disagree.
+
+/**
+ * WS-1: the workspace set while `workspace_direction_setting` is ON —
+ * {@link WORKSPACE_VERTICALS} plus Direction Setting. A module constant so the
+ * effective set keeps a stable identity across renders.
+ */
+const WORKSPACE_VERTICALS_WITH_DIRECTION_SETTING: ReadonlySet<VerticalKey> = new Set<VerticalKey>([
+  ...WORKSPACE_VERTICALS,
+  "direction-setting",
+])
+
+/**
+ * The ONE effective workspace set (WS-1, CSA 2026-10-22-ws-1, option 2).
+ *
+ * Off — the switch row absent, false, still loading, or unreadable — it IS
+ * {@link WORKSPACE_VERTICALS}, the same object, so both filters behave exactly
+ * as before WS-1. On, Direction Setting is a workspace vertical: a My Workspace
+ * row for an entitled account (hidden, not greyed, for an unentitled one, like
+ * Career Fit), and out of the Tools catalogue for everyone.
+ *
+ * Both {@link useWorkspaceVerticalItems} and {@link useVerticalLauncherSection}
+ * read this, via {@link useEffectiveWorkspaceVerticals}. If they read different
+ * sets, Direction Setting would show in both places or in neither.
+ */
+export function effectiveWorkspaceVerticals(
+  directionSettingOn: boolean,
+): ReadonlySet<VerticalKey> {
+  return directionSettingOn ? WORKSPACE_VERTICALS_WITH_DIRECTION_SETTING : WORKSPACE_VERTICALS
+}
+
+/** {@link effectiveWorkspaceVerticals} for this tier's switch. */
+export function useEffectiveWorkspaceVerticals(): ReadonlySet<VerticalKey> {
+  return effectiveWorkspaceVerticals(useWorkspaceDirectionSettingEnabled())
+}
 
 /**
  * Verticals hidden from the Tools section entirely (2026-07-31).
@@ -191,10 +232,11 @@ function toNavItem(
  */
 export function useVerticalLauncherSection(): SidebarSection | null {
   const { data: enabled } = useEnabledVerticals()
+  const workspace = useEffectiveWorkspaceVerticals()
   return useMemo(() => {
     const entitlements = enabled ?? []
     const verticals = listVerticals().filter(
-      (v) => !WORKSPACE_VERTICALS.has(v.key) && !HIDDEN_VERTICALS.has(v.key),
+      (v) => !workspace.has(v.key) && !HIDDEN_VERTICALS.has(v.key),
     )
     if (verticals.length === 0) return null
     return {
@@ -207,7 +249,7 @@ export function useVerticalLauncherSection(): SidebarSection | null {
       roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
       items: verticals.map((v) => toNavItem(v, entitlements.includes(v.key))),
     }
-  }, [enabled])
+  }, [enabled, workspace])
 }
 
 /**
@@ -278,14 +320,16 @@ export function useWorkspaceVerticalLinks(): NavItemDef[] {
  */
 export function useWorkspaceVerticalItems(): NavItemDef[] {
   const { data: enabled } = useEnabledVerticals()
-  // Memoised on the entitlement list so the returned array keeps a stable
-  // identity across renders — it feeds the `navSections` memo in every layout.
+  const workspace = useEffectiveWorkspaceVerticals()
+  // Memoised on the entitlement list (and the effective set, which is one of
+  // two module constants) so the returned array keeps a stable identity across
+  // renders — it feeds the `navSections` memo in every layout.
   return useMemo(() => {
     const entitlements = enabled ?? []
     return listVerticals()
-      .filter((v) => WORKSPACE_VERTICALS.has(v.key) && entitlements.includes(v.key))
+      .filter((v) => workspace.has(v.key) && entitlements.includes(v.key))
       .map((v) => toNavItem(v, true))
-  }, [enabled])
+  }, [enabled, workspace])
 }
 
 /**
