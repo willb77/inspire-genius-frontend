@@ -39,6 +39,8 @@ import {
 import { PrismDataMenu } from "@/components/dashboard/v2/PrismDataMenu";
 import { ReplacePrismDataDialog } from "@/components/prism/ReplacePrismDataButton";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
+import { AboutYouPanel } from "@/components/profile/AboutYouPanel";
+import { useHomeAboutYouPanelEnabled } from "@/hooks/switches/useHomeAboutYouPanelEnabled";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
 /**
@@ -304,6 +306,10 @@ export default function HomeV2() {
     useState<AddPersonalDocTarget | null>(null);
   // PRISM has its own dialog — it imports scores rather than filing a document.
   const [prismReplaceOpen, setPrismReplaceOpen] = useState(false);
+  // HOME-1: the shared "What we know about you" panel, dark until the
+  // `home_about_you_panel` switch row exists. Off (and loading, and any
+  // error) renders nothing, so Home is unchanged.
+  const aboutYouOn = useHomeAboutYouPanelEnabled();
   // First name for the page greeting (restored 2026-08-06). Falls back through
   // fullName → name → "there" so the heading never renders "Welcome ,".
   const firstName =
@@ -592,6 +598,22 @@ export default function HomeV2() {
               </div>
             </div>
           </header>
+
+          {/* HOME-1 (CSA 2026-10-22-home-1, option 1). The same component as
+              Direction Setting's Establish stage, with Home's own answers:
+              PRISM goes through ReplacePrismDataDialog (the path that projects
+              into prism_results), "has PRISM" is `hasReport` as in the
+              Personal Info menu, and no journey progress is recorded. The
+              header button and the Personal Info menu stay as they are. */}
+          {aboutYouOn ? (
+            <AboutYouPanel
+              variant="home"
+              hasPrism={hasReport}
+              prismUnknown={prismUnknown}
+              prismLoading={prismLoading}
+              onUploadPrism={() => setPrismReplaceOpen(true)}
+            />
+          ) : null}
 
           {/* Leads the page since the Chat-with-Meridian card was removed
               (2026-08-05). */}
