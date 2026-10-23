@@ -11,6 +11,7 @@ import {
   BarChart3,
   ChevronLeft,
   Check,
+  AlertTriangle,
 } from "lucide-react"
 
 import { Checkbox } from "@/components/ui/checkbox"
@@ -79,7 +80,11 @@ const initialState: State = {
   selectedUserIds: [],
   importBatchId: null,
   invitationBatchId: null,
-  skipOnboarding: false,
+  // Ticked by default (Bill, 2026-10-22). The unticked path goes to user-service,
+  // which creates no sign-in account (nothing there calls auth-service
+  // create_user), and its invitation link carries ?batch=&invite= where
+  // /accept-invitation reads ?token=. Hence the warning below when unticked.
+  skipOnboarding: true,
 }
 
 function reducer(state: State, action: Action): State {
@@ -293,6 +298,20 @@ export default function SuperAdminBulkImport() {
                 </span>
               </span>
             </label>
+            {!state.skipOnboarding && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  Without Skip onboarding, imported people do not get a sign-in
+                  account today: the invitation they are emailed cannot be used to
+                  set a password, so they cannot sign in. Keep it ticked unless you
+                  are testing that path.
+                </span>
+              </div>
+            )}
           </div>
         )}
 

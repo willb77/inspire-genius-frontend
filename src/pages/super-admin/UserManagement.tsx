@@ -839,6 +839,10 @@ export default function UserManagement() {
         open={addOpen}
         onOpenChange={setAddOpen}
         mode="add"
+        // Skip onboarding starts ticked (Bill, 2026-10-22): it is the path that
+        // gives the person a working sign-in. Unticking keeps the password-setup
+        // invitation.
+        defaultValues={{ skip_onboarding: true }}
         onSubmit={handleAdd}
         submitLabel={inviteMutation.isPending ? "Adding User..." : "Add User"}
         allowStatusEdit={false}
