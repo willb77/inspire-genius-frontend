@@ -6,11 +6,13 @@ import {
   getDiscoveryAlignment,
   getDiscoveryAlignmentJob,
   getDiscoveryCareers,
+  getDiscoveryEducation,
   getDiscoveryGoals,
   getDiscoveryJourney,
   getDiscoveryPays,
   getDiscoveryPlan,
   getDiscoveryPortrait,
+  getDiscoverySchools,
   getDiscoveryStatus,
   recordDiscoveryAge,
   saveDiscoveryAbout,
@@ -19,12 +21,15 @@ import {
 import type {
   DiscoveryAlignment,
   DiscoveryCareers,
+  DiscoveryEducation,
   DiscoveryGoals,
   DiscoveryJob,
   DiscoveryJourney,
   DiscoveryPays,
   DiscoveryPlan,
+  DiscoverySchools,
   DiscoveryStatus,
+  SchoolsQuery,
 } from "@/types/career-discovery"
 import type { SelfPortrait } from "@/types/lumen"
 
@@ -46,6 +51,9 @@ export const discoveryKeys = {
   alignment: ["career-discovery", "alignment"] as const,
   job: (id: string) => ["career-discovery", "alignment", "job", id] as const,
   plan: ["career-discovery", "plan"] as const,
+  education: ["career-discovery", "education"] as const,
+  schools: (q: SchoolsQuery | null) =>
+    ["career-discovery", "education", "schools", q?.cip ?? "", q?.level ?? 0, q?.state ?? ""] as const,
 }
 
 /** The server's message for a failed call, or a plain fallback. */
@@ -98,6 +106,20 @@ export const useDiscoveryGoals = (enabled: boolean) =>
   useStageQuery<DiscoveryGoals>(discoveryKeys.goals, getDiscoveryGoals, enabled)
 export const useDiscoveryPlan = (enabled: boolean) =>
   useStageQuery<DiscoveryPlan>(discoveryKeys.plan, getDiscoveryPlan, enabled)
+/** DISC-2: Education paths. Reading them records the stage, so the map refreshes after. */
+export const useDiscoveryEducation = (enabled: boolean) =>
+  useStageQuery<DiscoveryEducation>(discoveryKeys.education, getDiscoveryEducation, enabled)
+
+/** DISC-2: schools for one path, fetched only once a field, level and state are chosen. */
+export function useDiscoverySchools(query: SchoolsQuery | null) {
+  return useQuery<DiscoverySchools | undefined, AxiosError>({
+    queryKey: discoveryKeys.schools(query),
+    queryFn: async () => (await getDiscoverySchools(query as SchoolsQuery)).data,
+    enabled: query !== null,
+    retry: false,
+    staleTime: 60 * 60 * 1000,
+  })
+}
 
 function useJourneyMutation<V>(fn: (v: V) => Promise<{ data?: DiscoveryJourney }>) {
   const qc = useQueryClient()

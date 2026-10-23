@@ -65,6 +65,24 @@ export default function PlanPage() {
           {data.alignment?.note ? <p className="text-muted-foreground">{data.alignment.note}</p> : null}
         </CardContent>
       </Card>
+      {data.educationPaths ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Education paths</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            {data.educationPaths.length ? (
+              data.educationPaths.map((e) => (
+                <p key={`${e.careerArea}-${e.field}`}>
+                  {e.field} <span className="text-muted-foreground">— {e.credential}, for {e.careerArea}</span>
+                </p>
+              ))
+            ) : (
+              <p className="text-muted-foreground">Not yet — do Education paths first.</p>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
       {data.nextSteps.length ? (
         <Card>
           <CardHeader className="pb-2">

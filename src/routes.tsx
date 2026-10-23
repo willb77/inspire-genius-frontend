@@ -276,6 +276,7 @@ const DiscoveryPays = React.lazy(() => import("@/pages/career-discovery/PaysPage
 const DiscoveryGoals = React.lazy(() => import("@/pages/career-discovery/GoalsPage"));
 const DiscoveryAlignment = React.lazy(() => import("@/pages/career-discovery/AlignmentPage"));
 const DiscoveryComingNext = React.lazy(() => import("@/pages/career-discovery/ComingNextPage"));
+const DiscoveryEducation = React.lazy(() => import("@/pages/career-discovery/EducationPage"));
 const DiscoveryPlan = React.lazy(() => import("@/pages/career-discovery/PlanPage"));
 
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
@@ -851,7 +852,9 @@ export const routes: RouteObject[] = [
               { path: "pays", element: withSuspense(<DiscoveryPays />) },
               { path: "goals", element: withSuspense(<DiscoveryGoals />) },
               { path: "alignment", element: withSuspense(<DiscoveryAlignment />) },
-              { path: "education", element: withSuspense(<DiscoveryComingNext stage="education" />) },
+              // DISC-2: renders the same "Coming next" page until the server
+              // reports the education stage available (its own switch).
+              { path: "education", element: withSuspense(<DiscoveryEducation />) },
               { path: "cost", element: withSuspense(<DiscoveryComingNext stage="cost" />) },
               { path: "plan", element: withSuspense(<DiscoveryPlan />) },
             ],
