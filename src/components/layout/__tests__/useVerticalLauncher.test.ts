@@ -4,6 +4,8 @@
 import { renderHook } from "@testing-library/react"
 import { __resetRegistry, registerVertical } from "@/verticals/core"
 import {
+  WORKSPACE_VERTICALS,
+  effectiveWorkspaceVerticals,
   useVerticalLauncherSection,
   useWorkspaceNavItems,
   useWorkspaceVerticalItems,
@@ -17,12 +19,20 @@ jest.mock("@/verticals/core/useEnabledVerticals", () => ({
   useEnabledVerticals: () => mockUseEnabledVerticals(),
 }))
 
+// WS-1: the workspace_direction_setting switch. OFF (false) unless a test turns
+// it on, so every pre-WS-1 assertion below is the switch-off contract, unchanged.
+const mockSwitchOn = jest.fn(() => false)
+jest.mock("@/hooks/switches/useWorkspaceDirectionSettingEnabled", () => ({
+  useWorkspaceDirectionSettingEnabled: () => mockSwitchOn(),
+}))
+
 function setEnabled(list: string[]) {
   mockUseEnabledVerticals.mockReturnValue({ data: list, isLoading: false })
 }
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockSwitchOn.mockReturnValue(false)
   __resetRegistry()
   registerVertical({
     key: "grant",
@@ -266,5 +276,84 @@ describe("useWorkspaceNavItems", () => {
     setEnabled(["honor"])
     const { result } = renderHook(() => useWorkspaceNavItems(MENU))
     expect(result.current).toBe(MENU)
+  })
+})
+
+// ── WS-1: ONE effective workspace set, read by both filters ─────────────
+//
+// The menu splice (useWorkspaceVerticalItems) and the Tools filter
+// (useVerticalLauncherSection) must read the same set. If they diverge,
+// Direction Setting shows in BOTH places or in NEITHER — and "neither" looks
+// exactly like today, so nobody would report it (CSA 2026-10-22-ws-1).
+describe("WS-1 — the menu and Tools filters share one effective set", () => {
+  const DS_TO = "/vertical/direction-setting/journey"
+
+  beforeEach(() => {
+    registerVertical({
+      key: "direction-setting",
+      title: "Direction Setting",
+      description: "journey",
+      routePrefix: "/vertical/direction-setting",
+      homePath: DS_TO,
+    })
+  })
+
+  test("off, the effective set IS the static set — the same object", () => {
+    expect(effectiveWorkspaceVerticals(false)).toBe(WORKSPACE_VERTICALS)
+    expect(effectiveWorkspaceVerticals(true)).not.toBe(WORKSPACE_VERTICALS)
+  })
+
+  test("on, the effective set is the static set plus direction-setting, nothing else", () => {
+    expect([...effectiveWorkspaceVerticals(true)].sort()).toEqual(
+      [...WORKSPACE_VERTICALS, "direction-setting"].sort(),
+    )
+    // The static set itself is never mutated by turning the switch on.
+    expect(WORKSPACE_VERTICALS.has("direction-setting")).toBe(false)
+  })
+
+  test.each([false, true])(
+    "switch %s: every visible vertical is in exactly one of menu / Tools for an entitled account",
+    (on) => {
+      mockSwitchOn.mockReturnValue(on)
+      setEnabled(["grant", "honor", "job-fit", "lumen", "direction-setting"])
+      const menu = renderHook(() => useWorkspaceVerticalItems()).result.current.map((i) => i.to)
+      const tools = renderHook(() => useVerticalLauncherSection()).result.current!.items.map(
+        (i) => i.to,
+      )
+      for (const to of [
+        "/vertical/grant/dashboard",
+        "/vertical/job-fit/matches",
+        "/vertical/lumen/dashboard",
+        DS_TO,
+      ]) {
+        expect([to, menu.includes(to) !== tools.includes(to)]).toEqual([to, true])
+      }
+      expect(menu.includes(DS_TO)).toBe(on)
+      expect(tools.includes(DS_TO)).toBe(!on)
+    },
+  )
+
+  test("switch on, not entitled: Direction Setting is in neither (hidden, not greyed)", () => {
+    mockSwitchOn.mockReturnValue(true)
+    setEnabled(["grant"])
+    expect(renderHook(() => useWorkspaceVerticalItems()).result.current).toEqual([])
+    const tools = renderHook(() => useVerticalLauncherSection()).result.current!.items
+    expect(tools.map((i) => i.to)).not.toContain(DS_TO)
+  })
+
+  test("switch off: Direction Setting stays in Tools, greyed when not entitled", () => {
+    setEnabled(["grant"])
+    const tools = renderHook(() => useVerticalLauncherSection()).result.current!.items
+    expect(tools.filter((i) => i.to === DS_TO).map((i) => i.disabled)).toEqual([true])
+  })
+
+  test("the menu row keeps a stable identity with the switch on", () => {
+    mockSwitchOn.mockReturnValue(true)
+    setEnabled(["direction-setting"])
+    const { result, rerender } = renderHook(() => useWorkspaceVerticalItems())
+    const first = result.current
+    expect(first.map((i) => i.label)).toEqual(["Direction Setting"])
+    rerender()
+    expect(result.current).toBe(first)
   })
 })
