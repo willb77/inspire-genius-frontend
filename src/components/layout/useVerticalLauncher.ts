@@ -86,7 +86,22 @@ import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation"
  * than greyed when the account is not entitled — see
  * {@link useWorkspaceVerticalItems}.
  */
-export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit", "career-discovery"])
+export const WORKSPACE_VERTICALS = new Set<VerticalKey>([
+  "job-fit",
+  "career-discovery",
+  "direction-setting",
+])
+//
+// "direction-setting" joined 2026-10-22 (DS-nav, request: "Direction Setting is
+// not visible in the left side menu for a user"). The `user` role has no Tools
+// section (TOOL_ITEMS_BY_ROLE / TOOLS_SECTION_ROLES), so until now an entitled
+// user had no sidebar door to it at all. Same footing as Career Fit: one row,
+// opening on its `homePath` (`/vertical/direction-setting/journey`), in every
+// role's main menu, ONLY for an account entitled to `direction-setting` —
+// hidden, not greyed, otherwise. It leaves the Tools catalogue for manager,
+// practitioner and super-admin by the same no-duplicate rule. Menu order is
+// registry order (key-sorted), so an account entitled to all three reads:
+// Career & Education Discovery · Direction Setting · Career Fit.
 //
 // "career-discovery" joined 2026-10-20 (DISC-1). Its door is the person's own
 // menu, shown ONLY to an entitled account (see useWorkspaceVerticalItems) —

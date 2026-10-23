@@ -113,6 +113,9 @@ export const RESUME_WRITER_ITEM: NavItemDef = {
  * One thing is spliced in: Career Fit (`job-fit` is in `WORKSPACE_VERTICALS`
  * again as of 2026-10-18), above the Document Library/Settings/Help tail, and
  * only for an account entitled to it. `WORKSPACE_VERTICAL_LINKS` stays empty.
+ * 2026-10-22 (DS-nav, request): Direction Setting rides the same splice, for an
+ * account entitled to `direction-setting`; Career & Education Discovery has
+ * done so since 2026-10-20 (DISC-1). Registry order among the three.
  */
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
@@ -160,6 +163,14 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
  * `WORKSPACE_VERTICALS` was emptied on 2026-08-12 and holds `job-fit` again as
  * of 2026-10-18, so an entitled account sees Career Fit between Role Play and
  * Document Library. `WORKSPACE_VERTICAL_LINKS` (Resume Writer) stays empty.
+ *
+ * 2026-10-22 (DS-nav, request: "Direction Setting is not visible in the left
+ * side menu for a user"): `direction-setting` joined the set, after
+ * `career-discovery` (2026-10-20, DISC-1). Each is spliced in only for an
+ * account entitled to it, in registry (key) order, so the bracketed rows read
+ * [Career & Education Discovery] · [Direction Setting] · [Career Fit], all
+ * between Role Play/Résumé Writer and Document Library. Direction Setting
+ * opens on its journey (`/vertical/direction-setting/journey`).
  *
  * ## What was removed, and why the pages are fine
  *

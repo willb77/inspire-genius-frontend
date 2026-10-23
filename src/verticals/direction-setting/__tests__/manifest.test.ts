@@ -24,18 +24,18 @@ describe("Direction Setting manifest", () => {
     expect(listVerticals().map((v) => v.key)).toContain("direction-setting")
   })
 
-  test("appears in the Tools catalogue rather than being hidden", async () => {
-    // This originally asserted membership of WORKSPACE_VERTICALS. That set was
-    // emptied on development (#321) when My Workspace became a fixed five-entry
-    // list and every vertical moved into the Tools catalogue, so asserting
-    // membership would now re-introduce a pattern that was deliberately
-    // removed. What still matters is the property the old test was really
-    // protecting: that Direction Setting is *listed*, not withheld like Honor.
+  test("is a workspace vertical (main menu), never hidden", async () => {
+    // History: this originally asserted membership of WORKSPACE_VERTICALS; the
+    // set was emptied (#321) and the test flipped to assert NON-membership,
+    // with Direction Setting in the Tools catalogue. Tools is not shown to the
+    // `user` role, so an entitled user had no sidebar door at all. 2026-10-22
+    // (DS-nav, request) it is a workspace vertical again: in every entitled
+    // account's main menu, out of Tools. Still never withheld like Honor.
     const { WORKSPACE_VERTICALS, HIDDEN_VERTICALS } = await import(
       "@/components/layout/useVerticalLauncher"
     )
     expect(HIDDEN_VERTICALS.has("direction-setting")).toBe(false)
-    expect(WORKSPACE_VERTICALS.has("direction-setting")).toBe(false)
+    expect(WORKSPACE_VERTICALS.has("direction-setting")).toBe(true)
   })
 
   test("the vertical sub-nav has a switch arm for it", async () => {

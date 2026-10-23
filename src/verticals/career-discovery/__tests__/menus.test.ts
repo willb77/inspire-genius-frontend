@@ -27,8 +27,9 @@ function setEnabled(list: string[] | undefined) {
 const EXISTING = ["grant", "honor", "job-blueprint", "job-fit", "knowledge-continuity", "lumen", "direction-setting"]
 // The Tools catalogue as it was before DISC-1: every registered vertical except
 // the workspace one (job-fit) and the hidden one (honor), sorted by key.
+// 2026-10-22 (DS-nav): direction-setting left it for the main menu, so it is
+// no longer listed here — DISC-1 still adds nothing to it.
 const PRE_DISC1_TOOLS = [
-  "/vertical/direction-setting/journey",
   "/vertical/grant/dashboard",
   "/vertical/job-blueprint/dashboard",
   "/vertical/knowledge-continuity/dashboard",
@@ -48,12 +49,17 @@ describe("menus without the entitlement are unchanged", () => {
     expect(tos).toEqual(PRE_DISC1_TOOLS)
   })
 
-  test.each(CASES.map((c) => [c]))("the workspace menu gains nothing (%p)", (list) => {
+  test.each(CASES.map((c) => [c]))("the workspace menu gains no Discovery row (%p)", (list) => {
+    // Without `career-discovery` only the other workspace verticals the account
+    // is entitled to appear (direction-setting since 2026-10-22, DS-nav), in
+    // registry order.
     setEnabled(list)
     const { result } = renderHook(() => useWorkspaceVerticalItems())
-    expect(result.current.map((i) => i.to)).toEqual(
-      (list ?? []).includes("job-fit") ? ["/vertical/job-fit/matches"] : []
-    )
+    const ents = list ?? []
+    expect(result.current.map((i) => i.to)).toEqual([
+      ...(ents.includes("direction-setting") ? ["/vertical/direction-setting/journey"] : []),
+      ...(ents.includes("job-fit") ? ["/vertical/job-fit/matches"] : []),
+    ])
   })
 
   test("an entitled account gets exactly one Discovery row in its own menu", () => {
