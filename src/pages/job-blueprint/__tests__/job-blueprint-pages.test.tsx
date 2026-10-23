@@ -562,3 +562,106 @@ describe("Analytics — hires and activity", () => {
     expect(analyticsHooks.useBlueprintActivity).toHaveBeenCalledWith(10)
   })
 })
+
+/* ── BP-F4: the move to hired needs a reason; refusals are shown, never an empty board ── */
+describe("BP-F4 — advance to hired and server refusals", () => {
+  function renderDetail() {
+    return render(
+      <MemoryRouter initialEntries={["/vertical/job-blueprint/candidates/cand-1"]}>
+        <Routes>
+          <Route path="/vertical/job-blueprint/candidates/:candidateId" element={<JobBlueprintCandidateDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    )
+  }
+
+  test("detail: interview-completed asks for a reason, and sends it", async () => {
+    const user = userEvent.setup()
+    const mutateAsync = jest.fn().mockResolvedValue({ ...CANDIDATE, status: "hired" })
+    ;(triageHooks.useCandidateDetail as jest.Mock).mockReturnValue(
+      query({ ...CANDIDATE, status: "interview-completed" })
+    )
+    ;(triageHooks.useAdvanceCandidate as jest.Mock).mockReturnValue({ mutateAsync, isPending: false })
+    renderDetail()
+    await user.click(screen.getByRole("button", { name: /advance to next stage/i }))
+    expect(mutateAsync).not.toHaveBeenCalled()
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog).toHaveTextContent(/mark candidate .* hired/i)
+
+    await user.click(screen.getByRole("button", { name: /mark hired/i }))
+    expect(await screen.findByText(/say why this candidate is being marked hired/i)).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+
+    await user.type(screen.getByLabelText(/reason/i), "Offer accepted after the panel")
+    await user.click(screen.getByRole("button", { name: /mark hired/i }))
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({ candidateId: "cand-1", reason: "Offer accepted after the panel" })
+    )
+  })
+
+  test("detail: a refused hire keeps the dialog open and says why", async () => {
+    const user = userEvent.setup()
+    const mutateAsync = jest.fn().mockRejectedValue({
+      response: { status: 403, data: { detail: "Only a manager or above in this organisation can change the pipeline" } },
+    })
+    ;(triageHooks.useCandidateDetail as jest.Mock).mockReturnValue(
+      query({ ...CANDIDATE, status: "interview-completed" })
+    )
+    ;(triageHooks.useAdvanceCandidate as jest.Mock).mockReturnValue({ mutateAsync, isPending: false })
+    renderDetail()
+    await user.click(screen.getByRole("button", { name: /advance to next stage/i }))
+    await user.type(await screen.findByLabelText(/reason/i), "x")
+    await user.click(screen.getByRole("button", { name: /mark hired/i }))
+    expect(await screen.findByRole("alert")).toHaveTextContent(/manager or above/i)
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+
+  test("detail: any other step advances without a prompt", async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({ ...CANDIDATE, status: "insights-delivered" })
+    ;(triageHooks.useAdvanceCandidate as jest.Mock).mockReturnValue({ mutateAsync, isPending: false })
+    renderDetail()
+    fireEvent.click(screen.getByRole("button", { name: /advance to next stage/i }))
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith("cand-1"))
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+  })
+
+  test("detail: another organisation's candidate is an error, not a blank page", () => {
+    ;(triageHooks.useCandidateDetail as jest.Mock).mockReturnValue(
+      query(undefined, { isError: true, error: { response: { status: 404, data: { detail: "Candidate not found" } } } })
+    )
+    renderDetail()
+    expect(screen.getByText("Candidate not found")).toBeInTheDocument()
+  })
+
+  test("pipeline: a refusal renders the server's words, not 'no candidates yet'", () => {
+    ;(triageHooks.usePipeline as jest.Mock).mockReturnValue(
+      query(undefined, {
+        isError: true,
+        error: { response: { status: 403, data: { detail: "You need to belong to an organisation to see its candidate pipeline" } } },
+      })
+    )
+    renderPage(<JobBlueprintPipelinePage />)
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "j1" } })
+    expect(screen.getByText(/You need to belong to an organisation/i)).toBeInTheDocument()
+    expect(screen.queryByText(/No candidates in this pipeline yet/i)).not.toBeInTheDocument()
+  })
+
+  test("pipeline: advancing an interview-completed card asks for the reason", async () => {
+    const user = userEvent.setup()
+    const mutateAsync = jest.fn().mockResolvedValue({})
+    ;(triageHooks.useAdvanceCandidate as jest.Mock).mockReturnValue({ mutateAsync, isPending: false })
+    ;(triageHooks.usePipeline as jest.Mock).mockReturnValue(
+      query([{ ...CANDIDATE, status: "interview-completed" }])
+    )
+    renderPage(<JobBlueprintPipelinePage />)
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "j1" } })
+    await user.click(screen.getByRole("button", { name: /table/i }))
+    await user.click(screen.getByRole("button", { name: /^advance$/i }))
+    expect(mutateAsync).not.toHaveBeenCalled()
+    await user.type(await screen.findByLabelText(/reason/i), "Signed the offer")
+    await user.click(screen.getByRole("button", { name: /mark hired/i }))
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({ candidateId: "cand-1", reason: "Signed the offer" })
+    )
+  })
+})

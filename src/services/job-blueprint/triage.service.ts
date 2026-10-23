@@ -26,8 +26,16 @@ export const triageService = {
     return api.get<BaseApiResponse<Candidate>>(`${BASE}/candidate/${candidateId}`)
   },
 
-  advanceCandidate(candidateId: string) {
-    return api.post<BaseApiResponse<Candidate>>(`${BASE}/advance/${candidateId}`)
+  /**
+   * One step along the pipeline. `reason` is recorded with the move; the
+   * server REQUIRES it on the move to `hired` (BP-F4) and accepts no body for
+   * any other step.
+   */
+  advanceCandidate(candidateId: string, reason?: string) {
+    const url = `${BASE}/advance/${candidateId}`
+    return reason
+      ? api.post<BaseApiResponse<Candidate>>(url, { reason })
+      : api.post<BaseApiResponse<Candidate>>(url)
   },
 
   /**

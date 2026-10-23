@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { ClipboardCheck } from "lucide-react"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
 import { usePipeline } from "@/hooks/job-blueprint/useTriage"
 import {
@@ -132,7 +133,6 @@ export default function JobBlueprintScorecardsPage() {
         candidateId,
         data: {
           jobId,
-          interviewerId: "",
           interviewDate: new Date().toISOString(),
           behaviorScores,
           counterProductiveScores,
@@ -145,8 +145,8 @@ export default function JobBlueprintScorecardsPage() {
         setResult(scorecard)
         toast.success("Scorecard submitted.")
       }
-    } catch {
-      toast.error("Failed to submit scorecard.")
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Failed to submit scorecard."))
     }
   }
 

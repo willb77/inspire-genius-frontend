@@ -91,7 +91,7 @@ export function useSubmitScorecard() {
       candidateId: string
       data: {
         jobId: string
-        interviewerId: string
+        interviewerId?: string
         interviewDate: string
         behaviorScores: ScorecardEntry[]
         counterProductiveScores: ScorecardEntry[]

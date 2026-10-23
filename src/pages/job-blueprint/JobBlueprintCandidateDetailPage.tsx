@@ -1,8 +1,9 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { ArrowLeft, ArrowRight, ClipboardCheck, Loader2, ShieldCheck, UserSearch } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { ROUTES } from "@/constants/routes"
 import { useJobDnaDetail } from "@/hooks/job-blueprint/useJobDna"
 import { useCandidateDetail, useCandidateInsights, useAdvanceCandidate } from "@/hooks/job-blueprint/useTriage"
@@ -10,6 +11,8 @@ import { useScorecardDetail, isNoScorecardError } from "@/hooks/job-blueprint/us
 import { FitAnalysisView } from "@/components/job-blueprint/triage/FitAnalysisView"
 import { InsightPackageView } from "@/components/job-blueprint/triage/InsightPackageView"
 import { ScorecardSummary } from "@/components/job-blueprint/scorecard/ScorecardSummary"
+import { HireReasonDialog } from "@/components/job-blueprint/triage/HireReasonDialog"
+import { advanceNeedsReason } from "@/components/job-blueprint/triage/hireReason"
 import { ClassificationBadge } from "@/components/job-blueprint/shared/ClassificationBadge"
 import { PipelineStepBadge } from "@/components/job-blueprint/shared/PipelineStepBadge"
 import type { PipelineStep } from "@/types/job-blueprint"
@@ -38,6 +41,8 @@ export default function JobBlueprintCandidateDetailPage() {
   const insights = useCandidateInsights(candidateId)
   const scorecard = useScorecardDetail(candidateId)
   const advance = useAdvanceCandidate()
+  const [hiring, setHiring] = useState(false)
+  const [hireError, setHireError] = useState<string | null>(null)
 
   const benchmark = useMemo(
     () => (jobDna.data ? [...jobDna.data.behaviors, ...jobDna.data.aptitudes, ...jobDna.data.coreTraits] : []),
@@ -48,7 +53,7 @@ export default function JobBlueprintCandidateDetailPage() {
   if (candidate.isError || !candidate.data)
     return (
       <div className="max-w-2xl">
-        <JobDnaError message="Failed to load this candidate." onRetry={() => void candidate.refetch()} />
+        <JobDnaError message={apiErrorMessage(candidate.error, "Failed to load this candidate.")} onRetry={() => void candidate.refetch()} />
         <Link to={ROUTES.JOB_DNA.CANDIDATES} className="mt-3 inline-block text-sm text-[#7C3AED] underline">
           Back to candidates
         </Link>
@@ -61,11 +66,27 @@ export default function JobBlueprintCandidateDetailPage() {
   const scored = Boolean(c.prismScores && c.variationScores && c.classificationTier)
 
   const handleAdvance = async () => {
+    // BP-F4: the move to `hired` needs a reason — ask first.
+    if (advanceNeedsReason(c.status)) {
+      setHireError(null)
+      setHiring(true)
+      return
+    }
     try {
       const next = await advance.mutateAsync(c.id)
       toast.success(`Candidate ${code} advanced to ${next?.status ?? "the next stage"}.`)
-    } catch {
-      toast.error("Failed to advance this candidate.")
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Failed to advance this candidate."))
+    }
+  }
+
+  const confirmHire = async (reason: string) => {
+    try {
+      await advance.mutateAsync({ candidateId: c.id, reason })
+      toast.success(`Candidate ${code} marked hired.`)
+      setHiring(false)
+    } catch (err) {
+      setHireError(apiErrorMessage(err, "Failed to mark this candidate hired."))
     }
   }
 
@@ -165,6 +186,15 @@ export default function JobBlueprintCandidateDetailPage() {
           )}
         </section>
       </div>
+
+      <HireReasonDialog
+        open={hiring}
+        onOpenChange={setHiring}
+        candidateCode={code}
+        pending={advance.isPending}
+        error={hireError}
+        onConfirm={(reason) => void confirmHire(reason)}
+      />
     </div>
   )
 }

@@ -110,4 +110,11 @@ describe("describeIntakeError", () => {
     expect(describeIntakeError({ response: { status: 403, data: { detail: "x" } } })).toMatch(/not enabled/)
     expect(describeIntakeError(new Error("boom"))).toMatch(/Could not add/)
   })
+
+  test("BP-F4: a 403 for no organisation or below manager says so", () => {
+    const below = "Only a manager or above in this organisation can change the pipeline"
+    expect(describeIntakeError({ response: { status: 403, data: { detail: below } } })).toBe(below)
+    const noOrg = "You need to belong to an organisation to see its candidate pipeline"
+    expect(describeIntakeError({ response: { status: 403, data: { detail: noOrg } } })).toBe(noOrg)
+  })
 })
