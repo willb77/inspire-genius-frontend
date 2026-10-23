@@ -190,7 +190,8 @@ describe("EstablishPage", () => {
     expect(screen.getByText("Scores on file")).toBeInTheDocument()
     expect(screen.getByText("On file")).toBeInTheDocument()
     expect(screen.getByText("Not added yet")).toBeInTheDocument()
-    expect(screen.getByText(/2 of 3 on file/)).toBeInTheDocument()
+    // HOME-1: the counter names the three facts it counts (four boxes, three facts).
+    expect(screen.getByText(/2 of 3 on file: PRISM, résumé, bio\./)).toBeInTheDocument()
   })
 
   test("the résumé tile opens the shared upload modal and records the stage", () => {
