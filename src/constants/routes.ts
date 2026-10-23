@@ -12,6 +12,8 @@ export const ROUTES = {
   INTERVIEW_PRACTICE: "/interview-practice",
   /** Public per-occupation Interview Practice role guides (index + `/interview-practice/:slug`). */
   INTERVIEW_PRACTICE_ROLES: "/interview-practice/roles",
+  /** N-8 — public viewer of a shared Career Pathways Profile (token in the fragment). */
+  CAREER_PATHWAYS_VIEW: "/career-pathways/view",
   /** Surveys — build questionnaires and select one to take (browser-local). */
   SURVEYS: "/surveys",
   PROFILE: "/profile",
@@ -299,6 +301,8 @@ export const ROUTES = {
     MATCHES: "/vertical/job-fit/matches",
     GAPS: "/vertical/job-fit/gaps",
     PATHWAY: "/vertical/job-fit/pathway",
+    /** N-8 — the candidate's own Career Pathways Profile (dark behind the server switch). */
+    PROFILE: "/vertical/job-fit/profile",
     BLUEPRINT: "/vertical/job-fit/blueprint",
     COACH: "/vertical/job-fit/coach",
     /** Neutral D7 target service consumer — preview the target for a pasted JD. */

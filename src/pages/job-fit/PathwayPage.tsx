@@ -6,6 +6,7 @@ import { useGoalTargetsEnabled } from "@/hooks/switches/useGoalTargetsEnabled"
 import { useMyTargets } from "@/hooks/goals/useGoalTargets"
 import type { PathwaySuggestion } from "@/types/job-fit"
 import { MyRoadmaps, TargetRoleAction } from "./PathwayTargets"
+import { CareerProfileLink } from "./CareerProfileLink"
 import {
   FitPageHeader,
   FitCard,
@@ -97,6 +98,9 @@ export default function PathwayPage() {
         title="Career Pathways"
         description="Adjacent roles you could grow toward, and the skills that get you there."
       />
+
+      {/* N-8: renders nothing unless the server's career_pathways_profile switch is on. */}
+      <CareerProfileLink />
 
       {/* Always-visible explainer so the page is self-describing even when empty */}
       <FitCard className="mb-6">

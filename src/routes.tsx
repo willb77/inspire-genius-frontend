@@ -20,6 +20,7 @@ const MagicLinkVerify = React.lazy(() => import("@/pages/auth/MagicLinkVerify"))
 
 // ── Legal pages ─────────────────────────────────────────────────────────────
 const Terms = React.lazy(() => import("@/pages/legal/Terms"));
+const CareerPathwaysView = React.lazy(() => import("@/pages/career-pathways/CareerPathwaysViewPage"));
 const Privacy = React.lazy(() => import("@/pages/legal/Privacy"));
 
 // ── Misc / Preview / Dev pages ──────────────────────────────────────────────
@@ -311,6 +312,7 @@ const JobFitMatchesPage = React.lazy(() => import("@/pages/job-fit/MatchesPage")
 const JobFitDetailPage = React.lazy(() => import("@/pages/job-fit/FitDetailPage"));
 const JobFitGapsPage = React.lazy(() => import("@/pages/job-fit/GapsPage"));
 const JobFitPathwayPage = React.lazy(() => import("@/pages/job-fit/PathwayPage"));
+const JobFitCareerProfilePage = React.lazy(() => import("@/pages/job-fit/CareerProfilePage"));
 const JobFitBlueprintPage = React.lazy(() => import("@/pages/job-fit/BlueprintStudioPage"));
 const JobFitCoachPage = React.lazy(() => import("@/pages/job-fit/CoachPage"));
 const JobFitTargetPage = React.lazy(() => import("@/pages/job-fit/TargetPreviewPage"));
@@ -430,6 +432,10 @@ export const routes: RouteObject[] = [
       // a broken link. The page reveals nothing without a verified session.
       { path: "/asset-open", element: withSuspense(<AssetOpen />) },
       { path: "/terms", element: withSuspense(<Terms />) },
+      // N-8 — a shared Career Pathways Profile, opened by its recipient without
+      // signing in. The link token is in the URL fragment; the page needs a code
+      // mailed to the recipient, and the server refuses every link while dark.
+      { path: "/career-pathways/view", element: withSuspense(<CareerPathwaysView />) },
       { path: "/privacy", element: withSuspense(<Privacy />) },
       { path: "/preview-home", element: withSuspense(<PreviewHome />) },
       // Public Interview Practice role guides — landing pages that funnel into
@@ -900,6 +906,7 @@ export const routes: RouteObject[] = [
               { path: "history/:snapshotId", element: withSuspense(<JobFitHistoryPage />) },
               { path: "gaps", element: withSuspense(<JobFitGapsPage />) },
               { path: "pathway", element: withSuspense(<JobFitPathwayPage />) },
+              { path: "profile", element: withSuspense(<JobFitCareerProfilePage />) },
               { path: "blueprint", element: withSuspense(<JobFitBlueprintPage />) },
               { path: "coach", element: withSuspense(<JobFitCoachPage />) },
               { path: "target", element: withSuspense(<JobFitTargetPage />) },
