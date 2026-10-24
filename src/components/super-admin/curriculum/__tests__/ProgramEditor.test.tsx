@@ -1,13 +1,14 @@
 import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { ProgramEditor } from "../ProgramEditor"
-import { deleteProgram, upsertProgram } from "@/services/curriculum/curriculum.service"
-import { COURSES, CYCLE_REPORT, http, PROGRAMS, renderCurriculum } from "@/test/curriculumFixtures"
+import { deleteProgram, getProgramOutcomes, upsertProgram } from "@/services/curriculum/curriculum.service"
+import { COURSES, CYCLE_REPORT, http, PROGRAMS, programOutcomes, renderCurriculum } from "@/test/curriculumFixtures"
 
 jest.mock("@/services/curriculum/curriculum.service")
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 const save = upsertProgram as jest.MockedFunction<typeof upsertProgram>
 const remove = deleteProgram as jest.MockedFunction<typeof deleteProgram>
+const m = <T extends (...a: never[]) => unknown>(f: T) => f as unknown as jest.MockedFunction<T>
 
 beforeEach(() => jest.resetAllMocks())
 
@@ -69,11 +70,24 @@ describe("ProgramEditor", () => {
     expect(within(alert).getByText(/XYZ 999 — needed by/)).toBeInTheDocument()
   })
 
-  it("does not offer program-outcome editing (CUR-3's)", async () => {
+  it("points the program form at the Outcomes button instead of editing outcomes inside it (CUR-3)", async () => {
     renderCurriculum(<ProgramEditor catalogId="cat-1" programs={PROGRAMS} courses={COURSES} editable />)
     await userEvent.click(screen.getByRole("button", { name: "Add program" }))
-    expect(screen.getByText(/Career outcomes for this program .* are set up separately/)).toBeInTheDocument()
-    expect(screen.queryByLabelText(/role family|blueprint|SOC/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/set per program with the\s+Outcomes button.*once the program is saved/)).toBeInTheDocument()
+    const form = screen.getByRole("form", { name: "Program form" })
+    expect(within(form).queryByLabelText(/role family|blueprint|SOC/i)).not.toBeInTheDocument()
+  })
+
+  it("opens a program's outcomes from the list, on a published catalog too", async () => {
+    m(getProgramOutcomes).mockResolvedValue(programOutcomes("published"))
+    renderCurriculum(<ProgramEditor catalogId="cat-1" programs={PROGRAMS} courses={COURSES} editable={false} />)
+    await userEvent.click(screen.getByRole("button", { name: "Outcomes for P1" }))
+    const panel = await screen.findByRole("region", { name: "Outcomes of P1" })
+    expect(await within(panel).findByText("Example Analyst")).toBeInTheDocument()
+    expect(getProgramOutcomes).toHaveBeenCalledWith("prog-1")
+    expect(within(panel).queryByRole("button", { name: "Edit outcomes" })).not.toBeInTheDocument()
+    await userEvent.click(within(panel).getByRole("button", { name: "Close outcomes" }))
+    expect(screen.queryByRole("region", { name: "Outcomes of P1" })).not.toBeInTheDocument()
   })
 
   it("renders a refused delete, and is read-only when not editable", async () => {

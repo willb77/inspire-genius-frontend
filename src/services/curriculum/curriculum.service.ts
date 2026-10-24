@@ -10,8 +10,12 @@ import type {
   ImportResult,
   Institution,
   InstitutionInput,
+  OutcomeCoverage,
+  OutcomeInput,
   Program,
   ProgramInput,
+  ProgramOutcomes,
+  RoleFamiliesInfo,
 } from "@/types/curriculum"
 
 /**
@@ -127,4 +131,34 @@ export async function publishCatalog(catalogId: string): Promise<Catalog> {
     `${ADMIN}/catalogs/${enc(catalogId)}/publish`
   )
   return unwrap(data).catalog
+}
+
+/*
+ * Program outcomes (CUR-3). Only the ADMIN routes are called here — each is
+ * super-admin → switch → tables on the server. The entitled reader routes
+ * (`/curriculum/programs/{id}/outcomes`, …) are Discovery's, not this screen's.
+ */
+
+export async function getRoleFamilies(): Promise<RoleFamiliesInfo> {
+  const { data } = await agentApi.get<VerticalApiResponse<RoleFamiliesInfo>>(`${ADMIN}/role-families`)
+  return unwrap(data)
+}
+
+export async function getProgramOutcomes(programId: string): Promise<ProgramOutcomes> {
+  const { data } = await agentApi.get<VerticalApiResponse<ProgramOutcomes>>(
+    `${ADMIN}/programs/${enc(programId)}/outcomes`
+  )
+  return unwrap(data)
+}
+
+/** Replaces the program's whole outcome list (`[]` clears it). Draft catalogs only — the server refuses others (409). */
+export async function replaceProgramOutcomes(programId: string, outcomes: OutcomeInput[]): Promise<void> {
+  await agentApi.put(`${ADMIN}/programs/${enc(programId)}/outcomes`, { outcomes })
+}
+
+export async function getOutcomeCoverage(catalogId: string): Promise<OutcomeCoverage> {
+  const { data } = await agentApi.get<VerticalApiResponse<OutcomeCoverage>>(
+    `${ADMIN}/catalogs/${enc(catalogId)}/outcome-coverage`
+  )
+  return unwrap(data)
 }

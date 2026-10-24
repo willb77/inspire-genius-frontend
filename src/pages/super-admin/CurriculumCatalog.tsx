@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/super-admin/curriculum/CatalogYearsPan
 import { CourseEditor } from "@/components/super-admin/curriculum/CourseEditor"
 import { CurriculumGate } from "@/components/super-admin/curriculum/CurriculumGate"
 import { CurriculumErrorPanel } from "@/components/super-admin/curriculum/CurriculumReportView"
+import { OutcomeCoverage } from "@/components/super-admin/curriculum/OutcomeCoverage"
 import { PrerequisiteGraph } from "@/components/super-admin/curriculum/PrerequisiteGraph"
 import { ProgramEditor } from "@/components/super-admin/curriculum/ProgramEditor"
 import { PublishPanel } from "@/components/super-admin/curriculum/PublishPanel"
@@ -59,6 +60,7 @@ function CatalogBody({ catalogId }: { catalogId: string }) {
           <TabsTrigger value="courses">Courses</TabsTrigger>
           <TabsTrigger value="programs">Programs</TabsTrigger>
           <TabsTrigger value="import">CSV import</TabsTrigger>
+          <TabsTrigger value="coverage">Outcome coverage</TabsTrigger>
           <TabsTrigger value="graph">Prerequisite graph</TabsTrigger>
           <TabsTrigger value="publish">Publish</TabsTrigger>
         </TabsList>
@@ -70,6 +72,9 @@ function CatalogBody({ catalogId }: { catalogId: string }) {
         </TabsContent>
         <TabsContent value="import">
           <CatalogImport catalogId={catalog.id} editable={editable} />
+        </TabsContent>
+        <TabsContent value="coverage">
+          <OutcomeCoverage catalogId={catalog.id} />
         </TabsContent>
         <TabsContent value="graph">
           <PrerequisiteGraph programs={programs} courses={courses} />

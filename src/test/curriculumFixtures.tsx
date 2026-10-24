@@ -2,7 +2,16 @@ import type { ReactElement } from "react"
 import { render } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
-import type { CatalogDetail, Course, CurriculumReport, Program } from "@/types/curriculum"
+import type {
+  AdminOutcome,
+  CatalogDetail,
+  CatalogStatus,
+  Course,
+  CurriculumReport,
+  Program,
+  ProgramOutcomes,
+  RoleFamiliesInfo,
+} from "@/types/curriculum"
 
 /** Shared fixtures for the Curriculum admin tests (CUR-2). Fictional data only. */
 
@@ -40,6 +49,7 @@ export const COURSES: Course[] = [
 
 export const PROGRAMS: Program[] = [
   {
+    id: "prog-1",
     code: "P1",
     title: "Example Program",
     credential: "AAS",
@@ -66,6 +76,38 @@ export function catalogDetail(overrides: Partial<CatalogDetail["catalog"]> = {},
     courses: COURSES,
     programs: PROGRAMS,
     publishCheck: report,
+  }
+}
+
+/* CUR-3 — program outcomes. Fictional ids and names only. */
+
+export const ROLE_FAMILIES: RoleFamiliesInfo = {
+  roleFamilies: ["Data & Quantitative", "Healthcare & Care", "Skilled Trades & Technical"],
+  maxOutcomesPerProgram: 20,
+  socCodeNote: "SOC / O*NET codes are checked for format only; they are not validated.",
+}
+
+export const BLUEPRINT_ID = "role-example-1"
+
+export function programOutcomes(
+  status: CatalogStatus = "draft",
+  outcomes: AdminOutcome[] = [
+    {
+      roleFamily: "Data & Quantitative",
+      blueprintId: BLUEPRINT_ID,
+      socCode: "15-2051",
+      socCodeValidated: false,
+      blueprint: { id: BLUEPRINT_ID, title: "Example Analyst", status: "active" },
+    },
+  ],
+  libraryAvailable = true
+): ProgramOutcomes {
+  return {
+    program: { id: "prog-1", code: "P1" },
+    catalog: { id: "cat-1", status, catalogYear: "2026-2027", version: 1 },
+    outcomes,
+    libraryAvailable,
+    socCodeNote: ROLE_FAMILIES.socCodeNote,
   }
 }
 

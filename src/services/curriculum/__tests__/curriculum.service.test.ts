@@ -108,3 +108,40 @@ describe("curriculum.service — every call on agentApi, under the Discovery pre
     expect(post).toHaveBeenCalledWith(`${ADMIN}/catalogs/c1/publish`)
   })
 })
+
+describe("curriculum.service — program outcomes (CUR-3), super-admin ADMIN routes only", () => {
+  it("reads the role families", async () => {
+    get.mockResolvedValue(env({ roleFamilies: ["A"], maxOutcomesPerProgram: 20, socCodeNote: "n" }))
+    await expect(svc.getRoleFamilies()).resolves.toEqual({ roleFamilies: ["A"], maxOutcomesPerProgram: 20, socCodeNote: "n" })
+    expect(get).toHaveBeenCalledWith(`${ADMIN}/role-families`)
+  })
+
+  it("reads and replaces a program's outcomes, encoding the id", async () => {
+    get.mockResolvedValue(env({ outcomes: [] }))
+    await expect(svc.getProgramOutcomes("p/1")).resolves.toEqual({ outcomes: [] })
+    expect(get).toHaveBeenCalledWith(`${ADMIN}/programs/p%2F1/outcomes`)
+
+    put.mockResolvedValue(env({ outcomes: [] }))
+    const body = [{ roleFamily: "A", blueprintId: null, socCode: "15-1252" }]
+    await svc.replaceProgramOutcomes("p1", body)
+    expect(put).toHaveBeenCalledWith(`${ADMIN}/programs/p1/outcomes`, { outcomes: body })
+  })
+
+  it("reads a catalog's outcome coverage", async () => {
+    get.mockResolvedValue(env({ programCount: 0 }))
+    await expect(svc.getOutcomeCoverage("c1")).resolves.toEqual({ programCount: 0 })
+    expect(get).toHaveBeenCalledWith(`${ADMIN}/catalogs/c1/outcome-coverage`)
+  })
+
+  it("never calls an entitled reader route (they are Discovery's, not this admin screen's)", async () => {
+    get.mockResolvedValue(env({}))
+    put.mockResolvedValue(env({}))
+    await svc.getRoleFamilies()
+    await svc.getProgramOutcomes("p1")
+    await svc.replaceProgramOutcomes("p1", [])
+    await svc.getOutcomeCoverage("c1")
+    for (const [url] of [...get.mock.calls, ...put.mock.calls]) {
+      expect(String(url).startsWith(`${ADMIN}/`)).toBe(true)
+    }
+  })
+})
