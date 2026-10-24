@@ -280,6 +280,7 @@ const DiscoveryAlignment = React.lazy(() => import("@/pages/career-discovery/Ali
 const DiscoveryEducation = React.lazy(() => import("@/pages/career-discovery/EducationPage"));
 const DiscoveryCost = React.lazy(() => import("@/pages/career-discovery/CostPage"));
 const DiscoveryPlan = React.lazy(() => import("@/pages/career-discovery/PlanPage"));
+const DiscoveryDegreePlan = React.lazy(() => import("@/pages/career-discovery/DegreePlanPage"));
 
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
@@ -864,6 +865,10 @@ export const routes: RouteObject[] = [
               // reports the cost stage available (its own switch, with education's).
               { path: "cost", element: withSuspense(<DiscoveryCost />) },
               { path: "plan", element: withSuspense(<DiscoveryPlan />) },
+              // DISC-5: the degree plan. Not a stage (the stage list is the
+              // server's); reached from Programs at your school, and it says so
+              // when the server hasn't switched it on.
+              { path: "degree-plan", element: withSuspense(<DiscoveryDegreePlan />) },
             ],
           },
         ],

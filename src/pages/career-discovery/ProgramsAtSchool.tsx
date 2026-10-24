@@ -1,8 +1,11 @@
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ROUTES } from "@/constants/routes"
 import {
   discoveryErrorMessage,
+  useDegreePlan,
   useProgramSchools,
   useProgramSuggestions,
   useSaveProgramChoice,
@@ -112,6 +115,7 @@ function ProgramList({ data }: { data: DiscoveryProgramsCatalog }) {
         <p className="text-xs text-muted-foreground">{data.fit.reason}</p>
       )}
       {save.isError ? <DiscoveryError message={discoveryErrorMessage(save.error)} /> : null}
+      {data.chosenProgramId ? <DegreePlanLink /> : null}
       <ol className="space-y-3">
         {data.programs.map((p) => (
           <li key={p.id}>
@@ -126,6 +130,23 @@ function ProgramList({ data }: { data: DiscoveryProgramsCatalog }) {
       </ol>
       <p className="text-xs text-muted-foreground">{data.socCodeNote}</p>
     </div>
+  )
+}
+
+/**
+ * DISC-5: a way into the degree plan once a program is chosen — shown only
+ * when the server answers for it. A 403 (not switched on) or any failure
+ * renders nothing here; the plan page itself says why.
+ */
+function DegreePlanLink() {
+  const plan = useDegreePlan(true)
+  if (!plan.data || !plan.data.available) return null
+  return (
+    <p className="text-sm">
+      <Link className="font-medium underline" to={ROUTES.CAREER_DISCOVERY.DEGREE_PLAN}>
+        See your degree plan, term by term
+      </Link>
+    </p>
   )
 }
 

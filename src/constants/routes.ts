@@ -376,6 +376,7 @@ export const ROUTES = {
     EDUCATION: "/vertical/career-discovery/education",
     COST: "/vertical/career-discovery/cost",
     PLAN: "/vertical/career-discovery/plan",
+    DEGREE_PLAN: "/vertical/career-discovery/degree-plan",
   },
   ONBOARDING: {
     ONE: "/onboarding/one",

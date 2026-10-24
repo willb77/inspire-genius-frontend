@@ -2,6 +2,8 @@ import { agentApi } from "@/lib/agentApi"
 import type { VerticalApiResponse } from "@/verticals/core"
 import type {
   CostQuery,
+  DegreePlan,
+  DegreePlanInputsBody,
   DiscoveryAlignment,
   DiscoveryCareers,
   DiscoveryCost,
@@ -16,6 +18,7 @@ import type {
   DiscoverySchools,
   DiscoveryStatus,
   ProgramChoice,
+  SavedDegreePlanInputs,
   SavedProgramChoice,
   SchoolsQuery,
 } from "@/types/career-discovery"
@@ -75,6 +78,18 @@ export async function getProgramSuggestions(school: string | null) {
 export async function saveProgramChoice(body: ProgramChoice) {
   const { data } = await agentApi.put<VerticalApiResponse<SavedProgramChoice>>(
     `${PREFIX}/education/programs/choice`,
+    body
+  )
+  return data
+}
+
+/** DISC-5: the degree plan for the chosen program(s), built by the server. Reading writes nothing. */
+export const getDegreePlan = () => get<DegreePlan>("/education/degree-plan")
+
+/** DISC-5: completed courses (self-reported) and the plan's settings. The server keeps ids only. */
+export async function saveDegreePlanInputs(body: DegreePlanInputsBody) {
+  const { data } = await agentApi.put<VerticalApiResponse<SavedDegreePlanInputs>>(
+    `${PREFIX}/education/degree-plan/inputs`,
     body
   )
   return data
