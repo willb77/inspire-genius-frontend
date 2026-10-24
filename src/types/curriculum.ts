@@ -166,3 +166,54 @@ export type ImportInput = {
   programsCsv: string
   dryRun: boolean
 }
+
+/* ─── Program outcomes (CUR-3 API, CUR-3 FE screens) ─────────────────────── */
+
+/**
+ * How a linked role reads from the role library, as the server reports it:
+ * `active`, `superseded`, `draft`, `missing`, `other-org` — or `unknown`
+ * while the library cannot be read.
+ */
+export type OutcomeLinkStatus = "active" | "superseded" | "draft" | "missing" | "other-org" | "unknown"
+
+/** `GET …/admin/role-families` — the nine families, the per-program cap, the SOC note. */
+export type RoleFamiliesInfo = {
+  roleFamilies: string[]
+  maxOutcomesPerProgram: number
+  socCodeNote: string
+}
+
+/** One outcome as the admin read returns it. */
+export type AdminOutcome = {
+  roleFamily: string
+  blueprintId: string | null
+  socCode: string | null
+  /** Always false: a SOC / O*NET code is format-checked, never looked up. */
+  socCodeValidated: boolean
+  blueprint: { id: string; title: string | null; status: OutcomeLinkStatus } | null
+}
+
+/** `GET …/admin/programs/{id}/outcomes`. */
+export type ProgramOutcomes = {
+  program: { id: string; code: string }
+  catalog: { id: string; status: CatalogStatus; catalogYear: string; version: number }
+  outcomes: AdminOutcome[]
+  libraryAvailable: boolean
+  socCodeNote: string
+}
+
+/** One outcome in a `PUT …/admin/programs/{id}/outcomes` body. */
+export type OutcomeInput = {
+  roleFamily: string
+  blueprintId: string | null
+  socCode: string | null
+}
+
+/** `GET …/admin/catalogs/{id}/outcome-coverage`. */
+export type OutcomeCoverage = {
+  catalog: { id: string; status: CatalogStatus; catalogYear: string; version: number }
+  programCount: number
+  withOutcomes: number
+  withoutOutcomes: { id: string; code: string; title: string }[]
+  complete: boolean
+}

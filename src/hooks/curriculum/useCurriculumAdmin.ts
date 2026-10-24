@@ -14,10 +14,14 @@ import {
   deleteProgram,
   getCatalog,
   getCurriculumStatus,
+  getOutcomeCoverage,
+  getProgramOutcomes,
+  getRoleFamilies,
   importCatalog,
   listCatalogs,
   listInstitutions,
   publishCatalog,
+  replaceProgramOutcomes,
   updateInstitution,
   upsertCourse,
   upsertProgram,
@@ -29,6 +33,7 @@ import type {
   ImportResult,
   Institution,
   InstitutionInput,
+  OutcomeInput,
   ProgramInput,
 } from "@/types/curriculum"
 
@@ -38,6 +43,9 @@ export const curriculumKeys = {
   institutions: [...ROOT, "institutions"] as const,
   catalogs: (institutionId: string) => [...ROOT, "catalogs", institutionId] as const,
   catalog: (catalogId: string) => [...ROOT, "catalog", catalogId] as const,
+  roleFamilies: [...ROOT, "role-families"] as const,
+  programOutcomes: (programId: string) => [...ROOT, "program-outcomes", programId] as const,
+  outcomeCoverage: (catalogId: string) => [...ROOT, "outcome-coverage", catalogId] as const,
 }
 
 /** `{enabled, tablesReady}` — the one route that answers while the switch is off. */
@@ -142,6 +150,53 @@ export function useImportCatalog(catalogId: string) {
   return useCatalogMutation<ImportInput, ImportResult>(catalogId, (body) =>
     importCatalog(catalogId, body)
   )
+}
+
+/* ─── Program outcomes (CUR-3) ─────────────────────────────────────────── */
+
+/** The nine role families, the per-program cap and the SOC note — static on the server. */
+export function useRoleFamilies(enabled = true) {
+  return useQuery({
+    queryKey: curriculumKeys.roleFamilies,
+    queryFn: getRoleFamilies,
+    enabled,
+    staleTime: Infinity,
+    retry: false,
+  })
+}
+
+export function useProgramOutcomes(programId: string | null) {
+  return useQuery({
+    queryKey: curriculumKeys.programOutcomes(programId ?? ""),
+    queryFn: () => getProgramOutcomes(programId as string),
+    enabled: !!programId,
+    retry: false,
+  })
+}
+
+export function useOutcomeCoverage(catalogId: string) {
+  return useQuery({
+    queryKey: curriculumKeys.outcomeCoverage(catalogId),
+    queryFn: () => getOutcomeCoverage(catalogId),
+    retry: false,
+  })
+}
+
+/**
+ * Replace a program's outcomes. Refetches that program's outcomes (the admin
+ * read carries each link's title and status), the catalog's coverage and the
+ * catalog itself (whose programs carry `outcomes`).
+ */
+export function useSaveProgramOutcomes(catalogId: string, programId: string) {
+  const qc = useQueryClient()
+  return useMutation<void, unknown, OutcomeInput[]>({
+    mutationFn: (outcomes) => replaceProgramOutcomes(programId, outcomes),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: curriculumKeys.programOutcomes(programId) })
+      void qc.invalidateQueries({ queryKey: curriculumKeys.outcomeCoverage(catalogId) })
+      void qc.invalidateQueries({ queryKey: curriculumKeys.catalog(catalogId) })
+    },
+  })
 }
 
 export function usePublishCatalog(catalogId: string, institutionId: string | undefined) {

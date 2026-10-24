@@ -13,6 +13,7 @@ import { curriculumError, type CurriculumError } from "@/services/curriculum/cur
 import { CREDENTIALS, RULES, type Course, type Program, type RequirementGroup } from "@/types/curriculum"
 import { CurriculumErrorPanel } from "./CurriculumReportView"
 import { describeGroup } from "./curriculumUi"
+import { ProgramOutcomes } from "./ProgramOutcomes"
 import { EMPTY_PROGRAM, programSchema, toProgramInput, type ProgramValues } from "./curriculum.schemas"
 
 const selectClass =
@@ -154,8 +155,9 @@ function Groups({
  * picked from the catalog; the server reports credit totals, and refuses an
  * unknown code (422) or a loop (409) — both rendered as they come back.
  *
- * Program outcomes (role families, blueprints, occupations) are CUR-3's and
- * are not edited here.
+ * Program outcomes (CUR-3) open per program from the list's Outcomes button,
+ * outside the program form (a form cannot hold another form), on every
+ * catalog status — editable on a draft, read-only otherwise.
  */
 export function ProgramEditor({
   catalogId,
@@ -174,6 +176,8 @@ export function ProgramEditor({
   const [formOpen, setFormOpen] = useState(false)
   const [saveError, setSaveError] = useState<CurriculumError | null>(null)
   const [deleteError, setDeleteError] = useState<CurriculumError | null>(null)
+  const [outcomesFor, setOutcomesFor] = useState<string | null>(null)
+  const outcomesProgram = programs.find((p) => p.id && p.id === outcomesFor) ?? null
 
   const form = useForm<ProgramValues>({ resolver: zodResolver(programSchema), defaultValues: EMPTY_PROGRAM })
   const {
@@ -270,8 +274,8 @@ export function ProgramEditor({
           <Groups control={control} register={register} courses={courses} errors={errors} />
 
           <p className="rounded border border-dashed p-2 text-xs text-muted-foreground">
-            Career outcomes for this program (role families, blueprints, occupations) are set up separately
-            and are not part of this screen yet.
+            Career outcomes (role family, linked role, SOC / O*NET code) are set per program with the
+            Outcomes button in the program list{editing ? "" : ", once the program is saved"}.
           </p>
 
           {saveError && <CurriculumErrorPanel error={saveError} />}
@@ -300,6 +304,7 @@ export function ProgramEditor({
               <TableHead>Credential</TableHead>
               <TableHead>Credits</TableHead>
               <TableHead>Requirement groups</TableHead>
+              <TableHead>Outcomes</TableHead>
               {editable && <TableHead className="w-24" />}
             </TableRow>
           </TableHeader>
@@ -321,6 +326,17 @@ export function ProgramEditor({
                     </ul>
                   )}
                 </TableCell>
+                <TableCell>
+                  <Button
+                    size="sm"
+                    variant={p.id && p.id === outcomesFor ? "secondary" : "outline"}
+                    aria-label={`Outcomes for ${p.code}`}
+                    disabled={!p.id}
+                    onClick={() => setOutcomesFor(p.id && p.id !== outcomesFor ? p.id : null)}
+                  >
+                    {p.outcomes?.length ?? 0}
+                  </Button>
+                </TableCell>
                 {editable && (
                   <TableCell className="space-x-1 whitespace-nowrap">
                     <Button size="icon" variant="ghost" aria-label={`Edit ${p.code}`} onClick={() => open(p)}>
@@ -341,6 +357,16 @@ export function ProgramEditor({
             ))}
           </TableBody>
         </Table>
+      )}
+
+      {outcomesProgram?.id && (
+        <ProgramOutcomes
+          key={outcomesProgram.id}
+          catalogId={catalogId}
+          program={{ id: outcomesProgram.id, code: outcomesProgram.code, title: outcomesProgram.title }}
+          editable={editable}
+          onClose={() => setOutcomesFor(null)}
+        />
       )}
     </div>
   )

@@ -11,6 +11,7 @@ import {
   deleteCatalog,
   getCatalog,
   getCurriculumStatus,
+  getOutcomeCoverage,
   listCatalogs,
   listInstitutions,
   updateInstitution,
@@ -157,6 +158,21 @@ describe("Curriculum catalog page", () => {
     expect(await screen.findByRole("img", { name: "Prerequisite graph for P1" })).toBeInTheDocument()
     await userEvent.click(screen.getByRole("tab", { name: "Publish" }))
     expect(await screen.findByRole("button", { name: /publish 2026-2027 v1/i })).toBeEnabled()
+  })
+
+  it("has an Outcome coverage tab (CUR-3)", async () => {
+    m(getCatalog).mockResolvedValue(catalogDetail())
+    m(getOutcomeCoverage).mockResolvedValue({
+      catalog: { id: "cat-1", status: "draft", catalogYear: "2026-2027", version: 1 },
+      programCount: 1,
+      withOutcomes: 0,
+      withoutOutcomes: [{ id: "prog-1", code: "P1", title: "Example Program" }],
+      complete: false,
+    })
+    renderAt("/super-admin/curriculum/catalogs/cat-1")
+    await userEvent.click(await screen.findByRole("tab", { name: "Outcome coverage" }))
+    expect(await screen.findByText("0 of 1 programs have at least one career outcome.")).toBeInTheDocument()
+    expect(getOutcomeCoverage).toHaveBeenCalledWith("cat-1")
   })
 
   it("renders a missing catalog's error and the gate's state", async () => {
