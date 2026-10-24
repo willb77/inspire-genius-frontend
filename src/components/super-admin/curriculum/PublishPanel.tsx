@@ -6,11 +6,17 @@ import { Button } from "@/components/ui/button"
 import { useCreateCatalog, usePublishCatalog } from "@/hooks/curriculum/useCurriculumAdmin"
 import { curriculumError, type CurriculumError } from "@/services/curriculum/curriculumErrors"
 import type { CatalogDetail } from "@/types/curriculum"
+import { EditCatalogButton } from "./CatalogEdit"
 import { catalogPath } from "./curriculumUi"
 import { CurriculumErrorPanel, CurriculumReportView } from "./CurriculumReportView"
 
 /**
  * Publish a draft, or start a new version of a published one.
+ *
+ * On a published catalog "Start a new version" opens the draft of the same
+ * year already in progress, if there is one, instead of starting a second
+ * (CUR-UNLOCK, CURU-F2). On a superseded catalog it is unchanged: it always
+ * starts a copy.
  *
  * The publish check shown is the server's (`publishCheck` on the catalog
  * read), refreshed after every edit. Publishing makes any earlier published
@@ -56,9 +62,18 @@ export function PublishPanel({ detail }: { detail: CatalogDetail }) {
           </Button>
           <span className="text-sm text-muted-foreground">
             {publishCheck.ok
-              ? "Publishing replaces the published version of this year, if there is one. It cannot be edited afterwards."
+              ? "Publishing replaces the published version of this year, if there is one. It cannot be edited afterwards. Students who saved a program or degree plan on the version it replaces will be asked to choose their program again."
               : "Fix the problems below before publishing."}
           </span>
+        </div>
+      ) : catalog.status === "published" ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm">
+            This catalog is published and live. A change is made on a draft of the next version; v{catalog.version}{" "}
+            stays live until that draft is published. If a draft of {catalog.catalogYear} is already in progress, it
+            opens that one.
+          </p>
+          <EditCatalogButton catalog={catalog} label="Start a new version" variant="outline" onError={setError} />
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-3">

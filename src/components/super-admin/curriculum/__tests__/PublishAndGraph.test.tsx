@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { PublishPanel } from "../PublishPanel"
 import { PrerequisiteGraph } from "../PrerequisiteGraph"
-import { createCatalog, publishCatalog } from "@/services/curriculum/curriculum.service"
+import { createCatalog, listCatalogs, publishCatalog } from "@/services/curriculum/curriculum.service"
 import {
   catalogDetail,
   CLEAN_REPORT,
@@ -17,6 +17,7 @@ jest.mock("@/services/curriculum/curriculum.service")
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 const publish = publishCatalog as jest.MockedFunction<typeof publishCatalog>
 const create = createCatalog as jest.MockedFunction<typeof createCatalog>
+const m = <T extends (...a: never[]) => unknown>(f: T) => f as unknown as jest.MockedFunction<T>
 
 beforeEach(() => jest.resetAllMocks())
 
@@ -45,9 +46,10 @@ describe("PublishPanel", () => {
 
   it("offers a new version (a copy) of a published catalog and opens it", async () => {
     create.mockResolvedValue({ ...catalogDetail().catalog, id: "cat-2", version: 2 })
+    m(listCatalogs).mockResolvedValue([catalogDetail({ status: "published" }).catalog])
     renderCurriculum(<PublishPanel detail={catalogDetail({ status: "published" })} />)
     expect(screen.queryByRole("button", { name: /^publish/i })).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole("button", { name: "Start a new version" }))
+    await userEvent.click(screen.getByRole("button", { name: "Start a new version 2026-2027 v1" }))
     await waitFor(() =>
       expect(create).toHaveBeenCalledWith("inst-1", { catalogYear: "2026-2027", fromCatalogId: "cat-1" })
     )

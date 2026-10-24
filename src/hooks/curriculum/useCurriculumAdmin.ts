@@ -26,6 +26,7 @@ import {
   upsertCourse,
   upsertProgram,
 } from "@/services/curriculum/curriculum.service"
+import { sameYearDraft } from "@/lib/curriculum/catalogVersions"
 import type {
   Catalog,
   CourseInput,
@@ -105,6 +106,37 @@ export function useCreateCatalog() {
       createCatalog(institutionId, { catalogYear, fromCatalogId: fromCatalogId ?? null }),
     onSuccess: (_c, v) => {
       void qc.invalidateQueries({ queryKey: curriculumKeys.catalogs(v.institutionId) })
+    },
+  })
+}
+
+/**
+ * "Edit" on a published catalog (CUR-UNLOCK): open the draft of the same
+ * school and year if one is already in progress; otherwise start one as a
+ * copy of `source` — the same call "New version" makes. The school's catalog
+ * list is re-read first, so a draft started a moment ago is found rather than
+ * duplicated. Two admins clicking at the same instant can still race; only a
+ * server-side guard would close that.
+ */
+export function useOpenOrStartDraft() {
+  const qc = useQueryClient()
+  return useMutation<{ catalog: Catalog; created: boolean }, unknown, Catalog>({
+    mutationFn: async (source) => {
+      const catalogs = await qc.fetchQuery({
+        queryKey: curriculumKeys.catalogs(source.institutionId),
+        queryFn: () => listCatalogs(source.institutionId),
+        staleTime: 0,
+      })
+      const existing = sameYearDraft(catalogs, source)
+      if (existing) return { catalog: existing, created: false }
+      const catalog = await createCatalog(source.institutionId, {
+        catalogYear: source.catalogYear,
+        fromCatalogId: source.id,
+      })
+      return { catalog, created: true }
+    },
+    onSuccess: (result, source) => {
+      if (result.created) void qc.invalidateQueries({ queryKey: curriculumKeys.catalogs(source.institutionId) })
     },
   })
 }

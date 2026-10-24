@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CatalogImport } from "@/components/super-admin/curriculum/CatalogImport"
+import { EditCatalogButton, LiveVersionBanner } from "@/components/super-admin/curriculum/CatalogEdit"
 import { StatusBadge } from "@/components/super-admin/curriculum/CatalogYearsPanel"
 import { CourseEditor } from "@/components/super-admin/curriculum/CourseEditor"
 import { CurriculumGate } from "@/components/super-admin/curriculum/CurriculumGate"
@@ -49,8 +50,16 @@ function CatalogBody({ catalogId }: { catalogId: string }) {
           Catalog {catalog.catalogYear} · v{catalog.version}
         </h2>
         <StatusBadge status={catalog.status} />
+        <EditCatalogButton catalog={catalog} />
       </div>
-      {!editable && (
+      <LiveVersionBanner catalog={catalog} />
+      {catalog.status === "published" && (
+        <p role="status" className="rounded-md border bg-slate-50 p-2 text-sm">
+          Read-only: this is the live catalog. Edit opens a draft of the next version; v{catalog.version} stays live
+          until you publish that draft.
+        </p>
+      )}
+      {catalog.status === "superseded" && (
         <p role="status" className="rounded-md border bg-slate-50 p-2 text-sm">
           Read-only: published catalogs are never edited. Use Publish → “Start a new version” to make a change.
         </p>

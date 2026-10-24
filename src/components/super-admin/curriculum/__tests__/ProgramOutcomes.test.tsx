@@ -82,10 +82,12 @@ describe("ProgramOutcomes — viewing", () => {
 })
 
 describe("ProgramOutcomes — draft-only editing", () => {
-  it("is read-only on a published catalog, pointing at a new version", async () => {
+  it("is read-only on a published catalog, pointing at the page's Edit (CUR-UNLOCK)", async () => {
     read.mockResolvedValue(programOutcomes("published"))
     renderPanel(false)
-    expect(await screen.findByText(/Read-only: this catalog is published/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/Read-only: this catalog is published\. To change outcomes, use Edit at the top of this page/)
+    ).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Edit outcomes" })).not.toBeInTheDocument()
   })
 
