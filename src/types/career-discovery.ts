@@ -304,3 +304,161 @@ export type DiscoveryPrograms = DiscoveryProgramsCatalog | DiscoveryProgramsFall
 /** What the server saves: ids only. */
 export type ProgramChoice = { schoolId: string; programId?: string | null }
 export type SavedProgramChoice = { saved: { schoolId: string; catalogId: string; programId: string | null } }
+
+// ─── DISC-5: Degree plan ─────────────────────────────────────────────────
+
+export type PlanSeason = "fall" | "spring" | "summer"
+export type PlanLoad = "full_time" | "part_time"
+export type PlanTermRef = { season: PlanSeason; year: number }
+
+export type PlanCourse = {
+  id: string | null
+  code: string
+  title: string | null
+  credits: number
+  whyNow: string
+  satisfies: string[]
+  after: string[]
+  alreadyDone: string[]
+  with: string[]
+  unlocks: string[]
+  offered: string[] | null
+  anyTerm: boolean
+  minGrades: string[]
+}
+
+export type PlanTerm = {
+  season: PlanSeason
+  year: number
+  label: string
+  credits: number
+  overLoad: boolean
+  note: string | null
+  courses: PlanCourse[]
+}
+
+export type PlanRefusal = { code: string; names: string[]; statement: string }
+
+export type PlanProgram = {
+  id: string | null
+  code: string | null
+  title: string | null
+  credential: string | null
+  totalCredits: number | null
+  requirementsMinimum: number
+  openElectiveCredits: number | null
+}
+
+/** The engine's answer: a plan, or a refusal that names what stopped it. */
+export type DegreePlanResult = {
+  engineVersion: string
+  load: { kind: PlanLoad; creditsPerTerm: number; min: number; max: number; default: number }
+  start: PlanTermRef & { label: string }
+  summer: boolean
+  refused: PlanRefusal | null
+  programs?: PlanProgram[]
+  terms?: PlanTerm[]
+  termsLeft?: number
+  creditsDone?: number
+  creditsLeft?: number
+  completedCounted?: string[]
+  completedNotCounted?: string[]
+  expectedCompletion?: (PlanTermRef & { label: string }) | null
+  alreadyComplete?: boolean
+  notes?: string[]
+}
+
+export type PlanCareer = {
+  program: string | null
+  roleFamily: string | null
+  socCode: string | null
+  role: { id: string; title: string | null } | null
+  overallFit: number | null
+  prismFit: number | null
+  fitMissing: string[]
+}
+
+export type CostToFinish =
+  | {
+      available: true
+      terms: number
+      low: number
+      high: number
+      perTerm?: { low: number; high: number }
+      basis?: string
+      source?: string | null
+      note?: string | null
+      program?: string | null
+    }
+  | { available: false; reason: string; note: string | null; missingStatements: string[] }
+
+export type PlanGaps =
+  | {
+      available: true
+      targetRole: { title?: string | null } | null
+      targetRolePending: boolean
+      gapsPending: boolean
+      counts: Record<string, number> | null
+      items: { title: string | null; competency: string | null; severity: string | null; costable: boolean }[]
+      note: string | null
+    }
+  | { available: false; note: string }
+
+export type ChecklistCourse = { id: string; code: string; title: string; credits: number | null; completed: boolean }
+
+export type DegreePlanInputs = {
+  programIds: string[]
+  load: PlanLoad
+  creditsPerTerm: number
+  startTerm: PlanTermRef
+  summer: boolean
+  droppedCompleted: number
+}
+
+export type DegreePlanReady = {
+  available: true
+  reason: null
+  note: null
+  school: { id: string }
+  catalog: { id: string; catalogYear: string; version: number }
+  inputs: DegreePlanInputs
+  options: {
+    loads: Record<PlanLoad, { min: number; max: number; default: number }>
+    maxExtraPrograms: number
+    programs: { id: string; code: string; title: string; credential: string | null }[]
+  }
+  checklist: ChecklistCourse[]
+  plan: DegreePlanResult
+  careers: PlanCareer[]
+  fit: { available: boolean; state: string; asOf: string | null; reason: string | null }
+  costToFinish: CostToFinish
+  gaps: PlanGaps
+  socCodeNote: string
+}
+
+/** No plan yet: catalogs can't be read, no program chosen, or the catalog moved on. */
+export type DegreePlanPending = { available: boolean; reason: string; note: string; plan: null }
+
+export type DegreePlan = DegreePlanReady | DegreePlanPending
+
+/** What the person sends: ids and settings only. */
+export type DegreePlanInputsBody = {
+  completedCourseIds: string[]
+  load: PlanLoad
+  creditsPerTerm: number | null
+  startTerm: PlanTermRef
+  summer: boolean
+  extraProgramIds: string[]
+}
+
+export type SavedDegreePlanInputs = {
+  saved: {
+    catalogId: string
+    programIds: string[]
+    completedCourseIds: string[]
+    load: PlanLoad
+    creditsPerTerm: number
+    startTerm: PlanTermRef
+    summer: boolean
+  }
+}

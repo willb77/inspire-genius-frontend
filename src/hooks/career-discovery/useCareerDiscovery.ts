@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import {
   advanceDiscovery,
+  getDegreePlan,
   getDiscoveryAlignment,
   getDiscoveryAlignmentJob,
   getDiscoveryCareers,
@@ -18,11 +19,14 @@ import {
   getProgramSchools,
   getProgramSuggestions,
   recordDiscoveryAge,
+  saveDegreePlanInputs,
   saveDiscoveryAbout,
   saveProgramChoice,
   startDiscoveryAlignment,
 } from "@/services/career-discovery/careerDiscovery.service"
 import type {
+  DegreePlan,
+  DegreePlanInputsBody,
   DiscoveryAlignment,
   CostQuery,
   DiscoveryCareers,
@@ -38,6 +42,7 @@ import type {
   DiscoverySchools,
   DiscoveryStatus,
   ProgramChoice,
+  SavedDegreePlanInputs,
   SavedProgramChoice,
   SchoolsQuery,
 } from "@/types/career-discovery"
@@ -68,6 +73,7 @@ export const discoveryKeys = {
     ["career-discovery", "cost", q?.cip ?? "", q?.level ?? 0, q?.school ?? 0] as const,
   programSchools: ["career-discovery", "programs", "schools"] as const,
   programs: (school: string | null) => ["career-discovery", "programs", "list", school ?? ""] as const,
+  degreePlan: ["career-discovery", "degree-plan"] as const,
 }
 
 /** The server's message for a failed call, or a plain fallback. */
@@ -180,8 +186,39 @@ export function useSaveProgramChoice() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["career-discovery", "programs"] })
       void qc.invalidateQueries({ queryKey: discoveryKeys.journey })
+      void qc.invalidateQueries({ queryKey: discoveryKeys.degreePlan })
     },
   })
+}
+
+/**
+ * DISC-5: the degree plan. A 403 means the server hasn't switched it on here,
+ * which callers treat as "not offered" rather than as a failure.
+ */
+export function useDegreePlan(enabled: boolean) {
+  return useQuery<DegreePlan | undefined, AxiosError>({
+    queryKey: discoveryKeys.degreePlan,
+    queryFn: async () => (await getDegreePlan()).data,
+    enabled,
+    retry: false,
+  })
+}
+
+/** DISC-5: save completed courses and settings (ids only), then rebuild the plan. */
+export function useSaveDegreePlanInputs() {
+  const qc = useQueryClient()
+  return useMutation<SavedDegreePlanInputs | undefined, AxiosError, DegreePlanInputsBody>({
+    mutationFn: async (body) => (await saveDegreePlanInputs(body)).data,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: discoveryKeys.degreePlan })
+      void qc.invalidateQueries({ queryKey: discoveryKeys.journey })
+    },
+  })
+}
+
+/** True when a failed call was the server saying "not switched on here". */
+export function isNotOffered(error: unknown): boolean {
+  return (error as AxiosError | undefined)?.response?.status === 403
 }
 
 function useJourneyMutation<V>(fn: (v: V) => Promise<{ data?: DiscoveryJourney }>) {
