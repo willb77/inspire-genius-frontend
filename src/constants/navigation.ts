@@ -40,6 +40,7 @@ import {
   Handshake,
   HeartPulse,
   IdCard,
+  GraduationCap,
 } from "lucide-react"
 
 /**
@@ -544,6 +545,11 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   // confidential tier unlocks. Label must stay unique — SidebarScaffold keys
   // nav items by label, so a duplicate collides.
   { to: ROUTES.SUPER_ADMIN.ASSET_LIBRARY, icon: FolderOpen, label: "Asset Library" },
+  // Curriculum (CUR-2): school catalogs — programs, courses, prerequisites,
+  // CSV import, publish. Super-admin ONLY (decision E2): no company-admin or
+  // other-role entry. The server checks the role on every curriculum route and
+  // the page says so plainly while the `curriculum` switch is off.
+  { to: ROUTES.SUPER_ADMIN.CURRICULUM, icon: GraduationCap, label: "Curriculum" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 

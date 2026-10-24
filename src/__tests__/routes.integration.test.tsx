@@ -119,6 +119,8 @@ const pageModules: Record<string, string> = {
   "@/pages/super-admin/IssueDetailPage": "IssueDetailPage",
   "@/pages/super-admin/LicenceDetailsPage": "LicenceDetailsPage",
   "@/pages/super-admin/Settings": "SuperAdminSettingsPage",
+  "@/pages/super-admin/Curriculum": "SuperAdminCurriculumPage",
+  "@/pages/super-admin/CurriculumCatalog": "SuperAdminCurriculumCatalogPage",
   "@/pages/super-admin/OrganizationView": "OrganizationViewPage",
   "@/pages/super-admin/UserCoaches": "UserCoachesPage",
   "@/pages/super-admin/ProjectLog": "ProjectLogPage",
@@ -479,6 +481,17 @@ describe("Route Integration Tests", () => {
       expect(await screen.findByTestId("CompanyAdminDashboardPage")).toBeInTheDocument();
     });
 
+    // CUR-2, decision E2: curriculum entry is super-admin only — a
+    // company-admin typing the URL is sent home, never shown the page.
+    it("company-admin CANNOT access /super-admin/curriculum", async () => {
+      const user = makeAuthUser({ role: "company-admin" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter("/super-admin/curriculum", ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("CompanyAdminDashboardPage")).toBeInTheDocument();
+      expect(screen.queryByTestId("SuperAdminCurriculumPage")).not.toBeInTheDocument();
+    });
+
     it("company-admin CANNOT access /super-admin/dashboard", async () => {
       const user = makeAuthUser({ role: "company-admin" });
       const ctx = makeAuthContext({ user });
@@ -636,6 +649,9 @@ describe("Route Integration Tests", () => {
       { path: "/super-admin/dashboard", testId: "SuperAdminDashboardPage" },
       { path: "/super-admin/users", testId: "UserManagementPage" },
       { path: "/super-admin/settings", testId: "SuperAdminSettingsPage" },
+      // CUR-2 — Administration → Curriculum.
+      { path: "/super-admin/curriculum", testId: "SuperAdminCurriculumPage" },
+      { path: "/super-admin/curriculum/catalogs/c1", testId: "SuperAdminCurriculumCatalogPage" },
     ];
 
     it.each(superAdminRoutes)(
