@@ -13,9 +13,17 @@
  *   - the server switch is off           → said so, Generate disabled
  *   - today's limit is used up           → said so, Generate disabled
  *   - nothing on file to ground a draft  → asks for a résumé or bio first
+ *
+ * RW2 (2026-10-24): opened as `/my/resume?jobId=<id>` — Career Fit's "Write
+ * résumé" while the server's `resume_writer_tailored` switch is on — the draft
+ * is built on the person's whole current résumé and aimed at that role. The
+ * server names the role only if its org-scoped read finds it; what its
+ * fabrication check took out is always listed here, never dropped silently.
+ * Switch off, the page is today's whatever the URL says.
  */
 import { useState } from "react"
-import { Copy, Download, FileUp, Loader2, ScrollText, Sparkles } from "lucide-react"
+import { useSearchParams } from "react-router-dom"
+import { Copy, Download, FileText, FileUp, Loader2, ScrollText, Sparkles, Target } from "lucide-react"
 import { toast } from "sonner"
 import UserLayout from "@/layouts/UserLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,8 +43,9 @@ import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { downloadBlob } from "@/lib/exportTranscript"
 import { resumeToPlainText } from "@/lib/resume/buildResumeHtml"
 import { renderResumePdf } from "@/lib/resume/exportResume"
+import { renderResumeDocx } from "@/lib/resume/exportResumeDocx"
 import { cn } from "@/lib/utils"
-import { isResumeWriterDisabled, type GeneratedResume } from "@/types/resumeWriter"
+import { isResumeWriterDisabled, type GeneratedResume, type RemovedLine } from "@/types/resumeWriter"
 
 const RESUME_UPLOAD: AddPersonalDocTarget = { name: "Résumé", docKind: "resume" }
 const BIO_UPLOAD: AddPersonalDocTarget = { name: "Bio", docKind: "bio" }
@@ -50,6 +59,59 @@ function SourceChip({ on, label }: { on: boolean; label: string }) {
     >
       {label}: {on ? "on file" : "not on file"}
     </Badge>
+  )
+}
+
+const REMOVED_REASON: Record<string, string> = {
+  employer: "Employer not in your résumé",
+  title: "Job title not in your résumé",
+  dates: "Dates not in your résumé",
+  education: "Education not in your résumé",
+  certification: "Certification not in your résumé",
+  number: "A number that isn't in your résumé",
+  activity: "Claims something your résumé doesn't show",
+}
+
+/** RW2 — what the check took out, and what the role asks for that the résumé doesn't show. */
+function TailoredNotes({ resume }: { resume: GeneratedResume }) {
+  const removed: RemovedLine[] = resume.removed ?? []
+  const notEvidenced = resume.notEvidenced ?? []
+  return (
+    <div className="space-y-3 rounded-md border bg-muted/30 p-3 text-sm" data-testid="resume-tailored-notes">
+      {removed.length ? (
+        <section data-testid="resume-removed">
+          <h3 className="mb-1 font-semibold">Taken out — not in your résumé ({removed.length})</h3>
+          <p className="mb-1 text-xs text-muted-foreground">
+            The draft only keeps what your résumé shows. If one of these is true, add it to your résumé and draft again.
+          </p>
+          <ul className="list-disc space-y-0.5 pl-5">
+            {removed.map((r, i) => (
+              <li key={`${r.reason}-${i}`}>
+                <span className="text-muted-foreground">{REMOVED_REASON[r.reason] ?? "Not in your résumé"}:</span>{" "}
+                {r.text}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <p data-testid="resume-removed-none" className="text-xs text-muted-foreground">
+          Nothing was taken out: every line was found in your résumé.
+        </p>
+      )}
+      {notEvidenced.length ? (
+        <section data-testid="resume-not-evidenced">
+          <h3 className="mb-1 font-semibold">This role also asks for</h3>
+          <p className="mb-1 text-xs text-muted-foreground">
+            Your résumé doesn&apos;t show these yet, so the draft doesn&apos;t claim them.
+          </p>
+          <ul className="list-disc space-y-0.5 pl-5">
+            {notEvidenced.map((a) => (
+              <li key={a}>{a}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
   )
 }
 
@@ -129,7 +191,9 @@ function ResumeView({ resume, name }: { resume: GeneratedResume; name: string })
 
 export default function MyResumePage() {
   const { user } = useAuth()
-  const sources = useResumeWriterSources()
+  const [params, setParams] = useSearchParams()
+  const jobId = params.get("jobId") || undefined
+  const sources = useResumeWriterSources(jobId)
   const generate = useGenerateResume()
   const [role, setRole] = useState("")
   const [careerArea, setCareerArea] = useState("")
@@ -149,12 +213,27 @@ export default function MyResumePage() {
   const limitReached = !!data && limit > 0 && used >= limit
   const hasText = !!data && (data.sources.resume || data.sources.bio)
   const hasAnything = hasText || (data?.sources.assessments.length ?? 0) > 0 || documentIds.length > 0
-  const canGenerate = !!data && !switchedOff && !limitReached && hasAnything && !generate.isPending
+  // RW2: a role is aimed at only when the server named it (switch on, role visible).
+  const tailoredRole = data?.tailoredEnabled && data.targetRole ? data.targetRole : null
+  const roleUnavailable = !!jobId && !!data?.tailoredEnabled && data.targetRoleStatus === "not_found"
+  const hasResume = !!data && (data.sources.resume || documentIds.length > 0)
+  const canGenerate =
+    !!data && !switchedOff && !limitReached && (tailoredRole ? hasResume : hasAnything) && !generate.isPending
 
   const toggleDoc = (id: string, on: boolean) =>
     setDocumentIds((prev) => (on ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)))
 
+  const clearRole = () => {
+    const next = new URLSearchParams(params)
+    next.delete("jobId")
+    setParams(next, { replace: true })
+  }
+
   const onGenerate = () => {
+    if (tailoredRole) {
+      generate.mutate({ jobId: tailoredRole.jobId, documentIds: documentIds.length ? documentIds : undefined })
+      return
+    }
     generate.mutate({
       role: role.trim() || undefined,
       careerArea: careerArea.trim() || undefined,
@@ -181,6 +260,19 @@ export default function MyResumePage() {
       downloadBlob(fileName, blob)
     } catch {
       toast.error("Couldn't build the PDF. Try again, or use Copy.")
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const onDownloadWord = async () => {
+    if (!draft) return
+    setExporting(true)
+    try {
+      const { fileName, blob } = await renderResumeDocx(draft, name)
+      downloadBlob(fileName, blob)
+    } catch {
+      toast.error("Couldn't build the Word file. Try again, or use Copy.")
     } finally {
       setExporting(false)
     }
@@ -282,37 +374,73 @@ export default function MyResumePage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Target</CardTitle>
-                <CardDescription>Optional. Without one, the draft follows your own background.</CardDescription>
+                <CardDescription>
+                  {tailoredRole
+                    ? "Built on your current résumé and aimed at this role."
+                    : "Optional. Without one, the draft follows your own background."}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-1">
-                  <Label htmlFor="rw-role">Role</Label>
-                  <Input
-                    id="rw-role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    placeholder="e.g. Operations Manager"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="rw-area">Career area</Label>
-                  <Input
-                    id="rw-area"
-                    value={careerArea}
-                    onChange={(e) => setCareerArea(e.target.value)}
-                    placeholder="e.g. Healthcare administration"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="rw-jd">Job description</Label>
-                  <Textarea
-                    id="rw-jd"
-                    rows={5}
-                    value={positionText}
-                    onChange={(e) => setPositionText(e.target.value)}
-                    placeholder="Paste a job posting to aim the draft at it"
-                  />
-                </div>
+                {roleUnavailable ? (
+                  <p role="status" data-testid="resume-role-unavailable" className="text-xs text-amber-700">
+                    That role isn&apos;t available to you, so this draft follows the target you type below.
+                  </p>
+                ) : null}
+                {tailoredRole ? (
+                  <div data-testid="resume-tailored-role" className="space-y-2 rounded-md border border-teal-200 bg-teal-50 p-3">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Target className="h-4 w-4 text-teal-700" aria-hidden="true" />
+                      {tailoredRole.title}
+                      {tailoredRole.department ? (
+                        <span className="text-xs font-normal text-muted-foreground">· {tailoredRole.department}</span>
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Every role on your résumé is kept and rewritten toward what this role asks for. Anything that
+                      isn&apos;t in your résumé is taken out and listed with the draft.
+                    </p>
+                    {!hasResume && data ? (
+                      <p data-testid="resume-tailored-needs-resume" className="text-xs text-amber-700">
+                        Add your résumé first — this draft is built on the one you have.
+                      </p>
+                    ) : null}
+                    <Button size="sm" variant="ghost" onClick={clearRole}>
+                      Write without this role instead
+                    </Button>
+                  </div>
+                ) : null}
+                {tailoredRole ? null : (
+                  <>
+                    <div className="space-y-1">
+                      <Label htmlFor="rw-role">Role</Label>
+                      <Input
+                        id="rw-role"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        placeholder="e.g. Operations Manager"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="rw-area">Career area</Label>
+                      <Input
+                        id="rw-area"
+                        value={careerArea}
+                        onChange={(e) => setCareerArea(e.target.value)}
+                        placeholder="e.g. Healthcare administration"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="rw-jd">Job description</Label>
+                      <Textarea
+                        id="rw-jd"
+                        rows={5}
+                        value={positionText}
+                        onChange={(e) => setPositionText(e.target.value)}
+                        placeholder="Paste a job posting to aim the draft at it"
+                      />
+                    </div>
+                  </>
+                )}
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Button onClick={onGenerate} disabled={!canGenerate}>
                     {generate.isPending ? (
@@ -354,6 +482,10 @@ export default function MyResumePage() {
                     <Copy className="mr-1.5 h-4 w-4" aria-hidden="true" />
                     Copy
                   </Button>
+                  <Button size="sm" variant="outline" onClick={onDownloadWord} disabled={exporting}>
+                    <FileText className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                    Download Word
+                  </Button>
                   <Button size="sm" onClick={onDownload} disabled={exporting}>
                     <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
                     {exporting ? "Building…" : "Download PDF"}
@@ -363,7 +495,10 @@ export default function MyResumePage() {
             </CardHeader>
             <CardContent>
               {draft ? (
-                <ResumeView resume={draft} name={name} />
+                <div className="space-y-4">
+                  {draft.tailored ? <TailoredNotes resume={draft} /> : null}
+                  <ResumeView resume={draft} name={name} />
+                </div>
               ) : (
                 <p className="py-16 text-center text-sm text-muted-foreground">
                   {generate.isPending ? "Drafting your résumé…" : "Your draft will appear here."}
