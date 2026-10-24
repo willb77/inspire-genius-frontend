@@ -22,10 +22,12 @@ export default function EducationPage() {
   const { journey } = useDiscoveryContext()
   const on = journey.stages.some((s) => s.id === "education" && s.available)
   if (!on) return <ComingNextPage stage="education" />
-  return <EducationPaths enabled={journey.mayProceed} />
+  // DISC-3: each school links to its cost and payback only when that stage is on.
+  const costOn = journey.stages.some((s) => s.id === "cost" && s.available)
+  return <EducationPaths enabled={journey.mayProceed} costOn={costOn} />
 }
 
-function EducationPaths({ enabled }: { enabled: boolean }) {
+function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean }) {
   const { data, isLoading, isError, error } = useDiscoveryEducation(enabled)
   const [state, setState] = useState("")
   const [query, setQuery] = useState<SchoolsQuery | null>(null)
@@ -110,7 +112,7 @@ function EducationPaths({ enabled }: { enabled: boolean }) {
                   ))}
                 </div>
                 {query && query.cip === p.field.code && p.credentials.some((c) => c.level === query.level) ? (
-                  <SchoolList query={query} />
+                  <SchoolList query={query} costOn={costOn} />
                 ) : null}
               </CardContent>
             </Card>
@@ -131,7 +133,7 @@ function href(url: string): string {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`
 }
 
-function SchoolList({ query }: { query: SchoolsQuery }) {
+function SchoolList({ query, costOn }: { query: SchoolsQuery; costOn: boolean }) {
   const { data, isLoading, isError, error } = useDiscoverySchools(query)
   if (isLoading) return <DiscoveryLoading label="Finding schools" />
   if (isError || !data) return <DiscoveryError message={discoveryErrorMessage(error)} />
@@ -160,6 +162,17 @@ function SchoolList({ query }: { query: SchoolsQuery }) {
               <span>{s.name}</span>
             )}
             {s.city ? <span className="text-muted-foreground"> — {s.city}</span> : null}
+            {costOn && s.id !== null ? (
+              <>
+                {" "}
+                <Link
+                  className="text-xs underline"
+                  to={`${ROUTES.CAREER_DISCOVERY.COST}?cip=${query.cip}&level=${query.level}&school=${s.id}`}
+                >
+                  Cost and payback
+                </Link>
+              </>
+            ) : null}
           </li>
         ))}
       </ul>

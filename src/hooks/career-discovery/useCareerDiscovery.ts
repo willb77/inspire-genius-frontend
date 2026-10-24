@@ -6,6 +6,7 @@ import {
   getDiscoveryAlignment,
   getDiscoveryAlignmentJob,
   getDiscoveryCareers,
+  getDiscoveryCost,
   getDiscoveryEducation,
   getDiscoveryGoals,
   getDiscoveryJourney,
@@ -20,7 +21,9 @@ import {
 } from "@/services/career-discovery/careerDiscovery.service"
 import type {
   DiscoveryAlignment,
+  CostQuery,
   DiscoveryCareers,
+  DiscoveryCost,
   DiscoveryEducation,
   DiscoveryGoals,
   DiscoveryJob,
@@ -54,6 +57,8 @@ export const discoveryKeys = {
   education: ["career-discovery", "education"] as const,
   schools: (q: SchoolsQuery | null) =>
     ["career-discovery", "education", "schools", q?.cip ?? "", q?.level ?? 0, q?.state ?? ""] as const,
+  cost: (q: CostQuery | null) =>
+    ["career-discovery", "cost", q?.cip ?? "", q?.level ?? 0, q?.school ?? 0] as const,
 }
 
 /** The server's message for a failed call, or a plain fallback. */
@@ -119,6 +124,23 @@ export function useDiscoverySchools(query: SchoolsQuery | null) {
     retry: false,
     staleTime: 60 * 60 * 1000,
   })
+}
+
+/** DISC-3: Cost and payback for one school's program. Reading it can record the stage. */
+export function useDiscoveryCost(query: CostQuery | null, enabled: boolean) {
+  const qc = useQueryClient()
+  const q = useQuery<DiscoveryCost | undefined, AxiosError>({
+    queryKey: discoveryKeys.cost(query),
+    queryFn: async () => (await getDiscoveryCost(query as CostQuery)).data,
+    enabled: enabled && query !== null,
+    retry: false,
+    staleTime: 60 * 60 * 1000,
+  })
+  const settled = q.isSuccess
+  useEffect(() => {
+    if (settled) void qc.invalidateQueries({ queryKey: discoveryKeys.journey })
+  }, [settled, qc])
+  return q
 }
 
 function useJourneyMutation<V>(fn: (v: V) => Promise<{ data?: DiscoveryJourney }>) {

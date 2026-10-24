@@ -155,6 +155,62 @@ export type DiscoverySchools = SchoolsQuery & {
   note: string | null
 }
 
+/** DISC-3: one school's program, as picked from an Education paths school list. */
+export type CostQuery = { cip: string; level: number; school: number }
+
+export type CostRange = { low: number; high: number }
+
+/** DISC-3: Cost and payback. Every figure is computed by the server; none here. */
+export type DiscoveryCost = {
+  cip: string
+  code: string
+  level: number
+  schoolId: number
+  unavailable: boolean
+  note: string | null
+  field?: string
+  credential?: string
+  school?: { id: number | null; name: string | null; priceCalculatorUrl: string | null } | null
+  netPrice?: (CostRange & {
+    average: number
+    byIncome: { band: string; amount: number }[]
+    source: string
+    note: string
+  }) | null
+  yearsToComplete?: (CostRange & { source: string }) | null
+  totalCost?: (CostRange & { average: number; basis: string }) | null
+  earnings?: {
+    basis: "program" | "market"
+    early: number
+    later: number
+    earlyYearsAfter: number | null
+    laterYearsAfter: number | null
+    approximation: boolean
+    source: string
+    label: string | null
+    occupations?: { soc: string; title: string }[]
+  } | null
+  baseline?: { annual: number; source: string }
+  payback?: {
+    low: number | null
+    high: number | null
+    unit: "years"
+    reachable: boolean
+    highUnreachable: boolean
+    basis: string
+    note: string
+  } | null
+  statement?: string | null
+  missing?: string[]
+  missingStatements?: string[]
+  computable?: boolean
+  aid?: {
+    grant: { vertical: string; path: string; label: string }
+    studentAid: string
+    netPriceCalculator: string | null
+  }
+}
+
 /** Two-letter codes the server accepts (app/tools/career_discovery/education.py US_STATES). */
 export const US_STATES: { value: string; label: string }[] = [
   ["AL", "Alabama"], ["AK", "Alaska"], ["AZ", "Arizona"], ["AR", "Arkansas"], ["CA", "California"],

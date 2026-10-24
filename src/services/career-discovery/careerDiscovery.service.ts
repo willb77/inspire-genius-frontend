@@ -1,8 +1,10 @@
 import { agentApi } from "@/lib/agentApi"
 import type { VerticalApiResponse } from "@/verticals/core"
 import type {
+  CostQuery,
   DiscoveryAlignment,
   DiscoveryCareers,
+  DiscoveryCost,
   DiscoveryEducation,
   DiscoveryGoals,
   DiscoveryJob,
@@ -42,6 +44,14 @@ export async function getDiscoverySchools(q: SchoolsQuery) {
     `${PREFIX}/education/schools`,
     { params: { cip: q.cip, level: q.level, state: q.state } }
   )
+  return data
+}
+
+/** DISC-3: Cost and payback for one school's program. No income is sent: none is asked for. */
+export async function getDiscoveryCost(q: CostQuery) {
+  const { data } = await agentApi.get<VerticalApiResponse<DiscoveryCost>>(`${PREFIX}/cost`, {
+    params: { cip: q.cip, level: q.level, school: q.school },
+  })
   return data
 }
 
