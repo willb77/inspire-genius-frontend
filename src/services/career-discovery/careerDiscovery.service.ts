@@ -3,12 +3,15 @@ import type { VerticalApiResponse } from "@/verticals/core"
 import type {
   DiscoveryAlignment,
   DiscoveryCareers,
+  DiscoveryEducation,
   DiscoveryGoals,
   DiscoveryJob,
   DiscoveryJourney,
   DiscoveryPays,
   DiscoveryPlan,
+  DiscoverySchools,
   DiscoveryStatus,
+  SchoolsQuery,
 } from "@/types/career-discovery"
 import type { SelfPortrait } from "@/types/lumen"
 
@@ -31,6 +34,16 @@ export const getDiscoveryAlignment = () => get<DiscoveryAlignment>("/alignment")
 export const getDiscoveryAlignmentJob = (jobId: string) =>
   get<DiscoveryJob>(`/alignment/jobs/${encodeURIComponent(jobId)}`)
 export const getDiscoveryPlan = () => get<DiscoveryPlan>("/plan")
+export const getDiscoveryEducation = () => get<DiscoveryEducation>("/education")
+
+/** Schools offering one path's field at one level in one state. The state is not stored. */
+export async function getDiscoverySchools(q: SchoolsQuery) {
+  const { data } = await agentApi.get<VerticalApiResponse<DiscoverySchools>>(
+    `${PREFIX}/education/schools`,
+    { params: { cip: q.cip, level: q.level, state: q.state } }
+  )
+  return data
+}
 
 /** The birth year is sent once; the server keeps only an age band. */
 export async function recordDiscoveryAge(birthYear: number) {

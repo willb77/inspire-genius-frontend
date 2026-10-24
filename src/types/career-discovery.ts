@@ -105,7 +105,73 @@ export type DiscoveryPlan = {
   alignment: { summary?: Record<string, number>; note?: string } | null
   nextSteps: { stageId: string; name: string; question: string }[]
   comingNext: { stageId: string; name: string; note?: string }[]
+  /** DISC-2: present only when Education paths is switched on. */
+  educationPaths?: { careerArea: string; field: string; credential: string }[]
 }
+
+// ─── DISC-2: Education paths ─────────────────────────────────────────────
+
+export type EducationCredential = { level: number; title: string }
+
+export type EducationPath = {
+  id: string
+  careerArea: string
+  areaRank: number
+  fit: number | null
+  occupations: { soc: string; title: string; typicalEntry: string }[]
+  credentials: EducationCredential[]
+  field: { cip: string; code: string; title: string }
+  why: string
+  notes: string[]
+}
+
+export type DiscoveryEducation = {
+  areas: { careerArea: string; fit: number | null }[]
+  paths: EducationPath[]
+  note: string | null
+  crosswalkSource: string
+  entrySource: string
+  schoolsSource: string
+}
+
+export type EducationSchool = {
+  id: number | null
+  name: string
+  city: string | null
+  state: string | null
+  url: string | null
+  program: { title: string | null; credential: string | null }
+}
+
+export type SchoolsQuery = { cip: string; level: number; state: string }
+
+export type DiscoverySchools = SchoolsQuery & {
+  page: number
+  perPage: number
+  source: string
+  schools: EducationSchool[]
+  total: number | null
+  unavailable: boolean
+  note: string | null
+}
+
+/** Two-letter codes the server accepts (app/tools/career_discovery/education.py US_STATES). */
+export const US_STATES: { value: string; label: string }[] = [
+  ["AL", "Alabama"], ["AK", "Alaska"], ["AZ", "Arizona"], ["AR", "Arkansas"], ["CA", "California"],
+  ["CO", "Colorado"], ["CT", "Connecticut"], ["DE", "Delaware"], ["DC", "District of Columbia"],
+  ["FL", "Florida"], ["GA", "Georgia"], ["HI", "Hawaii"], ["ID", "Idaho"], ["IL", "Illinois"],
+  ["IN", "Indiana"], ["IA", "Iowa"], ["KS", "Kansas"], ["KY", "Kentucky"], ["LA", "Louisiana"],
+  ["ME", "Maine"], ["MD", "Maryland"], ["MA", "Massachusetts"], ["MI", "Michigan"],
+  ["MN", "Minnesota"], ["MS", "Mississippi"], ["MO", "Missouri"], ["MT", "Montana"],
+  ["NE", "Nebraska"], ["NV", "Nevada"], ["NH", "New Hampshire"], ["NJ", "New Jersey"],
+  ["NM", "New Mexico"], ["NY", "New York"], ["NC", "North Carolina"], ["ND", "North Dakota"],
+  ["OH", "Ohio"], ["OK", "Oklahoma"], ["OR", "Oregon"], ["PA", "Pennsylvania"],
+  ["RI", "Rhode Island"], ["SC", "South Carolina"], ["SD", "South Dakota"], ["TN", "Tennessee"],
+  ["TX", "Texas"], ["UT", "Utah"], ["VT", "Vermont"], ["VA", "Virginia"], ["WA", "Washington"],
+  ["WV", "West Virginia"], ["WI", "Wisconsin"], ["WY", "Wyoming"], ["AS", "American Samoa"],
+  ["GU", "Guam"], ["MP", "Northern Mariana Islands"], ["PR", "Puerto Rico"],
+  ["VI", "U.S. Virgin Islands"], ["FM", "Micronesia"], ["MH", "Marshall Islands"], ["PW", "Palau"],
+].map(([value, label]) => ({ value, label }))
 
 /** Mirrors `SCHOOL_LEVELS` in app/tools/career_discovery/store.py. */
 export const SCHOOL_LEVELS: { value: string; label: string }[] = [
