@@ -325,8 +325,9 @@ export function ProgramOutcomes({
           )}
           {!canEdit && (
             <p role="status" className="text-xs text-muted-foreground">
-              Read-only: this catalog is {data.catalog.status}. Outcomes change on a new version — Publish → “Start a
-              new version”.
+              {data.catalog.status === "published"
+                ? "Read-only: this catalog is published. To change outcomes, use Edit at the top of this page — it opens a draft of the next version."
+                : `Read-only: this catalog is ${data.catalog.status}. Outcomes change on a new version — Publish → “Start a new version”.`}
             </p>
           )}
           <p className="text-xs text-muted-foreground">{data.socCodeNote}</p>

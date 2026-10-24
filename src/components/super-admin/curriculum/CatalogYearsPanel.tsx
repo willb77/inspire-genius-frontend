@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useCreateCatalog, useCurriculumCatalogs, useDeleteCatalog } from "@/hooks/curriculum/useCurriculumAdmin"
 import { curriculumError, type CurriculumError } from "@/services/curriculum/curriculumErrors"
 import type { Catalog } from "@/types/curriculum"
+import { EditCatalogButton } from "./CatalogEdit"
 import { CurriculumErrorPanel } from "./CurriculumReportView"
 import { catalogYearSchema, type CatalogYearValues } from "./curriculum.schemas"
 import { catalogPath } from "./curriculumUi"
@@ -25,8 +26,9 @@ export function StatusBadge({ status }: { status: Catalog["status"] }) {
 
 /**
  * One school's catalog years and their versions. A published catalog is never
- * edited; "New version" starts a draft copy of it, which is what gets edited
- * and published in its place.
+ * edited; its "Edit" opens the draft of that year already in progress or
+ * starts a draft copy, which is what gets edited and published in its place
+ * (CUR-UNLOCK). A superseded catalog keeps "New version" unchanged.
  */
 export function CatalogYearsPanel({ institutionId, schoolName }: { institutionId: string; schoolName?: string }) {
   const navigate = useNavigate()
@@ -127,6 +129,8 @@ export function CatalogYearsPanel({ institutionId, schoolName }: { institutionId
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
+                  ) : c.status === "published" ? (
+                    <EditCatalogButton catalog={c} variant="ghost" onError={setActionError} />
                   ) : (
                     <Button
                       size="sm"

@@ -48,6 +48,7 @@ function renderAt(path: string) {
 beforeEach(() => {
   jest.resetAllMocks()
   status.mockResolvedValue({ enabled: true, tablesReady: true })
+  m(listCatalogs).mockResolvedValue([])
 })
 
 describe("Administration → Curriculum page", () => {
@@ -67,10 +68,30 @@ describe("Administration → Curriculum page", () => {
     const years = await screen.findByRole("region", { name: "Catalog years" })
     expect(within(years).getByText("Catalog years — Example Community College")).toBeInTheDocument()
     expect(await within(years).findByRole("button", { name: "Delete draft 2026-2027 v1" })).toBeInTheDocument()
-    expect(within(years).getByRole("button", { name: /new version/i })).toBeInTheDocument()
+    expect(within(years).getByRole("button", { name: "Edit 2026-2027 v0" })).toBeInTheDocument()
+    expect(within(years).queryByRole("button", { name: /new version/i })).not.toBeInTheDocument()
     await userEvent.click(within(years).getAllByRole("link", { name: "Open" })[0])
     expect(await screen.findByText("Catalog 2026-2027 · v1")).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Courses" })).toBeInTheDocument()
+    expect(await screen.findByText("You're editing v1. v0 stays live until you publish.")).toBeInTheDocument()
+  })
+
+  it("Edit on a published row opens the year's draft in progress; a superseded row keeps New version (CUR-UNLOCK)", async () => {
+    const live = { ...CAT, id: "cat-1", version: 1, status: "published" as const, publishedAt: "2026-10-24T05:08:08Z" }
+    const old = { ...CAT, id: "cat-0", version: 0, status: "superseded" as const }
+    const draft = { ...CAT, id: "cat-2", version: 2 }
+    m(listInstitutions).mockResolvedValue([SCHOOL])
+    m(listCatalogs).mockResolvedValue([draft, live, old])
+    m(getCatalog).mockResolvedValue(catalogDetail({ id: "cat-2", version: 2 }))
+    renderAt("/super-admin/curriculum?school=inst-1")
+    const years = await screen.findByRole("region", { name: "Catalog years" })
+    expect(await within(years).findByRole("button", { name: /new version/i })).toBeInTheDocument()
+    expect(within(years).queryByRole("button", { name: "Edit 2026-2027 v0" })).not.toBeInTheDocument()
+    await userEvent.click(within(years).getByRole("button", { name: "Edit 2026-2027 v1" }))
+    expect(await screen.findByText("Catalog 2026-2027 · v2")).toBeInTheDocument()
+    expect(getCatalog).toHaveBeenCalledWith("cat-2")
+    expect(createCatalog).not.toHaveBeenCalled()
+    expect(await screen.findByText("You're editing v2. v1 stays live until you publish.")).toBeInTheDocument()
   })
 
   it("adds a school, validating the IPEDS id, and renders a 409 duplicate", async () => {
@@ -143,11 +164,43 @@ describe("Administration → Curriculum page", () => {
 })
 
 describe("Curriculum catalog page", () => {
-  it("is read-only for a published catalog", async () => {
+  it("is read-only for a published catalog, with Edit at the top (CUR-UNLOCK)", async () => {
     m(getCatalog).mockResolvedValue(catalogDetail({ status: "published" }))
     renderAt("/super-admin/curriculum/catalogs/cat-1")
-    expect(await screen.findByText(/Read-only: published catalogs are never edited/)).toBeInTheDocument()
+    expect(await screen.findByText(/Read-only: this is the live catalog\. Edit opens a draft/)).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Add course" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Edit 2026-2027 v1" })).toBeInTheDocument()
+  })
+
+  it("Edit on a published catalog starts a copy when no draft is in progress, and opens it", async () => {
+    m(getCatalog).mockImplementation(async (id: string) =>
+      id === "cat-2" ? catalogDetail({ id: "cat-2", version: 2 }) : catalogDetail({ status: "published" })
+    )
+    m(listCatalogs).mockResolvedValue([{ ...CAT, status: "published" }])
+    m(createCatalog).mockResolvedValue({ ...CAT, id: "cat-2", version: 2 })
+    renderAt("/super-admin/curriculum/catalogs/cat-1")
+    await userEvent.click(await screen.findByRole("button", { name: "Edit 2026-2027 v1" }))
+    expect(await screen.findByText("Catalog 2026-2027 · v2")).toBeInTheDocument()
+    expect(createCatalog).toHaveBeenCalledTimes(1)
+    expect(createCatalog).toHaveBeenCalledWith("inst-1", { catalogYear: "2026-2027", fromCatalogId: "cat-1" })
+    expect(await screen.findByRole("button", { name: "Add course" })).toBeInTheDocument()
+  })
+
+  it("a superseded catalog has no Edit and keeps its old read-only line", async () => {
+    m(getCatalog).mockResolvedValue(catalogDetail({ status: "superseded" }))
+    renderAt("/super-admin/curriculum/catalogs/cat-1")
+    expect(await screen.findByText(/Read-only: published catalogs are never edited/)).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /^Edit 2026/ })).not.toBeInTheDocument()
+  })
+
+  it("a draft has no Edit and no banner when the year was never published", async () => {
+    m(getCatalog).mockResolvedValue(catalogDetail())
+    m(listCatalogs).mockResolvedValue([CAT])
+    renderAt("/super-admin/curriculum/catalogs/cat-1")
+    expect(await screen.findByRole("button", { name: "Add course" })).toBeInTheDocument()
+    await waitFor(() => expect(listCatalogs).toHaveBeenCalledWith("inst-1"))
+    expect(screen.queryByRole("button", { name: /^Edit 2026/ })).not.toBeInTheDocument()
+    expect(screen.queryByText(/stays live until you publish/)).not.toBeInTheDocument()
   })
 
   it("moves between tabs on a draft", async () => {
