@@ -25,6 +25,18 @@ export type ResumeWriterSources = {
     assessments: string[]
   }
   documents: ResumeWriterDocument[]
+  /** RW2 — present only while the server's `resume_writer_tailored` switch is on. */
+  tailoredEnabled?: boolean
+  /** RW2 — the role a `?jobId=` names, as the server's org-scoped read returns it. */
+  targetRole?: TargetRoleView | null
+  targetRoleStatus?: "ok" | "not_found"
+}
+
+/** RW2 — a Career Fit role, as the Résumé Writer may show it. */
+export type TargetRoleView = {
+  jobId: string
+  title: string
+  department: string | null
 }
 
 export type ResumeWriterRequest = {
@@ -32,6 +44,15 @@ export type ResumeWriterRequest = {
   careerArea?: string
   positionText?: string
   documentIds?: string[]
+  /** RW2 — the Career Fit role to aim at. Ignored by the server while its switch is off. */
+  jobId?: string
+}
+
+/** RW2 — one line the fabrication check took out, because the source does not show it. */
+export type RemovedLine = {
+  section: string
+  reason: "employer" | "title" | "dates" | "education" | "certification" | "number" | "activity" | string
+  text: string
 }
 
 export type ResumeExperience = {
@@ -55,9 +76,29 @@ export type GeneratedResume = {
   disclaimer: string
   usedToday: number
   dailyLimit: number
+  /** RW2 — present on a résumé aimed at a chosen role. */
+  tailored?: boolean
+  targetRole?: TargetRoleView
+  /** The role's critical activities the draft reflects. */
+  emphasised?: string[]
+  /** The role's critical activities the résumé does not show — advice, never written in. */
+  notEvidenced?: string[]
+  /** What the fabrication check took out. Always shown to the person. */
+  removed?: RemovedLine[]
 }
 
 export type ResumeWriterDisabled = { disabled: true }
+
+/** RW2 — `POST /v1/agents/resume-writer/me/jobs` (202). */
+export type ResumeJobStarted = { jobId: string; status: string; tailored?: boolean }
+
+/** RW2 — `GET /v1/agents/resume-writer/me/jobs/{jobId}`. */
+export type ResumeJobState = {
+  jobId: string
+  status: "queued" | "running" | "complete" | "error" | "expired"
+  result: GeneratedResume | null
+  error: string | null
+}
 
 export type ResumeWriterResult = GeneratedResume | ResumeWriterDisabled
 

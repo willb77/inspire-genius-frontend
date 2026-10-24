@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import {
   Download,
@@ -68,8 +69,21 @@ function printBlob(blob: Blob) {
  *
  * Save writes a real row (POST /v1/blueprint/fit/history, JS-3) with the
  * breakdown as rendered; it used to write browser storage and report success.
+ *
+ * RW2: `tailoredResumeHref` is set by the page only while the server's
+ * `resume_writer_tailored` switch is on. Then "Write Résumé" opens the Résumé
+ * Writer aimed at this role (built on the person's whole résumé) instead of the
+ * inline draft. Without it, the button is exactly today's.
  */
-export function FitActionsBar({ data, overview }: { data: FitDetail; overview?: string }) {
+export function FitActionsBar({
+  data,
+  overview,
+  tailoredResumeHref,
+}: {
+  data: FitDetail
+  overview?: string
+  tailoredResumeHref?: string
+}) {
   const pct = displayFitPercent(data)
   const reportInput = { data, pct, overview }
   const [busy, setBusy] = useState<null | "pdf" | "print" | "export">(null)
@@ -271,10 +285,21 @@ export function FitActionsBar({ data, overview }: { data: FitDetail; overview?: 
           Copy link
         </button>
 
-        <button type="button" onClick={handleWriteResume} className={BTN} title="Draft a role-aligned résumé from your strengths">
-          <PenLine className="h-4 w-4" />
-          Write Résumé
-        </button>
+        {tailoredResumeHref ? (
+          <Link
+            to={tailoredResumeHref}
+            className={BTN}
+            title="Write your résumé for this role, built on the résumé you have on file"
+          >
+            <PenLine className="h-4 w-4" />
+            Write Résumé
+          </Link>
+        ) : (
+          <button type="button" onClick={handleWriteResume} className={BTN} title="Draft a role-aligned résumé from your strengths">
+            <PenLine className="h-4 w-4" />
+            Write Résumé
+          </button>
+        )}
       </div>
 
       {showResume && (
