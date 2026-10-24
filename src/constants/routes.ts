@@ -101,6 +101,9 @@ export const ROUTES = {
     /** Administration → Client Sign-Up: the CRM pipeline, SOWs and invoicing hand-off. */
     CLIENT_SIGNUP: "/super-admin/client-signup",
     CLIENT_SIGNUP_ENGAGEMENT: "/super-admin/client-signup/:engagementId",
+    /** Administration → Curriculum (CUR-2): schools, catalog years, programs, courses. Super-admin only (E2). */
+    CURRICULUM: "/super-admin/curriculum",
+    CURRICULUM_CATALOG: "/super-admin/curriculum/catalogs/:catalogId",
     SUPPORT_MANAGEMENT: "/super-admin/support",
     SUPPORT_TICKET: "/super-admin/support/:ticketId",
     /** Help & Support → Claude Code tab (CC.3). Static, so it outranks `:ticketId`. Shown only when the console grants access. */

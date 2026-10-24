@@ -190,6 +190,8 @@ const MentorManagement = React.lazy(() => import("@/pages/super-admin/MentorMana
 const KnowledgeBase = React.lazy(() => import("@/pages/super-admin/KnowledgeBase"));
 const PrivacyCompliance = React.lazy(() => import("@/pages/super-admin/PrivacyCompliance"));
 const ClientSignup = React.lazy(() => import("@/pages/super-admin/ClientSignup"));
+const Curriculum = React.lazy(() => import("@/pages/super-admin/Curriculum"));
+const CurriculumCatalog = React.lazy(() => import("@/pages/super-admin/CurriculumCatalog"));
 const ClientEngagement = React.lazy(() => import("@/pages/super-admin/ClientEngagement"));
 const Explainability = React.lazy(() => import("@/pages/super-admin/Explainability"));
 
@@ -619,6 +621,9 @@ export const routes: RouteObject[] = [
       // makes the pair obvious to the next reader.
       { path: "/super-admin/client-signup", element: withSuspense(<ClientSignup />) },
       { path: "/super-admin/client-signup/:engagementId", element: withSuspense(<ClientEngagement />) },
+      // Administration -> Curriculum (CUR-2), super-admin only.
+      { path: "/super-admin/curriculum", element: withSuspense(<Curriculum />) },
+      { path: "/super-admin/curriculum/catalogs/:catalogId", element: withSuspense(<CurriculumCatalog />) },
       { path: "/super-admin/explainability", element: withSuspense(<Explainability />) },
       { path: "/super-admin/explainability/c/:sessionId", element: withSuspense(<Explainability />) },
       { path: "/super-admin/explainability/c/:sessionId/t/:turnId", element: withSuspense(<Explainability />) },
