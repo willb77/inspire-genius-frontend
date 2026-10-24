@@ -11,6 +11,7 @@ import {
 import { US_STATES, type EducationPath, type SchoolsQuery } from "@/types/career-discovery"
 import ComingNextPage from "./ComingNextPage"
 import { DiscoveryError, DiscoveryLoading, NoticeCard, StageHeader } from "./DiscoveryParts"
+import { ProgramsAtSchool } from "./ProgramsAtSchool"
 import { useDiscoveryContext } from "./discoveryContext"
 
 /**
@@ -41,10 +42,13 @@ function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean
       lead="For each career area that suits you: what people usually study to get there, and schools that offer it. These are routes, not rankings."
     />
   )
+  // DISC-4: a school's own programs, only when the server offers them.
+  const programs = data.programsAvailable ? <ProgramsAtSchool /> : null
   if (data.paths.length === 0) {
     return (
       <div className="space-y-6">
         {header}
+        {programs}
         <NoticeCard title="Nothing to show yet">
           <p>{data.note}</p>
           <Link className="underline" to={ROUTES.CAREER_DISCOVERY.CAREERS}>
@@ -61,6 +65,7 @@ function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean
   return (
     <div className="space-y-6">
       {header}
+      {programs}
       <label className="flex max-w-sm flex-col gap-1 text-sm">
         <span className="font-medium">Where would you study?</span>
         <select

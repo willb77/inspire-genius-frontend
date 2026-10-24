@@ -132,6 +132,8 @@ export type DiscoveryEducation = {
   crosswalkSource: string
   entrySource: string
   schoolsSource: string
+  /** DISC-4: present (true) only when the server offers a school's own programs. */
+  programsAvailable?: boolean
 }
 
 export type EducationSchool = {
@@ -239,3 +241,66 @@ export const SCHOOL_LEVELS: { value: string; label: string }[] = [
   { value: "adult_learner", label: "Adult learner" },
   { value: "not_in_school", label: "Not in school right now" },
 ]
+
+// ─── DISC-4: Programs at your school ─────────────────────────────────────
+
+export type ProgramSchool = { id: string; name: string; suggested: boolean }
+
+export type DiscoveryProgramSchools = {
+  available: boolean
+  schools: ProgramSchool[]
+  chosenSchoolId: string | null
+  note: string | null
+}
+
+/** One component of a suggestion. Only `scored` carries a number; anything else says why. */
+export type ProgramComponent = {
+  status: string
+  score?: number
+  reason?: string
+  family?: string
+  role?: { id: string; title: string | null }
+  used?: string[]
+  missing?: string[]
+  goalFamilies?: string[]
+  matched?: string[]
+}
+
+export type ProgramCard = {
+  id: string
+  code: string
+  title: string
+  credential: string | null
+  totalCredits: number | null
+  careers: { roleFamily: string | null; role: { id: string; title: string | null } | null; socCode: string | null }[]
+  components: { fit: ProgramComponent; affinity: ProgramComponent; goal: ProgramComponent }
+  score: number | null
+  rank: number | null
+  why: string
+  note: string | null
+}
+
+export type DiscoveryProgramsFallback = {
+  mode: "public_paths"
+  reason: string
+  note: string
+  school: { id: string; name: string | null } | null
+}
+
+export type DiscoveryProgramsCatalog = {
+  mode: "catalog"
+  school: { id: string; name: string | null }
+  catalog: { id: string; catalogYear: string; version: number }
+  programs: ProgramCard[]
+  weights: Record<string, number>
+  engineVersion: string
+  fit: { available: boolean; state: string; asOf: string | null; reason: string | null }
+  chosenProgramId: string | null
+  socCodeNote: string
+}
+
+export type DiscoveryPrograms = DiscoveryProgramsCatalog | DiscoveryProgramsFallback
+
+/** What the server saves: ids only. */
+export type ProgramChoice = { schoolId: string; programId?: string | null }
+export type SavedProgramChoice = { saved: { schoolId: string; catalogId: string; programId: string | null } }

@@ -11,8 +11,12 @@ import type {
   DiscoveryJourney,
   DiscoveryPays,
   DiscoveryPlan,
+  DiscoveryProgramSchools,
+  DiscoveryPrograms,
   DiscoverySchools,
   DiscoveryStatus,
+  ProgramChoice,
+  SavedProgramChoice,
   SchoolsQuery,
 } from "@/types/career-discovery"
 import type { SelfPortrait } from "@/types/lumen"
@@ -52,6 +56,27 @@ export async function getDiscoveryCost(q: CostQuery) {
   const { data } = await agentApi.get<VerticalApiResponse<DiscoveryCost>>(`${PREFIX}/cost`, {
     params: { cip: q.cip, level: q.level, school: q.school },
   })
+  return data
+}
+
+/** DISC-4: schools that have published their catalog here. */
+export const getProgramSchools = () => get<DiscoveryProgramSchools>("/education/programs/schools")
+
+/** DISC-4: one school's programs, ranked by the server. No school: the saved or suggested one. */
+export async function getProgramSuggestions(school: string | null) {
+  const { data } = await agentApi.get<VerticalApiResponse<DiscoveryPrograms>>(
+    `${PREFIX}/education/programs`,
+    { params: school ? { school } : {} }
+  )
+  return data
+}
+
+/** DISC-4: save the chosen school (and program). The server keeps ids only. */
+export async function saveProgramChoice(body: ProgramChoice) {
+  const { data } = await agentApi.put<VerticalApiResponse<SavedProgramChoice>>(
+    `${PREFIX}/education/programs/choice`,
+    body
+  )
   return data
 }
 

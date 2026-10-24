@@ -15,8 +15,11 @@ import {
   getDiscoveryPortrait,
   getDiscoverySchools,
   getDiscoveryStatus,
+  getProgramSchools,
+  getProgramSuggestions,
   recordDiscoveryAge,
   saveDiscoveryAbout,
+  saveProgramChoice,
   startDiscoveryAlignment,
 } from "@/services/career-discovery/careerDiscovery.service"
 import type {
@@ -30,8 +33,12 @@ import type {
   DiscoveryJourney,
   DiscoveryPays,
   DiscoveryPlan,
+  DiscoveryProgramSchools,
+  DiscoveryPrograms,
   DiscoverySchools,
   DiscoveryStatus,
+  ProgramChoice,
+  SavedProgramChoice,
   SchoolsQuery,
 } from "@/types/career-discovery"
 import type { SelfPortrait } from "@/types/lumen"
@@ -59,6 +66,8 @@ export const discoveryKeys = {
     ["career-discovery", "education", "schools", q?.cip ?? "", q?.level ?? 0, q?.state ?? ""] as const,
   cost: (q: CostQuery | null) =>
     ["career-discovery", "cost", q?.cip ?? "", q?.level ?? 0, q?.school ?? 0] as const,
+  programSchools: ["career-discovery", "programs", "schools"] as const,
+  programs: (school: string | null) => ["career-discovery", "programs", "list", school ?? ""] as const,
 }
 
 /** The server's message for a failed call, or a plain fallback. */
@@ -141,6 +150,38 @@ export function useDiscoveryCost(query: CostQuery | null, enabled: boolean) {
     if (settled) void qc.invalidateQueries({ queryKey: discoveryKeys.journey })
   }, [settled, qc])
   return q
+}
+
+/** DISC-4: schools with a published catalog. Only asked for when the server offers programs. */
+export function useProgramSchools(enabled: boolean) {
+  return useQuery<DiscoveryProgramSchools | undefined, AxiosError>({
+    queryKey: discoveryKeys.programSchools,
+    queryFn: async () => (await getProgramSchools()).data,
+    enabled,
+    retry: false,
+  })
+}
+
+/** DISC-4: one school's programs, ranked and explained by the server. Reading writes nothing. */
+export function useProgramSuggestions(school: string | null, enabled: boolean) {
+  return useQuery<DiscoveryPrograms | undefined, AxiosError>({
+    queryKey: discoveryKeys.programs(school),
+    queryFn: async () => (await getProgramSuggestions(school)).data,
+    enabled,
+    retry: false,
+  })
+}
+
+/** DISC-4: save the chosen school and program (ids only), then re-read both lists. */
+export function useSaveProgramChoice() {
+  const qc = useQueryClient()
+  return useMutation<SavedProgramChoice | undefined, AxiosError, ProgramChoice>({
+    mutationFn: async (body) => (await saveProgramChoice(body)).data,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["career-discovery", "programs"] })
+      void qc.invalidateQueries({ queryKey: discoveryKeys.journey })
+    },
+  })
 }
 
 function useJourneyMutation<V>(fn: (v: V) => Promise<{ data?: DiscoveryJourney }>) {
