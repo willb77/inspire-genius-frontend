@@ -24,7 +24,13 @@
  * files for the four pages that read the switch (Direction Setting Job
  * matches, role detail, Fit a JD, history) each gained exactly one line,
  * `switch.fitSharedDisplay()` — a server switch cannot be read without a
- * request (CSA d01e9276 §3.5). That is the only reviewed golden update.
+ * request (CSA d01e9276 §3.5). That was the first reviewed golden update.
+ *
+ * RW2 follow-up (Bill, typed in Coord2 2026-10-24 23:13 EDT: "remove Career
+ * Fit's old résumé route: yes"): the five role-detail *.html goldens that draw
+ * the action bar changed in exactly one element — "Write Résumé" went from the
+ * inline-draft <button> to an <a href="/my/resume?jobId=…"> with the same class
+ * and icon. No *.requests.txt changed. That is the second reviewed update.
  *
  * To re-record (only ever on the base, before a source change):
  *   FIT5_GOLDEN_WRITE=1 npx jest src/components/fit/__tests__/fit5-golden.test.tsx

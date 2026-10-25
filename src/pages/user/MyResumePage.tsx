@@ -20,6 +20,13 @@
  * server names the role only if its org-scoped read finds it; what its
  * fabrication check took out is always listed here, never dropped silently.
  * Switch off, the page is today's whatever the URL says.
+ *
+ * RW2 follow-up (Bill, typed in Coord2 2026-10-24 23:13 EDT): with no role
+ * chosen, the page offers the role the person set as their goal target, when
+ * the server names one (`goalTarget`, resolved through the same org-scoped
+ * read). Taking it only sets `?jobId=`; the server resolves the role again. Career
+ * Fit now always links here, so with the switch off the page says it cannot aim
+ * at that role rather than dropping it silently.
  */
 import { useState } from "react"
 import { useSearchParams } from "react-router-dom"
@@ -216,12 +223,22 @@ export default function MyResumePage() {
   // RW2: a role is aimed at only when the server named it (switch on, role visible).
   const tailoredRole = data?.tailoredEnabled && data.targetRole ? data.targetRole : null
   const roleUnavailable = !!jobId && !!data?.tailoredEnabled && data.targetRoleStatus === "not_found"
+  // Career Fit links here with ?jobId= whatever the switch says; off, say so.
+  const roleIgnored = !!jobId && !!data && !data.tailoredEnabled
+  // RW2 follow-up: no role chosen → offer the goal target the server named.
+  const goalTarget = !jobId && data?.tailoredEnabled && data.goalTarget ? data.goalTarget : null
   const hasResume = !!data && (data.sources.resume || documentIds.length > 0)
   const canGenerate =
     !!data && !switchedOff && !limitReached && (tailoredRole ? hasResume : hasAnything) && !generate.isPending
 
   const toggleDoc = (id: string, on: boolean) =>
     setDocumentIds((prev) => (on ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)))
+
+  const pickGoalTarget = (target: { jobId: string }) => {
+    const next = new URLSearchParams(params)
+    next.set("jobId", target.jobId)
+    setParams(next, { replace: true })
+  }
 
   const clearRole = () => {
     const next = new URLSearchParams(params)
@@ -385,6 +402,20 @@ export default function MyResumePage() {
                   <p role="status" data-testid="resume-role-unavailable" className="text-xs text-amber-700">
                     That role isn&apos;t available to you, so this draft follows the target you type below.
                   </p>
+                ) : null}
+                {roleIgnored ? (
+                  <p role="status" data-testid="resume-role-ignored" className="text-xs text-amber-700">
+                    Aiming the draft at a Career Fit role isn&apos;t on right now — name the role below.
+                  </p>
+                ) : null}
+                {goalTarget ? (
+                  <div data-testid="resume-goal-target" className="space-y-2 rounded-md border border-dashed border-teal-300 p-3">
+                    <p className="text-xs text-muted-foreground">You set this role as your goal target.</p>
+                    <Button size="sm" variant="outline" onClick={() => pickGoalTarget(goalTarget)}>
+                      <Target className="mr-1.5 h-4 w-4 text-teal-700" aria-hidden="true" />
+                      Tailor to your goal target: {goalTarget.title}
+                    </Button>
+                  </div>
                 ) : null}
                 {tailoredRole ? (
                   <div data-testid="resume-tailored-role" className="space-y-2 rounded-md border border-teal-200 bg-teal-50 p-3">

@@ -30,6 +30,12 @@ export type ResumeWriterSources = {
   /** RW2 — the role a `?jobId=` names, as the server's org-scoped read returns it. */
   targetRole?: TargetRoleView | null
   targetRoleStatus?: "ok" | "not_found"
+  /**
+   * RW2 follow-up — with no `?jobId=`, the role the person set as their goal
+   * target, as the server's org-scoped read returns it. Absent when there is
+   * none, it is not visible, or either switch is off. A suggestion only.
+   */
+  goalTarget?: TargetRoleView
 }
 
 /** RW2 — a Career Fit role, as the Résumé Writer may show it. */

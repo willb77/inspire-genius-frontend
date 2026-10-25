@@ -11,13 +11,11 @@ import {
   Link2,
   PenLine,
   Loader2,
-  X,
 } from "lucide-react"
 import type { FitDetail } from "@/types/job-fit"
 import { downloadBlob } from "@/lib/exportTranscript"
 import { renderHtmlToPdf } from "@/lib/exportTranscript/renderPdf"
 import { copyReportLink, emailReportLink } from "@/lib/honor/shareReportLink"
-import { useWriteResume } from "@/hooks/job-fit/useWriteResume"
 import { useSaveFitReport } from "@/hooks/job-fit/useFitHistory"
 import {
   buildFitReportHtml,
@@ -26,7 +24,6 @@ import {
   fitReportFileBase,
 } from "@/lib/job-fit/fitReport"
 import { displayFitPercent } from "@/components/fit/fit"
-import { isMeasured } from "@/lib/job-fit/coverage"
 
 const BTN =
   "inline-flex items-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50"
@@ -70,19 +67,21 @@ function printBlob(blob: Blob) {
  * Save writes a real row (POST /v1/blueprint/fit/history, JS-3) with the
  * breakdown as rendered; it used to write browser storage and report success.
  *
- * RW2: `tailoredResumeHref` is set by the page only while the server's
- * `resume_writer_tailored` switch is on. Then "Write Résumé" opens the Résumé
- * Writer aimed at this role (built on the person's whole résumé) instead of the
- * inline draft. Without it, the button is exactly today's.
+ * "Write Résumé" opens the Résumé Writer aimed at this role
+ * (`/my/resume?jobId=<id>`), built on the person's whole résumé. The basic
+ * inline draft it used to fall back to, and its route
+ * (`POST /v1/agents/blueprint/write-resume`), were removed on Bill's word,
+ * typed in Coord2 2026-10-24 23:13 EDT: "remove Career Fit's old résumé route:
+ * yes". With no `resumeHref` (no role id) there is no button.
  */
 export function FitActionsBar({
   data,
   overview,
-  tailoredResumeHref,
+  resumeHref,
 }: {
   data: FitDetail
   overview?: string
-  tailoredResumeHref?: string
+  resumeHref?: string
 }) {
   const pct = displayFitPercent(data)
   const reportInput = { data, pct, overview }
@@ -90,8 +89,6 @@ export function FitActionsBar({
   const [menuOpen, setMenuOpen] = useState(false)
   const [saved, setSaved] = useState(false)
   const saveReport = useSaveFitReport()
-  const writeResume = useWriteResume()
-  const [showResume, setShowResume] = useState(false)
 
   async function handleDownloadPdf() {
     setBusy("pdf")
@@ -171,46 +168,6 @@ export function FitActionsBar({
     toast[ok ? "success" : "error"](ok ? "Link copied to clipboard." : "Could not copy the link.")
   }
 
-  async function handleWriteResume() {
-    setShowResume(true)
-    if (writeResume.data || writeResume.isPending) return
-    // BP-F5: only measured dimensions can be strengths — an unmeasured one has
-    // no gap (and `null >= 0` is true in JS, so it must be filtered explicitly).
-    const topDimensions = data.perDimension
-      .flatMap((d) => (isMeasured(d) && d.gap !== null && d.gap >= 0 ? [{ name: d.dimensionName, gap: d.gap }] : []))
-      .sort((a, b) => b.gap - a.gap)
-      .slice(0, 6)
-      .map((d) => d.name)
-    try {
-      await writeResume.mutateAsync({
-        roleTitle: data.roleTitle,
-        strengths: data.interviewSelfAdvocacy,
-        topDimensions,
-        fitContext: `About ${pct}% aligned with ${data.roleTitle}.`,
-        fitScore: pct,
-      })
-    } catch {
-      toast.error("Could not draft a résumé right now.")
-    }
-  }
-
-  function downloadResume() {
-    const r = writeResume.data
-    if (!r) return
-    const lines = [
-      r.summary,
-      "",
-      "STRENGTHS",
-      ...r.strengths.map((s) => `- ${s}`),
-      "",
-      "SUGGESTED BULLETS",
-      ...r.suggestedBullets.map((s) => `- ${s}`),
-      "",
-      r.disclaimer,
-    ]
-    downloadBlob(`${fitReportFileBase(data)}_resume-draft.txt`, new Blob([lines.join("\n")], { type: "text/plain" }))
-  }
-
   return (
     <div className="mb-6">
       <div className="flex flex-wrap items-center gap-2">
@@ -285,78 +242,17 @@ export function FitActionsBar({
           Copy link
         </button>
 
-        {tailoredResumeHref ? (
+        {resumeHref ? (
           <Link
-            to={tailoredResumeHref}
+            to={resumeHref}
             className={BTN}
             title="Write your résumé for this role, built on the résumé you have on file"
           >
             <PenLine className="h-4 w-4" />
             Write Résumé
           </Link>
-        ) : (
-          <button type="button" onClick={handleWriteResume} className={BTN} title="Draft a role-aligned résumé from your strengths">
-            <PenLine className="h-4 w-4" />
-            Write Résumé
-          </button>
-        )}
+        ) : null}
       </div>
-
-      {showResume && (
-        <div className="mt-4 rounded-xl border border-[#e5e7eb] bg-white p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#6b7280]">
-              Résumé draft — {data.roleTitle}
-            </h2>
-            <button type="button" onClick={() => setShowResume(false)} aria-label="Close résumé draft" className="text-[#9ca3af] hover:text-[#374151]">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {writeResume.isPending && (
-            <div className="flex items-center gap-2 text-sm text-[#6b7280]">
-              <Loader2 className="h-4 w-4 animate-spin" /> Drafting your résumé…
-            </div>
-          )}
-
-          {writeResume.isError && (
-            <p className="text-sm text-[#b91c1c]">Couldn&apos;t draft a résumé just now — please try again.</p>
-          )}
-
-          {writeResume.data && (
-            <div className="space-y-4">
-              <p className="text-sm leading-relaxed text-[#374151]">{writeResume.data.summary}</p>
-              {writeResume.data.strengths.length > 0 && (
-                <div>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#0f766e]">Strengths</h3>
-                  <ul className="list-disc space-y-1 pl-5 text-sm text-[#374151]">
-                    {writeResume.data.strengths.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {writeResume.data.suggestedBullets.length > 0 && (
-                <div>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#0f766e]">Suggested bullets</h3>
-                  <ul className="list-disc space-y-1 pl-5 text-sm text-[#374151]">
-                    {writeResume.data.suggestedBullets.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={downloadResume} className={BTN}>
-                  <Download className="h-4 w-4" />
-                  Download draft
-                </button>
-              </div>
-              <p className="text-xs leading-relaxed text-[#9ca3af]">{writeResume.data.disclaimer}</p>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }

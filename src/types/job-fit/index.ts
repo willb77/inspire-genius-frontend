@@ -248,14 +248,6 @@ export type ExplainFitResult = {
   disclaimer: string
 }
 
-/** Response from POST /v1/agents/blueprint/write-resume (flat — read res.data). */
-export type WriteResumeResult = {
-  summary: string
-  strengths: string[]
-  suggestedBullets: string[]
-  disclaimer: string
-}
-
 /** One adjacent role the user could grow toward. */
 export type PathwaySuggestion = {
   roleTitle: string

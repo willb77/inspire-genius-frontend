@@ -1,17 +1,14 @@
 /**
  * @jest-environment jsdom
  *
- * BP-F5 — the action toolbar on a partial-profile fit. "Write Résumé" builds
- * its strengths from dimensions at or above the benchmark; an unmeasured
- * dimension has no gap, and `null >= 0` is true in JS, so without an explicit
- * filter every unmeasured dimension would be sent as a top strength.
+ * BP-F5 — the action toolbar on a partial-profile fit. (Its "Write Résumé"
+ * strengths test went with the basic inline writer, removed 2026-10-24 — RW2
+ * follow-up; the button is now a link to the Résumé Writer.)
  */
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 
 jest.mock("sonner", () => ({ toast: Object.assign(jest.fn(), { success: jest.fn(), error: jest.fn(), info: jest.fn() }) }))
 
-const mockResume = { mutateAsync: jest.fn(), data: undefined as unknown, isPending: false, isError: false }
-jest.mock("@/hooks/job-fit/useWriteResume", () => ({ useWriteResume: () => mockResume }))
 const mockSaveReport = { mutateAsync: jest.fn().mockResolvedValue({ id: "snap-1" }), isPending: false }
 jest.mock("@/hooks/job-fit/useFitHistory", () => ({ useSaveFitReport: () => mockSaveReport }))
 
@@ -42,15 +39,6 @@ const PARTIAL: FitDetail = {
 }
 
 beforeEach(() => jest.clearAllMocks())
-
-test("Write Résumé sends measured strengths only — never an unmeasured dimension", async () => {
-  mockResume.mutateAsync.mockResolvedValueOnce(undefined)
-  render(<FitActionsBar data={PARTIAL} />)
-  fireEvent.click(screen.getByRole("button", { name: /write résumé/i }))
-  await waitFor(() => expect(mockResume.mutateAsync).toHaveBeenCalled())
-  const body = mockResume.mutateAsync.mock.calls[0][0] as { topDimensions: string[] }
-  expect(body.topDimensions).toEqual(["Delivering"])
-})
 
 test("Save keeps the withheld tier as null rather than inventing one", async () => {
   render(<FitActionsBar data={PARTIAL} />)

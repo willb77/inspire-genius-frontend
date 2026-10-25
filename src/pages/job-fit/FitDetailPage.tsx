@@ -17,7 +17,6 @@ import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponents
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
 import { useGoalTargetsEnabled } from "@/hooks/switches/useGoalTargetsEnabled"
 import { useFitSharedDisplayEnabled } from "@/hooks/switches/useFitSharedDisplayEnabled"
-import { useResumeWriterTailoredEnabled } from "@/hooks/switches/useResumeWriterTailoredEnabled"
 import { MakeTargetCard } from "./MakeTargetCard"
 import { FitBreakdown } from "./FitBreakdown"
 import { FitSummaryCard } from "./FitSummaryCard"
@@ -51,12 +50,11 @@ export default function FitDetailPage() {
   // FIT-5b — the shared fit display's wording (decision 3). Off, loading or
   // unreadable = FIT-5a's page exactly.
   const sharedDisplay = useFitSharedDisplayEnabled()
-  // RW2 — "Write Résumé" opens the tailored Résumé Writer for this role, only
-  // while the server's resume_writer_tailored switch is on. Off, loading or
-  // unreadable = today's inline draft.
-  const tailoredResume = useResumeWriterTailoredEnabled()
-  const tailoredResumeHref =
-    tailoredResume && jobId ? `${ROUTES.MY_RESUME}?jobId=${encodeURIComponent(jobId)}` : undefined
+  // RW2 follow-up — "Write Résumé" always opens the Résumé Writer aimed at
+  // this role. The basic inline writer is gone (Bill, Coord2 2026-10-24 23:13
+  // EDT); with the server's resume_writer_tailored switch off, /my/resume says
+  // it cannot aim at the role and lets the person name it.
+  const resumeHref = jobId ? `${ROUTES.MY_RESUME}?jobId=${encodeURIComponent(jobId)}` : undefined
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -86,7 +84,7 @@ export default function FitDetailPage() {
           <PartialProfileNote coverage={data} />
 
           {/* Action toolbar: Download PDF · Export As · Print · Save · Email · Copy link · Write Résumé */}
-          {narrative && <FitActionsBar data={data} tailoredResumeHref={tailoredResumeHref} />}
+          {narrative && <FitActionsBar data={data} resumeHref={resumeHref} />}
 
           {/* Closeness summary */}
           <FitStatTiles data={data} subject="role" className="mb-6" shared={sharedDisplay} />
