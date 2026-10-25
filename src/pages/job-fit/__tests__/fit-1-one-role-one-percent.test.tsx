@@ -54,9 +54,6 @@ jest.mock("@/hooks/job-fit/useFitHistory", () => ({
 jest.mock("@/hooks/job-fit/useExplainFit", () => ({
   useExplainFit: () => ({ mutate: jest.fn(), data: undefined, isPending: false, isError: false }),
 }))
-jest.mock("@/hooks/job-fit/useWriteResume", () => ({
-  useWriteResume: () => ({ mutate: jest.fn(), mutateAsync: jest.fn(), isPending: false }),
-}))
 jest.mock("@/hooks/switches/useJobFitComponentsEnabled", () => ({
   useJobFitComponentsEnabled: () => false,
 }))

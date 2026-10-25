@@ -5,13 +5,12 @@
  * (answer renders IN PLACE) and the action toolbar (copy link, Write Résumé).
  */
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { MemoryRouter } from "react-router-dom"
 
 jest.mock("sonner", () => ({ toast: Object.assign(jest.fn(), { success: jest.fn(), error: jest.fn(), info: jest.fn() }) }))
 
 const mockExplain = { mutate: jest.fn(), mutateAsync: jest.fn(), isPending: false, data: undefined as unknown }
-const mockResume = { mutateAsync: jest.fn(), data: undefined as unknown, isPending: false, isError: false }
 jest.mock("@/hooks/job-fit/useExplainFit", () => ({ useExplainFit: () => mockExplain }))
-jest.mock("@/hooks/job-fit/useWriteResume", () => ({ useWriteResume: () => mockResume }))
 const mockSaveReport = { mutateAsync: jest.fn().mockResolvedValue({ id: "snap-1" }), isPending: false }
 jest.mock("@/hooks/job-fit/useFitHistory", () => ({ useSaveFitReport: () => mockSaveReport }))
 
@@ -59,13 +58,14 @@ test("copy link puts the current URL on the clipboard", async () => {
   await waitFor(() => expect(writeText).toHaveBeenCalled())
 })
 
-test("Write Résumé shows the drafted résumé", async () => {
-  mockResume.data = { summary: "Operations leader.", strengths: ["Coordination"], suggestedBullets: ["Led a program."], disclaimer: "Draft." }
-  mockResume.mutateAsync.mockResolvedValueOnce(mockResume.data)
-  render(<FitActionsBar data={DATA} />)
-  fireEvent.click(screen.getByRole("button", { name: /write résumé/i }))
-  await waitFor(() => expect(screen.getByText("Operations leader.")).toBeInTheDocument())
-  expect(screen.getByText("Led a program.")).toBeInTheDocument()
+test("Write Résumé is a link to the Résumé Writer for this role, not an inline draft", () => {
+  render(
+    <MemoryRouter>
+      <FitActionsBar data={DATA} resumeHref="/my/resume?jobId=j1" />
+    </MemoryRouter>,
+  )
+  expect(screen.getByRole("link", { name: /write résumé/i })).toHaveAttribute("href", "/my/resume?jobId=j1")
+  expect(screen.queryByRole("button", { name: /write résumé/i })).not.toBeInTheDocument()
 })
 
 describe("FitActionsBar — Save (JS-3)", () => {

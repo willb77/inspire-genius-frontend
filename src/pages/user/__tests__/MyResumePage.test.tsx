@@ -212,8 +212,9 @@ test("RW2: the page asks the server about the jobId in the URL", () => {
   expect(sourcesFor).toHaveBeenCalledWith("job-1")
 })
 
-test("RW2: switch off (no tailoredEnabled), a jobId changes nothing on the page", () => {
+test("RW2: switch off (no tailoredEnabled), a jobId is not aimed at — the page says so and keeps the typed target", () => {
   renderPage("/my/resume?jobId=job-1")
+  expect(screen.getByTestId("resume-role-ignored")).toHaveTextContent(/isn.t on right now/)
   expect(screen.queryByTestId("resume-tailored-role")).not.toBeInTheDocument()
   expect(screen.getByLabelText("Role")).toBeInTheDocument()
   fireEvent.click(generateButton())
@@ -290,4 +291,40 @@ test("RW2: Download Word builds the .docx and downloads it", async () => {
   fireEvent.click(screen.getByRole("button", { name: /Download Word/ }))
   await waitFor(() => expect(mockDownload).toHaveBeenCalledWith("resume-test-member.docx", blob))
   expect(mockRenderDocx).toHaveBeenCalledWith(DRAFT, "Test Member")
+})
+
+// ── RW2 follow-up: the goal target (Bill, Coord2 2026-10-24 23:13 EDT) ──────
+
+const GOAL = { jobId: "job-goal", title: "Reporting Analyst", department: null }
+
+test("RW2 follow-up: no role chosen — the goal target the server named is offered", async () => {
+  sourcesState = { data: SOURCES({ tailoredEnabled: true, goalTarget: GOAL }) }
+  renderPage()
+  const offer = screen.getByRole("button", { name: "Tailor to your goal target: Reporting Analyst" })
+  expect(screen.queryByTestId("resume-role-ignored")).not.toBeInTheDocument()
+  fireEvent.click(offer)
+  // Taking it only sets ?jobId=; the server resolves the role again.
+  await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/my/resume?jobId=job-goal"))
+  expect(mutate).not.toHaveBeenCalled()
+})
+
+test("RW2 follow-up: no goal target from the server — no offer, today's page", () => {
+  sourcesState = { data: SOURCES({ tailoredEnabled: true }) }
+  renderPage()
+  expect(screen.queryByTestId("resume-goal-target")).not.toBeInTheDocument()
+  expect(screen.getByLabelText("Role")).toBeInTheDocument()
+})
+
+test("RW2 follow-up: switch off — a stray goalTarget is never offered", () => {
+  // Mutation: drop the tailoredEnabled check on the offer → red.
+  sourcesState = { data: SOURCES({ goalTarget: GOAL }) }
+  renderPage()
+  expect(screen.queryByTestId("resume-goal-target")).not.toBeInTheDocument()
+})
+
+test("RW2 follow-up: a role already chosen wins over the goal target", () => {
+  sourcesState = { data: SOURCES({ tailoredEnabled: true, targetRole: ROLE, targetRoleStatus: "ok", goalTarget: GOAL }) }
+  renderPage("/my/resume?jobId=job-1")
+  expect(screen.queryByTestId("resume-goal-target")).not.toBeInTheDocument()
+  expect(screen.getByTestId("resume-tailored-role")).toHaveTextContent("Sales Analytics Lead")
 })

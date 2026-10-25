@@ -1,18 +1,19 @@
 /**
  * @jest-environment jsdom
  *
- * RW2 — Career Fit's "Write Résumé". While the server's resume_writer_tailored
- * switch is on, it opens the Résumé Writer aimed at THIS role
- * (/my/resume?jobId=<id>) and never calls the basic inline writer. Off, loading
- * or unreadable, it is today's button: the inline draft, and no link.
+ * RW2 follow-up — Career Fit's "Write Résumé" always opens the Résumé Writer
+ * aimed at THIS role (/my/resume?jobId=<id>), whatever the server's
+ * resume_writer_tailored switch says. The basic inline writer and its route
+ * (POST /v1/agents/blueprint/write-resume) were removed on Bill's word, typed in
+ * Coord2 2026-10-24 23:13 EDT: "remove Career Fit's old résumé route: yes".
  */
+import fs from "fs"
+import path from "path"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 jest.mock("sonner", () => ({ toast: Object.assign(jest.fn(), { success: jest.fn(), error: jest.fn(), info: jest.fn() }) }))
-const mockResume = { mutateAsync: jest.fn(), data: undefined as unknown, isPending: false, isError: false }
-jest.mock("@/hooks/job-fit/useWriteResume", () => ({ useWriteResume: () => mockResume }))
 jest.mock("@/hooks/job-fit/useFitHistory", () => ({
   useSaveFitReport: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }))
@@ -66,35 +67,58 @@ function renderPage() {
 
 beforeEach(() => jest.clearAllMocks())
 
-test("ON: Write Résumé opens the Résumé Writer for this role, never the basic writer", async () => {
-  mockSwitch.mockResolvedValue(true)
+test.each([
+  ["on", () => mockSwitch.mockResolvedValue(true)],
+  ["off", () => mockSwitch.mockResolvedValue(false)],
+  ["unreadable", () => mockSwitch.mockRejectedValue(new Error("HTTP 404"))],
+])("switch %s: Write Résumé opens the Résumé Writer for this role", async (_label, arrange) => {
+  arrange()
   renderPage()
   const link = await screen.findByRole("link", { name: /write résumé/i })
   expect(link).toHaveAttribute("href", "/my/resume?jobId=j%2F1")
+  // No inline draft button, whatever the switch says.
+  expect(screen.queryByRole("button", { name: /write résumé/i })).not.toBeInTheDocument()
   fireEvent.click(link)
   await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/my/resume?jobId=j%2F1"))
-  expect(mockResume.mutateAsync).not.toHaveBeenCalled()
 })
 
-test.each([
-  ["off", () => mockSwitch.mockResolvedValue(false)],
-  ["unreadable", () => mockSwitch.mockRejectedValue(new Error("HTTP 404"))],
-])("%s: Write Résumé is today's button and drafts inline", async (_label, arrange) => {
-  arrange()
-  renderPage()
-  await waitFor(() => expect(mockSwitch).toHaveBeenCalled())
-  expect(screen.queryByRole("link", { name: /write résumé/i })).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole("button", { name: /write résumé/i }))
-  await waitFor(() => expect(mockResume.mutateAsync).toHaveBeenCalled())
-  expect(mockResume.mutateAsync.mock.calls[0][0]).toMatchObject({ roleTitle: "Research Analyst" })
-})
-
-test("the bar on its own (no href) needs no router and keeps today's button", () => {
+test("the bar with no role link renders no Write Résumé at all — and needs no router", () => {
   const data = {
     jobId: "j2", roleTitle: "Engineer", tier: null, baseTier: null, totalVariation: 0, fitScore: 50,
     perDimension: [], criticalGaps: [], coachingGaps: [], overdoneFlags: [], interviewSelfAdvocacy: [],
     methodologyNote: "",
   } as unknown as FitDetail
   render(<FitActionsBar data={data} />)
-  expect(screen.getByRole("button", { name: /write résumé/i })).toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: /write résumé/i })).not.toBeInTheDocument()
+  expect(screen.queryByRole("link", { name: /write résumé/i })).not.toBeInTheDocument()
+})
+
+// ── Static guard: nothing in the app calls the removed route ────────────────
+
+const SRC = path.resolve(__dirname, "../../..")
+
+function sourceFiles(dir: string, acc: string[] = []): string[] {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      if (entry.name === "node_modules" || entry.name === "__tests__") continue
+      sourceFiles(full, acc)
+    } else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
+      acc.push(full)
+    }
+  }
+  return acc
+}
+
+test("no app source calls the removed basic résumé route", () => {
+  // Mutation: restore resume.service.ts (or any caller of the path) → red.
+  const files = sourceFiles(SRC)
+  expect(files.length).toBeGreaterThan(200) // the walk saw the tree, not an empty dir
+  // A path as a string literal, or the old hook called. FitActionsBar's comment
+  // recording the removal names the path in prose and is not a caller.
+  const callers = files.filter((f) => {
+    const body = fs.readFileSync(f, "utf8")
+    return /["'`]\/v1\/agents\/blueprint\/write-resume["'`]/.test(body) || /\buseWriteResume\s*\(/.test(body)
+  })
+  expect(callers.map((f) => path.relative(SRC, f))).toEqual([])
 })
