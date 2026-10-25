@@ -58,6 +58,7 @@ function DegreePlanView({ enabled }: { enabled: boolean }) {
       <div className="space-y-6">
         {header}
         <NoticeCard title="No plan yet">
+          {data.carriedForward ? <p>{data.carriedForward.note}</p> : null}
           <p>{data.note}</p>
           <Link className="underline" to={ROUTES.CAREER_DISCOVERY.EDUCATION}>
             Go to Education paths
@@ -69,6 +70,11 @@ function DegreePlanView({ enabled }: { enabled: boolean }) {
   return (
     <div className="space-y-6">
       {header}
+      {data.carriedForward ? (
+        <NoticeCard title="Your plan moved to the new catalog">
+          <p>{data.carriedForward.note}</p>
+        </NoticeCard>
+      ) : null}
       <PlanSettings data={data} />
       <PlanBody data={data} />
     </div>

@@ -301,3 +301,30 @@ describe("service", () => {
     })
   })
 })
+
+describe("CURU-F1: a choice carried to a new catalog version", () => {
+  const carried = { ...{
+  fromCatalog: { id: "cat-a", catalogYear: "2025", version: 1 },
+  toCatalog: { id: "cat-a2", catalogYear: "2025", version: 2 },
+  programsNotCarried: [],
+  coursesNotCarried: ["ELE 1"],
+  note: "Your school published version 2 of its 2025 catalog, so your saved plan was moved to it from version 1. 1 course you'd ticked is no longer in it: ELE 1.",
+}, coursesNotCarried: [],
+    note: "Your school published version 2 of its 2025 catalog, so your saved plan was moved to it from version 1. Everything you'd chosen and ticked is still in it." }
+
+  test("the list says the choice moved, and the carried program is still 'Your choice'", async () => {
+    m.getProgramSuggestions.mockReturnValue(ok(catalog({
+      catalog: { id: "cat-a2", catalogYear: "2025", version: 2 },
+      chosenProgramId: "p-data", carriedForward: carried })))
+    renderPage()
+    expect(await screen.findByText("Your choice moved to the new catalog")).toBeInTheDocument()
+    expect(screen.getByText(carried.note)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Your choice" })).toBeDisabled()
+  })
+
+  test("no carriedForward, no notice", async () => {
+    renderPage()
+    await screen.findByText("1. Data Analytics")
+    expect(screen.queryByText("Your choice moved to the new catalog")).not.toBeInTheDocument()
+  })
+})

@@ -287,6 +287,18 @@ export type DiscoveryProgramsFallback = {
   school: { id: string; name: string | null } | null
 }
 
+/**
+ * CURU-F1: the saved choice was made on an older version of the same catalog
+ * and was carried to the newest by course and program code. Present only then.
+ */
+export type CarriedForward = {
+  fromCatalog: { id: string; catalogYear: string; version: number }
+  toCatalog: { id: string; catalogYear: string; version: number }
+  programsNotCarried: string[]
+  coursesNotCarried: string[]
+  note: string
+}
+
 export type DiscoveryProgramsCatalog = {
   mode: "catalog"
   school: { id: string; name: string | null }
@@ -297,6 +309,7 @@ export type DiscoveryProgramsCatalog = {
   fit: { available: boolean; state: string; asOf: string | null; reason: string | null }
   chosenProgramId: string | null
   socCodeNote: string
+  carriedForward?: CarriedForward
 }
 
 export type DiscoveryPrograms = DiscoveryProgramsCatalog | DiscoveryProgramsFallback
@@ -434,10 +447,17 @@ export type DegreePlanReady = {
   costToFinish: CostToFinish
   gaps: PlanGaps
   socCodeNote: string
+  carriedForward?: CarriedForward
 }
 
 /** No plan yet: catalogs can't be read, no program chosen, or the catalog moved on. */
-export type DegreePlanPending = { available: boolean; reason: string; note: string; plan: null }
+export type DegreePlanPending = {
+  available: boolean
+  reason: string
+  note: string
+  plan: null
+  carriedForward?: CarriedForward
+}
 
 export type DegreePlan = DegreePlanReady | DegreePlanPending
 
