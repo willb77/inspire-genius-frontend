@@ -114,6 +114,11 @@ function ProgramList({ data }: { data: DiscoveryProgramsCatalog }) {
       ) : (
         <p className="text-xs text-muted-foreground">{data.fit.reason}</p>
       )}
+      {data.carriedForward ? (
+        <NoticeCard title="Your choice moved to the new catalog">
+          <p>{data.carriedForward.note}</p>
+        </NoticeCard>
+      ) : null}
       {save.isError ? <DiscoveryError message={discoveryErrorMessage(save.error)} /> : null}
       {data.chosenProgramId ? <DegreePlanLink /> : null}
       <ol className="space-y-3">

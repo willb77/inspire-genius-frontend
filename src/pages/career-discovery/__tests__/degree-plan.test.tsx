@@ -323,3 +323,38 @@ describe("the way in from Programs at your school", () => {
     expect(screen.queryByRole("link", { name: /See your degree plan/ })).not.toBeInTheDocument()
   })
 })
+
+describe("CURU-F1: a plan carried to a new catalog version", () => {
+  const carried = {
+  fromCatalog: { id: "cat-a", catalogYear: "2025", version: 1 },
+  toCatalog: { id: "cat-a2", catalogYear: "2025", version: 2 },
+  programsNotCarried: [],
+  coursesNotCarried: ["ELE 1"],
+  note: "Your school published version 2 of its 2025 catalog, so your saved plan was moved to it from version 1. 1 course you'd ticked is no longer in it: ELE 1.",
+}
+
+  test("the plan shows one notice saying what moved and what did not", async () => {
+    m.getDegreePlan.mockReturnValue(ok(planData({ carriedForward: carried })))
+    renderAt("degree-plan")
+    expect(await screen.findByText("Your plan moved to the new catalog")).toBeInTheDocument()
+    expect(screen.getByText(carried.note)).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Your plan" })).toBeInTheDocument()
+  })
+
+  test("no carriedForward, no notice", async () => {
+    renderAt("degree-plan")
+    expect(await screen.findByRole("heading", { name: "Your plan" })).toBeInTheDocument()
+    expect(screen.queryByText("Your plan moved to the new catalog")).not.toBeInTheDocument()
+  })
+
+  test("a program the new version dropped: the move and the server's note, no plan", async () => {
+    m.getDegreePlan.mockReturnValue(ok({ available: true, reason: "program_gone",
+      note: "The program you chose isn't in your school's newest catalog. Choose again.", plan: null,
+      carriedForward: { ...carried, programsNotCarried: ["DAT100"], coursesNotCarried: [],
+        note: "Your school published version 2 of its 2025 catalog, so your saved plan was moved to it from version 1. 1 program you'd chosen is no longer in it: DAT100." } }))
+    renderAt("degree-plan")
+    expect(await screen.findByText(/no longer in it: DAT100\./)).toBeInTheDocument()
+    expect(screen.getByText(/isn't in your school's newest catalog/)).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Your plan" })).not.toBeInTheDocument()
+  })
+})
