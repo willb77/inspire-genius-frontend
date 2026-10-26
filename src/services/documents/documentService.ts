@@ -259,6 +259,11 @@ type LatestPrismDocument = {
   document_id: string;
   file_name: string;
   uploaded_at: string;
+  // PRISM-RR P2 (D4): the uploaded report PDF's and PRISM CSV's own names, for
+  // "Latest report:". Absent from an older document-service; null when the
+  // user has no such document. `file_name` keeps its old meaning.
+  pdf_file_name?: string | null;
+  csv_file_name?: string | null;
 };
 
 /**

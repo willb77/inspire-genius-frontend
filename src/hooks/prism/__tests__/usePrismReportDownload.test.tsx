@@ -21,7 +21,7 @@ import {
   replaceMyPrismReport,
 } from "@/services/prism/prismReport.service"
 
-jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
+jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() } }))
 jest.mock("@/services/prism/prismReport.service", () => ({
   getMyPrismReport: jest.fn(),
   getMyPrismReportDownloadUrl: jest.fn(),
@@ -29,6 +29,7 @@ jest.mock("@/services/prism/prismReport.service", () => ({
   replaceMyPrismReport: jest.fn(),
   adminUploadUserPrismPdf: jest.fn(),
   adminDeleteUserPrismPdf: jest.fn(),
+  adminDeleteUserPrismScores: jest.fn(),
 }))
 
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -119,7 +120,7 @@ it("useReplaceMyPrismReport calls the service with csv + pdf", async () => {
     await act(async () => {
       await result.current.mutateAsync({ csv, pdf })
     })
-    expect(replaceMyPrismReport).toHaveBeenCalledWith(csv, pdf)
+    expect(replaceMyPrismReport).toHaveBeenCalledWith(csv, pdf, { confirmSectionLoss: undefined })
   })
 
   it("useAdminUploadPrismPdf calls the service with userId + pdf", async () => {

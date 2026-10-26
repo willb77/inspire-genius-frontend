@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { FileUp, Loader2, CheckCircle2, XCircle, Paperclip } from "lucide-react";
+import { FileUp, Loader2, CheckCircle2, XCircle, Paperclip, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { importPrismFile } from "@/services/prism/prism.service";
+import { useAdminDeletePrismScores } from "@/hooks/prism/usePrismReportDownload";
 
 /** A user the dialog can ingest a PRISM report for. */
 export type PrismIngestTarget = {
@@ -283,6 +284,10 @@ export default function PrismIngestDialog({ open, onOpenChange, targets }: Props
           ))}
         </div>
 
+        {!bulk && targets[0] && (
+          <DeletePrismScoresSection target={targets[0]} disabled={running} />
+        )}
+
         <DialogFooter className="flex items-center sm:justify-between gap-2">
           <div className="text-xs text-muted-foreground">
             {progress
@@ -319,5 +324,112 @@ export default function PrismIngestDialog({ open, onOpenChange, targets }: Props
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * PRISM-RR (D3/D5): a super-admin deletes ONE user's PRISM scores and their
+ * PRISM CSV documents. The report PDF is kept — it has its own Upload / Delete
+ * PRISM PDF action. A hard delete with no undo, so it sits behind an explicit
+ * step and typing the user's email. The server answers 403 while
+ * `prism_pdf_replace` is off for the user, which the toast reports.
+ */
+export function DeletePrismScoresSection({
+  target,
+  disabled,
+}: {
+  target: PrismIngestTarget;
+  disabled?: boolean;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState("");
+  const del = useAdminDeletePrismScores();
+  const matches = typed.trim().toLowerCase() === target.email.trim().toLowerCase();
+
+  useEffect(() => {
+    setConfirming(false);
+    setTyped("");
+  }, [target.id]);
+
+  if (!confirming) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-md border border-red-200 p-2.5">
+        <div className="text-xs text-muted-foreground">
+          Remove this user&apos;s PRISM scores and PRISM CSV documents. The report PDF is kept.
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0 border-red-300 text-red-700 hover:bg-red-50"
+          disabled={disabled || del.isPending}
+          data-testid="prism-scores-delete-open"
+          onClick={() => setConfirming(true)}
+        >
+          <Trash2 className="size-4" /> Delete PRISM scores…
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="space-y-2 rounded-md border border-red-300 bg-red-50 p-3"
+      data-testid="prism-scores-delete-confirm"
+    >
+      <p className="text-sm font-medium text-red-800">
+        Delete {target.name || target.email}&apos;s PRISM scores?
+      </p>
+      <p className="text-xs text-red-800">
+        This permanently removes their PRISM assessments, scores and PRISM CSV documents. Their
+        report PDF is kept. It cannot be undone except by importing their PRISM data again.
+      </p>
+      <label className="block text-xs text-red-800" htmlFor="prism-scores-delete-email">
+        Type <span className="font-mono">{target.email}</span> to confirm
+      </label>
+      <input
+        id="prism-scores-delete-email"
+        data-testid="prism-scores-delete-email"
+        value={typed}
+        onChange={(e) => setTyped(e.target.value)}
+        autoComplete="off"
+        className="w-full rounded-md border border-red-300 bg-white px-2 py-1 text-sm"
+      />
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={del.isPending}
+          onClick={() => {
+            setConfirming(false);
+            setTyped("");
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          data-testid="prism-scores-delete-submit"
+          disabled={!matches || del.isPending || disabled}
+          onClick={() =>
+            del.mutate(
+              { userId: target.id },
+              {
+                onSuccess: () => {
+                  setConfirming(false);
+                  setTyped("");
+                },
+              },
+            )
+          }
+        >
+          {del.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+          Delete scores
+        </Button>
+      </div>
+    </div>
   );
 }
