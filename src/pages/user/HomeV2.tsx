@@ -25,6 +25,7 @@ import { isVerticalForceDisabled } from "@/components/layout/useVerticalLauncher
 import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation";
 import type { AxiosError } from "axios";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
+import { latestPrismDisplayName } from "@/lib/prism/latestPrismDisplayName";
 import { useMyProfile } from "@/hooks/profile/useProfile";
 import {
   WelcomeBackTile,
@@ -622,7 +623,7 @@ export default function HomeV2() {
             lastActionsLoading={convLoading}
             onResumeConversation={goToChat}
             hasReport={hasReport}
-            reportFileName={latestPrism?.file_name}
+            reportFileName={latestPrismDisplayName(latestPrism)}
             prismLoading={prismLoading}
             personalInfo={personalInfo}
             onAddPersonalInfo={openAddPersonalInfo}

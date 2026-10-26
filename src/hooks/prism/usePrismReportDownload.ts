@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { apiErrorMessage } from '@/lib/apiErrorMessage'
 import {
   adminDeleteUserPrismPdf,
+  adminDeleteUserPrismScores,
   adminUploadUserPrismPdf,
   getMyPrismReport,
   getMyPrismReportDownloadUrl,
@@ -9,6 +11,7 @@ import {
   replaceMyPrismReport,
   type MyPrismReport,
   type PrismReportDownload,
+  type PrismScoresDeleteResult,
   type ReplaceReportResult,
 } from '@/services/prism/prismReport.service'
 
@@ -58,19 +61,59 @@ export function useMyPrismReportDownloadUrl() {
   })
 }
 
-function _errDetail(error: unknown): string {
-  const e = error as Error & { response?: { data?: { detail?: string } } }
-  return e?.response?.data?.detail ?? e?.message ?? 'Something went wrong'
+type _ApiError = Error & {
+  response?: { status?: number; data?: { detail?: unknown } }
 }
 
 /**
- * Self-service replace of the caller's own PRISM data (CSV scores + optional
- * PDF). Invalidates the report + history queries so every surface refreshes.
+ * A readable message from an API error. Adds one shape to
+ * {@link apiErrorMessage} (strings and FastAPI 422 lists): the PRISM-RR replace
+ * route's `{code, message}` object, whose `message` is the reason to show.
+ * Passed raw it rendered as "[object Object]".
+ */
+export function errorDetail(error: unknown): string {
+  const detail = (error as _ApiError)?.response?.data?.detail
+  if (detail && typeof detail === 'object' && !Array.isArray(detail)) {
+    const msg = (detail as { message?: unknown }).message
+    if (typeof msg === 'string' && msg.trim()) return msg
+  }
+  return apiErrorMessage(error, 'Something went wrong')
+}
+
+const _errDetail = errorDetail
+
+/**
+ * The sections a replace would remove, when the server refused it with
+ * `409 {code: "section_loss", sections}` — or `null` for any other error. The
+ * replace dialog asks the user to confirm and resubmits with
+ * `confirmSectionLoss`.
+ */
+export function sectionLossOf(error: unknown): string[] | null {
+  const e = error as _ApiError
+  if (e?.response?.status !== 409) return null
+  const detail = e.response?.data?.detail as { code?: unknown; sections?: unknown } | undefined
+  if (!detail || detail.code !== 'section_loss') return null
+  return Array.isArray(detail.sections)
+    ? detail.sections.filter((s): s is string => typeof s === 'string')
+    : []
+}
+
+export type ReplacePrismVars = {
+  csv?: File | null
+  pdf?: File | null
+  confirmSectionLoss?: boolean
+}
+
+/**
+ * Self-service replace of the caller's own PRISM data — a CSV, a PDF, or both
+ * (a PDF on its own only while `prism_pdf_replace` is on). Invalidates every
+ * query that shows PRISM so each surface refreshes at once.
  */
 export function useReplaceMyPrismReport() {
   const qc = useQueryClient()
-  return useMutation<ReplaceReportResult, unknown, { csv: File; pdf?: File | null }>({
-    mutationFn: ({ csv, pdf }) => replaceMyPrismReport(csv, pdf),
+  return useMutation<ReplaceReportResult, unknown, ReplacePrismVars>({
+    mutationFn: ({ csv, pdf, confirmSectionLoss }) =>
+      replaceMyPrismReport(csv ?? null, pdf ?? null, { confirmSectionLoss }),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['prism', 'report', 'me'] })
       qc.invalidateQueries({ queryKey: ['prism-history'] })
@@ -81,12 +124,45 @@ export function useReplaceMyPrismReport() {
       // line a successful replace leaves the tile showing the pre-import state
       // until a hard reload, which reads as "it didn't work".
       qc.invalidateQueries({ queryKey: ['documents', 'latest-prism'] })
+      // The Behavioral map (Powered by PRISM card) and the Prism Data pill's
+      // Brain Map read the scores through THIS key (5-min staleTime). It was
+      // never invalidated, so both showed the old map after a replace.
+      qc.invalidateQueries({ queryKey: ['me', 'prism'] })
+      const what = data.csv_generated ? 'from your PDF' : 'replaced'
       toast.success(
-        `PRISM data replaced — ${data.scores_written} scores` +
+        `PRISM data ${what} — ${data.scores_written} scores` +
           (data.pdf_replaced ? ' + PDF updated.' : '.'),
       )
     },
-    onError: (error) => toast.error(`Replace failed: ${_errDetail(error)}`),
+    onError: (error) => {
+      // The section-loss 409 is a question for the user, not a failure: the
+      // dialog shows the sections and offers to replace anyway.
+      if (sectionLossOf(error)) return
+      toast.error(`Replace failed: ${_errDetail(error)}`)
+    },
+  })
+}
+
+/**
+ * Super-admin: delete a user's PRISM scores and PRISM CSV documents (never the
+ * PDF). Hard delete — the caller confirms first.
+ */
+export function useAdminDeletePrismScores() {
+  const qc = useQueryClient()
+  return useMutation<PrismScoresDeleteResult, unknown, { userId: string }>({
+    mutationFn: ({ userId }) => adminDeleteUserPrismScores(userId),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['prism-history'] })
+      if (data.deleted_assessments === 0 && data.deleted_prism_results === 0) {
+        toast.info('No PRISM scores were found for this user. Nothing was deleted.')
+        return
+      }
+      toast.success(
+        `Deleted the user's PRISM scores (${data.deleted_assessments} assessment(s)) and ` +
+          `${data.deleted_csv_documents} CSV document(s). The report PDF was kept.`,
+      )
+    },
+    onError: (error) => toast.error(`Delete failed: ${_errDetail(error)}`),
   })
 }
 

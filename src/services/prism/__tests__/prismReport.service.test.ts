@@ -4,6 +4,7 @@
 import { api } from "@/lib/axios"
 import {
   adminDeleteUserPrismPdf,
+  adminDeleteUserPrismScores,
   adminUploadUserPrismPdf,
   getMyPrismReport,
   getMyPrismReportDownloadUrl,
@@ -119,5 +120,37 @@ it("replaceMyPrismReport POSTs multipart to /report/me/replace with csv (+pdf)",
     const res = await adminDeleteUserPrismPdf("u1")
     expect(mockApi.delete).toHaveBeenCalledWith("/v1/profile/admin/users/u1/prism-pdf")
     expect(res.deleted_document_rows).toBe(2)
+  })
+})
+
+describe("prismReport.service — PRISM-RR", () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it("replaceMyPrismReport sends a PDF on its own (no csv field)", async () => {
+    ;(mockApi.post as jest.Mock).mockResolvedValueOnce({ data: { status: true } })
+    const pdf = new File(["%PDF-1.7 x"], "report.pdf", { type: "application/pdf" })
+    await replaceMyPrismReport(null, pdf)
+    const [, form] = (mockApi.post as jest.Mock).mock.calls[0]
+    expect((form as FormData).get("csv")).toBeNull()
+    expect((form as FormData).get("pdf")).toBe(pdf)
+    expect((form as FormData).get("confirm_section_loss")).toBeNull()
+  })
+
+  it("replaceMyPrismReport adds confirm_section_loss=true only when asked", async () => {
+    ;(mockApi.post as jest.Mock).mockResolvedValueOnce({ data: { status: true } })
+    const csv = new File(["raw"], "scores.csv", { type: "text/csv" })
+    await replaceMyPrismReport(csv, null, { confirmSectionLoss: true })
+    const [, form] = (mockApi.post as jest.Mock).mock.calls[0]
+    expect((form as FormData).get("confirm_section_loss")).toBe("true")
+  })
+
+  it("adminDeleteUserPrismScores DELETEs the admin per-user prism-scores route", async () => {
+    ;(mockApi.delete as jest.Mock).mockResolvedValueOnce({
+      data: { status: true, user_id: "u1", deleted_assessments: 1, deleted_scores: 5,
+              deleted_typings: 0, deleted_prism_results: 1, deleted_csv_documents: 1 },
+    })
+    const res = await adminDeleteUserPrismScores("u1")
+    expect(mockApi.delete).toHaveBeenCalledWith("/v1/profile/admin/users/u1/prism-scores")
+    expect(res.deleted_csv_documents).toBe(1)
   })
 })

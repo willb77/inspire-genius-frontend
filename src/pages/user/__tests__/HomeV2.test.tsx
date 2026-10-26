@@ -194,7 +194,7 @@ describe("HomeV2", () => {
       fireEvent.click(screen.getByRole("button", { name: "Add Prism Rpt .csv" }));
 
       // The replace dialog — it posts to /v1/prism/report/me/replace.
-      expect(screen.getByTestId("prism-replace-csv")).toBeInTheDocument();
+      expect(screen.getByTestId("prism-drop-zone")).toBeInTheDocument();
       expect(screen.getByTestId("prism-replace-submit")).toBeInTheDocument();
       // ...and NOT the generic tagged-upload modal, whose heading is "Add <name>".
       expect(
@@ -212,7 +212,7 @@ describe("HomeV2", () => {
         screen.getByRole("heading", { name: "Add Bio" }),
       ).toBeInTheDocument();
       // ...and it must NOT get the PRISM importer.
-      expect(screen.queryByTestId("prism-replace-csv")).toBeNull();
+      expect(screen.queryByTestId("prism-drop-zone")).toBeNull();
     });
   });
 
