@@ -39,6 +39,84 @@ export type PrismSurveyRequestPayload = {
    *  resolves to one of the caller's practitioners; ignored otherwise. When
    *  the report lands, that practitioner is granted the PRISM profile. */
   shareWithPractitioner?: boolean
+  /** Required by the server only when `email` is not the caller's own account
+   *  email: the PRISM Practitioner who authorised a survey for someone else. */
+  practitionerName?: string
+  /** The caller's confirmation that `practitionerName` authorised it. */
+  practitionerConfirmed?: boolean
+}
+
+// ── Prior approval for survey requests (2026-10-26) ─────────────────
+
+/** The notice every blocked caller sees — the server sends the same text. */
+export const PRISM_REQUEST_APPROVAL_MESSAGE =
+  'All Requests for Surveys need prior Approval. Please provide your name and the ' +
+  'name of the PRISM Practitioner who provided access to the site. A notification ' +
+  'will be sent to Admin@inspiresgenius.com'
+
+export type PrismAccessRequest = {
+  id: string
+  status: 'requested' | 'approved' | 'denied' | string
+  practitioner_name: string
+  requested_at: string | null
+  decided_at: string | null
+}
+
+/** `GET /v1/prism/requests/access` — may the caller request a survey? */
+export type PrismRequestAccessState = {
+  allowed: boolean
+  /** Which authorisation applies: everyone, the caller's organisation, or them. */
+  scope: 'tier' | 'org' | 'person' | null
+  /** An approval request is open and not yet decided. */
+  pending: boolean
+  request: PrismAccessRequest | null
+  message: string
+  /** The caller's OWN name and email, as an approval request records them. */
+  account: { name: string; email: string }
+}
+
+export async function getPrismRequestAccess(): Promise<PrismRequestAccessState> {
+  const resp = await agentApi.get<PrismRequestAccessState>('/v1/prism/requests/access')
+  return resp.data
+}
+
+/** `POST /v1/prism/requests/access` — ask for approval. Name and email are
+ *  taken from the account server-side; the body carries neither. */
+export async function requestPrismAccess(body: {
+  practitionerName: string
+  confirmIsMe: boolean
+}): Promise<PrismRequestAccessState> {
+  const resp = await agentApi.post<PrismRequestAccessState>('/v1/prism/requests/access', body)
+  return resp.data
+}
+
+type ErrorWithResponse = {
+  response?: { status?: number; data?: { detail?: unknown } }
+}
+
+/** True for the server's `403 prism_request_approval_required`. */
+export function isApprovalRequiredError(err: unknown): boolean {
+  const res = (err as ErrorWithResponse)?.response
+  const detail = res?.data?.detail as { code?: unknown } | undefined
+  return res?.status === 403 && detail?.code === 'prism_request_approval_required'
+}
+
+/** True when `email` is not the signed-in account's. An unknown account email
+ *  counts as different — the server treats it the same way. */
+export function isOtherEmail(email: string | undefined, accountEmail: string): boolean {
+  const entered = (email ?? '').trim().toLowerCase()
+  if (!entered) return false
+  return !accountEmail || entered !== accountEmail.trim().toLowerCase()
+}
+
+/** A readable message from an API error: a string `detail`, a structured
+ *  `detail.message`, else the error's own message. Never "[object Object]". */
+export function apiErrorMessage(err: unknown): string | undefined {
+  const raw = (err as ErrorWithResponse)?.response?.data?.detail
+  if (typeof raw === 'string') return raw
+  const msg = (raw as { message?: unknown } | undefined)?.message
+  if (typeof msg === 'string' && msg) return msg
+  return (err as Error)?.message
 }
 
 /** One of the caller's own practitioners, as the 409 lists them. */
