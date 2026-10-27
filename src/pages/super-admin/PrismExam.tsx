@@ -9,7 +9,9 @@ import {
   Loader2,
   MinusCircle,
   Play,
+  Share2,
   StopCircle,
+  Upload,
   XCircle,
 } from "lucide-react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
@@ -28,38 +30,63 @@ import { answersToCsv, answersToMarkdown, pct, pointsOf, runTitle, scoreOf, shor
 import { validateQuestionSet } from "@/lib/prism-exam/validateQuestionSet"
 import {
   isRunActive,
+  useActivateQuestionSet,
   useActiveQuestionSet,
   useCancelExamRun,
+  useDeleteGrant,
   useExamAnswers,
   useExamDiff,
+  useExamGrants,
+  useExamQuestionSet,
   useExamQuestionSets,
   useExamRun,
   useExamRuns,
+  useImportQuestionSet,
+  usePutGrant,
   useReplaceQuestionSet,
+  useShareQuestionSet,
   useStartExamRun,
 } from "@/hooks/super-admin/usePrismExam"
 import type {
   DiffRecord,
+  ExamAccess,
   ExamAnswer,
   ExamRun,
   ExamRunDetail,
   ExamVerdict,
+  ImportResult,
   QuestionSet,
+  QuestionSetSummary,
 } from "@/types/prism-exam"
 
-type TabKey = "run" | "results" | "history" | "questions"
+type TabKey = "run" | "results" | "history" | "questions" | "access"
 
 /**
- * PRISM Practitioner Exam — run the handbook exam against the platform from
- * the browser, watch it score, and keep every run.
+ * PRISM Practitioner Exam — run an exam against the platform from the browser,
+ * watch it score, and keep every run.
  *
- * The exam is the same 91-question set the CLI harness uses, asked of
- * Meridian as the synthetic exam user and judged strictly against the
- * handbook's marking key. A run takes about ten minutes and shares the
- * engine's LLM capacity with live users, so it is one run per tier at a time
- * and the concurrency is capped.
+ * The default set is the same 91-question handbook set the CLI harness uses;
+ * other sets are saved by name (pasted as JSON or imported from an .xlsx) and
+ * picked per run. Every question is asked of Meridian as the synthetic exam
+ * user and judged against the set's expected answers. A run takes about ten
+ * minutes and shares the engine's LLM capacity with live users, so it is one
+ * run per tier at a time and the concurrency is capped.
+ *
+ * Super-admins get this page under `/super-admin/prism-exam`. A granted user
+ * (manager or above, with a grant) gets {@link PrismExamContent} at
+ * `/prism-exam` in their own layout: their own and shared sets, their own runs,
+ * no active-set editing and no Access tab. The server enforces all of that;
+ * the page only hides what would 403.
  */
 export default function PrismExam() {
+  return (
+    <SuperAdminLayout>
+      <PrismExamContent superAdmin />
+    </SuperAdminLayout>
+  )
+}
+
+export function PrismExamContent({ superAdmin, access }: { superAdmin: boolean; access?: ExamAccess }) {
   const [tab, setTab] = useState<TabKey>("run")
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>(undefined)
 
@@ -75,15 +102,14 @@ export default function PrismExam() {
   }
 
   return (
-    <SuperAdminLayout>
-      <div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
             <ClipboardCheck className="h-6 w-6" /> PRISM Practitioner Exam
           </h1>
           <p className="text-muted-foreground mt-1 max-w-3xl text-sm">
-            Sits the practitioner handbook exam against this tier: every question is asked of Meridian
-            as the exam user and marked against the handbook. Start a run, watch it score, read the
+            Sits a PRISM exam against this tier: every question is asked of Meridian as the exam user
+            and marked against the set&apos;s expected answers. Start a run, watch it score, read the
             misses, and compare runs over time.
           </p>
         </div>
@@ -94,9 +120,16 @@ export default function PrismExam() {
             <TabsTrigger value="results">Results</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
             <TabsTrigger value="questions">Questions</TabsTrigger>
+            {superAdmin && <TabsTrigger value="access">Access</TabsTrigger>}
           </TabsList>
           <TabsContent value="run" className="mt-4">
-            <RunPanel runs={runs.data ?? []} onStarted={openResults} onOpen={openResults} />
+            <RunPanel
+              runs={runs.data ?? []}
+              onStarted={openResults}
+              onOpen={openResults}
+              superAdmin={superAdmin}
+              access={access}
+            />
           </TabsContent>
           <TabsContent value="results" className="mt-4">
             <ResultsPanel runs={runs.data ?? []} runId={selectedRunId} onSelect={setSelectedRunId} />
@@ -105,11 +138,15 @@ export default function PrismExam() {
             <HistoryPanel runs={runs.data ?? []} loading={runs.isLoading} onOpen={openResults} />
           </TabsContent>
           <TabsContent value="questions" className="mt-4">
-            <QuestionsPanel />
+            <QuestionsPanel superAdmin={superAdmin} />
           </TabsContent>
+          {superAdmin && (
+            <TabsContent value="access" className="mt-4">
+              <AccessPanel />
+            </TabsContent>
+          )}
         </Tabs>
-      </div>
-    </SuperAdminLayout>
+    </div>
   )
 }
 
@@ -175,30 +212,48 @@ function ScoreLine({ run }: { run: Pick<ExamRunDetail, "score" | "pass_mark" | "
 
 // ─── Run ─────────────────────────────────────────────────────────────
 
+/** The run picker's value for "whatever set is active" — a super-admin's default, as before. */
+const ACTIVE_SET = ""
+
+function setLabel(s: Pick<QuestionSetSummary, "name" | "version">): string {
+  return `${s.name} (v${s.version})`
+}
+
 function RunPanel({
   runs,
   onStarted,
   onOpen,
+  superAdmin,
+  access,
 }: {
   runs: ExamRun[]
   onStarted: (id: string) => void
   onOpen: (id: string) => void
+  superAdmin: boolean
+  access?: ExamAccess
 }) {
-  const [label, setLabel] = useState("")
+  const [label, setRunLabel] = useState("")
   const [concurrency, setConcurrency] = useState(2)
+  const [setId, setSetId] = useState<string>(ACTIVE_SET)
   const active = runs.find(isRunActive)
   const activeDetail = useExamRun(active?.id)
   const start = useStartExamRun()
   const cancel = useCancelExamRun()
-  const qset = useActiveQuestionSet()
+  const qset = useActiveQuestionSet(superAdmin)
+  const sets = useExamQuestionSets()
+  const others = (sets.data ?? []).filter((x) => !(superAdmin && x.is_active))
+  // A granted user has no "active set" to fall back on: they pick one of theirs or a shared one.
+  const chosenId = superAdmin ? setId : setId || others[0]?.id || ""
+  const chosen = (sets.data ?? []).find((x) => x.id === chosenId)
+  const capReached = !superAdmin && !!access?.daily_cap && access.runs_last_24h >= access.daily_cap
 
   const onStart = () => {
     start.mutate(
-      { label, concurrency },
+      chosenId ? { label, concurrency, question_set_id: chosenId } : { label, concurrency },
       {
         onSuccess: (res) => {
           toast.success(`Exam started — ${res.total} questions`)
-          setLabel("")
+          setRunLabel("")
           onStarted(res.run_id)
         },
         onError: (e) => toast.error(apiErrorMessage(e, "Could not start the exam")),
@@ -225,12 +280,37 @@ function RunPanel({
         <CardHeader>
           <CardTitle className="text-base">Start a run</CardTitle>
           <CardDescription>
-            {qset.data
-              ? `${qset.data.count ?? qset.data.questions.length} questions · ${qset.data.name} (v${qset.data.version}) · pass mark ${pct(qset.data.pass_mark, 0)}`
-              : "Loading the active question set…"}
+            {chosen
+              ? `${chosen.count ?? "?"} questions · ${setLabel(chosen)} · pass mark ${pct(chosen.pass_mark, 0)}`
+              : superAdmin
+                ? qset.data
+                  ? `${qset.data.count ?? qset.data.questions.length} questions · ${qset.data.name} (v${qset.data.version}) · pass mark ${pct(qset.data.pass_mark, 0)}`
+                  : "Loading the active question set…"
+                : sets.isLoading
+                  ? "Loading your question sets…"
+                  : "No question set yet — import one on the Questions tab."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="exam-set">Question set</Label>
+            <select
+              id="exam-set"
+              className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+              value={chosenId}
+              onChange={(e) => setSetId(e.target.value)}
+            >
+              {superAdmin && (
+                <option value={ACTIVE_SET}>Active set{qset.data ? ` — ${setLabel(qset.data)}` : ""}</option>
+              )}
+              {!superAdmin && !others.length && <option value="">No sets available</option>}
+              {others.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {setLabel(x)} · {x.count ?? "?"} questions{x.shared ? " · shared" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="exam-label">Label (optional)</Label>
             <Input
@@ -238,7 +318,7 @@ function RunPanel({
               placeholder="e.g. after canon sections"
               value={label}
               maxLength={120}
-              onChange={(e) => setLabel(e.target.value)}
+              onChange={(e) => setRunLabel(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
@@ -263,7 +343,16 @@ function RunPanel({
               when people are on the platform.
             </p>
           </div>
-          <Button type="button" onClick={onStart} disabled={!!active || start.isPending}>
+          {!superAdmin && access?.daily_cap ? (
+            <p className="text-muted-foreground text-xs">
+              {access.runs_last_24h} of {access.daily_cap} runs used in the last 24 hours.
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            onClick={onStart}
+            disabled={!!active || start.isPending || capReached || (!superAdmin && !chosenId)}
+          >
             {start.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             Start exam
           </Button>
@@ -572,7 +661,7 @@ function AnswerRow({ a }: { a: ExamAnswer }) {
       {open && (
         <div className="space-y-2 border-t px-3 py-2 text-sm">
           <p>
-            <span className="font-semibold">Handbook.</span> {a.expected}
+            <span className="font-semibold">Expected.</span> {a.expected}
           </p>
           <p className="whitespace-pre-wrap">
             <span className="font-semibold">IG.</span> {a.answer ?? <span className="text-muted-foreground">(no answer)</span>}
@@ -782,22 +871,30 @@ function setToJson(qs: QuestionSet): string {
   return JSON.stringify({ name: qs.name, pass_mark: qs.pass_mark, chapters: qs.chapters, questions: qs.questions }, null, 2)
 }
 
-function QuestionsPanel() {
-  const active = useActiveQuestionSet()
+/** Matches the server's cap (`importer.MAX_BYTES`); checked here only to fail fast. */
+const MAX_IMPORT_BYTES = 2 * 1024 * 1024
+
+function QuestionsPanel({ superAdmin }: { superAdmin: boolean }) {
+  const active = useActiveQuestionSet(superAdmin)
   const sets = useExamQuestionSets()
   const replace = useReplaceQuestionSet()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState("")
+  // Which saved set is open below. A super-admin starts on the active set, as before.
+  const [viewId, setViewId] = useState<string | undefined>(undefined)
+  const viewed = useExamQuestionSet(viewId)
+
+  const shown: QuestionSet | undefined = viewId ? viewed.data : superAdmin ? active.data : undefined
 
   const grouped = useMemo(() => {
-    const qs = active.data
+    const qs = shown
     if (!qs) return []
     return Object.entries(qs.chapters).map(([key, title]) => ({
       key,
       title,
       questions: qs.questions.filter((q) => q.chapter === key),
     }))
-  }, [active.data])
+  }, [shown])
 
   const beginEdit = () => {
     if (!active.data) return
@@ -815,69 +912,97 @@ function QuestionsPanel() {
       onSuccess: (res) => {
         toast.success(`Question set saved as v${res.version} (${res.count ?? v.value.questions.length} questions) and made active`)
         setEditing(false)
+        setViewId(undefined)
       },
       onError: (e) => toast.error(apiErrorMessage(e, "Could not save the question set")),
     })
   }
 
-  if (active.isError) {
+  if (superAdmin && active.isError) {
     return (
       <p className="text-destructive text-sm" role="alert">
         Could not load the question set: {apiErrorMessage(active.error, "unknown error")}
       </p>
     )
   }
-  if (!active.data) {
+  if (superAdmin && !active.data) {
     return (
       <p className="text-muted-foreground flex items-center gap-2 text-sm">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading question set…
       </p>
     )
   }
-  const qs = active.data
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">
-            {qs.name} <span className="text-muted-foreground font-normal">v{qs.version}</span>
-          </CardTitle>
-          <CardDescription>
-            {qs.questions.length} questions across {Object.keys(qs.chapters).length} chapters · pass mark {pct(qs.pass_mark, 0)}
-            {sets.data && sets.data.length > 1 && ` · ${sets.data.length} versions on file`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-muted-foreground text-xs">
-            Saving creates a new version and makes it the active set for future runs; earlier runs keep the
-            version they were marked against. Each question needs a unique id, a chapter key from the
-            chapters map, the question text and the handbook&apos;s expected answer.
-          </p>
-          {editing ? (
-            <>
-              <Textarea
-                aria-label="question set JSON"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                className="min-h-[360px] font-mono text-xs"
-              />
-              <div className="flex gap-2">
-                <Button type="button" onClick={save} disabled={replace.isPending}>
-                  {replace.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save as new version
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setEditing(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </>
-          ) : (
-            <Button type="button" variant="outline" onClick={beginEdit}>
-              Edit question set
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+      {superAdmin && active.data && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              Active: {active.data.name} <span className="text-muted-foreground font-normal">v{active.data.version}</span>
+            </CardTitle>
+            <CardDescription>
+              {active.data.questions.length} questions across {Object.keys(active.data.chapters).length} chapters · pass mark{" "}
+              {pct(active.data.pass_mark, 0)}
+              {sets.data && sets.data.length > 1 && ` · ${sets.data.length} versions on file`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-muted-foreground text-xs">
+              Saving creates a new version and makes it the active set for future runs; earlier runs keep the
+              version they were marked against. Each question needs a unique id, a chapter key from the
+              chapters map, the question text and the expected answer.
+            </p>
+            {editing ? (
+              <>
+                <Textarea
+                  aria-label="question set JSON"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  className="min-h-[360px] font-mono text-xs"
+                />
+                <div className="flex gap-2">
+                  <Button type="button" onClick={save} disabled={replace.isPending}>
+                    {replace.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save as new version
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setEditing(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Button type="button" variant="outline" onClick={beginEdit}>
+                Edit question set
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {!editing && (
+        <>
+          <SavedSetsCard
+            sets={sets.data ?? []}
+            loading={sets.isLoading}
+            superAdmin={superAdmin}
+            viewId={viewId ?? (superAdmin ? active.data?.id : undefined)}
+            onView={setViewId}
+          />
+          <ImportCard onSaved={(id) => setViewId(id)} />
+        </>
+      )}
+
+      {!editing && viewId && viewed.isError && (
+        <p className="text-destructive text-sm" role="alert">
+          Could not load that set: {apiErrorMessage(viewed.error, "unknown error")}
+        </p>
+      )}
+
+      {!editing && shown && viewId && (
+        <p className="text-sm font-medium">
+          Showing {setLabel(shown)} · {shown.questions.length} questions
+        </p>
+      )}
 
       {!editing &&
         grouped.map((g) => (
@@ -896,8 +1021,9 @@ function QuestionsPanel() {
                       {q.page ? <span className="block">p.{q.page}</span> : null}
                     </span>
                     <span>
-                      <span className="block">{q.q}</span>
+                      <span className="block whitespace-pre-line">{q.q}</span>
                       <span className="text-muted-foreground block text-xs">{q.expected}</span>
+                      {q.basis && <span className="text-muted-foreground block text-xs italic">Basis: {q.basis}</span>}
                     </span>
                   </li>
                 ))}
@@ -906,5 +1032,289 @@ function QuestionsPanel() {
           </Card>
         ))}
     </div>
+  )
+}
+
+function SavedSetsCard({
+  sets,
+  loading,
+  superAdmin,
+  viewId,
+  onView,
+}: {
+  sets: QuestionSetSummary[]
+  loading: boolean
+  superAdmin: boolean
+  viewId: string | undefined
+  onView: (id: string) => void
+}) {
+  const activate = useActivateQuestionSet()
+  const share = useShareQuestionSet()
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Saved question sets</CardTitle>
+        <CardDescription>
+          {superAdmin
+            ? "Every set on this tier. Pick one on the Run tab to run it; share a set to let granted users run it."
+            : "Your sets and the ones shared with you. Pick one on the Run tab to run it."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading sets…
+          </p>
+        ) : !sets.length ? (
+          <p className="text-muted-foreground text-sm">No sets yet. Import a spreadsheet below.</p>
+        ) : (
+          <ul className="divide-y text-sm">
+            {sets.map((x) => (
+              <li key={x.id} className="flex flex-wrap items-center gap-2 py-2">
+                <button
+                  type="button"
+                  className={cn("text-left hover:underline", viewId === x.id && "font-semibold")}
+                  onClick={() => onView(x.id)}
+                >
+                  {setLabel(x)}
+                </button>
+                <span className="text-muted-foreground text-xs">{x.count ?? "?"} questions</span>
+                {x.is_active && <Badge variant="outline">active</Badge>}
+                {x.shared && <Badge variant="outline">shared</Badge>}
+                {superAdmin && (
+                  <span className="ml-auto flex gap-2">
+                    {!x.is_active && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={activate.isPending}
+                        onClick={() =>
+                          activate.mutate(x.id, {
+                            onSuccess: () => toast.success(`${setLabel(x)} is now the active set`),
+                            onError: (e) => toast.error(apiErrorMessage(e, "Could not make that set active")),
+                          })
+                        }
+                      >
+                        Make active
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={share.isPending}
+                      onClick={() =>
+                        share.mutate(
+                          { setId: x.id, shared: !x.shared },
+                          {
+                            onSuccess: () => toast.success(x.shared ? `${setLabel(x)} is no longer shared` : `${setLabel(x)} is shared`),
+                            onError: (e) => toast.error(apiErrorMessage(e, "Could not change sharing")),
+                          },
+                        )
+                      }
+                    >
+                      <Share2 className="mr-1 h-4 w-4" /> {x.shared ? "Unshare" : "Share"}
+                    </Button>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ImportCard({ onSaved }: { onSaved: (id: string) => void }) {
+  const imp = useImportQuestionSet()
+  const [file, setFile] = useState<File | null>(null)
+  const [name, setName] = useState("")
+  const [preview, setPreview] = useState<ImportResult | null>(null)
+
+  const pick = (f: File | null) => {
+    setPreview(null)
+    if (f && f.size > MAX_IMPORT_BYTES) {
+      toast.error("That file is larger than 2 MB")
+      setFile(null)
+      return
+    }
+    setFile(f)
+    if (f && !name) setName(f.name.replace(/\.xlsx$/i, ""))
+  }
+
+  const run = (dryRun: boolean) => {
+    if (!file) return
+    imp.mutate(
+      { file, name, dryRun },
+      {
+        onSuccess: (res) => {
+          if (dryRun) {
+            setPreview(res)
+            return
+          }
+          toast.success(`Saved "${name.trim()}" — ${res.count} questions`)
+          setPreview(null)
+          setFile(null)
+          setName("")
+          if (res.question_set) onSaved(res.question_set.id)
+        },
+        onError: (e) => toast.error(apiErrorMessage(e, "Could not read that workbook")),
+      },
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Import a spreadsheet</CardTitle>
+        <CardDescription>
+          An .xlsx with a <strong>Questions</strong> tab (Question ID, Question Text; optional Chapter and
+          Basis), an optional <strong>Options</strong> tab (Question ID, Option — one row per option, in
+          order) and an <strong>Answers</strong> tab (Question ID, Expected Answer — a letter or the option
+          text for multiple choice). A question with no text or no answer is skipped and listed.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="exam-import-file">Workbook (.xlsx)</Label>
+            <Input
+              id="exam-import-file"
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={(e) => pick(e.target.files?.[0] ?? null)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="exam-import-name">Set name</Label>
+            <Input
+              id="exam-import-name"
+              value={name}
+              maxLength={120}
+              placeholder="e.g. Accreditation — multiple choice"
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={() => run(true)} disabled={!file || imp.isPending}>
+            {imp.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            Preview
+          </Button>
+          <Button type="button" onClick={() => run(false)} disabled={!preview || !preview.count || !name.trim() || imp.isPending}>
+            Save as named set
+          </Button>
+        </div>
+        {preview && (
+          <div className="space-y-2 rounded-md border p-3 text-sm" aria-label="import preview">
+            <p>
+              <span className="font-semibold">{preview.count} questions</span> ({preview.multiple_choice} multiple choice) across{" "}
+              {Object.keys(preview.chapters).length} chapters
+              {preview.skipped.length > 0 && ` · ${preview.skipped.length} skipped`}
+            </p>
+            {preview.skipped.length > 0 && (
+              <p className="text-muted-foreground text-xs">
+                Skipped: {preview.skipped.map((x) => `${x.id} (${x.reason})`).join(", ")}
+              </p>
+            )}
+            {preview.warnings.map((w) => (
+              <p key={w} className="text-xs text-amber-700 dark:text-amber-300">
+                {w}
+              </p>
+            ))}
+            {preview.sample.length > 0 && (
+              <ol className="space-y-1 text-xs">
+                {preview.sample.map((q) => (
+                  <li key={q.id}>
+                    <span className="text-muted-foreground font-mono">{q.id}</span>{" "}
+                    <span className="whitespace-pre-line">{q.q}</span>
+                    <span className="text-muted-foreground block">→ {q.expected}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ─── Access (super-admin only) ───────────────────────────────────────
+
+function AccessPanel() {
+  const grants = useExamGrants()
+  const put = usePutGrant()
+  const del = useDeleteGrant()
+  const [email, setEmail] = useState("")
+
+  const add = () => {
+    if (!email.trim()) return
+    put.mutate(email, {
+      onSuccess: (res) => {
+        toast.success(`Granted ${res.email} (${res.role})`)
+        setEmail("")
+      },
+      onError: (e) => toast.error(apiErrorMessage(e, "Could not grant access")),
+    })
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Who else can run exams</CardTitle>
+        <CardDescription>
+          A granted account (manager or above) reaches this page at /prism-exam. It sees its own sets and the
+          ones you share, and only its own runs, up to five runs in 24 hours. Shared sets show their questions
+          and expected answers to every granted account.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-[16rem] flex-1 space-y-1.5">
+            <Label htmlFor="exam-grant-email">Account email</Label>
+            <Input id="exam-grant-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <Button type="button" onClick={add} disabled={!email.trim() || put.isPending}>
+            Grant access
+          </Button>
+        </div>
+        {grants.isError ? (
+          <p className="text-destructive text-sm" role="alert">
+            Could not load grants: {apiErrorMessage(grants.error, "unknown error")}
+          </p>
+        ) : !grants.data?.length ? (
+          <p className="text-muted-foreground text-sm">{grants.isLoading ? "Loading…" : "Nobody else has access."}</p>
+        ) : (
+          <ul className="divide-y text-sm">
+            {grants.data.map((g) => (
+              <li key={g.user_id} className="flex items-center justify-between gap-2 py-2">
+                <span>
+                  {g.email ?? g.user_id}
+                  <span className="text-muted-foreground ml-2 text-xs">since {when(g.granted_at)}</span>
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={del.isPending}
+                  onClick={() =>
+                    del.mutate(g.user_id, {
+                      onSuccess: () => toast.success(`Revoked ${g.email ?? g.user_id}`),
+                      onError: (e) => toast.error(apiErrorMessage(e, "Could not revoke access")),
+                    })
+                  }
+                >
+                  Revoke
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   )
 }

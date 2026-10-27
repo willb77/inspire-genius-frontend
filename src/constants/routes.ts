@@ -61,6 +61,11 @@ export const ROUTES = {
   MY_DEVELOPMENT: "/my/development",
   /** Résumé Writer — the person's own résumé (2026-10-19). Same `/my/*` rule as above. */
   MY_RESUME: "/my/resume",
+  /**
+   * PRISM exam for a granted user — manager or above with a grant (2026-10-27).
+   * Outside `/super-admin` so those roles can reach it; the server decides access.
+   */
+  PRISM_EXAM: "/prism-exam",
   /** @deprecated Wave 2 Lane 2.A (P7.1) — moved under super-admin as `SUPER_ADMIN.AGENT_TRACE_CONSOLE`. The old path now redirects to the new one. */
   DIAGNOSTIC_CHAT: "/diagnostic-chat",
   SUPER_ADMIN: {

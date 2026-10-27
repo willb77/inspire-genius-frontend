@@ -1,8 +1,8 @@
 import React from "react"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import PrismExam from "../PrismExam"
-import type { ExamAnswer, ExamRun, ExamRunDetail, QuestionSet, RunDiff } from "@/types/prism-exam"
+import PrismExam, { PrismExamContent } from "../PrismExam"
+import type { ExamAnswer, ExamGrant, ExamRun, ExamRunDetail, QuestionSet, QuestionSetSummary, RunDiff } from "@/types/prism-exam"
 
 jest.mock("@/layouts/SuperAdminLayout", () => ({
   __esModule: true,
@@ -19,6 +19,15 @@ jest.mock("@/lib/exportTranscript", () => ({ downloadBlob: (name: string, blob: 
 const startMutate = jest.fn()
 const cancelMutate = jest.fn()
 const replaceMutate = jest.fn()
+const importMutate = jest.fn()
+const activateMutate = jest.fn()
+const shareMutate = jest.fn()
+const putGrantMutate = jest.fn()
+const deleteGrantMutate = jest.fn()
+const activeEnabled = jest.fn()
+let sets: QuestionSetSummary[] | undefined
+let setsById: Record<string, QuestionSet> = {}
+let grants: ExamGrant[] = []
 let runs: ExamRun[] = []
 let runDetails: Record<string, ExamRunDetail> = {}
 let answers: ExamAnswer[] = []
@@ -50,8 +59,21 @@ jest.mock("@/hooks/super-admin/usePrismExam", () => {
       diffArgs(a, b)
       return { data: a && b ? diff : undefined, isError: false, error: undefined }
     },
-    useActiveQuestionSet: () => ({ data: activeSet, isError: !!setError, error: setError }),
-    useExamQuestionSets: () => ({ data: activeSet ? [activeSet, { ...activeSet, version: 0 }] : [] }),
+    useActiveQuestionSet: (enabled = true) => {
+      activeEnabled(enabled)
+      return enabled ? { data: activeSet, isError: !!setError, error: setError } : { data: undefined, isError: false }
+    },
+    useExamQuestionSets: () => ({
+      data: sets ?? (activeSet ? [activeSet, { ...activeSet, id: "qs-0", version: 0, is_active: false }] : []),
+      isLoading: false,
+    }),
+    useExamQuestionSet: (id?: string) => ({ data: id ? setsById[id] : undefined, isError: false }),
+    useImportQuestionSet: () => ({ mutate: importMutate, isPending: false }),
+    useActivateQuestionSet: () => ({ mutate: activateMutate, isPending: false }),
+    useShareQuestionSet: () => ({ mutate: shareMutate, isPending: false }),
+    useExamGrants: () => ({ data: grants, isLoading: false, isError: false }),
+    usePutGrant: () => ({ mutate: putGrantMutate, isPending: false }),
+    useDeleteGrant: () => ({ mutate: deleteGrantMutate, isPending: false }),
     useStartExamRun: () => ({ mutate: startMutate, isPending: false }),
     useCancelExamRun: () => ({ mutate: cancelMutate, isPending: false }),
     useReplaceQuestionSet: () => ({ mutate: replaceMutate, isPending: false }),
@@ -151,6 +173,9 @@ beforeEach(() => {
     }),
   ]
   activeSet = SET
+  sets = undefined
+  setsById = {}
+  grants = []
   diff = undefined
   runError = undefined
   setError = undefined
@@ -333,4 +358,126 @@ describe("PrismExam page", () => {
     await user.click(screen.getByRole("tab", { name: "Questions" }))
     expect(screen.getByRole("alert")).toHaveTextContent("Could not load the question set: exam user missing")
   })
+
+  // ── named sets, import, access (2026-10-27) ──────────────────────────
+
+  const ACCRED: QuestionSet = {
+    ...SET,
+    id: "qs-7",
+    version: 7,
+    name: "Accreditation MC",
+    is_active: false,
+    shared: false,
+    questions: [{ id: "2", chapter: "welcome", page: null, q: "Pick one\nA) x\nB) y", expected: "B) y", basis: "D1 slide 3" }],
+  }
+
+  it("runs the active set by default and a saved set when one is picked", async () => {
+    const user = userEvent.setup()
+    sets = [SET, ACCRED]
+    render(<PrismExam />)
+    await user.selectOptions(screen.getByLabelText("Question set"), "qs-7")
+    expect(screen.getByText(/2 questions · Accreditation MC \(v7\)/)).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Start exam" }))
+    expect(startMutate).toHaveBeenCalledWith({ label: "", concurrency: 2, question_set_id: "qs-7" }, expect.any(Object))
+  })
+
+  it("lists saved sets, shows one, makes it active and shares it", async () => {
+    const user = userEvent.setup()
+    sets = [SET, ACCRED]
+    setsById = { "qs-7": ACCRED }
+    activateMutate.mockImplementation((_id, opts) => opts.onSuccess())
+    shareMutate.mockImplementation((_in, opts) => opts.onSuccess())
+    render(<PrismExam />)
+    await user.click(screen.getByRole("tab", { name: "Questions" }))
+    await user.click(screen.getByRole("button", { name: "Accreditation MC (v7)" }))
+    expect(screen.getByText(/Showing Accreditation MC \(v7\) · 1 questions/)).toBeInTheDocument()
+    expect(screen.getByText("Basis: D1 slide 3")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Make active" }))
+    expect(activateMutate).toHaveBeenCalledWith("qs-7", expect.any(Object))
+    expect(toastSuccess).toHaveBeenCalledWith("Accreditation MC (v7) is now the active set")
+    await user.click(screen.getAllByRole("button", { name: /Share/ })[1])
+    expect(shareMutate).toHaveBeenCalledWith({ setId: "qs-7", shared: true }, expect.any(Object))
+  })
+
+  it("previews a workbook, then saves it under a name", async () => {
+    const user = userEvent.setup()
+    importMutate.mockImplementation((input, opts) =>
+      opts.onSuccess(
+        input.dryRun
+          ? { dry_run: true, count: 40, multiple_choice: 40, chapters: { a: "A" }, skipped: [{ id: "23", reason: "no question text" }], warnings: [], sample: [] }
+          : { dry_run: false, count: 40, multiple_choice: 40, chapters: {}, skipped: [], warnings: [], sample: [], question_set: { ...ACCRED } },
+      ),
+    )
+    render(<PrismExam />)
+    await user.click(screen.getByRole("tab", { name: "Questions" }))
+    const save = screen.getByRole("button", { name: "Save as named set" })
+    expect(save).toBeDisabled()
+    const file = new File(["x"], "Accreditation MC.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+    await user.upload(screen.getByLabelText("Workbook (.xlsx)"), file)
+    expect(screen.getByLabelText("Set name")).toHaveValue("Accreditation MC")
+    await user.click(screen.getByRole("button", { name: "Preview" }))
+    expect(importMutate).toHaveBeenCalledWith({ file, name: "Accreditation MC", dryRun: true }, expect.any(Object))
+    expect(screen.getByLabelText("import preview")).toHaveTextContent("40 questions (40 multiple choice) across 1 chapters · 1 skipped")
+    expect(screen.getByText("Skipped: 23 (no question text)")).toBeInTheDocument()
+    await user.click(save)
+    expect(importMutate).toHaveBeenLastCalledWith({ file, name: "Accreditation MC", dryRun: false }, expect.any(Object))
+    expect(toastSuccess).toHaveBeenCalledWith('Saved "Accreditation MC" — 40 questions')
+  })
+
+  it("refuses a workbook over 2 MB before sending it", async () => {
+    const user = userEvent.setup()
+    render(<PrismExam />)
+    await user.click(screen.getByRole("tab", { name: "Questions" }))
+    const big = new File([new Uint8Array(2 * 1024 * 1024 + 1)], "big.xlsx")
+    await user.upload(screen.getByLabelText("Workbook (.xlsx)"), big)
+    expect(toastError).toHaveBeenCalledWith("That file is larger than 2 MB")
+    expect(screen.getByRole("button", { name: "Preview" })).toBeDisabled()
+  })
+
+  it("grants and revokes access on the Access tab", async () => {
+    const user = userEvent.setup()
+    grants = [{ user_id: "m-1", email: "mgr@example.com", granted_by: "sa", granted_at: "2026-10-27T20:00:00Z" }]
+    putGrantMutate.mockImplementation((_e, opts) => opts.onSuccess({ user_id: "m-2", email: "new@example.com", role: "manager" }))
+    deleteGrantMutate.mockImplementation((_id, opts) => opts.onSuccess())
+    render(<PrismExam />)
+    await user.click(screen.getByRole("tab", { name: "Access" }))
+    expect(screen.getByText("mgr@example.com")).toBeInTheDocument()
+    await user.type(screen.getByLabelText("Account email"), "new@example.com")
+    await user.click(screen.getByRole("button", { name: "Grant access" }))
+    expect(putGrantMutate).toHaveBeenCalledWith("new@example.com", expect.any(Object))
+    expect(toastSuccess).toHaveBeenCalledWith("Granted new@example.com (manager)")
+    await user.click(screen.getByRole("button", { name: "Revoke" }))
+    expect(deleteGrantMutate).toHaveBeenCalledWith("m-1", expect.any(Object))
+  })
+
+  describe("as a granted user", () => {
+    const ACCESS = { allowed: true, super_admin: false, daily_cap: 5, runs_last_24h: 1 }
+
+    it("has no Access tab, no active-set editor, never asks for the active set, and runs a picked set", async () => {
+      const user = userEvent.setup()
+      sets = [{ ...ACCRED, shared: true }]
+      render(<PrismExamContent superAdmin={false} access={ACCESS} />)
+      expect(screen.queryByRole("tab", { name: "Access" })).not.toBeInTheDocument()
+      expect(activeEnabled).toHaveBeenCalled()
+      expect(activeEnabled.mock.calls.every(([enabled]) => enabled === false)).toBe(true)
+      expect(screen.getByText("1 of 5 runs used in the last 24 hours.")).toBeInTheDocument()
+      await user.click(screen.getByRole("button", { name: "Start exam" }))
+      expect(startMutate).toHaveBeenCalledWith({ label: "", concurrency: 2, question_set_id: "qs-7" }, expect.any(Object))
+      await user.click(screen.getByRole("tab", { name: "Questions" }))
+      expect(screen.queryByRole("button", { name: "Edit question set" })).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "Make active" })).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: /Share/ })).not.toBeInTheDocument()
+    })
+
+    it("cannot start with no set, or at the daily cap", () => {
+      sets = []
+      const { unmount } = render(<PrismExamContent superAdmin={false} access={ACCESS} />)
+      expect(screen.getByRole("button", { name: "Start exam" })).toBeDisabled()
+      unmount()
+      sets = [ACCRED]
+      render(<PrismExamContent superAdmin={false} access={{ ...ACCESS, runs_last_24h: 5 }} />)
+      expect(screen.getByRole("button", { name: "Start exam" })).toBeDisabled()
+    })
+  })
 })
+

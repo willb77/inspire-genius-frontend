@@ -1,10 +1,18 @@
 jest.mock("@/lib/agentApi", () => ({
-  agentApi: { get: jest.fn(), post: jest.fn(), put: jest.fn() },
+  agentApi: { get: jest.fn(), post: jest.fn(), put: jest.fn(), patch: jest.fn(), delete: jest.fn() },
 }))
 
 import { agentApi } from "@/lib/agentApi"
 import {
+  activateQuestionSet,
   cancelRun,
+  deleteGrant,
+  getExamAccess,
+  importQuestionSet,
+  listGrants,
+  putGrant,
+  saveQuestionSet,
+  setQuestionSetShared,
   diffRuns,
   getActiveQuestionSet,
   getQuestionSet,
@@ -20,6 +28,8 @@ import {
 const get = agentApi.get as jest.Mock
 const post = agentApi.post as jest.Mock
 const put = agentApi.put as jest.Mock
+const patch = agentApi.patch as jest.Mock
+const del = agentApi.delete as jest.Mock
 const BASE = "/v1/agents/prism-exam"
 
 describe("prismExam.service", () => {
@@ -93,5 +103,50 @@ describe("prismExam.service", () => {
     get.mockResolvedValueOnce({ data: { improved: [], regressed: [] } })
     expect(await diffRuns("r-1", "r-2")).toEqual({ improved: [], regressed: [] })
     expect(get).toHaveBeenCalledWith(`${BASE}/runs/r-1/diff/r-2`)
+  })
+
+  it("saves a named set, activates and shares one", async () => {
+    post.mockResolvedValueOnce({ data: { id: "qs-7", version: 7 } })
+    const input = { name: "n", pass_mark: 0.8, chapters: {}, questions: [], shared: true }
+    expect(await saveQuestionSet(input)).toEqual({ id: "qs-7", version: 7 })
+    expect(post).toHaveBeenCalledWith(`${BASE}/question-sets`, input)
+    post.mockResolvedValueOnce({ data: { id: "qs-7", is_active: true } })
+    await activateQuestionSet("qs 7")
+    expect(post).toHaveBeenLastCalledWith(`${BASE}/question-sets/qs%207/activate`)
+    patch.mockResolvedValueOnce({ data: { id: "qs-7", shared: true } })
+    await setQuestionSetShared({ setId: "qs-7", shared: true })
+    expect(patch).toHaveBeenCalledWith(`${BASE}/question-sets/qs-7`, { shared: true })
+  })
+
+  it("imports a workbook as multipart, with the dry-run flag, name and pass mark", async () => {
+    post.mockResolvedValueOnce({ data: { dry_run: true, count: 1 } })
+    const file = new File(["x"], "a.xlsx")
+    await importQuestionSet({ file, name: "  Set  ", passMark: 0.7, dryRun: true })
+    const [url, form, cfg] = post.mock.calls[0]
+    expect(url).toBe(`${BASE}/question-sets/import`)
+    expect(cfg).toEqual({ headers: { "Content-Type": "multipart/form-data" } })
+    expect((form as FormData).get("file")).toBe(file)
+    expect((form as FormData).get("dry_run")).toBe("true")
+    expect((form as FormData).get("name")).toBe("Set")
+    expect((form as FormData).get("pass_mark")).toBe("0.7")
+    post.mockResolvedValueOnce({ data: { dry_run: false } })
+    await importQuestionSet({ file, dryRun: false })
+    const form2 = post.mock.calls[1][1] as FormData
+    expect(form2.get("dry_run")).toBe("false")
+    expect(form2.has("name")).toBe(false)
+  })
+
+  it("reads access, and lists, grants and revokes", async () => {
+    get.mockResolvedValueOnce({ data: { allowed: true } })
+    expect(await getExamAccess()).toEqual({ allowed: true })
+    expect(get).toHaveBeenLastCalledWith(`${BASE}/access`)
+    get.mockResolvedValueOnce({ data: [{ user_id: "m" }] })
+    expect(await listGrants()).toEqual([{ user_id: "m" }])
+    put.mockResolvedValueOnce({ data: { user_id: "m", email: "a@b.c", role: "manager" } })
+    await putGrant(" a@b.c ")
+    expect(put).toHaveBeenLastCalledWith(`${BASE}/grants`, { email: "a@b.c" })
+    del.mockResolvedValueOnce({ data: { user_id: "m", revoked: true } })
+    expect(await deleteGrant("m/1")).toEqual({ user_id: "m", revoked: true })
+    expect(del).toHaveBeenCalledWith(`${BASE}/grants/m%2F1`)
   })
 })
