@@ -10,6 +10,9 @@ import {
   useOnboardingStatus,
   useRequestPrismSurvey,
 } from "@/hooks/lumen/useOnboarding"
+import { usePrismRequestAccess } from "@/hooks/prism/usePrismRequestAccess"
+import { PrismRequestApprovalNotice } from "@/components/prism/PrismRequestApprovalNotice"
+import { isApprovalRequiredError } from "@/services/prism/prism"
 import type { OnboardingNextStep } from "@/types/lumen"
 
 /**
@@ -59,7 +62,19 @@ export default function LumenOnboarding() {
     refetchInterval: (query) =>
       query.state.data?.next_step === "awaiting_report" ? 30_000 : false,
   })
-  const { mutate: request, isPending, isError, data: created } = useRequestPrismSurvey()
+  const {
+    mutate: request,
+    isPending,
+    isError,
+    error,
+    data: created,
+  } = useRequestPrismSurvey()
+  // PRISM survey requests need prior approval (2026-10-26). Read up front so a
+  // blocked user sees why before asking; a refusal shows the same notice. The
+  // server is the gate — while this read is loading or failed, nothing blocks.
+  const access = usePrismRequestAccess()
+  const refused = isApprovalRequiredError(error)
+  const needsApproval = refused || access.data?.allowed === false
 
   if (isLoading) {
     return (
@@ -72,7 +87,8 @@ export default function LumenOnboarding() {
   const step: OnboardingNextStep = status?.next_step ?? "request_prism"
   const copy = STEP_COPY[step]
   const surveyUrl = created?.survey_url ?? status?.prism_request?.survey_url ?? null
-  const canSubmit = forename.trim().length > 0 && surname.trim().length > 0
+  const canSubmit =
+    forename.trim().length > 0 && surname.trim().length > 0 && !needsApproval
 
   return (
     <div className="space-y-6 p-6">
@@ -101,6 +117,13 @@ export default function LumenOnboarding() {
 
           {step === "request_prism" && (
             <div className="space-y-3">
+              {needsApproval && (
+                <PrismRequestApprovalNotice
+                  state={access.data}
+                  fallbackAccount={{ name: "", email: "" }}
+                  defaultOpen={refused}
+                />
+              )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input
                   value={forename}
@@ -125,7 +148,7 @@ export default function LumenOnboarding() {
                   {isPending ? "Requesting…" : "Send me the questionnaire"}
                   <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
                 </Button>
-                {isError && (
+                {isError && !refused && (
                   <span className="text-sm text-destructive">
                     That didn't work. Try again in a moment.
                   </span>

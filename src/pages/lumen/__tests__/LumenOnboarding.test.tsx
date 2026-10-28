@@ -9,6 +9,20 @@ import type { OnboardingStatus } from "@/types/lumen"
 
 jest.mock("@/hooks/lumen/useOnboarding")
 
+/* Prior approval for PRISM survey requests (2026-10-26). */
+const mockAccess = jest.fn()
+jest.mock("@/hooks/prism/usePrismRequestAccess", () => ({
+  usePrismRequestAccess: () => mockAccess(),
+  useRequestPrismAccess: () => ({ mutateAsync: jest.fn(), isPending: false }),
+}))
+
+const D2 =
+  "All Requests for Surveys need prior Approval. Please provide your name and the " +
+  "name of the PRISM Practitioner who provided access to the site. A notification " +
+  "will be sent to Admin@inspiresgenius.com"
+const ALLOWED = { data: { allowed: true, scope: "tier", pending: false, request: null, message: "", account: { name: "", email: "" } } }
+const BLOCKED = { data: { allowed: false, scope: null, pending: false, request: null, message: D2, account: { name: "Solo User", email: "solo@example.com" } } }
+
 const mockStatus = useOnboardingStatus as jest.MockedFunction<typeof useOnboardingStatus>
 const mockRequest = useRequestPrismSurvey as jest.MockedFunction<
   typeof useRequestPrismSurvey
@@ -28,7 +42,10 @@ function setup({
   created = undefined as { request_id: string; survey_url: string | null; status: string } | undefined,
   isPending = false,
   isError = false,
+  error = null as unknown,
+  access = ALLOWED as unknown,
 } = {}) {
+  mockAccess.mockReturnValue(access)
   mockStatus.mockReturnValue({
     data: status,
     isLoading,
@@ -38,6 +55,7 @@ function setup({
     data: created,
     isPending,
     isError,
+    error,
   } as unknown as ReturnType<typeof useRequestPrismSurvey>)
   return { request }
 }
@@ -135,5 +153,29 @@ describe("LumenOnboarding", () => {
     setup({ isError: true })
     renderPage()
     expect(screen.getByText(/That didn't work/)).toBeInTheDocument()
+  })
+
+  test("a blocked user sees the approval notice and cannot request", () => {
+    const { request } = setup({ access: BLOCKED })
+    renderPage()
+    expect(screen.getByText(D2)).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Solo" } })
+    fireEvent.change(screen.getByLabelText("Last name"), { target: { value: "User" } })
+    const send = screen.getByRole("button", { name: /Send me the questionnaire/ })
+    expect(send).toBeDisabled()
+    fireEvent.click(send)
+    expect(request).not.toHaveBeenCalled()
+  })
+
+  test("an approval refusal shows the notice and its dialog, not the generic error", () => {
+    setup({
+      isError: true,
+      error: { response: { status: 403, data: { detail: { code: "prism_request_approval_required", message: D2 } } } },
+      access: { data: undefined },
+    })
+    renderPage()
+    expect(screen.getAllByText(D2).length).toBeGreaterThan(0)
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(screen.queryByText(/That didn't work/)).not.toBeInTheDocument()
   })
 })

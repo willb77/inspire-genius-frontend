@@ -10,14 +10,21 @@ import {
   UserCheck,
   UserPlus,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useAuth } from '@/context/useAuth'
 import { useCheckExistingCustomer } from '@/hooks/prism/useCheckExistingCustomer'
 import { useRequestPrismSurvey } from '@/hooks/prism/usePrismRequest'
+import { usePrismRequestAccess } from '@/hooks/prism/usePrismRequestAccess'
 import { useMyPractitioners } from '@/hooks/prism/useMyPractitioners'
+import { PrismRequestApprovalNotice } from '@/components/prism/PrismRequestApprovalNotice'
 import {
+  apiErrorMessage,
+  isApprovalRequiredError,
+  isOtherEmail,
   practitionerChoiceFrom,
   type PractitionerChoice,
 } from '@/services/prism/prism'
@@ -70,9 +77,35 @@ const initiateSchema = z.object({
   createUser: z.boolean().default(true),
   isGift: z.boolean().default(false),
   shareWithPractitioner: z.boolean().default(false),
+
+  // Only when the survey is for an email that is not the caller's own: the
+  // PRISM Practitioner who authorised it, and the caller's confirmation.
+  practitionerName: z.string().max(200).optional(),
+  practitionerConfirmed: z.boolean().default(false),
 })
 
 type InitiateFormValues = z.infer<typeof initiateSchema>
+
+/** The schema, with the "someone else's email" rule bound to this account. */
+function schemaFor(accountEmail: string) {
+  return initiateSchema.superRefine((v, ctx) => {
+    if (!isOtherEmail(v.email, accountEmail)) return
+    if (!v.practitionerName?.trim()) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['practitionerName'],
+        message: 'Name the PRISM Practitioner who authorised a survey for this email',
+      })
+    }
+    if (!v.practitionerConfirmed) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['practitionerConfirmed'],
+        message: 'Confirm the practitioner authorised it',
+      })
+    }
+  })
+}
 
 type PrismInitiateFormProps = {
   /** Disable the form (e.g. when an active assessment exists) */
@@ -121,6 +154,22 @@ export default function PrismInitiateForm({
 
   const checkCustomer = useCheckExistingCustomer()
   const requestSurvey = useRequestPrismSurvey()
+  const { user, hasRole } = useAuth()
+  // Pre-paid (isGift) is super-admin only; the server refuses it for anyone else.
+  const isSuperAdmin = hasRole('super-admin')
+  // Prior approval (2026-10-26). Read up front so a blocked caller sees why
+  // before filling in the form. The server is the gate; while this read is
+  // loading or failed the form stays usable and a refusal shows the notice.
+  const access = usePrismRequestAccess({ enabled: !showPayloadPreview })
+  const [approvalRefused, setApprovalRefused] = useState(false)
+  const blocked =
+    !showPayloadPreview && (approvalRefused || access.data?.allowed === false)
+  const accountEmail = (access.data?.account?.email || user?.email || '').trim()
+  const accountName = access.data?.account?.name || user?.fullName || user?.name || ''
+  const resolver = useMemo(
+    () => zodResolver(schemaFor(accountEmail)) as Resolver<InitiateFormValues>,
+    [accountEmail],
+  )
   // Offered only when the server says the caller has a practitioner to share
   // with. A failed read hides the option; it never blocks the request.
   const mine = useMyPractitioners({ enabled: !showPayloadPreview })
@@ -131,7 +180,7 @@ export default function PrismInitiateForm({
       : 'Share my results with the practitioner I choose'
 
   const form = useForm<InitiateFormValues>({
-    resolver: zodResolver(initiateSchema) as Resolver<InitiateFormValues>,
+    resolver,
     defaultValues: {
       forename: '',
       surname: '',
@@ -142,9 +191,13 @@ export default function PrismInitiateForm({
       createUser: true,
       isGift: false,
       shareWithPractitioner: false,
+      practitionerName: '',
+      practitionerConfirmed: false,
       ...defaultValues,
     },
   })
+  const otherEmail = isOtherEmail(form.watch('email'), accountEmail)
+  const formDisabled = disabled || blocked
 
   async function onSubmit(values: InitiateFormValues) {
     // Build the full PRISM CreateCandidate-compatible payload.
@@ -171,7 +224,7 @@ export default function PrismInitiateForm({
       reference: values.reference || `IG-${Date.now()}`,
       questionnaireTypeId: values.questionnaireTypeId,
       languageId: values.languageId,
-      isGift: values.isGift,
+      isGift: isSuperAdmin && values.isGift,
 
       // These map to PRISM CreateCandidate fields (backend handles SiteID/ClientID)
       _prismMapping: {
@@ -189,7 +242,7 @@ export default function PrismInitiateForm({
         // CreateUser is a PRISM CreateCandidate hint only — it is not part of
         // InitiateAssessmentRequest and is not sent as a top-level field.
         CreateUser: values.createUser,
-        IsGift: values.isGift,
+        IsGift: isSuperAdmin && values.isGift,
         AccID: 0,
       },
     }
@@ -223,7 +276,13 @@ export default function PrismInitiateForm({
         organisation: values.organisation || undefined,
         qtype_id: values.questionnaireTypeId,
         lang_id: values.languageId,
-        isGift: values.isGift,
+        isGift: isSuperAdmin && values.isGift,
+        ...(isOtherEmail(values.email, accountEmail)
+          ? {
+              practitionerName: values.practitionerName?.trim(),
+              practitionerConfirmed: values.practitionerConfirmed,
+            }
+          : {}),
         ...(practitionerSub ? { practitionerSub } : {}),
         ...(shareable.length > 0 && values.shareWithPractitioner
           ? { shareWithPractitioner: true }
@@ -247,9 +306,15 @@ export default function PrismInitiateForm({
         setChosen('')
         return
       }
-      const raw = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      if (isApprovalRequiredError(err)) {
+        // Not a failure of the form: requests need approval first. Show the
+        // notice and its dialog instead of an error toast.
+        setApprovalRefused(true)
+        void access.refetch()
+        return
+      }
       // A structured `detail` must never reach the toast as "[object Object]".
-      const detail = typeof raw === 'string' ? raw : (err as Error)?.message
+      const detail = apiErrorMessage(err)
       toast.error(
         `Failed to request PRISM assessment${detail ? `: ${detail}` : '. Please try again.'}`,
       )
@@ -380,7 +445,14 @@ export default function PrismInitiateForm({
           All fields map to the PRISM CreateCandidate API.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
+        {blocked && (
+          <PrismRequestApprovalNotice
+            state={access.data}
+            fallbackAccount={{ name: accountName, email: accountEmail }}
+            defaultOpen={approvalRefused}
+          />
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* ── Check existing customer ── */}
@@ -398,7 +470,7 @@ export default function PrismInitiateForm({
                   variant="outline"
                   size="sm"
                   onClick={handleCheckCustomer}
-                  disabled={disabled || checkCustomer.isPending}
+                  disabled={formDisabled || checkCustomer.isPending}
                 >
                   {checkCustomer.isPending ? (
                     <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -467,7 +539,7 @@ export default function PrismInitiateForm({
                     <FormControl>
                       <Input
                         placeholder="Jane"
-                        disabled={disabled}
+                        disabled={formDisabled}
                         {...field}
                       />
                     </FormControl>
@@ -485,7 +557,7 @@ export default function PrismInitiateForm({
                     <FormControl>
                       <Input
                         placeholder="Smith"
-                        disabled={disabled}
+                        disabled={formDisabled}
                         {...field}
                       />
                     </FormControl>
@@ -505,7 +577,7 @@ export default function PrismInitiateForm({
                     <Input
                       type="email"
                       placeholder="jane.smith@company.com"
-                      disabled={disabled}
+                      disabled={formDisabled}
                       {...field}
                     />
                   </FormControl>
@@ -524,6 +596,51 @@ export default function PrismInitiateForm({
               )}
             />
 
+            {otherEmail && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-3 dark:border-amber-700 dark:bg-amber-950/40">
+                <p className="text-sm">
+                  This email is not your account&apos;s. A survey for someone else
+                  needs the PRISM Practitioner who authorised it.
+                </p>
+                <FormField
+                  control={form.control}
+                  name="practitionerName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>PRISM Practitioner who authorised it *</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Practitioner's name"
+                          disabled={formDisabled}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="practitionerConfirmed"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(v) => field.onChange(v === true)}
+                          disabled={formDisabled}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm font-normal">
+                        I confirm this practitioner authorised a survey for this person
+                      </FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+
             <FormField
               control={form.control}
               name="organisation"
@@ -531,7 +648,7 @@ export default function PrismInitiateForm({
                 <FormItem>
                   <FormLabel>Organisation *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Acme Corp" disabled={disabled} {...field} />
+                    <Input placeholder="Acme Corp" disabled={formDisabled} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -558,7 +675,7 @@ export default function PrismInitiateForm({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value?.toString()}
-                      disabled={disabled}
+                      disabled={formDisabled}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -590,7 +707,7 @@ export default function PrismInitiateForm({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value?.toString()}
-                      disabled={disabled}
+                      disabled={formDisabled}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -620,7 +737,7 @@ export default function PrismInitiateForm({
                   <FormControl>
                     <Input
                       placeholder="e.g. EMP-2026-042, Q1-Review"
-                      disabled={disabled}
+                      disabled={formDisabled}
                       {...field}
                     />
                   </FormControl>
@@ -661,13 +778,14 @@ export default function PrismInitiateForm({
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled={disabled}
+                        disabled={formDisabled}
                       />
                     </FormControl>
                   </FormItem>
                 )}
               />
 
+              {isSuperAdmin && (
               <FormField
                 control={form.control}
                 name="isGift"
@@ -686,12 +804,13 @@ export default function PrismInitiateForm({
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled={disabled}
+                        disabled={formDisabled}
                       />
                     </FormControl>
                   </FormItem>
                 )}
               />
+              )}
             </div>
 
             {shareable.length > 0 && (
@@ -712,7 +831,7 @@ export default function PrismInitiateForm({
                         aria-label={shareLabel}
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled={disabled}
+                        disabled={formDisabled}
                       />
                     </FormControl>
                   </FormItem>
@@ -759,7 +878,7 @@ export default function PrismInitiateForm({
 
             {/* ── Submit ── */}
             <div className="flex items-center gap-3 pt-2">
-              <Button type="submit" disabled={disabled || requestSurvey.isPending}>
+              <Button type="submit" disabled={formDisabled || requestSurvey.isPending}>
                 {requestSurvey.isPending && (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 )}
@@ -769,7 +888,7 @@ export default function PrismInitiateForm({
                 type="button"
                 variant="outline"
                 onClick={() => form.reset()}
-                disabled={disabled || requestSurvey.isPending}
+                disabled={formDisabled || requestSurvey.isPending}
               >
                 Clear Form
               </Button>
