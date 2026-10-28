@@ -2,9 +2,12 @@
  * PRISM Practitioner Exam — types mirroring the agent-engine's
  * `/v1/agents/prism-exam` routes (`app/routes/prism_exam.py`).
  *
- * A run asks every question in the active question set of Meridian, as the
- * synthetic exam user, judges each answer against the handbook's marking key
- * and keeps the lot: runs are history, answers are the evidence.
+ * A run asks every question in a question set of Meridian, as the synthetic
+ * exam user, judges each answer against the set's expected answers and keeps
+ * the lot: runs are history, answers are the evidence.
+ *
+ * Super-admins see every set and run. A granted user (manager or above, with a
+ * grant) sees their own sets plus shared ones, and only their own runs.
  */
 
 export type ExamVerdict = "correct" | "partial" | "wrong"
@@ -90,6 +93,9 @@ export type ExamQuestion = {
   page: number | null
   q: string
   expected: string
+  /** Where the expected answer comes from, e.g. a script section; imported sets carry it. */
+  basis?: string | null
+  confidence?: string | null
 }
 
 export type QuestionSetSummary = {
@@ -101,6 +107,9 @@ export type QuestionSetSummary = {
   is_active: boolean
   created_by?: string | null
   created_at?: string | null
+  owner_user_id?: string | null
+  /** Visible to every granted user; only a super-admin can share. */
+  shared?: boolean
 }
 
 export type QuestionSet = QuestionSetSummary & {
@@ -161,6 +170,45 @@ export type RunDiff = {
   by_chapter: DiffChapter[]
   run_a: RunRef
   run_b: RunRef
+}
+
+/** `GET /access` — what the page may show the caller. */
+export type ExamAccess = {
+  allowed: boolean
+  super_admin: boolean
+  /** null for a super-admin (not capped). */
+  daily_cap: number | null
+  runs_last_24h: number
+}
+
+export type NamedQuestionSetInput = QuestionSetInput & { shared?: boolean }
+
+export type ImportSkip = { id: string; reason: string }
+
+/** `POST /question-sets/import` — the preview, plus the saved set when not a dry run. */
+export type ImportResult = {
+  dry_run: boolean
+  count: number
+  multiple_choice: number
+  chapters: Record<string, string>
+  skipped: ImportSkip[]
+  warnings: string[]
+  sample: ExamQuestion[]
+  question_set?: QuestionSetSummary
+}
+
+export type ImportInput = {
+  file: File
+  name?: string
+  passMark?: number
+  dryRun: boolean
+}
+
+export type ExamGrant = {
+  user_id: string
+  email: string | null
+  granted_by: string
+  granted_at: string
 }
 
 export type AnswerFilters = {

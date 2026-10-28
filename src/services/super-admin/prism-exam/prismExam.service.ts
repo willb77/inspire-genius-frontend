@@ -1,9 +1,14 @@
 import { agentApi } from "@/lib/agentApi"
 import type {
   AnswerFilters,
+  ExamAccess,
   ExamAnswer,
+  ExamGrant,
   ExamRun,
   ExamRunDetail,
+  ImportInput,
+  ImportResult,
+  NamedQuestionSetInput,
   QuestionSet,
   QuestionSetInput,
   QuestionSetSummary,
@@ -61,6 +66,65 @@ export async function getQuestionSet(setId: string): Promise<QuestionSet> {
 
 export async function replaceActiveQuestionSet(input: QuestionSetInput): Promise<QuestionSetSummary> {
   const { data } = await agentApi.put<MaybeEnvelope<QuestionSetSummary>>(`${BASE}/question-sets/active`, input)
+  return unwrap(data)
+}
+
+export async function saveQuestionSet(input: NamedQuestionSetInput): Promise<QuestionSetSummary> {
+  const { data } = await agentApi.post<MaybeEnvelope<QuestionSetSummary>>(`${BASE}/question-sets`, input)
+  return unwrap(data)
+}
+
+/** The .xlsx is parsed on the server; `dryRun` previews without saving. */
+export async function importQuestionSet(input: ImportInput): Promise<ImportResult> {
+  const form = new FormData()
+  form.append("file", input.file)
+  form.append("dry_run", input.dryRun ? "true" : "false")
+  if (input.name?.trim()) form.append("name", input.name.trim())
+  if (input.passMark !== undefined) form.append("pass_mark", String(input.passMark))
+  const { data } = await agentApi.post<MaybeEnvelope<ImportResult>>(`${BASE}/question-sets/import`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+  return unwrap(data)
+}
+
+export async function activateQuestionSet(setId: string): Promise<QuestionSet> {
+  const { data } = await agentApi.post<MaybeEnvelope<QuestionSet>>(
+    `${BASE}/question-sets/${encodeURIComponent(setId)}/activate`,
+  )
+  return unwrap(data)
+}
+
+export async function setQuestionSetShared(input: { setId: string; shared: boolean }): Promise<QuestionSet> {
+  const { data } = await agentApi.patch<MaybeEnvelope<QuestionSet>>(
+    `${BASE}/question-sets/${encodeURIComponent(input.setId)}`,
+    { shared: input.shared },
+  )
+  return unwrap(data)
+}
+
+// ── access ───────────────────────────────────────────────────────────
+
+export async function getExamAccess(): Promise<ExamAccess> {
+  const { data } = await agentApi.get<MaybeEnvelope<ExamAccess>>(`${BASE}/access`)
+  return unwrap(data)
+}
+
+export async function listGrants(): Promise<ExamGrant[]> {
+  const { data } = await agentApi.get<MaybeEnvelope<ExamGrant[]>>(`${BASE}/grants`)
+  return unwrap(data)
+}
+
+export async function putGrant(email: string): Promise<{ user_id: string; email: string; role: string }> {
+  const { data } = await agentApi.put<MaybeEnvelope<{ user_id: string; email: string; role: string }>>(`${BASE}/grants`, {
+    email: email.trim(),
+  })
+  return unwrap(data)
+}
+
+export async function deleteGrant(userId: string): Promise<{ user_id: string; revoked: boolean }> {
+  const { data } = await agentApi.delete<MaybeEnvelope<{ user_id: string; revoked: boolean }>>(
+    `${BASE}/grants/${encodeURIComponent(userId)}`,
+  )
   return unwrap(data)
 }
 

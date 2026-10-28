@@ -27,12 +27,25 @@ jest.mock("@/constants/navigation", () => ({
 const mockWorkspaceNav = jest.fn((items: unknown) => items)
 jest.mock("@/components/layout/useVerticalLauncher", () => ({
   useWorkspaceNavItems: (items: unknown) => mockWorkspaceNav(items),
+  // The real splice puts extras above the Settings/Help tail; appending is enough here.
+  withWorkspaceVerticals: (items: unknown[], extra: unknown[]) => [...items, ...extra],
+}))
+
+// The PRISM exam grant read (2026-10-27). `enabled` is the role check; data is the server's answer.
+let mockExamAccess: { allowed: boolean; super_admin: boolean } | undefined
+const mockExamEnabled = jest.fn()
+jest.mock("@/hooks/super-admin/usePrismExam", () => ({
+  useExamAccess: (enabled: boolean) => {
+    mockExamEnabled(enabled)
+    return { data: enabled ? mockExamAccess : undefined }
+  },
 }))
 
 describe("useGatedNavItems", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockWorkspaceNav.mockImplementation((items: unknown) => items)
+    mockExamAccess = undefined
   })
 
   it("returns exactly the role's nav items (no launcher-vertical appends)", () => {
@@ -65,4 +78,29 @@ describe("useGatedNavItems", () => {
       "Lumen",
     ])
   })
+
+  describe("PRISM Exam item", () => {
+    it("is added for a grantable role the server says is granted", () => {
+      mockExamAccess = { allowed: true, super_admin: false }
+      const { result } = renderHook(() => useGatedNavItems("practitioner"))
+      expect(mockExamEnabled).toHaveBeenCalledWith(true)
+      const item = result.current.find((i) => i.label === "PRISM Exam")
+      expect(item?.to).toBe("/prism-exam")
+    })
+
+    it("is absent when the server says no, or before it answers", () => {
+      mockExamAccess = { allowed: false, super_admin: false }
+      expect(renderHook(() => useGatedNavItems("practitioner")).result.current.some((i) => i.label === "PRISM Exam")).toBe(false)
+      mockExamAccess = undefined
+      expect(renderHook(() => useGatedNavItems("practitioner")).result.current.some((i) => i.label === "PRISM Exam")).toBe(false)
+    })
+
+    it("never asks for a plain user, who cannot be granted", () => {
+      mockExamAccess = { allowed: true, super_admin: false }
+      const { result } = renderHook(() => useGatedNavItems("user"))
+      expect(mockExamEnabled).toHaveBeenCalledWith(false)
+      expect(result.current.some((i) => i.label === "PRISM Exam")).toBe(false)
+    })
+  })
 })
+

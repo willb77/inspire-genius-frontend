@@ -1,14 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  activateQuestionSet,
   cancelRun,
+  deleteGrant,
   diffRuns,
   getActiveQuestionSet,
+  getExamAccess,
   getQuestionSet,
   getRun,
+  importQuestionSet,
   listAnswers,
+  listGrants,
   listQuestionSets,
   listRuns,
+  putGrant,
   replaceActiveQuestionSet,
+  saveQuestionSet,
+  setQuestionSetShared,
   startRun,
 } from "@/services/super-admin/prism-exam/prismExam.service"
 import type { AnswerFilters, ExamRun, ExamRunDetail } from "@/types/prism-exam"
@@ -29,8 +37,9 @@ export function useExamQuestionSets() {
   return useQuery({ queryKey: [KEY, "question-sets"], queryFn: listQuestionSets, staleTime: 60_000 })
 }
 
-export function useActiveQuestionSet() {
-  return useQuery({ queryKey: [KEY, "question-set", "active"], queryFn: getActiveQuestionSet, staleTime: 60_000 })
+/** Super-admin only on the server; `enabled: false` keeps a granted user's page from asking. */
+export function useActiveQuestionSet(enabled = true) {
+  return useQuery({ queryKey: [KEY, "question-set", "active"], queryFn: getActiveQuestionSet, staleTime: 60_000, enabled })
 }
 
 export function useExamQuestionSet(setId: string | undefined) {
@@ -51,6 +60,46 @@ export function useReplaceQuestionSet() {
       void qc.invalidateQueries({ queryKey: [KEY, "question-set"] })
     },
   })
+}
+
+function useSetMutation<TIn, TOut>(fn: (input: TIn) => Promise<TOut>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [KEY, "question-sets"] })
+      void qc.invalidateQueries({ queryKey: [KEY, "question-set"] })
+    },
+  })
+}
+
+export const useSaveQuestionSet = () => useSetMutation(saveQuestionSet)
+export const useImportQuestionSet = () => useSetMutation(importQuestionSet)
+export const useActivateQuestionSet = () => useSetMutation(activateQuestionSet)
+export const useShareQuestionSet = () => useSetMutation(setQuestionSetShared)
+
+// ── access ───────────────────────────────────────────────────────────
+
+/**
+ * Whether the caller may use the exam page. `enabled` lets the nav skip the
+ * request for a role that can never be granted (plain `user`).
+ */
+export function useExamAccess(enabled = true) {
+  return useQuery({ queryKey: [KEY, "access"], queryFn: getExamAccess, staleTime: 5 * 60_000, retry: false, enabled })
+}
+
+export function useExamGrants(enabled = true) {
+  return useQuery({ queryKey: [KEY, "grants"], queryFn: listGrants, staleTime: 30_000, enabled })
+}
+
+export function usePutGrant() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: putGrant, onSuccess: () => void qc.invalidateQueries({ queryKey: [KEY, "grants"] }) })
+}
+
+export function useDeleteGrant() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: deleteGrant, onSuccess: () => void qc.invalidateQueries({ queryKey: [KEY, "grants"] }) })
 }
 
 // ── runs ─────────────────────────────────────────────────────────────
@@ -91,6 +140,7 @@ export function useStartExamRun() {
     mutationFn: startRun,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: [KEY, "runs"] })
+      void qc.invalidateQueries({ queryKey: [KEY, "access"] })
     },
   })
 }

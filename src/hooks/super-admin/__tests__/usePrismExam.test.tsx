@@ -3,8 +3,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
   ACTIVE_POLL_MS,
   isRunActive,
+  useActivateQuestionSet,
   useActiveQuestionSet,
   useCancelExamRun,
+  useDeleteGrant,
+  useExamAccess,
+  useExamGrants,
+  useImportQuestionSet,
+  usePutGrant,
+  useSaveQuestionSet,
+  useShareQuestionSet,
   useExamAnswers,
   useExamDiff,
   useExamQuestionSet,
@@ -26,6 +34,14 @@ jest.mock("@/services/super-admin/prism-exam/prismExam.service", () => ({
   listAnswers: jest.fn(),
   cancelRun: jest.fn(),
   diffRuns: jest.fn(),
+  saveQuestionSet: jest.fn(),
+  importQuestionSet: jest.fn(),
+  activateQuestionSet: jest.fn(),
+  setQuestionSetShared: jest.fn(),
+  getExamAccess: jest.fn(),
+  listGrants: jest.fn(),
+  putGrant: jest.fn(),
+  deleteGrant: jest.fn(),
 }))
 
 import * as service from "@/services/super-admin/prism-exam/prismExam.service"
@@ -139,5 +155,50 @@ describe("usePrismExam", () => {
     expect(same.result.current.fetchStatus).toBe("idle")
     expect(half.result.current.fetchStatus).toBe("idle")
     expect(service.diffRuns).toHaveBeenCalledWith("r-1", "r-2")
+  })
+
+  it("set mutations invalidate the set lists", async () => {
+    ;(service.saveQuestionSet as jest.Mock).mockResolvedValue({ id: "qs-7" })
+    ;(service.importQuestionSet as jest.Mock).mockResolvedValue({ dry_run: true })
+    ;(service.activateQuestionSet as jest.Mock).mockResolvedValue({ id: "qs-7" })
+    ;(service.setQuestionSetShared as jest.Mock).mockResolvedValue({ id: "qs-7" })
+    const spy = jest.spyOn(qc, "invalidateQueries")
+    for (const [hook, arg] of [
+      [useSaveQuestionSet, { name: "n", pass_mark: 0.8, chapters: {}, questions: [] }],
+      [useImportQuestionSet, { file: new File(["x"], "a.xlsx"), dryRun: true }],
+      [useActivateQuestionSet, "qs-7"],
+      [useShareQuestionSet, { setId: "qs-7", shared: true }],
+    ] as const) {
+      spy.mockClear()
+      const h = renderHook(() => (hook as () => { mutateAsync: (a: unknown) => Promise<unknown> })(), { wrapper })
+      await act(async () => {
+        await h.result.current.mutateAsync(arg)
+      })
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["prism-exam", "question-sets"] })
+    }
+  })
+
+  it("reads access only when enabled, and grants invalidate the grant list", async () => {
+    ;(service.getExamAccess as jest.Mock).mockResolvedValue({ allowed: true })
+    ;(service.listGrants as jest.Mock).mockResolvedValue([])
+    ;(service.putGrant as jest.Mock).mockResolvedValue({ user_id: "m" })
+    ;(service.deleteGrant as jest.Mock).mockResolvedValue({ user_id: "m", revoked: true })
+    renderHook(() => useExamAccess(false), { wrapper })
+    expect(service.getExamAccess).not.toHaveBeenCalled()
+    const on = renderHook(() => useExamAccess(), { wrapper })
+    await waitFor(() => expect(on.result.current.data).toEqual({ allowed: true }))
+    const g = renderHook(() => useExamGrants(), { wrapper })
+    await waitFor(() => expect(g.result.current.data).toEqual([]))
+    const spy = jest.spyOn(qc, "invalidateQueries")
+    const put = renderHook(() => usePutGrant(), { wrapper })
+    await act(async () => {
+      await put.result.current.mutateAsync("a@b.c")
+    })
+    const del = renderHook(() => useDeleteGrant(), { wrapper })
+    await act(async () => {
+      await del.result.current.mutateAsync("m")
+    })
+    expect(spy).toHaveBeenCalledTimes(2)
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["prism-exam", "grants"] })
   })
 })

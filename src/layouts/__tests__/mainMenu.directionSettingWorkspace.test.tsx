@@ -36,6 +36,10 @@ jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
 }));
 
 const mockUseEnabledVerticals = jest.fn();
+// PRISM Exam grant read (2026-10-27): no grant, so these menus are unchanged.
+jest.mock("@/hooks/super-admin/usePrismExam", () => ({
+  useExamAccess: () => ({ data: undefined }),
+}));
 jest.mock("@/verticals/core/useEnabledVerticals", () => ({
   useEnabledVerticals: () => mockUseEnabledVerticals(),
 }));
