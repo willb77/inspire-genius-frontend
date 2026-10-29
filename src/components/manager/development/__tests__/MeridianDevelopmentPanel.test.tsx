@@ -44,11 +44,13 @@ jest.mock("@/hooks/agents/useMeridianChat", () => ({
 }))
 
 const mockSaveChat = jest.fn()
+const mockGoalSession = jest.fn()
+let mockHistory: Array<{ role: "user" | "assistant"; content: string }> = []
 jest.mock("@/hooks/manager/development", () => ({
   useLearningPlan: () => ({ mutate: jest.fn() }),
   useCreateMilestone: () => ({ mutate: jest.fn() }),
-  useGoalSession: () => ({ mutate: jest.fn(), isPending: false }),
-  useDossierChat: () => ({ data: [] }),
+  useGoalSession: () => ({ mutate: mockGoalSession, isPending: false }),
+  useDossierChat: () => ({ data: mockHistory }),
   useSaveChatMessage: () => ({ mutate: mockSaveChat }),
 }))
 
@@ -76,6 +78,7 @@ function renderPanel() {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockHistory = []
   chatState = { isProcessing: false, partial: "", error: null }
   capturedOptions = {}
 })
@@ -271,5 +274,29 @@ describe("Export (T2)", () => {
     fireEvent.change(screen.getByLabelText(/ask meridian about this member/i), { target: { value: "Hello" } })
     fireEvent.click(screen.getByRole("button", { name: /send/i }))
     expect(screen.getByTestId("meridian-export-trigger")).toBeEnabled()
+  })
+})
+
+// 2026-10-29: "Continue session" posted a Summit "resume" that growth recorded
+// as an invite and that nobody could see. It now picks up the manager's saved
+// conversation about the member, and touches no goal session.
+describe("Continue session", () => {
+  it("is disabled when there is no earlier conversation", () => {
+    renderPanel()
+    expect(screen.getByRole("button", { name: "Continue session" })).toBeDisabled()
+  })
+
+  it("picks up the saved conversation: focuses the input and starts no goal session", () => {
+    mockHistory = [
+      { role: "user", content: "How is Ben doing?" },
+      { role: "assistant", content: "Steady progress on delegation." },
+    ]
+    renderPanel()
+    expect(screen.getByText("Steady progress on delegation.")).toBeInTheDocument()
+    const btn = screen.getByRole("button", { name: "Continue session" })
+    expect(btn).toBeEnabled()
+    fireEvent.click(btn)
+    expect(screen.getByRole("textbox", { name: "Ask Meridian about this member" })).toHaveFocus()
+    expect(mockGoalSession).not.toHaveBeenCalled()
   })
 })

@@ -153,11 +153,17 @@ export function getDevelopmentGoals(memberId: string) {
 
 export type GoalSessionAction = "invite" | "resume"
 
-/** POST /members/{id}/goal-session — invite/resume a Summit discovery session. */
+/**
+ * POST /members/{id}/goal-session — record a Summit discovery-session invite.
+ *
+ * The body field is `mode` (`GoalSessionBody` in growth-service). This sent
+ * `{ action }` until 2026-10-29; Pydantic dropped the unknown key, so every
+ * call was recorded as "invite" whatever was asked.
+ */
 export function postGoalSession(memberId: string, action: GoalSessionAction) {
   return getApi().post<BaseApiResponse<{ sessionId?: string; status?: string }>>(
     `${BASE}/members/${memberId}/goal-session`,
-    { action },
+    { mode: action },
   )
 }
 

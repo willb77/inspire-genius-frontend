@@ -34,7 +34,13 @@ jest.mock("@/constants/development", () => ({
 }))
 
 /* ---- data hooks ---- */
-let dossierState: { data: MemberDossier | null | undefined; isLoading: boolean; isError: boolean } = {
+let dossierState: {
+  data: MemberDossier | null | undefined
+  isLoading: boolean
+  isError: boolean
+  error?: Error | null
+  refetch?: () => void
+} = {
   data: undefined,
   isLoading: true,
   isError: false,
@@ -345,11 +351,37 @@ describe("MemberDevelopmentWorkspace — tabs and header", () => {
     expect(screen.getAllByText("High confidence").length).toBeGreaterThan(0)
   })
 
-  it("the profile tab's invite starts a goal session invite", async () => {
+  // 2026-10-29: "+ Clifton" / "+ DISC" and the profile tab's "Send invite"
+  // filed a Summit goals invite whichever framework was clicked, and nothing
+  // reached the member. There is no Clifton or DISC invite, so none is offered.
+  it("offers no framework invite: missing assessments say they are not on file", async () => {
     dossierState = { data: dossier(), isLoading: false, isError: false }
     renderAt("/manager/development/m-1?tab=profile")
-    fireEvent.click(await screen.findByRole("button", { name: "invite" }))
-    expect(sessionMutate).toHaveBeenCalledWith("invite")
+    await screen.findByTestId("profile-panel")
+    expect(received.profile?.onInvite).toBeUndefined()
+    expect(screen.queryByTestId(/^coverage-.*-invite$/)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "invite" }))
+    expect(sessionMutate).not.toHaveBeenCalled()
+  })
+
+  it("a failed dossier job says so and offers a retry, instead of polling forever", async () => {
+    const { DossierJobFailedError } = jest.requireActual("@/hooks/manager/development/useMemberDossier")
+    const refetch = jest.fn()
+    dossierState = {
+      data: null, isLoading: false, isError: true,
+      error: new DossierJobFailedError("Dossier generation failed — please retry."), refetch,
+    }
+    renderAt("/manager/development/m-1")
+    expect(await screen.findByRole("alert")).toHaveTextContent("Dossier generation failed — please retry.")
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }))
+    expect(refetch).toHaveBeenCalled()
+  })
+
+  it("renders the Meridian rail at every width, so a started conversation is visible", async () => {
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1")
+    await screen.findByTestId("meridian-panel")
+    expect(screen.getByTestId("meridian-rail").className).not.toMatch(/\bhidden\b/)
   })
 
   it("Refresh recomputes, Share reports, Export builds the PDF from the dossier", async () => {

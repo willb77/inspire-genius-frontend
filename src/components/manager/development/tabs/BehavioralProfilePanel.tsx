@@ -59,9 +59,12 @@ function InviteToAddCard({ framework, onInvite }: { framework: string; onInvite?
   return (
     <Card className="border-dashed">
       <CardContent className="flex flex-col items-start gap-2 p-4">
-        <div className={cn("text-sm font-medium", sk.text700)}>Invite to add {framework}</div>
+        <div className={cn("text-sm font-medium", sk.text700)}>
+          {onInvite ? `Invite to add ${framework}` : `${framework} not on file`}
+        </div>
         <p className={cn("text-xs", sk.text500)}>
           Not yet assessed. This overlay is missing, which lowers reconciliation confidence.
+          {onInvite ? null : " Inspire Genius can't send an invite for this assessment yet."}
         </p>
         {onInvite ? (
           <Button size="sm" variant="outline" onClick={onInvite}>

@@ -187,6 +187,7 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
   const [input, setInput] = useState("")
   const [staged, setStaged] = useState<ProposedAction | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const seededRef = useRef(false)
 
   const learning = useLearningPlan(memberId)
@@ -283,6 +284,11 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
     sendRef.current(growthConversationOpener(memberNameRef.current))
   }, [seedRequest])
 
+  const continueConversation = () => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
+    inputRef.current?.focus()
+  }
+
   const applyStaged = () => {
     if (!staged) return
     if (staged.type === "invite_summit") session.mutate("invite")
@@ -311,7 +317,6 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
             {isProcessing ? "Thinking…" : "Ask about this member"}
           </div>
         </div>
-        {/* Continue a Summit goal-discovery session (resume = continue, not a CV). */}
         {/* T2: export the conversation on screen. Browser-only; "Email" opens
             the manager's mail client, never a server send. */}
         <div className="ml-auto">
@@ -321,11 +326,15 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
             turns={turns}
           />
         </div>
+        {/* Picks up this manager's saved conversation about the member, which
+            the panel loads from history. It used to post a Summit "resume" that
+            growth recorded as an invite and that did nothing anyone could see. */}
         <Button
           size="sm"
           variant="outline"
-          onClick={() => session.mutate("resume")}
-          disabled={session.isPending}
+          onClick={continueConversation}
+          disabled={turns.length === 0}
+          title={turns.length === 0 ? "No earlier conversation about this member yet" : undefined}
         >
           Continue session
         </Button>
@@ -437,6 +446,7 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
         }}
       >
         <input
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about this member…"

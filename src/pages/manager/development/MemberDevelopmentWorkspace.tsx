@@ -36,11 +36,11 @@ import {
 } from "@/constants/development"
 import type { CareerMatch, RosterMember } from "@/types/development"
 import { developmentKeys } from "@/hooks/manager/development/queryKeys"
+import { DossierJobFailedError } from "@/hooks/manager/development/useMemberDossier"
 import {
   useMemberDossier,
   useMemberFitMatches,
   useRefreshDossier,
-  useGoalSession,
   useSharePlan,
   useDevelopmentText,
 } from "@/hooks/manager/development"
@@ -198,7 +198,7 @@ export default function MemberDevelopmentWorkspace({
   // panel that reads like a tab with nothing in it.
   const activeTab: DevTab = TABS.some((x) => x.value === tabParam) ? tabParam : "profile"
 
-  const { data: dossier, isLoading, isError } = useMemberDossier(memberId)
+  const { data: dossier, isLoading, isError, error: dossierError, refetch: refetchDossier } = useMemberDossier(memberId)
   // TDS-P1 (c): the name for the computing header, from the roster the manager
   // came from. Read from the cache only — never a fetch of its own.
   const queryClient = useQueryClient()
@@ -207,7 +207,6 @@ export default function MemberDevelopmentWorkspace({
     ?.find((m) => m.memberId === memberId)?.name
   const refresh = useRefreshDossier(memberId)
   const share = useSharePlan(memberId)
-  const session = useGoalSession(memberId)
   // 3.3a. Fires only when FIT_ENGINE_MATCHES_ENABLED — off by default, so a
   // tier whose growth-service has no /fit-matches route is never asked.
   const fitMatches = useMemberFitMatches(memberId, FIT_ENGINE_MATCHES_ENABLED)
@@ -281,6 +280,25 @@ export default function MemberDevelopmentWorkspace({
       <div className="space-y-4">
         <Skeleton className={cn("h-24 w-full", sk.radius)} />
         <Skeleton className={cn("h-96 w-full", sk.radius)} />
+      </div>,
+    )
+  }
+
+  // Checked before the computing branch: a failed job leaves `dossier` null,
+  // which would otherwise render the computing view with nothing polling.
+  if (isError && dossierError instanceof DossierJobFailedError) {
+    return frame(
+      <div
+        role="alert"
+        className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}
+      >
+        <p className={cn("text-sm", sk.text700)}>{dossierError.message}</p>
+        <div className="flex gap-2">
+          <Button onClick={() => void refetchDossier()}>Try again</Button>
+          <Button variant="outline" onClick={() => navigate(studioRoute)}>
+            Back to roster
+          </Button>
+        </div>
       </div>,
     )
   }
@@ -373,8 +391,6 @@ export default function MemberDevelopmentWorkspace({
     coverage: dossier.profile.coverage,
   }
 
-  const handleInvite = () => session.mutate("invite")
-
   return frame(
     <div className="space-y-4">
       <button
@@ -412,7 +428,10 @@ export default function MemberDevelopmentWorkspace({
                 <p className={cn("text-sm", sk.text700)}>{reconciledHeadline}</p>
               </div>
               <div className="mt-2">
-                <CoverageChips coverage={coverage} showDates onInvite={handleInvite} />
+                {/* No onInvite: there is no Clifton or DISC invite in the platform,
+                    and the old handler filed a Summit goals invite whichever chip
+                    was clicked. A missing framework says so instead. */}
+                <CoverageChips coverage={coverage} showDates />
               </div>
             </div>
           </div>
@@ -426,8 +445,10 @@ export default function MemberDevelopmentWorkspace({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-80">
-                  <div className={cn("text-xs font-semibold", sk.text700)}>Interpretation provenance</div>
-                  <p className={cn("mt-0.5 text-[11px]", sk.text400)}>Which agent produced what, confidence, and any discrepancies.</p>
+                  {/* The rows are this dossier's recent activity (shares, invites,
+                      closed gaps, recomputes), not only agent interpretations. */}
+                  <div className={cn("text-xs font-semibold", sk.text700)}>Recent activity</div>
+                  <p className={cn("mt-0.5 text-[11px]", sk.text400)}>What changed on this dossier, and which agent or action did it.</p>
                   <ul className="mt-2 space-y-2">
                     {dossier.events.map((ev, i) => (
                       <li key={i} className={cn("rounded-md border p-2 text-xs", sk.border100)}>
@@ -526,7 +547,6 @@ export default function MemberDevelopmentWorkspace({
               <TabsContent value="profile">
                 <BehavioralProfilePanel
                   profile={dossier.profile}
-                  onInvite={() => handleInvite()}
                   notShared={dossier.prismNotShared}
                   noAccount={dossier.prismNoAccount}
                   memberName={member.name}
@@ -629,8 +649,11 @@ export default function MemberDevelopmentWorkspace({
 
         {/* Member-scoped Meridian assistant (in-page right rail; AppShell's own
             RightPanel is fixed and not prop-injectable). */}
-        <aside className="hidden xl:block">
-          <div className="sticky top-[calc(var(--spacing-header-h)+1rem)] h-[calc(100vh-var(--spacing-header-h)-2rem)]">
+        {/* Shown at every width: below xl it stacks under the tabs. It used to be
+            `hidden xl:block`, so "Start growth conversation" sent and saved a
+            turn the manager could not see on a laptop-width window. */}
+        <aside data-testid="meridian-rail">
+          <div className="h-[560px] xl:sticky xl:top-[calc(var(--spacing-header-h)+1rem)] xl:h-[calc(100vh-var(--spacing-header-h)-2rem)]">
             <MeridianDevelopmentPanel
               memberId={dossier.memberId}
               memberName={member.name}

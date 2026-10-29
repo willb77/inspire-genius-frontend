@@ -82,6 +82,7 @@ export function CoverageChips({
               <span
                 className={cn(chipBase, "border-dashed bg-transparent", sk.border300, sk.text400)}
                 data-testid={`coverage-${key}-missing`}
+                title={`${label} is not on file for this member`}
               >
                 <Plus className="h-3 w-3" aria-hidden="true" />
                 {label}
