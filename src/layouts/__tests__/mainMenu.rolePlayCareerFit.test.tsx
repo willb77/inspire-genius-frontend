@@ -161,40 +161,52 @@ describe.each(ALL_ROLES)("%s — Role Play and Career Fit", (role) => {
 });
 
 describe("main-menu order around the new rows", () => {
-  test("user: Role Play, Résumé Writer, then Career Fit, then Document Library directly above Settings", () => {
+  // 2026-10-29 (request): Career & Education Discovery then Career Fit sit in
+  // FRONT of Role Play in every role's main menu; in the user's My Workspace,
+  // My development moved after Role Play.
+  test("user: the requested order, Career Fit in front of Role Play", () => {
     const labels = mainMenu("user", renderAs("user", ["job-fit"])).map((i) => i.label);
     expect(labels).toEqual([
       "Home",
       "Chat with Meridian",
       "Goals Studio",
-      "My development",
-      "Role Play",
-      "Résumé Writer",
       "Career Fit",
+      "Role Play",
+      "My development",
+      "Résumé Writer",
       "Document Library",
       "Settings",
       "Help & Support",
     ]);
   });
 
+  test.each(ALL_ROLES)("%s: Career & Education Discovery, then Career Fit, directly in front of Role Play", (role) => {
+    const labels = mainMenu(role, renderAs(role, ["job-fit", "career-discovery"])).map((i) => i.label);
+    const at = labels.indexOf("Role Play");
+    expect(labels.slice(at - 2, at + 1)).toEqual(["Career & Education Discovery", "Career Fit", "Role Play"]);
+  });
+
   test.each(["manager", "company-admin", "distributor"] as const)(
-    "%s: Role Play, Résumé Writer, then Career Fit sit directly above Settings",
+    "%s: Role Play and Résumé Writer still sit directly above Settings",
     (role) => {
       const labels = mainMenu(role, renderAs(role, ["job-fit"])).map((i) => i.label);
       const at = labels.indexOf("Settings");
-      expect(labels.slice(at - 3, at + 1)).toEqual(["Role Play", "Résumé Writer", "Career Fit", "Settings"]);
+      expect(labels.slice(at - 2, at + 1)).toEqual(["Role Play", "Résumé Writer", "Settings"]);
     },
   );
 
-  test("practitioner: Role Play, Résumé Writer, then Career Fit close the menu (it has no Settings tail)", () => {
+  test("practitioner: Role Play and Résumé Writer close the menu (it has no Settings tail)", () => {
     const labels = mainMenu("practitioner", renderAs("practitioner", ["job-fit"])).map((i) => i.label);
-    expect(labels.slice(-3)).toEqual(["Role Play", "Résumé Writer", "Career Fit"]);
+    expect(labels.slice(-2)).toEqual(["Role Play", "Résumé Writer"]);
   });
 });
 
 // ── Résumé Writer (2026-10-19, request) — one row in every role's main menu ──
 describe.each(ALL_ROLES)("%s — Résumé Writer", (role) => {
-  test("is in the main menu once, right after Role Play, pointing at /my/resume, never greyed", () => {
+  // Right after Role Play — except in the user's My Workspace (user and
+  // super-admin), where My development sits between them since 2026-10-29.
+  const before = role === "user" || role === "super-admin" ? "My development" : "Role Play";
+  test(`is in the main menu once, right after ${before}, pointing at /my/resume, never greyed`, () => {
     for (const entitlement of [["job-fit"], [], "loading"] as Entitlement[]) {
       const props = renderAs(role, entitlement);
       const main = mainMenu(role, props);
@@ -202,7 +214,7 @@ describe.each(ALL_ROLES)("%s — Résumé Writer", (role) => {
       const hits = main.filter((i) => i.label === "Résumé Writer");
       expect(hits.map((i) => i.to)).toEqual([ROUTES.MY_RESUME]);
       expect(hits[0].disabled).toBeFalsy();
-      expect(labels.indexOf("Résumé Writer")).toBe(labels.indexOf("Role Play") + 1);
+      expect(labels.indexOf("Résumé Writer")).toBe(labels.indexOf(before) + 1);
       expect(allRows(props).filter((i) => i.to === ROUTES.MY_RESUME)).toHaveLength(1);
     }
   });

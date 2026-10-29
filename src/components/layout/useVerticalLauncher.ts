@@ -328,9 +328,36 @@ export function useWorkspaceVerticalItems(): NavItemDef[] {
     const entitlements = enabled ?? []
     return listVerticals()
       .filter((v) => workspace.has(v.key) && entitlements.includes(v.key))
+      .sort((a, b) => workspaceRank(a.key) - workspaceRank(b.key))
       .map((v) => toNavItem(v, true))
   }, [enabled, workspace])
 }
+
+/**
+ * The order workspace verticals take in the menu (2026-10-29, request): Career &
+ * Education Discovery, then Career Fit, then Direction Setting when its switch
+ * is on. Registry order puts Career Fit first, so the order is stated here. A
+ * workspace vertical missing from this list sorts after the named ones.
+ */
+const WORKSPACE_VERTICAL_ORDER: readonly VerticalKey[] = [
+  "career-discovery",
+  "job-fit",
+  "direction-setting",
+]
+
+function workspaceRank(key: VerticalKey): number {
+  const i = WORKSPACE_VERTICAL_ORDER.indexOf(key)
+  return i === -1 ? WORKSPACE_VERTICAL_ORDER.length : i
+}
+
+/**
+ * The label workspace verticals are spliced in FRONT of (2026-10-29, request:
+ * "Home, Chat with Meridian, Goals Studio, Career & Education Discovery, Career
+ * Fit, Role Play, My development, …"). Every role's main menu carries
+ * {@link ROLE_PLAY_ITEM}, so this one anchor places them in every menu; a menu
+ * without it falls back to the Settings/Help tail.
+ */
+const WORKSPACE_SPLICE_BEFORE_LABEL = "Role Play"
 
 /**
  * Labels that always sit at the BOTTOM of a workspace menu. Workspace verticals
@@ -348,10 +375,11 @@ const MENU_TAIL_LABELS = new Set([
 ])
 
 /**
- * Merge workspace verticals into a menu, just above its Settings/Help tail — or
- * appended when the menu has no such tail. Idempotent: an item already present
- * by `to` is not duplicated. Returns the input array unchanged when there is
- * nothing to merge, so callers' memo identities stay stable.
+ * Merge workspace verticals into a menu, directly in front of Role Play — or,
+ * in a menu without Role Play, just above its Settings/Help tail, or appended
+ * when the menu has neither. Idempotent: an item already present by `to` is not
+ * duplicated. Returns the input array unchanged when there is nothing to merge,
+ * so callers' memo identities stay stable.
  */
 export function withWorkspaceVerticals(
   items: NavItemDef[],
@@ -361,6 +389,8 @@ export function withWorkspaceVerticals(
   const present = new Set(items.map((i) => i.to))
   const extra = workspaceVerticals.filter((i) => !present.has(i.to))
   if (extra.length === 0) return items
+  const anchorAt = items.findIndex((i) => i.label === WORKSPACE_SPLICE_BEFORE_LABEL)
+  if (anchorAt !== -1) return [...items.slice(0, anchorAt), ...extra, ...items.slice(anchorAt)]
   const tailAt = items.findIndex((i) => MENU_TAIL_LABELS.has(i.label))
   if (tailAt === -1) return [...items, ...extra]
   return [...items.slice(0, tailAt), ...extra, ...items.slice(tailAt)]

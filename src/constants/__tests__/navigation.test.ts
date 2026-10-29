@@ -326,11 +326,13 @@ describe("My Workspace menu order + switched-off entries", () => {
       "Home",
       "Chat with Meridian",
       "Goals Studio",
-      "My development",
-      // "Interview Practice" until 2026-10-18 (request). Career Fit, for an
-      // entitled account, is spliced in after this row by useWorkspaceNavItems —
-      // pinned in workspace-menu.render.test.tsx, since it is not in this list.
+      // "Interview Practice" until 2026-10-18 (request). Career & Education
+      // Discovery and Career Fit, for an entitled account, are spliced in FRONT
+      // of this row by useWorkspaceNavItems (2026-10-29, request) — pinned in
+      // workspace-menu.render.test.tsx, since they are not in this list.
       "Role Play",
+      // After Role Play since 2026-10-29 (request); beside Goals Studio before.
+      "My development",
       "Résumé Writer",
       "Document Library",
       "Settings",
@@ -345,11 +347,13 @@ describe("My Workspace menu order + switched-off entries", () => {
       "Home",
       "Chat with Coaches",
       "Goals Studio",
-      "My development",
-      // "Interview Practice" until 2026-10-18 (request). Career Fit, for an
-      // entitled account, is spliced in after this row by useWorkspaceNavItems —
-      // pinned in workspace-menu.render.test.tsx, since it is not in this list.
+      // "Interview Practice" until 2026-10-18 (request). Career & Education
+      // Discovery and Career Fit, for an entitled account, are spliced in FRONT
+      // of this row by useWorkspaceNavItems (2026-10-29, request) — pinned in
+      // workspace-menu.render.test.tsx, since they are not in this list.
       "Role Play",
+      // After Role Play since 2026-10-29 (request); beside Goals Studio before.
+      "My development",
       "Résumé Writer",
       "Document Library",
       "Settings",

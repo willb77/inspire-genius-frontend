@@ -74,6 +74,15 @@ function renderMenu(entitlements: string[] | null = ["job-fit"]) {
     routePrefix: "/vertical/job-fit",
     homePath: "/vertical/job-fit/matches",
   })
+  // Registered AFTER Career Fit on purpose: the menu order (Discovery first) is
+  // stated in useVerticalLauncher, so it must not depend on registry order.
+  registerVertical({
+    key: "career-discovery",
+    title: "Career & Education Discovery",
+    description: "career and education discovery",
+    routePrefix: "/vertical/career-discovery",
+    homePath: "/vertical/career-discovery",
+  })
   mockUseEnabledVerticals.mockReturnValue(
     entitlements === null
       ? { data: undefined, isLoading: true }
@@ -101,14 +110,18 @@ const row = (label: string) => screen.getByRole("button", { name: label })
 const isGreyed = (label: string) =>
   (row(label).className || "").includes("text-[#1A1A1A]/40")
 
-/** The nine fixed rows (Résumé Writer since 2026-10-19); Career Fit is spliced in after it when entitled. */
+/**
+ * The nine fixed rows (Résumé Writer since 2026-10-19). Career & Education
+ * Discovery and Career Fit are spliced in front of Role Play when entitled.
+ */
 const FIXED = [
   "Home",
   "Chat with Meridian",
   "Goals Studio",
-  "My development",
   // "Interview Practice" until 2026-10-18 (request).
   "Role Play",
+  // After Role Play since 2026-10-29 (request).
+  "My development",
   "Résumé Writer",
   "Document Library",
   "Settings",
@@ -122,15 +135,16 @@ describe("My Workspace — rendered menu", () => {
       // Exactly six as of 2026-08-12 (request), seven since 2026-09-04 when
       // Goals returned (Goals offering, Phase 3), eight since 2026-09-30 when
       // My development joined (TDS-4c). 2026-10-18 (request): "Interview
-      // Practice" became "Role Play", and Career Fit is spliced in after it for
-      // an account entitled to `job-fit` — the one workspace vertical.
+      // Practice" became "Role Play". 2026-10-29 (request): Career Fit, for an
+      // account entitled to `job-fit`, sits in FRONT of Role Play, and My
+      // development moved after Role Play.
       "Home",
       "Chat with Meridian",
       "Goals Studio",
-      "My development",
-      "Role Play",
-      "Résumé Writer",
       "Career Fit",
+      "Role Play",
+      "My development",
+      "Résumé Writer",
       "Document Library",
       "Settings",
       "Help & Support",
@@ -139,6 +153,28 @@ describe("My Workspace — rendered menu", () => {
     expect(menu.find((i) => i.label === "Career Fit")?.to).toBe("/vertical/job-fit/matches")
     expect(row("Career Fit")).toBeEnabled()
     expect(isGreyed("Career Fit")).toBe(false)
+  })
+
+  it("renders the 2026-10-29 list exactly for an account entitled to both workspace verticals", () => {
+    // The request, verbatim in order: Home, Chat with Meridian, Goals Studio,
+    // Career & Education Discovery, Career Fit, Role Play, My development,
+    // Resume Writer, Document Library, Settings, Help & Support.
+    const menu = renderMenu(["lumen", "job-fit", "career-discovery"])
+    expect(menu.map((i) => i.label)).toEqual([
+      "Home",
+      "Chat with Meridian",
+      "Goals Studio",
+      "Career & Education Discovery",
+      "Career Fit",
+      "Role Play",
+      "My development",
+      "Résumé Writer",
+      "Document Library",
+      "Settings",
+      "Help & Support",
+    ])
+    expect(row("Career & Education Discovery")).toBeEnabled()
+    expect(isGreyed("Career & Education Discovery")).toBe(false)
   })
 
   it("does not render Analytics at all", () => {

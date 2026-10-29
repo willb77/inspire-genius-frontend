@@ -111,16 +111,19 @@ export const RESUME_WRITER_ITEM: NavItemDef = {
  * Assessment and Feedback long after the other had dropped them — and a menu
  * that changes depending on which page you are on is the bug that creates.
  *
- * One thing is spliced in: Career Fit (`job-fit` is in `WORKSPACE_VERTICALS`
- * again as of 2026-10-18), above the Document Library/Settings/Help tail, and
- * only for an account entitled to it. `WORKSPACE_VERTICAL_LINKS` stays empty.
+ * Spliced in by `useWorkspaceNavItems`, directly in front of Role Play and only
+ * for an entitled account: Career & Education Discovery, then Career Fit
+ * (2026-10-29, request — Role Play now sits ahead of My development so the menu
+ * reads Home · Chat · Goals Studio · Career & Education Discovery · Career Fit ·
+ * Role Play · My development · Résumé Writer · Document Library · Settings ·
+ * Help & Support). `WORKSPACE_VERTICAL_LINKS` stays empty.
  */
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
   { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals Studio" },
-  { to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" },
   ROLE_PLAY_ITEM,
+  { to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" },
   RESUME_WRITER_ITEM,
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
@@ -136,8 +139,12 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
  * (Goals offering, Phase 3 — decision D8: base product, not a vertical); My
  * development joined on 2026-09-30 (TDS-4c), on the same footing:
  *
- *   Home · Chat with Meridian · Goals Studio · My development · Role Play ·
- *   [Career Fit] · Document Library · Settings · Help & Support
+ *   Home · Chat with Meridian · Goals Studio · [Career & Education Discovery] ·
+ *   [Career Fit] · Role Play · My development · Résumé Writer · Document Library ·
+ *   Settings · Help & Support
+ *
+ * Order fixed 2026-10-29 (request). The bracketed rows are spliced in front of
+ * Role Play by `useWorkspaceNavItems`, for entitled accounts only.
  *
  * "Interview Practice" became "Role Play" on 2026-10-18 (request). Career Fit
  * (2026-10-18, request) is the bracketed ninth row: it is NOT in this list but
@@ -199,20 +206,21 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // The person's own goals — set in the Summit interview, shared per person
     // by consent (Goals offering, Phase 3). Ungated: every role reaches it.
     { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals Studio" },
+    // Candidate-side STAR rehearsal with Alex (voice-capable). "Role Play"
+    // since 2026-10-18 (request). Career & Education Discovery and Career Fit,
+    // when entitled, splice in directly IN FRONT of it (2026-10-29, request).
+    ROLE_PLAY_ITEM,
     // My development (TDS-4c, 2026-09-30) — the member's own view of the rows a
-    // coach sees about them in the Team Development Studio. Sits next to Goals
-    // Studio because it is the other "this is mine" surface, and like it the
-    // row is gated on nothing but sign-in: every read behind the page is a
-    // `/v1/growth/me/*` route that resolves the member from the token, so a
-    // plain `user` reaches all of it with no manager involved.
+    // coach sees about them in the Team Development Studio. Moved from beside
+    // Goals Studio to after Role Play on 2026-10-29 (request). Gated on nothing
+    // but sign-in: every read behind the page is a `/v1/growth/me/*` route that
+    // resolves the member from the token, so a plain `user` reaches all of it
+    // with no manager involved.
     //
     // Deliberately NOT between Document Library and Settings: the adjacency of
     // those two is asserted as exactly one apart (navigation.test.ts), which is
     // what caught the workspace-vertical splice landing in that gap.
     { to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" },
-    // Candidate-side STAR rehearsal with Alex (voice-capable). "Role Play"
-    // since 2026-10-18 (request); Career Fit, when entitled, splices in after it.
-    ROLE_PLAY_ITEM,
     RESUME_WRITER_ITEM,
     // Document Library sits directly above Settings (2026-08-06 request). It is
     // a reference surface you go to occasionally, not a daily shortcut, so it
