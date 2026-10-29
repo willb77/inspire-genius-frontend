@@ -66,8 +66,8 @@ describe("BehavioralProfilePanel", () => {
     // PRISM table still renders
     expect(screen.getByText("Innovating")).toBeInTheDocument()
     // Missing overlays render as invite-to-add cards
-    expect(screen.getByText(/Invite to add CliftonStrengths/i)).toBeInTheDocument()
-    expect(screen.getByText(/Invite to add DISC/i)).toBeInTheDocument()
+    expect(screen.getByText(/CliftonStrengths not on file/i)).toBeInTheDocument()
+    expect(screen.getByText(/DISC not on file/i)).toBeInTheDocument()
     // Reconciliation confidence reduced note
     expect(screen.getByText(/reduced resolution/i)).toBeInTheDocument()
   })
@@ -84,7 +84,7 @@ describe("BehavioralProfilePanel", () => {
       coverage: { prism: false, clifton: false, disc: false },
     }
     render(<BehavioralProfilePanel profile={noPrism} />)
-    expect(screen.getByText(/Invite to add PRISM/i)).toBeInTheDocument()
+    expect(screen.getByText(/PRISM not on file/i)).toBeInTheDocument()
   })
 })
 

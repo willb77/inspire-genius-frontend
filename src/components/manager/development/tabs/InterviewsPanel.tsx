@@ -38,7 +38,8 @@ export function InterviewsPanel({
         )}
         {state === "unavailable" && (
           <p className="text-sm text-amber-700" role="status" data-testid="interviews-unavailable">
-            Interviews couldn't be loaded right now. This isn't the same as having none.
+            Interviews aren't available here right now: interview sharing may be switched off on
+            this site, or the read failed. This isn't the same as having none.
           </p>
         )}
         {state === "shared" && items.length === 0 && (

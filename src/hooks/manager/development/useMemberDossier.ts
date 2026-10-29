@@ -7,6 +7,19 @@ import type { MemberDossier } from "@/types/development"
 import { developmentKeys } from "./queryKeys"
 
 /**
+ * The dossier job itself failed. growth-service says so with a 202 whose body
+ * is `{status: "error"}`, which this hook used to read as "still computing":
+ * a failed Refresh then fell back to the old dossier as if it had worked, and a
+ * member with no dossier yet started a new job on every poll, forever.
+ */
+export class DossierJobFailedError extends Error {
+  constructor(message = "Dossier generation failed. Please try again.") {
+    super(message)
+    this.name = "DossierJobFailedError"
+  }
+}
+
+/**
  * Per-member synthesized dossier.
  *
  * The compute is async (~60s, past the API Gateway 30s cap): the backend
@@ -20,14 +33,22 @@ export function useMemberDossier(memberId: string | undefined) {
     queryKey: developmentKeys.dossier(memberId ?? ""),
     queryFn: async () => {
       const r = await getMemberDossier(memberId as string)
-      if (r.status === 202) return null // computing — keep polling
+      if (r.status === 202) {
+        const body = r.data as unknown as { status?: string; message?: string } | undefined
+        if (body?.status === "error") throw new DossierJobFailedError(body.message || undefined)
+        return null // computing — keep polling
+      }
       const data = r.data?.data
       if (!data) throw new Error("Dossier not found")
       return data
     },
     enabled: Boolean(memberId),
-    // Poll while the dossier is still computing (data === null); stop once ready.
-    refetchInterval: (query) => (query.state.data === null ? 3000 : false),
+    // A failed job is an answer, not a blip: retrying would start another job.
+    retry: (count, err) => !(err instanceof DossierJobFailedError) && count < 2,
+    // Poll while the dossier is still computing (data === null); stop once ready
+    // or once the job has failed.
+    refetchInterval: (query) =>
+      query.state.status !== "error" && query.state.data === null ? 3000 : false,
     staleTime: 60_000,
   })
 }
