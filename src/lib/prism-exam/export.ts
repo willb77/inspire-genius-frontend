@@ -34,6 +34,31 @@ export function pointsOf(answers: ExamAnswer[]): number {
   return answers.reduce((sum, a) => sum + scoreOf(a.verdict), 0)
 }
 
+/**
+ * The option a multiple-choice answer chose, e.g. "C) Being precise".
+ *
+ * The exam asks for "the letter and the option text", and Meridian leads with it
+ * (`**C) Being precise**`, then the reasoning). Null when the answer does not
+ * lead with an option, which is every open-ended question, so callers fall back
+ * to the answer itself rather than inventing a choice.
+ */
+export function selectedOption(answer: string | null | undefined): string | null {
+  if (!answer) return null
+  const first = answer.split(/\r?\n/).find((l) => l.trim()) ?? ""
+  const m = first.match(/^\s*\*{0,2}\s*([A-H])\)\s*(.+?)\s*\*{0,2}\s*$/)
+  return m ? `${m[1]}) ${m[2].replace(/\*+$/, "").trim()}` : null
+}
+
+/** What an export prints as "the answer": the chosen option, else the whole answer. */
+export function answerShown(a: ExamAnswer): string {
+  return selectedOption(a.answer) ?? (a.answer ?? "(no answer)").trim()
+}
+
+function oneLine(s: string, max = 160): string {
+  const flat = s.replace(/\s+/g, " ").trim()
+  return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat
+}
+
 function csvCell(v: unknown): string {
   const s = v === null || v === undefined ? "" : String(v)
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
@@ -42,11 +67,11 @@ function csvCell(v: unknown): string {
 export function answersToCsv(run: ExamRunDetail, answers: ExamAnswer[]): string {
   const header = [
     "run_id", "tier", "label", "engine_sha", "question_id", "chapter", "page", "question", "expected",
-    "answer", "agent", "contributing_agents", "verdict", "score", "missing", "reason", "elapsed_s", "session_id", "error",
+    "selected", "answer", "agent", "contributing_agents", "verdict", "score", "missing", "reason", "elapsed_s", "session_id", "error",
   ]
   const rows = answers.map((a) => [
     run.id, run.tier, run.label ?? "", run.engine_sha ?? "", a.question_id, a.chapter, a.page ?? "", a.question,
-    a.expected, a.answer ?? "", a.agent ?? "", (a.contributing_agents ?? []).join("|"), a.verdict ?? "",
+    a.expected, selectedOption(a.answer) ?? "", a.answer ?? "", a.agent ?? "", (a.contributing_agents ?? []).join("|"), a.verdict ?? "",
     scoreOf(a.verdict), (a.missing ?? []).join("|"), a.reason ?? "", a.elapsed_s ?? "", a.session_id ?? "", a.error ?? "",
   ])
   return [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n"
@@ -97,6 +122,8 @@ export function answersToMarkdown(run: ExamRunDetail, answers: ExamAnswer[]): st
     lines.push("")
     lines.push(`**Expected.** ${a.expected}`)
     lines.push("")
+    const chosen = selectedOption(a.answer)
+    if (chosen) lines.push(`**Selected.** ${chosen}`, "")
     lines.push(`**Answer (${a.agent ?? "—"}).** ${(a.answer ?? "(no answer)").trim()}`)
     lines.push("")
     if (a.missing?.length) lines.push(`**Missing.** ${a.missing.join("; ")}`)
@@ -106,12 +133,13 @@ export function answersToMarkdown(run: ExamRunDetail, answers: ExamAnswer[]): st
   }
   lines.push("## All answers")
   lines.push("")
-  lines.push("| # | Chapter | Verdict | Agent | Consulted | Question |")
-  lines.push("|---|---|---|---|---|---|")
+  lines.push("| # | Chapter | Verdict | Answer | Expected | Agent | Consulted | Question |")
+  lines.push("|---|---|---|---|---|---|---|---|")
+  const cell = (t: string) => oneLine(t).replace(/\|/g, "\\|")
   for (const a of answers) {
     const consulted = (a.contributing_agents ?? []).filter((x) => x !== a.agent).join(", ")
     lines.push(
-      `| ${a.question_id} | ${a.chapter} | ${a.verdict ?? "—"} | ${a.agent ?? "—"} | ${consulted || "—"} | ${a.question.replace(/\|/g, "\\|")} |`,
+      `| ${a.question_id} | ${a.chapter} | ${a.verdict ?? "—"} | ${cell(answerShown(a))} | ${cell(a.expected)} | ${a.agent ?? "—"} | ${consulted || "—"} | ${a.question.replace(/\|/g, "\\|")} |`,
     )
   }
   lines.push("")
