@@ -1,4 +1,4 @@
-import { answersToCsv, answersToMarkdown, pct, pointsOf, runTitle, scoreOf, shortSha, when } from "../export"
+import { answerShown, answersToCsv, answersToMarkdown, pct, pointsOf, runTitle, scoreOf, selectedOption, shortSha, when } from "../export"
 import { validateQuestionSet } from "../validateQuestionSet"
 import type { ExamAnswer, ExamRunDetail } from "@/types/prism-exam"
 
@@ -112,7 +112,39 @@ describe("prism-exam export helpers", () => {
     expect(md).toContain("## Misses (1)")
     expect(md).toContain("### B01 · brain · p.12 · **partial**")
     expect(md).toContain("**Missing.** learning and memory")
-    expect(md).toContain("| B01 | brain | partial | Summit | Aura | Role of the cerebellum \\| pipes |")
+    expect(md).toContain(
+      "| B01 | brain | partial | Balance and coordination. Also music. | Underlying, Adapted, Consistent | Summit | Aura | Role of the cerebellum \\| pipes |",
+    )
+  })
+
+  // A multiple-choice run that scored 100% has no misses, so before this the
+  // markdown never showed what was chosen (reported 2026-10-29).
+  it("shows the option a multiple-choice answer chose, in every export, with no misses", () => {
+    const mc = answer({
+      id: "m-1",
+      question_id: "7",
+      question: "Pick one: A) Alpha B) Beta C) Gamma D) Delta",
+      expected: "B) Beta",
+      answer: "**B) Beta**\nBecause beta is the second letter.",
+    })
+    const md = answersToMarkdown(RUN, [mc])
+    expect(md).toContain("## Misses (0)")
+    expect(md).toContain("| 7 | welcome | correct | B) Beta | B) Beta | Aura |")
+    const csv = answersToCsv(RUN, [mc]).trim().split("\r\n")
+    const header = csv[0].split(",")
+    expect(header.indexOf("selected")).toBe(header.indexOf("expected") + 1)
+    expect(csv[1]).toContain(",B) Beta,B) Beta,")
+  })
+
+  it("reads the chosen option only when the answer leads with one", () => {
+    expect(selectedOption("**C) Gamma**\nwhy")).toBe("C) Gamma")
+    expect(selectedOption("\n  D) Delta  \nmore")).toBe("D) Delta")
+    expect(selectedOption("A) Alpha")).toBe("A) Alpha")
+    expect(selectedOption("I think it is a) or b)")).toBeNull()
+    expect(selectedOption("Underlying, Adapted and Consistent.")).toBeNull()
+    expect(selectedOption(null)).toBeNull()
+    expect(answerShown(answer({ answer: "  Open answer.  " }))).toBe("Open answer.")
+    expect(answerShown(answer({ answer: null }))).toBe("(no answer)")
   })
 
   it("says so when a run has no misses and is not finalised", () => {

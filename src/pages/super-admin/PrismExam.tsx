@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { downloadBlob } from "@/lib/exportTranscript"
 import { answersToCsv, answersToMarkdown, pct, pointsOf, runTitle, scoreOf, shortSha, when } from "@/lib/prism-exam/export"
+import { exportExamPdf } from "@/lib/prism-exam/exportPdf"
 import { validateQuestionSet } from "@/lib/prism-exam/validateQuestionSet"
 import {
   isRunActive,
@@ -466,6 +467,9 @@ function ResultsPanel({
 
   const exportCsv = () => downloadBlob(`prism-exam-${r.tier}-${r.id.slice(0, 8)}.csv`, new Blob([answersToCsv(r, list)], { type: "text/csv;charset=utf-8" }))
   const exportMd = () => downloadBlob(`prism-exam-${r.tier}-${r.id.slice(0, 8)}.md`, new Blob([answersToMarkdown(r, list)], { type: "text/markdown;charset=utf-8" }))
+  const exportPdf = () => {
+    void exportExamPdf(r, list).catch(() => toast.error("Could not build the PDF. Try again, or use CSV."))
+  }
 
   return (
     <div className="space-y-4">
@@ -492,6 +496,9 @@ function ResultsPanel({
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={exportMd} disabled={!list.length}>
             <Download className="mr-1 h-4 w-4" /> Markdown
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={exportPdf} disabled={!list.length}>
+            <Download className="mr-1 h-4 w-4" /> PDF
           </Button>
         </span>
       </div>
