@@ -18,7 +18,14 @@ jest.mock("@/services/manager/development/growthService", () => ({
   recomputeDossier: jest.fn(),
 }))
 const success = jest.fn()
-jest.mock("sonner", () => ({ toast: { success: (...a: unknown[]) => success(...a), error: jest.fn() } }))
+const warning = jest.fn()
+jest.mock("sonner", () => ({
+  toast: {
+    success: (...a: unknown[]) => success(...a),
+    warning: (...a: unknown[]) => warning(...a),
+    error: jest.fn(),
+  },
+}))
 
 import { GOAL_INVITE_RECORDED, useGoalSession } from "../useGoalSession"
 import { DossierJobFailedError, useMemberDossier } from "../useMemberDossier"
