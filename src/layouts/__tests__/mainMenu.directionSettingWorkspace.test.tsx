@@ -176,23 +176,24 @@ describe.each(ALL_ROLES)("%s — switch ON, entitled", (role) => {
     expect(allRows(props).filter((i) => i.to === DS_TO)).toHaveLength(1);
   });
 
-  test("it sits between Career & Education Discovery and Career Fit, above Document Library", () => {
+  // 2026-10-29 (request): Career & Education Discovery then Career Fit, in
+  // front of Role Play. Direction Setting, where its switch is on, follows them
+  // so it never splits that pair.
+  test("it follows Career & Education Discovery and Career Fit, directly in front of Role Play", () => {
     const labels = mainMenu(role, renderAs(role, ALL_THREE, true)).map((i) => i.label);
     const at = labels.indexOf(DS);
-    expect(labels.slice(at - 1, at + 2)).toEqual([
+    expect(labels.slice(at - 2, at + 2)).toEqual([
       "Career & Education Discovery",
-      DS,
       "Career Fit",
+      DS,
+      "Role Play",
     ]);
-    const lib = labels.indexOf("Document Library");
-    if (lib !== -1) expect(at).toBeLessThan(lib);
   });
 
-  test("with only direction-setting entitled it still sits above Document Library / Settings", () => {
+  test("with only direction-setting entitled it still sits directly in front of Role Play", () => {
     const labels = mainMenu(role, renderAs(role, ["direction-setting"], true)).map((i) => i.label);
     expect(labels.filter((l) => l === DS)).toHaveLength(1);
-    const tail = labels.findIndex((l) => ["Document Library", "Settings", "Help & Support"].includes(l));
-    if (tail !== -1) expect(labels.indexOf(DS)).toBe(tail - 1);
+    expect(labels.indexOf(DS)).toBe(labels.indexOf("Role Play") - 1);
   });
 
   test("no list in the sidebar repeats a label", () => {
@@ -205,14 +206,15 @@ describe.each(ALL_ROLES)("%s — switch ON, entitled", (role) => {
 });
 
 describe("user menu — the full order with the switch ON", () => {
-  test("Career & Education Discovery, Direction Setting, Career Fit, then Document Library", () => {
+  test("Goals Studio, Career & Education Discovery, Career Fit, Direction Setting, then Role Play", () => {
     const labels = mainMenu("user", renderAs("user", ALL_THREE, true)).map((i) => i.label);
-    const at = labels.indexOf("Document Library");
-    expect(labels.slice(at - 3, at + 1)).toEqual([
+    const at = labels.indexOf("Role Play");
+    expect(labels.slice(at - 4, at + 1)).toEqual([
+      "Goals Studio",
       "Career & Education Discovery",
-      DS,
       "Career Fit",
-      "Document Library",
+      DS,
+      "Role Play",
     ]);
   });
 });
