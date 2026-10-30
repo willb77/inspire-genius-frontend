@@ -154,16 +154,42 @@ export function getDevelopmentGoals(memberId: string) {
 export type GoalSessionAction = "invite" | "resume"
 
 /**
+ * Where a goal-session request came from. `prism_setup` is the PRISM-needed
+ * gate's "Set up with Aura": it posts `invite` but is not a Goals invite, so
+ * the server records it and notifies nobody (TDS-GI-1).
+ */
+export type GoalSessionChannel = "prism_setup"
+
+/**
+ * What the server says a goal-session request did (growth `GoalSessionResult`).
+ * `notified` is a boolean only when the call was a Goals invite, and is
+ * absent on a server that predates TDS-GI-1; `alreadySent` means this caller
+ * already notified the member in the last 24h; `noAccount` means the member
+ * has no account to notify.
+ */
+export type GoalSessionResult = {
+  sessionId?: string
+  status?: string
+  notified?: boolean | null
+  alreadySent?: boolean
+  noAccount?: boolean
+}
+
+/**
  * POST /members/{id}/goal-session — record a Summit discovery-session invite.
  *
  * The body field is `mode` (`GoalSessionBody` in growth-service). This sent
  * `{ action }` until 2026-10-29; Pydantic dropped the unknown key, so every
  * call was recorded as "invite" whatever was asked.
  */
-export function postGoalSession(memberId: string, action: GoalSessionAction) {
-  return getApi().post<BaseApiResponse<{ sessionId?: string; status?: string }>>(
+export function postGoalSession(
+  memberId: string,
+  action: GoalSessionAction,
+  channel?: GoalSessionChannel,
+) {
+  return getApi().post<BaseApiResponse<GoalSessionResult>>(
     `${BASE}/members/${memberId}/goal-session`,
-    { mode: action },
+    channel ? { mode: action, channel } : { mode: action },
   )
 }
 

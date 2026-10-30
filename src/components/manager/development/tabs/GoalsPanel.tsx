@@ -526,7 +526,11 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
         title="PRISM needed"
         body="Set this member up with Aura to map their PRISM profile before goal discovery can begin."
       >
-        <Button onClick={() => session.mutate("invite")} disabled={session.isPending}>
+        {/* TDS-GI-1: a PRISM set-up, not a Goals invite. The server records it and notifies nobody. */}
+        <Button
+          onClick={() => session.mutate({ action: "invite", channel: "prism_setup" })}
+          disabled={session.isPending}
+        >
           Set up with Aura
         </Button>
       </StateCard>

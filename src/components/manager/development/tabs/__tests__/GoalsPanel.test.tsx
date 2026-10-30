@@ -258,3 +258,22 @@ describe("3.4 5b-strip — practice on a shared goal", () => {
     expect(screen.queryByTestId("goal-practice")).not.toBeInTheDocument()
   })
 })
+
+describe("TDS-GI-1: the PRISM gate is not a Goals invite", () => {
+  beforeEach(() => sessionMutate.mockClear())
+
+  it("'Set up with Aura' sends the prism_setup channel, never a bare invite", () => {
+    goalsState.data = { goals: [], coverage: [], prismNeeded: true, goalsSharedUntil: null }
+    renderAt("/manager/development/m1")
+    fireEvent.click(screen.getByRole("button", { name: /Set up with Aura/ }))
+    expect(sessionMutate).toHaveBeenCalledTimes(1)
+    expect(sessionMutate).toHaveBeenCalledWith({ action: "invite", channel: "prism_setup" })
+  })
+
+  it("'Invite to Goals Studio session' stays a plain Goals invite", () => {
+    goalsState.data = { goals: [], coverage: [], goalsPending: true, goalsSharedUntil: null }
+    renderAt("/manager/development/m1")
+    fireEvent.click(screen.getByRole("button", { name: /Invite to Goals Studio session/ }))
+    expect(sessionMutate).toHaveBeenCalledWith("invite")
+  })
+})
