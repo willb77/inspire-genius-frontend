@@ -37,6 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { CoachGoalCard } from "@/components/manager/development/tabs/GoalsPanel";
 import { useMyGoals } from "@/hooks/summit/useMyGoals";
+import { MemberLinkRequestCard } from "@/components/sharing/MemberLinkRequestCard";
 import {
   useAccessLog,
   useCategoryDetails,
@@ -650,6 +651,8 @@ export function SharingCore() {
       )}
 
       {!loading && !failed && <AddPerson />}
+
+      {!loading && !failed && <MemberLinkRequestCard />}
 
       {!loading && !failed && <WhoHasLooked nameById={nameById} />}
     </div>
