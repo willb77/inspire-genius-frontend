@@ -32,6 +32,7 @@ import { MemberCard } from "@/components/manager/development/MemberCard"
 import { AddMemberDialog } from "@/components/manager/development/AddMemberDialog"
 import { OrgChartPanel } from "@/components/manager/development/OrgChartPanel"
 import { MyReportsPanel } from "@/components/manager/development/MyReportsPanel"
+import { LinkRequestsPanel } from "@/components/manager/development/LinkRequestsPanel"
 import {
   DevSkinProvider,
   DevPageFrame,
@@ -171,6 +172,9 @@ export default function DevelopmentStudio({
         </div>
         <AddMemberDialog />
       </header>
+
+      {/* MMLR-6 — shown only while a member's request waits on this manager. */}
+      <LinkRequestsPanel audience={audience} />
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

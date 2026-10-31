@@ -107,6 +107,29 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.studio.scope.org":
     "The reporting lines on file inside your own organisation. The chart draws the lines; the roster lists the people.",
 
+  /**
+   * MMLR-6 — "Requests to join your team". Shown only while there is a request
+   * to act on (the list reads `[]` both when there are none and when the
+   * feature is off). The refusal lines name what happened, never a success.
+   */
+  "dev.linkRequests.title": "Requests to join your team",
+  "dev.linkRequests.intro": "These people asked you to add them to your team. Nothing is shared until you accept.",
+  "dev.linkRequests.asked": "asked",
+  "dev.linkRequests.willShare": "If you accept, they'll share:",
+  "dev.linkRequests.accept": "Accept",
+  "dev.linkRequests.decline": "Decline",
+  "dev.linkRequests.declineConfirm": "Decline this request?",
+  "dev.linkRequests.declineYes": "Yes, decline",
+  "dev.linkRequests.keep": "Keep",
+  "dev.linkRequests.added": "Added to your team.",
+  "dev.linkRequests.declined": "Request declined.",
+  "dev.linkRequests.refreshFailed": "We couldn't refresh requests just now.",
+  "dev.linkRequests.refused.alreadyOnTeam": "They've joined another team since asking.",
+  "dev.linkRequests.refused.crossOrg": "They're no longer in your organisation.",
+  "dev.linkRequests.refused.notPending": "This request has already closed.",
+  "dev.linkRequests.refused.gone": "This request is no longer available.",
+  "dev.linkRequests.refused.other": "That didn't work. Nothing changed — try again.",
+
   "dev.workspace.refresh": "Refresh dossier",
   "dev.workspace.share": "Share with member",
   "dev.workspace.export": "Export PDF",

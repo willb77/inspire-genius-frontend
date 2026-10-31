@@ -5,6 +5,8 @@ jest.mock("@/lib/agentApi", () => ({ getApi: () => api }))
 import {
   actOnMyLinkRequest,
   createLinkRequest,
+  decideLinkRequest,
+  getIncomingLinkRequests,
   getMyLinkRequests,
   leaveTeam,
 } from "@/services/manager/development/growthService"
@@ -29,4 +31,16 @@ it.each(["withdraw", "share"] as const)("%s acts on one request", (action) => {
 it("leaves the team", () => {
   leaveTeam()
   expect(api.post).toHaveBeenCalledWith("/v1/growth/team/leave")
+})
+
+// ── MMLR-6 ──────────────────────────────────────────────────────────────────
+
+it("reads the incoming list (a manager's own, or a company-admin's org's)", () => {
+  getIncomingLinkRequests()
+  expect(api.get).toHaveBeenCalledWith("/v1/growth/link-requests/incoming")
+})
+
+it.each(["approve", "decline", "cancel"] as const)("%s decides one request", (action) => {
+  decideLinkRequest("r1", action)
+  expect(api.post).toHaveBeenCalledWith(`/v1/growth/link-requests/r1/${action}`)
 })
