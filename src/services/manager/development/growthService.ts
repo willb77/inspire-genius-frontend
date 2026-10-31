@@ -724,3 +724,61 @@ export function getMyMilestones() {
 export function getMyFullPrism() {
   return getApi().get<BaseApiResponse<FullPrismProfileResponse>>(`${BASE}/me/profile`)
 }
+
+// ── Member → manager link requests (MMLR-5) ──────────────────────────────────
+
+/**
+ * One of the caller's own requests to join a manager's team, as the member
+ * sees it. A declined, cancelled or expired request reads `closed` with no
+ * decision date, so the list never says whether an address belongs to a
+ * manager. `grantOutcome` is null until approval tries to share, `failed` when
+ * that share did not land.
+ */
+export type MemberLinkRequest = {
+  id: string
+  requestedEmail: string
+  status: string
+  categories: string[]
+  createdAt: string | null
+  expiresAt: string | null
+  decidedAt: string | null
+  grantOutcome: string | null
+}
+
+export type LinkRequestCreateInput = { managerEmail: string; categories: string[] }
+
+/**
+ * GET /link-requests/mine. **404 means the feature is not on for this
+ * member** (switch off, or a grant gate does not apply) — not an error.
+ */
+export function getMyLinkRequests() {
+  return getApi().get<BaseApiResponse<MemberLinkRequest[]>>(`${BASE}/link-requests/mine`)
+}
+
+/**
+ * POST /link-requests → 202 with the same neutral message for every target,
+ * whether or not the address belongs to someone who can accept. Refusals are
+ * about the caller only: 409 `already_on_a_team`, 403 `members_only`, 422
+ * `unknown_category`, 404 when the feature is off.
+ */
+export function createLinkRequest(input: LinkRequestCreateInput) {
+  return getApi().post<BaseApiResponse<{ status: string; message: string }>>(
+    `${BASE}/link-requests`,
+    input,
+  )
+}
+
+/** POST /link-requests/{id}/{withdraw|share} — the member's own actions on their request. */
+export function actOnMyLinkRequest(requestId: string, action: "withdraw" | "share") {
+  return getApi().post<BaseApiResponse<MemberLinkRequest>>(
+    `${BASE}/link-requests/${requestId}/${action}`,
+  )
+}
+
+/**
+ * POST /team/leave — removes a team link the member's own request made.
+ * 409 `ask_your_manager` when the manager added them.
+ */
+export function leaveTeam() {
+  return getApi().post<BaseApiResponse<{ left: boolean; requestId: string }>>(`${BASE}/team/leave`)
+}
