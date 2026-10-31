@@ -114,3 +114,34 @@ describe("CatalogImport — dry run before import", () => {
     expect(screen.getByText(/start a new version to import into/)).toBeInTheDocument()
   })
 })
+
+describe("CatalogImport — sample files", () => {
+  // The links point at public/; a missing file would come back from the CDN as
+  // the app's index.html with a 200, so the files themselves are checked here.
+  const SAMPLES = [
+    { link: /sample courses csv/i, file: "sample_courses.csv", header: "code,title,credits," },
+    { link: /sample programs csv/i, file: "sample_programs.csv", header: "program_code,program_title,credential,total_credits," },
+  ]
+
+  it.each(SAMPLES)("offers $file as a download", ({ link, file }) => {
+    renderCurriculum(<CatalogImport catalogId="cat-1" editable />)
+    const a = screen.getByRole("link", { name: link })
+    expect(a).toHaveAttribute("href", `/samples/curriculum/${file}`)
+    expect(a).toHaveAttribute("download", file)
+  })
+
+  it("shows the samples on a published catalog too", () => {
+    renderCurriculum(<CatalogImport catalogId="cat-1" editable={false} />)
+    expect(screen.getByRole("link", { name: /sample courses csv/i })).toBeInTheDocument()
+  })
+
+  it.each(SAMPLES)("ships $file in public/ with the import's header", ({ file, header }) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- node fs in a jsdom test, read-only
+    const fs = require("fs") as typeof import("fs")
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- as above
+    const path = require("path") as typeof import("path")
+    const text = fs.readFileSync(path.join(process.cwd(), "public", "samples", "curriculum", file), "utf8")
+    expect(text.startsWith(header)).toBe(true)
+    expect(text.split("\n").filter((l) => l.trim()).length).toBeGreaterThan(1)
+  })
+})

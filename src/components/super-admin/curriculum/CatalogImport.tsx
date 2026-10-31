@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { FlaskConical, Upload } from "lucide-react"
+import { Download, FlaskConical, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -16,6 +16,12 @@ import {
   type ImportValues,
 } from "./curriculum.schemas"
 import { canImport, type DryRun } from "./curriculumUi"
+
+/** Static files under public/samples/curriculum/ — an illustrative catalog with no personal data, safe for the public CDN. */
+const SAMPLE_FILES = [
+  { label: "Sample courses CSV", name: "sample_courses.csv", href: "/samples/curriculum/sample_courses.csv" },
+  { label: "Sample programs CSV", name: "sample_programs.csv", href: "/samples/curriculum/sample_programs.csv" },
+] as const
 
 /**
  * CSV import for one catalog: a dry run first (nothing is written), its full
@@ -83,6 +89,20 @@ export function CatalogImport({ catalogId, editable }: { catalogId: string; edit
         programs (one row per requirement group). A dry run checks unknown codes, requirement loops and credit
         totals and writes nothing. An import replaces this draft's courses and programs.
       </p>
+      <div className="flex flex-wrap items-center gap-3 text-xs">
+        <span className="text-muted-foreground">Sample files (42 courses, 4 programs; they pass the dry run):</span>
+        {SAMPLE_FILES.map((s) => (
+          <a
+            key={s.href}
+            href={s.href}
+            download={s.name}
+            className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {s.label}
+          </a>
+        ))}
+      </div>
       <form aria-label="CSV import" className="space-y-3" onSubmit={onDryRun}>
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-1">
