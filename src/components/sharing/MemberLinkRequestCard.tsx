@@ -37,17 +37,16 @@ import {
   useMyLinkRequests,
 } from "@/hooks/summit/useLinkRequests"
 import type { MemberLinkRequest } from "@/services/manager/development/growthService"
-import { memberStatusLabel, NO_SHARE_FOUND, REFRESH_FAILED, SENT_MESSAGE } from "./linkRequestCopy"
-
-/** The categories a member may offer, with the labels the sharing panel uses. */
-const OFFER_CATEGORIES = [
-  { key: "goals", label: "Goals" },
-  { key: "prism", label: "PRISM profile" },
-  { key: "assessments", label: "Assessments" },
-  { key: "artefacts", label: "Profile" },
-  { key: "interviews", label: "Interviews" },
-  { key: "development", label: "Development" },
-] as const
+import {
+  codeOf,
+  LINK_REQUEST_CATEGORIES as OFFER_CATEGORIES,
+  memberStatusLabel,
+  NO_SHARE_FOUND,
+  REFRESH_FAILED,
+  SENT_MESSAGE,
+  shortDate as formatDate,
+  statusOf,
+} from "./linkRequestCopy"
 
 const OFFER_KEYS = OFFER_CATEGORIES.map((c) => c.key) as [string, ...string[]]
 
@@ -58,21 +57,6 @@ const askSchema = z.object({
 type AskInput = z.input<typeof askSchema>
 type AskOutput = z.output<typeof askSchema>
 
-type ErrorShape = { response?: { status?: number; data?: { detail?: unknown } } }
-
-function statusOf(err: unknown): number | undefined {
-  return (err as ErrorShape | null | undefined)?.response?.status
-}
-
-function codeOf(err: unknown): string | undefined {
-  const detail = (err as ErrorShape | null | undefined)?.response?.data?.detail
-  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
-    const code = (detail as { code?: unknown }).code
-    return typeof code === "string" ? code : undefined
-  }
-  return undefined
-}
-
 function askErrorText(err: unknown): string {
   const code = codeOf(err)
   if (code === "already_on_a_team") return "You're already on a team. Leave it first to join another."
@@ -80,12 +64,6 @@ function askErrorText(err: unknown): string {
   if (statusOf(err) === 422) return "One of those choices can't be shared. Nothing was sent."
   if (statusOf(err) === 404) return "Asking to join a team isn't available for your account right now. Nothing was sent."
   return "That didn't send. Nothing was sent — try again."
-}
-
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return ""
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
 }
 
 type Notice = { tone: "ok" | "error"; text: string }

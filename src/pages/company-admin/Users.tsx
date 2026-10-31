@@ -7,6 +7,7 @@ import { Info } from "lucide-react"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCompanyUsers } from "@/hooks/company-admin/useCompanyAdmin"
+import { LinkRequestsAdminSection } from "@/components/company-admin/LinkRequestsAdminSection"
 
 type User = { id: string; name: string; email: string; role: string; department: string; team: string; status: string; joinDate: string }
 
@@ -70,6 +71,9 @@ export default function CompanyAdminUsers() {
           </div>
         ))}
       </div>
+
+      {/* MMLR-6 — shown only while a request in this organisation is pending. */}
+      <LinkRequestsAdminSection />
 
       <DataCard title={t("admin:users.users")}>
         {error && (

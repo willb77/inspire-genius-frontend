@@ -782,3 +782,44 @@ export function actOnMyLinkRequest(requestId: string, action: "withdraw" | "shar
 export function leaveTeam() {
   return getApi().post<BaseApiResponse<{ left: boolean; requestId: string }>>(`${BASE}/team/leave`)
 }
+
+// ── The manager's and company-admin's side of link requests (MMLR-6) ─────────
+
+/**
+ * A pending request as the manager or company-admin sees it. `managerName` is
+ * sent to a company-admin only (whose team the member asked to join); it is
+ * absent for a manager, and absent everywhere until growth sends it.
+ */
+export type IncomingLinkRequest = {
+  id: string
+  memberId: string
+  memberName: string | null
+  status: string
+  categories: string[]
+  createdAt: string | null
+  expiresAt: string | null
+  grantOutcome: string | null
+  managerName?: string | null
+}
+
+/**
+ * GET /link-requests/incoming. A manager's own pending requests, or a
+ * company-admin's org's. **200 `[]` both when there are none and when the
+ * feature is off** — the two cannot be told apart. 403 `managers_only` for any
+ * other role.
+ */
+export function getIncomingLinkRequests() {
+  return getApi().get<BaseApiResponse<IncomingLinkRequest[]>>(`${BASE}/link-requests/incoming`)
+}
+
+/**
+ * POST /link-requests/{id}/{approve|decline} (the manager) or `cancel` (a
+ * company-admin of the request's org). Refusals: 404 `not_found` /
+ * `not_available`, 409 `not_pending`, and on approve 409 `cross_org` /
+ * `already_on_a_team`; on cancel 403 `company_admin_only`.
+ */
+export function decideLinkRequest(requestId: string, action: "approve" | "decline" | "cancel") {
+  return getApi().post<BaseApiResponse<IncomingLinkRequest>>(
+    `${BASE}/link-requests/${requestId}/${action}`,
+  )
+}
