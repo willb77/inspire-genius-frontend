@@ -1,0 +1,23 @@
+program_code,program_title,credential,total_credits,cip_code,description,group,rule,n,min_credits,courses
+IT-AAS,Information Technology,AAS,60,11.0103,"Prepares graduates for entry-level roles in programming, networking, databases and support.",General Education,required,,,ENG 111|MAT 143
+IT-AAS,,,,,,Communication,choose_n,1,,ENG 112|COM 120|COM 231
+IT-AAS,,,,,,Humanities and Fine Arts,choose_n,1,,ART 111|PHI 240
+IT-AAS,,,,,,Social and Behavioral Sciences,choose_n,1,,PSY 150|SOC 210|ECO 251
+IT-AAS,,,,,,Core,required,,,CIS 110|CTI 110|CTI 120|CSC 151|DBA 110|NET 125|SEC 110|NOS 110|WEB 110|CTS 285|CTS 289
+IT-AAS,,,,,,Major Electives,min_credits,,12,CSC 251|NET 126|SEC 150|SEC 160|WBL 111
+CYB-CERT,Cybersecurity Fundamentals,certificate,15,11.1003,A short credential in network security for career changers and IT staff.,Core,required,,,CTI 120|SEC 110|NET 125|SEC 160
+CYB-CERT,,,,,,Elective,choose_n,1,,SEC 150|NET 126
+BUS-AAS,Business Administration,AAS,60,52.0201,"Management, accounting, marketing and law for supervisory and small-business careers.",General Education,required,,,ACA 122|ENG 111|MAT 143
+BUS-AAS,,,,,,Communication,choose_n,1,,ENG 112|COM 231
+BUS-AAS,,,,,,Humanities and Fine Arts,choose_n,1,,ART 111|PHI 240|HIS 131
+BUS-AAS,,,,,,Social Science,required,,,ECO 251
+BUS-AAS,,,,,,Core,required,,,ACC 120|ACC 121|BUS 110|BUS 115|BUS 137|BUS 153|BUS 260|BUS 285|MKT 120|CIS 110
+BUS-AAS,,,,,,Electives,min_credits,,12,ECO 252|WBL 111|CTI 110|DBA 110|WEB 110
+AA-TRANS,Associate in Arts (College Transfer),AA,60,24.0101,"The first two years of a bachelor's degree, designed to transfer.",Transfer Success,required,,,ACA 122
+AA-TRANS,,,,,,English Composition,required,,,ENG 111|ENG 112
+AA-TRANS,,,,,,Mathematics,choose_n,1,,MAT 143|MAT 152|MAT 171
+AA-TRANS,,,,,,Communication,choose_n,1,,COM 120|COM 231
+AA-TRANS,,,,,,Humanities and Fine Arts,choose_n,2,,ART 111|PHI 240|HIS 131
+AA-TRANS,,,,,,Social and Behavioral Sciences,choose_n,2,,PSY 150|SOC 210|ECO 251|ECO 252
+AA-TRANS,,,,,,Natural Science,required,,,BIO 110
+AA-TRANS,,,,,,Transfer Electives,min_credits,,31,MAT 172|BUS 110|ACC 120|CSC 151|CTI 110|CIS 110|MKT 120|BUS 137|WEB 110|NOS 110|BUS 115
