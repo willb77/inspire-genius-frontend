@@ -5,6 +5,7 @@ import {
   DocumentRejectedError,
   DocumentStillCheckingError,
   SCAN_AWAITING_DETAIL,
+  SCAN_RESULT_RECEIVED_DETAIL,
   isAwaitingScan,
   scanRejection,
 } from "../scan"
@@ -14,8 +15,11 @@ import { toast } from "sonner"
 jest.mock("sonner", () => ({ toast: { loading: jest.fn(), dismiss: jest.fn() } }))
 
 describe("isAwaitingScan", () => {
-  it("is true only for scanning WITH the awaiting marker", () => {
+  it("is true only for scanning WITH one of the two scan markers", () => {
     expect(isAwaitingScan({ status: "scanning", status_detail: SCAN_AWAITING_DETAIL })).toBe(true)
+    // The result event got there first and the server is finishing the file.
+    expect(isAwaitingScan({ status: "scanning", status_detail: SCAN_RESULT_RECEIVED_DETAIL })).toBe(true)
+    expect(isAwaitingScan({ status: "extracting", status_detail: SCAN_RESULT_RECEIVED_DETAIL })).toBe(false)
     // Today's pipeline passes through "scanning" with no detail: not a wait.
     expect(isAwaitingScan({ status: "scanning", status_detail: null })).toBe(false)
     expect(isAwaitingScan({ status: "extracting", status_detail: SCAN_AWAITING_DETAIL })).toBe(false)

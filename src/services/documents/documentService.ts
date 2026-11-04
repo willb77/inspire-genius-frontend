@@ -24,6 +24,7 @@ export {
   DocumentStillCheckingError,
   SCAN_AWAITING_DETAIL,
   SCAN_REJECTED_PREFIX,
+  SCAN_RESULT_RECEIVED_DETAIL,
   isAwaitingScan,
   scanRejection,
 } from "@/lib/documents/scan";

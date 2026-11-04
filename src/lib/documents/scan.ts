@@ -11,6 +11,9 @@ type ScanStatusFields = { status: string; status_detail: string | null };
 // scanner is switched on, so on every other tier triggerProcessing behaves
 // exactly as before: one request, its response returned as-is.
 export const SCAN_AWAITING_DETAIL = "Awaiting virus scan";
+// The detail once the scan result has arrived and the server is finishing the
+// file. /process can return it when the result event got there first.
+export const SCAN_RESULT_RECEIVED_DETAIL = "Virus scan result received";
 // The prefix the server puts on a document the scan refused (document-service
 // SCAN_REJECTED_PREFIX). Such a document is never handed out.
 export const SCAN_REJECTED_PREFIX = "Virus scan failed";
@@ -35,7 +38,10 @@ export class DocumentStillCheckingError extends Error {
 }
 
 export function isAwaitingScan(doc: ScanStatusFields): boolean {
-  return doc.status === "scanning" && doc.status_detail === SCAN_AWAITING_DETAIL;
+  return (
+    doc.status === "scanning" &&
+    (doc.status_detail === SCAN_AWAITING_DETAIL || doc.status_detail === SCAN_RESULT_RECEIVED_DETAIL)
+  );
 }
 
 /** The reason a document was refused by the scan, or null if it wasn't. */
