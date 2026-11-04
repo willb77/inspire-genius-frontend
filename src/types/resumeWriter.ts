@@ -42,6 +42,11 @@ export type ResumeWriterSources = {
   bulletStyles?: BulletStyleView[]
   defaultOption?: string
   defaultBulletStyle?: string
+  /**
+   * RWO-8 — present (true) only while the server's `resume_writer_guided` switch is
+   * on. Absent, the page is today's, whatever else the response says.
+   */
+  guidedEnabled?: boolean
 }
 
 /** RWO-2 — one résumé format, as the server describes it (the copy, never the prompt). */
@@ -94,6 +99,50 @@ export type ResumeWriterRequest = {
   disclosure?: string
   /** RWO-3 — Federal only: hours per week, series/grade, clearance. Used for this draft; never stored. */
   federalDetails?: string
+  /**
+   * RWO-8 — the person's direction from the assistant ("Apply to my draft"): changes
+   * emphasis and wording only, never facts. Read only while `guidedEnabled`. Never stored.
+   */
+  instruction?: string
+  /** RWO-8 — the person's answers to the résumé interview. Their facts, for this draft only. */
+  answers?: InterviewAnswer[]
+}
+
+/** RWO-8 — one question from the résumé interview. */
+export type InterviewQuestion = {
+  id: string
+  text: string
+  /** One sentence: what the job asks for, or which line has no result. */
+  why: string
+  /** The job's words, or the résumé line, the question is about. */
+  requirement: string
+}
+
+/** RWO-8 — an answered question. Only answered ones are ever sent. */
+export type InterviewAnswer = { question: string; answer: string }
+
+/** RWO-8 — `POST /v1/agents/resume-writer/me/questions`. */
+export type ResumeQuestionsRequest = {
+  role?: string
+  careerArea?: string
+  positionText?: string
+  documentIds?: string[]
+  jobId?: string
+  option?: string
+  /** True for the follow-ups on the review step, with the draft's lines. */
+  afterDraft?: boolean
+  weakBullets?: string[]
+}
+
+/** RWO-8 — the 202 (or, with nothing to ask after a draft, the empty answer at once). */
+export type ResumeQuestionsStarted = { jobId: string | null; status: string; questions?: InterviewQuestion[] }
+
+/** RWO-8 — `GET /v1/agents/resume-writer/me/questions/{jobId}`. */
+export type ResumeQuestionsState = {
+  jobId: string
+  status: "queued" | "running" | "complete" | "error" | "expired"
+  questions: InterviewQuestion[] | null
+  error: string | null
 }
 
 /** RW2 — one line the fabrication check took out, because the source does not show it. */

@@ -1,8 +1,12 @@
 import axios from "axios"
 import { agentApi } from "@/lib/agentApi"
 import {
+  type InterviewQuestion,
   type ResumeJobStarted,
   type ResumeJobState,
+  type ResumeQuestionsRequest,
+  type ResumeQuestionsStarted,
+  type ResumeQuestionsState,
   type ResumeWriterApiResponse,
   type ResumeWriterDisabled,
   type ResumeWriterRequest,
@@ -18,6 +22,8 @@ import {
 export const RESUME_WRITER_BASE = "/v1/agents/resume-writer/me"
 /** RW2 — the async-jobs pair: a full résumé can outlast the gateway's 30 s. */
 export const RESUME_WRITER_JOBS = `${RESUME_WRITER_BASE}/jobs`
+/** RWO-8 — the résumé interview, also a job pair. Free; capped per day by the server. */
+export const RESUME_WRITER_QUESTIONS = `${RESUME_WRITER_BASE}/questions`
 
 /** What the caller has on file, whether generation is on, and today's count.
  * RW2: with a `jobId`, the server also names that role (only while its tailored
@@ -99,4 +105,37 @@ export async function generateMyResumeJob(
     }
   }
   throw new Error("The draft is taking longer than it should. Try again in a moment.")
+}
+
+/**
+ * RWO-8 — the résumé interview: start it and wait for the questions. `[]` when
+ * there is nothing to ask; `{ disabled: true }` while the server switch is off.
+ * Questions take no draft slot.
+ */
+export async function askResumeQuestions(
+  body: ResumeQuestionsRequest,
+  { intervalMs = 2000, timeoutMs = 90_000, sleep = defaultSleep }: PollOptions = {},
+): Promise<InterviewQuestion[] | ResumeWriterDisabled> {
+  const { data } = await agentApi.post<ResumeWriterApiResponse<ResumeQuestionsStarted | ResumeWriterDisabled>>(
+    RESUME_WRITER_QUESTIONS,
+    body,
+  )
+  const started = data.data
+  if ((started as ResumeWriterDisabled).disabled === true) return { disabled: true }
+  const { jobId, questions } = started as ResumeQuestionsStarted
+  if (!jobId) return questions ?? []
+
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    await sleep(intervalMs)
+    const { data: polled } = await agentApi.get<ResumeWriterApiResponse<ResumeQuestionsState>>(
+      `${RESUME_WRITER_QUESTIONS}/${encodeURIComponent(jobId)}`,
+    )
+    const job = polled.data
+    if (job.status === "complete" && job.questions) return job.questions
+    if (job.status === "error" || job.status === "expired" || job.status === "complete") {
+      throw new Error(job.error || "We couldn't think of questions just now. You can write your résumé without them.")
+    }
+  }
+  throw new Error("The questions are taking too long. You can write your résumé without them.")
 }

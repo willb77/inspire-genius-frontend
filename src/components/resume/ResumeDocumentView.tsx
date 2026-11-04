@@ -8,7 +8,19 @@
  */
 import type { ResumeDocument } from "@/lib/resume/resumeDocument"
 
-export function ResumeDocumentView({ doc, footnote }: { doc: ResumeDocument; footnote: string }) {
+/** RWO-8 — lines new since the previous draft are marked. Absent (today's page), nothing is. */
+const mark = (changed: ReadonlySet<string> | undefined, text: string) =>
+  changed?.has(text) ? { "data-changed": "true", className: "rounded bg-teal-50 px-1" } : {}
+
+export function ResumeDocumentView({
+  doc,
+  footnote,
+  changed,
+}: {
+  doc: ResumeDocument
+  footnote: string
+  changed?: ReadonlySet<string>
+}) {
   return (
     <div className="space-y-4" data-testid="resume-draft">
       <div>
@@ -25,7 +37,12 @@ export function ResumeDocumentView({ doc, footnote }: { doc: ResumeDocument; foo
           <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide">{s.heading}</h3>
           <div className="space-y-2">
             {s.blocks.map((b, i) => {
-              if (b.kind === "paragraph") return <p key={i} className="text-sm leading-relaxed">{b.text}</p>
+              if (b.kind === "paragraph")
+                return (
+                  <p key={i} className="text-sm leading-relaxed">
+                    {changed?.has(b.text) ? <span {...mark(changed, b.text)}>{b.text}</span> : b.text}
+                  </p>
+                )
               if (b.kind === "lines")
                 return (
                   <div key={i} className="space-y-0.5 text-sm">
@@ -38,7 +55,9 @@ export function ResumeDocumentView({ doc, footnote }: { doc: ResumeDocument; foo
                 return (
                   <ul key={i} className="list-disc space-y-0.5 pl-5 text-sm">
                     {b.items.map((x, j) => (
-                      <li key={j}>{x}</li>
+                      <li key={j} {...mark(changed, x)}>
+                        {x}
+                      </li>
                     ))}
                   </ul>
                 )
@@ -49,7 +68,9 @@ export function ResumeDocumentView({ doc, footnote }: { doc: ResumeDocument; foo
                   {b.bullets.length ? (
                     <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm">
                       {b.bullets.map((x, j) => (
-                        <li key={j}>{x}</li>
+                        <li key={j} {...mark(changed, x)}>
+                          {x}
+                        </li>
                       ))}
                     </ul>
                   ) : null}
