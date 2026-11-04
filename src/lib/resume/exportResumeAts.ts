@@ -111,9 +111,26 @@ export function writeAtsPdf(pdf: AtsPdfLike, doc: ResumeDocument): Blob {
     }
     y += o.gap ?? 0
   }
+  /**
+   * A bullet is wrapped ONCE, at the width left after its indent and marker, and
+   * each line is printed as-is. Wrapping it and then handing the marked lines back
+   * to `write` re-wrapped them at a different width, which stranded a word on a
+   * line of its own ("…from 2 hours to / 20 / minutes.") — seen on dev, 2026-11-04.
+   */
+  const BULLET_INDENT = 6
+  const BULLET_TEXT = 14
   const bullet = (text: string) => {
-    const lines = pdf.splitTextToSize(pdfSafe(text), BODY_W - 14)
-    lines.forEach((line, i) => write(i === 0 ? `-  ${line}` : `   ${line}`, { indent: 6 }))
+    const size = 10.5
+    pdf.setFont("helvetica", "normal")
+    pdf.setFontSize(size)
+    pdf.setTextColor(0, 0, 0)
+    const lh = size * 1.3
+    pdf.splitTextToSize(pdfSafe(text), BODY_W - BULLET_TEXT).forEach((line, i) => {
+      need(lh)
+      if (i === 0) pdf.text("-", MARGIN + BULLET_INDENT, y + size)
+      pdf.text(line, MARGIN + BULLET_TEXT, y + size)
+      y += lh
+    })
   }
 
   if (doc.name) write(doc.name, { size: 16, bold: true, gap: 2 })

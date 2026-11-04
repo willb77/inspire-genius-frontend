@@ -280,3 +280,38 @@ describe("the format selector", () => {
     expect(inputLabel("some_new_input")).toBe("Some new input")
   })
 })
+
+describe("bullet wrapping in the PDF (dev, 2026-11-04)", () => {
+  /** A width-honest fake: wraps at width/5 characters, like a real font would at some size. */
+  function widthPdf(): AtsPdfLike {
+    const pdf = fakePdf()
+    pdf.splitTextToSize = (t: string, w: number) => {
+      const per = Math.floor(w / 5)
+      const out: string[] = []
+      let line = ""
+      for (const word of t.split(" ")) {
+        if (line && (line + " " + word).length > per) {
+          out.push(line)
+          line = word
+        } else line = line ? `${line} ${word}` : word
+      }
+      if (line) out.push(line)
+      return out
+    }
+    return pdf
+  }
+
+  test("a long bullet is wrapped once: one marker, every line at the text column, no stranded word", () => {
+    const long = "Built a Python and SQL inventory tracker that cut stock counts from 2 hours to 20 minutes across every stockroom in the region"
+    const doc = buildResumeDocument({ ...DRAFT, selected_achievements: [long] }, CONTACT, ["selected_achievements"])
+    writeAtsPdf(widthPdf(), { ...doc, sections: doc.sections.filter((s) => s.key === "selected_achievements") })
+    const body = calls.filter((c) => c.text !== "SELECTED ACHIEVEMENTS" && !c.text.startsWith("Casey") && !c.text.startsWith("Operations") && !c.text.startsWith("Springfield"))
+    const markers = body.filter((c) => c.text === "-")
+    const lines = body.filter((c) => c.text !== "-")
+    expect(markers).toHaveLength(1)
+    expect(new Set(lines.map((c) => c.x)).size).toBe(1)
+    expect(lines.map((c) => c.text).join(" ")).toBe(long)
+    expect(lines.length).toBeGreaterThan(1)
+    expect(lines.every((c) => c.text.split(" ").length > 1)).toBe(true)
+  })
+})
