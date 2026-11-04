@@ -37,6 +37,8 @@ export type ResumeDocument = {
   headline: string
   contactLine: string
   sections: DocSection[]
+  /** RWO-3 — "federal": OPM's suggested 10-pt text and 0.5-inch margins. */
+  layout?: "standard" | "federal"
 }
 
 /** Today's order — the server's Reverse-Chronological sections. */
@@ -54,10 +56,33 @@ export const HEADINGS: Record<string, string> = {
   activities: "Activities and Leadership",
   education: "Education",
   certifications: "Certifications",
+  federal_optional: "Additional Information",
 }
 
 /** Advice for the person — on the page, never in a file. */
-export const PAGE_ONLY_KEYS: ReadonlySet<string> = new Set(["talking_points"])
+export const PAGE_ONLY_KEYS: ReadonlySet<string> = new Set(["talking_points", "qualifications_crosswalk"])
+
+const key = (s: unknown) => String(s ?? "").trim().toLowerCase().replace(/\s+/g, " ")
+
+/**
+ * RWO-3 — a job's federal line: MM/YYYY dates, hours per week and (for a Federal
+ * position) series/grade, as OPM lists them. Matched to its job by title and
+ * organization; a job with no match keeps its dates alone.
+ */
+export function federalDatesLine(dates: string, title: string, org: string, draft: GeneratedResume): string {
+  const row = (draft.federal_roles ?? []).find(
+    (r) => key(r.organization) === key(org) && key(r.title) === key(title),
+  )
+  const hours = String(row?.hours_per_week ?? "").trim()
+  const grade = String(row?.series_grade ?? "").trim()
+  return [
+    dates,
+    hours ? `${hours.replace(/\s*hours?( per week)?$/i, "")} hours per week` : "",
+    grade,
+  ]
+    .filter(Boolean)
+    .join(" | ")
+}
 
 const clean = (s: unknown): string => String(s ?? "").trim()
 const nonEmpty = (items: unknown): string[] =>
@@ -88,7 +113,9 @@ function section(key: string, draft: GeneratedResume): DocSection | null {
           kind: "entry" as const,
           title: clean(e.title),
           subtitle: clean(e.organization),
-          dates: clean(e.dates),
+          dates: draft.federal_roles
+            ? federalDatesLine(clean(e.dates), clean(e.title), clean(e.organization), draft)
+            : clean(e.dates),
           bullets: nonEmpty(e.bullets),
         }))
         .filter((e) => e.title || e.subtitle || e.bullets.length)
@@ -132,6 +159,7 @@ export function buildResumeDocument(
   draft: GeneratedResume,
   contact: ResumeContact,
   sections: string[] = DEFAULT_SECTIONS,
+  layout: "standard" | "federal" = "standard",
 ): ResumeDocument {
   const order = [...new Set([...sections, ...Object.keys(HEADINGS)])]
   return {
@@ -139,6 +167,8 @@ export function buildResumeDocument(
     headline: clean(draft.headline),
     contactLine: contactLine(contact),
     sections: order.map((k) => section(k, draft)).filter((s): s is DocSection => s !== null),
+    // Only when Federal, so every other document keeps exactly its RWO-2 shape.
+    ...(layout === "federal" ? { layout } : {}),
   }
 }
 

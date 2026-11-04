@@ -59,6 +59,10 @@ export type ResumeOptionView = {
   avoidWhen: string
   expect: string
   takesDisclosure: boolean
+  /** RWO-3 — present (true) only for Federal: the page asks for hours and series/grade. */
+  takesFederalDetails?: boolean
+  /** RWO-3 — a hard page limit the page warns against (Federal: 2). */
+  pageLimit?: number
 }
 
 /** RWO-2 — one bullet-writing style. */
@@ -88,6 +92,8 @@ export type ResumeWriterRequest = {
   bulletStyle?: string
   /** Re-Entry only: how the person wants a gap or program described. Used for this draft; never stored. */
   disclosure?: string
+  /** RWO-3 — Federal only: hours per week, series/grade, clearance. Used for this draft; never stored. */
+  federalDetails?: string
 }
 
 /** RW2 — one line the fabrication check took out, because the source does not show it. */
@@ -138,7 +144,16 @@ export type GeneratedResume = {
   projects?: ResumeProject[]
   activities?: string[]
   technical_skills?: SkillGroup[]
+  /** RWO-3 — Federal: hours per week and series/grade for each job, matched by title and organization. */
+  federal_roles?: FederalRole[]
+  /** RWO-3 — Federal: clearance, languages, affiliations, publications, special programs. */
+  federal_optional?: string[]
+  /** RWO-3 — Federal: the announcement's requirements and the bullet that shows each. Page only. */
+  qualifications_crosswalk?: CrosswalkRow[]
 }
+
+export type FederalRole = { title: string; organization: string; hours_per_week: string; series_grade: string }
+export type CrosswalkRow = { requirement: string; evidence: string }
 
 export type ResumeProject = { name: string; problem: string; stack: string; role: string; outcome: string }
 export type SkillGroup = { category: string; skills: string[] }
