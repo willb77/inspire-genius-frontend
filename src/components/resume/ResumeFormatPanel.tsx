@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import {
-  SITUATIONS,
+  situationsFor,
   USES,
   inputLabel,
   recommendFormat,
@@ -73,7 +73,7 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
             onChange={(e) => setSituation(e.target.value as Situation)}
           >
             <option value="">Choose one</option>
-            {SITUATIONS.map((s) => (
+            {situationsFor(options.map((o) => o.id)).map((s) => (
               <option key={s.id} value={s.id}>
                 {s.label}
               </option>

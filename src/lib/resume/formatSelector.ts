@@ -17,6 +17,20 @@ export type Situation =
 
 export type UseWhere = "online" | "in_person" | "networking"
 
+/**
+ * RWO-3 — situations that only make sense when the server offers their format.
+ * Listed only then, so a format behind its own switch (Federal) cannot surface
+ * on a tier before that switch is on (Coord2's gate on FE #659).
+ */
+const NEEDS_OPTION: Partial<Record<Situation, string>> = { federal: "federal" }
+
+export function situationsFor(available: string[]): { id: Situation; label: string }[] {
+  return SITUATIONS.filter((s) => {
+    const needs = NEEDS_OPTION[s.id]
+    return !needs || available.includes(needs)
+  })
+}
+
 export const SITUATIONS: { id: Situation; label: string }[] = [
   { id: "same_field", label: "Working in the same field, with a steady history" },
   { id: "changing", label: "Changing careers or industries" },

@@ -363,3 +363,15 @@ test("federal: the crosswalk is on the page and not in the draft; the file uses 
   await waitFor(() => expect(mockAts).toHaveBeenCalled())
   expect((mockAts.mock.calls[0][0] as ResumeDocument).layout).toBe("federal")
 })
+
+test("federal: the 'federal job' situation is listed only when the server offers Federal", () => {
+  sources = ON
+  const { unmount } = renderPage()
+  const without = Array.from((screen.getByLabelText("You are…") as HTMLSelectElement).options).map((o) => o.value)
+  expect(without).not.toContain("federal")
+  unmount()
+  sources = ON_FED
+  renderPage()
+  const withFed = Array.from((screen.getByLabelText("You are…") as HTMLSelectElement).options).map((o) => o.value)
+  expect(withFed).toContain("federal")
+})

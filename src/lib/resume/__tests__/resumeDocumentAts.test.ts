@@ -408,3 +408,12 @@ describe("RWO-3 Federal", () => {
     expect(inputLabel("series_grade")).toMatch(/GS-0343-09/)
   })
 })
+
+describe("situationsFor (Coord2 gate on FE #659)", () => {
+  test("federal is listed only when the server offers the federal format", async () => {
+    const { situationsFor } = await import("@/lib/resume/formatSelector")
+    expect(situationsFor(["reverse_chrono", "hybrid"]).map((s) => s.id)).not.toContain("federal")
+    expect(situationsFor(["reverse_chrono", "federal"]).map((s) => s.id)).toContain("federal")
+    expect(situationsFor([]).map((s) => s.id)).toContain("same_field")
+  })
+})
