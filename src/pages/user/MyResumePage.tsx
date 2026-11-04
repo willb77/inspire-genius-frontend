@@ -235,6 +235,10 @@ export default function MyResumePage() {
   const [exporting, setExporting] = useState(false)
   // RWO-2 — used only while the server's options switch is on.
   const [format, setFormat] = useState<FormatChoice>({ optionId: "", styleId: "", disclosure: "" })
+  // The target the person aimed the draft at, for the file name. Not the draft's
+  // `target`: with no role named, the server labels it "the person's next role",
+  // which is not a job title (seen on dev, 2026-11-04).
+  const [aimedAt, setAimedAt] = useState("")
   const [contact, setContact] = useState<ResumeContact>(() => ({
     name: user?.fullName ?? "",
     email: user?.email ?? "",
@@ -273,7 +277,7 @@ export default function MyResumePage() {
   const chosenOption = optionOffers.find((o) => o.id === optionId)
   const draftSections = optionOffers.find((o) => o.id === draft?.option)?.sections ?? DEFAULT_SECTIONS
   const doc = optionsOn && draft ? buildResumeDocument(draft, contact, draftSections) : null
-  const fileTarget = draft ? draft.targetRole?.title || draft.target || null : null
+  const fileTarget = draft ? draft.targetRole?.title || aimedAt || null : null
 
   const toggleDoc = (id: string, on: boolean) =>
     setDocumentIds((prev) => (on ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)))
@@ -303,6 +307,7 @@ export default function MyResumePage() {
   }
 
   const onGenerate = () => {
+    setAimedAt(tailoredRole ? tailoredRole.title : role.trim() || careerArea.trim())
     if (tailoredRole) {
       generate.mutate(
         withFormat({ jobId: tailoredRole.jobId, documentIds: documentIds.length ? documentIds : undefined }),

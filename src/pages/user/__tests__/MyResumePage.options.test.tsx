@@ -221,6 +221,8 @@ test("on: Word and PDF come from the ATS document, named for the target, never t
   sources = ON
   genData = OPTION_DRAFT
   renderPage()
+  fireEvent.change(screen.getByLabelText("Role"), { target: { value: "Operations Manager" } })
+  generate()
   fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "(555) 555-0199" } })
   fireEvent.click(screen.getByRole("button", { name: /Download Word/ }))
   await waitFor(() => expect(mockAts).toHaveBeenCalledTimes(1))
@@ -255,4 +257,19 @@ test("on: the Mini card is built from the draft, with no request", () => {
   fireEvent.click(screen.getByTestId("resume-mini-open"))
   expect(screen.getByTestId("resume-mini-text")).toHaveTextContent("Led a team of 8")
   expect(mutate).not.toHaveBeenCalled()
+})
+
+test("on: the file is named for the role the person typed, never the server's default label", async () => {
+  sources = ON
+  genData = { ...OPTION_DRAFT, target: "the person's next role" }
+  renderPage()
+  generate()
+  fireEvent.click(screen.getByRole("button", { name: /Download Word/ }))
+  await waitFor(() => expect(mockAts).toHaveBeenCalledTimes(1))
+  expect(mockAts.mock.calls[0][2]).toBeNull()
+  fireEvent.change(screen.getByLabelText("Role"), { target: { value: "Data Analyst" } })
+  generate()
+  fireEvent.click(screen.getByRole("button", { name: /Download PDF/ }))
+  await waitFor(() => expect(mockAts).toHaveBeenCalledTimes(2))
+  expect(mockAts.mock.calls[1][2]).toBe("Data Analyst")
 })
