@@ -36,6 +36,37 @@ export type ResumeWriterSources = {
    * none, it is not visible, or either switch is off. A suggestion only.
    */
   goalTarget?: TargetRoleView
+  /** RWO-1/RWO-2 — present only while the server's `resume_writer_options` switch is on. */
+  optionsEnabled?: boolean
+  options?: ResumeOptionView[]
+  bulletStyles?: BulletStyleView[]
+  defaultOption?: string
+  defaultBulletStyle?: string
+}
+
+/** RWO-2 — one résumé format, as the server describes it (the copy, never the prompt). */
+export type ResumeOptionView = {
+  id: string
+  number: number
+  name: string
+  atsRating: string
+  pages: string
+  /** Render order for the page and the file. */
+  sections: string[]
+  requiredInputs: string[]
+  recommendedInputs: string[]
+  useWhen: string
+  avoidWhen: string
+  expect: string
+  takesDisclosure: boolean
+}
+
+/** RWO-2 — one bullet-writing style. */
+export type BulletStyleView = {
+  id: string
+  name: string
+  structure: string
+  bestFor: string
 }
 
 /** RW2 — a Career Fit role, as the Résumé Writer may show it. */
@@ -52,6 +83,11 @@ export type ResumeWriterRequest = {
   documentIds?: string[]
   /** RW2 — the Career Fit role to aim at. Ignored by the server while its switch is off. */
   jobId?: string
+  /** RWO-2 — sent only while `optionsEnabled`. */
+  option?: string
+  bulletStyle?: string
+  /** Re-Entry only: how the person wants a gap or program described. Used for this draft; never stored. */
+  disclosure?: string
 }
 
 /** RW2 — one line the fabrication check took out, because the source does not show it. */
@@ -91,7 +127,21 @@ export type GeneratedResume = {
   notEvidenced?: string[]
   /** What the fabrication check took out. Always shown to the person. */
   removed?: RemovedLine[]
+  /** RWO-1 — the format and bullet style the draft was written in. */
+  option?: string
+  bulletStyle?: string
+  /** RWO-1 — a format's extra sections. Present only for the format that returns them. */
+  selected_achievements?: string[]
+  training?: string[]
+  /** Interview advice for the person: shown on the page, never written into a file. */
+  talking_points?: string[]
+  projects?: ResumeProject[]
+  activities?: string[]
+  technical_skills?: SkillGroup[]
 }
+
+export type ResumeProject = { name: string; problem: string; stack: string; role: string; outcome: string }
+export type SkillGroup = { category: string; skills: string[] }
 
 export type ResumeWriterDisabled = { disabled: true }
 

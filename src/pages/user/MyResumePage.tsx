@@ -21,6 +21,18 @@
  * fabrication check took out is always listed here, never dropped silently.
  * Switch off, the page is today's whatever the URL says.
  *
+ * RWO-2 (CSA docs/analysis/2026-11-03-rwo-2-resume-writer-page-and-ats-export-csa.md,
+ * Bill's "RWO-2 go", Lane 814, 2026-11-03 23:37 EDT): while the server's
+ * `resume_writer_options` switch is on (`optionsEnabled`), the page offers the
+ * formats and bullet styles, shows what the checks removed on EVERY draft, a
+ * contact block for the file, the Mini card, and writes Word / PDF / Copy from
+ * one ATS-safe document — a text PDF on US Letter, with no AI disclaimer,
+ * "Drafted from", "Target —" line or platform footer in the file (D3, Q1-Q3).
+ * Switch off — including on any tier whose engine predates RWO-1 — every piece
+ * of this page, the request body and all three exports are today's, by keeping
+ * today's code path rather than by care: a frontend merge deploys to dev AND
+ * stable at once, so the off path is what stable users get until the switch.
+ *
  * RW2 follow-up (Bill, typed in Coord2 2026-10-24 23:13 EDT): with no role
  * chosen, the page offers the role the person set as their goal target, when
  * the server names one (`goalTarget`, resolved through the same org-scoped
@@ -52,6 +64,17 @@ import { resumeToPlainText } from "@/lib/resume/buildResumeHtml"
 import { renderResumePdf } from "@/lib/resume/exportResume"
 import { renderResumeDocx } from "@/lib/resume/exportResumeDocx"
 import { cn } from "@/lib/utils"
+import { ResumeContactFields } from "@/components/resume/ResumeContactFields"
+import { ResumeDocumentView, ResumeTalkingPoints } from "@/components/resume/ResumeDocumentView"
+import { ResumeFormatPanel, type FormatChoice } from "@/components/resume/ResumeFormatPanel"
+import { ResumeMiniCardPanel } from "@/components/resume/ResumeMiniCardPanel"
+import { renderAtsResume } from "@/lib/resume/exportResumeAts"
+import {
+  buildResumeDocument,
+  DEFAULT_SECTIONS,
+  documentToPlainText,
+  type ResumeContact,
+} from "@/lib/resume/resumeDocument"
 import { isResumeWriterDisabled, type GeneratedResume, type RemovedLine } from "@/types/resumeWriter"
 
 const RESUME_UPLOAD: AddPersonalDocTarget = { name: "Résumé", docKind: "resume" }
@@ -77,6 +100,8 @@ const REMOVED_REASON: Record<string, string> = {
   certification: "Certification not in your résumé",
   number: "A number that isn't in your résumé",
   activity: "Claims something your résumé doesn't show",
+  training: "Training not in your résumé",
+  assessment: "Assessment wording — kept off your résumé",
 }
 
 /** RW2 — what the check took out, and what the role asks for that the résumé doesn't show. */
@@ -208,6 +233,15 @@ export default function MyResumePage() {
   const [documentIds, setDocumentIds] = useState<string[]>([])
   const [uploadTarget, setUploadTarget] = useState<AddPersonalDocTarget | null>(null)
   const [exporting, setExporting] = useState(false)
+  // RWO-2 — used only while the server's options switch is on.
+  const [format, setFormat] = useState<FormatChoice>({ optionId: "", styleId: "", disclosure: "" })
+  const [contact, setContact] = useState<ResumeContact>(() => ({
+    name: user?.fullName ?? "",
+    email: user?.email ?? "",
+    phone: "",
+    location: "",
+    link: "",
+  }))
 
   const name = user?.fullName || "My résumé"
   const data = sources.data
@@ -230,6 +264,16 @@ export default function MyResumePage() {
   const hasResume = !!data && (data.sources.resume || documentIds.length > 0)
   const canGenerate =
     !!data && !switchedOff && !limitReached && (tailoredRole ? hasResume : hasAnything) && !generate.isPending
+  // RWO-2: the switch. Absent (switch off, or an engine that predates RWO-1) → today's page.
+  const optionOffers = data?.optionsEnabled ? data.options ?? [] : []
+  const optionsOn = optionOffers.length > 0
+  const styleOffers = data?.bulletStyles ?? []
+  const optionId = format.optionId || data?.defaultOption || optionOffers[0]?.id || ""
+  const styleId = format.styleId || data?.defaultBulletStyle || styleOffers[0]?.id || ""
+  const chosenOption = optionOffers.find((o) => o.id === optionId)
+  const draftSections = optionOffers.find((o) => o.id === draft?.option)?.sections ?? DEFAULT_SECTIONS
+  const doc = optionsOn && draft ? buildResumeDocument(draft, contact, draftSections) : null
+  const fileTarget = draft ? draft.targetRole?.title || draft.target || null : null
 
   const toggleDoc = (id: string, on: boolean) =>
     setDocumentIds((prev) => (on ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)))
@@ -246,23 +290,39 @@ export default function MyResumePage() {
     setParams(next, { replace: true })
   }
 
+  /** RWO-2: the format fields, only while the switch is on — off, the body is today's. */
+  const withFormat = <T extends object>(body: T): T => {
+    if (!optionsOn || !optionId) return body
+    const disclosure = chosenOption?.takesDisclosure ? format.disclosure.trim() : ""
+    return {
+      ...body,
+      option: optionId,
+      bulletStyle: styleId || undefined,
+      ...(disclosure ? { disclosure } : {}),
+    }
+  }
+
   const onGenerate = () => {
     if (tailoredRole) {
-      generate.mutate({ jobId: tailoredRole.jobId, documentIds: documentIds.length ? documentIds : undefined })
+      generate.mutate(
+        withFormat({ jobId: tailoredRole.jobId, documentIds: documentIds.length ? documentIds : undefined }),
+      )
       return
     }
-    generate.mutate({
-      role: role.trim() || undefined,
-      careerArea: careerArea.trim() || undefined,
-      positionText: positionText.trim() || undefined,
-      documentIds: documentIds.length ? documentIds : undefined,
-    })
+    generate.mutate(
+      withFormat({
+        role: role.trim() || undefined,
+        careerArea: careerArea.trim() || undefined,
+        positionText: positionText.trim() || undefined,
+        documentIds: documentIds.length ? documentIds : undefined,
+      }),
+    )
   }
 
   const onCopy = async () => {
     if (!draft) return
     try {
-      await navigator.clipboard.writeText(resumeToPlainText(draft, name))
+      await navigator.clipboard.writeText(doc ? documentToPlainText(doc) : resumeToPlainText(draft, name))
       toast.success("Résumé copied.")
     } catch {
       toast.error("Couldn't copy. Select the text and copy it instead.")
@@ -273,7 +333,9 @@ export default function MyResumePage() {
     if (!draft) return
     setExporting(true)
     try {
-      const { fileName, blob } = await renderResumePdf(draft, name)
+      const { fileName, blob } = doc
+        ? await renderAtsResume(doc, "pdf", fileTarget)
+        : await renderResumePdf(draft, name)
       downloadBlob(fileName, blob)
     } catch {
       toast.error("Couldn't build the PDF. Try again, or use Copy.")
@@ -286,7 +348,9 @@ export default function MyResumePage() {
     if (!draft) return
     setExporting(true)
     try {
-      const { fileName, blob } = await renderResumeDocx(draft, name)
+      const { fileName, blob } = doc
+        ? await renderAtsResume(doc, "docx", fileTarget)
+        : await renderResumeDocx(draft, name)
       downloadBlob(fileName, blob)
     } catch {
       toast.error("Couldn't build the Word file. Try again, or use Copy.")
@@ -387,6 +451,29 @@ export default function MyResumePage() {
                 ) : null}
               </CardContent>
             </Card>
+
+            {optionsOn && data ? (
+              <Card data-testid="resume-format-card">
+                <CardHeader>
+                  <CardTitle className="text-base">Format</CardTitle>
+                  <CardDescription>How the résumé is laid out. Pick the one that fits what it&apos;s for.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResumeFormatPanel
+                    options={optionOffers}
+                    styles={styleOffers}
+                    value={{ optionId, styleId, disclosure: format.disclosure }}
+                    onChange={setFormat}
+                    defaultOption={data.defaultOption || optionOffers[0].id}
+                    onFile={{
+                      resume: data.sources.resume,
+                      bio: data.sources.bio,
+                      assessments: data.sources.assessments.length > 0,
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            ) : null}
 
             <Card>
               <CardHeader>
@@ -499,6 +586,18 @@ export default function MyResumePage() {
                 ) : null}
               </CardContent>
             </Card>
+
+            {optionsOn ? (
+              <Card data-testid="resume-contact-card">
+                <CardHeader>
+                  <CardTitle className="text-base">Contact details</CardTitle>
+                  <CardDescription>For the top of your downloaded résumé.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResumeContactFields value={contact} onChange={setContact} />
+                </CardContent>
+              </Card>
+            ) : null}
           </div>
 
           <Card className="min-h-[24rem]">
@@ -525,7 +624,17 @@ export default function MyResumePage() {
               ) : null}
             </CardHeader>
             <CardContent>
-              {draft ? (
+              {draft && doc ? (
+                <div className="space-y-4">
+                  {draft.tailored || Array.isArray(draft.removed) ? <TailoredNotes resume={draft} /> : null}
+                  <ResumeTalkingPoints points={draft.talking_points ?? []} />
+                  <ResumeDocumentView
+                    doc={doc}
+                    footnote={`${draft.sources.length ? `Drafted from: ${draft.sources.join(" · ")}. ` : ""}${draft.disclaimer}`}
+                  />
+                  <ResumeMiniCardPanel draft={draft} contact={contact} />
+                </div>
+              ) : draft ? (
                 <div className="space-y-4">
                   {draft.tailored ? <TailoredNotes resume={draft} /> : null}
                   <ResumeView resume={draft} name={name} />
