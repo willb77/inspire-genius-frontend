@@ -1,6 +1,7 @@
 import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole, RoleConfig } from "@/types/roles"
 import { ROUTES } from "@/constants/routes"
+import { INTAKE_PRESETS, intakePresetHref } from "@/constants/intake"
 import {
   Home,
   FileText,
@@ -41,6 +42,8 @@ import {
   HeartPulse,
   IdCard,
   GraduationCap,
+  Inbox,
+  Filter,
 } from "lucide-react"
 
 /**
@@ -531,6 +534,17 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   // PC-1a — each practitioner's PRISM identifiers, and the client-assignment
   // picker. Label must stay unique: SidebarScaffold keys nav items by label.
   { to: ROUTES.SUPER_ADMIN.PRACTITIONER_REGISTRY, icon: IdCard, label: "Practitioner Registry" },
+  // IN-3 — people who signed up through the public intake form, and the
+  // webinar sessions they chose. The children are saved views of the
+  // Registrations list (a query string each), so they differ by `to`, which is
+  // what SidebarScaffold keys sub-items by. Super-admin only: the page sits
+  // under /super-admin/* and intake-service checks the role on every route.
+  {
+    to: ROUTES.SUPER_ADMIN.INTAKE,
+    icon: Inbox,
+    label: "Intake",
+    children: INTAKE_PRESETS.map((preset) => ({ to: intakePresetHref(preset), icon: Filter, label: preset.label })),
+  },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   // Client Sign-Up — the operating procedure in
   // docs/operations/IG_Client_Signup_and_SOW_Process.docx, as a working surface:
