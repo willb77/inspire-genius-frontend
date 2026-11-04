@@ -1,6 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { generateMyResumeJob, getResumeWriterSources } from "@/services/resumeWriter/resumeWriter.service"
-import type { ResumeWriterRequest, ResumeWriterResult, ResumeWriterSources } from "@/types/resumeWriter"
+import {
+  askResumeQuestions,
+  generateMyResumeJob,
+  getResumeWriterSources,
+} from "@/services/resumeWriter/resumeWriter.service"
+import type {
+  InterviewQuestion,
+  ResumeQuestionsRequest,
+  ResumeWriterDisabled,
+  ResumeWriterRequest,
+  ResumeWriterResult,
+  ResumeWriterSources,
+} from "@/types/resumeWriter"
 
 export const resumeWriterKeys = {
   sources: ["resume-writer", "me", "sources"] as const,
@@ -25,5 +36,12 @@ export function useGenerateResume() {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: resumeWriterKeys.sources })
     },
+  })
+}
+
+/** RWO-8 — the résumé interview's questions. Free; uses no draft. */
+export function useResumeQuestions() {
+  return useMutation<InterviewQuestion[] | ResumeWriterDisabled, Error, ResumeQuestionsRequest>({
+    mutationFn: (body) => askResumeQuestions(body),
   })
 }

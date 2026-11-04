@@ -39,6 +39,12 @@
  * read). Taking it only sets `?jobId=`; the server resolves the role again. Career
  * Fit now always links here, so with the switch off the page says it cannot aim
  * at that role rather than dropping it silently.
+ *
+ * RWO-8 (CSA docs/analysis/2026-11-04-rwo-8-resume-writer-guided-flow-and-assistant-csa.md,
+ * option 1 and §7): when the server sends `guidedEnabled` (`resume_writer_guided`
+ * ON) together with its formats, the page is the guided flow instead —
+ * `GuidedResumeWriter`, with the résumé interview and the assistant. Without it,
+ * everything below is today's page, request bodies and exports included.
  */
 import { useEffect, useState } from "react"
 import { useSearchParams } from "react-router-dom"
@@ -68,6 +74,7 @@ import { ResumeContactFields } from "@/components/resume/ResumeContactFields"
 import { ResumeCrosswalk, ResumeDocumentView, ResumeTalkingPoints } from "@/components/resume/ResumeDocumentView"
 import { ResumeFormatPanel, type FormatChoice } from "@/components/resume/ResumeFormatPanel"
 import { ResumeMiniCardPanel } from "@/components/resume/ResumeMiniCardPanel"
+import { GuidedResumeWriter } from "@/components/resume/guided/GuidedResumeWriter"
 import { atsPdfPageCount, renderAtsResume } from "@/lib/resume/exportResumeAts"
 import {
   buildResumeDocument,
@@ -391,6 +398,46 @@ export default function MyResumePage() {
     } finally {
       setExporting(false)
     }
+  }
+
+  // RWO-8: the guided flow, only on the server's word and only with its formats.
+  if (data?.guidedEnabled && optionsOn) {
+    return (
+      <UserLayout>
+        <div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
+          <header className="flex items-start gap-3">
+            <ScrollText className="mt-1 h-6 w-6 text-teal-700" aria-hidden="true" />
+            <div>
+              <h1 className="text-2xl font-semibold">Résumé Writer</h1>
+              <p className="text-sm text-muted-foreground">
+                A few short steps: what it&apos;s for, your information, the job — then review it with the assistant.
+              </p>
+            </div>
+          </header>
+          {sources.isError ? (
+            <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {apiErrorMessage(sources.error, "Couldn't load what you have on file. Try again in a moment.")}
+            </div>
+          ) : null}
+          <GuidedResumeWriter
+            data={data}
+            jobId={jobId}
+            onPickRole={pickGoalTarget}
+            onClearRole={clearRole}
+            onUpload={(kind) => setUploadTarget(kind === "resume" ? RESUME_UPLOAD : BIO_UPLOAD)}
+          />
+        </div>
+        <AddPersonalDocModal
+          target={uploadTarget}
+          onOpenChange={(open) => {
+            if (!open) setUploadTarget(null)
+          }}
+          onUploaded={() => {
+            void sources.refetch()
+          }}
+        />
+      </UserLayout>
+    )
   }
 
   return (
