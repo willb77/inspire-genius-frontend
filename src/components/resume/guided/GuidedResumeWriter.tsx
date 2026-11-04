@@ -26,12 +26,13 @@ import { downloadBlob } from "@/lib/exportTranscript"
 import { useAuth } from "@/context/useAuth"
 import { useGenerateResume, useResumeQuestions } from "@/hooks/useResumeWriter"
 import type { FormatChoice } from "@/components/resume/ResumeFormatPanel"
-import { ResumeCrosswalk, ResumeDocumentView, ResumeTalkingPoints } from "@/components/resume/ResumeDocumentView"
+import { ResumeCrosswalk, ResumeTalkingPoints } from "@/components/resume/ResumeDocumentView"
 import { ResumeMiniCardPanel } from "@/components/resume/ResumeMiniCardPanel"
 import { atsPdfPageCount, renderAtsResume } from "@/lib/resume/exportResumeAts"
 import { buildResumeDocument, DEFAULT_SECTIONS, type ResumeContact } from "@/lib/resume/resumeDocument"
 import type { Situation, UseWhere } from "@/lib/resume/formatSelector"
 import { buildDraftSummary, changedLines, weakBullets } from "@/lib/resume/guided/draftSummary"
+import { askAboutLine, downloadFileName, rewriteLine, yourChoices } from "@/lib/resume/guided/choices"
 import {
   isResumeWriterDisabled,
   type GeneratedResume,
@@ -45,6 +46,7 @@ import {
 import { StepAim, StepInformation, StepPurpose, type Aim } from "./GuidedSetupSteps"
 import { FollowUpCards, InterviewPromise, StepQuestions } from "./GuidedInterview"
 import { ResumeAssistant } from "./ResumeAssistant"
+import { GuidedDraftView } from "./GuidedDraftView"
 
 export type GuidedStep = "purpose" | "info" | "aim" | "questions" | "review" | "download"
 
@@ -116,6 +118,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
   const [showRemoved, setShowRemoved] = useState(false)
   const [pendingAsk, setPendingAsk] = useState<string | null>(null)
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const [prefill, setPrefill] = useState<{ text: string } | null>(null)
   const [exporting, setExporting] = useState(false)
   const [pages, setPages] = useState<number | null>(null)
   const [checks, setChecks] = useState({ read: false, contact: false, reviewed: false })
@@ -251,6 +254,16 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
   }
 
   const setAnswer = (id: string, text: string) => setAnswers((a) => ({ ...a, [id]: text }))
+  // Lines are only clickable on the review step, where the assistant is always open.
+  const fillAssistant = (text: string) => setPrefill({ text })
+  const choices = yourChoices({
+    situation,
+    formatName: chosen?.name ?? "",
+    sources: data.sources,
+    addedDocuments: documentIds.length,
+    aimedAt,
+    styleName: styles.length > 1 ? (styles.find((st) => st.id === styleId)?.name ?? "") : "",
+  })
   const removed: RemovedLine[] = draft?.removed ?? []
   const notShown = [
     ...(draft?.notEvidenced ?? []),
@@ -261,6 +274,9 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
 
   return (
     <div className="space-y-6" data-testid="guided-resume-writer">
+      <p className="text-sm text-muted-foreground" data-testid="guided-drafts-left">
+        {left} of {limit} drafts left today
+      </p>
       <nav aria-label="Steps" className="flex flex-wrap gap-2">
         {STEPS.map((s) => {
           const i = ORDER.indexOf(s.id)
@@ -434,10 +450,12 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
             <ResumeCrosswalk rows={draft.qualifications_crosswalk ?? []} />
             <ResumeTalkingPoints points={draft.talking_points ?? []} />
             <div className="rounded-lg border p-4">
-              <ResumeDocumentView
+              <GuidedDraftView
                 doc={doc}
                 changed={changed}
                 footnote={`${draft.sources.length ? `Drafted from: ${draft.sources.join(" · ")}. ` : ""}${draft.disclaimer}`}
+                onAsk={(line) => fillAssistant(askAboutLine(line))}
+                onRewrite={(line) => fillAssistant(rewriteLine(line))}
               />
             </div>
           </div>
@@ -458,6 +476,9 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
                 <FileText className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Download Word
               </Button>
+              <p className="break-all text-xs text-muted-foreground" data-testid="guided-file-name-docx">
+                File name: {downloadFileName(doc.name, aimedAt, "docx")}
+              </p>
             </div>
             <div className="space-y-2 rounded-lg border p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email or print</p>
@@ -467,6 +488,9 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
                 <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 {exporting ? "Building…" : "Download PDF"}
               </Button>
+              <p className="break-all text-xs text-muted-foreground" data-testid="guided-file-name-pdf">
+                File name: {downloadFileName(doc.name, aimedAt, "pdf")}
+              </p>
             </div>
           </div>
           <ResumeMiniCardPanel draft={draft} contact={contact} />
@@ -502,6 +526,19 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
 
       </div>
       <aside className="min-w-0 space-y-4">
+        {step === "aim" ? (
+          <section aria-label="Your choices" className="rounded-lg border p-4 text-sm" data-testid="guided-your-choices">
+            <h3 className="mb-1 font-semibold">Your choices</h3>
+            <dl className="space-y-1">
+              {choices.map((c) => (
+                <div key={c.label} className="flex gap-2">
+                  <dt className="w-24 shrink-0 text-muted-foreground">{c.label}</dt>
+                  <dd className="min-w-0">{c.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
         {step === "questions" ? <InterviewPromise /> : null}
         {step === "review" ? <FollowUpCards questions={followUps} answers={answers} onAnswer={setAnswer} /> : null}
         {step === "download" ? null : (
@@ -525,6 +562,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
               onApply={(instruction) => write(instruction)}
               pendingAsk={pendingAsk}
               onPendingAskUsed={() => setPendingAsk(null)}
+              prefill={prefill}
             />
           </details>
         )}

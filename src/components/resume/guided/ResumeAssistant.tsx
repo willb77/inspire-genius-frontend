@@ -16,14 +16,13 @@
  * The hook's `error` is rendered (`role="alert"`): a panel that cannot say "that
  * failed" is indistinguishable from one that is slow.
  */
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Loader2, Send, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useMeridianChat } from "@/hooks/agents/useMeridianChat"
 import { cn } from "@/lib/utils"
-
-const INSTRUCTION_MAX = 300
+import { INSTRUCTION_MAX } from "@/lib/resume/guided/choices"
 
 const SUGGESTIONS = [
   "Why were some lines left out?",
@@ -45,6 +44,7 @@ export function ResumeAssistant({
   onApply,
   pendingAsk,
   onPendingAskUsed,
+  prefill,
 }: {
   /** The draft summary, sent as `resume_draft` (the server caps and fences it). */
   summary: string
@@ -60,9 +60,15 @@ export function ResumeAssistant({
   /** A question handed over from elsewhere on the page ("Not sure what you mean?"). */
   pendingAsk?: string | null
   onPendingAskUsed?: () => void
+  /**
+   * Text put in the box from a clicked review line, NOT sent: the person reads,
+   * finishes and sends it. A new object per click, so the same line twice works.
+   */
+  prefill?: { text: string } | null
 }) {
   const [turns, setTurns] = useState<Turn[]>([])
   const [text, setText] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
   const { send, isProcessing, partial, error, clearError } = useMeridianChat({
     sessionKey: "resume-writer",
     accessToken,
@@ -78,6 +84,16 @@ export function ResumeAssistant({
     setText("")
     void send(trimmed)
   }
+
+  useEffect(() => {
+    if (!prefill) return
+    setText(prefill.text)
+    const input = inputRef.current
+    if (input) {
+      input.focus()
+      input.setSelectionRange(prefill.text.length, prefill.text.length)
+    }
+  }, [prefill])
 
   useEffect(() => {
     // Handed over once: ask it, then let the page forget it.
@@ -157,6 +173,7 @@ export function ResumeAssistant({
         }}
       >
         <Input
+          ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Ask, or say what to change"
