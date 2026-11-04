@@ -12,6 +12,21 @@
  */
 import { api } from "@/lib/axios";
 import { agentApi } from "@/lib/agentApi";
+import {
+  DocumentRejectedError,
+  DocumentStillCheckingError,
+  isAwaitingScan,
+  scanRejection,
+} from "@/lib/documents/scan";
+
+export {
+  DocumentRejectedError,
+  DocumentStillCheckingError,
+  SCAN_AWAITING_DETAIL,
+  SCAN_REJECTED_PREFIX,
+  isAwaitingScan,
+  scanRejection,
+} from "@/lib/documents/scan";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -134,10 +149,42 @@ export async function uploadToS3(
   });
 }
 
-/** Trigger server-side processing (scan, extract, chunk, embed → pgvector). */
-export async function triggerProcessing(documentId: string): Promise<DocumentOut> {
+const IN_FLIGHT = new Set(["scanning", "extracting", "chunking"]);
+const DEFAULT_POLL_MS = 2000;
+const DEFAULT_WAIT_MS = 120_000;
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/**
+ * Trigger server-side processing (scan, extract, chunk, embed → pgvector).
+ *
+ * If the tier answers "awaiting virus scan", waits (polling GET) until the
+ * document is finished, calling `onChecking` once so the surface can say
+ * "checking the file…". Throws DocumentRejectedError for a file the scan
+ * refused and DocumentStillCheckingError if the wait runs out, so no caller
+ * goes on to use a file that isn't ready.
+ */
+export async function triggerProcessing(
+  documentId: string,
+  opts: { onChecking?: () => void; pollMs?: number; waitMs?: number } = {},
+): Promise<DocumentOut> {
   const resp = await api.post(`/v1/documents/${encodeURIComponent(documentId)}/process`);
-  return (resp.data as { data: DocumentOut }).data;
+  let doc = (resp.data as { data: DocumentOut }).data;
+
+  if (doc && isAwaitingScan(doc)) {
+    opts.onChecking?.();
+    const pollMs = opts.pollMs ?? DEFAULT_POLL_MS;
+    const deadline = Date.now() + (opts.waitMs ?? DEFAULT_WAIT_MS);
+    while (IN_FLIGHT.has(doc.status)) {
+      if (Date.now() >= deadline) throw new DocumentStillCheckingError();
+      await sleep(pollMs);
+      doc = await getDocument(documentId);
+    }
+  }
+
+  const reason = doc ? scanRejection(doc) : null;
+  if (reason) throw new DocumentRejectedError(reason);
+  return doc;
 }
 
 /** List documents with pagination and filters.

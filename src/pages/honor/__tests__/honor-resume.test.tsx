@@ -29,6 +29,15 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { fullName: "S. Carter", email: "coach@honor.org" } }),
 }))
 
+const initiateUpload = jest.fn()
+const uploadToS3 = jest.fn()
+const triggerProcessing = jest.fn()
+jest.mock("@/services/documents/documentService", () => ({
+  initiateUpload: (...a: unknown[]) => initiateUpload(...a),
+  uploadToS3: (...a: unknown[]) => uploadToS3(...a),
+  triggerProcessing: (...a: unknown[]) => triggerProcessing(...a),
+}))
+
 jest.mock("sonner", () => ({
   toast: { success: jest.fn(), warning: jest.fn(), error: jest.fn(), info: jest.fn() },
 }))
@@ -260,4 +269,44 @@ test("handoff without a saved id passes the narrative as improvements text", asy
     "f1",
     expect.objectContaining({ improvements: expect.stringContaining("Quantify scope") }),
   )
+})
+
+describe("job-description file and the virus scan (DOC-AV-1)", () => {
+  beforeEach(() => {
+    initiateUpload.mockResolvedValue({ document_id: "jd1", upload_url: "u", upload_fields: {} })
+    uploadToS3.mockResolvedValue(undefined)
+  })
+
+  function attach(container: HTMLElement) {
+    fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "f1" } })
+    const input = container.querySelector('input[type="file"][accept*=".pdf"]') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [new File(["jd"], "pm-role.pdf", { type: "application/pdf" })] } })
+  }
+
+  test("a refused file says why and is never attached to the résumé request", async () => {
+    const { DocumentRejectedError } = jest.requireActual("@/lib/documents/scan")
+    triggerProcessing.mockRejectedValueOnce(new DocumentRejectedError("A threat was found in this file"))
+    const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } }
+    const { container } = renderPage()
+    attach(container)
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("This file wasn't accepted: A threat was found in this file"),
+    )
+    expect(screen.queryByRole("button", { name: /remove job description/i })).not.toBeInTheDocument()
+    fireEvent.change(screen.getByPlaceholderText(/Program Manager/i), { target: { value: "Program Manager" } })
+    fireEvent.click(screen.getByRole("button", { name: /generate résumé/i }))
+    await waitFor(() => expect(generateResume).toHaveBeenCalledTimes(1))
+    expect(JSON.stringify(generateResume.mock.calls[0])).not.toContain("jd1")
+  })
+
+  test("a file that passes is attached only after processing finishes", async () => {
+    let finish: (v: unknown) => void = () => {}
+    triggerProcessing.mockReturnValueOnce(new Promise((r) => { finish = r }))
+    const { container } = renderPage()
+    attach(container)
+    await waitFor(() => expect(triggerProcessing).toHaveBeenCalledWith("jd1", expect.anything()))
+    expect(screen.queryByRole("button", { name: /remove job description/i })).not.toBeInTheDocument()
+    finish({ id: "jd1", status: "ready" })
+    expect(await screen.findByRole("button", { name: /remove job description/i })).toBeInTheDocument()
+  })
 })

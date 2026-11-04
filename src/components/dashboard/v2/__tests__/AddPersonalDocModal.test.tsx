@@ -55,6 +55,22 @@ describe("AddPersonalDocModal", () => {
     );
   });
 
+  it("a file the virus scan refused shows the reason, not the generic error (DOC-AV-1)", async () => {
+    const { DocumentRejectedError } = jest.requireActual("@/lib/documents/scan");
+    const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock; success: jest.Mock } };
+    mutate.mockImplementationOnce((_vars, opts) =>
+      opts.onError(new DocumentRejectedError("A threat was found in this file")),
+    );
+    wrap(<AddPersonalDocModal target={RESUME} onOpenChange={jest.fn()} />);
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(["x"], "resume.pdf", { type: "application/pdf" })] } });
+    fireEvent.click(screen.getByRole("button", { name: /Upload & add/i }));
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("This file wasn't accepted: A threat was found in this file"),
+    );
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
   it("renders nothing interactable when target is null", () => {
     wrap(<AddPersonalDocModal target={null} onOpenChange={jest.fn()} />);
     expect(screen.queryByText(/Upload & add/i)).not.toBeInTheDocument();

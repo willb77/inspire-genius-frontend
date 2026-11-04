@@ -25,6 +25,7 @@ import {
 } from "./_shared"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
 import { HONOR_CAREER_AREAS, HONOR_CAREER_AREA_OTHER } from "./_careerAreas"
+import { scanErrorMessage } from "@/lib/documents/checkingNotice"
 
 /**
  * Honor Coach Workbench — Résumé Writer (Phase 5).
@@ -141,11 +142,11 @@ export default function HonorResume() {
       setPositionFileIds([id])
       setJdName(f.name)
       toast.success(`Attached "${f.name}" as the target position description.`)
-    } catch {
+    } catch (err) {
       setJdFile(null)
       setJdName("")
       setPositionFileIds([])
-      toast.error("Couldn't upload that job description. Please try again.")
+      toast.error(scanErrorMessage(err) ?? "Couldn't upload that job description. Please try again.")
     }
   }
 
