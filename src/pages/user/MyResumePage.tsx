@@ -40,7 +40,7 @@
  * Fit now always links here, so with the switch off the page says it cannot aim
  * at that role rather than dropping it silently.
  */
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { Copy, Download, FileText, FileUp, Loader2, ScrollText, Sparkles, Target } from "lucide-react"
 import { toast } from "sonner"
@@ -65,10 +65,10 @@ import { renderResumePdf } from "@/lib/resume/exportResume"
 import { renderResumeDocx } from "@/lib/resume/exportResumeDocx"
 import { cn } from "@/lib/utils"
 import { ResumeContactFields } from "@/components/resume/ResumeContactFields"
-import { ResumeDocumentView, ResumeTalkingPoints } from "@/components/resume/ResumeDocumentView"
+import { ResumeCrosswalk, ResumeDocumentView, ResumeTalkingPoints } from "@/components/resume/ResumeDocumentView"
 import { ResumeFormatPanel, type FormatChoice } from "@/components/resume/ResumeFormatPanel"
 import { ResumeMiniCardPanel } from "@/components/resume/ResumeMiniCardPanel"
-import { renderAtsResume } from "@/lib/resume/exportResumeAts"
+import { atsPdfPageCount, renderAtsResume } from "@/lib/resume/exportResumeAts"
 import {
   buildResumeDocument,
   DEFAULT_SECTIONS,
@@ -234,7 +234,7 @@ export default function MyResumePage() {
   const [uploadTarget, setUploadTarget] = useState<AddPersonalDocTarget | null>(null)
   const [exporting, setExporting] = useState(false)
   // RWO-2 — used only while the server's options switch is on.
-  const [format, setFormat] = useState<FormatChoice>({ optionId: "", styleId: "", disclosure: "" })
+  const [format, setFormat] = useState<FormatChoice>({ optionId: "", styleId: "", disclosure: "", federalDetails: "" })
   // The target the person aimed the draft at, for the file name. Not the draft's
   // `target`: with no role named, the server labels it "the person's next role",
   // which is not a job title (seen on dev, 2026-11-04).
@@ -275,8 +275,35 @@ export default function MyResumePage() {
   const optionId = format.optionId || data?.defaultOption || optionOffers[0]?.id || ""
   const styleId = format.styleId || data?.defaultBulletStyle || styleOffers[0]?.id || ""
   const chosenOption = optionOffers.find((o) => o.id === optionId)
-  const draftSections = optionOffers.find((o) => o.id === draft?.option)?.sections ?? DEFAULT_SECTIONS
-  const doc = optionsOn && draft ? buildResumeDocument(draft, contact, draftSections) : null
+  const draftOffer = optionOffers.find((o) => o.id === draft?.option)
+  const draftSections = draftOffer?.sections ?? DEFAULT_SECTIONS
+  // RWO-3: Federal's layout and page limit come from the server's description of the format.
+  const doc = optionsOn && draft
+    ? buildResumeDocument(draft, contact, draftSections, draftOffer?.takesFederalDetails ? "federal" : "standard")
+    : null
+  const pageLimit = draftOffer?.pageLimit
+  const [pages, setPages] = useState<number | null>(null)
+  const docKey = doc && pageLimit ? JSON.stringify(doc) : ""
+  useEffect(() => {
+    // RWO-3: count the text PDF's pages for a format with a page limit (Federal: 2).
+    if (!docKey || !doc) {
+      setPages(null)
+      return
+    }
+    let live = true
+    void atsPdfPageCount(doc)
+      .then((n) => {
+        if (live) setPages(n)
+      })
+      .catch(() => {
+        if (live) setPages(null)
+      })
+    return () => {
+      live = false
+    }
+    // docKey stands for the document's content; `doc` is rebuilt every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docKey])
   const fileTarget = draft ? draft.targetRole?.title || aimedAt || null : null
 
   const toggleDoc = (id: string, on: boolean) =>
@@ -298,11 +325,13 @@ export default function MyResumePage() {
   const withFormat = <T extends object>(body: T): T => {
     if (!optionsOn || !optionId) return body
     const disclosure = chosenOption?.takesDisclosure ? format.disclosure.trim() : ""
+    const federalDetails = chosenOption?.takesFederalDetails ? format.federalDetails.trim() : ""
     return {
       ...body,
       option: optionId,
       bulletStyle: styleId || undefined,
       ...(disclosure ? { disclosure } : {}),
+      ...(federalDetails ? { federalDetails } : {}),
     }
   }
 
@@ -467,7 +496,7 @@ export default function MyResumePage() {
                   <ResumeFormatPanel
                     options={optionOffers}
                     styles={styleOffers}
-                    value={{ optionId, styleId, disclosure: format.disclosure }}
+                    value={{ optionId, styleId, disclosure: format.disclosure, federalDetails: format.federalDetails }}
                     onChange={setFormat}
                     defaultOption={data.defaultOption || optionOffers[0].id}
                     onFile={{
@@ -632,6 +661,21 @@ export default function MyResumePage() {
               {draft && doc ? (
                 <div className="space-y-4">
                   {draft.tailored || Array.isArray(draft.removed) ? <TailoredNotes resume={draft} /> : null}
+                  {pageLimit && pages !== null ? (
+                    <p
+                      role={pages > pageLimit ? "alert" : "status"}
+                      data-testid="resume-page-count"
+                      className={cn(
+                        "rounded-md border p-2 text-sm",
+                        pages > pageLimit ? "border-red-200 bg-red-50 text-red-700" : "text-muted-foreground",
+                      )}
+                    >
+                      {pages > pageLimit
+                        ? `This résumé runs to ${pages} pages. USAJOBS won't accept more than ${pageLimit} — shorten it or draft again before you upload it.`
+                        : `This résumé is ${pages} page${pages === 1 ? "" : "s"} as a PDF (USAJOBS allows ${pageLimit}). Check the Word file is too.`}
+                    </p>
+                  ) : null}
+                  <ResumeCrosswalk rows={draft.qualifications_crosswalk ?? []} />
                   <ResumeTalkingPoints points={draft.talking_points ?? []} />
                   <ResumeDocumentView
                     doc={doc}

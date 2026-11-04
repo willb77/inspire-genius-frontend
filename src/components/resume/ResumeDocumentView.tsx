@@ -66,6 +66,33 @@ export function ResumeDocumentView({ doc, footnote }: { doc: ResumeDocument; foo
   )
 }
 
+/**
+ * RWO-3 — the qualifications crosswalk (Federal): each requirement quoted from the
+ * announcement, with the résumé bullet that shows it or "Not shown yet". Advice for
+ * the person — never part of the document.
+ */
+export function ResumeCrosswalk({ rows }: { rows: { requirement: string; evidence: string }[] }) {
+  if (!rows.length) return null
+  return (
+    <section data-testid="resume-crosswalk" className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm">
+      <h3 className="mb-1 font-semibold">Announcement requirements</h3>
+      <p className="mb-1 text-xs text-muted-foreground">
+        What your résumé shows for each requirement. Not part of your résumé.
+      </p>
+      <ul className="space-y-1">
+        {rows.map((r, i) => (
+          <li key={i}>
+            <span className="font-medium">{r.requirement}</span>
+            <span className="block text-xs text-muted-foreground">
+              {r.evidence ? `Shown by: ${r.evidence}` : "Not shown yet — add it to your résumé if it is true."}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 export function ResumeTalkingPoints({ points }: { points: string[] }) {
   if (!points.length) return null
   return (

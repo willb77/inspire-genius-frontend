@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import {
-  SITUATIONS,
+  situationsFor,
   USES,
   inputLabel,
   recommendFormat,
@@ -23,7 +23,7 @@ import {
 } from "@/lib/resume/formatSelector"
 import type { BulletStyleView, ResumeOptionView } from "@/types/resumeWriter"
 
-export type FormatChoice = { optionId: string; styleId: string; disclosure: string }
+export type FormatChoice = { optionId: string; styleId: string; disclosure: string; federalDetails: string }
 
 export interface ResumeFormatPanelProps {
   options: ResumeOptionView[]
@@ -73,7 +73,7 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
             onChange={(e) => setSituation(e.target.value as Situation)}
           >
             <option value="">Choose one</option>
-            {SITUATIONS.map((s) => (
+            {situationsFor(options.map((o) => o.id)).map((s) => (
               <option key={s.id} value={s.id}>
                 {s.label}
               </option>
@@ -204,6 +204,27 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
             placeholder="e.g. Kitchen Worker, State Workforce Program, 2019–2023"
           />
           <p className="text-xs text-muted-foreground">Used for this draft only. Not saved.</p>
+        </div>
+      ) : null}
+
+      {chosen?.takesFederalDetails ? (
+        <div className="space-y-1" data-testid="resume-federal-details">
+          <Label htmlFor="rw-federal">Federal details</Label>
+          <Textarea
+            id="rw-federal"
+            rows={3}
+            maxLength={600}
+            value={value.federalDetails}
+            onChange={(e) => onChange({ ...value, federalDetails: e.target.value })}
+            placeholder="For each job: hours per week. For any federal job: series and grade (e.g. GS-0343-09). Any current security clearance."
+          />
+          <p className="text-xs text-muted-foreground">
+            USAJOBS asks for these. Anything not here or in your résumé is left off. Used for this draft only — not saved.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Paste the announcement — at least its Qualifications section — in Job description.
+            {chosen.pageLimit ? ` USAJOBS accepts ${chosen.pageLimit} pages at most.` : ""}
+          </p>
         </div>
       ) : null}
     </div>

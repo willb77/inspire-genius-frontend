@@ -15,16 +15,29 @@ import { atsFileBase } from "./resumeDocument"
 
 // ── Word ────────────────────────────────────────────────────────────────────
 
+/**
+ * RWO-3 — the two layouts. "standard" is RWO-2's, unchanged. "federal" follows
+ * USAJOBS's suggestion for its two-page résumé: 10-pt body text, 14-pt name,
+ * 0.5-inch margins (USAJOBS help, re-read 2026-11-04).
+ */
+export const LAYOUTS = {
+  standard: { margin: 54, body: 10.5, name: 16, docxBody: 21, docxName: 32, footerFromBottom: 28 },
+  federal: { margin: 36, body: 10, name: 14, docxBody: 20, docxName: 28, footerFromBottom: 20 },
+} as const
+
+const layoutOf = (doc: ResumeDocument) => LAYOUTS[doc.layout === "federal" ? "federal" : "standard"]
+
 export async function buildAtsDocx(doc: ResumeDocument): Promise<Blob> {
   const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import("docx")
+  const L = layoutOf(doc)
   const run = (text: string, o: { bold?: boolean; size?: number } = {}) =>
-    new TextRun({ text, bold: o.bold, size: o.size ?? 21, font: "Calibri" })
+    new TextRun({ text, bold: o.bold, size: o.size ?? L.docxBody, font: "Calibri" })
   const para = (text: string, o: { bold?: boolean; size?: number; before?: number } = {}) =>
     new Paragraph({ spacing: { before: o.before ?? 0, after: 40 }, children: [run(text, o)] })
   const bullet = (text: string) => new Paragraph({ bullet: { level: 0 }, children: [run(text)] })
 
   const children: InstanceType<typeof Paragraph>[] = []
-  if (doc.name) children.push(para(doc.name, { bold: true, size: 32 }))
+  if (doc.name) children.push(para(doc.name, { bold: true, size: L.docxName }))
   if (doc.headline) children.push(para(doc.headline, { size: 22 }))
   if (doc.contactLine) children.push(para(doc.contactLine, { size: 20 }))
   for (const s of doc.sections) {
@@ -37,7 +50,10 @@ export async function buildAtsDocx(doc: ResumeDocument): Promise<Blob> {
     )
     for (const b of s.blocks) children.push(...docxBlock(b, { para, bullet }))
   }
-  return Packer.toBlob(new Document({ sections: [{ children }] }))
+  // Federal: 0.5-inch margins (720 twips). Every other document keeps Word's default.
+  const properties =
+    doc.layout === "federal" ? { properties: { page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } } } } : {}
+  return Packer.toBlob(new Document({ sections: [{ ...properties, children }] }))
 }
 
 function docxBlock<P>(
@@ -57,8 +73,6 @@ function docxBlock<P>(
 /** US Letter in points. */
 export const LETTER_W = 612
 export const LETTER_H = 792
-const MARGIN = 54
-const BODY_W = LETTER_W - MARGIN * 2
 
 /** The subset of jsPDF used here. */
 export type AtsPdfLike = {
@@ -88,7 +102,11 @@ export function pdfSafe(s: string): string {
     .replace(/\u00a0/g, " ")
 }
 
-export function writeAtsPdf(pdf: AtsPdfLike, doc: ResumeDocument): Blob {
+/** Lay the document out on `pdf` and return its page count (RWO-3: the page warns past a limit). */
+export function layoutAtsPdf(pdf: AtsPdfLike, doc: ResumeDocument): number {
+  const L = layoutOf(doc)
+  const MARGIN = L.margin
+  const BODY_W = LETTER_W - MARGIN * 2
   let y = MARGIN
   const need = (h: number) => {
     // Checked BEFORE writing: writing first clips the last line of a page.
@@ -98,7 +116,7 @@ export function writeAtsPdf(pdf: AtsPdfLike, doc: ResumeDocument): Blob {
     }
   }
   const write = (text: string, o: { size?: number; bold?: boolean; indent?: number; gap?: number } = {}) => {
-    const size = o.size ?? 10.5
+    const size = o.size ?? L.body
     const indent = o.indent ?? 0
     pdf.setFont("helvetica", o.bold ? "bold" : "normal")
     pdf.setFontSize(size)
@@ -120,7 +138,7 @@ export function writeAtsPdf(pdf: AtsPdfLike, doc: ResumeDocument): Blob {
   const BULLET_INDENT = 6
   const BULLET_TEXT = 14
   const bullet = (text: string) => {
-    const size = 10.5
+    const size = L.body
     pdf.setFont("helvetica", "normal")
     pdf.setFontSize(size)
     pdf.setTextColor(0, 0, 0)
@@ -133,7 +151,7 @@ export function writeAtsPdf(pdf: AtsPdfLike, doc: ResumeDocument): Blob {
     })
   }
 
-  if (doc.name) write(doc.name, { size: 16, bold: true, gap: 2 })
+  if (doc.name) write(doc.name, { size: L.name, bold: true, gap: 2 })
   if (doc.headline) write(doc.headline, { size: 11, gap: 1 })
   if (doc.contactLine) write(doc.contactLine, { size: 9.5, gap: 4 })
   for (const s of doc.sections) {
@@ -160,15 +178,26 @@ export function writeAtsPdf(pdf: AtsPdfLike, doc: ResumeDocument): Blob {
       pdf.setFont("helvetica", "normal")
       pdf.setFontSize(8)
       pdf.setTextColor(0, 0, 0)
-      pdf.text(`Page ${p} of ${total}`, MARGIN, LETTER_H - 28)
+      pdf.text(`Page ${p} of ${total}`, MARGIN, LETTER_H - L.footerFromBottom)
     }
   }
+  return total
+}
+
+export function writeAtsPdf(pdf: AtsPdfLike, doc: ResumeDocument): Blob {
+  layoutAtsPdf(pdf, doc)
   return pdf.output("blob")
 }
 
 export async function buildAtsPdf(doc: ResumeDocument): Promise<Blob> {
   const { jsPDF } = await import("jspdf")
   return writeAtsPdf(new jsPDF({ unit: "pt", format: "letter" }) as unknown as AtsPdfLike, doc)
+}
+
+/** RWO-3 — how many pages the text PDF of `doc` runs to, without saving it. */
+export async function atsPdfPageCount(doc: ResumeDocument): Promise<number> {
+  const { jsPDF } = await import("jspdf")
+  return layoutAtsPdf(new jsPDF({ unit: "pt", format: "letter" }) as unknown as AtsPdfLike, doc)
 }
 
 export async function renderAtsResume(

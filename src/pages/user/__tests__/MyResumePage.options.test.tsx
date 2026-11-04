@@ -32,7 +32,11 @@ jest.mock("@/lib/resume/exportResume", () => ({ renderResumePdf: (...a: unknown[
 const mockOldDocx = jest.fn()
 jest.mock("@/lib/resume/exportResumeDocx", () => ({ renderResumeDocx: (...a: unknown[]) => mockOldDocx(...a) }))
 const mockAts = jest.fn()
-jest.mock("@/lib/resume/exportResumeAts", () => ({ renderAtsResume: (...a: unknown[]) => mockAts(...a) }))
+const mockPages = jest.fn()
+jest.mock("@/lib/resume/exportResumeAts", () => ({
+  renderAtsResume: (...a: unknown[]) => mockAts(...a),
+  atsPdfPageCount: (...a: unknown[]) => mockPages(...a),
+}))
 const mockDownload = jest.fn()
 jest.mock("@/lib/exportTranscript", () => ({ downloadBlob: (...a: unknown[]) => mockDownload(...a) }))
 
@@ -272,4 +276,102 @@ test("on: the file is named for the role the person typed, never the server's de
   fireEvent.click(screen.getByRole("button", { name: /Download PDF/ }))
   await waitFor(() => expect(mockAts).toHaveBeenCalledTimes(2))
   expect(mockAts.mock.calls[1][2]).toBe("Data Analyst")
+})
+
+
+// ── RWO-3 Federal (keyed on the server's catalogue) ─────────────────────────
+
+const FEDERAL = {
+  ...opt("federal", 7, ["summary", "experience", "education", "certifications", "training", "federal_optional"]),
+  takesFederalDetails: true,
+  pageLimit: 2,
+}
+const ON_FED: ResumeWriterSources = { ...ON, options: [...OPTIONS, FEDERAL] }
+const FED_DRAFT: GeneratedResume = {
+  ...DRAFT,
+  option: "federal",
+  federal_roles: [{ title: "Lead", organization: "Acme", hours_per_week: "40", series_grade: "GS-0303-05" }],
+  federal_optional: ["Secret clearance"],
+  qualifications_crosswalk: [
+    { requirement: "leading teams", evidence: "Led a team of 8" },
+    { requirement: "budget analysis", evidence: "" },
+  ],
+  removed: [],
+}
+
+test("federal: the details box and the federalDetails field exist only for a format that takes them", () => {
+  sources = ON_FED
+  renderPage()
+  expect(screen.queryByTestId("resume-federal-details")).not.toBeInTheDocument()
+  fireEvent.click(screen.getByTestId("resume-format-federal"))
+  expect(screen.getByTestId("resume-federal-details")).toHaveTextContent("USAJOBS accepts 2 pages at most")
+  fireEvent.change(screen.getByLabelText("Federal details"), { target: { value: "Acme: 40 hrs/wk, GS-0303-05" } })
+  generate()
+  expect(mutate.mock.calls[0][0]).toMatchObject({ option: "federal", federalDetails: "Acme: 40 hrs/wk, GS-0303-05" })
+  fireEvent.click(screen.getByTestId("resume-format-hybrid"))
+  generate()
+  expect(mutate.mock.calls[1][0]).not.toHaveProperty("federalDetails")
+})
+
+test("federal: a catalogue without Federal shows no box and sends no federalDetails", () => {
+  sources = ON
+  renderPage()
+  expect(screen.queryByTestId("resume-format-federal")).not.toBeInTheDocument()
+  generate()
+  expect(mutate.mock.calls[0][0]).not.toHaveProperty("federalDetails")
+  expect(mockPages).not.toHaveBeenCalled()
+})
+
+test("federal: past the page limit the page says so, with the count", async () => {
+  sources = ON_FED
+  genData = FED_DRAFT
+  mockPages.mockResolvedValue(3)
+  renderPage()
+  await waitFor(() => expect(screen.getByTestId("resume-page-count")).toHaveTextContent("runs to 3 pages"))
+  expect(screen.getByTestId("resume-page-count")).toHaveAttribute("role", "alert")
+})
+
+test("federal: within the limit it is a quiet note", async () => {
+  sources = ON_FED
+  genData = FED_DRAFT
+  mockPages.mockResolvedValue(2)
+  renderPage()
+  await waitFor(() => expect(screen.getByTestId("resume-page-count")).toHaveTextContent("is 2 pages as a PDF"))
+  expect(screen.getByTestId("resume-page-count")).toHaveAttribute("role", "status")
+})
+
+test("federal: no page count for a format without a limit", async () => {
+  sources = ON_FED
+  genData = OPTION_DRAFT
+  renderPage()
+  await waitFor(() => expect(screen.getByTestId("resume-draft")).toBeInTheDocument())
+  expect(mockPages).not.toHaveBeenCalled()
+  expect(screen.queryByTestId("resume-page-count")).not.toBeInTheDocument()
+})
+
+test("federal: the crosswalk is on the page and not in the draft; the file uses the federal layout", async () => {
+  sources = ON_FED
+  genData = FED_DRAFT
+  mockPages.mockResolvedValue(1)
+  renderPage()
+  const cw = screen.getByTestId("resume-crosswalk")
+  expect(cw).toHaveTextContent("Shown by: Led a team of 8")
+  expect(cw).toHaveTextContent("Not shown yet")
+  expect(screen.getByTestId("resume-draft")).not.toHaveTextContent("budget analysis")
+  expect(screen.getByTestId("resume-draft")).toHaveTextContent("2020–2024 | 40 hours per week | GS-0303-05")
+  fireEvent.click(screen.getByRole("button", { name: /Download Word/ }))
+  await waitFor(() => expect(mockAts).toHaveBeenCalled())
+  expect((mockAts.mock.calls[0][0] as ResumeDocument).layout).toBe("federal")
+})
+
+test("federal: the 'federal job' situation is listed only when the server offers Federal", () => {
+  sources = ON
+  const { unmount } = renderPage()
+  const without = Array.from((screen.getByLabelText("You are…") as HTMLSelectElement).options).map((o) => o.value)
+  expect(without).not.toContain("federal")
+  unmount()
+  sources = ON_FED
+  renderPage()
+  const withFed = Array.from((screen.getByLabelText("You are…") as HTMLSelectElement).options).map((o) => o.value)
+  expect(withFed).toContain("federal")
 })
