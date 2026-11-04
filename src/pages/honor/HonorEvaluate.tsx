@@ -72,6 +72,7 @@ import {
 } from "./_shared"
 import { ArtifactStatusMatrix } from "./_ArtifactUploader"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
+import { checkingNotice, scanErrorMessage } from "@/lib/documents/checkingNotice"
 
 /**
  * Honor Coach Workbench — Evaluate Fellow (Phase 3).
@@ -487,6 +488,7 @@ export default function HonorEvaluate() {
     e.target.value = ""
     if (!file || !primary) return
     setUploading(true)
+    const notice = checkingNotice(file.name)
     try {
       // Attach the position description to the FELLOW (subject), doc_kind="position".
       const presigned = await initiateUpload({
@@ -497,12 +499,13 @@ export default function HonorEvaluate() {
         subject_user_id: primary.id,
       })
       await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
-      await triggerProcessing(presigned.document_id)
+      await triggerProcessing(presigned.document_id, { onChecking: notice.onChecking })
       setPositionAttached(file.name)
       toast.success(`Position description saved to ${fellowName(primary.firstName, primary.lastName)}.`)
-    } catch {
-      toast.error("Could not attach the position description.")
+    } catch (err) {
+      toast.error(scanErrorMessage(err) ?? "Could not attach the position description.")
     } finally {
+      notice.done()
       setUploading(false)
     }
   }

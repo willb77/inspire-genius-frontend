@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useDocumentUpload } from "@/hooks/documents/useDocumentUpload";
 import { profileKeys } from "@/hooks/profile/useProfile";
+import { scanErrorMessage } from "@/lib/documents/checkingNotice";
 
 export interface AddPersonalDocTarget {
   /** Display label, e.g. "Resume". */
@@ -62,6 +63,8 @@ export function AddPersonalDocModal({
   const open = target !== null;
 
   const errorMessage = (err: unknown): string => {
+    const scan = scanErrorMessage(err);
+    if (scan) return scan;
     if (axios.isAxiosError(err)) {
       const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
       if (detail) return detail;

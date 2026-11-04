@@ -69,7 +69,7 @@ describe("useDocumentUpload (B.2 flow)", () => {
       file,
       undefined,
     )
-    expect(triggerProcessing).toHaveBeenCalledWith("d1")
+    expect(triggerProcessing).toHaveBeenCalledWith("d1", { onChecking: expect.any(Function) })
     expect(result.current.data?.id).toBe("d1")
     expect(result.current.data?.filename).toBe("test.pdf")
   })

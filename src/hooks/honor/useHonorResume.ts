@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import { generateResume } from "@/services/honor/coach.service"
 import { uploadJobDescription } from "@/services/honor/artifact.service"
+import { checkingNotice } from "@/lib/documents/checkingNotice"
 import type { HonorResume, HonorResumeBody, HonorResumeDisabled } from "@/types/honor"
 
 /** True when the route returned the server-flag-off `{ disabled }` shape. */
@@ -36,6 +37,13 @@ export function useGenerateResume() {
  */
 export function useUploadJobDescription() {
   return useMutation<string, Error, File>({
-    mutationFn: (file) => uploadJobDescription(file),
+    mutationFn: async (file) => {
+      const notice = checkingNotice(file.name)
+      try {
+        return await uploadJobDescription(file, notice.onChecking)
+      } finally {
+        notice.done()
+      }
+    },
   })
 }

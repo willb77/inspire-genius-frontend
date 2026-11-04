@@ -357,7 +357,23 @@ test("attaching a position description uploads with doc_kind=position for the su
   expect(initiateUpload).toHaveBeenCalledWith(
     expect.objectContaining({ doc_kind: "position", subject_user_id: "f1", filename: "pm-role.pdf" }),
   )
-  expect(triggerProcessing).toHaveBeenCalledWith("d1")
+  expect(triggerProcessing).toHaveBeenCalledWith("d1", expect.objectContaining({ onChecking: expect.any(Function) }))
+})
+
+test("a position description the virus scan refused says so and is not marked attached (DOC-AV-1)", async () => {
+  const { DocumentRejectedError } = jest.requireActual("@/lib/documents/scan")
+  triggerProcessing.mockRejectedValueOnce(new DocumentRejectedError("A threat was found in this file"))
+  const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock; success: jest.Mock } }
+  const { container } = renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("checkbox", { name: /Position/i }))
+  const input = container.querySelector('input[type="file"]') as HTMLInputElement
+  fireEvent.change(input, { target: { files: [new File(["x"], "bad.pdf", { type: "application/pdf" })] } })
+
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith("This file wasn't accepted: A threat was found in this file"),
+  )
+  expect(toast.success).not.toHaveBeenCalledWith(expect.stringMatching(/Position description saved/))
 })
 
 test("Run evaluation auto-composes Meridian's formatted narrative, driven by the coach's criteria", async () => {

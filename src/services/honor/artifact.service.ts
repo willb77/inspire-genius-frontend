@@ -27,6 +27,7 @@ export async function uploadFellowDocument(
   file: File,
   docKind: HonorDocKind,
   subjectUserId?: string,
+  onChecking?: () => void,
 ): Promise<void> {
   const presigned = await initiateUpload({
     filename: file.name,
@@ -36,7 +37,7 @@ export async function uploadFellowDocument(
     ...(subjectUserId ? { subject_user_id: subjectUserId } : {}),
   })
   await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
-  await triggerProcessing(presigned.document_id)
+  await triggerProcessing(presigned.document_id, { onChecking })
 }
 
 /**
@@ -46,7 +47,7 @@ export async function uploadFellowDocument(
  * document, self-scoped (no `subject_user_id`), so it never lands in a Fellow's
  * profile / RAG — it only describes the target job.
  */
-export async function uploadJobDescription(file: File): Promise<string> {
+export async function uploadJobDescription(file: File, onChecking?: () => void): Promise<string> {
   const presigned = await initiateUpload({
     filename: file.name,
     content_type: file.type || "application/octet-stream",
@@ -54,7 +55,9 @@ export async function uploadJobDescription(file: File): Promise<string> {
     doc_kind: "general",
   })
   await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
-  await triggerProcessing(presigned.document_id)
+  // Waits out an asynchronous virus scan, so the id is only handed back once the
+  // text can be extracted; a refused file throws (DOC-AV-1).
+  await triggerProcessing(presigned.document_id, { onChecking })
   return presigned.document_id
 }
 

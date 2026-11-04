@@ -20,6 +20,7 @@ import {
 } from "@/services/documents/documentService";
 import type { DocumentOut } from "@/services/documents/documentService";
 import { logAuditEvent } from "@/services/audit/audit.service";
+import { checkingNotice } from "@/lib/documents/checkingNotice";
 
 async function uploadOne(args: {
   file: File;
@@ -48,8 +49,15 @@ async function uploadOne(args: {
 
   // triggerProcessing kicks off the pipeline. Document-service handles
   // scan + extract + chunk + embed into pgvector. Returns the canonical
-  // DocumentOut once the row is in the documents table.
-  return triggerProcessing(presigned.document_id);
+  // DocumentOut once the row is in the documents table. On a tier that scans
+  // asynchronously it waits for the scan, showing "checking the file…", and
+  // throws if the scan refused the file (DOC-AV-1).
+  const notice = checkingNotice(args.file.name);
+  try {
+    return await triggerProcessing(presigned.document_id, { onChecking: notice.onChecking });
+  } finally {
+    notice.done();
+  }
 }
 
 /** Single-file upload via the B.2 presigned-URL flow. */
