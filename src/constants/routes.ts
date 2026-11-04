@@ -101,6 +101,8 @@ export const ROUTES = {
     PRISM_EXAM: "/super-admin/prism-exam",
     /** Practitioner PRISM registry: identifiers per practitioner, and client assignment (PC-1a). */
     PRACTITIONER_REGISTRY: "/super-admin/practitioner-registry",
+    /** Administration → Intake (IN-3): public-form registrations and webinar sessions. */
+    INTAKE: "/super-admin/intake",
     CHARACTER_LAB: "/super-admin/character-lab",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
     /** Administration → Client Sign-Up: the CRM pipeline, SOWs and invoicing hand-off. */
