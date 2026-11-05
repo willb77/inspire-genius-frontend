@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   askResumeQuestions,
+  fetchSavedJobFile,
   generateMyResumeJob,
   getResumeWriterSources,
+  listSavedJobDescriptions,
+  type SavedJobDescription,
 } from "@/services/resumeWriter/resumeWriter.service"
 import type {
   InterviewQuestion,
@@ -15,6 +18,7 @@ import type {
 
 export const resumeWriterKeys = {
   sources: ["resume-writer", "me", "sources"] as const,
+  savedJobs: ["documents", "resume-writer", "saved-job-descriptions"] as const,
 }
 
 /** The caller's sources, the switch state and today's usage. RW2: with a
@@ -43,5 +47,24 @@ export function useGenerateResume() {
 export function useResumeQuestions() {
   return useMutation<InterviewQuestion[] | ResumeWriterDisabled, Error, ResumeQuestionsRequest>({
     mutationFn: (body) => askResumeQuestions(body),
+  })
+}
+
+/** RWO-8 §9 — the caller's stored job descriptions. Only fetched while the
+ * server sends `jobFileStorageEnabled`. Under ["documents"], so an upload's
+ * invalidation refreshes it. */
+export function useSavedJobDescriptions(enabled: boolean) {
+  return useQuery<SavedJobDescription[], Error>({
+    queryKey: resumeWriterKeys.savedJobs,
+    queryFn: listSavedJobDescriptions,
+    enabled,
+    staleTime: 30_000,
+  })
+}
+
+/** RWO-8 §9 — the file of a saved job description, to read on the device again. */
+export function useSavedJobFile() {
+  return useMutation<File, Error, SavedJobDescription>({
+    mutationFn: (saved) => fetchSavedJobFile(saved),
   })
 }

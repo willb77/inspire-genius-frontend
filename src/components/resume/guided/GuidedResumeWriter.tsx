@@ -16,7 +16,7 @@
  * fabrication and assessment-term checks. Questions and the assistant's answers
  * are free. Undo restores the previous draft from page state, with no request.
  */
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Download, FileText, Loader2, Undo2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -24,7 +24,17 @@ import { cn } from "@/lib/utils"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { downloadBlob } from "@/lib/exportTranscript"
 import { useAuth } from "@/context/useAuth"
-import { useGenerateResume, useResumeQuestions } from "@/hooks/useResumeWriter"
+import {
+  useGenerateResume,
+  useResumeQuestions,
+  useSavedJobDescriptions,
+  useSavedJobFile,
+} from "@/hooks/useResumeWriter"
+import { useDocumentUpload } from "@/hooks/documents/useDocumentUpload"
+import { DocumentRejectedError, DocumentStillCheckingError } from "@/lib/documents/scan"
+import { readJobFile } from "@/lib/resume/guided/readJobFile"
+import { combinePosting, JOB_DESCRIPTION_KIND, positionCap } from "@/lib/resume/guided/jobFile"
+import { rolesForRequest, type RoleDraft } from "@/lib/resume/guided/roles"
 import type { FormatChoice } from "@/components/resume/ResumeFormatPanel"
 import { ResumeCrosswalk, ResumeTalkingPoints } from "@/components/resume/ResumeDocumentView"
 import { ResumeMiniCardPanel } from "@/components/resume/ResumeMiniCardPanel"
@@ -43,7 +53,7 @@ import {
   type ResumeWriterSources,
   type TargetRoleView,
 } from "@/types/resumeWriter"
-import { StepAim, StepInformation, StepPurpose, type Aim } from "./GuidedSetupSteps"
+import { StepAim, StepInformation, StepPurpose, type Aim, type JobFileStorage } from "./GuidedSetupSteps"
 import { FollowUpCards, InterviewPromise, StepQuestions } from "./GuidedInterview"
 import { ResumeAssistant } from "./ResumeAssistant"
 import { GuidedDraftView } from "./GuidedDraftView"
@@ -122,6 +132,19 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
   const [exporting, setExporting] = useState(false)
   const [pages, setPages] = useState<number | null>(null)
   const [checks, setChecks] = useState({ read: false, contact: false, reviewed: false })
+  // RWO-8 §10 — roles added by hand (only while the server sends rolesEnabled).
+  const rolesOn = data.rolesEnabled === true
+  const [roles, setRoles] = useState<RoleDraft[]>([])
+  // RWO-8 §9 — a job-description file read on the device and kept for 90 days
+  // (only while the server sends jobFileStorageEnabled). Its text aims the draft;
+  // it is never put in the box. "loaded" only once its virus scan has passed.
+  const storeJobFile = data.jobFileStorageEnabled === true
+  const [jobFile, setJobFile] = useState<{ name: string; text: string; status: "checking" | "loaded" } | null>(null)
+  const [jobNote, setJobNote] = useState<string | null>(null)
+  const jobToken = useRef(0)
+  const upload = useDocumentUpload()
+  const savedJobs = useSavedJobDescriptions(storeJobFile)
+  const savedFile = useSavedJobFile()
 
   const optionId = format.optionId || data.defaultOption || options[0]?.id || ""
   const styleId = format.styleId || data.defaultBulletStyle || styles[0]?.id || ""
@@ -134,8 +157,14 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
   const hasResume = data.sources.resume || documentIds.length > 0
   const hasAnything = hasResume || data.sources.bio || data.sources.assessments.length > 0
   const switchedOff = !data.enabled || isResumeWriterDisabled(generate.data)
+  const addedRoles = rolesOn ? rolesForRequest(roles) : []
+  const jobChecking = storeJobFile && jobFile?.status === "checking"
   const canWrite =
-    !switchedOff && left > 0 && !generate.isPending && (aim === "role" && tailoredRole ? hasResume : hasAnything)
+    !switchedOff &&
+    left > 0 &&
+    !generate.isPending &&
+    !jobChecking &&
+    (aim === "role" && tailoredRole ? hasResume : hasAnything || addedRoles.length > 0)
   const aimedAt = aim === "role" && tailoredRole ? tailoredRole.title : title.trim() || area.trim()
 
   const draftOffer = options.find((o) => o.id === draft?.option)
@@ -176,7 +205,11 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
 
   const targetBody = (): ResumeWriterRequest => {
     if (aim === "role" && tailoredRole) return { jobId: tailoredRole.jobId }
-    if (aim === "posting") return { role: title.trim() || undefined, positionText: roleText.trim() || undefined }
+    if (aim === "posting") {
+      const fileText = storeJobFile && jobFile?.status === "loaded" ? jobFile.text : ""
+      const posting = combinePosting(roleText, fileText, positionCap(chosen))
+      return { role: title.trim() || undefined, positionText: posting?.text }
+    }
     return { role: title.trim() || undefined, careerArea: area.trim() || undefined }
   }
 
@@ -213,6 +246,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
         ...(disclosure ? { disclosure } : {}),
         ...(federalDetails ? { federalDetails } : {}),
         ...(facts.length ? { answers: facts } : {}),
+        ...(addedRoles.length ? { roles: addedRoles } : {}),
         ...(instruction ? { instruction } : {}),
       },
       {
@@ -252,6 +286,74 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
       setExporting(false)
     }
   }
+
+  const removeJobFile = () => {
+    jobToken.current += 1
+    setJobFile(null)
+  }
+
+  // Keep the text only after the stored copy has passed its virus scan; a
+  // refused file's text is discarded and never aims a draft.
+  const onJobFile = (file: File, text: string) => {
+    const token = ++jobToken.current
+    setJobNote(null)
+    setJobFile({ name: file.name, text, status: "checking" })
+    upload.mutate(
+      { file, docKind: JOB_DESCRIPTION_KIND },
+      {
+        onSuccess: () => {
+          if (token !== jobToken.current) return
+          setJobFile({ name: file.name, text, status: "loaded" })
+        },
+        onError: (err) => {
+          if (token !== jobToken.current) return
+          setJobFile(null)
+          setJobNote(
+            err instanceof DocumentRejectedError
+              ? err.message
+              : err instanceof DocumentStillCheckingError
+                ? "We're still checking this file — try again in a minute."
+                : "Couldn't keep that file. Try again, or describe the role in the box.",
+          )
+        },
+      },
+    )
+  }
+
+  const onUseSaved: JobFileStorage["onUseSaved"] = (saved) => {
+    const token = ++jobToken.current
+    setJobNote(null)
+    savedFile.mutate(saved, {
+      onSuccess: async (file) => {
+        try {
+          const text = await readJobFile(file)
+          if (token === jobToken.current) setJobFile({ name: saved.filename, text, status: "loaded" })
+        } catch {
+          if (token === jobToken.current) setJobNote(`Couldn't read ${saved.filename}. Choose the file again.`)
+        }
+      },
+      onError: () => {
+        if (token === jobToken.current) setJobNote(`Couldn't open ${saved.filename}. Choose the file again.`)
+      },
+    })
+  }
+
+  const jobFileProps: JobFileStorage | undefined = storeJobFile
+    ? {
+        loaded: jobFile ? { name: jobFile.name, status: jobFile.status } : null,
+        note: jobNote,
+        both: !!(jobFile && roleText.trim()),
+        truncated:
+          !!jobFile &&
+          !!roleText.trim() &&
+          !!combinePosting(roleText, jobFile.text, positionCap(chosen))?.truncated,
+        saved: savedJobs.data ?? [],
+        onFile: onJobFile,
+        onRemove: removeJobFile,
+        onUseSaved,
+        openingSaved: savedFile.isPending,
+      }
+    : undefined
 
   const setAnswer = (id: string, text: string) => setAnswers((a) => ({ ...a, [id]: text }))
   // Lines are only clickable on the review step, where the assistant is always open.
@@ -335,6 +437,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
           contact={contact}
           onContact={setContact}
           onUpload={onUpload}
+          {...(rolesOn ? { roles, onRoles: setRoles } : {})}
         />
       ) : null}
 
@@ -357,6 +460,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
           onStyle={(id) => setFormat((f) => ({ ...f, styleId: id }))}
           left={left}
           limit={limit}
+          jobFile={jobFileProps}
         />
       ) : null}
 
@@ -598,7 +702,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
               <Button variant="ghost" onClick={() => write()} disabled={!canWrite}>
                 Skip questions, write now
               </Button>
-              <Button onClick={startQuestions} disabled={switchedOff}>
+              <Button onClick={startQuestions} disabled={switchedOff || jobChecking}>
                 Next: a few quick questions
               </Button>
             </>

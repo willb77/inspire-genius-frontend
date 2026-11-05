@@ -22,6 +22,10 @@ import {
 import { JOB_FILE_ACCEPT, JobFileRefused, readJobFile } from "@/lib/resume/guided/readJobFile"
 import type { ResumeContact } from "@/lib/resume/resumeDocument"
 import type { ResumeOptionView, ResumeWriterSources, TargetRoleView } from "@/types/resumeWriter"
+import type { RoleDraft } from "@/lib/resume/guided/roles"
+import { deletesOnLabel } from "@/lib/resume/guided/jobFile"
+import type { SavedJobDescription } from "@/services/resumeWriter/resumeWriter.service"
+import { GuidedRoles } from "./GuidedRoles"
 
 const CARD = "w-full rounded-lg border p-3 text-left text-sm transition-colors"
 
@@ -151,6 +155,8 @@ export function StepInformation({
   contact,
   onContact,
   onUpload,
+  roles,
+  onRoles,
 }: {
   data: ResumeWriterSources
   chosen: ResumeOptionView | undefined
@@ -161,6 +167,9 @@ export function StepInformation({
   contact: ResumeContact
   onContact: (c: ResumeContact) => void
   onUpload: (kind: "resume" | "bio") => void
+  /** RWO-8 §10 — given only while the server sends `rolesEnabled`. */
+  roles?: RoleDraft[]
+  onRoles?: (r: RoleDraft[]) => void
 }) {
   const s = data.sources
   const ready = [s.resume || documentIds.length > 0, s.bio, s.assessments.length > 0, !!(contact.email && contact.phone)]
@@ -197,6 +206,11 @@ export function StepInformation({
             {s.assessments.length ? `${s.assessments.join(", ")} — shapes what's emphasised, never named` : "none on file"}
           </span>
         </p>
+        {roles?.length ? (
+          <p className="text-sm" data-testid="guided-roles-count">
+            Roles you added: <span className="text-teal-700">{roles.length} — on file for this draft</span>
+          </p>
+        ) : null}
         {data.documents.length ? (
           <fieldset className="space-y-1 pt-1">
             <legend className="text-xs font-medium text-muted-foreground">Also use these documents (optional)</legend>
@@ -215,6 +229,7 @@ export function StepInformation({
           </fieldset>
         ) : null}
       </div>
+      {roles && onRoles ? <GuidedRoles roles={roles} onRoles={onRoles} /> : null}
       <div className="space-y-2 rounded-lg border p-4" data-testid="guided-readiness">
         <div className="flex items-center justify-between text-sm font-medium">
           <span>Ready to write</span>
@@ -266,6 +281,22 @@ export function StepInformation({
 
 export type Aim = "posting" | "role" | "general"
 
+/** RWO-8 §9 — given to StepAim only while the server sends `jobFileStorageEnabled`.
+ * The file's text is held by the page, never put in the box. */
+export type JobFileStorage = {
+  loaded: { name: string; status: "checking" | "loaded" } | null
+  /** A refusal or failure to show, in place of the loaded file. */
+  note: string | null
+  /** Both a typed description and the file are used; `truncated` when the file was cut. */
+  both: boolean
+  truncated: boolean
+  saved: SavedJobDescription[]
+  onFile: (file: File, text: string) => void
+  onRemove: () => void
+  onUseSaved: (s: SavedJobDescription) => void
+  openingSaved: boolean
+}
+
 export function StepAim({
   aim,
   onAim,
@@ -284,6 +315,7 @@ export function StepAim({
   onStyle,
   left,
   limit,
+  jobFile,
 }: {
   aim: Aim
   onAim: (a: Aim) => void
@@ -302,6 +334,7 @@ export function StepAim({
   onStyle: (id: string) => void
   left: number
   limit: number
+  jobFile?: JobFileStorage
 }) {
   const [reading, setReading] = useState(false)
   const [fileNote, setFileNote] = useState<{ ok: boolean; text: string } | null>(null)
@@ -313,8 +346,13 @@ export function StepAim({
     setFileNote(null)
     try {
       const text = await readJobFile(file)
-      onRoleText(text)
-      setFileNote({ ok: true, text: `${file.name} — read on this device. Its text is in the box above; edit it if you like.` })
+      if (jobFile) {
+        // §9 (Q15 as Bill changed it): the box is not filled; the page holds the text.
+        jobFile.onFile(file, text)
+      } else {
+        onRoleText(text)
+        setFileNote({ ok: true, text: `${file.name} — read on this device. Its text is in the box above; edit it if you like.` })
+      }
     } catch (err) {
       setFileNote({ ok: false, text: err instanceof JobFileRefused ? err.message : "Couldn't read that file. Paste the text instead." })
     } finally {
@@ -380,7 +418,9 @@ export function StepAim({
               <p className="text-sm font-medium">Read the job description from a file</p>
               <p className="text-xs text-muted-foreground">PDF, Word (.docx) or text (.txt), up to 10 MB.</p>
               <p className="text-xs text-muted-foreground" data-testid="guided-file-promise">
-                Read on your device — the file isn&apos;t uploaded or kept. Programs and other file types are refused.
+                {jobFile
+                  ? "Read on your device, checked for viruses, and kept with your account for 90 days, then deleted. Programs and other file types are refused."
+                  : "Read on your device — the file isn't uploaded or kept. Programs and other file types are refused."}
               </p>
             </div>
             <label className="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-teal-600 px-3 text-sm text-teal-700">
@@ -397,6 +437,47 @@ export function StepAim({
               />
             </label>
           </div>
+          {jobFile?.loaded ? (
+            <div
+              role="status"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-teal-200 bg-teal-50 p-2 text-xs text-teal-900"
+              data-testid="guided-job-loaded"
+            >
+              <span>
+                {jobFile.loaded.status === "checking"
+                  ? `Checking ${jobFile.loaded.name} for viruses…`
+                  : `Loaded ${jobFile.loaded.name} — it will be used to aim your résumé.`}
+                {jobFile.loaded.status === "loaded" && jobFile.both
+                  ? ` Your description and ${jobFile.loaded.name} are both used${jobFile.truncated ? " (the file's text is shortened to fit)" : ""}.`
+                  : ""}
+              </span>
+              <Button size="sm" variant="ghost" onClick={jobFile.onRemove} data-testid="guided-job-remove">
+                Remove
+              </Button>
+            </div>
+          ) : null}
+          {jobFile?.note ? (
+            <p role="alert" className="text-xs text-red-700" data-testid="guided-job-note">
+              {jobFile.note}
+            </p>
+          ) : null}
+          {jobFile && jobFile.saved.length && !jobFile.loaded ? (
+            <div className="space-y-1" data-testid="guided-saved-jobs">
+              <p className="text-xs font-medium text-muted-foreground">Use a saved job description</p>
+              {jobFile.saved.map((sj) => (
+                <button
+                  key={sj.id}
+                  type="button"
+                  disabled={jobFile.openingSaved}
+                  onClick={() => jobFile.onUseSaved(sj)}
+                  className={cn(CARD, "flex items-center justify-between gap-2 hover:bg-muted/50")}
+                >
+                  <span className="min-w-0 break-words">{sj.filename}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{deletesOnLabel(sj.expiresAt) ?? ""}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
           {fileNote ? (
             <p
               role={fileNote.ok ? "status" : "alert"}

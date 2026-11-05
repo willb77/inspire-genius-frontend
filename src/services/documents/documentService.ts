@@ -73,6 +73,8 @@ type DocumentOut = {
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  /** RWO-8 §9 — when the server deletes this document (a stored job description). */
+  expires_at?: string | null;
 };
 
 type DocumentListResponse = {

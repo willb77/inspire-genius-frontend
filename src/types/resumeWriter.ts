@@ -47,6 +47,22 @@ export type ResumeWriterSources = {
    * on. Absent, the page is today's, whatever else the response says.
    */
   guidedEnabled?: boolean
+  /** RWO-8 §10 — present (true) only when the server reads `roles` ("Add a role"). */
+  rolesEnabled?: boolean
+  /**
+   * RWO-8 §9 — present (true) only when the server keeps a chosen job-description
+   * file for 90 days. Absent, the file is read into the box as before and never stored.
+   */
+  jobFileStorageEnabled?: boolean
+}
+
+/** RWO-8 §10 — a role the person adds by hand. Their facts, for this draft only. */
+export type AddedRole = {
+  title: string
+  organization: string
+  start?: string
+  end?: string
+  bullets?: string[]
 }
 
 /** RWO-2 — one résumé format, as the server describes it (the copy, never the prompt). */
@@ -106,6 +122,8 @@ export type ResumeWriterRequest = {
   instruction?: string
   /** RWO-8 — the person's answers to the résumé interview. Their facts, for this draft only. */
   answers?: InterviewAnswer[]
+  /** RWO-8 §10 — roles added by hand. Sent only while `rolesEnabled`. */
+  roles?: AddedRole[]
 }
 
 /** RWO-8 — one question from the résumé interview. */
