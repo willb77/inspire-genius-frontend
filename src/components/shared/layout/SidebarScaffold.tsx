@@ -438,7 +438,10 @@ export default function SidebarScaffold({ navItems, navSections, children, class
           HomeV2's own wrapper was removed at the same time — nesting the same
           colour twice just paid for an extra rounded box. */}
       <SidebarInset className={cn("bg-ig-page", className)}>
-        <div className="sticky top-0 z-20 bg-ig-page/80 backdrop-blur">
+        {/* Opaque (RWO8-F3, 2026-11-04): at 80% the page showed through on
+            every page as it scrolled under. Same token as the SidebarInset it sits in, so
+            the header matches the page in every theme. */}
+        <div className="sticky top-0 z-20 bg-ig-page">
           <div className="h-14 flex items-center gap-2 px-3">
             <MobileMenuTrigger />
             <UserTopHeader />
