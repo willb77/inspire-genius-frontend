@@ -46,5 +46,10 @@ export interface AuthLayoutProps {
   leftTitleOne?: string;
   leftTitleTwo?: string;
   subTitle?: string;
+  /**
+   * Extra classes for the form panel's content column, merged over its default
+   * `w-full max-w-[360px]`. Unset on every sign-in screen; `/join` widens it.
+   */
+  contentClassName?: string;
   children: React.ReactNode;
 }

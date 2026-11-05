@@ -1,5 +1,6 @@
 import { type AuthLayoutProps } from "@/types/auth";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { cn } from "@/lib/utils";
 
 /**
  * AuthLayout — Design B: Immersive Brand Wall
@@ -11,6 +12,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
  */
 export default function AuthLayout({
   children,
+  contentClassName,
 }: AuthLayoutProps) {
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
@@ -73,7 +75,7 @@ export default function AuthLayout({
         <div className="absolute top-4 right-4">
           <LanguageSwitcher />
         </div>
-        <div className="w-full max-w-[360px]">
+        <div className={cn("w-full max-w-[360px]", contentClassName)}>
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 flex justify-center">
             <img src="/Logo-Dark.png" alt="Inspire Genius" className="h-8" />
