@@ -37,6 +37,7 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import Pagination from "@/components/shared/Pagination";
 import { DatePicker } from "@/components/ui/date-picker";
+import { deletesOnLabel } from "@/lib/resume/guided/jobFile";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,8 @@ type UIDocItem = {
   url: string;
   createdAt: Date;
   categoryName?: string;
+  /** RWO-8 §9 — "Deletes on <date>" for a document the server will delete. */
+  deletesOn?: string | null;
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -184,6 +187,7 @@ export default function DocumentsV2() {
         rawDocKind: doc.doc_kind ?? "general",
         url: "",
         createdAt: d,
+        deletesOn: deletesOnLabel(doc.expires_at),
       });
     }
 
@@ -521,6 +525,11 @@ export default function DocumentsV2() {
                               <TooltipContent sideOffset={6}>{d.name}</TooltipContent>
                             ) : null}
                           </Tooltip>
+                          {d.deletesOn ? (
+                            <span className="text-xs text-body-slate" data-testid="doc-deletes-on">
+                              {d.deletesOn}
+                            </span>
+                          ) : null}
                         </div>
                         {d.categoryName ? (
                           <p className="flex-1 text-center text-xs text-body-slate">

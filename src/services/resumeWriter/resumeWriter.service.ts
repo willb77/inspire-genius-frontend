@@ -1,5 +1,7 @@
 import axios from "axios"
 import { agentApi } from "@/lib/agentApi"
+import { getDownloadUrl, listDocumentsV2 } from "@/services/documents/documentService"
+import { JOB_DESCRIPTION_KIND } from "@/lib/resume/guided/jobFile"
 import {
   type InterviewQuestion,
   type ResumeJobStarted,
@@ -138,4 +140,28 @@ export async function askResumeQuestions(
     }
   }
   throw new Error("The questions are taking too long. You can write your résumé without them.")
+}
+
+// ── RWO-8 §9: saved job descriptions ────────────────────────────────────────
+
+/** A stored job description the person can reuse for 90 days. */
+export type SavedJobDescription = { id: string; filename: string; contentType: string; expiresAt: string | null }
+
+/** The caller's own stored job descriptions that passed the virus scan. Goes
+ * through document-service's owner-scoped list, never another person's. */
+export async function listSavedJobDescriptions(): Promise<SavedJobDescription[]> {
+  const out = await listDocumentsV2({ doc_kind: JOB_DESCRIPTION_KIND, status: "ready", limit: 20 })
+  return out.documents
+    .filter((d) => d.doc_kind === JOB_DESCRIPTION_KIND && d.status === "ready")
+    .map((d) => ({ id: d.id, filename: d.filename, contentType: d.content_type, expiresAt: d.expires_at ?? null }))
+}
+
+/** Fetch a saved job description's file through the caller's own download URL,
+ * so the page can read it on the device again. */
+export async function fetchSavedJobFile(saved: SavedJobDescription): Promise<File> {
+  const url = await getDownloadUrl(saved.id)
+  const resp = await fetch(url)
+  if (!resp.ok) throw new Error(`Couldn't open ${saved.filename}`)
+  const blob = await resp.blob()
+  return new File([blob], saved.filename, { type: saved.contentType || blob.type })
 }

@@ -156,6 +156,27 @@ describe("Documents Page", () => {
     expect(screen.getByText("data.csv")).toBeInTheDocument();
   });
 
+  it.each([
+    ["Documents", Documents],
+    ["DocumentsV2", DocumentsV2],
+  ])("%s shows 'Deletes on <date>' only for a document with an expiry (RWO-8 §9)", (_n, Page) => {
+    mockUseDocuments.mockReturnValue({
+      data: {
+        documents: [
+          { id: "j1", filename: "posting.pdf", doc_kind: "job_description", created_at: NOW.toISOString(), expires_at: "2027-02-03T12:00:00Z" },
+          { id: "d1", filename: "report.pdf", doc_kind: "pdf", created_at: NOW.toISOString() },
+        ],
+        total: 2,
+      },
+      isLoading: false,
+      isFetching: false,
+    } as unknown as ReturnType<typeof useDocuments>);
+    render(<Page />, { wrapper: createWrapper() });
+    const labels = screen.getAllByTestId("doc-deletes-on");
+    expect(labels).toHaveLength(1);
+    expect(labels[0]).toHaveTextContent("Deletes on 3 Feb 2027");
+  });
+
   it("shows loading skeletons when fetching", () => {
     mockUseDocuments.mockReturnValue({
       data: undefined,

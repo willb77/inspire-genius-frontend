@@ -52,6 +52,12 @@ jest.mock("@/hooks/useResumeWriter", () => ({
   useResumeWriterSources: () => ({ refetch: jest.fn(), data: sources }),
   useGenerateResume: () => ({ mutate, data: undefined, isPending: false, isError: false }),
   useResumeQuestions: () => ({ mutate: qMutate, isPending: false, isError: false }),
+  // RWO-8 §9 — only reached while jobFileStorageEnabled; inert here.
+  useSavedJobDescriptions: () => ({ data: [] }),
+  useSavedJobFile: () => ({ mutate: jest.fn(), isPending: false }),
+}))
+jest.mock("@/hooks/documents/useDocumentUpload", () => ({
+  useDocumentUpload: () => ({ mutate: jest.fn(), isPending: false }),
 }))
 
 type ChatOpts = { context?: Record<string, unknown>; sessionKey: string; accessToken?: string }
