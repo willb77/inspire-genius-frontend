@@ -100,14 +100,14 @@ function SourceChip({ on, label }: { on: boolean; label: string }) {
 }
 
 const REMOVED_REASON: Record<string, string> = {
-  employer: "Employer not in your résumé",
-  title: "Job title not in your résumé",
-  dates: "Dates not in your résumé",
-  education: "Education not in your résumé",
-  certification: "Certification not in your résumé",
-  number: "A number that isn't in your résumé",
-  activity: "Claims something your résumé doesn't show",
-  training: "Training not in your résumé",
+  employer: "Employer not in anything you've given us",
+  title: "Job title not in anything you've given us",
+  dates: "Dates not in anything you've given us",
+  education: "Education not in anything you've given us",
+  certification: "Certification not in anything you've given us",
+  number: "A number that isn't in anything you've given us",
+  activity: "A claim nothing you've given us backs up",
+  training: "Training not in anything you've given us",
   assessment: "Assessment wording — kept off your résumé",
 }
 
@@ -119,14 +119,14 @@ function TailoredNotes({ resume }: { resume: GeneratedResume }) {
     <div className="space-y-3 rounded-md border bg-muted/30 p-3 text-sm" data-testid="resume-tailored-notes">
       {removed.length ? (
         <section data-testid="resume-removed">
-          <h3 className="mb-1 font-semibold">Taken out — not in your résumé ({removed.length})</h3>
+          <h3 className="mb-1 font-semibold">Taken out — not in anything you've given us ({removed.length})</h3>
           <p className="mb-1 text-xs text-muted-foreground">
             The draft only keeps what your résumé shows. If one of these is true, add it to your résumé and draft again.
           </p>
           <ul className="list-disc space-y-0.5 pl-5">
             {removed.map((r, i) => (
               <li key={`${r.reason}-${i}`}>
-                <span className="text-muted-foreground">{REMOVED_REASON[r.reason] ?? "Not in your résumé"}:</span>{" "}
+                <span className="text-muted-foreground">{REMOVED_REASON[r.reason] ?? "Not in anything you've given us"}:</span>{" "}
                 {r.text}
               </li>
             ))}

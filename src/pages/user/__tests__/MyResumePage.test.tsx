@@ -263,9 +263,9 @@ test("RW2: everything the check took out is listed with the draft, with what the
   genState = { data: TAILORED }
   renderPage("/my/resume?jobId=job-1")
   const removed = screen.getByTestId("resume-removed")
-  expect(removed).toHaveTextContent("Taken out — not in your résumé (2)")
-  expect(removed).toHaveTextContent("Employer not in your résumé: Globex Corporation")
-  expect(removed).toHaveTextContent("A number that isn't in your résumé: Grew revenue by 45%")
+  expect(removed).toHaveTextContent("Taken out — not in anything you've given us (2)")
+  expect(removed).toHaveTextContent("Employer not in anything you've given us: Globex Corporation")
+  expect(removed).toHaveTextContent("A number that isn't in anything you've given us: Grew revenue by 45%")
   expect(screen.getByTestId("resume-not-evidenced")).toHaveTextContent("Manage vendor contracts")
   expect(screen.getByTestId("resume-draft")).not.toHaveTextContent("Globex")
 })

@@ -104,7 +104,7 @@ describe("buildDraftSummary", () => {
     const s = buildDraftSummary(DRAFT, "Hybrid", "Operations Manager")
     expect(s).toContain("Format: Hybrid. Aimed at: Operations Manager.")
     expect(s).toContain("- Led a team of 12")
-    expect(s).toContain("Left out by the checks:\n- Globex Corporation (employer not in the résumé)")
+    expect(s).toContain("Left out by the checks:\n- Globex Corporation (employer not in anything on file)")
     expect(s).toContain("- Own an operating budget")
     expect(s).toContain("- Lean certification")
   })
