@@ -294,7 +294,7 @@ export default function JoinPage() {
   return (
     // The same shell as the sign-in pages: brand wall, logo, form panel. It
     // reads no auth state and makes no request, so it cannot redirect anyone.
-    <AuthLayout contentClassName="max-w-[560px]">
+    <AuthLayout contentClassName="max-w-[560px]" showTestimonial={false}>
       <AuthHeader
         title="Register your interest"
         subtitle="Inspires Genius is an AI coaching platform. Leave your details below to register your interest."
