@@ -14,6 +14,8 @@ export const ROUTES = {
   INTERVIEW_PRACTICE_ROLES: "/interview-practice/roles",
   /** N-8 — public viewer of a shared Career Pathways Profile (token in the fragment). */
   CAREER_PATHWAYS_VIEW: "/career-pathways/view",
+  /** IN-2c — public "Register your interest" form (no sign-in). */
+  JOIN: "/join",
   /** Surveys — build questionnaires and select one to take (browser-local). */
   SURVEYS: "/surveys",
   PROFILE: "/profile",

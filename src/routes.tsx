@@ -22,6 +22,7 @@ const MagicLinkVerify = React.lazy(() => import("@/pages/auth/MagicLinkVerify"))
 const Terms = React.lazy(() => import("@/pages/legal/Terms"));
 const CareerPathwaysView = React.lazy(() => import("@/pages/career-pathways/CareerPathwaysViewPage"));
 const Privacy = React.lazy(() => import("@/pages/legal/Privacy"));
+const JoinPage = React.lazy(() => import("@/pages/join/JoinPage"));
 
 // ── Misc / Preview / Dev pages ──────────────────────────────────────────────
 const PreviewHome = React.lazy(() => import("@/pages/PreviewHome"));
@@ -442,6 +443,10 @@ export const routes: RouteObject[] = [
       // mailed to the recipient, and the server refuses every link while dark.
       { path: "/career-pathways/view", element: withSuspense(<CareerPathwaysView />) },
       { path: "/privacy", element: withSuspense(<Privacy />) },
+      // IN-2c — public "Register your interest" form. No sign-in; it posts
+      // through its own request client with no auth interceptors, so a 401 or
+      // 404 from the public route can never redirect a visitor to /login.
+      { path: "/join", element: withSuspense(<JoinPage />) },
       { path: "/preview-home", element: withSuspense(<PreviewHome />) },
       // Public Interview Practice role guides — landing pages that funnel into
       // the (auth-gated) coach. Static `/roles` outranks the `:slug` param.
