@@ -400,6 +400,20 @@ export default function MyResumePage() {
     }
   }
 
+  // RWO8-F1: until the server has said which page this person gets, show
+  // neither — the old page used to render and then swap to the guided one.
+  if (sources.isLoading && !data) {
+    return (
+      <UserLayout>
+        <div className="mx-auto w-full max-w-6xl p-4 md:p-6">
+          <p role="status" className="text-sm text-muted-foreground" data-testid="resume-writer-loading">
+            Loading the Résumé Writer…
+          </p>
+        </div>
+      </UserLayout>
+    )
+  }
+
   // RWO-8: the guided flow, only on the server's word and only with its formats.
   if (data?.guidedEnabled && optionsOn) {
     return (

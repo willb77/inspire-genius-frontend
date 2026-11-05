@@ -55,7 +55,11 @@ function Line({ at, text, changed, openLine, onOpen, onAsk, onRewrite }: LinePro
         onClick={() => onOpen(open ? null : at)}
         {...(isChanged ? { "data-changed": "true" } : {})}
         className={cn(
-          "w-full rounded px-1 text-left hover:bg-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600",
+          // RWO8-F4: block, not the button default inline-block — an inline-block's
+          // baseline is its LAST line, so a wrapped bullet's dot sat beside its
+          // last line. No horizontal padding, so text lines up with the headings
+          // as in ResumeDocumentView.
+          "block w-full rounded text-left hover:bg-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600",
           isChanged && "bg-teal-50",
           open && "bg-muted",
         )}
