@@ -248,7 +248,7 @@ test("'left out — why?' opens the list with no request", () => {
   finishDraft()
   const calls = mutate.mock.calls.length + qMutate.mock.calls.length
   fireEvent.click(screen.getByTestId("guided-removed-toggle"))
-  expect(screen.getByTestId("guided-removed-list")).toHaveTextContent("Employer not in your résumé: Globex Corporation")
+  expect(screen.getByTestId("guided-removed-list")).toHaveTextContent("Employer not in anything you've given us: Globex Corporation")
   expect(mutate.mock.calls.length + qMutate.mock.calls.length).toBe(calls)
 })
 
@@ -258,7 +258,7 @@ test("the assistant asks over useMeridianChat with the résumé surface and the 
   finishDraft()
   expect(chat.opts?.context).toEqual({
     surface: "resume_writer",
-    resume_draft: expect.stringContaining("Globex Corporation (employer not in the résumé)"),
+    resume_draft: expect.stringContaining("Globex Corporation (employer not in anything on file)"),
   })
   expect(chat.opts?.accessToken).toBe("tok")
   const panel = screen.getByTestId("resume-assistant")

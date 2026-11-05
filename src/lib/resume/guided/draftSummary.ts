@@ -12,14 +12,14 @@ import type { GeneratedResume, RemovedLine } from "@/types/resumeWriter"
 export const DRAFT_SUMMARY_MAX = 8000
 
 const REASON: Record<string, string> = {
-  employer: "employer not in the résumé",
-  title: "job title not in the résumé",
-  dates: "dates not in the résumé",
-  education: "education not in the résumé",
-  certification: "certification not in the résumé",
-  number: "a number not in the résumé",
-  activity: "a claim the résumé doesn't show",
-  training: "training not in the résumé",
+  employer: "employer not in anything on file",
+  title: "job title not in anything on file",
+  dates: "dates not in anything on file",
+  education: "education not in anything on file",
+  certification: "certification not in anything on file",
+  number: "a number not in anything on file",
+  activity: "a claim nothing on file backs up",
+  training: "training not in anything on file",
   assessment: "assessment wording, kept off résumés",
 }
 
@@ -40,7 +40,7 @@ export function buildDraftSummary(
   if (draft.certifications.length) out.push(`Certifications: ${draft.certifications.join("; ")}`)
   const removed: RemovedLine[] = draft.removed ?? []
   out.push(removed.length ? "Left out by the checks:" : "Left out by the checks: nothing.")
-  for (const r of removed) out.push(`- ${r.text} (${REASON[r.reason] ?? "not in the résumé"})`)
+  for (const r of removed) out.push(`- ${r.text} (${REASON[r.reason] ?? "not in anything on file"})`)
   const notShown = [
     ...(draft.notEvidenced ?? []),
     ...(draft.qualifications_crosswalk ?? []).filter((r) => !r.evidence).map((r) => r.requirement),
