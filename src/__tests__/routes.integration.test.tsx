@@ -76,6 +76,7 @@ const pageModules: Record<string, string> = {
   "@/pages/auth/MagicLinkVerify": "MagicLinkVerifyPage",
   "@/pages/legal/Terms": "TermsPage",
   "@/pages/legal/Privacy": "PrivacyPage",
+  "@/pages/join/JoinPage": "JoinPage",
   "@/pages/PreviewHome": "PreviewHomePage",
   "@/pages/dev/PrismTestHarness": "PrismTestHarnessPage",
   "@/pages/dev/JobBlueprintTestHarness": "JobBlueprintTestHarnessPage",
@@ -331,6 +332,7 @@ describe("Route Integration Tests", () => {
       { path: "/social-login", testId: "SocialLoginPage" },
       { path: "/terms", testId: "TermsPage" },
       { path: "/privacy", testId: "PrivacyPage" },
+      { path: "/join", testId: "JoinPage" },
     ];
 
     it.each(publicRoutes)(
