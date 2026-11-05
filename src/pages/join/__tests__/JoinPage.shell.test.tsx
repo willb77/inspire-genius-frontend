@@ -110,3 +110,30 @@ describe("AuthLayout contentClassName", () => {
     expect(cls).not.toContain("max-w-[360px]")
   })
 })
+
+describe("brand-wall testimonial", () => {
+  const NAME = "Sarah Reynolds"
+  const QUOTE = /completely changed how our team approaches/i
+  const ROLE = "VP People Operations"
+
+  it("/join renders no testimonial, but keeps the headline and logo", async () => {
+    renderAt(false)
+    await screen.findByRole("form", { name: "Register your interest" })
+    expect(screen.queryByText(NAME)).not.toBeInTheDocument()
+    expect(screen.queryByText(QUOTE)).not.toBeInTheDocument()
+    expect(screen.queryByText(ROLE)).not.toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 2, name: /unlock your/i })).toBeInTheDocument()
+    expect(screen.getAllByAltText("Inspire Genius").length).toBeGreaterThan(0)
+  })
+
+  it("the default AuthLayout (every sign-in page) still renders it", () => {
+    render(
+      <AuthLayout>
+        <p>child</p>
+      </AuthLayout>,
+    )
+    expect(screen.getByText(NAME)).toBeInTheDocument()
+    expect(screen.getByText(QUOTE)).toBeInTheDocument()
+    expect(screen.getByText(ROLE)).toBeInTheDocument()
+  })
+})

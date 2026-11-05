@@ -51,5 +51,7 @@ export interface AuthLayoutProps {
    * `w-full max-w-[360px]`. Unset on every sign-in screen; `/join` widens it.
    */
   contentClassName?: string;
+  /** Show the brand wall's testimonial card. Defaults to true; `/join` hides it. */
+  showTestimonial?: boolean;
   children: React.ReactNode;
 }

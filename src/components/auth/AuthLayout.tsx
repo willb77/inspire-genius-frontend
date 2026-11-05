@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 export default function AuthLayout({
   children,
   contentClassName,
+  showTestimonial = true,
 }: AuthLayoutProps) {
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
@@ -50,6 +51,7 @@ export default function AuthLayout({
           </p>
 
           {/* Testimonial */}
+          {showTestimonial && (
           <div className="mt-12 bg-white/[0.06] border border-white/[0.08] rounded-2xl p-6 px-7 max-w-[420px] backdrop-blur-xl">
             <p className="text-sm text-white/75 leading-relaxed italic">
               "Inspire Genius completely changed how our team approaches
@@ -66,6 +68,7 @@ export default function AuthLayout({
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
 
