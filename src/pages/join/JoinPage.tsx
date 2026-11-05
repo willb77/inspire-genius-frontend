@@ -2,6 +2,8 @@ import { useState, type ReactNode } from "react"
 import { useForm, Controller, type FieldPath } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { AlertCircle, CalendarClock, CheckCircle2, Loader2 } from "lucide-react"
+import AuthHeader from "@/components/auth/AuthHeader"
+import AuthLayout from "@/components/auth/AuthLayout"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -281,7 +283,7 @@ export default function JoinPage() {
           <input id="join-website" type="text" tabIndex={-1} autoComplete="off" {...register("website")} />
         </div>
 
-        <Button type="submit" disabled={registration.isPending} className="w-full sm:w-auto sm:self-start">
+        <Button type="submit" disabled={registration.isPending} className="w-full mt-2">
           {registration.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
           Register your interest
         </Button>
@@ -290,14 +292,14 @@ export default function JoinPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:py-12">
-      <div className="relative mx-auto w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Register your interest</h1>
-        <p className="mt-1 mb-6 text-sm text-slate-600">
-          Inspires Genius is an AI coaching platform. Leave your details below to register your interest.
-        </p>
-        {body}
-      </div>
-    </main>
+    // The same shell as the sign-in pages: brand wall, logo, form panel. It
+    // reads no auth state and makes no request, so it cannot redirect anyone.
+    <AuthLayout contentClassName="max-w-[560px]">
+      <AuthHeader
+        title="Register your interest"
+        subtitle="Inspires Genius is an AI coaching platform. Leave your details below to register your interest."
+      />
+      {body}
+    </AuthLayout>
   )
 }
