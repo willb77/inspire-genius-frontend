@@ -580,7 +580,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
                 <FileText className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Download Word
               </Button>
-              <p className="break-all text-xs text-muted-foreground" data-testid="guided-file-name-docx">
+              <p className="break-words text-xs text-muted-foreground" data-testid="guided-file-name-docx">
                 File name: {downloadFileName(doc.name, aimedAt, "docx")}
               </p>
             </div>
@@ -592,7 +592,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
                 <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 {exporting ? "Building…" : "Download PDF"}
               </Button>
-              <p className="break-all text-xs text-muted-foreground" data-testid="guided-file-name-pdf">
+              <p className="break-words text-xs text-muted-foreground" data-testid="guided-file-name-pdf">
                 File name: {downloadFileName(doc.name, aimedAt, "pdf")}
               </p>
             </div>
@@ -679,7 +679,17 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
         </div>
       ) : null}
 
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+      {/* RWO8-F2: the page's floating help launcher (SidebarScaffold, 56px at
+          24px from the viewport's right and bottom edges) sat on this footer's
+          primary button and took its clicks. 96px under the footer (mb-24)
+          keeps it above the launcher's top edge (80px up) once scrolled to the
+          end, and 80px on the right (pr-20) keeps the buttons out of the
+          launcher's column where the content runs to the viewport's edge. The
+          shared launcher itself is unchanged. */}
+      <footer
+        className="mb-24 flex flex-wrap items-center justify-between gap-3 border-t pt-4 pr-20"
+        data-testid="guided-footer"
+      >
         {step !== "purpose" ? (
           <Button
             variant="ghost"
