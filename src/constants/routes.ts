@@ -196,6 +196,7 @@ export const ROUTES = {
     BULK_IMPORT: "/company-admin/bulk-import",
     OBSERVABILITY: "/company-admin/observability",
     CULTURE: "/company-admin/culture",
+    COHORT_READOUT: "/company-admin/cohort-readout",
   },
   PRACTITIONER: {
     BASE: "/practitioner",

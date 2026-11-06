@@ -41,11 +41,58 @@ jest.mock("@/hooks/super-admin/usePrismExam", () => ({
   },
 }))
 
+// N-3: the cohort read-out status read. `enabled` is the role check; data is the server's answer.
+let mockCohortOn: boolean | undefined
+// A disabled React Query still returns CACHED data (e.g. after an account switch).
+let mockCohortCached = false
+const mockCohortEnabled = jest.fn()
+jest.mock("@/hooks/company-admin/useCohortReadout", () => ({
+  useCohortReadoutEnabled: (enabled: boolean) => {
+    mockCohortEnabled(enabled)
+    return { data: enabled || mockCohortCached ? mockCohortOn : undefined }
+  },
+}))
+
 describe("useGatedNavItems", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockWorkspaceNav.mockImplementation((items: unknown) => items)
     mockExamAccess = undefined
+    mockCohortOn = undefined
+    mockCohortCached = false
+  })
+
+  describe("Cohort Read-out item (N-3)", () => {
+    it("is added for a company-admin whose org has the switch on", () => {
+      mockCohortOn = true
+      const { result } = renderHook(() => useGatedNavItems("company-admin"))
+      expect(mockCohortEnabled).toHaveBeenCalledWith(true)
+      expect(result.current.find((i) => i.label === "Cohort Read-out")?.to).toBe("/company-admin/cohort-readout")
+    })
+
+    it("switch off or unanswered: the company-admin menu is unchanged", () => {
+      mockCohortOn = false
+      const off = renderHook(() => useGatedNavItems("company-admin")).result.current
+      mockCohortOn = undefined
+      const pending = renderHook(() => useGatedNavItems("company-admin")).result.current
+      expect(off.some((i) => i.label === "Cohort Read-out")).toBe(false)
+      expect(pending.some((i) => i.label === "Cohort Read-out")).toBe(false)
+      expect(off.map((i) => i.label)).toEqual(["Home", "Settings", "Help & Support"])
+    })
+
+    it("never asks, and never shows it, for any other role", () => {
+      mockCohortOn = true
+      const { result } = renderHook(() => useGatedNavItems("practitioner"))
+      expect(mockCohortEnabled).toHaveBeenCalledWith(false)
+      expect(result.current.some((i) => i.label === "Cohort Read-out")).toBe(false)
+    })
+
+    it("ignores a cached true for any other role", () => {
+      mockCohortOn = true
+      mockCohortCached = true
+      const { result } = renderHook(() => useGatedNavItems("practitioner"))
+      expect(result.current.some((i) => i.label === "Cohort Read-out")).toBe(false)
+    })
   })
 
   it("returns exactly the role's nav items (no launcher-vertical appends)", () => {

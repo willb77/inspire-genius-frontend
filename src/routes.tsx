@@ -185,6 +185,9 @@ const CompanyAdminAnalytics = React.lazy(() => import("@/pages/company-admin/Ana
 const CompanyAdminBulkImport = React.lazy(() => import("@/pages/company-admin/BulkImport"));
 const CompanyAdminObservability = React.lazy(() => import("@/pages/company-admin/Observability"));
 const CompanyAdminCultureDocs = React.lazy(() => import("@/pages/company-admin/CultureDocs"));
+// N-3: reachable only from the menu item the cohort_readout switch adds; the
+// server refuses every read while the switch is off for the org.
+const CompanyAdminCohortReadout = React.lazy(() => import("@/pages/company-admin/CohortReadout"));
 const SuperAdminBulkImport = React.lazy(() => import("@/pages/super-admin/BulkImport"));
 const SuperAdminObservability = React.lazy(() => import("@/pages/super-admin/Observability"));
 // Wave 2 Lane 2.B — InteractionProtocol standalone deprecated; tab embedded in MentorManagement.
@@ -708,6 +711,7 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/analytics", element: withSuspense(<CompanyAdminAnalytics />) },
       { path: "/company-admin/observability", element: withSuspense(<CompanyAdminObservability />) },
       { path: "/company-admin/culture", element: withSuspense(<CompanyAdminCultureDocs />) },
+      { path: "/company-admin/cohort-readout", element: withSuspense(<CompanyAdminCohortReadout />) },
 
       // Practitioner pages
       { path: "/practitioner/home", element: withSuspense(<PractitionerHome />) },
