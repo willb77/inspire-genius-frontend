@@ -40,6 +40,10 @@ const mockUseEnabledVerticals = jest.fn();
 jest.mock("@/hooks/super-admin/usePrismExam", () => ({
   useExamAccess: () => ({ data: undefined }),
 }));
+// N-3 cohort read-out menu gate (company-admin only): switch off, menus unchanged.
+jest.mock("@/hooks/company-admin/useCohortReadout", () => ({
+  useCohortReadoutEnabled: () => ({ data: undefined }),
+}));
 jest.mock("@/verticals/core/useEnabledVerticals", () => ({
   useEnabledVerticals: () => mockUseEnabledVerticals(),
 }));

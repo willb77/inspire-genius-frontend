@@ -1,11 +1,12 @@
 import { useMemo } from "react"
-import { ClipboardCheck } from "lucide-react"
+import { ClipboardCheck, PieChart } from "lucide-react"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole } from "@/types/roles"
 import { NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
 import { ROUTES } from "@/constants/routes"
 import { useWorkspaceNavItems, withWorkspaceVerticals } from "@/components/layout/useVerticalLauncher"
 import { useExamAccess } from "@/hooks/super-admin/usePrismExam"
+import { useCohortReadoutEnabled } from "@/hooks/company-admin/useCohortReadout"
 
 /** Roles a super-admin can grant exam access to — the server's rank gate (manager or above). */
 const EXAM_GRANTABLE_ROLES: ReadonlySet<UserRole> = new Set<UserRole>([
@@ -17,6 +18,13 @@ const EXAM_GRANTABLE_ROLES: ReadonlySet<UserRole> = new Set<UserRole>([
 
 /** Label must stay unique: SidebarScaffold keys nav items by label ("PRISM Practitioner Exam" is super-admin's). */
 const EXAM_NAV_ITEM: NavItemDef = { to: ROUTES.PRISM_EXAM, icon: ClipboardCheck, label: "PRISM Exam" }
+
+/** N-3: the company-admin's cohort read-out, present only when the org's switch is on. */
+const COHORT_READOUT_NAV_ITEM: NavItemDef = {
+  to: ROUTES.COMPANY_ADMIN.COHORT_READOUT,
+  icon: PieChart,
+  label: "Cohort Read-out",
+}
 
 /**
  * A role's own menu — its `NAV_ITEMS_BY_ROLE` list, plus the **workspace**
@@ -34,12 +42,23 @@ const EXAM_NAV_ITEM: NavItemDef = { to: ROUTES.PRISM_EXAM, icon: ClipboardCheck,
  * grant; the access read is skipped for a plain `user`, who can never have one.
  * Absent while loading or on any error, so the menu never offers a page that
  * would only say "no access".
+ *
+ * Cohort Read-out (N-3) follows the same rule for a company-admin: the status
+ * read runs for that role only, and the item appears only on `true` — with the
+ * `cohort_readout` switch off (no row), the menu is exactly as before.
  */
 export function useGatedNavItems(role: UserRole): NavItemDef[] {
   const examAccess = useExamAccess(EXAM_GRANTABLE_ROLES.has(role))
+  const cohort = useCohortReadoutEnabled(role === "company-admin")
   const granted = !!examAccess.data?.allowed && !examAccess.data?.super_admin
+  const cohortOn = role === "company-admin" && cohort.data === true
   const base = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
-  const items = useMemo(() => (granted ? withWorkspaceVerticals(base, [EXAM_NAV_ITEM]) : base), [base, granted])
+  const items = useMemo(() => {
+    const extra: NavItemDef[] = []
+    if (granted) extra.push(EXAM_NAV_ITEM)
+    if (cohortOn) extra.push(COHORT_READOUT_NAV_ITEM)
+    return extra.length ? withWorkspaceVerticals(base, extra) : base
+  }, [base, granted, cohortOn])
   return useWorkspaceNavItems(items)
 }
 
