@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { useParams } from "react-router-dom"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import PromptStudioHouse from "./house/PromptStudioHouse"
 import { useActivePrompt, usePromptVersions, useCreatePrompt, usePublishPrompt } from "@/hooks/trainer/useTrainer"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,6 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Save, Upload, Undo2, FlaskConical } from "lucide-react"
 
 export default function PromptStudio() {
+  // House style (admin switch, default OFF): the same editor without the
+  // controls that do nothing (unsaved "Sections", the dead test message box).
+  return isHouseStyleOn("admin") ? <PromptStudioHouse /> : <PromptStudioClassic />
+}
+
+function PromptStudioClassic() {
   const { agentId } = useParams<{ agentId: string }>()
   const [draftText, setDraftText] = useState("")
   const [activeTab, setActiveTab] = useState("editor")

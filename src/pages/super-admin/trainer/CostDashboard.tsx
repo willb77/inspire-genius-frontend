@@ -1,5 +1,8 @@
 import { useParams } from "react-router-dom"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { AdminHub } from "@/pages/super-admin/house/AdminHub"
+import { USAGE_HUB } from "@/pages/super-admin/house/hubs"
 import { useAgentCosts, useAgentROI, useBudgetStatus, useAuditLog, useAuditStats } from "@/hooks/trainer/useTrainer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,6 +11,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, TrendingUp, TrendingDown, Shield, Activity, BarChart3 } from "lucide-react"
 
 export default function CostDashboard() {
+  // House style (admin switch, default OFF): the "Cost per coach" tab of Usage & costs.
+  if (isHouseStyleOn("admin")) {
+    return (
+      <AdminHub hub={USAGE_HUB} active="coach">
+        <CostDashboardContent house />
+      </AdminHub>
+    )
+  }
+  return (
+    <SuperAdminLayout>
+      <CostDashboardContent />
+    </SuperAdminLayout>
+  )
+}
+
+function CostDashboardContent({ house = false }: { house?: boolean }) {
   const { agentId } = useParams<{ agentId: string }>()
 
   const { data: costsResp } = useAgentCosts(agentId || "", 30)
@@ -23,9 +42,12 @@ export default function CostDashboard() {
   const auditStats = (auditStatsResp as any)?.data
 
   return (
-    <SuperAdminLayout>
-      <div className="space-y-6 p-6">
+      <div className={house ? "space-y-6" : "space-y-6 p-6"}>
+        {house ? (
+          <h2 className="text-lg font-semibold text-foreground">Coach: {agentId}</h2>
+        ) : (
         <h1 className="text-2xl font-bold flex items-center gap-2"><DollarSign className="h-6 w-6" /> Cost & ROI Dashboard</h1>
+        )}
 
         <Tabs defaultValue="costs">
           <TabsList>
@@ -160,6 +182,5 @@ export default function CostDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </SuperAdminLayout>
   )
 }

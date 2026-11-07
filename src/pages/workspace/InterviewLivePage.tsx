@@ -7,11 +7,15 @@
  * /practitioner/*, with `audience` set by the route to pick the chrome.
  */
 import WorkspaceLayout, { type WorkspaceAudience } from "@/layouts/WorkspaceLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import InterviewHouseLinks from "@/components/interview/house/InterviewHouseLinks"
 import LiveInterviewBody from "@/components/interview/LiveInterviewBody"
 
 export default function WorkspaceInterviewLivePage({ audience }: { audience: WorkspaceAudience }) {
   return (
     <WorkspaceLayout audience={audience}>
+      {/* House style (interview area, OFF by default): links to the sibling pages. */}
+      {isHouseStyleOn("interview") && <InterviewHouseLinks audience={audience} current="live" />}
       <LiveInterviewBody />
     </WorkspaceLayout>
   )

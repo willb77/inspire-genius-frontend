@@ -1,4 +1,5 @@
-import { Check, Flag, Info, Heart, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Check, Flag, Info, Heart, Loader2 } from "lucide-react";
 /** An illustration of the WHY ladder's shape — not anyone's data. */
 const LADDER: { role: string; body: string; cls: "q" | "a" | "root" }[] = [
   { role: "Stated goal", body: "“I want to get better at leading through change.”", cls: "a" },
@@ -12,6 +13,8 @@ const LADDER: { role: string; body: string; cls: "q" | "a" | "root" }[] = [
 import { PageHead, Card, MiniLabel, CardH, StatusPill } from "@/pages/summit/components/ui";
 import { cn } from "@/lib/utils";
 import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
+import { ROUTES } from "@/constants/routes";
+import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 
 const STATUS_LABEL = { explored: "Explored", active: "In progress", todo: "Not started" } as const;
 
@@ -19,6 +22,9 @@ export default function SummitDiscovery() {
   const { data: session, isLoading, isError } = useGoalSession();
   const categories = useSummitCategories(session);
   const whyRoots = (session?.why_roots ?? []).filter((r) => r.root);
+  // House style (goals, S2a), display only: this page is read-only, so give
+  // it the way into the conversation it describes. OFF: no link, as today.
+  const house = isHouseStyleOn("goals");
 
   return (
     <div className="flex flex-col gap-[18px]">
@@ -27,6 +33,17 @@ export default function SummitDiscovery() {
         title="Discovery, not a questionnaire"
         sub="Goals Studio gathers organically across sessions. For each category it explores, probes for patterns, runs the WHY ladder to your true motivation, then converts the discussion into candidate goals."
       />
+
+      {house && (
+        <div>
+          <Link
+            to={ROUTES.MY_GOALS.INTERVIEW}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#127A8A] px-3.5 py-2 text-[13px] font-bold text-white hover:bg-[#0E5F6B]"
+          >
+            Talk it through <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          </Link>
+        </div>
+      )}
 
       {isLoading && (
         <div className="flex items-center gap-2 text-[13.5px] text-[#13294B]/70">

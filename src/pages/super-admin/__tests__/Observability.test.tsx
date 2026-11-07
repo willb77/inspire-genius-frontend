@@ -1,6 +1,7 @@
 /**
  * @jest-environment jsdom
  */
+import { MemoryRouter } from "react-router-dom";
 
 import { render, screen } from "@testing-library/react";
 import Observability from "../Observability";
@@ -97,3 +98,28 @@ describe("SuperAdmin Observability", () => {
     expect(screen.getByText("Agent Observability")).toBeInTheDocument();
   });
 });
+
+describe("SuperAdmin Observability — house style switch", () => {
+  afterEach(() => localStorage.removeItem("house_style_admin"))
+
+  it("switch OFF (default): today's heading and help text", () => {
+    render(<MemoryRouter><Observability /></MemoryRouter>)
+    expect(screen.getByText("Agent Observability")).toBeInTheDocument()
+    expect(screen.getByText("response_observability")).toBeInTheDocument()
+    expect(screen.queryByRole("navigation", { name: "Usage & costs sections" })).not.toBeInTheDocument()
+  })
+
+  it("switch ON: the AI usage & health tab, plain words, a labelled Refresh", () => {
+    const refetch = jest.fn()
+    ;(useDashboardMetrics as jest.Mock).mockReturnValue({ data: undefined, isLoading: false, refetch })
+    localStorage.setItem("house_style_admin", "true")
+    render(<MemoryRouter><Observability /></MemoryRouter>)
+    expect(screen.getByRole("link", { name: "AI usage & health" })).toHaveAttribute("aria-current", "page")
+    expect(screen.queryByText("Agent Observability")).not.toBeInTheDocument()
+    expect(screen.queryByText("response_observability")).not.toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Task coaches" })).toBeInTheDocument()
+    expect(screen.getByTestId("cost-board-mock-platform")).toBeInTheDocument()
+    screen.getByRole("button", { name: "Refresh" }).click()
+    expect(refetch).toHaveBeenCalled()
+  })
+})
