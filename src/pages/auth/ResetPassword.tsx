@@ -7,6 +7,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { ROUTES } from "@/constants/routes"
 import { useResetPassword } from "@/hooks/auth/useResetPassword"
 import { useTranslation } from "react-i18next"
+import { PASSWORD_RULE_TEXT, passwordMeetsRule } from "@/lib/house/passwordRule"
+import { PasswordChecklist } from "@/components/shared/house/PasswordChecklist"
 
 type FormValues = {
   new_password: string
@@ -58,10 +60,13 @@ export default function ResetPassword() {
           placeholder={t('resetPassword.newPassword')}
           {...register("new_password", {
             required: t('resetPassword.newPasswordRequired'),
-            minLength: { value: 6, message: t('resetPassword.minLength') },
+            validate: (val) => passwordMeetsRule(val) || PASSWORD_RULE_TEXT,
           })}
           error={errors?.new_password?.message}
         />
+        {newPasswordValue && !passwordMeetsRule(newPasswordValue) && (
+          <PasswordChecklist password={newPasswordValue} />
+        )}
 
         <PasswordField
           placeholder={t('resetPassword.confirmPassword')}

@@ -730,14 +730,14 @@ describe("AccountSettings Component", () => {
     test("submits change password form with valid data", async () => {
       const mockHandleSubmit = makeHandleSubmitMock<ChangePasswordFormValues>({
         current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT_SHORT as string,
-        new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
-        confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
+        new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+        confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
       });
 
       const changeForm = createMockForm<ChangePasswordFormValues>({
         handleSubmit: mockHandleSubmit,
         watch: jest.fn((field?: string) => {
-          if (field === "new_password") return process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string;
+          if (field === "new_password") return process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string;
           return "";
         }) as unknown as UseFormWatch<ChangePasswordFormValues>,
       });
@@ -755,8 +755,8 @@ describe("AccountSettings Component", () => {
       await waitFor(() => {
         expect(props.onChangePassword).toHaveBeenCalledWith({
           current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT_SHORT as string,
-          new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
-          confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
+          new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+          confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
         });
       });
     });
@@ -768,13 +768,13 @@ describe("AccountSettings Component", () => {
 
       const mockHandleSubmit = makeHandleSubmitMockAsync<ChangePasswordFormValues>({
         current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_WRONG_SHORT as string,
-        new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
-        confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
+        new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+        confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
       });
 
       const changeForm = createMockForm<ChangePasswordFormValues>({
         handleSubmit: mockHandleSubmit,
-        watch: jest.fn(() => process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string) as unknown as UseFormWatch<ChangePasswordFormValues>,
+        watch: jest.fn(() => process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string) as unknown as UseFormWatch<ChangePasswordFormValues>,
       });
 
       const props = createBaseProps({

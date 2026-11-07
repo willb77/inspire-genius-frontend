@@ -158,6 +158,32 @@ describe("ResetPassword Component", () => {
     expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
   });
 
+  test("blocks a 7-character password on the page, before the server sees it", async () => {
+    renderComponent();
+
+    fireEvent.change(screen.getByLabelText("Enter New Password"), { target: { value: "Abcdef1" } });
+    fireEvent.change(screen.getByLabelText("Confirm New Password"), { target: { value: "Abcdef1" } });
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: /reset password/i }))
+    );
+
+    expect(screen.getByText("At least 8 characters, with a capital, a small letter and a number.")).toBeInTheDocument();
+    expect(screen.getByText("At least 8 characters").closest("li")).toHaveAttribute("data-met", "false");
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+  });
+
+  test("accepts 8 characters with no symbol (the server's rule)", async () => {
+    renderComponent();
+
+    fireEvent.change(screen.getByLabelText("Enter New Password"), { target: { value: "Abcdefg1" } });
+    fireEvent.change(screen.getByLabelText("Confirm New Password"), { target: { value: "Abcdefg1" } });
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: /reset password/i }))
+    );
+
+    expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+  });
+
   /* -------------------------------------------------------------------
      API CALL TEST
      Ensures correct payload is passed to mutateAsync()

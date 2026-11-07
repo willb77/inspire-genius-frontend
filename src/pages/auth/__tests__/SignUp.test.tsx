@@ -179,8 +179,22 @@ describe("SignUp Component", () => {
     fireEvent.focus(pwd);
     fireEvent.change(pwd, { target: { value: process.env.FAKE_TEST_SIGNUP_WEAK_PASSWORD as string } });
 
-    expect(screen.getByText(/Uppercase/)).toBeInTheDocument();
-    expect(screen.getByText(/Number/)).toBeInTheDocument();
+    for (const label of ["A capital letter", "A number"]) {
+      expect(screen.getByText(label).closest("li")).toHaveAttribute("data-met", "false");
+    }
+    expect(screen.getByText("A small letter").closest("li")).toHaveAttribute("data-met", "true");
+  });
+
+  test("a symbol is not required, and 7 characters is not enough", () => {
+    renderSignUp();
+    const pwd = screen.getByLabelText("password");
+    fireEvent.focus(pwd);
+
+    fireEvent.change(pwd, { target: { value: "Abcdefg1" } });
+    expect(screen.queryByRole("list", { name: "Password rules" })).not.toBeInTheDocument();
+
+    fireEvent.change(pwd, { target: { value: "Abcdef1" } });
+    expect(screen.getByText("At least 8 characters").closest("li")).toHaveAttribute("data-met", "false");
   });
 
   /* -----------------------------------------------------------------------
