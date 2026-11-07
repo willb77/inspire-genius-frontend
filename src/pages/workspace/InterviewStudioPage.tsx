@@ -9,27 +9,19 @@ import WorkspaceLayout, { type WorkspaceAudience } from "@/layouts/WorkspaceLayo
 import StudioInterviewBody from "@/components/interview/StudioInterviewBody"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import InterviewHouseLinks from "@/components/interview/house/InterviewHouseLinks"
+import InterviewRunBody from "@/components/interview/house/run/InterviewRunBody"
 
 /**
- * House style (interview area, OFF by default): `?session=<id>` opens a stored
- * interview, the way Live Interview's address already does, so a row in the
- * manager's list can open it. Read from the address directly so the switch-off
- * page needs nothing it did not need before.
+ * House style (interview area, OFF by default): the one interview build,
+ * starting on "Your own questions". It reads `?session=<id>` itself, so a row
+ * in the manager's list opens here. Switch off, the Studio body as today.
  */
-function sessionFromAddress(): string | undefined {
-  try {
-    return new URLSearchParams(window.location.search).get("session") || undefined
-  } catch {
-    return undefined
-  }
-}
-
 export default function WorkspaceInterviewStudioPage({ audience }: { audience: WorkspaceAudience }) {
   const house = isHouseStyleOn("interview")
   return (
     <WorkspaceLayout audience={audience}>
       {house && <InterviewHouseLinks audience={audience} current="studio" />}
-      <StudioInterviewBody openSessionId={house ? sessionFromAddress() : undefined} />
+      {house ? <InterviewRunBody initialKind="own" /> : <StudioInterviewBody />}
     </WorkspaceLayout>
   )
 }

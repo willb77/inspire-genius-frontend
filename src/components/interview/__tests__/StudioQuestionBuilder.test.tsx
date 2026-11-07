@@ -177,3 +177,24 @@ describe("S-3 — the development-only slot", () => {
     expect(onKindChange).toHaveBeenLastCalledWith("general")
   })
 })
+
+describe("S4b — the style the builder starts on", () => {
+  function renderWith(initialKind?: "general" | "hiring") {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <StudioQuestionBuilder onConfirm={jest.fn()} initialKind={initialKind} />
+      </QueryClientProvider>,
+    )
+  }
+
+  it("starts on development / discovery when no style is given (today's behaviour)", () => {
+    renderWith()
+    expect(screen.queryByText(/requisition \/ role opening/i)).not.toBeInTheDocument()
+  })
+
+  it("starts on selection when the person already chose that kind", () => {
+    renderWith("hiring")
+    expect(screen.getByText(/requisition \/ role opening/i)).toBeInTheDocument()
+  })
+})

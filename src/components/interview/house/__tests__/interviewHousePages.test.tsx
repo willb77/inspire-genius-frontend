@@ -42,6 +42,15 @@ jest.mock("@/components/interview/StudioInterviewBody", () => ({
     return <div data-testid="body">interview-studio</div>
   },
 }))
+// S4b: with the switch on, the interviewer pages render the one interview build.
+const runProps = jest.fn()
+jest.mock("@/components/interview/house/run/InterviewRunBody", () => ({
+  __esModule: true,
+  default: (p: { initialKind: string }) => {
+    runProps(p)
+    return <div data-testid="body">interview-run {p.initialKind}</div>
+  },
+}))
 let mockRole: string | undefined = "manager"
 jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: mockRole ? { role: mockRole } : null }),
@@ -71,7 +80,9 @@ describe("interviewer pages — links to the sibling pages", () => {
       expect(screen.queryByRole("navigation", { name: "Interview pages" })).not.toBeInTheDocument()
       unmount()
     }
-    expect(studioProps).toHaveBeenCalledWith({ openSessionId: undefined })
+    // Today's Studio body, handed nothing new.
+    expect(studioProps).toHaveBeenCalledWith({})
+    expect(runProps).not.toHaveBeenCalled()
   })
 
   it("ON: a manager's Studio page links to the list and to Prepare questions", () => {
@@ -81,17 +92,11 @@ describe("interviewer pages — links to the sibling pages", () => {
     expect(screen.getByRole("link", { name: "Prepare questions" })).toHaveAttribute("href", "/manager/interview-prep")
   })
 
-  it("ON: Studio is handed the session the address names", () => {
-    localStorage.setItem("house_style_interview", "true")
-    window.history.replaceState(null, "", "/manager/interview-studio?session=s-9")
-    inRouter(<WorkspaceInterviewStudioPage audience="manager" />)
-    expect(studioProps).toHaveBeenCalledWith({ openSessionId: "s-9" })
-  })
-
-  it("ON: no session in the address hands none", () => {
+  it("ON (S4b): Studio's address renders the one build, starting on Your own questions", () => {
     localStorage.setItem("house_style_interview", "true")
     inRouter(<WorkspaceInterviewStudioPage audience="practitioner" />)
-    expect(studioProps).toHaveBeenCalledWith({ openSessionId: undefined })
+    expect(runProps).toHaveBeenCalledWith({ initialKind: "own" })
+    expect(studioProps).not.toHaveBeenCalled()
   })
 
   it("ON: a practitioner's Prep page links back to running an interview, and there is no list link", () => {
@@ -105,14 +110,14 @@ describe("interviewer pages — links to the sibling pages", () => {
     expect(screen.getByTestId("practitioner-layout")).toBeInTheDocument()
   })
 
-  it("ON: Live keeps its body and gains the links", () => {
+  it("ON (S4b): Live's address renders the one build, starting on Hiring, with the links", () => {
     localStorage.setItem("house_style_interview", "true")
     inRouter(<WorkspaceInterviewLivePage audience="practitioner" />)
     expect(screen.getByRole("link", { name: "Prepare questions" })).toHaveAttribute(
       "href",
       "/practitioner/interview-prep",
     )
-    expect(screen.getByTestId("body")).toHaveTextContent("interview-live")
+    expect(screen.getByTestId("body")).toHaveTextContent("interview-run hiring")
   })
 
   it("lists links per audience and page", () => {

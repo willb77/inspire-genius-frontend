@@ -10,13 +10,16 @@ import WorkspaceLayout, { type WorkspaceAudience } from "@/layouts/WorkspaceLayo
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import InterviewHouseLinks from "@/components/interview/house/InterviewHouseLinks"
 import LiveInterviewBody from "@/components/interview/LiveInterviewBody"
+import InterviewRunBody from "@/components/interview/house/run/InterviewRunBody"
 
 export default function WorkspaceInterviewLivePage({ audience }: { audience: WorkspaceAudience }) {
+  // House style (interview area, OFF by default): links to the sibling pages,
+  // and the one interview build starting on "Hiring". Off: Live as today.
+  const house = isHouseStyleOn("interview")
   return (
     <WorkspaceLayout audience={audience}>
-      {/* House style (interview area, OFF by default): links to the sibling pages. */}
-      {isHouseStyleOn("interview") && <InterviewHouseLinks audience={audience} current="live" />}
-      <LiveInterviewBody />
+      {house && <InterviewHouseLinks audience={audience} current="live" />}
+      {house ? <InterviewRunBody initialKind="hiring" /> : <LiveInterviewBody />}
     </WorkspaceLayout>
   )
 }

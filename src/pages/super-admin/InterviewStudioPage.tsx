@@ -4,11 +4,14 @@
  */
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import StudioInterviewBody from "@/components/interview/StudioInterviewBody"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import InterviewRunBody from "@/components/interview/house/run/InterviewRunBody"
 
 export default function SuperAdminInterviewStudioPage() {
+  // House style (interview area, OFF by default): the one interview build.
   return (
     <SuperAdminLayout>
-      <StudioInterviewBody />
+      {isHouseStyleOn("interview") ? <InterviewRunBody initialKind="own" /> : <StudioInterviewBody />}
     </SuperAdminLayout>
   )
 }
