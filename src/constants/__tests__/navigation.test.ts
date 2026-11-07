@@ -585,6 +585,13 @@ describe("practitioner nav doors (X-3, Practitioner Programme)", () => {
     expect(hasAccess("practitioner", ROUTES.PRACTITIONER.PRISM_CLIENTS)).toBe(true)
   })
 
+  it("gives the practitioner a door to My PRISM Practice (PI-2) they can pass through", () => {
+    const item = NAV_ITEMS_BY_ROLE.practitioner.find((i) => i.to === ROUTES.PRACTITIONER.PRACTICE)
+    expect(item?.label).toBe("My PRISM Practice")
+    expect(ROUTES.PRACTITIONER.PRACTICE).toBe("/practitioner/practice")
+    expect(hasAccess("practitioner", ROUTES.PRACTITIONER.PRACTICE)).toBe(true)
+  })
+
   it("has no door to the retired credits page", () => {
     expect(NAV_ITEMS_BY_ROLE.practitioner.some((i) => i.to === "/practitioner/credits")).toBe(false)
   })
