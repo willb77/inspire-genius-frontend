@@ -8,6 +8,8 @@ import { Label } from "../ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import PasswordField from "@/components/shared/inputs/PasswordField";
+import { PASSWORD_RULE_TEXT, passwordMeetsRule } from "@/lib/house/passwordRule";
+import { PasswordChecklist } from "@/components/shared/house/PasswordChecklist";
 import { DatePicker } from "@/components/ui/date-picker";
 import { parse, isValid, format as formatDate } from "date-fns";
 import { ROLES } from "@/constants/routes";
@@ -294,9 +296,12 @@ export default function AccountSettings({
 
                 <PasswordField
                   placeholder="Enter New Password"
-                  {...register("new_password", { required: "New password is required", minLength: { value: 6, message: "Password must be at least 6 characters long" } })}
+                  {...register("new_password", { required: "New password is required", validate: (val) => passwordMeetsRule(val) || PASSWORD_RULE_TEXT })}
                   error={errors?.new_password?.message}
                 />
+                {newPasswordValue && !passwordMeetsRule(newPasswordValue) && (
+                  <PasswordChecklist password={newPasswordValue} />
+                )}
 
                 <PasswordField
                   placeholder="Confirm New Password"

@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/useAuth";
 import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
 import { useForm } from "react-hook-form";
 import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 import { useTranslation } from "react-i18next";
+import { passwordMeetsRule } from "@/lib/house/passwordRule";
+import { PasswordChecklist } from "@/components/shared/house/PasswordChecklist";
 
 export default function SignUp() {
   const { signup, isLoading } = useAuth();
@@ -47,20 +49,7 @@ export default function SignUp() {
   const confirm = watch("confirm") ?? "";
   const [pwdFocused, setPwdFocused] = useState(false);
   const terms = watch("terms") ?? false;
-  const rules = useMemo(() => ({
-    hasUpper: /[A-Z]/.test(password),
-    hasLower: /[a-z]/.test(password),
-    hasNumber: /\d/.test(password),
-    hasSpecial: /[^A-Za-z0-9]/.test(password),
-  }), [password]);
-  const unmet: string[] = useMemo(() => {
-    const arr: string[] = []
-    if (!rules.hasUpper) arr.push('Uppercase')
-    if (!rules.hasLower) arr.push('Lowercase')
-    if (!rules.hasNumber) arr.push('Number')
-    if (!rules.hasSpecial) arr.push('Special')
-    return arr
-  }, [rules])
+  const passwordOk = passwordMeetsRule(password);
 
   // Submit handler
   const onSubmit = async (values: { email: string; password: string; confirm: string; terms: boolean }) => {
@@ -84,8 +73,8 @@ export default function SignUp() {
 
         <div role="group" aria-label="Password" onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
           <PasswordField value={password} onChange={(v) => setValue("password", v, { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
-          {(pwdFocused || dirtyFields.password) && password && unmet.length > 0 && (
-            <p className="text-left mt-2 text-xs text-red-500">At least one {unmet.join(', ')}</p>
+          {(pwdFocused || dirtyFields.password) && password && !passwordOk && (
+            <PasswordChecklist password={password} />
           )}
         </div>
 
@@ -104,7 +93,7 @@ export default function SignUp() {
           </Label>
         </div>
 
-        <Button type="submit" className="w-full mt-2" disabled={isLoading || !email || !password || !confirm || unmet.length > 0 || password !== confirm || !terms}>
+        <Button type="submit" className="w-full mt-2" disabled={isLoading || !email || !password || !confirm || !passwordOk || password !== confirm || !terms}>
           {isLoading ? t('signup.creating') : t('signup.submit')}
         </Button>
       </form>
