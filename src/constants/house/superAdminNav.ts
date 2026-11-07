@@ -25,10 +25,8 @@ import {
   Brain,
   Briefcase,
   Building2,
-  ClipboardCheck,
   ClipboardList,
   Eye,
-  FileSpreadsheet,
   Filter,
   FolderOpen,
   GraduationCap,
@@ -40,10 +38,10 @@ import {
   LifeBuoy,
   MessageSquarePlus,
   Network,
+  PieChart,
   SearchCheck,
   Settings,
   ShieldCheck,
-  Target,
   UserCheck,
   UserPlus,
   Users,
@@ -100,10 +98,9 @@ export const HOUSE_SUPER_ADMIN_SECTIONS: NavSectionDef[] = [
     label: "PRISM",
     collapsible: true,
     items: [
-      { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM scores" },
-      { to: ROUTES.SUPER_ADMIN.PRISM_EXAM, icon: ClipboardCheck, label: "PRISM exam" },
-      { to: ROUTES.SUPER_ADMIN.PRISM_ACCURACY_SCORER, icon: Target, label: "Accuracy check" },
-      { to: ROUTES.SUPER_ADMIN.PRISM_CSV_CONVERTER, icon: FileSpreadsheet, label: "Convert a report" },
+      // One entry: the PRISM page's tabs (PRISM_HUB) reach the exam, the
+      // accuracy check and the report converter.
+      { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM tools" },
     ],
   },
   {
@@ -124,6 +121,7 @@ export const HOUSE_SUPER_ADMIN_SECTIONS: NavSectionDef[] = [
       { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Usage reports" },
       { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: plain("observability") },
       { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: plain("rtbf") },
+      { to: ROUTES.SUPER_ADMIN.COHORT_READOUT, icon: PieChart, label: "Cohort read-out" },
     ],
   },
   {
