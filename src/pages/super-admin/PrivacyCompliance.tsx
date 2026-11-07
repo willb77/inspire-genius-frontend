@@ -23,6 +23,11 @@ import {
   useRetentionSweep,
 } from "@/hooks/privacy/usePrivacy"
 import { toast } from "sonner"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { plain } from "@/lib/house/glossary"
+import { PageHeader } from "@/components/shared/house/PageHeader"
+import { PageState } from "@/components/shared/house/PageState"
+import { DeleteConfirm } from "@/components/shared/house/DeleteConfirm"
 import {
   Shield,
   Trash2,
@@ -52,7 +57,9 @@ export default function PrivacyCompliance() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
 
-  const { data: requestsData, isPending, refetch } = useDeletionRequests(
+  // House style (area `admin`, default OFF) — display only.
+  const house = isHouseStyleOn("admin")
+  const { data: requestsData, isPending, isError, refetch } = useDeletionRequests(
     statusFilter === "all" ? undefined : statusFilter,
   )
   const { data: manifestData, isPending: manifestLoading } = useDeletionManifest(selectedRequestId)
@@ -70,6 +77,18 @@ export default function PrivacyCompliance() {
     })
   }
 
+  // House style: the sweep deletes data, so it only runs after the person
+  // confirms in the shared dialog. Same mutation as the classic button.
+  const handleConfirmedSweep = async () => {
+    try {
+      const resp = await sweepMutation.mutateAsync()
+      toast.success(resp.message)
+      refetch()
+    } catch {
+      toast.error("We couldn't delete expired data. Try again.")
+    }
+  }
+
   // Summary stats
   const totalRequests = requests.length
   const completedCount = requests.filter((r) => r.status === "completed").length
@@ -79,6 +98,30 @@ export default function PrivacyCompliance() {
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
+        {house ? (
+          <PageHeader
+            title={plain("rtbf")}
+            description="Requests from people to have their data deleted, and the clean-up of data past its keep-by date."
+            action={
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isPending}>
+                  <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Refresh
+                </Button>
+                <DeleteConfirm
+                  thing="expired data"
+                  onConfirm={handleConfirmedSweep}
+                  trigger={
+                    <Button variant="destructive" size="sm" disabled={sweepMutation.isPending}>
+                      <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                      {sweepMutation.isPending ? "Deleting…" : "Delete expired data…"}
+                    </Button>
+                  }
+                />
+              </div>
+            }
+          />
+        ) : (
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
@@ -110,6 +153,7 @@ export default function PrivacyCompliance() {
             </Button>
           </div>
         </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -164,6 +208,14 @@ export default function PrivacyCompliance() {
           <CardContent>
             {isPending ? (
               <LoadingSkeleton />
+            ) : house && isError ? (
+              <PageState
+                kind="error"
+                message="We couldn't load data deletion requests."
+                onRetry={() => void refetch()}
+              />
+            ) : house && requests.length === 0 ? (
+              <PageState kind="empty" title="No data deletion requests yet" />
             ) : requests.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">
                 No RTBF deletion requests found.
