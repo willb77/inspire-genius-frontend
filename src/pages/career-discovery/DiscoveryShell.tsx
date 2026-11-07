@@ -10,6 +10,8 @@ import {
 } from "@/hooks/career-discovery/useCareerDiscovery"
 import { DiscoveryError, DiscoveryLoading, NoticeCard } from "./DiscoveryParts"
 import type { DiscoveryContext } from "./discoveryContext"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { HouseDiscoveryNav } from "./house/HouseDiscoveryNav"
 
 /**
  * Career & Education Discovery's pathless layout: the in-vertical nav, then
@@ -98,7 +100,7 @@ function Gate() {
 export default function DiscoveryShell() {
   return (
     <div className="p-6">
-      <DiscoveryNav />
+      {isHouseStyleOn("career-education") ? <HouseDiscoveryNav /> : <DiscoveryNav />}
       <Gate />
     </div>
   )

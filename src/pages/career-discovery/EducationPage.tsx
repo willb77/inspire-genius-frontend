@@ -13,6 +13,7 @@ import ComingNextPage from "./ComingNextPage"
 import { DiscoveryError, DiscoveryLoading, NoticeCard, StageHeader } from "./DiscoveryParts"
 import { ProgramsAtSchool } from "./ProgramsAtSchool"
 import { useDiscoveryContext } from "./discoveryContext"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 
 /**
  * Education paths (DISC-2). The server decides whether this stage exists on
@@ -59,6 +60,8 @@ function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean
     )
   }
 
+  // House style: a greyed-out button always says why, beside it.
+  const house = isHouseStyleOn("career-education")
   const choose = (path: EducationPath, level: number) =>
     setQuery({ cip: path.field.code, level, state })
 
@@ -110,12 +113,18 @@ function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean
                       size="sm"
                       variant="outline"
                       disabled={!state}
+                      aria-describedby={house && !state ? `cd-schools-why-${p.id}` : undefined}
                       onClick={() => choose(p, c.level)}
                     >
                       Schools: {c.title}
                     </Button>
                   ))}
                 </div>
+                {house && !state ? (
+                  <p id={`cd-schools-why-${p.id}`} className="text-xs text-muted-foreground">
+                    Choose a state above first. Schools are listed by state.
+                  </p>
+                ) : null}
                 {query && query.cip === p.field.code && p.credentials.some((c) => c.level === query.level) ? (
                   <SchoolList query={query} costOn={costOn} />
                 ) : null}
