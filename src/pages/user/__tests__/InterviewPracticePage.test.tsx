@@ -36,8 +36,23 @@ jest.mock("react-router-dom", () => ({
   useLocation: () => ({ state: null, pathname: "/interview-practice" }),
 }))
 
-jest.mock("@/context/useAuth", () => ({
+// House style: the signed-in role is unset for every classic test (as before)
+// and set only by the house-style cases at the end of this file.
+let mockAuthRole: string | undefined
+jest.mock("@/context/useAuth", () => {
+  const classic = {
   useAuth: () => ({ user: { name: "Candidate One", email: "c@example.test" } }),
+  }
+  return {
+    useAuth: () =>
+      mockAuthRole ? { user: { ...classic.useAuth().user, role: mockAuthRole } } : classic.useAuth(),
+  }
+})
+jest.mock("@/layouts/UnifiedLayout", () => ({
+  __esModule: true,
+  default: ({ role, children }: { role: string; children: ReactNode }) => (
+    <div data-testid={`unified-layout-${role}`}>{children}</div>
+  ),
 }))
 
 jest.mock("@/components/interview/InterviewFrameForm", () => ({
@@ -554,3 +569,57 @@ describe("3.4 P4 — scored practice", () => {
   })
 })
 
+describe("house style (interview area) — the switch", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    mockAuthRole = undefined
+  })
+  afterEach(() => {
+    mockAuthRole = undefined
+  })
+  afterAll(() => localStorage.clear())
+
+  const endEmpty = async (user: ReturnType<typeof userEvent.setup>) => {
+    await start(user)
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    await screen.findByText(/ended the interview before answering any questions/i)
+  }
+
+  it("OFF: today's words, title and chrome, whatever the role", async () => {
+    mockAuthRole = "manager"
+    const user = userEvent.setup()
+    render(<InterviewPracticePage />)
+    expect(screen.getByText(/supportive coaching — no scores,/)).toBeInTheDocument()
+    expect(screen.queryByTestId("unified-layout-manager")).not.toBeInTheDocument()
+    await endEmpty(user)
+    expect(screen.getByRole("heading", { name: "Interview Findings" })).toBeInTheDocument()
+  })
+
+  it("ON without scored practice: says there is no score, and titles the read-out plainly", async () => {
+    localStorage.setItem("house_style_interview", "true")
+    const user = userEvent.setup()
+    render(<InterviewPracticePage />)
+    expect(screen.getByText(/There is no score/)).toBeInTheDocument()
+    expect(screen.queryByText(/supportive coaching — no scores,/)).not.toBeInTheDocument()
+    await endEmpty(user)
+    expect(screen.getByRole("heading", { name: "How it went" })).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Interview Findings" })).not.toBeInTheDocument()
+  })
+
+  it("ON with scored practice: no longer promises no score", () => {
+    localStorage.setItem("house_style_interview", "true")
+    scoredOn = true
+    render(<InterviewPracticePage />)
+    expect(screen.getByText(/practice result at the end/)).toBeInTheDocument()
+    expect(screen.queryByText(/no score/i)).not.toBeInTheDocument()
+  })
+
+  it("ON: a manager keeps the manager's own menu", () => {
+    localStorage.setItem("house_style_interview", "true")
+    mockAuthRole = "manager"
+    render(<InterviewPracticePage />)
+    expect(screen.getByTestId("unified-layout-manager")).toContainElement(
+      screen.getByRole("heading", { name: /^role play$/i }),
+    )
+  })
+})
