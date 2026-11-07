@@ -3,7 +3,7 @@ import { useForm, type UseFormRegisterReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { z } from "zod"
 import { toast } from "sonner"
-import { Download, Link2, Loader2, Pencil, Power, RefreshCw, Upload, UserPlus } from "lucide-react"
+import { Download, Link2, Loader2, PanelRightOpen, Pencil, Power, RefreshCw, Upload, UserPlus } from "lucide-react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import {
   useAddPractitioner,
@@ -39,6 +39,7 @@ import {
 } from "@/services/super-admin/practitioner-registry/registryErrors"
 import type { RegistryError, RegistryRow } from "@/types/practitioner-registry"
 import { addSchema, assignSchema, CSV_TEMPLATE, fieldsSchema } from "./practitionerRegistry.schemas"
+import { PractitionerDetailDrawer } from "./PractitionerDetailDrawer"
 
 /**
  * Super-admin → Practitioner Registry (Practitioner Programme PC-1a).
@@ -467,12 +468,23 @@ function RegenerateCodeDialog({ row, onClose }: { row: RegistryRow; onClose: () 
   )
 }
 
+type RegistryTab = "active" | "pending" | "deactivated"
+
+const EMPTY_TEXT: Record<Exclude<RegistryTab, "pending">, string> = {
+  active: "No practitioners in the registry yet.",
+  deactivated: "No deactivated practitioners.",
+}
+
 function RegistryTable() {
-  const [includeInactive, setIncludeInactive] = useState(false)
+  // PI-6: tabs replace the "Show deactivated" switch. The Deactivated tab asks
+  // for every row and keeps the inactive ones; Active is the default list.
+  const [tab, setTab] = useState<RegistryTab>("active")
   const [editing, setEditing] = useState<RegistryRow | null>(null)
   const [regenerating, setRegenerating] = useState<RegistryRow | null>(null)
-  const registry = useRegistry(includeInactive)
+  const [opened, setOpened] = useState<RegistryRow | null>(null)
+  const registry = useRegistry(tab === "deactivated")
   const setActive = useSetPractitionerActive()
+  const rows = (registry.data ?? []).filter((row) => (tab === "deactivated" ? !row.active : row.active))
 
   const toggle = (row: RegistryRow) =>
     setActive.mutate(
@@ -490,14 +502,22 @@ function RegistryTable() {
           <CardTitle className="text-base">Registry</CardTitle>
           <CardDescription>A deactivated practitioner disappears from the assignment picker.</CardDescription>
         </div>
-        <div className="flex items-center gap-2">
-          <Switch id="include-inactive" checked={includeInactive} onCheckedChange={setIncludeInactive} />
-          <Label htmlFor="include-inactive" className="text-sm">
-            Show deactivated
-          </Label>
-        </div>
       </CardHeader>
       <CardContent>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as RegistryTab)}>
+          <TabsList aria-label="Registry status">
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="pending">Pending invites</TabsTrigger>
+            <TabsTrigger value="deactivated">Deactivated</TabsTrigger>
+          </TabsList>
+          <TabsContent value="pending">
+            <p className="text-sm text-muted-foreground">
+              Inviting a practitioner who has no account yet is coming in a later release. Invitations that have
+              not been accepted will be listed here.
+            </p>
+          </TabsContent>
+          {(["active", "deactivated"] as const).map((value) => (
+            <TabsContent key={value} value={value}>
         {registry.isLoading ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading registry…
@@ -506,8 +526,8 @@ function RegistryTable() {
           <p role="alert" className="text-sm text-destructive">
             {registryErrorSummary(registry.error, "Could not load the registry")}
           </p>
-        ) : (registry.data ?? []).length === 0 ? (
-          <p className="text-sm text-muted-foreground">No practitioners in the registry yet.</p>
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{EMPTY_TEXT[value]}</p>
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -525,7 +545,7 @@ function RegistryTable() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(registry.data ?? []).map((row) => (
+                {rows.map((row) => (
                   <TableRow key={row.practitionerSub}>
                     <TableCell>
                       <div className="font-medium">{row.displayName}</div>
@@ -553,6 +573,14 @@ function RegistryTable() {
                       <Badge variant={row.active ? "default" : "secondary"}>{row.active ? "Active" : "Deactivated"}</Badge>
                     </TableCell>
                     <TableCell className="space-x-1 text-right whitespace-nowrap">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setOpened(row)}
+                        aria-label={`Open details for ${row.displayName}`}
+                      >
+                        <PanelRightOpen className="h-4 w-4" />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditing(row)} aria-label={`Edit ${row.displayName}`}>
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -572,9 +600,13 @@ function RegistryTable() {
             </Table>
           </div>
         )}
+            </TabsContent>
+          ))}
+        </Tabs>
       </CardContent>
       {editing && <EditDialog row={editing} onClose={() => setEditing(null)} />}
       {regenerating && <RegenerateCodeDialog row={regenerating} onClose={() => setRegenerating(null)} />}
+      {opened && <PractitionerDetailDrawer row={opened} onClose={() => setOpened(null)} />}
     </Card>
   )
 }

@@ -52,6 +52,18 @@ jest.mock("@/hooks/super-admin/usePractitionerRegistry", () => ({
   useRegeneratePractitionerCode: () => ({ mutate: regenMutate, isPending: false, error: regenError }),
 }))
 
+const detailArgs = jest.fn()
+jest.mock("@/hooks/super-admin/usePractitionerDetail", () => ({
+  usePractitionerDetail: (sub: string | null) => {
+    detailArgs(sub)
+    return {
+      data: { practitionerSub: sub, active: true, linkedClients: 4, surveysOnSite30d: 7, surveyWindowDays: 30 },
+      isLoading: false,
+      error: undefined,
+    }
+  },
+}))
+
 const axios422 = (detail: unknown) => ({ response: { status: 422, data: { detail } } })
 
 const ROW: RegistryRow = {
@@ -251,11 +263,44 @@ describe("PractitionerRegistry", () => {
     expect(await within(dialog).findByRole("alert", { name: "Edit errors" })).toHaveTextContent("country: bad")
   })
 
-  it("toggles deactivated rows into the list", async () => {
+  it("the Deactivated tab asks for every row and shows only the deactivated ones", async () => {
+    rows = [ROW, { ...ROW, practitionerSub: "p2", displayName: "Dee Gone", active: false }]
     const user = userEvent.setup()
     render(<PractitionerRegistry />)
-    await user.click(screen.getByLabelText("Show deactivated"))
+    expect(screen.getByRole("tab", { name: "Active" })).toHaveAttribute("aria-selected", "true")
+    expect(screen.getByText("Alice Able")).toBeInTheDocument()
+    expect(screen.queryByText("Dee Gone")).not.toBeInTheDocument()
+    await user.click(screen.getByRole("tab", { name: "Deactivated" }))
     expect(registryArgs).toHaveBeenLastCalledWith(true)
+    expect(screen.getByText("Dee Gone")).toBeInTheDocument()
+    expect(screen.queryByText("Alice Able")).not.toBeInTheDocument()
+  })
+
+  it("the Deactivated tab has its own honest empty state", async () => {
+    const user = userEvent.setup()
+    render(<PractitionerRegistry />)
+    await user.click(screen.getByRole("tab", { name: "Deactivated" }))
+    expect(screen.getByText("No deactivated practitioners.")).toBeInTheDocument()
+  })
+
+  it("the Pending invites tab is an explained shell, not an empty table", async () => {
+    const user = userEvent.setup()
+    render(<PractitionerRegistry />)
+    await user.click(screen.getByRole("tab", { name: "Pending invites" }))
+    expect(screen.getByText(/coming in a later release/)).toBeInTheDocument()
+    expect(screen.queryByRole("table")).not.toBeInTheDocument()
+  })
+
+  it("Open details shows the drawer with the two counts for that practitioner", async () => {
+    const user = userEvent.setup()
+    render(<PractitionerRegistry />)
+    expect(detailArgs).not.toHaveBeenCalled()
+    await user.click(screen.getByRole("button", { name: "Open details for Alice Able" }))
+    const drawer = await screen.findByRole("dialog")
+    expect(detailArgs).toHaveBeenLastCalledWith("p1")
+    expect(within(drawer).getByLabelText("Linked clients count")).toHaveTextContent("4")
+    expect(within(drawer).getByLabelText("Surveys on this site count")).toHaveTextContent("7")
+    expect(within(drawer).getByText("Surveys on this site (30 days)")).toBeInTheDocument()
   })
 })
 
