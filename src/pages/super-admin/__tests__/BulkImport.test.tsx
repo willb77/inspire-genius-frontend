@@ -28,6 +28,15 @@ jest.mock("@/components/bulk-import/DeliveryTracker", () => ({
   DeliveryTracker: () => <div data-testid="delivery-tracker" />,
 }))
 
+// N-2: roster age capture reads the minor-consent status; off here (today).
+jest.mock("@/hooks/useMinorConsent", () => ({
+  useRosterAgeCapture: () => ({
+    ageCaptureAllowed: false,
+    recordFrom: jest.fn(),
+    mutation: { isPending: false, isError: false, data: undefined },
+  }),
+}))
+
 jest.mock("@/hooks/useBulkImport", () => ({
   useBulkImport: () => ({ mutate: jest.fn(), isPending: false, data: null }),
   useBulkDemoInvite: () => ({ mutate: jest.fn(), isPending: false, data: undefined }),

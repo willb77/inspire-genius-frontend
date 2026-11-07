@@ -68,6 +68,14 @@ const FIELD_ALIASES: Record<string, KnownField> = {
   organisation: "organization",
   organization_name: "organization",
   organisation_name: "organization",
+  // ── Date of birth (N-2; recorded only while under-18 support is on for the
+  // importer — see validation.ts, which otherwise reports it as ignored). ──
+  date_of_birth: "date_of_birth",
+  dateofbirth: "date_of_birth",
+  dob: "date_of_birth",
+  birth_date: "date_of_birth",
+  birthdate: "date_of_birth",
+  birthday: "date_of_birth",
 }
 
 /** Fields the importer actually consumes. Anything else is surplus. */
@@ -81,6 +89,7 @@ export const KNOWN_FIELDS = [
   "department",
   "position",
   "organization",
+  "date_of_birth",
 ] as const
 export type KnownField = (typeof KNOWN_FIELDS)[number]
 

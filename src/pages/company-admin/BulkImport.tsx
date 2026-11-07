@@ -29,6 +29,8 @@ import {
   useInvitationStatus,
   useResendInvitation,
 } from "@/hooks/useBulkImport"
+import { useRosterAgeCapture } from "@/hooks/useMinorConsent"
+import RosterAgeNotice from "@/components/minors/RosterAgeNotice"
 
 import type {
   RawUserRecord,
@@ -128,6 +130,8 @@ export default function BulkImport() {
   // requests; without this the UI looks hung and invites a mid-import refresh.
   const [demoProgress, setDemoProgress] = useState<{ done: number; total: number } | null>(null)
   const demoMutation = useBulkDemoInvite({ onProgress: setDemoProgress })
+  // N-2: roster dates of birth — only while the server allows it (switch on).
+  const { ageCaptureAllowed, recordFrom: recordRosterAges, mutation: rosterAges } = useRosterAgeCapture()
   const sendMutation = useSendInvitations()
   const resendMutation = useResendInvitation()
   const { data: invitationStatus, isLoading: isTrackingLoading } = useInvitationStatus(
@@ -148,11 +152,12 @@ export default function BulkImport() {
     (validRecords: BulkUserRecord[]) => {
       dispatch({ type: "SET_VALID", records: validRecords })
       if (state.skipOnboarding) {
-        demoMutation.mutate(validRecords)
+        demoMutation.mutate(validRecords, { onSuccess: () => recordRosterAges(validRecords) })
         return
       }
       importMutation.mutate(validRecords, {
         onSuccess: (data) => {
+          recordRosterAges(validRecords)
           const imported: ImportedUser[] = data.results
             .filter((r) => r.status === "success" && r.user_id)
             .map((r) => {
@@ -170,7 +175,7 @@ export default function BulkImport() {
         },
       })
     },
-    [importMutation, demoMutation, state.skipOnboarding],
+    [importMutation, demoMutation, state.skipOnboarding, recordRosterAges],
   )
 
   const handleContinueToSend = useCallback(() => {
@@ -304,6 +309,7 @@ export default function BulkImport() {
             records={state.parsedRecords}
             onRecordsChange={handleRecordsChange}
             onProceed={handleProceedToImport}
+            ageCaptureAllowed={ageCaptureAllowed}
           />
         )}
 
@@ -321,6 +327,14 @@ export default function BulkImport() {
             isLoading={importMutation.isPending}
             data={importMutation.data}
             onContinue={() => dispatch({ type: "GO_TO_STEP", step: "compose" })}
+          />
+        )}
+
+        {state.currentStep === "import" && (
+          <RosterAgeNotice
+            isPending={rosterAges.isPending}
+            isError={rosterAges.isError}
+            data={rosterAges.data}
           />
         )}
 

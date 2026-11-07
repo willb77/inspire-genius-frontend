@@ -6,6 +6,8 @@ import { isNewHomeEnabled, isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
 // Eager, not lazy: the shell is the entitlement gate for a vertical route
 // subtree, so it must resolve before the subtree renders rather than after.
 import { VerticalShell } from "@/verticals/core";
+import MinorGate from "@/components/minors/MinorGate";
+import type { MinorGateSurface } from "@/types/minorConsent";
 
 // ── Auth pages ──────────────────────────────────────────────────────────────
 const Login = React.lazy(() => import("@/pages/auth/Login"));
@@ -335,6 +337,12 @@ function withSuspense(element: React.ReactNode) {
   return <Suspense fallback={<LoadingSpinner />}>{element}</Suspense>;
 }
 
+// N-2: a surface the minor gate covers. Renders the page exactly as before
+// unless the server says this person is held on it (see MinorGate).
+function withMinorGate(surface: MinorGateSurface, element: React.ReactNode) {
+  return withSuspense(<MinorGate surface={surface}>{element}</MinorGate>);
+}
+
 // ── /home surface resolver ──────────────────────────────────────────────────
 // HomeV2 is the DEFAULT here as of 2026-08-01 (`isNewHomeEnabled`), unlike every
 // other surface below, which stays opt-in behind `isNewUserSurfacesEnabled`.
@@ -491,8 +499,8 @@ export const routes: RouteObject[] = [
       { path: "/coaches/classic", element: withSuspense(<Coaches />) },
       { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChatSurface />) },
       { path: "/dashboard/:coach/chat/classic", element: withSuspense(<CoachChat />) },
-      { path: "/meridian/chat", element: withSuspense(<MeridianChatSurface />) },
-      { path: "/meridian/chat/classic", element: withSuspense(<MeridianChat />) },
+      { path: "/meridian/chat", element: withMinorGate("chat", <MeridianChatSurface />) },
+      { path: "/meridian/chat/classic", element: withMinorGate("chat", <MeridianChat />) },
       // Bio Capture — Chronicle life-narrative surface (viewer + chat + memoir export)
       { path: "/bio", element: withSuspense(<BioCapture />) },
       // Goals Studio — the person's own goals surface (nested; GoalsStudioLayout
@@ -529,9 +537,9 @@ export const routes: RouteObject[] = [
       // became Goals Studio (request: "I will deprecate the Summit interface").
       // Nothing in the app, and no email ever sent, links to /summit; a stale
       // bookmark now gets the platform's not-found page like any other dead URL.
-      { path: "/documents", element: withSuspense(<DocumentsSurface />) },
-      { path: "/documents/classic", element: withSuspense(<Documents />) },
-      { path: "/interview-practice", element: withSuspense(<InterviewPractice />) },
+      { path: "/documents", element: withMinorGate("documents", <DocumentsSurface />) },
+      { path: "/documents/classic", element: withMinorGate("documents", <Documents />) },
+      { path: "/interview-practice", element: withMinorGate("role_play", <InterviewPractice />) },
       // Surveys — build questionnaires + select one to take. Reachable by any
       // authenticated role; the page adapts its chrome via UnifiedLayout.
       { path: "/surveys", element: withSuspense(<SurveysPage />) },
@@ -562,8 +570,8 @@ export const routes: RouteObject[] = [
       { path: "/help/classic", element: withSuspense(<HelpSurface />) },
       // Alias so /support keeps working for anyone who has it bookmarked.
       { path: "/support", element: withSuspense(<SupportPage />) },
-      { path: "/prism-assessment", element: withSuspense(<PrismAssessmentSurface />) },
-      { path: "/prism-assessment/classic", element: withSuspense(<PrismAssessment />) },
+      { path: "/prism-assessment", element: withMinorGate("prism", <PrismAssessmentSurface />) },
+      { path: "/prism-assessment/classic", element: withMinorGate("prism", <PrismAssessment />) },
       { path: "/feedback", element: withSuspense(<FeedbackHistorySurface />) },
       { path: "/feedback/classic", element: withSuspense(<FeedbackHistory />) },
       { path: "/analytics", element: withSuspense(<UserAnalyticsSurface />) },

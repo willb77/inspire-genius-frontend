@@ -9,8 +9,15 @@ import type {
 } from "@/types/bulk-import"
 
 export async function bulkImportUsers(records: BulkUserRecord[]) {
+  // N-2: a date of birth is recorded through the agent engine's roster-ages
+  // route, never sent to the import (which has no use for it).
+  const users = records.map((record) => {
+    const rest = { ...record }
+    delete rest.date_of_birth
+    return rest
+  })
   const res = await api.post<BulkImportResponse>("/api/v1/users/bulk-import", {
-    users: records,
+    users,
   })
   return res.data
 }
