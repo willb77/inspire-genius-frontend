@@ -1,4 +1,7 @@
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { AdminHub } from "@/pages/super-admin/house/AdminHub"
+import { USAGE_HUB } from "@/pages/super-admin/house/hubs"
 import { Button } from "@/components/ui/button"
 import { Eye, RefreshCw } from "lucide-react"
 import { useDashboardMetrics } from "@/hooks/observability/useObservability"
@@ -12,11 +15,38 @@ import CostBoard from "@/components/super-admin/CostBoard"
 import ObservabilityBoard from "@/components/super-admin/ObservabilityBoard"
 
 export default function Observability() {
+  // House style (admin switch, default OFF): the "AI usage & health" tab of Usage & costs.
+  if (isHouseStyleOn("admin")) {
+    return (
+      <AdminHub hub={USAGE_HUB} active="health">
+        <ObservabilityContent house />
+      </AdminHub>
+    )
+  }
+  return (
+    <SuperAdminLayout>
+      <ObservabilityContent />
+    </SuperAdminLayout>
+  )
+}
+
+function ObservabilityContent({ house = false }: { house?: boolean }) {
   const { isLoading, refetch } = useDashboardMetrics()
 
   return (
-    <SuperAdminLayout>
       <div className="space-y-6">
+        {house ? (
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
+              Today only: totals for the current day, not single conversations.
+            </p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+              <RefreshCw className={cn("mr-1 h-4 w-4", isLoading && "animate-spin")} aria-hidden="true" />
+              Refresh
+            </Button>
+          </div>
+        ) : (
+        <>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -71,11 +101,13 @@ export default function Observability() {
             particular agent was chosen, use <strong>Explainability</strong>.
           </p>
         </div>
+        </>
+        )}
 
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="tasks">{house ? "Task coaches" : "Tasks"}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="tasks">
@@ -91,6 +123,5 @@ export default function Observability() {
           </TabsContent>
         </Tabs>
       </div>
-    </SuperAdminLayout>
   )
 }

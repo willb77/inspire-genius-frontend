@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import AgentTrainerDashboardHouse from "./house/AgentTrainerDashboardHouse"
+import { AGENT_TILE_ACTIONS, TRAINER_TOOLS } from "./trainerActions"
 import { useTrainerAgents, useEcosystems } from "@/hooks/trainer/useTrainer"
 import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,50 +10,12 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import {
-  Brain, Search, Settings2, MessageSquare, BookOpen,
-  Target, DollarSign, GitBranch, ListChecks, ShieldCheck,
-} from "lucide-react"
+import { Brain, Search } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import type { AgentConfig } from "@/types/trainer"
 
 const DOMAIN_COLORS = { coaching: "bg-blue-100 text-blue-800", business: "bg-green-100 text-green-800", system: "bg-purple-100 text-purple-800" }
 const MATURITY_NAMES = ["Seed", "Sprout", "Growing", "Mature", "Expert"]
-
-/** The per-agent options each tile exposes. Segments match the routes
- *  registered in routes.tsx under /super-admin/agent-trainer/:agentId/*. */
-const AGENT_TILE_ACTIONS = [
-  { segment: "prompt", label: "Prompt", icon: Settings2, hint: "Prompt Studio — system prompt, versions, A/B" },
-  { segment: "knowledge", label: "Knowledge", icon: BookOpen, hint: "Knowledge Manager — sources, uploads, coverage" },
-  { segment: "test", label: "Test", icon: MessageSquare, hint: "Conversation Simulator — try prompts against the agent" },
-  { segment: "training", label: "Training", icon: Target, hint: "Training Plans — goals, progress, maturity" },
-  { segment: "costs", label: "Costs", icon: DollarSign, hint: "Cost & ROI for this agent" },
-] as const
-
-/** Trainer tools that are not scoped to a single agent. Routes for all three
- *  already existed; none of them was reachable from anywhere in the UI —
- *  Workflows only via the Process Builder nav item, and Executions/Approvals
- *  from no link at all. */
-const TRAINER_TOOLS = [
-  {
-    to: "/super-admin/agent-trainer/workflows",
-    label: "Workflow Designer",
-    icon: GitBranch,
-    blurb: "Compose multi-agent DAG plans on a canvas and save them as templates.",
-  },
-  {
-    to: "/super-admin/agent-trainer/executions",
-    label: "Executions",
-    icon: ListChecks,
-    blurb: "History of workflow runs, with per-step traces, latency and cost.",
-  },
-  {
-    to: "/super-admin/agent-trainer/approvals",
-    label: "Approvals",
-    icon: ShieldCheck,
-    blurb: "Human-in-the-loop queue for steps a workflow paused on.",
-  },
-] as const
 
 function MaturityRing({ level }: { level: number }) {
   const pct = (level / 5) * 100
@@ -66,6 +31,12 @@ function MaturityRing({ level }: { level: number }) {
 }
 
 export default function AgentTrainerDashboard() {
+  // House style (admin switch, default OFF): coach cards stop pretending to be
+  // links (clicking one reloaded this same page); every action button is unchanged.
+  return isHouseStyleOn("admin") ? <AgentTrainerDashboardHouse /> : <AgentTrainerDashboardClassic />
+}
+
+function AgentTrainerDashboardClassic() {
   const [ecosystem, setEcosystem] = useState("inspire-genius")
   const [domainFilter, setDomainFilter] = useState<string>("all")
   const [search, setSearch] = useState("")

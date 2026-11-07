@@ -12,6 +12,9 @@ import {
   XCircle,
 } from "lucide-react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { AdminHub } from "@/pages/super-admin/house/AdminHub"
+import { PRISM_HUB } from "@/pages/super-admin/house/hubs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -54,9 +57,25 @@ import type {
  * number.
  */
 export default function PrismAccuracyScorer() {
+  // House style (admin switch, default OFF): the "Accuracy check" tab of the one PRISM page.
+  if (isHouseStyleOn("admin")) {
+    return (
+      <AdminHub hub={PRISM_HUB} active="accuracy">
+        <PrismAccuracyScorerContent house />
+      </AdminHub>
+    )
+  }
   return (
     <SuperAdminLayout>
+      <PrismAccuracyScorerContent />
+    </SuperAdminLayout>
+  )
+}
+
+function PrismAccuracyScorerContent({ house = false }: { house?: boolean }) {
+  return (
       <div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
+        {!house && (
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
             <Target className="h-6 w-6" /> PRISM Accuracy Scorer
@@ -67,6 +86,7 @@ export default function PrismAccuracyScorer() {
             each claim.
           </p>
         </div>
+        )}
 
         <Tabs defaultValue="conversation">
           <TabsList>
@@ -85,7 +105,6 @@ export default function PrismAccuracyScorer() {
           </TabsContent>
         </Tabs>
       </div>
-    </SuperAdminLayout>
   )
 }
 

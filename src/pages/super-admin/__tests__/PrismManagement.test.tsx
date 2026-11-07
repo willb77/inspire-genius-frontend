@@ -90,6 +90,9 @@ const createMutate = jest.fn()
 const updateMutate = jest.fn()
 const deleteMutate = jest.fn()
 const usePrismListSpy = jest.fn()
+const mockRefetch = jest.fn()
+// House-style tests swap the list result (error / empty / loading).
+const mockListState: { override: Record<string, unknown> | null } = { override: null }
 
 const FIXTURE_ROWS = [
   {
@@ -121,10 +124,12 @@ const FIXTURE_ROWS = [
 jest.mock("@/hooks/super-admin/prism/usePrism", () => ({
   usePrismList: (params: unknown) => {
     usePrismListSpy(params)
-    return {
-      data: { rows: FIXTURE_ROWS, total: FIXTURE_ROWS.length },
-      isLoading: false,
-    }
+    return (
+      mockListState.override ?? {
+        data: { rows: FIXTURE_ROWS, total: FIXTURE_ROWS.length },
+        isLoading: false,
+      }
+    )
   },
   useCreatePrism: () => ({ mutate: createMutate, isPending: false }),
   useUpdatePrism: () => ({ mutate: updateMutate, isPending: false }),
@@ -270,3 +275,94 @@ describe("PrismManagement", () => {
     expect(screen.queryByText("PRISM Management")).not.toBeInTheDocument()
   })
 })
+
+// ── House style (admin switch) ──────────────────────────────────────
+describe("PrismManagement — house style switch", () => {
+  beforeEach(() => {
+    usePrismListSpy.mockClear()
+    hasRoleSpy.mockImplementation((role: string) => role === "super-admin")
+  })
+  afterEach(() => {
+    localStorage.removeItem("house_style_admin")
+    mockListState.override = null
+    mockRefetch.mockClear()
+  })
+
+  it("switch OFF (default): today's page, title and wording unchanged", () => {
+    renderPage()
+    expect(screen.getByRole("heading", { name: "PRISM Management" })).toBeInTheDocument()
+    expect(screen.getByText("New PRISM Row")).toBeInTheDocument()
+    expect(screen.getByText(/Re-vectorization fires automatically/)).toBeInTheDocument()
+    expect(screen.getByLabelText("Search PRISM rows by user_id")).toBeInTheDocument()
+    expect(screen.queryByRole("navigation", { name: "PRISM sections" })).not.toBeInTheDocument()
+    expect(screen.getByText("2026-05-12")).toBeInTheDocument()
+  })
+
+  it("switch ON: the Scores tab of one PRISM page", () => {
+    localStorage.setItem("house_style_admin", "true")
+    renderPage()
+    expect(screen.getByRole("heading", { level: 1, name: "PRISM" })).toBeInTheDocument()
+    const nav = screen.getByRole("navigation", { name: "PRISM sections" })
+    expect(within(nav).getByRole("link", { name: "Scores" })).toHaveAttribute("aria-current", "page")
+    expect(within(nav).getByRole("link", { name: "Exam" })).toHaveAttribute("href", "/super-admin/prism-exam")
+    expect(screen.queryByRole("heading", { name: "PRISM Management" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Re-vectorization/)).not.toBeInTheDocument()
+    // Dates in the one house format; rows and actions still there.
+    expect(screen.getByText("May 12, 2026")).toBeInTheDocument()
+    expect(screen.getByTestId("prism-row-row-aaa")).toBeInTheDocument()
+    fireEvent.click(screen.getByText("Add scores"))
+    expect(screen.getByTestId("dialog")).toBeInTheDocument()
+  })
+
+  it("switch ON: search still sends the same query parameter", () => {
+    localStorage.setItem("house_style_admin", "true")
+    renderPage()
+    fireEvent.change(screen.getByLabelText("Search PRISM scores by user ID"), { target: { value: "user-2" } })
+    const lastCall = usePrismListSpy.mock.calls[usePrismListSpy.mock.calls.length - 1][0]
+    expect(lastCall).toMatchObject({ search: "user-2" })
+  })
+
+  it("switch ON: a failed load shows the error state, never 'no rows'", () => {
+    localStorage.setItem("house_style_admin", "true")
+    mockListState.override = { data: undefined, isLoading: false, isError: true, refetch: mockRefetch }
+    renderPage()
+    expect(screen.getByRole("alert")).toHaveTextContent("We couldn't load PRISM scores.")
+    expect(screen.queryByText("No PRISM scores found")).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText("Try again"))
+    expect(mockRefetch).toHaveBeenCalled()
+  })
+
+  it("switch ON: an empty list is an empty state, worded for a search", () => {
+    localStorage.setItem("house_style_admin", "true")
+    mockListState.override = { data: { rows: [], total: 0 }, isLoading: false, isError: false }
+    renderPage()
+    expect(screen.getByText("No PRISM scores found")).toBeInTheDocument()
+    expect(screen.getByText("No one has PRISM scores on file yet.")).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText("Search PRISM scores by user ID"), { target: { value: "x" } })
+    expect(screen.getByText("No one matches this search.")).toBeInTheDocument()
+  })
+
+  it("switch ON: loading shows the house loading state", () => {
+    localStorage.setItem("house_style_admin", "true")
+    mockListState.override = { data: undefined, isLoading: true, isError: false }
+    renderPage()
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument()
+  })
+
+  it("switch ON: delete still asks first", () => {
+    localStorage.setItem("house_style_admin", "true")
+    renderPage()
+    fireEvent.click(screen.getByLabelText(/^Delete PRISM scores for user-1@/))
+    expect(screen.getByTestId("alert-dialog")).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText(/^Edit PRISM scores for user-2@/))
+    expect(screen.getByTestId("dialog")).toBeInTheDocument()
+  })
+
+  it("switch ON never bypasses the role check", () => {
+    localStorage.setItem("house_style_admin", "true")
+    hasRoleSpy.mockImplementation(() => false)
+    renderPage()
+    expect(screen.getByText("HOME_PAGE")).toBeInTheDocument()
+  })
+})
+

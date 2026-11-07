@@ -49,6 +49,11 @@ import type {
 } from "@/services/super-admin/prism/prism.service";
 import { useAuth } from "@/context/useAuth";
 import { ROLES, ROUTES } from "@/constants/routes";
+import { isHouseStyleOn } from "@/lib/house/areaSwitch";
+import { formatDate } from "@/lib/house/formatDate";
+import { PageState } from "@/components/shared/house/PageState";
+import { AdminHub } from "@/pages/super-admin/house/AdminHub"
+import { PRISM_HUB } from "@/pages/super-admin/house/hubs";
 
 const SCORE_FIELDS = ["gold", "green", "blue", "orange"] as const;
 type ScoreField = (typeof SCORE_FIELDS)[number];
@@ -61,23 +66,45 @@ export default function PrismManagement() {
     return <Navigate to={ROUTES.HOME} replace />;
   }
 
-  return <PrismManagementInner />;
+  // House style (admin switch, default OFF): shown as the "Scores" tab of the
+  // one PRISM page. Display only — the role check above still runs first.
+  if (isHouseStyleOn("admin")) {
+    return (
+      <AdminHub hub={PRISM_HUB} active="scores">
+        <PrismManagementInner house />
+      </AdminHub>
+    );
+  }
+
+  return (
+    <SuperAdminLayout>
+      <PrismManagementInner />
+    </SuperAdminLayout>
+  );
 }
 
-function PrismManagementInner() {
+function PrismManagementInner({ house = false }: { house?: boolean }) {
   const [search, setSearch] = useState("");
   const [editingRow, setEditingRow] = useState<PrismRow | null>(null);
   const [deletingRow, setDeletingRow] = useState<PrismRow | null>(null);
   const [creating, setCreating] = useState(false);
 
-  const { data, isLoading } = usePrismList({ search: search || undefined });
+  const { data, isLoading, isError, refetch } = usePrismList({ search: search || undefined });
   const createM = useCreatePrism();
   const updateM = useUpdatePrism();
   const deleteM = useDeletePrism();
 
   return (
-    <SuperAdminLayout>
+    <>
       <div className="container mx-auto py-6 space-y-4">
+        {house ? (
+          <div className="flex justify-end">
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="size-4 mr-2" />
+              Add scores
+            </Button>
+          </div>
+        ) : (
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">PRISM Management</h1>
@@ -91,20 +118,31 @@ function PrismManagementInner() {
             New PRISM Row
           </Button>
         </div>
+        )}
 
         <Card>
           <CardHeader>
-            <CardTitle>PRISM Rows</CardTitle>
+            <CardTitle>{house ? "People with scores" : "PRISM Rows"}</CardTitle>
           </CardHeader>
           <CardContent>
             <Input
-              placeholder="Search by user_id…"
+              placeholder={house ? "Search by user ID…" : "Search by user_id…"}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-xs mb-4"
-              aria-label="Search PRISM rows by user_id"
+              aria-label={house ? "Search PRISM scores by user ID" : "Search PRISM rows by user_id"}
             />
-            {isLoading ? (
+            {house ? (
+              <HouseScoresTable
+                rows={data?.rows ?? []}
+                searching={search !== ""}
+                isLoading={isLoading}
+                isError={isError}
+                onRetry={() => void refetch()}
+                onEdit={setEditingRow}
+                onDelete={setDeletingRow}
+              />
+            ) : isLoading ? (
               <div
                 role="status"
                 aria-label="Loading PRISM rows"
@@ -244,7 +282,7 @@ function PrismManagementInner() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </SuperAdminLayout>
+    </>
   );
 }
 
@@ -453,5 +491,100 @@ function PrismEditDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * House-style scores list: a failed load says so (never "no rows"), dates use
+ * the one house format, and colours come from the theme.
+ */
+function HouseScoresTable({
+  rows,
+  searching,
+  isLoading,
+  isError,
+  onRetry,
+  onEdit,
+  onDelete,
+}: {
+  rows: PrismRow[];
+  searching: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+  onEdit: (row: PrismRow) => void;
+  onDelete: (row: PrismRow) => void;
+}) {
+  if (isLoading) return <PageState kind="loading" />;
+  if (isError) {
+    return (
+      <PageState
+        kind="error"
+        message="We couldn't load PRISM scores."
+        onRetry={onRetry}
+      />
+    );
+  }
+  if (rows.length === 0) {
+    return (
+      <PageState
+        kind="empty"
+        title="No PRISM scores found"
+        message={
+          searching
+            ? "No one matches this search."
+            : "No one has PRISM scores on file yet."
+        }
+      />
+    );
+  }
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Person</TableHead>
+          <TableHead>Gold</TableHead>
+          <TableHead>Green</TableHead>
+          <TableHead>Blue</TableHead>
+          <TableHead>Orange</TableHead>
+          <TableHead>Version</TableHead>
+          <TableHead>Last assessed</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((row) => (
+          <TableRow key={row.id} data-testid={`prism-row-${row.id}`}>
+            <TableCell className="font-mono text-xs">{row.user_id}</TableCell>
+            <TableCell>{row.gold.toFixed(0)}</TableCell>
+            <TableCell>{row.green.toFixed(0)}</TableCell>
+            <TableCell>{row.blue.toFixed(0)}</TableCell>
+            <TableCell>{row.orange.toFixed(0)}</TableCell>
+            <TableCell>{row.version}</TableCell>
+            <TableCell className="text-xs text-muted-foreground">
+              {formatDate(row.assessed_at)}
+            </TableCell>
+            <TableCell className="text-right space-x-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onEdit(row)}
+                aria-label={`Edit PRISM scores for ${row.user_id}`}
+              >
+                <Pencil className="size-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onDelete(row)}
+                aria-label={`Delete PRISM scores for ${row.user_id}`}
+              >
+                <Trash2 className="size-4 text-destructive" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

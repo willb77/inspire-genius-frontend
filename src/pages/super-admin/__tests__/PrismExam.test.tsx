@@ -1,3 +1,4 @@
+import { MemoryRouter } from "react-router-dom"
 import React from "react"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -481,3 +482,26 @@ describe("PrismExam page", () => {
   })
 })
 
+describe("PrismExam — house style switch", () => {
+  afterEach(() => localStorage.removeItem("house_style_admin"))
+
+  it("switch OFF (default): today's title, no PRISM tabs", () => {
+    render(<MemoryRouter><PrismExam /></MemoryRouter>)
+    expect(screen.getByRole("heading", { name: /PRISM Practitioner Exam/ })).toBeInTheDocument()
+    expect(screen.queryByRole("navigation", { name: "PRISM sections" })).not.toBeInTheDocument()
+  })
+
+  it("switch ON: the 'Exam' tab of one PRISM page", () => {
+    localStorage.setItem("house_style_admin", "true")
+    render(<MemoryRouter><PrismExam /></MemoryRouter>)
+    expect(screen.getByRole("heading", { level: 1, name: "PRISM" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Exam" })).toHaveAttribute("aria-current", "page")
+    expect(screen.queryByRole("heading", { name: /PRISM Practitioner Exam/ })).not.toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Scores" })).toHaveAttribute("href", "/super-admin/prism-management")
+  })
+})
+
+it("PrismExamContent keeps its title by default (the shared /prism-exam page)", () => {
+  render(<PrismExamContent superAdmin={false} />)
+  expect(screen.getByRole("heading", { name: /PRISM Practitioner Exam/ })).toBeInTheDocument()
+})
