@@ -198,3 +198,40 @@ describe("SuperAdminAnalytics", () => {
     expect(screen.queryByText("No organizations yet")).not.toBeInTheDocument()
   })
 })
+
+describe("SuperAdminAnalytics — house style switch", () => {
+  afterEach(() => localStorage.removeItem("house_style_admin"))
+
+  it("switch OFF (default): today's title and all three tabs", () => {
+    renderWithProviders(<SuperAdminAnalytics />)
+    expect(screen.getByText("Analytics & Logs")).toBeInTheDocument()
+    expect(screen.getByTestId("tab-project")).toBeInTheDocument()
+    expect(screen.getByText("Audit Log")).toBeInTheDocument()
+    expect(screen.queryByRole("navigation", { name: "Usage & costs sections" })).not.toBeInTheDocument()
+  })
+
+  it("switch ON: the Activity tab of Usage & costs, without the Project Log tab", () => {
+    localStorage.setItem("house_style_admin", "true")
+    renderWithProviders(<SuperAdminAnalytics />)
+    expect(screen.getByRole("heading", { level: 1, name: "Usage & costs" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Activity" })).toHaveAttribute("aria-current", "page")
+    expect(screen.getByRole("link", { name: "AI usage & health" })).toHaveAttribute("href", "/super-admin/observability")
+    expect(screen.queryByText("Analytics & Logs")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("tab-project")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("tab-content-project")).not.toBeInTheDocument()
+    expect(screen.getByText("Audit log")).toBeInTheDocument()
+    expect(screen.getByText("Total Users")).toBeInTheDocument()
+  })
+
+  it("switch ON: ?tab=project falls back to Analytics; ?tab=audit still opens the audit log", () => {
+    localStorage.setItem("house_style_admin", "true")
+    renderWithProviders(<SuperAdminAnalytics />, ["/super-admin/analytics?tab=project"])
+    expect(screen.getByTestId("tabs")).toHaveAttribute("value", "analytics")
+  })
+
+  it("switch ON: ?tab=audit opens the audit log", () => {
+    localStorage.setItem("house_style_admin", "true")
+    renderWithProviders(<SuperAdminAnalytics />, ["/super-admin/analytics?tab=audit"])
+    expect(screen.getByTestId("tabs")).toHaveAttribute("value", "audit")
+  })
+})

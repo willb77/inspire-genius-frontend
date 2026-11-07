@@ -122,3 +122,61 @@ describe("PromptStudio", () => {
     expect(historyTab).toBeInTheDocument();
   });
 });
+
+describe("PromptStudio — house style switch", () => {
+  beforeEach(() => {
+    mockCreatePrompt.mutate.mockClear();
+    mockPublishPrompt.mutate.mockClear();
+  });
+  afterEach(() => localStorage.removeItem("house_style_admin"));
+
+  it("switch OFF (default): today's page, including the Sections tab and test box", () => {
+    renderComponent();
+    expect(screen.getByText(/Prompt Studio — agent-1/)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Sections" })).toBeInTheDocument();
+    expect(screen.getByText("Send Test Message")).toBeInTheDocument();
+    expect(screen.getByText("Save Draft")).toBeInTheDocument();
+  });
+
+  it("switch ON: the dead controls are gone and say why", () => {
+    localStorage.setItem("house_style_admin", "true");
+    renderComponent();
+    expect(screen.getByRole("heading", { level: 1, name: "Prompt Studio" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Sections" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Send Test Message")).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Type a test message...")).not.toBeInTheDocument();
+    expect(screen.getByText(/isn't available on this page yet/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open Test" })).toHaveAttribute(
+      "href",
+      "/super-admin/agent-trainer/agent-1/test",
+    );
+    expect(screen.getByRole("link", { name: /Back to Agent Trainer/ })).toHaveAttribute(
+      "href",
+      "/super-admin/agent-trainer",
+    );
+  });
+
+  it("switch ON: Save draft and Publish call exactly what they call today", () => {
+    localStorage.setItem("house_style_admin", "true");
+    renderComponent();
+    const textarea = screen.getByLabelText("Prompt text");
+    expect(textarea).toHaveValue("You are a helpful coaching agent.");
+    fireEvent.change(textarea, { target: { value: "New prompt" } });
+    expect(screen.getByText("3 tokens")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Save draft"));
+    expect(mockCreatePrompt.mutate).toHaveBeenCalledWith({ agentId: "agent-1", payload: { prompt_text: "New prompt" } });
+    fireEvent.click(screen.getByText("Publish"));
+    expect(mockPublishPrompt.mutate).toHaveBeenCalledWith({ agentId: "agent-1", version: 3 });
+  });
+
+  it("switch ON: history uses house dates and Restore publishes that version", () => {
+    localStorage.setItem("house_style_admin", "true");
+    renderComponent();
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /History/ }));
+    expect(screen.getByText("Live")).toBeInTheDocument();
+    expect(screen.getByText(/Mar 15, 2026|Mar 14, 2026/)).toBeInTheDocument();
+    fireEvent.click(screen.getAllByText("Restore")[0]);
+    expect(mockPublishPrompt.mutate).toHaveBeenCalledWith({ agentId: "agent-1", version: 2 });
+  });
+});
+

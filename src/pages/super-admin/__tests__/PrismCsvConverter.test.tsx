@@ -1,3 +1,4 @@
+import { MemoryRouter } from "react-router-dom"
 import fs from "fs"
 import path from "path"
 import React from "react"
@@ -117,4 +118,31 @@ describe("PrismCsvConverter", () => {
     URL.createObjectURL = origCreate
     URL.revokeObjectURL = origRevoke
   })
+})
+
+describe("PrismCsvConverter — house style switch", () => {
+  afterEach(() => localStorage.removeItem("house_style_admin"))
+
+  it("switch OFF (default): today's title, no PRISM tabs", () => {
+    render(<MemoryRouter><PrismCsvConverter /></MemoryRouter>)
+    expect(screen.getByRole("heading", { name: /PRISM CSV Converter/i })).toBeInTheDocument()
+    expect(screen.queryByRole("navigation", { name: "PRISM sections" })).not.toBeInTheDocument()
+  })
+
+  it("switch ON: the 'Convert a report' tab of one PRISM page", () => {
+    localStorage.setItem("house_style_admin", "true")
+    render(<MemoryRouter><PrismCsvConverter /></MemoryRouter>)
+    expect(screen.getByRole("heading", { level: 1, name: "PRISM" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Convert a report" })).toHaveAttribute("aria-current", "page")
+    expect(screen.queryByRole("heading", { name: /PRISM CSV Converter/i })).not.toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Scores" })).toHaveAttribute("href", "/super-admin/prism-management")
+  })
+})
+
+it("PrismCsvConverter switch ON: the converter itself still works", async () => {
+  localStorage.setItem("house_style_admin", "true")
+  render(<MemoryRouter><PrismCsvConverter /></MemoryRouter>)
+  await userEvent.upload(screen.getByLabelText(/Long-format PRISM CSV/i), csvFile(SAMPLE))
+  expect(await screen.findByText("Test Subject")).toBeInTheDocument()
+  localStorage.removeItem("house_style_admin")
 })

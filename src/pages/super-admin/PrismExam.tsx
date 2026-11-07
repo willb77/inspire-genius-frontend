@@ -15,6 +15,9 @@ import {
   XCircle,
 } from "lucide-react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { AdminHub } from "@/pages/super-admin/house/AdminHub"
+import { PRISM_HUB } from "@/pages/super-admin/house/hubs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -80,6 +83,14 @@ type TabKey = "run" | "results" | "history" | "questions" | "access"
  * the page only hides what would 403.
  */
 export default function PrismExam() {
+  // House style (admin switch, default OFF): the "Exam" tab of the one PRISM page.
+  if (isHouseStyleOn("admin")) {
+    return (
+      <AdminHub hub={PRISM_HUB} active="exam">
+        <PrismExamContent superAdmin hideTitle />
+      </AdminHub>
+    )
+  }
   return (
     <SuperAdminLayout>
       <PrismExamContent superAdmin />
@@ -87,7 +98,16 @@ export default function PrismExam() {
   )
 }
 
-export function PrismExamContent({ superAdmin, access }: { superAdmin: boolean; access?: ExamAccess }) {
+export function PrismExamContent({
+  superAdmin,
+  access,
+  hideTitle = false,
+}: {
+  superAdmin: boolean
+  access?: ExamAccess
+  /** True only inside the house-style PRISM page, whose header replaces this one. */
+  hideTitle?: boolean
+}) {
   const [tab, setTab] = useState<TabKey>("run")
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>(undefined)
 
@@ -104,6 +124,7 @@ export function PrismExamContent({ superAdmin, access }: { superAdmin: boolean; 
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
+        {!hideTitle && (
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
             <ClipboardCheck className="h-6 w-6" /> PRISM Practitioner Exam
@@ -114,6 +135,7 @@ export function PrismExamContent({ superAdmin, access }: { superAdmin: boolean; 
             misses, and compare runs over time.
           </p>
         </div>
+        )}
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)}>
           <TabsList>

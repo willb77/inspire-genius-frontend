@@ -4,6 +4,9 @@ import { FileSpreadsheet, Upload, AlertTriangle, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { AdminHub } from "@/pages/super-admin/house/AdminHub"
+import { PRISM_HUB } from "@/pages/super-admin/house/hubs"
 import {
   convertLongToWide,
   PrismCsvError,
@@ -19,6 +22,22 @@ import {
  * arithmetic we can do here would add a data path for no benefit.
  */
 export default function PrismCsvConverter() {
+  // House style (admin switch, default OFF): the "Convert a report" tab of the one PRISM page.
+  if (isHouseStyleOn("admin")) {
+    return (
+      <AdminHub hub={PRISM_HUB} active="convert">
+        <PrismCsvConverterContent house />
+      </AdminHub>
+    )
+  }
+  return (
+    <SuperAdminLayout>
+      <PrismCsvConverterContent />
+    </SuperAdminLayout>
+  )
+}
+
+function PrismCsvConverterContent({ house = false }: { house?: boolean }) {
   const [report, setReport] = useState<ConversionReport | null>(null)
   const [sourceName, setSourceName] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -57,8 +76,8 @@ export default function PrismCsvConverter() {
   const scored = report ? report.filledFromLongForm + report.copiedFromUnderlying : 0
 
   return (
-    <SuperAdminLayout>
       <div className="mx-auto w-full max-w-3xl space-y-6 p-4 md:p-6">
+        {!house && (
         <div>
           <h1 className="text-2xl font-semibold">PRISM CSV Converter</h1>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -66,6 +85,7 @@ export default function PrismCsvConverter() {
             Runs entirely in your browser — the file is never uploaded.
           </p>
         </div>
+        )}
 
         <Card>
           <CardHeader>
@@ -172,6 +192,5 @@ export default function PrismCsvConverter() {
           </Card>
         )}
       </div>
-    </SuperAdminLayout>
   )
 }
