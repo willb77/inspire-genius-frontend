@@ -25,9 +25,6 @@ const Privacy = React.lazy(() => import("@/pages/legal/Privacy"));
 const JoinPage = React.lazy(() => import("@/pages/join/JoinPage"));
 
 // ── Misc / Preview / Dev pages ──────────────────────────────────────────────
-const PreviewHome = React.lazy(() => import("@/pages/PreviewHome"));
-const PrismTestHarness = React.lazy(() => import("@/pages/dev/PrismTestHarness"));
-const JobBlueprintTestHarness = React.lazy(() => import("@/pages/dev/JobBlueprintTestHarness"));
 
 // ── Onboarding pages ────────────────────────────────────────────────────────
 const OnboardingOne = React.lazy(() => import("@/pages/onboarding/OnboardingOne"));
@@ -452,14 +449,14 @@ export const routes: RouteObject[] = [
       // through its own request client with no auth interceptors, so a 401 or
       // 404 from the public route can never redirect a visitor to /login.
       { path: "/join", element: withSuspense(<JoinPage />) },
-      { path: "/preview-home", element: withSuspense(<PreviewHome />) },
       // Public Interview Practice role guides — landing pages that funnel into
       // the (auth-gated) coach. Static `/roles` outranks the `:slug` param.
       { path: "/interview-practice/roles", element: withSuspense(<InterviewRolesIndex />) },
       { path: "/interview-practice/:slug", element: withSuspense(<InterviewRolePage />) },
-      { path: "/dev/prism-test", element: withSuspense(<PrismTestHarness />) },
-      { path: "/dev/job-blueprint-test", element: withSuspense(<JobBlueprintTestHarness />) },
-      { path: "/dev/process-builder", element: withSuspense(<ProcessBuilderPage />) },
+      // Wave 0 house style: the public /dev and /preview-home demo pages are gone.
+      // The process builder that used to be public here now lives behind the
+      // super-admin guard; this redirect keeps old links landing on it.
+      { path: "/dev/process-builder", element: <Navigate to="/super-admin/agent-trainer/admin-templates" replace /> },
       // Wave 2 Lane 2.A (P7.1) — `/diagnostic-chat` is now a redirect to the super-admin-gated route.
       // The old path is kept public so any external link still lands somewhere useful.
       { path: "/diagnostic-chat", element: <Navigate to="/super-admin/agent-trace-console" replace /> },
@@ -658,6 +655,9 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/agent-trainer/:agentId/costs", element: withSuspense(<AgentTrainerCosts />) },
       { path: "/super-admin/agent-trainer/:agentId/test", element: withSuspense(<AgentTrainerSimulator />) },
       { path: "/super-admin/agent-trainer/workflows", element: withSuspense(<AgentTrainerWorkflows />) },
+      // The full-screen process builder (saves to the agent-engine's admin templates,
+      // a different store from the Workflow Designer above). Formerly public at /dev/process-builder.
+      { path: "/super-admin/agent-trainer/admin-templates", element: withSuspense(<ProcessBuilderPage />) },
       { path: "/super-admin/agent-trainer/executions", element: withSuspense(<AgentTrainerExecutions />) },
       { path: "/super-admin/agent-trainer/executions/:executionId", element: withSuspense(<AgentTrainerExecutionViewer />) },
       { path: "/super-admin/agent-trainer/approvals", element: withSuspense(<HitlDashboard />) },

@@ -86,6 +86,7 @@ export const ROUTES = {
     VOICE_SETTINGS: "/super-admin/voice-settings",
     PROCESS_BUILDER: "/super-admin/process-builder",
     AGENT_TRAINER: "/super-admin/agent-trainer",
+    AGENT_TRAINER_ADMIN_TEMPLATES: "/super-admin/agent-trainer/admin-templates",
     BULK_IMPORT: "/super-admin/bulk-import",
     OBSERVABILITY: "/super-admin/observability",
     /** @deprecated Wave 2 Lane 2.B (P2.2 / D4) — redirects to MentorManagement → Protocol tab. */

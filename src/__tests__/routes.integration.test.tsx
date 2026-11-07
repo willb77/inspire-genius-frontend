@@ -77,9 +77,6 @@ const pageModules: Record<string, string> = {
   "@/pages/legal/Terms": "TermsPage",
   "@/pages/legal/Privacy": "PrivacyPage",
   "@/pages/join/JoinPage": "JoinPage",
-  "@/pages/PreviewHome": "PreviewHomePage",
-  "@/pages/dev/PrismTestHarness": "PrismTestHarnessPage",
-  "@/pages/dev/JobBlueprintTestHarness": "JobBlueprintTestHarnessPage",
   "@/pages/onboarding/OnboardingOne": "OnboardingOnePage",
   "@/pages/onboarding/OnboardingTwo": "OnboardingTwoPage",
   "@/pages/onboarding/OnboardingThree": "OnboardingThreePage",
@@ -762,6 +759,57 @@ describe("Route Integration Tests", () => {
       // A redirect has no children and no lazy element to load. If someone
       // reinstates the page by hanging it back on this path, this fails.
       expect(findRoute("coaching")?.children).toBeUndefined();
+    });
+
+    // Wave 0 house style — the public demo pages are gone, and the process
+    // builder that was public at /dev/process-builder sits behind the
+    // super-admin guard.
+    it.each(["/preview-home", "/dev/prism-test", "/dev/job-blueprint-test"])(
+      "no longer registers the public demo route %s",
+      (path) => {
+        expect(findRoute(path)).toBeUndefined();
+      },
+    );
+
+    it("sends /dev/process-builder to the super-admin admin-templates page", () => {
+      const element = findRoute("/dev/process-builder")?.element as React.ReactElement<{ to: string }>;
+      expect(element?.props?.to).toBe("/super-admin/agent-trainer/admin-templates");
+    });
+
+    it("keeps /super-admin/process-builder pointing at the Workflow Designer", () => {
+      // Bookmarks to this address open Workflow Designer today; they must not
+      // silently start opening the other builder, which saves to another store.
+      const element = findRoute("/super-admin/process-builder")?.element as React.ReactElement<{ to: string }>;
+      expect(element?.props?.to).toBe("/super-admin/agent-trainer/workflows");
+    });
+
+    it.each(["/preview-home", "/dev/process-builder"])(
+      "a signed-out visitor at %s gets the login page, not a demo or the builder",
+      async (path) => {
+        const ctx = makeAuthContext({ user: null });
+        renderWithRouter(path, ctx);
+        await advancePastBoot();
+        expect(await screen.findByTestId("LoginPage")).toBeInTheDocument();
+        expect(screen.queryByTestId("ProcessBuilderPage")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("PreviewHomePage")).not.toBeInTheDocument();
+      },
+    );
+
+    it("a super-admin can open the process builder at its new address", async () => {
+      const user = makeAuthUser({ role: "super-admin" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter("/super-admin/agent-trainer/admin-templates", ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("ProcessBuilderPage")).toBeInTheDocument();
+    });
+
+    it("a company-admin at the new address is sent home, never shown the builder", async () => {
+      const user = makeAuthUser({ role: "company-admin" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter("/super-admin/agent-trainer/admin-templates", ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("CompanyAdminDashboardPage")).toBeInTheDocument();
+      expect(screen.queryByTestId("ProcessBuilderPage")).not.toBeInTheDocument();
     });
   });
 });
