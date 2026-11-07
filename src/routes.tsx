@@ -207,6 +207,7 @@ const Explainability = React.lazy(() => import("@/pages/super-admin/Explainabili
 // /api/practitioner/sessions call was 500-ing; Home uses the coachClient seam.
 const PractitionerClients = React.lazy(() => import("@/pages/practitioner/Clients"));
 const PrismClients = React.lazy(() => import("@/pages/practitioner/PrismClients"));
+const PractitionerMyPractice = React.lazy(() => import("@/pages/practitioner/MyPractice"));
 const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Analytics"));
 // Settings, the task-agent forms, Interview Live/Studio, Character Lab and Team
 // Composition are shared with the manager (ROLE-C): the Workspace* pages above,
@@ -735,6 +736,8 @@ export const routes: RouteObject[] = [
       // bookmark lands somewhere real instead of a 404.
       { path: "/practitioner/credits", element: <Navigate to="/practitioner/home" replace /> },
       { path: "/practitioner/prism-clients", element: withSuspense(<PrismClients />) },
+      // PI-2: the practitioner's own code and PRISM ids (GET /v1/agents/practitioner-registry/me).
+      { path: "/practitioner/practice", element: withSuspense(<PractitionerMyPractice />) },
       { path: "/practitioner/settings", element: withSuspense(<WorkspaceSettings audience="practitioner" />) },
       { path: "/practitioner/analytics", element: withSuspense(<PractitionerAnalytics />) },
       // Wave 4 Lane 4.D (P7.2) — task-agent forms now available to practitioner
