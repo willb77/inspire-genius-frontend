@@ -629,6 +629,9 @@ export const routes: RouteObject[] = [
       // Wave 0.E (P5.1) — CulturalContent merged into KnowledgeBase as a domain filter.
       { path: "/super-admin/cultural-content", element: <Navigate to="/super-admin/knowledge-base?domain=cultural" replace /> },
       { path: "/super-admin/privacy-compliance", element: withSuspense(<PrivacyCompliance />) },
+      // N-3: the company-admin read-out body with an organisation picker. The
+      // server reads the cohort_readout switch against the PICKED org.
+      { path: "/super-admin/cohort-readout", element: withSuspense(<CompanyAdminCohortReadout audience="super-admin" />) },
       // Administration -> Client Sign-Up. The detail route is registered AFTER
       // the list so the literal path is matched first; React Router v6 ranks
       // static segments above dynamic ones regardless, but keeping them adjacent

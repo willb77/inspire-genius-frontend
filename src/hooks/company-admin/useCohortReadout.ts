@@ -19,17 +19,26 @@ export function useCohortReadoutEnabled(enabled = true) {
   })
 }
 
-export function useCohortReadout(since?: string) {
+/**
+ * A super-admin's choice of organisation. Absent for a company-admin, whose
+ * read-out is always their own org and whose call is unchanged.
+ */
+export type CohortReadoutScope = { orgId?: string }
+
+export function useCohortReadout(since?: string, scope?: CohortReadoutScope) {
+  const orgId = scope?.orgId || undefined
   return useQuery({
-    queryKey: [KEY, "data", since ?? ""],
-    queryFn: () => getCohortReadout(since),
+    queryKey: scope ? [KEY, "data", since ?? "", orgId ?? ""] : [KEY, "data", since ?? ""],
+    queryFn: () => (scope ? getCohortReadout(since, orgId) : getCohortReadout(since)),
     retry: false,
+    // A super-admin with no org picked makes no call: the server would 422.
+    enabled: scope ? Boolean(orgId) : true,
   })
 }
 
 export function useCohortReadoutExport() {
   return useMutation({
-    mutationFn: ({ format, since }: { format: CohortExportFormat; since?: string }) =>
-      exportCohortReadout(format, since),
+    mutationFn: ({ format, since, orgId }: { format: CohortExportFormat; since?: string; orgId?: string }) =>
+      orgId ? exportCohortReadout(format, since, orgId) : exportCohortReadout(format, since),
   })
 }
