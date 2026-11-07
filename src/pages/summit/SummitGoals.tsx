@@ -52,6 +52,7 @@ import {
   prismSummary,
   styleLabel,
 } from "@/pages/summit/_summit";
+import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 
 /** A message from a failed mutation, as a person can read it. */
 function errorText(err: unknown): string {
@@ -431,6 +432,11 @@ export default function SummitGoals() {
   const drafts = (session.data?.goals ?? []).filter((g) => !publishedFrom.has(g.goal_id));
 
   const loading = session.isLoading || mine.isLoading;
+  // House style (goals, S2a), display only: explain "Requires stretch" only
+  // when a goal on this page actually carries that label. OFF: always shown.
+  const showStretchCallout = isHouseStyleOn("goals")
+    ? !loading && !session.isError && drafts.some((g) => alignKind(g.prism_alignment) === "stretch")
+    : true;
   const nothingAnywhere =
     !loading && !session.isError && !mine.isError && shared.length === 0 && drafts.length === 0;
 
@@ -461,9 +467,11 @@ export default function SummitGoals() {
           </Link>
         </Button>
       </div>
+      {showStretchCallout && (
       <Callout tone="info" icon={<Info className="h-4 w-4 text-[#1D3A66]" />}>
         A goal marked <strong>Requires stretch</strong> isn&apos;t a weakness call — it&apos;s a deliberate, time-boxed move against type.
       </Callout>
+      )}
 
       {loading && (
         <div className="flex items-center gap-2 text-[13.5px] text-[#13294B]/70">
