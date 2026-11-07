@@ -30,6 +30,18 @@ describe("cohortReadout.service", () => {
     expect(mockGet).toHaveBeenLastCalledWith("/v1/agents/cohort-readout", { params: { since: "2026-08-01" } })
   })
 
+  it("a super-admin's picked org goes as org_id on the read and the export", async () => {
+    mockGet.mockResolvedValueOnce({ data: { status: true, data: { suppressed: true } } })
+    await getCohortReadout(undefined, "org-9")
+    expect(mockGet).toHaveBeenLastCalledWith("/v1/agents/cohort-readout", { params: { org_id: "org-9" } })
+    mockGet.mockResolvedValueOnce({ data: new Blob(["x"]) })
+    await exportCohortReadout("csv", "2026-08-01", "org-9")
+    expect(mockGet).toHaveBeenLastCalledWith("/v1/agents/cohort-readout/export", {
+      params: { format: "csv", since: "2026-08-01", org_id: "org-9" },
+      responseType: "blob",
+    })
+  })
+
   it("exports as a blob in the chosen format", async () => {
     const blob = new Blob(["x"])
     mockGet.mockResolvedValueOnce({ data: blob })

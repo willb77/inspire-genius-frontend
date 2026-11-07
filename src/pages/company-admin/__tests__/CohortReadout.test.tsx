@@ -8,15 +8,23 @@ import type { CohortReadout as Readout } from "@/types/cohortReadout"
 
 jest.mock("@/layouts/CompanyAdminLayout", () => ({
   __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  default: ({ children }: { children: React.ReactNode }) => <div data-testid="company-admin-layout">{children}</div>,
+}))
+jest.mock("@/layouts/SuperAdminLayout", () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => <div data-testid="super-admin-layout">{children}</div>,
+}))
+const mockUseOrgDirectory = jest.fn()
+jest.mock("@/hooks/super-admin/organization-management/useOrganizationManagement", () => ({
+  useOrgDirectory: () => mockUseOrgDirectory(),
 }))
 
 let mockQuery: { data?: Readout; isLoading: boolean; error: unknown }
 const mockMutate = jest.fn()
 const mockUseReadout = jest.fn()
 jest.mock("@/hooks/company-admin/useCohortReadout", () => ({
-  useCohortReadout: (since?: string) => {
-    mockUseReadout(since)
+  useCohortReadout: (...args: unknown[]) => {
+    mockUseReadout(...args)
     return mockQuery
   },
   useCohortReadoutExport: () => ({ mutate: mockMutate, isPending: false }),
@@ -108,13 +116,90 @@ describe("CohortReadout page", () => {
   it("passes the date filter and exports both formats", () => {
     render(<CohortReadout />)
     fireEvent.change(screen.getByLabelText("Activity since"), { target: { value: "2026-08-01" } })
-    expect(mockUseReadout).toHaveBeenLastCalledWith("2026-08-01")
+    expect(mockUseReadout).toHaveBeenLastCalledWith("2026-08-01", undefined)
     fireEvent.click(screen.getByRole("button", { name: /CSV/ }))
     fireEvent.click(screen.getByRole("button", { name: /Word/ }))
-    expect(mockMutate.mock.calls.map((c) => c[0])).toEqual([
+    expect(mockMutate.mock.calls.map((c) => c[0])).toStrictEqual([
       { format: "csv", since: "2026-08-01" },
       { format: "docx", since: "2026-08-01" },
     ])
+  })
+
+  it("company-admin path is unchanged: own layout, no picker, no org scope, no directory read", () => {
+    render(<CohortReadout />)
+    expect(screen.getByTestId("company-admin-layout")).toBeInTheDocument()
+    expect(screen.queryByTestId("super-admin-layout")).not.toBeInTheDocument()
+    expect(screen.queryByLabelText("Organisation")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Pick an organisation/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Your organisation at a glance/)).toBeInTheDocument()
+    // Every read is the caller's own org: no scope object, so the hook keeps
+    // its original key, its original service call and no enabled guard.
+    expect(mockUseReadout.mock.calls.length).toBeGreaterThan(0)
+    for (const call of mockUseReadout.mock.calls) expect(call[1]).toBeUndefined()
+    expect(mockUseOrgDirectory).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("button", { name: /CSV/ }))
+    expect(mockMutate.mock.calls[0][0]).toStrictEqual({ format: "csv", since: undefined })
+  })
+
+  it("company-admin 403 without a detail says 'your organisation'", () => {
+    const err = forbidden("")
+    ;(err.response as { data: unknown }).data = {}
+    mockQuery = { isLoading: false, error: err }
+    render(<CohortReadout />)
+    expect(screen.getByRole("alert")).toHaveTextContent("not enabled for your organisation")
+  })
+
+  it("super-admin with no org picked: a prompt to pick, the hook gets an empty scope, exports disabled", () => {
+    mockQuery = { isLoading: false, error: null }
+    mockUseOrgDirectory.mockReturnValue({ data: [{ id: "org-1", name: "Org One" }], isLoading: false, isError: false })
+    render(<CohortReadout audience="super-admin" />)
+    expect(screen.getByTestId("super-admin-layout")).toBeInTheDocument()
+    expect(screen.getByText("Pick an organisation to see its read-out.")).toBeInTheDocument()
+    expect(mockUseReadout).toHaveBeenLastCalledWith(undefined, { orgId: undefined })
+    expect(screen.getByRole("button", { name: /CSV/ })).toBeDisabled()
+  })
+
+  it("super-admin picker states: loading and failed directory", () => {
+    mockQuery = { isLoading: false, error: null }
+    mockUseOrgDirectory.mockReturnValue({ data: undefined, isLoading: true, isError: false })
+    const { unmount } = render(<CohortReadout audience="super-admin" />)
+    expect(screen.getByLabelText("Organisation")).toBeDisabled()
+    expect(screen.getByText("Loading organisations…")).toBeInTheDocument()
+    unmount()
+    mockUseOrgDirectory.mockReturnValue({ data: undefined, isLoading: false, isError: true })
+    render(<CohortReadout audience="super-admin" />)
+    expect(screen.getByText("Organisations could not be loaded")).toBeInTheDocument()
+  })
+
+  it("super-admin: picking an org scopes the read and the export to it", () => {
+    mockUseOrgDirectory.mockReturnValue({
+      data: [
+        { id: "org-1", name: "Org One" },
+        { id: "org-2", name: "" },
+      ],
+      isLoading: false,
+      isError: false,
+    })
+    render(<CohortReadout audience="super-admin" />)
+    expect(screen.getByRole("option", { name: "org-2" })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText("Organisation"), { target: { value: "org-1" } })
+    expect(mockUseReadout).toHaveBeenLastCalledWith(undefined, { orgId: "org-1" })
+    expect(screen.queryByText(/Pick an organisation to see/)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /Word/ }))
+    expect(mockMutate.mock.calls[0][0]).toStrictEqual({ format: "docx", since: undefined, orgId: "org-1" })
+  })
+
+  it("super-admin: a refused org shows the server's message, or a 'this organisation' fallback", () => {
+    mockUseOrgDirectory.mockReturnValue({ data: [], isLoading: false, isError: false })
+    mockQuery = { isLoading: false, error: forbidden("The cohort read-out is not enabled for this organisation.") }
+    const { unmount } = render(<CohortReadout audience="super-admin" />)
+    expect(screen.getByRole("alert")).toHaveTextContent("The cohort read-out is not enabled for this organisation.")
+    unmount()
+    const err = forbidden("")
+    ;(err.response as { data: unknown }).data = {}
+    mockQuery = { isLoading: false, error: err }
+    render(<CohortReadout audience="super-admin" />)
+    expect(screen.getByRole("alert")).toHaveTextContent("not enabled for this organisation")
   })
 
   it("saves the downloaded file", () => {
