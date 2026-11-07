@@ -683,6 +683,8 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   // no menu. `/practitioner/*` is in ROLE_PERMISSIONS.practitioner, so this
   // door is reachable, not a live-looking redirect home.
   { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "Client PRISM Assessments" },
+  // PI-2: the practitioner's own client code and PRISM account identifiers.
+  { to: ROUTES.PRACTITIONER.PRACTICE, icon: IdCard, label: "My PRISM Practice" },
   { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },

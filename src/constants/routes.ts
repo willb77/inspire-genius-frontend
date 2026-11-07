@@ -212,6 +212,8 @@ export const ROUTES = {
     CLIENTS: "/practitioner/clients",
     CLIENT_DETAIL: "/practitioner/clients/:clientId",
     PRISM_CLIENTS: "/practitioner/prism-clients",
+    /** PI-2 — "My PRISM practice": the practitioner's own code + PRISM ids. */
+    PRACTICE: "/practitioner/practice",
     ANALYTICS: "/practitioner/analytics",
     SETTINGS: "/practitioner/settings",
     // Wave 4 Lane 4.D (P7.2) — task-agent forms mirrored from manager.
