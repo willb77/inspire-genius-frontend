@@ -105,6 +105,10 @@ const renderComponent = () => {
    TEST SUITE
 ===================================================================*/
 
+// The one password rule renders as a checklist; an unmet line has data-met="false".
+const expectUnmet = (label: string) =>
+  expect(screen.getByText(label).closest("li")).toHaveAttribute("data-met", "false");
+
 describe("AcceptInvitation Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -163,7 +167,7 @@ describe("AcceptInvitation Component", () => {
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
 
-      expect(screen.getByText(/uppercase/i)).toBeInTheDocument();
+      expectUnmet("A capital letter");
     });
 
     test("password mismatch shows error", () => {
@@ -232,7 +236,7 @@ describe("AcceptInvitation Component", () => {
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
       
       // Should not show any validation errors
-      expect(screen.queryByText(/uppercase/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Password rules" })).not.toBeInTheDocument();
       expect(screen.queryByText(/lowercase/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/number/i)).not.toBeInTheDocument();
     });
@@ -245,7 +249,7 @@ describe("AcceptInvitation Component", () => {
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
-      expect(screen.getByText(/lowercase/i)).toBeInTheDocument();
+      expectUnmet("A small letter");
     });
 
     test("rejects missing uppercase", () => {
@@ -256,7 +260,7 @@ describe("AcceptInvitation Component", () => {
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
-      expect(screen.getByText(/uppercase/i)).toBeInTheDocument();
+      expectUnmet("A capital letter");
     });
 
     test("rejects missing number", () => {
@@ -267,10 +271,10 @@ describe("AcceptInvitation Component", () => {
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
-      expect(screen.getByText(/number/i)).toBeInTheDocument();
+      expectUnmet("A number");
     });
 
-    test("rejects missing special character", () => {
+    test("does not require a symbol (matches the server's rule)", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
@@ -278,7 +282,19 @@ describe("AcceptInvitation Component", () => {
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
-      expect(screen.getByText(/special/i)).toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Password rules" })).not.toBeInTheDocument();
+    });
+
+    test("rejects fewer than 8 characters", () => {
+      renderComponent();
+
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "Abcde12" },
+      });
+
+      fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
+      expectUnmet("At least 8 characters");
+      expect(screen.getByRole("button", { name: "Set Password" })).toBeDisabled();
     });
   });
 
@@ -388,7 +404,7 @@ describe("AcceptInvitation Component", () => {
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
 
-      expect(screen.getByText(/uppercase/i)).toBeInTheDocument();
+      expectUnmet("A capital letter");
     });
 
     test("hides validation when field is blurred empty", () => {
@@ -397,7 +413,7 @@ describe("AcceptInvitation Component", () => {
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
       fireEvent.blur(screen.getByPlaceholderText("Enter New Password"));
 
-      expect(screen.queryByText(/uppercase/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Password rules" })).not.toBeInTheDocument();
     });
   });
 

@@ -7,7 +7,9 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { ROUTES } from "@/constants/routes"
 import { useAcceptInvitation } from "@/hooks/auth/useAcceptInvitation"
 import { toast } from "sonner"
-import { useMemo, useState } from "react"
+import { useState } from "react"
+import { passwordMeetsRule } from "@/lib/house/passwordRule"
+import { PasswordChecklist } from "@/components/shared/house/PasswordChecklist"
 
 type FormValues = {
   new_password: string
@@ -28,21 +30,7 @@ export default function AcceptInvitation() {
   const newPasswordValue = watch("new_password") ?? ""
   const confirmValue = watch("confirm_password") ?? ""
 
-  const rules = useMemo(() => ({
-    hasUpper: /[A-Z]/.test(newPasswordValue),
-    hasLower: /[a-z]/.test(newPasswordValue),
-    hasNumber: /\d/.test(newPasswordValue),
-    hasSpecial: /[^A-Za-z0-9]/.test(newPasswordValue),
-  }), [newPasswordValue])
-
-  const unmet: string[] = useMemo(() => {
-    const arr: string[] = []
-    if (!rules.hasUpper) arr.push('Uppercase')
-    if (!rules.hasLower) arr.push('Lowercase')
-    if (!rules.hasNumber) arr.push('Number')
-    if (!rules.hasSpecial) arr.push('Special')
-    return arr
-  }, [rules])
+  const passwordOk = passwordMeetsRule(newPasswordValue)
 
   const onSubmit = async (values: FormValues) => {
     const token = params.get('token') || ''
@@ -66,8 +54,8 @@ export default function AcceptInvitation() {
             value={newPasswordValue}
             onChange={(e) => setValue("new_password", e.target.value, { shouldDirty: true, shouldTouch: true, shouldValidate: true })}
           />
-          {(pwdFocused || dirtyFields.new_password) && newPasswordValue && unmet.length > 0 && (
-            <p className="text-left mt-2 text-xs text-red-500">At least one {unmet.join(', ')}</p>
+          {(pwdFocused || dirtyFields.new_password) && newPasswordValue && !passwordOk && (
+            <PasswordChecklist password={newPasswordValue} />
           )}
         </div>
 
@@ -82,7 +70,7 @@ export default function AcceptInvitation() {
           )}
         </div>
 
-        <Button type="submit" className="w-full mt-2" disabled={mutation.isPending || !newPasswordValue || !confirmValue || unmet.length > 0 || newPasswordValue !== confirmValue}>
+        <Button type="submit" className="w-full mt-2" disabled={mutation.isPending || !newPasswordValue || !confirmValue || !passwordOk || newPasswordValue !== confirmValue}>
           {mutation.isPending ? "Saving..." : "Set Password"}
         </Button>
       </form>
