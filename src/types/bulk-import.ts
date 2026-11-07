@@ -13,6 +13,9 @@ export type RawUserRecord = {
   /** Organisation NAME as typed in the file. Resolved to an id by
    *  `validateRecords` (super-admin only); never sent as typed. */
   organization?: string
+  /** N-2: as typed in the file. Normalised to YYYY-MM-DD by `validateRecords`
+   *  only while roster age capture is allowed; dropped otherwise. */
+  date_of_birth?: unknown
   [key: string]: unknown
 }
 
@@ -48,6 +51,15 @@ export const bulkUserSchema = z.object({
    * of producing a user who belongs to no organisation.
    */
   organization: z.string().max(255).optional().or(z.literal("")),
+  /**
+   * N-2: the roster's date of birth. Optional; checked and normalised in
+   * `validateRecords` (and only while the server allows roster age capture),
+   * then recorded through the agent engine — never sent to the import itself.
+   */
+  // `unknown`, not `string`: while capture is off this column must not be able
+  // to fail a row (a spreadsheet date can arrive as a number), exactly as when
+  // it was an unrecognised column.
+  date_of_birth: z.unknown().optional(),
 })
 
 export type BulkUserRecord = z.infer<typeof bulkUserSchema> & {

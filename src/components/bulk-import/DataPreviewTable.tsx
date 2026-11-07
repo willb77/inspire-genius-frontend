@@ -22,6 +22,7 @@ const FIELD_LABELS: Record<string, string> = {
   department: "Department",
   position: "Position",
   organization: "Organization",
+  date_of_birth: "Date of birth",
 }
 
 type DataPreviewTableProps = {
@@ -33,6 +34,9 @@ type DataPreviewTableProps = {
   orgDirectory?: OrganizationOptions["orgDirectory"]
   /** Super-admin only: true when this import applies organisations (Skip onboarding). */
   organizationAllowed?: boolean
+  /** N-2: true only while the server allows this importer to record roster
+   *  dates of birth. Off, a Date of birth column is reported as ignored. */
+  ageCaptureAllowed?: boolean
 }
 
 const PAGE_SIZE = 50
@@ -67,6 +71,7 @@ export function DataPreviewTable({
   callerRole = "company-admin",
   orgDirectory,
   organizationAllowed = false,
+  ageCaptureAllowed = false,
 }: DataPreviewTableProps) {
   // Only a super-admin import acts on Organization, so only it shows the column.
   const showOrganization = callerRole === "super-admin"
@@ -81,8 +86,8 @@ export function DataPreviewTable({
   const [currentPage, setCurrentPage] = useState(0)
 
   useEffect(() => {
-    setValidation(validateRecords(records, callerRole, { orgDirectory, organizationAllowed }))
-  }, [records, callerRole, orgDirectory, organizationAllowed])
+    setValidation(validateRecords(records, callerRole, { orgDirectory, organizationAllowed, ageCaptureAllowed }))
+  }, [records, callerRole, orgDirectory, organizationAllowed, ageCaptureAllowed])
 
   // Build a per-row error map for quick lookup
   const rowErrors = useMemo(() => {
@@ -147,8 +152,8 @@ export function DataPreviewTable({
   }, [records, validation, onRecordsChange])
 
   const handleRevalidateAll = useCallback(() => {
-    setValidation(validateRecords(records, callerRole, { orgDirectory, organizationAllowed }))
-  }, [records, callerRole, orgDirectory, organizationAllowed])
+    setValidation(validateRecords(records, callerRole, { orgDirectory, organizationAllowed, ageCaptureAllowed }))
+  }, [records, callerRole, orgDirectory, organizationAllowed, ageCaptureAllowed])
 
   const handleProceed = useCallback(() => {
     onProceed(validation.valid.map((v) => v.record))

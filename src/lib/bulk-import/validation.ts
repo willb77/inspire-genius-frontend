@@ -21,6 +21,58 @@ export type OrganizationOptions = {
    *  organisation sent there would be dropped without a word. Defaults to
    *  false, so a caller that does not say is refused rather than ignored. */
   organizationAllowed?: boolean
+  /** N-2: whether this importer may record roster dates of birth — the
+   *  server's `rosterAgeCapture`, true only while under-18 support is on for
+   *  the importer. Defaults to false: a Date of birth column is then reported
+   *  as ignored and never sent, which is what happens to it today. */
+  ageCaptureAllowed?: boolean
+}
+
+/** The label a Date of birth column is reported under when it is not used. */
+export const DATE_OF_BIRTH_LABEL = "Date of birth"
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
+const US_DATE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+
+/** A real calendar date as ISO, or null. Never rolls an impossible date over. */
+function toIsoDate(year: number, month: number, day: number): string | null {
+  const d = new Date(Date.UTC(year, month - 1, day))
+  if (d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) return null
+  return d.toISOString().slice(0, 10)
+}
+
+/** True when the row carries anything at all in its Date of birth column. */
+function hasDateOfBirth(record: RawUserRecord): boolean {
+  const raw = record.date_of_birth
+  if (raw === undefined || raw === null) return false
+  return typeof raw === "string" ? raw.trim() !== "" : true
+}
+
+/**
+ * N-2: a row's date of birth, normalised to `YYYY-MM-DD`, or why not.
+ *
+ * Accepted as `YYYY-MM-DD` or US `MM/DD/YYYY`. Not in the future, not before
+ * 1900. An unreadable date fails on a row the operator can see: a student whose
+ * date silently failed to record would be ungated without anyone knowing.
+ * With capture not allowed the value is dropped, never sent.
+ */
+export function resolveDateOfBirth(
+  record: RawUserRecord,
+  options: OrganizationOptions,
+  today: Date = new Date(),
+): { value?: string; error?: string } {
+  if (!hasDateOfBirth(record) || !options.ageCaptureAllowed) return {}
+  const raw = record.date_of_birth
+  const typed = typeof raw === "string" ? raw.trim() : ""
+  let iso: string | null = null
+  const isoMatch = ISO_DATE.exec(typed)
+  const usMatch = US_DATE.exec(typed)
+  if (isoMatch) iso = toIsoDate(Number(isoMatch[1]), Number(isoMatch[2]), Number(isoMatch[3]))
+  else if (usMatch) iso = toIsoDate(Number(usMatch[3]), Number(usMatch[1]), Number(usMatch[2]))
+  if (!iso) return { error: "Date of birth must be a real date written YYYY-MM-DD or MM/DD/YYYY" }
+  if (iso > today.toISOString().slice(0, 10)) return { error: "Date of birth cannot be in the future" }
+  if (iso < "1900-01-01") return { error: "Date of birth is not a plausible birth date" }
+  return { value: iso }
 }
 
 /** Case- and spacing-insensitive, so "Test-Org-A " matches "test-org-a". */
@@ -149,6 +201,11 @@ export function validateRecords(
       errors.push({ row, field: "organization", message: org.error })
     }
 
+    const dob = resolveDateOfBirth(record, options)
+    if (dob.error) {
+      errors.push({ row, field: "date_of_birth", message: dob.error })
+    }
+
     // Duplicate email detection
     const email = (record.email1 ?? "").toLowerCase().trim()
     if (email) {
@@ -170,6 +227,8 @@ export function validateRecords(
     } else {
       const valid = parsed.data as BulkUserRecord
       if (org.organizationId) valid.organization_id = org.organizationId
+      if (dob.value) valid.date_of_birth = dob.value
+      else delete valid.date_of_birth
       result.valid.push({ row, record: valid })
     }
   }
@@ -182,6 +241,16 @@ export function validateRecords(
     !result.ignoredColumns.includes("Organization")
   ) {
     result.ignoredColumns = [...result.ignoredColumns, "Organization"]
+  }
+
+  // N-2: a Date of birth column is used only while capture is allowed; until
+  // then it is reported as ignored, as it was before the column was known.
+  if (
+    !options.ageCaptureAllowed &&
+    records.some(hasDateOfBirth) &&
+    !result.ignoredColumns.includes(DATE_OF_BIRTH_LABEL)
+  ) {
+    result.ignoredColumns = [...result.ignoredColumns, DATE_OF_BIRTH_LABEL]
   }
 
   return result
@@ -215,6 +284,11 @@ export function revalidateRecord(
   const org = resolveOrganization(record, callerRole, options)
   if (org.error) {
     errors.push({ row: 0, field: "organization", message: org.error })
+  }
+
+  const dob = resolveDateOfBirth(record, options)
+  if (dob.error) {
+    errors.push({ row: 0, field: "date_of_birth", message: dob.error })
   }
 
   return errors

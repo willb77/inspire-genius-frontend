@@ -31,6 +31,8 @@ import {
   useResendInvitation,
 } from "@/hooks/useBulkImport"
 import { useOrgDirectory } from "@/hooks/super-admin/user-management/useOrgAssignment"
+import { useRosterAgeCapture } from "@/hooks/useMinorConsent"
+import RosterAgeNotice from "@/components/minors/RosterAgeNotice"
 
 import type {
   RawUserRecord,
@@ -132,6 +134,8 @@ export default function SuperAdminBulkImport() {
   const demoMutation = useBulkDemoInvite({ onProgress: setDemoProgress })
   // Names in an Organization column are resolved against this list.
   const { data: orgDirectory } = useOrgDirectory(true)
+  // N-2: roster dates of birth — only while the server allows it (switch on).
+  const { ageCaptureAllowed, recordFrom: recordRosterAges, mutation: rosterAges } = useRosterAgeCapture()
   const sendMutation = useSendInvitations()
   const resendMutation = useResendInvitation()
   const { data: invitationStatus, isLoading: isTrackingLoading } = useInvitationStatus(
@@ -154,11 +158,12 @@ export default function SuperAdminBulkImport() {
       // one-click magic links via the auth-service bulk endpoint. Stays on the
       // "import" step and renders DemoImportResult; compose/send/track unused.
       if (state.skipOnboarding) {
-        demoMutation.mutate(validRecords)
+        demoMutation.mutate(validRecords, { onSuccess: () => recordRosterAges(validRecords) })
         return
       }
       importMutation.mutate(validRecords, {
         onSuccess: (data) => {
+          recordRosterAges(validRecords)
           const imported: ImportedUser[] = data.results
             .filter((r) => r.status === "success" && r.user_id)
             .map((r) => {
@@ -176,7 +181,7 @@ export default function SuperAdminBulkImport() {
         },
       })
     },
-    [importMutation, demoMutation, state.skipOnboarding],
+    [importMutation, demoMutation, state.skipOnboarding, recordRosterAges],
   )
 
   const handleContinueToSend = useCallback(() => {
@@ -323,6 +328,7 @@ export default function SuperAdminBulkImport() {
             callerRole="super-admin"
             orgDirectory={orgDirectory}
             organizationAllowed={state.skipOnboarding}
+            ageCaptureAllowed={ageCaptureAllowed}
           />
         )}
 
@@ -340,6 +346,14 @@ export default function SuperAdminBulkImport() {
             isLoading={importMutation.isPending}
             data={importMutation.data}
             onContinue={() => dispatch({ type: "GO_TO_STEP", step: "compose" })}
+          />
+        )}
+
+        {state.currentStep === "import" && (
+          <RosterAgeNotice
+            isPending={rosterAges.isPending}
+            isError={rosterAges.isError}
+            data={rosterAges.data}
           />
         )}
 

@@ -133,6 +133,15 @@ const mockImportMutate = jest.fn();
 const mockSendMutate = jest.fn();
 const mockResendMutate = jest.fn();
 
+// N-2: roster age capture reads the minor-consent status; off here (today).
+jest.mock("@/hooks/useMinorConsent", () => ({
+  useRosterAgeCapture: () => ({
+    ageCaptureAllowed: false,
+    recordFrom: jest.fn(),
+    mutation: { isPending: false, isError: false, data: undefined },
+  }),
+}));
+
 jest.mock("@/hooks/useBulkImport", () => ({
   useBulkImport: () => ({
     mutate: mockImportMutate,

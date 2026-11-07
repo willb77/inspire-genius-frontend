@@ -7,6 +7,7 @@ import { useAuth } from "@/context/useAuth"
 import { isUserRole, type UserRole } from "@/types/roles"
 import type { VerticalKey } from "./types"
 import RequireVertical from "./RequireVertical"
+import MinorGate from "@/components/minors/MinorGate"
 
 type VerticalShellProps = {
   vertical: VerticalKey
@@ -73,7 +74,11 @@ export default function VerticalShell({
 
   return (
     <RequireVertical vertical={vertical} redirectTo={redirectTo}>
-      {shell ?? <CoreVerticalChrome vertical={vertical} role={role} />}
+      {/* N-2: the minor gate, inside the entitlement gate. A no-op unless the
+          server says this person is held on the verticals. */}
+      <MinorGate surface="verticals">
+        {shell ?? <CoreVerticalChrome vertical={vertical} role={role} />}
+      </MinorGate>
     </RequireVertical>
   )
 }
