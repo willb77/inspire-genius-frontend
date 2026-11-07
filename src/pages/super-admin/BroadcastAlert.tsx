@@ -28,6 +28,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import ConfirmDialog from "@/components/shared/ConfirmDialog"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { BUTTON_WORDS } from "@/lib/house/glossary"
 import { useAuth } from "@/context/useAuth"
 import RichHtmlEditor from "@/components/super-admin/broadcast/RichHtmlEditor"
 import { buildBrandedHtml, SEVERITY_META } from "@/lib/broadcastTemplate"
@@ -452,6 +455,7 @@ function AccessPanel() {
   const addMut = useAddBroadcastAdmin()
   const removeMut = useRemoveBroadcastAdmin()
   const [email, setEmail] = useState("")
+  const house = isHouseStyleOn("admin")
 
   async function add() {
     const e = email.trim().toLowerCase()
@@ -488,6 +492,23 @@ function AccessPanel() {
               <Badge variant="secondary" className="text-xs">
                 owner
               </Badge>
+            ) : house ? (
+              // House style (area `admin`, default OFF): revoking is confirmed first.
+              <ConfirmDialog
+                title={`Remove access for ${a.email}?`}
+                description="They will no longer be able to send platform alerts. You can grant access again at any time."
+                confirmText="Remove access"
+                cancelText={BUTTON_WORDS.cancel}
+                onConfirm={() => remove(a.email)}
+                trigger={
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-xs text-destructive hover:underline"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Remove access
+                  </button>
+                }
+              />
             ) : (
               <button
                 type="button"

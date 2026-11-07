@@ -20,6 +20,9 @@ import {
 } from "lucide-react"
 
 import UserLayout from "@/layouts/UserLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import RolePracticeChrome from "@/components/interview/house/RolePracticeChrome"
+import { practiceIntro, PRACTICE_RESULTS_TITLE } from "@/components/interview/house/practiceWords"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -129,6 +132,11 @@ export default function InterviewPracticePage() {
   // 3.4 P4 — scored practice beside the coaching; a no-op when the tier's
   // switch is off, and never something the coaching waits on.
   const scored = useScoredPractice()
+
+  // House style (interview area, OFF by default): the signed-in role's own
+  // chrome, and words that match what the page does. Display only.
+  const house = isHouseStyleOn("interview")
+  const Chrome = house ? RolePracticeChrome : UserLayout
 
   const voice = useMeridianVoice("nova")
   const dictation = useSpeechDictation({
@@ -353,14 +361,18 @@ export default function InterviewPracticePage() {
   // ── SETUP ────────────────────────────────────────────────────
   if (phase === "setup") {
     return (
-      <UserLayout>
+      <Chrome>
         <div className="mx-auto max-w-3xl py-8 space-y-4">
           <header>
             <h1 className="text-2xl font-semibold">Role Play</h1>
-            <p className="text-sm text-slate-600">
-              A structured interview role play with supportive coaching — no scores,
-              just tips to help your story land. You choose how many questions.
-            </p>
+            {house ? (
+              <p className="text-sm text-muted-foreground">{practiceIntro(scored.enabled)}</p>
+            ) : (
+              <p className="text-sm text-slate-600">
+                A structured interview role play with supportive coaching — no scores,
+                just tips to help your story land. You choose how many questions.
+              </p>
+            )}
             <p className="mt-1 text-sm">
               <Link to={ROUTES.INTERVIEW_PRACTICE_ROLES} className="text-indigo-600 hover:underline">
                 Preparing for a specific role? Browse role guides →
@@ -399,7 +411,7 @@ export default function InterviewPracticePage() {
             </>
           )}
         </div>
-      </UserLayout>
+      </Chrome>
     )
   }
 
@@ -407,11 +419,11 @@ export default function InterviewPracticePage() {
   if (phase === "findings" && frame) {
     const planned = frameQuestionCount(frame)
     return (
-      <UserLayout>
+      <Chrome>
         <div className="mx-auto max-w-3xl py-8 space-y-4 print:max-w-none print:py-0">
           <header className="flex items-start justify-between gap-4 print:block">
             <div>
-              <h1 className="text-2xl font-semibold">Interview Findings</h1>
+              <h1 className="text-2xl font-semibold">{house ? PRACTICE_RESULTS_TITLE : "Interview Findings"}</h1>
               <p className="text-sm text-slate-600">
                 {frame.roleTitle} · {frame.company} — {exchanges.length} of {planned} answered · {frameLengthMinutes(frame)} min target
               </p>
@@ -484,7 +496,7 @@ export default function InterviewPracticePage() {
             </CardContent>
           </Card>
         </div>
-      </UserLayout>
+      </Chrome>
     )
   }
 
@@ -492,7 +504,7 @@ export default function InterviewPracticePage() {
   const currentSectionKey = current?.sectionTitle
 
   return (
-    <UserLayout>
+    <Chrome>
       <div className="mx-auto max-w-3xl py-8 space-y-4">
         <header className="flex items-start justify-between gap-4">
           <div>
@@ -687,6 +699,6 @@ export default function InterviewPracticePage() {
           </Card>
         )}
       </div>
-    </UserLayout>
+    </Chrome>
   )
 }

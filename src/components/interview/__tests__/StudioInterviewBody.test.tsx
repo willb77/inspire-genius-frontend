@@ -19,6 +19,7 @@
  */
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { StrictMode } from "react"
 
 const createMutate = jest.fn()
 const submitMutate = jest.fn()
@@ -637,6 +638,48 @@ describe("past interviews — resume and reopen (fork)", () => {
     const scoreLine = screen.getAllByText(/Overall score:/i)[0].textContent ?? ""
     expect(scoreLine).toContain("—")
     expect(scoreLine).not.toContain("0.00")
+  })
+
+  // House style (interview area): the manager's list opens a Studio interview
+  // through the page's address, which passes `openSessionId`.
+  it("opens the session it is handed, once, and resumes it without a new session", async () => {
+    useLiveSessions.mockReturnValue(LIST())
+    getSession.mockResolvedValue(DETAIL())
+    // StrictMode runs mount effects twice in development; the once-per-id
+    // guard is what keeps that from opening (and fetching) the session twice.
+    const { rerender } = render(
+      <StrictMode>
+        <StudioInterviewBody openSessionId="s-old" />
+      </StrictMode>,
+    )
+
+    expect(await screen.findByText("panel 1/1: What drew you here?")).toBeInTheDocument()
+    rerender(
+      <StrictMode>
+        <StudioInterviewBody openSessionId="s-old" />
+      </StrictMode>,
+    )
+    expect(getSession).toHaveBeenCalledTimes(1)
+    expect(getSession).toHaveBeenCalledWith("s-old")
+    expect(createMutate).not.toHaveBeenCalled()
+  })
+
+  it("opens a finished session it is handed read-only and never re-finalizes it", async () => {
+    useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
+    getSession.mockResolvedValue(
+      DETAIL({ status: "finalized", overall_score: 5, recommendation: "Advance", section_scores: { warm_up: { mean: 5 } } }),
+    )
+    render(<StudioInterviewBody openSessionId="s-old" />)
+
+    expect(await screen.findByText(/reopened for review/i)).toBeInTheDocument()
+    expect(finalizeMutate).not.toHaveBeenCalled()
+  })
+
+  it("opens nothing when no session is handed (today's behaviour)", async () => {
+    useLiveSessions.mockReturnValue(LIST())
+    render(<StudioInterviewBody />)
+    await screen.findByRole("button", { name: /resume/i })
+    expect(getSession).not.toHaveBeenCalled()
   })
 })
 

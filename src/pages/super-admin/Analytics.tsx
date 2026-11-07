@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "react-router-dom"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { AdminHub } from "@/pages/super-admin/house/AdminHub"
+import { USAGE_HUB } from "@/pages/super-admin/house/hubs"
 import DataCard from "@/components/dashboard/DataCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -527,9 +530,34 @@ function isAnalyticsTab(value: string | null): value is AnalyticsTab {
   return value !== null && (VALID_TABS as readonly string[]).includes(value)
 }
 
+// House style drops the "Project Log" tab: it only says the log has moved
+// (the usability review marks it for removal). ?tab=project then opens Analytics.
+const HOUSE_TABS: readonly AnalyticsTab[] = ["analytics", "audit"]
+
+function isShownTab(value: string | null, house: boolean): value is AnalyticsTab {
+  return isAnalyticsTab(value) && (!house || HOUSE_TABS.includes(value))
+}
+
 export default function SuperAdminAnalytics() {
+  // House style (admin switch, default OFF): the "Activity" tab of Usage & costs.
+  if (isHouseStyleOn("admin")) {
+    return (
+      <AdminHub hub={USAGE_HUB} active="activity">
+        <AnalyticsContent house />
+      </AdminHub>
+    )
+  }
+  return (
+    <SuperAdminLayout>
+      <AnalyticsContent />
+    </SuperAdminLayout>
+  )
+}
+
+function AnalyticsContent({ house = false }: { house?: boolean }) {
   const [searchParams, setSearchParams] = useSearchParams()
-  const initialTab: AnalyticsTab = isAnalyticsTab(searchParams.get("tab"))
+  const isTab = (value: string | null): value is AnalyticsTab => isShownTab(value, house)
+  const initialTab: AnalyticsTab = isTab(searchParams.get("tab"))
     ? (searchParams.get("tab") as AnalyticsTab)
     : "analytics"
   const [activeTab, setActiveTab] = useState<AnalyticsTab>(initialTab)
@@ -537,13 +565,13 @@ export default function SuperAdminAnalytics() {
   // Keep ?tab=… in sync if a deep-link arrives after mount (e.g. redirect from /super-admin/audit-log)
   useEffect(() => {
     const param = searchParams.get("tab")
-    if (isAnalyticsTab(param) && param !== activeTab) {
+    if (isShownTab(param, house) && param !== activeTab) {
       setActiveTab(param)
     }
-  }, [searchParams, activeTab])
+  }, [searchParams, activeTab, house])
 
   const handleTabChange = (next: string) => {
-    if (!isAnalyticsTab(next)) return
+    if (!isTab(next)) return
     setActiveTab(next)
     const params = new URLSearchParams(searchParams)
     if (next === "analytics") {
@@ -555,12 +583,13 @@ export default function SuperAdminAnalytics() {
   }
 
   return (
-    <SuperAdminLayout>
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
+      <div className={house ? "flex flex-col" : "flex flex-col h-[calc(100vh-4rem)]"}>
+        {!house && (
         <div className="mb-4">
           <h1 className="text-xl font-bold text-[#111827]">Analytics & Logs</h1>
           <p className="text-[13px] text-[#6b7280] mt-1">Platform analytics, audit trail, and project documentation.</p>
         </div>
+        )}
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col">
           <TabsList className="w-fit">
@@ -570,12 +599,14 @@ export default function SuperAdminAnalytics() {
             </TabsTrigger>
             <TabsTrigger value="audit" className="gap-2">
               <Shield className="h-3.5 w-3.5" />
-              Audit Log
+              {house ? "Audit log" : "Audit Log"}
             </TabsTrigger>
+            {!house && (
             <TabsTrigger value="project" className="gap-2">
               <FileText className="h-3.5 w-3.5" />
               Project Log
             </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="analytics" className="flex-1 mt-4 overflow-y-auto">
@@ -586,11 +617,12 @@ export default function SuperAdminAnalytics() {
             <AuditLogTab />
           </TabsContent>
 
+          {!house && (
           <TabsContent value="project" className="flex-1 mt-4 flex flex-col">
             <ProjectLogTab />
           </TabsContent>
+          )}
         </Tabs>
       </div>
-    </SuperAdminLayout>
   )
 }

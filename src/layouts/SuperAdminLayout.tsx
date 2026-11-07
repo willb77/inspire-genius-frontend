@@ -12,6 +12,8 @@ import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher";
 import { useToolsSection } from "@/hooks/nav/useToolsSection";
 import GrantPreviewToggle from "@/components/grant/GrantPreviewToggle";
 import { useAuth } from "@/context/useAuth";
+import { isHouseStyleOn } from "@/lib/house/areaSwitch";
+import { HOUSE_SUPER_ADMIN_SECTIONS } from "@/constants/house/superAdminNav";
 
 export type SuperAdminLayoutProps = {
   children: React.ReactNode;
@@ -32,6 +34,10 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
   // section but are hidden from every super-admin except the platform owner.
   // The backend independently hard-403s any non-owner caller.
   const isOwner = isPlatformOwner(user?.email);
+  // House style (area `admin`, default OFF): six groups plus Advanced, and the
+  // Role Views group gives way to the "View as…" switcher on Admin home.
+  // Display only — the same destinations, the same owner-only filter.
+  const houseStyle = isHouseStyleOn("admin");
 
   /**
    * Section order (2026-07-28): **My Workspace → Role Views → Verticals →
@@ -53,6 +59,15 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
         ...s,
         items: gate(s.items),
       }));
+    if (houseStyle) {
+      return [
+        ...HOUSE_SUPER_ADMIN_SECTIONS.map((s) => ({ ...s, items: gate(s.items) })),
+        ...(toolsSection ? [toolsSection] : []),
+        // Collapsed here (wireframe); SidebarScaffold still opens it on any
+        // page it holds, e.g. Home, where super-admins land.
+        { label: "My Workspace", items: userNavItems, defaultCollapsed: true },
+      ];
+    }
     return [
       // Always visible: a plain group, no header toggle (Bill, 2026-10-12).
       { label: "My Workspace", items: userNavItems },
@@ -69,7 +84,7 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
       // any admin page, because SidebarScaffold opens the group holding the page.
       ...bySection("Administration"),
     ];
-  }, [userNavItems, toolsSection, isOwner]);
+  }, [userNavItems, toolsSection, isOwner, houseStyle]);
 
   return (
     <SidebarScaffold

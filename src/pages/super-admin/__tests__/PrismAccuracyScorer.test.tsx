@@ -1,3 +1,4 @@
+import { MemoryRouter } from "react-router-dom"
 import React from "react"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -227,5 +228,24 @@ describe("PrismAccuracyScorer — people first", () => {
     expect(screen.getByText(/PRISM guide — behaviours and colours/)).toBeInTheDocument()
     expect(screen.getByText(/High \(65–74\)/)).toBeInTheDocument()
     expect(screen.getByText(/Finishing ↔ Innovating/)).toBeInTheDocument()
+  })
+})
+
+describe("PrismAccuracyScorer — house style switch", () => {
+  afterEach(() => localStorage.removeItem("house_style_admin"))
+
+  it("switch OFF (default): today's title, no PRISM tabs", () => {
+    render(<MemoryRouter><PrismAccuracyScorer /></MemoryRouter>)
+    expect(screen.getByRole("heading", { name: /PRISM Accuracy Scorer/i })).toBeInTheDocument()
+    expect(screen.queryByRole("navigation", { name: "PRISM sections" })).not.toBeInTheDocument()
+  })
+
+  it("switch ON: the 'Accuracy check' tab of one PRISM page", () => {
+    localStorage.setItem("house_style_admin", "true")
+    render(<MemoryRouter><PrismAccuracyScorer /></MemoryRouter>)
+    expect(screen.getByRole("heading", { level: 1, name: "PRISM" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Accuracy check" })).toHaveAttribute("aria-current", "page")
+    expect(screen.queryByRole("heading", { name: /PRISM Accuracy Scorer/i })).not.toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Scores" })).toHaveAttribute("href", "/super-admin/prism-management")
   })
 })

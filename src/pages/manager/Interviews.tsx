@@ -23,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ROUTES } from "@/constants/routes"
 import { useLiveSessions } from "@/hooks/interview/useLiveSessions"
 import type { LiveSessionSummary } from "@/services/interview/live.service"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import InterviewsListHouse from "@/components/interview/house/InterviewsListHouse"
 
 const fmtDate = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—"
@@ -38,7 +40,22 @@ const candidateLabel = (s: LiveSessionSummary) =>
 const modeLabel = (s: LiveSessionSummary) =>
   (s.frame?.mode ?? "star") === "custom" ? "Studio" : "Live scored"
 
+/**
+ * House style (interview area, OFF by default): the list whose rows open.
+ * Switch off, the classic page below renders exactly as before.
+ */
 export default function ManagerInterviews() {
+  if (isHouseStyleOn("interview")) {
+    return (
+      <ManagerLayout>
+        <InterviewsListHouse />
+      </ManagerLayout>
+    )
+  }
+  return <ClassicManagerInterviews />
+}
+
+function ClassicManagerInterviews() {
   const { data, isLoading, error, refetch } = useLiveSessions({ limit: 100 })
 
   const sessions = useMemo(() => data?.sessions ?? [], [data])

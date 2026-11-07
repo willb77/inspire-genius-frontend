@@ -11,7 +11,7 @@
  * `frame.mode = "custom"`), the scorer bands per `frame.kind`, and the findings
  * add the advisory narrative feedback the backend now returns.
  */
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -160,7 +160,16 @@ type AnswerState = {
   scored: LiveAnswer | null
 }
 
-export default function StudioInterviewBody() {
+export type StudioInterviewBodyProps = {
+  /**
+   * House style (interview area): a stored session to open once on mount —
+   * a finished one read-only, an unfinished one where it stopped. Only the
+   * switched-on workspace page passes it; absent, nothing here changes.
+   */
+  openSessionId?: string
+}
+
+export default function StudioInterviewBody({ openSessionId }: StudioInterviewBodyProps = {}) {
   const { user } = useAuth()
 
   const [phase, setPhase] = useState<Phase>("setup")
@@ -442,6 +451,17 @@ export default function StudioInterviewBody() {
     setFinalizeError(null); setReadOnly(false)
     setEmployer(null); setTailoring(null)
   }
+
+  // House style — open the session the address names, once per id. Same rule
+  // as Live Interview's `?session=`: the ref keeps a re-render from opening it
+  // twice, and a finished interview opens read-only and is never re-finalized.
+  const openedFromPropRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!openSessionId || openedFromPropRef.current === openSessionId) return
+    openedFromPropRef.current = openSessionId
+    void openSession(openSessionId, "resume")
+    // openSession is recreated each render; the ref above makes this run once per id.
+  }, [openSessionId])
 
   const doExport = async (kind: "word" | "pdf" | "save") => {
     if (!finalizeResult) return

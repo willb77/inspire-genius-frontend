@@ -122,3 +122,24 @@ describe("CostDashboard", () => {
     expect(screen.getByText("30d period")).toBeInTheDocument();
   });
 });
+
+describe("CostDashboard — house style switch", () => {
+  afterEach(() => localStorage.removeItem("house_style_admin"));
+
+  it("switch OFF (default): no Usage & costs tabs", () => {
+    renderComponent();
+    expect(screen.queryByRole("navigation", { name: "Usage & costs sections" })).not.toBeInTheDocument();
+  });
+
+  it("switch ON: the Cost per coach tab, same figures", () => {
+    localStorage.setItem("house_style_admin", "true");
+    renderComponent();
+    const tab = screen.getByRole("link", { name: "Cost per coach" });
+    expect(tab).toHaveAttribute("aria-current", "page");
+    expect(tab).toHaveAttribute("href", "/super-admin/agent-trainer/agent-1/costs");
+    expect(screen.getByRole("link", { name: "Activity" })).toHaveAttribute("href", "/super-admin/analytics");
+    expect(screen.getByText("Coach: agent-1")).toBeInTheDocument();
+    expect(screen.queryByText("Cost & ROI Dashboard")).not.toBeInTheDocument();
+    expect(screen.getByText("$127.45")).toBeInTheDocument();
+  });
+});

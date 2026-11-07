@@ -224,3 +224,34 @@ describe("UserTopHeader — Goals Studio guide pill", () => {
     },
   );
 });
+
+describe("UserTopHeader — interview guide film title (house style, interview area)", () => {
+  afterEach(() => localStorage.clear());
+
+  it("OFF: keeps today's title", () => {
+    mockPathname = "/interview-practice";
+    render(<UserTopHeader />);
+    expect(screen.getByTestId("interview-studio-guide-video")).toHaveTextContent("Watch: Interview Studio");
+  });
+
+  it.each(["/manager/interview-studio", "/practitioner/interview-live", "/interview-practice"])(
+    "ON: titles the same film for every interview page on %s",
+    (path) => {
+      localStorage.setItem("house_style_interview", "true");
+      mockPathname = path;
+      render(<UserTopHeader />);
+      const pill = screen.getByTestId("interview-studio-guide-video");
+      expect(pill).toHaveTextContent("Watch: Interviews guide");
+      expect(pill).not.toHaveTextContent("Interview Studio");
+      // Same film: only the title changes.
+      expect(pill).toHaveAttribute("href", expect.stringContaining("IG_Interview_Studio.mp4"));
+    },
+  );
+
+  it("ON: leaves the other films' titles alone", () => {
+    localStorage.setItem("house_style_interview", "true");
+    mockPathname = "/home";
+    render(<UserTopHeader />);
+    expect(screen.getByTestId("workspace-guide-video")).toHaveTextContent("Watch: My Workspace guide");
+  });
+});
