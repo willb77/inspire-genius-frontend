@@ -12,6 +12,7 @@ import DistributorDashboard from "../../Dashboard"
 import DistributorCredits from "../../Credits"
 import DistributorAnalytics from "../../Analytics"
 import NetworkHub from "../../NetworkHub"
+import { formatDate } from "@/lib/house/formatDate"
 
 jest.mock("@/layouts/DistributorLayout", () => ({
   __esModule: true,
@@ -142,7 +143,8 @@ describe("switch ON — distributor home", () => {
     expect(screen.getByText("Ana Gomez")).toBeInTheDocument()
     expect(screen.getByText("42 of 50 credits used")).toBeInTheDocument()
     expect(screen.getByText("Given to a practitioner")).toBeInTheDocument()
-    expect(screen.getByText("Nov 3, 2026")).toBeInTheDocument()
+    // Formatted in the runner's own time zone, as the page does.
+    expect(screen.getByText(formatDate("2026-11-03T15:00:00Z"))).toBeInTheDocument()
     expect(screen.getByTestId("validation-queue")).toBeInTheDocument()
     expectNoSample()
   })
