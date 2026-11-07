@@ -15,6 +15,8 @@ import { ROLES, ROUTES } from "@/constants/routes";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeMenu from "@/components/shared/theme/ThemeMenu";
 import { useThemesAllowed } from "@/hooks/useIgTheme";
+import { isHouseStyleOn } from "@/lib/house/areaSwitch";
+import { INTERVIEW_GUIDE_LABEL } from "@/components/interview/house/practiceWords";
 
 /**
  * The My Workspace tour (4:13), narrated: Home and the seven sidebar pages.
@@ -103,7 +105,9 @@ type GuidePill = { label: string; url: string; testId: string };
 function guidePillFor(pathname: string): GuidePill | null {
   if (matchesPrefix(pathname, INTERVIEW_STUDIO_PREFIXES)) {
     return {
-      label: "Watch: Interview Studio",
+      // House style (interview area, OFF by default): the film covers every
+      // interview page, not just Interview Studio, so it is titled for that.
+      label: isHouseStyleOn("interview") ? INTERVIEW_GUIDE_LABEL : "Watch: Interview Studio",
       url: INTERVIEW_STUDIO_GUIDE_VIDEO_URL,
       testId: "interview-studio-guide-video",
     };
