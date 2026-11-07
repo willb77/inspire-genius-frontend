@@ -7,6 +7,8 @@ import {
 import ProgressBar from "@/components/dashboard/ProgressBar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDistributorAnalytics } from "@/hooks/analytics/useAnalytics"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import DistributorReportsHouse from "./house/DistributorReportsHouse"
 
 const FALLBACK_CREDITS_BY_REGION = [
   { region: "Northeast", credits: 890 }, { region: "Southeast", credits: 770 }, { region: "Midwest", credits: 620 },
@@ -22,7 +24,7 @@ const FALLBACK_CREDIT_FLOW = [
   { month: "Feb", purchased: 550, allocated: 480, used: 385 }, { month: "Mar", purchased: 500, allocated: 420, used: 350 },
 ]
 
-export default function DistributorAnalytics() {
+function DistributorAnalyticsClassic() {
   const { data: analyticsData, isLoading, error, refetch } = useDistributorAnalytics()
 
   const ad = analyticsData as {
@@ -89,4 +91,10 @@ export default function DistributorAnalytics() {
       />
     </DistributorLayout>
   )
+}
+
+/** House-style switch (`distributor`, default OFF): OFF renders the classic page unchanged. */
+export default function DistributorAnalytics() {
+  if (isHouseStyleOn("distributor")) return <DistributorReportsHouse />
+  return <DistributorAnalyticsClassic />
 }

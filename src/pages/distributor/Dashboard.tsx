@@ -8,6 +8,8 @@ import StatusBadge from "@/components/dashboard/StatusBadge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDistributorPractitioners, useDistributorCredits, useDistributorTransactions } from "@/hooks/distributor/useDistributor"
 import { ValidationReviewQueue } from "@/components/job-blueprint/validation/ValidationReviewQueue"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import DistributorHomeHouse from "./house/DistributorHomeHouse"
 
 type NetworkEntry = { name: string; region: string; alloc: number; used: number; util: number; status: string }
 type Transaction = { date: string; type: string; amount: string; amountClass: string; balance: string }
@@ -59,7 +61,7 @@ function txTypeColor(type: string) {
   return "text-[#374151]"
 }
 
-export default function DistributorDashboard() {
+function DistributorDashboardClassic() {
   const { t } = useTranslation(["admin", "common"]);
 
   const { data: practsData, isLoading: practsLoading, error: practsError, refetch: refetchPracts } = useDistributorPractitioners()
@@ -230,4 +232,10 @@ export default function DistributorDashboard() {
       />
     </DistributorLayout>
   )
+}
+
+/** House-style switch (`distributor`, default OFF): OFF renders the classic page unchanged. */
+export default function DistributorDashboard() {
+  if (isHouseStyleOn("distributor")) return <DistributorHomeHouse />
+  return <DistributorDashboardClassic />
 }
