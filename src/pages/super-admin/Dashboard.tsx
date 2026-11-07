@@ -51,6 +51,8 @@ import { useFeedbackStats } from "@/hooks/feedback/useFeedback"
 import { useCostDashboard } from "@/hooks/trainer/useTrainer"
 import { ROUTES } from "@/constants/routes"
 import { AGENT_VOICE_CONFIG, getDomainColor } from "@/constants/agentVoiceConfig"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import SuperAdminDashboardHouse from "@/pages/super-admin/house/DashboardHouse"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -144,7 +146,15 @@ function KpiCard({ label, value, change, icon: Icon, color, linkTo }: KpiCardPro
 // Component
 // ---------------------------------------------------------------------------
 
+/**
+ * House style (area `admin`, default OFF) renders the new admin home; with the
+ * switch off this page is unchanged. The switch is display-only.
+ */
 export default function SuperAdminDashboard() {
+  return isHouseStyleOn("admin") ? <SuperAdminDashboardHouse /> : <ClassicSuperAdminDashboard />
+}
+
+function ClassicSuperAdminDashboard() {
   const [dateRange, setDateRange] = useState("30")
 
   // ── Real data hooks ──────────────────────────────────────────────
