@@ -39,6 +39,35 @@ describe("useCohortReadout hooks", () => {
     expect(svc.getCohortReadout).toHaveBeenCalledWith("2026-08-01")
   })
 
+  it("company-admin (no scope) reads the own org with the original call", async () => {
+    ;(svc.getCohortReadout as jest.Mock).mockResolvedValue({ suppressed: true })
+    const { result } = renderHook(() => useCohortReadout(undefined), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect((svc.getCohortReadout as jest.Mock).mock.calls).toEqual([[undefined]])
+    expect((svc.getCohortReadout as jest.Mock).mock.calls[0]).toHaveLength(1)
+  })
+
+  it("super-admin scope with no org makes NO call", async () => {
+    const { result } = renderHook(() => useCohortReadout(undefined, { orgId: undefined }), { wrapper })
+    await new Promise((r) => setTimeout(r, 20))
+    expect(svc.getCohortReadout).not.toHaveBeenCalled()
+    expect(result.current.fetchStatus).toBe("idle")
+  })
+
+  it("super-admin scope with an org sends it", async () => {
+    ;(svc.getCohortReadout as jest.Mock).mockResolvedValue({ suppressed: true })
+    const { result } = renderHook(() => useCohortReadout("2026-08-01", { orgId: "org-9" }), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(svc.getCohortReadout).toHaveBeenCalledWith("2026-08-01", "org-9")
+  })
+
+  it("exports for a picked org", async () => {
+    ;(svc.exportCohortReadout as jest.Mock).mockResolvedValue(new Blob(["x"]))
+    const { result } = renderHook(() => useCohortReadoutExport(), { wrapper })
+    result.current.mutate({ format: "docx", orgId: "org-9" })
+    await waitFor(() => expect(svc.exportCohortReadout).toHaveBeenCalledWith("docx", undefined, "org-9"))
+  })
+
   it("exports through the service", async () => {
     ;(svc.exportCohortReadout as jest.Mock).mockResolvedValue(new Blob(["x"]))
     const { result } = renderHook(() => useCohortReadoutExport(), { wrapper })

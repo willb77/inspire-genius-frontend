@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ROUTES } from "@/constants/routes"
@@ -8,6 +9,9 @@ import ComingNextPage from "./ComingNextPage"
 import { costQueryFrom } from "./costQuery"
 import { DiscoveryError, DiscoveryLoading, NoticeCard, StageHeader } from "./DiscoveryParts"
 import { useDiscoveryContext } from "./discoveryContext"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { HouseCostNoQuery } from "./house/HouseCostNoQuery"
+import { costSearch, rememberCost } from "./house/lastCost"
 
 /**
  * Cost and payback (DISC-3). The server decides whether this stage exists on
@@ -37,6 +41,12 @@ function CostAndPayback({ enabled }: { enabled: boolean }) {
   const [params] = useSearchParams()
   const query = costQueryFrom(params)
   const { data, isLoading, isError, error } = useDiscoveryCost(query, enabled)
+  // House style: remember this tab's last school and path, so the menu can reopen it.
+  const house = isHouseStyleOn("career-education")
+  const toRemember = house && query ? costSearch(query) : null
+  useEffect(() => {
+    if (toRemember) rememberCost(toRemember)
+  }, [toRemember])
   const header = (
     <StageHeader
       title="Cost and payback"
@@ -44,6 +54,14 @@ function CostAndPayback({ enabled }: { enabled: boolean }) {
     />
   )
 
+  if (!query && house) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <HouseCostNoQuery />
+      </div>
+    )
+  }
   if (!query) {
     return (
       <div className="space-y-6">

@@ -10,6 +10,7 @@ import {
 import { DiscoveryError, DiscoveryLoading, PayRange, StageHeader } from "./DiscoveryParts"
 import { useDiscoveryContext } from "./discoveryContext"
 import { STAGE_ROUTES } from "./stageRoutes"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 
 /** My plan — one page of what the person has found so far. No invented numbers. */
 export default function PlanPage() {
@@ -102,9 +103,12 @@ export default function PlanPage() {
           </CardContent>
         </Card>
       ) : null}
-      <p className="text-xs text-muted-foreground">
-        Coming next: {data.comingNext.map((c) => c.name).join(" and ")}.
-      </p>
+      {/* House style: nothing pending, no "Coming next: ." line. */}
+      {data.comingNext.length > 0 || !isHouseStyleOn("career-education") ? (
+        <p className="text-xs text-muted-foreground">
+          Coming next: {data.comingNext.map((c) => c.name).join(" and ")}.
+        </p>
+      ) : null}
     </div>
   )
 }

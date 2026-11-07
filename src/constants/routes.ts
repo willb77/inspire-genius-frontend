@@ -86,6 +86,7 @@ export const ROUTES = {
     VOICE_SETTINGS: "/super-admin/voice-settings",
     PROCESS_BUILDER: "/super-admin/process-builder",
     AGENT_TRAINER: "/super-admin/agent-trainer",
+    AGENT_TRAINER_ADMIN_TEMPLATES: "/super-admin/agent-trainer/admin-templates",
     BULK_IMPORT: "/super-admin/bulk-import",
     OBSERVABILITY: "/super-admin/observability",
     /** @deprecated Wave 2 Lane 2.B (P2.2 / D4) — redirects to MentorManagement → Protocol tab. */
@@ -107,6 +108,8 @@ export const ROUTES = {
     INTAKE: "/super-admin/intake",
     CHARACTER_LAB: "/super-admin/character-lab",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
+    /** Administration → Cohort Read-out (N-3): any organisation's read-out, picked by the super-admin. */
+    COHORT_READOUT: "/super-admin/cohort-readout",
     /** Administration → Client Sign-Up: the CRM pipeline, SOWs and invoicing hand-off. */
     CLIENT_SIGNUP: "/super-admin/client-signup",
     CLIENT_SIGNUP_ENGAGEMENT: "/super-admin/client-signup/:engagementId",

@@ -1,7 +1,9 @@
 /**
  * DAG Process Builder page.
- * Public at /dev/process-builder (no auth).
- * Protected at /super-admin/process-builder (auth required).
+ * Super-admin only, at /super-admin/agent-trainer/admin-templates.
+ * /dev/process-builder (formerly public, no auth) redirects there.
+ * /super-admin/process-builder is NOT this page: it redirects to the
+ * Workflow Designer, which saves to a different store.
  *
  * Wires the dag-builder package to IG's authenticated `agentApi` axios
  * instance so template CRUD (GET list, POST save, PATCH update) hits

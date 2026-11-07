@@ -46,6 +46,7 @@ import {
   Inbox,
   Filter,
   CreditCard,
+  PieChart,
 } from "lucide-react"
 
 /**
@@ -548,6 +549,10 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
     children: INTAKE_PRESETS.map((preset) => ({ to: intakePresetHref(preset), icon: Filter, label: preset.label })),
   },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
+  // N-3 — an organisation's cohort read-out, picked from the org directory.
+  // Not gated in the menu: the switch is per org, so the page shows the
+  // server's refusal for an org that is not enabled. Label must stay unique.
+  { to: ROUTES.SUPER_ADMIN.COHORT_READOUT, icon: PieChart, label: "Cohort Read-out" },
   // Client Sign-Up — the operating procedure in
   // docs/operations/IG_Client_Signup_and_SOW_Process.docx, as a working surface:
   // CRM pipeline with the stage gates enforced, the 14-section SOW, and the

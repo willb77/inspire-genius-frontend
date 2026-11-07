@@ -34,6 +34,7 @@ import {
   removeCoachesFromBusiness,
   getOrg,
   createOrg,
+  listOrgs,
   type OrgRecord,
 } from "@/services/super-admin/organization-management/organization-management.service";
 
@@ -43,6 +44,16 @@ export function useOrg(orgId?: string) {
     queryKey: ["org", orgId],
     queryFn: () => getOrg(orgId as string),
     enabled: !!orgId,
+    retry: false,
+  });
+}
+
+/** Every live organization (GET /v1/orgs/directory, platform-only), for pickers. */
+export function useOrgDirectory() {
+  return useQuery<OrgRecord[], AxiosError>({
+    queryKey: ["org-directory"],
+    queryFn: listOrgs,
+    staleTime: 5 * 60_000,
     retry: false,
   });
 }
