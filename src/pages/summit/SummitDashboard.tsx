@@ -6,6 +6,8 @@ import { GoalCard } from "@/pages/summit/SummitGoals";
 import { useAuth } from "@/context/useAuth";
 import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
 import { GoalsWiringCard } from "@/pages/summit/components/GoalsWiringCard";
+import { alignKind } from "@/pages/summit/_summit";
+import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 
 /** First name only, for the greeting. Falls back to a name-free headline. */
 function firstName(name: string | null | undefined): string {
@@ -29,6 +31,18 @@ export default function SummitDashboard() {
   const nextCategory = categories.find((c) => c.status !== "explored");
 
   const who = firstName(user?.name ?? user?.fullName);
+
+  // House style (goals, S2a). Display only — the switch decides which words
+  // and links show, never what is read or saved. OFF renders today's page.
+  //  - Discovery is read-only and cannot start the conversation, so with the
+  //    switch on every "carry on" link goes to the page that can: Interview.
+  //  - The brain-map callout shows only when it is true: there are goals and
+  //    every one of them carries a PRISM alignment.
+  const house = isHouseStyleOn("goals");
+  const continueTo = house ? ROUTES.MY_GOALS.INTERVIEW : ROUTES.MY_GOALS.DISCOVERY;
+  const everyGoalAligned =
+    goals.length > 0 && goals.every((g) => alignKind(g.prism_alignment) !== null);
+  const showBrainCallout = house ? !isLoading && !isError && everyGoalAligned : true;
 
   return (
     <div className="flex flex-col gap-[18px]">
@@ -69,7 +83,7 @@ export default function SummitDashboard() {
                 <div className="font-serif text-2xl text-[#0B1B33]">{pct}% explored</div>
               </div>
               <Link
-                to={ROUTES.MY_GOALS.DISCOVERY}
+                to={continueTo}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-[#127A8A] px-3.5 py-2 text-[13px] font-bold text-white hover:bg-[#0E5F6B]"
               >
                 {explored === 0 ? "Start" : "Resume"} <ArrowRight className="h-3.5 w-3.5" />
@@ -111,10 +125,10 @@ export default function SummitDashboard() {
                   "Goals Studio gathers this in conversation rather than as a form — a few minutes now is enough to move it on."}
               </p>
               <Link
-                to={ROUTES.MY_GOALS.DISCOVERY}
+                to={continueTo}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#0B1B33] px-4 py-2.5 text-sm font-semibold text-[#FBF7F0] hover:bg-[#1D3A66]"
               >
-                Continue discovery <ChevronRight className="h-4 w-4" />
+                {house ? "Talk it through" : "Continue discovery"} <ChevronRight className="h-4 w-4" />
               </Link>
             </Card>
           )}
@@ -135,7 +149,18 @@ export default function SummitDashboard() {
                 </Link>
               )}
             </div>
-            {goals.length === 0 ? (
+            {goals.length === 0 && house ? (
+              <p className="text-[14px] leading-relaxed text-[#13294B]/80">
+                Goals are written out of the conversation rather than typed into a form,
+                so they appear here as you talk it through.{" "}
+                <Link
+                  to={ROUTES.MY_GOALS.INTERVIEW}
+                  className="inline-flex items-center gap-1 font-semibold text-[#0E5F6B]"
+                >
+                  Talk it through <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                </Link>
+              </p>
+            ) : goals.length === 0 ? (
               <p className="text-[14px] leading-relaxed text-[#13294B]/80">
                 Goals are written out of the discovery conversation rather than typed
                 into a form, so they appear here as you talk to Goals Studio — on the right
@@ -154,9 +179,11 @@ export default function SummitDashboard() {
         </>
       )}
 
+      {showBrainCallout && (
       <Callout tone="brain" icon={<Brain className="h-4 w-4 text-[#0E5F6B]" />}>
         Every goal here is aligned to your brain map: we prefer goals that <strong>leverage your natural strengths</strong>, and we frame any stretch as a conscious, time-boxed adaptation — never a permanent rewrite of who you are.
       </Callout>
+      )}
     </div>
   );
 }

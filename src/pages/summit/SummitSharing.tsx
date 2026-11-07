@@ -37,6 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { CoachGoalCard } from "@/components/manager/development/tabs/GoalsPanel";
 import { useMyGoals } from "@/hooks/summit/useMyGoals";
+import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 import { MemberLinkRequestCard } from "@/components/sharing/MemberLinkRequestCard";
 import {
   useAccessLog,
@@ -662,6 +663,11 @@ export function SharingCore() {
 export default function SummitSharing() {
   const mine = useMyGoals();
   const preview = (mine.data?.goals ?? []).find((g) => g.visibility === "shareable");
+  // House style (goals, S2a), display only: the preview is a picture of the
+  // other person's card, so nothing on it may look clickable. The disabled
+  // fieldset turns its one control (Co-ratify, which did nothing here) off and
+  // the class hides it. OFF: the preview renders as today.
+  const house = isHouseStyleOn("goals");
 
   return (
     <div className="flex flex-col gap-[18px]">
@@ -677,7 +683,20 @@ export default function SummitSharing() {
         <h2 id="preview-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">
           What they see
         </h2>
-        {preview ? (
+        {preview && house ? (
+          <div data-testid="sharing-preview">
+            <p className="mb-2 text-[12.5px] text-[#13294B]/75" data-testid="sharing-preview-note">
+              A preview of their view. Nothing on it can be clicked here.
+            </p>
+            <fieldset
+              disabled
+              aria-label="Preview of what they see"
+              className="m-0 min-w-0 border-0 p-0 [&_button]:hidden"
+            >
+              <CoachGoalCard goal={preview} onRatify={() => undefined} ratifying={false} />
+            </fieldset>
+          </div>
+        ) : preview ? (
           <div data-testid="sharing-preview">
             <CoachGoalCard goal={preview} onRatify={() => undefined} ratifying={false} />
           </div>
