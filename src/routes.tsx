@@ -597,7 +597,6 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/broadcast-alert", element: withSuspense(<BroadcastAlert />) },
       { path: "/super-admin/interview-studio", element: withSuspense(<SuperAdminInterviewStudio />) },
       { path: "/super-admin/interview-live", element: withSuspense(<SuperAdminInterviewLive />) },
-      { path: "/super-admin/interview-live", element: withSuspense(<SuperAdminInterviewLive />) },
       // Combined Plan §A.E3.4 — document research (Sage)
       { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
       // Saved-research workspace browser — Q + A pairs from POST /v1/tasks/results
