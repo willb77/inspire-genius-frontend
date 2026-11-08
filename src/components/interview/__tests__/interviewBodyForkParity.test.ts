@@ -45,3 +45,29 @@ describe("S-3 / D3 — subject_sub is decided in BOTH bodies, out loud", () => {
     expect(live).not.toContain("InterviewSubjectPicker")
   })
 })
+
+/**
+ * S4b — the one build behind the interview switch keeps both rules out loud,
+ * per source. The side-by-side suite proves the request bodies match the old
+ * bodies; these lines make removing a rule visible in review.
+ */
+describe("S4b — the one build keeps the D3 rule per source", () => {
+  const run = readFileSync(join(DIR, "house", "run", "InterviewRunBody.tsx"), "utf8")
+  const between = (from: string, to: string) => run.slice(run.indexOf(from), run.indexOf(to))
+
+  it("the hiring (star) create body never carries subject_sub", () => {
+    const star = between("const createStar", "/** Byte-for-byte Studio")
+    expect(star.length).toBeGreaterThan(100)
+    expect(star).not.toMatch(/subject_sub/)
+  })
+
+  it("the custom create body sends subject_sub only on a development frame", () => {
+    expect(between("const createCustom", "const handleFrameConfirm")).toContain(
+      '...(f.kind === "general" && subject ? { subject_sub: subject } : {})',
+    )
+  })
+
+  it("pipeline steps are written on the hiring source only", () => {
+    expect(run).toContain('if (source !== "star") return')
+  })
+})

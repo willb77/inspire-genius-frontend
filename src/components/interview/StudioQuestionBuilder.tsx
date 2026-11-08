@@ -72,6 +72,12 @@ export type StudioQuestionBuilderProps = {
    * development / discovery — the subject picker lives here, after the kind is
    * known, never on the participant step. */
   developmentOnly?: ReactNode
+  /**
+   * House style S4b: the style to start on, when the person already chose a
+   * kind of interview before reaching this form. Absent, the form starts on
+   * development / discovery exactly as before.
+   */
+  initialKind?: InterviewKind
 }
 
 const KIND_OPTIONS: { value: InterviewKind; label: string; hint: string }[] = [
@@ -87,11 +93,12 @@ export default function StudioQuestionBuilder({
   submitting,
   onKindChange,
   developmentOnly,
+  initialKind = "general",
 }: StudioQuestionBuilderProps) {
   const [title, setTitle] = useState("")
   const [purpose, setPurpose] = useState("")
   const [audience, setAudience] = useState("")
-  const [kind, setKind] = useState<InterviewKind>("general")
+  const [kind, setKind] = useState<InterviewKind>(initialKind)
   const [count, setCount] = useState(8)
   const [requisitionId, setRequisitionId] = useState("")
   const [requisitionLabel, setRequisitionLabel] = useState("")
