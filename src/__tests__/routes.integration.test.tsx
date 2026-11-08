@@ -9,6 +9,7 @@ import { render, screen, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useRoutes } from "react-router-dom";
 import { routes } from "@/routes";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthContext } from "@/context/auth-context";
 import type { AuthContextValue, AuthUser } from "@/types/auth/context-types";
 
@@ -113,19 +114,16 @@ const pageModules: Record<string, string> = {
   "@/pages/super-admin/Dashboard": "SuperAdminDashboardPage",
   "@/pages/super-admin/OrganizationManagement": "OrganizationManagementPage",
   "@/pages/super-admin/UserManagement": "UserManagementPage",
-  "@/pages/super-admin/IssuesDetailsPage": "IssuesDetailsPage",
-  "@/pages/super-admin/IssueDetailPage": "IssueDetailPage",
   "@/pages/super-admin/LicenceDetailsPage": "LicenceDetailsPage",
   "@/pages/super-admin/Settings": "SuperAdminSettingsPage",
   "@/pages/super-admin/Curriculum": "SuperAdminCurriculumPage",
   "@/pages/super-admin/CurriculumCatalog": "SuperAdminCurriculumCatalogPage",
   "@/pages/super-admin/OrganizationView": "OrganizationViewPage",
   "@/pages/super-admin/UserCoaches": "UserCoachesPage",
-  "@/pages/super-admin/ProjectLog": "ProjectLogPage",
   "@/pages/super-admin/RlhfTraining": "RlhfTrainingPage",
-  "@/pages/super-admin/PromptBuilder": "PromptBuilderPage",
   "@/pages/super-admin/Analytics": "SuperAdminAnalyticsPage",
-  "@/pages/super-admin/VoiceProviderSettings": "VoiceProviderSettingsPage",
+  "@/pages/super-admin/HelpSupportManagement": "HelpSupportManagementPage",
+  "@/pages/super-admin/ResearchPage": "SuperAdminResearchPage",
   "@/pages/super-admin/ProcessBuilder": "ProcessBuilderPage",
   "@/pages/super-admin/BulkImport": "SuperAdminBulkImportPage",
   "@/pages/super-admin/trainer/AgentTrainerDashboard": "AgentTrainerDashboardPage",
@@ -801,6 +799,67 @@ describe("Route Integration Tests", () => {
       renderWithRouter("/super-admin/agent-trainer/admin-templates", ctx);
       await advancePastBoot();
       expect(await screen.findByTestId("ProcessBuilderPage")).toBeInTheDocument();
+    });
+
+    // House style W1 — dead super-admin pages removed. Each old address is kept
+    // as a redirect so a bookmark opens the page that replaced it, not /login.
+    const W1_REDIRECTS = [
+      { path: "/super-admin/project-log", to: "/super-admin/analytics", testId: "SuperAdminAnalyticsPage" },
+      { path: "/super-admin/dashboard/issues", to: "/super-admin/support", testId: "HelpSupportManagementPage" },
+      { path: "/super-admin/issues/:id", url: "/super-admin/issues/abc-123", to: "/super-admin/support", testId: "HelpSupportManagementPage" },
+      { path: "/super-admin/research-library", to: "/super-admin/research", testId: "SuperAdminResearchPage" },
+    ];
+
+    it.each(W1_REDIRECTS)("$path is registered only as a redirect to $to", ({ path, to }) => {
+      const route = findRoute(path);
+      expect(route).toBeDefined();
+      const element = route?.element as React.ReactElement<{ to: string; replace?: boolean }>;
+      expect(element?.props?.to).toBe(to);
+      expect(element?.props?.replace).toBe(true);
+      expect(route?.children).toBeUndefined();
+    });
+
+    it.each(W1_REDIRECTS)("$path stays under the ProtectedRoute guard", ({ path }) => {
+      const guarded = routes.filter(
+        (r) => (r.element as React.ReactElement | undefined)?.type === ProtectedRoute,
+      );
+      expect(guarded.length).toBeGreaterThan(0);
+      const underGuard = guarded.some((r) => (r.children ?? []).some((c) => c.path === path));
+      expect(underGuard).toBe(true);
+    });
+
+    it.each(W1_REDIRECTS)("a super-admin at $path lands on $to", async ({ path, url, testId }) => {
+      const user = makeAuthUser({ role: "super-admin" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter(url ?? path, ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId(testId)).toBeInTheDocument();
+    });
+
+    it.each(W1_REDIRECTS)("a company-admin at $path is sent home, not to $to", async ({ path, url, testId }) => {
+      const user = makeAuthUser({ role: "company-admin" });
+      const ctx = makeAuthContext({ user });
+      renderWithRouter(url ?? path, ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("CompanyAdminDashboardPage")).toBeInTheDocument();
+      expect(screen.queryByTestId(testId)).not.toBeInTheDocument();
+    });
+
+    it.each(W1_REDIRECTS)("a signed-out visitor at $path gets the login page", async ({ path, url, testId }) => {
+      const ctx = makeAuthContext({ user: null });
+      renderWithRouter(url ?? path, ctx);
+      await advancePastBoot();
+      expect(await screen.findByTestId("LoginPage")).toBeInTheDocument();
+      expect(screen.queryByTestId(testId)).not.toBeInTheDocument();
+    });
+
+    it.each([
+      { path: "/super-admin/prompt-builder", to: "/super-admin/mentor-management?tab=prompt" },
+      { path: "/super-admin/interaction-protocol", to: "/super-admin/mentor-management?tab=protocol" },
+      { path: "/super-admin/voice-settings", to: "/super-admin/mentor-management?tab=voice" },
+    ])("keeps the existing Agent Management redirect $path -> $to", ({ path, to }) => {
+      const element = findRoute(path)?.element as React.ReactElement<{ to: string }>;
+      expect(element?.props?.to).toBe(to);
     });
 
     it("a company-admin at the new address is sent home, never shown the builder", async () => {

@@ -77,7 +77,6 @@ export const ROUTES = {
     USERS: "/super-admin/users",
     USER_MEMORY: "/super-admin/users/:userId/memory",
     SETTINGS: "/super-admin/settings",
-    PROJECT_LOG: "/super-admin/project-log",
     RLHF_TRAINING: "/super-admin/rlhf-training",
     /** @deprecated Wave 2 Lane 2.B (P2.1 / D3) — redirects to MentorManagement → Prompt tab. */
     PROMPT_BUILDER: "/super-admin/prompt-builder",
@@ -121,7 +120,6 @@ export const ROUTES = {
     /** Help & Support → Claude Code tab (CC.3). Static, so it outranks `:ticketId`. Shown only when the console grants access. */
     SUPPORT_CLAUDE_CODE: "/super-admin/support/claude-code",
     RESEARCH: "/super-admin/research",
-    RESEARCH_LIBRARY: "/super-admin/research-library",
     EXPLAINABILITY: "/super-admin/explainability",
     DEV_TRAFFIC_REPORT: "/super-admin/dev-traffic-report",
     EXPLAINABILITY_CONVERSATION: "/super-admin/explainability/c/:sessionId",

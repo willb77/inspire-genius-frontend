@@ -96,24 +96,17 @@ const SuperAdminDashboard = React.lazy(() => import("@/pages/super-admin/Dashboa
 const OrganizationManagement = React.lazy(() => import("@/pages/super-admin/OrganizationManagement"));
 const UserManagement = React.lazy(() => import("@/pages/super-admin/UserManagement"));
 const SuperAdminUserMemory = React.lazy(() => import("@/pages/super-admin/UserMemory"));
-const IssuesDetailsPage = React.lazy(() => import("@/pages/super-admin/IssuesDetailsPage"));
-const IssueDetailPage = React.lazy(() => import("@/pages/super-admin/IssueDetailPage"));
 const HelpSupportManagement = React.lazy(() => import("@/pages/super-admin/HelpSupportManagement"));
 const LicenceDetailsPage = React.lazy(() => import("@/pages/super-admin/LicenceDetailsPage"));
 const SuperAdminSettingsPage = React.lazy(() => import("@/pages/super-admin/Settings"));
 const OrganizationView = React.lazy(() => import("@/pages/super-admin/OrganizationView"));
 const UserCoaches = React.lazy(() => import("@/pages/super-admin/UserCoaches"));
-const ProjectLog = React.lazy(() => import("@/pages/super-admin/ProjectLog"));
 const AssetLibrary = React.lazy(() => import("@/pages/super-admin/AssetLibrary"));
 const AssetOpen = React.lazy(() => import("@/pages/super-admin/AssetOpen"));
 const RlhfTraining = React.lazy(() => import("@/pages/super-admin/RlhfTraining"));
 const DevTrafficReport = React.lazy(() => import("@/pages/super-admin/DevTrafficReport"));
 const BroadcastAlert = React.lazy(() => import("@/pages/super-admin/BroadcastAlert"));
-// Wave 2 Lane 2.B — PromptBuilder standalone deprecated; tab embedded in MentorManagement.
-// const PromptBuilder = React.lazy(() => import("@/pages/super-admin/PromptBuilder"));
 const SuperAdminAnalytics = React.lazy(() => import("@/pages/super-admin/Analytics"));
-// Wave 2 Lane 2.B — VoiceProviderSettings standalone deprecated; tab embedded in MentorManagement.
-// const VoiceProviderSettings = React.lazy(() => import("@/pages/super-admin/VoiceProviderSettings"));
 const PrismManagement = React.lazy(() => import("@/pages/super-admin/PrismManagement"));
 const PrismCsvConverter = React.lazy(() => import("@/pages/super-admin/PrismCsvConverter"));
 const PrismAccuracyScorer = React.lazy(() => import("@/pages/super-admin/PrismAccuracyScorer"));
@@ -172,7 +165,6 @@ const WorkspaceCharacterLab = React.lazy(() => import("@/pages/workspace/Charact
 const WorkspaceTeamComposition = React.lazy(() => import("@/pages/workspace/TeamCompositionPage"));
 const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
 const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/ResearchPage"));
-const SuperAdminResearchLibrary = React.lazy(() => import("@/pages/super-admin/ResearchLibraryPage"));
 
 // ── Company Admin pages ─────────────────────────────────────────────────────
 const CompanyAdminDashboard = React.lazy(() => import("@/pages/company-admin/Dashboard"));
@@ -189,8 +181,6 @@ const CompanyAdminCultureDocs = React.lazy(() => import("@/pages/company-admin/C
 const CompanyAdminCohortReadout = React.lazy(() => import("@/pages/company-admin/CohortReadout"));
 const SuperAdminBulkImport = React.lazy(() => import("@/pages/super-admin/BulkImport"));
 const SuperAdminObservability = React.lazy(() => import("@/pages/super-admin/Observability"));
-// Wave 2 Lane 2.B — InteractionProtocol standalone deprecated; tab embedded in MentorManagement.
-// const InteractionProtocol = React.lazy(() => import("@/pages/super-admin/InteractionProtocol"));
 const MentorManagement = React.lazy(() => import("@/pages/super-admin/MentorManagement"));
 const KnowledgeBase = React.lazy(() => import("@/pages/super-admin/KnowledgeBase"));
 const PrivacyCompliance = React.lazy(() => import("@/pages/super-admin/PrivacyCompliance"));
@@ -585,8 +575,10 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/organizations/:id/view", element: withSuspense(<OrganizationView />) },
       { path: "/super-admin/users", element: withSuspense(<UserManagement />) },
       { path: "/super-admin/users/:userId/memory", element: withSuspense(<SuperAdminUserMemory />) },
-      { path: "/super-admin/dashboard/issues", element: withSuspense(<IssuesDetailsPage />) },
-      { path: "/super-admin/issues/:id", element: withSuspense(<IssueDetailPage />) },
+      // House style W1 — the legacy issues pages were reachable by URL only and
+      // are removed; old bookmarks land on the live Help & Support queue below.
+      { path: "/super-admin/dashboard/issues", element: <Navigate to="/super-admin/support" replace /> },
+      { path: "/super-admin/issues/:id", element: <Navigate to="/super-admin/support" replace /> },
       // Help and Support Management — support-service tickets (not the legacy
       // /v1/issues above). The emailed "Open this ticket" link lands on the
       // :ticketId route with ?claim=1 and assigns the admin who opened it.
@@ -598,7 +590,9 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/support/claude-code", element: withSuspense(<HelpSupportManagement />) },
       { path: "/super-admin/dashboard/licences", element: withSuspense(<LicenceDetailsPage />) },
       { path: "/super-admin/settings", element: withSuspense(<SuperAdminSettingsPage />) },
-      { path: "/super-admin/project-log", element: withSuspense(<ProjectLog />) },
+      // House style W1 — the Project Log page only said the log had moved; it is
+      // removed and old bookmarks open Analytics.
+      { path: "/super-admin/project-log", element: <Navigate to="/super-admin/analytics" replace /> },
       { path: "/super-admin/asset-library", element: withSuspense(<AssetLibrary />) },
       { path: "/super-admin/rlhf-training", element: withSuspense(<RlhfTraining />) },
       { path: "/super-admin/dev-traffic-report", element: withSuspense(<DevTrafficReport />) },
@@ -608,7 +602,9 @@ export const routes: RouteObject[] = [
       // Combined Plan §A.E3.4 — document research (Sage)
       { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
       // Saved-research workspace browser — Q + A pairs from POST /v1/tasks/results
-      { path: "/super-admin/research-library", element: withSuspense(<SuperAdminResearchLibrary />) },
+      // House style W1 — the saved-research browser is the Library tab of the
+      // Research page; its standalone address now opens Research.
+      { path: "/super-admin/research-library", element: <Navigate to="/super-admin/research" replace /> },
       // Wave 2 Lane 2.B (P2.1 / D3) — PromptBuilder standalone superseded by the
       // MentorManagement → Prompt tab. Public path redirects so external links work.
       { path: "/super-admin/prompt-builder", element: <Navigate to="/super-admin/mentor-management?tab=prompt" replace /> },
