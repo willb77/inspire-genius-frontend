@@ -85,4 +85,4 @@ npx jest src/components/alex/__tests__/AlexChatPanel.test.tsx
 - `database_schema.md` — frontend data models and API entity schemas
 - `IG_project_log.html` — standalone HTML dashboard with all docs + session prompt history
 - `.claude/rules/` — development rules (code-style, architecture, workflow)
-- Project Log page available at `/super-admin/project-log` in the app
+- The in-app Project Log page was removed (house style W1, #690); `/super-admin/project-log` redirects to `/super-admin/analytics`
