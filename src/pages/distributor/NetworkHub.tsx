@@ -4,6 +4,8 @@ import DistributorLayout from "@/layouts/DistributorLayout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PractitionersBody } from "./network/PractitionersBody"
 import { TerritoryBody } from "./network/TerritoryBody"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import DistributorPractitionersHouse from "./house/DistributorPractitionersHouse"
 
 type NetworkTab = "practitioners" | "territory"
 
@@ -15,7 +17,7 @@ type NetworkHubProps = {
   defaultTab?: NetworkTab
 }
 
-export default function NetworkHub({ defaultTab = "practitioners" }: NetworkHubProps) {
+function NetworkHubClassic({ defaultTab = "practitioners" }: NetworkHubProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const queryTab = searchParams.get("tab")
   const [tab, setTab] = useState<NetworkTab>(isNetworkTab(queryTab) ? queryTab : defaultTab)
@@ -51,4 +53,10 @@ export default function NetworkHub({ defaultTab = "practitioners" }: NetworkHubP
       </Tabs>
     </DistributorLayout>
   )
+}
+
+/** House-style switch (`distributor`, default OFF): OFF renders the classic page unchanged. */
+export default function NetworkHub({ defaultTab = "practitioners" }: NetworkHubProps) {
+  if (isHouseStyleOn("distributor")) return <DistributorPractitionersHouse defaultTab={defaultTab} />
+  return <NetworkHubClassic defaultTab={defaultTab} />
 }

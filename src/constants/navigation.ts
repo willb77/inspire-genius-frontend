@@ -2,6 +2,7 @@ import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/Sideb
 import type { UserRole, RoleConfig } from "@/types/roles"
 import { ROUTES } from "@/constants/routes"
 import { INTAKE_PRESETS, intakePresetHref } from "@/constants/intake"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import {
   Home,
   FileText,
@@ -44,6 +45,7 @@ import {
   GraduationCap,
   Inbox,
   Filter,
+  CreditCard,
   PieChart,
 } from "lucide-react"
 
@@ -699,8 +701,8 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   RESUME_WRITER_ITEM,
 ]
 
-/** Navigation items for the distributor role */
-export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
+/** Navigation items for the distributor role (classic; shown while the `distributor` house-style switch is off) */
+const DISTRIBUTOR_NAV_ITEMS_CLASSIC: NavItemDef[] = [
   { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.DISTRIBUTOR.NETWORK, icon: Network, label: "Network" },
   { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Analytics" },
@@ -711,6 +713,29 @@ export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
   RESUME_WRITER_ITEM,
   { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
 ]
+
+/**
+ * House-style distributor menu (switch: `distributor`, default OFF): five items,
+ * with Credits — the core of the role — and Help added. Settings stays under the
+ * profile picture, and every route the classic menu linked to still loads.
+ * Display only: it chooses which list to show, never what a distributor may open.
+ */
+export const DISTRIBUTOR_NAV_ITEMS_HOUSE: NavItemDef[] = [
+  { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: Home, label: "Home" },
+  { to: ROUTES.DISTRIBUTOR.NETWORK, icon: Users, label: "My practitioners" },
+  { to: ROUTES.DISTRIBUTOR.CREDITS, icon: CreditCard, label: "Credits" },
+  { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Reports" },
+  { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
+]
+
+/**
+ * The distributor menu. Chosen once at load, like the switch itself (changing a
+ * switch takes effect on reload); with the switch off this is exactly the
+ * classic list.
+ */
+export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = isHouseStyleOn("distributor")
+  ? DISTRIBUTOR_NAV_ITEMS_HOUSE
+  : DISTRIBUTOR_NAV_ITEMS_CLASSIC
 
 /** Role-view links — lets super-admin jump to any role's dashboard */
 const ROLE_VIEW_ITEMS: NavItemDef[] = [

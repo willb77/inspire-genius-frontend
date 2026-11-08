@@ -7,6 +7,8 @@ import {
   DistributorAllocateControl,
   DistributorPurchaseControl,
 } from "@/components/credits/CreditsWriteControls"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import DistributorCreditsHouse from "./house/DistributorCreditsHouse"
 
 const FALLBACK_CHART_BARS = [
   { label: "Sep", val: 320, pct: 51.6 },
@@ -37,7 +39,7 @@ function txColor(type: string) {
   return "text-[#8B5CF6]"
 }
 
-export default function DistributorCredits() {
+function DistributorCreditsClassic() {
   const { data: creditsData, isLoading: creditsLoading } = useDistributorCredits()
   const { data: txData, isLoading: txLoading, error: txError, refetch: refetchTx } = useDistributorTransactions()
 
@@ -160,4 +162,10 @@ export default function DistributorCredits() {
       </DataCard>
     </DistributorLayout>
   )
+}
+
+/** House-style switch (`distributor`, default OFF): OFF renders the classic page unchanged. */
+export default function DistributorCredits() {
+  if (isHouseStyleOn("distributor")) return <DistributorCreditsHouse />
+  return <DistributorCreditsClassic />
 }
