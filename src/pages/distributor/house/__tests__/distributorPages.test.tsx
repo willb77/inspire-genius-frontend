@@ -1,9 +1,10 @@
 /**
  * @jest-environment jsdom
  *
- * The `distributor` house-style switch: OFF (the default) must render today's
- * pages exactly — same text, same sample figures — and ON must render the
- * house pages, which show only what the server returned.
+ * The distributor pages. The house-style pages are the only pages: the classic
+ * pages and their built-in sample figures were removed, so every value of the
+ * `distributor` switch — absent, "false" or "true" — renders the house page,
+ * which shows only what the server returned.
  */
 import React from "react"
 import { fireEvent, render, screen, within } from "@testing-library/react"
@@ -20,10 +21,6 @@ jest.mock("@/layouts/DistributorLayout", () => ({
 }))
 jest.mock("@/components/job-blueprint/validation/ValidationReviewQueue", () => ({
   ValidationReviewQueue: () => <div data-testid="validation-queue" />,
-}))
-jest.mock("@/components/analytics/charts", () => ({
-  EngagementChart: ({ title }: { title: string }) => <div>{title}</div>,
-  UtilizationAreaChart: ({ title }: { title: string }) => <div>{title}</div>,
 }))
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -54,8 +51,11 @@ jest.mock("@/hooks/distributor/useDistributor", () => ({
   useDistributorTransactions: () => q("txs"),
   useDistributorTerritory: () => q("territory"),
 }))
+// The removed classic Analytics page called GET /v1/analytics/distributor, which
+// has no server route. Nothing on a distributor page may call it now.
+const mockDistributorAnalytics = jest.fn(() => q("analytics"))
 jest.mock("@/hooks/analytics/useAnalytics", () => ({
-  useDistributorAnalytics: () => q("analytics"),
+  useDistributorAnalytics: () => mockDistributorAnalytics(),
 }))
 
 const REAL = {
@@ -80,10 +80,28 @@ const REAL = {
   territory: { data: { territories: [{ id: "r1", name: "North", region_code: "N", practitioner_count: 1, coverage_pct: 33.3 }], total_practitioners: 1, avg_coverage: 33.3 } },
 }
 
-const SAMPLE_TEXT = [/PRISM Partners Inc\./, /^10,000$/, /^3,200$/, /^1,800$/, /^5,000$/, /Dr\. Sarah Chen/, /Michael Torres/]
+// Every sample figure and name the removed classic pages fell back to.
+const SAMPLE_TEXT = [
+  /PRISM Partners Inc\./,
+  /10,000/,
+  /3,200/,
+  /1,800/,
+  /5,000/,
+  /Dr\. Sarah Chen/,
+  /Michael Torres/,
+  /Jennifer Okafor/,
+  /David Kim/,
+  /Rebecca Foster/,
+  /Alex Nguyen/,
+  /Maria Santos/,
+  /John Parker/,
+  /Onboard Practitioner/,
+  /Territory Analytics/,
+  /Mountain/,
+]
 
 function expectNoSample() {
-  for (const re of SAMPLE_TEXT) expect(screen.queryByText(re)).not.toBeInTheDocument()
+  for (const re of SAMPLE_TEXT) expect(document.body.textContent ?? "").not.toMatch(re)
 }
 
 const at = (ui: React.ReactElement, path = "/") => render(<MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>)
@@ -94,44 +112,103 @@ function setSwitch(v: "true" | "false" | null) {
 }
 
 beforeEach(() => {
+  mockDistributorAnalytics.mockClear()
   for (const k of Object.keys(hooks)) delete hooks[k]
   mockUser.current = { fullName: "Carolina Reyes" }
   mockWrite.on = false
   localStorage.clear()
 })
 
-describe("switch OFF — today's pages, unchanged", () => {
-  it.each([null, "false"] as const)("dashboard keeps the classic text (switch %s)", (v) => {
+const PAGES: [string, () => React.ReactElement, string][] = [
+  ["home", () => <DistributorDashboard />, "/distributor/dashboard"],
+  ["credits", () => <DistributorCredits />, "/distributor/credits"],
+  ["reports", () => <DistributorAnalytics />, "/distributor/analytics"],
+  ["practitioners", () => <NetworkHub />, "/distributor/network"],
+  ["regions", () => <NetworkHub defaultTab="territory" />, "/distributor/territory"],
+]
+
+describe("every switch value — the house page, never sample data", () => {
+  it.each([null, "false", "true"] as const)("home is the house page (switch %s)", (v) => {
     setSwitch(v)
     at(<DistributorDashboard />)
-    expect(screen.getByText(/Welcome back, PRISM Partners Inc\./)).toBeInTheDocument()
-    expect(screen.getByText("10,000")).toBeInTheDocument()
-    expect(screen.getByText("Dr. Sarah Chen")).toBeInTheDocument()
-    expect(screen.queryByText(/Good (morning|afternoon|evening)/)).not.toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Good (morning|afternoon|evening), Carolina$/)
+    expect(screen.queryByText(/Welcome back/)).not.toBeInTheDocument()
+    expectNoSample()
   })
 
-  it("credits keeps the classic page", () => {
-    at(<DistributorCredits />)
-    expect(screen.getByText("Credit Management")).toBeInTheDocument()
-    expect(screen.getByText("Purchase Credits")).toBeInTheDocument()
-    expect(screen.getByText("Total Purchased")).toBeInTheDocument()
-  })
-
-  it("analytics keeps the classic page", () => {
-    at(<DistributorAnalytics />)
-    expect(screen.getByText("Territory Analytics")).toBeInTheDocument()
-    expect(screen.queryByRole("heading", { name: "Reports" })).not.toBeInTheDocument()
-  })
-
-  it("network keeps the classic page", () => {
+  it.each([null, "false"] as const)("credits, reports and practitioners are the house pages (switch %s)", (v) => {
+    setSwitch(v)
+    const a = at(<DistributorCredits />)
+    expect(screen.getByRole("heading", { level: 1, name: "Credits" })).toBeInTheDocument()
+    expect(screen.queryByText("Credit Management")).not.toBeInTheDocument()
+    expect(screen.queryByText("Purchase Credits")).not.toBeInTheDocument()
+    a.unmount()
+    const b = at(<DistributorAnalytics />)
+    expect(screen.getByRole("heading", { level: 1, name: "Reports" })).toBeInTheDocument()
+    b.unmount()
     at(<NetworkHub />)
-    expect(screen.getByRole("heading", { name: "Network" })).toBeInTheDocument()
-    expect(screen.getByText("+ Onboard Practitioner")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1, name: "My practitioners" })).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Network" })).not.toBeInTheDocument()
+  })
+
+  const states: [string, () => void][] = [
+    ["no answer", () => undefined],
+    ["empty answers", () => {
+      hooks.practs = { data: { practitioners: [], total: 0 } }
+      hooks.txs = { data: { transactions: [] } }
+      hooks.territory = { data: { territories: [] } }
+      hooks.credits = { data: {} }
+    }],
+    ["failed loads", () => {
+      for (const k of ["practs", "txs", "territory", "credits"]) hooks[k] = { error: new Error("boom") }
+    }],
+    ["real answers", () => Object.assign(hooks, REAL)],
+  ]
+  for (const [stateName, arrange] of states) {
+    it.each(PAGES)(`${stateName}: %s shows no sample figure or name (switch off)`, (_n, ui, path) => {
+      setSwitch("false")
+      arrange()
+      at(ui(), path)
+      expectNoSample()
+    })
+  }
+
+  it.each(PAGES)("a failed load on %s shows the error state, never an empty state", (_n, ui, path) => {
+    for (const k of ["practs", "txs", "territory", "credits"]) hooks[k] = { error: new Error("boom") }
+    at(ui(), path)
+    expect(screen.getAllByText(/^We couldn't load/).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole("button", { name: "Try again" }).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/^No (practitioners|credit activity|regions) yet$/)).not.toBeInTheDocument()
+    expect(screen.queryByText("Nothing to report yet")).not.toBeInTheDocument()
+  })
+
+  it.each(PAGES)("%s never calls the route-less distributor analytics endpoint", (_n, ui, path) => {
+    Object.assign(hooks, REAL)
+    at(ui(), path)
+    expect(mockDistributorAnalytics).not.toHaveBeenCalled()
   })
 })
 
-describe("switch ON — distributor home", () => {
-  beforeEach(() => setSwitch("true"))
+describe("regions read the server's `territories` field", () => {
+  it("shows the territories rows", () => {
+    hooks.territory = REAL.territory
+    at(<NetworkHub defaultTab="territory" />)
+    expect(screen.getByText("Regions (1)")).toBeInTheDocument()
+    expect(screen.getByText("North")).toBeInTheDocument()
+    expect(screen.getByText("33%")).toBeInTheDocument()
+  })
+
+  it("ignores a `regions` field — the shape the removed page wrongly read", () => {
+    hooks.territory = {
+      data: { regions: [{ name: "Mountain", practitionerCount: 2, coveragePct: 25, allocatedCredits: 400, utilizationPct: 40, status: "pending" }] },
+    }
+    at(<NetworkHub defaultTab="territory" />)
+    expect(screen.getByText("Territory details aren't available yet.")).toBeInTheDocument()
+    expect(screen.queryByText("Mountain")).not.toBeInTheDocument()
+  })
+})
+
+describe("distributor home", () => {
 
   it("greets the account by its own name and shows real figures", () => {
     Object.assign(hooks, REAL)
@@ -200,8 +277,7 @@ describe("switch ON — distributor home", () => {
   })
 })
 
-describe("switch ON — credits", () => {
-  beforeEach(() => setSwitch("true"))
+describe("credits", () => {
 
   it("shows the real totals, roster and ledger", () => {
     Object.assign(hooks, REAL)
@@ -260,8 +336,7 @@ describe("switch ON — credits", () => {
   })
 })
 
-describe("switch ON — my practitioners", () => {
-  beforeEach(() => setSwitch("true"))
+describe("my practitioners", () => {
 
   it("lists the real roster, searchable, with no dead Onboard button", () => {
     Object.assign(hooks, REAL)
@@ -331,8 +406,7 @@ describe("switch ON — my practitioners", () => {
   })
 })
 
-describe("switch ON — reports", () => {
-  beforeEach(() => setSwitch("true"))
+describe("reports", () => {
 
   it("builds reports from the real roster and ledger only", () => {
     Object.assign(hooks, REAL)

@@ -2,7 +2,6 @@ import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/Sideb
 import type { UserRole, RoleConfig } from "@/types/roles"
 import { ROUTES } from "@/constants/routes"
 import { INTAKE_PRESETS, intakePresetHref } from "@/constants/intake"
-import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import {
   Home,
   FileText,
@@ -701,23 +700,12 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   RESUME_WRITER_ITEM,
 ]
 
-/** Navigation items for the distributor role (classic; shown while the `distributor` house-style switch is off) */
-const DISTRIBUTOR_NAV_ITEMS_CLASSIC: NavItemDef[] = [
-  { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.DISTRIBUTOR.NETWORK, icon: Network, label: "Network" },
-  { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Analytics" },
-  { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
-  // Role Play + entitlement-gated Career Fit (2026-10-18, request) — see
-  // ROLE_PLAY_ITEM. Career Fit is spliced in above Settings when entitled.
-  ROLE_PLAY_ITEM,
-  RESUME_WRITER_ITEM,
-  { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
-]
-
 /**
- * House-style distributor menu (switch: `distributor`, default OFF): five items,
- * with Credits — the core of the role — and Help added. Settings stays under the
- * profile picture, and every route the classic menu linked to still loads.
+ * The distributor menu: five items, with Credits — the core of the role — and
+ * Help. Settings stays under the profile picture. This is the house-style menu,
+ * now the only one: the classic seven-item list was removed with the classic
+ * distributor pages (house style W2a, "remove"). Surveys, Role Play and Résumé
+ * Writer are no longer in this menu; their routes still load by address.
  * Display only: it chooses which list to show, never what a distributor may open.
  */
 export const DISTRIBUTOR_NAV_ITEMS_HOUSE: NavItemDef[] = [
@@ -728,14 +716,8 @@ export const DISTRIBUTOR_NAV_ITEMS_HOUSE: NavItemDef[] = [
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
 
-/**
- * The distributor menu. Chosen once at load, like the switch itself (changing a
- * switch takes effect on reload); with the switch off this is exactly the
- * classic list.
- */
-export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = isHouseStyleOn("distributor")
-  ? DISTRIBUTOR_NAV_ITEMS_HOUSE
-  : DISTRIBUTOR_NAV_ITEMS_CLASSIC
+/** Navigation items for the distributor role (the house-style list above). */
+export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = DISTRIBUTOR_NAV_ITEMS_HOUSE
 
 /** Role-view links — lets super-admin jump to any role's dashboard */
 const ROLE_VIEW_ITEMS: NavItemDef[] = [

@@ -183,21 +183,26 @@ describe.each(ALL_ROLES)("%s — switch ON, entitled", (role) => {
   // 2026-10-29 (request): Career & Education Discovery then Career Fit, in
   // front of Role Play. Direction Setting, where its switch is on, follows them
   // so it never splits that pair.
-  test("it follows Career & Education Discovery and Career Fit, directly in front of Role Play", () => {
+  // The distributor menu has no Role Play since the house-style menu became its
+  // only menu (house style W2a, "remove"), so its workspace verticals sit just
+  // above its Help & Support tail instead.
+  const after = role === "distributor" ? "Help & Support" : "Role Play";
+
+  test("it follows Career & Education Discovery and Career Fit, directly in front of Role Play (distributor: Help & Support)", () => {
     const labels = mainMenu(role, renderAs(role, ALL_THREE, true)).map((i) => i.label);
     const at = labels.indexOf(DS);
     expect(labels.slice(at - 2, at + 2)).toEqual([
       "Career & Education Discovery",
       "Career Fit",
       DS,
-      "Role Play",
+      after,
     ]);
   });
 
-  test("with only direction-setting entitled it still sits directly in front of Role Play", () => {
+  test("with only direction-setting entitled it still sits directly in front of Role Play (distributor: Help & Support)", () => {
     const labels = mainMenu(role, renderAs(role, ["direction-setting"], true)).map((i) => i.label);
     expect(labels.filter((l) => l === DS)).toHaveLength(1);
-    expect(labels.indexOf(DS)).toBe(labels.indexOf("Role Play") - 1);
+    expect(labels.indexOf(DS)).toBe(labels.indexOf(after) - 1);
   });
 
   test("no list in the sidebar repeats a label", () => {

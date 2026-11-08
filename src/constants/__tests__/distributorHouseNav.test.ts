@@ -1,9 +1,10 @@
 /**
  * @jest-environment jsdom
  *
- * The distributor menu under the `distributor` house-style switch. The list is
- * chosen when the module loads (a switch change applies on reload), so each
- * case loads a fresh copy of the module.
+ * The distributor menu. The house-style five-item list is the only one: the
+ * `distributor` switch no longer chooses it, so every switch value — absent,
+ * "false" or "true" — gives the same menu. Each case loads a fresh copy of the
+ * module, because a switch would be read when the module loads.
  */
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 
@@ -22,32 +23,33 @@ function load(switchValue: "true" | "false" | null): NavModule {
 
 const labels = (items: NavItemDef[]) => items.map((i) => i.label)
 
-const CLASSIC = ["Dashboard", "Network", "Analytics", "Surveys", "Role Play", "Résumé Writer", "Settings"]
+const HOUSE: [string, string][] = [
+  ["Home", "/distributor/dashboard"],
+  ["My practitioners", "/distributor/network"],
+  ["Credits", "/distributor/credits"],
+  ["Reports", "/distributor/analytics"],
+  ["Help & Support", "/help"],
+]
 
 afterEach(() => localStorage.clear())
 
 describe("distributor menu", () => {
-  it.each([null, "false"] as const)("switch %s: today's menu, unchanged", (v) => {
+  it.each([null, "false", "true"] as const)("switch %s: the five-item house menu", (v) => {
     const nav = load(v)
-    expect(labels(nav.DISTRIBUTOR_NAV_ITEMS)).toEqual(CLASSIC)
-    expect(nav.NAV_ITEMS_BY_ROLE.distributor).toBe(nav.DISTRIBUTOR_NAV_ITEMS)
-    expect(nav.DEFAULT_ROLE_CONFIGS.distributor.navItems).toBe(nav.DISTRIBUTOR_NAV_ITEMS)
-  })
-
-  it("switch ON: five items with Credits and Help", () => {
-    const nav = load("true")
-    expect(nav.DISTRIBUTOR_NAV_ITEMS.map((i) => [i.label, i.to])).toEqual([
-      ["Home", "/distributor/dashboard"],
-      ["My practitioners", "/distributor/network"],
-      ["Credits", "/distributor/credits"],
-      ["Reports", "/distributor/analytics"],
-      ["Help & Support", "/help"],
-    ])
+    expect(nav.DISTRIBUTOR_NAV_ITEMS.map((i) => [i.label, i.to])).toEqual(HOUSE)
     expect(nav.NAV_ITEMS_BY_ROLE.distributor).toBe(nav.DISTRIBUTOR_NAV_ITEMS_HOUSE)
     expect(nav.DEFAULT_ROLE_CONFIGS.distributor.navItems).toBe(nav.DISTRIBUTOR_NAV_ITEMS_HOUSE)
   })
 
-  it("switch ON changes no other role's menu", () => {
+  it("no longer lists the classic entries (they still load by address)", () => {
+    const nav = load("false")
+    const l = labels(nav.DISTRIBUTOR_NAV_ITEMS)
+    for (const gone of ["Dashboard", "Network", "Analytics", "Surveys", "Role Play", "Résumé Writer", "Settings"]) {
+      expect(l).not.toContain(gone)
+    }
+  })
+
+  it("the distributor switch changes no other role's menu", () => {
     const off = load(null)
     const on = load("true")
     for (const role of ["user", "manager", "company-admin", "practitioner", "super-admin"] as const) {
@@ -55,8 +57,10 @@ describe("distributor menu", () => {
     }
   })
 
-  it("switch ON keeps the home route", () => {
-    const nav = load("true")
+  it("keeps the home route, and super-admin Role Views still reaches the distributor home", () => {
+    const nav = load(null)
     expect(nav.HOME_ROUTE_BY_ROLE.distributor).toBe("/distributor/dashboard")
+    const roleViews = nav.SUPER_ADMIN_NAV_SECTIONS.find((s) => s.label === "Role Views")
+    expect(roleViews?.items.find((i) => i.label === "Distributor")?.to).toBe("/distributor/dashboard")
   })
 })

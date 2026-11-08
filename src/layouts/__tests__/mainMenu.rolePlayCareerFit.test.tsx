@@ -119,7 +119,37 @@ function mainMenu(role: UserRole, props: Props): NavItemDef[] {
 
 const CAREER_FIT_TO = ROUTES.JOB_FIT.MATCHES;
 
-describe.each(ALL_ROLES)("%s — Role Play and Career Fit", (role) => {
+// The distributor menu is the five-item house-style menu since the classic
+// distributor pages were removed (house style W2a, "remove"): Role Play and
+// Résumé Writer are no longer in it (their routes still load by address), and
+// workspace verticals sit just above its Help & Support tail.
+const ROLE_PLAY_MENU_ROLES = ALL_ROLES.filter((r) => r !== "distributor");
+
+describe("distributor — house-style menu", () => {
+  test("Role Play and Résumé Writer are not in the sidebar", () => {
+    for (const entitlement of [["job-fit"], [], "loading"] as Entitlement[]) {
+      const props = renderAs("distributor", entitlement);
+      const labels = allRows(props).map((i) => i.label);
+      expect(labels).not.toContain("Role Play");
+      expect(labels).not.toContain("Résumé Writer");
+    }
+  });
+
+  test("Career & Education Discovery, then Career Fit, directly above Help & Support", () => {
+    const labels = mainMenu("distributor", renderAs("distributor", ["job-fit", "career-discovery"])).map((i) => i.label);
+    expect(labels).toEqual([
+      "Home",
+      "My practitioners",
+      "Credits",
+      "Reports",
+      "Career & Education Discovery",
+      "Career Fit",
+      "Help & Support",
+    ]);
+  });
+});
+
+describe.each(ROLE_PLAY_MENU_ROLES)("%s — Role Play", (role) => {
   test("Role Play is in the main menu, pointing at /interview-practice, exactly once in the whole sidebar", () => {
     const props = renderAs(role, ["job-fit"]);
     const main = mainMenu(role, props);
@@ -135,6 +165,9 @@ describe.each(ALL_ROLES)("%s — Role Play and Career Fit", (role) => {
     expect(labels).not.toContain("Practice Interview");
   });
 
+});
+
+describe.each(ALL_ROLES)("%s — Career Fit", (role) => {
   test("Career Fit is in the main menu once, opening on My fit, when entitled to job-fit", () => {
     const props = renderAs(role, ["job-fit"]);
     const hits = mainMenu(role, props).filter((i) => i.label === "Career Fit");
@@ -184,13 +217,13 @@ describe("main-menu order around the new rows", () => {
     ]);
   });
 
-  test.each(ALL_ROLES)("%s: Career & Education Discovery, then Career Fit, directly in front of Role Play", (role) => {
+  test.each(ROLE_PLAY_MENU_ROLES)("%s: Career & Education Discovery, then Career Fit, directly in front of Role Play", (role) => {
     const labels = mainMenu(role, renderAs(role, ["job-fit", "career-discovery"])).map((i) => i.label);
     const at = labels.indexOf("Role Play");
     expect(labels.slice(at - 2, at + 1)).toEqual(["Career & Education Discovery", "Career Fit", "Role Play"]);
   });
 
-  test.each(["manager", "company-admin", "distributor"] as const)(
+  test.each(["manager", "company-admin"] as const)(
     "%s: Role Play and Résumé Writer still sit directly above Settings",
     (role) => {
       const labels = mainMenu(role, renderAs(role, ["job-fit"])).map((i) => i.label);
@@ -206,7 +239,7 @@ describe("main-menu order around the new rows", () => {
 });
 
 // ── Résumé Writer (2026-10-19, request) — one row in every role's main menu ──
-describe.each(ALL_ROLES)("%s — Résumé Writer", (role) => {
+describe.each(ROLE_PLAY_MENU_ROLES)("%s — Résumé Writer", (role) => {
   // Right after Role Play — except in the user's My Workspace (user and
   // super-admin), where My development sits between them since 2026-10-29.
   const before = role === "user" || role === "super-admin" ? "My development" : "Role Play";
