@@ -269,6 +269,24 @@ describe("Talk it through — progress strip", () => {
       expect(screen.getByTestId("interview-panel")).toBeInTheDocument();
     });
 
+    it("keeps the last good progress when a later re-read fails", async () => {
+      mockGetGoalSession.mockResolvedValueOnce(session(["explored", "active", "todo", "todo", "todo"]));
+      const qc = client();
+      render(
+        <QueryClientProvider client={qc}>
+          <MemoryRouter>
+            <SummitInterview />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+      await screen.findByRole("region", { name: "Your progress" });
+      mockGetGoalSession.mockRejectedValueOnce(new Error("boom"));
+      await qc.refetchQueries({ queryKey: ["summit", "session"] });
+      await waitFor(() => expect(mockGetGoalSession).toHaveBeenCalledTimes(2));
+      expect(screen.getByRole("region", { name: "Your progress" })).toHaveTextContent("1 of 5 areas explored");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
     it("shows loading while the session is read", () => {
       mockGetGoalSession.mockReturnValue(new Promise(() => undefined));
       renderInterview();

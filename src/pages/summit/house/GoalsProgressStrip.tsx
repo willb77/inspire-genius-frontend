@@ -30,7 +30,10 @@ export default function GoalsProgressStrip() {
 
   if (isLoading) return <PageState kind="loading" rows={1} />;
 
-  if (isError) {
+  // A failed BACKGROUND refetch (the interview re-reads the session after each
+  // turn) keeps the last good read on screen; only a read with nothing to show
+  // becomes the error state.
+  if (isError && !session) {
     return (
       <PageState
         kind="error"
