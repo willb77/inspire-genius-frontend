@@ -9,11 +9,18 @@ import { ArrowRight, Info } from "lucide-react";
 import { PageHead, Callout } from "@/pages/summit/components/ui";
 import { ROUTES } from "@/constants/routes";
 import GoalInterviewPanel from "@/components/direction-setting/GoalInterviewPanel";
+import { isHouseStyleOn } from "@/lib/house/areaSwitch";
+import GoalsProgressStrip from "@/pages/summit/house/GoalsProgressStrip";
 
 export default function SummitInterview() {
   const [synthesised, setSynthesised] = useState(0);
+  // House style (goals, S2b): this page is "Talk it through", and Overview and
+  // Discovery fold into it — so the progress they showed sits above the
+  // conversation. Same session read as those pages; OFF renders today's page.
+  const house = isHouseStyleOn("goals");
   return (
     <div className="flex flex-col gap-[18px]">
+      {house && <GoalsProgressStrip />}
       <PageHead
         eyebrow="A conversation, not a form"
         title="Talk it through with Goals Studio"

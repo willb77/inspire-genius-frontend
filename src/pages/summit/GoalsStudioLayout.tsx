@@ -14,8 +14,8 @@
  * manager keeps the manager menu (with "Goals Studio" lit under Tools), a user
  * keeps My Workspace.
  */
-import { NavLink, Outlet } from "react-router-dom";
-import { Compass, Layers, Flag, Mic, Share2, Users, Clock, Target } from "lucide-react";
+import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Compass, Layers, Flag, Mic, Share2, Users, Clock, Target, MessageCircle, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/context/useAuth";
@@ -23,6 +23,8 @@ import UserLayout from "@/layouts/UserLayout";
 import UnifiedLayout from "@/layouts/UnifiedLayout";
 import type { UserRole } from "@/types/roles";
 import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
+import { isHouseStyleOn } from "@/lib/house/areaSwitch";
+import { houseGoalsRedirectFor } from "@/pages/summit/house/goalsHouseRoutes";
 
 type Section = { to: string; label: string; icon: typeof Compass; badge?: string; end?: boolean };
 
@@ -60,6 +62,31 @@ function sections(explored: number, total: number, goals: number): Section[] {
 }
 
 /**
+ * House style (goals, S2b): the seven sections as three pills. Overview and
+ * Discovery fold into "Talk it through" (the interview, with its progress
+ * strip), and Coaches and Coming soon go. Badges keep the same live-session
+ * rule as above. Display only — the routes all stay registered.
+ */
+function houseSections(explored: number, total: number, goals: number): Section[] {
+  return [
+    {
+      to: ROUTES.MY_GOALS.BASE,
+      label: "My goals",
+      icon: Flag,
+      end: true,
+      badge: goals > 0 ? String(goals) : undefined,
+    },
+    {
+      to: ROUTES.MY_GOALS.INTERVIEW,
+      label: "Talk it through",
+      icon: MessageCircle,
+      badge: total ? `${explored}/${total}` : undefined,
+    },
+    { to: ROUTES.MY_GOALS.SHARING, label: "Who can see them", icon: Eye },
+  ];
+}
+
+/**
  * The signed-in role's own chrome.
  *
  * `UserLayout` already knows how to render a super-admin on a user page (My
@@ -80,9 +107,17 @@ export default function GoalsStudioLayout() {
   const { data: session } = useGoalSession();
   const categories = useSummitCategories(session);
 
+  const { pathname } = useLocation();
+
   const explored = categories.filter((c) => c.status === "explored").length;
-  const SECTIONS = sections(explored, categories.length, session?.goals?.length ?? 0);
+  // House style (goals, S2b), read at render time. OFF: today's seven pills
+  // and every section renders where it is.
+  const house = isHouseStyleOn("goals");
+  const SECTIONS = (house ? houseSections : sections)(explored, categories.length, session?.goals?.length ?? 0);
   const role = (user?.role ?? undefined) as UserRole | undefined;
+
+  const redirectTo = house ? houseGoalsRedirectFor(pathname) : null;
+  if (redirectTo) return <Navigate to={redirectTo} replace />;
 
   return (
     <RoleChrome role={role}>
