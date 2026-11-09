@@ -280,7 +280,7 @@ export default function PractitionerClients() {
                           variant="outline"
                           size="sm"
                           className="min-h-11"
-                          disabled={!c.email || invitingId === c.id}
+                          disabled={!c.email || invitingId !== null}
                           title={c.email ? undefined : "Add an email address to invite this client"}
                           aria-label={`Invite ${c.name}`}
                           onClick={(e) => {

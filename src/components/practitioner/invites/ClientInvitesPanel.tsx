@@ -72,6 +72,9 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
       <ul className="divide-y rounded-lg border bg-card" aria-label="Invitations">
         {invites.map((inv) => {
           const busy = busyId === inv.id
+          // One action at a time: a second link issued while the first is in
+          // flight would replace it in the dialog, and a link is shown once.
+          const locked = busyId !== null
           const claimedDiffers =
             inv.status === "claimed" &&
             inv.claimedEmail &&
@@ -112,7 +115,7 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
                     type="button"
                     variant="outline"
                     className="min-h-11"
-                    disabled={busy}
+                    disabled={locked}
                     onClick={() => handleRotate(inv)}
                   >
                     {busy && rotate.isPending ? (
@@ -128,7 +131,7 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
                     type="button"
                     variant="outline"
                     className="min-h-11"
-                    disabled={busy}
+                    disabled={locked}
                     onClick={() => handleRevoke(inv)}
                   >
                     <XCircle className="mr-2 h-4 w-4" aria-hidden="true" />

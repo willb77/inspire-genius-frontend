@@ -162,6 +162,13 @@ describe("PractitionerClients — invites live (S4/S5)", () => {
     expect(mockToastError).toHaveBeenCalledWith("This client is already connected to an account.")
   })
 
+  it("locks every Invite button while one create is in flight", async () => {
+    mockCreateInvite.mockImplementation(() => undefined) // never settles
+    renderPage()
+    await userEvent.click(screen.getByRole("button", { name: "Invite Marcus Chen" }))
+    expect(screen.getByRole("button", { name: "Invite Sophie Laurent" })).toBeDisabled()
+  })
+
   it("opens the Invitations tab from ?tab=invites", () => {
     renderPage("/practitioner/clients?tab=invites")
     expect(screen.getByRole("tab", { name: "Invitations" })).toHaveAttribute("aria-selected", "true")

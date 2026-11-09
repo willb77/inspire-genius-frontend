@@ -155,3 +155,13 @@ describe("ClientInvitesPanel (S5)", () => {
     expect(retry).toHaveBeenCalled()
   })
 })
+
+describe("ClientInvitesPanel — one action at a time", () => {
+  it("locks every row while a rotate is in flight", async () => {
+    mockRotate.mockImplementation(() => undefined) // never settles
+    render(<ClientInvitesPanel invites={[inv("a", "pending"), inv("b", "expired")]} clientNames={{}} />)
+    await userEvent.click(within(screen.getByTestId("invite-row-a")).getByRole("button", { name: /copy new link/i }))
+    expect(within(screen.getByTestId("invite-row-b")).getByRole("button", { name: /copy new link/i })).toBeDisabled()
+    expect(within(screen.getByTestId("invite-row-a")).getByRole("button", { name: /revoke/i })).toBeDisabled()
+  })
+})
