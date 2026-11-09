@@ -8,6 +8,7 @@ import {
   OWNER_ONLY_NAV_ROUTES,
   isPlatformOwner,
 } from "@/constants/navigation"
+import { withCompanyAdminHouseMenu } from "@/constants/house/companyAdminNav"
 import { verticalSubNavItems } from "@/constants/vertical-subnav"
 import { useAgentEngine } from "@/lib/agentApi"
 import { useAuth } from "@/context/useAuth"
@@ -47,7 +48,7 @@ export function useVerticalPageSections(
   // otherwise the role's own menu. Workspace verticals splice in either way.
   const baseItems = isSuperAdmin
     ? getUserNavItems(agentEngineOn)
-    : NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
+    : withCompanyAdminHouseMenu(role, NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user)
   const workspaceItems = useWorkspaceNavItems(baseItems)
 
   const toolsSection = useToolsSection(role)

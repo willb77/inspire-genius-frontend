@@ -3,6 +3,8 @@ import DataCard from "@/components/dashboard/DataCard"
 import { Building2, Users, Info } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCompanyDepartments } from "@/hooks/company-admin/useCompanyAdmin"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import OrganizationHouse from "./house/OrganizationHouse"
 
 type OrgDept = { name: string; headcount: number; teams: number; lead: string }
 
@@ -19,7 +21,7 @@ const FALLBACK_DEPARTMENTS: OrgDept[] = [
 
 const COLORS = ["#3B5BFF", "#2DD4BF", "#10B981", "#8B5CF6", "#3B82F6", "#e9c46a", "#EF4444", "#4b5563"]
 
-export default function CompanyAdminOrganization() {
+function CompanyAdminOrganizationClassic() {
   const { data: deptsData, isLoading, error, refetch } = useCompanyDepartments()
 
   const depts = ((deptsData as { departments?: OrgDept[] } | undefined)?.departments ?? FALLBACK_DEPARTMENTS) as OrgDept[]
@@ -129,4 +131,12 @@ export default function CompanyAdminOrganization() {
       </DataCard>
     </CompanyAdminLayout>
   )
+}
+
+/**
+ * House style (area `company-admin`, default OFF): the switch is read at render
+ * and only chooses which page to show. Off, the classic page renders unchanged.
+ */
+export default function CompanyAdminOrganization() {
+  return isHouseStyleOn("company-admin") ? <OrganizationHouse /> : <CompanyAdminOrganizationClassic />
 }

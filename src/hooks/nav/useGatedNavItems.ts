@@ -7,6 +7,8 @@ import { ROUTES } from "@/constants/routes"
 import { useWorkspaceNavItems, withWorkspaceVerticals } from "@/components/layout/useVerticalLauncher"
 import { useExamAccess } from "@/hooks/super-admin/usePrismExam"
 import { useCohortReadoutEnabled } from "@/hooks/company-admin/useCohortReadout"
+import { companyAdminHouseMenu } from "@/constants/house/companyAdminNav"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 
 /** Roles a super-admin can grant exam access to — the server's rank gate (manager or above). */
 const EXAM_GRANTABLE_ROLES: ReadonlySet<UserRole> = new Set<UserRole>([
@@ -52,7 +54,10 @@ export function useGatedNavItems(role: UserRole): NavItemDef[] {
   const cohort = useCohortReadoutEnabled(role === "company-admin")
   const granted = !!examAccess.data?.allowed && !examAccess.data?.super_admin
   const cohortOn = role === "company-admin" && cohort.data === true
-  const base = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
+  // House style (area `company-admin`, default OFF): display-only menu swap.
+  const roleBase = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
+  const houseOn = role === "company-admin" && isHouseStyleOn("company-admin")
+  const base = useMemo(() => (houseOn ? companyAdminHouseMenu(roleBase) : roleBase), [houseOn, roleBase])
   const items = useMemo(() => {
     const extra: NavItemDef[] = []
     if (granted) extra.push(EXAM_NAV_ITEM)
