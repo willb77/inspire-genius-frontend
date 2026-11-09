@@ -35,7 +35,7 @@ function record(method: string) {
 }
 
 const auth = {
-  user: { id: "me", role: "company-admin", email: "admin@example.com" },
+  user: { id: "me", role: "company-admin", email: "test-admin" },
   hasRole: (r: string) => r === "company-admin",
   isAtLeast: () => true,
 } as unknown as AuthContextValue

@@ -53,7 +53,8 @@ jest.mock("@/hooks/company-admin/useObservabilityRollup", () => ({
 }))
 
 const SWITCH = "house_style_company-admin"
-const FALLBACK_NAMES = ["Alex Thompson", "Maria Garcia", "James Wilson", "Sarah Lee", "Chris Martin", "Priya Patel", "Tom Harris", "David Chen"]
+// The classic page's eight sample people, by first name and initial.
+const FALLBACK_NAMES = ["Alex T", "Maria G", "James W", "Sarah L", "Chris M", "Priya P", "Tom H", "David C"]
 const INVENTED = ["247", "$107,000", "Enterprise (247 seats)", ...FALLBACK_NAMES]
 
 function renderPage(el: ReactNode) {
@@ -72,8 +73,8 @@ function expectNoInvented() {
 
 const REAL_PEOPLE = {
   users: [
-    { id: "1", user_id: "u1", name: "Rowan Field", email: "rowan@example.com", role: "manager", department: null, is_active: true, prism_completed: true, last_active: "2026-11-03T14:05:00Z" },
-    { id: "2", user_id: "u2", name: "Kit Marsh", email: "kit@example.com", role: "user", department: "Sales", is_active: false, prism_completed: false, last_active: null },
+    { id: "1", user_id: "u1", name: "Rowan Field", email: "rowan.field (test)", role: "manager", department: null, is_active: true, prism_completed: true, last_active: "2026-11-03T14:05:00Z" },
+    { id: "2", user_id: "u2", name: "Kit Marsh", email: "kit.marsh (test)", role: "user", department: "Sales", is_active: false, prism_completed: false, last_active: null },
   ],
   total: 2,
 }
@@ -93,7 +94,7 @@ describe("switch OFF: today's pages, unchanged", () => {
     expect(screen.getByText("admin:users.title")).toBeInTheDocument()
     expect(screen.getByText("Total Users")).toBeInTheDocument()
     expect(screen.getByText("247")).toBeInTheDocument()
-    expect(screen.getByText("Alex Thompson")).toBeInTheDocument()
+    expect(screen.getByText(/^Alex T/)).toBeInTheDocument()
     expect(screen.getByText("common:addUser")).toBeInTheDocument()
     expect(screen.queryByText("Add people")).not.toBeInTheDocument()
   })

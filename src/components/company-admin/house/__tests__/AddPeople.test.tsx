@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AddPeople, ADD_PEOPLE_NOTICE } from "../AddPeople"
 import type { BulkImportResponse } from "@/types/bulk-import"
 
-const ROW = { fname: "Rowan", lname: "Field", email1: "rowan@example.com", user_type: "user" }
+const ROW = { fname: "Rowan", lname: "Field", email1: "rowan.field (test)", user_type: "user" }
 
 jest.mock("@/components/bulk-import/FileUploader", () => ({
   FileUploader: ({ onParsed }: { onParsed: (r: unknown[]) => void }) => (
@@ -46,8 +46,8 @@ const OK: BulkImportResponse = {
   succeeded: 1,
   failed: 1,
   results: [
-    { email: "rowan@example.com", status: "success", user_id: "u1" },
-    { email: "kit@example.com", status: "failed", error: "Email already exists" },
+    { email: "rowan.field (test)", status: "success", user_id: "u1" },
+    { email: "kit.marsh (test)", status: "failed", error: "Email already exists" },
   ],
 }
 
@@ -91,7 +91,7 @@ describe("AddPeople", () => {
     expect(mockRecordAges).toHaveBeenCalledWith([ROW])
     expect(screen.getByText(/They cannot sign in yet/)).toBeInTheDocument()
     expect(screen.getByText("Not recorded (1)")).toBeInTheDocument()
-    expect(screen.getByText("kit@example.com: Email already exists")).toBeInTheDocument()
+    expect(screen.getByText("kit.marsh (test): Email already exists")).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(MISLEADING)
     expect(mockToast.success).not.toHaveBeenCalled()
   })
