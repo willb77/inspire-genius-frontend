@@ -197,6 +197,7 @@ const Explainability = React.lazy(() => import("@/pages/super-admin/Explainabili
 const PractitionerClients = React.lazy(() => import("@/pages/practitioner/Clients"));
 const PrismClients = React.lazy(() => import("@/pages/practitioner/PrismClients"));
 const PractitionerMyPractice = React.lazy(() => import("@/pages/practitioner/MyPractice"));
+const PractitionerWelcome = React.lazy(() => import("@/pages/welcome/PractitionerWelcome"));
 const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Analytics"));
 // Settings, the task-agent forms, Interview Live/Studio, Character Lab and Team
 // Composition are shared with the manager (ROLE-C): the Workspace* pages above,
@@ -536,6 +537,8 @@ export const routes: RouteObject[] = [
       { path: "/profile", element: withSuspense(<ProfileSurface />) },
       { path: "/profile/classic", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
+      // PI-4 S7 — claim a practitioner invite link after sign-in (any role).
+      { path: "/welcome/practitioner", element: withSuspense(<PractitionerWelcome />) },
       // Permanent escape hatch — original Settings, flag-independent. The main
       // /settings resolves classic/V2 inside the shared Settings component via
       // the new_user_surfaces flag (shared across all six role Settings pages).

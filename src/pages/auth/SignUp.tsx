@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useAuth } from "@/context/useAuth";
 import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
 import { useForm } from "react-hook-form";
@@ -12,6 +12,7 @@ import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages
 import { useTranslation } from "react-i18next";
 import { passwordMeetsRule } from "@/lib/house/passwordRule";
 import { PasswordChecklist } from "@/components/shared/house/PasswordChecklist";
+import { captureInviteFromLocation } from "@/lib/practitionerInvite";
 
 export default function SignUp() {
   const { signup, isLoading } = useAuth();
@@ -26,6 +27,14 @@ export default function SignUp() {
       return false;
     }
   });
+
+  // PI-4 S6: `/signup#invite=<token>` — move the token to sessionStorage and
+  // clear the fragment. A layout effect, so it runs before the signed-in
+  // redirect below. With no `invite=` in the fragment it does nothing; the
+  // token is sent nowhere from this page (the claim runs after sign-in).
+  useLayoutEffect(() => {
+    captureInviteFromLocation();
+  }, []);
 
   const { handleSubmit, setValue, watch, formState: { dirtyFields } } = useForm<{ email: string; password: string; confirm: string; terms: boolean }>({
     mode: "onChange",

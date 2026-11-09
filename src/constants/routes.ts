@@ -32,6 +32,8 @@ export const ROUTES = {
   /** Bio Capture — the Chronicle life-narrative surface. */
   BIO_CAPTURE: "/bio",
   PRISM_ASSESSMENT: "/prism-assessment",
+  /** PI-4 S7 — claim a practitioner invite after sign-in; any signed-in role. */
+  WELCOME_PRACTITIONER: "/welcome/practitioner",
   /**
    * Goals Studio — the person's own goals surface (Goals offering, Phase 3;
    * renamed from "Summit" on 2026-09-04 by request, the Summit agent kept).
