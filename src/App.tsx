@@ -12,6 +12,7 @@ import { useDirection } from '@/hooks/useDirection'
 import RoleSelector from '@/components/auth/RoleSelector'
 import { useAuth } from '@/context/useAuth'
 import { checkForUpdate } from '@/lib/buildVersion'
+import { PendingInviteRedirect } from '@/components/practitioner/invites/PendingInviteRedirect'
 import '@/lib/axios'
 
 function RoleSelectorWrapper() {
@@ -44,7 +45,14 @@ function AppInner() {
     // triggers a clean reload.
     void checkForUpdate()
   }, [])
-  return useRoutes(routes)
+  const element = useRoutes(routes)
+  return (
+    <>
+      {element}
+      {/* PI-4: inert unless an invite token from /signup#invite= is waiting. */}
+      <PendingInviteRedirect />
+    </>
+  )
 }
 
 function App() {

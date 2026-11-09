@@ -1,9 +1,12 @@
 import { AlertTriangle, Copy, Loader2, UserPlus } from "lucide-react"
 import { toast } from "sonner"
+import { useNavigate } from "react-router-dom"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useMyPracticeRegistration } from "@/hooks/practitioner/useMyPracticeRegistration"
+import { useClientInvites } from "@/hooks/practitioner/useClientInvites"
+import { ROUTES } from "@/constants/routes"
 import { copyText } from "@/lib/copyText"
 import type { MyPracticeRegistration } from "@/types/practitioner-practice"
 
@@ -13,6 +16,7 @@ export const DEACTIVATED_BANNER =
   "Your PRISM registration is deactivated. Surveys you invite will be raised on Inspire Genius's PRISM site until it is reactivated."
 export const DARK_MESSAGE = "The Practitioner Programme is not switched on yet."
 export const LOAD_ERROR = "Your PRISM registration could not be loaded just now. Please try again later."
+export const INVITES_OFF_TITLE = "Client invite links are not switched on for your practice yet."
 
 function clientMessage(code: string): string {
   return (
@@ -110,6 +114,11 @@ function Registered({ registration }: { registration: MyPracticeRegistration }) 
 
 export default function MyPractice() {
   const { data, isLoading, error } = useMyPracticeRegistration()
+  const navigate = useNavigate()
+  // PI-4: enabled only when the invite routes apply to this practitioner. The
+  // invite itself is made per client, on the Clients page (S4).
+  const invites = useClientInvites()
+  const invitesLive = invites.data?.state === "live"
 
   return (
     <PractitionerLayout>
@@ -121,8 +130,13 @@ export default function MyPractice() {
               Your client code and the PRISM account your clients&apos; surveys are raised under.
             </p>
           </div>
-          {/* Wired when PI-4 (client invite links) lands. */}
-          <Button type="button" disabled title="Coming soon">
+          <Button
+            type="button"
+            className="min-h-11"
+            disabled={!invitesLive}
+            title={invitesLive ? undefined : INVITES_OFF_TITLE}
+            onClick={() => navigate(ROUTES.PRACTITIONER.CLIENTS)}
+          >
             <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
             Invite a client
           </Button>
