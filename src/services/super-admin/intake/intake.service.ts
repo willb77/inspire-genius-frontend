@@ -11,10 +11,13 @@
 import { api } from "@/lib/axios"
 import type {
   AttendanceInput,
+  IntakeReport,
   Registrant,
   RegistrantDetail,
   RegistrationFilters,
   RegistrationPage,
+  ReportBlock,
+  ReportFilters,
   SessionList,
   Webinar,
   WebinarInput,
@@ -115,5 +118,42 @@ export async function markAttendance({
 /** The session's list as the server's CSV (formula cells already defused there). */
 export async function downloadSessionCsv(id: string): Promise<Blob> {
   const { data } = await api.get<Blob>(`${webinarUrl(id)}/registrations.csv`, { responseType: "blob" })
+  return data
+}
+
+// ─── IN-7 reports ─────────────────────────────────────────────────────
+
+/**
+ * Query string for the reports. Built by hand for the same reason as
+ * {@link registrationParams}: FastAPI reads a repeated `role=a&role=b`. Blank
+ * text is left out rather than sent as an empty filter.
+ */
+export function reportParams(filters: ReportFilters): URLSearchParams {
+  const p = new URLSearchParams()
+  if (filters.segment_status) p.set("segment_status", filters.segment_status)
+  if (filters.segment_context) p.set("segment_context", filters.segment_context)
+  for (const role of filters.role ?? []) p.append("role", role)
+  if (filters.prism_accredited) p.set("prism_accredited", filters.prism_accredited)
+  if (filters.country?.trim()) p.set("country", filters.country.trim())
+  if (filters.region?.trim()) p.set("region", filters.region.trim())
+  if (filters.date_from) p.set("date_from", filters.date_from)
+  if (filters.date_to) p.set("date_to", filters.date_to)
+  return p
+}
+
+export async function getIntakeReport(filters: ReportFilters): Promise<IntakeReport> {
+  const { data } = await api.get<IntakeReport>(`${BASE}/reports`, { params: reportParams(filters) })
+  return data
+}
+
+/**
+ * One block as the server's CSV (formula cells already defused there). Fetched
+ * through `api` as a blob so the interceptors attach the token — never a bare
+ * link to the URL, which would reach the service unauthenticated.
+ */
+export async function downloadReportCsv({ block, filters }: { block: ReportBlock; filters: ReportFilters }): Promise<Blob> {
+  const params = reportParams(filters)
+  params.set("block", block)
+  const { data } = await api.get<Blob>(`${BASE}/reports/export.csv`, { params, responseType: "blob" })
   return data
 }

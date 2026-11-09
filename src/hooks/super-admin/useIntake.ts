@@ -2,7 +2,9 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   cancelWebinar,
   createWebinar,
+  downloadReportCsv,
   downloadSessionCsv,
+  getIntakeReport,
   getRegistration,
   getSessionList,
   listAllRegistrations,
@@ -11,7 +13,7 @@ import {
   markAttendance,
   updateWebinar,
 } from "@/services/super-admin/intake/intake.service"
-import type { RegistrationFilters } from "@/types/intake"
+import type { RegistrationFilters, ReportFilters } from "@/types/intake"
 
 const KEY = ["intake"] as const
 
@@ -78,4 +80,18 @@ export function useExportRegistrations() {
 /** The server's CSV of one session's list. Reads only. */
 export function useDownloadSessionCsv() {
   return useMutation({ mutationFn: (webinarId: string) => downloadSessionCsv(webinarId) })
+}
+
+/** IN-7 — every report block for the filters. Keeps the last report on screen while a new filter loads. */
+export function useIntakeReport(filters: ReportFilters) {
+  return useQuery({
+    queryKey: [...KEY, "report", filters],
+    queryFn: () => getIntakeReport(filters),
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** The server's CSV of one report block. Reads only. */
+export function useDownloadReportCsv() {
+  return useMutation({ mutationFn: downloadReportCsv })
 }

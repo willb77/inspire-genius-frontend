@@ -2,7 +2,9 @@ import {
   PAGE_MAX,
   cancelWebinar,
   createWebinar,
+  downloadReportCsv,
   downloadSessionCsv,
+  getIntakeReport,
   getRegistration,
   getSessionList,
   listAllRegistrations,
@@ -10,6 +12,7 @@ import {
   listWebinars,
   markAttendance,
   registrationParams,
+  reportParams,
   updateWebinar,
 } from "../intake.service"
 
@@ -108,5 +111,58 @@ describe("intake.service", () => {
     get.mockResolvedValue({ data: blob })
     expect(await downloadSessionCsv("w1")).toBe(blob)
     expect(get).toHaveBeenCalledWith(`${BASE}/webinars/w1/registrations.csv`, { responseType: "blob" })
+  })
+
+  // ─── IN-7 reports ───────────────────────────────────────────────────
+
+  it("maps every report filter to its query parameter, role repeated, blanks left out", () => {
+    expect(
+      reportParams({
+        segment_status: "inspiresgenius",
+        segment_context: "company",
+        role: ["career_coach", "education_coach"],
+        prism_accredited: "not_sure",
+        country: "  UK ",
+        region: " Europe",
+        date_from: "2026-11-01",
+        date_to: "2026-11-30",
+      }).toString(),
+    ).toBe(
+      "segment_status=inspiresgenius&segment_context=company&role=career_coach&role=education_coach" +
+        "&prism_accredited=not_sure&country=UK&region=Europe&date_from=2026-11-01&date_to=2026-11-30",
+    )
+    expect(reportParams({}).toString()).toBe("")
+    expect(reportParams({ country: "   ", region: "", role: [] }).toString()).toBe("")
+  })
+
+  it.each([
+    [{ segment_status: "non_inspiresgenius" as const }, "segment_status=non_inspiresgenius"],
+    [{ segment_context: "education" as const }, "segment_context=education"],
+    [{ role: ["hr" as const] }, "role=hr"],
+    [{ prism_accredited: "yes" as const }, "prism_accredited=yes"],
+    [{ country: "US" }, "country=US"],
+    [{ region: "Asia" }, "region=Asia"],
+    [{ date_from: "2026-01-01" }, "date_from=2026-01-01"],
+    [{ date_to: "2026-02-01" }, "date_to=2026-02-01"],
+  ])("sends %p as %s", (filters, expected) => {
+    expect(reportParams(filters).toString()).toBe(expected)
+  })
+
+  it("reads the report through the api instance", async () => {
+    get.mockResolvedValue({ data: { totals: {} } })
+    expect(await getIntakeReport({ role: ["hr"] })).toEqual({ totals: {} })
+    expect(get).toHaveBeenCalledWith(`${BASE}/reports`, { params: expect.any(URLSearchParams) })
+    expect(get.mock.calls[0][1].params.toString()).toBe("role=hr")
+  })
+
+  it("downloads one report block as a blob with its filters, through the api instance", async () => {
+    const blob = new Blob(["role,count"])
+    get.mockResolvedValue({ data: blob })
+    expect(await downloadReportCsv({ block: "by_role", filters: { segment_context: "company" } })).toBe(blob)
+    expect(get).toHaveBeenCalledWith(`${BASE}/reports/export.csv`, {
+      params: expect.any(URLSearchParams),
+      responseType: "blob",
+    })
+    expect(get.mock.calls[0][1].params.toString()).toBe("segment_context=company&block=by_role")
   })
 })

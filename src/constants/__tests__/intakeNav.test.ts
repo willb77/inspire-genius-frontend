@@ -9,6 +9,7 @@ import { INTAKE_PRESETS, intakePresetHref } from "@/constants/intake"
 import { ROUTES } from "@/constants/routes"
 import { hasAccess } from "@/types/roles"
 import { filtersFromView, viewFromSearch } from "@/pages/super-admin/intake/intakeView"
+import { reportFiltersFromView, reportViewFromSearch } from "@/pages/super-admin/intake/reportView"
 
 // IN-3: Administration → Intake is super-admin ONLY. It holds personal data of
 // members of the public; no other role's menu may point at it.
@@ -60,7 +61,30 @@ describe("Administration → Intake nav (super-admin only)", () => {
   })
 })
 
-// The saved views ARE the filter: href → URL → view → API filters, end to end.
+// IN-7: the saved views open the Reports tab, and the filter reaches the
+// reports API end to end: href → URL → report view → report filters.
+describe("Intake saved views → report filters (IN-7)", () => {
+  const search = (key: string) => {
+    const preset = INTAKE_PRESETS.find((p) => p.key === key)
+    if (!preset) throw new Error(key)
+    return new URLSearchParams(intakePresetHref(preset).split("?")[1])
+  }
+
+  it.each([
+    ["hr", { role: ["hr"] }],
+    ["recruiters", { role: ["recruiter"] }],
+    ["companies", { segment_context: "company" }],
+    ["coaches", { role: ["career_coach", "education_coach"] }],
+  ])("%s", (key, expected) => {
+    expect(reportFiltersFromView(reportViewFromSearch(search(key)))).toEqual(expected)
+  })
+
+  it("every preset opens the Reports tab", () => {
+    for (const p of INTAKE_PRESETS) expect(search(p.key).get("tab")).toBe("reports")
+  })
+})
+
+// Switching to Registrations from a preset keeps the filter: href → URL → list view → API filters.
 describe("Intake saved views → registration filters", () => {
   const filtersFor = (key: string) => {
     const preset = INTAKE_PRESETS.find((p) => p.key === key)
@@ -80,10 +104,10 @@ describe("Intake saved views → registration filters", () => {
 
   it("hrefs are exactly the documented query strings", () => {
     expect(INTAKE_PRESETS.map(intakePresetHref)).toEqual([
-      "/super-admin/intake?role=hr",
-      "/super-admin/intake?role=recruiter",
-      "/super-admin/intake?segment_context=company",
-      "/super-admin/intake?role=career_coach&role=education_coach",
+      "/super-admin/intake?tab=reports&role=hr",
+      "/super-admin/intake?tab=reports&role=recruiter",
+      "/super-admin/intake?tab=reports&segment_context=company",
+      "/super-admin/intake?tab=reports&role=career_coach&role=education_coach",
     ])
   })
 })

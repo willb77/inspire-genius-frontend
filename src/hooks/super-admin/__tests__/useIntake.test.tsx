@@ -3,8 +3,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
   useCancelWebinar,
   useCreateWebinar,
+  useDownloadReportCsv,
   useDownloadSessionCsv,
   useExportRegistrations,
+  useIntakeReport,
   useIntakeRegistration,
   useIntakeRegistrations,
   useIntakeWebinars,
@@ -24,6 +26,8 @@ jest.mock("@/services/super-admin/intake/intake.service", () => ({
   getSessionList: jest.fn(),
   markAttendance: jest.fn(),
   downloadSessionCsv: jest.fn(),
+  getIntakeReport: jest.fn(),
+  downloadReportCsv: jest.fn(),
 }))
 
 import * as service from "@/services/super-admin/intake/intake.service"
@@ -98,6 +102,27 @@ describe("useIntake", () => {
     const dl = renderHook(() => useDownloadSessionCsv(), { wrapper })
     await act(() => dl.result.current.mutateAsync("w1"))
     expect(svc.downloadSessionCsv).toHaveBeenCalledWith("w1")
+    expect(invalidate).not.toHaveBeenCalled()
+  })
+
+  it("reads the report with its filters, and an error stays an error", async () => {
+    svc.getIntakeReport.mockResolvedValue({ totals: { registrants: 3 } } as never)
+    const { result } = renderHook(() => useIntakeReport({ role: ["hr"] }), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(svc.getIntakeReport).toHaveBeenCalledWith({ role: ["hr"] })
+
+    svc.getIntakeReport.mockRejectedValue(new Error("down"))
+    const bad = renderHook(() => useIntakeReport({ country: "UK" }), { wrapper })
+    await waitFor(() => expect(bad.result.current.isError).toBe(true))
+    expect(bad.result.current.data).toBeUndefined()
+  })
+
+  it("downloads a report block without invalidating", async () => {
+    svc.downloadReportCsv.mockResolvedValue(new Blob())
+    const invalidate = jest.spyOn(qc, "invalidateQueries")
+    const dl = renderHook(() => useDownloadReportCsv(), { wrapper })
+    await act(() => dl.result.current.mutateAsync({ block: "by_week", filters: { role: ["hr"] } }))
+    expect(svc.downloadReportCsv.mock.calls[0][0]).toEqual({ block: "by_week", filters: { role: ["hr"] } })
     expect(invalidate).not.toHaveBeenCalled()
   })
 })

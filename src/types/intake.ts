@@ -226,3 +226,60 @@ export type AttendanceInput = {
 
 /** A refused write lists every problem: `{"detail": [{field, message}]}`. */
 export type IntakeProblem = { field: string; message: string }
+
+// ─── IN-7 reports (`GET /v1/intake/admin/reports`) ─────────────────────
+
+/** Every block the reports endpoint returns; `?block=` on the CSV export accepts exactly these. */
+export const REPORT_BLOCKS = [
+  "totals",
+  "by_segment",
+  "by_role",
+  "by_region",
+  "by_country",
+  "by_source",
+  "by_week",
+  "by_session",
+] as const
+export type ReportBlock = (typeof REPORT_BLOCKS)[number]
+
+/** The shared report filters. Dates are calendar days (`YYYY-MM-DD`, UTC), both inclusive. */
+export type ReportFilters = {
+  segment_status?: SegmentStatus
+  segment_context?: SegmentContext
+  role?: IntakeRole[]
+  prism_accredited?: IntakePrismAccredited
+  country?: string
+  region?: string
+  date_from?: string
+  date_to?: string
+}
+
+export type ReportSessionRow = {
+  /** `null` is the "none of these times" row. */
+  webinar_id: string | null
+  title: string
+  starts_at: string | null
+  status: WebinarStatus | null
+  registered: number
+  confirmed: number
+  attended: number
+  no_show: number
+  total: number
+}
+
+export type IntakeReport = {
+  filters: Partial<Record<keyof ReportFilters, string | string[]>>
+  totals: {
+    registrants: number
+    needs_review: number
+    session_registrations: number
+    none_of_these_times: number
+  }
+  by_segment: (Segment & { count: number })[]
+  by_role: { role: IntakeRole; count: number }[]
+  by_region: { region: string; count: number }[]
+  by_country: { country: string; count: number }[]
+  by_source: { source: string; count: number }[]
+  by_week: { week: string; count: number }[]
+  by_session: ReportSessionRow[]
+}

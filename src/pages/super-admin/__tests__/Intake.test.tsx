@@ -1,9 +1,9 @@
 import React from "react"
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import Intake from "../Intake"
-import type { Registrant, RegistrantDetail, SessionList, Webinar } from "@/types/intake"
+import type { IntakeReport, Registrant, RegistrantDetail, SessionList, Webinar } from "@/types/intake"
 
 jest.mock("@/layouts/SuperAdminLayout", () => ({
   __esModule: true,
@@ -28,6 +28,10 @@ const cancelMutate = jest.fn()
 const markMutate = jest.fn()
 const exportMutate = jest.fn()
 const csvMutate = jest.fn()
+const reportArgs = jest.fn()
+let report: Q<IntakeReport>
+const reportCsvMutate = jest.fn()
+let reportCsv: { mutate: jest.Mock; isPending: boolean; variables?: { block: string } }
 
 jest.mock("@/hooks/super-admin/useIntake", () => ({
   useIntakeRegistrations: (...a: unknown[]) => {
@@ -43,6 +47,11 @@ jest.mock("@/hooks/super-admin/useIntake", () => ({
   useMarkAttendance: () => ({ mutate: markMutate, isPending: false }),
   useExportRegistrations: () => ({ mutate: exportMutate, isPending: false }),
   useDownloadSessionCsv: () => ({ mutate: csvMutate, isPending: false }),
+  useIntakeReport: (...a: unknown[]) => {
+    reportArgs(...a)
+    return report
+  },
+  useDownloadReportCsv: () => reportCsv,
 }))
 
 const axios422 = (detail: unknown) => ({ response: { status: 422, data: { detail } } })
@@ -106,8 +115,51 @@ function renderAt(url: string) {
   )
 }
 
+const REPORT: IntakeReport = {
+  filters: {},
+  totals: { registrants: 12, needs_review: 3, session_registrations: 5, none_of_these_times: 2 },
+  by_segment: [
+    { segment_status: "inspiresgenius", segment_context: "company", count: 7 },
+    { segment_status: "non_inspiresgenius", segment_context: "education", count: 5 },
+  ],
+  by_role: [
+    { role: "hr", count: 4 },
+    { role: "career_coach", count: 8 },
+  ],
+  by_region: [{ region: "Europe", count: 12 }],
+  by_country: [{ country: "UK", count: 9 }, { country: "France", count: 3 }],
+  by_source: [{ source: "(other)", count: 2 }, { source: "LinkedIn", count: 10 }],
+  by_week: [{ week: "2026-W45", count: 12 }],
+  by_session: [
+    {
+      webinar_id: "w1",
+      title: "PRISM for coaches",
+      starts_at: "2099-07-01T13:00:00+00:00",
+      status: "cancelled",
+      registered: 2,
+      confirmed: 0,
+      attended: 2,
+      no_show: 1,
+      total: 5,
+    },
+    {
+      webinar_id: null,
+      title: "(none of these times)",
+      starts_at: null,
+      status: null,
+      registered: 2,
+      confirmed: 0,
+      attended: 0,
+      no_show: 0,
+      total: 2,
+    },
+  ],
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
+  report = { data: REPORT }
+  reportCsv = { mutate: reportCsvMutate, isPending: false }
   registrations = { data: { items: [PERSON], total: 1, limit: 50, offset: 0 } }
   detail = {
     data: {
@@ -162,9 +214,11 @@ beforeEach(() => {
 const lastFilters = () => registrationsArgs.mock.calls[registrationsArgs.mock.calls.length - 1][0]
 
 describe("Intake — Registrations", () => {
-  it("renders only the two tabs this package ships", () => {
+  it("renders the three tabs shipped so far (Reports is IN-7)", () => {
     renderAt("/super-admin/intake")
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Registrations", "Webinars"])
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Registrations", "Webinars", "Reports"])
+    // Reports is not fetched until its tab is open.
+    expect(reportArgs).not.toHaveBeenCalled()
   })
 
   it("shows an error, not an empty list, when the service cannot be reached", () => {
@@ -436,3 +490,128 @@ describe("Intake — Webinars", () => {
     click.mockRestore()
   })
 })
+
+const lastReportFilters = () => reportArgs.mock.calls[reportArgs.mock.calls.length - 1][0]
+
+describe("Intake — Reports (IN-7)", () => {
+  it("renders every block's counts, and names nobody", () => {
+    renderAt("/super-admin/intake?tab=reports")
+    expect(screen.getByRole("tab", { name: "Reports" })).toHaveAttribute("aria-selected", "true")
+    expect(lastReportFilters()).toEqual({})
+    expect(screen.getByText("Registrants").nextSibling).toHaveTextContent("12")
+    expect(screen.getByText("None of these times").nextSibling).toHaveTextContent("2")
+    const role = screen.getByRole("table", { name: "By role" })
+    expect(within(role).getByText("HR").closest("tr")).toHaveTextContent("4")
+    expect(within(role).getByText("Career coach")).toBeInTheDocument()
+    expect(within(screen.getByRole("table", { name: "By segment" })).getByText("InspiresGenius · Company")).toBeInTheDocument()
+    expect(within(screen.getByRole("table", { name: "By country" })).getByText("France")).toBeInTheDocument()
+    expect(within(screen.getByRole("table", { name: "By source (heard from)" })).getByText("LinkedIn")).toBeInTheDocument()
+    expect(within(screen.getByRole("table", { name: "By week registered (ISO week)" })).getByText("2026-W45")).toBeInTheDocument()
+    const sessions = screen.getByRole("table", { name: "By webinar session" })
+    expect(within(sessions).getByText("None of these times work")).toBeInTheDocument()
+    expect(within(sessions).getByText("(cancelled)")).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: /Download .* CSV/ })).toHaveLength(8)
+  })
+
+  it("shows an error, not a page of zeros, when the service cannot be reached", () => {
+    report = { error: networkError }
+    renderAt("/super-admin/intake?tab=reports")
+    expect(screen.getByRole("alert")).toHaveTextContent(/Could not load reports/)
+    expect(screen.queryByText("Registrants")).not.toBeInTheDocument()
+  })
+
+  it("lists the server's filter problems", () => {
+    report = { error: axios422([{ field: "date_to", message: "must not be before date_from" }]) }
+    renderAt("/super-admin/intake?tab=reports")
+    expect(screen.getByRole("alert")).toHaveTextContent("date_to: must not be before date_from")
+  })
+
+  it("says plainly when a block is empty", () => {
+    report = { data: { ...REPORT, by_country: [] } }
+    renderAt("/super-admin/intake?tab=reports")
+    expect(screen.getByText("No registrations match these filters.")).toBeInTheDocument()
+  })
+
+  it("shows the loading state", () => {
+    report = { isLoading: true }
+    renderAt("/super-admin/intake?tab=reports")
+    expect(screen.getByText(/Loading reports/)).toBeInTheDocument()
+  })
+
+  it.each([
+    ["HR", "/super-admin/intake?tab=reports&role=hr", { role: ["hr"] }, "hr"],
+    ["Recruiters", "/super-admin/intake?tab=reports&role=recruiter", { role: ["recruiter"] }, "recruiter"],
+    ["Companies", "/super-admin/intake?tab=reports&segment_context=company", { segment_context: "company" }, ""],
+    [
+      "Coaches",
+      "/super-admin/intake?tab=reports&role=career_coach&role=education_coach",
+      { role: ["career_coach", "education_coach"] },
+      "career_coach,education_coach",
+    ],
+  ])("the %s preset opens Reports filtered", (_label, url, expected, roleValue) => {
+    renderAt(url)
+    expect(lastReportFilters()).toEqual(expected)
+    expect(screen.getByLabelText("Role")).toHaveValue(roleValue)
+  })
+
+  it("switching from a preset to Registrations keeps the filter", async () => {
+    const user = userEvent.setup()
+    renderAt("/super-admin/intake?tab=reports&role=hr")
+    await user.click(screen.getByRole("tab", { name: "Registrations" }))
+    expect(lastFilters()).toEqual({ role: ["hr"] })
+  })
+
+  it("every filter in the bar reaches the query", async () => {
+    const user = userEvent.setup()
+    renderAt("/super-admin/intake?tab=reports")
+    await user.selectOptions(screen.getByLabelText("Community"), "inspiresgenius")
+    await user.selectOptions(screen.getByLabelText("Context"), "education")
+    await user.selectOptions(screen.getByLabelText("Role"), "career_coach,education_coach")
+    await user.selectOptions(screen.getByLabelText("PRISM accredited"), "not_sure")
+    fireDate("Registered from", "2026-11-01")
+    fireDate("to", "2026-11-30")
+    expect(lastReportFilters()).toEqual({
+      segment_status: "inspiresgenius",
+      segment_context: "education",
+      role: ["career_coach", "education_coach"],
+      prism_accredited: "not_sure",
+      date_from: "2026-11-01",
+      date_to: "2026-11-30",
+    })
+    await user.type(screen.getByLabelText("Country"), "UK")
+    await user.type(screen.getByLabelText("Region"), "Europe")
+    await waitFor(() => expect(lastReportFilters()).toMatchObject({ country: "UK", region: "Europe" }), { timeout: 2000 })
+    await user.click(screen.getByRole("button", { name: "Clear filters" }))
+    expect(lastReportFilters()).toEqual({})
+    expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument()
+  })
+
+  it("downloads one block's CSV through the hook with the current filters", async () => {
+    const user = userEvent.setup()
+    Object.assign(URL, { createObjectURL: jest.fn(() => "blob:r"), revokeObjectURL: jest.fn() })
+    const click = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {})
+    reportCsvMutate.mockImplementation((_v: unknown, opts: MutateOpts) => opts.onSuccess?.(new Blob(["a"])))
+    renderAt("/super-admin/intake?tab=reports&role=hr")
+    await user.click(screen.getByRole("button", { name: "Download by_country CSV" }))
+    expect(reportCsvMutate.mock.calls[0][0]).toEqual({ block: "by_country", filters: { role: ["hr"] } })
+    expect(click).toHaveBeenCalled()
+    click.mockRestore()
+  })
+
+  it("a failed download is a toast, and buttons wait while one runs", async () => {
+    const user = userEvent.setup()
+    reportCsvMutate.mockImplementation((_v: unknown, opts: MutateOpts) => opts.onError?.(networkError))
+    renderAt("/super-admin/intake?tab=reports")
+    await user.click(screen.getByRole("button", { name: "Download totals CSV" }))
+    expect(toastError).toHaveBeenCalled()
+
+    reportCsv = { mutate: reportCsvMutate, isPending: true, variables: { block: "by_week" } }
+    renderAt("/super-admin/intake?tab=reports")
+    const buttons = screen.getAllByRole("button", { name: "Download by_week CSV" })
+    expect(buttons[buttons.length - 1]).toBeDisabled()
+  })
+})
+
+function fireDate(label: string, value: string) {
+  fireEvent.change(screen.getByLabelText(label), { target: { value } })
+}
