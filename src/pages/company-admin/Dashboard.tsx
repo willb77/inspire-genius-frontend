@@ -9,6 +9,8 @@ import { useCompanyDepartments, useCompanyAnalytics as useCompanyAdminAnalytics 
 import { useObservabilityRollup } from "@/hooks/company-admin/useObservabilityRollup"
 import { ROUTES } from "@/constants/routes"
 import { ValidationReviewQueue } from "@/components/job-blueprint/validation/ValidationReviewQueue"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import DashboardHouse from "./house/DashboardHouse"
 
 type Dept = { name: string; count: number; color: string }
 
@@ -25,7 +27,7 @@ const ADMIN_SURFACES: { label: string; path: string }[] = [
   { label: "Settings",      path: ROUTES.COMPANY_ADMIN.SETTINGS },
 ]
 
-export default function CompanyAdminDashboard() {
+function CompanyAdminDashboardClassic() {
   const { t } = useTranslation(["admin", "common"]);
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -193,4 +195,12 @@ export default function CompanyAdminDashboard() {
       />
     </CompanyAdminLayout>
   )
+}
+
+/**
+ * House style (area `company-admin`, default OFF): the switch is read at render
+ * and only chooses which page to show. Off, the classic page renders unchanged.
+ */
+export default function CompanyAdminDashboard() {
+  return isHouseStyleOn("company-admin") ? <DashboardHouse /> : <CompanyAdminDashboardClassic />
 }

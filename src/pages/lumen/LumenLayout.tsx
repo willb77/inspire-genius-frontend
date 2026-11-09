@@ -1,6 +1,7 @@
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
+import { withCompanyAdminHouseMenu } from "@/constants/house/companyAdminNav"
 import { useAuth } from "@/context/useAuth"
 import { isUserRole, type UserRole } from "@/types/roles"
 import { VerticalShell, useVerticalAccess } from "@/verticals/core"
@@ -40,7 +41,7 @@ export default function LumenLayout() {
   if (isLoading) return <LoadingSpinner />
 
   if (!hasAccess) {
-    const navItems = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
+    const navItems = withCompanyAdminHouseMenu(role, NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user)
     return (
       <SidebarScaffold navItems={navItems}>
         <LumenRequestAccess />

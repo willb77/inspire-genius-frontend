@@ -8,6 +8,8 @@ import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCompanyUsers } from "@/hooks/company-admin/useCompanyAdmin"
 import { LinkRequestsAdminSection } from "@/components/company-admin/LinkRequestsAdminSection"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import PeopleHouse from "./house/PeopleHouse"
 
 type User = { id: string; name: string; email: string; role: string; department: string; team: string; status: string; joinDate: string }
 
@@ -22,7 +24,7 @@ const FALLBACK_USERS: User[] = [
   { id: "u-8", name: "David Chen", email: "david.c@acme.com", role: "User", department: "Sales", team: "SMB Sales", status: "active", joinDate: "Apr 2025" },
 ]
 
-export default function CompanyAdminUsers() {
+function CompanyAdminUsersClassic() {
   const { t } = useTranslation(["admin", "common"]);
   const [search, setSearch] = useState("")
   const { data: usersData, isLoading, error, refetch } = useCompanyUsers()
@@ -129,4 +131,12 @@ export default function CompanyAdminUsers() {
       </DataCard>
     </CompanyAdminLayout>
   )
+}
+
+/**
+ * House style (area `company-admin`, default OFF): the switch is read at render
+ * and only chooses which page to show. Off, the classic page renders unchanged.
+ */
+export default function CompanyAdminUsers() {
+  return isHouseStyleOn("company-admin") ? <PeopleHouse /> : <CompanyAdminUsersClassic />
 }
