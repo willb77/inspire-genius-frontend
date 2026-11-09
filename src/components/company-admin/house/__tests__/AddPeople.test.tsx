@@ -23,11 +23,12 @@ jest.mock("@/components/bulk-import/DataPreviewTable", () => ({
   ),
 }))
 const mockRecordAges = jest.fn()
+const mockRosterReset = jest.fn()
 jest.mock("@/hooks/useMinorConsent", () => ({
   useRosterAgeCapture: () => ({
     ageCaptureAllowed: false,
     recordFrom: (...a: unknown[]) => mockRecordAges(...a),
-    mutation: { isPending: false, isError: false, data: undefined },
+    mutation: { isPending: false, isError: false, data: undefined, reset: () => mockRosterReset() },
   }),
 }))
 const mockToast = { success: jest.fn(), error: jest.fn(), info: jest.fn() }
@@ -126,8 +127,12 @@ describe("AddPeople", () => {
     fireEvent.click(screen.getByText("mock proceed 1"))
     expect(await screen.findByRole("status", { name: "Loading" })).toBeInTheDocument()
     expect(screen.queryByText("Add more people")).not.toBeInTheDocument()
+    // Close waits for the import, so the roster-age write after it is not lost.
+    expect(screen.getByRole("button", { name: "Close" })).toBeDisabled()
     resolve(OK)
     await waitFor(() => expect(screen.getByText("Recorded 1 of 2 people.")).toBeInTheDocument())
+    expect(screen.getByRole("button", { name: "Close" })).toBeEnabled()
+    expect(mockRecordAges).toHaveBeenCalledWith([ROW])
   })
 
   it("Add more people starts over; Close calls onClose", async () => {
@@ -137,7 +142,9 @@ describe("AddPeople", () => {
     expect(screen.getByText("Add more people")).toBeInTheDocument()
     fireEvent.click(screen.getByText("mock proceed 1"))
     await screen.findByText("Recorded 1 of 2 people.")
+    expect(mockRosterReset).not.toHaveBeenCalled()
     fireEvent.click(screen.getByText("Add more people"))
+    expect(mockRosterReset).toHaveBeenCalledTimes(1)
     expect(screen.getByText("mock upload")).toBeInTheDocument()
     expect(screen.queryByText(/Recorded/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Close" }))

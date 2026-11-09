@@ -32,7 +32,7 @@ jest.mock("@/hooks/useMinorConsent", () => ({
   useRosterAgeCapture: () => ({
     ageCaptureAllowed: false,
     recordFrom: jest.fn(),
-    mutation: { isPending: false, isError: false, data: undefined },
+    mutation: { isPending: false, isError: false, data: undefined, reset: jest.fn() },
   }),
 }))
 

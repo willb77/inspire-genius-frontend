@@ -58,6 +58,8 @@ export function AddPeople({ onClose }: AddPeopleProps) {
 
   const startOver = () => {
     record.reset()
+    // A new run must not show the previous run's dates-of-birth summary.
+    rosterAges.reset()
     setRecords([])
     setLastValid([])
     setStep("upload")
@@ -72,7 +74,9 @@ export function AddPeople({ onClose }: AddPeopleProps) {
         <h2 id="add-people-title" className="text-lg font-semibold text-foreground">
           Add people
         </h2>
-        <Button variant="ghost" size="sm" onClick={onClose}>
+        {/* Closing mid-import would unmount this panel and skip the roster-age
+            write that follows a successful import, so wait for it. */}
+        <Button variant="ghost" size="sm" onClick={onClose} disabled={record.isPending}>
           {BUTTON_WORDS.close}
         </Button>
       </div>
