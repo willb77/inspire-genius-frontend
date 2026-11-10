@@ -311,7 +311,14 @@ export function WebinarsTab() {
                         <FillBar webinar={w} />
                       </TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_BADGE[w.status].variant}>{STATUS_BADGE[w.status].label}</Badge>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <Badge variant={STATUS_BADGE[w.status].variant}>{STATUS_BADGE[w.status].label}</Badge>
+                          {w.is_public === true && (
+                            <Badge variant="outline" title="Shown on the public events page while scheduled and upcoming">
+                              Public
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="space-x-1 whitespace-nowrap text-right">
                         <Button size="sm" variant="outline" onClick={() => setOpenList(w.id)}>

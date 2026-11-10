@@ -1,6 +1,9 @@
 import { z } from "zod"
 import { SEGMENT_CONTEXTS, SEGMENT_STATUSES, type WebinarInput } from "@/types/intake"
 
+/** The server's CHECK on `intake.webinars.public_description`. */
+export const PUBLIC_DESCRIPTION_MAX = 2000
+
 /**
  * The New / Edit session form. Mirrors the server rules in intake-service
  * `app/webinars.py`; the server is authoritative and lists every problem it
@@ -35,6 +38,14 @@ export const webinarFormSchema = z.object({
     )
     .min(1, "Tick at least one segment"),
   status: z.enum(["scheduled", "completed"]).optional(),
+  // The public events page (monorepo CSA 2026-11-10-public-events-list-csa.md).
+  // Defaulted, so values that predate these fields still parse as "not public".
+  isPublic: z.boolean().default(false),
+  publicDescription: z
+    .string()
+    .trim()
+    .max(PUBLIC_DESCRIPTION_MAX, `Public description must be at most ${PUBLIC_DESCRIPTION_MAX.toLocaleString("en-US")} characters`)
+    .default(""),
 })
 
 export type WebinarFormInput = z.input<typeof webinarFormSchema>
@@ -51,5 +62,24 @@ export function toWebinarInput(values: WebinarFormValues): WebinarInput {
     segments: values.segments,
   }
   if (values.status) input.status = values.status
+  // Sent only when set, so a form that leaves them alone produces exactly the
+  // body an intake service without the public events columns accepts (it
+  // answers 422 "unknown field" to either key).
+  if (values.isPublic) input.is_public = true
+  if (values.publicDescription !== "") input.public_description = values.publicDescription
   return input
+}
+
+/**
+ * The public fields an EDIT sends: only the ones the admin changed. Unticking
+ * sends `false`; clearing the description sends `null`.
+ */
+export function publicFieldsForEdit(
+  values: WebinarFormValues,
+  dirty: { isPublic?: boolean; publicDescription?: boolean },
+): Pick<WebinarInput, "is_public" | "public_description"> {
+  const out: Pick<WebinarInput, "is_public" | "public_description"> = {}
+  if (dirty.isPublic) out.is_public = values.isPublic
+  if (dirty.publicDescription) out.public_description = values.publicDescription === "" ? null : values.publicDescription
+  return out
 }

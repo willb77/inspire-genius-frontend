@@ -175,6 +175,13 @@ export type Webinar = {
   /** Every registration for the session, whatever its status. */
   registered_count: number
   segments: Segment[]
+  /**
+   * Shown on the public `/events` page. Absent when the intake service
+   * predates the public events list (monorepo CSA 2026-11-10); read absent as false.
+   */
+  is_public?: boolean
+  /** Plain text for the public events page, at most 2,000 characters. Absent on an older service. */
+  public_description?: string | null
 }
 
 export type WebinarList = {
@@ -195,6 +202,13 @@ export type WebinarInput = {
   join_link: string | null
   segments: Segment[]
   status?: WebinarStatus
+  /**
+   * Sent only when the admin set it (see `toWebinarInput` and the edit path in
+   * `WebinarForm`): an older intake service answers 422 "unknown field" to
+   * either key, so an untouched form must never carry them.
+   */
+  is_public?: boolean
+  public_description?: string | null
 }
 
 export type SessionListItem = {
