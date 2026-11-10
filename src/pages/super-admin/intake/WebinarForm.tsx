@@ -23,6 +23,7 @@ import type { RegistryError } from "@/types/practitioner-registry"
 import { SEGMENT_CONTEXTS, SEGMENT_STATUSES, type Segment, type Webinar, type WebinarInput } from "@/types/intake"
 import {
   PUBLIC_DESCRIPTION_MAX,
+  editChanges,
   publicFieldsForEdit,
   toWebinarInput,
   webinarFormSchema,
@@ -124,27 +125,24 @@ export function WebinarFormDialog({ webinar, onClose }: { webinar: Webinar | nul
   const onSubmit = form.handleSubmit((values) => {
     setServerErrors([])
     const input: Partial<WebinarInput> = toWebinarInput(values)
-    // On an edit, an untouched time is not re-sent: a finished session keeps
-    // its exact stored instant, which a minute-precision input cannot echo.
-    if (webinar && !form.formState.dirtyFields.startsAt && !form.formState.dirtyFields.timeZone) {
-      delete input.starts_at
-      delete input.time_zone
-    }
-    // On an edit, the public fields go only when the admin changed them, so an
-    // untouched edit still saves against an intake service without them.
-    // Compared with the opening values rather than read from `dirtyFields`,
-    // which this form does not subscribe to and so is never filled in.
     if (webinar) {
-      const opened = defaults(webinar)
+      // Compared with the values the dialog opened with, never with
+      // `formState.dirtyFields`: this form does not subscribe to it, so it is
+      // always empty (see `editChanges`).
+      const changed = editChanges(values, defaults(webinar))
+      // An untouched time is not re-sent: a finished session keeps its exact
+      // stored instant, which a minute-precision input cannot echo. A changed
+      // date, time or zone sends both, so the server reads the wall-clock time
+      // in the chosen zone.
+      if (!changed.startsAt && !changed.timeZone) {
+        delete input.starts_at
+        delete input.time_zone
+      }
+      // The public fields go only when changed, so an untouched edit still saves
+      // against an intake service without them.
       delete input.is_public
       delete input.public_description
-      Object.assign(
-        input,
-        publicFieldsForEdit(values, {
-          isPublic: values.isPublic !== opened.isPublic,
-          publicDescription: values.publicDescription !== (opened.publicDescription ?? "").trim(),
-        }),
-      )
+      Object.assign(input, publicFieldsForEdit(values, changed))
     }
     const handlers = {
       onSuccess: () => {

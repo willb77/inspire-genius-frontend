@@ -601,6 +601,97 @@ describe("Intake — Webinars: public events fields", () => {
   })
 })
 
+// The edit dialog used to decide "was the time changed?" from react-hook-form's
+// `dirtyFields`, which this form never fills in — so a changed date, time or
+// zone was dropped from the PATCH while the dialog said "Session saved".
+// FUTURE opens as 2099-07-01T09:00 in America/New_York.
+describe("Intake — Webinars: an edit sends a changed date, time or zone", () => {
+  async function openEdit() {
+    const user = userEvent.setup()
+    renderAt("/super-admin/intake?tab=webinars")
+    await user.click(screen.getByRole("button", { name: "Edit PRISM for coaches" }))
+    const dialog = screen.getByRole("dialog")
+    expect(within(dialog).getByLabelText("Date and time")).toHaveValue("2099-07-01T09:00")
+    return { user, dialog }
+  }
+  const save = async (user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement) => {
+    await user.click(within(dialog).getByRole("button", { name: "Save" }))
+    await waitFor(() => expect(updateMutate).toHaveBeenCalled())
+    return updateMutate.mock.calls[0][0]
+  }
+
+  beforeEach(() => {
+    updateMutate.mockImplementation((_v: unknown, opts: MutateOpts) => opts.onSuccess?.({}))
+  })
+
+  it("a changed date only is sent, with the session's zone", async () => {
+    const { user, dialog } = await openEdit()
+    fireEvent.change(within(dialog).getByLabelText("Date and time"), { target: { value: "2099-07-02T09:00" } })
+    const sent = await save(user, dialog)
+    expect(sent).toMatchObject({ id: "w1", starts_at: "2099-07-02T09:00:00", time_zone: "America/New_York" })
+  })
+
+  it("a changed time only is sent", async () => {
+    const { user, dialog } = await openEdit()
+    fireEvent.change(within(dialog).getByLabelText("Date and time"), { target: { value: "2099-07-01T15:30" } })
+    const sent = await save(user, dialog)
+    expect(sent).toMatchObject({ starts_at: "2099-07-01T15:30:00", time_zone: "America/New_York" })
+  })
+
+  it("a changed zone only is sent, with the wall-clock time it opened with", async () => {
+    const { user, dialog } = await openEdit()
+    await user.selectOptions(within(dialog).getByLabelText("Time zone"), "Europe/London")
+    const sent = await save(user, dialog)
+    expect(sent).toMatchObject({ starts_at: "2099-07-01T09:00:00", time_zone: "Europe/London" })
+  })
+
+  it("a changed date and zone are both sent", async () => {
+    const { user, dialog } = await openEdit()
+    fireEvent.change(within(dialog).getByLabelText("Date and time"), { target: { value: "2099-08-15T18:45" } })
+    await user.selectOptions(within(dialog).getByLabelText("Time zone"), "Europe/London")
+    const sent = await save(user, dialog)
+    expect(sent).toMatchObject({ starts_at: "2099-08-15T18:45:00", time_zone: "Europe/London" })
+    expect(toastSuccess).toHaveBeenCalledWith("Session saved")
+  })
+
+  it("an untouched save sends exactly today's body (no time, no zone, no public fields)", async () => {
+    const { user, dialog } = await openEdit()
+    const sent = await save(user, dialog)
+    expect(sent).toEqual({
+      id: "w1",
+      title: "PRISM for coaches",
+      capacity: 10,
+      join_link: "https://zoom.example/j/1",
+      segments: FUTURE.segments,
+      status: "scheduled",
+    })
+  })
+
+  it("a time changed and then put back is untouched", async () => {
+    const { user, dialog } = await openEdit()
+    const input = within(dialog).getByLabelText("Date and time")
+    fireEvent.change(input, { target: { value: "2099-07-02T09:00" } })
+    fireEvent.change(input, { target: { value: "2099-07-01T09:00" } })
+    const sent = await save(user, dialog)
+    expect(sent).not.toHaveProperty("starts_at")
+    expect(sent).not.toHaveProperty("time_zone")
+  })
+
+  it("a changed time the server refuses shows the server's error and does not claim success", async () => {
+    updateMutate.mockImplementation((_v: unknown, opts: MutateOpts) =>
+      opts.onError?.(axios422([{ field: "starts_at", message: "that time does not exist in America/New_York" }])),
+    )
+    const { user, dialog } = await openEdit()
+    fireEvent.change(within(dialog).getByLabelText("Date and time"), { target: { value: "2099-03-08T02:30" } })
+    const sent = await save(user, dialog)
+    expect(sent).toMatchObject({ starts_at: "2099-03-08T02:30:00" })
+    const alert = await screen.findByRole("alert", { name: "Session errors" })
+    expect(alert).toHaveTextContent("starts_at: that time does not exist in America/New_York")
+    expect(toastSuccess).not.toHaveBeenCalled()
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+})
+
 const lastReportFilters =() => reportArgs.mock.calls[reportArgs.mock.calls.length - 1][0]
 
 describe("Intake — Reports (IN-7)", () => {

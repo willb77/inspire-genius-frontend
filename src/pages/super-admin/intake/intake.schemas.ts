@@ -70,6 +70,31 @@ export function toWebinarInput(values: WebinarFormValues): WebinarInput {
   return input
 }
 
+/** Which of the edit dialog's conditionally-sent fields differ from the values it opened with. */
+export type EditChanges = {
+  startsAt: boolean
+  timeZone: boolean
+  isPublic: boolean
+  publicDescription: boolean
+}
+
+/**
+ * Compare the submitted values with the values the dialog OPENED with.
+ *
+ * This replaces react-hook-form's `formState.dirtyFields`, which the edit
+ * dialog never subscribes to (it is a proxy, filled in only when read during
+ * render) and so was always empty: a changed date, time or zone was treated as
+ * untouched and dropped from the PATCH while the dialog said "Session saved".
+ */
+export function editChanges(values: WebinarFormValues, opened: WebinarFormInput): EditChanges {
+  return {
+    startsAt: values.startsAt !== opened.startsAt,
+    timeZone: values.timeZone !== opened.timeZone,
+    isPublic: values.isPublic !== (opened.isPublic ?? false),
+    publicDescription: values.publicDescription !== (opened.publicDescription ?? "").trim(),
+  }
+}
+
 /**
  * The public fields an EDIT sends: only the ones the admin changed. Unticking
  * sends `false`; clearing the description sends `null`.
