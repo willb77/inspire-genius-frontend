@@ -25,6 +25,7 @@ const Terms = React.lazy(() => import("@/pages/legal/Terms"));
 const CareerPathwaysView = React.lazy(() => import("@/pages/career-pathways/CareerPathwaysViewPage"));
 const Privacy = React.lazy(() => import("@/pages/legal/Privacy"));
 const JoinPage = React.lazy(() => import("@/pages/join/JoinPage"));
+const EventsPage = React.lazy(() => import("@/pages/join/EventsPage"));
 
 // ── Misc / Preview / Dev pages ──────────────────────────────────────────────
 
@@ -448,6 +449,9 @@ export const routes: RouteObject[] = [
       // through its own request client with no auth interceptors, so a 401 or
       // 404 from the public route can never redirect a visitor to /login.
       { path: "/join", element: withSuspense(<JoinPage />) },
+      // Public "Upcoming events", linked from /join. A stub that makes no
+      // request until events are entered in Administration; no sign-in.
+      { path: "/events", element: withSuspense(<EventsPage />) },
       // Public Interview Practice role guides — landing pages that funnel into
       // the (auth-gated) coach. Static `/roles` outranks the `:slug` param.
       { path: "/interview-practice/roles", element: withSuspense(<InterviewRolesIndex />) },
