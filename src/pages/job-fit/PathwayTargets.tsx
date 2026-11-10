@@ -170,7 +170,7 @@ function TargetRoadmap({ t }: { t: GoalTargetWithRoadmap }) {
       )}
       {r && r.gapsPending && (
         <p className="ml-6 text-sm text-[#6b7280]">
-          The fit you chose this role from showed no gaps to close.
+          The fit you chose this role from showed no growth areas to work on.
         </p>
       )}
       {r && !r.gapsPending && (
@@ -213,8 +213,8 @@ export function MyRoadmaps({ targets }: { targets: ReturnType<typeof useMyTarget
       {!targets.isLoading && !targets.isError && rows.length === 0 && (
         <p className="text-sm text-[#6b7280]">
           You haven&apos;t targeted a role yet. Choose &ldquo;Make this my target&rdquo; on a role
-          above and its roadmap — the gaps between your profile and that role&apos;s benchmark,
-          in the order to close them — appears here.
+          above and its roadmap — the growth areas between your profile and that role&apos;s blueprint,
+          in the order to work on them — appears here.
         </p>
       )}
       {rows.length > 0 && (

@@ -120,9 +120,9 @@ export default function PathwayPage() {
           <li className="flex items-start gap-2">
             <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-[#0D9488]" />
             {targetsOn ? (
-              <span><span className="font-medium text-[#374151]">Roadmaps</span> — make a role your target and the gaps between your profile and its benchmark become the steps, in the order to close them.</span>
+              <span><span className="font-medium text-[#374151]">Roadmaps</span> — make a role your target and the growth areas between your profile and its blueprint become the steps, in the order to work on them.</span>
             ) : (
-              <span><span className="font-medium text-[#374151]">Skill ladders</span> — a few practical steps to close the gap toward those roles.</span>
+              <span><span className="font-medium text-[#374151]">Skill ladders</span> — a few practical steps to develop the growth areas for those roles.</span>
             )}
           </li>
         </ul>

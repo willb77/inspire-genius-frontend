@@ -455,7 +455,7 @@ function GapsCard({ data }: { data: DegreePlanReady }) {
       {!g.available ? (
         <p>{g.note}</p>
       ) : g.items.length === 0 ? (
-        <p>{g.note ?? "No behaviour or skill gaps are on file."}</p>
+        <p>{g.note ?? "No behaviour or skill growth areas are on file."}</p>
       ) : (
         <ul className="list-disc space-y-1 pl-5 text-foreground">
           {g.items.map((item, i) => (

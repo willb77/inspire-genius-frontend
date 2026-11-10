@@ -709,9 +709,9 @@ function DoneStep({
           >
             <Target className="h-5 w-5 shrink-0 text-muted-foreground" />
             <div className="flex-1">
-              <div className="text-sm font-semibold">Show me the gaps</div>
+              <div className="text-sm font-semibold">Show me my growth areas</div>
               <div className="text-xs text-muted-foreground">
-                What's missing, and which gaps are worth closing first.
+                What's missing, and which growth areas are worth working on first.
               </div>
             </div>
           </button>
@@ -724,7 +724,7 @@ function DoneStep({
             <RouteIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
             <div className="flex-1">
               <div className="text-sm font-semibold">Plan the pathway</div>
-              <div className="text-xs text-muted-foreground">Turn the gaps into a route to the role.</div>
+              <div className="text-xs text-muted-foreground">Turn the growth areas into a route to the role.</div>
             </div>
           </button>
 

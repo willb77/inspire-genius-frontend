@@ -78,7 +78,7 @@ export default function CoachPage() {
       <FitPageHeader
         icon={MessagesSquare}
         title="Coaching"
-        description="Work through one of your roles — fit, gaps, how to close them, goals, and interview prep. Pick a role and a question; the answer appears right here."
+        description="Work through one of your roles — fit, growth areas, how to develop them, goals, and interview prep. Pick a role and a question; the answer appears right here."
       />
 
       {matches.isLoading ? (

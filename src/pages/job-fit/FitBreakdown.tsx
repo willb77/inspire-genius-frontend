@@ -97,7 +97,7 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <ScoreBar score={d.candidateScore} label="You" size="sm" showValue />
-                  <ScoreBar score={d.benchmarkScore} label="Role benchmark" size="sm" showValue color="bg-[#0D9488]" />
+                  <ScoreBar score={d.benchmarkScore} label="Role blueprint" size="sm" showValue color="bg-[#0D9488]" />
                 </div>
                 {d.coaching && <p className="mt-2 text-sm text-[#6b7280]">{d.coaching}</p>}
               </div>
@@ -127,7 +127,7 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
                   <span className="text-sm font-medium text-[#1f2937]">{g.dimensionName}</span>
                 </div>
                 <p className="text-xs text-[#6b7280]">
-                  Currently {Math.abs(g.gap)} points below this role&apos;s benchmark — a good area
+                  Currently {Math.abs(g.gap)} points below this role&apos;s blueprint — a good area
                   to build on.
                 </p>
               </div>

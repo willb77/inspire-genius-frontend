@@ -443,7 +443,7 @@ describe("MatchesPage — with matches", () => {
     const rows = screen.getAllByRole("button").filter((b) => b.hasAttribute("aria-pressed"))
     expect(rows[0]).toHaveTextContent("Customer Success Lead")
     expect(screen.getAllByText("81").length).toBeGreaterThan(0)
-    expect(screen.getByText(/2 critical gaps to close/i)).toBeInTheDocument()
+    expect(screen.getByText(/2 critical growth areas to work on/i)).toBeInTheDocument()
     expect(container.textContent).not.toMatch(
       /misalignment|potential[ -]fit|strong[ -]fit|moderate[ -]fit|excellent|poor|base tier|(front-line|professional|executive) role/i,
     )

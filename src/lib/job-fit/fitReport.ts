@@ -78,7 +78,7 @@ export function buildFitReportText({ data, pct, overview }: FitReportInput): str
   if (data.coachingGaps.length) {
     L.push("", "Growth focus:")
     for (const g of data.coachingGaps) {
-      L.push(`  - ${g.dimensionName}: ${Math.abs(Math.round(g.gap))} points below the role's benchmark`)
+      L.push(`  - ${g.dimensionName}: ${Math.abs(Math.round(g.gap))} points below the role's blueprint`)
     }
   }
   if (data.interviewSelfAdvocacy.length) {
@@ -88,7 +88,7 @@ export function buildFitReportText({ data, pct, overview }: FitReportInput): str
   L.push(
     "",
     "This is a self-guided development aid, not a hiring decision. It compares your",
-    "behavioral profile to a role's published benchmark to help you focus your growth."
+    "behavioral profile to a role's published blueprint to help you focus your growth."
   )
   return L.join("\n")
 }
@@ -101,14 +101,14 @@ export function buildFitReportMarkdown({ data, pct, overview }: FitReportInput):
   const partial = partialLine(data)
   if (partial) L.push(`_${partial}_`, "")
   if (overview) L.push(overview, "")
-  L.push("## Where you stand", "", "| Dimension | You | Role benchmark | Difference |", "| --- | --- | --- | --- |")
+  L.push("## Where you stand", "", "| Dimension | You | Role blueprint | Difference |", "| --- | --- | --- | --- |")
   for (const g of gapLines(data)) {
     L.push(`| ${g.name} | ${g.you} | ${g.role} | ${g.sign} |`)
   }
   if (data.coachingGaps.length) {
     L.push("", "## Growth focus", "")
     for (const g of data.coachingGaps) {
-      L.push(`- **${g.dimensionName}** — ${Math.abs(Math.round(g.gap))} points below the role's benchmark`)
+      L.push(`- **${g.dimensionName}** — ${Math.abs(Math.round(g.gap))} points below the role's blueprint`)
     }
   }
   if (data.interviewSelfAdvocacy.length) {
@@ -118,7 +118,7 @@ export function buildFitReportMarkdown({ data, pct, overview }: FitReportInput):
   L.push(
     "",
     "> This is a self-guided development aid, not a hiring decision. It compares your",
-    "> behavioral profile to a role's published benchmark to help you focus your growth."
+    "> behavioral profile to a role's published blueprint to help you focus your growth."
   )
   return L.join("\n")
 }
@@ -138,7 +138,7 @@ export function buildFitReportHtml({ data, pct, overview }: FitReportInput): str
           (g) =>
             `<li><strong>${esc(g.dimensionName)}</strong> — ${Math.abs(
               Math.round(g.gap)
-            )} points below the role's benchmark</li>`
+            )} points below the role's blueprint</li>`
         )
         .join("")}</ul>`
     : ""
@@ -162,11 +162,11 @@ export function buildFitReportHtml({ data, pct, overview }: FitReportInput): str
     ${partial ? `<p style="color:#b45309;font-size:12px">${esc(partial)}</p>` : ""}
     ${overview ? `<p>${esc(overview)}</p>` : ""}
     <h2>Where you stand</h2>
-    <table><thead><tr><th>Dimension</th><th>You</th><th>Role benchmark</th><th>Difference</th></tr></thead>
+    <table><thead><tr><th>Dimension</th><th>You</th><th>Role blueprint</th><th>Difference</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${growth}
     ${advocacy}
     <p class="note">This is a self-guided development aid, not a hiring decision. It compares your
-    behavioral profile to a role's published benchmark to help you focus your growth and interview prep.</p>
+    behavioral profile to a role's published blueprint to help you focus your growth and interview prep.</p>
   </body></html>`
 }

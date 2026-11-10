@@ -56,7 +56,7 @@ import {
 import type { UserRole } from "@/types/roles";
 
 const OTHER_ROLES: UserRole[] = ["manager", "company-admin", "practitioner", "distributor", "super-admin"];
-const OTHER_TOOLS = ["My fit", "Gaps", "Pathway", "Fit a JD", "Coaching"];
+const OTHER_TOOLS = ["My fit", "Growth areas", "Pathway", "Fit a JD", "Coaching"];
 
 function renderSidebarFor(role: UserRole) {
   const subNav = verticalSubNavItems("job-fit", role);

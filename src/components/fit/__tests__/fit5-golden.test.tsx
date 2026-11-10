@@ -32,6 +32,12 @@
  * inline-draft <button> to an <a href="/my/resume?jobId=…"> with the same class
  * and icon. No *.requests.txt changed. That is the second reviewed update.
  *
+ * JF-1 (Bill, typed in Coord 2026-11-10: "JF-1 go" 15:28, "JF-1 ship
+ * ungated" 15:46 EST): user-visible "gap" → "growth area" and "benchmark" →
+ * "blueprint". 39 *.html goldens changed in their copy only — reversing the
+ * JF-1 phrase map over each new golden reproduces the base byte for byte. No
+ * *.requests.txt changed. That is the third reviewed update.
+ *
  * To re-record (only ever on the base, before a source change):
  *   FIT5_GOLDEN_WRITE=1 npx jest src/components/fit/__tests__/fit5-golden.test.tsx
  */

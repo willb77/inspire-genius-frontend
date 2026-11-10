@@ -37,7 +37,7 @@ function signalDetail(key: OverallSignalKey, s: OverallSignal): string | null {
         ? "One of your goals points toward this kind of role."
         : `Your goals point toward ${(s.goalFamilies ?? []).join(" and ")}, not this kind of role.`
     case "prism":
-      return "How your behavioural profile sits with this role's benchmark — unchanged."
+      return "How your behavioural profile sits with this role's blueprint — unchanged."
   }
 }
 
@@ -95,7 +95,7 @@ export function OverallFitCard({ job, weights, person, benchmarksValidated }: Pr
           </p>
         )}
         {benchmarksValidated === false && (
-          <p>Role benchmarks are not yet validated against people working in these roles.</p>
+          <p>Role blueprints are not yet validated against people working in these roles.</p>
         )}
         {others.length > 0 && (
           <p>
