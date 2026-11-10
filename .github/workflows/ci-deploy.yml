@@ -120,6 +120,12 @@ jobs:
           # tab never renders and the /me probe never fires. staging-b reads its
           # own variable, STAGING_B_DEV_CONSOLE_URL, in the staging-b job below.
           echo "VITE_DEV_CONSOLE_URL=${{ vars.VITE_DEV_CONSOLE_URL }}" >> .env
+          # House-style areas switched on for this build (src/lib/house/areaSwitch.ts),
+          # from a repo VARIABLE so an area flips without a code change. Comma list
+          # of area names; unset writes an empty value = every area OFF. A viewer's
+          # localStorage `house_style_<area>` still overrides it. Visual only — never
+          # a security control. staging-b reads STAGING_B_HOUSE_STYLE_AREAS below.
+          echo "VITE_HOUSE_STYLE_AREAS=${{ vars.DEV_HOUSE_STYLE_AREAS }}" >> .env
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
@@ -535,6 +541,9 @@ jobs:
             # this writes an empty value: isDevConsoleConfigured() is false, the
             # Help & Support tab never renders and the /me probe never fires.
             echo "VITE_DEV_CONSOLE_URL=${{ vars.STAGING_B_DEV_CONSOLE_URL }}"
+            # House-style areas for stable — same contract as the dev job's
+            # DEV_HOUSE_STYLE_AREAS; unset = every area OFF.
+            echo "VITE_HOUSE_STYLE_AREAS=${{ vars.STAGING_B_HOUSE_STYLE_AREAS }}"
           } >> .env
 
       - name: Install dependencies
