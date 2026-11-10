@@ -14,12 +14,18 @@ import { cn } from "@/lib/utils";
  * and testimonial. The wall then stays on screen while a long form scrolls
  * (`lg:sticky lg:top-0 lg:h-screen`), its content starts at the top, and it
  * scrolls inside itself on a short screen. Without it — every sign-in page —
- * the wall renders exactly as before.
+ * the wall renders exactly as before. With a panel the grid is also form-led
+ * (wall ~38%, form ~62%) and the wall's padding is tighter.
  */
 const DEFAULT_WALL_CLASS =
   "relative hidden lg:flex flex-col justify-end overflow-hidden p-14 pt-[104px]";
+const DEFAULT_GRID_CLASS = "min-h-screen grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]";
+// /join: the form is the focus, so the wall takes ~38% and the form ~62%.
+const PANEL_GRID_CLASS = "min-h-screen grid grid-cols-1 lg:grid-cols-[1fr_1.6fr]";
+const DEFAULT_LOGO_CLASS = "absolute top-14 left-14 z-10";
+const PANEL_LOGO_CLASS = "absolute top-8 left-8 xl:top-10 xl:left-10 z-10";
 const PANEL_WALL_CLASS =
-  "relative hidden lg:flex flex-col justify-start overflow-x-hidden overflow-y-auto p-14 pt-[104px] lg:sticky lg:top-0 lg:h-screen lg:self-start";
+  "relative hidden lg:flex flex-col justify-start overflow-x-hidden overflow-y-auto px-8 pb-8 pt-[88px] xl:px-10 xl:pb-10 xl:pt-[96px] lg:sticky lg:top-0 lg:h-screen lg:self-start";
 
 export default function AuthLayout({
   children,
@@ -28,7 +34,7 @@ export default function AuthLayout({
   brandPanel,
 }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
+    <div className={brandPanel ? PANEL_GRID_CLASS : DEFAULT_GRID_CLASS}>
       {/* ── Brand Wall (left) ────────────────────────────────── */}
       <div className={brandPanel ? PANEL_WALL_CLASS : DEFAULT_WALL_CLASS}
         style={{ background: "linear-gradient(135deg, #0c1629 0%, #162040 40%, #1a2f5a 70%, #0f172a 100%)" }}
@@ -45,7 +51,7 @@ export default function AuthLayout({
         />
 
         {/* Logo */}
-        <div className="absolute top-14 left-14 z-10">
+        <div className={brandPanel ? PANEL_LOGO_CLASS : DEFAULT_LOGO_CLASS}>
           <img src="/Logo-Light.png" alt="Inspire Genius" className="h-8" />
         </div>
 

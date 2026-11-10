@@ -78,6 +78,7 @@ const pageModules: Record<string, string> = {
   "@/pages/legal/Terms": "TermsPage",
   "@/pages/legal/Privacy": "PrivacyPage",
   "@/pages/join/JoinPage": "JoinPage",
+  "@/pages/join/EventsPage": "EventsPage",
   "@/pages/onboarding/OnboardingOne": "OnboardingOnePage",
   "@/pages/onboarding/OnboardingTwo": "OnboardingTwoPage",
   "@/pages/onboarding/OnboardingThree": "OnboardingThreePage",
@@ -328,6 +329,7 @@ describe("Route Integration Tests", () => {
       { path: "/terms", testId: "TermsPage" },
       { path: "/privacy", testId: "PrivacyPage" },
       { path: "/join", testId: "JoinPage" },
+      { path: "/events", testId: "EventsPage" },
     ];
 
     it.each(publicRoutes)(

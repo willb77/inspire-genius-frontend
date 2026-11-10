@@ -5,6 +5,7 @@ import { AlertCircle, CalendarClock, CheckCircle2, Loader2 } from "lucide-react"
 import AuthHeader from "@/components/auth/AuthHeader"
 import AuthLayout from "@/components/auth/AuthLayout"
 import { JoinBrandPanel } from "./JoinBrandPanel"
+import { ROUTES } from "@/constants/routes"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -295,11 +296,17 @@ export default function JoinPage() {
   return (
     // The same shell as the sign-in pages: brand wall, logo, form panel. It
     // reads no auth state and makes no request, so it cannot redirect anyone.
-    <AuthLayout contentClassName="max-w-[560px]" showTestimonial={false} brandPanel={<JoinBrandPanel />}>
+    <AuthLayout contentClassName="max-w-[760px]" showTestimonial={false} brandPanel={<JoinBrandPanel />}>
       <AuthHeader
         title="Register your interest"
         subtitle="Inspires Genius is an AI mentoring platform. Leave your details below to register your interest."
       />
+      {/* A plain anchor, not a router Link: the page renders with no router. */}
+      <p className="-mt-3 mb-6 text-sm">
+        <a href={ROUTES.EVENTS} className="font-medium text-[#466bc4] underline-offset-4 hover:underline">
+          See upcoming events →
+        </a>
+      </p>
       {body}
     </AuthLayout>
   )

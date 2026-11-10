@@ -63,3 +63,26 @@ describe("/join brand panel", () => {
     expect(screen.queryByText(/AI coaching platform/)).not.toBeInTheDocument()
   })
 })
+
+describe("/join form-led layout", () => {
+  it("widens the form column to 760px and gives it the larger grid track", () => {
+    const { container } = renderPage()
+    const root = container.firstChild as HTMLElement
+    expect(root).toHaveClass("lg:grid-cols-[1fr_1.6fr]")
+    const form = screen.getByRole("form", { name: "Register your interest" })
+    const column = form.closest(".max-w-\\[760px\\]")
+    expect(column).not.toBeNull()
+    expect(column?.className).not.toContain("max-w-[560px]")
+  })
+})
+
+describe("/join upcoming-events link", () => {
+  it("links to /events, above the form rather than between its fields and the submit button", () => {
+    renderPage()
+    const link = screen.getByRole("link", { name: /see upcoming events/i })
+    expect(link).toHaveAttribute("href", "/events")
+    const form = screen.getByRole("form", { name: "Register your interest" })
+    expect(form).not.toContainElement(link)
+    expect(link.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+})
