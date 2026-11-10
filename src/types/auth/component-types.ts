@@ -53,5 +53,11 @@ export interface AuthLayoutProps {
   contentClassName?: string;
   /** Show the brand wall's testimonial card. Defaults to true; `/join` hides it. */
   showTestimonial?: boolean;
+  /**
+   * Replaces the brand wall's headline and testimonial, and makes the wall
+   * sticky with its content from the top. Unset on every sign-in screen (the
+   * wall renders unchanged); `/join` passes `JoinBrandPanel`.
+   */
+  brandPanel?: React.ReactNode;
   children: React.ReactNode;
 }

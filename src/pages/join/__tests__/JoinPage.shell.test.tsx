@@ -116,13 +116,14 @@ describe("brand-wall testimonial", () => {
   const QUOTE = /completely changed how our team approaches/i
   const ROLE = "VP People Operations"
 
-  it("/join renders no testimonial, but keeps the headline and logo", async () => {
+  it("/join renders no testimonial; its own brand panel replaces the headline, and the logo stays", async () => {
     renderAt(false)
     await screen.findByRole("form", { name: "Register your interest" })
     expect(screen.queryByText(NAME)).not.toBeInTheDocument()
     expect(screen.queryByText(QUOTE)).not.toBeInTheDocument()
     expect(screen.queryByText(ROLE)).not.toBeInTheDocument()
-    expect(screen.getByRole("heading", { level: 2, name: /unlock your/i })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 2, name: /support every client between sessions/i })).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { level: 2, name: /unlock your/i })).not.toBeInTheDocument()
     expect(screen.getAllByAltText("Inspire Genius").length).toBeGreaterThan(0)
   })
 
