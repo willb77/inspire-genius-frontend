@@ -9,12 +9,19 @@ import { ClipboardList, Layers, UsersRound } from "lucide-react"
  * reply in phase 1). Hidden below `lg` with the rest of the wall.
  */
 
+/** The "What happens next" box on /join: it refers to the form's first tick box. */
+export const JOIN_NEXT_STEP =
+  "No account and nothing to install. Tick the first box to hear when the next webinar is scheduled."
+/** The same box on /events, which has no form and so no box to tick. */
+export const EVENTS_NEXT_STEP =
+  "No account and nothing to install. Register your interest to hear when the next event is announced."
+
 const SETTINGS = ["Individuals", "Teams", "Organisations", "Education", "Enterprise"] as const
 
 const iconBox =
   "flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg border border-teal-400/35 bg-[#127A8A]/35 text-teal-300"
 
-export function JoinBrandPanel() {
+export function JoinBrandPanel({ nextStep = JOIN_NEXT_STEP }: { nextStep?: string } = {}) {
   return (
     <div className="flex max-w-[460px] flex-col gap-5">
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#e7b65a]">Register your interest</p>
@@ -77,7 +84,7 @@ export function JoinBrandPanel() {
       <div className="rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3.5">
         <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#e7b65a]">What happens next</p>
         <p className="mt-1.5 text-[12.5px] leading-snug text-white/70">
-          No account and nothing to install. Tick the first box to hear when the next webinar is scheduled.
+          {nextStep}
         </p>
       </div>
     </div>

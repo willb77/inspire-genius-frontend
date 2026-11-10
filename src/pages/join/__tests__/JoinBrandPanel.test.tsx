@@ -53,6 +53,17 @@ describe("/join brand panel", () => {
     expect(text).not.toMatch(/Sarah Reynolds|completely changed/i)
   })
 
+  it("keeps the /join 'What happens next' box word for word (it refers to the form's first box)", () => {
+    const { container } = renderPage()
+    const wall = (container.firstChild as HTMLElement).firstChild as HTMLElement
+    expect(
+      within(wall).getByText(
+        "No account and nothing to install. Tick the first box to hear when the next webinar is scheduled.",
+      ),
+    ).toBeInTheDocument()
+    expect(within(wall).queryByText(/Register your interest to hear when the next event/)).not.toBeInTheDocument()
+  })
+
   it("uses the mentoring subtitle on the form", () => {
     renderPage()
     expect(

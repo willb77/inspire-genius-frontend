@@ -449,8 +449,9 @@ export const routes: RouteObject[] = [
       // through its own request client with no auth interceptors, so a 401 or
       // 404 from the public route can never redirect a visitor to /login.
       { path: "/join", element: withSuspense(<JoinPage />) },
-      // Public "Upcoming events", linked from /join. A stub that makes no
-      // request until events are entered in Administration; no sign-in.
+      // Public "Upcoming events", linked from /join; no sign-in. Reads the
+      // public intake events route through the interceptor-free client, and
+      // shows the old stub's copy while that route answers 404 (switch off).
       { path: "/events", element: withSuspense(<EventsPage />) },
       // Public Interview Practice role guides — landing pages that funnel into
       // the (auth-gated) coach. Static `/roles` outranks the `:slug` param.
