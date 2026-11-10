@@ -15,12 +15,20 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { SEGMENT_CONTEXT_LABELS, SEGMENT_STATUS_LABELS } from "@/constants/intake"
 import { useCreateWebinar, useUpdateWebinar } from "@/hooks/super-admin/useIntake"
 import { registryErrors, registryErrorSummary } from "@/services/super-admin/practitioner-registry/registryErrors"
 import type { RegistryError } from "@/types/practitioner-registry"
 import { SEGMENT_CONTEXTS, SEGMENT_STATUSES, type Segment, type Webinar, type WebinarInput } from "@/types/intake"
-import { toWebinarInput, webinarFormSchema, type WebinarFormInput, type WebinarFormValues } from "./intake.schemas"
+import {
+  PUBLIC_DESCRIPTION_MAX,
+  publicFieldsForEdit,
+  toWebinarInput,
+  webinarFormSchema,
+  type WebinarFormInput,
+  type WebinarFormValues,
+} from "./intake.schemas"
 import { IntakeErrorList } from "./IntakeErrorList"
 import { browserTimeZone, segmentKey, timeZoneOptions, toZonedInput } from "./intakeView"
 
@@ -71,7 +79,16 @@ function SegmentGrid({ value, onChange }: { value: Segment[]; onChange: (next: S
 
 function defaults(webinar: Webinar | null): WebinarFormInput {
   if (!webinar) {
-    return { title: "", startsAt: "", timeZone: browserTimeZone(), capacity: "100", joinLink: "", segments: [] }
+    return {
+      title: "",
+      startsAt: "",
+      timeZone: browserTimeZone(),
+      capacity: "100",
+      joinLink: "",
+      segments: [],
+      isPublic: false,
+      publicDescription: "",
+    }
   }
   return {
     title: webinar.title,
@@ -80,6 +97,9 @@ function defaults(webinar: Webinar | null): WebinarFormInput {
     capacity: String(webinar.capacity),
     joinLink: webinar.join_link ?? "",
     segments: webinar.segments,
+    // Absent on an intake service that predates the public events list: read as not public.
+    isPublic: webinar.is_public === true,
+    publicDescription: webinar.public_description ?? "",
     // A cancelled session has no status control, and saving it must not quietly un-cancel it.
     status: webinar.status === "cancelled" ? undefined : webinar.status,
   }
@@ -109,6 +129,22 @@ export function WebinarFormDialog({ webinar, onClose }: { webinar: Webinar | nul
     if (webinar && !form.formState.dirtyFields.startsAt && !form.formState.dirtyFields.timeZone) {
       delete input.starts_at
       delete input.time_zone
+    }
+    // On an edit, the public fields go only when the admin changed them, so an
+    // untouched edit still saves against an intake service without them.
+    // Compared with the opening values rather than read from `dirtyFields`,
+    // which this form does not subscribe to and so is never filled in.
+    if (webinar) {
+      const opened = defaults(webinar)
+      delete input.is_public
+      delete input.public_description
+      Object.assign(
+        input,
+        publicFieldsForEdit(values, {
+          isPublic: values.isPublic !== opened.isPublic,
+          publicDescription: values.publicDescription !== (opened.publicDescription ?? "").trim(),
+        }),
+      )
     }
     const handlers = {
       onSuccess: () => {
@@ -184,6 +220,39 @@ export function WebinarFormDialog({ webinar, onClose }: { webinar: Webinar | nul
               render={({ field }) => <SegmentGrid value={field.value} onChange={field.onChange} />}
             />
             {errs.segments?.message && <p className="text-xs text-destructive">{errs.segments.message}</p>}
+          </div>
+          <div className="space-y-2 rounded-md border p-3 sm:col-span-2">
+            <div className="flex items-center gap-2">
+              <Controller
+                control={form.control}
+                name="isPublic"
+                render={({ field }) => (
+                  <Checkbox
+                    id="webinar-isPublic"
+                    checked={field.value}
+                    onCheckedChange={(on) => field.onChange(on === true)}
+                  />
+                )}
+              />
+              <Label htmlFor="webinar-isPublic">Show on the public events page</Label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The public page shows only the title, the date and time, and the public description below — never the
+              places, the join link or who has registered. It lists a session while it is scheduled and in the future.
+              Changes reach the public page within about 2 minutes.
+            </p>
+            <div className="space-y-1">
+              <Label htmlFor="webinar-publicDescription">Public description</Label>
+              <Textarea
+                id="webinar-publicDescription"
+                rows={4}
+                placeholder={`Plain text, up to ${PUBLIC_DESCRIPTION_MAX.toLocaleString("en-US")} characters. Shown to anyone who visits the events page.`}
+                {...form.register("publicDescription")}
+              />
+              {errs.publicDescription?.message && (
+                <p className="text-xs text-destructive">{errs.publicDescription.message}</p>
+              )}
+            </div>
           </div>
           <div className="sm:col-span-2">
             <IntakeErrorList errors={serverErrors} label="Session errors" />

@@ -491,7 +491,117 @@ describe("Intake — Webinars", () => {
   })
 })
 
-const lastReportFilters = () => reportArgs.mock.calls[reportArgs.mock.calls.length - 1][0]
+// Public events list (monorepo CSA 2026-11-10-public-events-list-csa.md, PR A FE twin).
+// FUTURE and PAST carry no `is_public` / `public_description`: they are the shape
+// today's intake service returns, so every test on them is an old-backend test.
+describe("Intake — Webinars: public events fields", () => {
+  const PUBLIC: Webinar = { ...FUTURE, is_public: true, public_description: "An hour on PRISM." }
+
+  it("an old-backend session (no public fields) opens unticked and an untouched edit sends neither key", async () => {
+    const user = userEvent.setup()
+    updateMutate.mockImplementation((_v: unknown, opts: MutateOpts) => opts.onSuccess?.({}))
+    renderAt("/super-admin/intake?tab=webinars")
+    await user.click(screen.getByRole("button", { name: "Edit PRISM for coaches" }))
+    const dialog = screen.getByRole("dialog")
+    expect(within(dialog).getByLabelText("Show on the public events page")).not.toBeChecked()
+    expect(within(dialog).getByLabelText("Public description")).toHaveValue("")
+    await user.click(within(dialog).getByRole("button", { name: "Save" }))
+    await waitFor(() => expect(updateMutate).toHaveBeenCalled())
+    const sent = updateMutate.mock.calls[0][0]
+    expect(sent).not.toHaveProperty("is_public")
+    expect(sent).not.toHaveProperty("public_description")
+  })
+
+  it("a new session sends is_public and the description only when set", async () => {
+    const user = userEvent.setup()
+    renderAt("/super-admin/intake?tab=webinars")
+    await user.click(screen.getByRole("button", { name: /New session/ }))
+    const dialog = screen.getByRole("dialog")
+    await user.type(within(dialog).getByLabelText("Title"), "Open evening")
+    await user.type(within(dialog).getByLabelText("Date and time"), "2099-03-01T14:00")
+    await user.click(within(dialog).getByLabelText("InspiresGenius · Education"))
+    await user.click(within(dialog).getByLabelText("Show on the public events page"))
+    await user.type(within(dialog).getByLabelText("Public description"), "  Meet the team.  ")
+    await user.click(within(dialog).getByRole("button", { name: "Save" }))
+    await waitFor(() => expect(createMutate).toHaveBeenCalled())
+    expect(createMutate.mock.calls[0][0]).toMatchObject({ is_public: true, public_description: "Meet the team." })
+  })
+
+  it("unticking a public session sends is_public false and leaves the description alone", async () => {
+    const user = userEvent.setup()
+    webinars = { data: { items: [PUBLIC], none_of_these_times_count: 0 } }
+    updateMutate.mockImplementation((_v: unknown, opts: MutateOpts) => opts.onSuccess?.({}))
+    renderAt("/super-admin/intake?tab=webinars")
+    await user.click(screen.getByRole("button", { name: "Edit PRISM for coaches" }))
+    const dialog = screen.getByRole("dialog")
+    const box = within(dialog).getByLabelText("Show on the public events page")
+    expect(box).toBeChecked()
+    expect(within(dialog).getByLabelText("Public description")).toHaveValue("An hour on PRISM.")
+    await user.click(box)
+    await user.click(within(dialog).getByRole("button", { name: "Save" }))
+    await waitFor(() => expect(updateMutate).toHaveBeenCalled())
+    const sent = updateMutate.mock.calls[0][0]
+    expect(sent).toMatchObject({ id: "w1", is_public: false })
+    expect(sent).not.toHaveProperty("public_description")
+  })
+
+  it("clearing the description sends null", async () => {
+    const user = userEvent.setup()
+    webinars = { data: { items: [PUBLIC], none_of_these_times_count: 0 } }
+    updateMutate.mockImplementation((_v: unknown, opts: MutateOpts) => opts.onSuccess?.({}))
+    renderAt("/super-admin/intake?tab=webinars")
+    await user.click(screen.getByRole("button", { name: "Edit PRISM for coaches" }))
+    const dialog = screen.getByRole("dialog")
+    await user.clear(within(dialog).getByLabelText("Public description"))
+    await user.click(within(dialog).getByRole("button", { name: "Save" }))
+    await waitFor(() => expect(updateMutate).toHaveBeenCalled())
+    const sent = updateMutate.mock.calls[0][0]
+    expect(sent).toHaveProperty("public_description", null)
+    expect(sent).not.toHaveProperty("is_public")
+  })
+
+  it("refuses a description over 2,000 characters before calling the server", async () => {
+    webinars = { data: { items: [PUBLIC], none_of_these_times_count: 0 } }
+    const user = userEvent.setup()
+    renderAt("/super-admin/intake?tab=webinars")
+    await user.click(screen.getByRole("button", { name: "Edit PRISM for coaches" }))
+    const dialog = screen.getByRole("dialog")
+    fireEvent.change(within(dialog).getByLabelText("Public description"), { target: { value: "x".repeat(2001) } })
+    await user.click(within(dialog).getByRole("button", { name: "Save" }))
+    expect(await screen.findByText("Public description must be at most 2,000 characters")).toBeInTheDocument()
+    expect(updateMutate).not.toHaveBeenCalled()
+  })
+
+  it("accepts exactly 2,000 characters", async () => {
+    webinars = { data: { items: [PUBLIC], none_of_these_times_count: 0 } }
+    updateMutate.mockImplementation((_v: unknown, opts: MutateOpts) => opts.onSuccess?.({}))
+    const user = userEvent.setup()
+    renderAt("/super-admin/intake?tab=webinars")
+    await user.click(screen.getByRole("button", { name: "Edit PRISM for coaches" }))
+    const dialog = screen.getByRole("dialog")
+    fireEvent.change(within(dialog).getByLabelText("Public description"), { target: { value: "y".repeat(2000) } })
+    await user.click(within(dialog).getByRole("button", { name: "Save" }))
+    await waitFor(() => expect(updateMutate).toHaveBeenCalled())
+    expect(updateMutate.mock.calls[0][0].public_description).toHaveLength(2000)
+  })
+
+  it("says changes reach the public page within about 2 minutes", async () => {
+    const user = userEvent.setup()
+    renderAt("/super-admin/intake?tab=webinars")
+    await user.click(screen.getByRole("button", { name: /New session/ }))
+    expect(within(screen.getByRole("dialog")).getByText(/within about 2 minutes/)).toBeInTheDocument()
+  })
+
+  it("badges a public session, and only that one", () => {
+    webinars = { data: { items: [PUBLIC, PAST], none_of_these_times_count: 0 } }
+    renderAt("/super-admin/intake?tab=webinars")
+    const rows = screen.getAllByRole("row").slice(1)
+    expect(within(rows[0]).getByText("Public")).toBeInTheDocument()
+    expect(within(rows[1]).queryByText("Public")).not.toBeInTheDocument()
+  })
+})
+
+const lastReportFilters =() => reportArgs.mock.calls[reportArgs.mock.calls.length - 1][0]
 
 describe("Intake — Reports (IN-7)", () => {
   it("renders every block's counts, and names nobody", () => {
