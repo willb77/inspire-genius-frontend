@@ -42,7 +42,7 @@ export function FitStatTiles({
     <div className={cn(className, "grid grid-cols-1 gap-4 sm:grid-cols-3")}>
       <FitStat
         icon={Target}
-        label={shared ? "Total growth area" : "Overall closeness"}
+        label={shared ? "Total distance from blueprint" : "Overall closeness"}
         value={data.totalVariation}
         hint={subject === "role" ? "Lower means closer to this role's blueprint" : "Lower means closer to this target"}
       />

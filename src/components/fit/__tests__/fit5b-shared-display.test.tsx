@@ -455,7 +455,7 @@ describe("Career Fit role detail — Total gap (decision 3)", () => {
   it("ON: the tile reads Total gap", async () => {
     mount(<FitDetailPage />, newClient(), "/job-fit/role/j1", "/job-fit/role/:jobId")
     await settle()
-    expect(screen.getByText("Total growth area")).toBeInTheDocument()
+    expect(screen.getByText("Total distance from blueprint")).toBeInTheDocument()
     expect(screen.queryByText("Overall closeness")).toBeNull()
   })
   it("OFF: the tile still reads Overall closeness", async () => {
@@ -463,7 +463,7 @@ describe("Career Fit role detail — Total gap (decision 3)", () => {
     mount(<FitDetailPage />, newClient(), "/job-fit/role/j1", "/job-fit/role/:jobId")
     await settle()
     expect(screen.getByText("Overall closeness")).toBeInTheDocument()
-    expect(screen.queryByText("Total growth area")).toBeNull()
+    expect(screen.queryByText("Total distance from blueprint")).toBeNull()
   })
 })
 
@@ -480,7 +480,7 @@ describe("Fit a JD — Total gap and a reserved Overall slot (decisions 3, 4)", 
     const { container } = mount(<TargetPreviewPage />)
     await settle()
     await scoreAJd()
-    expect(screen.getByText("Total growth area")).toBeInTheDocument()
+    expect(screen.getByText("Total distance from blueprint")).toBeInTheDocument()
     expect(screen.queryByText("Overall closeness")).toBeNull()
     const slot = container.querySelector('[data-fit-slot="overall"]')
     expect(slot).not.toBeNull()
