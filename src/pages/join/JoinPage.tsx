@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { AlertCircle, CalendarClock, CheckCircle2, Loader2 } from "lucide-react"
 import AuthHeader from "@/components/auth/AuthHeader"
 import AuthLayout from "@/components/auth/AuthLayout"
+import { JoinBrandPanel } from "./JoinBrandPanel"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -294,10 +295,10 @@ export default function JoinPage() {
   return (
     // The same shell as the sign-in pages: brand wall, logo, form panel. It
     // reads no auth state and makes no request, so it cannot redirect anyone.
-    <AuthLayout contentClassName="max-w-[560px]" showTestimonial={false}>
+    <AuthLayout contentClassName="max-w-[560px]" showTestimonial={false} brandPanel={<JoinBrandPanel />}>
       <AuthHeader
         title="Register your interest"
-        subtitle="Inspires Genius is an AI coaching platform. Leave your details below to register your interest."
+        subtitle="Inspires Genius is an AI mentoring platform. Leave your details below to register your interest."
       />
       {body}
     </AuthLayout>

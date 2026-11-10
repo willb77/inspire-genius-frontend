@@ -9,16 +9,28 @@ import { cn } from "@/lib/utils";
  * Left: Dark gradient brand wall with animated mesh, headline + testimonial.
  * Right: White form panel with centered content.
  * Mobile: Brand wall hidden, form only.
+ *
+ * `brandPanel` (optional, used only by `/join`) replaces the wall's headline
+ * and testimonial. The wall then stays on screen while a long form scrolls
+ * (`lg:sticky lg:top-0 lg:h-screen`), its content starts at the top, and it
+ * scrolls inside itself on a short screen. Without it — every sign-in page —
+ * the wall renders exactly as before.
  */
+const DEFAULT_WALL_CLASS =
+  "relative hidden lg:flex flex-col justify-end overflow-hidden p-14 pt-[104px]";
+const PANEL_WALL_CLASS =
+  "relative hidden lg:flex flex-col justify-start overflow-x-hidden overflow-y-auto p-14 pt-[104px] lg:sticky lg:top-0 lg:h-screen lg:self-start";
+
 export default function AuthLayout({
   children,
   contentClassName,
   showTestimonial = true,
+  brandPanel,
 }: AuthLayoutProps) {
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
       {/* ── Brand Wall (left) ────────────────────────────────── */}
-      <div className="relative hidden lg:flex flex-col justify-end overflow-hidden p-14 pt-[104px]"
+      <div className={brandPanel ? PANEL_WALL_CLASS : DEFAULT_WALL_CLASS}
         style={{ background: "linear-gradient(135deg, #0c1629 0%, #162040 40%, #1a2f5a 70%, #0f172a 100%)" }}
       >
         {/* Animated mesh blobs */}
@@ -38,6 +50,9 @@ export default function AuthLayout({
         </div>
 
         {/* Content */}
+        {brandPanel ? (
+          <div className="relative z-10">{brandPanel}</div>
+        ) : (
         <div className="relative z-10">
           <h2 className="text-[48px] font-extrabold text-white leading-[1.08] tracking-[-0.04em] mb-5">
             Unlock your<br />full{" "}
@@ -70,9 +85,10 @@ export default function AuthLayout({
           </div>
           )}
         </div>
+        )}
       </div>
 
-      {/* ── Form Panel (right) ───────────────────────────────── */}
+      {/* ── Form Panel (right)───────────────────────────────── */}
       <div className="bg-white flex items-center justify-center px-5 sm:px-10 py-12 pt-24 lg:pt-12 relative">
         {/* Language switcher — top right */}
         <div className="absolute top-4 right-4">
