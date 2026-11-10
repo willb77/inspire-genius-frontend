@@ -65,7 +65,7 @@ export function FitFollowUpCard({ data }: { data: FitDetail }) {
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) ask()
           }}
-          placeholder="e.g. Which gap should I focus on first, and how?"
+          placeholder="e.g. Which growth area should I focus on first, and how?"
           className="min-h-[64px] flex-1 resize-y rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#1f2937] outline-none focus:border-[#0D9488]"
         />
         <button

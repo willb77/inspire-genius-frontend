@@ -17,17 +17,17 @@ const STEPS = [
   {
     icon: Compass,
     title: "Blueprint a role",
-    body: "Upload a posting or describe one. The Job DNA engine drafts a behavioral benchmark from it — a starting point a person reviews, not a validated PRISM benchmark — and saves the role for reuse.",
+    body: "Upload a posting or describe one. The Job DNA engine drafts a behavioral blueprint from it — a starting point a person reviews, not a validated PRISM blueprint — and saves the role for reuse.",
   },
   {
     icon: Target,
     title: "See the fit",
-    body: "Your PRISM profile against that benchmark, dimension by dimension — where you line up, where you don't, and by how much.",
+    body: "Your PRISM profile against that blueprint, dimension by dimension — where you line up, where you don't, and by how much.",
   },
   {
     icon: MessagesSquare,
     title: "Do something about it",
-    body: "Coaching turns the gaps into a conversation: what to close, what to work around, and how to talk about it in an interview.",
+    body: "Coaching turns the growth areas into a conversation: what to close, what to work around, and how to talk about it in an interview.",
   },
 ]
 
@@ -44,7 +44,7 @@ export default function FitPurpose() {
         <span className="font-medium text-[#1f2937]">
           A fit score is a comparison, not a verdict
         </span>{" "}
-        — a low one usually means a specific, nameable gap, and naming it is the point.
+        — a low one usually means a specific, nameable growth area, and naming it is the point.
       </p>
       <ol className="grid gap-4 sm:grid-cols-3">
         {STEPS.map(({ icon: Icon, title, body }, i) => (

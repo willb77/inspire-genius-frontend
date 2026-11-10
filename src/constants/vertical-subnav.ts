@@ -47,7 +47,7 @@ import { grantSidebarSectionForRole, KCE_SIDEBAR_SECTION } from "@/constants/sid
 /** Job Fit — also rendered as the in-page pill row by `FitNav`. */
 export const JOB_FIT_TOOLS: NavItemDef[] = [
   { to: ROUTES.JOB_FIT.MATCHES, icon: ScanSearch, label: "My fit" },
-  { to: ROUTES.JOB_FIT.GAPS, icon: Target, label: "Gaps" },
+  { to: ROUTES.JOB_FIT.GAPS, icon: Target, label: "Growth areas" },
   { to: ROUTES.JOB_FIT.PATHWAY, icon: RouteIcon, label: "Pathway" },
   { to: ROUTES.JOB_FIT.BLUEPRINT, icon: Wand2, label: "Blueprint a role" },
   { to: ROUTES.JOB_FIT.TARGET, icon: Sparkles, label: "Fit a JD" },

@@ -97,8 +97,8 @@ export function FitMatchRow(props: FitMatchRowProps) {
               {(match.criticalGapCount ?? 0) > 0 && (
                 <span className="inline-flex items-center gap-1 text-amber-700">
                   <AlertTriangle className="h-3 w-3" aria-hidden />
-                  {match.criticalGapCount} critical gap
-                  {match.criticalGapCount === 1 ? "" : "s"} to close
+                  {match.criticalGapCount} critical growth area
+                  {match.criticalGapCount === 1 ? "" : "s"} to work on
                 </span>
               )}
             </span>

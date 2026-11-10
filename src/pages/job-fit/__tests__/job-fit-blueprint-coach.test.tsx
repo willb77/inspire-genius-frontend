@@ -198,7 +198,7 @@ describe("FitNav", () => {
 
   test("links every Job-Fit tool", () => {
     renderNav()
-    for (const label of ["My fit", "Gaps", "Pathway", "Blueprint a role", "Coaching"]) {
+    for (const label of ["My fit", "Growth areas", "Pathway", "Blueprint a role", "Coaching"]) {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument()
     }
   })

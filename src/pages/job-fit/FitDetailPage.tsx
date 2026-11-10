@@ -93,7 +93,7 @@ export default function FitDetailPage() {
               rests on an uncalibrated cut, so the person sees the score only. */}
           {typeof data.blueprintVersion === "number" && (
             <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
-              <FitPill tone="gray">Scored against benchmark v{data.blueprintVersion}</FitPill>
+              <FitPill tone="gray">Scored against blueprint v{data.blueprintVersion}</FitPill>
             </div>
           )}
 

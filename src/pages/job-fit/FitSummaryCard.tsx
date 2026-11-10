@@ -55,7 +55,7 @@ export function FitSummaryCard({ data }: { data: FitDetail }) {
 
       {gaps && (
         <div className="mt-5">
-          <FitSectionTitle>Where the gaps are — and how to close them</FitSectionTitle>
+          <FitSectionTitle>Your growth areas — and how to develop them</FitSectionTitle>
           <div className="space-y-3">
             {gaps.map((g, i) => (
               <div key={`${g.dimension}-${i}`} className="rounded-lg border border-[#e5e7eb] p-3">

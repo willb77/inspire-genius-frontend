@@ -45,16 +45,16 @@ export default function GapsPage() {
     <div className="mx-auto max-w-4xl">
       <FitPageHeader
         icon={Layers}
-        title="Your Gaps at a Glance"
-        description="Where your profile tends to diverge from role benchmarks, summarised across every match."
+        title="Your Growth Areas at a Glance"
+        description="Where your profile tends to diverge from role blueprints, summarised across every match."
       />
 
-      {isLoading && <FitLoading label="Aggregating gaps across your matches…" />}
+      {isLoading && <FitLoading label="Aggregating growth areas across your matches…" />}
 
       {isError && (
         <FitError>
           <span role="alert">
-            We couldn&apos;t load your gap summary right now.
+            We couldn&apos;t load your growth-area summary right now.
             {error?.message ? ` (${error.message})` : ""}
           </span>
         </FitError>
@@ -62,7 +62,7 @@ export default function GapsPage() {
 
       {!isLoading && !isError && matches.length === 0 && (
         <FitEmptyState>
-          No matched roles yet, so there are no gaps to summarise. Your gap picture appears once roles
+          No matched roles yet, so there are no growth areas to summarise. Your growth-area picture appears once roles
           are available to match against.
         </FitEmptyState>
       )}
@@ -77,7 +77,7 @@ export default function GapsPage() {
                   icon={Layers}
                   label={d.label}
                   value={d.avg}
-                  hint="Avg. distance from benchmark, per dimension"
+                  hint="Avg. distance from blueprint, per dimension"
                   tone={meterTone(d.avg)}
                 />
               ))}
@@ -85,9 +85,9 @@ export default function GapsPage() {
           ) : (
             <FitCard className="mb-6">
               <p className="text-sm text-[#374151]">
-                Your matches rest on a partial profile, so your gaps can&apos;t be split into
+                Your matches rest on a partial profile, so your growth areas can&apos;t be split into
                 behavioral style, aptitudes and core traits yet. The roles below still show how far
-                you are from each benchmark on what was measured.
+                you are from each blueprint on what was measured.
               </p>
             </FitCard>
           )}
@@ -95,7 +95,7 @@ export default function GapsPage() {
           {domains.length > 0 && splitCount < matches.length && (
             <p className="-mt-3 mb-6 text-xs text-[#9ca3af]">
               Based on {splitCount} of {matches.length} roles. The others are scored on a partial profile,
-              so their gap can&apos;t be split by area.
+              so their growth areas can&apos;t be split by category.
             </p>
           )}
 
@@ -105,13 +105,13 @@ export default function GapsPage() {
                 Across your matches, your biggest average distance is in{" "}
                 <span className="font-semibold text-[#0f766e]">{topDomain.label.toLowerCase()}</span>.
                 Focusing development there tends to lift your fit across the most roles. Open any
-                role below to see which dimensions make up its gap.
+                role below to see which dimensions make up its growth areas.
               </p>
             </FitCard>
           )}
 
           <FitCard className="mb-6">
-            <FitSectionTitle>Roles with the widest gap</FitSectionTitle>
+            <FitSectionTitle>Roles with the largest growth areas</FitSectionTitle>
             <div className="space-y-3">
               {widestRoles.map(({ m, mean }) => (
                 <Link

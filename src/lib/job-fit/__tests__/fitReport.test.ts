@@ -44,7 +44,7 @@ describe("fitReport serializers", () => {
   test("markdown report renders a table + growth section", () => {
     const md = buildFitReportMarkdown(INPUT)
     expect(md).toContain("# Job Fit — Operations Program Manager")
-    expect(md).toContain("| Dimension | You | Role benchmark | Difference |")
+    expect(md).toContain("| Dimension | You | Role blueprint | Difference |")
     expect(md).toContain("## Growth focus")
   })
 
@@ -53,6 +53,25 @@ describe("fitReport serializers", () => {
     expect(html).toContain("72%")
     expect(html).toContain("<table>")
     expect(html.startsWith("<!doctype html>")).toBe(true)
+  })
+
+  // JF-1: the exports say "blueprint" and "growth area", never "benchmark" or
+  // "gap". The PDF is rendered from buildFitReportHtml (FitActionsBar), so the
+  // HTML case covers it.
+  test.each([
+    ["text", buildFitReportText],
+    ["markdown", buildFitReportMarkdown],
+    ["html (and so the PDF)", buildFitReportHtml],
+  ])("JF-1 wording — %s export reads blueprint, never benchmark or gap", (_name, build) => {
+    const out = build(INPUT)
+    expect(out).toMatch(/\bblueprint\b/i)
+    expect(out).not.toMatch(/\bbenchmarks?\b/i)
+    expect(out).not.toMatch(/\bgaps?\b/i)
+  })
+
+  test("JF-1 wording — the markdown and html tables head the role column 'Role blueprint'", () => {
+    expect(buildFitReportMarkdown(INPUT)).toContain("| Role blueprint |")
+    expect(buildFitReportHtml(INPUT)).toContain("<th>Role blueprint</th>")
   })
 
   test("no binary / hiring-verdict language in any format", () => {

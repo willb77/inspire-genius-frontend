@@ -172,7 +172,7 @@ describe("GapsPage", () => {
     expect(screen.queryByText("77")).not.toBeInTheDocument()
     // Biggest area named; pointer to the per-role dimension breakdown.
     expect(screen.getByText("behavioral style")).toBeInTheDocument()
-    expect(screen.getByText(/which dimensions make up its gap/i)).toBeInTheDocument()
+    expect(screen.getByText(/which dimensions make up its growth areas/i)).toBeInTheDocument()
   })
 
   test("widest-gap roles rank and colour by the per-dimension mean", () => {
@@ -225,7 +225,7 @@ describe("GapsPage", () => {
     })
     renderPage()
     const alert = screen.getByRole("alert")
-    expect(alert).toHaveTextContent(/couldn.t load your gap summary/i)
+    expect(alert).toHaveTextContent(/couldn.t load your growth-area summary/i)
     expect(alert).toHaveTextContent("Request failed with status code 503")
     expect(screen.queryByText(/no matched roles yet/i)).not.toBeInTheDocument()
   })
@@ -233,6 +233,6 @@ describe("GapsPage", () => {
   test("loading state", () => {
     mockUseFitMatches.mockReturnValue({ data: undefined, isLoading: true, isError: false })
     renderPage()
-    expect(screen.getByText(/aggregating gaps/i)).toBeInTheDocument()
+    expect(screen.getByText(/aggregating growth areas/i)).toBeInTheDocument()
   })
 })

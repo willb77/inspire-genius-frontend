@@ -21,7 +21,7 @@ const OTHER_ROLES: UserRole[] = [
   "distributor",
   "super-admin",
 ]
-const OTHER_TOOLS = ["My fit", "Gaps", "Pathway", "Fit a JD", "Coaching"]
+const OTHER_TOOLS = ["My fit", "Growth areas", "Pathway", "Fit a JD", "Coaching"]
 
 function renderAs(role: string | undefined) {
   mockUseAuth.mockReturnValue({ user: role === undefined ? null : { id: "me", role } })

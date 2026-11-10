@@ -180,7 +180,7 @@ export default function TargetPreviewPage() {
 
       {!draft && !extract.isPending && (
         <FitEmptyState>
-          The drafted target will appear here — a benchmark for each of the 22 dimensions, with
+          The drafted target will appear here — a blueprint score for each of the 22 dimensions, with
           where it came from and how confident the extractor is.
         </FitEmptyState>
       )}

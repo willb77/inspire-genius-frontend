@@ -33,7 +33,7 @@ const SECTION_LABEL: Record<SectionName, string> = {
   identity: "Your name",
   prism: "PRISM highlights",
   fit: "Fit with validated roles",
-  pathway: "Suggested roles and gaps to close",
+  pathway: "Suggested roles and growth areas to work on",
   goals: "Goals you choose",
   practice: "Interview practice",
 }
@@ -370,7 +370,7 @@ export default function CareerProfilePage() {
       <FitPageHeader
         icon={FileText}
         title="Career Pathways Profile"
-        description="A profile of you that you own: what you prefer, the roles within reach, and how to close the gaps."
+        description="A profile of you that you own: what you prefer, the roles within reach, and how to develop your growth areas."
       />
       {status.isLoading ? (
         <FitLoading label="Checking…" />

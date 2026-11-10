@@ -31,7 +31,7 @@ import {
 // FIT-3 (owner, Q2): "Overall" means the Overall fit only, so the D4 method
 // that is a PRISM formula says so.
 const METHOD_OPTIONS: { value: FitMethod; label: string; hint: string }[] = [
-  { value: "gap", label: "Gap to benchmark", hint: "Distance from the role's target profile" },
+  { value: "gap", label: "Growth areas vs blueprint", hint: "Distance from the role's target profile" },
   { value: "closeness", label: "PRISM closeness", hint: "Weighted similarity to the role" },
 ]
 
@@ -208,7 +208,7 @@ export default function MatchesPage() {
           empty: (
             <FitEmptyState>
               No published roles are available to match against yet. Check back once your organization
-              publishes role benchmarks.
+              publishes role blueprints.
             </FitEmptyState>
           ),
           // BP-F5: one explanation for the page, from the first partial row.

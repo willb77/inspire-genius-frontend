@@ -316,7 +316,7 @@ describe("GapsPage", () => {
     mockUseFitMatches.mockReturnValue({ data: [MATCH, MATCH_2], isLoading: false, isError: false })
     renderRouted(<GapsPage />)
     expect(screen.getByText("Behavioral style")).toBeInTheDocument()
-    expect(screen.getByText(/widest gap/i)).toBeInTheDocument()
+    expect(screen.getByText(/largest growth areas/i)).toBeInTheDocument()
     // The stretch role (highest totalVariation) should appear in the widest list.
     expect(screen.getByText("Operations Manager")).toBeInTheDocument()
   })

@@ -42,9 +42,9 @@ export function FitStatTiles({
     <div className={cn(className, "grid grid-cols-1 gap-4 sm:grid-cols-3")}>
       <FitStat
         icon={Target}
-        label={shared ? "Total gap" : "Overall closeness"}
+        label={shared ? "Total growth area" : "Overall closeness"}
         value={data.totalVariation}
-        hint={subject === "role" ? "Lower means closer to this role's benchmark" : "Lower means closer to this target"}
+        hint={subject === "role" ? "Lower means closer to this role's blueprint" : "Lower means closer to this target"}
       />
       <FitStat
         icon={Sprout}
@@ -52,7 +52,7 @@ export function FitStatTiles({
         value={data.coachingGaps.length}
         hint={
           subject === "role"
-            ? "Dimensions to develop toward the benchmark"
+            ? "Dimensions to develop toward the blueprint"
             : "Dimensions to develop toward the target"
         }
         tone="amber"
@@ -61,7 +61,7 @@ export function FitStatTiles({
         icon={AlertTriangle}
         label="Priority focus"
         value={data.criticalGaps.length}
-        hint="Larger gaps worth prioritizing"
+        hint="Larger growth areas worth prioritizing"
         tone={data.criticalGaps.length > 0 ? "red" : "green"}
       />
     </div>
@@ -177,7 +177,7 @@ export function FitResult(props: FitResultProps) {
 
           <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
             {data.methodologyNote ||
-              "This compares your profile with a role's published benchmark to help you aim your effort. It is not a hiring decision, and no one else sees it."}
+              "This compares your profile with a role's published blueprint to help you aim your effort. It is not a hiring decision, and no one else sees it."}
           </p>
         </div>
       )

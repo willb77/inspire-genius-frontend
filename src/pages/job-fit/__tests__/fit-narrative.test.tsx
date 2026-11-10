@@ -43,7 +43,7 @@ test("follow-up renders the answer inline, in Job Fit", async () => {
     overview: "", gaps: [], closingActions: [], answer: "Focus on coordination first.", fitScore: 72, disclaimer: "",
   })
   render(<FitFollowUpCard data={DATA} />)
-  fireEvent.change(screen.getByPlaceholderText(/which gap/i), { target: { value: "What first?" } })
+  fireEvent.change(screen.getByPlaceholderText(/which growth area/i), { target: { value: "What first?" } })
   fireEvent.click(screen.getByRole("button", { name: /ask/i }))
   await waitFor(() => expect(screen.getByText("Focus on coordination first.")).toBeInTheDocument())
   // the question is echoed on-page (accumulated Q&A), i.e. no navigation away

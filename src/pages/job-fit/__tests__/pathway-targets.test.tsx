@@ -214,7 +214,7 @@ describe("switch ON — the roadmap engine", () => {
     ])
     renderPage()
     const roadmap = await screen.findByTestId("pathway-roadmap")
-    expect(roadmap).toHaveTextContent(/showed no gaps to close/i)
+    expect(roadmap).toHaveTextContent(/showed no growth areas to work on/i)
     expect(within(roadmap).queryByRole("list")).not.toBeInTheDocument()
   })
 
