@@ -16,7 +16,7 @@ export const ROUTES = {
   CAREER_PATHWAYS_VIEW: "/career-pathways/view",
   /** IN-2c — public "Register your interest" form (no sign-in). */
   JOIN: "/join",
-  /** Public list of upcoming events, linked from /join. A stub until events are entered in Administration. */
+  /** Public list of upcoming events, linked from /join. Lists Intake webinars flagged public in Administration. */
   EVENTS: "/events",
   /** Surveys — build questionnaires and select one to take (browser-local). */
   SURVEYS: "/surveys",
