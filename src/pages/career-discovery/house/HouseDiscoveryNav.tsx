@@ -6,6 +6,7 @@ import { CAREER_DISCOVERY_TOOLS } from "@/constants/vertical-subnav"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import { useDiscoveryJourney, useDiscoveryStatus } from "@/hooks/career-discovery/useCareerDiscovery"
 import { costSearch, recallCost } from "./lastCost"
+import { discoveryMenu, isProfileMerged } from "@/lib/career-discovery/profileSection"
 
 const DEGREE_PLAN: NavItemDef = {
   to: ROUTES.CAREER_DISCOVERY.DEGREE_PLAN,
@@ -35,7 +36,8 @@ export function HouseDiscoveryNav() {
   const lastCost = recallCost()
 
   const items: NavItemDef[] = []
-  for (const item of CAREER_DISCOVERY_TOOLS) {
+  // JF-11: one "My profile" entry when the server folds Who I am into About me.
+  for (const item of discoveryMenu(CAREER_DISCOVERY_TOOLS, isProfileMerged(journey.data?.stages))) {
     if (item.to === ROUTES.CAREER_DISCOVERY.COST && lastCost) {
       items.push({ ...item, to: item.to + costSearch(lastCost) })
     } else {

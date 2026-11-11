@@ -12,6 +12,10 @@ export type DiscoveryStage = {
   available: boolean
   comingNext?: string
   state?: DiscoveryStageState
+  /** JF-11: set on "who" when the server shows it inside the "about" section. */
+  mergedInto?: string
+  /** JF-11: set on "about" when it carries other stages ("who"). */
+  includes?: string[]
 }
 
 export type DiscoveryJourney = {

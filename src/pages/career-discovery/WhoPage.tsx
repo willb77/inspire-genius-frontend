@@ -1,57 +1,18 @@
-import { useEffect } from "react"
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
+import { Navigate } from "react-router-dom"
 import { ROUTES } from "@/constants/routes"
-import {
-  PortraitAnchorNote,
-  PortraitCorroborating,
-  PortraitDimensions,
-  PortraitNoPrism,
-} from "@/components/lumen/portrait"
-import { ProvenanceNote } from "@/components/shared/ProvenanceNote"
-import {
-  discoveryErrorMessage,
-  useAdvanceDiscovery,
-  useDiscoveryPortrait,
-} from "@/hooks/career-discovery/useCareerDiscovery"
-import { DiscoveryError, DiscoveryLoading, StageHeader } from "./DiscoveryParts"
+import { isProfileMerged } from "@/lib/career-discovery/profileSection"
 import { useDiscoveryContext } from "./discoveryContext"
+import { WhoSection } from "./profile/WhoSection"
 
 /**
- * Who I am — Lumen's Self-Portrait, the same engine and the same sections,
- * served through Discovery's own route so it needs no Lumen entitlement.
+ * Who I am. JF-11: when the server shows it inside the one profile section
+ * (`job_fit_v2` applies), an old /who link lands on that section instead;
+ * otherwise this is today's page, unchanged.
  */
 export default function WhoPage() {
   const { journey } = useDiscoveryContext()
-  const { data: portrait, isLoading, isError, error } = useDiscoveryPortrait(journey.mayProceed)
-  const advance = useAdvanceDiscovery()
-  const { mutate } = advance
-  const done = journey.stageStatus.who === "complete"
-  const hasPrism = Boolean(portrait?.prism)
-  useEffect(() => {
-    if (hasPrism && !done) mutate({ stageId: "who" })
-  }, [hasPrism, done, mutate])
-
-  if (isLoading) return <DiscoveryLoading label="Loading your portrait" />
-  if (isError || !portrait) return <DiscoveryError message={discoveryErrorMessage(error)} />
-  return (
-    <div className="space-y-6">
-      <StageHeader
-        title="Who I am"
-        lead="How you tend to work, from what's on file. A mirror to think with, not a verdict on you."
-      />
-      <ProvenanceNote sources={portrait.sources ?? {}} className="max-w-3xl" />
-      {!portrait.prism ? (
-        <PortraitNoPrism title="What this is built on so far" headline={portrait.headline}>
-          <Button asChild variant="outline" size="sm">
-            <Link to={ROUTES.PRISM_ASSESSMENT}>Take or check PRISM</Link>
-          </Button>
-        </PortraitNoPrism>
-      ) : (
-        <PortraitDimensions prism={portrait.prism} title="What sits underneath that" />
-      )}
-      <PortraitCorroborating instruments={portrait.corroborating} title="The other instruments we read" />
-      <PortraitAnchorNote />
-    </div>
-  )
+  if (isProfileMerged(journey.stages)) {
+    return <Navigate to={ROUTES.CAREER_DISCOVERY.ABOUT} replace />
+  }
+  return <WhoSection />
 }
