@@ -47,6 +47,7 @@ import type { FitDetail } from "@/types/job-fit"
 import { FavoriteButton } from "./FavoriteButton"
 import { HeadlineGrowthArea } from "./HeadlineGrowthArea"
 import { ProfileVsRole } from "./ProfileVsRole"
+import { SkillsMatch } from "./SkillsMatch"
 
 const [T_FIT, , T_CARDS, T_REFERENCE, T_SKILLS, , T_LOCAL] = FIT_V2_SECTION_TITLES
 
@@ -65,9 +66,8 @@ function SectionLines({ text }: { text: SectionText }) {
 }
 
 /**
- * O*NET skills. `skillsMatch` is the JF-12 mount point: the have / to-build
- * card (`SkillsMatch.tsx`) is passed here as one prop when it lands. Until
- * then the section lists the occupation's O*NET skills.
+ * O*NET skills: the occupation's O*NET skills, then JF-12's have / to-build
+ * card (`SkillsMatch.tsx`), passed in as `skillsMatch`.
  */
 function OnetSkillsSection({
   text,
@@ -104,6 +104,7 @@ function JobPageV2({
   targetsOn,
   resumeHref,
   attribution,
+  skillsMatch,
 }: {
   data: FitDetail
   report: FitV2Report
@@ -111,6 +112,7 @@ function JobPageV2({
   targetsOn: boolean
   resumeHref?: string
   attribution?: string | null
+  skillsMatch?: ReactNode
 }) {
   return (
     <>
@@ -155,8 +157,8 @@ function JobPageV2({
         </FitCard>
       </div>
 
-      {/* JF-12 mounts SkillsMatch here: <OnetSkillsSection ... skillsMatch={<SkillsMatch … />} /> */}
-      <OnetSkillsSection text={report.skills} attribution={attribution} />
+      {/* JF-12: the SkillsMatch card sits inside the O*NET skills section. */}
+      <OnetSkillsSection text={report.skills} attribution={attribution} skillsMatch={skillsMatch} />
 
       <div data-jf6-section="profile">
         <ProfileVsRole growth={report.growth} />
@@ -273,6 +275,14 @@ export default function FitDetailPage() {
     pay.data,
   ])
 
+  // JF-12 — the skills match card, on the JF-6 page only (JobPageV2 is the
+  // only place it is passed). Mounted once the Job DNA read has settled, so a
+  // job still loading never shows the card's "no O*NET code" text, and a
+  // failed read is left to the section's own failure line. `code` is the one
+  // the O*NET reads use (O*NET-SOC first, else SOC), both of which SkillsMatch
+  // accepts; null shows its no-code message.
+  const skillsMatch = !job.isLoading && !job.isError ? <SkillsMatch onetSocCode={code} /> : null
+
   return (
     <div className="mx-auto max-w-4xl">
       <Link
@@ -297,6 +307,7 @@ export default function FitDetailPage() {
           targetsOn={targetsOn}
           resumeHref={resumeHref}
           attribution={occupation.data?.attribution ?? null}
+          skillsMatch={skillsMatch}
         />
       )}
 
