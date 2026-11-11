@@ -12,6 +12,8 @@ import { DiscoveryError, DiscoveryLoading, NoticeCard } from "./DiscoveryParts"
 import type { DiscoveryContext } from "./discoveryContext"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import { HouseDiscoveryNav } from "./house/HouseDiscoveryNav"
+import { discoveryMenu } from "@/lib/career-discovery/profileSection"
+import { useProfileMerged } from "@/hooks/career-discovery/useProfileMerged"
 
 /**
  * Career & Education Discovery's pathless layout: the in-vertical nav, then
@@ -27,9 +29,11 @@ import { HouseDiscoveryNav } from "./house/HouseDiscoveryNav"
  * These mirror the server's gates; they are presentation, not security.
  */
 export function DiscoveryNav() {
+  // JF-11: one "My profile" entry when the server folds Who I am into About me.
+  const items = discoveryMenu(CAREER_DISCOVERY_TOOLS, useProfileMerged())
   return (
     <nav aria-label="Career & Education Discovery" className="mb-6 flex flex-wrap gap-1.5">
-      {CAREER_DISCOVERY_TOOLS.map(({ to, icon: Icon, label }) => (
+      {items.map(({ to, icon: Icon, label }) => (
         <NavLink
           key={to}
           to={to}

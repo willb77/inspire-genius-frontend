@@ -11,6 +11,7 @@ import { discoveryErrorMessage, useRecordAge } from "@/hooks/career-discovery/us
 import { DiscoveryError, StageHeader } from "./DiscoveryParts"
 import { useDiscoveryContext } from "./discoveryContext"
 import { STAGE_ROUTES, STATE_LABELS } from "./stageRoutes"
+import { isProfileMerged, shownStage, visibleStages } from "@/lib/career-discovery/profileSection"
 
 const THIS_YEAR = new Date().getFullYear()
 
@@ -63,12 +64,20 @@ function AgeScreen() {
 export default function JourneyPage() {
   const { journey } = useDiscoveryContext()
   if (!journey.ageBand) return <AgeScreen />
-  const next = journey.nextAction
+  // JF-11: with Who I am folded into the profile section, it is not its own
+  // entry, and a "next" that points at it points at the section instead.
+  const merged = isProfileMerged(journey.stages)
+  const next = merged ? shownStage(journey.nextAction, journey.stages) : journey.nextAction
+  const stages = merged ? visibleStages(journey.stages) : journey.stages
   return (
     <div className="space-y-6">
       <StageHeader
         title="Your discovery journey"
-        lead="Ten steps from who you are to a plan. Do them in any order and come back any time."
+        lead={
+          merged
+            ? "Nine steps from who you are to a plan. Do them in any order and come back any time."
+            : "Ten steps from who you are to a plan. Do them in any order and come back any time."
+        }
       />
       {next.id ? (
         <Card>
@@ -84,7 +93,7 @@ export default function JourneyPage() {
         </Card>
       ) : null}
       <ol className="grid gap-3 md:grid-cols-2">
-        {journey.stages.map((s, i) => (
+        {stages.map((s, i) => (
           <li key={s.id}>
             <Card className={s.available ? "" : "border-dashed opacity-80"}>
               <CardContent className="space-y-1 p-4 text-sm">

@@ -12,6 +12,9 @@ import { discoveryErrorMessage, useSaveAbout } from "@/hooks/career-discovery/us
 import { DiscoveryError, StageHeader } from "./DiscoveryParts"
 import { useDiscoveryContext } from "./discoveryContext"
 import { splitInterests } from "./splitInterests"
+import { isProfileMerged, PROFILE_LABEL } from "@/lib/career-discovery/profileSection"
+import { SkillsSection } from "./profile/SkillsSection"
+import { WhoSection } from "./profile/WhoSection"
 
 const aboutSchema = z.object({
   schoolLevel: z.string().min(1, "Pick where you are now."),
@@ -19,8 +22,15 @@ const aboutSchema = z.object({
 })
 type AboutForm = z.infer<typeof aboutSchema>
 
+/**
+ * About me. JF-11: when the server shows About me and Who I am as one section
+ * (`job_fit_v2` applies), this page IS that section — the same About form and
+ * the same stored answers, then Who I am and Skills below. Otherwise it renders
+ * exactly as before.
+ */
 export default function AboutPage() {
   const { journey } = useDiscoveryContext()
+  const merged = isProfileMerged(journey.stages)
   const save = useSaveAbout()
   const form = useForm<AboutForm>({
     resolver: zodResolver(aboutSchema),
@@ -35,7 +45,14 @@ export default function AboutPage() {
   const errors = form.formState.errors
   return (
     <div className="space-y-6">
-      <StageHeader title="About me" lead="Where you're starting from. You can change any of this later." />
+      {merged ? (
+        <StageHeader
+          title={PROFILE_LABEL}
+          lead="Where you're starting from, your skills, and how you tend to work. You can change any of this later."
+        />
+      ) : (
+        <StageHeader title="About me" lead="Where you're starting from. You can change any of this later." />
+      )}
       <Card className="max-w-2xl">
         <CardContent className="p-6">
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
@@ -92,6 +109,8 @@ export default function AboutPage() {
           </CardContent>
         </Card>
       </div>
+      {merged ? <SkillsSection /> : null}
+      {merged ? <WhoSection embedded /> : null}
     </div>
   )
 }

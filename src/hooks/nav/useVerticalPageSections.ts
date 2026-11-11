@@ -15,6 +15,8 @@ import { useAuth } from "@/context/useAuth"
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
 import { useToolsSection } from "@/hooks/nav/useToolsSection"
 import { getVertical, type VerticalKey } from "@/verticals/core"
+import { discoveryMenu } from "@/lib/career-discovery/profileSection"
+import { useProfileMerged } from "@/hooks/career-discovery/useProfileMerged"
 
 /**
  * The left-rail sections for a page **inside** a vertical.
@@ -52,7 +54,15 @@ export function useVerticalPageSections(
   const workspaceItems = useWorkspaceNavItems(baseItems)
 
   const toolsSection = useToolsSection(role)
-  const subNav = verticalSubNavItems(vertical, role)
+  // JF-11: Career Discovery shows About me + Who I am as one entry when the
+  // server says so (read from the cache only; false everywhere else).
+  const discoveryMerged = useProfileMerged()
+  const subNav = useMemo(() => {
+    const raw = verticalSubNavItems(vertical, role)
+    return vertical === "career-discovery" && raw && discoveryMerged
+      ? { ...raw, items: discoveryMenu(raw.items, true) }
+      : raw
+  }, [vertical, role, discoveryMerged])
   const definition = getVertical(vertical)
 
   return useMemo(() => {

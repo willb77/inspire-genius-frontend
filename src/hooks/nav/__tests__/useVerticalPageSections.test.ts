@@ -53,6 +53,9 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { email: mockEmail } }),
 }))
 jest.mock("@/lib/agentApi", () => ({ useAgentEngine: () => true }))
+// JF-11: whether Discovery folds Who I am into the profile entry (a cache read).
+const mockMerged = jest.fn(() => false)
+jest.mock("@/hooks/career-discovery/useProfileMerged", () => ({ useProfileMerged: () => mockMerged() }))
 jest.mock("@/verticals/core", () => ({
   getVertical: (key: string) => ({ key, title: key === "lumen" ? "Lumen" : key }),
 }))
@@ -159,5 +162,44 @@ describe("useVerticalPageSections", () => {
     })
     const { result } = renderHook(() => useVerticalPageSections("grant" as never, "user"))
     expect(result.current.map((s) => s.label)).toContain("Financial Aid")
+  })
+
+  describe("JF-11: Career Discovery's one profile entry", () => {
+    const DISCOVERY = {
+      items: [
+        { to: "/vertical/career-discovery/journey", icon: DummyIcon, label: "My journey" },
+        { to: "/vertical/career-discovery/about", icon: DummyIcon, label: "About me" },
+        { to: "/vertical/career-discovery/who", icon: DummyIcon, label: "Who I am" },
+        { to: "/vertical/career-discovery/careers", icon: DummyIcon, label: "Career areas" },
+      ],
+    }
+    const section = (r: ReturnType<typeof useVerticalPageSections>) =>
+      r.find((s) => s.label === "career-discovery")?.items.map((i) => i.label)
+
+    it("is today's menu, entry for entry, when the server does not fold Who I am", () => {
+      mockSubNav.mockReturnValue(DISCOVERY)
+      mockMerged.mockReturnValue(false)
+      const { result } = renderHook(() => useVerticalPageSections("career-discovery" as never, "user"))
+      expect(section(result.current)).toEqual(["My journey", "About me", "Who I am", "Career areas"])
+    })
+
+    it("is one My profile entry when it does", () => {
+      mockSubNav.mockReturnValue(DISCOVERY)
+      mockMerged.mockReturnValue(true)
+      const { result } = renderHook(() => useVerticalPageSections("career-discovery" as never, "user"))
+      expect(section(result.current)).toEqual(["My journey", "My profile", "Career areas"])
+    })
+
+    it("never touches another vertical's menu", () => {
+      mockSubNav.mockReturnValue({
+        items: [
+          { to: "/vertical/direction-setting/portrait", icon: DummyIcon, label: "Who I am" },
+          { to: "/vertical/career-discovery/who", icon: DummyIcon, label: "Who I am" },
+        ],
+      })
+      mockMerged.mockReturnValue(true)
+      const { result } = renderHook(() => useVerticalPageSections("direction-setting" as never, "user"))
+      expect(result.current.find((s) => s.label === "direction-setting")?.items).toHaveLength(2)
+    })
   })
 })
