@@ -9,7 +9,8 @@ import {
   isPlatformOwner,
 } from "@/constants/navigation"
 import { withCompanyAdminHouseMenu } from "@/constants/house/companyAdminNav"
-import { verticalSubNavItems } from "@/constants/vertical-subnav"
+import { jobFitToolsFor, verticalSubNavItems } from "@/constants/vertical-subnav"
+import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs"
 import { useAgentEngine } from "@/lib/agentApi"
 import { useAuth } from "@/context/useAuth"
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
@@ -57,12 +58,19 @@ export function useVerticalPageSections(
   // JF-11: Career Discovery shows About me + Who I am as one entry when the
   // server says so (read from the cache only; false everywhere else).
   const discoveryMerged = useProfileMerged()
+  // JF-8: Job Fit's section is the same list as its pill row (FitNav) — with
+  // `job_fit_v2` on, "Careers and Jobs" replaces "My fit" and "Growth areas".
+  // Off (loading, error, false) the section is `verticalSubNavItems`, untouched.
+  const jobFitV2 = useSavedJobsEnabled()
   const subNav = useMemo(() => {
     const raw = verticalSubNavItems(vertical, role)
+    if (vertical === "job-fit" && raw && jobFitV2) {
+      return { ...raw, items: jobFitToolsFor(role, true) }
+    }
     return vertical === "career-discovery" && raw && discoveryMerged
       ? { ...raw, items: discoveryMenu(raw.items, true) }
       : raw
-  }, [vertical, role, discoveryMerged])
+  }, [vertical, role, discoveryMerged, jobFitV2])
   const definition = getVertical(vertical)
 
   return useMemo(() => {

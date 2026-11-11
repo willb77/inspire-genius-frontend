@@ -15,6 +15,12 @@ import {
 // Control the entitlement read by mocking the leaf module (the barrel re-exports
 // from it), so the real registry + listEntitledVerticals stay intact.
 const mockUseEnabledVerticals = jest.fn()
+// JF-8 menu wiring: the menus now read `job_fit_v2` (JF-7's status read). Off
+// here, as today; the on state is covered in jf8-menu-wiring.test.tsx.
+jest.mock("@/hooks/job-fit/useSavedJobs", () => ({
+  ...jest.requireActual("@/hooks/job-fit/useSavedJobs"),
+  useSavedJobsEnabled: () => false,
+}))
 jest.mock("@/verticals/core/useEnabledVerticals", () => ({
   useEnabledVerticals: () => mockUseEnabledVerticals(),
 }))
