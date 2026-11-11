@@ -22,6 +22,7 @@ import {
   buildFitReportMarkdown,
   buildFitReportText,
   fitReportFileBase,
+  type FitV2Report,
 } from "@/lib/job-fit/fitReport"
 import { displayFitPercent } from "@/components/fit/fit"
 
@@ -73,18 +74,28 @@ function printBlob(blob: Blob) {
  * (`POST /v1/agents/blueprint/write-resume`), were removed on Bill's word,
  * typed in Coord2 2026-10-24 23:13 EDT: "remove Career Fit's old résumé route:
  * yes". With no `resumeHref` (no role id) there is no button.
+ *
+ * JF-6 — PDF only on the Careers and Jobs job page. When the page passes `v2`
+ * (its `job_fit_v2` layout) the bar offers Download PDF, Save and Write
+ * Résumé; Export as, Print, Email and Copy link are not drawn, and the PDF
+ * carries the v2 page's sections. Without `v2` the bar is today's bar. Honor's
+ * share helpers (`lib/honor/shareReportLink`) are untouched and still serve
+ * the Honor pages (F-32).
  */
 export function FitActionsBar({
   data,
   overview,
   resumeHref,
+  v2,
 }: {
   data: FitDetail
   overview?: string
   resumeHref?: string
+  v2?: FitV2Report
 }) {
   const pct = displayFitPercent(data)
-  const reportInput = { data, pct, overview }
+  const reportInput = { data, pct, overview, v2 }
+  const pdfOnly = v2 !== undefined
   const [busy, setBusy] = useState<null | "pdf" | "print" | "export">(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -176,50 +187,54 @@ export function FitActionsBar({
           Download PDF
         </button>
 
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            disabled={busy !== null}
-            className={BTN}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-          >
-            {busy === "export" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-            Export as…
-            <ChevronDown className="h-4 w-4" />
-          </button>
-          {menuOpen && (
-            <>
-              <button
-                type="button"
-                aria-hidden
-                tabIndex={-1}
-                className="fixed inset-0 z-40 cursor-default"
-                onClick={() => setMenuOpen(false)}
-              />
-              <div role="menu" className="absolute left-0 z-50 mt-1 w-52 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-lg">
-                {EXPORT_FORMATS.map(({ fmt, label }) => (
-                  <button
-                    key={fmt}
-                    type="button"
-                    role="menuitem"
-                    onClick={() => handleExport(fmt)}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#1f2937] hover:bg-[#f4f6fa]"
-                  >
-                    <FileText className="h-4 w-4 text-[#6b7280]" />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        {!pdfOnly && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              disabled={busy !== null}
+              className={BTN}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+            >
+              {busy === "export" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              Export as…
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            {menuOpen && (
+              <>
+                <button
+                  type="button"
+                  aria-hidden
+                  tabIndex={-1}
+                  className="fixed inset-0 z-40 cursor-default"
+                  onClick={() => setMenuOpen(false)}
+                />
+                <div role="menu" className="absolute left-0 z-50 mt-1 w-52 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-lg">
+                  {EXPORT_FORMATS.map(({ fmt, label }) => (
+                    <button
+                      key={fmt}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => handleExport(fmt)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#1f2937] hover:bg-[#f4f6fa]"
+                    >
+                      <FileText className="h-4 w-4 text-[#6b7280]" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
-        <button type="button" onClick={handlePrint} disabled={busy !== null} className={BTN}>
-          {busy === "print" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-          Print
-        </button>
+        {!pdfOnly && (
+          <button type="button" onClick={handlePrint} disabled={busy !== null} className={BTN}>
+            {busy === "print" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+            Print
+          </button>
+        )}
 
         <button
           type="button"
@@ -232,15 +247,19 @@ export function FitActionsBar({
           {saved ? "Saved" : "Save"}
         </button>
 
-        <button type="button" onClick={handleEmail} className={BTN} title="Open your email with a link to this fit">
-          <Mail className="h-4 w-4" />
-          Email
-        </button>
+        {!pdfOnly && (
+          <button type="button" onClick={handleEmail} className={BTN} title="Open your email with a link to this fit">
+            <Mail className="h-4 w-4" />
+            Email
+          </button>
+        )}
 
-        <button type="button" onClick={handleCopyLink} className={BTN} title="Copy a link to this fit">
-          <Link2 className="h-4 w-4" />
-          Copy link
-        </button>
+        {!pdfOnly && (
+          <button type="button" onClick={handleCopyLink} className={BTN} title="Copy a link to this fit">
+            <Link2 className="h-4 w-4" />
+            Copy link
+          </button>
+        )}
 
         {resumeHref ? (
           <Link
