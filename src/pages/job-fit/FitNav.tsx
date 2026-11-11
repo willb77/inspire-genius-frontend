@@ -1,7 +1,8 @@
 import { NavLink } from "react-router-dom"
 import { Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { jobFitToolsForRole } from "@/constants/vertical-subnav"
+import { jobFitToolsFor } from "@/constants/vertical-subnav"
+import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs"
 import { useAuth } from "@/context/useAuth"
 import { isUserRole, type UserRole } from "@/types/roles"
 
@@ -24,7 +25,12 @@ export default function FitNav() {
   // missing role is treated as `user`, so the two surfaces always agree.
   const rawRole = user?.role
   const role: UserRole = isUserRole(rawRole) ? rawRole : "user"
-  const tools = jobFitToolsForRole(role)
+  // JF-8: with `job_fit_v2` on, "My fit" and "Growth areas" fold into one
+  // "Careers and Jobs" pill. Only the server's `true` is on — loading, an error
+  // and off all keep today's row (`jobFitToolsFor(role, false)` IS
+  // `jobFitToolsForRole(role)`). The sidebar reads the same switch and list.
+  const v2 = useSavedJobsEnabled()
+  const tools = jobFitToolsFor(role, v2)
 
   return (
     <div className="mb-6 space-y-3">
