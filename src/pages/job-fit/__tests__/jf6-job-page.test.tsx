@@ -219,7 +219,8 @@ describe("switch on — the Careers and Jobs order", () => {
       "2. Coordinating",
       "3. Relating",
     ])
-    expect(screen.getByRole("link", { name: /career pathway/i })).toHaveAttribute("href", "/vertical/job-fit/pathway")
+    // JF-9: the v2 job page's Career Pathway button starts the pathway from this job.
+    expect(screen.getByRole("link", { name: /career pathway/i })).toHaveAttribute("href", "/vertical/job-fit/pathway?from=j1")
   })
 
   test("PDF only: no Export as, Print, Email or Copy link", async () => {

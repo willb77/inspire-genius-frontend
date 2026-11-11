@@ -46,8 +46,12 @@ export const fitService = {
   },
 
   /** GET /v1/blueprint/fit/pathway — adjacent role families / skill ladders (may be gated). */
-  getPathway() {
-    return api.get<BaseApiResponse<FitPathway>>(`${BASE}/pathway`)
+  getPathway(from?: string | null) {
+    // JF-9: `from` is the job the pathway starts from (job_fit_v2 only — the
+    // server ignores it when off). Without one the request is today's, exactly.
+    return from
+      ? api.get<BaseApiResponse<FitPathway>>(`${BASE}/pathway`, { params: { from } })
+      : api.get<BaseApiResponse<FitPathway>>(`${BASE}/pathway`)
   },
 
   /**

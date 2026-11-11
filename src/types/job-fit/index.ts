@@ -7,6 +7,7 @@
 
 import type { DimensionCategory } from '@/types/job-blueprint'
 import type { TargetBenchmarkInput } from '@/types/targets'
+import type { PathwayV2 } from './pathway'
 
 /**
  * Coarse, plain-language fit label the backend assigns per role. Kept as a
@@ -272,4 +273,6 @@ export type FitPathway = {
   suggestions?: PathwaySuggestion[]
   skillLadders?: SkillLadder[]
   note?: string
+  /** JF-9 — present only when the server's job_fit_v2 switch applies. */
+  v2?: PathwayV2
 }

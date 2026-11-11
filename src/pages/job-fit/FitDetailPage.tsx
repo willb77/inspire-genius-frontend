@@ -186,8 +186,9 @@ function JobPageV2({
       )}
 
       <div data-jf6-section="pathway" className="mb-6 mt-6">
+        {/* JF-9: the pathway starts from this job. */}
         <Link
-          to={ROUTES.JOB_FIT.PATHWAY}
+          to={`${ROUTES.JOB_FIT.PATHWAY}?from=${encodeURIComponent(data.jobId)}`}
           className="inline-flex items-center gap-1.5 rounded-lg bg-[#0D9488] px-3 py-2 text-sm font-medium text-white hover:bg-[#0b8078]"
         >
           <RouteIcon className="h-4 w-4" aria-hidden />
