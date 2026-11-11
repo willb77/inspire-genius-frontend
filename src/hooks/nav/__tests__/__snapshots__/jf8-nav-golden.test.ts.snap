@@ -1,0 +1,336 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`JF-8 — menus with job_fit_v2 off are today's Job Fit and Discovery in-vertical menus for company-admin 1`] = `
+{
+  "directionSetting": [
+    "My journey -> /vertical/direction-setting/journey",
+    "Who I am -> /vertical/direction-setting/portrait",
+    "Career areas -> /vertical/direction-setting/careers",
+    "What it pays -> /vertical/direction-setting/salary",
+    "My goals -> /vertical/direction-setting/goals",
+    "Goals vs wiring -> /vertical/direction-setting/alignment",
+    "Job matches -> /vertical/direction-setting/matches",
+    "My plan -> /vertical/direction-setting/plan",
+    "Interview prep -> /vertical/direction-setting/interview",
+    "Practise answers -> /vertical/direction-setting/rehearse",
+  ],
+  "discovery": [
+    "My journey -> /vertical/career-discovery/journey",
+    "About me -> /vertical/career-discovery/about",
+    "Who I am -> /vertical/career-discovery/who",
+    "Career areas -> /vertical/career-discovery/careers",
+    "What it pays -> /vertical/career-discovery/pays",
+    "My goals -> /vertical/career-discovery/goals",
+    "Goals vs wiring -> /vertical/career-discovery/alignment",
+    "Education paths -> /vertical/career-discovery/education",
+    "Cost and payback -> /vertical/career-discovery/cost",
+    "My plan -> /vertical/career-discovery/plan",
+  ],
+  "jobFit": [
+    "My fit -> /vertical/job-fit/matches",
+    "Growth areas -> /vertical/job-fit/gaps",
+    "Pathway -> /vertical/job-fit/pathway",
+    "Blueprint a role -> /vertical/job-fit/blueprint",
+    "Fit a JD -> /vertical/job-fit/target",
+    "Coaching -> /vertical/job-fit/coach",
+  ],
+}
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's Job Fit and Discovery in-vertical menus for distributor 1`] = `
+{
+  "directionSetting": [
+    "My journey -> /vertical/direction-setting/journey",
+    "Who I am -> /vertical/direction-setting/portrait",
+    "Career areas -> /vertical/direction-setting/careers",
+    "What it pays -> /vertical/direction-setting/salary",
+    "My goals -> /vertical/direction-setting/goals",
+    "Goals vs wiring -> /vertical/direction-setting/alignment",
+    "Job matches -> /vertical/direction-setting/matches",
+    "My plan -> /vertical/direction-setting/plan",
+    "Interview prep -> /vertical/direction-setting/interview",
+    "Practise answers -> /vertical/direction-setting/rehearse",
+  ],
+  "discovery": [
+    "My journey -> /vertical/career-discovery/journey",
+    "About me -> /vertical/career-discovery/about",
+    "Who I am -> /vertical/career-discovery/who",
+    "Career areas -> /vertical/career-discovery/careers",
+    "What it pays -> /vertical/career-discovery/pays",
+    "My goals -> /vertical/career-discovery/goals",
+    "Goals vs wiring -> /vertical/career-discovery/alignment",
+    "Education paths -> /vertical/career-discovery/education",
+    "Cost and payback -> /vertical/career-discovery/cost",
+    "My plan -> /vertical/career-discovery/plan",
+  ],
+  "jobFit": [
+    "My fit -> /vertical/job-fit/matches",
+    "Growth areas -> /vertical/job-fit/gaps",
+    "Pathway -> /vertical/job-fit/pathway",
+    "Blueprint a role -> /vertical/job-fit/blueprint",
+    "Fit a JD -> /vertical/job-fit/target",
+    "Coaching -> /vertical/job-fit/coach",
+  ],
+}
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's Job Fit and Discovery in-vertical menus for manager 1`] = `
+{
+  "directionSetting": [
+    "My journey -> /vertical/direction-setting/journey",
+    "Who I am -> /vertical/direction-setting/portrait",
+    "Career areas -> /vertical/direction-setting/careers",
+    "What it pays -> /vertical/direction-setting/salary",
+    "My goals -> /vertical/direction-setting/goals",
+    "Goals vs wiring -> /vertical/direction-setting/alignment",
+    "Job matches -> /vertical/direction-setting/matches",
+    "My plan -> /vertical/direction-setting/plan",
+    "Interview prep -> /vertical/direction-setting/interview",
+    "Practise answers -> /vertical/direction-setting/rehearse",
+  ],
+  "discovery": [
+    "My journey -> /vertical/career-discovery/journey",
+    "About me -> /vertical/career-discovery/about",
+    "Who I am -> /vertical/career-discovery/who",
+    "Career areas -> /vertical/career-discovery/careers",
+    "What it pays -> /vertical/career-discovery/pays",
+    "My goals -> /vertical/career-discovery/goals",
+    "Goals vs wiring -> /vertical/career-discovery/alignment",
+    "Education paths -> /vertical/career-discovery/education",
+    "Cost and payback -> /vertical/career-discovery/cost",
+    "My plan -> /vertical/career-discovery/plan",
+  ],
+  "jobFit": [
+    "My fit -> /vertical/job-fit/matches",
+    "Growth areas -> /vertical/job-fit/gaps",
+    "Pathway -> /vertical/job-fit/pathway",
+    "Blueprint a role -> /vertical/job-fit/blueprint",
+    "Fit a JD -> /vertical/job-fit/target",
+    "Coaching -> /vertical/job-fit/coach",
+  ],
+}
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's Job Fit and Discovery in-vertical menus for practitioner 1`] = `
+{
+  "directionSetting": [
+    "My journey -> /vertical/direction-setting/journey",
+    "Who I am -> /vertical/direction-setting/portrait",
+    "Career areas -> /vertical/direction-setting/careers",
+    "What it pays -> /vertical/direction-setting/salary",
+    "My goals -> /vertical/direction-setting/goals",
+    "Goals vs wiring -> /vertical/direction-setting/alignment",
+    "Job matches -> /vertical/direction-setting/matches",
+    "My plan -> /vertical/direction-setting/plan",
+    "Interview prep -> /vertical/direction-setting/interview",
+    "Practise answers -> /vertical/direction-setting/rehearse",
+  ],
+  "discovery": [
+    "My journey -> /vertical/career-discovery/journey",
+    "About me -> /vertical/career-discovery/about",
+    "Who I am -> /vertical/career-discovery/who",
+    "Career areas -> /vertical/career-discovery/careers",
+    "What it pays -> /vertical/career-discovery/pays",
+    "My goals -> /vertical/career-discovery/goals",
+    "Goals vs wiring -> /vertical/career-discovery/alignment",
+    "Education paths -> /vertical/career-discovery/education",
+    "Cost and payback -> /vertical/career-discovery/cost",
+    "My plan -> /vertical/career-discovery/plan",
+  ],
+  "jobFit": [
+    "My fit -> /vertical/job-fit/matches",
+    "Growth areas -> /vertical/job-fit/gaps",
+    "Pathway -> /vertical/job-fit/pathway",
+    "Blueprint a role -> /vertical/job-fit/blueprint",
+    "Fit a JD -> /vertical/job-fit/target",
+    "Coaching -> /vertical/job-fit/coach",
+  ],
+}
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's Job Fit and Discovery in-vertical menus for super-admin 1`] = `
+{
+  "directionSetting": [
+    "My journey -> /vertical/direction-setting/journey",
+    "Who I am -> /vertical/direction-setting/portrait",
+    "Career areas -> /vertical/direction-setting/careers",
+    "What it pays -> /vertical/direction-setting/salary",
+    "My goals -> /vertical/direction-setting/goals",
+    "Goals vs wiring -> /vertical/direction-setting/alignment",
+    "Job matches -> /vertical/direction-setting/matches",
+    "My plan -> /vertical/direction-setting/plan",
+    "Interview prep -> /vertical/direction-setting/interview",
+    "Practise answers -> /vertical/direction-setting/rehearse",
+  ],
+  "discovery": [
+    "My journey -> /vertical/career-discovery/journey",
+    "About me -> /vertical/career-discovery/about",
+    "Who I am -> /vertical/career-discovery/who",
+    "Career areas -> /vertical/career-discovery/careers",
+    "What it pays -> /vertical/career-discovery/pays",
+    "My goals -> /vertical/career-discovery/goals",
+    "Goals vs wiring -> /vertical/career-discovery/alignment",
+    "Education paths -> /vertical/career-discovery/education",
+    "Cost and payback -> /vertical/career-discovery/cost",
+    "My plan -> /vertical/career-discovery/plan",
+  ],
+  "jobFit": [
+    "My fit -> /vertical/job-fit/matches",
+    "Growth areas -> /vertical/job-fit/gaps",
+    "Pathway -> /vertical/job-fit/pathway",
+    "Blueprint a role -> /vertical/job-fit/blueprint",
+    "Fit a JD -> /vertical/job-fit/target",
+    "Coaching -> /vertical/job-fit/coach",
+  ],
+}
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's Job Fit and Discovery in-vertical menus for user 1`] = `
+{
+  "directionSetting": [
+    "My journey -> /vertical/direction-setting/journey",
+    "Who I am -> /vertical/direction-setting/portrait",
+    "Career areas -> /vertical/direction-setting/careers",
+    "What it pays -> /vertical/direction-setting/salary",
+    "My goals -> /vertical/direction-setting/goals",
+    "Goals vs wiring -> /vertical/direction-setting/alignment",
+    "Job matches -> /vertical/direction-setting/matches",
+    "My plan -> /vertical/direction-setting/plan",
+    "Interview prep -> /vertical/direction-setting/interview",
+    "Practise answers -> /vertical/direction-setting/rehearse",
+  ],
+  "discovery": [
+    "My journey -> /vertical/career-discovery/journey",
+    "About me -> /vertical/career-discovery/about",
+    "Who I am -> /vertical/career-discovery/who",
+    "Career areas -> /vertical/career-discovery/careers",
+    "What it pays -> /vertical/career-discovery/pays",
+    "My goals -> /vertical/career-discovery/goals",
+    "Goals vs wiring -> /vertical/career-discovery/alignment",
+    "Education paths -> /vertical/career-discovery/education",
+    "Cost and payback -> /vertical/career-discovery/cost",
+    "My plan -> /vertical/career-discovery/plan",
+  ],
+  "jobFit": [
+    "My fit -> /vertical/job-fit/matches",
+    "Growth areas -> /vertical/job-fit/gaps",
+    "Pathway -> /vertical/job-fit/pathway",
+    "Blueprint a role -> /vertical/job-fit/blueprint (greyed)",
+    "Fit a JD -> /vertical/job-fit/target",
+    "Coaching -> /vertical/job-fit/coach",
+  ],
+}
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(company-admin) — the menu the role gets 1`] = `
+[
+  "Dashboard -> /company-admin/dashboard",
+  "User Management -> /company-admin/users",
+  "Organization -> /company-admin/organization",
+  "Bulk Import -> /company-admin/bulk-import",
+  "Analytics -> /company-admin/analytics",
+  "AI Observability -> /company-admin/observability",
+  "Culture Docs -> /company-admin/culture",
+  "Surveys -> /surveys",
+  "Career & Education Discovery -> /vertical/career-discovery/journey",
+  "Career Fit -> /vertical/job-fit/matches",
+  "Role Play -> /interview-practice",
+  "Résumé Writer -> /my/resume",
+  "Settings -> /company-admin/settings",
+]
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(distributor) — the menu the role gets 1`] = `
+[
+  "Home -> /distributor/dashboard",
+  "My practitioners -> /distributor/network",
+  "Credits -> /distributor/credits",
+  "Reports -> /distributor/analytics",
+  "Career & Education Discovery -> /vertical/career-discovery/journey",
+  "Career Fit -> /vertical/job-fit/matches",
+  "Help & Support -> /help",
+]
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(manager) — the menu the role gets 1`] = `
+[
+  "Dashboard -> /manager/dashboard",
+  "Member Oversight -> /manager/students",
+  "Team Import -> /manager/bulk-import",
+  "Schedule -> /manager/schedule",
+  "Career & Education Discovery -> /vertical/career-discovery/journey",
+  "Career Fit -> /vertical/job-fit/matches",
+  "Role Play -> /interview-practice",
+  "Résumé Writer -> /my/resume",
+  "Settings -> /manager/settings",
+  "Help & Support -> /help",
+]
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(practitioner) — the menu the role gets 1`] = `
+[
+  "Practitioner Home -> /practitioner/home",
+  "Chat with Meridian -> /meridian/chat",
+  "My Clients -> /practitioner/clients",
+  "Client PRISM Assessments -> /practitioner/prism-clients",
+  "My PRISM Practice -> /practitioner/practice",
+  "Schedule -> /practitioner/schedule",
+  "Surveys -> /surveys",
+  "Analytics -> /practitioner/analytics",
+  "Career & Education Discovery -> /vertical/career-discovery/journey",
+  "Career Fit -> /vertical/job-fit/matches",
+  "Role Play -> /interview-practice",
+  "Résumé Writer -> /my/resume",
+]
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(super-admin) — the menu the role gets 1`] = `
+[
+  "Dashboard -> /super-admin/dashboard",
+  "User Management -> /super-admin/users",
+  "Organizations -> /super-admin/organizations",
+  "Agent Management -> /super-admin/mentor-management",
+  "RLHF Training -> /super-admin/rlhf-training",
+  "Analytics & Logs -> /super-admin/analytics",
+  "Agent Trainer -> /super-admin/agent-trainer",
+  "Bulk User Import -> /super-admin/bulk-import",
+  "Observability -> /super-admin/observability",
+  "Explainability -> /super-admin/explainability",
+  "Dev Traffic Report -> /super-admin/dev-traffic-report",
+  "Research -> /super-admin/research",
+  "Knowledge Base -> /super-admin/knowledge-base",
+  "PRISM Management -> /super-admin/prism-management",
+  "PRISM CSV Converter -> /super-admin/prism-csv-converter",
+  "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
+  "PRISM Practitioner Exam -> /super-admin/prism-exam",
+  "Practitioner Registry -> /super-admin/practitioner-registry",
+  "Intake -> /super-admin/intake",
+  "Privacy & RTBF -> /super-admin/privacy-compliance",
+  "Cohort Read-out -> /super-admin/cohort-readout",
+  "Client Sign-Up -> /super-admin/client-signup",
+  "Help and Support Management -> /super-admin/support",
+  "Agent Trace Console -> /super-admin/agent-trace-console",
+  "Surveys -> /surveys",
+  "Asset Library -> /super-admin/asset-library",
+  "Curriculum -> /super-admin/curriculum",
+  "Career & Education Discovery -> /vertical/career-discovery/journey",
+  "Career Fit -> /vertical/job-fit/matches",
+  "Settings -> /super-admin/settings",
+]
+`;
+
+exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(user) — the menu the role gets 1`] = `
+[
+  "Home -> /home",
+  "Chat with Coaches -> /dashboard",
+  "Goals Studio -> /my/goals",
+  "Career & Education Discovery -> /vertical/career-discovery/journey",
+  "Career Fit -> /vertical/job-fit/matches",
+  "Role Play -> /interview-practice",
+  "My development -> /my/development",
+  "Résumé Writer -> /my/resume",
+  "Document Library -> /documents",
+  "Settings -> /settings",
+  "Help & Support -> /help",
+]
+`;
