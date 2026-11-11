@@ -18,6 +18,12 @@ import { __resetRegistry, registerVertical } from "@/verticals/core"
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold"
 
 const mockUseEnabledVerticals = jest.fn()
+// JF-8 menu wiring: the menus now read `job_fit_v2` (JF-7's status read). Off
+// here, as today; the on state is covered in jf8-menu-wiring.test.tsx.
+jest.mock("@/hooks/job-fit/useSavedJobs", () => ({
+  ...jest.requireActual("@/hooks/job-fit/useSavedJobs"),
+  useSavedJobsEnabled: () => false,
+}))
 jest.mock("@/verticals/core/useEnabledVerticals", () => ({
   useEnabledVerticals: () => mockUseEnabledVerticals(),
 }))

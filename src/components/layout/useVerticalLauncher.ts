@@ -17,6 +17,8 @@ import type { SidebarSection } from "@/constants/sidebar-sections"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation"
 import { useWorkspaceDirectionSettingEnabled } from "@/hooks/switches/useWorkspaceDirectionSettingEnabled"
+import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs"
+import { CAREERS_AND_JOBS_LABEL, CAREERS_AND_JOBS_PATH } from "@/constants/vertical-subnav"
 
 /**
  * Registry-driven vertical launcher.
@@ -321,6 +323,7 @@ export function useWorkspaceVerticalLinks(): NavItemDef[] {
 export function useWorkspaceVerticalItems(): NavItemDef[] {
   const { data: enabled } = useEnabledVerticals()
   const workspace = useEffectiveWorkspaceVerticals()
+  const jobFitV2 = useSavedJobsEnabled()
   // Memoised on the entitlement list (and the effective set, which is one of
   // two module constants) so the returned array keeps a stable identity across
   // renders — it feeds the `navSections` memo in every layout.
@@ -329,8 +332,27 @@ export function useWorkspaceVerticalItems(): NavItemDef[] {
     return listVerticals()
       .filter((v) => workspace.has(v.key) && entitlements.includes(v.key))
       .sort((a, b) => workspaceRank(a.key) - workspaceRank(b.key))
-      .map((v) => toNavItem(v, true))
-  }, [enabled, workspace])
+      .map((v) => toNavItem(jobFitV2 ? asCareersAndJobs(v) : v, true))
+  }, [enabled, workspace, jobFitV2])
+}
+
+/**
+ * JF-8 (D6) — the main-menu name for Career Fit while `job_fit_v2` is on for
+ * the person: "Careers and Jobs", opening on Careers and Jobs. Only the menu
+ * entry changes; the manifest (title "Career Fit", key `job-fit`, entitlement,
+ * routes) does not.
+ *
+ * The rename lives HERE, not in the job-fit manifest, because the manifest is
+ * registered once at module load and cannot read a per-person server switch,
+ * and because every main menu — `useGatedNavItems`, `UserLayout`,
+ * `SuperAdminLayout`, `useVerticalPageSections` — already reaches Career Fit
+ * through this one hook. Off (loading, an error, false) this is never called,
+ * so the entry is today's object.
+ */
+function asCareersAndJobs<V extends { key: VerticalKey; title: string; homePath: string }>(v: V): V {
+  return v.key === "job-fit"
+    ? { ...v, title: CAREERS_AND_JOBS_LABEL, homePath: CAREERS_AND_JOBS_PATH }
+    : v
 }
 
 /**

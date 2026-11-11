@@ -7,6 +7,12 @@ import { listEntitledVerticals, useEnabledVerticals } from "@/verticals/core"
 import type { FitDetail, FitMatch } from "@/types/job-fit"
 
 const mockNavigate = jest.fn()
+// JF-8 menu wiring: the menus now read `job_fit_v2` (JF-7's status read). Off
+// here, as today; the on state is covered in jf8-menu-wiring.test.tsx.
+jest.mock("@/hooks/job-fit/useSavedJobs", () => ({
+  ...jest.requireActual("@/hooks/job-fit/useSavedJobs"),
+  useSavedJobsEnabled: () => false,
+}))
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,

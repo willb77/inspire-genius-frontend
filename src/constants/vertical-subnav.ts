@@ -94,10 +94,10 @@ export const CAREERS_AND_JOBS_PATH = `${ROUTES.JOB_FIT.BASE}/home`
  * Jobs, which holds the ranked jobs; every other tool is unchanged, and the
  * `user` role still sees "Blueprint a role" greyed.
  *
- * Nothing renders this list yet: the menus that read `jobFitToolsForRole`
- * (FitNav's pill row and the sidebar) are wired in a follow-up. With the switch
- * off `jobFitToolsFor(role, false)` is `jobFitToolsForRole(role)` — the same
- * array, by identity.
+ * FitNav's pill row and the Job Fit sidebar section (`useVerticalPageSections`)
+ * render this through `useSavedJobsEnabled()`. With the switch off
+ * `jobFitToolsFor(role, false)` is `jobFitToolsForRole(role)` — the same array,
+ * by identity.
  */
 const CAREERS_AND_JOBS_ENTRY: NavItemDef = {
   to: CAREERS_AND_JOBS_PATH,
