@@ -11,6 +11,8 @@ import { ScoreBar } from "@/components/job-blueprint/shared/ScoreBar"
 import { FitCard, FitPill, FitSectionTitle } from "@/components/fit/primitives"
 import { gapTone, formatGap } from "@/components/fit/fit"
 import { NOT_MEASURED, isMeasured } from "@/lib/job-fit/coverage"
+import { FitCards } from "@/components/fit/FitCards"
+import { fitCardGroups } from "@/components/fit/FitCardsModel"
 
 const NEUTRAL_BAND: InterpretationBand = "moderate"
 
@@ -69,20 +71,34 @@ function toRadarInputs(perDimension: PerDimensionFit[]): {
  */
 export function FitBreakdown({ data }: { data: FitDetail }) {
   const radar = useMemo(() => toRadarInputs(data.perDimension), [data])
+  // JF-5: cards only on a priority-scored read (job_fit_v2 applied server-side);
+  // null on every other read, which draws today's radar exactly as before.
+  const cards = useMemo(() => fitCardGroups(data), [data])
 
   return (
     <>
-      {/* Radar: your profile vs the role benchmark */}
-      <FitCard className="mb-6">
-        <FitSectionTitle>Your profile vs. this role</FitSectionTitle>
-        <BenchmarkRadarChart
-          behaviors={radar.behaviors}
-          aptitudes={radar.aptitudes}
-          coreTraits={radar.coreTraits}
-          candidateScores={radar.candidateScores}
-          height={380}
-        />
-      </FitCard>
+      {cards ? (
+        <FitCard className="mb-6">
+          <FitSectionTitle>Your profile vs. this role</FitSectionTitle>
+          <p className="mb-4 text-sm text-[#6b7280]">
+            The dimensions this role puts first: what the job asks for, your rating, and the
+            difference. Hover, focus or tap a name for its definition.
+          </p>
+          <FitCards groups={cards} />
+        </FitCard>
+      ) : (
+        /* Radar: your profile vs the role benchmark */
+        <FitCard className="mb-6">
+          <FitSectionTitle>Your profile vs. this role</FitSectionTitle>
+          <BenchmarkRadarChart
+            behaviors={radar.behaviors}
+            aptitudes={radar.aptitudes}
+            coreTraits={radar.coreTraits}
+            candidateScores={radar.candidateScores}
+            height={380}
+          />
+        </FitCard>
+      )}
 
       {/* Per-dimension gap table with coaching */}
       <FitCard className="mb-6">
