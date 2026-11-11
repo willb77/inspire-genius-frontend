@@ -147,6 +147,7 @@ const DevelopmentStudio = React.lazy(() => import("@/pages/manager/development/D
 const MemberDevelopmentWorkspace = React.lazy(() => import("@/pages/manager/development/MemberDevelopmentWorkspace"));
 const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
 const StudentRoster = React.lazy(() => import("@/pages/manager/StudentRoster"));
+const ManagerStudentCareerExercise = React.lazy(() => import("@/pages/manager/career-exercise/StudentCareerExercisePage"));
 const WorkspaceSettings = React.lazy(() => import("@/pages/workspace/SettingsPage"));
 const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
 const ManagerBulkImport = React.lazy(() => import("@/pages/manager/BulkImport"));
@@ -209,6 +210,7 @@ const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Anal
 const PractitionerHome = React.lazy(() => import("@/pages/practitioner/HomeSwitch"));
 const PractitionerMeridianChat = React.lazy(() => import("@/pages/practitioner/MeridianChat"));
 const PractitionerClientProfile = React.lazy(() => import("@/pages/practitioner/ClientProfile"));
+const PractitionerStudentCareerExercise = React.lazy(() => import("@/pages/practitioner/career-exercise/StudentCareerExercisePage"));
 const PractitionerSchedule = React.lazy(() => import("@/pages/practitioner/Schedule"));
 const PractitionerMeeting = React.lazy(() => import("@/pages/practitioner/Meeting"));
 
@@ -732,6 +734,8 @@ export const routes: RouteObject[] = [
       { path: "/manager/leadership", element: withSuspense(<ManagerLeadership />) },
       { path: "/manager/prism-team", element: withSuspense(<PrismTeam />) },
       { path: "/manager/students", element: withSuspense(<StudentRoster />) },
+      // CX-6 — ROUTES.MANAGER.CAREER_EXERCISE_STUDENT (a test asserts they agree).
+      { path: "/manager/career-exercise/:studentId", element: withSuspense(<ManagerStudentCareerExercise />) },
       { path: "/manager/settings", element: withSuspense(<WorkspaceSettings audience="manager" />) },
       { path: "/manager/analytics", element: withSuspense(<ManagerAnalytics />) },
       { path: "/manager/bulk-import", element: withSuspense(<ManagerBulkImport />) },
@@ -765,6 +769,8 @@ export const routes: RouteObject[] = [
       { path: "/practitioner/dashboard", element: <Navigate to="/practitioner/home" replace /> },
       { path: "/practitioner/clients", element: withSuspense(<PractitionerClients />) },
       { path: "/practitioner/clients/:clientId", element: withSuspense(<PractitionerClientProfile />) },
+      // CX-6 — ROUTES.PRACTITIONER.CAREER_EXERCISE_STUDENT (a test asserts they agree).
+      { path: "/practitioner/career-exercise/:studentId", element: withSuspense(<PractitionerStudentCareerExercise />) },
       // X-3 (Practitioner Programme): practitioner credits are retired — PRISM
       // surveys route to the practitioner's own PRISM site (D-P1), so there is
       // nothing left for a credit to buy. Redirect rather than drop, so an old

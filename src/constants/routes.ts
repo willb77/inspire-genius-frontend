@@ -188,6 +188,10 @@ export const ROUTES = {
     // Team Development Studio (behind VITE_FEATURE_TEAM_DEVELOPMENT)
     DEVELOPMENT: "/manager/development",
     DEVELOPMENT_MEMBER: "/manager/development/:memberId",
+    /** CX-6 — one student's career exploration exercise, for their counselor.
+     *  The server decides who may see the student (their `development` grant
+     *  AND a counselor relationship); behind the `career_exercise` switch. */
+    CAREER_EXERCISE_STUDENT: "/manager/career-exercise/:studentId",
   },
   COMPANY_ADMIN: {
     BASE: "/company-admin",
@@ -239,6 +243,9 @@ export const ROUTES = {
     /** Character Lab — fictional PRISM profiles; no CSV export or import for this role. */
     CHARACTER_LAB: "/practitioner/character-lab",
     TEAM_COMPOSITION: "/practitioner/team-composition",
+    /** CX-6 — one student's career exploration exercise, for their counselor.
+     *  Same view and same server rule as MANAGER.CAREER_EXERCISE_STUDENT. */
+    CAREER_EXERCISE_STUDENT: "/practitioner/career-exercise/:studentId",
   },
   DISTRIBUTOR: {
     BASE: "/distributor",
