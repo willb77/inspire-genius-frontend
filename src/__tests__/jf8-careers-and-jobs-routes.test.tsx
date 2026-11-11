@@ -61,6 +61,7 @@ jest.mock("@/pages/career-discovery/EducationPage", () => stub("discovery/educat
 jest.mock("@/pages/career-discovery/CostPage", () => stub("discovery/cost"))
 jest.mock("@/pages/career-discovery/PlanPage", () => stub("discovery/plan"))
 jest.mock("@/pages/career-discovery/DegreePlanPage", () => stub("discovery/degree-plan"))
+jest.mock("@/pages/career-exercise/CareerExercisePage", () => stub("career-exercise"))
 
 const ROOTS = ["/vertical/job-fit", "/vertical/career-discovery"]
 
@@ -120,6 +121,12 @@ const MOVED: Record<string, string> = {
   "/vertical/career-discovery/careers": "careers-and-jobs",
 }
 
+/** Paths added after JF-8 (not today's, not moved): where each lands, switch on or off. */
+const ADDED: Record<string, string> = {
+  // CX-5 — its own `career_exercise` gate lives inside the page.
+  "/vertical/career-discovery/exercise": "career-exercise",
+}
+
 function Routes(): ReactElement | null {
   return useRoutes([...SUBTREES, { path: "*", element: <p>NO-MATCH</p> }])
 }
@@ -174,7 +181,7 @@ describe("JF-8 — job_fit_v2 ON", () => {
   })
 
   it.each(FOUND)("%s lands on its new home (or stays put)", async (url) => {
-    expect(await landOn(url)).toBe(MOVED[url] ?? TODAY[url])
+    expect(await landOn(url)).toBe(MOVED[url] ?? TODAY[url] ?? ADDED[url])
   })
 
   it("a Discovery-only account keeps today's Career areas (no bounce into Career Fit)", async () => {
