@@ -5,7 +5,8 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { isNewHomeEnabled, isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
 // Eager, not lazy: the shell is the entitlement gate for a vertical route
 // subtree, so it must resolve before the subtree renders rather than after.
-import { VerticalShell } from "@/verticals/core";
+import { VerticalShell, useVerticalAccess } from "@/verticals/core";
+import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs";
 import MinorGate from "@/components/minors/MinorGate";
 import type { MinorGateSurface } from "@/types/minorConsent";
 
@@ -320,6 +321,7 @@ const JobFitCoachPage = React.lazy(() => import("@/pages/job-fit/CoachPage"));
 const JobFitTargetPage = React.lazy(() => import("@/pages/job-fit/TargetPreviewPage"));
 const JobFitHistoryPage = React.lazy(() => import("@/pages/job-fit/FitHistoryPage"));
 const JobFitShell = React.lazy(() => import("@/pages/job-fit/FitShell"));
+const JobFitHome = React.lazy(() => import("@/pages/job-fit/JobFitHome"));
 
 // ── Suspense wrapper helper ─────────────────────────────────────────────────
 function withSuspense(element: React.ReactNode) {
@@ -414,6 +416,25 @@ function AgentTraceConsoleSurface() {
   ) : (
     <DiagnosticChat variant="classic" />
   );
+}
+
+// ── JF-8 — Careers and Jobs, behind `job_fit_v2` ────────────────────────────
+// The switch is read through JF-7's Favorites status (`GET
+// /v1/agents/saved-jobs/status`, `applies_to_member(job_fit_v2)`), the same
+// cached read FavoriteButton already makes. Anything but `true` — no row,
+// false, loading, an error — renders `off`, which is the route exactly as it
+// was before JF-8: no spinner, no extra wait.
+function JobFitV2Route({ on, off }: { on: React.ReactNode; off: React.ReactNode }) {
+  return <>{useSavedJobsEnabled() ? on : off}</>;
+}
+const CAREERS_AND_JOBS = "/vertical/job-fit/home";
+// Discovery's Career areas step moves onto Careers and Jobs — but only for an
+// account that can open Career Fit. A Discovery-only account keeps today's page
+// (a redirect into a vertical it is not entitled to would bounce it to /home).
+function DiscoveryCareersRoute() {
+  const v2 = useSavedJobsEnabled();
+  const jobFit = useVerticalAccess("job-fit");
+  return v2 && jobFit.hasAccess ? <Navigate to={CAREERS_AND_JOBS} replace /> : withSuspense(<DiscoveryCareers />);
 }
 
 // Central route configuration compatible with useRoutes
@@ -887,7 +908,8 @@ export const routes: RouteObject[] = [
               { path: "journey", element: withSuspense(<DiscoveryJourney />) },
               { path: "about", element: withSuspense(<DiscoveryAbout />) },
               { path: "who", element: withSuspense(<DiscoveryWho />) },
-              { path: "careers", element: withSuspense(<DiscoveryCareers />) },
+              // JF-8: with job_fit_v2 on, Career areas is the fields filter on Careers and Jobs.
+              { path: "careers", element: <DiscoveryCareersRoute /> },
               { path: "pays", element: withSuspense(<DiscoveryPays />) },
               { path: "goals", element: withSuspense(<DiscoveryGoals />) },
               { path: "alignment", element: withSuspense(<DiscoveryAlignment />) },
@@ -944,15 +966,53 @@ export const routes: RouteObject[] = [
         path: "/vertical/job-fit",
         element: withSuspense(<JobFitLayout />),
         children: [
-          { index: true, element: <Navigate to="/vertical/job-fit/matches" replace /> },
+          // JF-8: with job_fit_v2 on, the vertical opens on Careers and Jobs; off, as before.
+          {
+            index: true,
+            element: (
+              <JobFitV2Route
+                off={<Navigate to="/vertical/job-fit/matches" replace />}
+                on={<Navigate to={CAREERS_AND_JOBS} replace />}
+              />
+            ),
+          },
           // Pathless layout route: renders the in-vertical nav above every page.
           {
             element: withSuspense(<JobFitShell />),
             children: [
-              { path: "matches", element: withSuspense(<JobFitMatchesPage />) },
+              // JF-8: Careers and Jobs (D6). Off, the path is unknown to today's menus
+              // and sends anyone who types it to My fit, so nothing new shows and
+              // nothing 404s.
+              {
+                path: "home",
+                element: (
+                  <JobFitV2Route
+                    off={<Navigate to="/vertical/job-fit/matches" replace />}
+                    on={withSuspense(<JobFitHome />)}
+                  />
+                ),
+              },
+              // JF-8: My fit and Growth areas fold into Careers and Jobs when job_fit_v2 is on.
+              {
+                path: "matches",
+                element: (
+                  <JobFitV2Route
+                    off={withSuspense(<JobFitMatchesPage />)}
+                    on={<Navigate to={CAREERS_AND_JOBS} replace />}
+                  />
+                ),
+              },
               { path: "fit/:jobId", element: withSuspense(<JobFitDetailPage />) },
               { path: "history/:snapshotId", element: withSuspense(<JobFitHistoryPage />) },
-              { path: "gaps", element: withSuspense(<JobFitGapsPage />) },
+              {
+                path: "gaps",
+                element: (
+                  <JobFitV2Route
+                    off={withSuspense(<JobFitGapsPage />)}
+                    on={<Navigate to={CAREERS_AND_JOBS} replace />}
+                  />
+                ),
+              },
               { path: "pathway", element: withSuspense(<JobFitPathwayPage />) },
               { path: "profile", element: withSuspense(<JobFitCareerProfilePage />) },
               { path: "blueprint", element: withSuspense(<JobFitBlueprintPage />) },

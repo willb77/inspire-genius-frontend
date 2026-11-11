@@ -15,6 +15,7 @@ import {
   Wand2,
   BarChart3,
   BookOpenCheck,
+  Briefcase,
   GraduationCap,
   PiggyBank,
   UserRound,
@@ -79,6 +80,42 @@ const JOB_FIT_TOOLS_FOR_USER: NavItemDef[] = JOB_FIT_TOOLS.map((item) =>
 
 export function jobFitToolsForRole(role: UserRole): NavItemDef[] {
   return role === "user" ? JOB_FIT_TOOLS_FOR_USER : JOB_FIT_TOOLS
+}
+
+/** JF-8 (D6) — the page and menu name. The `job-fit` key, routes and entitlement stay. */
+export const CAREERS_AND_JOBS_LABEL = "Careers and Jobs"
+
+/** JF-8 — where Careers and Jobs lives (a child of the Job Fit vertical). */
+export const CAREERS_AND_JOBS_PATH = `${ROUTES.JOB_FIT.BASE}/home`
+
+/**
+ * JF-8 — the Job Fit menu while `job_fit_v2` applies to the person. "My fit"
+ * and "Growth areas" are gone because both pages now redirect to Careers and
+ * Jobs, which holds the ranked jobs; every other tool is unchanged, and the
+ * `user` role still sees "Blueprint a role" greyed.
+ *
+ * Nothing renders this list yet: the menus that read `jobFitToolsForRole`
+ * (FitNav's pill row and the sidebar) are wired in a follow-up. With the switch
+ * off `jobFitToolsFor(role, false)` is `jobFitToolsForRole(role)` — the same
+ * array, by identity.
+ */
+const CAREERS_AND_JOBS_ENTRY: NavItemDef = {
+  to: CAREERS_AND_JOBS_PATH,
+  icon: Briefcase,
+  label: CAREERS_AND_JOBS_LABEL,
+}
+const FOLDED_INTO_CAREERS_AND_JOBS = new Set<string>([ROUTES.JOB_FIT.MATCHES, ROUTES.JOB_FIT.GAPS])
+const careersAndJobsTools = (tools: NavItemDef[]): NavItemDef[] => [
+  CAREERS_AND_JOBS_ENTRY,
+  ...tools.filter((t) => !FOLDED_INTO_CAREERS_AND_JOBS.has(t.to)),
+]
+const CAREERS_AND_JOBS_TOOLS = careersAndJobsTools(JOB_FIT_TOOLS)
+const CAREERS_AND_JOBS_TOOLS_FOR_USER = careersAndJobsTools(JOB_FIT_TOOLS_FOR_USER)
+
+/** Job Fit tools for this role, with `job_fit_v2` on (`v2`) or off (today's list). */
+export function jobFitToolsFor(role: UserRole, v2: boolean): NavItemDef[] {
+  if (!v2) return jobFitToolsForRole(role)
+  return role === "user" ? CAREERS_AND_JOBS_TOOLS_FOR_USER : CAREERS_AND_JOBS_TOOLS
 }
 
 /** Lumen — also rendered as the in-page pill row by `LumenNav`. */
