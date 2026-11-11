@@ -14,6 +14,8 @@ import { DiscoveryError, DiscoveryLoading, NoticeCard, StageHeader } from "./Dis
 import { ProgramsAtSchool } from "./ProgramsAtSchool"
 import { useDiscoveryContext } from "./discoveryContext"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { learningBlockOf, learningOf, LEARNING_TITLE, type LearningMark } from "@/lib/career-discovery/learningSection"
+import { LearningButtons, LocalOptions } from "./LearningParts"
 
 /**
  * Education paths (DISC-2). The server decides whether this stage exists on
@@ -26,10 +28,20 @@ export default function EducationPage() {
   if (!on) return <ComingNextPage stage="education" />
   // DISC-3: each school links to its cost and payback only when that stage is on.
   const costOn = journey.stages.some((s) => s.id === "cost" && s.available)
-  return <EducationPaths enabled={journey.mayProceed} costOn={costOn} />
+  // JF-10: the server's Learning and Education mark; null keeps today's page.
+  const learning = learningOf(journey.stages)
+  return <EducationPaths enabled={journey.mayProceed} costOn={costOn} learning={learning} />
 }
 
-function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean }) {
+function EducationPaths({
+  enabled,
+  costOn,
+  learning,
+}: {
+  enabled: boolean
+  costOn: boolean
+  learning: LearningMark | null
+}) {
   const { data, isLoading, isError, error } = useDiscoveryEducation(enabled)
   const [state, setState] = useState("")
   const [query, setQuery] = useState<SchoolsQuery | null>(null)
@@ -37,7 +49,17 @@ function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean
   if (isLoading) return <DiscoveryLoading label="Working out education paths" />
   if (isError || !data) return <DiscoveryError message={discoveryErrorMessage(error)} />
 
-  const header = (
+  // JF-10: present only when `job_fit_v2` applies to this person (server-decided).
+  const block = learningBlockOf(data)
+  const header = block ? (
+    <>
+      <StageHeader
+        title={LEARNING_TITLE}
+        lead="For each career area that suits you: what people usually study to get there, and the colleges, training providers, licences and apprenticeships that lead there. These are routes, not rankings."
+      />
+      {learning ? <LearningButtons learning={learning} current="education" /> : null}
+    </>
+  ) : (
     <StageHeader
       title="Education paths"
       lead="For each career area that suits you: what people usually study to get there, and schools that offer it. These are routes, not rankings."
@@ -69,8 +91,13 @@ function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean
     <div className="space-y-6">
       {header}
       {programs}
+      {block && !state ? (
+        <p className="max-w-3xl text-sm" role="status">
+          {block.homeStateNote}
+        </p>
+      ) : null}
       <label className="flex max-w-sm flex-col gap-1 text-sm">
-        <span className="font-medium">Where would you study?</span>
+        <span className="font-medium">{block ? "Your state (or any other state)" : "Where would you study?"}</span>
         <select
           className="rounded-md border bg-background px-3 py-2"
           value={state}
@@ -79,7 +106,7 @@ function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean
             setQuery((q) => (q && e.target.value ? { ...q, state: e.target.value } : null))
           }}
         >
-          <option value="">Choose a state to see schools</option>
+          <option value="">{block ? "Choose your state" : "Choose a state to see schools"}</option>
           {US_STATES.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
@@ -128,6 +155,7 @@ function EducationPaths({ enabled, costOn }: { enabled: boolean; costOn: boolean
                 {query && query.cip === p.field.code && p.credentials.some((c) => c.level === query.level) ? (
                   <SchoolList query={query} costOn={costOn} />
                 ) : null}
+                {block ? <LocalOptions path={p} state={state} block={block} /> : null}
               </CardContent>
             </Card>
           </li>
