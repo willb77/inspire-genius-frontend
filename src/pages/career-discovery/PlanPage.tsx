@@ -11,6 +11,8 @@ import { DiscoveryError, DiscoveryLoading, PayRange, StageHeader } from "./Disco
 import { useDiscoveryContext } from "./discoveryContext"
 import { STAGE_ROUTES } from "./stageRoutes"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { learningOf } from "@/lib/career-discovery/learningSection"
+import { LearningButtons } from "./LearningParts"
 
 /** My plan — one page of what the person has found so far. No invented numbers. */
 export default function PlanPage() {
@@ -19,6 +21,8 @@ export default function PlanPage() {
   const { mutate } = useAdvanceDiscovery()
   const hasAreas = (data?.careerAreas.length ?? 0) > 0
   const done = journey.stageStatus.plan === "complete"
+  // JF-10 (D8): My Plan stays, as one of the four Learning and Education buttons.
+  const learning = learningOf(journey.stages)
   useEffect(() => {
     if (hasAreas && !done) mutate({ stageId: "plan" })
   }, [hasAreas, done, mutate])
@@ -29,6 +33,7 @@ export default function PlanPage() {
   return (
     <div className="space-y-6">
       <StageHeader title="My plan" lead="What you've found so far, and what to do next." />
+      {learning ? <LearningButtons learning={learning} current="plan" /> : null}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Where you are</CardTitle>
@@ -69,7 +74,7 @@ export default function PlanPage() {
       {data.educationPaths ? (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Education paths</CardTitle>
+            <CardTitle className="text-base">{learning ? "Learning and Education Path" : "Education paths"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 text-sm">
             {data.educationPaths.length ? (
@@ -79,7 +84,9 @@ export default function PlanPage() {
                 </p>
               ))
             ) : (
-              <p className="text-muted-foreground">Not yet — do Education paths first.</p>
+              <p className="text-muted-foreground">
+                Not yet — do {learning ? "Learning and Education Path" : "Education paths"} first.
+              </p>
             )}
           </CardContent>
         </Card>

@@ -12,6 +12,8 @@ import { useDiscoveryContext } from "./discoveryContext"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import { HouseCostNoQuery } from "./house/HouseCostNoQuery"
 import { costSearch, rememberCost } from "./house/lastCost"
+import { learningOf } from "@/lib/career-discovery/learningSection"
+import { LearningButtons } from "./LearningParts"
 
 /**
  * Cost and payback (DISC-3). The server decides whether this stage exists on
@@ -23,7 +25,16 @@ export default function CostPage() {
   const { journey } = useDiscoveryContext()
   const on = journey.stages.some((s) => s.id === "cost" && s.available)
   if (!on) return <ComingNextPage stage="cost" />
-  return <CostAndPayback enabled={journey.mayProceed} />
+  // JF-10: with the server's Learning and Education mark, the four buttons sit
+  // above the page. The figures are the server's either way (/cost is unchanged).
+  const learning = learningOf(journey.stages)
+  if (!learning) return <CostAndPayback enabled={journey.mayProceed} />
+  return (
+    <div className="space-y-6">
+      <LearningButtons learning={learning} current="cost" />
+      <CostAndPayback enabled={journey.mayProceed} pathsLabel="Learning and Education Path" />
+    </div>
+  )
 }
 
 const money = (n: number) =>
@@ -37,7 +48,7 @@ function years(n: number): string {
   return `about ${n.toFixed(1)} years`
 }
 
-function CostAndPayback({ enabled }: { enabled: boolean }) {
+function CostAndPayback({ enabled, pathsLabel = "Education paths" }: { enabled: boolean; pathsLabel?: string }) {
   const [params] = useSearchParams()
   const query = costQueryFrom(params)
   const { data, isLoading, isError, error } = useDiscoveryCost(query, enabled)
@@ -67,9 +78,9 @@ function CostAndPayback({ enabled }: { enabled: boolean }) {
       <div className="space-y-6">
         {header}
         <NoticeCard title="Pick a school first">
-          <p>Choose a path and a school on Education paths, then open its cost and payback.</p>
+          <p>Choose a path and a school on {pathsLabel}, then open its cost and payback.</p>
           <Link className="underline" to={ROUTES.CAREER_DISCOVERY.EDUCATION}>
-            Go to Education paths
+            Go to {pathsLabel}
           </Link>
         </NoticeCard>
       </div>
