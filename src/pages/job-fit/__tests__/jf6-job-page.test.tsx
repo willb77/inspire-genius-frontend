@@ -16,6 +16,8 @@
  *   are the page's headings in the page's order.
  * - Local pay names its area (D13) and an empty read says so — never a number.
  * - Honor's share helpers still serve the Honor pages (F-32).
+ * - JF-12 mount: the SkillsMatch card sits inside the O*NET skills section on
+ *   the ON page only; the OFF page never draws it and never asks for it.
  */
 import fs from "fs"
 import path from "path"
@@ -53,6 +55,12 @@ jest.mock("@/services/job-fit/occupations.service", () => ({
   getOccupation: (c: string) => mockGetOccupation(c),
   getOccupationPay: (c: string) => mockGetPay(c),
 }))
+const mockSkillsOn = jest.fn()
+const mockSkillMatch = jest.fn()
+jest.mock("@/services/job-fit/skillMatch.service", () => ({
+  getSkillMatchEnabled: () => mockSkillsOn(),
+  getSkillMatch: (c: string) => mockSkillMatch(c),
+}))
 const mockFavoritesOn = jest.fn()
 jest.mock("@/services/job-fit/savedJobs.service", () => ({
   getSavedJobsEnabled: () => mockFavoritesOn(),
@@ -83,6 +91,7 @@ jest.mock("@/lib/exportTranscript", () => ({ downloadBlob: jest.fn() }))
 import FitDetailPage from "../FitDetailPage"
 import { FIT_V2_SECTION_TITLES } from "@/lib/job-fit/fitReport"
 import * as honorShare from "@/lib/honor/shareReportLink"
+import { NO_CODE_TEXT } from "../SkillsMatch"
 
 const OCC = {
   state: "ready",
@@ -97,6 +106,17 @@ const OCC = {
     education: [{ category: 6, label: "Bachelor's degree", percent: 52.4 }],
     missing: [],
   },
+}
+const SKILL_MATCH = {
+  reason: null,
+  message: null,
+  occupation: { code: "11-1021.00", socCode: "11-1021", title: "General and Operations Managers" },
+  onet: { state: "ready", release: "29.1", attribution: "O*NET 29.1 Database (CC BY 4.0)." },
+  have: [{ elementId: "2.A.1.b", name: "Active Listening", importance: 4.0, level: 4.1, yourSkill: "Listening" }],
+  toBuild: [{ elementId: "2.B.4.e", name: "Negotiation", importance: 3.8, level: 4.2 }],
+  skillCount: 2,
+  importanceThreshold: 3,
+  note: "",
 }
 const PAY_EMPTY = { state: "empty", reason: "no published national median for 11-1021 in OEWS May 2024", data: null }
 const PAY_READY = {
@@ -132,6 +152,8 @@ beforeEach(() => {
   mockGetOccupation.mockResolvedValue(OCC)
   mockGetPay.mockResolvedValue(PAY_READY)
   mockFavoritesOn.mockResolvedValue(true)
+  mockSkillsOn.mockResolvedValue(true)
+  mockSkillMatch.mockResolvedValue(SKILL_MATCH)
   mockTargetsOn.mockResolvedValue(true)
   mockRenderPdf.mockResolvedValue(new Blob(["%PDF"]))
 })
@@ -156,6 +178,10 @@ describe("switch off — today's page", () => {
     expect(mockGetOccupation).not.toHaveBeenCalled()
     expect(mockGetPay).not.toHaveBeenCalled()
     expect(mockFavoritesOn).not.toHaveBeenCalled()
+    // JF-12: the card is not on today's page, so neither skill read is made.
+    expect(screen.queryByRole("heading", { name: /skills for this job/i })).not.toBeInTheDocument()
+    expect(mockSkillsOn).not.toHaveBeenCalled()
+    expect(mockSkillMatch).not.toHaveBeenCalled()
   })
 })
 
@@ -215,7 +241,9 @@ describe("switch on — the Careers and Jobs order", () => {
     const html: string = mockRenderPdf.mock.calls[0][0]
     const pdfHeadings = [...html.matchAll(/<h2>([^<]*)<\/h2>/g)].map((m) => m[1])
     expect(pdfHeadings).toEqual([...FIT_V2_SECTION_TITLES])
-    const pageHeadings = Array.from(container.querySelectorAll("[data-jf6-section] h2"))
+    // The JF-12 card's own heading is a sub-heading inside the skills section,
+    // not a section of the page or the PDF.
+    const pageHeadings = Array.from(container.querySelectorAll("[data-jf6-section] h2:not(#skills-match-heading)"))
       .map((h) => h.textContent)
       .slice(0, FIT_V2_SECTION_TITLES.length)
     expect(pageHeadings).toEqual(pdfHeadings)
@@ -250,6 +278,72 @@ describe("switch on — the Careers and Jobs order", () => {
     expect(mockGetJob).toHaveBeenCalledWith("j1")
     expect(mockGetOccupation).toHaveBeenCalledWith("11-1021.00")
     expect(mockGetPay).toHaveBeenCalledWith("11-1021.00")
+  })
+})
+
+describe("JF-12 mount — the skills match card on the JF-6 page", () => {
+  beforeEach(() => {
+    mockData = JF6_PRIORITY
+  })
+  const skillsSection = (c: HTMLElement) => c.querySelector('[data-jf6-section="skills"]') as HTMLElement
+
+  test("the card renders inside the O*NET skills section, asked with the Job DNA code", async () => {
+    const { container } = renderPage()
+    const heading = await screen.findByRole("heading", { name: /skills for this job/i })
+    expect(skillsSection(container)).toContainElement(heading)
+    expect(await screen.findByRole("list", { name: "Skills to build" })).toHaveTextContent("Negotiation")
+    expect(skillsSection(container)).toContainElement(screen.getByRole("list", { name: "Skills you have" }))
+    expect(mockSkillMatch).toHaveBeenCalledWith("11-1021.00")
+    expect(mockSkillMatch).toHaveBeenCalledTimes(1)
+  })
+
+  test("the section order is unchanged with the card mounted", async () => {
+    const { container } = renderPage()
+    await screen.findByRole("list", { name: "Skills to build" })
+    await screen.findByRole("heading", { name: /make this my target/i })
+    expect(sections(container)).toEqual([...JF6_SECTION_ORDER])
+  })
+
+  test("the card shows no percentage of its own", async () => {
+    const { container } = renderPage()
+    const card = (await screen.findByRole("heading", { name: /skills for this job/i })).closest("section") as HTMLElement
+    await screen.findByRole("list", { name: "Skills to build" })
+    expect(card.textContent).not.toMatch(/\d\s*%/)
+    // The fit section still carries the one % on the page.
+    expect(container.querySelector('[data-jf6-section="fit"]')).toHaveTextContent("72%")
+  })
+
+  test("a job with no O*NET or SOC code: the card says so itself and asks nothing", async () => {
+    mockGetJob.mockResolvedValue({ data: { data: { id: "j1", socCode: null, onetSocCode: null } } })
+    const { container } = renderPage()
+    expect(await screen.findByText(NO_CODE_TEXT)).toBeInTheDocument()
+    expect(skillsSection(container)).toHaveTextContent(NO_CODE_TEXT)
+    expect(mockSkillMatch).not.toHaveBeenCalled()
+  })
+
+  test.each([
+    ["still loading", () => new Promise(() => {}), "Loading O*NET skills…"],
+    ["failed", () => Promise.reject(new Error("boom")), "O*NET skills could not be read just now."],
+  ])("Job DNA read %s: no card yet, never its no-code text", async (_n, answer, sectionLine) => {
+    mockGetJob.mockImplementation(answer)
+    const { container } = renderPage()
+    expect(await screen.findByText(sectionLine)).toBeInTheDocument()
+    // Give the card's switch read time to land had the card been mounted.
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByText(NO_CODE_TEXT)).not.toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: /skills for this job/i })).not.toBeInTheDocument()
+    expect(skillsSection(container)).toHaveTextContent(sectionLine)
+    expect(mockSkillsOn).not.toHaveBeenCalled()
+  })
+
+  test("Skills switched off for the person: the card draws nothing and the section is as before", async () => {
+    mockSkillsOn.mockResolvedValue(false)
+    const { container } = renderPage()
+    await screen.findByText("Coordination")
+    await waitFor(() => expect(mockSkillsOn).toHaveBeenCalled())
+    expect(screen.queryByRole("heading", { name: /skills for this job/i })).not.toBeInTheDocument()
+    expect(skillsSection(container)).toBeInTheDocument()
+    expect(mockSkillMatch).not.toHaveBeenCalled()
   })
 })
 
