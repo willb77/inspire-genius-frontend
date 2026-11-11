@@ -1,0 +1,4 @@
+careerPathways.status()
+fit.getPathway()
+switch.goalTargets()
+goals.getMyTargets()

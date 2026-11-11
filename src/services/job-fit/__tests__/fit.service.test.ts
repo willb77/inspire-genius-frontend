@@ -37,6 +37,14 @@ describe("fitService", () => {
     expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/fit/pathway")
   })
 
+  test("JF-9: getPathway with a from job sends it as ?from=, and without one is today's call", async () => {
+    mockApi.get.mockResolvedValue({ data: { data: {} } })
+    await fitService.getPathway("j1")
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/fit/pathway", { params: { from: "j1" } })
+    await fitService.getPathway(null)
+    expect(mockApi.get).toHaveBeenLastCalledWith("/v1/blueprint/fit/pathway")
+  })
+
   // ── Decision D4 — scoring-method choice ──
   test("gap method sends no ?method (bare GET, backend default)", async () => {
     mockApi.get.mockResolvedValueOnce({ data: { data: [] } })
