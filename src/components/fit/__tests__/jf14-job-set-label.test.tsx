@@ -9,8 +9,9 @@
  * does the ordering. This component never reorders (FIT-3-F1, decision 7) and
  * never decides who is local — it renders the field it was given.
  *
- * Off-state: the goldens under `__golden__/jf14-*.html` were recorded on the
- * base sha, before any JF-14 source change, from rows WITHOUT `jobSet`. Every
+ * Off-state: the goldens under `__golden_jf14__/jf14-*.html` were recorded on the
+ * base sha, before any JF-14 source change, from rows WITHOUT `jobSet`
+ * (first committed under `__golden__/`, moved byte-for-byte to `__golden_jf14__/`). Every
  * later commit must leave them byte-identical. (The FIT-5 goldens in
  * `fit5-golden.test.tsx` already pin every page's list without the key.)
  *
@@ -24,7 +25,8 @@ import { MemoryRouter } from "react-router-dom"
 import type { FitMatch } from "@/types/job-fit"
 import { FitMatchList } from "@/components/fit/FitMatchList"
 
-const GOLDEN_DIR = path.join(__dirname, "__golden__")
+// Its own directory: FIT-5's suite owns `__golden__/` and checks it has no orphans.
+const GOLDEN_DIR = path.join(__dirname, "__golden_jf14__")
 const WRITE = process.env.JF14_GOLDEN_WRITE === "1"
 
 function match(jobId: string, roleTitle: string, fitScore: number, extra: Record<string, unknown> = {}): FitMatch {
@@ -32,8 +34,8 @@ function match(jobId: string, roleTitle: string, fitScore: number, extra: Record
     jobId,
     roleTitle,
     department: jobId === "a1" ? "Operations" : null,
-    tier: "good-fit",
-    baseTier: "good-fit",
+    tier: "potential-fit",
+    baseTier: "potential-fit",
     fitBand: "Good",
     totalVariation: 40,
     behaviorVariation: 10,
@@ -86,5 +88,48 @@ describe("JF-14 off-state: rows without jobSet are today's rows", () => {
     expect(container.innerHTML + "\n").toBe(fs.readFileSync(file, "utf8"))
     expect(screen.queryByText("Local")).toBeNull()
     expect(screen.queryByText("National")).toBeNull()
+  })
+})
+
+describe("JF-14 on: each row says which job set it is from", () => {
+  it.each<Variant>(["career", "ds", "recorded"])("%s rows carry Local / National, in the server's order", (variant) => {
+    const { container } = draw(variant, WITH_SET)
+    const labels = Array.from(container.querySelectorAll("[data-job-set]")).map((el) => [
+      el.getAttribute("data-job-set"),
+      el.textContent,
+    ])
+    expect(labels).toEqual([
+      ["local", "Local"],
+      ["national", "National"],
+      ["national", "National"],
+    ])
+    // The list never reorders: the server's local-first order is the order drawn.
+    const titles = WITH_SET.map((m) => m.roleTitle)
+    const drawn = titles.map((t) => container.innerHTML.indexOf(t))
+    expect([...drawn].sort((a, b) => a - b)).toEqual(drawn)
+    // The label sits in its own row, beside that row's title.
+    const localRow = screen.getByText("Forklift Operator — Wake County").closest(variant === "career" ? "a" : "li")
+    expect(localRow).not.toBeNull()
+    expect(within(localRow as HTMLElement).getByText("Local")).toBeTruthy()
+    expect(within(localRow as HTMLElement).queryByText("National")).toBeNull()
+  })
+
+  it("removing jobSet from every row gives back today's row exactly", () => {
+    const stripped = WITH_SET.map((m) => {
+      const copy: FitMatch = { ...m }
+      delete copy.jobSet
+      return copy
+    })
+    const { container } = draw("career", [stripped[1], stripped[0], stripped[2]])
+    expect(container.innerHTML + "\n").toBe(
+      fs.readFileSync(path.join(GOLDEN_DIR, "jf14-career-no-job-set.html"), "utf8"),
+    )
+  })
+
+  it("an unknown jobSet value draws nothing", () => {
+    draw("career", [match("x", "Welder", 60, { jobSet: "regional" })])
+    expect(screen.queryByText("Local")).toBeNull()
+    expect(screen.queryByText("National")).toBeNull()
+    expect(screen.queryByText("regional")).toBeNull()
   })
 })
