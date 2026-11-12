@@ -191,8 +191,11 @@ describe("JF-8 menus — job_fit_v2 on", () => {
       // JF-13 regroups the Tools section under the same switch (Talent
       // Studio); its on state and reachability are pinned in
       // jf13-talent-studio.test.tsx. JF-8 never touches Tools, so it is left
-      // out of this comparison rather than restated here.
-      const notTools = <S extends { label: string }>(sections: S[]) => sections.filter((s) => s.label !== "Tools")
+      // out of this comparison rather than restated here. The same goes for
+      // Administration (JF-13 admin: categories), pinned in
+      // jf13-admin-categories.test.tsx.
+      const notTools = <S extends { label: string }>(sections: S[]) =>
+        sections.filter((s) => s.label !== "Tools" && s.label !== "Administration")
       const expected = notTools(off.sidebars[v]).map((section) => {
         if (section.label === "My Workspace") {
           return { ...section, items: section.items.map(swapMainEntry) }
