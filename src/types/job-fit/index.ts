@@ -107,7 +107,17 @@ export type FitMatch = FitCoverage & {
    * Optional: older backends do not send it, and absent is not zero.
    */
   criticalGapCount?: number
+  /**
+   * JF-14 — the caller's organisation has a local job set: "local" is a role
+   * the organisation itself blueprinted, "national" is every other role. The
+   * server sends it only while the org's job set and `job_fit_v2` both apply,
+   * and has already put the local rows first. Absent = today's row.
+   */
+  jobSet?: FitJobSet
 }
+
+/** JF-14 — which job set a ranked role belongs to (see `FitMatch.jobSet`). */
+export type FitJobSet = "local" | "national"
 
 /** Per-dimension comparison of the user's score against the role benchmark. */
 export type PerDimensionFit = {

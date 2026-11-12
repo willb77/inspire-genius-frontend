@@ -488,6 +488,28 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
   ],
 }
 
+/**
+ * JF-13 — the role tools that fold into the "Talent Studio" group when
+ * `job_fit_v2` is on for the person (see `useToolsSection`). Matched by object
+ * identity against {@link TOOL_ITEMS_BY_ROLE}, not by label, so a rename of
+ * either entry cannot silently drop it out of the group or leave it loose.
+ *
+ * Talent Studio holds two sections — job blueprint, then interview — with
+ * Knowledge Continuity Studio under them. SidebarScaffold renders one level of
+ * children, so an Interview Studio group nested inside Talent Studio would hide
+ * Live Interview; `useToolsSection` lifts the group's children up beside it.
+ * Off (switch loading, unreadable or false) this set is never read.
+ */
+export const TALENT_STUDIO_BLUEPRINT_TOOLS: ReadonlySet<NavItemDef> = new Set<NavItemDef>([
+  JOB_BLUEPRINT_ITEM_MANAGER,
+  JOB_BLUEPRINT_ITEM_PRACTITIONER,
+])
+export const TALENT_STUDIO_INTERVIEW_TOOLS: ReadonlySet<NavItemDef> = new Set<NavItemDef>([
+  INTERVIEW_STUDIO_GROUP_MANAGER,
+  INTERVIEW_STUDIO_GROUP_PRACTITIONER,
+  INTERVIEW_STUDIO_GROUP_SUPER_ADMIN,
+])
+
 // SUPER_ADMIN_TOOLS_SECTION was removed 2026-08-12. It wrapped
 // TOOL_ITEMS_BY_ROLE["super-admin"] in a section labelled "Tools", which is now
 // assembled — together with the vertical catalogue, Bio Capture and Platform
