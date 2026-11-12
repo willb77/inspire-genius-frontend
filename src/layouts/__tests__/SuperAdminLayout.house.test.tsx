@@ -19,6 +19,10 @@ jest.mock("@/components/layout/useVerticalLauncher", () => ({
 }))
 jest.mock("@/components/grant/GrantPreviewToggle", () => ({ __esModule: true, default: () => null }))
 jest.mock("@/lib/agentApi", () => ({ useAgentEngine: () => true }))
+// JF-13 admin: SuperAdminLayout reads `job_fit_v2` (useSavedJobsEnabled). This
+// suite has no QueryClient and pins today's menus, so the switch is off here;
+// the on state is covered in hooks/nav/__tests__/jf13-admin-categories.test.tsx.
+jest.mock("@/hooks/job-fit/useSavedJobs", () => ({ useSavedJobsEnabled: () => false }))
 
 let mockEmail: string | null = mockMail("admin")
 jest.mock("@/context/useAuth", () => ({

@@ -138,6 +138,10 @@ jest.mock("@/constants/navigation", () => {
 jest.mock("@/lib/agentApi", () => ({
   useAgentEngine: () => true,
 }));
+// JF-13 admin: SuperAdminLayout reads `job_fit_v2` (useSavedJobsEnabled). This
+// suite has no QueryClient and pins today's menu, so the switch is off here;
+// the on state is covered in hooks/nav/__tests__/jf13-admin-categories.test.tsx.
+jest.mock("@/hooks/job-fit/useSavedJobs", () => ({ useSavedJobsEnabled: () => false }));
 
 // 🔹 Mock auth — default to a NON-owner super-admin so the baseline
 // (dev-traffic-report filtered out) assertions hold; owner tests flip mockEmail.

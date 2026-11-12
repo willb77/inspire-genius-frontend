@@ -12,6 +12,8 @@ import { useAuth } from "@/context/useAuth";
 import { useAgentEngine } from "@/lib/agentApi";
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher";
 import { useToolsSection } from "@/hooks/nav/useToolsSection";
+import { groupAdministrationItems } from "@/constants/house/administrationCategories";
+import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs";
 
 export type UserLayoutProps = {
   children: React.ReactNode;
@@ -49,6 +51,9 @@ export default function UserLayout({
   const signedInRole = user?.role;
   const role: UserRole = isUserRole(signedInRole) ? signedInRole : "user";
   const toolsSection = useToolsSection(isSuperAdmin ? "super-admin" : role);
+  // JF-13 admin: `job_fit_v2` shows Administration in the house categories.
+  // Only a server `true` is on; loading, an error and false keep today's list.
+  const jobFitV2 = useSavedJobsEnabled();
 
   const toolsSections: NavSectionDef[] = useMemo(
     () => (toolsSection ? [toolsSection] : []),
@@ -86,9 +91,12 @@ export default function UserLayout({
       { label: "My Workspace", items: userNavItems },
       ...bySection("Role Views"),
       ...toolsSections,
-      ...bySection("Administration"),
+      // JF-13 admin: with job_fit_v2 on, the same entries in categories.
+      ...bySection("Administration").map((s) =>
+        jobFitV2 ? { ...s, items: groupAdministrationItems(s.items) } : s,
+      ),
     ];
-  }, [userNavItems, toolsSections]);
+  }, [userNavItems, toolsSections, jobFitV2]);
 
   return (
     <SidebarScaffold

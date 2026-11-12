@@ -14,6 +14,8 @@ import GrantPreviewToggle from "@/components/grant/GrantPreviewToggle";
 import { useAuth } from "@/context/useAuth";
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 import { HOUSE_SUPER_ADMIN_SECTIONS } from "@/constants/house/superAdminNav";
+import { groupAdministrationItems } from "@/constants/house/administrationCategories";
+import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs";
 
 export type SuperAdminLayoutProps = {
   children: React.ReactNode;
@@ -38,6 +40,9 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
   // Role Views group gives way to the "View as…" switcher on Admin home.
   // Display only — the same destinations, the same owner-only filter.
   const houseStyle = isHouseStyleOn("admin");
+  // JF-13 admin: `job_fit_v2` shows Administration in the house categories.
+  // Only a server `true` is on; loading, an error and false keep today's list.
+  const jobFitV2 = useSavedJobsEnabled();
 
   /**
    * Section order (2026-07-28): **My Workspace → Role Views → Verticals →
@@ -82,9 +87,12 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
       ...(toolsSection ? [toolsSection] : []),
       // Administration keeps its closed default (2026-10-12). It still opens on
       // any admin page, because SidebarScaffold opens the group holding the page.
-      ...bySection("Administration"),
+      // With job_fit_v2 on, the same (owner-gated) entries in categories.
+      ...bySection("Administration").map((s) =>
+        jobFitV2 ? { ...s, items: groupAdministrationItems(s.items) } : s,
+      ),
     ];
-  }, [userNavItems, toolsSection, isOwner, houseStyle]);
+  }, [userNavItems, toolsSection, isOwner, houseStyle, jobFitV2]);
 
   return (
     <SidebarScaffold
