@@ -401,6 +401,9 @@ export const ROUTES = {
     COST: "/vertical/career-discovery/cost",
     PLAN: "/vertical/career-discovery/plan",
     DEGREE_PLAN: "/vertical/career-discovery/degree-plan",
+    // CX-5: the student's career exploration exercise. Behind the server's
+    // `career_exercise` switch (off = redirected to BASE), not DiscoveryShell's.
+    EXERCISE: "/vertical/career-discovery/exercise",
   },
   ONBOARDING: {
     ONE: "/onboarding/one",

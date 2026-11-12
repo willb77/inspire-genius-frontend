@@ -282,6 +282,7 @@ const DiscoveryEducation = React.lazy(() => import("@/pages/career-discovery/Edu
 const DiscoveryCost = React.lazy(() => import("@/pages/career-discovery/CostPage"));
 const DiscoveryPlan = React.lazy(() => import("@/pages/career-discovery/PlanPage"));
 const DiscoveryDegreePlan = React.lazy(() => import("@/pages/career-discovery/DegreePlanPage"));
+const CareerExercisePage = React.lazy(() => import("@/pages/career-exercise/CareerExercisePage"));
 
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
@@ -908,6 +909,10 @@ export const routes: RouteObject[] = [
         element: <VerticalShell vertical="career-discovery" />,
         children: [
           { index: true, element: <Navigate to="/vertical/career-discovery/journey" replace /> },
+          // CX-5: the career exploration exercise. Its own gate (the server's
+          // `career_exercise` switch; off or a failed read redirects to the
+          // vertical's home), so it sits beside DiscoveryShell, not inside it.
+          { path: "exercise", element: withSuspense(<CareerExercisePage />) },
           {
             element: withSuspense(<DiscoveryShell />),
             children: [
