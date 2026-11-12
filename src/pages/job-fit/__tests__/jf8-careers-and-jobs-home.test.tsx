@@ -11,6 +11,12 @@ jest.mock("@/verticals/core", () => ({
   useVerticalAccess: () => ({ hasAccess: mockDiscoveryAccess, isLoading: false, enabledVerticals: [] }),
 }))
 
+// CX-5 link: the exercise link reads the `career_exercise` switch; off here, so
+// this suite sees JF-8's page unchanged (cx5-link-careers-and-jobs.test.tsx covers on).
+jest.mock("@/hooks/career-exercise/useCounselorCareerExercise", () => ({
+  useCareerExerciseSwitch: () => "off",
+}))
+
 jest.mock("../MatchesPage", () => ({ __esModule: true, default: () => <p>JOBS-LIST</p> }))
 jest.mock("../FavoritesList", () => ({ FavoritesList: () => <p>FAVORITES</p> }))
 

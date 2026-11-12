@@ -1,9 +1,10 @@
 import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight, Compass, GraduationCap, Route as RouteIcon } from "lucide-react"
+import { ArrowRight, Compass, GraduationCap, Route as RouteIcon, Sparkles } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { CAREERS_AND_JOBS_LABEL } from "@/constants/vertical-subnav"
 import { useVerticalAccess } from "@/verticals/core"
+import { useCareerExerciseSwitch } from "@/hooks/career-exercise/useCounselorCareerExercise"
 import {
   discoveryErrorMessage,
   useDiscoveryCareers,
@@ -173,7 +174,28 @@ function NextSteps({ learning }: { learning: boolean }) {
           text="The education and training that lead to these jobs, and what it costs."
         />
       )}
+      {learning && <ExerciseStepLink />}
     </nav>
+  )
+}
+
+/**
+ * CX-5 link — the one way into the Career Exploration exercise from this page.
+ * Only for an account with Discovery (the exercise route sits inside its
+ * VerticalShell), and only once the server says `career_exercise` is on for
+ * the signed-in person: off, loading or a failed read render nothing, so the
+ * page is exactly what it was before.
+ */
+function ExerciseStepLink() {
+  const sw = useCareerExerciseSwitch()
+  if (sw !== "on") return null
+  return (
+    <StepLink
+      to={ROUTES.CAREER_DISCOVERY.EXERCISE}
+      icon={<Sparkles className="h-5 w-5 text-[#0D9488]" aria-hidden />}
+      title="Career exploration"
+      text="Work out how you work best, then test the careers worth a closer look."
+    />
   )
 }
 
