@@ -188,7 +188,12 @@ describe("JF-8 menus — job_fit_v2 on", () => {
     const off = await dumpFor(role, "false")
     const on = await dumpFor(role, "true")
     for (const v of VERTICALS) {
-      const expected = off.sidebars[v].map((section) => {
+      // JF-13 regroups the Tools section under the same switch (Talent
+      // Studio); its on state and reachability are pinned in
+      // jf13-talent-studio.test.tsx. JF-8 never touches Tools, so it is left
+      // out of this comparison rather than restated here.
+      const notTools = <S extends { label: string }>(sections: S[]) => sections.filter((s) => s.label !== "Tools")
+      const expected = notTools(off.sidebars[v]).map((section) => {
         if (section.label === "My Workspace") {
           return { ...section, items: section.items.map(swapMainEntry) }
         }
@@ -205,7 +210,7 @@ describe("JF-8 menus — job_fit_v2 on", () => {
         }
         return section
       })
-      expect({ v, sections: on.sidebars[v] }).toEqual({ v, sections: expected })
+      expect({ v, sections: notTools(on.sidebars[v]) }).toEqual({ v, sections: expected })
     }
     const jobFitItems = on.sidebars["job-fit"].flatMap((s) => s.items)
     expect(jobFitItems.some((l) => l.startsWith("My fit") || l.startsWith("Growth areas"))).toBe(false)
