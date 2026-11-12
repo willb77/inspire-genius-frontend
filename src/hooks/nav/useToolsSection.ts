@@ -3,10 +3,15 @@ import { BookOpenText, Briefcase } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole } from "@/types/roles"
-import { TOOL_ITEMS_BY_ROLE } from "@/constants/navigation"
+import {
+  TALENT_STUDIO_BLUEPRINT_TOOLS,
+  TALENT_STUDIO_INTERVIEW_TOOLS,
+  TOOL_ITEMS_BY_ROLE,
+} from "@/constants/navigation"
 import { BROADCAST_SIDEBAR_SECTION } from "@/constants/sidebar-sections"
 import { useVerticalLauncherSection } from "@/components/layout/useVerticalLauncher"
 import { useBroadcastAccess } from "@/hooks/super-admin/useBroadcast"
+import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs"
 
 /**
  * The ONE "Tools" section — super-admin only (2026-08-12, request).
@@ -114,6 +119,66 @@ function splitCareerStudio(items: NavItemDef[]): { group: NavItemDef | null; res
 }
 
 /**
+ * JF-13 — Talent Studio (behind `job_fit_v2`). With the switch on, Career
+ * Studio, the role's Job Blueprint, the Interview Studio group and Knowledge
+ * Continuity Studio become ONE group, in two sections plus Knowledge
+ * Continuity under them:
+ *
+ *   Job Blueprint · Career Blueprint · Interview Studio · Live Interview ·
+ *   Knowledge Continuity Studio
+ *
+ * Only grouping moves: every child keeps its own route, label, entitlement
+ * greying and lock reason. SidebarScaffold renders ONE level of children, so
+ * Interview Studio's own child (Live Interview) is lifted up beside it rather
+ * than nested a second level, where it would be unreachable. Vertical children
+ * carry their route prefix as `activePrefix`, so the group opens on any page
+ * inside them, as Knowledge Continuity's top-level row did.
+ *
+ * Off — the status read loading, failing or answering false — none of this
+ * runs and the section is exactly today's.
+ */
+export const TALENT_STUDIO_LABEL = "Talent Studio"
+const TALENT_STUDIO_BLUEPRINT_PREFIXES = CAREER_STUDIO_PREFIXES
+const TALENT_STUDIO_KNOWLEDGE_PREFIX = "/vertical/knowledge-continuity"
+
+function liftVertical(items: NavItemDef[], prefix: string): NavItemDef | null {
+  const hit = items.find((i) => i.to.startsWith(prefix))
+  return hit ? { ...hit, activePrefix: prefix } : null
+}
+
+function withTalentStudio(
+  roleTools: NavItemDef[],
+  catalogue: NavItemDef[],
+): { roleTools: NavItemDef[]; catalogue: NavItemDef[] } {
+  const blueprintRole = roleTools.filter((i) => TALENT_STUDIO_BLUEPRINT_TOOLS.has(i))
+  const interviewRole = roleTools.filter((i) => TALENT_STUDIO_INTERVIEW_TOOLS.has(i))
+  const blueprintVerticals = TALENT_STUDIO_BLUEPRINT_PREFIXES.map((p) => liftVertical(catalogue, p)).filter(
+    (i): i is NavItemDef => i !== null,
+  )
+  const knowledge = liftVertical(catalogue, TALENT_STUDIO_KNOWLEDGE_PREFIX)
+
+  const children: NavItemDef[] = [
+    ...blueprintRole,
+    ...blueprintVerticals,
+    // Interview Studio stays a page; its own children sit beside it.
+    ...interviewRole.flatMap(({ children: nested, ...studio }) => [studio, ...(nested ?? [])]),
+    ...(knowledge ? [knowledge] : []),
+  ]
+  if (children.length === 0) return { roleTools, catalogue }
+
+  const folded = new Set<NavItemDef>([...blueprintRole, ...interviewRole])
+  const lifted = new Set(children.map((c) => c.to))
+  const at = roleTools.findIndex((i) => folded.has(i))
+  const keptTools = roleTools.filter((i) => !folded.has(i))
+  const group: NavItemDef = { to: "", icon: Briefcase, label: TALENT_STUDIO_LABEL, children }
+  const insertAt = at === -1 ? keptTools.length : at
+  return {
+    roleTools: [...keptTools.slice(0, insertAt), group, ...keptTools.slice(insertAt)],
+    catalogue: catalogue.filter((i) => !lifted.has(i.to)),
+  }
+}
+
+/**
  * The consolidated Tools section, or `null` when this role does not get one.
  *
  * Closed by default again (Bill, 2026-10-12: "collapse the 'Tools' and other
@@ -127,19 +192,18 @@ export function useToolsSection(role: UserRole): NavSectionDef | null {
   // skipping a hook, or the hook order would change between roles.
   const launcherSection = useVerticalLauncherSection()
   const { data: broadcastAccess } = useBroadcastAccess()
+  // JF-13: `job_fit_v2`, the same signal JF-8's menus read. Only a server
+  // `true` is on; loading, an error and false all keep today's section.
+  const jobFitV2 = useSavedJobsEnabled()
 
   return useMemo(() => {
     if (!canSeeToolsSection(role)) return null
 
-    const { group: careerStudio, rest: catalogue } = splitCareerStudio(launcherSection?.items ?? [])
-    const roleTools = [...(TOOL_ITEMS_BY_ROLE[role] ?? [])]
-    if (careerStudio) {
-      // Career Studio sits just ahead of Interview Studio among the role tools
-      // (Bio Capture → Team Development → Goals → Career → Interview …), or at
-      // the end of them when the role has no Interview Studio entry.
-      const at = roleTools.findIndex((i) => i.label === "Interview Studio")
-      roleTools.splice(at === -1 ? roleTools.length : at, 0, careerStudio)
-    }
+    const baseTools = TOOL_ITEMS_BY_ROLE[role] ?? []
+    const launcherItems = launcherSection?.items ?? []
+    const { roleTools, catalogue } = jobFitV2
+      ? withTalentStudio(baseTools, launcherItems)
+      : withCareerStudio(baseTools, launcherItems)
 
     const candidates: NavItemDef[] = [
       BIO_CAPTURE_ITEM,
@@ -169,7 +233,24 @@ export function useToolsSection(role: UserRole): NavSectionDef | null {
       items,
       defaultCollapsed: true,
     }
-  }, [role, launcherSection, broadcastAccess])
+  }, [role, launcherSection, broadcastAccess, jobFitV2])
+}
+
+/** Today's Tools grouping (switch off): Career Studio just ahead of Interview Studio. */
+function withCareerStudio(
+  baseTools: NavItemDef[],
+  launcherItems: NavItemDef[],
+): { roleTools: NavItemDef[]; catalogue: NavItemDef[] } {
+  const { group: careerStudio, rest: catalogue } = splitCareerStudio(launcherItems)
+  const roleTools = [...baseTools]
+  if (careerStudio) {
+    // Career Studio sits just ahead of Interview Studio among the role tools
+    // (Bio Capture → Team Development → Goals → Career → Interview …), or at
+    // the end of them when the role has no Interview Studio entry.
+    const at = roleTools.findIndex((i) => i.label === "Interview Studio")
+    roleTools.splice(at === -1 ? roleTools.length : at, 0, careerStudio)
+  }
+  return { roleTools, catalogue }
 }
 
 export default useToolsSection

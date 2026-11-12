@@ -21,6 +21,11 @@ jest.mock("@/components/layout/useVerticalLauncher", () => ({
   useVerticalLauncherSection: () => mockLauncher(),
 }))
 
+// JF-13: useToolsSection reads `job_fit_v2` (useSavedJobsEnabled). This suite
+// has no QueryClient and pins today's Tools section, so the switch is off here;
+// the on state is covered in hooks/nav/__tests__/jf13-talent-studio.test.tsx.
+jest.mock("@/hooks/job-fit/useSavedJobs", () => ({ useSavedJobsEnabled: () => false }))
+
 const mockBroadcast = jest.fn()
 jest.mock("@/hooks/super-admin/useBroadcast", () => ({
   useBroadcastAccess: () => mockBroadcast(),

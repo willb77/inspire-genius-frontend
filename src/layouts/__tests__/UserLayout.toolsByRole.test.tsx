@@ -31,6 +31,10 @@ jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
 const mockUseAuth = jest.fn();
 jest.mock("@/context/useAuth", () => ({ useAuth: () => mockUseAuth() }));
 jest.mock("@/lib/agentApi", () => ({ useAgentEngine: () => true }));
+// JF-13: useToolsSection reads `job_fit_v2` (useSavedJobsEnabled). This suite
+// has no QueryClient and pins today's Tools section, so the switch is off here;
+// the on state is covered in hooks/nav/__tests__/jf13-talent-studio.test.tsx.
+jest.mock("@/hooks/job-fit/useSavedJobs", () => ({ useSavedJobsEnabled: () => false }));
 jest.mock("@/hooks/super-admin/useBroadcast", () => ({
   useBroadcastAccess: () => ({ data: { authorized: false } }),
 }));
