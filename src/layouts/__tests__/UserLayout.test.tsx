@@ -37,6 +37,15 @@ jest.mock("@/context/useAuth", () => ({
 jest.mock("@/lib/agentApi", () => ({
   useAgentEngine: () => false,
 }));
+// JF-13 admin: UserLayout reads `job_fit_v2` (useSavedJobsEnabled) and, when it
+// is on, groups Administration through the house menu. This suite has no
+// QueryClient, stubs the routes table and pins today's menu, so the switch is
+// off here and the grouping module is not loaded; the on state is covered in
+// hooks/nav/__tests__/jf13-admin-categories.test.tsx.
+jest.mock("@/hooks/job-fit/useSavedJobs", () => ({ useSavedJobsEnabled: () => false }));
+jest.mock("@/constants/house/administrationCategories", () => ({
+  groupAdministrationItems: (items: unknown[]) => items,
+}));
 
 // My Workspace = the user menu with entitled workspace verticals (Job Fit,
 // Lumen) spliced in. The splice has its own coverage in

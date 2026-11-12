@@ -15,6 +15,7 @@ import { useAgentEngine } from "@/lib/agentApi"
 import { useAuth } from "@/context/useAuth"
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
 import { useToolsSection } from "@/hooks/nav/useToolsSection"
+import { groupAdministrationItems } from "@/constants/house/administrationCategories"
 import { getVertical, type VerticalKey } from "@/verticals/core"
 import { discoveryMenu } from "@/lib/career-discovery/profileSection"
 import { useProfileMerged } from "@/hooks/career-discovery/useProfileMerged"
@@ -119,9 +120,15 @@ export function useVerticalPageSections(
       })
     }
 
-    sections.push(...adminSection("Administration"))
+    // JF-13 admin: with job_fit_v2 on, the same (owner-gated) entries in the
+    // house categories. Off (loading, error, false) the list is today's.
+    sections.push(
+      ...adminSection("Administration").map((s) =>
+        jobFitV2 ? { ...s, items: groupAdministrationItems(s.items) } : s,
+      ),
+    )
     return sections
-  }, [workspaceItems, toolsSection, subNav, definition, vertical, isSuperAdmin, isOwner])
+  }, [workspaceItems, toolsSection, subNav, definition, vertical, isSuperAdmin, isOwner, jobFitV2])
 }
 
 export default useVerticalPageSections
