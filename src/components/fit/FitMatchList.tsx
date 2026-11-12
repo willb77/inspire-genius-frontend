@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { AlertTriangle, Building2, ChevronRight, Target } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { partialCoverage, partialProfileDetail } from "@/lib/job-fit/coverage"
-import type { FitMatch } from "@/types/job-fit"
+import type { FitJobSet, FitMatch } from "@/types/job-fit"
 import type { JobComponents } from "@/types/job-fit/components"
 import {
   displayFitPercent,
@@ -46,6 +46,26 @@ export type FitMatchRowProps =
     })
   | (RowCommon & { variant: "recorded" })
 
+/**
+ * JF-14 — the words for each job set. Only these two values ever draw; an
+ * absent or unknown `jobSet` draws nothing, so a row without it is today's.
+ */
+const JOB_SET_LABEL: Record<FitJobSet, { text: string; title: string }> = {
+  local: { text: "Local", title: "A job your organisation has blueprinted" },
+  national: { text: "National", title: "From the national job library" },
+}
+
+/** JF-14 — "Local" / "National", from the server's `jobSet`; nothing without it. */
+function JobSetLabel({ jobSet }: { jobSet: FitMatch["jobSet"] }) {
+  const label = jobSet ? JOB_SET_LABEL[jobSet] : undefined
+  if (!label) return null
+  return (
+    <span title={label.title} data-job-set={jobSet} className="shrink-0">
+      <FitPill tone={jobSet === "local" ? "teal" : "gray"}>{label.text}</FitPill>
+    </span>
+  )
+}
+
 /** One ranked role. Its % is always `displayFitPercent(match)` (FIT-1). */
 export function FitMatchRow(props: FitMatchRowProps) {
   const { match } = props
@@ -60,6 +80,7 @@ export function FitMatchRow(props: FitMatchRowProps) {
         <Link to={fitDetailPath(match.jobId, match.method)} className="min-w-0 flex-1 truncate font-medium text-[#1f2937] hover:text-[#0D9488]">
           {match.roleTitle}
         </Link>
+        <JobSetLabel jobSet={match.jobSet} />
         <FitPill tone={fitPercentTone(pct)}>{pct}% fit</FitPill>
       </li>
     )
@@ -86,6 +107,7 @@ export function FitMatchRow(props: FitMatchRowProps) {
           <span className="min-w-0 flex-1">
             <span className="block truncate font-medium">{match.roleTitle}</span>
             <span className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <JobSetLabel jobSet={match.jobSet} />
               {match.department && (
                 <span className="inline-flex items-center gap-1">
                   <Building2 className="h-3 w-3" aria-hidden />
@@ -140,6 +162,7 @@ export function FitMatchRow(props: FitMatchRowProps) {
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <span className="truncate text-base font-semibold text-[#1f2937]">{match.roleTitle}</span>
+          <JobSetLabel jobSet={match.jobSet} />
           {goal?.status === "scored" && (
             <FitPill tone={VERDICT_TONE[goal.verdict]}>{VERDICT_LABEL[goal.verdict]}</FitPill>
           )}
