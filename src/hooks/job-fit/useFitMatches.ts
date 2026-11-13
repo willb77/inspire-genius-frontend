@@ -2,7 +2,7 @@ import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/r
 import type { AxiosError } from "axios"
 import { fitService } from "@/services/job-fit/fit.service"
 import { normalizeMatches, type MatchesEnvelope, type MatchesResult } from "@/lib/job-fit/matches"
-import type { FitMatch, FitMethod } from "@/types/job-fit"
+import type { FitMatch, FitMethod, FitOrder } from "@/types/job-fit"
 
 /**
  * The query, exactly as before (`data` is the ranked rows), plus `gated`.
@@ -34,12 +34,16 @@ export const FIT_MATCHES_STALE_MS = 5 * 60_000
  */
 export function useFitMatches(
   method: FitMethod = "gap",
-  options?: Partial<UseQueryOptions<MatchesResult, AxiosError>>
+  options?: Partial<UseQueryOptions<MatchesResult, AxiosError>>,
+  order?: FitOrder
 ): FitMatchesQuery {
+  // JF-14b: only Direction Setting ever passes `order`, and only "fit" changes
+  // the request or the key — every Career Fit caller is today's key and call.
+  const fit = order === "fit"
   const query = useQuery<MatchesResult, AxiosError>({
-    queryKey: ["job-fit", "matches", method],
+    queryKey: fit ? ["job-fit", "matches", method, "fit"] : ["job-fit", "matches", method],
     queryFn: async () => {
-      const res = await fitService.getMatches(method)
+      const res = fit ? await fitService.getMatches(method, "fit") : await fitService.getMatches(method)
       return normalizeMatches(res.data as MatchesEnvelope)
     },
     ...options,

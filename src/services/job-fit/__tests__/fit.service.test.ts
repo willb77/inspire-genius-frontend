@@ -60,6 +60,31 @@ describe("fitService", () => {
     })
   })
 
+  // ── JF-14b — order: only "fit" is ever sent ──
+  test("order=local (or absent) is today's call, under either method", async () => {
+    mockApi.get.mockResolvedValue({ data: { data: [] } })
+    await fitService.getMatches("gap", "local")
+    expect(mockApi.get).toHaveBeenLastCalledWith("/v1/blueprint/fit/matches")
+    await fitService.getMatches(undefined, "local")
+    expect(mockApi.get).toHaveBeenLastCalledWith("/v1/blueprint/fit/matches")
+    await fitService.getMatches("closeness", "local")
+    expect(mockApi.get).toHaveBeenLastCalledWith("/v1/blueprint/fit/matches", {
+      params: { method: "closeness" },
+    })
+  })
+
+  test("order=fit sends ?order=fit, alongside ?method only when closeness", async () => {
+    mockApi.get.mockResolvedValue({ data: { data: [] } })
+    await fitService.getMatches("gap", "fit")
+    expect(mockApi.get).toHaveBeenLastCalledWith("/v1/blueprint/fit/matches", {
+      params: { order: "fit" },
+    })
+    await fitService.getMatches("closeness", "fit")
+    expect(mockApi.get).toHaveBeenLastCalledWith("/v1/blueprint/fit/matches", {
+      params: { method: "closeness", order: "fit" },
+    })
+  })
+
   test("getDetail forwards the closeness method", async () => {
     mockApi.get.mockResolvedValueOnce({ data: { data: { jobId: "j1" } } })
     await fitService.getDetail("j1", "closeness")

@@ -4,6 +4,7 @@ import type {
   FitMatch,
   FitDetail,
   FitMethod,
+  FitOrder,
   FitPathway,
   FitTargetRequest,
   FitSnapshot,
@@ -27,8 +28,13 @@ function methodParams(method?: FitMethod) {
 
 export const fitService = {
   /** GET /v1/blueprint/fit/matches — the user's ranked matches, best-first. */
-  getMatches(method?: FitMethod) {
-    const cfg = methodParams(method)
+  getMatches(method?: FitMethod, order?: FitOrder) {
+    // JF-14b: `order` is sent only when it is "fit"; "local" is the server's
+    // default, so the bare/`method`-only call below stays byte-for-byte today's.
+    const cfg =
+      order === 'fit'
+        ? { params: { ...methodParams(method)?.params, order } }
+        : methodParams(method)
     const url = `${BASE}/matches`
     // Default (gap) path stays a bare GET — identical call signature to before.
     return cfg
