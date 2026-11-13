@@ -310,7 +310,8 @@ export default function MatchesPage() {
   const selected = matches.find((m) => m.jobId === selectedId) ?? null
   // JF-14b — offer the order only when it changes something: the server marked
   // at least one of the person's own organisation's roles `local`.
-  const showOrder = !gated && hasLocalJobSet(matches)
+  // (Never while gated: the list, and this toggle inside it, is not drawn then.)
+  const showOrder = hasLocalJobSet(matches)
   const chooseOrder = (next: FitOrder) => {
     if (next === order) return
     orderChanged.current = true

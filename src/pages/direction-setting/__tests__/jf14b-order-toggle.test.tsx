@@ -244,6 +244,22 @@ describe("JF-14b: switching the order", () => {
     expect(mockUseMatches.mock.calls.every((c) => c.length === 1)).toBe(true)
     expect(stage7()).toEqual(["a1"])
   })
+
+  test("…so a refetch that moves the first row still records it, as it does today", () => {
+    // Today, with the order never touched, a refetch that brings a new first
+    // row records it (one write per role). Clicking the order that was already
+    // chosen is not a change of order, so it must not switch that off.
+    serveDs({ local: LOCAL_FIRST, fit: BEST_FIT })
+    const { rerender } = page()
+    fireEvent.click(screen.getByRole("radio", { name: /local jobs first/i }))
+    serveDs({ local: [FORKLIFT, NURSE, ELECTRICIAN].reverse(), fit: BEST_FIT })
+    rerender(
+      <MemoryRouter>
+        <MatchesPage />
+      </MemoryRouter>,
+    )
+    expect(stage7()).toEqual(["a1", "n2"])
+  })
 })
 
 describe("JF-14b with fit_shared_display ON (Career Fit's hook)", () => {
@@ -293,7 +309,8 @@ describe("JF-14b hooks", () => {
     await waitFor(() => expect(b.result.current.isSuccess).toBe(true))
     const c = renderHook(() => hook("gap", undefined, "fit"), { wrapper })
     await waitFor(() => expect(c.result.current.isSuccess).toBe(true))
-    expect(spy.mock.calls).toEqual([["gap"], ["gap", "fit"]])
+    // strict: the default call must not even carry an undefined second argument
+    expect(spy.mock.calls).toStrictEqual([["gap"], ["gap", "fit"]])
     const keys = qc.getQueryCache().getAll().map((q) => q.queryKey)
     expect(keys).toEqual([[...prefix, "gap"], [...prefix, "gap", "fit"]])
     spy.mockRestore()
