@@ -65,6 +65,9 @@ jest.mock("@/components/shared/ActionMenu", () => (props: any) => (
     {props.showPrismAccess && (
       <button onClick={props.onPrismAccess}>PRISM survey access</button>
     )}
+    {props.showVerticalEntitlements && (
+      <button onClick={props.onVerticalEntitlements}>Vertical entitlements</button>
+    )}
   </>
 ));
 
@@ -84,9 +87,29 @@ jest.mock(
   () => (props: { open: boolean; target?: { email: string } | null }) =>
     props.open ? <div data-testid="prism-access-dialog">{props.target?.email}</div> : null
 );
-jest.mock("@/components/super-admin/prism-access/PrismApproversPanel", () => () => (
-  <div data-testid="prism-approvers-panel" />
-));
+jest.mock(
+  "@/components/super-admin/prism-access/PrismApproversPanel",
+  () => (props: { capability?: string }) => (
+    <div data-testid="prism-approvers-panel">{props.capability ?? "prism_survey_access"}</div>
+  )
+);
+
+/* -------------------------------------------------
+ MOCK VERTICAL ENTITLEMENTS (approver-gated; the backend decides)
+------------------------------------------------- */
+let mockEntitlementPerms = { canManageEntitlements: false };
+const mockEntitlementPermsEnabled = jest.fn();
+jest.mock("@/hooks/super-admin/vertical-entitlements/useVerticalEntitlementsAdmin", () => ({
+  useVerticalEntitlementsPermission: (enabled: boolean) => {
+    mockEntitlementPermsEnabled(enabled);
+    return enabled ? mockEntitlementPerms : { canManageEntitlements: false };
+  },
+}));
+jest.mock(
+  "@/components/super-admin/vertical-entitlements/VerticalEntitlementsDialog",
+  () => (props: { open: boolean; target?: { email: string } | null }) =>
+    props.open ? <div data-testid="entitlements-dialog">{props.target?.email}</div> : null
+);
 
 // Default mock for UserFormModal
 let mockFormSubmitData = {
@@ -1345,5 +1368,49 @@ describe("UserManagement — PRISM survey access (approvers only)", () => {
     renderPage();
     fireEvent.click(screen.getByText("PRISM approvers"));
     expect(screen.getByTestId("prism-approvers-panel")).toBeInTheDocument();
+  });
+});
+
+describe("UserManagement — vertical entitlements (approvers only)", () => {
+  beforeEach(() => {
+    queryClient.clear();
+    mockIsSuperAdmin = true;
+    mockRenderHeaderExtras = true;
+    mockPrismPerms = { canManagePrismAccess: false, isOwner: false };
+    mockEntitlementPerms = { canManageEntitlements: false };
+    oneUser({});
+  });
+  afterEach(() => {
+    mockRenderHeaderExtras = false;
+    jest.clearAllMocks();
+  });
+
+  it("shows no entitlements item and no approvers button to a super-admin who is not an approver", () => {
+    renderPage();
+    expect(screen.queryByText("Vertical entitlements")).not.toBeInTheDocument();
+    expect(screen.queryByText("Entitlement approvers")).not.toBeInTheDocument();
+  });
+
+  it("asks the backend only for a super-admin", () => {
+    mockIsSuperAdmin = false;
+    mockEntitlementPerms = { canManageEntitlements: true };
+    renderPage();
+    expect(mockEntitlementPermsEnabled).toHaveBeenCalledWith(false);
+    expect(screen.queryByText("Vertical entitlements")).not.toBeInTheDocument();
+  });
+
+  it("an approver gets the Action-menu item, which opens the dialog for that row", () => {
+    mockEntitlementPerms = { canManageEntitlements: true };
+    renderPage();
+    expect(screen.queryByText("PRISM survey access")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Vertical entitlements"));
+    expect(screen.getByTestId("entitlements-dialog")).toHaveTextContent("test@example.com");
+  });
+
+  it("only the owner gets the entitlement approvers control, for that capability", () => {
+    mockPrismPerms = { canManagePrismAccess: true, isOwner: true };
+    renderPage();
+    fireEvent.click(screen.getByText("Entitlement approvers"));
+    expect(screen.getByTestId("prism-approvers-panel")).toHaveTextContent("vertical_entitlements");
   });
 });

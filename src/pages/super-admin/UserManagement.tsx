@@ -71,6 +71,11 @@ import PrismAccessDialog, {
 } from "@/components/super-admin/prism-access/PrismAccessDialog";
 import PrismApproversPanel from "@/components/super-admin/prism-access/PrismApproversPanel";
 import { usePrismAccessPermissions } from "@/hooks/super-admin/prism-access/usePrismAccessAdmin";
+import VerticalEntitlementsDialog, {
+  type EntitlementsTarget,
+} from "@/components/super-admin/vertical-entitlements/VerticalEntitlementsDialog";
+import { useVerticalEntitlementsPermission } from "@/hooks/super-admin/vertical-entitlements/useVerticalEntitlementsAdmin";
+import { VERTICAL_ENTITLEMENTS_CAPABILITY } from "@/types/super-admin/vertical-entitlements";
 
 export default function UserManagement() {
   const pageSize = 10;
@@ -228,6 +233,16 @@ export default function UserManagement() {
   const openPrismAccess = useCallback((target: PrismAccessTarget) => {
     setPrismAccessTarget(target);
     setPrismAccessOpen(true);
+  }, []);
+  // Vertical entitlements — same approver gate, its own capability. The
+  // backend decides; a super-admin who is not an approver sees no menu item.
+  const { canManageEntitlements } = useVerticalEntitlementsPermission(canAssignOrg);
+  const [entitlementsOpen, setEntitlementsOpen] = useState(false);
+  const [entitlementApproversOpen, setEntitlementApproversOpen] = useState(false);
+  const [entitlementsTarget, setEntitlementsTarget] = useState<EntitlementsTarget | null>(null);
+  const openEntitlements = useCallback((target: EntitlementsTarget) => {
+    setEntitlementsTarget(target);
+    setEntitlementsOpen(true);
   }, []);
   const [prismIngestOpen, setPrismIngestOpen] = useState(false);
   const [prismTargets, setPrismTargets] = useState<PrismIngestTarget[]>([]);
@@ -686,6 +701,10 @@ export default function UserManagement() {
           onPrismAccess={() =>
             openPrismAccess({ id: row.id, email: row.email, name: row.name })
           }
+          showVerticalEntitlements={canManageEntitlements}
+          onVerticalEntitlements={() =>
+            openEntitlements({ id: row.id, email: row.email, name: row.name })
+          }
         />
       ),
     },
@@ -704,6 +723,12 @@ export default function UserManagement() {
                 <Button variant="outline" onClick={() => setApproversOpen(true)}>
                   <ShieldCheck className="size-4" />
                   PRISM approvers
+                </Button>
+              )}
+              {isOwner && (
+                <Button variant="outline" onClick={() => setEntitlementApproversOpen(true)}>
+                  <ShieldCheck className="size-4" />
+                  Entitlement approvers
                 </Button>
               )}
               <Button
@@ -858,6 +883,28 @@ export default function UserManagement() {
         onOpenChange={setPrismAccessOpen}
         target={prismAccessTarget}
       />
+
+      <VerticalEntitlementsDialog
+        open={entitlementsOpen}
+        onOpenChange={setEntitlementsOpen}
+        target={entitlementsTarget}
+      />
+
+      {isOwner && (
+        <Dialog open={entitlementApproversOpen} onOpenChange={setEntitlementApproversOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Vertical entitlements approvers</DialogTitle>
+              <DialogDescription className="sr-only">
+                Add or remove the super-admins who may grant or revoke vertical entitlements.
+              </DialogDescription>
+            </DialogHeader>
+            {entitlementApproversOpen && (
+              <PrismApproversPanel capability={VERTICAL_ENTITLEMENTS_CAPABILITY} />
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
 
       {isOwner && (
         <Dialog open={approversOpen} onOpenChange={setApproversOpen}>
