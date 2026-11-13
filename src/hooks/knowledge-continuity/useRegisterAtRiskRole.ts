@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { registerAtRiskRole } from "@/services/knowledge-continuity/continuity.service"
 import type { RegisterRiskRequest, RiskEntry } from "@/types/knowledge-continuity"
 
@@ -24,8 +25,8 @@ export function useRegisterAtRiskRole() {
         `${entry.role_title} registered — KRI ${entry.kri.toFixed(2)}, priority ${entry.capture_priority}`
       )
     },
-    onError: () => {
-      toast.error("Couldn't register this role. Please try again.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't register this role. Please try again."))
     },
   })
 }

@@ -30,6 +30,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useContinuityAnalytics } from "@/hooks/knowledge-continuity/useContinuityAnalytics"
+import { isKceAccessDenied } from "@/services/knowledge-continuity/authz"
+import { KceAccessNotice } from "./KceAccessNotice"
 import type {
   CapturePriority,
   CaptureSessionStats,
@@ -231,7 +233,7 @@ function CapturePipelineCard({ sessions }: { sessions: CaptureSessionStats }) {
  * language — no raw PRISM dimension names surfaced here.
  */
 export default function KceDashboardPage() {
-  const { data: analytics, isLoading, isError } = useContinuityAnalytics()
+  const { data: analytics, isLoading, isError, error } = useContinuityAnalytics()
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -247,7 +249,9 @@ export default function KceDashboardPage() {
 
       {isLoading && <StatCardSkeletons />}
 
-      {!isLoading && isError && (
+      {!isLoading && isError && isKceAccessDenied(error) && <KceAccessNotice />}
+
+      {!isLoading && isError && !isKceAccessDenied(error) && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             We couldn't load Program Health right now. Try again shortly.

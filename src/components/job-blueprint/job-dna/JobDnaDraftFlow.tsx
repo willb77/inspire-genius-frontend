@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { ACCEPTED_ROLE_FILE_TYPES, extractRoleText } from "@/lib/extractRoleText"
 import { getSavedRoleBlueprint } from "@/services/knowledge-continuity/continuity.service"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { calculateBenchmark, getInterpretation } from "@/lib/job-blueprint/scoring"
 import { useAllRoles, KCE_ORG_ID } from "@/hooks/job-blueprint/useAllRoles"
 import { useDraftBenchmark } from "@/hooks/job-blueprint/useDraftBenchmark"
@@ -136,7 +137,7 @@ type FormValues = z.infer<typeof formSchema>
 function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) => void }) {
   const navigate = useNavigate()
   const draft = useDraftBenchmark()
-  const { roles, isLoading: rolesLoading } = useAllRoles()
+  const { roles, isLoading: rolesLoading, kceError } = useAllRoles()
 
   const { register, handleSubmit, control, setValue, getValues, formState: { errors } } =
     useForm<FormValues>({
@@ -288,6 +289,11 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
                   : "Pick an existing role — a Job DNA role opens its blueprint; a Knowledge Continuity role seeds this draft."}
               </p>
             </div>
+          )}
+          {kceError != null && (
+            <p role="alert" className="text-xs text-muted-foreground">
+              {kceErrorMessage(kceError, "Couldn't load the roles saved in Knowledge Continuity.")}
+            </p>
           )}
 
           {/* Upload a role document */}

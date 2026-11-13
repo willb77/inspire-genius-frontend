@@ -24,6 +24,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { ROUTES } from "@/constants/routes"
 import { useSavedRoles } from "@/hooks/knowledge-continuity/useSavedRoles"
+import { isKceAccessDenied } from "@/services/knowledge-continuity/authz"
+import { KceAccessInline } from "./KceAccessNotice"
 import { useSavedRoleBlueprint } from "@/hooks/knowledge-continuity/useSavedRoleBlueprint"
 import { useStartCaptureSession } from "@/hooks/knowledge-continuity/useStartCaptureSession"
 import { useNextQuestion } from "@/hooks/knowledge-continuity/useNextQuestion"
@@ -103,7 +105,7 @@ function HowItWorks() {
 
 function ChooseRoleStep({ onPick }: { onPick: (roleTitle: string) => void }) {
   const navigate = useNavigate()
-  const { data: roles = [], isLoading } = useSavedRoles(CAPTURE_ORG_ID)
+  const { data: roles = [], isLoading, isError, error } = useSavedRoles(CAPTURE_ORG_ID)
 
   return (
     <Card>
@@ -119,6 +121,8 @@ function ChooseRoleStep({ onPick }: { onPick: (roleTitle: string) => void }) {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading your saved roles…
           </div>
+        ) : isError && isKceAccessDenied(error) ? (
+          <KceAccessInline />
         ) : roles.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">

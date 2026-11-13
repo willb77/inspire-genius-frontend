@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { publishCurriculum } from "@/services/knowledge-continuity/continuity.service"
 import type {
   PublishCurriculumRequest,
@@ -24,8 +25,8 @@ export function usePublishCurriculum() {
       qc.invalidateQueries({ queryKey: ["knowledge-continuity", "curricula"] })
       toast.success("Curriculum published")
     },
-    onError: () => {
-      toast.error("Couldn't publish the curriculum. Please try again.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't publish the curriculum. Please try again."))
     },
   })
 }

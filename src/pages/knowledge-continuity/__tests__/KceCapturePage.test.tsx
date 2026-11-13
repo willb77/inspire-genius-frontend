@@ -6,10 +6,11 @@ import userEvent from "@testing-library/user-event"
 import type { UserEvent } from "@testing-library/user-event"
 
 // ── Router (arrive with ?role=) + toast ───────────────────────────────────────
+let mockSearch = "role=Senior%20Water%20Treatment%20Operator"
 jest.mock("react-router-dom", () => ({
   useNavigate: () => jest.fn(),
   useSearchParams: () => [
-    new URLSearchParams("role=Senior%20Water%20Treatment%20Operator"),
+    new URLSearchParams(mockSearch),
     jest.fn(),
   ],
 }))
@@ -47,8 +48,9 @@ const loadBlueprintMutate = jest.fn((_role, opts) => opts?.onSuccess?.(BLUEPRINT
 jest.mock("@/hooks/knowledge-continuity/useSavedRoleBlueprint", () => ({
   useSavedRoleBlueprint: () => ({ mutate: loadBlueprintMutate, isPending: false }),
 }))
+let mockSavedRoles: Record<string, unknown> = { data: [], isLoading: false }
 jest.mock("@/hooks/knowledge-continuity/useSavedRoles", () => ({
-  useSavedRoles: () => ({ data: [], isLoading: false }),
+  useSavedRoles: () => mockSavedRoles,
 }))
 
 const mockStartSession = { mutateAsync: jest.fn(), isPending: false }
@@ -81,6 +83,8 @@ import KceCapturePage from "../KceCapturePage"
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockSearch = "role=Senior%20Water%20Treatment%20Operator"
+  mockSavedRoles = { data: [], isLoading: false }
   loadBlueprintMutate.mockImplementation((_role, opts) => opts?.onSuccess?.(BLUEPRINT))
   mockStartSession.mutateAsync.mockResolvedValue({ id: "session-1" })
   nextQuestionMutate.mockImplementation((_vars, opts) =>
@@ -182,5 +186,24 @@ describe("KceCapturePage (blueprint-driven)", () => {
     expect(await screen.findByText(/capture complete/i)).toBeInTheDocument()
     expect(screen.getByText("Restart the pumps in sequence")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /review & validate/i })).toBeInTheDocument()
+  })
+})
+
+describe("KceCapturePage (choosing a role)", () => {
+  test("a 403 on the saved roles says so instead of 'No saved roles yet'", () => {
+    mockSearch = ""
+    mockSavedRoles = { data: [], isLoading: false, isError: true, error: { response: { status: 403 } } }
+    render(<KceCapturePage />)
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "You don't have access to this organisation's knowledge."
+    )
+    expect(screen.queryByText(/No saved roles yet/i)).not.toBeInTheDocument()
+  })
+
+  test("with no roles and no error it still shows the friendly empty state", () => {
+    mockSearch = ""
+    render(<KceCapturePage />)
+    expect(screen.getByText(/No saved roles yet/i)).toBeInTheDocument()
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 })

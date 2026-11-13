@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { getSavedRoleBlueprint } from "@/services/knowledge-continuity/continuity.service"
 import type { SavedRoleBlueprint } from "@/types/knowledge-continuity"
 
@@ -16,8 +17,8 @@ export function useSavedRoleBlueprint(orgId: string) {
       if (!res.data) throw new Error("No blueprint returned for that role")
       return res.data
     },
-    onError: () => {
-      toast.error("Couldn't load that saved role. Please try again.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't load that saved role. Please try again."))
     },
   })
 }

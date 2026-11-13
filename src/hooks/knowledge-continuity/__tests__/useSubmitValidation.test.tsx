@@ -89,4 +89,17 @@ describe("useSubmitValidation", () => {
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(toast.error).toHaveBeenCalledWith("Couldn't submit the review. Please try again.")
   })
+
+  test("a 403 says the reviewer lacks access, not 'try again'", async () => {
+    mockSubmitValidation.mockRejectedValue({ response: { status: 403 } })
+
+    const { result } = renderHook(() => useSubmitValidation(), { wrapper })
+    result.current.mutate({
+      unitId: "unit-1",
+      body: { validator_user_id: "self", method: "sme_review", verdict: "confirm" },
+    })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(toast.error).toHaveBeenCalledWith("You don't have access to this organisation's knowledge.")
+  })
 })

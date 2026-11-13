@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { synthesizeUnits } from "@/services/knowledge-continuity/continuity.service"
 import type { ExtractedUnit } from "@/types/knowledge-continuity"
 
@@ -20,8 +21,8 @@ export function useSynthesizeUnits() {
       const res = await synthesizeUnits(sessionId, units)
       return res.data
     },
-    onError: () => {
-      toast.error("Couldn't send the capture for review. Please try again.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't send the capture for review. Please try again."))
     },
   })
 }

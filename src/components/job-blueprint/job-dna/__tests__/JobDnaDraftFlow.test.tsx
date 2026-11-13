@@ -17,9 +17,10 @@ const draftMutate = jest.fn()
 const createMutateAsync = jest.fn()
 const finalizeMutateAsync = jest.fn()
 
+let mockKceError: unknown = null
 jest.mock("@/hooks/job-blueprint/useAllRoles", () => ({
   KCE_ORG_ID: "kce-capture",
-  useAllRoles: () => ({ roles: [], isLoading: false }),
+  useAllRoles: () => ({ roles: [], isLoading: false, kceError: mockKceError }),
 }))
 jest.mock("@/hooks/job-blueprint/useDraftBenchmark", () => ({
   useDraftBenchmark: () => ({ mutate: draftMutate, isPending: false }),
@@ -51,6 +52,7 @@ const SAMPLE_DRAFT = {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockKceError = null
   createMutateAsync.mockResolvedValue({ id: "new-id" })
   finalizeMutateAsync.mockResolvedValue({})
   // The draft mutation resolves immediately into the review step.
@@ -115,5 +117,28 @@ describe("JobDnaDraftFlow", () => {
     await waitFor(() => expect(screen.getByText("Blueprint drafted")).toBeInTheDocument())
     fireEvent.click(screen.getByRole("button", { name: /start over/i }))
     expect(screen.getByText("Draft a blueprint")).toBeInTheDocument()
+  })
+})
+
+describe("JobDnaDraftFlow role picker (KCE refused)", () => {
+  it("a 403 from KCE says so instead of silently showing no KCE roles", () => {
+    mockKceError = { response: { status: 403 } }
+    render(<JobDnaDraftFlow />)
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "You don't have access to this organisation's knowledge."
+    )
+  })
+
+  it("any other KCE failure says the roles could not be loaded", () => {
+    mockKceError = { response: { status: 500 } }
+    render(<JobDnaDraftFlow />)
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn't load the roles saved in Knowledge Continuity."
+    )
+  })
+
+  it("no KCE error, no notice", () => {
+    render(<JobDnaDraftFlow />)
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 })

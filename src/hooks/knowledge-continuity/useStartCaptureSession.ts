@@ -1,6 +1,11 @@
 import { useMutation } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import {
+  KCE_ACCESS_DENIED_MESSAGE,
+  isKceAccessDenied,
+  kceErrorDetail,
+} from "@/services/knowledge-continuity/authz"
 import { startCaptureSession } from "@/services/knowledge-continuity/continuity.service"
 import type { StartSessionRequest, StartSessionResponse } from "@/types/knowledge-continuity"
 
@@ -24,8 +29,15 @@ export function useStartCaptureSession() {
       toast.success(`Capture session started — ${session.id}`)
     },
     onError: (error) => {
-      if (error.response?.status === 403) {
-        toast.error(CONSENT_REQUIRED_MESSAGE)
+      if (isKceAccessDenied(error)) {
+        // Two different refusals share 403: the consent gate (its detail
+        // names consent) and the organisation access check. Only the first
+        // is fixed by attaching a consent id, so do not suggest it for the
+        // second.
+        const detail = kceErrorDetail(error) ?? ""
+        toast.error(
+          /consent/i.test(detail) || detail === "" ? CONSENT_REQUIRED_MESSAGE : KCE_ACCESS_DENIED_MESSAGE
+        )
         return
       }
       toast.error("Couldn't start the capture session. Please try again.")

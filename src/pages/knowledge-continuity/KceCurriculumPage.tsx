@@ -29,7 +29,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useAuth } from "@/context/useAuth"
+import { isKceAccessDenied } from "@/services/knowledge-continuity/authz"
+import { KceAccessInline, KceAccessNotice } from "./KceAccessNotice"
 import { useCurricula } from "@/hooks/knowledge-continuity/useCurricula"
 import { useCurriculum } from "@/hooks/knowledge-continuity/useCurriculum"
 import { useRecordUsage } from "@/hooks/knowledge-continuity/useRecordUsage"
@@ -73,6 +74,18 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
 }
 
+// Publisher ids are not names. Older curricula carry the browser's placeholder
+// ("me", which read as "published by the viewer"), and the server stamps the
+// signed-in account's id, which no one can read. Neither belongs on screen
+// until there is a name to show.
+const UNREADABLE_PUBLISHER = /^(me|self|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
+
+function publisherLabel(publishedBy: string | null | undefined): string {
+  const who = publishedBy?.trim()
+  if (!who || UNREADABLE_PUBLISHER.test(who)) return "Published"
+  return `Published by ${who}`
+}
+
 // ── Curriculum picker ─────────────────────────────────────────────────────────
 
 function PickerCardSkeleton() {
@@ -94,7 +107,7 @@ function CurriculumPicker({
 }: {
   onSelect: (templateId: string) => void
 }) {
-  const { data: curricula, isLoading, isError } = useCurricula()
+  const { data: curricula, isLoading, isError, error } = useCurricula()
 
   if (isLoading) {
     return (
@@ -104,6 +117,8 @@ function CurriculumPicker({
       </div>
     )
   }
+
+  if (isError && isKceAccessDenied(error)) return <KceAccessNotice />
 
   if (isError) {
     return (
@@ -152,7 +167,7 @@ function CurriculumPicker({
           </CardHeader>
           <CardContent className="mt-auto space-y-3">
             <p className="text-xs text-muted-foreground">
-              {c.published_by ? `Published by ${c.published_by}` : "Published"} · {formatDate(c.created_at)}
+              {publisherLabel(c.published_by)} · {formatDate(c.created_at)}
             </p>
             <Button
               size="sm"
@@ -301,14 +316,12 @@ function CurriculumWalkthrough({
   templateId: string
   onBack: () => void
 }) {
-  const { user } = useAuth()
-  const { data: curriculum, isLoading, isError } = useCurriculum(templateId)
+  const { data: curriculum, isLoading, isError, error } = useCurriculum(templateId)
   const recordUsage = useRecordUsage()
 
   const [clarify, setClarify] = useState<ClarifyState | null>(null)
   const [notes, setNotes] = useState("")
 
-  const successorId = user?.id
 
   function sendSignal(unit: CurriculumUnit, signalType: "still_true" | "no_longer_true") {
     recordUsage.mutate({
@@ -317,7 +330,6 @@ function CurriculumWalkthrough({
       body: {
         signal_type: signalType,
         value: signalType === "still_true" ? 1.0 : 0.0,
-        successor_user_id: successorId,
       },
     })
   }
@@ -335,7 +347,6 @@ function CurriculumWalkthrough({
       body: {
         signal_type: "clarity_flag",
         value: 0.0,
-        successor_user_id: successorId,
         notes: notes.trim() || undefined,
       },
     })
@@ -357,7 +368,9 @@ function CurriculumWalkthrough({
         </div>
       )}
 
-      {!isLoading && (isError || !curriculum) && (
+      {!isLoading && isError && isKceAccessDenied(error) && <KceAccessNotice />}
+
+      {!isLoading && ((isError && !isKceAccessDenied(error)) || (!isError && !curriculum)) && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             We couldn&apos;t open this curriculum. It may have been unpublished — go back and pick another.
@@ -377,7 +390,7 @@ function CurriculumWalkthrough({
               )}
               <span className="inline-flex items-center gap-1">
                 <User className="h-3.5 w-3.5" />
-                {curriculum.published_by ? `Published by ${curriculum.published_by}` : "Published"}
+                {publisherLabel(curriculum.published_by)}
               </span>
               <span>· {formatDate(curriculum.created_at)}</span>
             </div>
@@ -467,8 +480,12 @@ function CurriculumWalkthrough({
 // ── Build a curriculum (authoring) ───────────────────────────────────────────
 
 function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: string) => void }) {
-  const { user } = useAuth()
-  const { data: roles = [], isLoading: rolesLoading } = useSavedRoles(CURRICULUM_ORG_ID)
+  const {
+    data: roles = [],
+    isLoading: rolesLoading,
+    isError: rolesFailed,
+    error: rolesError,
+  } = useSavedRoles(CURRICULUM_ORG_ID)
   const citable = useCitableUnits()
   const build = useBuildCurriculum()
   const publish = usePublishCurriculum()
@@ -504,7 +521,6 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
       const res = await publish.mutateAsync({
         taxonomy_id: selected.taxonomy_id,
         wiring_style: built.wiring_style ?? "balanced",
-        published_by: user?.id,
         modules: built.modules,
       })
       onPublished(res.template_id)
@@ -557,7 +573,8 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
             {buttonLabel}
           </Button>
         </div>
-        {!rolesLoading && roles.length === 0 && (
+        {rolesFailed && isKceAccessDenied(rolesError) && <KceAccessInline />}
+        {!rolesLoading && !(rolesFailed && isKceAccessDenied(rolesError)) && roles.length === 0 && (
           <p className="text-xs text-muted-foreground">
             No roles yet — blueprint and capture a role first, then validate its knowledge.
           </p>

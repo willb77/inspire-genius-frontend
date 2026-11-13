@@ -4,8 +4,8 @@ import type { SavedRole } from "@/types/knowledge-continuity"
 
 /**
  * The roles already blueprinted for an org — powers the "Load a saved role"
- * dropdown on Blueprint-a-role. Errors resolve to an empty list (the picker
- * simply shows nothing) rather than surfacing a toast on the happy path.
+ * dropdown on Blueprint-a-role. A failed read leaves `data` empty but keeps
+ * `isError`/`error`, so a 403 renders the access notice instead of "no roles".
  */
 export function useSavedRoles(orgId: string) {
   return useQuery<SavedRole[]>({

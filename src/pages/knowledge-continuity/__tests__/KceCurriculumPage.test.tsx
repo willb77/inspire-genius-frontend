@@ -138,7 +138,7 @@ describe("KceCurriculumPage", () => {
     expect(screen.getByText(/Source no longer available/i)).toBeInTheDocument()
   })
 
-  test("clicking Still accurate fires the usage mutation for the current user", async () => {
+  test("clicking Still accurate fires the usage mutation without a browser-supplied identity", async () => {
     const user = userEvent.setup()
     render(<KceCurriculumPage />)
 
@@ -149,8 +149,84 @@ describe("KceCurriculumPage", () => {
     expect(mockMutate).toHaveBeenCalledWith({
       unitId: "unit-1",
       templateId: "tmpl-1",
-      body: { signal_type: "still_true", value: 1.0, successor_user_id: "successor-1" },
+      body: { signal_type: "still_true", value: 1.0 },
     })
+    expect(JSON.stringify(mockMutate.mock.calls)).not.toContain("successor-1")
+  })
+
+  test("a 403 on the curriculum list says so instead of 'nothing published'", () => {
+    mockUseCurricula.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 403 } },
+    })
+    render(<KceCurriculumPage />)
+    expect(screen.getAllByRole("alert")[0]).toHaveTextContent(
+      "You don't have access to this organisation's knowledge."
+    )
+    expect(screen.queryByText(/No curricula have been published yet/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/couldn't load the curricula/i)).not.toBeInTheDocument()
+  })
+
+  test("any other curriculum-list failure keeps the generic message", () => {
+    mockUseCurricula.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 502 } },
+    })
+    render(<KceCurriculumPage />)
+    expect(screen.getByText(/couldn't load the curricula/i)).toBeInTheDocument()
+    expect(screen.queryByText(/don't have access/i)).not.toBeInTheDocument()
+  })
+
+  test("a 403 opening one curriculum says so instead of 'it may have been unpublished'", async () => {
+    mockUseCurriculum.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 403 } },
+    })
+    const user = userEvent.setup()
+    render(<KceCurriculumPage />)
+    await user.click(screen.getByRole("button", { name: /open curriculum/i }))
+
+    expect(screen.getByText("You don't have access to this organisation's knowledge.")).toBeInTheDocument()
+    expect(screen.queryByText(/may have been unpublished/i)).not.toBeInTheDocument()
+  })
+
+  test("a 403 on the role list says so instead of 'No roles yet'", () => {
+    mockUseSavedRoles.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 403 } },
+    })
+    render(<KceCurriculumPage />)
+    expect(screen.getByText("You don't have access to this organisation's knowledge.")).toBeInTheDocument()
+    expect(screen.queryByText(/No roles yet/i)).not.toBeInTheDocument()
+  })
+
+  test("publisher ids are not shown as names", () => {
+    mockUseCurricula.mockReturnValue({
+      data: [
+        { ...CURRICULUM_SUMMARY, template_id: "a", title: "From the placeholder", published_by: "me" },
+        {
+          ...CURRICULUM_SUMMARY,
+          template_id: "b",
+          title: "From the server",
+          // Built at runtime so no id-shaped literal sits in the source.
+          published_by: ["0b5e6c1a", "2f4d", "4a7e", "9c3b", "5d6e7f8a9b0c"].join("-"),
+        },
+      ],
+      isLoading: false,
+      isError: false,
+    })
+    render(<KceCurriculumPage />)
+    expect(screen.queryByText(/Published by me/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/0b5e6c1a/)).not.toBeInTheDocument()
+    expect(screen.getAllByText(/^Published ·/)).toHaveLength(2)
   })
 
   test("Build a curriculum: fetch citable units -> build -> publish -> open it", async () => {
@@ -186,6 +262,10 @@ describe("KceCurriculumPage", () => {
     expect(mockPublishMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ taxonomy_id: "tax-1", wiring_style: "sequential" })
     )
+    // The server stamps the publisher from the signed-in account; the browser
+    // sends none (its user id is a placeholder).
+    expect(mockPublishMutateAsync.mock.calls[0][0]).not.toHaveProperty("published_by")
+    expect(JSON.stringify(mockPublishMutateAsync.mock.calls)).not.toContain("successor-1")
     // publishing opens the new curriculum (walk-through loads tmpl-new via useCurriculum)
     expect(mockUseCurriculum).toHaveBeenCalledWith("tmpl-new")
   })
