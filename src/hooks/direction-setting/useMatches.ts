@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { fitService } from "@/services/job-fit/fit.service"
-import type { FitMethod } from "@/types/job-fit"
+import type { FitMethod, FitOrder } from "@/types/job-fit"
 import { normalizeMatches, type MatchesEnvelope, type MatchesResult } from "@/lib/job-fit/matches"
 
 /**
@@ -34,12 +34,16 @@ export type { MatchesResult } from "@/lib/job-fit/matches"
  */
 export function useMatches(
   method: FitMethod = "gap",
-  options?: Partial<UseQueryOptions<MatchesResult, AxiosError>>
+  options?: Partial<UseQueryOptions<MatchesResult, AxiosError>>,
+  order?: FitOrder
 ) {
+  // JF-14b: only "fit" changes the request, so only "fit" changes the key —
+  // the default ("local" or absent) is today's key and today's call.
+  const fit = order === "fit"
   return useQuery<MatchesResult, AxiosError>({
-    queryKey: ["direction-setting", "matches", method],
+    queryKey: fit ? ["direction-setting", "matches", method, "fit"] : ["direction-setting", "matches", method],
     queryFn: async () => {
-      const res = await fitService.getMatches(method)
+      const res = fit ? await fitService.getMatches(method, "fit") : await fitService.getMatches(method)
       return normalizeMatches(res.data as MatchesEnvelope)
     },
     staleTime: 60 * 1000,

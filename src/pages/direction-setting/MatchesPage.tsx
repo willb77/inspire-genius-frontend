@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight, Loader2, Pause, SearchX, Target } from "lucide-react"
+import { ArrowRight, ListOrdered, Loader2, MapPin, Pause, SearchX, Target, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -14,7 +14,8 @@ import { useFitSharedDisplayEnabled } from "@/hooks/switches/useFitSharedDisplay
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
 import { displayFitPercent } from "@/components/fit/fit"
 import { asOverall } from "@/components/fit/components"
-import type { FitMethod } from "@/types/job-fit"
+import { hasLocalJobSet } from "@/lib/job-fit/matches"
+import type { FitMethod, FitOrder } from "@/types/job-fit"
 import { FitMatchList } from "@/components/fit/FitMatchList"
 import { FitResult } from "@/components/fit/FitResult"
 
@@ -71,6 +72,26 @@ const METHODS: MethodOption[] = [
 const SHARED_METHODS: MethodOption[] = [
   { value: "gap", label: "PRISM: gap", hint: "Closest to the role" },
   { value: "closeness", label: "PRISM: closeness", hint: "Closest in shape to the role's profile" },
+]
+
+/**
+ * JF-14b — which jobs come first, for someone whose organisation has a local job
+ * set. "Local jobs first" is the server's default (JF-14); "Best fit" is the
+ * pure fit order. Either way each row still says Local or National.
+ */
+const ORDERS: { value: FitOrder; label: string; hint: string; icon: LucideIcon }[] = [
+  {
+    value: "local",
+    label: "Local jobs first",
+    hint: "Your organisation's own roles first, then every other role",
+    icon: MapPin,
+  },
+  {
+    value: "fit",
+    label: "Best fit",
+    hint: "Every role in order of how well it fits you",
+    icon: ListOrdered,
+  },
 ]
 
 /** The stages that still work when matching has nothing to show. */
@@ -234,6 +255,14 @@ function MatchingPaused() {
 export default function MatchesPage() {
   const [method, setMethod] = useState<FitMethod>("gap")
   const [picked, setPicked] = useState<string | null>(null)
+  // JF-14b — "local" is today's request (no `order` sent); only "fit" changes
+  // anything, and only for someone whose organisation has a local job set.
+  const [order, setOrder] = useState<FitOrder>("local")
+  // Set once the person changes the order on this visit. From then on a default
+  // that moved only because the order changed is NOT recorded as their target:
+  // the stage-7 target changes only by an explicit pick (see the effect below).
+  const orderChanged = useRef(false)
+  const fitOrder = order === "fit"
   // FIT-5b — the shared fit display. Fails closed: off, loading or unreadable
   // all read as off, and off is FIT-5a's page exactly.
   const shared = useFitSharedDisplayEnabled()
@@ -246,9 +275,22 @@ export default function MatchesPage() {
   // first visit may already have its own read in flight when the switch says
   // on. Those rows come from the same endpoint under the same method, so they
   // are shown until the shared read lands rather than flashing the spinner.
-  const dsArgs: Parameters<typeof useMatches> = shared ? [method, { enabled: false }] : [method]
+  //
+  // JF-14b: `order` is appended only when it is "fit", so the default calls are
+  // argument-for-argument today's (pinned by jf14b-ds-default-golden).
+  const dsArgs: Parameters<typeof useMatches> = shared
+    ? fitOrder
+      ? [method, { enabled: false }, "fit"]
+      : [method, { enabled: false }]
+    : fitOrder
+      ? [method, undefined, "fit"]
+      : [method]
   const dsQuery = useMatches(...dsArgs)
-  const sharedQuery = useFitMatches(method, { enabled: shared, staleTime: FIT_MATCHES_STALE_MS })
+  const sharedOptions = { enabled: shared, staleTime: FIT_MATCHES_STALE_MS }
+  const sharedArgs: Parameters<typeof useFitMatches> = fitOrder
+    ? [method, sharedOptions, "fit"]
+    : [method, sharedOptions]
+  const sharedQuery = useFitMatches(...sharedArgs)
   const data = shared
     ? sharedQuery.data
       ? { matches: sharedQuery.data, gated: sharedQuery.gated }
@@ -266,6 +308,15 @@ export default function MatchesPage() {
   const selectedId =
     picked && matches.some((m) => m.jobId === picked) ? picked : (matches[0]?.jobId ?? null)
   const selected = matches.find((m) => m.jobId === selectedId) ?? null
+  // JF-14b — offer the order only when it changes something: the server marked
+  // at least one of the person's own organisation's roles `local`.
+  // (Never while gated: the list, and this toggle inside it, is not drawn then.)
+  const showOrder = hasLocalJobSet(matches)
+  const chooseOrder = (next: FitOrder) => {
+    if (next === order) return
+    orderChanged.current = true
+    setOrder(next)
+  }
 
   // FIT-5b — Overall fit on the rows and the breakdown headline, read the way
   // Career Fit reads it (same route, same query key, so the two share a cache).
@@ -323,6 +374,10 @@ export default function MatchesPage() {
     // transition would silently start writing one role's gaps under another
     // role's target. Assert the pairing instead of depending on it.
     if (detail.jobId !== selected.jobId) return
+    // JF-14b: once the person has changed the order, only a role they picked is
+    // recorded. A default that moved because the list was re-ordered is not a
+    // choice, and must not replace the target already recorded on this visit.
+    if (orderChanged.current && picked !== selected.jobId) return
     // One write per role. Without this the effect re-fires on every refetch
     // and rewrites the same artefact indefinitely.
     if (recorded.current === selected.jobId) return
@@ -412,6 +467,45 @@ export default function MatchesPage() {
                     ))}
                   </div>
                 </div>
+
+                {showOrder && (
+                  <div
+                    data-jf14b-order-toggle=""
+                    className="mb-2 flex flex-wrap items-center justify-end gap-2"
+                  >
+                    <span aria-hidden className="text-xs text-muted-foreground">
+                      Show
+                    </span>
+                    <div
+                      role="radiogroup"
+                      aria-label="Which jobs come first"
+                      className="inline-flex rounded-lg border border-border p-0.5"
+                    >
+                      {ORDERS.map((o) => {
+                        const Icon = o.icon
+                        return (
+                          <button
+                            key={o.value}
+                            type="button"
+                            role="radio"
+                            title={o.hint}
+                            aria-checked={order === o.value}
+                            onClick={() => chooseOrder(o.value)}
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors",
+                              order === o.value
+                                ? "bg-primary/10 font-medium text-primary"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            <Icon className="h-3.5 w-3.5" aria-hidden />
+                            {o.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {list}
               </section>

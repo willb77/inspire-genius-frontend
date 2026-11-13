@@ -119,6 +119,14 @@ export type FitMatch = FitCoverage & {
 /** JF-14 — which job set a ranked role belongs to (see `FitMatch.jobSet`). */
 export type FitJobSet = "local" | "national"
 
+/**
+ * JF-14b — how `/fit/matches` orders rows for a caller whose organisation has a
+ * local job set: "local" (the server default — the org's own roles first) or
+ * "fit" (the pure fit order, rows still labelled). Without a job set the server
+ * ignores it. Only "fit" is ever sent; "local" is the bare request.
+ */
+export type FitOrder = "local" | "fit"
+
 /** Per-dimension comparison of the user's score against the role benchmark. */
 export type PerDimensionFit = {
   category: DimensionCategory

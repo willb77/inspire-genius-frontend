@@ -27,6 +27,18 @@ export type MatchesResult = {
   gated: boolean
 }
 
+/**
+ * JF-14b — does this list come from an organisation's local job set with at
+ * least one of its own roles in it? The server sends `jobSet` only while the
+ * caller's job set applies, so a `local` row is the whole signal: no envelope
+ * field is needed. A list that is all `national` (an org listed for a job set
+ * that owns no ranked role) is false — both orders are the same list there, so
+ * a choice between them would be a control that does nothing.
+ */
+export function hasLocalJobSet(matches: readonly FitMatch[] | undefined): boolean {
+  return (matches ?? []).some((m) => m.jobSet === "local")
+}
+
 /** Pull rows + gate out of whichever envelope shape came back. */
 export function normalizeMatches(body: MatchesEnvelope | undefined): MatchesResult {
   const payload = body?.data
