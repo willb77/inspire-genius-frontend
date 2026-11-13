@@ -80,4 +80,46 @@ describe("PrismApproversPanel", () => {
       ),
     );
   });
+
+  it("for vertical entitlements: lists only that control's approvers and adds for it", async () => {
+    perms = { canManagePrismAccess: true, isOwner: true };
+    list = {
+      data: {
+        approvers: [
+          { id: "p1", capability: "prism_survey_access", user_id: "u", email: "prism.peer@example.com", added_at: null },
+          { id: "v1", capability: "vertical_entitlements", user_id: "u", email: "ve.peer@example.com", added_at: null },
+        ],
+      },
+    };
+    render(<PrismApproversPanel capability="vertical_entitlements" />);
+    expect(screen.getByText(/grant or revoke vertical entitlements/)).toBeInTheDocument();
+    expect(screen.getByText("ve.peer@example.com")).toBeInTheDocument();
+    expect(screen.getByText("Vertical entitlements")).toBeInTheDocument();
+    expect(screen.queryByText("prism.peer@example.com")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "New@Example.com" } });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Add approver"));
+    });
+    await waitFor(() =>
+      expect(add).toHaveBeenCalledWith(
+        { email: "new@example.com", capability: "vertical_entitlements" },
+        expect.anything(),
+      ),
+    );
+  });
+
+  it("by default lists only PRISM approvers", () => {
+    perms = { canManagePrismAccess: true, isOwner: true };
+    list = {
+      data: {
+        approvers: [
+          { id: "p1", capability: "prism_survey_access", user_id: "u", email: "prism.peer@example.com", added_at: null },
+          { id: "v1", capability: "vertical_entitlements", user_id: "u", email: "ve.peer@example.com", added_at: null },
+        ],
+      },
+    };
+    render(<PrismApproversPanel />);
+    expect(screen.getByText("prism.peer@example.com")).toBeInTheDocument();
+    expect(screen.queryByText("ve.peer@example.com")).not.toBeInTheDocument();
+  });
 });

@@ -17,6 +17,7 @@ import {
   useRemoveApprover,
 } from "@/hooks/super-admin/prism-access/usePrismAccessAdmin";
 import { PRISM_SURVEY_ACCESS_CAPABILITY } from "@/types/super-admin/prism-access";
+import { VERTICAL_ENTITLEMENTS_CAPABILITY } from "@/types/super-admin/vertical-entitlements";
 import { approverSchema } from "./approver.schema";
 
 type ApproverInput = z.input<typeof approverSchema>;
@@ -24,17 +25,31 @@ type ApproverOutput = z.output<typeof approverSchema>;
 
 const CAPABILITY_LABELS: Record<string, string> = {
   [PRISM_SURVEY_ACCESS_CAPABILITY]: "PRISM survey access",
+  [VERTICAL_ENTITLEMENTS_CAPABILITY]: "Vertical entitlements",
 };
+
+const CAPABILITY_SCOPE: Record<string, string> = {
+  [PRISM_SURVEY_ACCESS_CAPABILITY]: "change PRISM survey access",
+  [VERTICAL_ENTITLEMENTS_CAPABILITY]: "grant or revoke vertical entitlements",
+};
+
+interface PrismApproversPanelProps {
+  /** The control whose approvers this panel lists and adds. Defaults to PRISM survey access. */
+  capability?: string;
+}
 
 const label = (cap: string): string => CAPABILITY_LABELS[cap] ?? cap;
 
 /**
- * Approvers — who may use the PRISM survey access controls. Shown only to the
+ * Approvers — who may use one admin control (PRISM survey access by default,
+ * or vertical entitlements). Lists only that control's approvers. Shown only to the
  * owner (the backend decides who that is; this page never knows), and every
  * route behind it refuses anyone else. The owner is always an approver and
  * cannot be removed here.
  */
-export default function PrismApproversPanel(): JSX.Element | null {
+export default function PrismApproversPanel({
+  capability = PRISM_SURVEY_ACCESS_CAPABILITY,
+}: PrismApproversPanelProps = {}): JSX.Element | null {
   const { isOwner } = usePrismAccessPermissions(true);
   const list = useApprovers(isOwner);
   const add = useAddApprover();
@@ -42,7 +57,7 @@ export default function PrismApproversPanel(): JSX.Element | null {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const form = useForm<ApproverInput, unknown, ApproverOutput>({
     resolver: zodResolver(approverSchema),
-    defaultValues: { email: "", capability: PRISM_SURVEY_ACCESS_CAPABILITY },
+    defaultValues: { email: "", capability },
   });
 
   if (!isOwner) return null;
@@ -51,7 +66,7 @@ export default function PrismApproversPanel(): JSX.Element | null {
     add.mutate(values, { onSuccess: () => form.reset({ ...values, email: "" }) });
   });
   const fieldError = form.formState.errors.email?.message;
-  const approvers = list.data?.approvers ?? [];
+  const approvers = (list.data?.approvers ?? []).filter((a) => a.capability === capability);
   const others = approvers.filter((a) => !a.is_owner);
 
   return (
@@ -59,7 +74,7 @@ export default function PrismApproversPanel(): JSX.Element | null {
       <CardHeader className="text-left">
         <CardTitle className="text-base font-semibold">Approvers</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Super-admins who may change PRISM survey access. Only you can add or remove them, and
+          Super-admins who may {CAPABILITY_SCOPE[capability] ?? label(capability)}. Only you can add or remove them, and
           each one must also be a super-admin.
         </p>
       </CardHeader>

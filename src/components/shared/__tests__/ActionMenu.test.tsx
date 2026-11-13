@@ -30,6 +30,19 @@ describe("ActionMenu", () => {
     expect(onPrismAccess).toHaveBeenCalledWith({ id: "r" });
   });
 
+  it("shows Vertical entitlements only when asked, and calls back with the row", () => {
+    const onVerticalEntitlements = jest.fn();
+    const { rerender } = render(
+      <ActionMenu row={{ id: "r" }} onVerticalEntitlements={onVerticalEntitlements} />,
+    );
+    expect(screen.queryByText("Vertical entitlements")).not.toBeInTheDocument();
+    rerender(
+      <ActionMenu row={{ id: "r" }} showVerticalEntitlements onVerticalEntitlements={onVerticalEntitlements} />,
+    );
+    fireEvent.click(screen.getByText("Vertical entitlements"));
+    expect(onVerticalEntitlements).toHaveBeenCalledWith({ id: "r" });
+  });
+
   it("renders the trigger button with sr-only text", () => {
     render(<ActionMenu />);
     expect(screen.getByText("Open menu")).toBeInTheDocument();

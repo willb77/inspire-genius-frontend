@@ -10,6 +10,7 @@ import {
   FileUp,
   Activity,
   ShieldCheck,
+  LayoutGrid,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -56,6 +57,8 @@ export type ActionMenuProps<Row = unknown> = {
   onPrismPdf?: (row?: Row) => void;
   showPrismAccess?: boolean;
   onPrismAccess?: (row?: Row) => void;
+  showVerticalEntitlements?: boolean;
+  onVerticalEntitlements?: (row?: Row) => void;
 };
 
 export default function ActionMenu<Row = unknown>({
@@ -86,6 +89,8 @@ export default function ActionMenu<Row = unknown>({
   onPrismPdf,
   showPrismAccess = false,
   onPrismAccess,
+  showVerticalEntitlements = false,
+  onVerticalEntitlements,
 }: ActionMenuProps<Row>) {
   return (
     <DropdownMenu>
@@ -188,6 +193,11 @@ export default function ActionMenu<Row = unknown>({
         {showPrismAccess && (
           <DropdownMenuItem onClick={() => onPrismAccess?.(row)}>
             <ShieldCheck className="w-4 h-4 mr-2 text-emerald-600" /> PRISM survey access
+          </DropdownMenuItem>
+        )}
+        {showVerticalEntitlements && (
+          <DropdownMenuItem onClick={() => onVerticalEntitlements?.(row)}>
+            <LayoutGrid className="w-4 h-4 mr-2 text-sky-600" /> Vertical entitlements
           </DropdownMenuItem>
         )}
 
