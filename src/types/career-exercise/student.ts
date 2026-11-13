@@ -15,6 +15,12 @@ export type StartOut = { session: ExerciseSession; created: boolean }
 
 export type SessionOut = { session: ExerciseSession }
 
+/**
+ * CX-AGE — the birth-year step. `next` is `"counselor"` while the exercise is
+ * not open to the person (the same pointer a blocked turn carries).
+ */
+export type AgeStep = { needsBirthYear: boolean; next: string | null }
+
 /** OD-4's pay read also carries `asOf` (the OEWS vintage code). */
 export type PayWithVintage = OccupationPay & { asOf?: string | null }
 

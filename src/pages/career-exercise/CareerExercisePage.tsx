@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { Navigate } from "react-router-dom"
-import { FileDown, Loader2, Pause, Play } from "lucide-react"
+import { FileDown, Loader2, Pause, Play, UserRound } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { ROUTES } from "@/constants/routes"
 import {
   currentSession,
   useCareerExerciseSwitch,
+  useMyAgeStep,
   useMyExerciseSessions,
   usePauseExercise,
   useRefreshMyExercise,
@@ -18,7 +19,8 @@ import {
 } from "@/hooks/career-exercise/useCareerExercise"
 import { downloadBlob } from "@/lib/exportTranscript"
 import { renderHtmlToPdf } from "@/lib/exportTranscript/renderPdf"
-import type { ExerciseSession, RoleFactCells } from "@/types/career-exercise/student"
+import type { AgeStep, ExerciseSession, RoleFactCells } from "@/types/career-exercise/student"
+import { BirthYearStep } from "./BirthYearStep"
 import { ExerciseChat } from "./ExerciseChat"
 import { exerciseErrorMessage } from "./exerciseErrors"
 import { roleCells } from "./factCells"
@@ -58,11 +60,32 @@ function Alert({ message }: { message: string }) {
   )
 }
 
+/**
+ * CX-AGE — said after the birth-year step when the exercise is still not open
+ * to the person. The same words the chat's counselor notice uses; nothing
+ * about why, so no cut-off can be read from it.
+ */
+function CounselorNotice() {
+  return (
+    <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+      <p className="flex items-center gap-2 font-medium">
+        <UserRound className="h-4 w-4" aria-hidden />
+        Talk to your counselor
+      </p>
+      <p className="mt-1">The exercise has stopped here for now and your counselor is the next step.</p>
+    </div>
+  )
+}
+
 function ExerciseHome() {
   const sessions = useMyExerciseSessions(true)
   const start = useStartExercise()
+  // CX-AGE: a failed read of the step is not a block — the exercise's own
+  // guardrails still decide every turn, exactly as before the step existed.
+  const ageStep = useMyAgeStep(true)
+  const [stepAnswer, setStepAnswer] = useState<AgeStep | null>(null)
 
-  if (sessions.isPending) {
+  if (sessions.isPending || ageStep.isPending) {
     return (
       <div className="space-y-3 p-6" aria-busy="true" aria-label="Loading your exercise">
         <Skeleton className="h-8 w-1/3" />
@@ -90,6 +113,16 @@ function ExerciseHome() {
     )
   }
 
+  if (ageStep.data?.needsBirthYear) {
+    return (
+      <div className="space-y-6 p-6">
+        {header}
+        <BirthYearStep onDone={setStepAnswer} />
+      </div>
+    )
+  }
+
+  const counselorNotice = stepAnswer?.next === "counselor" ? <CounselorNotice /> : null
   const session = currentSession(sessions.data?.sessions)
   const startButton = (label: string) => (
     <div className="space-y-2">
@@ -107,6 +140,7 @@ function ExerciseHome() {
     return (
       <div className="space-y-6 p-6">
         {header}
+        {counselorNotice}
         <div className="rounded-xl border bg-card p-6 text-sm">
           <p className="mb-4">
             It takes a few short sessions. You can stop whenever you like and pick up exactly where you left off.
@@ -120,6 +154,7 @@ function ExerciseHome() {
   return (
     <div className="space-y-6 p-6">
       {header}
+      {counselorNotice}
       <SessionView session={session} />
       {session.status === "closed" && (
         <div className="rounded-xl border bg-card p-4 text-sm">
