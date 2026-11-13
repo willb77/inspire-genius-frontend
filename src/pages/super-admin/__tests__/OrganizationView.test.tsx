@@ -48,6 +48,14 @@ jest.mock("@/components/shared/Pagination", () => ({
   ),
 }));
 
+// Approver-gated and tested on its own; here only its placement matters.
+jest.mock("@/components/super-admin/prism-access/OrgPrismAccessSwitch", () => ({
+  __esModule: true,
+  default: ({ orgId }: { orgId: string }) => (
+    <div data-testid="org-prism-access-stub" data-org={orgId} />
+  ),
+}));
+
 const mockUseOrg = jest.fn();
 jest.mock("@/hooks/super-admin/organization-management/useOrganizationManagement", () => ({
   useOrg: (...args: unknown[]) => mockUseOrg(...args),
@@ -321,5 +329,12 @@ describe("OrganizationView", () => {
       expect.objectContaining({ page: 2, limit: 50 }),
       { enabled: true }
     );
+  });
+
+  it("puts the PRISM survey switch for this organization on the Details tab", () => {
+    renderPage();
+    expect(screen.queryByTestId("org-prism-access-stub")).not.toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Details" }), { button: 0 });
+    expect(screen.getByTestId("org-prism-access-stub")).toHaveAttribute("data-org", "org-1");
   });
 });

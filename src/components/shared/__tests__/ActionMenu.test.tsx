@@ -21,6 +21,15 @@ jest.mock("@/components/ui/dropdown-menu", () => {
 });
 
 describe("ActionMenu", () => {
+  it("shows PRISM survey access only when asked, and calls back with the row", () => {
+    const onPrismAccess = jest.fn();
+    const { rerender } = render(<ActionMenu row={{ id: "r" }} onPrismAccess={onPrismAccess} />);
+    expect(screen.queryByText("PRISM survey access")).not.toBeInTheDocument();
+    rerender(<ActionMenu row={{ id: "r" }} showPrismAccess onPrismAccess={onPrismAccess} />);
+    fireEvent.click(screen.getByText("PRISM survey access"));
+    expect(onPrismAccess).toHaveBeenCalledWith({ id: "r" });
+  });
+
   it("renders the trigger button with sr-only text", () => {
     render(<ActionMenu />);
     expect(screen.getByText("Open menu")).toBeInTheDocument();

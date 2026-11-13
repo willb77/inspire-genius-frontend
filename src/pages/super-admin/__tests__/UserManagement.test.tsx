@@ -25,8 +25,14 @@ jest.mock("@/components/shared/LoadingSkeleton", () => () => (
   <div data-testid="loading-skeleton" />
 ));
 
+// Header extras render only where a test asks for them (the PRISM approvers
+// button lives there); the older tests never saw them and still do not.
+let mockRenderHeaderExtras = false;
 jest.mock("@/components/super-admin/ManagementHeader", () => (props: any) => (
-  <button onClick={props.onAdd}>Add User</button>
+  <>
+    <button onClick={props.onAdd}>Add User</button>
+    {mockRenderHeaderExtras && props.extraActions}
+  </>
 ));
 
 jest.mock("@/components/super-admin/organization/DataTable", () => ({
@@ -56,7 +62,30 @@ jest.mock("@/components/shared/ActionMenu", () => (props: any) => (
     {props.showEdit && <button onClick={props.onEdit}>Edit</button>}
     {props.showResend && <button onClick={props.onResend}>Resend</button>}
     {props.showDelete && <button onClick={props.onDelete}>Delete</button>}
+    {props.showPrismAccess && (
+      <button onClick={props.onPrismAccess}>PRISM survey access</button>
+    )}
   </>
+));
+
+/* -------------------------------------------------
+ MOCK PRISM SURVEY ACCESS (approver-gated; the backend decides)
+------------------------------------------------- */
+let mockPrismPerms = { canManagePrismAccess: false, isOwner: false };
+const mockPrismPermsEnabled = jest.fn();
+jest.mock("@/hooks/super-admin/prism-access/usePrismAccessAdmin", () => ({
+  usePrismAccessPermissions: (enabled: boolean) => {
+    mockPrismPermsEnabled(enabled);
+    return enabled ? mockPrismPerms : { canManagePrismAccess: false, isOwner: false };
+  },
+}));
+jest.mock(
+  "@/components/super-admin/prism-access/PrismAccessDialog",
+  () => (props: { open: boolean; target?: { email: string } | null }) =>
+    props.open ? <div data-testid="prism-access-dialog">{props.target?.email}</div> : null
+);
+jest.mock("@/components/super-admin/prism-access/PrismApproversPanel", () => () => (
+  <div data-testid="prism-approvers-panel" />
 ));
 
 // Default mock for UserFormModal
@@ -1273,5 +1302,48 @@ describe("UserManagement organisation picker", () => {
     });
     expect(mockChangeOrg).not.toHaveBeenCalled();
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+  });
+});
+
+describe("UserManagement — PRISM survey access (approvers only)", () => {
+  beforeEach(() => {
+    queryClient.clear();
+    mockIsSuperAdmin = true;
+    mockRenderHeaderExtras = true;
+    mockPrismPerms = { canManagePrismAccess: false, isOwner: false };
+    oneUser({});
+  });
+  afterEach(() => {
+    mockRenderHeaderExtras = false;
+    jest.clearAllMocks();
+  });
+
+  it("shows no PRISM access item and no approvers button to a super-admin who is not an approver", () => {
+    renderPage();
+    expect(screen.queryByText("PRISM survey access")).not.toBeInTheDocument();
+    expect(screen.queryByText("PRISM approvers")).not.toBeInTheDocument();
+  });
+
+  it("asks the backend only for a super-admin", () => {
+    mockIsSuperAdmin = false;
+    mockPrismPerms = { canManagePrismAccess: true, isOwner: true };
+    renderPage();
+    expect(mockPrismPermsEnabled).toHaveBeenCalledWith(false);
+    expect(screen.queryByText("PRISM survey access")).not.toBeInTheDocument();
+  });
+
+  it("an approver gets the Action-menu item, which opens the dialog for that row", () => {
+    mockPrismPerms = { canManagePrismAccess: true, isOwner: false };
+    renderPage();
+    expect(screen.queryByText("PRISM approvers")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("PRISM survey access"));
+    expect(screen.getByTestId("prism-access-dialog")).toHaveTextContent("test@example.com");
+  });
+
+  it("only the owner gets the approvers control", () => {
+    mockPrismPerms = { canManagePrismAccess: true, isOwner: true };
+    renderPage();
+    fireEvent.click(screen.getByText("PRISM approvers"));
+    expect(screen.getByTestId("prism-approvers-panel")).toBeInTheDocument();
   });
 });

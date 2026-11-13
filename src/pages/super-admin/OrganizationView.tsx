@@ -23,6 +23,7 @@ import {
 } from "@/components/super-admin/organization/OrgMemberEditors";
 import type { PersonOption } from "@/components/super-admin/organization/orgMemberEditors.constants";
 import { ROUTES } from "@/constants/routes";
+import OrgPrismAccessSwitch from "@/components/super-admin/prism-access/OrgPrismAccessSwitch";
 
 const MEMBERS_PAGE_SIZE = 50;
 /** The user list's maximum page; the manager picker offers this many people. */
@@ -375,6 +376,12 @@ export default function OrganizationView() {
                 </div>
               ))}
             </div>
+            {/* Approvers only; renders nothing for anyone else. */}
+            {orgId && (
+              <div className="mt-6">
+                <OrgPrismAccessSwitch orgId={orgId} />
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
