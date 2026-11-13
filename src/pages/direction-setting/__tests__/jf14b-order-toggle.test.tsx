@@ -43,6 +43,8 @@ jest.mock("@/hooks/job-fit/useFitComponents", () => ({
   useFitComponents: () => ({ data: undefined, isError: false }),
 }))
 jest.mock("@/hooks/direction-setting/useJourney", () => ({
+  // DS-7: the page reads the journey; nothing saved at stage 7 here.
+  useJourney: () => ({ data: { artefactKeys: [] }, isLoading: false, isError: false }),
   useAdvanceJourney: () => ({ mutate: mockAdvance, isPending: false }),
 }))
 
@@ -245,10 +247,11 @@ describe("JF-14b: switching the order", () => {
     expect(stage7()).toEqual(["a1"])
   })
 
-  test("…so a refetch that moves the first row still records it, as it does today", () => {
-    // Today, with the order never touched, a refetch that brings a new first
-    // row records it (one write per role). Clicking the order that was already
-    // chosen is not a change of order, so it must not switch that off.
+  test("…and a refetch that moves the first row does not overwrite the target (DS-7)", () => {
+    // Until DS-7 a refetch that brought a new first row recorded it — the same
+    // overwrite DS-7 removes: a visit writes the default at most once, and only
+    // when nothing was saved. The new first row is still SHOWN (it is the
+    // default), it just is not written over the role recorded a moment ago.
     serveDs({ local: LOCAL_FIRST, fit: BEST_FIT })
     const { rerender } = page()
     fireEvent.click(screen.getByRole("radio", { name: /local jobs first/i }))
@@ -258,7 +261,8 @@ describe("JF-14b: switching the order", () => {
         <MatchesPage />
       </MemoryRouter>,
     )
-    expect(stage7()).toEqual(["a1", "n2"])
+    expect(lastDetailId()).toBe("n2")
+    expect(stage7()).toEqual(["a1"])
   })
 })
 
