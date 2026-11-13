@@ -14,6 +14,7 @@ import ActionMenu from "@/components/shared/ActionMenu";
 import Pagination from "@/components/shared/Pagination";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
 import CreateOrganizationDialog from "@/components/super-admin/organization/CreateOrganizationDialog";
+import { ROUTES } from "@/constants/routes";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
 import {
   useOrganizationManagement,
@@ -104,10 +105,14 @@ export default function SuperAdminOrganizations() {
           row={row}
           align="end"
           showView
+          showActivity
           showEdit={false}
           showDeactivate={row.status === "Active"}
           showResend={false}
           onView={() => handleView(row)}
+          onActivity={() =>
+            navigate(ROUTES.SUPER_ADMIN.ORGANIZATION_ACTIVITY.replace(":id", encodeURIComponent(row.id)))
+          }
           onDeactivate={() => {
             setSelected(row);
             setConfirmMode(true);

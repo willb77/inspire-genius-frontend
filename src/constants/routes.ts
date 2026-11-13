@@ -78,6 +78,7 @@ export const ROUTES = {
     BASE: "/super-admin",
     DASHBOARD: "/super-admin/dashboard",
     ORGANIZATIONS: "/super-admin/organizations",
+    ORGANIZATION_ACTIVITY: "/super-admin/organizations/:id/activity",
     USERS: "/super-admin/users",
     USER_MEMORY: "/super-admin/users/:userId/memory",
     SETTINGS: "/super-admin/settings",

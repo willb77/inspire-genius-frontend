@@ -102,6 +102,7 @@ const HelpSupportManagement = React.lazy(() => import("@/pages/super-admin/HelpS
 const LicenceDetailsPage = React.lazy(() => import("@/pages/super-admin/LicenceDetailsPage"));
 const SuperAdminSettingsPage = React.lazy(() => import("@/pages/super-admin/Settings"));
 const OrganizationView = React.lazy(() => import("@/pages/super-admin/OrganizationView"));
+const OrganizationActivity = React.lazy(() => import("@/pages/super-admin/OrganizationActivity"));
 const UserCoaches = React.lazy(() => import("@/pages/super-admin/UserCoaches"));
 const AssetLibrary = React.lazy(() => import("@/pages/super-admin/AssetLibrary"));
 const AssetOpen = React.lazy(() => import("@/pages/super-admin/AssetOpen"));
@@ -605,6 +606,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/:userId/coaches", element: withSuspense(<UserCoaches />) },
       { path: "/super-admin/organizations", element: withSuspense(<OrganizationManagement />) },
       { path: "/super-admin/organizations/:id/view", element: withSuspense(<OrganizationView />) },
+      { path: "/super-admin/organizations/:id/activity", element: withSuspense(<OrganizationActivity />) },
       { path: "/super-admin/users", element: withSuspense(<UserManagement />) },
       { path: "/super-admin/users/:userId/memory", element: withSuspense(<SuperAdminUserMemory />) },
       // House style W1 — the legacy issues pages were reachable by URL only and
