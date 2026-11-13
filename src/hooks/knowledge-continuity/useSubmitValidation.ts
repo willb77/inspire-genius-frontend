@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { submitValidation } from "@/services/knowledge-continuity/continuity.service"
 import type { ValidationRequest, ValidationResponse } from "@/types/knowledge-continuity"
 
@@ -35,8 +36,8 @@ export function useSubmitValidation() {
       toast.success(`Unit ${VERDICT_LABEL[variables.body.verdict]}`)
       if (data.note) toast.info(data.note)
     },
-    onError: () => {
-      toast.error("Couldn't submit the review. Please try again.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't submit the review. Please try again."))
     },
   })
 }

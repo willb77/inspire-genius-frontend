@@ -132,3 +132,20 @@ describe("KceDashboardPage", () => {
     expect(screen.queryByTestId("bar-chart")).not.toBeInTheDocument()
   })
 })
+
+describe("KceDashboardPage (refused)", () => {
+  test("a 403 says so instead of the generic error or the empty state", () => {
+    mockUseContinuityAnalytics.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 403 } },
+    })
+    render(<KceDashboardPage />)
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "You don't have access to this organisation's knowledge."
+    )
+    expect(screen.queryByText(/couldn't load Program Health/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/No knowledge-capture activity yet/)).not.toBeInTheDocument()
+  })
+})

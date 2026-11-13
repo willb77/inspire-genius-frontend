@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { recordUsage } from "@/services/knowledge-continuity/continuity.service"
 import type { UsageRequest } from "@/types/knowledge-continuity"
 
@@ -38,8 +39,8 @@ export function useRecordUsage() {
         })
       }
     },
-    onError: () => {
-      toast.error("Couldn't record your feedback. Please try again.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't record your feedback. Please try again."))
     },
   })
 }

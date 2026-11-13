@@ -39,8 +39,14 @@ jest.mock("@/hooks/knowledge-continuity/useJobDnaSeed", () => ({
 }))
 
 let savedRolesData: SavedRole[] = []
+let mockSavedRolesError: unknown = null
 jest.mock("@/hooks/knowledge-continuity/useSavedRoles", () => ({
-  useSavedRoles: () => ({ data: savedRolesData, isLoading: false }),
+  useSavedRoles: () => ({
+    data: savedRolesData,
+    isLoading: false,
+    isError: mockSavedRolesError != null,
+    error: mockSavedRolesError,
+  }),
 }))
 
 const savedRoleMutate = jest.fn()
@@ -88,6 +94,7 @@ const FAKE_SAVED: SavedRoleBlueprint = {
 beforeEach(() => {
   jest.clearAllMocks()
   savedRolesData = []
+  mockSavedRolesError = null
   generateMutate.mockImplementation((_vars, opts) => opts?.onSuccess?.(FAKE_BLUEPRINT))
   persistMutate.mockImplementation((_vars, opts) => opts?.onSuccess?.({ created: 2, rootId: "tax-root" }))
   seedMutate.mockImplementation((_id, opts) => opts?.onSuccess?.(FAKE_SEED))
@@ -216,5 +223,22 @@ describe("KceBlueprintPage", () => {
       expect.objectContaining({ role_title: "Chief Information Officer", seed_nodes: undefined }),
       expect.any(Object)
     )
+  })
+})
+
+describe("KceBlueprintPage (saved roles refused)", () => {
+  test("a 403 on the saved roles says so; the draft form still works", () => {
+    mockSavedRolesError = { response: { status: 403 } }
+    render(<KceBlueprintPage />)
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "You don't have access to this organisation's knowledge."
+    )
+    expect(screen.getByRole("button", { name: /draft the blueprint/i })).toBeInTheDocument()
+  })
+
+  test("any other saved-roles failure shows no access notice", () => {
+    mockSavedRolesError = { response: { status: 500 } }
+    render(<KceBlueprintPage />)
+    expect(screen.queryByText(/don't have access/i)).not.toBeInTheDocument()
   })
 })

@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { listCitableUnits } from "@/services/knowledge-continuity/continuity.service"
 import type { CitableUnits } from "@/types/knowledge-continuity"
 
@@ -15,8 +16,8 @@ export function useCitableUnits() {
       const res = await listCitableUnits(taxonomyId)
       return res.data ?? { taxonomy_id: taxonomyId, bands: [], units: [] }
     },
-    onError: () => {
-      toast.error("Couldn't load this role's validated knowledge. Please try again.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't load this role's validated knowledge. Please try again."))
     },
   })
 }

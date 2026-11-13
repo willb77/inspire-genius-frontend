@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { resolveContradiction } from "@/services/knowledge-continuity/continuity.service"
 import type { ResolveContradictionRequest } from "@/types/knowledge-continuity"
 
@@ -31,8 +32,8 @@ export function useResolveContradiction() {
       qc.invalidateQueries({ queryKey: ["knowledge-continuity", "review-queue"] })
       toast.success(`Contradiction ${ACTION_LABEL[variables.body.action]}`)
     },
-    onError: () => {
-      toast.error("Couldn't resolve that contradiction. Please try again.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't resolve that contradiction. Please try again."))
     },
   })
 }

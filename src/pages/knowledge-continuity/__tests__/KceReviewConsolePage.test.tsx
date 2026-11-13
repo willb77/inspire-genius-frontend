@@ -163,7 +163,7 @@ describe("KceReviewConsolePage", () => {
     expect(screen.getByText("Close the main valve first.")).toBeInTheDocument()
   })
 
-  test("clicking Approve submits a confirm verdict for the current user", async () => {
+  test("clicking Approve submits a confirm verdict; the server, not the browser, names the reviewer", async () => {
     mockUseReviewQueue.mockReturnValue({ data: QUEUE_WITH_UNIT, isLoading: false, isError: false })
     const user = userEvent.setup()
     render(<KceReviewConsolePage />)
@@ -172,8 +172,102 @@ describe("KceReviewConsolePage", () => {
 
     expect(mockMutate).toHaveBeenCalledWith({
       unitId: "unit-1",
-      body: { validator_user_id: "reviewer-1", method: "sme_review", verdict: "confirm" },
+      body: { validator_user_id: "self", method: "sme_review", verdict: "confirm" },
     })
+    // The auth context's id is a placeholder; it must never be sent as identity.
+    expect(JSON.stringify(mockMutate.mock.calls)).not.toContain("reviewer-1")
+  })
+
+  test("a reject with notes also sends no browser identity", async () => {
+    mockUseReviewQueue.mockReturnValue({ data: QUEUE_WITH_UNIT, isLoading: false, isError: false })
+    const user = userEvent.setup()
+    render(<KceReviewConsolePage />)
+
+    await user.click(screen.getByRole("button", { name: /^reject$/i }))
+    await user.type(screen.getByRole("textbox"), "Out of date")
+    await user.click(screen.getByRole("button", { name: /^submit$/i }))
+
+    expect(mockMutate).toHaveBeenCalledWith({
+      unitId: "unit-1",
+      body: { validator_user_id: "self", method: "sme_review", verdict: "reject", notes: "Out of date" },
+    })
+    expect(JSON.stringify(mockMutate.mock.calls)).not.toContain("reviewer-1")
+  })
+
+  test("a 403 on the review queue says so instead of showing an empty queue", () => {
+    mockUseReviewQueue.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 403 } },
+    })
+    render(<KceReviewConsolePage />)
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "You don't have access to this organisation's knowledge."
+    )
+    expect(screen.queryByText(/All caught up/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/couldn't load the review queue/i)).not.toBeInTheDocument()
+  })
+
+  test("any other review-queue failure keeps the generic message", () => {
+    mockUseReviewQueue.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 500 } },
+    })
+    render(<KceReviewConsolePage />)
+
+    expect(screen.getByText(/couldn't load the review queue/i)).toBeInTheDocument()
+    expect(screen.queryByText(/don't have access/i)).not.toBeInTheDocument()
+  })
+
+  test("a 403 on the interview replay says so", async () => {
+    mockUseReviewQueue.mockReturnValue({ data: QUEUE_WITH_UNIT, isLoading: false, isError: false })
+    mockUseUnitTurns.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 403 } },
+    })
+    const user = userEvent.setup()
+    render(<KceReviewConsolePage />)
+
+    await user.click(screen.getByRole("button", { name: /replay the interview/i }))
+
+    expect(screen.getByText("You don't have access to this organisation's knowledge.")).toBeInTheDocument()
+    expect(screen.queryByText(/couldn't load the interview/i)).not.toBeInTheDocument()
+  })
+
+  test("intake has no free-text organisation and writes to the shared KCE key", async () => {
+    const registerMutate = jest.fn()
+    const startMutate = jest.fn()
+    mockUseRegisterAtRiskRole.mockReturnValue({ mutate: registerMutate, isPending: false })
+    mockUseStartCaptureSession.mockReturnValue({ mutate: startMutate, isPending: false })
+    mockUseReviewQueue.mockReturnValue({ data: EMPTY_QUEUE, isLoading: false, isError: false })
+    const user = userEvent.setup()
+    render(<KceReviewConsolePage />)
+
+    await user.click(screen.getByRole("tab", { name: /capture intake/i }))
+    const intakePanel = screen.getByRole("tabpanel", { name: /capture intake/i })
+    expect(within(intakePanel).queryByLabelText(/organization id/i)).not.toBeInTheDocument()
+
+    await user.type(within(intakePanel).getByLabelText("Expert user id", { selector: "#risk-expert-id" }), "Pat")
+    await user.type(within(intakePanel).getByLabelText("Role title", { selector: "#risk-role-title" }), "Line lead")
+    await user.click(within(intakePanel).getByRole("button", { name: /register role/i }))
+    expect(registerMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ org_id: "kce-capture", expert_user_id: "Pat", role_title: "Line lead" }),
+      expect.anything()
+    )
+
+    await user.type(within(intakePanel).getByLabelText("Expert user id", { selector: "#session-expert-id" }), "Sam")
+    await user.type(within(intakePanel).getByLabelText("Role title", { selector: "#session-role-title" }), "Operator")
+    await user.click(within(intakePanel).getByRole("button", { name: /start session/i }))
+    expect(startMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ org_id: "kce-capture", expert_user_id: "Sam", role_title: "Operator" }),
+      expect.anything()
+    )
   })
 
   test("renders a friendly empty state when there is nothing to review", () => {

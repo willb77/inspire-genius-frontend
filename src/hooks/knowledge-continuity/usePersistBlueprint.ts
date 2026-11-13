@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { createTaxonomyNode } from "@/services/knowledge-continuity/continuity.service"
 import type {
   PersistBlueprintRequest,
@@ -45,8 +46,8 @@ export function usePersistBlueprint() {
 
       return { created: ordered.length, rootId }
     },
-    onError: () => {
-      toast.error("Couldn't save the blueprint. Some nodes may not have been created.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't save the blueprint. Some nodes may not have been created."))
     },
   })
 }

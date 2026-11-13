@@ -32,7 +32,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useAuth } from "@/context/useAuth"
+import { KCE_SELF_IDENTITY, isKceAccessDenied } from "@/services/knowledge-continuity/authz"
+import { KceAccessInline, KceAccessNotice } from "./KceAccessNotice"
 import { useReviewQueue } from "@/hooks/knowledge-continuity/useReviewQueue"
 import { useSubmitValidation } from "@/hooks/knowledge-continuity/useSubmitValidation"
 import { useRegisterAtRiskRole } from "@/hooks/knowledge-continuity/useRegisterAtRiskRole"
@@ -70,7 +71,7 @@ function UnitCardSkeleton() {
 
 function UnitProvenance({ unitId, open }: { unitId: string; open: boolean }) {
   // Lazy: only fetch the interview turns once the reviewer opens the panel.
-  const { data, isLoading, isError } = useUnitTurns(unitId, open)
+  const { data, isLoading, isError, error } = useUnitTurns(unitId, open)
   if (!open) return null
   return (
     <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -79,7 +80,8 @@ function UnitProvenance({ unitId, open }: { unitId: string; open: boolean }) {
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading the interview…
         </div>
       )}
-      {isError && (
+      {isError && isKceAccessDenied(error) && <KceAccessInline />}
+      {isError && !isKceAccessDenied(error) && (
         <p className="text-xs text-muted-foreground">Couldn&apos;t load the interview for this unit.</p>
       )}
       {data && data.turns.length === 0 && (
@@ -265,8 +267,7 @@ function ContradictionCard({ c }: { c: ContradictionRelation }) {
 }
 
 function ReviewQueueTab() {
-  const { user } = useAuth()
-  const { data: queue, isLoading, isError } = useReviewQueue()
+  const { data: queue, isLoading, isError, error } = useReviewQueue()
   const submitValidation = useSubmitValidation()
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
@@ -283,10 +284,9 @@ function ReviewQueueTab() {
   }
 
   function approve(unit: KnowledgeUnit) {
-    if (!user) return
     submitValidation.mutate({
       unitId: unit.id,
-      body: { validator_user_id: user.id, method: "sme_review", verdict: "confirm" },
+      body: { validator_user_id: KCE_SELF_IDENTITY, method: "sme_review", verdict: "confirm" },
     })
   }
 
@@ -296,11 +296,11 @@ function ReviewQueueTab() {
   }
 
   function confirmNoteDialog() {
-    if (!noteDialog || !user) return
+    if (!noteDialog) return
     submitValidation.mutate({
       unitId: noteDialog.unit.id,
       body: {
-        validator_user_id: user.id,
+        validator_user_id: KCE_SELF_IDENTITY,
         method: "sme_review",
         verdict: noteDialog.verdict,
         notes: notes.trim(),
@@ -321,7 +321,9 @@ function ReviewQueueTab() {
         </div>
       )}
 
-      {!isLoading && isError && (
+      {!isLoading && isError && isKceAccessDenied(error) && <KceAccessNotice />}
+
+      {!isLoading && isError && !isKceAccessDenied(error) && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
             We couldn&apos;t load the review queue right now. Try again shortly.
@@ -422,8 +424,15 @@ function ReviewQueueTab() {
 
 // ── Capture intake tab ───────────────────────────────────────────────────────
 
+/**
+ * The organisation is not the person's to choose. Intake used to take it as
+ * free text, so rows landed under whatever string was typed. Every other KCE
+ * surface already writes to this key, and the server decides the real
+ * organisation from who is signed in.
+ */
+const INTAKE_ORG_ID = "kce-capture"
+
 const riskSchema = z.object({
-  org_id: z.string().min(1, "Organization is required"),
   expert_user_id: z.string().min(1, "Expert user id is required"),
   role_title: z.string().min(1, "Role title is required"),
   exit_risk: z.number().min(0, "Enter a value between 0 and 1").max(1, "Enter a value between 0 and 1"),
@@ -463,7 +472,6 @@ function RegisterRiskForm() {
   } = useForm<RiskFormValues>({
     resolver: zodResolver(riskSchema),
     defaultValues: {
-      org_id: "",
       expert_user_id: "",
       role_title: "",
       exit_risk: 0.5,
@@ -477,7 +485,7 @@ function RegisterRiskForm() {
   function onSubmit(values: RiskFormValues) {
     registerRisk.mutate(
       {
-        org_id: values.org_id.trim(),
+        org_id: INTAKE_ORG_ID,
         expert_user_id: values.expert_user_id.trim(),
         role_title: values.role_title.trim(),
         exit_risk: values.exit_risk,
@@ -505,12 +513,7 @@ function RegisterRiskForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="risk-org-id">Organization id</Label>
-              <Input id="risk-org-id" {...register("org_id")} />
-              {errors.org_id && <p className="text-xs text-red-600">{errors.org_id.message}</p>}
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="risk-expert-id">Expert user id</Label>
               <Input id="risk-expert-id" {...register("expert_user_id")} />
@@ -564,7 +567,6 @@ function RegisterRiskForm() {
 
 const sessionSchema = z
   .object({
-    org_id: z.string().min(1, "Organization is required"),
     expert_user_id: z.string().min(1, "Expert user id is required"),
     role_title: z.string().min(1, "Role title is required"),
     is_synthetic: z.boolean(),
@@ -589,7 +591,6 @@ function StartCaptureSessionForm() {
   } = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
-      org_id: "",
       expert_user_id: "",
       role_title: "",
       is_synthetic: true,
@@ -602,7 +603,7 @@ function StartCaptureSessionForm() {
   function onSubmit(values: SessionFormValues) {
     startSession.mutate(
       {
-        org_id: values.org_id.trim(),
+        org_id: INTAKE_ORG_ID,
         expert_user_id: values.expert_user_id.trim(),
         role_title: values.role_title.trim(),
         is_synthetic: values.is_synthetic,
@@ -627,12 +628,7 @@ function StartCaptureSessionForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="session-org-id">Organization id</Label>
-              <Input id="session-org-id" {...register("org_id")} />
-              {errors.org_id && <p className="text-xs text-red-600">{errors.org_id.message}</p>}
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="session-expert-id">Expert user id</Label>
               <Input id="session-expert-id" {...register("expert_user_id")} />

@@ -31,6 +31,8 @@ import { useGenerateBlueprint } from "@/hooks/knowledge-continuity/useGenerateBl
 import { useJobDnaSeed } from "@/hooks/knowledge-continuity/useJobDnaSeed"
 import { usePersistBlueprint } from "@/hooks/knowledge-continuity/usePersistBlueprint"
 import { useSavedRoles } from "@/hooks/knowledge-continuity/useSavedRoles"
+import { isKceAccessDenied } from "@/services/knowledge-continuity/authz"
+import { KceAccessInline } from "./KceAccessNotice"
 import { useSavedRoleBlueprint } from "@/hooks/knowledge-continuity/useSavedRoleBlueprint"
 import { useJobDnaList } from "@/hooks/job-blueprint"
 import type {
@@ -299,6 +301,7 @@ function FormStep({
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Load a saved role */}
+          {savedRoles.isError && isKceAccessDenied(savedRoles.error) && <KceAccessInline />}
           {roles.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="saved_role">Role</Label>

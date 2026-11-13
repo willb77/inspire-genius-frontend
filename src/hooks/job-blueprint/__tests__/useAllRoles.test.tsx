@@ -19,22 +19,48 @@ jest.mock("@/services/job-blueprint", () => ({
   },
 }))
 
+const mockListSavedRoles = jest.fn()
 jest.mock("@/services/knowledge-continuity/continuity.service", () => ({
-  listSavedRoles: jest.fn().mockResolvedValue({
-    data: {
-      roles: [
-        // "engineer" collides with the Job DNA row (case-insensitive) → dropped.
-        { role_title: "engineer", node_count: 5, taxonomy_id: "t1", created_at: null },
-        { role_title: "Nurse", node_count: 9, taxonomy_id: "t2", created_at: null },
-      ],
-    },
-  }),
+  listSavedRoles: (...a: unknown[]) => mockListSavedRoles(...a),
 }))
+
+const DEFAULT_KCE_ROLES = {
+  data: {
+    roles: [
+      // "engineer" collides with the Job DNA row (case-insensitive) → dropped.
+      { role_title: "engineer", node_count: 5, taxonomy_id: "t1", created_at: null },
+      { role_title: "Nurse", node_count: 9, taxonomy_id: "t2", created_at: null },
+    ],
+  },
+}
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return <QueryClientProvider client={qc}>{children}</QueryClientProvider>
 }
+
+beforeEach(() => {
+  mockListSavedRoles.mockReset()
+  mockListSavedRoles.mockResolvedValue(DEFAULT_KCE_ROLES)
+})
+
+describe("useAllRoles (KCE failures are surfaced, not hidden)", () => {
+  it("reports no KCE error on success", async () => {
+    const { result } = renderHook(() => useAllRoles(), { wrapper })
+    await waitFor(() => expect(result.current.roles.length).toBe(3))
+    expect(result.current.kceError).toBeNull()
+  })
+
+  it("a 403 from KCE keeps the Job DNA roles and returns the refusal", async () => {
+    const refusal = { response: { status: 403 } }
+    mockListSavedRoles.mockRejectedValue(refusal)
+    const { result } = renderHook(() => useAllRoles(), { wrapper })
+
+    await waitFor(() => expect(result.current.kceError).toBe(refusal))
+    expect(result.current.roles.map((r) => r.role_title)).toEqual(["Analyst", "Engineer"])
+    expect(result.current.roles.every((r) => r.source === "job-dna")).toBe(true)
+  })
+})
 
 describe("useAllRoles", () => {
   it("aggregates roles from both verticals, de-duped by title (Job DNA wins)", async () => {

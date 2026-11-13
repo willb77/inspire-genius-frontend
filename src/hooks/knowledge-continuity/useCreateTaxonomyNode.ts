@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { createTaxonomyNode } from "@/services/knowledge-continuity/continuity.service"
 import type { CreateTaxonomyRequest, TaxonomyNode } from "@/types/knowledge-continuity"
 
@@ -17,8 +18,8 @@ export function useCreateTaxonomyNode() {
       if (!res.data) throw new Error("No taxonomy node returned from the server")
       return res.data
     },
-    onError: () => {
-      toast.error("Couldn't set up the capture area. Please try again.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't set up the capture area. Please try again."))
     },
   })
 }

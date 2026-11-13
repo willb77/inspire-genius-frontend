@@ -16,10 +16,18 @@ export const KCE_ORG_ID = 'kce-capture'
  * Aggregate roles from BOTH verticals — Job DNA blueprints and KCE saved roles —
  * for the cross-vertical "Role" dropdown on Draft-a-blueprint. De-duped by
  * `role_title` (case-insensitive); Job DNA wins a collision so selecting it can
- * open the existing blueprint. KCE errors resolve to an empty list rather than
- * breaking the picker.
+ * open the existing blueprint.
+ *
+ * A KCE failure does not break the picker — Job DNA roles are still listed —
+ * but it is no longer hidden either: `kceError` carries it, so the picker can
+ * say "you don't have access" (403) or "couldn't load" instead of looking like
+ * a role list that simply has no KCE roles in it.
  */
-export function useAllRoles(): { roles: AggregatedRole[]; isLoading: boolean } {
+export function useAllRoles(): {
+  roles: AggregatedRole[]
+  isLoading: boolean
+  kceError: unknown
+} {
   const jobDnaList = useJobDnaList()
 
   const kce = useQuery({
@@ -53,5 +61,9 @@ export function useAllRoles(): { roles: AggregatedRole[]; isLoading: boolean } {
     return out.sort((a, b) => a.role_title.localeCompare(b.role_title))
   }, [jobDnaList.data, kce.data])
 
-  return { roles, isLoading: jobDnaList.isLoading || kce.isLoading }
+  return {
+    roles,
+    isLoading: jobDnaList.isLoading || kce.isLoading,
+    kceError: kce.isError ? kce.error : null,
+  }
 }

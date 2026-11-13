@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { kceErrorMessage } from "@/services/knowledge-continuity/authz"
 import { recordTurn } from "@/services/knowledge-continuity/continuity.service"
 import type { RecordTurnRequest } from "@/types/knowledge-continuity"
 
@@ -21,8 +22,8 @@ export function useRecordTurn() {
       const res = await recordTurn(sessionId, body)
       return res.data
     },
-    onError: () => {
-      toast.error("Couldn't save that answer. It may not be captured.")
+    onError: (error) => {
+      toast.error(kceErrorMessage(error, "Couldn't save that answer. It may not be captured."))
     },
   })
 }

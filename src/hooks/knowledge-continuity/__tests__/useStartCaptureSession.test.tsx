@@ -85,4 +85,36 @@ describe("useStartCaptureSession", () => {
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(toast.error).toHaveBeenCalledWith("Couldn't start the capture session. Please try again.")
   })
+
+  test("a 403 whose detail names consent keeps the consent message", async () => {
+    const error = new Error("Forbidden") as AxiosError
+    error.response = {
+      status: 403,
+      data: { detail: "consent event required before capturing a real expert" },
+    } as AxiosError["response"]
+    mockStartCaptureSession.mockRejectedValue(error)
+
+    const { result } = renderHook(() => useStartCaptureSession(), { wrapper })
+    result.current.mutate({ org_id: "o", expert_user_id: "e", role_title: "r", is_synthetic: false })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(toast.error).toHaveBeenCalledWith(
+      "Consent record required for a real expert; use a practice session or attach a consent id."
+    )
+  })
+
+  test("a 403 that is not about consent says the caller lacks access", async () => {
+    const error = new Error("Forbidden") as AxiosError
+    error.response = {
+      status: 403,
+      data: { detail: "not permitted for this organisation" },
+    } as AxiosError["response"]
+    mockStartCaptureSession.mockRejectedValue(error)
+
+    const { result } = renderHook(() => useStartCaptureSession(), { wrapper })
+    result.current.mutate({ org_id: "o", expert_user_id: "e", role_title: "r", is_synthetic: true })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(toast.error).toHaveBeenCalledWith("You don't have access to this organisation's knowledge.")
+  })
 })
