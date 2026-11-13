@@ -72,6 +72,12 @@ export type Journey = {
   stages: JourneyStage[]
   nextAction: NextAction
   artefactKeys: string[]
+  /**
+   * DS-7 — the role stage 7 holds, so a revisit can keep it. Absent from a
+   * backend older than DS-7; `null` when stage 7 holds nothing readable. Whether
+   * anything is saved at all is `artefactKeys.includes("7")`.
+   */
+  savedTarget?: { jobId: string; roleTitle: string | null } | null
   createdAt: string | null
   updatedAt: string | null
 }

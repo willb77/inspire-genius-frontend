@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { useMatches } from "@/hooks/direction-setting/useMatches"
-import { useAdvanceJourney } from "@/hooks/direction-setting/useJourney"
+import { useAdvanceJourney, useJourney } from "@/hooks/direction-setting/useJourney"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
 import { FIT_MATCHES_STALE_MS, useFitMatches } from "@/hooks/job-fit/useFitMatches"
 import { useFitComponents } from "@/hooks/job-fit/useFitComponents"
@@ -93,6 +93,9 @@ const ORDERS: { value: FitOrder; label: string; hint: string; icon: LucideIcon }
     icon: ListOrdered,
   },
 ]
+
+/** The journey stage whose artefact is the person's target role. */
+const TARGET_STAGE = "7"
 
 /** The stages that still work when matching has nothing to show. */
 const ELSEWHERE: { to: string; label: string; blurb: string }[] = [
@@ -299,14 +302,25 @@ export default function MatchesPage() {
   const isLoading = shared ? sharedQuery.isLoading && !dsQuery.data : dsQuery.isLoading
   const isError = shared ? sharedQuery.isError : dsQuery.isError
   const advance = useAdvanceJourney()
+  // DS-7 — what stage 7 already holds. `hasSavedTarget` comes from
+  // `artefactKeys` (every backend sends it); `savedTarget` names the role and is
+  // newer, so it may be absent. Until the journey has loaded, nothing is known,
+  // and an unknown is never treated as "nothing saved".
+  const { data: journey } = useJourney()
+  const journeyLoaded = journey !== undefined
+  const hasSavedTarget = journey?.artefactKeys?.includes(TARGET_STAGE) === true
+  const savedTarget = journey?.savedTarget ?? null
 
   const matches = data?.matches ?? []
   const gated = data?.gated === true
-  // Default to the best match rather than making the user click to see anything.
-  // Derived, not stored: a refetch that reorders the list can't strand the page
-  // on a role that is no longer in it.
-  const selectedId =
-    picked && matches.some((m) => m.jobId === picked) ? picked : (matches[0]?.jobId ?? null)
+  const inList = (jobId: string | null | undefined): jobId is string =>
+    !!jobId && matches.some((m) => m.jobId === jobId)
+  // A role picked on this visit, else the role already saved as the target (if
+  // it is still in the list), else the best match — so nobody has to click to
+  // see anything. Derived, not stored: a refetch that reorders the list can't
+  // strand the page on a role that is no longer in it.
+  const savedInList = savedTarget && inList(savedTarget.jobId) ? savedTarget.jobId : null
+  const selectedId = inList(picked) ? picked : (savedInList ?? matches[0]?.jobId ?? null)
   const selected = matches.find((m) => m.jobId === selectedId) ?? null
   // JF-14b — offer the order only when it changes something: the server marked
   // at least one of the person's own organisation's roles `local`.
@@ -364,8 +378,17 @@ export default function MatchesPage() {
    * Fire-and-forget, and only ever additive: this is bookkeeping that must not
    * cost the user a spinner, and a failed write leaves the stage where it was
    * rather than claiming progress that isn't stored.
+   *
+   * DS-7 — a visit never replaces a saved target. Only a role the person picks
+   * is written over one. The pre-selected default is written only when stage 7
+   * holds nothing at all (the journey has loaded and has no stage-7 artefact),
+   * at most once per visit, and never after the order was changed: stage 8's
+   * gaps feed stage 9's plan, so a first visit that wrote nothing would leave
+   * the plan with "no target role and no gaps on file" for anyone who read the
+   * default and never clicked.
    */
   const recorded = useRef<string | null>(null)
+  const autoWritten = useRef(false)
   useEffect(() => {
     if (gated || !selected || !detail) return
     // The two reads are separate queries. `useFitDetail` currently clears its
@@ -374,17 +397,25 @@ export default function MatchesPage() {
     // transition would silently start writing one role's gaps under another
     // role's target. Assert the pairing instead of depending on it.
     if (detail.jobId !== selected.jobId) return
-    // JF-14b: once the person has changed the order, only a role they picked is
-    // recorded. A default that moved because the list was re-ordered is not a
-    // choice, and must not replace the target already recorded on this visit.
-    if (orderChanged.current && picked !== selected.jobId) return
+    const chosen = picked === selected.jobId
+    if (!chosen) {
+      // DS-7: not known yet, or already saved — write nothing.
+      if (!journeyLoaded || hasSavedTarget) return
+      // JF-14b: a default that moved because the list was re-ordered is not a
+      // choice, and must not replace the target already recorded on this visit.
+      if (orderChanged.current) return
+      // DS-7: one default per visit. The journey refetch that would show it as
+      // saved can lag a re-ordering refetch of the matches.
+      if (autoWritten.current) return
+    }
     // One write per role. Without this the effect re-fires on every refetch
     // and rewrites the same artefact indefinitely.
     if (recorded.current === selected.jobId) return
     recorded.current = selected.jobId
+    if (!chosen) autoWritten.current = true
 
     advance.mutate({
-      stageId: "7",
+      stageId: TARGET_STAGE,
       state: "complete",
       artefact: { targetRole: selected as unknown as Record<string, unknown> },
     })
@@ -396,7 +427,17 @@ export default function MatchesPage() {
     // `advance` is a stable mutation object; including it would re-run this on
     // every render for no benefit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gated, selected, detail])
+  }, [gated, selected, detail, picked, journeyLoaded, hasSavedTarget])
+
+  // DS-7 — say what stays saved, so a list headed by another role never reads
+  // as the target having changed. Only before the person picks something.
+  const targetNote = !picked && hasSavedTarget
+    ? savedInList
+      ? `Your saved target role is ${savedTarget?.roleTitle || "the one selected below"}. Pick another role to change it.`
+      : savedTarget
+        ? `Your saved target role${savedTarget.roleTitle ? `, ${savedTarget.roleTitle},` : ""} isn't in this list right now. It stays your target unless you pick a role here.`
+        : "You already have a target role saved. It stays your target unless you pick a role here."
+    : null
 
   return (
     <div className="space-y-6 p-6">
@@ -505,6 +546,12 @@ export default function MatchesPage() {
                       })}
                     </div>
                   </div>
+                )}
+
+                {targetNote && (
+                  <p data-ds7-target-note="" className="mb-2 text-xs text-muted-foreground">
+                    {targetNote}
+                  </p>
                 )}
 
                 {list}
