@@ -44,6 +44,8 @@ jest.mock("@/hooks/direction-setting/useMatches", () => ({
   useMatches: (...args: unknown[]) => mockUseMatches(...args),
 }))
 jest.mock("@/hooks/direction-setting/useJourney", () => ({
+  // DS-7: the page reads the journey; nothing saved at stage 7 here.
+  useJourney: () => ({ data: { artefactKeys: [] }, isLoading: false, isError: false }),
   useAdvanceJourney: () => ({ mutate: jest.fn(), isPending: false }),
 }))
 jest.mock("@/hooks/job-fit/useFitHistory", () => ({

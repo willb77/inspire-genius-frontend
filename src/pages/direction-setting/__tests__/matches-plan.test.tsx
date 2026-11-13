@@ -56,6 +56,8 @@ jest.mock("@/hooks/job-fit/useFitComponents", () => ({
 // mount.
 const mockAdvance = jest.fn()
 jest.mock("@/hooks/direction-setting/useJourney", () => ({
+  // DS-7: the page reads the journey; nothing saved at stage 7 here.
+  useJourney: () => ({ data: { artefactKeys: [] }, isLoading: false, isError: false }),
   useAdvanceJourney: () => ({ mutate: mockAdvance, isPending: false }),
 }))
 

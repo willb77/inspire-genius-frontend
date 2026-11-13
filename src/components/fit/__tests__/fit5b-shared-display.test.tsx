@@ -96,6 +96,8 @@ jest.mock("@/services/targets", () => ({
   targetsService: { extract: () => Promise.resolve(envelope(DRAFT)) },
 }))
 jest.mock("@/hooks/direction-setting/useJourney", () => ({
+  // DS-7: the page reads the journey; nothing saved at stage 7 here.
+  useJourney: () => ({ data: { artefactKeys: [] }, isLoading: false, isError: false }),
   useAdvanceJourney: () => ({
     mutate: (v: { stageId: string; artefact: Record<string, unknown> }) => {
       const a = v.artefact as { jobId?: string; targetRole?: { jobId?: string } }
