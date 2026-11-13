@@ -52,7 +52,7 @@ import { toast } from "sonner";
 import type { UserRow } from "@/types/super-admin/user-management";
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
 import { ROLE_LABELS } from "@/types/roles";
-import { Search, Trash2, UserX, UserCheck, X, FileUp } from "lucide-react";
+import { Search, Trash2, UserX, UserCheck, X, FileUp, ShieldCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -66,6 +66,11 @@ import PrismIngestDialog, {
 import PrismPdfAdminDialog, {
   type PrismPdfTarget,
 } from "@/components/super-admin/user-management/PrismPdfAdminDialog";
+import PrismAccessDialog, {
+  type PrismAccessTarget,
+} from "@/components/super-admin/prism-access/PrismAccessDialog";
+import PrismApproversPanel from "@/components/super-admin/prism-access/PrismApproversPanel";
+import { usePrismAccessPermissions } from "@/hooks/super-admin/prism-access/usePrismAccessAdmin";
 
 export default function UserManagement() {
   const pageSize = 10;
@@ -213,6 +218,16 @@ export default function UserManagement() {
   const openPrismPdf = useCallback((target: PrismPdfTarget) => {
     setPrismPdfTarget(target);
     setPrismPdfOpen(true);
+  }, []);
+  // PRISM survey access — only for approvers. The backend decides who is one;
+  // a super-admin who is not sees no menu item (and every route refuses them).
+  const { canManagePrismAccess, isOwner } = usePrismAccessPermissions(canAssignOrg);
+  const [prismAccessOpen, setPrismAccessOpen] = useState(false);
+  const [approversOpen, setApproversOpen] = useState(false);
+  const [prismAccessTarget, setPrismAccessTarget] = useState<PrismAccessTarget | null>(null);
+  const openPrismAccess = useCallback((target: PrismAccessTarget) => {
+    setPrismAccessTarget(target);
+    setPrismAccessOpen(true);
   }, []);
   const [prismIngestOpen, setPrismIngestOpen] = useState(false);
   const [prismTargets, setPrismTargets] = useState<PrismIngestTarget[]>([]);
@@ -667,6 +682,10 @@ export default function UserManagement() {
           onPrismPdf={() =>
             openPrismPdf({ id: row.id, email: row.email, name: row.name })
           }
+          showPrismAccess={canManagePrismAccess}
+          onPrismAccess={() =>
+            openPrismAccess({ id: row.id, email: row.email, name: row.name })
+          }
         />
       ),
     },
@@ -681,6 +700,12 @@ export default function UserManagement() {
           onAdd={openAdd}
           extraActions={
             <>
+              {isOwner && (
+                <Button variant="outline" onClick={() => setApproversOpen(true)}>
+                  <ShieldCheck className="size-4" />
+                  PRISM approvers
+                </Button>
+              )}
               <Button
                 variant="outline"
                 className="border-destructive text-destructive hover:bg-destructive/10"
@@ -827,6 +852,26 @@ export default function UserManagement() {
         onOpenChange={setPrismPdfOpen}
         target={prismPdfTarget}
       />
+
+      <PrismAccessDialog
+        open={prismAccessOpen}
+        onOpenChange={setPrismAccessOpen}
+        target={prismAccessTarget}
+      />
+
+      {isOwner && (
+        <Dialog open={approversOpen} onOpenChange={setApproversOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>PRISM survey access approvers</DialogTitle>
+              <DialogDescription className="sr-only">
+                Add or remove the super-admins who may change PRISM survey access.
+              </DialogDescription>
+            </DialogHeader>
+            {approversOpen && <PrismApproversPanel />}
+          </DialogContent>
+        </Dialog>
+      )}
 
       <PrismIngestDialog
         open={prismIngestOpen}

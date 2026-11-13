@@ -9,6 +9,7 @@ import {
   Bot,
   FileUp,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -53,6 +54,8 @@ export type ActionMenuProps<Row = unknown> = {
   onImportPrism?: (row?: Row) => void;
   showPrismPdf?: boolean;
   onPrismPdf?: (row?: Row) => void;
+  showPrismAccess?: boolean;
+  onPrismAccess?: (row?: Row) => void;
 };
 
 export default function ActionMenu<Row = unknown>({
@@ -81,6 +84,8 @@ export default function ActionMenu<Row = unknown>({
   onImportPrism,
   showPrismPdf = false,
   onPrismPdf,
+  showPrismAccess = false,
+  onPrismAccess,
 }: ActionMenuProps<Row>) {
   return (
     <DropdownMenu>
@@ -178,6 +183,11 @@ export default function ActionMenu<Row = unknown>({
         {showImportPrism && (
           <DropdownMenuItem onClick={() => onImportPrism?.(row)}>
             <FileUp className="w-4 h-4 mr-2 text-indigo-500" /> Upload PRISM CSV
+          </DropdownMenuItem>
+        )}
+        {showPrismAccess && (
+          <DropdownMenuItem onClick={() => onPrismAccess?.(row)}>
+            <ShieldCheck className="w-4 h-4 mr-2 text-emerald-600" /> PRISM survey access
           </DropdownMenuItem>
         )}
 
