@@ -25,7 +25,10 @@ const mockList = jest.fn()
 const mockStart = jest.fn()
 const mockPause = jest.fn()
 const mockResume = jest.fn()
+const mockAgeStep = jest.fn()
 jest.mock("@/services/career-exercise/student.service", () => ({
+  getMyAgeStep: () => mockAgeStep(),
+  recordMyBirthYear: jest.fn(),
   getMySessions: () => mockList(),
   startMySession: () => mockStart(),
   pauseMySession: (id: unknown, v: unknown) => mockPause(id, v),
@@ -152,6 +155,7 @@ beforeEach(() => {
   chat.opts = null
   chat.error = null
   mockEnabled.mockResolvedValue(true)
+  mockAgeStep.mockResolvedValue({ needsBirthYear: false, next: null })
   mockPay.mockImplementation((c: string) => Promise.resolve(payFor(c)))
   mockOcc.mockImplementation((c: string) =>
     Promise.resolve(c === "29-2061.00" ? { state: "ready", reason: null, release: "29.3", data: null } : { state: "empty", reason: "no education data for 31-9092", data: null }),

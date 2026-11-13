@@ -1,14 +1,17 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import {
+  getMyAgeStep,
   getMySessions,
   pauseMySession,
+  recordMyBirthYear,
   resumeMySession,
   startMySession,
 } from "@/services/career-exercise/student.service"
 import { getOccupation, getOccupationPay } from "@/services/job-fit/occupations.service"
 import { occupationKeys } from "@/hooks/job-fit/useOccupation"
 import type {
+  AgeStep,
   ExerciseSession,
   PayWithVintage,
   ReadState,
@@ -24,6 +27,7 @@ export { useCareerExerciseSwitch } from "@/hooks/career-exercise/useCounselorCar
 
 export const myExerciseKeys = {
   sessions: ["career-exercise", "mine"] as const,
+  ageStep: ["career-exercise", "mine", "age-step"] as const,
 }
 
 /** My sessions, newest first. Idle until `enabled` (the switch is on). */
@@ -66,6 +70,26 @@ export function useResumeExercise() {
   return useMutation<SessionOut, AxiosError, Versioned>({
     mutationFn: ({ sessionId, version }) => resumeMySession(sessionId, version),
     onSettled: () => qc.invalidateQueries({ queryKey: myExerciseKeys.sessions }),
+  })
+}
+
+/** CX-AGE — whether to ask my birth year. Idle until `enabled`. */
+export function useMyAgeStep(enabled: boolean) {
+  return useQuery({
+    queryKey: myExerciseKeys.ageStep,
+    queryFn: getMyAgeStep,
+    enabled,
+    staleTime: 60_000,
+    retry: false,
+  })
+}
+
+/** CX-AGE — record my birth year, then re-check whether to ask (a 409 included). */
+export function useRecordBirthYear() {
+  const qc = useQueryClient()
+  return useMutation<AgeStep, AxiosError, number>({
+    mutationFn: recordMyBirthYear,
+    onSettled: () => qc.invalidateQueries({ queryKey: myExerciseKeys.ageStep }),
   })
 }
 

@@ -1,5 +1,5 @@
 import { agentApi } from "@/lib/agentApi"
-import type { MySessions, SessionOut, StartOut } from "@/types/career-exercise/student"
+import type { AgeStep, MySessions, SessionOut, StartOut } from "@/types/career-exercise/student"
 
 /**
  * CX-5 — the student's own career exercise. Owner-only routes: the server takes
@@ -37,5 +37,24 @@ export async function pauseMySession(sessionId: string, version: number): Promis
 /** Resume at the version on screen; a stale version is a 409. */
 export async function resumeMySession(sessionId: string, version: number): Promise<SessionOut> {
   const { data } = await agentApi.post<Envelope<SessionOut>>(`${one(sessionId)}/resume`, { version })
+  return data.data
+}
+
+/**
+ * CX-AGE — should the page ask my birth year? True only when the exercise
+ * would turn me away for having no age on file.
+ */
+export async function getMyAgeStep(): Promise<AgeStep> {
+  const { data } = await agentApi.get<Envelope<AgeStep>>(`${PREFIX}/age-step`)
+  return data.data
+}
+
+/**
+ * CX-AGE — my birth year, once. The server keeps only an age band, never the
+ * year, and answers with nothing but whether to ask again and where next.
+ * 409 when there is already an age on file; 422 for a year that can't be right.
+ */
+export async function recordMyBirthYear(birthYear: number): Promise<AgeStep> {
+  const { data } = await agentApi.post<Envelope<AgeStep>>(`${PREFIX}/age-step`, { birthYear })
   return data.data
 }
