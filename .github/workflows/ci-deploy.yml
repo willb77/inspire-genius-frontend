@@ -131,6 +131,11 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Build
+        # vite build's chunk-rendering phase outgrew node's default ~2 GB heap
+        # (exit 134, "JavaScript heap out of memory", 2026-11-13). The runner
+        # (ubuntu-latest, public repo) has 16 GB; 6 GB leaves ample headroom.
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: npm run build
 
       - name: Upload dist artifact
@@ -550,6 +555,11 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Build (staging-b)
+        # vite build's chunk-rendering phase outgrew node's default ~2 GB heap
+        # (exit 134, "JavaScript heap out of memory", 2026-11-13). The runner
+        # (ubuntu-latest, public repo) has 16 GB; 6 GB leaves ample headroom.
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: npm run build
 
       - name: Configure AWS via OIDC (staging-b)
