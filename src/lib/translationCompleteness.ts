@@ -18,7 +18,7 @@ export const LANGUAGES_METADATA: Record<string, LanguageMetadata> = {
   es: { native: 'Español', status: 'complete' },
   fr: { native: 'Français', status: 'complete' },
   de: { native: 'Deutsch', status: 'complete' },
-  pt: { native: 'Português', status: 'complete' },
+  pt: { native: 'Português (Brasil)', status: 'complete' },
   ja: { native: '日本語', status: 'complete' },
   ko: { native: '한국어', status: 'complete' },
   'zh-CN': { native: '中文（简体）', status: 'complete' },
@@ -36,6 +36,7 @@ export const LANGUAGES_METADATA: Record<string, LanguageMetadata> = {
   sv: { native: 'Svenska', status: 'partial', note: 'Partial (common.json only)' },
   nb: { native: 'Norsk', status: 'partial', note: 'Partial (common.json only)' },
   sq: { native: 'Shqip', status: 'complete' },
+  cs: { native: 'Čeština', status: 'incomplete', note: 'English placeholders; translation pending' },
 };
 
 export const TRANSLATION_NAMESPACES = [

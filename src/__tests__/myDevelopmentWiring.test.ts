@@ -6,7 +6,7 @@
  * Static rather than behavioural, for the reason every guard in this repo is:
  * each of these failures renders as something plausible. A route constant that
  * disagrees with `routes.tsx` gives a nav row that 404s; a locale key missing
- * from one of the 21 files shows that language the raw key; a second reader of
+ * from one of the 22 files shows that language the raw key; a second reader of
  * `/me/goal-reviews` gives two caches that can disagree about what a coach
  * said, and the person sees whichever one their route happened to warm.
  */
@@ -68,19 +68,19 @@ describe("the goal-reviews read", () => {
 describe("the Home quick action's locale key", () => {
   const LOCALES = path.join(REPO, "public", "locales")
 
-  it("exists in all 21 shipped dashboard.json files", () => {
+  it("exists in all 22 shipped dashboard.json files", () => {
     const dirs = fs
       .readdirSync(LOCALES, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name)
-    expect(dirs).toHaveLength(21)
+    expect(dirs).toHaveLength(22)
     for (const lang of dirs) {
       const file = path.join(LOCALES, lang, "dashboard.json")
       const json = JSON.parse(fs.readFileSync(file, "utf-8")) as {
         homeV2?: Record<string, string>
       }
       // Same pattern as `quickGoals`, which carries the untranslated English
-      // string in all 21 files today. Inventing translations here would be
+      // string in all 22 files today. Inventing translations here would be
       // worse than the English fallback.
       expect(json.homeV2?.quickMyDevelopment).toBe("My development")
     }

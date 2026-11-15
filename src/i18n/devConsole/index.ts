@@ -11,6 +11,7 @@
 import i18next, { type i18n as I18n } from "i18next";
 
 import ar from "./ar.json";
+import cs from "./cs.json";
 import de from "./de.json";
 import en from "./en.json";
 import es from "./es.json";
@@ -56,6 +57,7 @@ export const DEV_CONSOLE_BUNDLES: Record<string, Record<string, unknown>> = {
   sv,
   nb,
   sq,
+  cs,
 };
 
 /**

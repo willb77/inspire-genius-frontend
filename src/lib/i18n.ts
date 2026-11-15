@@ -11,7 +11,7 @@ i18n
     fallbackLng: 'en',
     defaultNS: 'common',
     ns: ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat'],
-    supportedLngs: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'zh-CN', 'ar', 'hi', 'it', 'nl', 'ru', 'pl', 'tr', 'th', 'vi', 'id', 'sv', 'nb', 'sq'],
+    supportedLngs: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'zh-CN', 'ar', 'hi', 'it', 'nl', 'ru', 'pl', 'tr', 'th', 'vi', 'id', 'sv', 'nb', 'sq', 'cs'],
     load: 'currentOnly',
 
     interpolation: {
