@@ -281,8 +281,8 @@ describe("SuperAdminLayout", () => {
       "Financial Aid",
       "Honor Foundation",
     ]);
-    // the preview toggle is still passed through renderAfterContent
-    expect(screen.getByTestId("grant-preview-toggle")).toBeInTheDocument();
+    // the floating Financial Aid preview pill is gone from every super-admin page
+    expect(screen.queryByTestId("grant-preview-toggle")).not.toBeInTheDocument();
   });
 
   test("Tools sits after Role Views and before Administration", () => {

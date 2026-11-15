@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { SEGMENT_CONTEXT_LABELS, SEGMENT_STATUS_LABELS } from "@/constants/intake"
 import { useCreateWebinar, useUpdateWebinar } from "@/hooks/super-admin/useIntake"
 import { registryErrors, registryErrorSummary } from "@/services/super-admin/practitioner-registry/registryErrors"
@@ -30,6 +29,7 @@ import {
   type WebinarFormInput,
   type WebinarFormValues,
 } from "./intake.schemas"
+import { MarkdownEditor } from "./MarkdownEditor"
 import { IntakeErrorList } from "./IntakeErrorList"
 import { browserTimeZone, segmentKey, timeZoneOptions, toZonedInput } from "./intakeView"
 
@@ -161,7 +161,7 @@ export function WebinarFormDialog({ webinar, onClose }: { webinar: Webinar | nul
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{webinar ? `Edit ${webinar.title}` : "New session"}</DialogTitle>
           <DialogDescription>
@@ -235,17 +235,23 @@ export function WebinarFormDialog({ webinar, onClose }: { webinar: Webinar | nul
               <Label htmlFor="webinar-isPublic">Show on the public events page</Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              The public page shows only the title, the date and time, and the public description below — never the
+              The public page shows only the title, the date and time, and the formatted description below — never the
               places, the join link or who has registered. It lists a session while it is scheduled and in the future.
               Changes reach the public page within about 2 minutes.
             </p>
             <div className="space-y-1">
               <Label htmlFor="webinar-publicDescription">Public description</Label>
-              <Textarea
-                id="webinar-publicDescription"
-                rows={4}
-                placeholder={`Plain text, up to ${PUBLIC_DESCRIPTION_MAX.toLocaleString("en-US")} characters. Shown to anyone who visits the events page.`}
-                {...form.register("publicDescription")}
+              <Controller
+                control={form.control}
+                name="publicDescription"
+                render={({ field }) => (
+                  <MarkdownEditor
+                    id="webinar-publicDescription"
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    placeholder={`Up to ${PUBLIC_DESCRIPTION_MAX.toLocaleString("en-US")} characters. Shown to anyone who visits the events page.`}
+                  />
+                )}
               />
               {errs.publicDescription?.message && (
                 <p className="text-xs text-destructive">{errs.publicDescription.message}</p>

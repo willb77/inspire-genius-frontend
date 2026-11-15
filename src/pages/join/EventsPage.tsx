@@ -4,6 +4,7 @@ import AuthLayout from "@/components/auth/AuthLayout"
 import { ROUTES } from "@/constants/routes"
 import { usePublicEvents } from "@/hooks/intake/usePublicEvents"
 import type { PublicEvent } from "@/types/publicEvents"
+import { EventDescription } from "./EventDescription"
 import { formatEventTime } from "./eventTime"
 import { EVENTS_NEXT_STEP, JoinBrandPanel } from "./JoinBrandPanel"
 
@@ -23,8 +24,8 @@ function EventItem({ event }: { event: PublicEvent }) {
       <p className="mt-1 text-sm text-muted-foreground">
         <time dateTime={event.starts_at}>{formatEventTime(event.starts_at, event.time_zone)}</time>
       </p>
-      {/* Plain text only: React escapes it, and nothing here turns text into links or markup. */}
-      {event.description && <p className="mt-2 whitespace-pre-line text-sm">{event.description}</p>}
+      {/* Markdown through an allow-list: no raw HTML, http(s)/mailto links only. */}
+      {event.description && <EventDescription markdown={event.description} />}
     </li>
   )
 }

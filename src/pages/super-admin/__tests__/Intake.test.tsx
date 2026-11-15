@@ -213,6 +213,14 @@ beforeEach(() => {
 
 const lastFilters = () => registrationsArgs.mock.calls[registrationsArgs.mock.calls.length - 1][0]
 
+// The rich-text editor is tested on its own (intake/__tests__/MarkdownEditor.test.tsx);
+// here it is a plain textarea so these tests exercise the form's wiring, not TipTap.
+jest.mock("../intake/MarkdownEditor", () => ({
+  MarkdownEditor: ({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) => (
+    <textarea id={id} aria-label="Public description" value={value} onChange={(e) => onChange(e.target.value)} />
+  ),
+}))
+
 describe("Intake — Registrations", () => {
   it("renders the three tabs shipped so far (Reports is IN-7)", () => {
     renderAt("/super-admin/intake")

@@ -107,19 +107,47 @@ describe("/events — switch on", () => {
     expect(screen.getByRole("link", { name: /register your interest/i })).toHaveAttribute("href", "/join")
   })
 
-  it("renders a description as text: no HTML, no links", async () => {
-    const hostile = '<img src=x onerror="alert(1)"><a href="https://evil.example">click</a> https://plain.example'
+  it("renders a description as Markdown: formatting yes, raw HTML no, unsafe links no", async () => {
+    const md = [
+      "**Bold** and *italic*",
+      "",
+      "- one",
+      "- two",
+      "",
+      "[safe](https://ok.example) [bad](javascript:alert(1))",
+      "",
+      '<img src=x onerror="alert(1)"><script>window.x=1</script>',
+    ].join("\n")
     answer(200, {
-      events: [{ title: "<b>Bold?</b>", starts_at: "2099-03-03T14:00:00Z", time_zone: "UTC", description: hostile }],
+      events: [{ title: "<b>Bold?</b>", starts_at: "2099-03-03T14:00:00Z", time_zone: "UTC", description: md }],
     })
     const { container } = renderPage()
     const list = await screen.findByRole("list", { name: "Upcoming events" })
-    expect(within(list).getByText(hostile)).toBeInTheDocument()
     expect(within(list).getByText("<b>Bold?</b>")).toBeInTheDocument()
+    expect(list.querySelector("strong")).toHaveTextContent("Bold")
+    expect(list.querySelector("em")).toHaveTextContent("italic")
+    expect(list.querySelectorAll("li li")).toHaveLength(2)
     expect(list.querySelector("img")).toBeNull()
+    expect(list.querySelector("script")).toBeNull()
     expect(list.querySelector("b")).toBeNull()
-    expect(list.querySelectorAll("a")).toHaveLength(0)
+    // raw HTML in the source is shown as literal text, never parsed
+    expect(list).toHaveTextContent('<img src=x onerror="alert(1)"><script>window.x=1</script>')
     expect(container.querySelector("img[src=x]")).toBeNull()
+    const links = Array.from(list.querySelectorAll("a"))
+    expect(links.find((a) => a.getAttribute("href") === "https://ok.example")).toHaveAttribute(
+      "rel",
+      expect.stringContaining("noopener"),
+    )
+    expect(links.some((a) => /^javascript:/i.test(a.getAttribute("href") ?? ""))).toBe(false)
+  })
+
+  it("still renders a pre-editor plain-text description, line breaks kept", async () => {
+    answer(200, {
+      events: [{ title: "Old", starts_at: "2099-03-03T14:00:00Z", time_zone: "UTC", description: "Line one\nLine two" }],
+    })
+    renderPage()
+    const list = await screen.findByRole("list", { name: "Upcoming events" })
+    expect(list).toHaveTextContent(/Line one\s*Line two/)
   })
 })
 
@@ -160,5 +188,7 @@ describe("/events source guards", () => {
     const src = readFileSync(join(__dirname, "..", "EventsPage.tsx"), "utf8")
     expect(src).not.toMatch(/dangerouslySetInnerHTML/)
     expect(src).not.toMatch(/innerHTML/)
+    const desc = readFileSync(join(__dirname, "..", "EventDescription.tsx"), "utf8")
+    expect(desc).not.toMatch(/dangerouslySetInnerHTML|innerHTML|react-markdown|rehype/)
   })
 })
