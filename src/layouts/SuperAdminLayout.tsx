@@ -10,7 +10,6 @@ import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 import { useAgentEngine } from "@/lib/agentApi";
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher";
 import { useToolsSection } from "@/hooks/nav/useToolsSection";
-import GrantPreviewToggle from "@/components/grant/GrantPreviewToggle";
 import { useAuth } from "@/context/useAuth";
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 import { HOUSE_SUPER_ADMIN_SECTIONS } from "@/constants/house/superAdminNav";
@@ -99,7 +98,6 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
       navItems={[]}
       navSections={sections}
       className={className}
-      renderAfterContent={<GrantPreviewToggle />}
     >
       {children}
     </SidebarScaffold>
