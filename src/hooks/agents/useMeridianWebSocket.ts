@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { liveVoiceLanguage } from "@/lib/voiceLanguage";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -432,7 +433,7 @@ export function useMeridianWebSocket(
       type: "voice_start",
       gender: voiceConfig?.gender,
       accent: voiceConfig?.accent,
-      language: voiceConfig?.language ?? "en-US",
+      language: voiceConfig?.language ?? liveVoiceLanguage(),
     }));
   }, [safeSend]);
 
