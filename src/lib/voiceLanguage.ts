@@ -60,3 +60,16 @@ export function ttsLanguage(): string | undefined {
 
   return undefined
 }
+
+/**
+ * The language to send when a LIVE voice session starts (`voice_start`).
+ *
+ * Same answer as {@link ttsLanguage}, with US English as the floor because the
+ * live-voice socket always wanted a language and has historically been sent
+ * `"en-US"`. The server resolves a bare app code ("pl", "es") to a Transcribe
+ * locale and falls back to US English for anything it cannot transcribe, so
+ * sending the raw UI language is safe for all 21 shipped languages.
+ */
+export function liveVoiceLanguage(): string {
+  return ttsLanguage() ?? "en-US"
+}

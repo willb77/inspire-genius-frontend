@@ -1,6 +1,7 @@
 import { useCallback, type RefObject } from "react";
 import { MessageType, WebSocketState } from "@/components/alex-voice-assistant/types/enums";
 import type { AlexResponse } from "@/components/alex-voice-assistant/types/types";
+import { liveVoiceLanguage } from "@/lib/voiceLanguage";
 
 export const useWebSocketConnectionHandlers = (
   socketRef: RefObject<WebSocket | null>,
@@ -142,7 +143,7 @@ export const useWebSocketMessageHandlers = (
   const startContinuousMode = useCallback(() => {
     if (!socketRef.current || socketRef.current.readyState !== WebSocketState.OPEN) return;
     // Send voice_start for Agent Engine WS, plus legacy start_continuous
-    const message = { type: "voice_start", language: "en-US" };
+    const message = { type: "voice_start", language: liveVoiceLanguage() };
     try {
       socketRef.current.send(JSON.stringify(message));
     } catch {

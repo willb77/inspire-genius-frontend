@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { useTranslation } from "react-i18next";
+import { liveVoiceLanguage } from "@/lib/voiceLanguage";
 import {
   AGENT_VOICE_CONFIG,
   getAgentVoice,
@@ -638,7 +639,7 @@ export default function DiagnosticChat({
         setIsRecording(true);
         const ws = wsRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "voice_start", language: "en-US" }));
+          ws.send(JSON.stringify({ type: "voice_start", language: liveVoiceLanguage() }));
           addTrace("success", "VOICE", "Recording started — streaming audio to Agent Engine");
         }
       };
