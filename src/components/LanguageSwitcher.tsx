@@ -13,7 +13,7 @@ const LANGUAGES = [
   { code: 'es',    label: 'Español' },
   { code: 'fr',    label: 'Français' },
   { code: 'de',    label: 'Deutsch' },
-  { code: 'pt',    label: 'Português' },
+  { code: 'pt',    label: 'Português (Brasil)' },
   { code: 'ja',    label: '日本語' },
   { code: 'ko',    label: '한국어' },
   { code: 'zh-CN', label: '中文（简体）' },
@@ -30,6 +30,7 @@ const LANGUAGES = [
   { code: 'sv',    label: 'Svenska' },
   { code: 'nb',    label: 'Norsk' },
   { code: 'sq',    label: 'Shqip' },
+  { code: 'cs',    label: 'Čeština' },
 ] as const;
 
 export default function LanguageSwitcher() {
