@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { SavedRun } from "@/lib/savedAnalysis"
+import { useTranslation } from "react-i18next"
 
 /**
  * A list of kept runs, with Open and Delete.
@@ -40,6 +41,7 @@ export default function SavedRunsCard({
   onDelete: (run: SavedRun) => void
   deletePending?: boolean
 }) {
+  const { t } = useTranslation("managerPages")
   return (
     <Card>
       <CardHeader>
@@ -74,7 +76,7 @@ export default function SavedRunsCard({
                   <Button
                     size="sm"
                     variant="secondary"
-                    aria-label={`${openLabel}: ${run.title}`}
+                    aria-label={t("savedRunsCard.text", { defaultValue: "{{openLabel}}: {{title}}", openLabel, title: run.title })}
                     onClick={() => onOpen(run)}
                   >
                     {openLabel}
@@ -82,7 +84,7 @@ export default function SavedRunsCard({
                   <Button
                     size="sm"
                     variant="ghost"
-                    aria-label={`Delete ${run.title}`}
+                    aria-label={t("savedRunsCard.delete", { defaultValue: "Delete {{title}}", title: run.title })}
                     disabled={deletePending}
                     onClick={() => onDelete(run)}
                   >

@@ -41,6 +41,7 @@ import type {
   PortraitSources,
   PrismAnchor,
 } from "@/types/lumen"
+import { useTranslation } from "react-i18next"
 
 export function PortraitSkeleton({ testId = "portrait-loading" }: { testId?: string }) {
   return (
@@ -75,6 +76,7 @@ export function PortraitSourceCoverage({
   footer?: ReactNode
   rows?: PortraitSourceRow[]
 }) {
+  const { t } = useTranslation("studioUi")
   const present = rows.filter((row) => sources[row.key]).length
 
   return (
@@ -85,9 +87,7 @@ export function PortraitSourceCoverage({
       <CardContent className="space-y-3">
         {showCount && (
           <p className="text-sm text-muted-foreground">
-            {present} of {rows.length} sources on file. Everything below is read
-            from those — where a source is missing, the read is thinner rather
-            than wrong.
+            {t("lumen.portraitPortraitSections.ofSourcesOnFileEverything", { defaultValue: "{{present}} of {{length}} sources on file. Everything below is read from those — where a source is missing, the read is thinner rather than wrong.", present, length: rows.length })}
           </p>
         )}
         <div className="grid gap-2 sm:grid-cols-2">
@@ -104,12 +104,12 @@ export function PortraitSourceCoverage({
                 {has ? (
                   <Check
                     className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
-                    aria-label="on file"
+                    aria-label={t("lumen.portraitPortraitSections.onFile", { defaultValue: "on file" })}
                   />
                 ) : (
                   <Minus
                     className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
-                    aria-label="not on file"
+                    aria-label={t("lumen.portraitPortraitSections.notOnFile", { defaultValue: "not on file" })}
                   />
                 )}
                 <span>
@@ -140,6 +140,7 @@ export function PortraitNoPrism({
   /** Navigation slot. */
   children?: ReactNode
 }) {
+  const { t } = useTranslation("studioUi")
   return (
     <Card className="border-dashed">
       <CardHeader className="pb-2">
@@ -148,9 +149,7 @@ export function PortraitNoPrism({
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         {headline && <p>{headline}</p>}
         <p>
-          This is a real read of what you have given us. PRISM is the anchor the
-          other sources get read against, so adding it lets the picture be
-          corroborated rather than only described.
+          {t("lumen.portraitPortraitSections.thisIsARealRead", { defaultValue: "This is a real read of what you have given us. PRISM is the anchor the other sources get read against, so adding it lets the picture be corroborated rather than only described." })}
         </p>
         {children}
       </CardContent>
@@ -165,13 +164,14 @@ export function PortraitQuadrants({
   prism: PrismAnchor
   title: ReactNode
 }) {
+  const { t } = useTranslation("studioUi")
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           {title}
           <Badge className={QUADRANT_CLASS[prism.dominant_quadrant]}>
-            {prism.dominant_quadrant} leads
+            {t("lumen.portraitPortraitSections.leads", { defaultValue: "{{dominant_quadrant}} leads", dominant_quadrant: prism.dominant_quadrant })}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -215,6 +215,7 @@ export function PortraitDimensions({
   prism: PrismAnchor
   title?: ReactNode
 }) {
+  const { t } = useTranslation("studioUi")
   const dimensions = prism.dimensions ?? {}
   const orientation = prism.orientation ?? {}
   const hasDimensions = Object.keys(dimensions).length > 0
@@ -289,10 +290,9 @@ export function PortraitDimensions({
           <>
             {hasDimensions && <Separator />}
             <div className="space-y-2">
-              <p className="text-sm font-medium">Energy direction</p>
+              <p className="text-sm font-medium">{t("lumen.portraitPortraitSections.energyDirection", { defaultValue: "Energy direction" })}</p>
               <p className="text-xs text-muted-foreground">
-                Measured alongside the eight, but part of no quadrant — and
-                neither end is better than the other.
+                {t("lumen.portraitPortraitSections.measuredAlongsideTheEightBut", { defaultValue: "Measured alongside the eight, but part of no quadrant — and neither end is better than the other." })}
               </p>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
@@ -386,6 +386,7 @@ export function PortraitCorroborating({
   instruments: CorroboratingInstrument[]
   title: ReactNode
 }) {
+  const { t } = useTranslation("studioUi")
   if (instruments.length === 0) return null
 
   return (
@@ -405,11 +406,11 @@ export function PortraitCorroborating({
                 {instrument.maps_to}
               </Badge>
               <Badge variant="outline">
-                {instrument.agrees_with_prism ? "agrees" : "differs"}
+                {instrument.agrees_with_prism ? t("lumen.portraitPortraitSections.agrees", { defaultValue: "agrees" }) : t("lumen.portraitPortraitSections.differs", { defaultValue: "differs" })}
               </Badge>
             </div>
             <span className="text-sm text-muted-foreground">
-              confidence {instrument.confidence.toFixed(2)}
+              {t("lumen.portraitPortraitSections.confidence", { defaultValue: "confidence {{v1}}", v1: instrument.confidence.toFixed(2) })}
             </span>
           </div>
         ))}
@@ -433,6 +434,7 @@ export function PortraitAgreementGrid({
   tensionTitle?: ReactNode
   tensionPreamble?: ReactNode
 }) {
+  const { t } = useTranslation("studioUi")
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card>
@@ -456,7 +458,7 @@ export function PortraitAgreementGrid({
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           {tensions.length === 0 ? (
-            <p>No tensions surfaced. Your instruments tell a consistent story.</p>
+            <p>{t("lumen.portraitPortraitSections.noTensionsSurfacedYourInstruments", { defaultValue: "No tensions surfaced. Your instruments tell a consistent story." })}</p>
           ) : (
             <>
               {tensionPreamble}
@@ -472,11 +474,11 @@ export function PortraitAgreementGrid({
 }
 
 export function PortraitAnchorNote() {
+  const { t } = useTranslation("studioUi")
   return (
     <p className="flex items-start gap-2 text-xs text-muted-foreground">
       <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-      PRISM is the anchor — where another instrument disagrees, PRISM leads and the
-      difference is shown rather than resolved away.
+      {t("lumen.portraitPortraitSections.prismIsTheAnchorWhere", { defaultValue: "PRISM is the anchor — where another instrument disagrees, PRISM leads and the difference is shown rather than resolved away." })}
     </p>
   )
 }

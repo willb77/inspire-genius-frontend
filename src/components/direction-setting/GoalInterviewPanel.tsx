@@ -65,6 +65,7 @@ import {
   type InterviewTurn,
 } from "@/hooks/summit/useSummitInterview"
 import { SUMMIT_CATEGORY_KEYS } from "@/types/summit"
+import { useTranslation } from "react-i18next"
 
 /**
  * How long the mic must go quiet before a spoken answer sends itself.
@@ -96,6 +97,7 @@ function Turn({
   /** 1-based running number for this turn when it is an actual question. */
   questionNumber?: number
 }) {
+  const { t: tr } = useTranslation("studioUi")
   const isUser = turn.role === "user"
   return (
     <div className={cn("flex gap-2", isUser && "flex-row-reverse")}>
@@ -117,7 +119,7 @@ function Turn({
             numbered — intros, why-ladder follow-ups and the root are not. */}
         {questionNumber != null && (
           <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary/70">
-            Question {questionNumber}
+            {tr("directionSetting.goalInterviewPanel.question", { defaultValue: "Question {{questionNumber}}", questionNumber })}
           </div>
         )}
         <div
@@ -145,6 +147,7 @@ export default function GoalInterviewPanel({
   onGoalsSynthesised,
   className,
 }: GoalInterviewPanelProps) {
+  const { t: tr } = useTranslation("studioUi")
   const { data: session } = useGoalSession()
   const [input, setInput] = useState("")
   const [voiceMode, setVoiceMode] = useState(true)
@@ -405,10 +408,10 @@ export default function GoalInterviewPanel({
           <Bot className="h-4 w-4" aria-hidden />
         </span>
         <div className="min-w-0">
-          <div className="text-sm font-semibold">Goals Studio</div>
+          <div className="text-sm font-semibold">{tr("directionSetting.goalInterviewPanel.goalsStudio", { defaultValue: "Goals Studio" })}</div>
           <div className="truncate text-[11px] text-muted-foreground">
             {phase === "opening"
-              ? "Getting the next questions…"
+              ? tr("directionSetting.goalInterviewPanel.gettingTheNextQuestions", { defaultValue: "Getting the next questions…" })
               : phase === "question" && questionCount > 0
                 ? `${categoryLabel ?? "Discovery"} · question ${Math.min(questionNumber, questionCount)} of ${questionCount}`
                 : phase === "stating-goal"
@@ -432,7 +435,7 @@ export default function GoalInterviewPanel({
               className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
               data-testid="question-count"
             >
-              Question {askedCount}
+              {tr("directionSetting.goalInterviewPanel.question2", { defaultValue: "Question {{askedCount}}", askedCount })}
             </span>
           )}
           <div className="flex items-center gap-1.5">
@@ -445,13 +448,13 @@ export default function GoalInterviewPanel({
               htmlFor="goal-interview-voice"
               className="text-[11px] text-muted-foreground"
             >
-              Voice
+              {tr("directionSetting.goalInterviewPanel.voice", { defaultValue: "Voice" })}
             </Label>
             <Switch
               id="goal-interview-voice"
               checked={voiceMode}
               onCheckedChange={toggleVoice}
-              aria-label="Voice mode: Goals Studio reads its questions aloud and listens for your answer"
+              aria-label={tr("directionSetting.goalInterviewPanel.voiceModeGoalsStudioReads", { defaultValue: "Voice mode: Goals Studio reads its questions aloud and listens for your answer" })}
             />
           </div>
         </div>
@@ -462,24 +465,22 @@ export default function GoalInterviewPanel({
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               Goals Studio works through five areas of your working life a few
-              questions at a time, then asks <em>why</em> until it reaches what
+              questions at a time, then asks <em>{tr("directionSetting.goalInterviewPanel.why", { defaultValue: "why" })}</em> until it reaches what
               actually sits underneath. What comes out are goals with a reason
               attached — not a list you typed.
             </p>
             <p className="text-xs text-muted-foreground">
               {voiceMode
-                ? "It will read its questions aloud and listen for your answer. Turn Voice off to type instead."
-                : "Text mode — read and type. Turn Voice on to have the conversation out loud."}
+                ? tr("directionSetting.goalInterviewPanel.itWillReadItsQuestions", { defaultValue: "It will read its questions aloud and listen for your answer. Turn Voice off to type instead." })
+                : tr("directionSetting.goalInterviewPanel.textModeReadAndType", { defaultValue: "Text mode — read and type. Turn Voice on to have the conversation out loud." })}
             </p>
             {exploredCount > 0 && (
               <p className="text-xs text-muted-foreground">
-                You&apos;ve explored {exploredCount} of{" "}
-                {SUMMIT_CATEGORY_KEYS.length} areas. We&apos;ll pick up where you
-                left off.
+                {tr("directionSetting.goalInterviewPanel.youVeExploredOfAreas", { defaultValue: "You've explored {{exploredCount}} of {{length}} areas. We'll pick up where you left off.", exploredCount, length: SUMMIT_CATEGORY_KEYS.length })}
               </p>
             )}
             <Button type="button" onClick={start} disabled={busy}>
-              {exploredCount > 0 ? "Continue the conversation" : "Start the conversation"}
+              {exploredCount > 0 ? tr("directionSetting.goalInterviewPanel.continueTheConversation", { defaultValue: "Continue the conversation" }) : tr("directionSetting.goalInterviewPanel.startTheConversation", { defaultValue: "Start the conversation" })}
             </Button>
           </div>
         ) : (
@@ -499,7 +500,7 @@ export default function GoalInterviewPanel({
             </span>
             <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              Thinking…
+              {tr("directionSetting.goalInterviewPanel.thinking", { defaultValue: "Thinking…" })}
             </div>
           </div>
         )}
@@ -509,7 +510,7 @@ export default function GoalInterviewPanel({
           screen turned away because they are having a conversation. */}
       <div className="sr-only" role="status" aria-live="polite">
         {speaking
-          ? "Goals Studio is speaking."
+          ? tr("directionSetting.goalInterviewPanel.goalsStudioIsSpeaking", { defaultValue: "Goals Studio is speaking." })
           : dictation.listening
             ? "Listening. Speak your answer."
             : pendingSend
@@ -521,7 +522,7 @@ export default function GoalInterviewPanel({
         <div className="flex flex-col gap-2 border-t px-3 pt-2">
           {stalled && (
             <Button type="button" size="sm" className="h-7 px-2 text-[11px]" onClick={start}>
-              Try again
+              {tr("directionSetting.goalInterviewPanel.tryAgain", { defaultValue: "Try again" })}
             </Button>
           )}
           {phase === "question" && (
@@ -534,7 +535,7 @@ export default function GoalInterviewPanel({
               disabled={busy}
             >
               <SkipForward className="h-3 w-3" aria-hidden />
-              Skip this area
+              {tr("directionSetting.goalInterviewPanel.skipThisArea", { defaultValue: "Skip this area" })}
             </Button>
           )}
           {/* Item 4: this is the action the whole interview exists to reach, and
@@ -551,7 +552,7 @@ export default function GoalInterviewPanel({
               className="w-full gap-2 bg-primary font-semibold shadow-sm hover:bg-primary/90"
             >
               <Sparkles className="h-4 w-4" aria-hidden />
-              Draft my goals
+              {tr("directionSetting.goalInterviewPanel.draftMyGoals", { defaultValue: "Draft my goals" })}
             </Button>
           )}
         </div>
@@ -561,7 +562,7 @@ export default function GoalInterviewPanel({
       {pendingSend && (
         <div className="flex items-center gap-2 border-t bg-amber-50 px-3 py-2 text-[12px] text-amber-900">
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-          <span className="min-w-0 flex-1">Sending your answer…</span>
+          <span className="min-w-0 flex-1">{tr("directionSetting.goalInterviewPanel.sendingYourAnswer", { defaultValue: "Sending your answer…" })}</span>
           <Button
             type="button"
             size="sm"
@@ -569,7 +570,7 @@ export default function GoalInterviewPanel({
             className="h-6 px-2 text-[11px]"
             onClick={cancelAutoSend}
           >
-            Hold on — let me edit
+            {tr("directionSetting.goalInterviewPanel.holdOnLetMeEdit", { defaultValue: "Hold on — let me edit" })}
           </Button>
         </div>
       )}
@@ -613,15 +614,14 @@ export default function GoalInterviewPanel({
                     size="icon"
                     variant="outline"
                     disabled
-                    aria-label="Voice input isn't supported in this browser"
+                    aria-label={tr("directionSetting.goalInterviewPanel.voiceInputIsnTSupported", { defaultValue: "Voice input isn't supported in this browser" })}
                   >
                     <MicOff className="h-4 w-4" aria-hidden />
                   </Button>
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                Voice input isn&apos;t supported in this browser — turn Voice off
-                and type your answers instead.
+                {tr("directionSetting.goalInterviewPanel.voiceInputIsnTSupported2", { defaultValue: "Voice input isn't supported in this browser — turn Voice off and type your answers instead." })}
               </TooltipContent>
             </Tooltip>
           ))}
@@ -642,7 +642,7 @@ export default function GoalInterviewPanel({
                 ? "Your answer…"
                 : "Start the conversation to answer"
           }
-          aria-label="Your answer"
+          aria-label={tr("directionSetting.goalInterviewPanel.yourAnswer", { defaultValue: "Your answer" })}
           className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
         />
         <Button
@@ -651,7 +651,7 @@ export default function GoalInterviewPanel({
           disabled={!acceptsAnswer || busy || !input.trim()}
         >
           <Send className="h-4 w-4" aria-hidden />
-          <span className="sr-only">Send</span>
+          <span className="sr-only">{tr("directionSetting.goalInterviewPanel.send", { defaultValue: "Send" })}</span>
         </Button>
       </form>
     </div>

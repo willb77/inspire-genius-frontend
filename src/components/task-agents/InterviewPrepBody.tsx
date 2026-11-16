@@ -23,6 +23,7 @@ import TaskAgentResultCard from "@/components/tasks/TaskAgentResultCard"
 import CostEstimateBanner from "@/components/tasks/CostEstimateBanner"
 import QuestionBankPanel from "@/components/task-agents/QuestionBankPanel"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 const schema = z.object({
   company_name: z.string().min(1, "Company name is required").max(255),
@@ -35,6 +36,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export default function InterviewPrepBody() {
+  const { t } = useTranslation("studioUi")
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
   const [lastRequest, setLastRequest] = useState<Record<string, unknown>>({})
 
@@ -53,11 +55,11 @@ export default function InterviewPrepBody() {
     mutationFn: tasksService.interviewPrep,
     onSuccess: (data) => {
       setResult(data)
-      toast.success("Interview prep generated.")
+      toast.success(t("taskAgents.interviewPrepBody.interviewPrepGenerated", { defaultValue: "Interview prep generated." }))
     },
     onError: (err: unknown) => {
       const message = err instanceof Error ? err.message : "Prep failed"
-      toast.error(`Maven (InterviewAgent) failed: ${message}`)
+      toast.error(t("taskAgents.interviewPrepBody.mavenInterviewagentFailed", { defaultValue: "Maven (InterviewAgent) failed: {{message}}", message }))
     },
   })
 
@@ -69,14 +71,14 @@ export default function InterviewPrepBody() {
   if (result) {
     return (
       <div className="mx-auto max-w-3xl py-8 space-y-4">
-        <h1 className="text-2xl font-semibold">Interview Prep</h1>
+        <h1 className="text-2xl font-semibold">{t("taskAgents.interviewPrepBody.interviewPrep", { defaultValue: "Interview Prep" })}</h1>
         <TaskAgentResultCard
           result={result}
           onRerun={() => setResult(null)}
           taskSlug="interview-prep"
           agentId="maven"
           requestPayload={lastRequest}
-          title="Interview prep"
+          title={t("taskAgents.interviewPrepBody.interviewPrep2", { defaultValue: "Interview prep" })}
         />
       </div>
     )
@@ -85,17 +87,16 @@ export default function InterviewPrepBody() {
   return (
     <div className="mx-auto max-w-3xl py-8 space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold">Interview Prep</h1>
+        <h1 className="text-2xl font-semibold">{t("taskAgents.interviewPrepBody.interviewPrep", { defaultValue: "Interview Prep" })}</h1>
         <p className="text-sm text-slate-600">
-          Get a structured 3-section interview plan from Maven (InterviewAgent),
-          or browse the shared STAR question bank with scoring anchors.
+          {t("taskAgents.interviewPrepBody.getAStructured3Section", { defaultValue: "Get a structured 3-section interview plan from Maven (InterviewAgent), or browse the shared STAR question bank with scoring anchors." })}
         </p>
       </header>
 
       <Tabs defaultValue="generate">
         <TabsList>
-          <TabsTrigger value="generate">Generate prep</TabsTrigger>
-          <TabsTrigger value="bank">Question bank</TabsTrigger>
+          <TabsTrigger value="generate">{t("taskAgents.interviewPrepBody.generatePrep", { defaultValue: "Generate prep" })}</TabsTrigger>
+          <TabsTrigger value="bank">{t("taskAgents.interviewPrepBody.questionBank", { defaultValue: "Question bank" })}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="bank" className="pt-4">
@@ -105,20 +106,20 @@ export default function InterviewPrepBody() {
         <TabsContent value="generate" className="pt-4">
       <Card>
         <CardHeader>
-          <CardTitle>Inputs</CardTitle>
+          <CardTitle>{t("taskAgents.interviewPrepBody.inputs", { defaultValue: "Inputs" })}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="company_name">Company</Label>
+                <Label htmlFor="company_name">{t("taskAgents.interviewPrepBody.company", { defaultValue: "Company" })}</Label>
                 <Input id="company_name" {...form.register("company_name")} />
                 {form.formState.errors.company_name && (
                   <p className="mt-1 text-xs text-red-600">{form.formState.errors.company_name.message}</p>
                 )}
               </div>
               <div>
-                <Label htmlFor="industry">Industry</Label>
+                <Label htmlFor="industry">{t("taskAgents.interviewPrepBody.industry", { defaultValue: "Industry" })}</Label>
                 <Input id="industry" {...form.register("industry")} />
                 {form.formState.errors.industry && (
                   <p className="mt-1 text-xs text-red-600">{form.formState.errors.industry.message}</p>
@@ -128,20 +129,20 @@ export default function InterviewPrepBody() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="role_title">Role title</Label>
+                <Label htmlFor="role_title">{t("taskAgents.interviewPrepBody.roleTitle", { defaultValue: "Role title" })}</Label>
                 <Input id="role_title" {...form.register("role_title")} />
                 {form.formState.errors.role_title && (
                   <p className="mt-1 text-xs text-red-600">{form.formState.errors.role_title.message}</p>
                 )}
               </div>
               <div>
-                <Label htmlFor="candidate_name">Candidate name (optional)</Label>
+                <Label htmlFor="candidate_name">{t("taskAgents.interviewPrepBody.candidateNameOptional", { defaultValue: "Candidate name (optional)" })}</Label>
                 <Input id="candidate_name" {...form.register("candidate_name")} />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="interview_focus">Interview focus (optional)</Label>
+              <Label htmlFor="interview_focus">{t("taskAgents.interviewPrepBody.interviewFocusOptional", { defaultValue: "Interview focus (optional)" })}</Label>
               <Textarea id="interview_focus" rows={3} {...form.register("interview_focus")} />
             </div>
 
@@ -150,10 +151,10 @@ export default function InterviewPrepBody() {
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Run Maven
+                {t("taskAgents.interviewPrepBody.runMaven", { defaultValue: "Run Maven" })}
               </Button>
               <Button type="button" variant="outline" onClick={() => form.reset()}>
-                Reset
+                {t("taskAgents.interviewPrepBody.reset", { defaultValue: "Reset" })}
               </Button>
             </div>
           </form>

@@ -1,6 +1,7 @@
 import { MessageSquareText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { DossierInterviews } from "@/types/development"
+import { useTranslation } from "react-i18next"
 
 /**
  * S-3 — development interviews on the member's record, as summaries only.
@@ -20,45 +21,37 @@ export function InterviewsPanel({
   interviews?: DossierInterviews
   memberName: string
 }) {
+  const { t } = useTranslation("managerPages")
   const state = interviews?.state ?? "unavailable"
   const items = interviews?.items ?? []
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <MessageSquareText className="h-4 w-4 text-indigo-600" /> Development interviews
-        </CardTitle>
+          <MessageSquareText className="h-4 w-4 text-indigo-600" />{" "}{t("interviewsPanel.developmentInterviews", { defaultValue: "Development interviews" })}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {state === "not_shared" && (
-          <p className="text-sm text-slate-600" data-testid="interviews-not-shared">
-            {memberName} hasn't shared their interviews with you. They can choose to from their
-            Sharing page.
-          </p>
+          <p className="text-sm text-slate-600" data-testid="interviews-not-shared">{t("interviewsPanel.hasnTSharedTheirInterviews", { defaultValue: "{{memberName}} hasn't shared their interviews with you. They can choose to from their Sharing page.", memberName })}</p>
         )}
         {state === "unavailable" && (
-          <p className="text-sm text-amber-700" role="status" data-testid="interviews-unavailable">
-            Interviews aren't available here right now: interview sharing may be switched off on
-            this site, or the read failed. This isn't the same as having none.
-          </p>
+          <p className="text-sm text-amber-700" role="status" data-testid="interviews-unavailable">{t("interviewsPanel.interviewsArenTAvailableHere", { defaultValue: "Interviews aren't available here right now: interview sharing may be switched off on this site, or the read failed. This isn't the same as having none." })}</p>
         )}
         {state === "shared" && items.length === 0 && (
-          <p className="text-sm text-slate-600" data-testid="interviews-none-yet">
-            No development interviews with {memberName} yet.
-          </p>
+          <p className="text-sm text-slate-600" data-testid="interviews-none-yet">{t("interviewsPanel.noDevelopmentInterviewsWithYet", { defaultValue: "No development interviews with {{memberName}} yet.", memberName })}</p>
         )}
         {state === "shared" &&
           items.map((it) => (
             <div key={it.sessionId} className="rounded-md border border-slate-200 p-3" data-testid="interview-item">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="font-medium text-slate-900">{it.title || "Development interview"}</span>
+                <span className="font-medium text-slate-900">{it.title || t("interviewsPanel.developmentInterview", { defaultValue: "Development interview" })}</span>
                 <span className="text-xs text-slate-500">
                   {it.finalizedAt ? new Date(it.finalizedAt).toLocaleDateString() : ""}
                 </span>
               </div>
               {(it.overallScore != null || it.recommendation) && (
                 <p className="mt-1 text-xs text-slate-600">
-                  {it.overallScore != null ? `Overall ${it.overallScore.toFixed(1)}` : ""}
+                  {it.overallScore != null ? t("interviewsPanel.overall", { defaultValue: "Overall {{value}}", value: it.overallScore.toFixed(1) }) : ""}
                   {it.overallScore != null && it.recommendation ? " · " : ""}
                   {it.recommendation ?? ""}
                 </p>

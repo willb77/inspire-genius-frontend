@@ -35,6 +35,7 @@ import {
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import type { MemberCreateInput } from "@/types/development"
 import { PersonLookup } from "./PersonLookup"
+import { useTranslation } from "react-i18next"
 
 /** Parse a simple `name,email,title,department` CSV (optional header row). */
 export function parseMemberCsv(text: string): MemberCreateInput[] {
@@ -60,6 +61,7 @@ export function parseMemberCsv(text: string): MemberCreateInput[] {
 }
 
 export function AddMemberDialog({ triggerClassName }: { triggerClassName?: string }) {
+  const { t } = useTranslation("managerPages")
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -94,7 +96,7 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
 
   const submitSingle = async () => {
     if (!name.trim()) {
-      toast.error("Name is required")
+      toast.error(t("addMemberDialog.nameIsRequired", { defaultValue: "Name is required" }))
       return
     }
     setAddError(null)
@@ -111,15 +113,15 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
         // picked from another one is added as a card that is not linked to
         // their account. Say so rather than imply the link was made.
         toast.success(
-          `Added ${name.trim()} to your team, but not linked to their account: ${result.identity.reason}`,
+          t("addMemberDialog.addedToYourTeamBut", { defaultValue: "Added {{name}} to your team, but not linked to their account: {{reason}}", name: name.trim(), reason: result.identity.reason }),
         )
       } else {
-        toast.success(`Added ${name.trim()} to your team`)
+        toast.success(t("addMemberDialog.addedToYourTeam", { defaultValue: "Added {{name}} to your team", name: name.trim() }))
       }
       resetSingle()
       setOpen(false)
     } catch (err) {
-      const message = apiErrorMessage(err, "Couldn't add the member. Please try again.")
+      const message = apiErrorMessage(err, t("addMemberDialog.couldnTAddTheMemberPlease", { defaultValue: "Couldn't add the member. Please try again." }))
       setAddError(message)
       toast.error(message)
     }
@@ -128,7 +130,7 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
   const submitBulk = async () => {
     const members = parseMemberCsv(csv)
     if (members.length === 0) {
-      toast.error("No valid rows found. Use: name, email, title, department")
+      toast.error(t("addMemberDialog.noValidRowsFoundUse", { defaultValue: "No valid rows found. Use: name, email, title, department" }))
       return
     }
     try {
@@ -137,18 +139,18 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
       const failed = result?.failed ?? 0
       const refused = result?.refused ?? 0
       toast.success(
-        `Added ${created} member${created === 1 ? "" : "s"}${failed ? ` — ${failed} skipped` : ""}`,
+        (created === 1 ? t("addMemberDialog.addedMemberOne", { defaultValue: "Added {{created}} member", created }) : t("addMemberDialog.addedMemberOther", { defaultValue: "Added {{created}} members", created })) + (failed ? t("addMemberDialog.skippedSuffix", { defaultValue: " — {{failed}} skipped", failed }) : ""),
       )
       if (refused) {
         toast.error(
-          `${refused} ${refused === 1 ? "person has" : "people have"} an account you can't add: ` +
-            "only their manager, a company admin of their organisation or a super admin can.",
+          (refused === 1 ? t("addMemberDialog.refusedOne", { defaultValue: "{{refused}} person has an account you can't add: ", refused }) : t("addMemberDialog.refusedOther", { defaultValue: "{{refused}} people have an account you can't add: ", refused })) +
+            t("addMemberDialog.onlyTheirManagerACompanyAdmin", { defaultValue: "only their manager, a company admin of their organisation or a super admin can." }),
         )
       }
       setCsv("")
       setOpen(false)
     } catch {
-      toast.error("Bulk add failed. Please try again.")
+      toast.error(t("addMemberDialog.bulkAddFailedPleaseTry", { defaultValue: "Bulk add failed. Please try again." }))
     }
   }
 
@@ -164,64 +166,59 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className={triggerClassName}>
-          <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
-          Add member
-        </Button>
+          <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />{t("addMemberDialog.addMember", { defaultValue: "Add member" })}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add team members</DialogTitle>
-          <DialogDescription>
-            Add a direct report to your development roster. A card is created for
-            each new member.
-          </DialogDescription>
+          <DialogTitle>{t("addMemberDialog.addTeamMembers", { defaultValue: "Add team members" })}</DialogTitle>
+          <DialogDescription>{t("addMemberDialog.addADirectReportTo", { defaultValue: "Add a direct report to your development roster. A card is created for each new member." })}</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="single">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="single">Single</TabsTrigger>
-            <TabsTrigger value="bulk">Bulk upload</TabsTrigger>
+            <TabsTrigger value="single">{t("addMemberDialog.single", { defaultValue: "Single" })}</TabsTrigger>
+            <TabsTrigger value="bulk">{t("addMemberDialog.bulkUpload", { defaultValue: "Bulk upload" })}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="single" className="space-y-3 pt-3">
             <PersonLookup selected={picked} onSelect={pick} />
             <div className="space-y-1.5">
-              <Label htmlFor="member-name">Name</Label>
+              <Label htmlFor="member-name">{t("addMemberDialog.name", { defaultValue: "Name" })}</Label>
               <Input
                 id="member-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Jordan Lee"
+                placeholder={t("addMemberDialog.jordanLee", { defaultValue: "Jordan Lee" })}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="member-title">Title</Label>
+                <Label htmlFor="member-title">{t("addMemberDialog.title", { defaultValue: "Title" })}</Label>
                 <Input
                   id="member-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Software Engineer"
+                  placeholder={t("addMemberDialog.softwareEngineer", { defaultValue: "Software Engineer" })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="member-dept">Department</Label>
+                <Label htmlFor="member-dept">{t("addMemberDialog.department", { defaultValue: "Department" })}</Label>
                 <Input
                   id="member-dept"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="Engineering"
+                  placeholder={t("addMemberDialog.engineering", { defaultValue: "Engineering" })}
                 />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="member-email">Email (optional)</Label>
+              <Label htmlFor="member-email">{t("addMemberDialog.emailOptional", { defaultValue: "Email (optional)" })}</Label>
               <Input
                 id="member-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="jordan@company.com"
+                placeholder={t("addMemberDialog.jordanCompanyCom", { defaultValue: "jordan@company.com" })}
               />
             </div>
             {addError && (
@@ -231,22 +228,20 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
             )}
             <DialogFooter>
               <Button onClick={submitSingle} disabled={addOne.isPending}>
-                {addOne.isPending ? "Adding…" : "Add member"}
+                {addOne.isPending ? t("addMemberDialog.adding", { defaultValue: "Adding…" }) : t("addMemberDialog.addMember", { defaultValue: "Add member" })}
               </Button>
             </DialogFooter>
           </TabsContent>
 
           <TabsContent value="bulk" className="space-y-3 pt-3">
-            <p className="text-sm text-muted-foreground">
-              Paste or upload a CSV, one member per line:
-              <br />
-              <code className="text-xs">name, email, title, department</code>
+            <p className="text-sm text-muted-foreground">{t("addMemberDialog.pasteOrUploadACsv", { defaultValue: "Paste or upload a CSV, one member per line:" })}<br />
+              <code className="text-xs">{t("addMemberDialog.nameEmailTitleDepartment", { defaultValue: "name, email, title, department" })}</code>
             </p>
             <Textarea
               value={csv}
               onChange={(e) => setCsv(e.target.value)}
               rows={7}
-              placeholder={"Jordan Lee, jordan@co.com, Engineer, Platform\nSam Rivera, sam@co.com, Designer, Product"}
+              placeholder={t("addMemberDialog.jordanLeeJordanCoCom", { defaultValue: "Jordan Lee, jordan@co.com, Engineer, Platform\nSam Rivera, sam@co.com, Designer, Product" })}
               className="font-mono text-xs"
             />
             <div className="flex items-center gap-2">
@@ -262,16 +257,12 @@ export function AddMemberDialog({ triggerClassName }: { triggerClassName?: strin
                 variant="outline"
                 size="sm"
                 onClick={() => fileRef.current?.click()}
-              >
-                Upload CSV file
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                {parseMemberCsv(csv).length} member(s) detected
-              </span>
+              >{t("addMemberDialog.uploadCsvFile", { defaultValue: "Upload CSV file" })}</Button>
+              <span className="text-xs text-muted-foreground">{t("addMemberDialog.memberSDetected", { defaultValue: "{{length}} member(s) detected", length: parseMemberCsv(csv).length })}</span>
             </div>
             <DialogFooter>
               <Button onClick={submitBulk} disabled={addBulk.isPending}>
-                {addBulk.isPending ? "Adding…" : "Add members"}
+                {addBulk.isPending ? t("addMemberDialog.adding", { defaultValue: "Adding…" }) : t("addMemberDialog.addMembers", { defaultValue: "Add members" })}
               </Button>
             </DialogFooter>
           </TabsContent>

@@ -48,7 +48,10 @@ jest.mock("@/hooks/practitioner/usePractitioner", () => ({
 
 /* ---- i18n ---- */
 jest.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    // Honour defaultValue (the extracted practitionerPages strings); keys without one still echo the key.
+    t: (key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key,
+  }),
 }));
 
 const hookDefaults = { data: undefined, isLoading: false, error: null, refetch: jest.fn() };

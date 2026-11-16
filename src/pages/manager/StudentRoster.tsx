@@ -11,6 +11,7 @@ import type {
   RosterPrism,
   StudentRosterRow,
 } from "@/types/manager/studentRoster"
+import { useTranslation } from "react-i18next"
 
 /**
  * Student Oversight — the manager's roster, gated by student consent.
@@ -78,23 +79,21 @@ const CONSENT_COPY: Record<string, { label: string; tone: string; hint: string }
 }
 
 function NotShared({ what }: { what: string }) {
+  const { t } = useTranslation("managerPages")
   return (
     <span
       className="inline-flex items-center gap-1 text-slate-400"
-      title={`${what} is not shared. The student has not granted this category — this is not a statement about their activity.`}
+      title={t("studentRoster.isNotSharedTheStudent", { defaultValue: "{{what}} is not shared. The student has not granted this category — this is not a statement about their activity.", what })}
     >
-      <Lock className="h-3 w-3" aria-hidden />
-      Not shared
-    </span>
+      <Lock className="h-3 w-3" aria-hidden />{t("studentRoster.notShared", { defaultValue: "Not shared" })}</span>
   )
 }
 
 /** A measurement nobody has. Distinct from "not shared" on purpose. */
 function NotRecorded({ why }: { why: string }) {
+  const { t } = useTranslation("managerPages")
   return (
-    <span className="text-slate-400" title={why}>
-      Not recorded
-    </span>
+    <span className="text-slate-400" title={why}>{t("studentRoster.notRecorded", { defaultValue: "Not recorded" })}</span>
   )
 }
 
@@ -113,19 +112,20 @@ function daysSince(iso: string | null): number | null {
 }
 
 function PrismCell({ prism }: { prism: StudentRosterRow["prism"] }) {
-  if (!isShared<RosterPrism>(prism)) return <NotShared what="PRISM status" />
+  const { t } = useTranslation("managerPages")
+  if (!isShared<RosterPrism>(prism)) return <NotShared what={t("studentRoster.prismStatus", { defaultValue: "PRISM status" })} />
 
   const when = formatDate(prism.at)
   const label =
     prism.state === "completed"
       ? when
-        ? `Completed ${when}`
-        : "Completed"
+        ? t("studentRoster.completedOn", { defaultValue: "Completed {{when}}", when })
+        : t("studentRoster.completed", { defaultValue: "Completed" })
       : prism.state === "in_progress"
         ? when
-          ? `Sent ${when}`
-          : "Sent"
-        : "Not started"
+          ? t("studentRoster.sentOn", { defaultValue: "Sent {{when}}", when })
+          : t("studentRoster.sent", { defaultValue: "Sent" })
+        : t("studentRoster.notStarted", { defaultValue: "Not started" })
 
   return (
     <div className="flex flex-col gap-0.5">
@@ -137,16 +137,15 @@ function PrismCell({ prism }: { prism: StudentRosterRow["prism"] }) {
           className="inline-flex items-start gap-1 text-xs text-amber-700"
           title={prism.disagreement}
         >
-          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
-          Sources disagree
-        </span>
+          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />{t("studentRoster.sourcesDisagree", { defaultValue: "Sources disagree" })}</span>
       )}
     </div>
   )
 }
 
 function EngagementCell({ engagement }: { engagement: StudentRosterRow["engagement"] }) {
-  if (!isShared<RosterEngagement>(engagement)) return <NotShared what="Engagement" />
+  const { t } = useTranslation("managerPages")
+  if (!isShared<RosterEngagement>(engagement)) return <NotShared what={t("studentRoster.engagement", { defaultValue: "Engagement" })} />
 
   const since = daysSince(engagement.lastLoginAt ?? engagement.lastSeenAt)
   const visits = engagement.visitDays4w
@@ -155,18 +154,18 @@ function EngagementCell({ engagement }: { engagement: StudentRosterRow["engageme
     <div className="flex flex-col gap-0.5 text-sm">
       <span>
         {since === null ? (
-          <NotRecorded why="We have no sign-in event for this member. That is not the same as never signing in." />
+          <NotRecorded why={t("studentRoster.noSignInEvent", { defaultValue: "We have no sign-in event for this member. That is not the same as never signing in." })} />
         ) : since === 0 ? (
-          "Seen today"
+          t("studentRoster.seenToday", { defaultValue: "Seen today" })
         ) : (
-          `${since} day${since === 1 ? "" : "s"} ago`
+          since === 1 ? t("studentRoster.dayAgoOne", { defaultValue: "{{since}} day ago", since }) : t("studentRoster.dayAgoOther", { defaultValue: "{{since}} days ago", since })
         )}
       </span>
       <span className="text-xs text-slate-500">
         {visits === null ? (
-          <NotRecorded why="No activity has been recorded for this member, so visits cannot be counted. This is not a count of zero." />
+          <NotRecorded why={t("studentRoster.noActivityRecorded", { defaultValue: "No activity has been recorded for this member, so visits cannot be counted. This is not a count of zero." })} />
         ) : (
-          `${visits} day${visits === 1 ? "" : "s"} active in ${engagement.cadenceWindowDays / 7} weeks`
+          visits === 1 ? t("studentRoster.dayActiveInWeeksOne", { defaultValue: "{{visits}} day active in {{weeks}} weeks", visits, weeks: engagement.cadenceWindowDays / 7 }) : t("studentRoster.dayActiveInWeeksOther", { defaultValue: "{{visits}} days active in {{weeks}} weeks", visits, weeks: engagement.cadenceWindowDays / 7 })
         )}
       </span>
     </div>
@@ -174,6 +173,7 @@ function EngagementCell({ engagement }: { engagement: StudentRosterRow["engageme
 }
 
 function ConsentCell({ row }: { row: StudentRosterRow }) {
+  const { t } = useTranslation("managerPages")
   const copy = CONSENT_COPY[row.consent.state] ?? CONSENT_COPY.none
   const cats = row.consent.grantedCategories
   return (
@@ -190,8 +190,7 @@ function ConsentCell({ row }: { row: StudentRosterRow }) {
         </span>
       )}
       {row.consent.state === "granted" && row.consent.expiresAt && (
-        <span className="text-xs text-slate-400">
-          Ends {formatDate(row.consent.expiresAt)}
+        <span className="text-xs text-slate-400">{t("studentRoster.ends", { defaultValue: "Ends" })}{" "}{formatDate(row.consent.expiresAt)}
         </span>
       )}
     </div>
@@ -199,6 +198,7 @@ function ConsentCell({ row }: { row: StudentRosterRow }) {
 }
 
 export default function StudentRoster() {
+  const { t } = useTranslation("managerPages")
   const { data, isLoading, isError, error, refetch } = useStudentRoster()
   const [showReasons, setShowReasons] = useState(false)
 
@@ -208,20 +208,15 @@ export default function StudentRoster() {
     <ManagerLayout>
       <div className="space-y-6 p-6">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-slate-900">Member oversight</h1>
-          <p className="max-w-3xl text-sm text-slate-600">
-            Your direct reports. What you can see about each of them is decided by
-            them — a member who has not shared a category is shown as{" "}
-            <span className="font-medium">Not shared</span>, which says nothing
-            about how engaged they are.
-          </p>
+          <h1 className="text-2xl font-semibold text-slate-900">{t("studentRoster.memberOversight", { defaultValue: "Member oversight" })}</h1>
+          <p className="max-w-3xl text-sm text-slate-600">{t("studentRoster.yourDirectReportsWhatYou", { defaultValue: "Your direct reports. What you can see about each of them is decided by them — a member who has not shared a category is shown as" })}{" "}<span className="font-medium">{t("studentRoster.notShared", { defaultValue: "Not shared" })}</span>{t("studentRoster.whichSaysNothingAboutHow", { defaultValue: ", which says nothing about how engaged they are." })}</p>
         </header>
 
         {/* Loading, error and empty are three separate states with three
             separate renderings. Collapsing any pair of them is how a broken
             fetch comes to look like a manager with no students. */}
         {isLoading && (
-          <div className="space-y-2" role="status" aria-label="Loading roster">
+          <div className="space-y-2" role="status" aria-label={t("studentRoster.loadingRoster", { defaultValue: "Loading roster" })}>
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
@@ -233,18 +228,11 @@ export default function StudentRoster() {
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 text-red-600" aria-hidden />
               <div className="space-y-2">
-                <p className="text-sm font-medium text-red-900">
-                  The roster could not be loaded.
-                </p>
+                <p className="text-sm font-medium text-red-900">{t("studentRoster.theRosterCouldNotBe", { defaultValue: "The roster could not be loaded." })}</p>
                 <p className="text-sm text-red-800">
                   {(error as Error)?.message ??
-                    "The roster service did not respond."}{" "}
-                  This is an error, not an empty roster — no conclusion should be
-                  drawn about your students from this screen.
-                </p>
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
-                  Try again
-                </Button>
+                    t("studentRoster.theRosterServiceDidNot", { defaultValue: "The roster service did not respond." })}{" "}{t("studentRoster.thisIsAnErrorNot", { defaultValue: "This is an error, not an empty roster — no conclusion should be drawn about your students from this screen." })}</p>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>{t("studentRoster.tryAgain", { defaultValue: "Try again" })}</Button>
               </div>
             </div>
           </div>
@@ -257,25 +245,13 @@ export default function StudentRoster() {
               <div className="space-y-1">
                 {data?.rosterEmptyReason === "no_profile" ? (
                   <>
-                    <p className="text-sm font-medium text-slate-900">
-                      We could not resolve your profile.
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      Your account has no profile record, so we cannot work out
-                      who reports to you. This is a set-up problem on our side,
-                      not an empty team — please contact support.
-                    </p>
+                    <p className="text-sm font-medium text-slate-900">{t("studentRoster.weCouldNotResolveYour", { defaultValue: "We could not resolve your profile." })}</p>
+                    <p className="text-sm text-slate-600">{t("studentRoster.yourAccountHasNoProfile", { defaultValue: "Your account has no profile record, so we cannot work out who reports to you. This is a set-up problem on our side, not an empty team — please contact support." })}</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-sm font-medium text-slate-900">
-                      No students are assigned to you yet.
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      Your profile resolved correctly and the roster came back
-                      empty, which means nobody has you set as their manager.
-                      An administrator assigns direct reports.
-                    </p>
+                    <p className="text-sm font-medium text-slate-900">{t("studentRoster.noStudentsAreAssignedTo", { defaultValue: "No students are assigned to you yet." })}</p>
+                    <p className="text-sm text-slate-600">{t("studentRoster.yourProfileResolvedCorrectlyAnd", { defaultValue: "Your profile resolved correctly and the roster came back empty, which means nobody has you set as their manager. An administrator assigns direct reports." })}</p>
                   </>
                 )}
               </div>
@@ -287,10 +263,9 @@ export default function StudentRoster() {
           <>
             <div className="flex items-center justify-between">
               <p className="text-sm text-slate-600">
-                {data?.counts?.total ?? rows.length} student
-                {(data?.counts?.total ?? rows.length) === 1 ? "" : "s"}
+                {(data?.counts?.total ?? rows.length) === 1 ? t("studentRoster.studentCountOne", { defaultValue: "{{total}} student", total: data?.counts?.total ?? rows.length }) : t("studentRoster.studentCountOther", { defaultValue: "{{total}} students", total: data?.counts?.total ?? rows.length })}
                 {typeof data?.counts?.withAnyGrant === "number" && (
-                  <> · {data.counts.withAnyGrant} sharing something with you</>
+                  <>{" "}{t("studentRoster.sharingSomethingWithYou", { defaultValue: "· {{withAnyGrant}} sharing something with you", withAnyGrant: data.counts.withAnyGrant })}</>
                 )}
               </p>
               <Button
@@ -299,7 +274,7 @@ export default function StudentRoster() {
                 onClick={() => setShowReasons((v) => !v)}
               >
                 <ShieldQuestion className="mr-1 h-4 w-4" aria-hidden />
-                {showReasons ? "Hide" : "Why this order?"}
+                {showReasons ? t("studentRoster.hide", { defaultValue: "Hide" }) : t("studentRoster.whyThisOrder", { defaultValue: "Why this order?" })}
               </Button>
             </div>
 
@@ -307,10 +282,10 @@ export default function StudentRoster() {
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th scope="col" className="px-4 py-3">Member</th>
-                    <th scope="col" className="px-4 py-3">Sharing</th>
-                    <th scope="col" className="px-4 py-3">PRISM</th>
-                    <th scope="col" className="px-4 py-3">Engagement</th>
+                    <th scope="col" className="px-4 py-3">{t("studentRoster.member", { defaultValue: "Member" })}</th>
+                    <th scope="col" className="px-4 py-3">{t("studentRoster.sharing", { defaultValue: "Sharing" })}</th>
+                    <th scope="col" className="px-4 py-3">{t("studentRoster.prism", { defaultValue: "PRISM" })}</th>
+                    <th scope="col" className="px-4 py-3">{t("studentRoster.engagement", { defaultValue: "Engagement" })}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -318,7 +293,7 @@ export default function StudentRoster() {
                     <tr key={row.studentUserId} className="align-top">
                       <td className="px-4 py-3">
                         <div className="font-medium text-slate-900">
-                          {row.name ?? "Name not on file"}
+                          {row.name ?? t("studentRoster.nameNotOnFile", { defaultValue: "Name not on file" })}
                         </div>
                         {row.email && (
                           <div className="text-xs text-slate-500">{row.email}</div>

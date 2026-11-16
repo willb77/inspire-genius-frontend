@@ -3,6 +3,7 @@ import DataCard from "@/components/dashboard/DataCard"
 import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerLeadership } from "@/hooks/manager/useManagerTeam"
+import { useTranslation } from "react-i18next"
 
 type Leader = { name: string; score: number; potential: string; programsCompleted: number; nextStep: string }
 
@@ -23,6 +24,7 @@ const potentialStyle = (p: string) => {
 }
 
 export default function ManagerLeadership() {
+  const { t } = useTranslation("managerPages")
   const { data: leaderData, isLoading, error, refetch } = useManagerLeadership()
   const leaders = ((leaderData as { leaders?: Leader[] } | undefined)?.leaders ?? FALLBACK_LEADERS) as Leader[]
 
@@ -30,17 +32,17 @@ export default function ManagerLeadership() {
   const highPotential = leaders.filter((l) => l.potential === "High").length
 
   const STATS = [
-    { label: "Total Leaders", value: String(leaders.length), color: "#3B5BFF" },
-    { label: "Avg Score", value: String(avgScore), color: "#0D9488" },
-    { label: "High Potential", value: String(highPotential), color: "#10B981" },
-    { label: "Programs Active", value: "4", color: "#8B5CF6" },
+    { label: t("leadership.totalLeaders", { defaultValue: "Total Leaders" }), value: String(leaders.length), color: "#3B5BFF" },
+    { label: t("leadership.avgScore", { defaultValue: "Avg Score" }), value: String(avgScore), color: "#0D9488" },
+    { label: t("leadership.highPotential", { defaultValue: "High Potential" }), value: String(highPotential), color: "#10B981" },
+    { label: t("leadership.programsActive", { defaultValue: "Programs Active" }), value: "4", color: "#8B5CF6" },
   ]
 
   return (
     <ManagerLayout>
       <PlaceholderBanner />
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Leadership</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Track leadership development, potential assessments, and program progress.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("leadership.leadership", { defaultValue: "Leadership" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("leadership.trackLeadershipDevelopmentPotentialAssessments", { defaultValue: "Track leadership development, potential assessments, and program progress." })}</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {STATS.map((s) => (
@@ -51,11 +53,9 @@ export default function ManagerLeadership() {
         ))}
       </div>
 
-      <DataCard title="Leadership Pipeline" badge={leaders.length}>
+      <DataCard title={t("leadership.leadershipPipeline", { defaultValue: "Leadership Pipeline" })} badge={leaders.length}>
         {error && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load leadership data.
-            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{t("leadership.failedToLoadLeadershipData", { defaultValue: "Failed to load leadership data." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("leadership.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         {isLoading ? (
@@ -65,11 +65,11 @@ export default function ManagerLeadership() {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-left text-[11px] text-[#6b7280] border-b border-[#e5e7eb]">
-                  <th className="pb-2 font-medium">Name</th>
-                  <th className="pb-2 font-medium">Leadership Score</th>
-                  <th className="pb-2 font-medium">Potential</th>
-                  <th className="pb-2 font-medium">Programs Completed</th>
-                  <th className="pb-2 font-medium">Next Step</th>
+                  <th className="pb-2 font-medium">{t("leadership.name", { defaultValue: "Name" })}</th>
+                  <th className="pb-2 font-medium">{t("leadership.leadershipScore", { defaultValue: "Leadership Score" })}</th>
+                  <th className="pb-2 font-medium">{t("leadership.potential", { defaultValue: "Potential" })}</th>
+                  <th className="pb-2 font-medium">{t("leadership.programsCompleted", { defaultValue: "Programs Completed" })}</th>
+                  <th className="pb-2 font-medium">{t("leadership.nextStep", { defaultValue: "Next Step" })}</th>
                 </tr>
               </thead>
               <tbody>

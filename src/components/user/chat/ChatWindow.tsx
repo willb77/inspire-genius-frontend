@@ -566,7 +566,7 @@ const genericMessages =
       {copied ? (
         <div className="fixed right-6 bottom-40 z-50">
           <div className="rounded-xl bg-black/80 text-white text-sm px-3 py-2 shadow">
-            Copied to clipboard
+            {t("studioUi:user.chatChatWindow.copiedToClipboard", { defaultValue: "Copied to clipboard" })}
           </div>
         </div>
       ) : null}

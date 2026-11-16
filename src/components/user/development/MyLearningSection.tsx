@@ -38,6 +38,7 @@ import {
 import type { LearningItem, LearningItemStatus } from "@/types/development"
 import SelfSection from "./SelfSection"
 import { selfLearningSchema } from "./myDevelopment.schema"
+import { useTranslation } from "react-i18next"
 
 type LearningInput = z.input<typeof selfLearningSchema>
 type LearningOutput = z.output<typeof selfLearningSchema>
@@ -103,6 +104,7 @@ function LearningRow({
 }
 
 export default function MyLearningSection() {
+  const { t } = useTranslation("studioUi")
   const items = useMyLearningItems()
   const createItem = useCreateMyLearningItem()
   const updateItem = useUpdateMyLearningItem()
@@ -130,7 +132,7 @@ export default function MyLearningSection() {
   return (
     <SelfSection
       id="my-learning"
-      title="Learning"
+      title={t("user.developmentMyLearningSection.learning", { defaultValue: "Learning" })}
       icon={BookOpen}
       lead="What you are working through, and how far you have got. You record your own progress here."
       isLoading={items.isLoading}
@@ -144,19 +146,19 @@ export default function MyLearningSection() {
       emptyBody="Add a course, book or module below, or your coach can add one against a gap from the Team Development Studio. Either way it appears here and the progress is yours to set."
       always={
         <form onSubmit={onSubmit} className="space-y-2 border-t border-border pt-4" noValidate>
-          <p className="text-sm font-medium">Add something you are working through</p>
+          <p className="text-sm font-medium">{t("user.developmentMyLearningSection.addSomethingYouAreWorking", { defaultValue: "Add something you are working through" })}</p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-1">
-              <Label htmlFor="my-learning-title">What is it?</Label>
+              <Label htmlFor="my-learning-title">{t("user.developmentMyLearningSection.whatIsIt", { defaultValue: "What is it?" })}</Label>
               <Input
                 id="my-learning-title"
-                placeholder="Negotiation fundamentals"
+                placeholder={t("user.developmentMyLearningSection.negotiationFundamentals", { defaultValue: "Negotiation fundamentals" })}
                 aria-invalid={!!titleError}
                 {...form.register("title")}
               />
             </div>
             <div className="flex-1 space-y-1">
-              <Label htmlFor="my-learning-provider">Where is it from? (optional)</Label>
+              <Label htmlFor="my-learning-provider">{t("user.developmentMyLearningSection.whereIsItFromOptional", { defaultValue: "Where is it from? (optional)" })}</Label>
               <Input
                 id="my-learning-provider"
                 placeholder="Internal L&amp;D"
@@ -167,7 +169,7 @@ export default function MyLearningSection() {
               {createItem.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
               )}
-              Add
+              {t("user.developmentMyLearningSection.add", { defaultValue: "Add" })}
             </Button>
           </div>
           {titleError && (

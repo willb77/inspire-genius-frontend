@@ -3,6 +3,7 @@ import ProgressBar from "@/components/dashboard/ProgressBar"
 import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerCareerPaths } from "@/hooks/manager/useManagerTeam"
+import { useTranslation } from "react-i18next"
 
 type Skill = { name: string; current: number; target: number }
 type CareerPath = {
@@ -27,19 +28,18 @@ const alignmentColor = (score: number) =>
   score >= 85 ? "#10B981" : score >= 75 ? "#3B82F6" : "#D97706"
 
 export default function ManagerCareerManagement() {
+  const { t } = useTranslation("managerPages")
   const { data: pathData, isLoading, error, refetch } = useManagerCareerPaths()
   const paths = ((pathData as { paths?: CareerPath[] } | undefined)?.paths ?? FALLBACK_PATHS) as CareerPath[]
 
   return (
     <ManagerLayout>
       <PlaceholderBanner />
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Career Management</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Track career paths, skill gaps, and PRISM alignment for your team.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("careerManagement.careerManagement", { defaultValue: "Career Management" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("careerManagement.trackCareerPathsSkillGaps", { defaultValue: "Track career paths, skill gaps, and PRISM alignment for your team." })}</p>
 
       {error && (
-        <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4">
-          Failed to load career paths.
-          <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+        <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4">{t("careerManagement.failedToLoadCareerPaths", { defaultValue: "Failed to load career paths." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("careerManagement.retry", { defaultValue: "Retry" })}</button>
         </div>
       )}
 
@@ -59,7 +59,7 @@ export default function ManagerCareerManagement() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] font-semibold text-[#6b7280]">PRISM Alignment</div>
+                  <div className="text-[10px] font-semibold text-[#6b7280]">{t("careerManagement.prismAlignment", { defaultValue: "PRISM Alignment" })}</div>
                   <div className="text-[14px] font-bold" style={{ color: alignmentColor(path.prismAlignment) }}>
                     {path.prismAlignment}%
                   </div>
@@ -68,13 +68,13 @@ export default function ManagerCareerManagement() {
 
               <div className="mb-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-medium text-[#6b7280]">Overall Progress</span>
+                  <span className="text-[11px] font-medium text-[#6b7280]">{t("careerManagement.overallProgress", { defaultValue: "Overall Progress" })}</span>
                   <span className="text-[11px] font-semibold text-[#3B5BFF]">{path.progressPct}%</span>
                 </div>
                 <ProgressBar value={path.progressPct} color="#3B5BFF" showPct={false} />
               </div>
 
-              <div className="text-[11px] font-semibold text-[#6b7280] mb-2">Skill Gaps</div>
+              <div className="text-[11px] font-semibold text-[#6b7280] mb-2">{t("careerManagement.skillGaps", { defaultValue: "Skill Gaps" })}</div>
               <div className="space-y-1.5">
                 {path.skills.map((skill) => {
                   const gap = skill.target - skill.current
