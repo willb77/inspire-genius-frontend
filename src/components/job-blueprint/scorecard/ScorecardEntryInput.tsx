@@ -1,6 +1,7 @@
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import type { ScorecardScore } from '@/types/job-blueprint'
+import { useTranslation } from 'react-i18next'
 
 type ScorecardEntryInputProps = {
   dimensionName: string
@@ -11,12 +12,6 @@ type ScorecardEntryInputProps = {
   isCounterProductive?: boolean
 }
 
-const SCORE_OPTIONS: { value: ScorecardScore; label: string; description: string }[] = [
-  { value: 0, label: '0', description: 'Unable to demonstrate satisfactorily' },
-  { value: 3, label: '3', description: 'Demonstrated to moderate extent' },
-  { value: 5, label: '5', description: 'Demonstrated to large extent' },
-]
-
 export function ScorecardEntryInput({
   dimensionName,
   score,
@@ -25,18 +20,25 @@ export function ScorecardEntryInput({
   onEvidenceChange,
   isCounterProductive,
 }: ScorecardEntryInputProps) {
+  const { t } = useTranslation("jobBlueprintPages")
+  const SCORE_OPTIONS: { value: ScorecardScore; label: string; description: string }[] = [
+    { value: 0, label: '0', description: t("entry.score0", { defaultValue: "Unable to demonstrate satisfactorily" }) },
+    { value: 3, label: '3', description: t("entry.score3", { defaultValue: "Demonstrated to moderate extent" }) },
+    { value: 5, label: '5', description: t("entry.score5", { defaultValue: "Demonstrated to large extent" }) },
+  ]
+
   return (
     <div className="border rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-slate-800">
           {dimensionName}
           {isCounterProductive && (
-            <span className="text-xs font-normal text-red-500 ml-2">(Counter-productive - inverted)</span>
+            <span className="text-xs font-normal text-red-500 ml-2">{t("entry.counterProductive", { defaultValue: "(Counter-productive - inverted)" })}</span>
           )}
         </p>
       </div>
 
-      <div className="flex gap-2" role="radiogroup" aria-label={`Score for ${dimensionName}`}>
+      <div className="flex gap-2" role="radiogroup" aria-label={t("entry.scoreFor", { defaultValue: "Score for {{name}}", name: dimensionName })}>
         {SCORE_OPTIONS.map(opt => (
           <button
             key={opt.value}
@@ -58,7 +60,7 @@ export function ScorecardEntryInput({
       </div>
 
       <Textarea
-        placeholder="Evidence and observations..."
+        placeholder={t("entry.evidencePlaceholder", { defaultValue: "Evidence and observations..." })}
         value={evidence}
         onChange={e => onEvidenceChange(e.target.value)}
         rows={2}

@@ -1,4 +1,6 @@
 import { useEffect } from "react"
+import type { TFunction } from "i18next"
+import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -16,14 +18,15 @@ import {
 
 const MAX_REASON = 2000
 
-const schema = z.object({
-  reason: z
-    .string()
-    .trim()
-    .min(1, "Say why this candidate is being marked hired")
-    .max(MAX_REASON, `At most ${MAX_REASON} characters`),
-})
-type FormValues = z.infer<typeof schema>
+const makeSchema = (t: TFunction) =>
+  z.object({
+    reason: z
+      .string()
+      .trim()
+      .min(1, t("hire.val.required", { defaultValue: "Say why this candidate is being marked hired" }))
+      .max(MAX_REASON, t("hire.val.max", { defaultValue: "At most {{max}} characters", max: MAX_REASON })),
+  })
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 /**
  * Asks for the reason before a candidate is marked hired. The reason is
@@ -46,7 +49,8 @@ export function HireReasonDialog({
   error?: string | null
   onConfirm: (reason: string) => void
 }) {
-  const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { reason: "" } })
+  const { t } = useTranslation("jobBlueprintPages")
+  const form = useForm<FormValues>({ resolver: zodResolver(makeSchema(t)), defaultValues: { reason: "" } })
   const { register, handleSubmit, reset, formState } = form
 
   useEffect(() => {
@@ -60,14 +64,14 @@ export function HireReasonDialog({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={onSubmit} noValidate>
           <DialogHeader>
-            <DialogTitle>Mark candidate {candidateCode} hired</DialogTitle>
+            <DialogTitle>{t("hire.title", { defaultValue: "Mark candidate {{code}} hired", code: candidateCode })}</DialogTitle>
             <DialogDescription>
-              Record why. The reason is kept with this step and with who made it.
+              {t("hire.description", { defaultValue: "Record why. The reason is kept with this step and with who made it." })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="mt-4 space-y-1.5">
-            <Label htmlFor="hire-reason">Reason</Label>
+            <Label htmlFor="hire-reason">{t("hire.reason", { defaultValue: "Reason" })}</Label>
             <Textarea id="hire-reason" rows={4} {...register("reason")} />
             {formState.errors.reason ? (
               <p className="text-xs text-destructive">{formState.errors.reason.message}</p>
@@ -84,10 +88,10 @@ export function HireReasonDialog({
 
           <DialogFooter className="mt-5">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={pending}>
-              Cancel
+              {t("hire.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : "Mark hired"}
+              {pending ? t("hire.saving", { defaultValue: "Saving…" }) : t("hire.submit", { defaultValue: "Mark hired" })}
             </Button>
           </DialogFooter>
         </form>

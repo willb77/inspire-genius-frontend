@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import type { LucideIcon } from "lucide-react"
 import {
   Target,
@@ -40,6 +41,7 @@ type JourneyStep = { key: string; label: string; icon: LucideIcon; done: boolean
  * next-actions list that deep-links into the relevant tool. Mock-backed hooks.
  */
 export default function GrantPlanPage() {
+  const { t } = useTranslation("grantPages")
   const { data: profile } = useStudentProfile()
   const { data: deadlines } = useDeadlines()
   const { data: scholarships } = useScholarships()
@@ -82,14 +84,14 @@ export default function GrantPlanPage() {
     const hasSubmittedApp = (deadlines ?? []).some((d) => d.status === "submitted")
     const hasOffers = (awards?.length ?? 0) > 0
     return [
-      { key: "profile", label: "Profile", icon: UserRound, done: aidReady },
-      { key: "fafsa", label: "FAFSA", icon: FileText, done: fafsaSubmitted },
-      { key: "search", label: "Search", icon: Search, done: hasMatches },
-      { key: "apply", label: "Apply", icon: ClipboardList, done: hasSubmittedApp },
-      { key: "compare", label: "Compare", icon: Scale, done: hasOffers },
-      { key: "plan", label: "Plan", icon: Target, done: false },
+      { key: "profile", label: t("journey.profile", "Profile"), icon: UserRound, done: aidReady },
+      { key: "fafsa", label: t("journey.fafsa", "FAFSA"), icon: FileText, done: fafsaSubmitted },
+      { key: "search", label: t("journey.search", "Search"), icon: Search, done: hasMatches },
+      { key: "apply", label: t("journey.apply", "Apply"), icon: ClipboardList, done: hasSubmittedApp },
+      { key: "compare", label: t("journey.compare", "Compare"), icon: Scale, done: hasOffers },
+      { key: "plan", label: t("journey.plan", "Plan"), icon: Target, done: false },
     ]
-  }, [aidReady, intake, scholarships, deadlines, awards])
+  }, [aidReady, intake, scholarships, deadlines, awards, t])
 
   const firstTodo = steps.findIndex((s) => !s.done)
   const activeIndex = firstTodo === -1 ? steps.length - 1 : firstTodo
@@ -101,41 +103,62 @@ export default function GrantPlanPage() {
     if (!aidReady) {
       actions.push({
         id: "intake",
-        label: `Finish your aid profile — ${answered}/${TRIGGER_FIELDS.length} essentials answered`,
+        label: t("plan.actionFinishProfile", {
+          answered,
+          total: TRIGGER_FIELDS.length,
+          defaultValue: "Finish your aid profile — {{answered}}/{{total}} essentials answered",
+        }),
         to: ROUTES.GRANT.PROFILE,
       })
     }
     if (nearestDeadline) {
       actions.push({
         id: "deadline",
-        label: `Submit ${nearestDeadline.name} — ${relativeDeadline(nearestDeadline.dueDate)}`,
+        label: t("plan.actionSubmit", {
+          name: nearestDeadline.name,
+          when: relativeDeadline(nearestDeadline.dueDate, undefined, t),
+          defaultValue: "Submit {{name}} — {{when}}",
+        }),
         to: ROUTES.GRANT.APPLICATIONS,
       })
     }
     if (topScholarship) {
       actions.push({
         id: "scholarship",
-        label: `Apply to ${topScholarship.name} (${formatCurrency(topScholarship.amount)})`,
+        label: t("plan.actionApply", {
+          name: topScholarship.name,
+          amount: formatCurrency(topScholarship.amount),
+          defaultValue: "Apply to {{name}} ({{amount}})",
+        }),
         to: ROUTES.GRANT.SCHOLARSHIPS,
       })
     }
     if (bestOffer) {
       actions.push({
         id: "offer",
-        label: `Review your best offer — ${bestOffer.institutionName} at ${formatCurrency(bestOffer.netCost)}/yr`,
+        label: t("plan.actionReviewOffer", {
+          institution: bestOffer.institutionName,
+          amount: formatCurrency(bestOffer.netCost),
+          defaultValue: "Review your best offer — {{institution}} at {{amount}}/yr",
+        }),
         to: ROUTES.GRANT.COMPARE,
       })
     }
     return actions
-  }, [aidReady, answered, nearestDeadline, topScholarship, bestOffer])
+  }, [aidReady, answered, nearestDeadline, topScholarship, bestOffer, t])
 
   return (
     <div className="max-w-4xl">
       <GrantPageHeader
         icon={Target}
-        title="My Aid Plan"
+        title={t("plan.title", "My Aid Plan")}
         description={
-          profile ? `${profile.fullName}'s consolidated financial-aid plan.` : "Your consolidated financial-aid plan."
+          profile
+            ? t("plan.descriptionNamed", {
+                name: profile.fullName,
+                defaultValue: "{{name}}'s consolidated financial-aid plan.",
+              })
+            : t("plan.description", "Your consolidated financial-aid plan.")
         }
       />
 
@@ -148,12 +171,19 @@ export default function GrantPlanPage() {
             </span>
             <div>
               <p className="text-sm font-semibold text-[#1f2937]">
-                Step {activeIndex + 1} of {steps.length}: {activeStep.label}
+                {t("plan.stepOf", {
+                  current: activeIndex + 1,
+                  total: steps.length,
+                  step: activeStep.label,
+                  defaultValue: "Step {{current}} of {{total}}: {{step}}",
+                })}
               </p>
-              <p className="text-xs text-[#6b7280]">Your active stage on the aid journey.</p>
+              <p className="text-xs text-[#6b7280]">{t("plan.activeStage", "Your active stage on the aid journey.")}</p>
             </div>
           </div>
-          <GrantPill tone="blue">{journeyPct}% complete</GrantPill>
+          <GrantPill tone="blue">
+            {t("plan.pctComplete", { pct: journeyPct, defaultValue: "{{pct}}% complete" })}
+          </GrantPill>
         </div>
 
         <ol className="flex items-start">
@@ -208,63 +238,65 @@ export default function GrantPlanPage() {
         <GrantCard>
           <div className="mb-2 flex items-center gap-2 text-[#374151]">
             <Award className="h-4 w-4 text-[#2DD4BF]" />
-            <h2 className="text-xs font-semibold">Potential aid</h2>
+            <h2 className="text-xs font-semibold">{t("plan.potentialAid", "Potential aid")}</h2>
           </div>
           <p className="text-2xl font-bold text-[#1f2937]">{formatCurrency(potentialAid)}</p>
-          <p className="mt-1 text-xs text-[#9ca3af]">across matched scholarships</p>
+          <p className="mt-1 text-xs text-[#9ca3af]">{t("plan.potentialAidHint", "across matched scholarships")}</p>
         </GrantCard>
 
         <GrantCard>
           <div className="mb-2 flex items-center gap-2 text-[#374151]">
             <CalendarClock className="h-4 w-4 text-[#3B5BFF]" />
-            <h2 className="text-xs font-semibold">Next deadline</h2>
+            <h2 className="text-xs font-semibold">{t("plan.nextDeadline", "Next deadline")}</h2>
           </div>
           <p className="text-2xl font-bold text-[#1f2937]">
             {nearestDeadline ? formatDate(nearestDeadline.dueDate) : "—"}
           </p>
           <p className="mt-1 truncate text-xs text-[#9ca3af]">
-            {nearestDeadline ? nearestDeadline.name : "nothing scheduled"}
+            {nearestDeadline ? nearestDeadline.name : t("plan.nothingScheduled", "nothing scheduled")}
           </p>
         </GrantCard>
 
         <GrantCard>
           <div className="mb-2 flex items-center gap-2 text-[#374151]">
             <Wallet className="h-4 w-4 text-[#3B5BFF]" />
-            <h2 className="text-xs font-semibold">Best net cost</h2>
+            <h2 className="text-xs font-semibold">{t("plan.bestNetCost", "Best net cost")}</h2>
           </div>
           <p className="text-2xl font-bold text-[#1f2937]">
             {bestOffer ? formatCurrency(bestOffer.netCost) : "—"}
           </p>
           <p className="mt-1 truncate text-xs text-[#9ca3af]">
-            {bestOffer ? bestOffer.institutionName : "no offers yet"}
+            {bestOffer ? bestOffer.institutionName : t("plan.noOffersYet", "no offers yet")}
           </p>
         </GrantCard>
 
         <GrantCard>
           <div className="mb-2 flex items-center gap-2 text-[#374151]">
             <GraduationCap className="h-4 w-4 text-[#3B5BFF]" />
-            <h2 className="text-xs font-semibold">Student Aid Index</h2>
+            <h2 className="text-xs font-semibold">{t("plan.studentAidIndex", "Student Aid Index")}</h2>
           </div>
           <p className="text-2xl font-bold text-[#1f2937]">
             {profile ? profile.studentAidIndex.toLocaleString() : "—"}
           </p>
-          <p className="mt-1 text-xs text-[#9ca3af]">from your profile</p>
+          <p className="mt-1 text-xs text-[#9ca3af]">{t("plan.fromYourProfile", "from your profile")}</p>
         </GrantCard>
       </div>
 
       {/* Grouped tool summaries */}
-      <GrantSectionTitle>Plan at a glance</GrantSectionTitle>
+      <GrantSectionTitle>{t("plan.atAGlance", "Plan at a glance")}</GrantSectionTitle>
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
         <GrantCard>
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[#374151]">
               <CalendarClock className="h-4 w-4 text-[#3B5BFF]" />
-              <h3 className="text-sm font-semibold">Deadlines</h3>
+              <h3 className="text-sm font-semibold">{t("plan.deadlines", "Deadlines")}</h3>
             </div>
-            <GrantPill tone="gray">{deadlines?.length ?? 0} tracked</GrantPill>
+            <GrantPill tone="gray">
+              {t("plan.tracked", { count: deadlines?.length ?? 0, defaultValue: "{{count}} tracked" })}
+            </GrantPill>
           </div>
           {(deadlines?.length ?? 0) === 0 ? (
-            <p className="text-sm text-[#9ca3af]">No deadlines scheduled yet.</p>
+            <p className="text-sm text-[#9ca3af]">{t("plan.noDeadlines", "No deadlines scheduled yet.")}</p>
           ) : (
             <ul className="space-y-2">
               {[...(deadlines ?? [])]
@@ -284,9 +316,11 @@ export default function GrantPlanPage() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[#374151]">
               <Award className="h-4 w-4 text-[#2DD4BF]" />
-              <h3 className="text-sm font-semibold">Scholarships</h3>
+              <h3 className="text-sm font-semibold">{t("plan.scholarships", "Scholarships")}</h3>
             </div>
-            <GrantPill tone="gray">{scholarships?.length ?? 0} matched</GrantPill>
+            <GrantPill tone="gray">
+              {t("plan.matched", { count: scholarships?.length ?? 0, defaultValue: "{{count}} matched" })}
+            </GrantPill>
           </div>
           {topScholarship ? (
             <div>
@@ -295,12 +329,14 @@ export default function GrantPlanPage() {
                 <span className="text-sm font-semibold text-[#0f766e]">
                   {formatCurrency(topScholarship.amount)}
                 </span>
-                <GrantPill tone="teal">{topScholarship.matchScore}% match</GrantPill>
+                <GrantPill tone="teal">
+                  {t("plan.matchPct", { pct: topScholarship.matchScore, defaultValue: "{{pct}}% match" })}
+                </GrantPill>
               </div>
-              <p className="mt-1 text-xs text-[#9ca3af]">your strongest match</p>
+              <p className="mt-1 text-xs text-[#9ca3af]">{t("plan.strongestMatch", "your strongest match")}</p>
             </div>
           ) : (
-            <p className="text-sm text-[#9ca3af]">Complete your profile to see matches.</p>
+            <p className="text-sm text-[#9ca3af]">{t("plan.completeProfileForMatches", "Complete your profile to see matches.")}</p>
           )}
         </GrantCard>
 
@@ -308,9 +344,13 @@ export default function GrantPlanPage() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[#374151]">
               <Wallet className="h-4 w-4 text-[#3B5BFF]" />
-              <h3 className="text-sm font-semibold">Net price</h3>
+              <h3 className="text-sm font-semibold">{t("plan.netPrice", "Net price")}</h3>
             </div>
-            {bestOffer && <GrantPill tone="green">{giftAidPct}% gift aid</GrantPill>}
+            {bestOffer && (
+              <GrantPill tone="green">
+                {t("plan.giftAidPct", { pct: giftAidPct, defaultValue: "{{pct}}% gift aid" })}
+              </GrantPill>
+            )}
           </div>
           {bestOffer ? (
             <div>
@@ -319,12 +359,15 @@ export default function GrantPlanPage() {
                 value={giftAidPct}
                 tone="green"
                 className="mt-2"
-                label="Covered by gift aid"
-                right={`${formatCurrency(bestOffer.netCost)}/yr net`}
+                label={t("plan.coveredByGiftAid", "Covered by gift aid")}
+                right={t("plan.netPerYear", {
+                  amount: formatCurrency(bestOffer.netCost),
+                  defaultValue: "{{amount}}/yr net",
+                })}
               />
             </div>
           ) : (
-            <p className="text-sm text-[#9ca3af]">Add an award letter to compare offers.</p>
+            <p className="text-sm text-[#9ca3af]">{t("plan.addAwardLetter", "Add an award letter to compare offers.")}</p>
           )}
         </GrantCard>
 
@@ -332,32 +375,37 @@ export default function GrantPlanPage() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[#374151]">
               <Landmark className="h-4 w-4 text-[#3B5BFF]" />
-              <h3 className="text-sm font-semibold">Loans</h3>
+              <h3 className="text-sm font-semibold">{t("plan.loans", "Loans")}</h3>
             </div>
             <Link to={ROUTES.GRANT.LOANS} className="text-xs font-medium text-[#3B5BFF]">
-              Plan repayment
+              {t("plan.planRepayment", "Plan repayment")}
             </Link>
           </div>
           {bestOffer ? (
             <div>
               <p className="text-2xl font-bold text-[#1f2937]">{formatCurrency(bestOffer.federalLoans)}</p>
               <p className="mt-1 text-xs text-[#9ca3af]">
-                federal loans in your best offer{" "}
-                {bestOffer.workStudy > 0 ? `· ${formatCurrency(bestOffer.workStudy)} work-study` : ""}
+                {t("plan.federalLoansInOffer", "federal loans in your best offer")}{" "}
+                {bestOffer.workStudy > 0
+                  ? t("plan.workStudySuffix", {
+                      amount: formatCurrency(bestOffer.workStudy),
+                      defaultValue: "· {{amount}} work-study",
+                    })
+                  : ""}
               </p>
             </div>
           ) : (
-            <p className="text-sm text-[#9ca3af]">Model repayment once you have an offer.</p>
+            <p className="text-sm text-[#9ca3af]">{t("plan.modelRepayment", "Model repayment once you have an offer.")}</p>
           )}
         </GrantCard>
       </div>
 
-      <h2 className="mb-3 text-sm font-semibold text-[#374151]">Your next actions</h2>
+      <h2 className="mb-3 text-sm font-semibold text-[#374151]">{t("plan.yourNextActions", "Your next actions")}</h2>
       {nextActions.length === 0 ? (
         <GrantCard className="flex items-center gap-3">
           <CheckCircle2 className="h-5 w-5 text-[#2DD4BF]" />
           <p className="text-sm text-[#374151]">
-            You're all caught up — no outstanding aid actions right now.
+            {t("plan.allCaughtUp", "You're all caught up — no outstanding aid actions right now.")}
           </p>
         </GrantCard>
       ) : (

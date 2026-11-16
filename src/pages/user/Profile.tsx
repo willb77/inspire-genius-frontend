@@ -59,6 +59,7 @@ import type {
   LoadedFramework,
   ProfileFact,
 } from "@/types/profile/profile-types";
+import { useTranslation } from "react-i18next";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -120,6 +121,7 @@ function ProfileHeader({
   facts: ProfileFact[] | undefined;
   loading: boolean;
 }) {
+  const { t } = useTranslation("userPages");
   const name = pickFact(facts, "identity", "name");
   const bio = pickFact(facts, "bio", "summary");
   const role = pickFact(facts, "career", "current_role");
@@ -130,7 +132,7 @@ function ProfileHeader({
     <Card className="shadow-sm">
       <CardHeader className="text-left">
         <CardTitle className="text-xl font-semibold">
-          {loading ? <Skeleton className="h-6 w-40" /> : name || "Your profile"}
+          {loading ? <Skeleton className="h-6 w-40" /> : name || t("profile.yourProfile", "Your profile")}
         </CardTitle>
       </CardHeader>
       <CardContent className="text-left space-y-3">
@@ -145,14 +147,14 @@ function ProfileHeader({
               <p className="text-sm text-foreground/90">{bio}</p>
             ) : (
               <p className="text-sm text-muted-foreground italic">
-                Add a short bio under Settings → Personal Data.
+                {t("profile.addAShortBioUnderSettings", "Add a short bio under Settings → Personal Data.")}
               </p>
             )}
             <div className="flex flex-wrap gap-2 text-xs">
-              {role && <Badge variant="outline">Role: {role}</Badge>}
-              {industry && <Badge variant="outline">Industry: {industry}</Badge>}
+              {role && <Badge variant="outline">{t("profile.roleBadge", { defaultValue: "Role: {{role}}", role })}</Badge>}
+              {industry && <Badge variant="outline">{t("profile.industryBadge", { defaultValue: "Industry: {{industry}}", industry })}</Badge>}
               {years && (
-                <Badge variant="outline">Experience: {years} yrs</Badge>
+                <Badge variant="outline">{t("profile.experienceBadge", { defaultValue: "Experience: {{years}} yrs", years })}</Badge>
               )}
             </div>
           </>
@@ -173,6 +175,7 @@ function AssessmentsTimeline({
   assessments: Assessment[];
   loading: boolean;
 }) {
+  const { t: tu } = useTranslation("userPages");
   const [selected, setSelected] = useState<Assessment | null>(null);
   const groups = useMemo(() => groupByFramework(assessments), [assessments]);
   const frameworks = Object.keys(groups).sort();
@@ -180,10 +183,9 @@ function AssessmentsTimeline({
   return (
     <Card className="shadow-sm">
       <CardHeader className="text-left">
-        <CardTitle className="text-lg font-semibold">Assessments</CardTitle>
+        <CardTitle className="text-lg font-semibold">{tu("profile.assessments", "Assessments")}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Every assessment you've added, grouped by framework. Click a card for
-          the full breakdown.
+          {tu("profile.everyAssessmentYouveAddedGroupedBy", "Every assessment you've added, grouped by framework. Click a card for the full breakdown.")}
         </p>
       </CardHeader>
       <CardContent className="text-left space-y-6">
@@ -194,8 +196,7 @@ function AssessmentsTimeline({
           </div>
         ) : frameworks.length === 0 ? (
           <p className="text-sm text-muted-foreground italic">
-            No assessments yet. Add one under Settings → Other Assessments, or
-            complete a PRISM survey.
+            {tu("profile.noAssessmentsYetAddOneUnder", "No assessments yet. Add one under Settings → Other Assessments, or complete a PRISM survey.")}
           </p>
         ) : (
           frameworks.map((fw) => (
@@ -222,7 +223,7 @@ function AssessmentsTimeline({
                             : ""}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Assessed {fmtDate(a.assessed_at)}
+                          {tu("profile.assessedOn", { defaultValue: "Assessed {{date}}", date: fmtDate(a.assessed_at) })}
                         </div>
                         {top.length > 0 && (
                           <div className="mt-1 flex flex-wrap gap-1.5">
@@ -264,12 +265,12 @@ function AssessmentsTimeline({
           {selected && (
             <div className="p-4 space-y-4 text-sm">
               <div className="text-muted-foreground">
-                Assessed {fmtDate(selected.assessed_at)}
-                {selected.source ? ` · ${selected.source}` : ""}
+                {tu("profile.assessedOn", { defaultValue: "Assessed {{date}}", date: fmtDate(selected.assessed_at) })}
+                {selected.source ? tu("profile.sourceSuffix", { defaultValue: " · {{source}}", source: selected.source }) : ""}
               </div>
               {selected.parsed_scores && selected.parsed_scores.length > 0 ? (
                 <div>
-                  <h4 className="font-semibold mb-2">All dimensions</h4>
+                  <h4 className="font-semibold mb-2">{tu("profile.allDimensions", "All dimensions")}</h4>
                   <ul className="space-y-1">
                     {[...selected.parsed_scores]
                       .sort((a, b) => b.score - a.score)
@@ -299,7 +300,7 @@ function AssessmentsTimeline({
               ) : null}
               {selected.typing && selected.typing.length > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-2">Typing</h4>
+                  <h4 className="font-semibold mb-2">{tu("profile.typing", "Typing")}</h4>
                   <ul className="space-y-1">
                     {selected.typing.map((t) => (
                       <li key={t.type_code} className="flex justify-between">
@@ -307,7 +308,7 @@ function AssessmentsTimeline({
                         <span className="font-mono">
                           {t.type_code}
                           {typeof t.clarity === "number"
-                            ? ` · clarity ${Math.round(t.clarity)}`
+                            ? tu("profile.clarity", { defaultValue: " · clarity {{value}}", value: Math.round(t.clarity) })
                             : ""}
                         </span>
                       </li>
@@ -334,6 +335,7 @@ function TrendChart({
   loadedFrameworks: LoadedFramework[];
   dimensionsByFramework: Record<string, string[]>;
 }) {
+  const { t } = useTranslation("userPages");
   const [framework, setFramework] = useState<string | undefined>(
     loadedFrameworks[0],
   );
@@ -365,21 +367,21 @@ function TrendChart({
   return (
     <Card className="shadow-sm">
       <CardHeader className="text-left">
-        <CardTitle className="text-lg font-semibold">Trend</CardTitle>
+        <CardTitle className="text-lg font-semibold">{t("profile.trend", "Trend")}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Track how a dimension has moved over time.
+          {t("profile.trackHowADimensionHasMoved", "Track how a dimension has moved over time.")}
         </p>
       </CardHeader>
       <CardContent className="text-left space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <Label htmlFor="trend-framework">Framework</Label>
+            <Label htmlFor="trend-framework">{t("profile.framework", "Framework")}</Label>
             <Select
               value={framework ?? ""}
               onValueChange={(v) => setFramework(v || undefined)}
             >
               <SelectTrigger id="trend-framework">
-                <SelectValue placeholder="Pick a framework" />
+                <SelectValue placeholder={t("profile.pickAFramework", "Pick a framework")} />
               </SelectTrigger>
               <SelectContent>
                 {loadedFrameworks.map((f) => (
@@ -391,14 +393,14 @@ function TrendChart({
             </Select>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="trend-dimension">Dimension</Label>
+            <Label htmlFor="trend-dimension">{t("profile.dimension", "Dimension")}</Label>
             <Select
               value={dimension ?? ""}
               onValueChange={(v) => setDimension(v || undefined)}
               disabled={dimsForCurrent.length === 0}
             >
               <SelectTrigger id="trend-dimension">
-                <SelectValue placeholder="Pick a dimension" />
+                <SelectValue placeholder={t("profile.pickADimension", "Pick a dimension")} />
               </SelectTrigger>
               <SelectContent>
                 {dimsForCurrent.map((d) => (
@@ -416,7 +418,7 @@ function TrendChart({
             <Skeleton className="h-full w-full" />
           ) : chartData.length === 0 ? (
             <div className="h-full w-full grid place-items-center text-sm text-muted-foreground italic">
-              Not enough data points for a trend yet.
+              {t("profile.notEnoughDataPointsForA", "Not enough data points for a trend yet.")}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -456,6 +458,7 @@ function PrivacyPanel({
   loadedFrameworks: LoadedFramework[];
   chatExcludedFrameworks: string[];
 }) {
+  const { t } = useTranslation("userPages");
   // Persisted for real: the excluded set is a `privacy / chat_excluded_frameworks`
   // profile fact (comma-list). The agent-engine loader reads it and drops those
   // frameworks from <USER_PROFILE>, so turning one off actually removes it from
@@ -477,23 +480,22 @@ function PrivacyPanel({
         key: "chat_excluded_frameworks",
         value: Array.from(next).sort().join(","),
       },
-      { onError: () => toast.error("Couldn't save your privacy setting.") },
+      { onError: () => toast.error(t("profile.couldntSaveYourPrivacySetting", "Couldn't save your privacy setting.")) },
     );
   };
 
   return (
     <Card className="shadow-sm">
       <CardHeader className="text-left">
-        <CardTitle className="text-lg font-semibold">Privacy</CardTitle>
+        <CardTitle className="text-lg font-semibold">{t("profile.privacy", "Privacy")}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Choose which frameworks Meridian can see in chat. Turning one off
-          removes it from every conversation.
+          {t("profile.chooseWhichFrameworksMeridianCanSee", "Choose which frameworks Meridian can see in chat. Turning one off removes it from every conversation.")}
         </p>
       </CardHeader>
       <CardContent className="text-left space-y-3">
         {loadedFrameworks.length === 0 ? (
           <p className="text-sm text-muted-foreground italic">
-            Once you have assessments loaded they'll show up here.
+            {t("profile.onceYouHaveAssessmentsLoadedTheyll", "Once you have assessments loaded they'll show up here.")}
           </p>
         ) : (
           loadedFrameworks.map((f) => (
@@ -506,7 +508,7 @@ function PrivacyPanel({
                 <span className="text-sm font-medium">{f}</span>
               </div>
               <Switch
-                aria-label={`Include ${f} in chat`}
+                aria-label={t("profile.includeInChat", { defaultValue: "Include {{field}} in chat", field: f })}
                 checked={!excludedSet.has(f.toUpperCase())}
                 disabled={createFact.isPending}
                 onCheckedChange={(v) => setIncluded(f, v)}
@@ -524,6 +526,7 @@ function PrivacyPanel({
 // ---------------------------------------------------------------------------
 
 export default function Profile() {
+  const { t } = useTranslation("userPages");
   const me = useMyProfile();
   const history = useAssessmentHistory(undefined, { limit: 100, offset: 0 });
 
@@ -554,9 +557,9 @@ export default function Profile() {
     <UserLayout>
       <div className="space-y-4" data-testid="profile-page">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("profile.profile", "Profile")}</h1>
           <p className="text-sm text-muted-foreground">
-            What Meridian sees about you, and how she uses it.
+            {t("profile.whatMeridianSeesAboutYouAnd", "What Meridian sees about you, and how she uses it.")}
           </p>
         </div>
 
@@ -579,8 +582,7 @@ export default function Profile() {
 
         {me.isError && (
           <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            We couldn't load your profile right now. If you just signed up this
-            is normal — try again after adding your first fact under Settings.
+            {t("profile.weCouldntLoadYourProfileRight", "We couldn't load your profile right now. If you just signed up this is normal — try again after adding your first fact under Settings.")}
           </div>
         )}
       </div>

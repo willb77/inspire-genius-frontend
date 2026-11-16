@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { CalendarRange } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
@@ -8,10 +9,9 @@ import { useDiscoveryJourney, useDiscoveryStatus } from "@/hooks/career-discover
 import { costSearch, recallCost } from "./lastCost"
 import { discoveryMenu, isProfileMerged } from "@/lib/career-discovery/profileSection"
 
-const DEGREE_PLAN: NavItemDef = {
+const DEGREE_PLAN_ENTRY = {
   to: ROUTES.CAREER_DISCOVERY.DEGREE_PLAN,
   icon: CalendarRange,
-  label: "Degree plan",
 }
 
 /**
@@ -28,6 +28,8 @@ const DEGREE_PLAN: NavItemDef = {
  * makes no extra server call. The sidebar menu is not changed here.
  */
 export function HouseDiscoveryNav() {
+  const { t } = useTranslation("careerDiscoveryPages")
+  const DEGREE_PLAN: NavItemDef = { ...DEGREE_PLAN_ENTRY, label: t("houseNavDegreePlan", "Degree plan") }
   useLocation() // re-render on every move, so a just-opened cost is picked up
   const status = useDiscoveryStatus()
   const journey = useDiscoveryJourney(status.data?.enabled === true)
@@ -47,7 +49,7 @@ export function HouseDiscoveryNav() {
   }
 
   return (
-    <nav aria-label="Career & Education Discovery" className="mb-6 flex flex-wrap gap-1.5">
+    <nav aria-label={t("shellNavLabel", "Career & Education Discovery")} className="mb-6 flex flex-wrap gap-1.5">
       {items.map(({ to, icon: Icon, label }) => (
         <NavLink
           key={label}

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { RubricBand, RubricDimension, ScoreByType, ScoreType } from "@/types/character-lab"
@@ -24,6 +25,7 @@ export default function ScoreRow({
   bands: RubricBand[]
   evidence?: string
 }) {
+  const { t } = useTranslation("prismUi")
   const [open, setOpen] = useState(false)
   const value = scores[scoreType] ?? scores.Underlying
   const underlying = scores.Underlying
@@ -62,15 +64,21 @@ export default function ScoreRow({
         </span>
         <span className="w-10 shrink-0 text-right text-sm tabular-nums">{value}</span>
         <span className="w-24 shrink-0 text-right text-xs text-muted-foreground">
-          {band?.label ?? (dimension.is_trait ? "" : "indicator")}
+          {band?.label ?? (dimension.is_trait ? "" : t("scoreRow.indicator", { defaultValue: "indicator" }))}
         </span>
         {notableGap && (
           <span
             className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400"
-            title={`Adapted ${adapted} vs Underlying ${underlying} — presented behaviour differs from instinct`}
+            title={t("scoreRow.gapTitle", {
+              defaultValue: "Adapted {{adapted}} vs Underlying {{underlying}} — presented behaviour differs from instinct",
+              adapted,
+              underlying,
+            })}
           >
-            gap {gap! > 0 ? "+" : ""}
-            {gap}
+            {t("scoreRow.gap", {
+              defaultValue: "gap {{delta}}",
+              delta: `${gap! > 0 ? "+" : ""}${gap}`,
+            })}
           </span>
         )}
       </button>
@@ -80,29 +88,40 @@ export default function ScoreRow({
           <p className="text-muted-foreground">{dimension.measures}</p>
           <div className="grid gap-2 sm:grid-cols-2">
             <p className="rounded bg-muted/50 p-2 text-xs">
-              <span className="font-semibold">High: </span>
+              <span className="font-semibold">{t("scoreRow.high", { defaultValue: "High: " })}</span>
               {dimension.high}
             </p>
             <p className="rounded bg-muted/50 p-2 text-xs">
-              <span className="font-semibold">Low: </span>
+              <span className="font-semibold">{t("scoreRow.low", { defaultValue: "Low: " })}</span>
               {dimension.low}
             </p>
           </div>
           {band && (
             <p className="text-xs text-muted-foreground">
-              <span className="font-semibold">{value} is {band.label.toLowerCase()}</span> — {band.meaning}
+              <span className="font-semibold">
+                {t("scoreRow.bandIs", {
+                  defaultValue: "{{value}} is {{band}}",
+                  value,
+                  band: band.label.toLowerCase(),
+                })}
+              </span>{" "}
+              — {band.meaning}
             </p>
           )}
           {evidence && (
             <p className="text-xs">
-              <span className="font-semibold">Why this score: </span>
+              <span className="font-semibold">{t("scoreRow.whyScore", { defaultValue: "Why this score: " })}</span>
               {evidence}
             </p>
           )}
           {notableGap && (
             <p className="text-xs text-amber-700 dark:text-amber-400">
-              Shows {adapted} but is {underlying}. A gap this size means effortful self-presentation
-              on this scale — the place strain tends to appear.
+              {t("scoreRow.gapExplain", {
+                defaultValue:
+                  "Shows {{adapted}} but is {{underlying}}. A gap this size means effortful self-presentation on this scale — the place strain tends to appear.",
+                adapted,
+                underlying,
+              })}
             </p>
           )}
         </div>

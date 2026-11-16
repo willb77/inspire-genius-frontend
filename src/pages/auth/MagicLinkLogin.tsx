@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label"
 import { Link } from "react-router-dom"
 import { useRequestMagicLink } from "@/hooks/magic-auth/useMagicAuth"
 import { Mail } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 export default function MagicLinkLogin() {
+  const { t: ta } = useTranslation('authPages')
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
   const mutation = useRequestMagicLink()
@@ -29,19 +31,19 @@ export default function MagicLinkLogin() {
               <Mail className="size-8 text-teal-600" />
             </div>
           </div>
-          <AuthHeader title="Check your email" subtitle={`We sent a magic link to ${email}`} />
+          <AuthHeader title={ta("magicLogin.checkEmail", { defaultValue: "Check your email" })} subtitle={ta("magicLogin.sentTo", { defaultValue: "We sent a magic link to {{email}}", email })} />
           <p className="text-sm text-muted-foreground">
-            Click the link in your email to sign in. The link expires in 15 minutes.
+            {ta("magicLogin.clickLink", { defaultValue: "Click the link in your email to sign in. The link expires in 15 minutes." })}
           </p>
           <Button
             variant="outline"
             className="mt-4"
             onClick={() => setSent(false)}
           >
-            Try a different email
+            {ta("magicLogin.tryDifferent", { defaultValue: "Try a different email" })}
           </Button>
           <p className="text-sm text-muted-foreground">
-            <Link className="underline" to="/login">Back to login</Link>
+            <Link className="underline" to="/login">{ta("magicLogin.backToLogin", { defaultValue: "Back to login" })}</Link>
           </p>
         </div>
       </AuthLayout>
@@ -50,11 +52,11 @@ export default function MagicLinkLogin() {
 
   return (
     <AuthLayout>
-      <AuthHeader title="Magic Link" subtitle="Sign in with your email — no password needed" />
+      <AuthHeader title={ta("magicLogin.title", { defaultValue: "Magic Link" })} subtitle={ta("magicLogin.subtitle", { defaultValue: "Sign in with your email — no password needed" })} />
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label htmlFor="magic-email">Email</Label>
+          <Label htmlFor="magic-email">{ta("magicLogin.email", { defaultValue: "Email" })}</Label>
           <Input
             id="magic-email"
             type="email"
@@ -66,12 +68,12 @@ export default function MagicLinkLogin() {
         </div>
 
         <Button type="submit" className="w-full" disabled={mutation.isPending}>
-          {mutation.isPending ? "Sending..." : "Send Magic Link"}
+          {mutation.isPending ? ta("magicLogin.sending", { defaultValue: "Sending..." }) : ta("magicLogin.submit", { defaultValue: "Send Magic Link" })}
         </Button>
       </form>
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
-        <Link className="underline" to="/login">Back to login</Link>
+        <Link className="underline" to="/login">{ta("magicLogin.backToLogin", { defaultValue: "Back to login" })}</Link>
       </p>
     </AuthLayout>
   )

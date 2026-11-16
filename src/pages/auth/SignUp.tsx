@@ -20,6 +20,7 @@ export default function SignUp() {
   const redirectTo = useAuthRedirectForAuthPages();
   const { t } = useTranslation('auth');
   const { t: tc } = useTranslation('common');
+  const { t: ta } = useTranslation('authPages');
   const [providerActive, setProviderActive] = useState<boolean>(() => {
     try {
       return Boolean(sessionStorage.getItem("auth:provider"));
@@ -80,7 +81,7 @@ export default function SignUp() {
       >
         <EmailField value={email} onChange={(v) => setValue("email", v, { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
 
-        <div role="group" aria-label="Password" onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
+        <div role="group" aria-label={ta("signup.passwordGroup", { defaultValue: "Password" })} onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
           <PasswordField value={password} onChange={(v) => setValue("password", v, { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
           {(pwdFocused || dirtyFields.password) && password && !passwordOk && (
             <PasswordChecklist password={password} />
@@ -98,7 +99,7 @@ export default function SignUp() {
         <div className="mt-8 flex items-start gap-2">
           <Checkbox id="terms" checked={!!terms} onCheckedChange={(v) => setValue("terms", Boolean(v), { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
           <Label htmlFor="terms" className="text-muted-foreground text-xs">
-            {t('signup.termsAgreement')} <Link className="underline text-blue-primary" to="/terms">{t('signup.termsOfUse')}</Link> & <Link className="underline text-blue-primary" to="/privacy">{t('signup.privacyPolicy')}</Link>
+            {t('signup.termsAgreement')} <Link className="underline text-blue-primary" to="/terms">{t('signup.termsOfUse')}</Link> {ta("signup.termsAnd", { defaultValue: "&" })} <Link className="underline text-blue-primary" to="/privacy">{t('signup.privacyPolicy')}</Link>
           </Label>
         </div>
 

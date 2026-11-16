@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { WageRange } from "@/types/career-discovery"
@@ -47,15 +48,16 @@ const money = (n: number) =>
 
 /** A pay range — never a bare number: always entry, median, experienced, source and year. */
 export function PayRange({ range }: { range: WageRange | null }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   if (!range) {
-    return <p className="text-sm text-muted-foreground">No pay data on file for this area yet.</p>
+    return <p className="text-sm text-muted-foreground">{t("payNoData", "No pay data on file for this area yet.")}</p>
   }
   return (
     <div className="text-sm">
       <p>
-        <span className="text-muted-foreground">Entry</span> {money(range.low)} ·{" "}
-        <span className="text-muted-foreground">Median</span> {money(range.median)} ·{" "}
-        <span className="text-muted-foreground">Experienced</span> {money(range.high)}
+        <span className="text-muted-foreground">{t("payEntry", "Entry")}</span> {money(range.low)} ·{" "}
+        <span className="text-muted-foreground">{t("payMedian", "Median")}</span> {money(range.median)} ·{" "}
+        <span className="text-muted-foreground">{t("payExperienced", "Experienced")}</span> {money(range.high)}
       </p>
       <p className="text-xs text-muted-foreground">
         {range.source}, {range.asOf}

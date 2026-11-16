@@ -14,14 +14,16 @@ function ratingLabel(rating: number): "positive" | "negative" | "correction" {
 }
 
 const RATING_CONFIG = {
-  positive: { icon: ThumbsUp, color: "text-[#10B981]", label: "Positive" },
-  negative: { icon: ThumbsDown, color: "text-[#EF4444]", label: "Negative" },
-  correction: { icon: Pencil, color: "text-[#3B5BFF]", label: "Neutral" },
+  positive: { icon: ThumbsUp, color: "text-[#10B981]", label: "Positive", labelKey: "feedbackHistoryV2.ratingPositive" },
+  negative: { icon: ThumbsDown, color: "text-[#EF4444]", label: "Negative", labelKey: "feedbackHistoryV2.ratingNegative" },
+  correction: { icon: Pencil, color: "text-[#3B5BFF]", label: "Neutral", labelKey: "feedbackHistoryV2.ratingNeutral" },
 } as const
 
 function RatingBadge({ rating }: { rating: number }) {
   const type = ratingLabel(rating)
-  const { icon: Icon, color, label } = RATING_CONFIG[type]
+  const { icon: Icon, color, label: labelDefault, labelKey } = RATING_CONFIG[type]
+  const { t: tu } = useTranslation("userPages");
+  const label = tu(labelKey, labelDefault)
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${color}`} title={`${label} (${rating}/5)`}>
       <Icon className="w-3 h-3" />
@@ -53,6 +55,7 @@ const PAGE_SIZE = 10
  * RTL-safe (logical CSS).
  */
 export default function FeedbackHistoryV2() {
+  const { t: tu } = useTranslation("userPages");
   const { t } = useTranslation(["common", "coaching"]);
   const [ratingFilter, setRatingFilter] = useState("")
   const [page, setPage] = useState(1)
@@ -163,7 +166,7 @@ export default function FeedbackHistoryV2() {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-[#f9fafb] border-b border-hairline">
-                      {["Date", "Coach", "Rating", "Sentiment", "Correction"].map((h) => (
+                      {[tu("feedbackHistoryV2.colDate", "Date"), tu("feedbackHistoryV2.colCoach", "Coach"), tu("feedbackHistoryV2.colRating", "Rating"), tu("feedbackHistoryV2.colSentiment", "Sentiment"), tu("feedbackHistoryV2.colCorrection", "Correction")].map((h) => (
                         <th key={h} className="text-start text-[10px] font-bold uppercase tracking-wider text-body-slate px-3 py-2.5">{h}</th>
                       ))}
                     </tr>
@@ -181,7 +184,7 @@ export default function FeedbackHistoryV2() {
                       </tr>
                     ))}
                     {feedback.length === 0 && (
-                      <tr><td colSpan={5} className="px-3 py-8 text-center text-[13px] text-mute">No feedback found</td></tr>
+                      <tr><td colSpan={5} className="px-3 py-8 text-center text-[13px] text-mute">{tu("feedbackHistoryV2.noFeedbackFound", "No feedback found")}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -191,7 +194,7 @@ export default function FeedbackHistoryV2() {
               {pagination && pagination.total > PAGE_SIZE && (
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-hairline">
                   <span className="text-xs text-mute">
-                    Page {pagination.page} of {Math.ceil(pagination.total / pagination.limit)}
+                    {tu("feedbackHistoryV2.pageOf", { defaultValue: "Page {{page}} of {{total}}", page: pagination.page, total: Math.ceil(pagination.total / pagination.limit) })}
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -199,14 +202,14 @@ export default function FeedbackHistoryV2() {
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       className="inline-flex items-center gap-1 text-xs text-body-slate px-2.5 py-1.5 rounded-lg border border-hairline hover:bg-[#f9fafb] disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <ChevronLeft className="w-3 h-3" /> Prev
+                      <ChevronLeft className="w-3 h-3" /> {tu("feedbackHistoryV2.prev", "Prev")}
                     </button>
                     <button
                       disabled={!pagination.has_more}
                       onClick={() => setPage((p) => p + 1)}
                       className="inline-flex items-center gap-1 text-xs text-body-slate px-2.5 py-1.5 rounded-lg border border-hairline hover:bg-[#f9fafb] disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      Next <ChevronRight className="w-3 h-3" />
+                      {tu("feedbackHistoryV2.next", "Next")} <ChevronRight className="w-3 h-3" />
                     </button>
                   </div>
                 </div>

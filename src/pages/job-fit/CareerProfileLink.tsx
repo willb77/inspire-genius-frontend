@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import { FileText } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { ROUTES } from "@/constants/routes"
 import { useCareerPathwaysStatus } from "@/hooks/career-pathways/useCareerPathways"
 
@@ -9,6 +10,7 @@ import { useCareerPathwaysStatus } from "@/hooks/career-pathways/useCareerPathwa
  * with the switch off (and on any error or 404) the Pathway page is unchanged.
  */
 export function CareerProfileLink() {
+  const { t } = useTranslation("jobFitPages")
   const { enabled } = useCareerPathwaysStatus()
   if (!enabled) return null
   return (
@@ -17,7 +19,10 @@ export function CareerProfileLink() {
       className="mb-6 flex items-center gap-2 rounded-lg border border-[#0D9488]/40 bg-[rgba(13,148,136,0.05)] p-3 text-sm text-[#0f766e] hover:border-[#0D9488]"
     >
       <FileText className="h-4 w-4" aria-hidden />
-      Build your Career Pathways Profile — a document you own and can choose to share.
+      {t(
+        "careerProfileLink.text",
+        "Build your Career Pathways Profile — a document you own and can choose to share.",
+      )}
     </Link>
   )
 }

@@ -3,6 +3,7 @@ import { ClassificationBadge } from '@/components/job-blueprint/shared/Classific
 import { PipelineStepBadge } from '@/components/job-blueprint/shared/PipelineStepBadge'
 import type { Candidate } from '@/types/job-blueprint'
 import { User, Mail } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type CandidateCardProps = {
   candidate: Candidate
@@ -10,6 +11,7 @@ type CandidateCardProps = {
 }
 
 export function CandidateCard({ candidate, onClick }: CandidateCardProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <Card
       className={onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}
@@ -38,11 +40,11 @@ export function CandidateCard({ candidate, onClick }: CandidateCardProps) {
           )}
           {candidate.variationScores && (
             <span className="text-xs text-slate-500">
-              Variation: {candidate.variationScores.totalVariation}
+              {t("card.variation", { defaultValue: "Variation: {{value}}", value: candidate.variationScores.totalVariation })}
             </span>
           )}
           {candidate.code && (
-            <span className="text-xs text-slate-400 ml-auto">Code: {candidate.code}</span>
+            <span className="text-xs text-slate-400 ml-auto">{t("card.code", { defaultValue: "Code: {{code}}", code: candidate.code })}</span>
           )}
         </div>
       </CardContent>

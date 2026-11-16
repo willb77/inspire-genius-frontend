@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { ArrowRight, Compass, GraduationCap, Route as RouteIcon, Sparkles } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { CAREERS_AND_JOBS_LABEL } from "@/constants/vertical-subnav"
@@ -33,13 +34,14 @@ import { FavoritesList } from "./FavoritesList"
  * that is not entitled to it.
  */
 export default function JobFitHome() {
+  const { t } = useTranslation("jobFitPages")
   const discovery = useVerticalAccess("career-discovery")
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold text-[#1f2937]">{CAREERS_AND_JOBS_LABEL}</h1>
         <p className="text-[#6b7280]">
-          The kinds of work that suit you, the jobs in them, and the way in.
+          {t("jobFitHome.intro", "The kinds of work that suit you, the jobs in them, and the way in.")}
         </p>
       </header>
 
@@ -47,7 +49,7 @@ export default function JobFitHome() {
 
       <FavoritesList />
 
-      <section aria-label="Jobs">
+      <section aria-label={t("jobFitHome.jobsLabel", "Jobs")}>
         <MatchesPage />
       </section>
 
@@ -58,6 +60,7 @@ export default function JobFitHome() {
 
 /** D4 — the fields that suit you, from Discovery's Career areas read. */
 function FieldsSection() {
+  const { t } = useTranslation("jobFitPages")
   const status = useDiscoveryStatus()
   const on = status.data?.enabled === true
   const journey = useDiscoveryJourney(on)
@@ -72,11 +75,13 @@ function FieldsSection() {
     <section aria-labelledby="fields-heading" className="rounded-xl border border-slate-200 bg-white p-4">
       <h2 id="fields-heading" className="flex items-center gap-2 text-sm font-semibold text-[#0F172A]">
         <Compass className="h-4 w-4 text-[#0D9488]" aria-hidden />
-        Fields that suit you
+        {t("fieldsSection.heading", "Fields that suit you")}
       </h2>
       <p className="mt-1 text-sm text-[#475569]">
-        Kinds of work ranked against how you&apos;re wired. Closer is a better natural fit — not the only
-        thing you can do.
+        {t(
+          "fieldsSection.intro",
+          "Kinds of work ranked against how you're wired. Closer is a better natural fit — not the only thing you can do.",
+        )}
       </p>
       <FieldsBody
         statusError={status.isError ? status.error : null}
@@ -102,38 +107,49 @@ function FieldsBody({
   mayProceed: boolean
   careers: ReturnType<typeof useDiscoveryCareers>
 }) {
+  const { t } = useTranslation("jobFitPages")
   if (statusError) return <FieldsAlert message={discoveryErrorMessage(statusError)} />
-  if (journeyLoading) return <FieldsStatus label="Loading your fields…" />
+  if (journeyLoading) return <FieldsStatus label={t("fieldsBody.loading", "Loading your fields…")} />
   if (journeyError) return <FieldsAlert message={discoveryErrorMessage(journeyError)} />
   if (!mayProceed) {
     return (
       <p className="mt-3 text-sm text-[#475569]">
-        Answer the first step of Career &amp; Education Discovery to see the fields that suit you.{" "}
+        {t(
+          "fieldsBody.firstStepPrompt",
+          "Answer the first step of Career & Education Discovery to see the fields that suit you.",
+        )}{" "}
         <Link className="font-medium text-[#0D9488] underline-offset-2 hover:underline" to={ROUTES.CAREER_DISCOVERY.JOURNEY}>
-          Go to the first step
+          {t("fieldsBody.goToFirstStep", "Go to the first step")}
         </Link>
       </p>
     )
   }
-  if (careers.isLoading) return <FieldsStatus label="Ranking the fields that suit you…" />
+  if (careers.isLoading) return <FieldsStatus label={t("fieldsBody.ranking", "Ranking the fields that suit you…")} />
   if (careers.isError || !careers.data) return <FieldsAlert message={discoveryErrorMessage(careers.error)} />
   const families = careers.data.families
   if (families.length === 0) {
     return (
       <p className="mt-3 text-sm text-[#475569]">
-        {careers.data.note ?? "Add your PRISM and the fields that suit you will appear here."}
+        {careers.data.note ??
+          t("fieldsBody.addPrism", "Add your PRISM and the fields that suit you will appear here.")}
       </p>
     )
   }
   return (
-    <ol className="mt-3 flex flex-wrap gap-2" aria-label="Fields that suit you">
+    <ol className="mt-3 flex flex-wrap gap-2" aria-label={t("fieldsBody.listLabel", "Fields that suit you")}>
       {families.map((f, i) => (
         <li
           key={f.family}
           className="rounded-full border border-slate-200 bg-[#F8FAFC] px-3 py-1 text-sm text-[#0F172A]"
         >
           {i + 1}. {f.family}{" "}
-          <span className="text-[#64748B]">· {Math.round(f.affinity)}% natural fit</span>
+          <span className="text-[#64748B]">
+            ·{" "}
+            {t("fieldsBody.naturalFit", {
+              defaultValue: "{{pct}}% natural fit",
+              pct: Math.round(f.affinity),
+            })}
+          </span>
         </li>
       ))}
     </ol>
@@ -158,20 +174,24 @@ function FieldsAlert({ message }: { message: string }) {
 
 /** Pathway, then Learning and Education (only for an account with Discovery). */
 function NextSteps({ learning }: { learning: boolean }) {
+  const { t } = useTranslation("jobFitPages")
   return (
-    <nav aria-label="Next steps" className="grid gap-3 sm:grid-cols-2">
+    <nav aria-label={t("nextSteps.label", "Next steps")} className="grid gap-3 sm:grid-cols-2">
       <StepLink
         to={ROUTES.JOB_FIT.PATHWAY}
         icon={<RouteIcon className="h-5 w-5 text-[#0D9488]" aria-hidden />}
-        title="Career Pathway"
-        text="Jobs you could move into next, and how to get there."
+        title={t("nextSteps.pathwayTitle", "Career Pathway")}
+        text={t("nextSteps.pathwayText", "Jobs you could move into next, and how to get there.")}
       />
       {learning && (
         <StepLink
           to={ROUTES.CAREER_DISCOVERY.EDUCATION}
           icon={<GraduationCap className="h-5 w-5 text-[#0D9488]" aria-hidden />}
-          title="Learning and Education"
-          text="The education and training that lead to these jobs, and what it costs."
+          title={t("nextSteps.learningTitle", "Learning and Education")}
+          text={t(
+            "nextSteps.learningText",
+            "The education and training that lead to these jobs, and what it costs.",
+          )}
         />
       )}
       {learning && <ExerciseStepLink />}
@@ -187,14 +207,18 @@ function NextSteps({ learning }: { learning: boolean }) {
  * page is exactly what it was before.
  */
 function ExerciseStepLink() {
+  const { t } = useTranslation("jobFitPages")
   const sw = useCareerExerciseSwitch()
   if (sw !== "on") return null
   return (
     <StepLink
       to={ROUTES.CAREER_DISCOVERY.EXERCISE}
       icon={<Sparkles className="h-5 w-5 text-[#0D9488]" aria-hidden />}
-      title="Career exploration"
-      text="Work out how you work best, then test the careers worth a closer look."
+      title={t("exerciseStep.title", "Career exploration")}
+      text={t(
+        "exerciseStep.text",
+        "Work out how you work best, then test the careers worth a closer look.",
+      )}
     />
   )
 }

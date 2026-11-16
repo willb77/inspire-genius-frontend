@@ -19,6 +19,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Download, FileText, Loader2, Undo2 } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -60,29 +62,30 @@ import { GuidedDraftView } from "./GuidedDraftView"
 
 export type GuidedStep = "purpose" | "info" | "aim" | "questions" | "review" | "download"
 
-const STEPS: { id: GuidedStep; label: string }[] = [
-  { id: "purpose", label: "1 · What is it for?" },
-  { id: "info", label: "2 · Your information" },
-  { id: "aim", label: "3 · Aim it" },
-  { id: "review", label: "4 · Review" },
-  { id: "download", label: "5 · Download" },
+// Labels are resolved at render (hooks cannot run at module level).
+const steps = (t: TFunction): { id: GuidedStep; label: string }[] => [
+  { id: "purpose", label: t("writer.steps.purpose", "1 · What is it for?") },
+  { id: "info", label: t("writer.steps.info", "2 · Your information") },
+  { id: "aim", label: t("writer.steps.aim", "3 · Aim it") },
+  { id: "review", label: t("writer.steps.review", "4 · Review") },
+  { id: "download", label: t("writer.steps.download", "5 · Download") },
 ]
 const ORDER: GuidedStep[] = ["purpose", "info", "aim", "questions", "review", "download"]
 
 /** At most this many answers ride one draft (the server's cap, Q11). */
 const ANSWERS_MAX = 6
 
-const REMOVED_REASON: Record<string, string> = {
-  employer: "Employer not in anything you've given us",
-  title: "Job title not in anything you've given us",
-  dates: "Dates not in anything you've given us",
-  education: "Education not in anything you've given us",
-  certification: "Certification not in anything you've given us",
-  number: "A number that isn't in anything you've given us",
-  activity: "A claim nothing you've given us backs up",
-  training: "Training not in anything you've given us",
-  assessment: "Assessment wording — kept off your résumé",
-}
+const removedReasons = (t: TFunction): Record<string, string> => ({
+  employer: t("removedReason.employer", "Employer not in anything you've given us"),
+  title: t("removedReason.title", "Job title not in anything you've given us"),
+  dates: t("removedReason.dates", "Dates not in anything you've given us"),
+  education: t("removedReason.education", "Education not in anything you've given us"),
+  certification: t("removedReason.certification", "Certification not in anything you've given us"),
+  number: t("removedReason.number", "A number that isn't in anything you've given us"),
+  activity: t("removedReason.activity", "A claim nothing you've given us backs up"),
+  training: t("removedReason.training", "Training not in anything you've given us"),
+  assessment: t("removedReason.assessment", "Assessment wording — kept off your résumé"),
+})
 
 export interface GuidedResumeWriterProps {
   data: ResumeWriterSources
@@ -93,6 +96,7 @@ export interface GuidedResumeWriterProps {
 }
 
 export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpload }: GuidedResumeWriterProps) {
+  const { t } = useTranslation("resumeUi")
   const { user } = useAuth()
   const generate = useGenerateResume()
   const interview = useResumeQuestions()
@@ -281,7 +285,11 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
       const { fileName, blob } = await renderAtsResume(doc, kind, aimedAt || null)
       downloadBlob(fileName, blob)
     } catch {
-      toast.error(kind === "pdf" ? "Couldn't build the PDF. Try again." : "Couldn't build the Word file. Try again.")
+      toast.error(
+        kind === "pdf"
+          ? t("writer.pdfFailed", "Couldn't build the PDF. Try again.")
+          : t("writer.wordFailed", "Couldn't build the Word file. Try again."),
+      )
     } finally {
       setExporting(false)
     }
@@ -312,8 +320,8 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
             err instanceof DocumentRejectedError
               ? err.message
               : err instanceof DocumentStillCheckingError
-                ? "We're still checking this file — try again in a minute."
-                : "Couldn't keep that file. Try again, or describe the role in the box.",
+                ? t("writer.stillChecking", "We're still checking this file — try again in a minute.")
+                : t("writer.keepFailed", "Couldn't keep that file. Try again, or describe the role in the box."),
           )
         },
       },
@@ -329,11 +337,11 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
           const text = await readJobFile(file)
           if (token === jobToken.current) setJobFile({ name: saved.filename, text, status: "loaded" })
         } catch {
-          if (token === jobToken.current) setJobNote(`Couldn't read ${saved.filename}. Choose the file again.`)
+          if (token === jobToken.current) setJobNote(t("writer.readSavedFailed", { defaultValue: "Couldn't read {{filename}}. Choose the file again.", filename: saved.filename }))
         }
       },
       onError: () => {
-        if (token === jobToken.current) setJobNote(`Couldn't open ${saved.filename}. Choose the file again.`)
+        if (token === jobToken.current) setJobNote(t("writer.openSavedFailed", { defaultValue: "Couldn't open {{filename}}. Choose the file again.", filename: saved.filename }))
       },
     })
   }
@@ -371,16 +379,22 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
     ...(draft?.notEvidenced ?? []),
     ...(draft?.qualifications_crosswalk ?? []).filter((r) => !r.evidence).map((r) => r.requirement),
   ]
+  const reasons = removedReasons(t)
+  // One sentence with a link inside it: the translator orders the words around {{link}}.
+  const [elsewhereBefore, elsewhereAfter = ""] = t("download.elsewhere", {
+    defaultValue: "Applying somewhere else? {{link}} — your information stays.",
+    link: "\u0000",
+  }).split("\u0000")
   const stepIndex = ORDER.indexOf(step)
   const pillFor = (s: GuidedStep) => (s === "questions" ? "aim" : s)
 
   return (
     <div className="space-y-6" data-testid="guided-resume-writer">
       <p className="text-sm text-muted-foreground" data-testid="guided-drafts-left">
-        {left} of {limit} drafts left today
+        {t("writer.draftsLeft", { defaultValue: "{{left}} of {{limit}} drafts left today", left, limit })}
       </p>
-      <nav aria-label="Steps" className="flex flex-wrap gap-2">
-        {STEPS.map((s) => {
+      <nav aria-label={t("writer.stepsLabel", "Steps")} className="flex flex-wrap gap-2">
+        {steps(t).map((s) => {
           const i = ORDER.indexOf(s.id)
           const current = pillFor(step) === s.id
           const done = i < stepIndex && !current
@@ -405,7 +419,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
 
       {switchedOff ? (
         <div role="status" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Résumé Writer is turned off right now. Your documents are still on file; try again later.
+          {t("writer.turnedOff", "Résumé Writer is turned off right now. Your documents are still on file; try again later.")}
         </div>
       ) : null}
 
@@ -470,12 +484,15 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
             answers={answers}
             index={qIndex}
             loading={interview.isPending}
-            error={interview.isError ? apiErrorMessage(interview.error, "We couldn't think of questions just now. You can write your résumé without them.") : null}
+            error={interview.isError ? apiErrorMessage(
+                    interview.error,
+                    t("writer.questionsFailed", "We couldn't think of questions just now. You can write your résumé without them."),
+                  ) : null}
             onAnswer={setAnswer}
             onIndex={setQIndex}
             onExplain={(q) => {
               setAssistantOpen(true)
-              setPendingAsk(`What do you mean by this question: "${q.text}"?`)
+              setPendingAsk(t("writer.explainQuestion", { defaultValue: 'What do you mean by this question: "{{text}}"?', text: q.text }))
             }}
           />
       ) : null}
@@ -490,22 +507,30 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
                 data-testid="guided-removed-toggle"
                 className="min-h-9 rounded-full border border-amber-300 bg-amber-50 px-3 text-xs text-amber-900"
               >
-                {removed.length ? `${removed.length} line${removed.length === 1 ? "" : "s"} left out — why?` : "Nothing left out"}
+                {removed.length
+                  ? removed.length === 1
+                    ? t("writer.leftOut_one", { defaultValue: "{{n}} line left out — why?", n: removed.length })
+                    : t("writer.leftOut_other", { defaultValue: "{{n}} lines left out — why?", n: removed.length })
+                  : t("writer.nothingLeftOut", "Nothing left out")}
               </button>
               {notShown.length ? (
                 <span className="rounded-full border px-3 py-1.5 text-xs" data-testid="guided-not-shown">
-                  {notShown.length} job skill{notShown.length === 1 ? "" : "s"} not shown yet
+                  {notShown.length === 1
+                    ? t("writer.notShown_one", { defaultValue: "{{n}} job skill not shown yet", n: notShown.length })
+                    : t("writer.notShown_other", { defaultValue: "{{n}} job skills not shown yet", n: notShown.length })}
                 </span>
               ) : null}
               {changed.size ? (
                 <span className="rounded-full bg-teal-50 px-3 py-1.5 text-xs text-teal-900" data-testid="guided-changed-count">
-                  {changed.size} line{changed.size === 1 ? "" : "s"} changed
+                  {changed.size === 1
+                    ? t("writer.changed_one", { defaultValue: "{{n}} line changed", n: changed.size })
+                    : t("writer.changed_other", { defaultValue: "{{n}} lines changed", n: changed.size })}
                 </span>
               ) : null}
               {previous ? (
                 <Button size="sm" variant="ghost" onClick={() => setHistory((h) => h.slice(0, -1))} data-testid="guided-undo">
                   <Undo2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                  Undo
+                  {t("writer.undo", "Undo")}
                 </Button>
               ) : null}
             </div>
@@ -514,24 +539,28 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
                 {removed.length ? (
                   <>
                     <p className="mb-1 text-xs text-muted-foreground">
-                      The draft only keeps what your résumé (and your answers) show. If one of these is true, add it to
-                      your résumé or answer a question, and write again.
+                      {t(
+                        "writer.removedIntro",
+                        "The draft only keeps what your résumé (and your answers) show. If one of these is true, add it to your résumé or answer a question, and write again.",
+                      )}
                     </p>
                     <ul className="list-disc space-y-0.5 pl-5">
                       {removed.map((r, i) => (
                         <li key={`${r.reason}-${i}`}>
-                          <span className="text-muted-foreground">{REMOVED_REASON[r.reason] ?? "Not in anything you've given us"}:</span>{" "}
+                          <span className="text-muted-foreground">{reasons[r.reason] ?? t("removedReason.other", "Not in anything you've given us")}:</span>{" "}
                           {r.text}
                         </li>
                       ))}
                     </ul>
                   </>
                 ) : (
-                  <p className="text-xs text-muted-foreground">Every line was found in your résumé or your answers.</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("writer.everyLineFound", "Every line was found in your résumé or your answers.")}
+                  </p>
                 )}
                 {notShown.length ? (
                   <>
-                    <p className="mt-2 font-medium">The job also asks for</p>
+                    <p className="mt-2 font-medium">{t("writer.alsoAsksFor", "The job also asks for")}</p>
                     <ul className="list-disc space-y-0.5 pl-5">
                       {notShown.map((n) => (
                         <li key={n}>{n}</li>
@@ -547,8 +576,22 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
                 className={cn("rounded-md border p-2 text-sm", pages > pageLimit ? "border-red-200 bg-red-50 text-red-700" : "text-muted-foreground")}
               >
                 {pages > pageLimit
-                  ? `This résumé runs to ${pages} pages. USAJOBS won't accept more than ${pageLimit} — ask the assistant to shorten it.`
-                  : `This résumé is ${pages} page${pages === 1 ? "" : "s"} as a PDF (USAJOBS allows ${pageLimit}).`}
+                  ? t("writer.pagesOver", {
+                      defaultValue: "This résumé runs to {{pages}} pages. USAJOBS won't accept more than {{limit}} — ask the assistant to shorten it.",
+                      pages,
+                      limit: pageLimit,
+                    })
+                  : pages === 1
+                    ? t("writer.pagesWithin_one", {
+                        defaultValue: "This résumé is {{pages}} page as a PDF (USAJOBS allows {{limit}}).",
+                        pages,
+                        limit: pageLimit,
+                      })
+                    : t("writer.pagesWithin_other", {
+                        defaultValue: "This résumé is {{pages}} pages as a PDF (USAJOBS allows {{limit}}).",
+                        pages,
+                        limit: pageLimit,
+                      })}
               </p>
             ) : null}
             <ResumeCrosswalk rows={draft.qualifications_crosswalk ?? []} />
@@ -557,7 +600,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
               <GuidedDraftView
                 doc={doc}
                 changed={changed}
-                footnote={`${draft.sources.length ? `Drafted from: ${draft.sources.join(" · ")}. ` : ""}${draft.disclaimer}`}
+                footnote={`${draft.sources.length ? `${t("writer.draftedFrom", { defaultValue: "Drafted from: {{sources}}.", sources: draft.sources.join(" · ") })} ` : ""}${draft.disclaimer}`}
                 onAsk={(line) => fillAssistant(askAboutLine(line))}
                 onRewrite={(line) => fillAssistant(rewriteLine(line))}
               />
@@ -568,43 +611,49 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
       {step === "download" && draft && doc ? (
         <div className="space-y-5" data-testid="guided-step-download">
           <div>
-            <h2 className="text-xl font-semibold">Your résumé is ready</h2>
-            <p className="text-sm text-muted-foreground">Pick the file for where you&apos;re sending it.</p>
+            <h2 className="text-xl font-semibold">{t("download.title", "Your résumé is ready")}</h2>
+            <p className="text-sm text-muted-foreground">{t("download.intro", "Pick the file for where you're sending it.")}</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2 rounded-lg border-2 border-teal-600 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Recommended</p>
-              <p className="text-lg font-semibold">Word</p>
-              <p className="text-sm text-muted-foreground">For online applications. Screening systems read it best.</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">{t("download.recommended", "Recommended")}</p>
+              <p className="text-lg font-semibold">{t("download.word", "Word")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("download.wordHint", "For online applications. Screening systems read it best.")}
+              </p>
               <Button onClick={() => void onDownload("docx")} disabled={exporting}>
                 <FileText className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                Download Word
+                {t("download.downloadWord", "Download Word")}
               </Button>
               <p className="break-words text-xs text-muted-foreground" data-testid="guided-file-name-docx">
-                File name: {downloadFileName(doc.name, aimedAt, "docx")}
+                {t("download.fileName", { defaultValue: "File name: {{name}}", name: downloadFileName(doc.name, aimedAt, "docx") })}
               </p>
             </div>
             <div className="space-y-2 rounded-lg border p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email or print</p>
-              <p className="text-lg font-semibold">PDF</p>
-              <p className="text-sm text-muted-foreground">Keeps its layout exactly. Use when a posting asks for PDF.</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("download.emailOrPrint", "Email or print")}
+              </p>
+              <p className="text-lg font-semibold">{t("download.pdf", "PDF")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("download.pdfHint", "Keeps its layout exactly. Use when a posting asks for PDF.")}
+              </p>
               <Button variant="outline" onClick={() => void onDownload("pdf")} disabled={exporting}>
                 <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                {exporting ? "Building…" : "Download PDF"}
+                {exporting ? t("download.building", "Building…") : t("download.downloadPdf", "Download PDF")}
               </Button>
               <p className="break-words text-xs text-muted-foreground" data-testid="guided-file-name-pdf">
-                File name: {downloadFileName(doc.name, aimedAt, "pdf")}
+                {t("download.fileName", { defaultValue: "File name: {{name}}", name: downloadFileName(doc.name, aimedAt, "pdf") })}
               </p>
             </div>
           </div>
           <ResumeMiniCardPanel draft={draft} contact={contact} />
           <fieldset className="space-y-2 rounded-lg border p-4" data-testid="guided-checklist">
-            <legend className="px-1 text-sm font-semibold">Before you send it</legend>
+            <legend className="px-1 text-sm font-semibold">{t("download.beforeSend", "Before you send it")}</legend>
             {(
               [
-                ["read", "I read every line — it's all true"],
-                ["contact", "My phone and email are right"],
-                ["reviewed", "A coach or friend has looked at it (optional)"],
+                ["read", t("download.checkRead", "I read every line — it's all true")],
+                ["contact", t("download.checkContact", "My phone and email are right")],
+                ["reviewed", t("download.checkReviewed", "A coach or friend has looked at it (optional)")],
               ] as const
             ).map(([k, label]) => (
               <label key={k} className="flex items-center gap-2 text-sm">
@@ -619,11 +668,11 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
             ))}
           </fieldset>
           <p className="text-sm text-muted-foreground">
-            Applying somewhere else?{" "}
+            {elsewhereBefore}
             <button type="button" className="text-teal-700 underline" onClick={() => go("aim")}>
-              Aim at another job
-            </button>{" "}
-            — your information stays.
+              {t("download.aimElsewhere", "Aim at another job")}
+            </button>
+            {elsewhereAfter}
           </p>
         </div>
       ) : null}
@@ -631,8 +680,8 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
       </div>
       <aside className="min-w-0 space-y-4">
         {step === "aim" ? (
-          <section aria-label="Your choices" className="rounded-lg border p-4 text-sm" data-testid="guided-your-choices">
-            <h3 className="mb-1 font-semibold">Your choices</h3>
+          <section aria-label={t("writer.yourChoices", "Your choices")} className="rounded-lg border p-4 text-sm" data-testid="guided-your-choices">
+            <h3 className="mb-1 font-semibold">{t("writer.yourChoices", "Your choices")}</h3>
             <dl className="space-y-1">
               {choices.map((c) => (
                 <div key={c.label} className="flex gap-2">
@@ -653,7 +702,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
             data-testid="guided-assistant-drawer"
           >
             <summary className={cn("cursor-pointer text-sm font-medium", step === "review" && "sr-only")}>
-              Questions? Ask the résumé assistant
+              {t("writer.askAssistant", "Questions? Ask the résumé assistant")}
             </summary>
             <ResumeAssistant
               summary={summary}
@@ -675,7 +724,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
 
       {generate.isError ? (
         <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {apiErrorMessage(generate.error, "The draft couldn't be written. Try again in a moment.")}
+          {apiErrorMessage(generate.error, t("writer.draftFailed", "The draft couldn't be written. Try again in a moment."))}
         </div>
       ) : null}
 
@@ -695,7 +744,7 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
             variant="ghost"
             onClick={() => go(step === "review" ? "aim" : ORDER[Math.max(0, stepIndex - 1)])}
           >
-            Back
+            {t("writer.back", "Back")}
           </Button>
         ) : (
           <span />
@@ -703,27 +752,27 @@ export function GuidedResumeWriter({ data, jobId, onPickRole, onClearRole, onUpl
         <div className="flex flex-wrap items-center gap-2">
           {step === "purpose" ? (
             <Button onClick={() => go("info")} disabled={!optionId}>
-              Next
+              {t("writer.next", "Next")}
             </Button>
           ) : null}
-          {step === "info" ? <Button onClick={() => go("aim")}>Next</Button> : null}
+          {step === "info" ? <Button onClick={() => go("aim")}>{t("writer.next", "Next")}</Button> : null}
           {step === "aim" ? (
             <>
               <Button variant="ghost" onClick={() => write()} disabled={!canWrite}>
-                Skip questions, write now
+                {t("writer.skipWrite", "Skip questions, write now")}
               </Button>
               <Button onClick={startQuestions} disabled={switchedOff || jobChecking}>
-                Next: a few quick questions
+                {t("writer.nextQuestions", "Next: a few quick questions")}
               </Button>
             </>
           ) : null}
           {step === "questions" ? (
             <Button onClick={() => write()} disabled={!canWrite} data-testid="guided-write">
               {generate.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" /> : null}
-              {generate.isPending ? "Writing…" : "Write my résumé"}
+              {generate.isPending ? t("writer.writing", "Writing…") : t("writer.writeMine", "Write my résumé")}
             </Button>
           ) : null}
-          {step === "review" ? <Button onClick={() => go("download")}>Looks good — download</Button> : null}
+          {step === "review" ? <Button onClick={() => go("download")}>{t("writer.looksGood", "Looks good — download")}</Button> : null}
         </div>
       </footer>
     </div>

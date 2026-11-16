@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -70,6 +72,7 @@ function UnitCardSkeleton() {
 }
 
 function UnitProvenance({ unitId, open }: { unitId: string; open: boolean }) {
+  const { t } = useTranslation("kcPages")
   // Lazy: only fetch the interview turns once the reviewer opens the panel.
   const { data, isLoading, isError, error } = useUnitTurns(unitId, open)
   if (!open) return null
@@ -77,27 +80,32 @@ function UnitProvenance({ unitId, open }: { unitId: string; open: boolean }) {
     <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-3">
       {isLoading && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading the interview…
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("review.provenance.loading", "Loading the interview…")}
         </div>
       )}
       {isError && isKceAccessDenied(error) && <KceAccessInline />}
       {isError && !isKceAccessDenied(error) && (
-        <p className="text-xs text-muted-foreground">Couldn&apos;t load the interview for this unit.</p>
+        <p className="text-xs text-muted-foreground">
+          {t("review.provenance.loadError", "Couldn't load the interview for this unit.")}
+        </p>
       )}
       {data && data.turns.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          No recorded interview for this unit (it may pre-date turn capture).
+          {t(
+            "review.provenance.none",
+            "No recorded interview for this unit (it may pre-date turn capture)."
+          )}
         </p>
       )}
       {data && data.turns.length > 0 && (
         <ul className="space-y-3">
-          {data.turns.map((t) => (
-            <li key={t.id} className="space-y-1">
+          {data.turns.map((turn) => (
+            <li key={turn.id} className="space-y-1">
               <div className="flex gap-2">
                 <MessagesSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#127A8A]" />
-                <p className="text-xs font-medium text-foreground">{t.question}</p>
+                <p className="text-xs font-medium text-foreground">{turn.question}</p>
               </div>
-              <p className="rounded bg-white px-2 py-1 text-xs text-foreground">{t.response}</p>
+              <p className="rounded bg-white px-2 py-1 text-xs text-foreground">{turn.response}</p>
             </li>
           ))}
         </ul>
@@ -121,6 +129,7 @@ function UnitCard({
   onOpenNoteDialog: (verdict: "amend" | "reject") => void
   isSubmitting: boolean
 }) {
+  const { t } = useTranslation("kcPages")
   const [showProvenance, setShowProvenance] = useState(false)
   return (
     <Card>
@@ -132,11 +141,13 @@ function UnitCard({
           </Badge>
           {unit.criticality === "high" && (
             <Badge variant="outline" className={CRITICALITY_BADGE_CLASS}>
-              High criticality
+              {t("review.unit.highCriticality", "High criticality")}
             </Badge>
           )}
         </div>
-        <CardDescription>KVI {unit.kvi.toFixed(2)}</CardDescription>
+        <CardDescription>
+          {t("review.unit.kvi", { defaultValue: "KVI {{value}}", value: unit.kvi.toFixed(2) })}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className={expanded ? "text-sm text-foreground" : "line-clamp-3 text-sm text-foreground"}>
@@ -148,13 +159,13 @@ function UnitCard({
             onClick={onToggleExpanded}
             className="text-xs font-medium text-[#127A8A] hover:underline"
           >
-            {expanded ? "Show less" : "Show more"}
+            {expanded ? t("review.unit.showLess", "Show less") : t("review.unit.showMore", "Show more")}
           </button>
         )}
         <div className="flex flex-wrap gap-2 pt-1">
           <Button size="sm" onClick={onApprove} disabled={isSubmitting} className="gap-1.5">
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-            Approve
+            {t("review.unit.approve", "Approve")}
           </Button>
           <Button
             size="sm"
@@ -164,7 +175,7 @@ function UnitCard({
             className="gap-1.5"
           >
             <PencilLine className="h-4 w-4" />
-            Amend
+            {t("review.unit.amend", "Amend")}
           </Button>
           <Button
             size="sm"
@@ -174,7 +185,7 @@ function UnitCard({
             className="gap-1.5 text-red-600 hover:text-red-700"
           >
             <XCircle className="h-4 w-4" />
-            Reject
+            {t("review.unit.reject", "Reject")}
           </Button>
           <Button
             size="sm"
@@ -183,7 +194,9 @@ function UnitCard({
             className="gap-1.5 text-muted-foreground"
           >
             <MessagesSquare className="h-4 w-4" />
-            {showProvenance ? "Hide the interview" : "Replay the interview"}
+            {showProvenance
+              ? t("review.unit.hideInterview", "Hide the interview")
+              : t("review.unit.replayInterview", "Replay the interview")}
           </Button>
         </div>
         <UnitProvenance unitId={unit.id} open={showProvenance} />
@@ -201,10 +214,11 @@ function ContradictionSide({
   onKeep: () => void
   busy: boolean
 }) {
+  const { t } = useTranslation("kcPages")
   if (!side) {
     return (
       <div className="flex-1 rounded-md border bg-white p-3 text-xs text-muted-foreground">
-        This unit is no longer available.
+        {t("review.contradiction.unitGone", "This unit is no longer available.")}
       </div>
     )
   }
@@ -215,19 +229,20 @@ function ContradictionSide({
           {side.category}
         </Badge>
         <span className="text-xs text-muted-foreground">
-          {side.validity_band} · KVI {side.kvi.toFixed(2)}
+          {t("review.contradiction.bandKvi", { defaultValue: "{{band}} · KVI {{value}}", band: side.validity_band, value: side.kvi.toFixed(2) })}
         </span>
       </div>
       <p className="text-sm font-medium text-foreground">{side.title}</p>
       <p className="text-xs text-foreground">{side.body}</p>
       <Button size="sm" variant="outline" disabled={busy} onClick={onKeep} className="gap-1.5">
-        <Trophy className="h-3.5 w-3.5" /> Keep this, retire the other
+        <Trophy className="h-3.5 w-3.5" /> {t("review.contradiction.keepThis", "Keep this, retire the other")}
       </Button>
     </div>
   )
 }
 
 function ContradictionCard({ c }: { c: ContradictionRelation }) {
+  const { t } = useTranslation("kcPages")
   const resolve = useResolveContradiction()
   const busy = resolve.isPending
   const supersede = (winnerUnitId: string) =>
@@ -249,7 +264,7 @@ function ContradictionCard({ c }: { c: ContradictionRelation }) {
           disabled={busy}
           onClick={() => resolve.mutate({ relationId: c.id, body: { action: "keep_both" } })}
         >
-          Both are true
+          {t("review.contradiction.bothTrue", "Both are true")}
         </Button>
         <Button
           size="sm"
@@ -258,7 +273,7 @@ function ContradictionCard({ c }: { c: ContradictionRelation }) {
           onClick={() => resolve.mutate({ relationId: c.id, body: { action: "dismiss" } })}
           className="text-muted-foreground"
         >
-          Not a contradiction
+          {t("review.contradiction.notContradiction", "Not a contradiction")}
         </Button>
         {busy && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
@@ -267,6 +282,7 @@ function ContradictionCard({ c }: { c: ContradictionRelation }) {
 }
 
 function ReviewQueueTab() {
+  const { t } = useTranslation("kcPages")
   const { data: queue, isLoading, isError, error } = useReviewQueue()
   const submitValidation = useSubmitValidation()
 
@@ -326,7 +342,7 @@ function ReviewQueueTab() {
       {!isLoading && isError && !isKceAccessDenied(error) && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            We couldn&apos;t load the review queue right now. Try again shortly.
+            {t("review.queue.loadError", "We couldn't load the review queue right now. Try again shortly.")}
           </CardContent>
         </Card>
       )}
@@ -334,7 +350,7 @@ function ReviewQueueTab() {
       {!isLoading && !isError && units.length === 0 && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            All caught up — no units awaiting review.
+            {t("review.queue.empty", "All caught up — no units awaiting review.")}
           </CardContent>
         </Card>
       )}
@@ -362,16 +378,20 @@ function ReviewQueueTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
-            Contradictions
+            {t("review.queue.contradictionsTitle", "Contradictions")}
           </CardTitle>
           <CardDescription>
-            Two captured units disagree. Keep the one that&apos;s right (the other is retired),
-            mark that both are true, or dismiss it if it isn&apos;t really a contradiction.
+            {t(
+              "review.queue.contradictionsDescription",
+              "Two captured units disagree. Keep the one that's right (the other is retired), mark that both are true, or dismiss it if it isn't really a contradiction."
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {contradictions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No unresolved contradictions.</p>
+            <p className="text-sm text-muted-foreground">
+              {t("review.queue.noContradictions", "No unresolved contradictions.")}
+            </p>
           ) : (
             <div className="space-y-3">
               {contradictions.map((c) => (
@@ -386,25 +406,31 @@ function ReviewQueueTab() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {noteDialog?.verdict === "amend" ? "Amend" : "Reject"} — {noteDialog?.unit.title}
+              {t("review.queue.noteTitle", { defaultValue: "{{verdict}} — {{title}}", verdict:
+                  noteDialog?.verdict === "amend"
+                    ? t("review.unit.amend", "Amend")
+                    : t("review.unit.reject", "Reject"), title: noteDialog?.unit.title })}
             </DialogTitle>
             <DialogDescription>
-              Add a note explaining what needs to change before it can be validated.
+              {t(
+                "review.queue.noteDescription",
+                "Add a note explaining what needs to change before it can be validated."
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor="review-notes">Notes</Label>
+            <Label htmlFor="review-notes">{t("review.queue.notes", "Notes")}</Label>
             <Textarea
               id="review-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="What needs to change?"
+              placeholder={t("review.queue.notesPlaceholder", "What needs to change?")}
               autoFocus
             />
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={closeNoteDialog}>
-              Cancel
+              {t("review.queue.cancel", "Cancel")}
             </Button>
             <Button
               type="button"
@@ -413,7 +439,7 @@ function ReviewQueueTab() {
               className="gap-1.5"
             >
               {submitValidation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Submit
+              {t("review.queue.submit", "Submit")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -432,37 +458,53 @@ function ReviewQueueTab() {
  */
 const INTAKE_ORG_ID = "kce-capture"
 
-const riskSchema = z.object({
-  expert_user_id: z.string().min(1, "Expert user id is required"),
-  role_title: z.string().min(1, "Role title is required"),
-  exit_risk: z.number().min(0, "Enter a value between 0 and 1").max(1, "Enter a value between 0 and 1"),
-  role_criticality: z
-    .number()
-    .min(0, "Enter a value between 0 and 1")
-    .max(1, "Enter a value between 0 and 1"),
-  doc_gap: z.number().min(0, "Enter a value between 0 and 1").max(1, "Enter a value between 0 and 1"),
-  bus_factor: z.number().min(0, "Enter a value between 0 and 1").max(1, "Enter a value between 0 and 1"),
-  // Kept as raw text — parsed to a number (or omitted) at submit time — to
-  // avoid the optional-vs-required generic mismatch z.preprocess() causes
-  // with react-hook-form's resolver typing.
-  retirement_horizon_months: z
-    .string()
-    .optional()
-    .refine((v) => !v || (Number.isInteger(Number(v)) && Number(v) >= 0), {
-      message: "Must be a whole number of months, 0 or more",
-    }),
-})
+function makeRiskSchema(t: TFunction) {
+  const range = t("review.intake.rangeError", "Enter a value between 0 and 1")
+  const expertRequired = t("review.intake.expertRequired", "Expert user id is required")
+  const roleRequired = t("review.intake.roleRequired", "Role title is required")
+  return z.object({
+    expert_user_id: z.string().min(1, expertRequired),
+    role_title: z.string().min(1, roleRequired),
+    exit_risk: z.number().min(0, range).max(1, range),
+    role_criticality: z.number().min(0, range).max(1, range),
+    doc_gap: z.number().min(0, range).max(1, range),
+    bus_factor: z.number().min(0, range).max(1, range),
+    // Kept as raw text — parsed to a number (or omitted) at submit time — to
+    // avoid the optional-vs-required generic mismatch z.preprocess() causes
+    // with react-hook-form's resolver typing.
+    retirement_horizon_months: z
+      .string()
+      .optional()
+      .refine((v) => !v || (Number.isInteger(Number(v)) && Number(v) >= 0), {
+        message: t("review.intake.horizonError", "Must be a whole number of months, 0 or more"),
+      }),
+  })
+}
 
-type RiskFormValues = z.infer<typeof riskSchema>
+type RiskFormValues = z.infer<ReturnType<typeof makeRiskSchema>>
 
-const RISK_FACTOR_FIELDS: { name: keyof Pick<RiskFormValues, "exit_risk" | "role_criticality" | "doc_gap" | "bus_factor">; label: string }[] = [
-  { name: "exit_risk", label: "Exit risk" },
-  { name: "role_criticality", label: "Role criticality" },
-  { name: "doc_gap", label: "Documentation gap" },
-  { name: "bus_factor", label: "Bus factor" },
+const RISK_FACTOR_FIELDS: { name: keyof Pick<RiskFormValues, "exit_risk" | "role_criticality" | "doc_gap" | "bus_factor"> }[] = [
+  { name: "exit_risk" },
+  { name: "role_criticality" },
+  { name: "doc_gap" },
+  { name: "bus_factor" },
 ]
 
+function riskFactorLabel(t: TFunction, name: (typeof RISK_FACTOR_FIELDS)[number]["name"]): string {
+  switch (name) {
+    case "exit_risk":
+      return t("review.intake.factor.exit_risk", "Exit risk")
+    case "role_criticality":
+      return t("review.intake.factor.role_criticality", "Role criticality")
+    case "doc_gap":
+      return t("review.intake.factor.doc_gap", "Documentation gap")
+    case "bus_factor":
+      return t("review.intake.factor.bus_factor", "Bus factor")
+  }
+}
+
 function RegisterRiskForm() {
+  const { t } = useTranslation("kcPages")
   const registerRisk = useRegisterAtRiskRole()
   const {
     register,
@@ -470,7 +512,7 @@ function RegisterRiskForm() {
     reset,
     formState: { errors },
   } = useForm<RiskFormValues>({
-    resolver: zodResolver(riskSchema),
+    resolver: zodResolver(makeRiskSchema(t)),
     defaultValues: {
       expert_user_id: "",
       role_title: "",
@@ -505,24 +547,24 @@ function RegisterRiskForm() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <ShieldAlert className="h-4 w-4 text-red-500" />
-          Register an at-risk role
+          {t("review.intake.riskTitle", "Register an at-risk role")}
         </CardTitle>
         <CardDescription>
-          Flag a role or expert whose knowledge should be prioritized for capture.
+          {t("review.intake.riskDescription", "Flag a role or expert whose knowledge should be prioritized for capture.")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="risk-expert-id">Expert user id</Label>
+              <Label htmlFor="risk-expert-id">{t("review.intake.expertId", "Expert user id")}</Label>
               <Input id="risk-expert-id" {...register("expert_user_id")} />
               {errors.expert_user_id && (
                 <p className="text-xs text-red-600">{errors.expert_user_id.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="risk-role-title">Role title</Label>
+              <Label htmlFor="risk-role-title">{t("review.intake.roleTitle", "Role title")}</Label>
               <Input id="risk-role-title" {...register("role_title")} />
               {errors.role_title && <p className="text-xs text-red-600">{errors.role_title.message}</p>}
             </div>
@@ -531,7 +573,9 @@ function RegisterRiskForm() {
           <div className="grid gap-3 sm:grid-cols-2">
             {RISK_FACTOR_FIELDS.map((field) => (
               <div key={field.name} className="space-y-1.5">
-                <Label htmlFor={`risk-${field.name}`}>{field.label} (0–1)</Label>
+                <Label htmlFor={`risk-${field.name}`}>
+                  {t("review.intake.factorRange", { defaultValue: "{{label}} (0–1)", label: riskFactorLabel(t, field.name) })}
+                </Label>
                 <Input
                   id={`risk-${field.name}`}
                   type="number"
@@ -548,7 +592,9 @@ function RegisterRiskForm() {
           </div>
 
           <div className="space-y-1.5 sm:w-1/3">
-            <Label htmlFor="risk-horizon">Retirement horizon (months, optional)</Label>
+            <Label htmlFor="risk-horizon">
+              {t("review.intake.horizon", "Retirement horizon (months, optional)")}
+            </Label>
             <Input id="risk-horizon" type="number" min={0} step={1} {...register("retirement_horizon_months")} />
             {errors.retirement_horizon_months && (
               <p className="text-xs text-red-600">{errors.retirement_horizon_months.message}</p>
@@ -557,7 +603,7 @@ function RegisterRiskForm() {
 
           <Button type="submit" disabled={registerRisk.isPending} className="gap-1.5">
             {registerRisk.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Register role
+            {t("review.intake.registerRole", "Register role")}
           </Button>
         </form>
       </CardContent>
@@ -565,21 +611,24 @@ function RegisterRiskForm() {
   )
 }
 
-const sessionSchema = z
-  .object({
-    expert_user_id: z.string().min(1, "Expert user id is required"),
-    role_title: z.string().min(1, "Role title is required"),
-    is_synthetic: z.boolean(),
-    consent_event_id: z.string().optional(),
-  })
-  .refine((values) => values.is_synthetic || (values.consent_event_id?.trim().length ?? 0) > 0, {
-    message: "Consent id is required for a real (non-practice) session",
-    path: ["consent_event_id"],
-  })
+function makeSessionSchema(t: TFunction) {
+  return z
+    .object({
+      expert_user_id: z.string().min(1, t("review.intake.expertRequired", "Expert user id is required")),
+      role_title: z.string().min(1, t("review.intake.roleRequired", "Role title is required")),
+      is_synthetic: z.boolean(),
+      consent_event_id: z.string().optional(),
+    })
+    .refine((values) => values.is_synthetic || (values.consent_event_id?.trim().length ?? 0) > 0, {
+      message: t("review.intake.consentRequired", "Consent id is required for a real (non-practice) session"),
+      path: ["consent_event_id"],
+    })
+}
 
-type SessionFormValues = z.infer<typeof sessionSchema>
+type SessionFormValues = z.infer<ReturnType<typeof makeSessionSchema>>
 
 function StartCaptureSessionForm() {
+  const { t } = useTranslation("kcPages")
   const startSession = useStartCaptureSession()
   const {
     register,
@@ -589,7 +638,7 @@ function StartCaptureSessionForm() {
     watch,
     formState: { errors },
   } = useForm<SessionFormValues>({
-    resolver: zodResolver(sessionSchema),
+    resolver: zodResolver(makeSessionSchema(t)),
     defaultValues: {
       expert_user_id: "",
       role_title: "",
@@ -620,24 +669,24 @@ function StartCaptureSessionForm() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <UserPlus2 className="h-4 w-4 text-[#127A8A]" />
-          Start a capture session
+          {t("review.intake.sessionTitle", "Start a capture session")}
         </CardTitle>
         <CardDescription>
-          Practice sessions need no consent record. A real expert session does.
+          {t("review.intake.sessionDescription", "Practice sessions need no consent record. A real expert session does.")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="session-expert-id">Expert user id</Label>
+              <Label htmlFor="session-expert-id">{t("review.intake.expertId", "Expert user id")}</Label>
               <Input id="session-expert-id" {...register("expert_user_id")} />
               {errors.expert_user_id && (
                 <p className="text-xs text-red-600">{errors.expert_user_id.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="session-role-title">Role title</Label>
+              <Label htmlFor="session-role-title">{t("review.intake.roleTitle", "Role title")}</Label>
               <Input id="session-role-title" {...register("role_title")} />
               {errors.role_title && (
                 <p className="text-xs text-red-600">{errors.role_title.message}</p>
@@ -651,9 +700,12 @@ function StartCaptureSessionForm() {
             render={({ field }) => (
               <div className="flex items-center justify-between rounded-md border p-3">
                 <div>
-                  <Label htmlFor="session-is-synthetic">Practice session</Label>
+                  <Label htmlFor="session-is-synthetic">{t("review.intake.practice", "Practice session")}</Label>
                   <p className="text-xs text-muted-foreground">
-                    On — synthetic practice, no consent record needed. Off — a real expert session.
+                    {t(
+                      "review.intake.practiceHint",
+                      "On — synthetic practice, no consent record needed. Off — a real expert session."
+                    )}
                   </p>
                 </div>
                 <Switch
@@ -667,7 +719,7 @@ function StartCaptureSessionForm() {
 
           {!isSynthetic && (
             <div className="space-y-1.5 sm:w-1/2">
-              <Label htmlFor="session-consent-id">Consent record id</Label>
+              <Label htmlFor="session-consent-id">{t("review.intake.consentId", "Consent record id")}</Label>
               <Input id="session-consent-id" {...register("consent_event_id")} />
               {errors.consent_event_id && (
                 <p className="text-xs text-red-600">{errors.consent_event_id.message}</p>
@@ -677,7 +729,7 @@ function StartCaptureSessionForm() {
 
           <Button type="submit" disabled={startSession.isPending} className="gap-1.5">
             {startSession.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Start session
+            {t("review.intake.startSession", "Start session")}
           </Button>
         </form>
       </CardContent>
@@ -705,22 +757,23 @@ function CaptureIntakeTab() {
  * plain language — no raw PRISM dimension names surfaced here.
  */
 export default function KceReviewConsolePage() {
+  const { t } = useTranslation("kcPages")
   return (
     <div className="max-w-5xl space-y-6">
       <div>
         <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
           <ClipboardCheck className="h-5 w-5 text-[#127A8A]" />
-          Reviewer Console
+          {t("review.title", "Reviewer Console")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Validate captured knowledge and flag at-risk roles for capture.
+          {t("review.subtitle", "Validate captured knowledge and flag at-risk roles for capture.")}
         </p>
       </div>
 
       <Tabs defaultValue="queue">
         <TabsList>
-          <TabsTrigger value="queue">Review Queue</TabsTrigger>
-          <TabsTrigger value="intake">Capture intake</TabsTrigger>
+          <TabsTrigger value="queue">{t("review.tabQueue", "Review Queue")}</TabsTrigger>
+          <TabsTrigger value="intake">{t("review.tabIntake", "Capture intake")}</TabsTrigger>
         </TabsList>
         <TabsContent value="queue" className="mt-4">
           <ReviewQueueTab />

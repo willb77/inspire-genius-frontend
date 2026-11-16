@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { QUADRANT_CONFIG } from '@/constants/prism'
 import type { PRISMQuadrant } from '@/types/prism/api-types'
 
@@ -8,6 +9,7 @@ type PrismQuadrantChartProps = {
 export default function PrismQuadrantChart({
   quadrants,
 }: PrismQuadrantChartProps) {
+  const { t } = useTranslation('prismUi')
   if (!quadrants.length) return null
 
   const maxValue = Math.max(...quadrants.map((q) => q.Value), 100)
@@ -15,7 +17,7 @@ export default function PrismQuadrantChart({
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-muted-foreground">
-        PRISM 4D Quadrants
+        {t('quadrantChart.heading', { defaultValue: 'PRISM 4D Quadrants' })}
       </h3>
       <div className="space-y-2">
         {quadrants.map((q) => {

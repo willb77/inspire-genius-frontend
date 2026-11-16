@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { ExternalLink, Mic, Users } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { ROUTES } from "@/constants/routes"
 import { useAuth } from "@/context/useAuth"
 import { liveInterviewCandidateLink } from "@/lib/interviewRoutes"
@@ -28,6 +29,7 @@ import {
  * rather than an error.
  */
 export default function JobBlueprintCandidatesPage() {
+  const { t } = useTranslation("jobBlueprintPages")
   const { data: jobDnas, isLoading: loadingJobs } = useJobDnaList()
   const { user } = useAuth()
   const [jobId, setJobId] = useState("")
@@ -62,8 +64,8 @@ export default function JobBlueprintCandidatesPage() {
     <div className="max-w-6xl">
       <JobDnaPageHeader
         icon={Users}
-        title="Candidates"
-        description="Screen and review candidates: each one's PRISM profile scored against the role's reviewed Job DNA benchmark."
+        title={t("candidates.title", { defaultValue: "Candidates" })}
+        description={t("candidates.description", { defaultValue: "Screen and review candidates: each one's PRISM profile scored against the role's reviewed Job DNA benchmark." })}
         action={
           <div className="flex flex-wrap items-center gap-3">
             <JobDnaSelect
@@ -87,17 +89,16 @@ export default function JobBlueprintCandidatesPage() {
       />
 
       {loadingJobs ? (
-        <JobDnaLoading label="Loading roles…" />
+        <JobDnaLoading label={t("candidates.loadingRoles", { defaultValue: "Loading roles…" })} />
       ) : !jobId ? (
-        <JobDnaEmptyState>Select a role to see its candidate roster.</JobDnaEmptyState>
+        <JobDnaEmptyState>{t("candidates.selectRole", { defaultValue: "Select a role to see its candidate roster." })}</JobDnaEmptyState>
       ) : isLoading ? (
-        <JobDnaLoading label="Loading candidates…" />
+        <JobDnaLoading label={t("candidates.loading", { defaultValue: "Loading candidates…" })} />
       ) : isError ? (
-        <JobDnaError message="Failed to load candidates." onRetry={() => void refetch()} />
+        <JobDnaError message={t("candidates.loadFailed", { defaultValue: "Failed to load candidates." })} onRetry={() => void refetch()} />
       ) : !candidates || candidates.length === 0 ? (
         <JobDnaEmptyState>
-          No candidates in this pipeline yet. Use &ldquo;Add candidate&rdquo; above to put one in;
-          fit scoring runs once their PRISM assessment is on file.
+          {t("candidates.emptyPipeline", { defaultValue: "No candidates in this pipeline yet. Use “Add candidate” above to put one in; fit scoring runs once their PRISM assessment is on file." })}
         </JobDnaEmptyState>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
@@ -111,18 +112,18 @@ export default function JobBlueprintCandidatesPage() {
             {selected ? (
               <div className="mb-3 flex items-center justify-between gap-3">
                 <span className="text-sm text-[#6b7280]">
-                  Candidate <span className="font-medium text-[#1f2937]">{selected.code ?? selected.name}</span>
+                  {t("candidates.candidateLabel", { defaultValue: "Candidate" })} <span className="font-medium text-[#1f2937]">{selected.code ?? selected.name}</span>
                 </span>
                 <span className="flex flex-wrap items-center gap-2">
                   {interviewHref ? (
                     <JobDnaLinkButton to={interviewHref}>
                       <Mic className="h-4 w-4" />
-                      Interview this candidate
+                      {t("candidates.interview", { defaultValue: "Interview this candidate" })}
                     </JobDnaLinkButton>
                   ) : null}
                   <JobDnaLinkButton to={ROUTES.JOB_DNA.candidateDetail(selected.id)}>
                     <ExternalLink className="h-4 w-4" />
-                    Open candidate
+                    {t("candidates.open", { defaultValue: "Open candidate" })}
                   </JobDnaLinkButton>
                 </span>
               </div>
@@ -147,8 +148,8 @@ export default function JobBlueprintCandidatesPage() {
             ) : (
               <JobDnaEmptyState>
                 {selected
-                  ? "This candidate has not been fit-scored yet."
-                  : "Select a candidate to view their fit analysis."}
+                  ? t("candidates.notScored", { defaultValue: "This candidate has not been fit-scored yet." })
+                  : t("candidates.selectCandidate", { defaultValue: "Select a candidate to view their fit analysis." })}
               </JobDnaEmptyState>
             )}
           </div>

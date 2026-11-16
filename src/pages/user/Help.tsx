@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSupportAgent } from "@/context/useSupportAgent";
+import { useTranslation } from "react-i18next";
 
 
 const getPriorityVariant = (priority: string) => {
@@ -23,6 +24,7 @@ const getPriorityVariant = (priority: string) => {
 };
 
 export default function Help() {
+  const { t } = useTranslation("userPages");
   const { open: openSupportAgent } = useSupportAgent();
   const [showSubmitted, setShowSubmitted] = useState(false);
   const [page, setPage] = useState(1);
@@ -87,7 +89,7 @@ export default function Help() {
       <div className="space-y-4">
         <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Help and Support
+            {t("help.helpAndSupport", "Help and Support")}
           </h1>
           <div data-tour="help-search" className="hidden">
             <SearchBar />
@@ -115,20 +117,19 @@ export default function Help() {
             <Phone className="size-6" />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-semibold tracking-tight">Talk to Meridian</h2>
+            <h2 className="text-base font-semibold tracking-tight">{t("help.talkToMeridian", "Talk to Meridian")}</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Ask a question by voice or text and get an answer right away. Need a
-              person? Submit a request above and a human will pick it up.
+              {t("help.askAQuestionByVoiceOr", "Ask a question by voice or text and get an answer right away. Need a person? Submit a request above and a human will pick it up.")}
             </p>
           </div>
           <Button variant="default" className="shrink-0" onClick={openSupportAgent}>
-            Speak with Support
+            {t("help.speakWithSupport", "Speak with Support")}
           </Button>
         </div>
 
         {/* Issues List */}
         <div className="bg-white rounded-2xl border shadow-sm p-4">
-          <div className="text-left mb-3 font-semibold">Recent Issues (TODO: translate)</div>
+          <div className="text-left mb-3 font-semibold">{t("help.recentIssuesTodoTranslate", "Recent Issues (TODO: translate)")}</div>
           {isListing && (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -152,7 +153,7 @@ export default function Help() {
             </div>
           )}
           {!isListing && items.length === 0 && (
-            <div className="text-sm text-muted-foreground">No issues found.</div>
+            <div className="text-sm text-muted-foreground">{t("help.noIssuesFound", "No issues found.")}</div>
           )}
           {!isListing && items.length > 0 && (
             <div className="space-y-3">
@@ -169,7 +170,7 @@ export default function Help() {
                   <div className="mt-1 text-sm text-muted-foreground line-clamp-3">{it.description}</div>
                   {it.admin_comment?.comment ? (
                     <div className="mt-3 rounded-md border bg-muted/30 p-3 text-left">
-                      <div className="text-xs font-semibold text-muted-foreground">Admin Comment</div>
+                      <div className="text-xs font-semibold text-muted-foreground">{t("help.adminComment", "Admin Comment")}</div>
                       <div className="mt-1 text-sm text-foreground">{it.admin_comment.comment}</div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         {it.admin_comment.created_at ? new Date(it.admin_comment.created_at).toLocaleString() : null}

@@ -4,7 +4,8 @@
  * StudioInterviewBody (custom); the old bodies are not edited, and render
  * whenever the interview switch is off.
  */
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -25,16 +26,18 @@ import type {
   LiveTailoringMeta,
   ScorecardDraftReport,
 } from "@/services/interview/live.service"
-import { KIND_OPTIONS, STEP_LABEL, type PipelineStepOutcome, type RunKind } from "./runFormat"
+import { SLOT, slotParts, type TFn } from "@/components/interview/tFallback"
+import { kindOptions, stepLabel, type PipelineStepOutcome, type RunKind } from "./runFormat"
 
 // ── Kind picker (new) ─────────────────────────────────────────────
 
 export function KindPicker({ value, onChange }: { value: RunKind; onChange: (k: RunKind) => void }) {
+  const { t } = useTranslation("interviewPages")
   return (
     <fieldset className="space-y-2">
-      <legend className="text-sm font-medium text-foreground">What kind of interview?</legend>
+      <legend className="text-sm font-medium text-foreground">{t("house.kindPicker.legend", "What kind of interview?")}</legend>
       <div className="grid gap-2 sm:grid-cols-3">
-        {KIND_OPTIONS.map((opt) => (
+        {kindOptions(t).map((opt) => (
           <button
             key={opt.value}
             type="button"
@@ -58,28 +61,36 @@ export function KindPicker({ value, onChange }: { value: RunKind; onChange: (k: 
 
 /** One honest line about the Job Studio scorecard draft after finalise (Live wording). */
 export function ScorecardDraftLineStar({ linked, report }: { linked: boolean; report?: ScorecardDraftReport | null }) {
+  const { t } = useTranslation("interviewPages")
   if (!linked) return null
   if (report?.written) {
+    const [reviewBefore, reviewAfter] = slotParts(
+      t("live.scorecard.review", { defaultValue: "{{slot}} before it counts.", slot: SLOT }),
+    )
     return (
       <p className="text-sm text-emerald-700" data-testid="scorecard-draft-line">
-        Scorecard draft written for the linked candidate
-        {typeof report.dimensions_scored === "number" ? ` (${report.dimensions_scored} dimensions)` : ""}.
+        {typeof report.dimensions_scored === "number"
+          ? t("live.scorecard.writtenDims", { defaultValue: "Scorecard draft written for the linked candidate ({{dimensions}} dimensions).", dimensions: report.dimensions_scored })
+          : t("live.scorecard.written", "Scorecard draft written for the linked candidate.")}
+        {reviewBefore}
         <Link to={ROUTES.JOB_DNA.SCORECARDS} className="underline underline-offset-2">
-          Review it under Career Blueprint → Scorecards
-        </Link>{" "}
-        before it counts.
+          {t("live.scorecard.reviewLink", "Review it under Career Blueprint → Scorecards")}
+        </Link>
+        {reviewAfter}
       </p>
     )
   }
   return (
     <p className="text-sm text-amber-700" role="alert" data-testid="scorecard-draft-line">
-      No scorecard draft was written for the linked candidate
-      {report?.reason ? ` (${report.reason})` : " (the backend did not report one)"}.
+      {report?.reason
+        ? t("live.scorecard.noDraftReason", { defaultValue: "No scorecard draft was written for the linked candidate ({{reason}}).", reason: report.reason })
+        : t("live.scorecard.noDraft", "No scorecard draft was written for the linked candidate (the backend did not report one).")}
     </p>
   )
 }
 
 export function PipelineStepLines({ outcomes }: { outcomes: PipelineStepOutcome[] }) {
+  const { t } = useTranslation("interviewPages")
   if (outcomes.length === 0) return null
   return (
     <ul className="space-y-0.5" data-testid="pipeline-step-lines">
@@ -90,10 +101,10 @@ export function PipelineStepLines({ outcomes }: { outcomes: PipelineStepOutcome[
           role={o.outcome === "failed" ? "alert" : undefined}
         >
           {o.outcome === "moved"
-            ? `Pipeline step set to ${STEP_LABEL[o.step]}.`
+            ? t("live.step.moved", { defaultValue: "Pipeline step set to {{step}}.", step: stepLabel(o.step, t) })
             : o.outcome === "unchanged"
-              ? `Pipeline step unchanged (${o.detail ?? "already there"}) — ${STEP_LABEL[o.step]} was not applied.`
-              : `Pipeline step not updated to ${STEP_LABEL[o.step]}: ${o.detail ?? "unknown error"}.`}
+              ? t("live.step.unchanged", { defaultValue: "Pipeline step unchanged ({{detail}}) — {{step}} was not applied.", detail: o.detail ?? t("live.step.alreadyThere", "already there"), step: stepLabel(o.step, t) })
+              : t("live.step.failed", { defaultValue: "Pipeline step not updated to {{step}}: {{detail}}.", step: stepLabel(o.step, t), detail: o.detail ?? t("live.step.unknownError", "unknown error") })}
         </li>
       ))}
     </ul>
@@ -102,42 +113,47 @@ export function PipelineStepLines({ outcomes }: { outcomes: PipelineStepOutcome[
 
 /** JS-10 — say what the URL asked for, in every state, before consent. */
 export function DeepLinkNotice({ deepLink }: { deepLink: ReturnType<typeof useDeepLinkedCandidate> }) {
+  const { t } = useTranslation("interviewPages")
   if (deepLink.state === "loading") {
-    return <p className="text-sm text-slate-600" data-testid="deep-link-notice">Loading the candidate from Career Blueprint…</p>
+    return <p className="text-sm text-slate-600" data-testid="deep-link-notice">{t("live.deepLink.loading", "Loading the candidate from Career Blueprint…")}</p>
   }
   if (deepLink.state === "ready" && deepLink.link) {
+    const [before, after] = slotParts(
+      deepLink.link.external_id
+        ? t("live.deepLink.readyWithId", { defaultValue: "Interviewing {{slot}} ({{externalId}}) from Career Blueprint — the candidate will be linked once you confirm consent.", slot: SLOT, externalId: deepLink.link.external_id })
+        : t("live.deepLink.ready", { defaultValue: "Interviewing {{slot}} from Career Blueprint — the candidate will be linked once you confirm consent.", slot: SLOT }),
+    )
     return (
       <p className="text-sm text-indigo-900" data-testid="deep-link-notice">
-        Interviewing <span className="font-medium">{deepLink.link.display_name}</span>
-        {deepLink.link.external_id ? ` (${deepLink.link.external_id})` : ""} from Career Blueprint — the candidate will
-        be linked once you confirm consent.
+        {before}
+        <span className="font-medium">{deepLink.link.display_name}</span>
+        {after}
       </p>
     )
   }
   if (deepLink.state === "missing") {
     return (
       <p className="text-sm text-amber-700" role="alert" data-testid="deep-link-notice">
-        The candidate in this link is not in that Job DNA&apos;s pipeline. You can still pick one on the next step;
-        otherwise this interview will not be linked.
+        {t("live.deepLink.missing", "The candidate in this link is not in that Job DNA's pipeline. You can still pick one on the next step; otherwise this interview will not be linked.")}
       </p>
     )
   }
   if (deepLink.state === "error") {
     return (
       <p className="text-sm text-amber-700" role="alert" data-testid="deep-link-notice">
-        Could not load the candidate from Career Blueprint. You can still pick one on the next step; otherwise this
-        interview will not be linked.
+        {t("live.deepLink.error", "Could not load the candidate from Career Blueprint. You can still pick one on the next step; otherwise this interview will not be linked.")}
       </p>
     )
   }
   return null
 }
 
-const candidateSchema = z.object({
-  displayName: z.string().min(1, "Candidate name is required").max(255),
-  externalId: z.string().max(255).optional(),
-})
-type CandidateFormValues = z.infer<typeof candidateSchema>
+const buildCandidateSchema = (t: TFn) =>
+  z.object({
+    displayName: z.string().min(1, t("live.candidate.nameRequired", "Candidate name is required")).max(255),
+    externalId: z.string().max(255).optional(),
+  })
+type CandidateFormValues = z.infer<ReturnType<typeof buildCandidateSchema>>
 
 export function CandidateIdentityForm({
   onConfirm,
@@ -147,6 +163,8 @@ export function CandidateIdentityForm({
   /** JS-10 — a link resolved from the URL, applied once as if picked. */
   initialLink?: JobDnaCandidateLink | null
 }) {
+  const { t } = useTranslation("interviewPages")
+  const candidateSchema = useMemo(() => buildCandidateSchema(t), [t])
   const form = useForm<CandidateFormValues>({
     resolver: zodResolver(candidateSchema),
     defaultValues: { displayName: "", externalId: "" },
@@ -169,11 +187,10 @@ export function CandidateIdentityForm({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <UserRound className="h-4 w-4 text-indigo-600" /> Who are you interviewing?
+          <UserRound className="h-4 w-4 text-indigo-600" /> {t("live.candidate.title", "Who are you interviewing?")}
         </CardTitle>
         <p className="text-sm text-slate-600">
-          This is a real, scored interview — the candidate is not the signed-in user.
-          Identify them before the questions start.
+          {t("live.candidate.intro", "This is a real, scored interview — the candidate is not the signed-in user. Identify them before the questions start.")}
         </p>
       </CardHeader>
       <CardContent>
@@ -190,17 +207,17 @@ export function CandidateIdentityForm({
         >
           <JobDnaCandidatePicker value={link} onPick={pick} onClear={() => setLink(null)} />
           <div>
-            <Label htmlFor="candidate-name">Candidate name</Label>
+            <Label htmlFor="candidate-name">{t("live.candidate.nameLabel", "Candidate name")}</Label>
             <Input id="candidate-name" {...form.register("displayName")} />
             {form.formState.errors.displayName && (
               <p className="mt-1 text-xs text-red-600">{form.formState.errors.displayName.message}</p>
             )}
           </div>
           <div>
-            <Label htmlFor="candidate-external-id">External / candidate ID (optional)</Label>
-            <Input id="candidate-external-id" {...form.register("externalId")} placeholder="ATS ID, req #, etc." />
+            <Label htmlFor="candidate-external-id">{t("live.candidate.externalIdLabel", "External / candidate ID (optional)")}</Label>
+            <Input id="candidate-external-id" {...form.register("externalId")} placeholder={t("live.candidate.externalIdPlaceholder", "ATS ID, req #, etc.")} />
           </div>
-          <Button type="submit">Continue</Button>
+          <Button type="submit">{t("live.candidate.continue", "Continue")}</Button>
         </form>
       </CardContent>
     </Card>
@@ -211,31 +228,37 @@ export function CandidateIdentityForm({
 
 /** One honest line about the Job Studio scorecard draft after finalise (Studio wording). */
 export function ScorecardDraftLineCustom({ linked, report }: { linked: boolean; report?: ScorecardDraftReport | null }) {
+  const { t } = useTranslation("interviewPages")
   if (!linked) return null
   if (report?.written) {
     return (
       <p className="text-sm text-emerald-700" data-testid="scorecard-draft-line">
-        Scorecard draft written for the linked candidate
-        {typeof report.dimensions_scored === "number" ? ` (${report.dimensions_scored} dimensions)` : ""}.
-        Review it under Job DNA → Scorecards before it counts.
+        {typeof report.dimensions_scored === "number"
+          ? t("live.scorecard.writtenDims", { defaultValue: "Scorecard draft written for the linked candidate ({{dimensions}} dimensions).", dimensions: report.dimensions_scored })
+          : t("live.scorecard.written", "Scorecard draft written for the linked candidate.")}{" "}
+        {t("studio.scorecard.review", "Review it under Job DNA → Scorecards before it counts.")}
       </p>
     )
   }
   return (
     <p className="text-sm text-amber-700" role="alert" data-testid="scorecard-draft-line">
-      No scorecard draft was written for the linked candidate
-      {report?.reason ? ` (${report.reason})` : " (the backend did not report one)"}.
+      {report?.reason
+        ? t("live.scorecard.noDraftReason", { defaultValue: "No scorecard draft was written for the linked candidate ({{reason}}).", reason: report.reason })
+        : t("live.scorecard.noDraft", "No scorecard draft was written for the linked candidate (the backend did not report one).")}
     </p>
   )
 }
 
-const participantSchema = z.object({
-  displayName: z.string().min(1, "A name is required").max(255),
-  externalId: z.string().max(255).optional(),
-})
-type ParticipantFormValues = z.infer<typeof participantSchema>
+const buildParticipantSchema = (t: TFn) =>
+  z.object({
+    displayName: z.string().min(1, t("studio.participant.nameRequired", "A name is required")).max(255),
+    externalId: z.string().max(255).optional(),
+  })
+type ParticipantFormValues = z.infer<ReturnType<typeof buildParticipantSchema>>
 
 export function ParticipantForm({ onConfirm }: { onConfirm: (c: LiveCandidate) => void }) {
+  const { t } = useTranslation("interviewPages")
+  const participantSchema = useMemo(() => buildParticipantSchema(t), [t])
   const form = useForm<ParticipantFormValues>({
     resolver: zodResolver(participantSchema),
     defaultValues: { displayName: "", externalId: "" },
@@ -250,11 +273,10 @@ export function ParticipantForm({ onConfirm }: { onConfirm: (c: LiveCandidate) =
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <UserRound className="h-4 w-4 text-indigo-600" /> Who is this interview with?
+          <UserRound className="h-4 w-4 text-indigo-600" /> {t("studio.participant.title", "Who is this interview with?")}
         </CardTitle>
         <p className="text-sm text-slate-600">
-          The interviewee is not the signed-in user — identify them before the
-          questions start.
+          {t("studio.participant.intro", "The interviewee is not the signed-in user — identify them before the questions start.")}
         </p>
       </CardHeader>
       <CardContent>
@@ -271,17 +293,17 @@ export function ParticipantForm({ onConfirm }: { onConfirm: (c: LiveCandidate) =
         >
           <JobDnaCandidatePicker value={link} onPick={pick} onClear={() => setLink(null)} />
           <div>
-            <Label htmlFor="participant-name">Name</Label>
+            <Label htmlFor="participant-name">{t("studio.participant.nameLabel", "Name")}</Label>
             <Input id="participant-name" {...form.register("displayName")} />
             {form.formState.errors.displayName && (
               <p className="mt-1 text-xs text-red-600">{form.formState.errors.displayName.message}</p>
             )}
           </div>
           <div>
-            <Label htmlFor="participant-external-id">Reference ID (optional)</Label>
-            <Input id="participant-external-id" {...form.register("externalId")} placeholder="Student ID, ATS ID, etc." />
+            <Label htmlFor="participant-external-id">{t("studio.participant.refLabel", "Reference ID (optional)")}</Label>
+            <Input id="participant-external-id" {...form.register("externalId")} placeholder={t("studio.participant.refPlaceholder", "Student ID, ATS ID, etc.")} />
           </div>
-          <Button type="submit">Continue</Button>
+          <Button type="submit">{t("live.candidate.continue", "Continue")}</Button>
         </form>
       </CardContent>
     </Card>
@@ -300,6 +322,10 @@ export function ProvenanceNotice({
   employer: LiveEmployerMeta | null
   tailoring: LiveTailoringMeta | null
 }) {
+  const { t } = useTranslation("interviewPages")
+  const [tailoringBefore, tailoringAfter] = slotParts(
+    t("studio.tailoringNotice", { defaultValue: "These questions were {{slot}} rewritten for the role — the tailoring step was unavailable, so the standard wording is being used. The interview and its scoring are unaffected.", slot: SLOT }),
+  )
   const rewriteMissed =
     tailoring?.requested && !tailoring.applied &&
     (tailoring.reason === "tailoring_unavailable" || tailoring.reason === "tailoring_error")
@@ -312,8 +338,9 @@ export function ProvenanceNotice({
           data-testid="studio-employer-provenance"
         >
           <span className="font-semibold text-slate-800">
-            Framed on {employer.name}
-            {employer.framework ? ` — ${employer.framework}` : ""}
+            {employer.framework
+              ? t("studio.framedOnFramework", { defaultValue: "Framed on {{name}} — {{framework}}", name: employer.name, framework: employer.framework })
+              : t("studio.framedOn", { defaultValue: "Framed on {{name}}", name: employer.name })}
           </span>
           <p className="mt-1 leading-snug">{employer.provenance}</p>
         </div>
@@ -324,9 +351,9 @@ export function ProvenanceNotice({
           role="status"
           data-testid="studio-tailoring-notice"
         >
-          These questions were <span className="font-semibold">not</span> rewritten for the
-          role — the tailoring step was unavailable, so the standard wording is
-          being used. The interview and its scoring are unaffected.
+          {tailoringBefore}
+          <span className="font-semibold">{t("studio.tailoringNot", "not")}</span>
+          {tailoringAfter}
         </div>
       ) : null}
     </div>

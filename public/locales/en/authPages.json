@@ -1,0 +1,66 @@
+{
+  "login": {
+    "emailHint": "You can sign in with your primary or secondary email address",
+    "toast": {
+      "emailRequired": "Please enter your email address.",
+      "emailInvalid": "Please enter a valid email address.",
+      "passwordRequired": "Please enter your password.",
+      "unexpected": "An unexpected error occurred. Please try again."
+    },
+    "hardened": {
+      "forgotPrefix": "Forgot your password?",
+      "useMagicLink": "Use a magic-link instead",
+      "linkValidity": "We'll email you a one-time sign-in link, valid for 15 minutes.",
+      "notArrivingPrefix": "Email not arriving? Check spam or",
+      "signInWithPasswordInstead": "sign in with password instead"
+    }
+  },
+  "invitation": {
+    "toast": {
+      "invalidToken": "Invalid or missing invitation token"
+    },
+    "leftTitleOne": "Upload. Ask.",
+    "leftTitleTwo": "Analyze. Achieve.",
+    "leftSubtitle": "Set a strong password to activate your account.",
+    "title": "Accept Invitation",
+    "subtitle": "Create your password to continue",
+    "newPasswordGroup": "New password",
+    "newPasswordPlaceholder": "Enter New Password",
+    "confirmPasswordPlaceholder": "Confirm New Password",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "saving": "Saving...",
+    "submit": "Set Password",
+    "hasAccount": "Already have an account?",
+    "logIn": "Log In"
+  },
+  "verify": {
+    "signedIn": "Signed in successfully",
+    "expiredTitle": "This sign-in link has expired",
+    "expiredSubtitle": "Sign-in links work once, and only for 15 minutes",
+    "expiredBody": "If you already opened this link, it has been used. Older emails won’t work either — request a fresh one and use the newest email.",
+    "sendNew": "Send me a new sign-in link",
+    "verifying": "Verifying...",
+    "pleaseWait": "Please wait while we sign you in"
+  },
+  "magicLogin": {
+    "checkEmail": "Check your email",
+    "sentTo": "We sent a magic link to {{email}}",
+    "clickLink": "Click the link in your email to sign in. The link expires in 15 minutes.",
+    "tryDifferent": "Try a different email",
+    "backToLogin": "Back to login",
+    "title": "Magic Link",
+    "subtitle": "Sign in with your email — no password needed",
+    "email": "Email",
+    "sending": "Sending...",
+    "submit": "Send Magic Link"
+  },
+  "signup": {
+    "passwordGroup": "Password",
+    "termsAnd": "&"
+  },
+  "social": {
+    "processing": "Completing social login...",
+    "done": "Login verified. You can close this tab if it doesn't redirect automatically.",
+    "error": "Redirecting to login..."
+  }
+}

@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { GitBranch } from "lucide-react"
@@ -30,6 +31,7 @@ import {
  * candidates yet".
  */
 export default function JobBlueprintPipelinePage() {
+  const { t } = useTranslation("jobBlueprintPages")
   const { data: jobDnas, isLoading: loadingJobs } = useJobDnaList()
   const [jobId, setJobId] = useState("")
   const navigate = useNavigate()
@@ -48,9 +50,9 @@ export default function JobBlueprintPipelinePage() {
     }
     try {
       await advance.mutateAsync(candidateId)
-      toast.success("Candidate advanced.")
+      toast.success(t("pipeline.advanced", { defaultValue: "Candidate advanced." }))
     } catch (err) {
-      toast.error(apiErrorMessage(err, "Failed to advance candidate."))
+      toast.error(apiErrorMessage(err, t("pipeline.advanceFailed", { defaultValue: "Failed to advance candidate." })))
     }
   }
 
@@ -58,10 +60,10 @@ export default function JobBlueprintPipelinePage() {
     if (!hiring) return
     try {
       await advance.mutateAsync({ candidateId: hiring.id, reason })
-      toast.success(`Candidate ${hiring.code} marked hired.`)
+      toast.success(t("pipeline.markedHired", { defaultValue: "Candidate {{code}} marked hired.", code: hiring.code }))
       setHiring(null)
     } catch (err) {
-      setHireError(apiErrorMessage(err, "Failed to mark this candidate hired."))
+      setHireError(apiErrorMessage(err, t("pipeline.markHiredFailed", { defaultValue: "Failed to mark this candidate hired." })))
     }
   }
 
@@ -69,28 +71,27 @@ export default function JobBlueprintPipelinePage() {
     <div className="max-w-6xl">
       <JobDnaPageHeader
         icon={GitBranch}
-        title="Pipeline"
-        description="Track candidates through each stage of the hiring pipeline for a role."
+        title={t("pipeline.title", { defaultValue: "Pipeline" })}
+        description={t("pipeline.description", { defaultValue: "Track candidates through each stage of the hiring pipeline for a role." })}
         action={
           <JobDnaSelect jobDnas={jobDnas ?? []} value={jobId} onChange={setJobId} />
         }
       />
 
       {loadingJobs ? (
-        <JobDnaLoading label="Loading roles…" />
+        <JobDnaLoading label={t("pipeline.loadingRoles", { defaultValue: "Loading roles…" })} />
       ) : !jobId ? (
-        <JobDnaEmptyState>Select a role to see its pipeline.</JobDnaEmptyState>
+        <JobDnaEmptyState>{t("pipeline.selectRole", { defaultValue: "Select a role to see its pipeline." })}</JobDnaEmptyState>
       ) : isLoading ? (
-        <JobDnaLoading label="Loading pipeline…" />
+        <JobDnaLoading label={t("pipeline.loading", { defaultValue: "Loading pipeline…" })} />
       ) : isError ? (
         <JobDnaError
-          message={apiErrorMessage(error, "Failed to load the pipeline.")}
+          message={apiErrorMessage(error, t("pipeline.loadFailed", { defaultValue: "Failed to load the pipeline." }))}
           onRetry={() => void refetch()}
         />
       ) : !candidates || candidates.length === 0 ? (
         <JobDnaEmptyState>
-          No candidates in this pipeline yet. Candidate intake and matching are gated for this
-          account.
+          {t("pipeline.emptyGated", { defaultValue: "No candidates in this pipeline yet. Candidate intake and matching are gated for this account." })}
         </JobDnaEmptyState>
       ) : (
         <PipelineDashboard

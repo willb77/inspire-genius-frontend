@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react"
 import { Sprout } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { FitDetail } from "@/types/job-fit"
 import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
@@ -18,6 +19,7 @@ import { displayFitPercent, fitPercentLabel } from "@/components/fit/fit"
  * the card is never blank.
  */
 export function FitSummaryCard({ data }: { data: FitDetail }) {
+  const { t } = useTranslation("jobFitPages")
   const explain = useExplainFit()
   const pct = displayFitPercent(data)
   const firedFor = useRef<string | null>(null)
@@ -34,12 +36,18 @@ export function FitSummaryCard({ data }: { data: FitDetail }) {
   const result = explain.data
   const overview =
     result?.overview?.trim() ||
-    (explain.isPending ? "" : `${fitPercentLabel(pct)} — about ${pct}% aligned overall.`)
+    (explain.isPending
+      ? ""
+      : t("fitSummaryCard.fallback", {
+          defaultValue: "{{label}} — about {{pct}}% aligned overall.",
+          label: fitPercentLabel(pct),
+          pct,
+        }))
   const gaps = result?.gaps?.length ? result.gaps : null
 
   return (
     <FitCard className="mb-6">
-      <FitSectionTitle>Your fit at a glance</FitSectionTitle>
+      <FitSectionTitle>{t("fitSummaryCard.title", "Your fit at a glance")}</FitSectionTitle>
 
       <FitScoreHeadline source={data} variant="summary" />
 
@@ -55,7 +63,9 @@ export function FitSummaryCard({ data }: { data: FitDetail }) {
 
       {gaps && (
         <div className="mt-5">
-          <FitSectionTitle>Your growth areas — and how to develop them</FitSectionTitle>
+          <FitSectionTitle>
+            {t("fitSummaryCard.growthTitle", "Your growth areas — and how to develop them")}
+          </FitSectionTitle>
           <div className="space-y-3">
             {gaps.map((g, i) => (
               <div key={`${g.dimension}-${i}`} className="rounded-lg border border-[#e5e7eb] p-3">
@@ -66,7 +76,7 @@ export function FitSummaryCard({ data }: { data: FitDetail }) {
                 {g.plain && <p className="text-sm text-[#4b5563]">{g.plain}</p>}
                 {g.howToClose && (
                   <p className="mt-1 text-sm text-[#0f766e]">
-                    <span className="font-medium">To close it:</span> {g.howToClose}
+                    <span className="font-medium">{t("fitSummaryCard.toCloseIt", "To close it:")}</span> {g.howToClose}
                   </p>
                 )}
               </div>
