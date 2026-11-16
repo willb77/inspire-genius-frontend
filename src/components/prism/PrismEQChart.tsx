@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { EQItem } from '@/types/prism/api-types'
 
 type PrismEQChartProps = {
@@ -5,12 +6,13 @@ type PrismEQChartProps = {
 }
 
 export default function PrismEQChart({ data }: PrismEQChartProps) {
+  const { t } = useTranslation('prismUi')
   if (!data.length) return null
 
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-muted-foreground">
-        Emotional Intelligence
+        {t('eqChart.heading', { defaultValue: 'Emotional Intelligence' })}
       </h3>
       <div className="space-y-2">
         {data.map((item) => (

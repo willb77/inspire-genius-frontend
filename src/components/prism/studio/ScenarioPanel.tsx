@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Clapperboard, Loader2, Save, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -43,6 +44,7 @@ export default function ScenarioPanel({
   port: ScenarioPort
   copy: ScenarioCopy
 }) {
+  const { t } = useTranslation("prismUi")
   const profiles = port.cast.subjects
   const isLoading = port.cast.isLoading
   const store = port.store
@@ -86,15 +88,25 @@ export default function ScenarioPanel({
         else next.individual[focus] = outcome.value.behaviour
       } else {
         failed += 1
-        const who = cast.find((c) => c.id === focus)?.name ?? "the group"
-        const marker = `_The read for ${who} could not be generated._`
+        const who =
+          cast.find((c) => c.id === focus)?.name ?? t("scenario.theGroup", { defaultValue: "the group" })
+        const marker = t("scenario.readFailedMarker", {
+          defaultValue: "_The read for {{who}} could not be generated._",
+          who,
+        })
         if (focus === COLLABORATIVE) next.collaborative = marker
         else next.individual[focus] = marker
       }
     })
     setResult(next)
     setRunning(false)
-    if (failed) toast.warning(`${failed} of ${focuses.length} reads failed`)
+    if (failed) toast.warning(
+        t("scenario.readsFailed", {
+          defaultValue: "{{failed}} of {{total}} reads failed",
+          failed,
+          total: focuses.length,
+        }),
+      )
   }
 
   async function onSave() {
@@ -107,7 +119,7 @@ export default function ScenarioPanel({
         character_names: cast.map((c) => c.name),
         result,
       })
-      toast.success("Scenario saved")
+      toast.success(t("scenario.saved", { defaultValue: "Scenario saved" }))
     } catch (err) {
       toast.error(apiErrorMessage(err, copy.saveFailed))
     }
@@ -125,15 +137,15 @@ export default function ScenarioPanel({
     const cast_ = cast.length ? cast : []
     const sections = cast_
       .map((c) => ({ heading: c.name, body: result?.individual[c.id] ?? "" }))
-      .concat([{ heading: "Together", body: result?.collaborative ?? "" }])
-    const docTitle = title.trim() || situation.trim().slice(0, 60) || "Scenario"
+      .concat([{ heading: t("scenario.together", { defaultValue: "Together" }), body: result?.collaborative ?? "" }])
+    const docTitle = title.trim() || situation.trim().slice(0, 60) || t("scenario.defaultTitle", { defaultValue: "Scenario" })
     return {
       title: docTitle,
       subtitle: copy.subtitle,
       notice: notice || copy.fallbackNotice,
       meta: [
-        { label: copy.metaLabel, value: cast_.map((c) => c.name).join(", ") || "none selected" },
-        { label: "Situation", value: situation.trim() },
+        { label: copy.metaLabel, value: cast_.map((c) => c.name).join(", ") || t("scenario.noneSelected", { defaultValue: "none selected" }) },
+        { label: t("scenario.docSituation", { defaultValue: "Situation" }), value: situation.trim() },
       ],
       sections,
       fileStem: narrativeFileStem(docTitle, copy.filePrefix),
@@ -170,13 +182,13 @@ export default function ScenarioPanel({
             capHint={copy.castCapHint}
           />
           <div className="space-y-1.5">
-            <Label htmlFor="cl-situation">The situation</Label>
+            <Label htmlFor="cl-situation">{t("scenario.situationLabel", { defaultValue: "The situation" })}</Label>
             <Textarea
               id="cl-situation"
               rows={3}
               value={situation}
               onChange={(e) => setSituation(e.target.value)}
-              placeholder="What are they walking into?"
+              placeholder={t("scenario.situationPlaceholder", { defaultValue: "What are they walking into?" })}
             />
             <div className="flex flex-wrap gap-1.5 pt-1">
               {copy.presets.map((p) => (
@@ -192,7 +204,7 @@ export default function ScenarioPanel({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cl-scenario-title">Name it (optional)</Label>
+            <Label htmlFor="cl-scenario-title">{t("scenario.nameIt", { defaultValue: "Name it (optional)" })}</Label>
             <Input
               id="cl-scenario-title"
               value={title}
@@ -207,7 +219,7 @@ export default function ScenarioPanel({
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {copy.runningLabel}
                 </>
               ) : (
-                "Run the scenario"
+                t("scenario.run", { defaultValue: "Run the scenario" })
               )}
             </Button>
             {store && result && !running && (
@@ -217,7 +229,7 @@ export default function ScenarioPanel({
                 ) : (
                   <Save className="mr-2 h-4 w-4" />
                 )}
-                Keep this run
+                {t("scenario.keepRun", { defaultValue: "Keep this run" })}
               </Button>
             )}
           </div>
@@ -228,9 +240,9 @@ export default function ScenarioPanel({
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-base">
-              {title.trim() || "How it plays out"}
+              {title.trim() || t("scenario.howItPlaysOut", { defaultValue: "How it plays out" })}
             </CardTitle>
-            {!running && <NarrativeExportButtons build={scenarioDoc} label="a scenario" />}
+            {!running && <NarrativeExportButtons build={scenarioDoc} label={t("scenario.labelScenario", { defaultValue: "a scenario" })} />}
           </CardHeader>
           <CardContent className="space-y-5">
             {cast.map((c) => (
@@ -254,7 +266,7 @@ export default function ScenarioPanel({
       {store && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Saved scenarios</CardTitle>
+            <CardTitle className="text-base">{t("scenario.savedScenarios", { defaultValue: "Saved scenarios" })}</CardTitle>
             <p className="text-xs text-muted-foreground">{copy.savedBlurb}</p>
           </CardHeader>
           <CardContent>
@@ -267,11 +279,13 @@ export default function ScenarioPanel({
                  gone. `isError` is optional on the port, so a store that does
                  not report it falls through exactly as it did before. */
               <p className="text-sm text-muted-foreground" role="status">
-                What you have kept could not be loaded. This is a load failure, not an
-                empty list — try again shortly.
+                {t("scenario.loadFailed", {
+                  defaultValue:
+                    "What you have kept could not be loaded. This is a load failure, not an empty list — try again shortly.",
+                })}
               </p>
             ) : !store.scenarios?.length ? (
-              <p className="text-sm text-muted-foreground">Nothing kept yet.</p>
+              <p className="text-sm text-muted-foreground">{t("scenario.nothingKept", { defaultValue: "Nothing kept yet." })}</p>
             ) : (
               <ul className="divide-y rounded-md border">
                 {store.scenarios.map((s) => (
@@ -279,7 +293,7 @@ export default function ScenarioPanel({
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{s.title || s.situation}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {s.character_names.join(", ") || "cast not recorded"}
+                        {s.character_names.join(", ") || t("scenario.castNotRecorded", { defaultValue: "cast not recorded" })}
                         {s.created_at ? ` · ${new Date(s.created_at).toLocaleDateString()}` : ""}
                       </p>
                     </div>
@@ -299,18 +313,21 @@ export default function ScenarioPanel({
                           })
                         }
                       >
-                        Open
+                        {t("scenario.open", { defaultValue: "Open" })}
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        aria-label={`Delete ${s.title || "scenario"}`}
+                        aria-label={t("scenario.deleteAria", {
+                          defaultValue: "Delete {{name}}",
+                          name: s.title || t("scenario.deleteAriaFallback", { defaultValue: "scenario" }),
+                        })}
                         onClick={async () => {
                           try {
                             await store.remove.run(s.id)
-                            toast.success("Scenario deleted")
+                            toast.success(t("scenario.deleted", { defaultValue: "Scenario deleted" }))
                           } catch {
-                            toast.error("Could not delete")
+                            toast.error(t("scenario.deleteFailed", { defaultValue: "Could not delete" }))
                           }
                         }}
                       >
