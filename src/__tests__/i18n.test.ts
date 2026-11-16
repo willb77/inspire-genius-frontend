@@ -132,9 +132,18 @@ describe("Locale file existence", () => {
 
   it("every namespace file exists for every language", () => {
     for (const lang of SUPPORTED_LNGS) {
+      // A namespace registered in scripts/i18n/pending is English-only until its
+      // translation run (see scripts/i18n/pending/README.md); it is not a shipped
+      // namespace yet, so its file is not counted against the language directory.
+      const pending = new Set(
+        fs
+          .readdirSync(path.resolve(__dirname, "../../scripts/i18n/pending"))
+          .filter((f) => f.endsWith(".json"))
+          .map((f) => f.replace(/\.json$/, ""))
+      );
       const files = fs
         .readdirSync(path.join(LOCALES_DIR, lang))
-        .filter((f) => f.endsWith(".json"));
+        .filter((f) => f.endsWith(".json") && !pending.has(f.replace(/\.json$/, "")));
       expect(files.length).toBe(NAMESPACES.length);
     }
   });
