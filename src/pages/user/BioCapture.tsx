@@ -23,8 +23,10 @@ import { useBioNarrative } from "@/hooks/useBioNarrative"
 import BioChaptersStrip from "@/components/user/bio/BioChaptersStrip"
 import ChronicleChatPanel from "@/components/user/bio/ChronicleChatPanel"
 import MemoirExportMenu from "@/components/user/bio/MemoirExportMenu"
+import { useTranslation } from "react-i18next"
 
 export default function BioCapture() {
+  const { t } = useTranslation("userPages")
   const { user } = useAuth()
   const memberId = user?.id ?? ""
   const { data: narrative, isLoading, isError, refetch } =
@@ -56,9 +58,9 @@ export default function BioCapture() {
               <BookOpenText className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h1 className="text-lg font-semibold">Bio Capture</h1>
+              <h1 className="text-lg font-semibold">{t("bioCapture.bioCapture", "Bio Capture")}</h1>
               <p className="text-sm text-muted-foreground">
-                Tell your story with Chronicle, one memory at a time.
+                {t("bioCapture.tellYourStoryWithChronicleOne", "Tell your story with Chronicle, one memory at a time.")}
               </p>
             </div>
           </div>
@@ -83,8 +85,7 @@ export default function BioCapture() {
           <Card>
             <CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
               <AlertCircle className="h-5 w-5 text-destructive" aria-hidden />
-              We couldn&apos;t load your story just now. Please refresh to try
-              again.
+              {t("bioCapture.weCouldntLoadYourStoryJust", "We couldn't load your story just now. Please refresh to try again.")}
             </CardContent>
           </Card>
         )}
@@ -106,7 +107,7 @@ export default function BioCapture() {
             ) : (
               <Card>
                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                  Sign in to talk to Chronicle.
+                  {t("bioCapture.signInToTalkToChronicle", "Sign in to talk to Chronicle.")}
                 </CardContent>
               </Card>
             )}

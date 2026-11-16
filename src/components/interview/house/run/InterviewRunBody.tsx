@@ -23,6 +23,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { ArrowRight, CheckCircle2, Flag } from "lucide-react"
 import { toast } from "sonner"
 
@@ -71,7 +72,7 @@ import {
   ProvenanceNotice,
 } from "./runParts"
 import {
-  KIND_OPTIONS,
+  kindOptions,
   builderKindOf,
   kindOfFrame,
   sourceOf,
@@ -94,6 +95,7 @@ export type InterviewRunBodyProps = {
 }
 
 export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps) {
+  const { t } = useTranslation("interviewPages")
   const { user } = useAuth()
 
   // JS-10 / JS-11 — the address can name a candidate to pre-link (a hiring
@@ -170,9 +172,9 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
       outcome =
         updated?.status === step
           ? { step, outcome: "moved" }
-          : { step, outcome: "unchanged", detail: updated?.status ? `at ${updated.status}` : "no status returned" }
+          : { step, outcome: "unchanged", detail: updated?.status ? t("live.step.at", { defaultValue: "at {{status}}", status: updated.status }) : t("live.step.noStatus", "no status returned") }
     } catch (e) {
-      outcome = { step, outcome: "failed", detail: stepFailureReason(e) }
+      outcome = { step, outcome: "failed", detail: stepFailureReason(e, t) }
     }
     setPipelineSteps((prev) => [...prev.filter((o) => o.step !== step), outcome])
   }
@@ -232,7 +234,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
       // JS-12 — linking a candidate to a hiring interview schedules it.
       await recordPipelineStep("interview-scheduled", result.session_id)
     } catch {
-      toast.error("Could not start the interview. Please try again.")
+      toast.error(t("live.startFailed", "Could not start the interview. Please try again."))
     }
   }
 
@@ -246,7 +248,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
       })
       setAnswers((prev) => ({ ...prev, [competencyId]: { suggestion: result, scored: prev[competencyId]?.scored ?? null } }))
     } catch {
-      toast.error("Could not submit that answer. Please try again.")
+      toast.error(t("live.submitFailed", "Could not submit that answer. Please try again."))
     }
   }
 
@@ -261,7 +263,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
       })
       setAnswers((prev) => ({ ...prev, [competencyId]: { suggestion: prev[competencyId]?.suggestion ?? null, scored: result } }))
     } catch {
-      toast.error("Could not save that rating. Please try again.")
+      toast.error(t("live.saveFailed", "Could not save that rating. Please try again."))
     }
   }
 
@@ -286,9 +288,9 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
     } catch (e) {
       // IS-F13 — a failed finalize is a state on screen, never a forever-spinner.
       const detail =
-        e instanceof Error && e.message ? e.message : "Could not finalize the interview."
+        e instanceof Error && e.message ? e.message : t("live.finalizeFailedDetail", "Could not finalize the interview.")
       setFinalizeError(detail)
-      toast.error("Could not finalize the interview. Please try again.")
+      toast.error(t("live.finalizeFailed", "Could not finalize the interview. Please try again."))
     }
   }
 
@@ -298,7 +300,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
     if (
       !currentScored &&
       !window.confirm(
-        "The current question hasn't been submitted and rated yet — its answer and notes won't be saved. End the interview anyway?",
+        t("live.confirmEnd", "The current question hasn't been submitted and rated yet — its answer and notes won't be saved. End the interview anyway?"),
       )
     ) {
       return
@@ -319,8 +321,8 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
       const fallbackName =
         detail.candidate_ref?.display_name?.trim() ||
         (detail.candidate_ref?.candidate_hash
-          ? `Candidate ${detail.candidate_ref.candidate_hash.slice(0, 8)}`
-          : "Candidate not recorded")
+          ? t("past.candidateHash", { defaultValue: "Candidate {{hash}}", hash: detail.candidate_ref.candidate_hash.slice(0, 8) })
+          : t("past.candidateNotRecorded", "Candidate not recorded"))
 
       setKind(kindOfFrame(detail.session.frame as { mode?: string; kind?: string } | null))
       setSessionId(sid)
@@ -344,7 +346,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
 
       const rehydrated = rehydrateSession(detail)
       if (rehydrated.plan.length === 0) {
-        toast.error("That interview has no recorded question plan, so it cannot be resumed.")
+        toast.error(t("live.noPlan", "That interview has no recorded question plan, so it cannot be resumed."))
         return
       }
       setReadOnly(false)
@@ -354,11 +356,11 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
       setFinalizeResult(null)
       setPhase("interview")
       if (rehydrated.complete) {
-        toast.info("Every question in this interview has been answered — review and finish it.")
+        toast.info(t("live.allAnswered", "Every question in this interview has been answered — review and finish it."))
       }
     } catch (e) {
       toast.error(
-        e instanceof Error && e.message ? e.message : "Could not open that interview.",
+        e instanceof Error && e.message ? e.message : t("live.openFailed", "Could not open that interview."),
       )
     } finally {
       setOpeningSessionId(null)
@@ -389,24 +391,24 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
     try {
       if (k === "save") {
         await saveScoredInterviewToDocuments({ result: finalizeResult, userLabel: user?.name || user?.email })
-        toast.success("Saved to your Document Library.")
+        toast.success(t("live.savedToLibrary", "Saved to your Document Library."))
       } else {
         await downloadScoredInterview({ result: finalizeResult, userLabel: user?.name || user?.email }, k)
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Export failed.")
+      toast.error(e instanceof Error ? e.message : t("live.exportFailed", "Export failed."))
     } finally {
       setExporting(null)
     }
   }
 
-  const kindLabel = KIND_OPTIONS.find((o) => o.value === kind)?.label ?? ""
+  const kindLabel = kindOptions(t).find((o) => o.value === kind)?.label ?? ""
 
   // ── SETUP ──────────────────────────────────────────────────────
   if (phase === "setup") {
     return (
       <div className="mx-auto max-w-3xl space-y-4 py-8">
-        <PageHeader title="Interviews" description="Run a scored interview, or look back at one." />
+        <PageHeader title={t("house.list.title", "Interviews")} description={t("house.list.description", "Run a scored interview, or look back at one.")} />
         {setupStep === "consent" ? (
           // The subject is chosen later, inside the builder, so nothing to clear here.
           <KindPicker value={kind} onChange={setKind} />
@@ -415,7 +417,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
             {kindLabel}
             {" · "}
             <button type="button" className="text-primary underline-offset-4 hover:underline" onClick={restart}>
-              Change
+              {t("house.run.change", "Change")}
             </button>
           </p>
         )}
@@ -438,9 +440,9 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
         {setupStep === "questions" &&
           (source === "star" ? (
             <InterviewFrameForm
-              title="Set up a live interview"
-              description="Confirm the seat you're interviewing for so the STAR questions and scoring fit the actual role, reporting line, and scope."
-              submitLabel="Confirm & start the live interview"
+              title={t("live.frame.title", "Set up a live interview")}
+              description={t("live.frame.description", "Confirm the seat you're interviewing for so the STAR questions and scoring fit the actual role, reporting line, and scope.")}
+              submitLabel={t("live.frame.submit", "Confirm & start the live interview")}
               showRequisition
               onConfirm={(f) => void handleFrameConfirm(f)}
             />
@@ -487,10 +489,12 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
     source === "star"
       ? `${person?.display_name ?? ""} · ${frame?.roleTitle ?? ""} · ${frame?.company ?? ""}`
       : [person?.display_name, frame?.topic].filter(Boolean).join(" · ")
-  const sectionLabel =
+  const questionOfLabel =
     source === "star"
-      ? ` · ${current?.section ?? ""}`
-      : current?.section ? ` · ${current.section.replace(/_/g, " ")}` : ""
+      ? t("answer.questionOf", { defaultValue: "Question {{number}} of {{total}} · {{section}}", number: current ? idx + 1 : 0, total, section: current?.section ?? "" })
+      : current?.section
+        ? t("answer.questionOf", { defaultValue: "Question {{number}} of {{total}} · {{section}}", number: current ? idx + 1 : 0, total, section: current.section.replace(/_/g, " ") })
+        : t("studio.questionOf", { defaultValue: "Question {{number}} of {{total}}", number: current ? idx + 1 : 0, total })
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 py-8">
@@ -500,7 +504,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
         <Button variant="ghost" size="sm" className="text-destructive" onClick={guardedFinish}>
-          <Flag className="mr-1 h-3.5 w-3.5" /> End interview
+          <Flag className="mr-1 h-3.5 w-3.5" /> {t("live.endInterview", "End interview")}
         </Button>
       </header>
       {source === "star" ? (
@@ -512,9 +516,11 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
       {total > 0 && (
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Question {current ? idx + 1 : 0} of {total}{sectionLabel}</span>
+            <span>{questionOfLabel}</span>
             <span>
-              Running tally: {savedCount}/{total} scored{savedAvg != null ? ` · avg ${savedAvg.toFixed(2)}` : ""}
+              {savedAvg != null
+                ? t("live.tallyAvg", { defaultValue: "Running tally: {{saved}}/{{total}} scored · avg {{avg}}", saved: savedCount, total, avg: savedAvg.toFixed(2) })
+                : t("live.tally", { defaultValue: "Running tally: {{saved}}/{{total}} scored", saved: savedCount, total })}
             </span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -543,7 +549,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
           />
           {currentAnswer?.scored && (
             <Button variant={isLast ? "default" : "ghost"} onClick={next}>
-              {isLast ? <><CheckCircle2 className="mr-2 h-4 w-4" /> Finish &amp; view results</> : <>Next question <ArrowRight className="ml-2 h-4 w-4" /></>}
+              {isLast ? <><CheckCircle2 className="mr-2 h-4 w-4" /> {t("live.finishView", "Finish & view results")}</> : <>{t("live.nextQuestion", "Next question")} <ArrowRight className="ml-2 h-4 w-4" /></>}
             </Button>
           )}
         </>

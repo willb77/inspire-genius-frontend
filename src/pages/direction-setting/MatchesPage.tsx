@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { Trans, useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { ArrowRight, ListOrdered, Loader2, MapPin, Pause, SearchX, Target, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -55,13 +56,15 @@ import { FitResult } from "@/components/fit/FitResult"
  * percentage (4.1, option D; see below).
  */
 
+type TFn = ReturnType<typeof useTranslation>["t"]
+
 /** A toggle option. `hint` is FIT-5b's (shared display on) and absent before it. */
 type MethodOption = { value: FitMethod; label: string; hint?: string }
 
 /** How the list is ordered. Both reads are live; the wording avoids jargon. */
-const METHODS: MethodOption[] = [
-  { value: "gap", label: "Closest to the role" },
-  { value: "closeness", label: "Best overall match" },
+const methodsFor = (t: TFn): MethodOption[] => [
+  { value: "gap", label: t("matches.methods.gap", "Closest to the role") },
+  { value: "closeness", label: t("matches.methods.closeness", "Best overall match") },
 ]
 
 /**
@@ -69,9 +72,17 @@ const METHODS: MethodOption[] = [
  * "Overall" means Overall fit only, so both reads are named for what they are:
  * two PRISM reads. The plain-language framing stays, as the hint.
  */
-const SHARED_METHODS: MethodOption[] = [
-  { value: "gap", label: "PRISM: gap", hint: "Closest to the role" },
-  { value: "closeness", label: "PRISM: closeness", hint: "Closest in shape to the role's profile" },
+const sharedMethodsFor = (t: TFn): MethodOption[] => [
+  {
+    value: "gap",
+    label: t("matches.sharedMethods.gap.label", "PRISM: gap"),
+    hint: t("matches.sharedMethods.gap.hint", "Closest to the role"),
+  },
+  {
+    value: "closeness",
+    label: t("matches.sharedMethods.closeness.label", "PRISM: closeness"),
+    hint: t("matches.sharedMethods.closeness.hint", "Closest in shape to the role's profile"),
+  },
 ]
 
 /**
@@ -79,17 +90,19 @@ const SHARED_METHODS: MethodOption[] = [
  * set. "Local jobs first" is the server's default (JF-14); "Best fit" is the
  * pure fit order. Either way each row still says Local or National.
  */
-const ORDERS: { value: FitOrder; label: string; hint: string; icon: LucideIcon }[] = [
+const ordersFor = (
+  t: TFn
+): { value: FitOrder; label: string; hint: string; icon: LucideIcon }[] => [
   {
     value: "local",
-    label: "Local jobs first",
-    hint: "Your organisation's own roles first, then every other role",
+    label: t("matches.orders.local.label", "Local jobs first"),
+    hint: t("matches.orders.local.hint", "Your organisation's own roles first, then every other role"),
     icon: MapPin,
   },
   {
     value: "fit",
-    label: "Best fit",
-    hint: "Every role in order of how well it fits you",
+    label: t("matches.orders.fit.label", "Best fit"),
+    hint: t("matches.orders.fit.hint", "Every role in order of how well it fits you"),
     icon: ListOrdered,
   },
 ]
@@ -98,21 +111,21 @@ const ORDERS: { value: FitOrder; label: string; hint: string; icon: LucideIcon }
 const TARGET_STAGE = "7"
 
 /** The stages that still work when matching has nothing to show. */
-const ELSEWHERE: { to: string; label: string; blurb: string }[] = [
+const elsewhereFor = (t: TFn): { to: string; label: string; blurb: string }[] => [
   {
     to: ROUTES.DIRECTION_SETTING.CAREERS,
-    label: "Career areas",
-    blurb: "Which kinds of work suit how you're wired — no job listings needed.",
+    label: t("matches.elsewhere.careers.label", "Career areas"),
+    blurb: t("matches.elsewhere.careers.blurb", "Which kinds of work suit how you're wired — no job listings needed."),
   },
   {
     to: ROUTES.DIRECTION_SETTING.PORTRAIT,
-    label: "Who I am",
-    blurb: "A plain-language read of your strengths you can borrow for a CV.",
+    label: t("matches.elsewhere.portrait.label", "Who I am"),
+    blurb: t("matches.elsewhere.portrait.blurb", "A plain-language read of your strengths you can borrow for a CV."),
   },
   {
     to: ROUTES.DIRECTION_SETTING.INTERVIEW,
-    label: "Interview prep",
-    blurb: "Work out what to say about yourself, and practise saying it.",
+    label: t("matches.elsewhere.interview.label", "Interview prep"),
+    blurb: t("matches.elsewhere.interview.blurb", "Work out what to say about yourself, and practise saying it."),
   },
 ]
 
@@ -134,40 +147,36 @@ const ELSEWHERE: { to: string; label: string; blurb: string }[] = [
  * be the single most damaging thing this page could do.
  */
 function NothingToMatchYet() {
+  const { t } = useTranslation("directionPages")
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <SearchX className="h-4 w-4 text-muted-foreground" aria-hidden />
-          There aren&apos;t any roles to compare you with yet
+          {t("matches.thereArenTAnyRoles", "There aren't any roles to compare you with yet")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3 text-sm text-muted-foreground">
           <p>
-            This step lines your profile up against <em>published role benchmarks</em>
-            {" "}— the detailed profiles of what a role actually asks for. Those come
-            from two places: an employer&apos;s own library, and a shared library
-            that&apos;s open to everyone.
+            <Trans i18nKey="matches.stepLinesUpAgainst" ns="directionPages">
+              {"This step lines your profile up against "}
+              <em>{"published role benchmarks"}</em>
+              {" — the detailed profiles of what a role actually asks for. Those come from two places: an employer's own library, and a shared library that's open to everyone."}
+            </Trans>
           </p>
           <p>
-            If you&apos;re not attached to an employer here, the shared library is all
-            there is — and it&apos;s still being built. Every benchmark in it is read
-            and checked by a person before it&apos;s published, and that work
-            isn&apos;t finished, so right now there&apos;s nothing on the other side
-            of the comparison.
+            {t("matches.ifYouReNotAttached", "If you're not attached to an employer here, the shared library is all there is — and it's still being built. Every benchmark in it is read and checked by a person before it's published, and that work isn't finished, so right now there's nothing on the other side of the comparison.")}
           </p>
           <p className="font-medium text-foreground">
-            Nothing is missing from your profile, and nothing has gone wrong. When
-            the first benchmarks are published, your matches will appear here on
-            their own — you won&apos;t have to redo anything.
+            {t("matches.nothingIsMissingFromYour", "Nothing is missing from your profile, and nothing has gone wrong. When the first benchmarks are published, your matches will appear here on their own — you won't have to redo anything.")}
           </p>
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-medium">In the meantime, these do work:</p>
+          <p className="mb-2 text-sm font-medium">{t("matches.inTheMeantimeTheseDo", "In the meantime, these do work:")}</p>
           <ul className="space-y-2">
-            {ELSEWHERE.map((item) => (
+            {elsewhereFor(t).map((item) => (
               <li key={item.to}>
                 <Link
                   to={item.to}
@@ -202,23 +211,21 @@ function NothingToMatchYet() {
  * would be a small lie with a long tail.
  */
 function MatchingPaused() {
+  const { t } = useTranslation("directionPages")
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Pause className="h-4 w-4 text-muted-foreground" aria-hidden />
-          Role matching is switched off for now
+          {t("matches.roleMatchingIsSwitchedOff", "Role matching is switched off for now")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         <p>
-          We&apos;ve paused this step while the matching is checked over. It&apos;s a
-          deliberate hold, not a fault at your end and nothing to do with your
-          profile — it&apos;ll come back on without you doing anything.
+          {t("matches.weVePausedThisStep", "We've paused this step while the matching is checked over. It's a deliberate hold, not a fault at your end and nothing to do with your profile — it'll come back on without you doing anything.")}
         </p>
         <p>
-          Everything else in your journey is unaffected, and anything you finish now
-          feeds straight into your matches the moment they&apos;re back.
+          {t("matches.everythingElseInYourJourney", "Everything else in your journey is unaffected, and anything you finish now feeds straight into your matches the moment they're back.")}
         </p>
         {/* The operator note. Someone seeing this card is usually one env var
             away from matches working, and previously the page gave them nothing
@@ -226,27 +233,25 @@ function MatchingPaused() {
             in the user's profile, where there isn't one. Plain text rather than
             a link: this is a deploy-time change, not something to click. */}
         <div className="rounded-md border border-dashed bg-muted/40 p-3 text-xs">
-          <p className="font-medium text-foreground">Turning it on</p>
+          <p className="font-medium text-foreground">{t("matches.turningItOn", "Turning it on")}</p>
           <p className="mt-1">
-            Matching is always computed — this flag only controls who can see it.
-            Set <code className="rounded bg-muted px-1">BLUEPRINT_MATCHING_ENABLED=true</code>{" "}
-            on the blueprint-service Lambda via CDK
-            (<code className="rounded bg-muted px-1">-c blueprintMatching=true</code>),
-            not by editing the Lambda directly — a direct edit is reverted by the
-            next deploy. Full steps in{" "}
-            <code className="rounded bg-muted px-1">
-              docs/runbooks/enable_role_matching.md
-            </code>
-            .
+            <Trans i18nKey="matches.turningItOnNote" ns="directionPages">
+              {"Matching is always computed — this flag only controls who can see it. Set "}
+              <code className="rounded bg-muted px-1">BLUEPRINT_MATCHING_ENABLED=true</code>
+              {" on the blueprint-service Lambda via CDK ("}
+              <code className="rounded bg-muted px-1">-c blueprintMatching=true</code>
+              {"), not by editing the Lambda directly — a direct edit is reverted by the next deploy. Full steps in "}
+              <code className="rounded bg-muted px-1">docs/runbooks/enable_role_matching.md</code>
+              {"."}
+            </Trans>
           </p>
           <p className="mt-1">
-            This gates Job Matches, and Job Matches gates My Plan and Interview
-            Prep — so all three come back together.
+            {t("matches.thisGatesJobMatchesAnd", "This gates Job Matches, and Job Matches gates My Plan and Interview Prep — so all three come back together.")}
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
           <Link to={ROUTES.DIRECTION_SETTING.JOURNEY}>
-            Back to your journey
+            {t("matches.backToYourJourney", "Back to your journey")}
             <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
           </Link>
         </Button>
@@ -256,6 +261,7 @@ function MatchingPaused() {
 }
 
 export default function MatchesPage() {
+  const { t } = useTranslation("directionPages")
   const [method, setMethod] = useState<FitMethod>("gap")
   const [picked, setPicked] = useState<string | null>(null)
   // JF-14b — "local" is today's request (no `order` sent); only "fit" changes
@@ -433,20 +439,26 @@ export default function MatchesPage() {
   // as the target having changed. Only before the person picks something.
   const targetNote = !picked && hasSavedTarget
     ? savedInList
-      ? `Your saved target role is ${savedTarget?.roleTitle || "the one selected below"}. Pick another role to change it.`
+      ? t("matches.savedTargetIs", {
+          defaultValue: "Your saved target role is {{role}}. Pick another role to change it.",
+          role: savedTarget?.roleTitle || t("matches.theOneSelectedBelow", "the one selected below"),
+        })
       : savedTarget
-        ? `Your saved target role${savedTarget.roleTitle ? `, ${savedTarget.roleTitle},` : ""} isn't in this list right now. It stays your target unless you pick a role here.`
-        : "You already have a target role saved. It stays your target unless you pick a role here."
+        ? savedTarget.roleTitle
+          ? t("matches.savedTargetNotInListNamed", {
+              defaultValue: "Your saved target role, {{role}}, isn't in this list right now. It stays your target unless you pick a role here.",
+              role: savedTarget.roleTitle,
+            })
+          : t("matches.savedTargetNotInListUnnamed", "Your saved target role isn't in this list right now. It stays your target unless you pick a role here.")
+        : t("matches.savedTargetUnnamed", "You already have a target role saved. It stays your target unless you pick a role here.")
     : null
 
   return (
     <div className="space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-semibold">Job matches</h1>
+        <h1 className="text-2xl font-semibold">{t("matches.jobMatches", "Job matches")}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Which roles suit the way you&apos;re actually wired, and how far you are
-          from each one. Pick a role to see where you already match it and where
-          there&apos;s ground to make up.
+          {t("matches.whichRolesSuitTheWay", "Which roles suit the way you're actually wired, and how far you are from each one. Pick a role to see where you already match it and where there's ground to make up.")}
         </p>
       </header>
       <FitMatchList
@@ -460,15 +472,14 @@ export default function MatchesPage() {
           loading: (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              Lining your profile up against published roles…
+              {t("matches.liningYourProfileUpAgainst", "Lining your profile up against published roles…")}
             </div>
           ),
           error: (
             <Card>
               <CardContent className="p-6">
                 <p className="text-sm text-muted-foreground">
-                  We couldn&apos;t load your matches just now. Refresh to try again —
-                  nothing you&apos;ve done has been lost.
+                  {t("matches.weCouldnTLoadYour", "We couldn't load your matches just now. Refresh to try again — nothing you've done has been lost.")}
                 </p>
               </CardContent>
             </Card>
@@ -481,14 +492,22 @@ export default function MatchesPage() {
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <h2 id="ds-matches-heading" className="flex items-center gap-2 text-sm font-medium">
                     <Target className="h-4 w-4 text-muted-foreground" aria-hidden />
-                    {matches.length} role{matches.length === 1 ? "" : "s"} to compare with
+                    {matches.length === 1
+                      ? t("matches.rolesToCompareOne", {
+                          defaultValue: "{{total}} role to compare with",
+                          total: matches.length,
+                        })
+                      : t("matches.rolesToCompareMany", {
+                          defaultValue: "{{total}} roles to compare with",
+                          total: matches.length,
+                        })}
                   </h2>
                   <div
                     role="radiogroup"
-                    aria-label="How to order your matches"
+                    aria-label={t("matches.howToOrderYourMatches", "How to order your matches")}
                     className="inline-flex rounded-lg border border-border p-0.5"
                   >
-                    {(shared ? SHARED_METHODS : METHODS).map((m) => (
+                    {(shared ? sharedMethodsFor(t) : methodsFor(t)).map((m) => (
                       <button
                         key={m.value}
                         type="button"
@@ -515,14 +534,14 @@ export default function MatchesPage() {
                     className="mb-2 flex flex-wrap items-center justify-end gap-2"
                   >
                     <span aria-hidden className="text-xs text-muted-foreground">
-                      Show
+                      {t("matches.show", "Show")}
                     </span>
                     <div
                       role="radiogroup"
-                      aria-label="Which jobs come first"
+                      aria-label={t("matches.whichJobsComeFirst", "Which jobs come first")}
                       className="inline-flex rounded-lg border border-border p-0.5"
                     >
-                      {ORDERS.map((o) => {
+                      {ordersFor(t).map((o) => {
                         const Icon = o.icon
                         return (
                           <button
@@ -559,12 +578,12 @@ export default function MatchesPage() {
 
               <section aria-labelledby="ds-breakdown-heading">
                 <h2 id="ds-breakdown-heading" className="mb-2 text-sm font-medium">
-                  Where you stand
+                  {t("matches.whereYouStand", "Where you stand")}
                 </h2>
                 {detailLoading && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                    Working out where you stand against this role…
+                    {t("matches.workingOutWhereYouStand", "Working out where you stand against this role…")}
                   </div>
                 )}
                 {!detailLoading && detail && selected && <FitResult variant="ds" data={detail} overall={selectedOverall} />}
@@ -572,8 +591,7 @@ export default function MatchesPage() {
                   <Card>
                     <CardContent className="p-6">
                       <p className="text-sm text-muted-foreground">
-                        We couldn&apos;t open the breakdown for this role. Pick another,
-                        or try again in a moment.
+                        {t("matches.weCouldnTOpenThe", "We couldn't open the breakdown for this role. Pick another, or try again in a moment.")}
                       </p>
                     </CardContent>
                   </Card>

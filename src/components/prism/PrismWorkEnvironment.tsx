@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { WORK_ENV_THRESHOLDS } from '@/constants/prism'
 
 type PrismWorkEnvironmentProps = {
@@ -8,19 +9,22 @@ type EnvironmentCategory = 'enhanced' | 'neutral' | 'inhibited'
 
 const CATEGORY_CONFIG: Record<
   EnvironmentCategory,
-  { label: string; color: string; bgClass: string }
+  { labelKey: string; label: string; color: string; bgClass: string }
 > = {
   enhanced: {
+    labelKey: 'workEnvironment.enhanced',
     label: 'Enhanced',
     color: 'text-green-700',
     bgClass: 'bg-green-50 border-green-200',
   },
   neutral: {
+    labelKey: 'workEnvironment.neutral',
     label: 'Neutral',
     color: 'text-amber-700',
     bgClass: 'bg-amber-50 border-amber-200',
   },
   inhibited: {
+    labelKey: 'workEnvironment.inhibited',
     label: 'Inhibited',
     color: 'text-red-700',
     bgClass: 'bg-red-50 border-red-200',
@@ -36,6 +40,7 @@ function categorize(score: number): EnvironmentCategory {
 export default function PrismWorkEnvironment({
   data,
 }: PrismWorkEnvironmentProps) {
+  const { t } = useTranslation('prismUi')
   const entries = Object.entries(data)
   if (!entries.length) return null
 
@@ -54,7 +59,7 @@ export default function PrismWorkEnvironment({
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-medium text-muted-foreground">
-        Work Environment
+        {t('workEnvironment.heading', { defaultValue: 'Work Environment' })}
       </h3>
       {(Object.keys(grouped) as EnvironmentCategory[]).map((cat) => {
         const items = grouped[cat]
@@ -64,7 +69,7 @@ export default function PrismWorkEnvironment({
         return (
           <div key={cat} className="space-y-2">
             <h4 className={`text-sm font-semibold ${config.color}`}>
-              {config.label}
+              {t(config.labelKey, { defaultValue: config.label })}
             </h4>
             <div className="space-y-1">
               {items.map((item, i) => (

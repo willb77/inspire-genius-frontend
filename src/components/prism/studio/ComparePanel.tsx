@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { HelpCircle, Loader2, Send, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -59,6 +60,7 @@ export default function ComparePanel({
     notice: string
   }) => React.ReactNode
 }) {
+  const { t } = useTranslation("prismUi")
   const profiles = port.cast.subjects
   const isLoading = port.cast.isLoading
 
@@ -106,12 +108,22 @@ export default function ComparePanel({
         chunks.push(
           outcome.status === "fulfilled"
             ? outcome.value.comparison
-            : `_Section ${i + 2} of ${first.parts} could not be generated._`,
+            : t("compare.sectionFailedMarker", {
+                defaultValue: "_Section {{index}} of {{total}} could not be generated._",
+                index: i + 2,
+                total: first.parts,
+              }),
         )
       })
       setComparison(chunks.join("\n\n"))
       const failed = rest.filter((o) => o.status === "rejected").length
-      if (failed) toast.warning(`${failed} of ${first.parts} sections failed`)
+      if (failed) toast.warning(
+          t("compare.sectionsFailed", {
+            defaultValue: "{{failed}} of {{total}} sections failed",
+            failed,
+            total: first.parts,
+          }),
+        )
     } catch (err) {
       toast.error(apiErrorMessage(err, copy.compareFailed))
     }
@@ -127,7 +139,7 @@ export default function ComparePanel({
       setStarters(result.questions)
       setNotice((n) => n || result.notice)
       if (!result.questions.length) {
-        toast.warning("No questions came back — try again.")
+        toast.warning(t("compare.noQuestions", { defaultValue: "No questions came back — try again." }))
       }
     } catch (err) {
       toast.error(apiErrorMessage(err, copy.questionsFailed))
@@ -177,9 +189,9 @@ export default function ComparePanel({
       notice: notice || copy.fallbackNotice,
       meta: [
         { label: copy.metaLabel, value: names.join(", ") },
-        { label: "Question", value: answered },
+        { label: t("compare.docQuestion", { defaultValue: "Question" }), value: answered },
       ],
-      sections: [{ heading: "Answer", body: answer }],
+      sections: [{ heading: t("compare.docAnswer", { defaultValue: "Answer" }), body: answer }],
       fileStem: narrativeFileStem(title, copy.filePrefix),
       footer: copy.footer(title),
     }
@@ -222,11 +234,11 @@ export default function ComparePanel({
             >
               {port.questions.pending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Thinking…
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("compare.thinking", { defaultValue: "Thinking…" })}
                 </>
               ) : (
                 <>
-                  <HelpCircle className="mr-2 h-4 w-4" /> Suggest questions
+                  <HelpCircle className="mr-2 h-4 w-4" /> {t("compare.suggestQuestions", { defaultValue: "Suggest questions" })}
                 </>
               )}
             </Button>
@@ -237,7 +249,9 @@ export default function ComparePanel({
       {starters.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Questions worth asking</CardTitle>
+            <CardTitle className="text-base">
+              {t("compare.questionsWorthAsking", { defaultValue: "Questions worth asking" })}
+            </CardTitle>
             <p className="text-xs text-muted-foreground">{copy.startersBlurb}</p>
           </CardHeader>
           <CardContent>
@@ -268,14 +282,19 @@ export default function ComparePanel({
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-base">
-            Ask about {names.length ? names.join(" and ") : copy.groupNoun}
+            {t("compare.askAbout", {
+              defaultValue: "Ask about {{subjects}}",
+              subjects: names.length
+                ? names.join(t("compare.nameJoiner", { defaultValue: " and " }))
+                : copy.groupNoun,
+            })}
           </CardTitle>
-          {answer && <NarrativeExportButtons build={answerDoc} label="an answer" />}
+          {answer && <NarrativeExportButtons build={answerDoc} label={t("compare.labelAnswer", { defaultValue: "an answer" })} />}
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Label htmlFor="cl-ask" className="sr-only">
-              Your question
+              {t("compare.yourQuestion", { defaultValue: "Your question" })}
             </Label>
             <Input
               id="cl-ask"
@@ -296,7 +315,7 @@ export default function ComparePanel({
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              <span className="ml-2">Ask</span>
+              <span className="ml-2">{t("compare.ask", { defaultValue: "Ask" })}</span>
             </Button>
           </div>
           {answer ? (
@@ -312,7 +331,7 @@ export default function ComparePanel({
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-base">{names.join(" vs ")}</CardTitle>
             <div className="flex flex-wrap items-center gap-2">
-              <NarrativeExportButtons build={comparisonDoc} label="a comparison" />
+              <NarrativeExportButtons build={comparisonDoc} label={t("compare.labelComparison", { defaultValue: "a comparison" })} />
               {/* Exactly what the export button is given — `comparison` is the
                   stitched text on screen, `names` and `notice` are the same
                   values `comparisonDoc()` stamps on the document. So a control

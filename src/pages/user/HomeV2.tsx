@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback} from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useNavigate } from "react-router-dom";
 import {
   format,
@@ -91,6 +92,17 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  *     viewer modal, as does "View PRISM Report" — previously that button
  *     navigated to the assessment page and never showed the report.
  */
+
+// Video titles are resolved at render (hooks cannot run at module level): id -> translation key.
+const VIDEO_TITLE_KEYS: Record<string, string> = {
+  "prism-survey": "homeV2.videoPrismSurvey",
+  "goals-studio": "homeV2.videoGoalsStudio",
+  "interview-studio": "homeV2.videoInterviewStudio",
+  "career-studio": "homeV2.videoCareerStudio",
+  "team-development-studio": "homeV2.videoTeamDevelopmentStudio",
+  "bio-capture-studio": "homeV2.videoBioCaptureStudio",
+  "knowledge-capture-studio": "homeV2.videoKnowledgeCaptureStudio",
+}
 
 /**
  * The Videos dropdown. PRISM Survey — Introduction is kept; the other four were
@@ -263,12 +275,12 @@ function formatRelative(input?: string): string {
  * date. Compared on calendar day, not elapsed hours — 23:50 last night is
  * "Yesterday" to a person even though it is under a day ago.
  */
-function dayBucket(input: string | undefined, now: Date): string {
+function dayBucket(input: string | undefined, now: Date, tu: TFunction): string {
   if (!input) return "";
   const d = new Date(input);
   if (Number.isNaN(d.getTime())) return "";
-  if (isSameDay(d, now)) return "Today";
-  if (isSameDay(d, subDays(now, 1))) return "Yesterday";
+  if (isSameDay(d, now)) return tu("homeV2.today", "Today");
+  if (isSameDay(d, subDays(now, 1))) return tu("homeV2.yesterday", "Yesterday");
   return format(d, "EEE d MMM");
 }
 
@@ -301,6 +313,7 @@ const PERSONAL_INFO_CATALOG: {
 
 export default function HomeV2() {
   const { t } = useTranslation("dashboard");
+  const { t: tu } = useTranslation("userPages");
   const { user } = useAuth();
   const navigate = useNavigate();
   const [personalTarget, setPersonalTarget] =
@@ -314,7 +327,7 @@ export default function HomeV2() {
   // First name for the page greeting (restored 2026-08-06). Falls back through
   // fullName → name → "there" so the heading never renders "Welcome ,".
   const firstName =
-    user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
+    user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? tu("homeV2.fallbackName", "there");
 
   const {
     data: latestPrism,
@@ -333,6 +346,10 @@ export default function HomeV2() {
   // loading default, so a slow query cannot flash a working link that the route
   // guard then rejects.
   const { data: entitledVerticals = [] } = useEnabledVerticals();
+  const videos = useMemo(
+    () => VIDEOS.map((v) => ({ ...v, title: tu(VIDEO_TITLE_KEYS[v.id], v.title) })),
+    [tu],
+  );
   const quickActions: WelcomeBackQuickAction[] = useMemo(
     () =>
       QUICK_ACTIONS.map(({ key, labelKey, defaultLabel, to, vertical, icon }) => {
@@ -403,9 +420,9 @@ export default function HomeV2() {
             defaultValue: "Untitled conversation",
           }),
         meta: formatRelative(c.updated_at || c.created_at),
-        dayLabel: dayBucket(c.updated_at || c.created_at, now),
+        dayLabel: dayBucket(c.updated_at || c.created_at, now, tu),
       }));
-  }, [convData, t]);
+  }, [convData, t, tu]);
 
   const {
     data: profileMe,
@@ -629,7 +646,7 @@ export default function HomeV2() {
             onAddPersonalInfo={openAddPersonalInfo}
             onRetryPersonalInfo={retryPersonalInfo}
             quickActions={quickActions}
-            videos={VIDEOS}
+            videos={videos}
           />
 
           {/* The tile that embedded Lumen Moments — then called "Today's
