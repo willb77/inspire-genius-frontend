@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useNavigate } from "react-router-dom"
@@ -24,7 +25,7 @@ import {
   TRIGGER_FIELDS,
   type AidIntakeProfile,
 } from "@/types/grant/intake"
-import { INTAKE_STEPS, labelForAnswer, type IntakeStep } from "./steps"
+import { INTAKE_STEPS, labelForAnswer, localizeStep, type IntakeStep } from "./steps"
 
 /** Assistant question bubble — the conversational half of the hybrid flow. */
 function AssistantBubble({ children }: { children: React.ReactNode }) {
@@ -48,7 +49,8 @@ function TranscriptRow({
   value: unknown
   onEdit: () => void
 }) {
-  const answer = labelForAnswer(step, value)
+  const { t } = useTranslation("grantPages")
+  const answer = labelForAnswer(step, value, t)
   return (
     <div className="space-y-1.5">
       <AssistantBubble>
@@ -60,7 +62,7 @@ function TranscriptRow({
           onClick={onEdit}
           className="group inline-flex items-center gap-1.5 rounded-2xl rounded-tr-sm bg-[#3B5BFF] px-4 py-2 text-sm text-white transition hover:bg-[#2f49cc]"
         >
-          {answer || <span className="italic opacity-80">Skipped</span>}
+          {answer || <span className="italic opacity-80">{t("intake.skipped", "Skipped")}</span>}
           <Pencil className="h-3 w-3 opacity-0 transition group-hover:opacity-80" />
         </button>
       </div>
@@ -75,6 +77,7 @@ function TranscriptRow({
  * and a successful save returns to the coach roster.
  */
 export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: string }) {
+  const { t } = useTranslation("grantPages")
   const isCoachMode = studentId !== "me"
   const navigate = useNavigate()
   const { data: saved } = useAidIntake(studentId)
@@ -94,8 +97,11 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
   const values = form.watch()
   // Branching: module steps appear only once their screener gate is answered Yes.
   const visibleSteps = useMemo(
-    () => INTAKE_STEPS.filter((s) => s.phase !== "module" || values[s.gate!] === true),
-    [values]
+    () =>
+      INTAKE_STEPS.filter((s) => s.phase !== "module" || values[s.gate!] === true).map((s) =>
+        localizeStep(s, t)
+      ),
+    [values, t]
   )
   const total = visibleSteps.length
   const done = stepIndex >= total
@@ -126,13 +132,18 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
     form.handleSubmit((data) => {
       saveMutation.mutate(data, {
         onSuccess: () => {
-          toast.success(isCoachMode ? "Student profile saved" : "Aid profile saved", {
-            description: isReady
-              ? isCoachMode
-                ? "We'll rank their matches from these answers."
-                : "We'll rank your matches from these answers."
-              : "You can finish the essentials anytime to unlock matches.",
-          })
+          toast.success(
+            isCoachMode
+              ? t("intake.toastStudentSaved", "Student profile saved")
+              : t("intake.toastSaved", "Aid profile saved"),
+            {
+              description: isReady
+                ? isCoachMode
+                  ? t("intake.toastRankTheirs", "We'll rank their matches from these answers.")
+                  : t("intake.toastRankYours", "We'll rank your matches from these answers.")
+                : t("intake.toastFinishEssentials", "You can finish the essentials anytime to unlock matches."),
+            }
+          )
           if (isCoachMode) {
             navigate(ROUTES.GRANT.COACH_STUDENTS)
             return
@@ -142,8 +153,8 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
         onError: () =>
           toast.error(
             isCoachMode
-              ? "Couldn't save this student's profile. Please try again."
-              : "Couldn't save your profile. Please try again."
+              ? t("intake.toastStudentSaveError", "Couldn't save this student's profile. Please try again.")
+              : t("intake.toastSaveError", "Couldn't save your profile. Please try again.")
           ),
       })
     })()
@@ -158,18 +169,28 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
             <Sparkles className="h-5 w-5 text-[#3B5BFF]" />
           </div>
           <h1 className="text-2xl font-semibold text-[#1f2937]">
-            {isCoachMode ? "Build this student's aid profile" : "Build your aid profile"}
+            {isCoachMode
+              ? t("intake.titleCoach", "Build this student's aid profile")
+              : t("intake.title", "Build your aid profile")}
           </h1>
         </div>
         <p className="text-[#6b7280]">
           {isCoachMode
-            ? "A few quick questions so we can find the grants and scholarships they actually qualify for."
-            : "A few quick questions so we can find the grants and scholarships you actually qualify for."}
+            ? t(
+                "intake.subtitleCoach",
+                "A few quick questions so we can find the grants and scholarships they actually qualify for."
+              )
+            : t(
+                "intake.subtitle",
+                "A few quick questions so we can find the grants and scholarships you actually qualify for."
+              )}
         </p>
 
         <div className="mt-4 rounded-xl border border-[#e5e7eb] bg-white p-4">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium text-[#374151]">Essentials to unlock matches</span>
+            <span className="font-medium text-[#374151]">
+              {t("intake.essentialsToUnlock", "Essentials to unlock matches")}
+            </span>
             <span className={cn("font-semibold", isReady ? "text-[#0f9d8c]" : "text-[#6b7280]")}>
               {progress}/{TRIGGER_FIELDS.length}
             </span>
@@ -178,7 +199,7 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
           {isReady && (
             <div className="mt-3 flex items-center gap-2 rounded-lg bg-[rgba(45,212,191,0.12)] px-3 py-2 text-sm text-[#0f766e]">
               <Check className="h-4 w-4" />
-              You're ready to search — anything more just sharpens your matches.
+              {t("intake.readyToSearch", "You're ready to search — anything more just sharpens your matches.")}
             </div>
           )}
         </div>
@@ -209,17 +230,20 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
               <StepInput step={step} form={form} onEnter={advance} />
               {form.formState.errors[step.field] && (
                 <p className="text-xs text-[#dc2626]">
-                  {String(form.formState.errors[step.field]?.message ?? "Please check this answer")}
+                  {String(
+                    form.formState.errors[step.field]?.message ??
+                      t("intake.checkAnswer", "Please check this answer")
+                  )}
                 </p>
               )}
 
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <Button onClick={advance} className="bg-[#3B5BFF] hover:bg-[#2f49cc]">
-                  Continue <ArrowRight className="ml-1 h-4 w-4" />
+                  {t("common.continue", "Continue")} <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
                 {step.phase !== "trigger" && (
                   <Button variant="ghost" onClick={skip} className="text-[#6b7280]">
-                    Skip
+                    {t("intake.skip", "Skip")}
                   </Button>
                 )}
                 {stepIndex > 0 && (
@@ -228,7 +252,7 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
                     onClick={() => setStepIndex((i) => i - 1)}
                     className="text-[#6b7280]"
                   >
-                    <ArrowLeft className="mr-1 h-4 w-4" /> Back
+                    <ArrowLeft className="mr-1 h-4 w-4" /> {t("intake.back", "Back")}
                   </Button>
                 )}
               </div>
@@ -241,12 +265,15 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
           <div className="rounded-xl border border-[#e5e7eb] bg-white p-5">
             <div className="mb-2 flex items-center gap-2">
               <Check className="h-5 w-5 text-[#0f9d8c]" />
-              <h2 className="text-lg font-semibold text-[#1f2937]">That's everything</h2>
+              <h2 className="text-lg font-semibold text-[#1f2937]">{t("intake.thatsEverything", "That's everything")}</h2>
             </div>
             <p className="mb-4 text-sm text-[#6b7280]">
               {isCoachMode
-                ? "Save this student's profile to lock in their matches. You can edit any answer above."
-                : "Save your profile to lock in your matches. You can edit any answer above."}
+                ? t(
+                    "intake.reviewCoach",
+                    "Save this student's profile to lock in their matches. You can edit any answer above."
+                  )
+                : t("intake.review", "Save your profile to lock in your matches. You can edit any answer above.")}
             </p>
             <div className="flex flex-wrap gap-2">
               {isCoachMode ? (
@@ -260,7 +287,7 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
                   ) : (
                     <Check className="mr-1 h-4 w-4" />
                   )}
-                  Save student profile
+                  {t("intake.saveStudentProfile", "Save student profile")}
                 </Button>
               ) : (
                 <>
@@ -274,14 +301,14 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
                     ) : (
                       <Search className="mr-1 h-4 w-4" />
                     )}
-                    Save &amp; find scholarships
+                    {t("intake.saveFind", "Save & find scholarships")}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => persist("dashboard")}
                     disabled={saveMutation.isPending}
                   >
-                    Save &amp; go to dashboard
+                    {t("intake.saveDashboard", "Save & go to dashboard")}
                   </Button>
                 </>
               )}
@@ -294,7 +321,9 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
       {isReady && !done && (
         <div className="mt-6 flex items-center justify-between rounded-xl border border-[#2DD4BF] bg-[rgba(45,212,191,0.06)] p-4">
           <span className="text-sm text-[#0f766e]">
-            {isCoachMode ? "Essentials are in — save now?" : "Skip the extras and search now?"}
+            {isCoachMode
+              ? t("intake.earlyExitCoach", "Essentials are in — save now?")
+              : t("intake.earlyExit", "Skip the extras and search now?")}
           </span>
           <Button
             onClick={() => persist("scholarships")}
@@ -303,11 +332,11 @@ export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: stri
           >
             {isCoachMode ? (
               <>
-                <Check className="mr-1 h-4 w-4" /> Save student profile
+                <Check className="mr-1 h-4 w-4" /> {t("intake.saveStudentProfile", "Save student profile")}
               </>
             ) : (
               <>
-                <Search className="mr-1 h-4 w-4" /> Search scholarships
+                <Search className="mr-1 h-4 w-4" /> {t("intake.searchScholarships", "Search scholarships")}
               </>
             )}
           </Button>
@@ -327,6 +356,7 @@ function StepInput({
   form: ReturnType<typeof useForm<AidIntakeProfile>>
   onEnter: () => void
 }) {
+  const { t } = useTranslation("grantPages")
   if (step.kind === "text") {
     return (
       <Input
@@ -372,8 +402,8 @@ function StepInput({
         render={({ field }) => (
           <div className="flex gap-2">
             {[
-              { label: "Yes", val: true },
-              { label: "No", val: false },
+              { label: t("common.yes", "Yes"), val: true },
+              { label: t("common.no", "No"), val: false },
             ].map((o) => (
               <Button
                 key={o.label}
@@ -436,7 +466,11 @@ function StepInput({
       render={({ field }) => (
         <Select value={(field.value as string | undefined) ?? ""} onValueChange={field.onChange}>
           <SelectTrigger className="max-w-sm">
-            <SelectValue placeholder={step.kind === "state" ? "Select your state" : "Select one"} />
+            <SelectValue placeholder={
+                step.kind === "state"
+                  ? t("intake.selectState", "Select your state")
+                  : t("intake.selectOne", "Select one")
+              } />
           </SelectTrigger>
           <SelectContent>
             {step.options.map((o) => (

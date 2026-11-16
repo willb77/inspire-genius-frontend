@@ -131,10 +131,19 @@ describe("Locale file existence", () => {
   });
 
   it("every namespace file exists for every language", () => {
+    // Namespaces registered in scripts/i18n/pending/ are extracted English-only and
+    // are awaiting their first translation run (I18N-4); they legitimately exist in
+    // en before they exist anywhere else, so they are not counted here.
+    const pendingDir = path.resolve(__dirname, "../../scripts/i18n/pending");
+    const pending = new Set(
+      fs.existsSync(pendingDir)
+        ? fs.readdirSync(pendingDir).filter((f) => f.endsWith(".json"))
+        : []
+    );
     for (const lang of SUPPORTED_LNGS) {
       const files = fs
         .readdirSync(path.join(LOCALES_DIR, lang))
-        .filter((f) => f.endsWith(".json"));
+        .filter((f) => f.endsWith(".json") && !pending.has(f));
       expect(files.length).toBe(NAMESPACES.length);
     }
   });
