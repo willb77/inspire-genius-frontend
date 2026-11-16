@@ -17,6 +17,7 @@ import DataCard from "@/components/dashboard/DataCard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Activity, Target, BookOpen, BarChart3 } from "lucide-react"
 import { useUserAnalytics } from "@/hooks/analytics/useAnalytics"
+import { useTranslation } from "react-i18next"
 
 type SessionTrendPoint = { period: string; count: number }
 type TrainingSummary = { total: number; completed: number; completion_pct: number }
@@ -39,6 +40,7 @@ function formatStatus(status: string) {
 }
 
 export default function UserAnalytics() {
+  const { t } = useTranslation("userPages")
   const { data, isLoading, isSuccess, error, refetch } = useUserAnalytics()
   const analytics = data as UserAnalyticsData | undefined
 
@@ -67,52 +69,52 @@ export default function UserAnalytics() {
   const emptyToastShownRef = useRef(false)
   useEffect(() => {
     if (isEmpty && !emptyToastShownRef.current) {
-      toast.info("No analytics yet — your charts will populate as you complete sessions and goals.")
+      toast.info(t("analytics.noAnalyticsYetYourChartsWill", "No analytics yet — your charts will populate as you complete sessions and goals."))
       emptyToastShownRef.current = true
     }
     if (!isEmpty) {
       emptyToastShownRef.current = false
     }
-  }, [isEmpty])
+  }, [isEmpty, t])
 
   return (
     <UserLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Your Analytics</h1>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("analytics.yourAnalytics", "Your Analytics")}</h1>
       <p className="text-[13px] text-[#6b7280] mb-5">
-        Track your coaching journey, goals, and training progress.
+        {t("analytics.trackYourCoachingJourneyGoalsAnd", "Track your coaching journey, goals, and training progress.")}
       </p>
 
       {error && (
         <div className="flex items-center gap-2 py-2 mb-4 text-[13px] text-[#EF4444]">
-          Failed to load analytics.
+          {t("analytics.failedToLoadAnalytics", "Failed to load analytics.")}
           <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">
-            Retry
+            {t("analytics.retry", "Retry")}
           </button>
         </div>
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <StatTile label="Total Sessions" value={totalSessions} icon={Activity} color="#3B5BFF" loading={isLoading} />
-        <StatTile label="Goals Tracked" value={goalsTotal} icon={Target} color="#10B981" loading={isLoading} />
-        <StatTile label="Training Completed" value={training.completed} icon={BookOpen} color="#8B5CF6" loading={isLoading} />
-        <StatTile label="Training Completion" value={`${training.completion_pct}%`} icon={BarChart3} color="#D97706" loading={isLoading} />
+        <StatTile label={t("analytics.totalSessions", "Total Sessions")} value={totalSessions} icon={Activity} color="#3B5BFF" loading={isLoading} />
+        <StatTile label={t("analytics.goalsTracked", "Goals Tracked")} value={goalsTotal} icon={Target} color="#10B981" loading={isLoading} />
+        <StatTile label={t("analytics.trainingCompleted", "Training Completed")} value={training.completed} icon={BookOpen} color="#8B5CF6" loading={isLoading} />
+        <StatTile label={t("analytics.trainingCompletion", "Training Completion")} value={`${training.completion_pct}%`} icon={BarChart3} color="#D97706" loading={isLoading} />
       </div>
 
       {isEmpty ? (
-        <DataCard title="No analytics yet">
+        <DataCard title={t("analytics.noAnalyticsYet", "No analytics yet")}>
           <div className="py-8 text-center">
             <p className="text-[13px] text-[#6b7280]">
-              Once you complete your first session or goal, your activity will appear here.
+              {t("analytics.onceYouCompleteYourFirstSession", "Once you complete your first session or goal, your activity will appear here.")}
             </p>
           </div>
         </DataCard>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <DataCard title="Session Activity" className="!mt-0">
+          <DataCard title={t("analytics.sessionActivity", "Session Activity")} className="!mt-0">
             {isLoading ? (
               <Skeleton className="h-[200px] w-full" />
             ) : sessionTrends.length === 0 ? (
-              <p className="py-8 text-center text-[13px] text-[#6b7280]">No session activity yet.</p>
+              <p className="py-8 text-center text-[13px] text-[#6b7280]">{t("analytics.noSessionActivityYet", "No session activity yet.")}</p>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={sessionTrends}>
@@ -126,11 +128,11 @@ export default function UserAnalytics() {
             )}
           </DataCard>
 
-          <DataCard title="Goals by Status" className="!mt-0">
+          <DataCard title={t("analytics.goalsByStatus", "Goals by Status")} className="!mt-0">
             {isLoading ? (
               <Skeleton className="h-[200px] w-full" />
             ) : goalsChart.length === 0 ? (
-              <p className="py-8 text-center text-[13px] text-[#6b7280]">No goals tracked yet.</p>
+              <p className="py-8 text-center text-[13px] text-[#6b7280]">{t("analytics.noGoalsTrackedYet", "No goals tracked yet.")}</p>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={goalsChart}>
