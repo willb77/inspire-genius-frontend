@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import {
   ArrowRight,
   BookOpenCheck,
@@ -64,19 +65,38 @@ function rootTaxonomyId(nodes: BlueprintNode[]): string | null {
 // ── How-it-works explainer (the "what do I do next" the flow was missing) ──────
 
 function HowItWorks() {
+  const { t } = useTranslation("kcPages")
   const steps = [
-    { icon: MessagesSquare, label: "Interview", text: "Maven interviews the expert, one area at a time." },
-    { icon: Sparkles, label: "Extract", text: "Sage turns each answer into typed knowledge units." },
-    { icon: BookOpenCheck, label: "Validate", text: "Units are scored and sent to the Reviewer Console." },
-    { icon: GraduationCap, label: "Transfer", text: "Validated knowledge becomes the successor's training." },
+    {
+      icon: MessagesSquare,
+      label: t("capture.how.interview", "Interview"),
+      text: t("capture.how.interviewText", "Maven interviews the expert, one area at a time."),
+    },
+    {
+      icon: Sparkles,
+      label: t("capture.how.extract", "Extract"),
+      text: t("capture.how.extractText", "Sage turns each answer into typed knowledge units."),
+    },
+    {
+      icon: BookOpenCheck,
+      label: t("capture.how.validate", "Validate"),
+      text: t("capture.how.validateText", "Units are scored and sent to the Reviewer Console."),
+    },
+    {
+      icon: GraduationCap,
+      label: t("capture.how.transfer", "Transfer"),
+      text: t("capture.how.transferText", "Validated knowledge becomes the successor's training."),
+    },
   ]
   return (
     <Card className="border-primary/30 bg-primary/5">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm">How a capture works</CardTitle>
+        <CardTitle className="text-sm">{t("capture.how.title", "How a capture works")}</CardTitle>
         <CardDescription>
-          You interview the person who holds the role. What they know becomes validated,
-          reusable training for whoever comes next — and a lasting record of the role.
+          {t(
+            "capture.how.description",
+            "You interview the person who holds the role. What they know becomes validated, reusable training for whoever comes next — and a lasting record of the role."
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -104,33 +124,38 @@ function HowItWorks() {
 // ── Choose which saved role to capture (fallback when no ?role= is passed) ─────
 
 function ChooseRoleStep({ onPick }: { onPick: (roleTitle: string) => void }) {
+  const { t } = useTranslation("kcPages")
   const navigate = useNavigate()
   const { data: roles = [], isLoading, isError, error } = useSavedRoles(CAPTURE_ORG_ID)
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Pick a role to capture</CardTitle>
+        <CardTitle className="text-base">{t("capture.choose.title", "Pick a role to capture")}</CardTitle>
         <CardDescription>
-          Capture runs against a role you've already blueprinted. Choose one below, or blueprint
-          a new role first.
+          {t(
+            "capture.choose.description",
+            "Capture runs against a role you've already blueprinted. Choose one below, or blueprint a new role first."
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading your saved roles…
+            <Loader2 className="h-4 w-4 animate-spin" /> {t("capture.choose.loading", "Loading your saved roles…")}
           </div>
         ) : isError && isKceAccessDenied(error) ? (
           <KceAccessInline />
         ) : roles.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              No saved roles yet. Blueprint a role first — it maps the knowledge areas this
-              capture will walk through.
+              {t(
+                "capture.choose.empty",
+                "No saved roles yet. Blueprint a role first — it maps the knowledge areas this capture will walk through."
+              )}
             </p>
             <Button onClick={() => navigate(ROUTES.KNOWLEDGE_CONTINUITY.BLUEPRINT)} className="gap-1.5">
-              <Wand2 className="h-4 w-4" /> Blueprint a role
+              <Wand2 className="h-4 w-4" /> {t("capture.choose.blueprintRole", "Blueprint a role")}
             </Button>
           </div>
         ) : (
@@ -145,7 +170,7 @@ function ChooseRoleStep({ onPick }: { onPick: (roleTitle: string) => void }) {
                   <div>
                     <div className="text-sm font-medium text-foreground">{role.role_title}</div>
                     <div className="text-xs text-muted-foreground">
-                      {role.node_count} knowledge areas
+                      {t("capture.choose.areaCount", { defaultValue: "{{areas}} knowledge areas", areas: role.node_count })}
                     </div>
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -180,6 +205,7 @@ function PlanStep({
   onFinish: () => void
   finishing: boolean
 }) {
+  const { t } = useTranslation("kcPages")
   const areas = blueprint.nodes
   const capturedCount = areas.filter((n) => capturedRefs.has(n.ref)).length
   const pct = areas.length ? Math.round((capturedCount / areas.length) * 100) : 0
@@ -192,19 +218,19 @@ function PlanStep({
       {/* Who's being captured */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Who are we capturing?</CardTitle>
+          <CardTitle className="text-base">{t("capture.plan.whoTitle", "Who are we capturing?")}</CardTitle>
           <CardDescription>
-            Set this once — it applies to every area you capture in this session.
+            {t("capture.plan.whoDescription", "Set this once — it applies to every area you capture in this session.")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="expert-name">Expert</Label>
+            <Label htmlFor="expert-name">{t("capture.plan.expert", "Expert")}</Label>
             <Input
               id="expert-name"
               value={expert.expertName}
               onChange={(e) => setExpert({ ...expert, expertName: e.target.value })}
-              placeholder="Name of the person who holds this role"
+              placeholder={t("capture.plan.expertPlaceholder", "Name of the person who holds this role")}
               disabled={capturedCount > 0}
             />
           </div>
@@ -218,21 +244,24 @@ function PlanStep({
             />
             <div className="space-y-0.5">
               <Label htmlFor="real-expert" className="font-medium">
-                This is a real expert (not a practice run)
+                {t("capture.plan.realExpert", "This is a real expert (not a practice run)")}
               </Label>
               <p className="text-xs text-muted-foreground">
-                Real captures need a consent record on file. Leave off for a practice/volunteer run.
+                {t(
+                  "capture.plan.realExpertHint",
+                  "Real captures need a consent record on file. Leave off for a practice/volunteer run."
+                )}
               </p>
             </div>
           </div>
           {expert.realExpert && (
             <div className="space-y-1.5">
-              <Label htmlFor="consent-id">Consent record id</Label>
+              <Label htmlFor="consent-id">{t("capture.plan.consentId", "Consent record id")}</Label>
               <Input
                 id="consent-id"
                 value={expert.consentId}
                 onChange={(e) => setExpert({ ...expert, consentId: e.target.value })}
-                placeholder="The id of the signed consent on file"
+                placeholder={t("capture.plan.consentIdPlaceholder", "The id of the signed consent on file")}
                 disabled={capturedCount > 0}
               />
             </div>
@@ -245,17 +274,21 @@ function PlanStep({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <ClipboardList className="h-4 w-4 text-[#127A8A]" />
-            {blueprint.role_title} — capture plan
+            {t("capture.plan.planTitle", { defaultValue: "{{role}} — capture plan", role: blueprint.role_title })}
           </CardTitle>
           <CardDescription>
-            Work through the role's knowledge areas. Capture as many as the expert has time for —
-            you can come back and finish the rest later.
+            {t(
+              "capture.plan.planDescription",
+              "Work through the role's knowledge areas. Capture as many as the expert has time for — you can come back and finish the rest later."
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{capturedCount} of {areas.length} areas captured</span>
+              <span>
+                {t("capture.plan.progress", { defaultValue: "{{captured}} of {{total}} areas captured", captured: capturedCount, total: areas.length })}
+              </span>
               <span>{pct}%</span>
             </div>
             <Progress value={pct} />
@@ -263,7 +296,7 @@ function PlanStep({
 
           {!expertReady && (
             <p className="text-xs text-muted-foreground">
-              Enter who you're capturing above to begin.
+              {t("capture.plan.enterWho", "Enter who you're capturing above to begin.")}
             </p>
           )}
 
@@ -303,7 +336,7 @@ function PlanStep({
                     ) : (
                       <ArrowRight className="h-3.5 w-3.5" />
                     )}
-                    {done ? "Re-capture" : "Capture"}
+                    {done ? t("capture.plan.recapture", "Re-capture") : t("capture.plan.capture", "Capture")}
                   </Button>
                 </li>
               )
@@ -315,10 +348,12 @@ function PlanStep({
       <div className="flex items-center gap-3">
         <Button onClick={onFinish} disabled={capturedCount === 0 || finishing} className="gap-1.5">
           {finishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-          Finish &amp; see the outcome
+          {t("capture.plan.finish", "Finish & see the outcome")}
         </Button>
         {capturedCount === 0 && (
-          <p className="text-xs text-muted-foreground">Capture at least one area to finish.</p>
+          <p className="text-xs text-muted-foreground">
+            {t("capture.plan.finishHint", "Capture at least one area to finish.")}
+          </p>
         )}
       </div>
     </div>
@@ -342,6 +377,7 @@ function InterviewStep({
   onCancel: () => void
   isFinishing: boolean
 }) {
+  const { t } = useTranslation("kcPages")
   const nextQuestion = useNextQuestion()
   const recordTurn = useRecordTurn()
 
@@ -407,7 +443,7 @@ function InterviewStep({
         <CardHeader className="pb-3">
           <CardTitle className="text-base">{node.name}</CardTitle>
           <CardDescription>
-            {roleTitle} · Answer in your own words. Maven follows up on what you say.
+            {t("capture.interview.description", { defaultValue: "{{role}} · Answer in your own words. Maven follows up on what you say.", role: roleTitle })}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -430,15 +466,17 @@ function InterviewStep({
           {waitingForQuestion && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Maven is thinking…
+              {t("capture.interview.thinking", "Maven is thinking…")}
             </div>
           )}
 
           {questionFailed && (
             <div className="space-y-2">
-              <p className="text-sm text-red-600">Something went wrong getting the next question.</p>
+              <p className="text-sm text-red-600">
+                {t("capture.interview.questionFailed", "Something went wrong getting the next question.")}
+              </p>
               <Button size="sm" variant="outline" onClick={retryQuestion} className="gap-1.5">
-                <RotateCcw className="h-4 w-4" /> Try again
+                <RotateCcw className="h-4 w-4" /> {t("capture.interview.tryAgain", "Try again")}
               </Button>
             </div>
           )}
@@ -453,16 +491,18 @@ function InterviewStep({
                 <p className="pl-6 text-xs italic text-muted-foreground">{coverageNote}</p>
               )}
               <div className="space-y-2">
-                <Label htmlFor="capture-answer" className="sr-only">Your answer</Label>
+                <Label htmlFor="capture-answer" className="sr-only">
+                  {t("capture.interview.yourAnswer", "Your answer")}
+                </Label>
                 <Textarea
                   id="capture-answer"
                   value={answerText}
                   onChange={(e) => setAnswerText(e.target.value)}
-                  placeholder="Type your answer…"
+                  placeholder={t("capture.interview.answerPlaceholder", "Type your answer…")}
                   rows={4}
                 />
                 <Button onClick={submitAnswer} disabled={answerText.trim().length === 0} className="gap-1.5">
-                  <Send className="h-4 w-4" /> Send answer
+                  <Send className="h-4 w-4" /> {t("capture.interview.sendAnswer", "Send answer")}
                 </Button>
               </div>
             </div>
@@ -473,13 +513,15 @@ function InterviewStep({
       <div className="flex items-center gap-3">
         <Button onClick={() => onFinishArea(transcript)} disabled={!canFinish} className="gap-1.5">
           {isFinishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-          Save this area
+          {t("capture.interview.saveArea", "Save this area")}
         </Button>
         <Button variant="ghost" onClick={onCancel} disabled={isFinishing}>
-          Back to plan
+          {t("capture.interview.backToPlan", "Back to plan")}
         </Button>
         {transcript.length === 0 && (
-          <p className="text-xs text-muted-foreground">Answer at least one question to save this area.</p>
+          <p className="text-xs text-muted-foreground">
+            {t("capture.interview.saveHint", "Answer at least one question to save this area.")}
+          </p>
         )}
       </div>
     </div>
@@ -500,17 +542,29 @@ function DoneStep({
   onRestart: () => void
 }) {
   const navigate = useNavigate()
+  const { t } = useTranslation("kcPages")
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Sparkles className="h-5 w-5 text-[#127A8A]" />
-          Capture complete — {roleTitle}
+          {t("capture.done.title", { defaultValue: "Capture complete — {{role}}", role: roleTitle })}
         </CardTitle>
         <CardDescription>
-          {units.length} knowledge {units.length === 1 ? "unit" : "units"} captured across{" "}
-          {areasCaptured} {areasCaptured === 1 ? "area" : "areas"} and sent for review. Here's what
-          happens next.
+          {t(
+            "capture.done.summary",
+            { defaultValue: "{{units}} captured across {{areas}} and sent for review. Here's what happens next.", units: t("capture.done.unitCount", {
+                count: units.length,
+                defaultValue_one: "{{count}} knowledge unit",
+                defaultValue_other: "{{count}} knowledge units",
+    defaultValue: "{{count}} knowledge units",
+              }), areas: t("capture.done.areaCount", {
+                count: areasCaptured,
+                defaultValue_one: "{{count}} area",
+                defaultValue_other: "{{count}} areas",
+    defaultValue: "{{count}} areas",
+              }) }
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -536,10 +590,14 @@ function DoneStep({
             <BookOpenCheck className="h-5 w-5 shrink-0 text-primary" />
             <div className="flex-1">
               <div className="text-sm font-semibold">
-                Review &amp; validate <span className="text-muted-foreground">(next step)</span>
+                {t("capture.done.reviewValidate", "Review & validate")}{" "}
+                <span className="text-muted-foreground">{t("capture.done.nextStep", "(next step)")}</span>
               </div>
               <div className="text-xs text-muted-foreground">
-                Confirm, amend, or reject each unit. Validated knowledge is what successors are taught.
+                {t(
+                  "capture.done.reviewHint",
+                  "Confirm, amend, or reject each unit. Validated knowledge is what successors are taught."
+                )}
               </div>
             </div>
             <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -552,16 +610,21 @@ function DoneStep({
           >
             <GraduationCap className="h-5 w-5 shrink-0 text-muted-foreground" />
             <div className="flex-1">
-              <div className="text-sm font-semibold">Build the successor's training</div>
+              <div className="text-sm font-semibold">
+                {t("capture.done.buildTraining", "Build the successor's training")}
+              </div>
               <div className="text-xs text-muted-foreground">
-                Turn validated knowledge into a wiring-adapted learning path for the next person.
+                {t(
+                  "capture.done.buildTrainingHint",
+                  "Turn validated knowledge into a wiring-adapted learning path for the next person."
+                )}
               </div>
             </div>
             <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
 
           <Button variant="outline" onClick={onRestart} className="gap-1.5">
-            <RotateCcw className="h-4 w-4" /> Capture more of this role
+            <RotateCcw className="h-4 w-4" /> {t("capture.done.captureMore", "Capture more of this role")}
           </Button>
         </div>
       </CardContent>
@@ -585,6 +648,7 @@ function DoneStep({
  * Deliberately plain language: no raw PRISM dimension names surfaced.
  */
 export default function KceCapturePage() {
+  const { t } = useTranslation("kcPages")
   const [searchParams] = useSearchParams()
   const roleParam = searchParams.get("role")?.trim() || null
 
@@ -659,9 +723,13 @@ export default function KceCapturePage() {
       setAllUnits((prev) => [...prev, ...extracted.units])
       setCapturedRefs((prev) => new Set(prev).add(activeNode.ref))
       toast.success(
-        extracted.units.length === 1
-          ? `1 unit captured from "${activeNode.name}"`
-          : `${extracted.units.length} units captured from "${activeNode.name}"`
+        t("capture.toast.unitsCaptured", {
+          count: extracted.units.length,
+          name: activeNode.name,
+          defaultValue_one: '{{count}} unit captured from "{{name}}"',
+          defaultValue_other: '{{count}} units captured from "{{name}}"',
+    defaultValue: '{{count}} units captured from "{{name}}"',
+        })
       )
       setActiveNode(null)
       setView("plan")
@@ -684,11 +752,13 @@ export default function KceCapturePage() {
       <div>
         <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
           <MessagesSquare className="h-5 w-5 text-[#127A8A]" />
-          Start a capture
+          {t("capture.title", "Start a capture")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sit the role-holder down with Maven and turn what they know into validated training for
-          whoever comes next.
+          {t(
+            "capture.subtitle",
+            "Sit the role-holder down with Maven and turn what they know into validated training for whoever comes next."
+          )}
         </p>
       </div>
 
@@ -703,7 +773,8 @@ export default function KceCapturePage() {
 
       {view === "plan" && !blueprint && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading the role's knowledge areas…
+          <Loader2 className="h-4 w-4 animate-spin" />{" "}
+          {t("capture.loadingAreas", "Loading the role's knowledge areas…")}
         </div>
       )}
 
