@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { MessagesSquare, Loader2, Send } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { FitDetail } from "@/types/job-fit"
 import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
@@ -15,6 +16,7 @@ type QA = { question: string; answer: string }
  * navigating away. Answers are grounded only in the person's own fit numbers.
  */
 export function FitFollowUpCard({ data }: { data: FitDetail }) {
+  const { t } = useTranslation("jobFitPages")
   const explain = useExplainFit()
   const [question, setQuestion] = useState("")
   const [history, setHistory] = useState<QA[]>([])
@@ -37,9 +39,12 @@ export function FitFollowUpCard({ data }: { data: FitDetail }) {
 
   return (
     <FitCard className="mb-6">
-      <FitSectionTitle>Ask about your fit</FitSectionTitle>
+      <FitSectionTitle>{t("fitFollowUpCard.title", "Ask about your fit")}</FitSectionTitle>
       <p className="mb-3 text-sm text-[#6b7280]">
-        Ask anything about this role and your development — the answer appears right here.
+        {t(
+          "fitFollowUpCard.intro",
+          "Ask anything about this role and your development — the answer appears right here.",
+        )}
       </p>
 
       {history.length > 0 && (
@@ -65,7 +70,10 @@ export function FitFollowUpCard({ data }: { data: FitDetail }) {
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) ask()
           }}
-          placeholder="e.g. Which growth area should I focus on first, and how?"
+          placeholder={t(
+            "fitFollowUpCard.placeholder",
+            "e.g. Which growth area should I focus on first, and how?",
+          )}
           className="min-h-[64px] flex-1 resize-y rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#1f2937] outline-none focus:border-[#0D9488]"
         />
         <button
@@ -75,13 +83,16 @@ export function FitFollowUpCard({ data }: { data: FitDetail }) {
           className="inline-flex h-fit items-center justify-center gap-1.5 self-end rounded-lg bg-[#0D9488] px-4 py-2 text-sm font-medium text-white hover:bg-[#0b8078] disabled:opacity-50"
         >
           {explain.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          Ask
+          {t("fitFollowUpCard.ask", "Ask")}
         </button>
       </div>
 
       {error && (
         <p className="mt-2 text-sm text-[#b91c1c]">
-          That didn&apos;t go through — please try again in a moment.
+          {t(
+            "fitFollowUpCard.error",
+            "That didn't go through — please try again in a moment.",
+          )}
         </p>
       )}
     </FitCard>

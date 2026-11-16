@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import {
   ArrowRight,
   CheckCircle2,
@@ -69,20 +71,40 @@ import { FitPageHeader } from "@/components/fit/primitives"
 // dropdown below, which is already cross-surface.
 const BLUEPRINT_ORG_ID = "job-fit"
 
-const ARCHETYPE_CHOICES: { value: "" | BlueprintArchetype; label: string; hint: string }[] = [
-  { value: "", label: "Auto-detect", hint: "Classify from the title" },
-  { value: "operational", label: "Operational", hint: "Hands-on / task-led" },
-  { value: "managerial", label: "Managerial", hint: "Judgment + people" },
-  { value: "executive", label: "Executive", hint: "Strategy + relationships" },
-]
+function archetypeChoices(t: TFunction): { value: "" | BlueprintArchetype; label: string; hint: string }[] {
+  return [
+    {
+      value: "",
+      label: t("blueprintStudio.archetypeAutoLabel", "Auto-detect"),
+      hint: t("blueprintStudio.archetypeAutoHint", "Classify from the title"),
+    },
+    {
+      value: "operational",
+      label: t("blueprintStudio.archetypeOperationalLabel", "Operational"),
+      hint: t("blueprintStudio.archetypeOperationalHint", "Hands-on / task-led"),
+    },
+    {
+      value: "managerial",
+      label: t("blueprintStudio.archetypeManagerialLabel", "Managerial"),
+      hint: t("blueprintStudio.archetypeManagerialHint", "Judgment + people"),
+    },
+    {
+      value: "executive",
+      label: t("blueprintStudio.archetypeExecutiveLabel", "Executive"),
+      hint: t("blueprintStudio.archetypeExecutiveHint", "Strategy + relationships"),
+    },
+  ]
+}
 
-const PROGRESS_STAGES = [
-  "Reading the role…",
-  "Classifying the role shape…",
-  "Drafting the knowledge areas…",
-  "Organizing the tree…",
-  "Finalizing the blueprint…",
-]
+function progressStages(t: TFunction): string[] {
+  return [
+    t("blueprintStudio.stageReading", "Reading the role…"),
+    t("blueprintStudio.stageClassifying", "Classifying the role shape…"),
+    t("blueprintStudio.stageDrafting", "Drafting the knowledge areas…"),
+    t("blueprintStudio.stageOrganizing", "Organizing the tree…"),
+    t("blueprintStudio.stageFinalizing", "Finalizing the blueprint…"),
+  ]
+}
 
 type View =
   | { step: "form" }
@@ -129,6 +151,7 @@ function NodeRow({
   onRename?: (ref: string, name: string) => void
   onRemove?: (ref: string) => void
 }) {
+  const { t } = useTranslation("jobFitPages")
   return (
     <div
       className="flex items-start gap-2 rounded-lg border border-border p-2.5"
@@ -137,7 +160,10 @@ function NodeRow({
       <div className="flex flex-1 flex-col gap-1.5">
         {onRename ? (
           <Input
-            aria-label={`Node ${node.ref} name`}
+            aria-label={t("blueprintStudio.nodeNameLabel", {
+              defaultValue: "Node {{ref}} name",
+              ref: node.ref,
+            })}
             value={node.name}
             onChange={(e) => onRename(node.ref, e.target.value)}
             className="h-8 text-sm font-medium"
@@ -164,7 +190,10 @@ function NodeRow({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={`Remove ${node.name}`}
+          aria-label={t("blueprintStudio.removeNodeLabel", {
+            defaultValue: "Remove {{name}}",
+            name: node.name,
+          })}
           onClick={() => onRemove(node.ref)}
           className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
         >
@@ -183,13 +212,17 @@ const selectClass = cn(
 
 // ── Step 1: pick or describe a role, then draft ──────────────────────────────
 
-const formSchema = z.object({
-  role_title: z.string().min(1, "Name the role you want to be measured against"),
-  context: z.string().optional(),
-  archetype: z.enum(["", "operational", "managerial", "executive"]),
-})
+function makeFormSchema(t: TFunction) {
+  return z.object({
+    role_title: z
+      .string()
+      .min(1, t("blueprintStudio.roleTitleRequired", "Name the role you want to be measured against")),
+    context: z.string().optional(),
+    archetype: z.enum(["", "operational", "managerial", "executive"]),
+  })
+}
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<ReturnType<typeof makeFormSchema>>
 
 function FormStep({
   onDrafted,
@@ -198,6 +231,8 @@ function FormStep({
   onDrafted: (bp: BlueprintGenerateResponse) => void
   onLoadedSaved: (bp: SavedRoleBlueprint) => void
 }) {
+  const { t } = useTranslation("jobFitPages")
+  const formSchema = useMemo(() => makeFormSchema(t), [t])
   const generate = useGenerateBlueprint()
   const jobDnaList = useJobDnaList()
   const jobDnaSeed = useJobDnaSeed()
@@ -225,13 +260,14 @@ function FormStep({
 
   const startProgress = () => {
     setProgress(8)
-    setStatusMsg(PROGRESS_STAGES[0])
+    const stages = progressStages(t)
+    setStatusMsg(stages[0])
     let p = 8
     tickRef.current = setInterval(() => {
       p = Math.min(90, p + 6)
       setProgress(p)
-      const idx = Math.min(PROGRESS_STAGES.length - 1, Math.floor((p / 90) * PROGRESS_STAGES.length))
-      setStatusMsg(PROGRESS_STAGES[idx])
+      const idx = Math.min(stages.length - 1, Math.floor((p / 90) * stages.length))
+      setStatusMsg(stages[idx])
     }, 550)
   }
   const stopProgress = (done: boolean) => {
@@ -259,7 +295,13 @@ function FormStep({
             parent_ref: n.parent_ref,
           }))
         )
-        toast.success(`Seeded from "${seed.roleTitle}" — ${seed.nodes.length} areas from its Job DNA.`)
+        toast.success(
+          t("blueprintStudio.seededToast", {
+            defaultValue: "Seeded from \"{{title}}\" — {{count}} areas from its Job DNA.",
+            title: seed.roleTitle,
+            count: seed.nodes.length,
+          }),
+        )
       },
     })
   }
@@ -280,9 +322,17 @@ function FormStep({
         setValue("role_title", suggestedTitle, { shouldValidate: true })
       }
       setUploadName(file.name)
-      toast.success(`Loaded "${file.name}" — ${text.length.toLocaleString()} characters of context.`)
+      toast.success(
+        t("blueprintStudio.loadedToast", {
+          defaultValue: "Loaded \"{{name}}\" — {{chars}} characters of context.",
+          name: file.name,
+          chars: text.length.toLocaleString(),
+        }),
+      )
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't read that file.")
+      toast.error(
+        err instanceof Error ? err.message : t("blueprintStudio.readFileError", "Couldn't read that file."),
+      )
     } finally {
       setExtracting(false)
       if (fileRef.current) fileRef.current.value = "" // allow re-uploading the same file
@@ -302,7 +352,11 @@ function FormStep({
         onSuccess: (bp) => {
           stopProgress(true)
           toast.success(
-            `Blueprint drafted — ${bp.nodes.length} knowledge areas across ${sectionCount(bp.nodes)} sections.`
+            t("blueprintStudio.draftedToast", {
+              defaultValue: "Blueprint drafted — {{areas}} knowledge areas across {{sections}} sections.",
+              areas: bp.nodes.length,
+              sections: sectionCount(bp.nodes),
+            }),
           )
           onDrafted(bp)
         },
@@ -319,12 +373,13 @@ function FormStep({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wand2 className="h-5 w-5 text-[#0D9488]" />
-          Blueprint a role
+          {t("blueprintStudio.formTitle", "Blueprint a role")}
         </CardTitle>
         <CardDescription>
-          Define the role you want to be measured against. Start from a saved role, a Job Blueprint
-          someone has already authored, an uploaded job posting, or a plain description — then review
-          the draft before anything is saved.
+          {t(
+            "blueprintStudio.formDescription",
+            "Define the role you want to be measured against. Start from a saved role, a Job Blueprint someone has already authored, an uploaded job posting, or a plain description — then review the draft before anything is saved.",
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -332,7 +387,7 @@ function FormStep({
           {/* Saved roles */}
           {roles.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="saved_role">Role</Label>
+              <Label htmlFor="saved_role">{t("blueprintStudio.roleLabel", "Role")}</Label>
               <select
                 id="saved_role"
                 defaultValue=""
@@ -340,17 +395,24 @@ function FormStep({
                 disabled={loadSavedRole.isPending}
                 className={selectClass}
               >
-                <option value="">Blueprint a new role…</option>
+                <option value="">{t("blueprintStudio.newRoleOption", "Blueprint a new role…")}</option>
                 {roles.map((r) => (
                   <option key={r.role_title} value={r.role_title}>
-                    {r.role_title} ({r.node_count} areas)
+                    {t("blueprintStudio.savedRoleOption", {
+                      defaultValue: "{{title}} ({{count}} areas)",
+                      title: r.role_title,
+                      count: r.node_count,
+                    })}
                   </option>
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
                 {loadSavedRole.isPending
-                  ? "Loading the saved blueprint…"
-                  : "Pick a role you've already blueprinted to see your fit against it, or leave it to draft a new one."}
+                  ? t("blueprintStudio.loadingSaved", "Loading the saved blueprint…")
+                  : t(
+                      "blueprintStudio.pickSavedHint",
+                      "Pick a role you've already blueprinted to see your fit against it, or leave it to draft a new one.",
+                    )}
               </p>
             </div>
           )}
@@ -358,7 +420,8 @@ function FormStep({
           {/* Existing Job DNA / Job Blueprints authored elsewhere */}
           <div className="space-y-2">
             <Label htmlFor="job_dna_seed">
-              Use an existing Job Blueprint <span className="text-muted-foreground">(optional)</span>
+              {t("blueprintStudio.useExisting", "Use an existing Job Blueprint")}{" "}
+              <span className="text-muted-foreground">{t("blueprintStudio.optional", "(optional)")}</span>
             </Label>
             <select
               id="job_dna_seed"
@@ -367,23 +430,30 @@ function FormStep({
               disabled={jobDnaList.isLoading || jobDnaSeed.isPending}
               className={selectClass}
             >
-              <option value="">Start from a role title instead</option>
+              <option value="">
+                {t("blueprintStudio.startFromTitle", "Start from a role title instead")}
+              </option>
               {(jobDnaList.data ?? []).map((jd) => (
                 <option key={jd.id} value={jd.id}>{jd.roleTitle}</option>
               ))}
             </select>
             <p className="text-xs text-muted-foreground">
               {jobDnaSeed.isPending
-                ? "Loading the blueprint's knowledge seed…"
-                : "Roles already authored in Job DNA — picking one seeds this blueprint from its completed DNA."}
+                ? t("blueprintStudio.loadingSeed", "Loading the blueprint's knowledge seed…")
+                : t(
+                    "blueprintStudio.seedHint",
+                    "Roles already authored in Job DNA — picking one seeds this blueprint from its completed DNA.",
+                  )}
             </p>
           </div>
 
           {/* Upload a job posting */}
           <div className="space-y-2">
             <Label>
-              Upload a job posting{" "}
-              <span className="text-muted-foreground">(optional — Word, PDF, or text)</span>
+              {t("blueprintStudio.uploadLabel", "Upload a job posting")}{" "}
+              <span className="text-muted-foreground">
+                {t("blueprintStudio.uploadOptional", "(optional — Word, PDF, or text)")}
+              </span>
             </Label>
             <div className="flex flex-wrap items-center gap-2">
               <input
@@ -392,7 +462,7 @@ function FormStep({
                 accept={ACCEPTED_ROLE_FILE_TYPES}
                 onChange={onFileChosen}
                 className="hidden"
-                aria-label="Upload a job posting"
+                aria-label={t("blueprintStudio.uploadLabel", "Upload a job posting")}
               />
               <Button
                 type="button"
@@ -401,9 +471,13 @@ function FormStep({
                 disabled={extracting}
               >
                 {extracting ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reading…</>
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("blueprintStudio.reading", "Reading…")}
+                  </>
                 ) : (
-                  <><FileUp className="mr-2 h-4 w-4" /> Upload a job posting</>
+                  <>
+                    <FileUp className="mr-2 h-4 w-4" /> {t("blueprintStudio.uploadLabel", "Upload a job posting")}
+                  </>
                 )}
               </Button>
               {uploadName && !extracting && (
@@ -413,16 +487,21 @@ function FormStep({
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Drop in the posting or job description — we read the text into the description below and
-              guess the title. Nothing is uploaded to a server.
+              {t(
+                "blueprintStudio.uploadHint",
+                "Drop in the posting or job description — we read the text into the description below and guess the title. Nothing is uploaded to a server.",
+              )}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role_title">Role title</Label>
+            <Label htmlFor="role_title">{t("blueprintStudio.roleTitleLabel", "Role title")}</Label>
             <Input
               id="role_title"
-              placeholder="e.g. Director of Operations, or Senior Product Manager"
+              placeholder={t(
+                "blueprintStudio.roleTitlePlaceholder",
+                "e.g. Director of Operations, or Senior Product Manager",
+              )}
               {...register("role_title")}
             />
             {errors.role_title && (
@@ -432,24 +511,28 @@ function FormStep({
 
           <div className="space-y-2">
             <Label htmlFor="context">
-              Describe the role <span className="text-muted-foreground">(optional)</span>
+              {t("blueprintStudio.describeRole", "Describe the role")}{" "}
+              <span className="text-muted-foreground">{t("blueprintStudio.optional", "(optional)")}</span>
             </Label>
             <Textarea
               id="context"
               rows={4}
-              placeholder="Paste the job posting, or describe what the role actually involves. (An uploaded file fills this in.)"
+              placeholder={t(
+                "blueprintStudio.contextPlaceholder",
+                "Paste the job posting, or describe what the role actually involves. (An uploaded file fills this in.)",
+              )}
               {...register("context")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Role shape</Label>
+            <Label>{t("blueprintStudio.roleShape", "Role shape")}</Label>
             <Controller
               control={control}
               name="archetype"
               render={({ field }) => (
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {ARCHETYPE_CHOICES.map((choice) => (
+                  {archetypeChoices(t).map((choice) => (
                     <button
                       key={choice.value || "auto"}
                       type="button"
@@ -469,15 +552,17 @@ function FormStep({
               )}
             />
             <p className="text-xs text-muted-foreground">
-              The shape decides which knowledge sections lead — an executive role is measured on
-              judgment and relationships, not a task list.
+              {t(
+                "blueprintStudio.shapeHint",
+                "The shape decides which knowledge sections lead — an executive role is measured on judgment and relationships, not a task list.",
+              )}
             </p>
           </div>
 
           {/* Draft button + progress */}
           {drafting ? (
             <div className="space-y-2" role="status" aria-live="polite">
-              <Progress value={progress} aria-label="Drafting the blueprint" />
+              <Progress value={progress} aria-label={t("blueprintStudio.draftingLabel", "Drafting the blueprint")} />
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {statusMsg} <span className="tabular-nums">({Math.round(progress)}%)</span>
@@ -485,7 +570,7 @@ function FormStep({
             </div>
           ) : (
             <Button type="submit" className="w-full">
-              <Sparkles className="mr-2 h-4 w-4" /> Draft the blueprint
+              <Sparkles className="mr-2 h-4 w-4" /> {t("blueprintStudio.draftButton", "Draft the blueprint")}
             </Button>
           )}
         </form>
@@ -505,6 +590,7 @@ function ReviewStep({
   onStartOver: () => void
   onSaved: (roleTitle: string, created: number) => void
 }) {
+  const { t } = useTranslation("jobFitPages")
   const persist = usePersistBlueprint()
   const [nodes, setNodes] = useState<BlueprintNode[]>(blueprint.nodes)
   const displayNodes = useMemo(() => buildDisplayOrder(nodes), [nodes])
@@ -532,14 +618,22 @@ function ReviewStep({
   const approve = () => {
     const clean = nodes.filter((n) => n.name.trim().length > 0)
     if (clean.length === 0) {
-      toast.error("Nothing to save — add or keep at least one node.")
+      toast.error(
+        t("blueprintStudio.nothingToSave", "Nothing to save — add or keep at least one node."),
+      )
       return
     }
     persist.mutate(
       { org_id: BLUEPRINT_ORG_ID, role_title: blueprint.role_title, nodes: clean },
       {
         onSuccess: (res) => {
-          toast.success(`Saved "${blueprint.role_title}" — ${res.created} knowledge areas.`)
+          toast.success(
+            t("blueprintStudio.savedToast", {
+              defaultValue: "Saved \"{{title}}\" — {{count}} knowledge areas.",
+              title: blueprint.role_title,
+              count: res.created,
+            }),
+          )
           onSaved(blueprint.role_title, res.created)
         },
       }
@@ -554,11 +648,18 @@ function ReviewStep({
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6 shrink-0 text-[#0D9488]" />
             <div>
-              <div className="font-semibold">Blueprint drafted</div>
+              <div className="font-semibold">{t("blueprintStudio.draftedTitle", "Blueprint drafted")}</div>
               <div className="text-sm text-muted-foreground">
-                {keepCount} knowledge areas across {sectionCount(nodes)} sections ·{" "}
-                <span className="capitalize">{blueprint.archetype}</span> shape · review and edit
-                below, then save to measure yourself against it.
+                {t("blueprintStudio.draftedSummaryLead", {
+                  defaultValue: "{{areas}} knowledge areas across {{sections}} sections ·",
+                  areas: keepCount,
+                  sections: sectionCount(nodes),
+                })}{" "}
+                <span className="capitalize">{blueprint.archetype}</span>{" "}
+                {t(
+                  "blueprintStudio.draftedSummaryTail",
+                  "shape · review and edit below, then save to measure yourself against it.",
+                )}
               </div>
             </div>
           </div>
@@ -572,14 +673,20 @@ function ReviewStep({
             {blueprint.role_title}
           </CardTitle>
           <CardDescription className="mt-1">
-            {blueprint.archetype_rationale}. Rename or remove anything — nothing is stored until you
-            save.
+            {blueprint.archetype_rationale}.{" "}
+            {t(
+              "blueprintStudio.reviewHint",
+              "Rename or remove anything — nothing is stored until you save.",
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {displayNodes.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Every node was removed. Start over to draft a fresh blueprint.
+              {t(
+                "blueprintStudio.allRemoved",
+                "Every node was removed. Start over to draft a fresh blueprint.",
+              )}
             </p>
           )}
           {displayNodes.map((node) => (
@@ -590,7 +697,7 @@ function ReviewStep({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button type="button" variant="ghost" onClick={onStartOver}>
-          <RotateCcw className="mr-2 h-4 w-4" /> Start over
+          <RotateCcw className="mr-2 h-4 w-4" /> {t("blueprintStudio.startOver", "Start over")}
         </Button>
         <Button
           type="button"
@@ -598,11 +705,16 @@ function ReviewStep({
           disabled={persist.isPending || displayNodes.length === 0}
         >
           {persist.isPending ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("blueprintStudio.saving", "Saving…")}
+            </>
           ) : (
             <>
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              Save role &amp; {keepCount} knowledge areas
+              {t("blueprintStudio.saveRole", {
+                defaultValue: "Save role & {{count}} knowledge areas",
+                count: keepCount,
+              })}
               <ArrowRight className="ml-2 h-4 w-4" />
             </>
           )}
@@ -621,6 +733,7 @@ function SavedRoleView({
   blueprint: SavedRoleBlueprint
   onBack: () => void
 }) {
+  const { t } = useTranslation("jobFitPages")
   const navigate = useNavigate()
   const displayNodes = useMemo(() => buildDisplayOrder(blueprint.nodes), [blueprint.nodes])
   return (
@@ -632,13 +745,16 @@ function SavedRoleView({
             <div>
               <div className="font-semibold">{blueprint.role_title}</div>
               <div className="text-sm text-muted-foreground">
-                Saved blueprint · {blueprint.nodes.length} knowledge areas. Ready to measure yourself
-                against.
+                {t("blueprintStudio.savedSummary", {
+                  defaultValue:
+                    "Saved blueprint · {{count}} knowledge areas. Ready to measure yourself against.",
+                  count: blueprint.nodes.length,
+                })}
               </div>
             </div>
           </div>
           <Button type="button" onClick={() => navigate(ROUTES.JOB_FIT.MATCHES)}>
-            <ScanSearch className="mr-2 h-4 w-4" /> See my fit
+            <ScanSearch className="mr-2 h-4 w-4" /> {t("blueprintStudio.seeMyFit", "See my fit")}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>
@@ -647,7 +763,9 @@ function SavedRoleView({
       <Card>
         <CardContent className="space-y-2 pt-6">
           {displayNodes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">This role has no saved knowledge areas.</p>
+            <p className="text-sm text-muted-foreground">
+              {t("blueprintStudio.noSavedAreas", "This role has no saved knowledge areas.")}
+            </p>
           ) : (
             displayNodes.map((node) => <NodeRow key={node.ref} node={node} />)
           )}
@@ -655,7 +773,7 @@ function SavedRoleView({
       </Card>
 
       <Button type="button" variant="ghost" onClick={onBack}>
-        <RotateCcw className="mr-2 h-4 w-4" /> Blueprint another role
+        <RotateCcw className="mr-2 h-4 w-4" /> {t("blueprintStudio.blueprintAnother", "Blueprint another role")}
       </Button>
     </div>
   )
@@ -672,15 +790,21 @@ function DoneStep({
   created: number
   onBlueprintAnother: () => void
 }) {
+  const { t } = useTranslation("jobFitPages")
   const navigate = useNavigate()
   return (
     <Card>
       <CardContent className="space-y-6 py-8 text-center">
         <div className="flex flex-col items-center gap-2">
           <CheckCircle2 className="h-12 w-12 text-[#0D9488]" />
-          <h2 className="text-xl font-semibold">Saved “{roleTitle}”</h2>
+          <h2 className="text-xl font-semibold">
+            {t("blueprintStudio.doneTitle", { defaultValue: "Saved “{{title}}”", title: roleTitle })}
+          </h2>
           <p className="max-w-md text-sm text-muted-foreground">
-            {created} knowledge areas are saved. Now find out how you measure against them.
+            {t("blueprintStudio.doneBody", {
+              defaultValue: "{{count}} knowledge areas are saved. Now find out how you measure against them.",
+              count: created,
+            })}
           </p>
         </div>
 
@@ -693,10 +817,14 @@ function DoneStep({
             <ScanSearch className="h-5 w-5 shrink-0 text-[#0D9488]" />
             <div className="flex-1">
               <div className="text-sm font-semibold">
-                See my fit <span className="text-muted-foreground">(recommended)</span>
+                {t("blueprintStudio.seeMyFit", "See my fit")}{" "}
+                <span className="text-muted-foreground">{t("blueprintStudio.recommended", "(recommended)")}</span>
               </div>
               <div className="text-xs text-muted-foreground">
-                How your profile lines up against this role, area by area.
+                {t(
+                  "blueprintStudio.seeMyFitHint",
+                  "How your profile lines up against this role, area by area.",
+                )}
               </div>
             </div>
             <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -709,9 +837,14 @@ function DoneStep({
           >
             <Target className="h-5 w-5 shrink-0 text-muted-foreground" />
             <div className="flex-1">
-              <div className="text-sm font-semibold">Show me my growth areas</div>
+              <div className="text-sm font-semibold">
+                {t("blueprintStudio.showGrowth", "Show me my growth areas")}
+              </div>
               <div className="text-xs text-muted-foreground">
-                What's missing, and which growth areas are worth working on first.
+                {t(
+                  "blueprintStudio.showGrowthHint",
+                  "What's missing, and which growth areas are worth working on first.",
+                )}
               </div>
             </div>
           </button>
@@ -723,8 +856,10 @@ function DoneStep({
           >
             <RouteIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
             <div className="flex-1">
-              <div className="text-sm font-semibold">Plan the pathway</div>
-              <div className="text-xs text-muted-foreground">Turn the growth areas into a route to the role.</div>
+              <div className="text-sm font-semibold">{t("blueprintStudio.planPathway", "Plan the pathway")}</div>
+              <div className="text-xs text-muted-foreground">
+                {t("blueprintStudio.planPathwayHint", "Turn the growth areas into a route to the role.")}
+              </div>
             </div>
           </button>
 
@@ -735,8 +870,12 @@ function DoneStep({
           >
             <Wand2 className="h-5 w-5 shrink-0 text-muted-foreground" />
             <div className="flex-1">
-              <div className="text-sm font-semibold">Blueprint another role</div>
-              <div className="text-xs text-muted-foreground">Compare yourself against a second target.</div>
+              <div className="text-sm font-semibold">
+                {t("blueprintStudio.blueprintAnother", "Blueprint another role")}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {t("blueprintStudio.blueprintAnotherHint", "Compare yourself against a second target.")}
+              </div>
             </div>
           </button>
         </div>
@@ -748,14 +887,18 @@ function DoneStep({
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function BlueprintStudioPage() {
+  const { t } = useTranslation("jobFitPages")
   const [view, setView] = useState<View>({ step: "form" })
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
       <FitPageHeader
         icon={Wand2}
-        title="Blueprint a role"
-        description="Define the role you're aiming at — from a saved role, an existing Job Blueprint, an uploaded posting, or a description. Job Fit measures you against it."
+        title={t("blueprintStudio.formTitle", "Blueprint a role")}
+        description={t(
+          "blueprintStudio.pageDescription",
+          "Define the role you're aiming at — from a saved role, an existing Job Blueprint, an uploaded posting, or a description. Job Fit measures you against it.",
+        )}
       />
 
       {view.step === "form" && (
