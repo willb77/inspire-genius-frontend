@@ -1,4 +1,5 @@
 import { Layers } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { FitComponentsResponse, JobComponents } from "@/types/job-fit/components"
 import { FitCard, FitPill, FitSectionTitle, FitMeter } from "@/components/fit/primitives"
 import {
@@ -36,12 +37,15 @@ export function FitComponentsCard({
   person,
   benchmarksValidated,
 }: Props) {
+  const { t } = useTranslation("jobFitPages")
   if (isError) {
     return (
       <FitCard className="mb-6">
         <p role="alert" className="text-sm text-[#6b7280]">
-          We couldn&apos;t load how this role sits with your goals and experience. Your fit above is
-          unaffected.
+          {t(
+            "fitComponentsCard.loadError",
+            "We couldn't load how this role sits with your goals and experience. Your fit above is unaffected.",
+          )}
         </p>
       </FitCard>
     )
@@ -63,10 +67,14 @@ export function FitComponentsCard({
   const { goalAlignment: goal, experienceMatch: exp, composite } = v1
   const goalReason = goalAbsentReason(goal)
   const expReason = experienceAbsentReason(exp)
+  const listAnd = t("shared.listAnd", " and ")
+  const weightsText = weights
+    ? `${weights.behavioural}/${weights.goalAlignment}/${weights.experienceMatch}`
+    : ""
 
   return (
     <FitCard className="mb-6">
-      <FitSectionTitle>How this is made</FitSectionTitle>
+      <FitSectionTitle>{t("fitComponentsCard.title", "How this is made")}</FitSectionTitle>
 
       <div className="space-y-4">
         <div>
@@ -86,9 +94,27 @@ export function FitComponentsCard({
           </div>
           {goal.status === "scored" ? (
             <p className="text-sm text-[#4b5563]">
-              Linked goal{goal.goalTitles.length === 1 ? "" : "s"}: {goal.goalTitles.join("; ")}.
+              {goal.goalTitles.length === 1
+                ? t("fitComponentsCard.linkedGoalOne", {
+                    defaultValue: "Linked goal: {{titles}}.",
+                    titles: goal.goalTitles.join("; "),
+                  })
+                : t("fitComponentsCard.linkedGoalOther", {
+                    defaultValue: "Linked goals: {{titles}}.",
+                    titles: goal.goalTitles.join("; "),
+                  })}
               {goal.pullingDimensions.length > 0 &&
-                ` ${goal.verdict === "at-tension" ? "Pulling against it" : "Carrying it"}: ${goal.pullingDimensions.join(" and ")}.`}
+                ` ${
+                  goal.verdict === "at-tension"
+                    ? t("fitComponentsCard.pullingAgainst", {
+                        defaultValue: "Pulling against it: {{dimensions}}.",
+                        dimensions: goal.pullingDimensions.join(listAnd),
+                      })
+                    : t("fitComponentsCard.carrying", {
+                        defaultValue: "Carrying it: {{dimensions}}.",
+                        dimensions: goal.pullingDimensions.join(listAnd),
+                      })
+                }`}
             </p>
           ) : (
             <p className="text-sm text-[#6b7280]">{goalReason}</p>
@@ -100,13 +126,22 @@ export function FitComponentsCard({
             <span className="font-medium text-[#1f2937]">{COMPONENT_LABEL.experienceMatch}</span>
             {exp.status === "scored" && (
               <span className="text-[#6b7280]">
-                {exp.covered} of {exp.total} activities
+                {t("fitComponentsCard.activitiesCovered", {
+                  defaultValue: "{{covered}} of {{total}} activities",
+                  covered: exp.covered,
+                  total: exp.total,
+                })}
               </span>
             )}
           </div>
           {exp.status === "scored" ? (
             exp.uncovered.length > 0 && (
-              <p className="text-sm text-[#4b5563]">Not yet on your résumé: {exp.uncovered.join("; ")}.</p>
+              <p className="text-sm text-[#4b5563]">
+                {t("fitComponentsCard.notOnResume", {
+                  defaultValue: "Not yet on your résumé: {{items}}.",
+                  items: exp.uncovered.join("; "),
+                })}
+              </p>
             )
           ) : (
             <p className="text-sm text-[#6b7280]">{expReason}</p>
@@ -117,19 +152,39 @@ export function FitComponentsCard({
           <div className="flex items-center gap-2 font-medium text-[#1f2937]">
             <Layers className="h-4 w-4 text-[#0D9488]" />
             {composite.score != null ? (
-              <span>Composite: {Math.round(composite.score)}%</span>
+              <span>
+                {t("fitComponentsCard.composite", {
+                  defaultValue: "Composite: {{score}}%",
+                  score: Math.round(composite.score),
+                })}
+              </span>
             ) : (
-              <span>No composite yet</span>
+              <span>{t("fitComponentsCard.noComposite", "No composite yet")}</span>
             )}
           </div>
           <p className="mt-1 text-[#6b7280]">
             {composite.score != null
-              ? `Weighted ${weights ? `${weights.behavioural}/${weights.goalAlignment}/${weights.experienceMatch}` : ""} across behavioural fit, goals and experience` +
-                (composite.missing.length > 0
-                  ? `, rescaled without ${composite.missing.map((k) => COMPONENT_LABEL[k].toLowerCase()).join(" and ")}.`
-                  : ".")
-              : "It needs at least one more part beyond your behavioural fit; the fit % above is your read for now."}{" "}
-            Decision support for your own development — never a selection verdict.
+              ? composite.missing.length > 0
+                ? t("fitComponentsCard.weightedRescaled", {
+                    defaultValue:
+                      "Weighted {{weights}} across behavioural fit, goals and experience, rescaled without {{missing}}.",
+                    weights: weightsText,
+                    missing: composite.missing
+                      .map((k) => COMPONENT_LABEL[k].toLowerCase())
+                      .join(listAnd),
+                  })
+                : t("fitComponentsCard.weighted", {
+                    defaultValue: "Weighted {{weights}} across behavioural fit, goals and experience.",
+                    weights: weightsText,
+                  })
+              : t(
+                  "fitComponentsCard.needsMore",
+                  "It needs at least one more part beyond your behavioural fit; the fit % above is your read for now.",
+                )}{" "}
+            {t(
+              "fitComponentsCard.disclaimer",
+              "Decision support for your own development — never a selection verdict.",
+            )}
           </p>
         </div>
       </div>

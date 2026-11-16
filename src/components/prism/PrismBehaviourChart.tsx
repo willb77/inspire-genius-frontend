@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { BEHAVIOUR_CONFIG } from '@/constants/prism'
 import type { PRISMBehaviourDimension } from '@/types/prism/api-types'
 
@@ -8,12 +9,13 @@ type PrismBehaviourChartProps = {
 export default function PrismBehaviourChart({
   behaviours,
 }: PrismBehaviourChartProps) {
+  const { t } = useTranslation('prismUi')
   if (!behaviours.length) return null
 
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-muted-foreground">
-        8D Behaviour Dimensions
+        {t('behaviourChart.heading', { defaultValue: '8D Behaviour Dimensions' })}
       </h3>
       <div className="space-y-2">
         {behaviours.map((b) => {

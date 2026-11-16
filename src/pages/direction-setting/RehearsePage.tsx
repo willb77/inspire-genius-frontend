@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import {
   ArrowRight,
@@ -84,11 +85,16 @@ export function QuestionPrompt({
   index?: number
   total?: number
 }) {
+  const { t } = useTranslation("directionPages")
   return (
     <div>
       {typeof index === "number" && typeof total === "number" && (
         <p className="mb-1 text-xs text-muted-foreground">
-          Question {index} of {total}
+          {t("rehearse.questionXofY", {
+            defaultValue: "Question {{index}} of {{total}}",
+            index,
+            total,
+          })}
         </p>
       )}
       <p className="flex items-start gap-2 font-medium">
@@ -117,7 +123,7 @@ export function AnswerInput({
   onSubmit,
   disabled = false,
   isSubmitting = false,
-  placeholder = "Say it the way you'd actually say it — no need to polish.",
+  placeholder,
 }: {
   value?: string
   onChange?: (next: string) => void
@@ -126,6 +132,7 @@ export function AnswerInput({
   isSubmitting?: boolean
   placeholder?: string
 }) {
+  const { t } = useTranslation("directionPages")
   const blank = !value?.trim()
   return (
     <div className="space-y-2">
@@ -134,8 +141,11 @@ export function AnswerInput({
         onChange={(e) => onChange?.(e.target.value)}
         disabled={disabled}
         rows={5}
-        aria-label="Your answer"
-        placeholder={placeholder}
+        aria-label={t("rehearse.yourAnswer", "Your answer")}
+        placeholder={
+          placeholder ??
+          t("rehearse.answerPlaceholder", "Say it the way you'd actually say it — no need to polish.")
+        }
       />
       <div className="flex flex-wrap items-center gap-2">
         <Button
@@ -146,20 +156,21 @@ export function AnswerInput({
           {isSubmitting && (
             <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
           )}
-          {blank ? "Nothing came to mind" : "Try this answer"}
+          {blank
+            ? t("rehearse.nothingCameToMind", "Nothing came to mind")
+            : t("rehearse.tryThisAnswer", "Try this answer")}
         </Button>
         {/* Voice is the obvious second input for a rehearsal — a spoken answer
             is the thing being practised. Still a placed affordance rather than a
             promise: there is no voice path for this stage yet. */}
         <Button type="button" variant="outline" size="sm" disabled>
           <Mic className="mr-1.5 h-4 w-4" aria-hidden />
-          Answer out loud
+          {t("rehearse.answerOutLoud", "Answer out loud")}
         </Button>
       </div>
       {blank && !disabled && (
         <p className="text-xs text-muted-foreground">
-          You can send this blank. Drawing one is an answer too, and it gets a
-          reply rather than a complaint.
+          {t("rehearse.youCanSendThisBlank", "You can send this blank. Drawing one is an answer too, and it gets a reply rather than a complaint.")}
         </p>
       )}
     </div>
@@ -180,6 +191,7 @@ export function FeedbackPanel({
 }: {
   feedback?: RehearsalFeedback | null
 }) {
+  const { t } = useTranslation("directionPages")
   if (!feedback) return null
 
   const warm = feedback.phrasing === "specialist" && !!feedback.statement.trim()
@@ -195,7 +207,7 @@ export function FeedbackPanel({
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-          On that answer
+          {t("rehearse.onThatAnswer", "On that answer")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -205,7 +217,7 @@ export function FeedbackPanel({
           <>
             <p className="text-muted-foreground">{feedback.noticed}</p>
             <div>
-              <p className="font-medium">One thing to try next time</p>
+              <p className="font-medium">{t("rehearse.oneThingToTryNext", "One thing to try next time")}</p>
               <p className="mt-1 text-muted-foreground">{feedback.tryThis}</p>
             </div>
           </>
@@ -228,11 +240,12 @@ export function FeedbackPanel({
 
 /** What has been answered so far, for someone who wants to look back over it. */
 function Transcript({ turns }: { turns: RehearsalTurn[] }) {
+  const { t } = useTranslation("directionPages")
   if (!turns.length) return null
   return (
     <section aria-labelledby="rehearse-transcript">
       <h2 id="rehearse-transcript" className="mb-2 text-sm font-medium">
-        What you said
+        {t("rehearse.whatYouSaid", "What you said")}
       </h2>
       <ul className="space-y-3">
         {turns.map((turn) => (
@@ -246,7 +259,7 @@ function Transcript({ turns }: { turns: RehearsalTurn[] }) {
                   </p>
                 ) : (
                   <p className="text-sm italic text-muted-foreground">
-                    You left this one blank.
+                    {t("rehearse.youLeftThisOneBlank", "You left this one blank.")}
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground">
@@ -282,25 +295,26 @@ function PrivacyPanel({
   onSharingChange: (shared: boolean) => void
   onDelete: () => void
 }) {
+  const { t } = useTranslation("directionPages")
   const shared = session.sharedWithCoach === true
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Lock className="h-4 w-4 text-muted-foreground" aria-hidden />
-          This transcript is yours
+          {t("rehearse.thisTranscriptIsYours", "This transcript is yours")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
             <label htmlFor="rehearse-sharing" className="font-medium">
-              Share this with a coach
+              {t("rehearse.shareThisWithACoach", "Share this with a coach")}
             </label>
             <p className="mt-0.5 text-muted-foreground">
               {shared
-                ? "On. A coach you work with can read these answers. Turn it off whenever you like."
-                : "Off. Nobody else can see these answers — not a coach, not your employer."}
+                ? t("rehearse.sharingOn", "On. A coach you work with can read these answers. Turn it off whenever you like.")
+                : t("rehearse.sharingOff", "Off. Nobody else can see these answers — not a coach, not your employer.")}
             </p>
           </div>
           <Switch
@@ -308,34 +322,35 @@ function PrivacyPanel({
             checked={shared}
             disabled={isSavingSharing}
             onCheckedChange={onSharingChange}
-            aria-label="Share this with a coach"
+            aria-label={t("rehearse.shareThisWithACoach", "Share this with a coach")}
           />
         </div>
 
         <p className="text-muted-foreground">
-          Kept for {session.retentionDays} days after you last use it, then
-          deleted on its own. Coming back to it starts that clock again.
+          {t("rehearse.retention", {
+            defaultValue:
+              "Kept for {{days}} days after you last use it, then deleted on its own. Coming back to it starts that clock again.",
+            days: session.retentionDays,
+          })}
         </p>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button type="button" variant="ghost" size="sm" disabled={isDeleting}>
               <Trash2 className="mr-1.5 h-4 w-4" aria-hidden />
-              Delete this rehearsal
+              {t("rehearse.deleteThisRehearsal", "Delete this rehearsal")}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete this rehearsal?</AlertDialogTitle>
+              <AlertDialogTitle>{t("rehearse.deleteThisRehearsal2", "Delete this rehearsal?")}</AlertDialogTitle>
               <AlertDialogDescription>
-                The questions, your answers and the feedback on them are removed —
-                not hidden, not archived. Your journey still shows you did this
-                step. There is no undo, which is the point.
+                {t("rehearse.theQuestionsYourAnswersAnd", "The questions, your answers and the feedback on them are removed — not hidden, not archived. Your journey still shows you did this step. There is no undo, which is the point.")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Keep it</AlertDialogCancel>
-              <AlertDialogAction onClick={onDelete}>Delete it</AlertDialogAction>
+              <AlertDialogCancel>{t("rehearse.keepIt", "Keep it")}</AlertDialogCancel>
+              <AlertDialogAction onClick={onDelete}>{t("rehearse.deleteIt", "Delete it")}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -345,6 +360,7 @@ function PrivacyPanel({
 }
 
 export default function RehearsePage() {
+  const { t } = useTranslation("directionPages")
   const navigate = useNavigate()
   const advance = useAdvanceJourney()
   const {
@@ -390,17 +406,13 @@ export default function RehearsePage() {
   return (
     <div className="space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-semibold">Practising out loud</h1>
+        <h1 className="text-2xl font-semibold">{t("rehearse.practisingOutLoud", "Practising out loud")}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Knowing what you want to say and being able to say it under mild
-          pressure are two different skills. This step is for the second one —
-          answering a few likely questions and getting a read on how the answer
-          lands, in private, with nobody keeping score.
+          {t("rehearse.knowingWhatYouWantTo", "Knowing what you want to say and being able to say it under mild pressure are two different skills. This step is for the second one — answering a few likely questions and getting a read on how the answer lands, in private, with nobody keeping score.")}
         </p>
         <p className="mt-3 max-w-2xl rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">This step is optional.</span>{" "}
-          Plenty of people go straight from the prep sheet to the interview and do
-          just fine. Skipping it doesn&apos;t leave a hole in anything.
+          <span className="font-medium text-foreground">{t("rehearse.thisStepIsOptional", "This step is optional.")}</span>{" "}
+          {t("rehearse.plentyOfPeopleGoStraight", "Plenty of people go straight from the prep sheet to the interview and do just fine. Skipping it doesn't leave a hole in anything.")}
         </p>
       </header>
 
@@ -413,7 +425,7 @@ export default function RehearsePage() {
       {phase === "loading" && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Looking for anything you&apos;ve already practised…
+          {t("rehearse.lookingForAnythingYouVe", "Looking for anything you've already practised…")}
         </div>
       )}
 
@@ -421,8 +433,7 @@ export default function RehearsePage() {
         <Card>
           <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">
-              We couldn&apos;t load your rehearsal just now. Refresh to try again —
-              nothing you&apos;ve answered has been lost.
+              {t("rehearse.weCouldnTLoadYour", "We couldn't load your rehearsal just now. Refresh to try again — nothing you've answered has been lost.")}
             </p>
           </CardContent>
         </Card>
@@ -433,17 +444,16 @@ export default function RehearsePage() {
         <Card>
           <CardContent className="space-y-3 p-6">
             <p className="text-sm font-medium">
-              That rehearsal isn&apos;t there any more.
+              {t("rehearse.thatRehearsalIsnTThere", "That rehearsal isn't there any more.")}
             </p>
             <p className="text-sm text-muted-foreground">
-              It was either deleted or it aged out. There&apos;s nothing to recover
-              — and starting a new one takes a minute.
+              {t("rehearse.itWasEitherDeletedOr", "It was either deleted or it aged out. There's nothing to recover — and starting a new one takes a minute.")}
             </p>
             <Button type="button" onClick={() => start(true)} disabled={isStarting}>
               {isStarting && (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
               )}
-              Start a new one
+              {t("rehearse.startANewOne", "Start a new one")}
             </Button>
           </CardContent>
         </Card>
@@ -453,15 +463,15 @@ export default function RehearsePage() {
       {phase === "unavailable" && (
         <Card>
           <CardContent className="space-y-3 p-6">
-            <p className="text-sm font-medium">Nothing to rehearse against yet.</p>
+            <p className="text-sm font-medium">{t("rehearse.nothingToRehearseAgainstYet", "Nothing to rehearse against yet.")}</p>
             <p className="text-sm text-muted-foreground">
               {note ??
-                "There is no interview guide on file yet, so there is nothing to rehearse against. Stage 11 builds one out of your own gaps against the role you are targeting."}
+                t("rehearse.noGuideOnFile", "There is no interview guide on file yet, so there is nothing to rehearse against. Stage 11 builds one out of your own gaps against the role you are targeting.")}
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
               <Button type="button" onClick={toPrep}>
                 <ClipboardCheck className="mr-1.5 h-4 w-4" aria-hidden />
-                Build my prep sheet
+                {t("rehearse.buildMyPrepSheet", "Build my prep sheet")}
                 <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Button>
               <Button
@@ -470,7 +480,7 @@ export default function RehearsePage() {
                 disabled={advance.isPending}
                 onClick={skip}
               >
-                Skip this step
+                {t("rehearse.skipThisStep", "Skip this step")}
               </Button>
             </div>
           </CardContent>
@@ -482,25 +492,22 @@ export default function RehearsePage() {
           <CardContent className="space-y-3 p-6">
             {justDeleted && (
               <p className="text-sm font-medium">
-                Deleted. Your answers and the feedback on them are gone.
+                {t("rehearse.deletedYourAnswersAndThe", "Deleted. Your answers and the feedback on them are gone.")}
               </p>
             )}
             <p className="text-sm text-muted-foreground">
-              You&apos;ll get a handful of questions drawn from your own prep sheet,
-              one at a time. Answer each one the way you&apos;d actually say it, and
-              you&apos;ll get a note back — what&apos;s there, and one thing to try
-              next time. Nothing is scored, and you can stop after any question.
+              {t("rehearse.youLlGetAHandful", "You'll get a handful of questions drawn from your own prep sheet, one at a time. Answer each one the way you'd actually say it, and you'll get a note back — what's there, and one thing to try next time. Nothing is scored, and you can stop after any question.")}
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
               <Button type="button" onClick={() => start()} disabled={isStarting}>
                 {isStarting && (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
                 )}
-                Start rehearsing
+                {t("rehearse.startRehearsing", "Start rehearsing")}
               </Button>
               <Button type="button" variant="outline" onClick={toPrep}>
                 <ClipboardCheck className="mr-1.5 h-4 w-4" aria-hidden />
-                Back to interview prep
+                {t("rehearse.backToInterviewPrep", "Back to interview prep")}
               </Button>
               <Button
                 type="button"
@@ -508,7 +515,7 @@ export default function RehearsePage() {
                 disabled={advance.isPending}
                 onClick={skip}
               >
-                Skip this step
+                {t("rehearse.skipThisStep", "Skip this step")}
               </Button>
             </div>
           </CardContent>
@@ -521,7 +528,10 @@ export default function RehearsePage() {
             <CardContent className="space-y-4 p-4">
               {session.roleTitle && (
                 <p className="text-xs text-muted-foreground">
-                  Practising for {session.roleTitle}
+                  {t("rehearse.practisingFor", {
+                    defaultValue: "Practising for {{role}}",
+                    role: session.roleTitle,
+                  })}
                 </p>
               )}
 
@@ -534,7 +544,7 @@ export default function RehearsePage() {
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  That&apos;s every question in this set.
+                  {t("rehearse.thatSEveryQuestionIn", "That's every question in this set.")}
                 </p>
               )}
 
@@ -561,11 +571,10 @@ export default function RehearsePage() {
               onClick={finish}
               disabled={isFinishing}
             >
-              Stop here — keep what I&apos;ve done
+              {t("rehearse.stopHereKeepWhatI", "Stop here — keep what I've done")}
             </Button>
             <p className="mt-1 text-xs text-muted-foreground">
-              Stopping counts as done. This step can&apos;t be failed, and the ones
-              you answered still count.
+              {t("rehearse.stoppingCountsAsDoneThis", "Stopping counts as done. This step can't be failed, and the ones you answered still count.")}
             </p>
           </div>
 
@@ -583,10 +592,20 @@ export default function RehearsePage() {
         <>
           <Card>
             <CardContent className="space-y-3 p-6">
-              <p className="text-sm font-medium">That&apos;s the practice done.</p>
+              <p className="text-sm font-medium">{t("rehearse.thatSThePracticeDone", "That's the practice done.")}</p>
               <p className="text-sm text-muted-foreground">
-                You answered {session.answered} of the {session.questionCount}{" "}
-                questions{session.roleTitle ? ` for ${session.roleTitle}` : ""}.
+                {session.roleTitle
+                  ? t("rehearse.answeredOfForRole", {
+                      defaultValue: "You answered {{answered}} of the {{total}} questions for {{role}}.",
+                      answered: session.answered,
+                      total: session.questionCount,
+                      role: session.roleTitle,
+                    })
+                  : t("rehearse.answeredOf", {
+                      defaultValue: "You answered {{answered}} of the {{total}} questions.",
+                      answered: session.answered,
+                      total: session.questionCount,
+                    })}
               </p>
               <p className="text-sm text-muted-foreground">{session.note}</p>
               <div className="flex flex-wrap gap-2 pt-1">
@@ -600,14 +619,14 @@ export default function RehearsePage() {
                   ) : (
                     <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden />
                   )}
-                  Go again
+                  {t("rehearse.goAgain", "Go again")}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => navigate(ROUTES.DIRECTION_SETTING.JOURNEY)}
                 >
-                  Back to the journey
+                  {t("rehearse.backToTheJourney", "Back to the journey")}
                   <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
                 </Button>
               </div>

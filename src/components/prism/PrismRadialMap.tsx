@@ -23,6 +23,7 @@
  * export path unchanged — matching the agent-engine's `prism_map.py` contract.
  */
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Table,
   TableBody,
@@ -149,6 +150,7 @@ export function PrismRadialMap({
   consistent,
   blueprint,
 }: PrismRadialMapProps): JSX.Element {
+  const { t } = useTranslation("prismUi")
   const layers: Record<LayerKey, PrismDimension[] | undefined> = {
     underlying,
     adapted,
@@ -164,7 +166,10 @@ export function PrismRadialMap({
           viewBox="0 0 560 600"
           width="100%"
           role="img"
-          aria-label="PRISM behavioral map — radial wheel with your profile plotted across the eight behaviours."
+          aria-label={t("radialMap.ariaLabel", {
+            defaultValue:
+              "PRISM behavioral map — radial wheel with your profile plotted across the eight behaviours.",
+          })}
         >
           <defs>
             {IDS.filter((id) => id % 2 === 1).map((id) => {
@@ -270,12 +275,12 @@ export function PrismRadialMap({
           expand to whatever layers were supplied (today: Underlying only). */}
       <Table>
         <caption className="sr-only">
-          PRISM 8-dimension scores (text equivalent of the radial map).
+          {t("radialMap.tableCaption", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radial map)." })}
         </caption>
         <TableHeader>
           <TableRow>
-            <TableHead>Dimension</TableHead>
-            <TableHead>Quadrant</TableHead>
+            <TableHead>{t("radialMap.colDimension", { defaultValue: "Dimension" })}</TableHead>
+            <TableHead>{t("radialMap.colQuadrant", { defaultValue: "Quadrant" })}</TableHead>
             {present.map((k) => (
               <TableHead key={`h-${k}`} className="text-right">
                 {LAYER_STYLE[k].label}

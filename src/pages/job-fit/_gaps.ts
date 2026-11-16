@@ -9,6 +9,7 @@
 // every domain red for a profile whose roles My Fit called close fits. So every
 // number on the page is divided by the dimensions that contributed to it.
 
+import type { TFunction } from "i18next"
 import type { FitMatch } from "@/types/job-fit"
 import { APTITUDES, BEHAVIORS, CORE_TRAITS } from "@/constants/job-blueprint/dimensions"
 import type { Tone } from "@/components/fit/fit"
@@ -17,7 +18,6 @@ export type DomainKey = "behavior" | "aptitude" | "coreTrait"
 
 export type DomainAggregate = {
   key: DomainKey
-  label: string
   /** Mean distance from benchmark per dimension, averaged across roles. */
   avg: number
 }
@@ -32,10 +32,16 @@ export const DOMAIN_DIMENSIONS: Record<DomainKey, number> = {
 const CATALOGUE_TOTAL =
   DOMAIN_DIMENSIONS.behavior + DOMAIN_DIMENSIONS.aptitude + DOMAIN_DIMENSIONS.coreTrait
 
-const DOMAIN_LABELS: Record<DomainKey, string> = {
-  behavior: "Behavioral style",
-  aptitude: "Aptitudes",
-  coreTrait: "Core traits",
+/** The display name of a domain, resolved at render so it follows the language. */
+export function domainLabel(key: DomainKey, t: TFunction): string {
+  switch (key) {
+    case "behavior":
+      return t("growthDomains.domainBehavior", "Behavioral style")
+    case "aptitude":
+      return t("growthDomains.domainAptitude", "Aptitudes")
+    default:
+      return t("growthDomains.domainCoreTrait", "Core traits")
+  }
 }
 
 /**
@@ -77,7 +83,6 @@ export function aggregateDomains(matches: FitMatch[]): DomainAggregate[] {
   const n = rows.length
   return (["behavior", "aptitude", "coreTrait"] as const).map((key) => ({
     key,
-    label: DOMAIN_LABELS[key],
     avg: Math.round(sum[key] / n),
   }))
 }

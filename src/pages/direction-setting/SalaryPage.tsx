@@ -7,6 +7,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -106,19 +107,21 @@ export type RoleSalary = {
  * Presentation.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+type TFn = ReturnType<typeof useTranslation>["t"]
+
+const monthNames = (t: TFn): string[] => [
+  t("salary.months.january", "January"),
+  t("salary.months.february", "February"),
+  t("salary.months.march", "March"),
+  t("salary.months.april", "April"),
+  t("salary.months.may", "May"),
+  t("salary.months.june", "June"),
+  t("salary.months.july", "July"),
+  t("salary.months.august", "August"),
+  t("salary.months.september", "September"),
+  t("salary.months.october", "October"),
+  t("salary.months.november", "November"),
+  t("salary.months.december", "December"),
 ]
 
 /**
@@ -130,11 +133,17 @@ const MONTHS = [
  * as `"mixed: 2024-05, 2023-10"`, and an outlook arrives as a projection window
  * like `"2023-2033"`. Both read more honestly as written than as a guessed month.
  */
-function formatAsOf(asOf: string): string {
+function formatAsOf(asOf: string, t: TFn): string {
   const match = /^(\d{4})-(\d{2})(?:-\d{2})?$/.exec(asOf)
   if (!match) return asOf
-  const month = MONTHS[Number(match[2]) - 1]
-  return month ? `${month} ${match[1]}` : asOf
+  const month = monthNames(t)[Number(match[2]) - 1]
+  return month
+    ? t("salary.asOfMonthYear", {
+        defaultValue: "{{month}} {{year}}",
+        month,
+        year: match[1],
+      })
+    : asOf
 }
 
 function formatMoney(value: number, currency: string): string {
@@ -174,6 +183,7 @@ function medianOffset(range: SalaryRange): number {
  * worse than a gap, because a gap doesn't get acted on.
  */
 export function SalaryRangeCard({ role, range }: RoleSalary) {
+  const { t } = useTranslation("directionPages")
   const currency = range.currency ?? "USD"
   const unsourced = !range.source.trim() || !range.asOf.trim()
   const incoherent = !(range.low <= range.median && range.median <= range.high)
@@ -184,12 +194,11 @@ export function SalaryRangeCard({ role, range }: RoleSalary) {
         <CardContent className="p-4">
           <p className="font-medium">{role}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            We have pay data for this one, but not in a state we&apos;d put in
-            front of you —{" "}
+            {t("salary.unusablePayData", "We have pay data for this one, but not in a state we'd put in front of you —")}{" "}
             {unsourced
-              ? "it arrived without a source or a date."
-              : "the reported figures don't line up."}{" "}
-            We&apos;d rather show you nothing than a number you can&apos;t check.
+              ? t("salary.unusableNoSource", "it arrived without a source or a date.")
+              : t("salary.unusableIncoherent", "the reported figures don't line up.")}{" "}
+            {t("salary.wedRatherShowNothing", "We'd rather show you nothing than a number you can't check.")}
           </p>
         </CardContent>
       </Card>
@@ -210,13 +219,14 @@ export function SalaryRangeCard({ role, range }: RoleSalary) {
           <div
             className="relative h-2 w-full rounded-full bg-muted"
             role="img"
-            aria-label={`Pay range for ${role}: ${formatMoney(
-              range.low,
-              currency
-            )} to ${formatMoney(range.high, currency)}, midpoint ${formatMoney(
-              range.median,
-              currency
-            )}`}
+            aria-label={t("salary.payRangeAria", {
+              defaultValue:
+                "Pay range for {{role}}: {{low}} to {{high}}, midpoint {{median}}",
+              role,
+              low: formatMoney(range.low, currency),
+              high: formatMoney(range.high, currency),
+              median: formatMoney(range.median, currency),
+            })}
           >
             <div
               className="absolute top-1/2 h-3 w-0.5 -translate-y-1/2 rounded bg-primary"
@@ -235,15 +245,19 @@ export function SalaryRangeCard({ role, range }: RoleSalary) {
             </span>
           </div>
           <div className="mt-0.5 flex items-baseline justify-between text-[11px] text-muted-foreground">
-            <span>Lower end</span>
-            <span>Midpoint</span>
-            <span>Upper end</span>
+            <span>{t("salary.lowerEnd", "Lower end")}</span>
+            <span>{t("salary.midpoint", "Midpoint")}</span>
+            <span>{t("salary.upperEnd", "Upper end")}</span>
           </div>
         </div>
 
         {/* Never optional, never in a tooltip. If it's on the page, it's sourced. */}
         <p className="text-xs text-muted-foreground">
-          Source: {range.source} · as of {formatAsOf(range.asOf)}
+          {t("salary.sourceAsOf", {
+            defaultValue: "Source: {{source}} · as of {{asOf}}",
+            source: range.source,
+            asOf: formatAsOf(range.asOf, t),
+          })}
         </p>
       </CardContent>
     </Card>
@@ -259,6 +273,7 @@ export function SalaryRangeCard({ role, range }: RoleSalary) {
  * a door closing.
  */
 export function OutlookLine({ outlook }: { outlook: MarketOutlook }) {
+  const { t } = useTranslation("directionPages")
   const falling = outlook.growthPct < 0
   const flat = outlook.growthPct === 0
   const Icon = falling ? TrendingDown : TrendingUp
@@ -274,16 +289,27 @@ export function OutlookLine({ outlook }: { outlook: MarketOutlook }) {
         aria-hidden
       />
       <span>
-        Employment{" "}
+        {t("salary.employment", "Employment")}{" "}
         {falling
-          ? "projected to fall"
+          ? t("salary.projectedToFall", "projected to fall")
           : flat
-            ? "projected flat"
-            : "projected to grow"}{" "}
+            ? t("salary.projectedFlat", "projected flat")
+            : t("salary.projectedToGrow", "projected to grow")}{" "}
         <span className="font-medium">{formatGrowth(outlook.growthPct)}</span>{" "}
-        over {outlook.horizonYears} years ({formatAsOf(outlook.asOf)}).{" "}
-        {falling ? "Shrinking is not the same as closed. " : ""}
-        Source: {outlook.source}
+        {t("salary.outlookWindow", {
+          defaultValue: "over {{years}} years ({{asOf}}).",
+          years: outlook.horizonYears,
+          asOf: formatAsOf(outlook.asOf, t),
+        })}{" "}
+        {falling ? (
+          <>
+            {t("salary.shrinkingNotClosed", "Shrinking is not the same as closed.")}{" "}
+          </>
+        ) : null}
+        {t("salary.sourceOnly", {
+          defaultValue: "Source: {{source}}",
+          source: outlook.source,
+        })}
       </span>
     </p>
   )
@@ -298,6 +324,7 @@ export function OutlookLine({ outlook }: { outlook: MarketOutlook }) {
  * occupation off the list either.
  */
 export function OccupationRow({ occupation }: { occupation: MarketOccupation }) {
+  const { t } = useTranslation("directionPages")
   return (
     <li className="rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -310,18 +337,22 @@ export function OccupationRow({ occupation }: { occupation: MarketOccupation }) 
           {formatMoney(occupation.salary.low, "USD")} –{" "}
           {formatMoney(occupation.salary.high, "USD")}{" "}
           <span className="text-muted-foreground">
-            (midpoint {formatMoney(occupation.salary.median, "USD")})
+            {t("salary.midpointParen", {
+              defaultValue: "(midpoint {{median}})",
+              median: formatMoney(occupation.salary.median, "USD"),
+            })}
           </span>
           <span className="mt-0.5 block text-xs text-muted-foreground">
-            Source: {occupation.salary.source} · as of{" "}
-            {formatAsOf(occupation.salary.asOf)}
+            {t("salary.sourceAsOf", {
+              defaultValue: "Source: {{source}} · as of {{asOf}}",
+              source: occupation.salary.source,
+              asOf: formatAsOf(occupation.salary.asOf, t),
+            })}
           </span>
         </p>
       ) : (
         <p className="mt-1 text-sm text-muted-foreground">
-          No wage data on file for this occupation. That&apos;s a gap in what we
-          hold, not a statement that the work pays nothing — we&apos;d rather
-          leave it blank than fill it with a stand-in figure.
+          {t("salary.noWageDataOnFile", "No wage data on file for this occupation. That's a gap in what we hold, not a statement that the work pays nothing — we'd rather leave it blank than fill it with a stand-in figure.")}
         </p>
       )}
 
@@ -329,7 +360,7 @@ export function OccupationRow({ occupation }: { occupation: MarketOccupation }) 
         <OutlookLine outlook={occupation.outlook} />
       ) : (
         <p className="mt-1 text-xs text-muted-foreground">
-          No employment projection on file for this occupation.
+          {t("salary.noEmploymentProjectionOnFile", "No employment projection on file for this occupation.")}
         </p>
       )}
     </li>
@@ -344,15 +375,26 @@ export function OccupationRow({ occupation }: { occupation: MarketOccupation }) 
  * the `asOf` rather than quietly picking one. That string is printed as written.
  */
 export function CareerAreaCard({ area }: { area: MarketArea }) {
+  const { t } = useTranslation("directionPages")
   return (
     <section className="space-y-3" aria-label={area.family}>
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="font-medium">{area.family}</h3>
         {area.affinity !== null && (
-          <Badge variant="outline">{Math.round(area.affinity)} / 100 fit</Badge>
+          <Badge variant="outline">
+            {t("salary.affinityFit", {
+              defaultValue: "{{score}} / 100 fit",
+              score: Math.round(area.affinity),
+            })}
+          </Badge>
         )}
         {area.pivotDifficulty && (
-          <Badge variant="outline">{area.pivotDifficulty} pivot</Badge>
+          <Badge variant="outline">
+            {t("salary.pivotBadge", {
+              defaultValue: "{{difficulty}} pivot",
+              difficulty: area.pivotDifficulty,
+            })}
+          </Badge>
         )}
       </div>
 
@@ -362,10 +404,8 @@ export function CareerAreaCard({ area }: { area: MarketArea }) {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">
-              {area.note ?? "No wage data on file for this career area yet."} We
-              haven&apos;t put a figure here, because a made-up one is worse than
-              an empty space — this is a gap in our data, not a claim about what
-              the work pays.
+              {area.note ?? t("salary.noWageDataAreaYet", "No wage data on file for this career area yet.")}{" "}
+              {t("salary.noFigureBecause", "We haven't put a figure here, because a made-up one is worse than an empty space — this is a gap in our data, not a claim about what the work pays.")}
             </p>
           </CardContent>
         </Card>
@@ -385,6 +425,7 @@ export function CareerAreaCard({ area }: { area: MarketArea }) {
 /* ──────────────────────────────────────────────────────────────────────────── */
 
 export default function SalaryPage() {
+  const { t } = useTranslation("directionPages")
   const navigate = useNavigate()
   const { data, isLoading, isError, isFetching, refetch } = useMarketSalaries()
 
@@ -399,29 +440,24 @@ export default function SalaryPage() {
   return (
     <div className="space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-semibold">What does that pay?</h1>
+        <h1 className="text-2xl font-semibold">{t("salary.whatDoesThatPay", "What does that pay?")}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Step 4 of the journey. It puts real pay figures next to the career
-          areas you&apos;re considering, so money is part of the decision from
-          the start rather than a surprise three months in.
+          {t("salary.step4OfTheJourney", "Step 4 of the journey. It puts real pay figures next to the career areas you're considering, so money is part of the decision from the start rather than a surprise three months in.")}
         </p>
       </header>
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">How we&apos;ll show it</CardTitle>
+          <CardTitle className="text-base">{t("salary.howWeLlShowIt", "How we'll show it")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            Always a range — the lower end, the midpoint and the upper end —
-            never a single number. Pay varies enormously by employer, city and
-            what you walk in with, and one figure hides all of that.
+            {t("salary.alwaysARangeTheLower", "Always a range — the lower end, the midpoint and the upper end — never a single number. Pay varies enormously by employer, city and what you walk in with, and one figure hides all of that.")}
           </p>
           <p className="flex gap-2">
             <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <span>
-              Every range will say where it came from and when it was collected.
-              If we can&apos;t tell you that, we won&apos;t show you the number.
+              {t("salary.everyRangeWillSayWhere", "Every range will say where it came from and when it was collected. If we can't tell you that, we won't show you the number.")}
             </span>
           </p>
         </CardContent>
@@ -430,7 +466,7 @@ export default function SalaryPage() {
       {isLoading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Looking up what these areas pay…
+          {t("salary.lookingUpWhatTheseAreas", "Looking up what these areas pay…")}
         </div>
       )}
 
@@ -438,14 +474,12 @@ export default function SalaryPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              We couldn&apos;t load the pay data
+              {t("salary.weCouldnTLoadThe", "We couldn't load the pay data")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              That&apos;s a fault on our side, not a sign there&apos;s nothing to
-              show. Nothing you&apos;ve done has been lost, and trying again is
-              safe.
+              {t("salary.thatSAFaultOn", "That's a fault on our side, not a sign there's nothing to show. Nothing you've done has been lost, and trying again is safe.")}
             </p>
             <Button
               type="button"
@@ -454,7 +488,7 @@ export default function SalaryPage() {
               disabled={isFetching}
             >
               <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
-              Try again
+              {t("salary.tryAgain", "Try again")}
             </Button>
           </CardContent>
         </Card>
@@ -464,16 +498,26 @@ export default function SalaryPage() {
         <section aria-labelledby="salary-ranges" className="space-y-6">
           <div>
             <h2 id="salary-ranges" className="text-sm font-medium">
-              {data.ranked ? "Your career areas" : "Every career area"}
+              {data.ranked
+                ? t("salary.yourCareerAreas", "Your career areas")
+                : t("salary.everyCareerArea", "Every career area")}
             </h2>
             {/* The provenance of the whole screen, said once and up front. The
                 per-figure attribution below is not a substitute for it: a reader
                 is entitled to know which dataset they are looking at before they
                 read a single number off it. */}
             <p className="mt-1 text-xs text-muted-foreground">
-              Figures from <span className="font-medium">{data.provider}</span>,
-              vintage {formatAsOf(data.asOf)}. {priced} of {areas.length} areas
-              have wage data on file.
+              {t("salary.figuresFrom", "Figures from")}{" "}
+              <span className="font-medium">{data.provider}</span>
+              {t("salary.vintage", {
+                defaultValue: ", vintage {{asOf}}.",
+                asOf: formatAsOf(data.asOf, t),
+              })}{" "}
+              {t("salary.pricedOfAreas", {
+                defaultValue: "{{priced}} of {{total}} areas have wage data on file.",
+                priced,
+                total: areas.length,
+              })}
             </p>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               {data.note}
@@ -484,9 +528,7 @@ export default function SalaryPage() {
             <Card>
               <CardContent className="space-y-3 p-4">
                 <p className="text-sm text-muted-foreground">
-                  These aren&apos;t ranked for you yet — that needs a behavioural
-                  profile on file. They&apos;re still worth reading: this is what
-                  the work pays, whoever is looking.
+                  {t("salary.theseArenTRankedFor", "These aren't ranked for you yet — that needs a behavioural profile on file. They're still worth reading: this is what the work pays, whoever is looking.")}
                 </p>
                 <div>
                   <Button
@@ -494,7 +536,7 @@ export default function SalaryPage() {
                     variant="outline"
                     onClick={() => navigate(ROUTES.DIRECTION_SETTING.ESTABLISH)}
                   >
-                    Start with who I am
+                    {t("salary.startWithWhoIAm", "Start with who I am")}
                     <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
                   </Button>
                 </div>
@@ -517,14 +559,13 @@ export default function SalaryPage() {
                 className="h-4 w-4 text-muted-foreground"
                 aria-hidden
               />
-              There&apos;s nothing to price yet
+              {t("salary.thereSNothingToPrice", "There's nothing to price yet")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">{data.note}</p>
             <p className="text-sm text-muted-foreground">
-              Picking your career areas is the step this one reads from, so
-              it&apos;s the useful thing to do next.
+              {t("salary.pickingYourCareerAreasIs", "Picking your career areas is the step this one reads from, so it's the useful thing to do next.")}
             </p>
             <div className="pt-1">
               <Button
@@ -532,7 +573,7 @@ export default function SalaryPage() {
                 variant="outline"
                 onClick={() => navigate(ROUTES.DIRECTION_SETTING.CAREERS)}
               >
-                Look at career areas
+                {t("salary.lookAtCareerAreas", "Look at career areas")}
                 <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Button>
             </div>

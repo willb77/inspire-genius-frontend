@@ -131,20 +131,25 @@ describe("Locale file existence", () => {
   });
 
   it("every namespace file exists for every language", () => {
-    // Namespaces registered in scripts/i18n/pending/ are extracted English-only and
-    // are awaiting their first translation run (I18N-4); they legitimately exist in
-    // en before they exist anywhere else, so they are not counted here.
-    const pendingDir = path.resolve(__dirname, "../../scripts/i18n/pending");
-    const pending = new Set(
-      fs.existsSync(pendingDir)
-        ? fs.readdirSync(pendingDir).filter((f) => f.endsWith(".json"))
-        : []
-    );
+    // Namespaces registered in scripts/i18n/pending/ (I18N-5 string extraction) exist in `en` only until
+    // the translation run (I18N-4) fills the other languages and deletes the registration. Every other
+    // language must still carry exactly the shipped namespaces.
+    const pendingDir = path.resolve(LOCALES_DIR, "..", "..", "scripts", "i18n", "pending");
+    const pending = fs.existsSync(pendingDir)
+      ? fs
+          .readdirSync(pendingDir)
+          .filter((f) => f.endsWith(".json"))
+          .map((f) => JSON.parse(fs.readFileSync(path.join(pendingDir, f), "utf-8")).namespace as string)
+      : [];
     for (const lang of SUPPORTED_LNGS) {
       const files = fs
         .readdirSync(path.join(LOCALES_DIR, lang))
-        .filter((f) => f.endsWith(".json") && !pending.has(f));
-      expect(files.length).toBe(NAMESPACES.length);
+        .filter((f) => f.endsWith(".json"));
+      expect(files.length).toBe(NAMESPACES.length + (lang === "en" ? pending.length : 0));
+    }
+    // A registration with no English file would silently hide a missing namespace from the parity gate.
+    for (const ns of pending) {
+      expect(fs.existsSync(path.join(LOCALES_DIR, "en", `${ns}.json`))).toBe(true);
     }
   });
 });

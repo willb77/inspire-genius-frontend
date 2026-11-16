@@ -5,12 +5,14 @@
  * call to action into `/interview-practice`.
  */
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { ArrowRight, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/constants/routes"
 
 export default function RolePageShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation("interviewPages")
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <header className="border-b border-slate-100">
@@ -21,7 +23,7 @@ export default function RolePageShell({ children }: { children: React.ReactNode 
           </Link>
           <Button asChild size="sm">
             <Link to={ROUTES.INTERVIEW_PRACTICE}>
-              Start practicing <ArrowRight className="ml-1.5 h-4 w-4" />
+              {t("shell.startPracticing", "Start practicing")} <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </Button>
         </div>
@@ -32,14 +34,14 @@ export default function RolePageShell({ children }: { children: React.ReactNode 
       <footer className="border-t border-slate-100">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-6 text-xs text-slate-500">
           <Link to={ROUTES.INTERVIEW_PRACTICE_ROLES} className="hover:text-slate-700">
-            All interview role guides
+            {t("shell.allRoleGuides", "All interview role guides")}
           </Link>
           <Link to={ROUTES.INTERVIEW_PRACTICE} className="hover:text-slate-700">
-            Interview Practice
+            {t("shell.interviewPractice", "Interview Practice")}
           </Link>
-          <Link to="/terms" className="hover:text-slate-700">Terms</Link>
-          <Link to="/privacy" className="hover:text-slate-700">Privacy</Link>
-          <span className="ml-auto">Wage &amp; outlook figures are planning references, not offers.</span>
+          <Link to="/terms" className="hover:text-slate-700">{t("shell.terms", "Terms")}</Link>
+          <Link to="/privacy" className="hover:text-slate-700">{t("shell.privacy", "Privacy")}</Link>
+          <span className="ml-auto">{t("shell.planningReferences", "Wage & outlook figures are planning references, not offers.")}</span>
         </div>
       </footer>
     </div>

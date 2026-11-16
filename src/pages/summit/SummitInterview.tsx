@@ -5,6 +5,7 @@
  */
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowRight, Info } from "lucide-react";
 import { PageHead, Callout } from "@/pages/summit/components/ui";
 import { ROUTES } from "@/constants/routes";
@@ -13,6 +14,7 @@ import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 import GoalsProgressStrip from "@/pages/summit/house/GoalsProgressStrip";
 
 export default function SummitInterview() {
+  const { t } = useTranslation("summitPages");
   const [synthesised, setSynthesised] = useState(0);
   // House style (goals, S2b): this page is "Talk it through", and Overview and
   // Discovery fold into it — so the progress they showed sits above the
@@ -22,15 +24,15 @@ export default function SummitInterview() {
     <div className="flex flex-col gap-[18px]">
       {house && <GoalsProgressStrip />}
       <PageHead
-        eyebrow="A conversation, not a form"
-        title="Talk it through with Goals Studio"
-        sub="Five areas of your working life, a category at a time, with the WHY ladder underneath each stated goal. Voice leads; text is one toggle away."
+        eyebrow={t("interview.eyebrow", { defaultValue: "A conversation, not a form" })}
+        title={t("interview.title", { defaultValue: "Talk it through with Goals Studio" })}
+        sub={t("interview.sub", { defaultValue: "Five areas of your working life, a category at a time, with the WHY ladder underneath each stated goal. Voice leads; text is one toggle away." })}
       />
       {synthesised > 0 && (
         <Callout tone="info" icon={<Info className="h-4 w-4 text-[#1D3A66]" />}>
-          {synthesised} goal{synthesised === 1 ? "" : "s"} drafted from this conversation.{" "}
+          {(synthesised === 1 ? t("interview.drafted_one", { count: synthesised, defaultValue: "{{count}} goal drafted from this conversation." }) : t("interview.drafted_other", { count: synthesised, defaultValue: "{{count}} goals drafted from this conversation." }))}{" "}
           <Link to={ROUTES.MY_GOALS.BASE} className="inline-flex items-center gap-1 font-semibold text-[#0E5F6B]">
-            Review and publish them <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            {t("interview.reviewLink", { defaultValue: "Review and publish them" })} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
         </Callout>
       )}

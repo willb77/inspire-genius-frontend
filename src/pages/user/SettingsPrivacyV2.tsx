@@ -16,6 +16,7 @@ import {
   useMyMemory,
 } from "@/hooks/privacy/useMemoryPrivacy"
 import type { MemoryInsight, MemoryConversation } from "@/types/memory"
+import { useTranslation } from "react-i18next"
 
 /**
  * SettingsPrivacyV2 — the new-design ("HomeV2" system) variant of
@@ -32,6 +33,7 @@ import type { MemoryInsight, MemoryConversation } from "@/types/memory"
  *     button gated by a confirmation modal.
  */
 export default function SettingsPrivacyV2() {
+  const { t } = useTranslation("userPages")
   const memoryQuery = useMyMemory()
   const exportMutation = useExportMyMemory()
   const deleteAllMutation = useDeleteMyMemory()
@@ -53,20 +55,18 @@ export default function SettingsPrivacyV2() {
     <UserLayout>
       <V2Panel className="max-w-4xl">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight font-serif text-ink">Memory & Privacy</h1>
+          <h1 className="text-2xl font-semibold tracking-tight font-serif text-ink">{t("settingsPrivacyV2.memoryPrivacy", "Memory & Privacy")}</h1>
           <p className="text-sm text-body-slate">
-            View, export, or delete the data Inspire Genius has stored about you. Deletion is permanent
-            and applies across all four memory tiers (working, short-term, long-term, semantic).
+            {t("settingsPrivacyV2.viewExportOrDeleteTheData", "View, export, or delete the data Inspire Genius has stored about you. Deletion is permanent and applies across all four memory tiers (working, short-term, long-term, semantic).")}
           </p>
         </header>
 
         {/* Long-term insights */}
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif text-ink">What we&apos;ve learned about you</CardTitle>
+            <CardTitle className="font-serif text-ink">{t("settingsPrivacyV2.whatWeveLearnedAboutYou", "What we've learned about you")}</CardTitle>
             <CardDescription className="text-body-slate">
-              Long-term insights extracted from your coaching sessions. Remove any item to forget that
-              specific fact while keeping the rest of your memory.
+              {t("settingsPrivacyV2.longTermInsightsExtractedFromYour", "Long-term insights extracted from your coaching sessions. Remove any item to forget that specific fact while keeping the rest of your memory.")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -80,11 +80,11 @@ export default function SettingsPrivacyV2() {
             {memoryQuery.isError && (
               <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                <span>Could not load your memory snapshot. Try refreshing the page.</span>
+                <span>{t("settingsPrivacyV2.couldNotLoadYourMemorySnapshot", "Could not load your memory snapshot. Try refreshing the page.")}</span>
               </div>
             )}
             {memoryQuery.data && insights.length === 0 && (
-              <p className="text-sm text-body-slate">No long-term insights stored yet.</p>
+              <p className="text-sm text-body-slate">{t("settingsPrivacyV2.noLongTermInsightsStoredYet", "No long-term insights stored yet.")}</p>
             )}
             {insights.map((insight) => (
               <div
@@ -103,14 +103,14 @@ export default function SettingsPrivacyV2() {
                   <p className="text-sm text-body-slate break-words">{insight.value}</p>
                 </div>
                 <ConfirmDialog
-                  title={`Forget "${insight.key}"?`}
-                  description="This insight will be deleted from your long-term memory. Your other memory is unaffected."
-                  confirmText="Forget"
+                  title={t("settingsPrivacyV2.forgetTitle", { defaultValue: 'Forget "{{key}}"?', key: insight.key })}
+                  description={t("settingsPrivacyV2.thisInsightWillBeDeletedFrom", "This insight will be deleted from your long-term memory. Your other memory is unaffected.")}
+                  confirmText={t("settingsPrivacyV2.forget", "Forget")}
                   trigger={
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={`Forget ${insight.key}`}
+                      aria-label={t("settingsPrivacyV2.forgetAria", { defaultValue: "Forget {{key}}", key: insight.key })}
                       disabled={deleteInsightMutation.isPending}
                     >
                       <Trash2 className="size-4" />
@@ -119,9 +119,9 @@ export default function SettingsPrivacyV2() {
                   onConfirm={async () => {
                     try {
                       await deleteInsightMutation.mutateAsync(insight.key)
-                      toast.success(`Forgot "${insight.key}"`)
+                      toast.success(t("settingsPrivacyV2.forgot", { defaultValue: 'Forgot "{{key}}"', key: insight.key }))
                     } catch {
-                      toast.error("Could not delete that insight. Please try again.")
+                      toast.error(t("settingsPrivacyV2.couldNotDeleteThatInsightPlease", "Could not delete that insight. Please try again."))
                     }
                   }}
                 />
@@ -133,26 +133,25 @@ export default function SettingsPrivacyV2() {
         {/* Conversation history + export */}
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif text-ink">Conversation history</CardTitle>
+            <CardTitle className="font-serif text-ink">{t("settingsPrivacyV2.conversationHistory", "Conversation history")}</CardTitle>
             <CardDescription className="text-body-slate">
-              Summaries and recent messages from your sessions. Download a JSON copy of everything we
-              have on file.
+              {t("settingsPrivacyV2.summariesAndRecentMessagesFromYour", "Summaries and recent messages from your sessions. Download a JSON copy of everything we have on file.")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap items-center gap-3 text-sm text-body-slate">
-              <Badge variant="outline">{sessionSummaryCount} session summaries</Badge>
+              <Badge variant="outline">{t("settingsPrivacyV2.sessionSummaries", { defaultValue: "{{count}} session summaries", count: sessionSummaryCount })}</Badge>
               <Badge variant="outline">
-                {conversations.reduce((total, c) => total + c.messages.length, 0)} stored messages across {conversations.length} sessions
+                {t("settingsPrivacyV2.storedMessages", { defaultValue: "{{messages}} stored messages across {{sessions}} sessions", messages: conversations.reduce((total, c) => total + c.messages.length, 0), sessions: conversations.length })}
               </Badge>
-              <Badge variant="outline">{semanticEntryCount} semantic entries</Badge>
+              <Badge variant="outline">{t("settingsPrivacyV2.semanticEntries", { defaultValue: "{{count}} semantic entries", count: semanticEntryCount })}</Badge>
             </div>
             <Button
               variant="outline"
               onClick={() => {
                 exportMutation.mutate(undefined, {
-                  onSuccess: () => toast.success("Download started"),
-                  onError: () => toast.error("Could not export your memory."),
+                  onSuccess: () => toast.success(t("settingsPrivacyV2.downloadStarted", "Download started")),
+                  onError: () => toast.error(t("settingsPrivacyV2.couldNotExportYourMemory", "Could not export your memory.")),
                 })
               }}
               disabled={exportMutation.isPending}
@@ -162,7 +161,7 @@ export default function SettingsPrivacyV2() {
               ) : (
                 <Download className="me-2 size-4" />
               )}
-              Download my data
+              {t("settingsPrivacyV2.downloadMyData", "Download my data")}
             </Button>
           </CardContent>
         </Card>
@@ -170,18 +169,16 @@ export default function SettingsPrivacyV2() {
         {/* Forget everything (RTBF) */}
         <Card className="border-destructive/40">
           <CardHeader>
-            <CardTitle className="font-serif text-destructive">Forget everything</CardTitle>
+            <CardTitle className="font-serif text-destructive">{t("settingsPrivacyV2.forgetEverything", "Forget everything")}</CardTitle>
             <CardDescription className="text-body-slate">
-              Permanently delete every memory tier we maintain about you: working state, recent
-              messages, summaries, long-term insights, milestones, PRISM results, and semantic
-              embeddings. This cannot be undone.
+              {t("settingsPrivacyV2.permanentlyDeleteEveryMemoryTierWe", "Permanently delete every memory tier we maintain about you: working state, recent messages, summaries, long-term insights, milestones, PRISM results, and semantic embeddings. This cannot be undone.")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ConfirmDialog
-              title="Delete all my coaching memory?"
-              description="This is permanent. You will start the next session with a blank slate. We recommend downloading a copy first."
-              confirmText="Delete everything"
+              title={t("settingsPrivacyV2.deleteAllMyCoachingMemory", "Delete all my coaching memory?")}
+              description={t("settingsPrivacyV2.thisIsPermanentYouWillStart", "This is permanent. You will start the next session with a blank slate. We recommend downloading a copy first.")}
+              confirmText={t("settingsPrivacyV2.deleteEverything", "Delete everything")}
               trigger={
                 <Button variant="destructive" disabled={deleteAllMutation.isPending}>
                   {deleteAllMutation.isPending ? (
@@ -189,15 +186,15 @@ export default function SettingsPrivacyV2() {
                   ) : (
                     <Trash2 className="me-2 size-4" />
                   )}
-                  Delete all my memory
+                  {t("settingsPrivacyV2.deleteAllMyMemory", "Delete all my memory")}
                 </Button>
               }
               onConfirm={async () => {
                 try {
                   await deleteAllMutation.mutateAsync()
-                  toast.success("Your memory has been deleted")
+                  toast.success(t("settingsPrivacyV2.yourMemoryHasBeenDeleted", "Your memory has been deleted"))
                 } catch {
-                  toast.error("Could not delete your memory. Please try again.")
+                  toast.error(t("settingsPrivacyV2.couldNotDeleteYourMemoryPlease", "Could not delete your memory. Please try again."))
                 }
               }}
             />

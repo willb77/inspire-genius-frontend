@@ -15,6 +15,8 @@
  * keeps My Workspace.
  */
 import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Compass, Layers, Flag, Mic, Share2, Users, Clock, Target, MessageCircle, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
@@ -36,28 +38,28 @@ type Section = { to: string; label: string; icon: typeof Compass; badge?: string
  * count: it tells a person who has done nothing that they are most of the way
  * through, and it never moves when they do the work.
  */
-function sections(explored: number, total: number, goals: number): Section[] {
+function sections(explored: number, total: number, goals: number, t: TFunction): Section[] {
   return [
     {
       to: ROUTES.MY_GOALS.BASE,
-      label: "My Goals",
+      label: t("layout.nav.myGoals", { defaultValue: "My Goals" }),
       icon: Flag,
       end: true,
       badge: goals > 0 ? String(goals) : undefined,
     },
-    { to: ROUTES.MY_GOALS.INTERVIEW, label: "Interview", icon: Mic },
-    { to: ROUTES.MY_GOALS.SHARING, label: "Sharing", icon: Share2 },
-    { to: ROUTES.MY_GOALS.OVERVIEW, label: "Overview", icon: Compass },
+    { to: ROUTES.MY_GOALS.INTERVIEW, label: t("layout.nav.interview", { defaultValue: "Interview" }), icon: Mic },
+    { to: ROUTES.MY_GOALS.SHARING, label: t("layout.nav.sharing", { defaultValue: "Sharing" }), icon: Share2 },
+    { to: ROUTES.MY_GOALS.OVERVIEW, label: t("layout.nav.overview", { defaultValue: "Overview" }), icon: Compass },
     {
       to: ROUTES.MY_GOALS.DISCOVERY,
-      label: "Discovery",
+      label: t("layout.nav.discovery", { defaultValue: "Discovery" }),
       icon: Layers,
       badge: total ? `${explored}/${total}` : undefined,
     },
-    { to: ROUTES.MY_GOALS.COACHES, label: "Coaches", icon: Users },
+    { to: ROUTES.MY_GOALS.COACHES, label: t("layout.nav.coaches", { defaultValue: "Coaches" }), icon: Users },
     // PRISM lens, Progress and Documents used to be three pages of sample
     // data. They are one honest page now (Goals offering, Phase 3).
-    { to: ROUTES.MY_GOALS.COMING_SOON, label: "Coming soon", icon: Clock },
+    { to: ROUTES.MY_GOALS.COMING_SOON, label: t("layout.nav.comingSoon", { defaultValue: "Coming soon" }), icon: Clock },
   ];
 }
 
@@ -67,22 +69,22 @@ function sections(explored: number, total: number, goals: number): Section[] {
  * strip), and Coaches and Coming soon go. Badges keep the same live-session
  * rule as above. Display only — the routes all stay registered.
  */
-function houseSections(explored: number, total: number, goals: number): Section[] {
+function houseSections(explored: number, total: number, goals: number, t: TFunction): Section[] {
   return [
     {
       to: ROUTES.MY_GOALS.BASE,
-      label: "My goals",
+      label: t("layout.nav.houseMyGoals", { defaultValue: "My goals" }),
       icon: Flag,
       end: true,
       badge: goals > 0 ? String(goals) : undefined,
     },
     {
       to: ROUTES.MY_GOALS.INTERVIEW,
-      label: "Talk it through",
+      label: t("layout.nav.houseTalk", { defaultValue: "Talk it through" }),
       icon: MessageCircle,
       badge: total ? `${explored}/${total}` : undefined,
     },
-    { to: ROUTES.MY_GOALS.SHARING, label: "Who can see them", icon: Eye },
+    { to: ROUTES.MY_GOALS.SHARING, label: t("layout.nav.houseWho", { defaultValue: "Who can see them" }), icon: Eye },
   ];
 }
 
@@ -103,6 +105,7 @@ function RoleChrome({ role, children }: { role: UserRole | undefined; children: 
 }
 
 export default function GoalsStudioLayout() {
+  const { t } = useTranslation("summitPages");
   const { user } = useAuth();
   const { data: session } = useGoalSession();
   const categories = useSummitCategories(session);
@@ -113,7 +116,7 @@ export default function GoalsStudioLayout() {
   // House style (goals, S2b), read at render time. OFF: today's seven pills
   // and every section renders where it is.
   const house = isHouseStyleOn("goals");
-  const SECTIONS = (house ? houseSections : sections)(explored, categories.length, session?.goals?.length ?? 0);
+  const SECTIONS = (house ? houseSections : sections)(explored, categories.length, session?.goals?.length ?? 0, t);
   const role = (user?.role ?? undefined) as UserRole | undefined;
 
   const redirectTo = house ? houseGoalsRedirectFor(pathname) : null;
@@ -127,14 +130,14 @@ export default function GoalsStudioLayout() {
             <Target className="h-5 w-5" aria-hidden />
           </span>
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight">Goals Studio</h1>
+            <h1 className="text-xl font-semibold tracking-tight">{t("layout.title", { defaultValue: "Goals Studio" })}</h1>
             <p className="text-sm text-muted-foreground">
-              Your goals, the conversation that surfaces them, and who gets to see them.
+              {t("layout.sub", { defaultValue: "Your goals, the conversation that surfaces them, and who gets to see them." })}
             </p>
           </div>
         </header>
 
-        <nav aria-label="Goals Studio sections" className="mb-6 flex flex-wrap gap-1.5">
+        <nav aria-label={t("layout.navLabel", { defaultValue: "Goals Studio sections" })} className="mb-6 flex flex-wrap gap-1.5">
           {SECTIONS.map((s) => (
             <NavLink
               key={s.to}

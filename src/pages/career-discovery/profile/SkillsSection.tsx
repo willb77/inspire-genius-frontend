@@ -1,4 +1,6 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -13,27 +15,33 @@ import { discoveryErrorMessage } from "@/hooks/career-discovery/useCareerDiscove
 import type { SkillSuggestion } from "@/types/profile/skills"
 import { DiscoveryError } from "../DiscoveryParts"
 
-const skillSchema = z.object({
-  name: z.string().trim().min(1, "Type a skill to add.").max(60, "Keep a skill to 60 characters."),
-})
-type SkillForm = z.infer<typeof skillSchema>
+const makeSkillSchema = (t: TFunction) =>
+  z.object({
+    name: z
+      .string()
+      .trim()
+      .min(1, t("skillsErrEmpty", "Type a skill to add."))
+      .max(60, t("skillsErrLong", "Keep a skill to 60 characters.")),
+  })
+type SkillForm = z.infer<ReturnType<typeof makeSkillSchema>>
 
 function SuggestionRow({ s, onAdd, busy }: { s: SkillSuggestion; onAdd: () => void; busy: boolean }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   return (
     <li className="flex items-center justify-between gap-3 py-1.5">
       <div className="min-w-0">
         <span className="font-medium">{s.name}</span>
         {s.match === "matched" ? (
-          <span className="ml-2 text-xs text-muted-foreground">O*NET skill</span>
+          <span className="ml-2 text-xs text-muted-foreground">{t("skillsOnetSkill", "O*NET skill")}</span>
         ) : (
           <span className="ml-2 text-xs text-muted-foreground">{s.label}</span>
         )}
       </div>
       {s.alreadySaved ? (
-        <span className="text-xs text-muted-foreground">Already added</span>
+        <span className="text-xs text-muted-foreground">{t("skillsAlreadyAdded", "Already added")}</span>
       ) : (
         <Button type="button" size="sm" variant="outline" onClick={onAdd} disabled={busy}>
-          Add
+          {t("skillsAdd", "Add")}
         </Button>
       )}
     </li>
@@ -46,6 +54,8 @@ function SuggestionRow({ s, onAdd, busy }: { s: SkillSuggestion; onAdd: () => vo
  * presses Add on it; asking for suggestions saves nothing.
  */
 export function SkillsSection() {
+  const { t } = useTranslation("careerDiscoveryPages")
+  const skillSchema = useMemo(() => makeSkillSchema(t), [t])
   const skills = useSkills(true)
   const [asked, setAsked] = useState(false)
   const suggestions = useSkillSuggestions(asked)
@@ -61,16 +71,16 @@ export function SkillsSection() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Skills</CardTitle>
+        <CardTitle className="text-base">{t("skillsTitle", "Skills")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
-        {skills.isLoading ? <p className="text-muted-foreground">Loading your skills…</p> : null}
+        {skills.isLoading ? <p className="text-muted-foreground">{t("skillsLoading", "Loading your skills…")}</p> : null}
         {skills.isError ? <DiscoveryError message={discoveryErrorMessage(skills.error)} /> : null}
         {skills.isSuccess && mine.length === 0 ? (
-          <p className="text-muted-foreground">No skills added yet. Type one, or read them from your résumé.</p>
+          <p className="text-muted-foreground">{t("skillsNone", "No skills added yet. Type one, or read them from your résumé.")}</p>
         ) : null}
         {mine.length ? (
-          <ul aria-label="Your skills" className="flex flex-wrap gap-2">
+          <ul aria-label={t("skillsYourSkills", "Your skills")} className="flex flex-wrap gap-2">
             {mine.map((k) => (
               <li key={k.id}>
                 <Badge variant="secondary" className="gap-1.5">
@@ -78,7 +88,7 @@ export function SkillsSection() {
                   {k.matched ? <span className="text-[10px] uppercase opacity-70">O*NET</span> : null}
                   <button
                     type="button"
-                    aria-label={`Remove ${k.name}`}
+                    aria-label={t("skillsRemove", { defaultValue: "Remove {{name}}", name: k.name })}
                     onClick={() => remove.mutate(k.id)}
                     disabled={remove.isPending}
                     className="rounded-sm opacity-70 hover:opacity-100"
@@ -93,12 +103,12 @@ export function SkillsSection() {
 
         <form onSubmit={onSubmit} className="flex items-end gap-2" noValidate>
           <div className="flex-1 space-y-1.5">
-            <Label htmlFor="cd-skill">Add a skill</Label>
-            <Input id="cd-skill" placeholder="e.g. Customer service" {...form.register("name")} />
+            <Label htmlFor="cd-skill">{t("skillsAddLabel", "Add a skill")}</Label>
+            <Input id="cd-skill" placeholder={t("skillsPlaceholder", "e.g. Customer service")} {...form.register("name")} />
           </div>
           <Button type="submit" disabled={save.isPending}>
             <Plus className="mr-1 h-4 w-4" aria-hidden />
-            Add
+            {t("skillsAdd", "Add")}
           </Button>
         </form>
         {form.formState.errors.name ? (
@@ -110,7 +120,7 @@ export function SkillsSection() {
         <div className="space-y-2 border-t pt-4">
           <div className="flex items-center justify-between gap-2">
             <p className="text-muted-foreground">
-              Read skills from your résumé. Nothing is added until you choose it.
+              {t("skillsReadIntro", "Read skills from your résumé. Nothing is added until you choose it.")}
             </p>
             <Button
               type="button"
@@ -119,20 +129,25 @@ export function SkillsSection() {
               onClick={() => (asked ? void suggestions.refetch() : setAsked(true))}
               disabled={suggestions.isFetching}
             >
-              Suggest from my résumé
+              {t("skillsSuggest", "Suggest from my résumé")}
             </Button>
           </div>
-          {suggestions.isFetching ? <p className="text-muted-foreground">Reading your résumé…</p> : null}
+          {suggestions.isFetching ? <p className="text-muted-foreground">{t("skillsReading", "Reading your résumé…")}</p> : null}
           {suggestions.isError ? <DiscoveryError message={discoveryErrorMessage(suggestions.error)} /> : null}
           {s && !suggestions.isFetching ? (
             <div className="space-y-2">
               {s.source ? (
-                <p className="text-xs text-muted-foreground">From {s.source.filename ?? "your résumé"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("skillsFrom", {
+                    defaultValue: "From {{source}}",
+                    source: s.source.filename ?? t("skillsYourResume", "your résumé"),
+                  })}
+                </p>
               ) : null}
               {s.message ? <p className="text-muted-foreground">{s.message}</p> : null}
               {s.onet?.message ? <p className="text-xs text-muted-foreground">{s.onet.message}</p> : null}
               {s.suggestions.length ? (
-                <ul aria-label="Suggested skills" className="divide-y">
+                <ul aria-label={t("skillsSuggested", "Suggested skills")} className="divide-y">
                   {s.suggestions.map((x) => (
                     <SuggestionRow
                       key={x.name}

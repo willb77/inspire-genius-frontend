@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import {
   AlertTriangle,
@@ -62,11 +63,11 @@ import type { InterviewGuide } from "@/types/job-blueprint"
  */
 
 /** Category → the plain word we use for it. The API's terms are internal. */
-const CATEGORY_LABEL: Record<string, string> = {
-  behavior: "how you work with people",
-  aptitude: "how you think",
-  "core-trait": "what drives you",
-  core_trait: "what drives you",
+const CATEGORY_LABEL_KEY: Record<string, string> = {
+  behavior: "behavior",
+  aptitude: "aptitude",
+  "core-trait": "coreTrait",
+  core_trait: "coreTrait",
 }
 
 function GuideSections({
@@ -76,6 +77,12 @@ function GuideSections({
   guide: InterviewGuide
   advocacy: string[]
 }) {
+  const { t } = useTranslation("directionPages")
+  const categoryLabels: Record<string, string> = {
+    behavior: t("interview.category.behavior", "how you work with people"),
+    aptitude: t("interview.category.aptitude", "how you think"),
+    coreTrait: t("interview.category.coreTrait", "what drives you"),
+  }
   return (
     <div className="space-y-6">
       {/* The strengths first, deliberately. Someone opening this page is more
@@ -85,7 +92,7 @@ function GuideSections({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-              Worth saying out loud
+              {t("interview.worthSayingOutLoud", "Worth saying out loud")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -108,12 +115,10 @@ function GuideSections({
       {guide.focusDimensions.length > 0 && (
         <section aria-labelledby="guide-focus">
           <h2 id="guide-focus" className="mb-1 text-sm font-medium">
-            What they&apos;re most likely to dig into
+            {t("interview.whatTheyReMostLikely", "What they're most likely to dig into")}
           </h2>
           <p className="mb-3 text-sm text-muted-foreground">
-            These come from the places where your profile sits furthest from what
-            this role is benchmarked for. Being asked about them isn&apos;t a
-            trap — it&apos;s the part of the conversation you can prepare for.
+            {t("interview.theseComeFromThePlaces", "These come from the places where your profile sits furthest from what this role is benchmarked for. Being asked about them isn't a trap — it's the part of the conversation you can prepare for.")}
           </p>
           <div className="space-y-3">
             {guide.focusDimensions.map((fd) => (
@@ -122,10 +127,14 @@ function GuideSections({
                   <CardTitle className="flex flex-wrap items-center gap-2 text-sm">
                     {fd.dimensionName}
                     <Badge variant="outline" className="text-xs font-normal">
-                      {CATEGORY_LABEL[fd.category] ?? fd.category}
+                      {categoryLabels[CATEGORY_LABEL_KEY[fd.category]] ?? fd.category}
                     </Badge>
                     <span className="ml-auto text-xs font-normal text-muted-foreground">
-                      You {fd.candidateScore} · this role typically {fd.benchmarkScore}
+                      {t("interview.youVersusRole", {
+                        defaultValue: "You {{yours}} · this role typically {{typical}}",
+                        yours: fd.candidateScore,
+                        typical: fd.benchmarkScore,
+                      })}
                     </span>
                   </CardTitle>
                 </CardHeader>
@@ -151,12 +160,10 @@ function GuideSections({
       {guide.counterProductiveQuestions.length > 0 && (
         <section aria-labelledby="guide-pressure">
           <h2 id="guide-pressure" className="mb-1 text-sm font-medium">
-            Where the conversation might get uncomfortable
+            {t("interview.whereTheConversationMightGet", "Where the conversation might get uncomfortable")}
           </h2>
           <p className="mb-3 text-sm text-muted-foreground">
-            Everyone has habits that show up under pressure. Interviewers probe
-            them because they&apos;re normal, not because something is wrong with
-            you. Having an honest example ready takes the sting out.
+            {t("interview.everyoneHasHabitsThatShow", "Everyone has habits that show up under pressure. Interviewers probe them because they're normal, not because something is wrong with you. Having an honest example ready takes the sting out.")}
           </p>
           <Card>
             <CardContent className="space-y-4 p-4">
@@ -193,7 +200,7 @@ function GuideSections({
       {guide.generalQuestions.length > 0 && (
         <section aria-labelledby="guide-general">
           <h2 id="guide-general" className="mb-3 text-sm font-medium">
-            Questions that come up for almost any role
+            {t("interview.questionsThatComeUpFor", "Questions that come up for almost any role")}
           </h2>
           <Card>
             <CardContent className="p-4">
@@ -222,6 +229,7 @@ function GuideSections({
 const SELF_CANDIDATE = "me"
 
 export default function InterviewPage() {
+  const { t } = useTranslation("directionPages")
   const navigate = useNavigate()
   /**
    * The candidate this guide is for — always the person looking at the page.
@@ -313,19 +321,16 @@ export default function InterviewPage() {
   return (
     <div className="space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-semibold">Getting ready for the interview</h1>
+        <h1 className="text-2xl font-semibold">{t("interview.gettingReadyForTheInterview", "Getting ready for the interview")}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Interviews feel like a test of who you are. They&apos;re mostly a test of
-          how well you&apos;ve thought about it beforehand — and that part is
-          entirely within your control. This page tells you which questions this
-          particular role is likely to lean on, and why.
+          {t("interview.interviewsFeelLikeATest", "Interviews feel like a test of who you are. They're mostly a test of how well you've thought about it beforehand — and that part is entirely within your control. This page tells you which questions this particular role is likely to lean on, and why.")}
         </p>
       </header>
 
       {matchesLoading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Looking up the roles you&apos;re matched to…
+          {t("interview.lookingUpTheRolesYou", "Looking up the roles you're matched to…")}
         </div>
       )}
 
@@ -334,22 +339,17 @@ export default function InterviewPage() {
         <Card>
           <CardContent className="space-y-3 p-6">
             <p className="text-sm">
-              There&apos;s no role to prepare for yet.
+              {t("interview.thereSNoRoleTo", "There's no role to prepare for yet.")}
             </p>
             <p className="text-sm text-muted-foreground">
-              The questions on this page are built from one specific role&apos;s
-              benchmark compared with your own profile — that&apos;s what makes
-              them worth rehearsing rather than generic. So we need a target role
-              first, and that comes from your job matches. If your matches are
-              empty, it usually means no roles have been published to you yet,
-              which is normal early on and isn&apos;t anything you did wrong.
+              {t("interview.theQuestionsOnThisPage", "The questions on this page are built from one specific role's benchmark compared with your own profile — that's what makes them worth rehearsing rather than generic. So we need a target role first, and that comes from your job matches. If your matches are empty, it usually means no roles have been published to you yet, which is normal early on and isn't anything you did wrong.")}
             </p>
             <Button
               type="button"
               onClick={() => navigate(ROUTES.DIRECTION_SETTING.MATCHES)}
             >
               <ScanSearch className="mr-1.5 h-4 w-4" aria-hidden />
-              Go to job matches
+              {t("interview.goToJobMatches", "Go to job matches")}
               <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
             </Button>
           </CardContent>
@@ -361,7 +361,7 @@ export default function InterviewPage() {
           {matches.length > 1 && (
             <section aria-labelledby="guide-role">
               <h2 id="guide-role" className="mb-2 text-sm font-medium">
-                Which role are you preparing for?
+                {t("interview.whichRoleAreYouPreparing", "Which role are you preparing for?")}
               </h2>
               <div className="flex flex-wrap gap-1.5">
                 {matches.map((m) => (
@@ -391,12 +391,12 @@ export default function InterviewPage() {
             <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="min-w-0">
                 <p className="font-medium">
-                  {role?.roleTitle ?? "Your target role"}
+                  {role?.roleTitle ?? t("interview.yourTargetRole", "Your target role")}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {guide
-                    ? "Built from your profile against this role's benchmark. Rebuild it any time your profile changes."
-                    : "We'll work out the questions this role is likely to lean on for you specifically."}
+                    ? t("interview.builtFromYourProfile", "Built from your profile against this role's benchmark. Rebuild it any time your profile changes.")
+                    : t("interview.wellWorkOutTheQuestions", "We'll work out the questions this role is likely to lean on for you specifically.")}
                 </p>
               </div>
               <Button
@@ -407,15 +407,16 @@ export default function InterviewPage() {
                 {generate.isPending && (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
                 )}
-                {guide ? "Rebuild" : "Build my prep sheet"}
+                {guide
+                  ? t("interview.rebuild", "Rebuild")
+                  : t("interview.buildMyPrepSheet", "Build my prep sheet")}
               </Button>
             </CardContent>
           </Card>
 
           {generate.isError && (
             <p className="text-sm text-muted-foreground">
-              That didn&apos;t come back just now. Try again in a moment —
-              nothing has been lost.
+              {t("interview.thatDidnTComeBack", "That didn't come back just now. Try again in a moment — nothing has been lost.")}
             </p>
           )}
 
@@ -429,7 +430,7 @@ export default function InterviewPage() {
           {guide && (
             <footer className="border-t pt-4">
               <p className="mb-2 text-sm text-muted-foreground">
-                Want to practise saying any of this out loud?
+                {t("interview.wantToPractiseSayingAny", "Want to practise saying any of this out loud?")}
               </p>
               <Button
                 type="button"
@@ -437,7 +438,7 @@ export default function InterviewPage() {
                 size="sm"
                 onClick={() => navigate(ROUTES.DIRECTION_SETTING.REHEARSE)}
               >
-                Go to rehearsal
+                {t("interview.goToRehearsal", "Go to rehearsal")}
                 <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Button>
             </footer>

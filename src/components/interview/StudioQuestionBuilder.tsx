@@ -13,6 +13,7 @@
  * pipeline runs and the generic scorer bands.
  */
 import { useRef, useState, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { Building2, Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -25,6 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
+import { SLOT, slotParts, type TFn } from "@/components/interview/tFallback"
 import type { InterviewFrame } from "@/services/interview/practice.service"
 import {
   employerPackToQuestions,
@@ -80,12 +82,12 @@ export type StudioQuestionBuilderProps = {
   initialKind?: InterviewKind
 }
 
-const KIND_OPTIONS: { value: InterviewKind; label: string; hint: string }[] = [
-  { value: "general", label: "Development / discovery", hint: "Warm, growth-oriented — no hiring verdict" },
+const kindOptions = (t: TFn): { value: InterviewKind; label: string; hint: string }[] => [
+  { value: "general", label: t("builder.kind.generalLabel", "Development / discovery"), hint: t("builder.kind.generalHint", "Warm, growth-oriented — no hiring verdict") },
   // The band words changed 2026-09-09 with the backend's. "Selection" names
   // what the interview is FOR; the bands describe the evidence gathered, never
   // an instruction about the person (the platform informs, it does not decide).
-  { value: "hiring", label: "Selection / evaluation", hint: "Evaluative — strong to limited alignment with the role" },
+  { value: "hiring", label: t("builder.kind.hiringLabel", "Selection / evaluation"), hint: t("builder.kind.hiringHint", "Evaluative — strong to limited alignment with the role") },
 ]
 
 export default function StudioQuestionBuilder({
@@ -95,6 +97,7 @@ export default function StudioQuestionBuilder({
   developmentOnly,
   initialKind = "general",
 }: StudioQuestionBuilderProps) {
+  const { t } = useTranslation("interviewPages")
   const [title, setTitle] = useState("")
   const [purpose, setPurpose] = useState("")
   const [audience, setAudience] = useState("")
@@ -117,6 +120,10 @@ export default function StudioQuestionBuilder({
   const packs = useEmployerPacks()
   const loadPack = useLoadEmployerPack()
 
+  const [reqBefore, reqAfter] = slotParts(
+    t("frame.requisition.title", { defaultValue: "Requisition / role opening {{slot}}", slot: SLOT }),
+  )
+
   const nonEmpty = rows.filter((r) => r.text.trim().length > 0)
 
   const addRow = () => setRows((r) => [...r, { text: "", theme: "", source: "manual" }])
@@ -126,7 +133,7 @@ export default function StudioQuestionBuilder({
 
   const handleLoadPack = async () => {
     if (!packSlug) {
-      toast.error("Pick an employer or sector first.")
+      toast.error(t("builder.pickPackFirst", "Pick an employer or sector first."))
       return
     }
     try {
@@ -144,15 +151,15 @@ export default function StudioQuestionBuilder({
           sourceRef: detail.pack.slug,
         })),
       ])
-      toast.success(`Loaded ${detail.questions.length} questions from ${detail.pack.name}.`)
+      toast.success(t("builder.packLoaded", { defaultValue: "Loaded {{questions}} questions from {{name}}.", questions: detail.questions.length, name: detail.pack.name }))
     } catch {
-      toast.error("Could not load that pack. Add your questions another way.")
+      toast.error(t("builder.packFailed", "Could not load that pack. Add your questions another way."))
     }
   }
 
   const handleGenerate = async () => {
     if (!title.trim()) {
-      toast.error("Add an interview topic first.")
+      toast.error(t("builder.topicFirst", "Add an interview topic first."))
       return
     }
     try {
@@ -178,12 +185,12 @@ export default function StudioQuestionBuilder({
         })),
       ])
       if (set.generated) {
-        toast.success(`Drafted ${generated.length} questions — review and edit below.`)
+        toast.success(t("builder.drafted", { defaultValue: "Drafted {{questions}} questions — review and edit below.", questions: generated.length }))
       } else {
-        toast.message("Added a starter question set — the AI draft wasn't available, so these are general discovery questions.")
+        toast.message(t("builder.starterSet", "Added a starter question set — the AI draft wasn't available, so these are general discovery questions."))
       }
     } catch {
-      toast.error("Could not generate questions. Try again, or add them manually.")
+      toast.error(t("builder.generateFailed", "Could not generate questions. Try again, or add them manually."))
     }
   }
 
@@ -194,16 +201,22 @@ export default function StudioQuestionBuilder({
       const { text } = await extractRoleText(file)
       const parsed = parseQuestionList(text)
       if (parsed.length === 0) {
-        toast.error("No questions found in that file — it may be empty or unreadable.")
+        toast.error(t("builder.noQuestionsInFile", "No questions found in that file — it may be empty or unreadable."))
         return
       }
       setRows((r) => [...r, ...parsed.map((q) => ({ text: q, theme: "", source: "upload" as const }))])
-      toast.success(`Loaded ${parsed.length} question${parsed.length === 1 ? "" : "s"} — review and edit below.`)
+      toast.success(
+        t("builder.loadedFromFile", {
+          defaultValue_one: "Loaded {{count}} question — review and edit below.",
+          defaultValue_other: "Loaded {{count}} questions — review and edit below.",
+          count: parsed.length,
+        }),
+      )
     } catch (e) {
       const msg =
         e instanceof RoleExtractionError
           ? e.message
-          : "Could not read that file. Try a .txt, .md, .pdf, or .docx list."
+          : t("builder.readFailed", "Could not read that file. Try a .txt, .md, .pdf, or .docx list.")
       toast.error(msg)
     } finally {
       setUploading(false)
@@ -213,7 +226,7 @@ export default function StudioQuestionBuilder({
 
   const handleConfirm = () => {
     if (nonEmpty.length === 0) {
-      toast.error("Add at least one question before starting.")
+      toast.error(t("builder.addOne", "Add at least one question before starting."))
       return
     }
     const questions: StudioQuestion[] = nonEmpty.map((r) => ({
@@ -253,83 +266,80 @@ export default function StudioQuestionBuilder({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Wand2 className="h-4 w-4 text-indigo-600" /> Design the interview
+            <Wand2 className="h-4 w-4 text-indigo-600" /> {t("builder.designTitle", "Design the interview")}
           </CardTitle>
           <p className="text-sm text-slate-600">
-            Give the interview a topic and pick its style. You can generate a
-            question set from the topic, add your own questions, or both.
+            {t("builder.designIntro", "Give the interview a topic and pick its style. You can generate a question set from the topic, add your own questions, or both.")}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="studio-title">Interview topic</Label>
+            <Label htmlFor="studio-title">{t("builder.topicLabel", "Interview topic")}</Label>
             <Input
               id="studio-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Student career discovery, Values & culture fit, New-hire onboarding"
+              placeholder={t("builder.topicPlaceholder", "e.g. Student career discovery, Values & culture fit, New-hire onboarding")}
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="studio-purpose">Purpose (optional)</Label>
+              <Label htmlFor="studio-purpose">{t("builder.purposeLabel", "Purpose (optional)")}</Label>
               <Input
                 id="studio-purpose"
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
-                placeholder="e.g. Career counseling led by a counselor"
+                placeholder={t("builder.purposePlaceholder", "e.g. Career counseling led by a counselor")}
               />
             </div>
             <div>
-              <Label htmlFor="studio-audience">Who you're interviewing (optional)</Label>
+              <Label htmlFor="studio-audience">{t("builder.audienceLabel", "Who you're interviewing (optional)")}</Label>
               <Input
                 id="studio-audience"
                 value={audience}
                 onChange={(e) => setAudience(e.target.value)}
-                placeholder="e.g. A first-year college student"
+                placeholder={t("builder.audiencePlaceholder", "e.g. A first-year college student")}
               />
             </div>
           </div>
           {kind === "hiring" && (
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
               <p className="text-sm font-semibold text-slate-800">
-                Requisition / role opening{" "}
-                <span className="font-normal text-slate-500">(optional)</span>
+                {reqBefore}
+                <span className="font-normal text-slate-500">{t("frame.optional", "(optional)")}</span>
+                {reqAfter}
               </p>
               <p className="mt-0.5 text-xs text-slate-600">
-                Key this interview to the opening it is for, so everyone interviewed
-                for it can be compared against the same procedure. Shown for hiring
-                interviews only — a development or discovery conversation is not run
-                against an opening.
+                {t("builder.requisitionHelp", "Key this interview to the opening it is for, so everyone interviewed for it can be compared against the same procedure. Shown for hiring interviews only — a development or discovery conversation is not run against an opening.")}
               </p>
               <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label htmlFor="studio-requisition-id">Requisition ID</Label>
+                  <Label htmlFor="studio-requisition-id">{t("frame.requisition.idLabel", "Requisition ID")}</Label>
                   <Input
                     id="studio-requisition-id"
                     value={requisitionId}
                     onChange={(e) => setRequisitionId(e.target.value)}
                     maxLength={120}
-                    placeholder="ATS req #, e.g. REQ-2041"
+                    placeholder={t("frame.requisition.idPlaceholder", "ATS req #, e.g. REQ-2041")}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="studio-requisition-label">Opening name</Label>
+                  <Label htmlFor="studio-requisition-label">{t("frame.requisition.nameLabel", "Opening name")}</Label>
                   <Input
                     id="studio-requisition-label"
                     value={requisitionLabel}
                     onChange={(e) => setRequisitionLabel(e.target.value)}
                     maxLength={240}
-                    placeholder="e.g. Regional Manager — North"
+                    placeholder={t("frame.requisition.namePlaceholder", "e.g. Regional Manager — North")}
                   />
                 </div>
               </div>
             </div>
           )}
           <div>
-            <Label>Interview style</Label>
+            <Label>{t("builder.styleLabel", "Interview style")}</Label>
             <div className="mt-1 grid gap-2 sm:grid-cols-2">
-              {KIND_OPTIONS.map((opt) => (
+              {kindOptions(t).map((opt) => (
                 <button
                   key={opt.value}
                   type="button"
@@ -358,20 +368,20 @@ export default function StudioQuestionBuilder({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Questions</CardTitle>
+          <CardTitle className="text-base">{t("builder.questionsTitle", "Questions")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs defaultValue="generate">
             <TabsList>
-              <TabsTrigger value="generate">Generate from topic</TabsTrigger>
-              <TabsTrigger value="manual">Add manually</TabsTrigger>
-              <TabsTrigger value="upload">Upload a file</TabsTrigger>
-              <TabsTrigger value="employer">Employer framework</TabsTrigger>
+              <TabsTrigger value="generate">{t("builder.tab.generate", "Generate from topic")}</TabsTrigger>
+              <TabsTrigger value="manual">{t("builder.tab.manual", "Add manually")}</TabsTrigger>
+              <TabsTrigger value="upload">{t("builder.tab.upload", "Upload a file")}</TabsTrigger>
+              <TabsTrigger value="employer">{t("builder.tab.employer", "Employer framework")}</TabsTrigger>
             </TabsList>
             <TabsContent value="generate" className="space-y-3 pt-3">
               <div className="flex flex-wrap items-end gap-3">
                 <div className="w-28">
-                  <Label htmlFor="studio-count">How many</Label>
+                  <Label htmlFor="studio-count">{t("builder.howMany", "How many")}</Label>
                   <Input
                     id="studio-count"
                     type="number"
@@ -387,49 +397,44 @@ export default function StudioQuestionBuilder({
                   ) : (
                     <Sparkles className="mr-2 h-4 w-4" />
                   )}
-                  Generate questions
+                  {t("builder.generate", "Generate questions")}
                 </Button>
               </div>
               <p className="text-xs text-slate-500">
-                Uses the topic, purpose, and audience above. Drafted questions
-                are added to the list below — edit or remove any before starting.
+                {t("builder.generateHelp", "Uses the topic, purpose, and audience above. Drafted questions are added to the list below — edit or remove any before starting.")}
               </p>
             </TabsContent>
             <TabsContent value="manual" className="pt-3">
               <Button type="button" variant="outline" onClick={addRow}>
-                <Plus className="mr-2 h-4 w-4" /> Add a question
+                <Plus className="mr-2 h-4 w-4" /> {t("builder.addQuestion", "Add a question")}
               </Button>
             </TabsContent>
             <TabsContent value="employer" className="space-y-3 pt-3">
               <p className="text-sm text-slate-600">
-                Seed the interview from a curated pack anchored to an employer&apos;s
-                own published hiring framework. Every question maps to one of the
-                12 competencies, so the framework changes how a question sounds —
-                never what is being assessed.
+                {t("builder.employerIntro", "Seed the interview from a curated pack anchored to an employer's own published hiring framework. Every question maps to one of the 12 competencies, so the framework changes how a question sounds — never what is being assessed.")}
               </p>
 
               {packs.isError ? (
                 <p className="text-sm text-amber-700" role="status">
-                  The employer catalogue could not be loaded. Add your questions
-                  another way — nothing here is required.
+                  {t("builder.catalogueFailed", "The employer catalogue could not be loaded. Add your questions another way — nothing here is required.")}
                 </p>
               ) : (
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="min-w-[18rem] flex-1">
-                    <Label htmlFor="studio-employer">Employer or sector</Label>
+                    <Label htmlFor="studio-employer">{t("builder.employerLabel", "Employer or sector")}</Label>
                     <select
                       id="studio-employer"
-                      aria-label="Employer or sector"
+                      aria-label={t("builder.employerLabel", "Employer or sector")}
                       className="mt-1 h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm"
                       value={packSlug}
                       onChange={(e) => setPackSlug(e.target.value)}
                       disabled={packs.isLoading}
                     >
                       <option value="">
-                        {packs.isLoading ? "Loading…" : "Select…"}
+                        {packs.isLoading ? t("builder.loading", "Loading…") : t("builder.select", "Select…")}
                       </option>
                       {packs.data?.employers?.length ? (
-                        <optgroup label="Employers">
+                        <optgroup label={t("builder.employers", "Employers")}>
                           {packs.data.employers.map((p) => (
                             <option key={p.slug} value={p.slug}>
                               {p.name}
@@ -438,7 +443,7 @@ export default function StudioQuestionBuilder({
                         </optgroup>
                       ) : null}
                       {packs.data?.sectors?.length ? (
-                        <optgroup label="Sectors">
+                        <optgroup label={t("builder.sectors", "Sectors")}>
                           {packs.data.sectors.map((p) => (
                             <option key={p.slug} value={p.slug}>
                               {p.name}
@@ -458,7 +463,7 @@ export default function StudioQuestionBuilder({
                     ) : (
                       <Building2 className="mr-2 h-4 w-4" />
                     )}
-                    Load questions
+                    {t("builder.loadQuestions", "Load questions")}
                   </Button>
                 </div>
               )}
@@ -468,30 +473,30 @@ export default function StudioQuestionBuilder({
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{pack.pack.name}</Badge>
                     <span className="text-xs text-slate-500">
-                      {pack.questions.length} questions loaded
+                      {t("builder.questionsLoaded", { defaultValue: "{{questions}} questions loaded", questions: pack.questions.length })}
                     </span>
                   </div>
                   {pack.pack.framework ? (
                     <p className="text-xs text-slate-700">
-                      <span className="font-semibold">Hires against:</span>{" "}
+                      <span className="font-semibold">{t("builder.hiresAgainst", "Hires against:")}</span>{" "}
                       {pack.pack.framework}
                     </p>
                   ) : null}
                   {pack.pack.howTheyInterview ? (
                     <p className="text-xs text-slate-700">
-                      <span className="font-semibold">How the loop runs:</span>{" "}
+                      <span className="font-semibold">{t("builder.loopRuns", "How the loop runs:")}</span>{" "}
                       {pack.pack.howTheyInterview}
                     </p>
                   ) : null}
                   {pack.pack.optimizesFor ? (
                     <p className="text-xs text-slate-700">
-                      <span className="font-semibold">Optimises for:</span>{" "}
+                      <span className="font-semibold">{t("builder.optimisesFor", "Optimises for:")}</span>{" "}
                       {pack.pack.optimizesFor}
                     </p>
                   ) : null}
                   {pack.pack.coachingNote ? (
                     <p className="text-xs text-slate-700">
-                      <span className="font-semibold">Coaching note:</span>{" "}
+                      <span className="font-semibold">{t("builder.coachingNote", "Coaching note:")}</span>{" "}
                       {pack.pack.coachingNote}
                     </p>
                   ) : null}
@@ -507,7 +512,7 @@ export default function StudioQuestionBuilder({
                 type="file"
                 accept={ACCEPTED_ROLE_FILE_TYPES}
                 className="hidden"
-                aria-label="Upload a question list file"
+                aria-label={t("builder.uploadAria", "Upload a question list file")}
                 onChange={(e) => void handleFile(e.target.files?.[0] ?? undefined)}
               />
               <Button
@@ -517,26 +522,24 @@ export default function StudioQuestionBuilder({
                 onClick={() => fileInputRef.current?.click()}
               >
                 {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                Choose a file
+                {t("builder.chooseFile", "Choose a file")}
               </Button>
               <p className="text-xs text-slate-500">
-                Upload a list of questions — one per line — as a .txt, .md, .pdf, or
-                .docx file. Numbering and bullets are stripped automatically; each
-                question is added to the list below to edit or remove.
+                {t("builder.uploadHelp", "Upload a list of questions — one per line — as a .txt, .md, .pdf, or .docx file. Numbering and bullets are stripped automatically; each question is added to the list below to edit or remove.")}
               </p>
             </TabsContent>
           </Tabs>
 
           {rows.length === 0 ? (
             <p className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-sm text-slate-500">
-              No questions yet. Generate a set from the topic, or add your own.
+              {t("builder.noQuestions", "No questions yet. Generate a set from the topic, or add your own.")}
             </p>
           ) : (
             <div className="space-y-3">
               {rows.map((row, i) => (
                 <div key={i} className="rounded-lg border border-slate-200 p-3">
                   <div className="mb-2 flex items-center justify-between">
-                    <Badge variant="secondary">Q{i + 1}</Badge>
+                    <Badge variant="secondary">{t("builder.questionShort", { defaultValue: "Q{{number}}", number: i + 1 })}</Badge>
                     <Button
                       type="button"
                       variant="ghost"
@@ -550,20 +553,20 @@ export default function StudioQuestionBuilder({
                   <Textarea
                     value={row.text}
                     onChange={(e) => updateRow(i, { text: e.target.value })}
-                    placeholder="Question text…"
+                    placeholder={t("builder.questionPlaceholder", "Question text…")}
                     rows={2}
                   />
                   <div className="mt-2">
                     <Input
                       value={row.theme}
                       onChange={(e) => updateRow(i, { theme: e.target.value })}
-                      placeholder="Theme (optional, e.g. Motivation, Goals) — groups the scored write-up"
+                      placeholder={t("builder.themePlaceholder", "Theme (optional, e.g. Motivation, Goals) — groups the scored write-up")}
                     />
                   </div>
                 </div>
               ))}
               <Button type="button" variant="outline" size="sm" onClick={addRow}>
-                <Plus className="mr-2 h-4 w-4" /> Add another
+                <Plus className="mr-2 h-4 w-4" /> {t("builder.addAnother", "Add another")}
               </Button>
             </div>
           )}
@@ -572,11 +575,15 @@ export default function StudioQuestionBuilder({
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">
-          {nonEmpty.length} question{nonEmpty.length === 1 ? "" : "s"} ready
+          {t("builder.readyCount", {
+            defaultValue_one: "{{count}} question ready",
+            defaultValue_other: "{{count}} questions ready",
+            count: nonEmpty.length,
+          })}
         </p>
         <Button onClick={handleConfirm} disabled={!!submitting || nonEmpty.length === 0}>
           {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Start the interview
+          {t("builder.start", "Start the interview")}
         </Button>
       </div>
     </div>
