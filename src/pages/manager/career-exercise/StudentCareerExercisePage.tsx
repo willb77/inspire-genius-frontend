@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom"
 import ManagerLayout from "@/layouts/ManagerLayout"
 import { CounselorExerciseView } from "@/pages/practitioner/career-exercise/CounselorExerciseView"
+import { useTranslation } from "react-i18next"
 
 /**
  * CX-6 — a manager's (counselor's) view of one student's career exploration
@@ -8,15 +9,14 @@ import { CounselorExerciseView } from "@/pages/practitioner/career-exercise/Coun
  * see the student.
  */
 export default function ManagerStudentCareerExercisePage() {
+  const { t } = useTranslation("managerPages")
   const { studentId } = useParams<{ studentId: string }>()
   return (
     <ManagerLayout>
       <div className="space-y-6 p-6">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold">Career exploration exercise</h1>
-          <p className="text-sm text-muted-foreground">
-            The student's own answers, step by step. Your notes sit beside them and never change what the student wrote.
-          </p>
+          <h1 className="text-2xl font-semibold">{t("studentCareerExercisePage.careerExplorationExercise", { defaultValue: "Career exploration exercise" })}</h1>
+          <p className="text-sm text-muted-foreground">{t("studentCareerExercisePage.theStudentSOwnAnswers", { defaultValue: "The student's own answers, step by step. Your notes sit beside them and never change what the student wrote." })}</p>
         </header>
         <CounselorExerciseView studentId={studentId} />
       </div>

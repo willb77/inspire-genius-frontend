@@ -38,6 +38,7 @@ import type { DevelopmentGap, LearningItem, SummitGoal } from "@/types/developme
 import type { UpdateLearningItemInput } from "@/services/manager/development/growthService"
 import { useUpdateLearningItem } from "@/hooks/manager/development"
 import { useDevSkin } from "../skin"
+import { useTranslation } from "react-i18next"
 
 /** 0..100, integer. Anything else is not a percentage the server will take.
  *  Module-private on purpose: a second value export here would trip
@@ -71,6 +72,7 @@ function LearningItemRow({
   onSave: (itemId: string, input: UpdateLearningItemInput) => void
   saving: boolean
 }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const [percent, setPercent] = useState(String(item.progress ?? 0))
   return (
@@ -85,9 +87,7 @@ function LearningItemRow({
             <span>{item.provider}</span>
             {item.estHours ? (
               <span className="inline-flex items-center gap-0.5">
-                <Clock className="h-3 w-3" aria-hidden="true" />
-                {item.estHours}h
-              </span>
+                <Clock className="h-3 w-3" aria-hidden="true" />{t("learningPlanPanel.h", { defaultValue: "{{estHours}}h", estHours: item.estHours })}</span>
             ) : null}
             {item.format ? <Badge variant="outline" className="capitalize">{item.format}</Badge> : null}
           </div>
@@ -97,23 +97,21 @@ function LearningItemRow({
         </Badge>
       </div>
       {typeof item.progress === "number" ? (
-        <Progress value={item.progress} className="h-1.5" aria-label={`Progress ${item.progress}%`} />
+        <Progress value={item.progress} className="h-1.5" aria-label={t("learningPlanPanel.progress", { defaultValue: "Progress {{progress}}%", progress: item.progress })} />
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         {typeof item.quizScore === "number" ? (
-          <span className={cn("text-xs", sk.text500)}>Quiz: {item.quizScore}%</span>
+          <span className={cn("text-xs", sk.text500)}>{t("learningPlanPanel.quiz", { defaultValue: "Quiz: {{quizScore}}%", quizScore: item.quizScore })}</span>
         ) : (
           <span />
         )}
-        <Button size="sm" variant="outline" onClick={onAssign}>
-          Assign in Training
-        </Button>
+        <Button size="sm" variant="outline" onClick={onAssign}>{t("learningPlanPanel.assignInTraining", { defaultValue: "Assign in Training" })}</Button>
       </div>
       {/* The write. Progress is saved on its own so it does not blank anything
           else; the server writes only the fields it receives. */}
       <form
         className="flex flex-wrap items-center gap-2"
-        aria-label={`Save progress on ${item.title}`}
+        aria-label={t("learningPlanPanel.saveProgressOn", { defaultValue: "Save progress on {{title}}", title: item.title })}
         // `noValidate` on purpose. `min`/`max` bound the spinner, but native
         // constraint validation BLOCKS submit for an out-of-range value, which
         // would make the clamp below unreachable and leave the manager with a
@@ -135,11 +133,11 @@ function LearningItemRow({
           max={100}
           value={percent}
           onChange={(e) => setPercent(e.target.value)}
-          aria-label={`Percent complete for ${item.title}`}
+          aria-label={t("learningPlanPanel.percentCompleteFor", { defaultValue: "Percent complete for {{title}}", title: item.title })}
           className={cn("w-20 rounded-md border px-2 py-1 text-xs", sk.border200, sk.text700)}
         />
         <Button type="submit" size="sm" variant="ghost" disabled={saving}>
-          {saving ? "Saving…" : "Save progress"}
+          {saving ? t("learningPlanPanel.saving", { defaultValue: "Saving…" }) : t("learningPlanPanel.saveProgress", { defaultValue: "Save progress" })}
         </Button>
         {item.status === "complete" ? (
           <Button
@@ -148,9 +146,7 @@ function LearningItemRow({
             variant="ghost"
             disabled={saving}
             onClick={() => onSave(item.itemId, { status: "in_progress" })}
-          >
-            Reopen
-          </Button>
+          >{t("learningPlanPanel.reopen", { defaultValue: "Reopen" })}</Button>
         ) : (
           <Button
             type="button"
@@ -158,9 +154,7 @@ function LearningItemRow({
             variant="ghost"
             disabled={saving}
             onClick={() => onSave(item.itemId, { status: "complete", progress: 100 })}
-          >
-            Mark complete
-          </Button>
+          >{t("learningPlanPanel.markComplete", { defaultValue: "Mark complete" })}</Button>
         )}
       </form>
     </div>
@@ -179,6 +173,7 @@ export type LearningPlanPanelProps = {
 }
 
 export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }: LearningPlanPanelProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const navigate = useNavigate()
   const update = useUpdateLearningItem(memberId)
@@ -193,13 +188,13 @@ export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }
           setSavingItemId(null)
           toast.success(
             typeof saved.progress === "number"
-              ? `Saved — ${saved.progress}% complete.`
-              : "Saved.",
+              ? t("learningPlanPanel.savedComplete", { defaultValue: "Saved — {{progress}}% complete.", progress: saved.progress })
+              : t("learningPlanPanel.saved", { defaultValue: "Saved." }),
           )
         },
         onError: (err) => {
           setSavingItemId(null)
-          toast.error(apiErrorMessage(err, "That didn't save. The item is unchanged."))
+          toast.error(apiErrorMessage(err, t("learningPlanPanel.thatDidnTSaveTheItem", { defaultValue: "That didn't save. The item is unchanged." })))
         },
       },
     )
@@ -208,9 +203,7 @@ export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }
   if (notShared) {
     return (
       <Card className="border-dashed">
-        <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="learning-not-shared">
-          This learning plan hasn&apos;t been shared with you. That isn&apos;t the same as having none.
-        </CardContent>
+        <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="learning-not-shared">{t("learningPlanPanel.thisLearningPlanHasnT", { defaultValue: "This learning plan hasn't been shared with you. That isn't the same as having none." })}</CardContent>
       </Card>
     )
   }
@@ -218,9 +211,7 @@ export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }
   if (!Array.isArray(learning)) {
     return (
       <Card className="border-dashed">
-        <CardContent className="p-6 text-center text-sm text-amber-700" role="status" data-testid="learning-unavailable">
-          The learning plan couldn&apos;t be loaded right now. That isn&apos;t the same as having none.
-        </CardContent>
+        <CardContent className="p-6 text-center text-sm text-amber-700" role="status" data-testid="learning-unavailable">{t("learningPlanPanel.theLearningPlanCouldnT", { defaultValue: "The learning plan couldn't be loaded right now. That isn't the same as having none." })}</CardContent>
       </Card>
     )
   }
@@ -228,9 +219,7 @@ export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }
   if (learning.length === 0) {
     return (
       <Card className="border-dashed">
-        <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
-          No learning items yet. Close a gap to seed one.
-        </CardContent>
+        <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>{t("learningPlanPanel.noLearningItemsYetClose", { defaultValue: "No learning items yet. Close a gap to seed one." })}</CardContent>
       </Card>
     )
   }
@@ -242,10 +231,10 @@ export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }
   const groups = new Map<string, LearningItem[]>()
   for (const item of learning) {
     const key = item.gapId
-      ? `Gap: ${gapLabel.get(item.gapId) ?? item.gapId}`
+      ? t("learningPlanPanel.gapGroup", { defaultValue: "Gap: {{name}}", name: gapLabel.get(item.gapId) ?? item.gapId })
       : item.goalId
-        ? `Goal: ${goalLabel.get(item.goalId) ?? item.goalId}`
-        : "General"
+        ? t("learningPlanPanel.goalGroup", { defaultValue: "Goal: {{name}}", name: goalLabel.get(item.goalId) ?? item.goalId })
+        : t("learningPlanPanel.general", { defaultValue: "General" })
     const arr = groups.get(key) ?? []
     arr.push(item)
     groups.set(key, arr)
@@ -255,10 +244,7 @@ export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }
 
   return (
     <div className="space-y-5">
-      <p className={cn("rounded-md p-2.5 text-xs", sk.bgMuted50, sk.text500)}>
-        Pacing note: items are sequenced to match this member’s behavioral learning preference —
-        avoid front-loading; space experiential items between reflective ones.
-      </p>
+      <p className={cn("rounded-md p-2.5 text-xs", sk.bgMuted50, sk.text500)}>{t("learningPlanPanel.pacingNoteItemsAreSequenced", { defaultValue: "Pacing note: items are sequenced to match this member’s behavioral learning preference — avoid front-loading; space experiential items between reflective ones." })}</p>
       {Array.from(groups.entries()).map(([group, items]) => (
         <div key={group} className="space-y-2">
           <h3 className={cn("text-xs font-semibold uppercase tracking-wide", sk.text500)}>{group}</h3>

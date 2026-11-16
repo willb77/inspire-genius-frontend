@@ -5,6 +5,7 @@ import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerCandidates, useManagerHiringStats } from "@/hooks/manager/useManagerTeam"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 type Candidate = {
   name: string
@@ -42,6 +43,7 @@ const matchColor = (score: number) =>
   score >= 85 ? "text-[#10B981]" : score >= 75 ? "text-[#3B82F6]" : "text-[#D97706]"
 
 export default function ManagerCandidates() {
+  const { t } = useTranslation("managerPages")
   const [activeStage, setActiveStage] = useState<string>("All")
   const { data: candidateData, isLoading, error, refetch } = useManagerCandidates()
   const { data: statsData, isLoading: statsLoading } = useManagerHiringStats()
@@ -51,17 +53,17 @@ export default function ManagerCandidates() {
   const stats = statsData as { openPositions?: number; totalCandidates?: number; interviewsThisWeek?: number; avgTimeToHire?: number } | undefined
 
   const STATS = [
-    { label: "Total Candidates", value: String(stats?.totalCandidates ?? candidates.length), color: "#3B5BFF" },
-    { label: "Active", value: String(candidates.filter((c) => c.stage !== "Offer").length), color: "#0D9488" },
-    { label: "Interview Stage", value: String(candidates.filter((c) => c.stage === "Interview").length), color: "#3B82F6" },
-    { label: "Offers Extended", value: String(candidates.filter((c) => c.stage === "Offer").length), color: "#10B981" },
+    { label: t("candidates.totalCandidates", { defaultValue: "Total Candidates" }), value: String(stats?.totalCandidates ?? candidates.length), color: "#3B5BFF" },
+    { label: t("candidates.active", { defaultValue: "Active" }), value: String(candidates.filter((c) => c.stage !== "Offer").length), color: "#0D9488" },
+    { label: t("candidates.interviewStage", { defaultValue: "Interview Stage" }), value: String(candidates.filter((c) => c.stage === "Interview").length), color: "#3B82F6" },
+    { label: t("candidates.offersExtended", { defaultValue: "Offers Extended" }), value: String(candidates.filter((c) => c.stage === "Offer").length), color: "#10B981" },
   ]
 
   return (
     <ManagerLayout>
       <PlaceholderBanner />
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Candidates</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Browse and manage candidates across your hiring pipeline.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("candidates.candidates", { defaultValue: "Candidates" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("candidates.browseAndManageCandidatesAcross", { defaultValue: "Browse and manage candidates across your hiring pipeline." })}</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {STATS.map((s) => (
@@ -92,11 +94,9 @@ export default function ManagerCandidates() {
         ))}
       </div>
 
-      <DataCard title="Candidate Pipeline" badge={filtered.length}>
+      <DataCard title={t("candidates.candidatePipeline", { defaultValue: "Candidate Pipeline" })} badge={filtered.length}>
         {error && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load candidates.
-            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{t("candidates.failedToLoadCandidates", { defaultValue: "Failed to load candidates." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("candidates.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
 
@@ -109,12 +109,12 @@ export default function ManagerCandidates() {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-left text-[11px] text-[#6b7280] border-b border-[#e5e7eb]">
-                  <th className="pb-2 font-medium">Name</th>
-                  <th className="pb-2 font-medium">Position</th>
-                  <th className="pb-2 font-medium">Stage</th>
-                  <th className="pb-2 font-medium">PRISM Match</th>
-                  <th className="pb-2 font-medium">Applied</th>
-                  <th className="pb-2 font-medium">Status</th>
+                  <th className="pb-2 font-medium">{t("candidates.name", { defaultValue: "Name" })}</th>
+                  <th className="pb-2 font-medium">{t("candidates.position", { defaultValue: "Position" })}</th>
+                  <th className="pb-2 font-medium">{t("candidates.stage", { defaultValue: "Stage" })}</th>
+                  <th className="pb-2 font-medium">{t("candidates.prismMatch", { defaultValue: "PRISM Match" })}</th>
+                  <th className="pb-2 font-medium">{t("candidates.applied", { defaultValue: "Applied" })}</th>
+                  <th className="pb-2 font-medium">{t("candidates.status", { defaultValue: "Status" })}</th>
                 </tr>
               </thead>
               <tbody>

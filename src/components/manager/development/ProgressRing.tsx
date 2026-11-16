@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { useDevSkin } from "./skin"
+import { useTranslation } from "react-i18next"
 
 export type ProgressRingProps = {
   /** 0–100. */
@@ -12,6 +13,7 @@ export type ProgressRingProps = {
 
 /** Small SVG progress ring for milestone completion. */
 export function ProgressRing({ value, size = 36, strokeWidth = 4, className, label }: ProgressRingProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const clamped = Math.max(0, Math.min(100, Math.round(value)))
   const radius = (size - strokeWidth) / 2
@@ -21,7 +23,7 @@ export function ProgressRing({ value, size = 36, strokeWidth = 4, className, lab
     <div
       className={cn("relative inline-flex items-center justify-center", className)}
       role="img"
-      aria-label={label ?? `${clamped}% complete`}
+      aria-label={label ?? t("progressRing.complete", { defaultValue: "{{clamped}}% complete", clamped })}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={sk.trackHex} strokeWidth={strokeWidth} />

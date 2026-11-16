@@ -40,6 +40,7 @@ import type {
   PrismQuadrantId,
 } from "@/types/development"
 import { useDevSkin } from "../skin"
+import { useTranslation } from "react-i18next"
 
 type CliftonDomain = CliftonTheme["domain"]
 
@@ -55,21 +56,18 @@ function quadrantColor(q: PrismQuadrantId): string {
 }
 
 function InviteToAddCard({ framework, onInvite }: { framework: string; onInvite?: () => void }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   return (
     <Card className="border-dashed">
       <CardContent className="flex flex-col items-start gap-2 p-4">
         <div className={cn("text-sm font-medium", sk.text700)}>
-          {onInvite ? `Invite to add ${framework}` : `${framework} not on file`}
+          {onInvite ? t("behavioralProfilePanel.inviteToAdd", { defaultValue: "Invite to add {{framework}}", framework }) : t("behavioralProfilePanel.notOnFile", { defaultValue: "{{framework}} not on file", framework })}
         </div>
-        <p className={cn("text-xs", sk.text500)}>
-          Not yet assessed. This overlay is missing, which lowers reconciliation confidence.
-          {onInvite ? null : " Inspire Genius can't send an invite for this assessment yet."}
+        <p className={cn("text-xs", sk.text500)}>{t("behavioralProfilePanel.notYetAssessedThisOverlay", { defaultValue: "Not yet assessed. This overlay is missing, which lowers reconciliation confidence." })}{onInvite ? null : t("behavioralProfilePanel.inspireGeniusCanTSend", { defaultValue: " Inspire Genius can't send an invite for this assessment yet." })}
         </p>
         {onInvite ? (
-          <Button size="sm" variant="outline" onClick={onInvite}>
-            Send invite
-          </Button>
+          <Button size="sm" variant="outline" onClick={onInvite}>{t("behavioralProfilePanel.sendInvite", { defaultValue: "Send invite" })}</Button>
         ) : null}
       </CardContent>
     </Card>
@@ -93,9 +91,10 @@ export type BehavioralProfilePanelProps = {
 export function BehavioralProfilePanel({
   profile, onInvite, notShared, noAccount, onRequestAccess, requestPending, requestSent, memberName,
 }: BehavioralProfilePanelProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const { prism, clifton, disc, reconciliation, coverage } = profile
-  const who = memberName?.trim() || "This member"
+  const who = memberName?.trim() || t("behavioralProfilePanel.thisMember", { defaultValue: "This member" })
 
   // TDS-1b. FIRST, before every other branch — and that order is the whole
   // point. The redaction empties `prism` while PRESERVING `coverage.prism`,
@@ -117,30 +116,20 @@ export function BehavioralProfilePanel({
           <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
             <Lock className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />
             <div className={cn("text-sm font-semibold", sk.text900)}>
-              {onFile ? "Not shared with you" : "Nothing on file yet"}
+              {onFile ? t("behavioralProfilePanel.notSharedWithYou", { defaultValue: "Not shared with you" }) : t("behavioralProfilePanel.nothingOnFileYet", { defaultValue: "Nothing on file yet" })}
             </div>
             <p className={cn("max-w-md text-sm", sk.text600)}>
               {onFile ? (
-                <>
-                  {who} has a PRISM profile on file but has not shared it with you. Nobody sees a
-                  behavioural profile by rank — they choose, person by person, from their own
-                  workspace. You can ask; asking grants nothing.
-                </>
+                <>{t("behavioralProfilePanel.hasAPrismProfileOn", { defaultValue: "{{who}} has a PRISM profile on file but has not shared it with you. Nobody sees a behavioural profile by rank — they choose, person by person, from their own workspace. You can ask; asking grants nothing.", who })}</>
               ) : (
-                <>
-                  {who} has no PRISM profile on file, so there is nothing to share yet. Nobody
-                  sees a behavioural profile by rank; this stays empty until they complete PRISM
-                  and choose to share it.
-                </>
+                <>{t("behavioralProfilePanel.hasNoPrismProfileOn", { defaultValue: "{{who}} has no PRISM profile on file, so there is nothing to share yet. Nobody sees a behavioural profile by rank; this stays empty until they complete PRISM and choose to share it.", who })}</>
               )}
             </p>
             {!onFile ? (
               // No profile means no ask: a request to share something that
               // does not exist cannot be granted, and would read to the member
               // as their manager asking for a thing they never made.
-              <p className={cn("text-sm", sk.text500)} data-testid="prism-state-none-on-file">
-                There is nothing to ask for yet.
-              </p>
+              <p className={cn("text-sm", sk.text500)} data-testid="prism-state-none-on-file">{t("behavioralProfilePanel.thereIsNothingToAsk", { defaultValue: "There is nothing to ask for yet." })}</p>
             ) : noAccount ? (
               // Measured 2026-09-14: all seven Studio-added rows on staging-b
               // carry synthetic member_ids matching no account, and
@@ -148,17 +137,12 @@ export function BehavioralProfilePanel({
               // :caller` — a synthetic id never equals a real sub. Offering
               // the ask here would report "Asked. They decide" for a request
               // no human can ever see.
-              <p className={cn("text-sm", sk.text500)} data-testid="prism-state-no-account">
-                {who} has no Inspires Genius account, so there is nobody to ask. A profile is
-                shared by the person it describes.
-              </p>
+              <p className={cn("text-sm", sk.text500)} data-testid="prism-state-no-account">{t("behavioralProfilePanel.hasNoInspiresGeniusAccount", { defaultValue: "{{who}} has no Inspires Genius account, so there is nobody to ask. A profile is shared by the person it describes.", who })}</p>
             ) : requestSent ? (
-              <p className={cn("text-sm", sk.text500)} data-testid="prism-request-sent">
-                Asked. {who} decides, and declining carries no consequence for them.
-              </p>
+              <p className={cn("text-sm", sk.text500)} data-testid="prism-request-sent">{t("behavioralProfilePanel.askedDecidesAndDecliningCarries", { defaultValue: "Asked. {{who}} decides, and declining carries no consequence for them.", who })}</p>
             ) : onRequestAccess ? (
               <Button variant="outline" onClick={onRequestAccess} disabled={requestPending}>
-                {requestPending ? "Asking…" : "Ask to see this profile"}
+                {requestPending ? t("behavioralProfilePanel.asking", { defaultValue: "Asking…" }) : t("behavioralProfilePanel.askToSeeThisProfile", { defaultValue: "Ask to see this profile" })}
               </Button>
             ) : null}
           </CardContent>
@@ -178,7 +162,7 @@ export function BehavioralProfilePanel({
       {/* PRISM radar + text table */}
       <Card>
         <CardHeader>
-          <CardTitle className={cn("text-base", sk.heading)}>PRISM behavioral map</CardTitle>
+          <CardTitle className={cn("text-base", sk.heading)}>{t("behavioralProfilePanel.prismBehavioralMap", { defaultValue: "PRISM behavioral map" })}</CardTitle>
         </CardHeader>
         <CardContent>
           {coverage.prism && prism.length > 0 ? (
@@ -218,14 +202,12 @@ export function BehavioralProfilePanel({
               </div>
               {/* Text-equivalent table for accessibility */}
               <Table>
-                <caption className="sr-only">
-                  PRISM 8-dimension scores (text equivalent of the radar chart).
-                </caption>
+                <caption className="sr-only">{t("behavioralProfilePanel.prism8DimensionScoresText", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radar chart)." })}</caption>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Dimension</TableHead>
-                    <TableHead>Quadrant</TableHead>
-                    <TableHead className="text-right">Score</TableHead>
+                    <TableHead>{t("behavioralProfilePanel.dimension", { defaultValue: "Dimension" })}</TableHead>
+                    <TableHead>{t("behavioralProfilePanel.quadrant", { defaultValue: "Quadrant" })}</TableHead>
+                    <TableHead className="text-right">{t("behavioralProfilePanel.score", { defaultValue: "Score" })}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -260,7 +242,7 @@ export function BehavioralProfilePanel({
         {/* CliftonStrengths */}
         <Card>
           <CardHeader>
-            <CardTitle className={cn("text-base", sk.heading)}>CliftonStrengths</CardTitle>
+            <CardTitle className={cn("text-base", sk.heading)}>{t("behavioralProfilePanel.cliftonstrengths", { defaultValue: "CliftonStrengths" })}</CardTitle>
           </CardHeader>
           <CardContent>
             {coverage.clifton && clifton && clifton.length > 0 ? (
@@ -307,18 +289,16 @@ export function BehavioralProfilePanel({
         {/* DISC */}
         <Card>
           <CardHeader>
-            <CardTitle className={cn("text-base", sk.heading)}>DISC</CardTitle>
+            <CardTitle className={cn("text-base", sk.heading)}>{t("behavioralProfilePanel.disc", { defaultValue: "DISC" })}</CardTitle>
           </CardHeader>
           <CardContent>
             {coverage.disc && disc ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2 text-xs">
-                  <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>
-                    Primary: <strong>{disc.primaryStyle}</strong>
+                  <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>{t("behavioralProfilePanel.primary", { defaultValue: "Primary:" })}{" "}<strong>{disc.primaryStyle}</strong>
                   </span>
                   {disc.adaptedStyle ? (
-                    <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>
-                      Adapted: <strong>{disc.adaptedStyle}</strong>
+                    <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>{t("behavioralProfilePanel.adapted", { defaultValue: "Adapted:" })}{" "}<strong>{disc.adaptedStyle}</strong>
                     </span>
                   ) : null}
                 </div>
@@ -343,9 +323,7 @@ export function BehavioralProfilePanel({
                     )
                   })}
                 </div>
-                <p className={cn("text-[11px]", sk.text400)}>
-                  Legend: D→Red · I→Green · S→Green · C→Blue (PRISM quadrant mapping)
-                </p>
+                <p className={cn("text-[11px]", sk.text400)}>{t("behavioralProfilePanel.legendDRedIGreen", { defaultValue: "Legend: D→Red · I→Green · S→Green · C→Blue (PRISM quadrant mapping)" })}</p>
               </div>
             ) : (
               <InviteToAddCard framework="DISC" onInvite={onInvite ? () => onInvite("disc") : undefined} />
@@ -357,7 +335,7 @@ export function BehavioralProfilePanel({
       {/* Reconciliation */}
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-          <CardTitle className={cn("text-base", sk.heading)}>Aura reconciliation</CardTitle>
+          <CardTitle className={cn("text-base", sk.heading)}>{t("behavioralProfilePanel.auraReconciliation", { defaultValue: "Aura reconciliation" })}</CardTitle>
           <Badge variant={CONFIDENCE_BADGE_VARIANT[reconciliation.confidence]}>
             {CONFIDENCE_LABEL[reconciliation.confidence]}
           </Badge>
@@ -368,7 +346,7 @@ export function BehavioralProfilePanel({
 
           {reconciliation.discrepancies.length > 0 ? (
             <div>
-              <div className={cn("mb-1 text-xs font-semibold", sk.text500)}>Discrepancies</div>
+              <div className={cn("mb-1 text-xs font-semibold", sk.text500)}>{t("behavioralProfilePanel.discrepancies", { defaultValue: "Discrepancies" })}</div>
               <ul className={cn("list-inside list-disc space-y-1 text-sm", sk.text600)}>
                 {reconciliation.discrepancies.map((d, i) => (
                   <li key={i}>{d}</li>
@@ -379,7 +357,7 @@ export function BehavioralProfilePanel({
 
           {reconciliation.actionableInsights && reconciliation.actionableInsights.length > 0 ? (
             <div className={cn("rounded-lg p-3", sk.bgMuted50)}>
-              <div className={cn("mb-1 text-xs font-semibold", sk.text500)}>How to work with this person</div>
+              <div className={cn("mb-1 text-xs font-semibold", sk.text500)}>{t("behavioralProfilePanel.howToWorkWithThis", { defaultValue: "How to work with this person" })}</div>
               <ul className={cn("space-y-1 text-sm", sk.text700)}>
                 {reconciliation.actionableInsights.map((ins, i) => (
                   <li key={i}>• {ins}</li>
@@ -389,10 +367,7 @@ export function BehavioralProfilePanel({
           ) : null}
 
           {(!coverage.clifton || !coverage.disc) && (
-            <p className="text-[11px] italic text-amber-600">
-              Reconciliation is at reduced resolution — one or more overlays are missing, so
-              confidence is lowered accordingly.
-            </p>
+            <p className="text-[11px] italic text-amber-600">{t("behavioralProfilePanel.reconciliationIsAtReducedResolution", { defaultValue: "Reconciliation is at reduced resolution — one or more overlays are missing, so confidence is lowered accordingly." })}</p>
           )}
         </CardContent>
       </Card>

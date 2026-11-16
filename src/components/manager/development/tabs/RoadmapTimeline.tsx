@@ -27,6 +27,7 @@ import type { Milestone, MilestoneStatus, SummitGoal } from "@/types/development
 import { useSharePlan, useUpdateMilestone } from "@/hooks/manager/development"
 import { useDevSkin } from "../skin"
 import { sharePlanToast, SHARE_PLAN_ERROR } from "../sharePlanToast"
+import { useTranslation } from "react-i18next"
 
 /** TDS-P1 (a): shown when the server gives no reason of its own. */
 const MILESTONE_STATUS_ERROR = "That status didn't save. Nothing changed — try again in a moment."
@@ -47,29 +48,30 @@ function MilestoneItem({
   goalTitle?: string
   onStatusChange: (status: MilestoneStatus) => void
 }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   return (
     <div className={cn("rounded-lg border bg-white p-3", sk.border100)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className={cn("truncate text-sm font-medium", sk.text800)}>{milestone.title}</div>
-          {goalTitle ? <div className={cn("truncate text-xs", sk.text500)}>Goal: {goalTitle}</div> : null}
+          {goalTitle ? <div className={cn("truncate text-xs", sk.text500)}>{t("roadmapTimeline.goal", { defaultValue: "Goal: {{goalTitle}}", goalTitle })}</div> : null}
         </div>
         <Badge variant={STATUS_BADGE[milestone.status]} className="shrink-0">
           {MILESTONE_STATUS_LABEL[milestone.status]}
         </Badge>
       </div>
       <div className={cn("mt-2 flex flex-wrap items-center gap-2 text-[11px]", sk.text400)}>
-        {milestone.dueDate ? <span>Due {new Date(milestone.dueDate).toLocaleDateString()}</span> : null}
-        {milestone.gapIds?.length ? <span>{milestone.gapIds.length} gap(s)</span> : null}
-        {milestone.learningItemIds?.length ? <span>{milestone.learningItemIds.length} learning item(s)</span> : null}
+        {milestone.dueDate ? <span>{t("roadmapTimeline.due", { defaultValue: "Due {{value}}", value: new Date(milestone.dueDate).toLocaleDateString() })}</span> : null}
+        {milestone.gapIds?.length ? <span>{t("roadmapTimeline.gapS", { defaultValue: "{{length}} gap(s)", length: milestone.gapIds.length })}</span> : null}
+        {milestone.learningItemIds?.length ? <span>{t("roadmapTimeline.learningItemS", { defaultValue: "{{length}} learning item(s)", length: milestone.learningItemIds.length })}</span> : null}
       </div>
       {milestone.status === "blocked" && milestone.blockedReason ? (
-        <p className="mt-1 text-xs text-red-600">Blocked: {milestone.blockedReason}</p>
+        <p className="mt-1 text-xs text-red-600">{t("roadmapTimeline.blocked", { defaultValue: "Blocked: {{blockedReason}}", blockedReason: milestone.blockedReason })}</p>
       ) : null}
       <div className="mt-2">
         <Select value={milestone.status} onValueChange={(v) => onStatusChange(v as MilestoneStatus)}>
-          <SelectTrigger className="h-7 w-[140px] text-xs" aria-label={`Update status for ${milestone.title}`}>
+          <SelectTrigger className="h-7 w-[140px] text-xs" aria-label={t("roadmapTimeline.updateStatusFor", { defaultValue: "Update status for {{title}}", title: milestone.title })}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -104,6 +106,7 @@ export function RoadmapTimeline({
   trajectory,
   notShared,
 }: RoadmapTimelineProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const share = useSharePlan(memberId)
   const update = useUpdateMilestone(memberId)
@@ -111,12 +114,12 @@ export function RoadmapTimeline({
 
   const nextBestAction = (() => {
     const blocked = milestones.find((m) => m.status === "blocked")
-    if (blocked) return `Unblock: ${blocked.title}`
+    if (blocked) return t("roadmapTimeline.unblock", { defaultValue: "Unblock: {{title}}", title: blocked.title })
     const inProgress = milestones.find((m) => m.status === "in_progress")
-    if (inProgress) return `Keep momentum on: ${inProgress.title}`
+    if (inProgress) return t("roadmapTimeline.keepMomentumOn", { defaultValue: "Keep momentum on: {{title}}", title: inProgress.title })
     const planned = [...milestones].sort((a, b) => a.sequence - b.sequence).find((m) => m.status === "planned")
-    if (planned) return `Start: ${planned.title}`
-    return "All milestones complete — schedule a review."
+    if (planned) return t("roadmapTimeline.start", { defaultValue: "Start: {{title}}", title: planned.title })
+    return t("roadmapTimeline.allMilestonesCompleteScheduleA", { defaultValue: "All milestones complete — schedule a review." })
   })()
 
   const atRisk = trajectory === "at_risk"
@@ -124,9 +127,7 @@ export function RoadmapTimeline({
   if (notShared) {
     return (
       <Card className="border-dashed">
-        <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="roadmap-not-shared">
-          This roadmap hasn&apos;t been shared with you. That isn&apos;t the same as having none.
-        </CardContent>
+        <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="roadmap-not-shared">{t("roadmapTimeline.thisRoadmapHasnTBeen", { defaultValue: "This roadmap hasn't been shared with you. That isn't the same as having none." })}</CardContent>
       </Card>
     )
   }
@@ -134,9 +135,7 @@ export function RoadmapTimeline({
   if (milestones.length === 0) {
     return (
       <Card className="border-dashed">
-        <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
-          No milestones planned yet.
-        </CardContent>
+        <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>{t("roadmapTimeline.noMilestonesPlannedYet", { defaultValue: "No milestones planned yet." })}</CardContent>
       </Card>
     )
   }
@@ -152,9 +151,9 @@ export function RoadmapTimeline({
           )}
           <div>
             <div className={cn("text-sm font-semibold", atRisk ? "text-red-700" : "text-emerald-700")}>
-              {atRisk ? "At risk" : "On track"}
+              {atRisk ? t("roadmapTimeline.atRisk", { defaultValue: "At risk" }) : t("roadmapTimeline.onTrack", { defaultValue: "On track" })}
             </div>
-            <div className={cn("text-xs", sk.text500)}>Next best action: {nextBestAction}</div>
+            <div className={cn("text-xs", sk.text500)}>{t("roadmapTimeline.nextBestAction", { defaultValue: "Next best action: {{nextBestAction}}", nextBestAction })}</div>
           </div>
         </div>
         <Button
@@ -167,9 +166,7 @@ export function RoadmapTimeline({
           }
           disabled={share.isPending}
         >
-          <Share2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-          Share plan
-        </Button>
+          <Share2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />{t("roadmapTimeline.sharePlan", { defaultValue: "Share plan" })}</Button>
       </div>
 
       {/* Horizon lanes (scrolls horizontally on narrow viewports) */}
@@ -186,7 +183,7 @@ export function RoadmapTimeline({
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {lane.length === 0 ? (
-                    <p className={cn("text-xs", sk.text400)}>No milestones in this lane.</p>
+                    <p className={cn("text-xs", sk.text400)}>{t("roadmapTimeline.noMilestonesInThisLane", { defaultValue: "No milestones in this lane." })}</p>
                   ) : (
                     lane.map((m) => (
                       <MilestoneItem
@@ -216,9 +213,7 @@ export function RoadmapTimeline({
 
       {/* Accessible list/table fallback */}
       <details className={cn("rounded-lg border p-3", sk.border200)}>
-        <summary className={cn("cursor-pointer text-sm font-medium", sk.text600)}>
-          View as list (accessible)
-        </summary>
+        <summary className={cn("cursor-pointer text-sm font-medium", sk.text600)}>{t("roadmapTimeline.viewAsListAccessible", { defaultValue: "View as list (accessible)" })}</summary>
         <ul className="mt-2 space-y-1 text-sm">
           {[...milestones]
             .sort((a, b) => MILESTONE_HORIZON_ORDER.indexOf(a.horizon) - MILESTONE_HORIZON_ORDER.indexOf(b.horizon) || a.sequence - b.sequence)

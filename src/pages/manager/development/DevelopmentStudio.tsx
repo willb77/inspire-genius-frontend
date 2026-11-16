@@ -40,6 +40,7 @@ import {
   resolveDevV2,
   type DevVariant,
 } from "@/components/manager/development/skin"
+import { useTranslation } from "react-i18next"
 
 type CoverageFilter = "all" | "complete" | "partial" | "none"
 type SortKey = "readiness" | "activity"
@@ -84,6 +85,7 @@ export default function DevelopmentStudio({
   variant?: DevVariant
   audience?: "manager" | "practitioner"
 }) {
+  const { t: tm } = useTranslation("managerPages")
   const v2 = resolveDevV2(variant)
   const Layout = audience === "practitioner" ? PractitionerLayout : ManagerLayout
   const memberRoute =
@@ -196,7 +198,7 @@ export default function DevelopmentStudio({
               They are hidden outside the grid rather than left visible and
               inert, because a filter that silently does nothing is worse than
               one that is not offered. */}
-          <div className="flex items-center rounded-full border p-0.5" role="group" aria-label="View">
+          <div className="flex items-center rounded-full border p-0.5" role="group" aria-label={tm("developmentStudio.view", { defaultValue: "View" })}>
             <button
               type="button"
               onClick={() => setView("grid")}
@@ -205,9 +207,7 @@ export default function DevelopmentStudio({
                 "rounded-full px-3 py-1 text-xs font-medium transition",
                 view === "grid" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
               )}
-            >
-              Team
-            </button>
+            >{tm("developmentStudio.team", { defaultValue: "Team" })}</button>
             {/* TDS-10. "My reports" is a narrower set than "Team", not a
                 filter on it: the ids come from the org chart's surviving edges
                 and the roster only supplies each card. See MyReportsPanel. */}
@@ -220,8 +220,7 @@ export default function DevelopmentStudio({
                 view === "reports" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
               )}
             >
-              <UserCheck className="h-3 w-3" aria-hidden /> My reports
-            </button>
+              <UserCheck className="h-3 w-3" aria-hidden />{" "}{tm("developmentStudio.myReports", { defaultValue: "My reports" })}</button>
             <button
               type="button"
               onClick={() => setView("org")}
@@ -231,8 +230,7 @@ export default function DevelopmentStudio({
                 view === "org" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
               )}
             >
-              <Network className="h-3 w-3" aria-hidden /> Org Chart
-            </button>
+              <Network className="h-3 w-3" aria-hidden />{" "}{tm("developmentStudio.orgChart", { defaultValue: "Org Chart" })}</button>
           </div>
           {view === "grid" && (
           <>
@@ -241,10 +239,10 @@ export default function DevelopmentStudio({
               <SelectValue placeholder={t("dev.studio.filter.coverage")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All coverage</SelectItem>
-              <SelectItem value="complete">Complete (3/3)</SelectItem>
-              <SelectItem value="partial">Partial</SelectItem>
-              <SelectItem value="none">No assessments</SelectItem>
+              <SelectItem value="all">{tm("developmentStudio.allCoverage", { defaultValue: "All coverage" })}</SelectItem>
+              <SelectItem value="complete">{tm("developmentStudio.complete33", { defaultValue: "Complete (3/3)" })}</SelectItem>
+              <SelectItem value="partial">{tm("developmentStudio.partial", { defaultValue: "Partial" })}</SelectItem>
+              <SelectItem value="none">{tm("developmentStudio.noAssessments", { defaultValue: "No assessments" })}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={plan} onValueChange={(v) => setPlan(v as PlanStatus | "all")}>
@@ -252,7 +250,7 @@ export default function DevelopmentStudio({
               <SelectValue placeholder={t("dev.studio.filter.plan")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All plans</SelectItem>
+              <SelectItem value="all">{tm("developmentStudio.allPlans", { defaultValue: "All plans" })}</SelectItem>
               {(Object.keys(PLAN_STATUS_LABEL) as PlanStatus[]).map((s) => (
                 <SelectItem key={s} value={s}>
                   {PLAN_STATUS_LABEL[s]}
@@ -266,7 +264,7 @@ export default function DevelopmentStudio({
                 <SelectValue placeholder={t("dev.studio.filter.department")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All departments</SelectItem>
+                <SelectItem value="all">{tm("developmentStudio.allDepartments", { defaultValue: "All departments" })}</SelectItem>
                 {departments.map((d) => (
                   <SelectItem key={d} value={d}>
                     {d}
@@ -276,7 +274,7 @@ export default function DevelopmentStudio({
             </Select>
           ) : null}
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-            <SelectTrigger className="w-[150px]" aria-label="Sort by">
+            <SelectTrigger className="w-[150px]" aria-label={tm("developmentStudio.sortBy", { defaultValue: "Sort by" })}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -331,9 +329,7 @@ export default function DevelopmentStudio({
       ) : isError ? (
         <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
           <p className={cn("text-sm", sk.text500)}>{t("dev.studio.error")}</p>
-          <Button variant="outline" onClick={() => refetch()}>
-            Retry
-          </Button>
+          <Button variant="outline" onClick={() => refetch()}>{tm("developmentStudio.retry", { defaultValue: "Retry" })}</Button>
         </div>
       ) : (roster?.length ?? 0) === 0 ? (
         <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
@@ -345,9 +341,7 @@ export default function DevelopmentStudio({
           <AddMemberDialog />
         </div>
       ) : filtered.length === 0 ? (
-        <div className={cn("border border-dashed py-16 text-center text-sm", sk.radius, sk.border200, sk.text500)}>
-          No members match the current filters.
-        </div>
+        <div className={cn("border border-dashed py-16 text-center text-sm", sk.radius, sk.border200, sk.text500)}>{tm("developmentStudio.noMembersMatchTheCurrent", { defaultValue: "No members match the current filters." })}</div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((m) => (
