@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
@@ -25,27 +27,40 @@ type Grant = {
   note?: string
 }
 
-const GRANTS: Grant[] = [
+const grants = (t: TFunction): Grant[] => [
   {
     key: "proactive",
-    label: "Moments in my feed",
-    body: "Let Lumen add unprompted Moments — a weekly check-in, and guidance before things you're preparing for. Nothing leaves the app; they appear in your Moments feed.",
+    label: t("settingsProactiveLabel", "Moments in my feed"),
+    body: t(
+      "settingsProactiveBody",
+      "Let Lumen add unprompted Moments — a weekly check-in, and guidance before things you're preparing for. Nothing leaves the app; they appear in your Moments feed."
+    ),
   },
   {
     key: "calendar",
-    label: "Use my bookings for timing",
-    body: "Let Lumen read your coaching bookings so a Moment can arrive before a session you're preparing for, rather than at a random time.",
-    note: "Off by default. Lumen can't see your work calendar — only bookings made in Inspire Genius.",
+    label: t("settingsCalendarLabel", "Use my bookings for timing"),
+    body: t(
+      "settingsCalendarBody",
+      "Let Lumen read your coaching bookings so a Moment can arrive before a session you're preparing for, rather than at a random time."
+    ),
+    note: t(
+      "settingsCalendarNote",
+      "Off by default. Lumen can't see your work calendar — only bookings made in Inspire Genius."
+    ),
   },
   {
     key: "email",
-    label: "Email me Moments",
-    body: "Deliver Moments outside the app as well as in your feed.",
-    note: "Off by default, and not yet available — turning this on won't send anything until email delivery ships.",
+    label: t("settingsEmailLabel", "Email me Moments"),
+    body: t("settingsEmailBody", "Deliver Moments outside the app as well as in your feed."),
+    note: t(
+      "settingsEmailNote",
+      "Off by default, and not yet available — turning this on won't send anything until email delivery ships."
+    ),
   },
 ]
 
 export default function LumenSettings() {
+  const { t } = useTranslation("lumenPages")
   const { data: consent, isLoading, isError } = useConsent()
   const { mutate: update, isPending } = useUpdateConsent()
 
@@ -64,11 +79,11 @@ export default function LumenSettings() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              We couldn't load your settings
+              {t("settingsLoadErrorTitle", "We couldn't load your settings")}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Try again in a moment. Your existing choices are unchanged.
+            {t("settingsLoadErrorBody", "Try again in a moment. Your existing choices are unchanged.")}
           </CardContent>
         </Card>
       </div>
@@ -78,22 +93,26 @@ export default function LumenSettings() {
   return (
     <div className="space-y-6 p-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Lumen settings</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("settingsTitle", "Lumen settings")}</h1>
         <p className="max-w-2xl text-muted-foreground">
-          You decide when Lumen speaks up without being asked, and what it's allowed
-          to look at.
+          {t(
+            "settingsLead",
+            "You decide when Lumen speaks up without being asked, and what it's allowed to look at."
+          )}
         </p>
         {consent.is_default && (
-          <Badge variant="outline">Showing defaults — you haven't changed these yet</Badge>
+          <Badge variant="outline">
+            {t("settingsDefaultsBadge", "Showing defaults — you haven't changed these yet")}
+          </Badge>
         )}
       </header>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Proactive guidance</CardTitle>
+          <CardTitle className="text-base">{t("settingsProactiveTitle", "Proactive guidance")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          {GRANTS.map((grant) => {
+          {grants(t).map((grant) => {
             const enabled = Boolean(consent[grant.key])
             return (
               <div
@@ -126,8 +145,10 @@ export default function LumenSettings() {
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Your assessment data is yours. Turning a grant off stops future Moments of
-        that kind; it never deletes what you've already saved.
+        {t(
+          "settingsFooter",
+          "Your assessment data is yours. Turning a grant off stops future Moments of that kind; it never deletes what you've already saved."
+        )}
       </p>
     </div>
   )

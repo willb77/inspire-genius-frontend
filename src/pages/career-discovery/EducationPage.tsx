@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,11 +43,12 @@ function EducationPaths({
   costOn: boolean
   learning: LearningMark | null
 }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const { data, isLoading, isError, error } = useDiscoveryEducation(enabled)
   const [state, setState] = useState("")
   const [query, setQuery] = useState<SchoolsQuery | null>(null)
 
-  if (isLoading) return <DiscoveryLoading label="Working out education paths" />
+  if (isLoading) return <DiscoveryLoading label={t("eduLoading", "Working out education paths")} />
   if (isError || !data) return <DiscoveryError message={discoveryErrorMessage(error)} />
 
   // JF-10: present only when `job_fit_v2` applies to this person (server-decided).
@@ -55,14 +57,20 @@ function EducationPaths({
     <>
       <StageHeader
         title={LEARNING_TITLE}
-        lead="For each career area that suits you: what people usually study to get there, and the colleges, training providers, licences and apprenticeships that lead there. These are routes, not rankings."
+        lead={t(
+          "eduLearningLead",
+          "For each career area that suits you: what people usually study to get there, and the colleges, training providers, licences and apprenticeships that lead there. These are routes, not rankings."
+        )}
       />
       {learning ? <LearningButtons learning={learning} current="education" /> : null}
     </>
   ) : (
     <StageHeader
-      title="Education paths"
-      lead="For each career area that suits you: what people usually study to get there, and schools that offer it. These are routes, not rankings."
+      title={t("eduTitle", "Education paths")}
+      lead={t(
+        "eduLead",
+        "For each career area that suits you: what people usually study to get there, and schools that offer it. These are routes, not rankings."
+      )}
     />
   )
   // DISC-4: a school's own programs, only when the server offers them.
@@ -72,10 +80,10 @@ function EducationPaths({
       <div className="space-y-6">
         {header}
         {programs}
-        <NoticeCard title="Nothing to show yet">
+        <NoticeCard title={t("eduEmptyTitle", "Nothing to show yet")}>
           <p>{data.note}</p>
           <Link className="underline" to={ROUTES.CAREER_DISCOVERY.CAREERS}>
-            Go to Career areas
+            {t("eduGoToCareers", "Go to Career areas")}
           </Link>
         </NoticeCard>
       </div>
@@ -97,7 +105,7 @@ function EducationPaths({
         </p>
       ) : null}
       <label className="flex max-w-sm flex-col gap-1 text-sm">
-        <span className="font-medium">{block ? "Your state (or any other state)" : "Where would you study?"}</span>
+        <span className="font-medium">{block ? t("eduStateLabelBlock", "Your state (or any other state)") : t("eduStateLabel", "Where would you study?")}</span>
         <select
           className="rounded-md border bg-background px-3 py-2"
           value={state}
@@ -106,14 +114,14 @@ function EducationPaths({
             setQuery((q) => (q && e.target.value ? { ...q, state: e.target.value } : null))
           }}
         >
-          <option value="">{block ? "Choose your state" : "Choose a state to see schools"}</option>
+          <option value="">{block ? t("eduChooseStateBlock", "Choose your state") : t("eduChooseState", "Choose a state to see schools")}</option>
           {US_STATES.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
             </option>
           ))}
         </select>
-        <span className="text-xs text-muted-foreground">Used only to look up schools. It isn&apos;t saved.</span>
+        <span className="text-xs text-muted-foreground">{t("eduStateNote", "Used only to look up schools. It isn't saved.")}</span>
       </label>
       <ol className="space-y-4">
         {data.paths.map((p) => (
@@ -123,7 +131,9 @@ function EducationPaths({
                 <CardTitle className="text-base">{p.field.title}</CardTitle>
                 <p className="text-xs text-muted-foreground">
                   {p.careerArea}
-                  {p.fit !== null ? ` · ${Math.round(p.fit)}% natural fit` : ""}
+                  {p.fit !== null
+                    ? ` · ${t("eduNaturalFit", { defaultValue: "{{percent}}% natural fit", percent: Math.round(p.fit) })}`
+                    : ""}
                 </p>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
@@ -143,13 +153,13 @@ function EducationPaths({
                       aria-describedby={house && !state ? `cd-schools-why-${p.id}` : undefined}
                       onClick={() => choose(p, c.level)}
                     >
-                      Schools: {c.title}
+                      {t("eduSchoolsButton", { defaultValue: "Schools: {{title}}", title: c.title })}
                     </Button>
                   ))}
                 </div>
                 {house && !state ? (
                   <p id={`cd-schools-why-${p.id}`} className="text-xs text-muted-foreground">
-                    Choose a state above first. Schools are listed by state.
+                    {t("eduChooseStateFirst", "Choose a state above first. Schools are listed by state.")}
                   </p>
                 ) : null}
                 {query && query.cip === p.field.code && p.credentials.some((c) => c.level === query.level) ? (
@@ -176,12 +186,15 @@ function href(url: string): string {
 }
 
 function SchoolList({ query, costOn }: { query: SchoolsQuery; costOn: boolean }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const { data, isLoading, isError, error } = useDiscoverySchools(query)
-  if (isLoading) return <DiscoveryLoading label="Finding schools" />
+  if (isLoading) return <DiscoveryLoading label={t("eduFindingSchools", "Finding schools")} />
   if (isError || !data) return <DiscoveryError message={discoveryErrorMessage(error)} />
   if (data.unavailable || data.schools.length === 0) {
     return (
-      <NoticeCard title={data.unavailable ? "School lists unavailable" : "No schools found"}>
+      <NoticeCard title={
+          data.unavailable ? t("eduSchoolsUnavailable", "School lists unavailable") : t("eduNoSchools", "No schools found")
+        }>
         <p>{data.note}</p>
       </NoticeCard>
     )
@@ -190,8 +203,14 @@ function SchoolList({ query, costOn }: { query: SchoolsQuery; costOn: boolean })
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
         {data.total !== null && data.total > data.schools.length
-          ? `Showing ${data.schools.length} of ${data.total} schools, A to Z.`
-          : `${data.schools.length} school${data.schools.length === 1 ? "" : "s"}, A to Z.`}
+          ? t("eduSchoolsShowing", {
+              defaultValue: "Showing {{shown}} of {{total}} schools, A to Z.",
+              shown: data.schools.length,
+              total: data.total,
+            })
+          : data.schools.length === 1
+            ? t("eduSchoolsOne", { defaultValue: "{{shown}} school, A to Z.", shown: data.schools.length })
+            : t("eduSchoolsMany", { defaultValue: "{{shown}} schools, A to Z.", shown: data.schools.length })}
       </p>
       <ul className="space-y-1">
         {data.schools.map((s) => (
@@ -211,7 +230,7 @@ function SchoolList({ query, costOn }: { query: SchoolsQuery; costOn: boolean })
                   className="text-xs underline"
                   to={`${ROUTES.CAREER_DISCOVERY.COST}?cip=${query.cip}&level=${query.level}&school=${s.id}`}
                 >
-                  Cost and payback
+                  {t("eduCostAndPayback", "Cost and payback")}
                 </Link>
               </>
             ) : null}

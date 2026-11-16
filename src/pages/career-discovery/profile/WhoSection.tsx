@@ -1,5 +1,6 @@
 import { useEffect } from "react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/constants/routes"
 import {
@@ -17,9 +18,6 @@ import {
 import { DiscoveryError, DiscoveryLoading, StageHeader } from "../DiscoveryParts"
 import { useDiscoveryContext } from "../discoveryContext"
 
-const WHO_TITLE = "Who I am"
-const WHO_LEAD = "How you tend to work, from what's on file. A mirror to think with, not a verdict on you."
-
 /**
  * Who I am — Lumen's Self-Portrait, the same engine and the same sections,
  * served through Discovery's own route so it needs no Lumen entitlement.
@@ -30,6 +28,12 @@ const WHO_LEAD = "How you tend to work, from what's on file. A mirror to think w
  * "who" stage records itself exactly as before once PRISM is on file.
  */
 export function WhoSection({ embedded = false }: { embedded?: boolean }) {
+  const { t } = useTranslation("careerDiscoveryPages")
+  const WHO_TITLE = t("whoTitle", "Who I am")
+  const WHO_LEAD = t(
+    "whoLead",
+    "How you tend to work, from what's on file. A mirror to think with, not a verdict on you."
+  )
   const { journey } = useDiscoveryContext()
   const { data: portrait, isLoading, isError, error } = useDiscoveryPortrait(journey.mayProceed)
   const advance = useAdvanceDiscovery()
@@ -53,10 +57,10 @@ export function WhoSection({ embedded = false }: { embedded?: boolean }) {
     return embedded ? (
       <section aria-label={WHO_TITLE} className="space-y-4">
         {header}
-        <DiscoveryLoading label="Loading your portrait" />
+        <DiscoveryLoading label={t("whoLoading", "Loading your portrait")} />
       </section>
     ) : (
-      <DiscoveryLoading label="Loading your portrait" />
+      <DiscoveryLoading label={t("whoLoading", "Loading your portrait")} />
     )
   }
   if (isError || !portrait) {
@@ -74,15 +78,15 @@ export function WhoSection({ embedded = false }: { embedded?: boolean }) {
       {header}
       <ProvenanceNote sources={portrait.sources ?? {}} className="max-w-3xl" />
       {!portrait.prism ? (
-        <PortraitNoPrism title="What this is built on so far" headline={portrait.headline}>
+        <PortraitNoPrism title={t("whoBuiltOn", "What this is built on so far")} headline={portrait.headline}>
           <Button asChild variant="outline" size="sm">
-            <Link to={ROUTES.PRISM_ASSESSMENT}>Take or check PRISM</Link>
+            <Link to={ROUTES.PRISM_ASSESSMENT}>{t("aboutPrismLink", "Take or check PRISM")}</Link>
           </Button>
         </PortraitNoPrism>
       ) : (
-        <PortraitDimensions prism={portrait.prism} title="What sits underneath that" />
+        <PortraitDimensions prism={portrait.prism} title={t("whoUnderneath", "What sits underneath that")} />
       )}
-      <PortraitCorroborating instruments={portrait.corroborating} title="The other instruments we read" />
+      <PortraitCorroborating instruments={portrait.corroborating} title={t("whoOtherInstruments", "The other instruments we read")} />
       <PortraitAnchorNote />
     </>
   )
