@@ -6,6 +6,7 @@
  * user's OWN behavioral map. Renders `quadrant`/`label` exactly as provided, so
  * it matches the dossier's grouping wherever the data comes from.
  */
+import { useTranslation } from "react-i18next"
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -36,8 +37,9 @@ export type PrismBehavioralMapProps = {
 }
 
 export function PrismBehavioralMap({ prism, brandHex = "#E8932B" }: PrismBehavioralMapProps) {
+  const { t } = useTranslation("prismUi")
   const radarData = prism.map((d) => ({
-    dimension: d.label || BEHAVIOUR_CONFIG[d.id]?.label || `Dim ${d.id}`,
+    dimension: d.label || BEHAVIOUR_CONFIG[d.id]?.label || t("behavioralMap.dimFallback", { defaultValue: "Dim {{id}}", id: d.id }),
     score: d.score,
     quadrant: d.quadrant,
   }))
@@ -76,13 +78,13 @@ export function PrismBehavioralMap({ prism, brandHex = "#E8932B" }: PrismBehavio
       </div>
       <Table>
         <caption className="sr-only">
-          PRISM 8-dimension scores (text equivalent of the radar chart).
+          {t("behavioralMap.tableCaption", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radar chart)." })}
         </caption>
         <TableHeader>
           <TableRow>
-            <TableHead>Dimension</TableHead>
-            <TableHead>Quadrant</TableHead>
-            <TableHead className="text-right">Score</TableHead>
+            <TableHead>{t("behavioralMap.colDimension", { defaultValue: "Dimension" })}</TableHead>
+            <TableHead>{t("behavioralMap.colQuadrant", { defaultValue: "Quadrant" })}</TableHead>
+            <TableHead className="text-right">{t("behavioralMap.colScore", { defaultValue: "Score" })}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

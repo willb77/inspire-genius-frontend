@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import {
   Download,
   FileText,
@@ -32,12 +34,20 @@ const BTN_PRIMARY =
   "inline-flex items-center gap-1.5 rounded-lg bg-[#0D9488] px-3 py-2 text-sm font-medium text-white hover:bg-[#0b8078] disabled:opacity-50"
 
 type ExportFormat = "pdf" | "md" | "html" | "txt"
-const EXPORT_FORMATS: Array<{ fmt: ExportFormat; label: string }> = [
-  { fmt: "pdf", label: "PDF" },
-  { fmt: "md", label: "Markdown (.md)" },
-  { fmt: "html", label: "Web page (.html)" },
-  { fmt: "txt", label: "Text (.txt)" },
-]
+const EXPORT_FORMATS: ExportFormat[] = ["pdf", "md", "html", "txt"]
+
+function exportFormatLabel(fmt: ExportFormat, t: TFunction): string {
+  switch (fmt) {
+    case "pdf":
+      return t("fitActionsBar.formatPdf", "PDF")
+    case "md":
+      return t("fitActionsBar.formatMd", "Markdown (.md)")
+    case "html":
+      return t("fitActionsBar.formatHtml", "Web page (.html)")
+    default:
+      return t("fitActionsBar.formatTxt", "Text (.txt)")
+  }
+}
 
 /** Print a rendered PDF blob via a hidden iframe (keeps the report isolated). */
 function printBlob(blob: Blob) {
@@ -93,6 +103,7 @@ export function FitActionsBar({
   resumeHref?: string
   v2?: FitV2Report
 }) {
+  const { t } = useTranslation("jobFitPages")
   const pct = displayFitPercent(data)
   const reportInput = { data, pct, overview, v2 }
   const pdfOnly = v2 !== undefined
@@ -106,9 +117,9 @@ export function FitActionsBar({
     try {
       const blob = await renderHtmlToPdf(buildFitReportHtml(reportInput))
       downloadBlob(`${fitReportFileBase(data)}.pdf`, blob)
-      toast.success("Fit report downloaded.")
+      toast.success(t("fitActionsBar.downloaded", "Fit report downloaded."))
     } catch {
-      toast.error("Could not generate the PDF.")
+      toast.error(t("fitActionsBar.pdfFailed", "Could not generate the PDF."))
     } finally {
       setBusy(null)
     }
@@ -129,9 +140,9 @@ export function FitActionsBar({
       } else {
         downloadBlob(`${base}.txt`, new Blob([buildFitReportText(reportInput)], { type: "text/plain" }))
       }
-      toast.success("Fit report exported.")
+      toast.success(t("fitActionsBar.exported", "Fit report exported."))
     } catch {
-      toast.error("Could not export the report.")
+      toast.error(t("fitActionsBar.exportFailed", "Could not export the report."))
     } finally {
       setBusy(null)
     }
@@ -143,7 +154,7 @@ export function FitActionsBar({
       const blob = await renderHtmlToPdf(buildFitReportHtml(reportInput))
       printBlob(blob)
     } catch {
-      toast.error("Could not prepare the report for printing.")
+      toast.error(t("fitActionsBar.printFailed", "Could not prepare the report for printing."))
     } finally {
       setBusy(null)
     }
@@ -160,7 +171,7 @@ export function FitActionsBar({
         payload: { ...data, overview: overview || "" },
       })
       setSaved(true)
-      toast.success("Saved to your fit reports.")
+      toast.success(t("fitActionsBar.savedToast", "Saved to your fit reports."))
     } catch {
       /* the hook already toasted the failure */
     }
@@ -168,15 +179,26 @@ export function FitActionsBar({
 
   function handleEmail() {
     emailReportLink({
-      subject: `My Job Fit — ${data.roleTitle}`,
-      intro: `My fit for ${data.roleTitle}: about ${pct}% aligned. View the full breakdown:`,
+      subject: t("fitActionsBar.emailSubject", {
+        defaultValue: "My Job Fit — {{role}}",
+        role: data.roleTitle,
+      }),
+      intro: t("fitActionsBar.emailIntro", {
+        defaultValue: "My fit for {{role}}: about {{pct}}% aligned. View the full breakdown:",
+        role: data.roleTitle,
+        pct,
+      }),
       url: window.location.href,
     })
   }
 
   async function handleCopyLink() {
     const ok = await copyReportLink(window.location.href)
-    toast[ok ? "success" : "error"](ok ? "Link copied to clipboard." : "Could not copy the link.")
+    toast[ok ? "success" : "error"](
+      ok
+        ? t("fitActionsBar.linkCopied", "Link copied to clipboard.")
+        : t("fitActionsBar.linkCopyFailed", "Could not copy the link."),
+    )
   }
 
   return (
@@ -184,7 +206,7 @@ export function FitActionsBar({
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={handleDownloadPdf} disabled={busy !== null} className={BTN_PRIMARY}>
           {busy === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          Download PDF
+          {t("fitActionsBar.downloadPdf", "Download PDF")}
         </button>
 
         {!pdfOnly && (
@@ -198,7 +220,7 @@ export function FitActionsBar({
               aria-expanded={menuOpen}
             >
               {busy === "export" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-              Export as…
+              {t("fitActionsBar.exportAs", "Export as…")}
               <ChevronDown className="h-4 w-4" />
             </button>
             {menuOpen && (
@@ -211,7 +233,7 @@ export function FitActionsBar({
                   onClick={() => setMenuOpen(false)}
                 />
                 <div role="menu" className="absolute left-0 z-50 mt-1 w-52 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-lg">
-                  {EXPORT_FORMATS.map(({ fmt, label }) => (
+                  {EXPORT_FORMATS.map((fmt) => (
                     <button
                       key={fmt}
                       type="button"
@@ -220,7 +242,7 @@ export function FitActionsBar({
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#1f2937] hover:bg-[#f4f6fa]"
                     >
                       <FileText className="h-4 w-4 text-[#6b7280]" />
-                      {label}
+                      {exportFormatLabel(fmt, t)}
                     </button>
                   ))}
                 </div>
@@ -232,7 +254,7 @@ export function FitActionsBar({
         {!pdfOnly && (
           <button type="button" onClick={handlePrint} disabled={busy !== null} className={BTN}>
             {busy === "print" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-            Print
+            {t("fitActionsBar.print", "Print")}
           </button>
         )}
 
@@ -241,23 +263,25 @@ export function FitActionsBar({
           onClick={handleSave}
           disabled={saveReport.isPending}
           className={BTN}
-          title="Save this fit report to revisit later"
+          title={t("fitActionsBar.saveTitle", "Save this fit report to revisit later")}
         >
           {saveReport.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {saved ? "Saved" : "Save"}
+          {saved ? t("fitActionsBar.savedLabel", "Saved") : t("fitActionsBar.save", "Save")}
         </button>
 
         {!pdfOnly && (
-          <button type="button" onClick={handleEmail} className={BTN} title="Open your email with a link to this fit">
+          <button type="button" onClick={handleEmail} className={BTN} title={t("fitActionsBar.emailTitle", "Open your email with a link to this fit")}
+          >
             <Mail className="h-4 w-4" />
-            Email
+            {t("fitActionsBar.email", "Email")}
           </button>
         )}
 
         {!pdfOnly && (
-          <button type="button" onClick={handleCopyLink} className={BTN} title="Copy a link to this fit">
+          <button type="button" onClick={handleCopyLink} className={BTN} title={t("fitActionsBar.copyLinkTitle", "Copy a link to this fit")}
+          >
             <Link2 className="h-4 w-4" />
-            Copy link
+            {t("fitActionsBar.copyLink", "Copy link")}
           </button>
         )}
 
@@ -265,10 +289,13 @@ export function FitActionsBar({
           <Link
             to={resumeHref}
             className={BTN}
-            title="Write your résumé for this role, built on the résumé you have on file"
+            title={t(
+              "fitActionsBar.resumeTitle",
+              "Write your résumé for this role, built on the résumé you have on file",
+            )}
           >
             <PenLine className="h-4 w-4" />
-            Write Résumé
+            {t("fitActionsBar.writeResume", "Write Résumé")}
           </Link>
         ) : null}
       </div>

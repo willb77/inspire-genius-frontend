@@ -67,6 +67,7 @@ import {
   saveInterviewToDocuments,
   type InterviewSession,
 } from "@/services/interview/interviewExport"
+import { Trans, useTranslation } from "react-i18next"
 
 type Phase = "setup" | "interview" | "findings"
 
@@ -78,6 +79,7 @@ function newSessionId(): string {
 }
 
 export default function InterviewPracticePage() {
+  const { t } = useTranslation("userPages")
   const { data, isLoading, isError } = usePracticeQuestions()
   const { user } = useAuth()
   const [sessionId] = useState(newSessionId)
@@ -165,7 +167,7 @@ export default function InterviewPracticePage() {
     onJobSettled: (job: ChatJob) => {
       if (job.status === "error") {
         setBusy(false); pendingRef.current = null
-        toast.error(job.error || "Something went wrong — please try again.")
+        toast.error(job.error || t("interviewPracticePage.somethingWentWrongPleaseTryAgain", "Something went wrong — please try again."))
         return
       }
       finalize(job.content ?? "")
@@ -181,7 +183,7 @@ export default function InterviewPracticePage() {
   useEffect(() => {
     if (voiceMode && phase === "interview" && current && spokenRef.current !== current.number) {
       spokenRef.current = current.number
-      void voice.speak(`Question ${current.number} of ${total}. ${current.question}`)
+      void voice.speak(t("interviewPracticePage.spokenQuestion", { defaultValue: "Question {{number}} of {{total}}. {{question}}", number: current.number, total, question: current.question }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceMode, phase, current, total])
@@ -289,7 +291,7 @@ export default function InterviewPracticePage() {
         sessionId, context: practiceJobContext(frame, personalContext),
       })
     } catch {
-      setBusy(false); pendingRef.current = null; toast.error("Could not get coaching.")
+      setBusy(false); pendingRef.current = null; toast.error(t("interviewPracticePage.couldNotGetCoaching", "Could not get coaching."))
     }
   }
 
@@ -303,7 +305,7 @@ export default function InterviewPracticePage() {
     dictation.stop(); voice.stop(); setPhase("findings")
     void scored.finish()
     if (exchanges.length === 0) {
-      setFindings("You ended the interview before answering any questions, so there's nothing to summarize yet. Start again whenever you're ready.")
+      setFindings(t("interviewPracticePage.youEndedTheInterviewBeforeAnswering", "You ended the interview before answering any questions, so there's nothing to summarize yet. Start again whenever you're ready."))
       return
     }
     setBusy(true)
@@ -314,7 +316,7 @@ export default function InterviewPracticePage() {
         sessionId, context: practiceJobContext(frame, personalContext),
       })
     } catch {
-      setBusy(false); pendingRef.current = null; toast.error("Could not compile findings.")
+      setBusy(false); pendingRef.current = null; toast.error(t("interviewPracticePage.couldNotCompileFindings", "Could not compile findings."))
     }
   }
 
@@ -338,12 +340,12 @@ export default function InterviewPracticePage() {
     try {
       if (kind === "save") {
         await saveInterviewToDocuments(session())
-        toast.success("Saved to your Document Library.")
+        toast.success(t("interviewPracticePage.savedToYourDocumentLibrary", "Saved to your Document Library."))
       } else {
         await downloadInterview(session(), kind)
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Export failed.")
+      toast.error(e instanceof Error ? e.message : t("interviewPracticePage.exportFailed", "Export failed."))
     } finally {
       setExporting(null)
     }
@@ -364,33 +366,31 @@ export default function InterviewPracticePage() {
       <Chrome>
         <div className="mx-auto max-w-3xl py-8 space-y-4">
           <header>
-            <h1 className="text-2xl font-semibold">Role Play</h1>
+            <h1 className="text-2xl font-semibold">{t("interviewPracticePage.rolePlay", "Role Play")}</h1>
             {house ? (
               <p className="text-sm text-muted-foreground">{practiceIntro(scored.enabled)}</p>
             ) : (
               <p className="text-sm text-slate-600">
-                A structured interview role play with supportive coaching — no scores,
-                just tips to help your story land. You choose how many questions.
+                {t("interviewPracticePage.aStructuredInterviewRolePlayWith", "A structured interview role play with supportive coaching — no scores, just tips to help your story land. You choose how many questions.")}
               </p>
             )}
             <p className="mt-1 text-sm">
               <Link to={ROUTES.INTERVIEW_PRACTICE_ROLES} className="text-indigo-600 hover:underline">
-                Preparing for a specific role? Browse role guides →
+                {t("interviewPracticePage.preparingForASpecificRoleBrowse", "Preparing for a specific role? Browse role guides →")}
               </Link>
             </p>
           </header>
-          {isLoading && <div className="flex items-center py-16 text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading…</div>}
-          {isError && <Card><CardContent className="py-8 text-sm text-rose-600">Couldn't load the question bank. Please try again later.</CardContent></Card>}
+          {isLoading && <div className="flex items-center py-16 text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t("interviewPracticePage.loading", "Loading…")}</div>}
+          {isError && <Card><CardContent className="py-8 text-sm text-rose-600">{t("interviewPracticePage.couldntLoadTheQuestionBankPlease", "Couldn't load the question bank. Please try again later.")}</CardContent></Card>}
           {data && (
             <>
               <div className="flex items-start justify-between gap-4 rounded-lg border border-slate-200 p-3">
                 <div className="flex items-start gap-2">
                   <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
                   <div>
-                    <Label htmlFor="personalize" className="text-sm font-medium">Personalize coaching to my profile</Label>
+                    <Label htmlFor="personalize" className="text-sm font-medium">{t("interviewPracticePage.personalizeCoachingToMyProfile", "Personalize coaching to my profile")}</Label>
                     <p className="text-xs text-slate-500">
-                      Uses your own PRISM summary and résumé to ground tips in your real experience —
-                      your data, never a score. Turn off to practise without it.
+                      {t("interviewPracticePage.usesYourOwnPrismSummaryAnd", "Uses your own PRISM summary and résumé to ground tips in your real experience — your data, never a score. Turn off to practise without it.")}
                     </p>
                   </div>
                 </div>
@@ -398,8 +398,16 @@ export default function InterviewPracticePage() {
               </div>
               {initialFrame && (
                 <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
-                  Prefilled for <span className="font-semibold">{initialFrame.roleTitle}</span> — edit anything
-                  before you start, or clear the role to practise generally.
+                  <Trans
+                    i18nKey="interviewPracticePage.prefilledFor"
+                    ns="userPages"
+                    defaults="Prefilled for <1>{{role}}</1> — edit anything before you start, or clear the role to practise generally."
+                    values={{ role: initialFrame.roleTitle }}
+                    components={{ 1: <span className="font-semibold" /> }}
+                  >
+                    Prefilled for <span className="font-semibold">{initialFrame.roleTitle}</span> — edit anything
+                    before you start, or clear the role to practise generally.
+                  </Trans>
                 </div>
               )}
               <InterviewFrameForm
@@ -423,23 +431,23 @@ export default function InterviewPracticePage() {
         <div className="mx-auto max-w-3xl py-8 space-y-4 print:max-w-none print:py-0">
           <header className="flex items-start justify-between gap-4 print:block">
             <div>
-              <h1 className="text-2xl font-semibold">{house ? PRACTICE_RESULTS_TITLE : "Interview Findings"}</h1>
+              <h1 className="text-2xl font-semibold">{house ? PRACTICE_RESULTS_TITLE : t("interviewPracticePage.interviewFindings", "Interview Findings")}</h1>
               <p className="text-sm text-slate-600">
-                {frame.roleTitle} · {frame.company} — {exchanges.length} of {planned} answered · {frameLengthMinutes(frame)} min target
+                {t("interviewPracticePage.findingsSummary", { defaultValue: "{{role}} · {{company}} — {{answered}} of {{planned}} answered · {{minutes}} min target", role: frame.roleTitle, company: frame.company, answered: exchanges.length, planned, minutes: frameLengthMinutes(frame) })}
               </p>
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
               <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => doExport("word")}>
-                {exporting === "word" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />} Word
+                {exporting === "word" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />} {t("interviewPracticePage.word", "Word")}
               </Button>
               <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => doExport("pdf")}>
-                {exporting === "pdf" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />} PDF
+                {exporting === "pdf" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />} {t("interviewPracticePage.pdf", "PDF")}
               </Button>
               <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => doExport("save")}>
-                {exporting === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save
+                {exporting === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} {t("interviewPracticePage.save", "Save")}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Print</Button>
-              <Button variant="ghost" size="sm" onClick={restart}><RefreshCw className="mr-2 h-4 w-4" /> New</Button>
+              <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> {t("interviewPracticePage.print", "Print")}</Button>
+              <Button variant="ghost" size="sm" onClick={restart}><RefreshCw className="mr-2 h-4 w-4" /> {t("interviewPracticePage.new", "New")}</Button>
             </div>
           </header>
 
@@ -451,7 +459,7 @@ export default function InterviewPracticePage() {
             />
           ) : scored.finishing ? (
             <p className="flex items-center text-sm text-slate-500">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Producing your simulated result…
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("interviewPracticePage.producingYourSimulatedResult", "Producing your simulated result…")}
             </p>
           ) : null}
           {scored.error ? (
@@ -459,22 +467,22 @@ export default function InterviewPracticePage() {
           ) : null}
           {scored.enabled && rolePack ? (
             <p className="text-xs text-slate-500" data-testid="role-set-unscored">
-              Role sets are coached, not scored: their questions are not from the standard interview bank.
+              {t("interviewPracticePage.roleSetsAreCoachedNotScored", "Role sets are coached, not scored: their questions are not from the standard interview bank.")}
             </p>
           ) : null}
 
           <Card>
             <CardHeader className="flex-row items-center justify-between">
-              <CardTitle className="text-base">Coaching summary</CardTitle>
+              <CardTitle className="text-base">{t("interviewPracticePage.coachingSummary", "Coaching summary")}</CardTitle>
               {findings && (
-                <Button variant="ghost" size="sm" className="print:hidden" title="Read aloud" onClick={() => void voice.speak(findings)}>
+                <Button variant="ghost" size="sm" className="print:hidden" title={t("interviewPracticePage.readAloud", "Read aloud")} onClick={() => void voice.speak(findings)}>
                   <Volume2 className="h-4 w-4" />
                 </Button>
               )}
             </CardHeader>
             <CardContent>
               {busy && !findings ? (
-                <span className="flex items-center text-sm text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Compiling your findings…</span>
+                <span className="flex items-center text-sm text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t("interviewPracticePage.compilingYourFindings", "Compiling your findings…")}</span>
               ) : (
                 <p className="whitespace-pre-wrap text-sm text-slate-700">{findings}</p>
               )}
@@ -483,14 +491,14 @@ export default function InterviewPracticePage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Full transcript ({exchanges.length} answered)</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">{t("interviewPracticePage.fullTranscript", { defaultValue: "Full transcript ({{count}} answered)", count: exchanges.length })}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {exchanges.map((e) => (
                 <div key={e.number} className="border-b border-slate-100 pb-3 last:border-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Question {e.number} · {e.sectionTitle} · {e.competency}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{t("interviewPracticePage.transcriptQuestionHeading", { defaultValue: "Question {{number}} · {{section}} · {{competency}}", number: e.number, section: e.sectionTitle, competency: e.competency })}</p>
                   <p className="mt-1 text-sm font-medium text-slate-900">{e.question}</p>
-                  <p className="mt-1 text-sm text-slate-700"><span className="font-semibold">Your answer:</span> {e.answer}</p>
-                  {coaching[e.number] && <p className="mt-1 whitespace-pre-wrap text-sm text-indigo-700"><span className="font-semibold">Coaching:</span> {coaching[e.number]}</p>}
+                  <p className="mt-1 text-sm text-slate-700"><span className="font-semibold">{t("interviewPracticePage.yourAnswer", "Your answer:")}</span> {e.answer}</p>
+                  {coaching[e.number] && <p className="mt-1 whitespace-pre-wrap text-sm text-indigo-700"><span className="font-semibold">{t("interviewPracticePage.coaching", "Coaching:")}</span> {coaching[e.number]}</p>}
                 </div>
               ))}
             </CardContent>
@@ -508,18 +516,18 @@ export default function InterviewPracticePage() {
       <div className="mx-auto max-w-3xl py-8 space-y-4">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Role Play</h1>
+            <h1 className="text-2xl font-semibold">{t("interviewPracticePage.rolePlay", "Role Play")}</h1>
             <p className="text-sm text-slate-600">{frame?.roleTitle} · {frame?.company}</p>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
               {tailoredApplied && (
                 <p className="flex items-center gap-1 text-xs text-emerald-600">
-                  <Sparkles className="h-3 w-3" /> Tailored to {frame?.roleTitle}
+                  <Sparkles className="h-3 w-3" /> {t("interviewPracticePage.tailoredTo", { defaultValue: "Tailored to {{role}}", role: frame?.roleTitle })}
                 </p>
               )}
               {rolePack && (
                 <Badge variant="secondary" className="gap-1 bg-indigo-50 text-indigo-700">
                   <ListChecks className="h-3 w-3" />
-                  {rolePack.level} set — {rolePack.competencyCount} competencies
+                  {t("interviewPracticePage.rolePackSummary", { defaultValue: "{{level}} set — {{count}} competencies", level: rolePack.level, count: rolePack.competencyCount })}
                 </Badge>
               )}
               {rolePack && (
@@ -528,9 +536,9 @@ export default function InterviewPracticePage() {
               <p className="text-sm font-semibold text-indigo-900">
                 {rolePack.title}
               </p>
-              <p><span className="font-semibold">Level: </span>{rolePack.level}</p>
-              <p><span className="font-semibold">Discipline: </span>{rolePack.family}</p>
-              <p><span className="font-semibold">Before you start: </span>{rolePack.coachingNote}</p>
+              <p><span className="font-semibold">{t("interviewPracticePage.level", "Level:")} </span>{rolePack.level}</p>
+              <p><span className="font-semibold">{t("interviewPracticePage.discipline", "Discipline:")} </span>{rolePack.family}</p>
+              <p><span className="font-semibold">{t("interviewPracticePage.beforeYouStart", "Before you start:")} </span>{rolePack.coachingNote}</p>
               <p className="pt-1 italic text-slate-500">{rolePack.provenance}</p>
             </CardContent>
           </Card>
@@ -539,8 +547,8 @@ export default function InterviewPracticePage() {
                 <p className="flex items-center gap-1 text-xs text-amber-700">
                   <Building2 className="h-3 w-3" />
                   {employerPack.kind === "employer"
-                    ? `${employerPack.questionCount} questions in ${employerPack.name}'s style`
-                    : `${employerPack.questionCount} sector-style questions`}
+                    ? t("interviewPracticePage.employerQuestionsInStyle", { defaultValue: "{{count}} questions in {{name}}'s style", count: employerPack.questionCount, name: employerPack.name })
+                    : t("interviewPracticePage.sectorStyleQuestions", { defaultValue: "{{count}} sector-style questions", count: employerPack.questionCount })}
                 </p>
               )}
               {/* Provenance, in every state. This slot used to render only when
@@ -550,7 +558,7 @@ export default function InterviewPracticePage() {
                 <ProvenanceNote sources={practiceSources} />
               ) : (
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Running on the question bank only — personalization is off.
+                  {t("interviewPracticePage.runningOnTheQuestionBankOnly", "Running on the question bank only — personalization is off.")}
                 </p>
               )}
             </div>
@@ -558,20 +566,20 @@ export default function InterviewPracticePage() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Volume2 className="h-4 w-4 text-slate-500" />
-              <Label htmlFor="voice-mode" className="text-xs text-slate-600">Voice mode</Label>
+              <Label htmlFor="voice-mode" className="text-xs text-slate-600">{t("interviewPracticePage.voiceMode", "Voice mode")}</Label>
               <Switch id="voice-mode" checked={voiceMode}
                 onCheckedChange={(v) => { setVoiceMode(v); if (!v) voice.stop(); if (!v) dictation.stop() }} />
             </div>
-            <Button variant="ghost" size="sm" onClick={restart}><Pencil className="mr-1 h-3.5 w-3.5" /> Edit setup</Button>
+            <Button variant="ghost" size="sm" onClick={restart}><Pencil className="mr-1 h-3.5 w-3.5" /> {t("interviewPracticePage.editSetup", "Edit setup")}</Button>
           </div>
         </header>
 
         {total > 0 && (
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs text-slate-500">
-              <span>Question {current?.number} of {total} · {currentSectionKey}</span>
+              <span>{t("interviewPracticePage.questionProgress", { defaultValue: "Question {{number}} of {{total}} · {{section}}", number: current?.number, total, section: currentSectionKey })}</span>
               <Button variant="ghost" size="sm" className="h-6 text-rose-600 hover:text-rose-700" onClick={() => void finish()}>
-                <Flag className="mr-1 h-3.5 w-3.5" /> End interview
+                <Flag className="mr-1 h-3.5 w-3.5" /> {t("interviewPracticePage.endInterview", "End interview")}
               </Button>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -586,22 +594,22 @@ export default function InterviewPracticePage() {
               <p className="flex items-center gap-1.5 text-sm font-semibold">
                 <Building2 className="h-4 w-4" />
                 {employerPack.kind === "employer"
-                  ? `Practising in ${employerPack.name}'s style`
+                  ? t("interviewPracticePage.practisingInStyle", { defaultValue: "Practising in {{name}}'s style", name: employerPack.name })
                   : employerPack.name}
               </p>
               {employerPack.framework && (
-                <p><span className="font-semibold">Their framework: </span>{employerPack.framework}</p>
+                <p><span className="font-semibold">{t("interviewPracticePage.theirFramework", "Their framework:")} </span>{employerPack.framework}</p>
               )}
               {employerPack.howTheyInterview && (
-                <p><span className="font-semibold">How they interview: </span>{employerPack.howTheyInterview}</p>
+                <p><span className="font-semibold">{t("interviewPracticePage.howTheyInterview", "How they interview:")} </span>{employerPack.howTheyInterview}</p>
               )}
               {employerPack.optimizesFor && (
-                <p><span className="font-semibold">What it rewards: </span>{employerPack.optimizesFor}</p>
+                <p><span className="font-semibold">{t("interviewPracticePage.whatItRewards", "What it rewards:")} </span>{employerPack.optimizesFor}</p>
               )}
               {employerPack.typicalEmployers && (
-                <p><span className="font-semibold">Typically: </span>{employerPack.typicalEmployers}</p>
+                <p><span className="font-semibold">{t("interviewPracticePage.typically", "Typically:")} </span>{employerPack.typicalEmployers}</p>
               )}
-              <p><span className="font-semibold">Watch out for: </span>{employerPack.coachingNote}</p>
+              <p><span className="font-semibold">{t("interviewPracticePage.watchOutFor", "Watch out for:")} </span>{employerPack.coachingNote}</p>
               {/* The disclaimer travels with the content, by contract. */}
               <p className="border-t border-amber-200 pt-2 italic text-amber-800">
                 {employerPack.provenance}
@@ -619,19 +627,19 @@ export default function InterviewPracticePage() {
                     <Badge variant="secondary" className="w-fit">{current.competency}</Badge>
                     {current.source === "employer" && employerPack && (
                       <Badge variant="outline" className="w-fit border-amber-300 text-amber-700">
-                        {employerPack.name} style
+                        {t("interviewPracticePage.employerStyleBadge", { defaultValue: "{{name}} style", name: employerPack.name })}
                       </Badge>
                     )}
                     {current.source === "sector" && (
                       <Badge variant="outline" className="w-fit border-slate-300 text-slate-600">
-                        Sector style
+                        {t("interviewPracticePage.sectorStyle", "Sector style")}
                       </Badge>
                     )}
                   </div>
                   <CardTitle className="text-base font-medium leading-snug">{current.question}</CardTitle>
                 </div>
                 {voiceMode && (
-                  <Button variant="ghost" size="sm" title="Read question aloud" onClick={() => void voice.speak(current.question)}>
+                  <Button variant="ghost" size="sm" title={t("interviewPracticePage.readQuestionAloud", "Read question aloud")} onClick={() => void voice.speak(current.question)}>
                     <Volume2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -647,37 +655,37 @@ export default function InterviewPracticePage() {
 
               {current.strongAnswerCovers && (
                 <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                  <span className="font-semibold">What a strong answer covers: </span>
+                  <span className="font-semibold">{t("interviewPracticePage.whatAStrongAnswerCovers", "What a strong answer covers:")} </span>
                   {current.strongAnswerCovers}
                 </p>
               )}
 
-              <Textarea rows={6} placeholder="Tell your story — Situation, Task, Action, Result…"
+              <Textarea rows={6} placeholder={t("interviewPracticePage.tellYourStorySituationTaskAction", "Tell your story — Situation, Task, Action, Result…")}
                 value={answer} onChange={(e) => setAnswer(e.target.value)} />
 
               {voiceMode && (
                 <div className="flex items-center gap-2">
                   {dictation.supported ? (
                     <Button type="button" size="sm" variant={dictation.listening ? "default" : "outline"} onClick={dictation.toggle}>
-                      {dictation.listening ? <><MicOff className="mr-2 h-4 w-4" /> Stop recording</> : <><Mic className="mr-2 h-4 w-4" /> Answer by voice</>}
+                      {dictation.listening ? <><MicOff className="mr-2 h-4 w-4" /> {t("interviewPracticePage.stopRecording", "Stop recording")}</> : <><Mic className="mr-2 h-4 w-4" /> {t("interviewPracticePage.answerByVoice", "Answer by voice")}</>}
                     </Button>
-                  ) : <span className="text-xs text-slate-500">Voice input isn't supported in this browser — please type.</span>}
-                  {dictation.listening && <span className="text-xs text-indigo-600">Listening…</span>}
+                  ) : <span className="text-xs text-slate-500">{t("interviewPracticePage.voiceInputIsntSupportedInThis", "Voice input isn't supported in this browser — please type.")}</span>}
+                  {dictation.listening && <span className="text-xs text-indigo-600">{t("interviewPracticePage.listening", "Listening…")}</span>}
                 </div>
               )}
 
               <div className="flex flex-wrap gap-2">
                 <Button onClick={submitAnswer} disabled={busy || !answer.trim()}>
-                  {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Coaching…</> : <><MessageSquareText className="mr-2 h-4 w-4" /> Submit answer</>}
+                  {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("interviewPracticePage.coaching2", "Coaching…")}</> : <><MessageSquareText className="mr-2 h-4 w-4" /> {t("interviewPracticePage.submitAnswer", "Submit answer")}</>}
                 </Button>
                 {currentCoaching && (
                   <Button variant="outline" onClick={() => { setAnswer(""); setCoaching((c) => { const n = { ...c }; delete n[current.number]; return n }) }}>
-                    <RefreshCw className="mr-2 h-4 w-4" /> Try again
+                    <RefreshCw className="mr-2 h-4 w-4" /> {t("interviewPracticePage.tryAgain", "Try again")}
                   </Button>
                 )}
                 {currentCoaching && (
                   <Button variant={isLast ? "default" : "ghost"} onClick={next} disabled={busy}>
-                    {isLast ? <><CheckCircle2 className="mr-2 h-4 w-4" /> Finish &amp; view findings</> : <>Next question <ArrowRight className="ml-2 h-4 w-4" /></>}
+                    {isLast ? <><CheckCircle2 className="mr-2 h-4 w-4" /> {t("interviewPracticePage.finishViewFindings", "Finish & view findings")}</> : <>{t("interviewPracticePage.nextQuestion", "Next question")} <ArrowRight className="ml-2 h-4 w-4" /></>}
                   </Button>
                 )}
               </div>
@@ -685,9 +693,9 @@ export default function InterviewPracticePage() {
               {currentCoaching && (
                 <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
                   <div className="mb-1 flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Coaching</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">{t("interviewPracticePage.coaching3", "Coaching")}</p>
                     {voiceMode && (
-                      <Button variant="ghost" size="sm" title="Read coaching aloud" onClick={() => void voice.speak(currentCoaching)}>
+                      <Button variant="ghost" size="sm" title={t("interviewPracticePage.readCoachingAloud", "Read coaching aloud")} onClick={() => void voice.speak(currentCoaching)}>
                         <Volume2 className="h-4 w-4" />
                       </Button>
                     )}

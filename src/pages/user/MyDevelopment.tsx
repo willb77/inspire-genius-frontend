@@ -57,6 +57,7 @@ import MyLearningSection from "@/components/user/development/MyLearningSection"
 import MyMilestonesSection from "@/components/user/development/MyMilestonesSection"
 import MyPrismReadingSection from "@/components/user/development/MyPrismReadingSection"
 import MyReviewsSection from "@/components/user/development/MyReviewsSection"
+import { useTranslation } from "react-i18next"
 
 /** The signed-in role's own chrome — same resolution as Goals Studio. */
 function RoleChrome({ role, children }: { role: UserRole | undefined; children: React.ReactNode }) {
@@ -67,6 +68,7 @@ function RoleChrome({ role, children }: { role: UserRole | undefined; children: 
 }
 
 export default function MyDevelopment() {
+  const { t } = useTranslation("userPages")
   const { user } = useAuth()
   const role = (user?.role ?? undefined) as UserRole | undefined
 
@@ -78,10 +80,9 @@ export default function MyDevelopment() {
             <HeartPulse className="h-5 w-5" aria-hidden />
           </span>
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight">My development</h1>
+            <h1 className="text-xl font-semibold tracking-tight">{t("myDevelopment.myDevelopment", "My development")}</h1>
             <p className="text-sm text-muted-foreground">
-              What your coach sees about you, as you. Your gaps, your learning, your roadmap,
-              what a coach wrote back, and your own PRISM reading.
+              {t("myDevelopment.whatYourCoachSeesAboutYou", "What your coach sees about you, as you. Your gaps, your learning, your roadmap, what a coach wrote back, and your own PRISM reading.")}
             </p>
           </div>
         </header>

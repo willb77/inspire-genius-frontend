@@ -1,5 +1,7 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -19,10 +21,6 @@ import ComingNextPage from "./ComingNextPage"
 import { DiscoveryError, DiscoveryLoading, NoticeCard, StageHeader } from "./DiscoveryParts"
 import { useDiscoveryContext } from "./discoveryContext"
 
-const LEAD =
-  "Your chosen program, course by course and term by term: what's left, when you could finish, " +
-  "where it leads and what it costs to get there. Built from your school's published catalog."
-
 /**
  * DISC-5: the degree plan. The server builds every term, credit and refusal;
  * this page shows what it says and never re-orders it. When the server hasn't
@@ -36,15 +34,24 @@ export default function DegreePlanPage() {
 }
 
 function DegreePlanView({ enabled }: { enabled: boolean }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const { data, isLoading, isError, error } = useDegreePlan(enabled)
-  const header = <StageHeader title="Degree plan" lead={LEAD} />
-  if (isLoading) return <DiscoveryLoading label="Building your degree plan" />
+  const header = (
+    <StageHeader
+      title={t("dpTitle", "Degree plan")}
+      lead={t(
+        "dpLead",
+        "Your chosen program, course by course and term by term: what's left, when you could finish, where it leads and what it costs to get there. Built from your school's published catalog."
+      )}
+    />
+  )
+  if (isLoading) return <DiscoveryLoading label={t("dpBuilding", "Building your degree plan")} />
   if (isError || !data) {
     return (
       <div className="space-y-6">
         {header}
         {isNotOffered(error) ? (
-          <NoticeCard title="Not switched on here yet">
+          <NoticeCard title={t("dpNotOnTitle", "Not switched on here yet")}>
             <p>{discoveryErrorMessage(error)}</p>
           </NoticeCard>
         ) : (
@@ -57,11 +64,11 @@ function DegreePlanView({ enabled }: { enabled: boolean }) {
     return (
       <div className="space-y-6">
         {header}
-        <NoticeCard title="No plan yet">
+        <NoticeCard title={t("dpNoPlanTitle", "No plan yet")}>
           {data.carriedForward ? <p>{data.carriedForward.note}</p> : null}
           <p>{data.note}</p>
           <Link className="underline" to={ROUTES.CAREER_DISCOVERY.EDUCATION}>
-            Go to Education paths
+            {t("dpGoToEducation", "Go to Education paths")}
           </Link>
         </NoticeCard>
       </div>
@@ -71,7 +78,7 @@ function DegreePlanView({ enabled }: { enabled: boolean }) {
     <div className="space-y-6">
       {header}
       {data.carriedForward ? (
-        <NoticeCard title="Your plan moved to the new catalog">
+        <NoticeCard title={t("dpMovedTitle", "Your plan moved to the new catalog")}>
           <p>{data.carriedForward.note}</p>
         </NoticeCard>
       ) : null}
@@ -85,35 +92,57 @@ function DegreePlanView({ enabled }: { enabled: boolean }) {
 
 const SEASONS: PlanSeason[] = ["fall", "spring", "summer"]
 
-const settingsSchema = z
-  .object({
-    load: z.enum(["full_time", "part_time"]),
-    creditsPerTerm: z.coerce.number(),
-    season: z.enum(["fall", "spring", "summer"]),
-    year: z.coerce.number().int(),
-    summer: z.boolean(),
-  })
-  .superRefine((v, ctx) => {
-    const band = v.load === "part_time" ? { min: 6, max: 9 } : { min: 12, max: 15 }
-    if (!(v.creditsPerTerm >= band.min && v.creditsPerTerm <= band.max)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["creditsPerTerm"],
-        message: `${v.load === "part_time" ? "Part-time" : "Full-time"} is ${band.min} to ${band.max} credits a term.`,
-      })
-    }
-    if (v.season === "summer" && !v.summer) {
-      ctx.addIssue({ code: "custom", path: ["season"], message: "Turn on summer terms to start in a summer." })
-    }
-  })
-type SettingsIn = z.input<typeof settingsSchema>
-type SettingsOut = z.output<typeof settingsSchema>
+const makeSettingsSchema = (t: TFunction) =>
+  z
+    .object({
+      load: z.enum(["full_time", "part_time"]),
+      creditsPerTerm: z.coerce.number(),
+      season: z.enum(["fall", "spring", "summer"]),
+      year: z.coerce.number().int(),
+      summer: z.boolean(),
+    })
+    .superRefine((v, ctx) => {
+      const band = v.load === "part_time" ? { min: 6, max: 9 } : { min: 12, max: 15 }
+      if (!(v.creditsPerTerm >= band.min && v.creditsPerTerm <= band.max)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["creditsPerTerm"],
+          message:
+            v.load === "part_time"
+              ? t("dpErrPartTime", {
+                  defaultValue: "Part-time is {{min}} to {{max}} credits a term.",
+                  min: band.min,
+                  max: band.max,
+                })
+              : t("dpErrFullTime", {
+                  defaultValue: "Full-time is {{min}} to {{max}} credits a term.",
+                  min: band.min,
+                  max: band.max,
+                }),
+        })
+      }
+      if (v.season === "summer" && !v.summer) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["season"],
+          message: t("dpErrSummer", "Turn on summer terms to start in a summer."),
+        })
+      }
+    })
+type SettingsSchema = ReturnType<typeof makeSettingsSchema>
+type SettingsIn = z.input<SettingsSchema>
+type SettingsOut = z.output<SettingsSchema>
 
-function seasonLabel(s: string): string {
+function seasonLabel(t: TFunction, s: string): string {
+  if (s === "fall") return t("dpSeasonFall", "Fall")
+  if (s === "spring") return t("dpSeasonSpring", "Spring")
+  if (s === "summer") return t("dpSeasonSummer", "Summer")
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
 function PlanSettings({ data }: { data: DegreePlanReady }) {
+  const { t } = useTranslation("careerDiscoveryPages")
+  const settingsSchema = useMemo(() => makeSettingsSchema(t), [t])
   const save = useSaveDegreePlanInputs()
   const primary = data.inputs.programIds[0]
   const [completed, setCompleted] = useState<string[]>(data.checklist.filter((c) => c.completed).map((c) => c.id))
@@ -146,14 +175,14 @@ function PlanSettings({ data }: { data: DegreePlanReady }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">What you've done and how you'll study</CardTitle>
+        <CardTitle className="text-base">{t("dpSettingsTitle", "What you've done and how you'll study")}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-5" noValidate>
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Courses you've already completed</legend>
+            <legend className="text-sm font-medium">{t("dpCompletedLegend", "Courses you've already completed")}</legend>
             <p className="text-xs text-muted-foreground">
-              Tick what you've passed. Only the course is saved — no grades.
+              {t("dpCompletedHelp", "Tick what you've passed. Only the course is saved — no grades.")}
             </p>
             <ul className="grid gap-1 sm:grid-cols-2">
               {data.checklist.map((c) => (
@@ -167,7 +196,7 @@ function PlanSettings({ data }: { data: DegreePlanReady }) {
                     />
                     <span>
                       <span className="font-medium">{c.code}</span> {c.title}
-                      {c.credits !== null ? ` · ${c.credits} cr` : ""}
+                      {c.credits !== null ? ` · ${t("dpCreditsShort", { defaultValue: "{{credits}} cr", credits: c.credits })}` : ""}
                     </span>
                   </label>
                 </li>
@@ -175,14 +204,17 @@ function PlanSettings({ data }: { data: DegreePlanReady }) {
             </ul>
             {data.inputs.droppedCompleted > 0 ? (
               <p className="text-xs text-muted-foreground">
-                {data.inputs.droppedCompleted} course(s) you ticked before aren't in your school's newest catalog.
+                {t("dpDropped", {
+                  defaultValue: "{{dropped}} course(s) you ticked before aren't in your school's newest catalog.",
+                  dropped: data.inputs.droppedCompleted,
+                })}
               </p>
             ) : null}
           </fieldset>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="dp-load">Load</Label>
+              <Label htmlFor="dp-load">{t("dpLoadLabel", "Load")}</Label>
               <select
                 id="dp-load"
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -195,15 +227,23 @@ function PlanSettings({ data }: { data: DegreePlanReady }) {
                 })}
               >
                 <option value="full_time">
-                  Full-time ({data.options.loads.full_time.min}–{data.options.loads.full_time.max} credits)
+                  {t("dpFullTimeOption", {
+                    defaultValue: "Full-time ({{min}}–{{max}} credits)",
+                    min: data.options.loads.full_time.min,
+                    max: data.options.loads.full_time.max,
+                  })}
                 </option>
                 <option value="part_time">
-                  Part-time ({data.options.loads.part_time.min}–{data.options.loads.part_time.max} credits)
+                  {t("dpPartTimeOption", {
+                    defaultValue: "Part-time ({{min}}–{{max}} credits)",
+                    min: data.options.loads.part_time.min,
+                    max: data.options.loads.part_time.max,
+                  })}
                 </option>
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dp-credits">Credits a term</Label>
+              <Label htmlFor="dp-credits">{t("dpCreditsLabel", "Credits a term")}</Label>
               <input
                 id="dp-credits"
                 type="number"
@@ -216,7 +256,7 @@ function PlanSettings({ data }: { data: DegreePlanReady }) {
               ) : null}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dp-season">Start term</Label>
+              <Label htmlFor="dp-season">{t("dpStartTerm", "Start term")}</Label>
               <div className="flex gap-2">
                 <select
                   id="dp-season"
@@ -225,12 +265,12 @@ function PlanSettings({ data }: { data: DegreePlanReady }) {
                 >
                   {SEASONS.map((s) => (
                     <option key={s} value={s}>
-                      {seasonLabel(s)}
+                      {seasonLabel(t, s)}
                     </option>
                   ))}
                 </select>
                 <input
-                  aria-label="Start year"
+                  aria-label={t("dpStartYear", "Start year")}
                   type="number"
                   className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm"
                   {...form.register("year")}
@@ -240,15 +280,17 @@ function PlanSettings({ data }: { data: DegreePlanReady }) {
             </div>
             <label className="flex items-center gap-2 self-end text-sm">
               <input type="checkbox" {...form.register("summer")} />
-              Take courses in summer terms too
+              {t("dpSummerToo", "Take courses in summer terms too")}
             </label>
           </div>
 
           {others.length > 0 ? (
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Also plan (up to {data.options.maxExtraPrograms})</legend>
+              <legend className="text-sm font-medium">
+                {t("dpAlsoPlan", { defaultValue: "Also plan (up to {{max}})", max: data.options.maxExtraPrograms })}
+              </legend>
               <p className="text-xs text-muted-foreground">
-                A second program or a minor. Courses they share are planned once.
+                {t("dpAlsoPlanHelp", "A second program or a minor. Courses they share are planned once.")}
               </p>
               <ul className="space-y-1">
                 {others.map((p) => (
@@ -266,7 +308,10 @@ function PlanSettings({ data }: { data: DegreePlanReady }) {
               </ul>
               {tooMany ? (
                 <p className="text-sm text-destructive">
-                  Choose at most {data.options.maxExtraPrograms} programs beside your main one.
+                  {t("dpTooMany", {
+                    defaultValue: "Choose at most {{max}} programs beside your main one.",
+                    max: data.options.maxExtraPrograms,
+                  })}
                 </p>
               ) : null}
             </fieldset>
@@ -274,7 +319,7 @@ function PlanSettings({ data }: { data: DegreePlanReady }) {
 
           {save.isError ? <DiscoveryError message={discoveryErrorMessage(save.error)} /> : null}
           <Button type="submit" disabled={save.isPending || tooMany}>
-            Update my plan
+            {t("dpUpdate", "Update my plan")}
           </Button>
         </form>
       </CardContent>
@@ -288,54 +333,60 @@ const money = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n)
 
 function PlanBody({ data }: { data: DegreePlanReady }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const plan = data.plan
   const [pdfError, setPdfError] = useState<string | null>(null)
   const download = () => {
     setPdfError(null)
-    exportDegreePlanPdf(data).catch(() => setPdfError("The PDF couldn't be made. Try again."))
+    exportDegreePlanPdf(data).catch(() => setPdfError(t("dpPdfFailed", "The PDF couldn't be made. Try again.")))
   }
   return (
     <>
       <section aria-labelledby="dp-summary" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="dp-summary" className="text-lg font-semibold">
-            Your plan
+            {t("dpYourPlan", "Your plan")}
           </h2>
           <Button size="sm" variant="outline" onClick={download}>
-            Download PDF
+            {t("dpDownloadPdf", "Download PDF")}
           </Button>
         </div>
         {pdfError ? <DiscoveryError message={pdfError} /> : null}
         <p className="text-sm text-muted-foreground">
-          {data.catalog.catalogYear} catalog ·{" "}
+          {t("dpCatalogYear", { defaultValue: "{{year}} catalog", year: data.catalog.catalogYear })} ·{" "}
           {(plan.programs ?? []).map((p) => `${p.title ?? p.code} (${p.credential ?? ""})`).join(" + ")}
         </p>
         {plan.refused ? (
           <Card role="alert" className="border-destructive/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">This plan can't be built yet</CardTitle>
+              <CardTitle className="text-base">{t("dpRefusedTitle", "This plan can't be built yet")}</CardTitle>
             </CardHeader>
             <CardContent className="text-sm">
               <p>{plan.refused.statement}</p>
             </CardContent>
           </Card>
         ) : plan.alreadyComplete ? (
-          <NoticeCard title="Nothing left to take">
-            <p>Every course these programs name is done ({plan.creditsDone} credits).</p>
+          <NoticeCard title={t("dpNothingLeftTitle", "Nothing left to take")}>
+            <p>
+              {t("dpNothingLeftBody", {
+                defaultValue: "Every course these programs name is done ({{credits}} credits).",
+                credits: plan.creditsDone,
+              })}
+            </p>
           </NoticeCard>
         ) : (
           <dl className="grid gap-3 sm:grid-cols-3">
-            <Stat label="Credits done" value={String(plan.creditsDone ?? 0)} />
-            <Stat label="Credits to go" value={String(plan.creditsLeft ?? 0)} />
-            <Stat label="Expected to finish" value={plan.expectedCompletion?.label ?? "—"} />
+            <Stat label={t("dpCreditsDone", "Credits done")} value={String(plan.creditsDone ?? 0)} />
+            <Stat label={t("dpCreditsToGo", "Credits to go")} value={String(plan.creditsLeft ?? 0)} />
+            <Stat label={t("dpExpectedFinish", "Expected to finish")} value={plan.expectedCompletion?.label ?? "—"} />
           </dl>
         )}
       </section>
 
       {plan.refused ? null : (
-        <section aria-label="Terms" className="space-y-3">
-          {(plan.terms ?? []).map((t) => (
-            <TermCard key={t.label} term={t} />
+        <section aria-label={t("dpTerms", "Terms")} className="space-y-3">
+          {(plan.terms ?? []).map((term) => (
+            <TermCard key={term.label} term={term} />
           ))}
           {(plan.notes ?? []).length > 0 ? (
             <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
@@ -364,13 +415,15 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function TermCard({ term }: { term: PlanTerm }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">
           {term.label}
           <span className="ml-2 text-sm font-normal text-muted-foreground">
-            {term.credits} credits{term.overLoad ? " · over your load" : ""}
+            {t("dpTermCredits", { defaultValue: "{{credits}} credits", credits: term.credits })}
+            {term.overLoad ? ` · ${t("dpOverLoad", "over your load")}` : ""}
           </span>
         </CardTitle>
       </CardHeader>
@@ -380,7 +433,7 @@ function TermCard({ term }: { term: PlanTerm }) {
           {term.courses.map((c) => (
             <li key={c.code}>
               <p>
-                <span className="font-medium">{c.code}</span> {c.title} · {c.credits} credits
+                <span className="font-medium">{c.code}</span> {c.title} · {t("dpTermCredits", { defaultValue: "{{credits}} credits", credits: c.credits })}
               </p>
               <p className="text-xs text-muted-foreground">{c.whyNow}</p>
             </li>
@@ -392,17 +445,18 @@ function TermCard({ term }: { term: PlanTerm }) {
 }
 
 function Careers({ data }: { data: DegreePlanReady }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   if (data.careers.length === 0) {
     return (
-      <NoticeCard title="Where it leads">
-        <p>This program hasn't been linked to careers yet.</p>
+      <NoticeCard title={t("dpLeadsTitle", "Where it leads")}>
+        <p>{t("dpNoCareers", "This program hasn't been linked to careers yet.")}</p>
       </NoticeCard>
     )
   }
   return (
     <section aria-labelledby="dp-careers" className="space-y-2">
       <h2 id="dp-careers" className="text-lg font-semibold">
-        Where it leads
+        {t("dpLeadsTitle", "Where it leads")}
       </h2>
       {data.fit.available ? null : <p className="text-xs text-muted-foreground">{data.fit.reason}</p>}
       <ul className="space-y-1 text-sm">
@@ -410,8 +464,14 @@ function Careers({ data }: { data: DegreePlanReady }) {
           <li key={`${c.program}-${c.role?.id ?? c.roleFamily}-${i}`}>
             <span className="font-medium">{c.role?.title ?? c.roleFamily}</span>
             {c.socCode ? <span className="text-muted-foreground"> · {c.socCode}</span> : null}
-            {c.overallFit !== null ? <span> · Overall fit {Math.round(c.overallFit)}%</span> : null}
-            {c.prismFit !== null ? <span> · PRISM fit {Math.round(c.prismFit)}%</span> : null}
+            {c.overallFit !== null ? <span>
+                {" "}
+                · {t("dpOverallFit", { defaultValue: "Overall fit {{percent}}%", percent: Math.round(c.overallFit) })}
+              </span> : null}
+            {c.prismFit !== null ? <span>
+                {" "}
+                · {t("dpPrismFit", { defaultValue: "PRISM fit {{percent}}%", percent: Math.round(c.prismFit) })}
+              </span> : null}
           </li>
         ))}
       </ul>
@@ -421,22 +481,35 @@ function Careers({ data }: { data: DegreePlanReady }) {
 }
 
 function CostToFinishCard({ data }: { data: DegreePlanReady }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const c = data.costToFinish
   return (
-    <NoticeCard title="Cost to finish">
+    <NoticeCard title={t("dpCostTitle", "Cost to finish")}>
       {c.available ? (
         <>
           <p className="text-foreground">
             {c.terms === 0
               ? c.note
-              : `${money(c.low)} to ${money(c.high)} after grants, over ${c.terms} term${c.terms === 1 ? "" : "s"}.`}
+              : c.terms === 1
+                ? t("dpCostOneTerm", {
+                    defaultValue: "{{low}} to {{high}} after grants, over {{terms}} term.",
+                    low: money(c.low),
+                    high: money(c.high),
+                    terms: c.terms,
+                  })
+                : t("dpCostManyTerms", {
+                    defaultValue: "{{low}} to {{high}} after grants, over {{terms}} terms.",
+                    low: money(c.low),
+                    high: money(c.high),
+                    terms: c.terms,
+                  })}
           </p>
           {c.basis ? <p className="text-xs">{c.basis}</p> : null}
           {c.note && c.terms > 0 ? <p className="text-xs">{c.note}</p> : null}
         </>
       ) : (
         <>
-          <p>{c.note ?? "There's no cost to finish for this plan yet."}</p>
+          <p>{c.note ?? t("dpNoCost", "There's no cost to finish for this plan yet.")}</p>
           {c.missingStatements.map((s) => (
             <p key={s} className="text-xs">
               {s}
@@ -449,13 +522,14 @@ function CostToFinishCard({ data }: { data: DegreePlanReady }) {
 }
 
 function GapsCard({ data }: { data: DegreePlanReady }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const g = data.gaps
   return (
-    <NoticeCard title="Still to work on">
+    <NoticeCard title={t("dpGapsTitle", "Still to work on")}>
       {!g.available ? (
         <p>{g.note}</p>
       ) : g.items.length === 0 ? (
-        <p>{g.note ?? "No behaviour or skill growth areas are on file."}</p>
+        <p>{g.note ?? t("dpNoGaps", "No behaviour or skill growth areas are on file.")}</p>
       ) : (
         <ul className="list-disc space-y-1 pl-5 text-foreground">
           {g.items.map((item, i) => (

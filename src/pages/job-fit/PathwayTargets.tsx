@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { Flag, Loader2, Map } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/constants/routes"
 import { useMakeTarget, useMyTargets } from "@/hooks/goals/useGoalTargets"
@@ -50,12 +51,13 @@ export function TargetRoleAction({
   roleTitle: string
   targets: ReturnType<typeof useMyTargets>
 }) {
+  const { t } = useTranslation("jobFitPages")
   const qc = useQueryClient()
   const make = useMakeTarget()
   const [reading, setReading] = useState(false)
   const [readError, setReadError] = useState<unknown>(null)
 
-  const already = (targets.data ?? []).filter((t) => t.jobId === jobId)
+  const already = (targets.data ?? []).filter((tg) => tg.jobId === jobId)
   const done = make.data
   const busy = reading || make.isPending
   const error = readError ?? make.error
@@ -67,9 +69,9 @@ export function TargetRoleAction({
   if (already.length > 0) {
     return (
       <p className="mt-2 text-xs text-[#0f766e]" data-testid="already-targeted">
-        A goal already targets this role —{" "}
+        {t("pathwayTargets.alreadyTargets", "A goal already targets this role —")}{" "}
         <Link className="font-semibold underline" to={ROUTES.MY_GOALS.ROADMAP(already[0].goalId)}>
-          view roadmap
+          {t("pathwayTargets.viewRoadmapLower", "view roadmap")}
         </Link>
       </p>
     )
@@ -78,12 +80,16 @@ export function TargetRoleAction({
   if (done) {
     return (
       <p role="status" className="mt-2 text-xs text-[#0f766e]">
-        &ldquo;{done.goal.title}&rdquo; now targets {done.target.roleTitle || roleTitle}.{" "}
+        {t("pathwayTargets.nowTargets", {
+          defaultValue: "“{{title}}” now targets {{role}}.",
+          title: done.goal.title,
+          role: done.target.roleTitle || roleTitle,
+        })}{" "}
         <Link
           className="inline-flex items-center gap-1 font-semibold underline"
           to={ROUTES.MY_GOALS.ROADMAP(done.goal.goalId)}
         >
-          <Map className="h-3 w-3" aria-hidden /> View roadmap
+          <Map className="h-3 w-3" aria-hidden /> {t("pathwayTargets.viewRoadmap", "View roadmap")}
         </Link>
       </p>
     )
@@ -112,14 +118,17 @@ export function TargetRoleAction({
         variant="outline"
         disabled={busy || targets.isLoading}
         onClick={onClick}
-        aria-label={`Make ${roleTitle} my target`}
+        aria-label={t("pathwayTargets.makeTargetLabel", {
+          defaultValue: "Make {{role}} my target",
+          role: roleTitle,
+        })}
       >
         {busy ? (
           <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden />
         ) : (
           <Flag className="mr-1 h-3.5 w-3.5" aria-hidden />
         )}
-        Make this my target
+        {t("pathwayTargets.makeTarget", "Make this my target")}
       </Button>
       {error != null && (
         <p role="alert" className="mt-1 text-xs text-[#B91C1C]">
@@ -131,46 +140,62 @@ export function TargetRoleAction({
 }
 
 function Milestone({ m }: { m: RoadmapMilestone }) {
+  const { t } = useTranslation("jobFitPages")
   return (
     <li className="text-sm text-[#6b7280]">
       <span className="font-medium text-[#1f2937]">{m.title || m.competency}</span>
       {m.severity === "critical" && (
         <span className="ml-2 rounded bg-[#C2614F]/10 px-1.5 py-0.5 text-[11px] font-semibold text-[#C2614F]">
-          Priority
+          {t("pathwayTargets.priority", "Priority")}
         </span>
       )}
       {m.why && <span className="block">{m.why}</span>}
       {m.canon && (
         <span className="mt-1 block border-l-[3px] border-[#0D9488] pl-2 text-xs text-[#6b7280]">
-          <b>{m.canon.dimension} in PRISM:</b> {m.canon.definition}
+          <b>
+            {t("pathwayTargets.dimensionInPrism", {
+              defaultValue: "{{dimension}} in PRISM:",
+              dimension: m.canon.dimension,
+            })}
+          </b> {m.canon.definition}
         </span>
       )}
     </li>
   )
 }
 
-function TargetRoadmap({ t }: { t: GoalTargetWithRoadmap }) {
-  const r = t.roadmap?.roadmap
-  const title = r?.goalTitle ?? `Toward ${t.roleTitle}`
+function TargetRoadmap({ target }: { target: GoalTargetWithRoadmap }) {
+  const { t } = useTranslation("jobFitPages")
+  const r = target.roadmap?.roadmap
+  const title =
+    r?.goalTitle ??
+    t("pathwayTargets.toward", { defaultValue: "Toward {{role}}", role: target.roleTitle })
   return (
     <div data-testid="pathway-roadmap">
       <div className="mb-1.5 flex flex-wrap items-center gap-2">
         <Flag className="h-4 w-4 text-[#0D9488]" aria-hidden />
         <span className="text-sm font-medium text-[#1f2937]">{title}</span>
-        <span className="text-xs text-[#9ca3af]">targets {t.roleTitle}</span>
+        <span className="text-xs text-[#9ca3af]">
+          {t("pathwayTargets.targetsRole", { defaultValue: "targets {{role}}", role: target.roleTitle })}
+        </span>
         <Link
-          to={ROUTES.MY_GOALS.ROADMAP(t.goalId)}
+          to={ROUTES.MY_GOALS.ROADMAP(target.goalId)}
           className="ml-auto text-xs font-semibold text-[#0D9488] underline"
         >
-          Full roadmap
+          {t("pathwayTargets.fullRoadmap", "Full roadmap")}
         </Link>
       </div>
       {!r && (
-        <p className="ml-6 text-sm text-[#6b7280]">No roadmap has been built for this target yet.</p>
+        <p className="ml-6 text-sm text-[#6b7280]">
+          {t("pathwayTargets.noRoadmap", "No roadmap has been built for this target yet.")}
+        </p>
       )}
       {r && r.gapsPending && (
         <p className="ml-6 text-sm text-[#6b7280]">
-          The fit you chose this role from showed no growth areas to work on.
+          {t(
+            "pathwayTargets.noGrowthAreas",
+            "The fit you chose this role from showed no growth areas to work on.",
+          )}
         </p>
       )}
       {r && !r.gapsPending && (
@@ -182,8 +207,8 @@ function TargetRoadmap({ t }: { t: GoalTargetWithRoadmap }) {
       )}
       {r && (
         <p className="ml-6 mt-1 text-xs text-[#9ca3af]">
-          {r.start.pending ? "No first step on this goal yet. " : ""}
-          {r.finish.pending ? "No success measure on this goal yet." : ""}
+          {r.start.pending ? `${t("pathwayTargets.noFirstStep", "No first step on this goal yet.")} ` : ""}
+          {r.finish.pending ? t("pathwayTargets.noSuccessMeasure", "No success measure on this goal yet.") : ""}
         </p>
       )}
     </div>
@@ -196,31 +221,33 @@ function TargetRoadmap({ t }: { t: GoalTargetWithRoadmap }) {
  * error — nothing targeted yet, the read failed — are said, never filled in.
  */
 export function MyRoadmaps({ targets }: { targets: ReturnType<typeof useMyTargets> }) {
+  const { t } = useTranslation("jobFitPages")
   const rows = targets.data ?? []
   return (
     <FitCard className="mb-6">
-      <FitSectionTitle>Your roadmaps</FitSectionTitle>
+      <FitSectionTitle>{t("pathwayTargets.roadmapsTitle", "Your roadmaps")}</FitSectionTitle>
       {targets.isLoading && (
         <p className="flex items-center gap-2 text-sm text-[#6b7280]">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Loading your roadmaps…
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> {t("pathwayTargets.loadingRoadmaps", "Loading your roadmaps…")}
         </p>
       )}
       {targets.isError && (
         <p role="alert" className="text-sm text-[#B91C1C]">
-          We couldn&apos;t load your roadmaps. Please try again shortly.
+          {t("pathwayTargets.roadmapsError", "We couldn't load your roadmaps. Please try again shortly.")}
         </p>
       )}
       {!targets.isLoading && !targets.isError && rows.length === 0 && (
         <p className="text-sm text-[#6b7280]">
-          You haven&apos;t targeted a role yet. Choose &ldquo;Make this my target&rdquo; on a role
-          above and its roadmap — the growth areas between your profile and that role&apos;s blueprint,
-          in the order to work on them — appears here.
+          {t(
+            "pathwayTargets.noTargets",
+            "You haven't targeted a role yet. Choose “Make this my target” on a role above and its roadmap — the growth areas between your profile and that role's blueprint, in the order to work on them — appears here.",
+          )}
         </p>
       )}
       {rows.length > 0 && (
         <div className="space-y-5">
-          {rows.map((t) => (
-            <TargetRoadmap key={t.targetId} t={t} />
+          {rows.map((row) => (
+            <TargetRoadmap key={row.targetId} target={row} />
           ))}
         </div>
       )}

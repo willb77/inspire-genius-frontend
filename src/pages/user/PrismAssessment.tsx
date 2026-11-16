@@ -28,6 +28,7 @@ const ACTIVE_STATUSES: Set<string> = new Set([
 ])
 
 export default function PrismAssessment() {
+  const { t: tu } = useTranslation("userPages");
   const { t } = useTranslation(["common", "coaching"]);
   const { user } = useAuth()
   const { data, isLoading } = usePrismHistory(user?.id ?? null)
@@ -47,7 +48,7 @@ export default function PrismAssessment() {
       const res = await downloadUrl.mutateAsync({ kind: 'pdf' })
       setPdfViewer({ url: res.url, name: res.filename })
     } catch {
-      toast.error('Could not open your PRISM report. Please try again.')
+      toast.error(tu("prismAssessment.couldNotOpenYourPrismReport", "Could not open your PRISM report. Please try again."))
     }
   }
 
@@ -85,11 +86,11 @@ export default function PrismAssessment() {
                 ) : (
                   <FileDown className="mr-1.5 h-4 w-4" />
                 )}
-                View PRISM Report PDF
+                {tu("prismAssessment.viewPrismReportPdf", "View PRISM Report PDF")}
               </Button>
             )}
             <ReplacePrismDataButton
-              label="Import / Replace Report"
+              label={tu("prismAssessment.importReplaceReport", "Import / Replace Report")}
               variant="outline"
               size="sm"
             />
@@ -106,7 +107,7 @@ export default function PrismAssessment() {
             className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            Retrieve from the PRISM portal
+            {tu("prismAssessment.retrieveFromThePrismPortal", "Retrieve from the PRISM portal")}
           </a>
         )}
 

@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next"
 import { ROUTES } from "@/constants/routes"
 
 /** Stage id (server) → page (client). Ids are the server's; see app/tools/career_discovery/stages.py. */
@@ -14,9 +15,9 @@ export const STAGE_ROUTES: Record<string, string> = {
   plan: ROUTES.CAREER_DISCOVERY.PLAN,
 }
 
-export const STATE_LABELS: Record<string, string> = {
-  not_started: "Not started",
-  in_progress: "In progress",
-  complete: "Done",
-  skipped: "Skipped",
-}
+export const stateLabels = (t: TFunction): Record<string, string> => ({
+  not_started: t("stateNotStarted", "Not started"),
+  in_progress: t("stateInProgress", "In progress"),
+  complete: t("stateDone", "Done"),
+  skipped: t("stateSkipped", "Skipped"),
+})

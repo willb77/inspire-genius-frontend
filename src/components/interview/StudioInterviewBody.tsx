@@ -11,7 +11,8 @@
  * `frame.mode = "custom"`), the scorer bands per `frame.kind`, and the findings
  * add the advisory narrative feedback the backend now returns.
  */
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -47,6 +48,7 @@ import {
   useScoreLiveAnswer,
   useSubmitLiveAnswer,
 } from "@/hooks/interview/useLiveInterview"
+import { SLOT, slotParts, slotSplit, type TFn } from "@/components/interview/tFallback"
 import type { InterviewFrame } from "@/services/interview/practice.service"
 import { liveInterviewService, normalizeSectionScores } from "@/services/interview/live.service"
 import {
@@ -75,34 +77,40 @@ function fmtScore(v: number | string | null | undefined): string {
 type Phase = "setup" | "interview" | "findings"
 type SetupStep = "consent" | "participant" | "questions"
 
-const participantSchema = z.object({
-  displayName: z.string().min(1, "A name is required").max(255),
-  externalId: z.string().max(255).optional(),
-})
-type ParticipantFormValues = z.infer<typeof participantSchema>
+const buildParticipantSchema = (t: TFn) =>
+  z.object({
+    displayName: z.string().min(1, t("studio.participant.nameRequired", "A name is required")).max(255),
+    externalId: z.string().max(255).optional(),
+  })
+type ParticipantFormValues = z.infer<ReturnType<typeof buildParticipantSchema>>
 
 
 /** One honest line about the Job Studio scorecard draft after finalise. */
 function ScorecardDraftLine({ linked, report }: { linked: boolean; report?: ScorecardDraftReport | null }) {
+  const { t } = useTranslation("interviewPages")
   if (!linked) return null
   if (report?.written) {
     return (
       <p className="text-sm text-emerald-700" data-testid="scorecard-draft-line">
-        Scorecard draft written for the linked candidate
-        {typeof report.dimensions_scored === "number" ? ` (${report.dimensions_scored} dimensions)` : ""}.
-        Review it under Job DNA → Scorecards before it counts.
+        {typeof report.dimensions_scored === "number"
+          ? t("live.scorecard.writtenDims", { defaultValue: "Scorecard draft written for the linked candidate ({{dimensions}} dimensions).", dimensions: report.dimensions_scored })
+          : t("live.scorecard.written", "Scorecard draft written for the linked candidate.")}{" "}
+        {t("studio.scorecard.review", "Review it under Job DNA → Scorecards before it counts.")}
       </p>
     )
   }
   return (
     <p className="text-sm text-amber-700" role="alert" data-testid="scorecard-draft-line">
-      No scorecard draft was written for the linked candidate
-      {report?.reason ? ` (${report.reason})` : " (the backend did not report one)"}.
+      {report?.reason
+        ? t("live.scorecard.noDraftReason", { defaultValue: "No scorecard draft was written for the linked candidate ({{reason}}).", reason: report.reason })
+        : t("live.scorecard.noDraft", "No scorecard draft was written for the linked candidate (the backend did not report one).")}
     </p>
   )
 }
 
 function ParticipantForm({ onConfirm }: { onConfirm: (c: LiveCandidate) => void }) {
+  const { t } = useTranslation("interviewPages")
+  const participantSchema = useMemo(() => buildParticipantSchema(t), [t])
   const form = useForm<ParticipantFormValues>({
     resolver: zodResolver(participantSchema),
     defaultValues: { displayName: "", externalId: "" },
@@ -117,11 +125,10 @@ function ParticipantForm({ onConfirm }: { onConfirm: (c: LiveCandidate) => void 
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <UserRound className="h-4 w-4 text-indigo-600" /> Who is this interview with?
+          <UserRound className="h-4 w-4 text-indigo-600" /> {t("studio.participant.title", "Who is this interview with?")}
         </CardTitle>
         <p className="text-sm text-slate-600">
-          The interviewee is not the signed-in user — identify them before the
-          questions start.
+          {t("studio.participant.intro", "The interviewee is not the signed-in user — identify them before the questions start.")}
         </p>
       </CardHeader>
       <CardContent>
@@ -138,17 +145,17 @@ function ParticipantForm({ onConfirm }: { onConfirm: (c: LiveCandidate) => void 
         >
           <JobDnaCandidatePicker value={link} onPick={pick} onClear={() => setLink(null)} />
           <div>
-            <Label htmlFor="participant-name">Name</Label>
+            <Label htmlFor="participant-name">{t("studio.participant.nameLabel", "Name")}</Label>
             <Input id="participant-name" {...form.register("displayName")} />
             {form.formState.errors.displayName && (
               <p className="mt-1 text-xs text-red-600">{form.formState.errors.displayName.message}</p>
             )}
           </div>
           <div>
-            <Label htmlFor="participant-external-id">Reference ID (optional)</Label>
-            <Input id="participant-external-id" {...form.register("externalId")} placeholder="Student ID, ATS ID, etc." />
+            <Label htmlFor="participant-external-id">{t("studio.participant.refLabel", "Reference ID (optional)")}</Label>
+            <Input id="participant-external-id" {...form.register("externalId")} placeholder={t("studio.participant.refPlaceholder", "Student ID, ATS ID, etc.")} />
           </div>
-          <Button type="submit">Continue</Button>
+          <Button type="submit">{t("live.candidate.continue", "Continue")}</Button>
         </form>
       </CardContent>
     </Card>
@@ -170,6 +177,7 @@ export type StudioInterviewBodyProps = {
 }
 
 export default function StudioInterviewBody({ openSessionId }: StudioInterviewBodyProps = {}) {
+  const { t } = useTranslation("interviewPages")
   const { user } = useAuth()
 
   const [phase, setPhase] = useState<Phase>("setup")
@@ -200,6 +208,13 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
   const submitAnswer = useSubmitLiveAnswer()
   const scoreAnswer = useScoreLiveAnswer()
   const finalizeSession = useFinalizeLiveSession()
+
+  const overallParts = slotSplit(
+    t("live.results.overall", { defaultValue: "Overall score: {{score}} / 5 · Mean: {{mean}}", score: SLOT, mean: SLOT }),
+  )
+  const [tailoringBefore, tailoringAfter] = slotParts(
+    t("studio.tailoringNotice", { defaultValue: "These questions were {{slot}} rewritten for the role — the tailoring step was unavailable, so the standard wording is being used. The interview and its scoring are unaffected.", slot: SLOT }),
+  )
 
   const current = plan[idx] ?? null
   const total = plan.length
@@ -245,8 +260,9 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
             data-testid="studio-employer-provenance"
           >
             <span className="font-semibold text-slate-800">
-              Framed on {employer.name}
-              {employer.framework ? ` — ${employer.framework}` : ""}
+              {employer.framework
+                ? t("studio.framedOnFramework", { defaultValue: "Framed on {{name}} — {{framework}}", name: employer.name, framework: employer.framework })
+                : t("studio.framedOn", { defaultValue: "Framed on {{name}}", name: employer.name })}
             </span>
             <p className="mt-1 leading-snug">{employer.provenance}</p>
           </div>
@@ -257,9 +273,9 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
             role="status"
             data-testid="studio-tailoring-notice"
           >
-            These questions were <span className="font-semibold">not</span> rewritten for the
-            role — the tailoring step was unavailable, so the standard wording is
-            being used. The interview and its scoring are unaffected.
+            {tailoringBefore}
+            <span className="font-semibold">{t("studio.tailoringNot", "not")}</span>
+            {tailoringAfter}
           </div>
         ) : null}
       </div>
@@ -294,7 +310,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
       setFinalizeResult(null)
       setPhase("interview")
     } catch {
-      toast.error("Could not start the interview. Please try again.")
+      toast.error(t("live.startFailed", "Could not start the interview. Please try again."))
     }
   }
 
@@ -308,7 +324,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
       })
       setAnswers((prev) => ({ ...prev, [competencyId]: { suggestion: result, scored: prev[competencyId]?.scored ?? null } }))
     } catch {
-      toast.error("Could not submit that answer. Please try again.")
+      toast.error(t("live.submitFailed", "Could not submit that answer. Please try again."))
     }
   }
 
@@ -323,7 +339,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
       })
       setAnswers((prev) => ({ ...prev, [competencyId]: { suggestion: prev[competencyId]?.suggestion ?? null, scored: result } }))
     } catch {
-      toast.error("Could not save that rating. Please try again.")
+      toast.error(t("live.saveFailed", "Could not save that rating. Please try again."))
     }
   }
 
@@ -358,9 +374,9 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
       // a state. This is pinned by a test in BOTH bodies; it was forked
       // verbatim, so fixing only one leaves the other stuck and green.
       const detail =
-        e instanceof Error && e.message ? e.message : "Could not finalize the interview."
+        e instanceof Error && e.message ? e.message : t("live.finalizeFailedDetail", "Could not finalize the interview.")
       setFinalizeError(detail)
-      toast.error("Could not finalize the interview. Please try again.")
+      toast.error(t("live.finalizeFailed", "Could not finalize the interview. Please try again."))
     }
   }
 
@@ -369,7 +385,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
     if (
       !currentScored &&
       !window.confirm(
-        "The current question hasn't been submitted and rated yet — its answer and notes won't be saved. End the interview anyway?",
+        t("live.confirmEnd", "The current question hasn't been submitted and rated yet — its answer and notes won't be saved. End the interview anyway?"),
       )
     ) {
       return
@@ -396,8 +412,8 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
       const fallbackName =
         detail.candidate_ref?.display_name?.trim() ||
         (detail.candidate_ref?.candidate_hash
-          ? `Candidate ${detail.candidate_ref.candidate_hash.slice(0, 8)}`
-          : "Candidate not recorded")
+          ? t("past.candidateHash", { defaultValue: "Candidate {{hash}}", hash: detail.candidate_ref.candidate_hash.slice(0, 8) })
+          : t("past.candidateNotRecorded", "Candidate not recorded"))
 
       setSessionId(sid)
       setFrame(detail.session.frame ?? null)
@@ -423,7 +439,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
         // The plan column is what makes an interview resumable. Empty means the
         // remaining questions are not recoverable, and dropping the interviewer
         // into an empty interview screen would look like a loading bug.
-        toast.error("That interview has no recorded question plan, so it cannot be resumed.")
+        toast.error(t("live.noPlan", "That interview has no recorded question plan, so it cannot be resumed."))
         return
       }
       setReadOnly(false)
@@ -433,11 +449,11 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
       setFinalizeResult(null)
       setPhase("interview")
       if (rehydrated.complete) {
-        toast.info("Every question in this interview has been answered — review and finish it.")
+        toast.info(t("live.allAnswered", "Every question in this interview has been answered — review and finish it."))
       }
     } catch (e) {
       toast.error(
-        e instanceof Error && e.message ? e.message : "Could not open that interview.",
+        e instanceof Error && e.message ? e.message : t("live.openFailed", "Could not open that interview."),
       )
     } finally {
       setOpeningSessionId(null)
@@ -469,12 +485,12 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
     try {
       if (kind === "save") {
         await saveScoredInterviewToDocuments({ result: finalizeResult, userLabel: user?.name || user?.email })
-        toast.success("Saved to your Document Library.")
+        toast.success(t("live.savedToLibrary", "Saved to your Document Library."))
       } else {
         await downloadScoredInterview({ result: finalizeResult, userLabel: user?.name || user?.email }, kind)
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Export failed.")
+      toast.error(e instanceof Error ? e.message : t("live.exportFailed", "Export failed."))
     } finally {
       setExporting(null)
     }
@@ -488,12 +504,10 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
       <div className="mx-auto max-w-3xl space-y-4 py-8">
         <header>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
-            <Sparkles className="h-6 w-6 text-indigo-600" /> Interview Studio
+            <Sparkles className="h-6 w-6 text-indigo-600" /> {t("studio.title", "Interview Studio")}
           </h1>
           <p className="text-sm text-slate-600">
-            Build a scored interview from your own questions — or generate a set
-            for a topic like a student career discovery conversation. Advisory AI
-            suggestions, your authoritative rating.
+            {t("studio.subtitle", "Build a scored interview from your own questions — or generate a set for a topic like a student career discovery conversation. Advisory AI suggestions, your authoritative rating.")}
           </p>
         </header>
         {setupStep === "consent" && (
@@ -527,7 +541,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
       <div className="mx-auto max-w-3xl space-y-4 py-8">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Interview Results</h1>
+            <h1 className="text-2xl font-semibold">{t("live.results.title", "Interview Results")}</h1>
             <p className="text-sm text-slate-600">{subtitle}</p>
             <div className="mt-2"><ProvenanceNotice /></div>
           </div>
@@ -535,37 +549,37 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
             {finalizeResult && (
               <>
                 <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => void doExport("word")}>
-                  {exporting === "word" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />} Word
+                  {exporting === "word" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />} {t("live.export.word", "Word")}
                 </Button>
                 <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => void doExport("pdf")}>
-                  {exporting === "pdf" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />} PDF
+                  {exporting === "pdf" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />} {t("live.export.pdf", "PDF")}
                 </Button>
                 <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => void doExport("save")}>
-                  {exporting === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save
+                  {exporting === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} {t("live.export.save", "Save")}
                 </Button>
               </>
             )}
-            <Button variant="ghost" size="sm" onClick={restart}><RefreshCw className="mr-2 h-4 w-4" /> New interview</Button>
+            <Button variant="ghost" size="sm" onClick={restart}><RefreshCw className="mr-2 h-4 w-4" /> {t("live.newInterview", "New interview")}</Button>
           </div>
         </header>
 
         {!finalizeResult && finalizeError ? (
           <Card className="border-rose-200 bg-rose-50/50">
             <CardContent className="space-y-3 py-6 text-sm">
-              <p className="font-medium text-rose-900">The scored write-up could not be compiled.</p>
+              <p className="font-medium text-rose-900">{t("live.results.compileFailed", "The scored write-up could not be compiled.")}</p>
               <p className="text-rose-800">{finalizeError}</p>
               <p className="text-xs text-rose-700">
-                Nothing was lost — the answers and ratings are saved. Try again.
+                {t("live.results.nothingLost", "Nothing was lost — the answers and ratings are saved. Try again.")}
               </p>
               <Button size="sm" variant="outline" onClick={() => void finish()}>
-                <RefreshCw className="mr-2 h-4 w-4" /> Try again
+                <RefreshCw className="mr-2 h-4 w-4" /> {t("past.tryAgain", "Try again")}
               </Button>
             </CardContent>
           </Card>
         ) : !finalizeResult ? (
           <Card>
             <CardContent className="flex items-center py-8 text-sm text-slate-500">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Compiling the scored write-up…
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t("live.results.compiling", "Compiling the scored write-up…")}
             </CardContent>
           </Card>
         ) : (
@@ -573,23 +587,24 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
             {readOnly && (
               <Card className="border-slate-300 bg-slate-50">
                 <CardContent className="py-4 text-sm text-slate-700">
-                  <p className="font-medium text-slate-900">Reopened for review — read only.</p>
+                  <p className="font-medium text-slate-900">{t("live.results.reopened", "Reopened for review — read only.")}</p>
                   <p className="mt-1 text-xs">
-                    This is the interview as it was recorded. Its score is the one the decision was
-                    made on and is not recalculated; ratings cannot be changed and it cannot be
-                    finalized again. Exporting it again is fine.
+                    {t("live.results.reopenedBody", "This is the interview as it was recorded. Its score is the one the decision was made on and is not recalculated; ratings cannot be changed and it cannot be finalized again. Exporting it again is fine.")}
                   </p>
                 </CardContent>
               </Card>
             )}
             <Card>
-              <CardHeader><CardTitle className="text-base">{isHiring ? "What the evidence shows" : "Overall assessment"}</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">{isHiring ? t("live.results.evidence", "What the evidence shows") : t("studio.results.overallAssessment", "Overall assessment")}</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 <p className="text-lg font-semibold capitalize text-slate-900">{finalizeResult.recommendation}</p>
                 <ScorecardDraftLine linked={!!participant?.candidate_id} report={finalizeResult.scorecard_draft} />
                 <p className="text-sm text-slate-600">
-                  Overall score: <span className="font-medium">{fmtScore(finalizeResult.overall_score)}</span> / 5
-                  {" · "}Mean: <span className="font-medium">{fmtScore(finalizeResult.overall_mean)}</span>
+                  {overallParts[0]}
+                  <span className="font-medium">{fmtScore(finalizeResult.overall_score)}</span>
+                  {overallParts[1]}
+                  <span className="font-medium">{fmtScore(finalizeResult.overall_mean)}</span>
+                  {overallParts[2]}
                 </p>
               </CardContent>
             </Card>
@@ -598,14 +613,14 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <Sparkles className="h-4 w-4 text-indigo-600" /> Feedback
+                    <Sparkles className="h-4 w-4 text-indigo-600" /> {t("studio.results.feedback", "Feedback")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {feedback.summary && <p className="text-sm text-slate-700">{feedback.summary}</p>}
                   {feedback.strengths.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Strengths</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{t("studio.results.strengths", "Strengths")}</p>
                       <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
                         {feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}
                       </ul>
@@ -613,7 +628,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
                   )}
                   {feedback.development_areas.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Areas to develop</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">{t("studio.results.areasToDevelop", "Areas to develop")}</p>
                       <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
                         {feedback.development_areas.map((s, i) => <li key={i}>{s}</li>)}
                       </ul>
@@ -627,8 +642,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
               <Card className="border-amber-200 bg-amber-50/60">
                 <CardContent className="space-y-2 py-4 text-sm">
                   <p className="font-medium text-amber-900">
-                    {finalizeResult.unrated!.length} of {finalizeResult.answer_count ?? finalizeResult.answers.length}{" "}
-                    answers were never rated and are NOT part of this score.
+                    {t("live.results.unrated", { defaultValue: "{{unrated}} of {{total}} answers were never rated and are NOT part of this score.", unrated: finalizeResult.unrated!.length, total: finalizeResult.answer_count ?? finalizeResult.answers.length })}
                   </p>
                   <ul className="list-disc space-y-1 pl-5 text-xs text-amber-800">
                     {finalizeResult.unrated!.map((u) => (
@@ -636,20 +650,19 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
                     ))}
                   </ul>
                   <p className="text-xs text-amber-700">
-                    They are still in the transcript below. A score that quietly dropped them
-                    would read as a complete scorecard.
+                    {t("live.results.unratedNote", "They are still in the transcript below. A score that quietly dropped them would read as a complete scorecard.")}
                   </p>
                 </CardContent>
               </Card>
             )}
             <Card>
-              <CardHeader><CardTitle className="text-base">Section scores</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">{t("live.results.sectionScores", "Section scores")}</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 {normalizeSectionScores(finalizeResult.section_scores).map((s) => (
                   <div key={s.section} className="flex items-center justify-between border-b border-slate-100 py-1 text-sm last:border-0">
                     <span className="capitalize text-slate-700">{s.section.replace(/_/g, " ")}</span>
                     <span className="font-medium">
-                      {fmtScore(s.score)} / 5
+                      {t("live.results.scoreOfFive", { defaultValue: "{{score}} / 5", score: fmtScore(s.score) })}
                       {feedback?.per_section?.[s.section] && (
                         <span className="ml-2 font-normal text-slate-500">— {feedback.per_section[s.section]}</span>
                       )}
@@ -657,13 +670,13 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
                   </div>
                 ))}
                 {normalizeSectionScores(finalizeResult.section_scores).length === 0 && (
-                  <p className="text-sm text-slate-500">No section scores were recorded.</p>
+                  <p className="text-sm text-slate-500">{t("live.results.noSectionScores", "No section scores were recorded.")}</p>
                 )}
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader><CardTitle className="text-base">Answer-by-answer</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">{t("live.results.answerByAnswer", "Answer-by-answer")}</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {finalizeResult.answers.map((a) => (
                   <div key={a.answer_id} className="border-b border-slate-100 pb-3 last:border-0">
@@ -684,17 +697,17 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
                         The parity test below exists so that cannot recur. */}
                     {a.final_source ? (
                       <p className="mt-1 text-sm text-indigo-700">
-                        Score: {a.final_score ?? "—"} / 5
-                        {a.final_source === "model" && <span className="text-slate-500"> (AI suggestion adopted)</span>}
-                        {typeof a.suggested_score === "number" && <span className="text-slate-500"> (AI suggested {a.suggested_score})</span>}
+                        {t("studio.results.score", { defaultValue: "Score: {{score}} / 5", score: a.final_score ?? "—" })}
+                        {a.final_source === "model" && <span className="text-slate-500"> {t("live.results.aiAdopted", "(AI suggestion adopted)")}</span>}
+                        {typeof a.suggested_score === "number" && <span className="text-slate-500"> {t("live.results.aiSuggested", { defaultValue: "(AI suggested {{score}})", score: a.suggested_score })}</span>}
                       </p>
                     ) : (
                       <p className="mt-1 text-sm text-slate-500">
-                        Not decided — this answer was not part of the score.
-                        {typeof a.suggested_score === "number" && <span> The AI suggested {a.suggested_score}.</span>}
+                        {t("live.results.notDecided", "Not decided — this answer was not part of the score.")}
+                        {typeof a.suggested_score === "number" && <span> {t("live.results.aiSuggestedSentence", { defaultValue: "The AI suggested {{score}}.", score: a.suggested_score })}</span>}
                       </p>
                     )}
-                    {a.interviewer_notes && <p className="mt-1 text-xs text-slate-600">Notes: {a.interviewer_notes}</p>}
+                    {a.interviewer_notes && <p className="mt-1 text-xs text-slate-600">{t("live.results.notes", { defaultValue: "Notes: {{notes}}", notes: a.interviewer_notes })}</p>}
                   </div>
                 ))}
               </CardContent>
@@ -710,11 +723,11 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
     <div className="mx-auto max-w-3xl space-y-4 py-8">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Interview Studio</h1>
+          <h1 className="text-2xl font-semibold">{t("studio.title", "Interview Studio")}</h1>
           <p className="text-sm text-slate-600">{subtitle}</p>
         </div>
         <Button variant="ghost" size="sm" className="text-rose-600 hover:text-rose-700" onClick={guardedFinish}>
-          <Flag className="mr-1 h-3.5 w-3.5" /> End interview
+          <Flag className="mr-1 h-3.5 w-3.5" /> {t("live.endInterview", "End interview")}
         </Button>
       </header>
 
@@ -723,9 +736,15 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
       {total > 0 && (
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Question {current ? idx + 1 : 0} of {total}{current?.section ? ` · ${current.section.replace(/_/g, " ")}` : ""}</span>
             <span>
-              Running tally: {savedCount}/{total} scored{savedAvg != null ? ` · avg ${savedAvg.toFixed(2)}` : ""}
+              {current?.section
+                ? t("answer.questionOf", { defaultValue: "Question {{number}} of {{total}} · {{section}}", number: current ? idx + 1 : 0, total, section: current.section.replace(/_/g, " ") })
+                : t("studio.questionOf", { defaultValue: "Question {{number}} of {{total}}", number: current ? idx + 1 : 0, total })}
+            </span>
+            <span>
+              {savedAvg != null
+                ? t("live.tallyAvg", { defaultValue: "Running tally: {{saved}}/{{total}} scored · avg {{avg}}", saved: savedCount, total, avg: savedAvg.toFixed(2) })
+                : t("live.tally", { defaultValue: "Running tally: {{saved}}/{{total}} scored", saved: savedCount, total })}
             </span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -752,7 +771,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
           />
           {currentAnswer?.scored && (
             <Button variant={isLast ? "default" : "ghost"} onClick={next}>
-              {isLast ? <><CheckCircle2 className="mr-2 h-4 w-4" /> Finish &amp; view results</> : <>Next question <ArrowRight className="ml-2 h-4 w-4" /></>}
+              {isLast ? <><CheckCircle2 className="mr-2 h-4 w-4" /> {t("live.finishView", "Finish & view results")}</> : <>{t("live.nextQuestion", "Next question")} <ArrowRight className="ml-2 h-4 w-4" /></>}
             </Button>
           )}
         </>

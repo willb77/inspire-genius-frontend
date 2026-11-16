@@ -1,4 +1,5 @@
 import { useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { FileUp, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,7 @@ export default function ImportCsvButton({
   port: ImportPort
   copy: ImportCopy
 }) {
+  const { t } = useTranslation("prismUi")
   const input = useRef<HTMLInputElement>(null)
   const [outcomes, setOutcomes] = useState<Outcome[]>([])
   const [running, setRunning] = useState(false)
@@ -48,18 +50,33 @@ export default function ImportCsvButton({
         const result = await port.importCsv.run({ content, filename: file.name })
         const short =
           result.imported === result.expected
-            ? `${result.name} — all ${result.expected} scales`
-            : `${result.name} — ${result.imported} of ${result.expected} scales`
+            ? t("importCsv.allScales", {
+                defaultValue: "{{name}} — all {{expected}} scales",
+                name: result.name,
+                expected: result.expected,
+              })
+            : t("importCsv.someScales", {
+                defaultValue: "{{name}} — {{imported}} of {{expected}} scales",
+                name: result.name,
+                imported: result.imported,
+                expected: result.expected,
+              })
         results.push({
           file: file.name,
           ok: true,
           // Warnings ride along on a SUCCESS. A file that imported 62 of 88
           // scales is a success with a caveat, not a failure, and hiding the
           // caveat would let it read as complete.
-          message: result.warnings.length ? `${short} · ${result.warnings[0]}` : short,
+          message: result.warnings.length
+            ? t("importCsv.withWarning", {
+                defaultValue: "{{summary}} · {{warning}}",
+                summary: short,
+                warning: result.warnings[0],
+              })
+            : short,
         })
       } catch (err) {
-        results.push({ file: file.name, ok: false, message: apiErrorMessage(err, "Import failed") })
+        results.push({ file: file.name, ok: false, message: apiErrorMessage(err, t("importCsv.failed", { defaultValue: "Import failed" })) })
       }
       setOutcomes([...results])
     }
@@ -68,8 +85,19 @@ export default function ImportCsvButton({
     const ok = results.filter((r) => r.ok).length
     const failed = results.length - ok
     if (failed === 0) toast.success(copy.imported(ok))
-    else if (ok === 0) toast.error(`All ${failed} file(s) failed — see the list below`)
-    else toast.warning(`${ok} imported, ${failed} failed — see the list below`)
+    else if (ok === 0) toast.error(
+        t("importCsv.allFailed", {
+          defaultValue: "All {{failed}} file(s) failed — see the list below",
+          failed,
+        }),
+      )
+    else toast.warning(
+        t("importCsv.partial", {
+          defaultValue: "{{ok}} imported, {{failed}} failed — see the list below",
+          ok,
+          failed,
+        }),
+      )
 
     if (input.current) input.current.value = "" // re-importing the same file must re-fire
   }
@@ -83,7 +111,7 @@ export default function ImportCsvButton({
           accept=".csv,text/csv"
           multiple
           className="sr-only"
-          aria-label="Character CSV files"
+          aria-label={t("importCsv.ariaLabel", { defaultValue: "Character CSV files" })}
           onChange={(e) => void onFiles(e.target.files)}
         />
         <Button
@@ -93,11 +121,11 @@ export default function ImportCsvButton({
         >
           {running ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Importing…
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("importCsv.importing", { defaultValue: "Importing…" })}
             </>
           ) : (
             <>
-              <FileUp className="mr-2 h-4 w-4" /> Import CSV
+              <FileUp className="mr-2 h-4 w-4" /> {t("importCsv.button", { defaultValue: "Import CSV" })}
             </>
           )}
         </Button>
