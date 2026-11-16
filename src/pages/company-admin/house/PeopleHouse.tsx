@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/shared/house/PageHeader"
@@ -46,6 +47,7 @@ function roleLabel(role: string | null | undefined): string {
  * in place. The link-request section stays with the list.
  */
 export default function PeopleHouse() {
+  const { t } = useTranslation("companyAdminPages")
   const [search, setSearch] = useState("")
   const [adding, setAdding] = useState(false)
   const { data, isLoading, error, refetch } = useCompanyUsers()
@@ -60,13 +62,13 @@ export default function PeopleHouse() {
   if (isLoading) {
     body = <PageState kind="loading" rows={5} />
   } else if (error || !read) {
-    body = <PageState kind="error" message="We couldn't load your people." onRetry={() => void refetch()} />
+    body = <PageState kind="error" message={t("peopleLoadFailed", { defaultValue: "We couldn't load your people." })} onRetry={() => void refetch()} />
   } else if (read.people.length === 0) {
     body = (
       <PageState
         kind="empty"
-        title="No people yet"
-        message="Use Add people to add your team from a spreadsheet."
+        title={t("peopleEmptyTitle", { defaultValue: "No people yet" })}
+        message={t("peopleEmptyBody", { defaultValue: "Use Add people to add your team from a spreadsheet." })}
       />
     )
   } else {
@@ -77,10 +79,10 @@ export default function PeopleHouse() {
       <>
         <dl className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { label: "People", value: read.total },
-            { label: "Active", value: active },
-            { label: "Managers", value: managers },
-            { label: "PRISM done", value: prismDone },
+            { label: t("peopleStatPeople", { defaultValue: "People" }), value: read.total },
+            { label: t("peopleStatActive", { defaultValue: "Active" }), value: active },
+            { label: t("peopleStatManagers", { defaultValue: "Managers" }), value: managers },
+            { label: t("peopleStatPrismDone", { defaultValue: "PRISM done" }), value: prismDone },
           ].map((s) => (
             <div key={s.label} className="rounded-lg border border-border bg-card p-3.5">
               <dt className="text-xs text-muted-foreground">{s.label}</dt>
@@ -89,24 +91,24 @@ export default function PeopleHouse() {
           ))}
         </dl>
         <div className="mb-4">
-          <label className="sr-only" htmlFor="people-search">Search people</label>
+          <label className="sr-only" htmlFor="people-search">{t("peopleSearchLabel", { defaultValue: "Search people" })}</label>
           <input
             id="people-search"
             type="search"
-            placeholder="Search by name, email or department"
+            placeholder={t("peopleSearchPlaceholder", { defaultValue: "Search by name, email or department" })}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full max-w-md rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
           />
         </div>
         {filtered.length === 0 ? (
-          <PageState kind="empty" title="No matches" message="No one matches that search." />
+          <PageState kind="empty" title={t("peopleNoMatchesTitle", { defaultValue: "No matches" })} message={t("peopleNoMatchesBody", { defaultValue: "No one matches that search." })} />
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted text-left text-xs text-muted-foreground">
-                  {["Name", "Email", "Role", "Department", "PRISM", "Status", "Last active"].map((h) => (
+                  {[t("peopleColName", { defaultValue: "Name" }), t("peopleColEmail", { defaultValue: "Email" }), t("peopleColRole", { defaultValue: "Role" }), t("peopleColDepartment", { defaultValue: "Department" }), t("peopleColPrism", { defaultValue: "PRISM" }), t("peopleColStatus", { defaultValue: "Status" }), t("peopleColLastActive", { defaultValue: "Last active" })].map((h) => (
                     <th key={h} scope="col" className="px-3 py-2.5 font-medium">{h}</th>
                   ))}
                 </tr>
@@ -119,10 +121,10 @@ export default function PeopleHouse() {
                     <td className="px-3 py-2.5 text-foreground">{roleLabel(p.role)}</td>
                     <td className="px-3 py-2.5 text-foreground">{p.department || DASH}</td>
                     <td className="px-3 py-2.5 text-foreground">
-                      {p.prism_completed == null ? DASH : p.prism_completed ? "Done" : "Not started"}
+                      {p.prism_completed == null ? DASH : p.prism_completed ? t("peoplePrismDone", { defaultValue: "Done" }) : t("peoplePrismNotStarted", { defaultValue: "Not started" })}
                     </td>
                     <td className="px-3 py-2.5 text-foreground">
-                      {p.is_active == null ? DASH : p.is_active ? "Active" : "Inactive"}
+                      {p.is_active == null ? DASH : p.is_active ? t("peopleStatusActive", { defaultValue: "Active" }) : t("peopleStatusInactive", { defaultValue: "Inactive" })}
                     </td>
                     <td className="px-3 py-2.5 text-muted-foreground">{formatDate(p.last_active)}</td>
                   </tr>
@@ -138,12 +140,12 @@ export default function PeopleHouse() {
   return (
     <CompanyAdminLayout>
       <PageHeader
-        title="People"
-        description="Everyone in your organization who uses Inspire Genius."
+        title={t("peopleTitle", { defaultValue: "People" })}
+        description={t("peopleDescription", { defaultValue: "Everyone in your organization who uses Inspire Genius." })}
         action={
           !adding && (
             <Button size="sm" onClick={() => setAdding(true)}>
-              Add people
+              {t("peopleAddPeople", { defaultValue: "Add people" })}
             </Button>
           )
         }

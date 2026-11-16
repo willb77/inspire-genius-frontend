@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import { PageHeader } from "@/components/shared/house/PageHeader"
 import { PageState } from "@/components/shared/house/PageState"
@@ -48,6 +49,7 @@ type Dept = { id?: string; name?: string | null; headcount?: number | null; coun
  * reads as the classic dashboard. Missing figures show "—", not 0.
  */
 export default function DashboardHouse() {
+  const { t } = useTranslation("companyAdminPages")
   const depts = useCompanyDepartments()
   const analytics = useCompanyAnalytics()
   const rollups = useObservabilityRollup()
@@ -56,16 +58,17 @@ export default function DashboardHouse() {
   const deptRows = (depts.data as { departments?: unknown } | undefined)?.departments
   const departments = Array.isArray(deptRows) ? (deptRows as Dept[]) : null
 
+  const departmentsLabel = t("dashHouseStatDepartments", { defaultValue: "Departments" })
   const stats = [
-    { label: "People", value: show(pick(a, "total_users", "totalUsers")), to: ROUTES.COMPANY_ADMIN.USERS },
-    { label: "Departments", value: show(departments ? departments.length : null), to: ROUTES.COMPANY_ADMIN.ORGANIZATION },
+    { label: t("dashHouseStatPeople", { defaultValue: "People" }), value: show(pick(a, "total_users", "totalUsers")), to: ROUTES.COMPANY_ADMIN.USERS },
+    { label: departmentsLabel, value: show(departments ? departments.length : null), to: ROUTES.COMPANY_ADMIN.ORGANIZATION },
     {
-      label: "Training completed",
+      label: t("dashHouseStatTraining", { defaultValue: "Training completed" }),
       value: show(pick(a, "training_completion", "trainingCompletion"), (n) => `${n}%`),
       to: ROUTES.COMPANY_ADMIN.ANALYTICS,
     },
     {
-      label: "PRISM assessed",
+      label: t("dashHouseStatPrism", { defaultValue: "PRISM assessed" }),
       value: show(pick(a, "avg_prism_score", "avgPrismScore"), (n) => `${n}%`),
       to: ROUTES.COMPANY_ADMIN.ANALYTICS,
     },
@@ -73,19 +76,19 @@ export default function DashboardHouse() {
 
   const r = rollups.data ?? null
   const rollupTiles = [
-    { label: "Coverage", value: show(num(r?.coverage_percent), (n) => `${n}%`) },
-    { label: "Active today", value: show(num(r?.active_today)) },
-    { label: "Average sessions per person", value: show(num(r?.avg_sessions_per_user), (n) => n.toFixed(2)) },
-    { label: "AI usage cost this month", value: show(num(r?.monthly_llm_cost_usd), (n) => `$${n.toFixed(2)}`) },
+    { label: t("dashHouseCoverage", { defaultValue: "Coverage" }), value: show(num(r?.coverage_percent), (n) => `${n}%`) },
+    { label: t("dashHouseActiveToday", { defaultValue: "Active today" }), value: show(num(r?.active_today)) },
+    { label: t("dashHouseAvgSessions", { defaultValue: "Average sessions per person" }), value: show(num(r?.avg_sessions_per_user), (n) => n.toFixed(2)) },
+    { label: t("dashHouseAiCost", { defaultValue: "AI usage cost this month" }), value: show(num(r?.monthly_llm_cost_usd), (n) => `$${n.toFixed(2)}`) },
   ]
 
   let deptBody: React.ReactNode
   if (depts.isLoading) deptBody = <PageState kind="loading" rows={2} />
   else if (depts.error || !departments)
-    deptBody = <PageState kind="error" message="We couldn't load your departments." onRetry={() => void depts.refetch()} />
+    deptBody = <PageState kind="error" message={t("dashHouseDeptLoadFailed", { defaultValue: "We couldn't load your departments." })} onRetry={() => void depts.refetch()} />
   else if (departments.length === 0)
     deptBody = (
-      <PageState kind="empty" title="No departments yet" message="Departments appear here once they are set up for your organization." />
+      <PageState kind="empty" title={t("dashHouseDeptEmptyTitle", { defaultValue: "No departments yet" })} message={t("dashHouseDeptEmptyBody", { defaultValue: "Departments appear here once they are set up for your organization." })} />
     )
   else
     deptBody = (
@@ -95,7 +98,7 @@ export default function DashboardHouse() {
           return (
             <li key={d.id ?? `${d.name}-${i}`} className="rounded-lg border border-border bg-card p-3">
               <div className="text-sm font-medium text-foreground">{d.name || DASH}</div>
-              <div className="mt-0.5 text-xs text-muted-foreground">{n == null ? DASH : `${n} ${n === 1 ? "person" : "people"}`}</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">{n == null ? DASH : n === 1 ? t("dashHousePersonOne", { n, defaultValue: "{{n}} person" }) : t("dashHousePersonMany", { n, defaultValue: "{{n}} people" })}</div>
             </li>
           )
         })}
@@ -106,13 +109,13 @@ export default function DashboardHouse() {
 
   return (
     <CompanyAdminLayout>
-      <PageHeader title="Dashboard" description="Your organization's people, departments and usage at a glance." />
+      <PageHeader title={t("dashHouseTitle", { defaultValue: "Dashboard" })} description={t("dashHouseDescription", { defaultValue: "Your organization's people, departments and usage at a glance." })} />
 
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((s) => (
           <Link key={s.label} to={s.to} className="rounded-lg border border-border bg-card p-3.5 hover:border-ring">
             <div className="text-xs text-muted-foreground">{s.label}</div>
-            {analytics.isLoading && s.label !== "Departments" ? (
+            {analytics.isLoading && s.label !== departmentsLabel ? (
               <Skeleton className="my-1 h-8 w-16" />
             ) : (
               <div className="my-1 text-2xl font-semibold text-foreground">{s.value}</div>
@@ -125,12 +128,12 @@ export default function DashboardHouse() {
       <ValidationReviewQueue />
 
       <section className={`${card} mb-5`} aria-labelledby="ca-departments">
-        <h2 id="ca-departments" className="mb-3 text-base font-semibold text-foreground">Departments</h2>
+        <h2 id="ca-departments" className="mb-3 text-base font-semibold text-foreground">{t("dashHouseDepartments", { defaultValue: "Departments" })}</h2>
         {deptBody}
       </section>
 
       <section className={`${card} mb-5`} aria-labelledby="ca-shortcuts">
-        <h2 id="ca-shortcuts" className="mb-3 text-base font-semibold text-foreground">Shortcuts</h2>
+        <h2 id="ca-shortcuts" className="mb-3 text-base font-semibold text-foreground">{t("dashHouseShortcuts", { defaultValue: "Shortcuts" })}</h2>
         <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
           {COMPANY_ADMIN_SHORTCUTS.map((s) => (
             <Link key={s.label} to={s.path} className="rounded-lg border border-border bg-card p-3 text-sm font-medium text-foreground hover:border-ring">
@@ -141,15 +144,15 @@ export default function DashboardHouse() {
       </section>
 
       <section className={card} aria-labelledby="ca-usage">
-        <h2 id="ca-usage" className="mb-3 text-base font-semibold text-foreground">Usage</h2>
+        <h2 id="ca-usage" className="mb-3 text-base font-semibold text-foreground">{t("dashHouseUsage", { defaultValue: "Usage" })}</h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {rollupTiles.map((t) => (
-            <div key={t.label} className="rounded-lg border border-border bg-muted p-3.5">
-              <div className="text-xs text-muted-foreground">{t.label}</div>
+          {rollupTiles.map((tile) => (
+            <div key={tile.label} className="rounded-lg border border-border bg-muted p-3.5">
+              <div className="text-xs text-muted-foreground">{tile.label}</div>
               {rollups.isLoading ? (
                 <Skeleton className="my-1 h-8 w-20" />
               ) : (
-                <div className="my-1 text-2xl font-semibold text-foreground">{t.value}</div>
+                <div className="my-1 text-2xl font-semibold text-foreground">{tile.value}</div>
               )}
             </div>
           ))}

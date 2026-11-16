@@ -1,4 +1,5 @@
 import { useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import {
   EngagementChart,
@@ -28,6 +29,7 @@ function download(content: string, name: string, type: string) {
 }
 
 export default function CompanyAdminAnalytics() {
+  const { t } = useTranslation("companyAdminPages")
   const { data: analyticsData, isLoading, error, refetch } = useCompanyAnalyticsHook()
 
   const ad = analyticsData as {
@@ -42,10 +44,10 @@ export default function CompanyAdminAnalytics() {
   const LICENSE = ad?.license ?? FALLBACK_LICENSE
   const COST_TREND = ad?.costTrend ?? FALLBACK_COST_TREND
 
-  const exportCSV = useCallback(() => { download("dept,engagement,training,prism\n" + DEPT.map((d) => `${d.dept},${d.engagement},${d.training},${d.prism}`).join("\n"), "company-analytics.csv", "text/csv"); toast.success("Exported CSV") }, [DEPT])
-  const exportJSON = useCallback(() => { download(JSON.stringify(DEPT, null, 2), "company-analytics.json", "application/json"); toast.success("Exported JSON") }, [DEPT])
+  const exportCSV = useCallback(() => { download("dept,engagement,training,prism\n" + DEPT.map((d) => `${d.dept},${d.engagement},${d.training},${d.prism}`).join("\n"), "company-analytics.csv", "text/csv"); toast.success(t("analyticsExportedCsv", { defaultValue: "Exported CSV" })) }, [DEPT, t])
+  const exportJSON = useCallback(() => { download(JSON.stringify(DEPT, null, 2), "company-analytics.json", "application/json"); toast.success(t("analyticsExportedJson", { defaultValue: "Exported JSON" })) }, [DEPT, t])
 
-  const errorString = error ? "Failed to load analytics data." : undefined
+  const errorString = error ? t("analyticsLoadFailed", { defaultValue: "Failed to load analytics data." }) : undefined
 
   return (
     <CompanyAdminLayout>
@@ -53,21 +55,21 @@ export default function CompanyAdminAnalytics() {
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
         <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
         <p className="text-[13px] text-amber-800">
-          Analytics data is currently placeholder. Live metrics and reporting are in progress.
+          {t("analyticsPlaceholderNotice", { defaultValue: "Analytics data is currently placeholder. Live metrics and reporting are in progress." })}
         </p>
       </div>
 
       {error && (
         <div className="flex items-center gap-2 py-2 mb-4 text-[13px] text-[#EF4444]">
-          Failed to load analytics data.
-          <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          {t("analyticsLoadFailed", { defaultValue: "Failed to load analytics data." })}
+          <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("retry", { defaultValue: "Retry" })}</button>
         </div>
       )}
 
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-[#111827]">Company Analytics</h1>
-          <p className="text-[13px] text-[#6b7280]">Organization-level engagement, training, and cost metrics.</p>
+          <h1 className="text-xl font-bold text-[#111827]">{t("analyticsTitle", { defaultValue: "Company Analytics" })}</h1>
+          <p className="text-[13px] text-[#6b7280]">{t("analyticsSubtitle", { defaultValue: "Organization-level engagement, training, and cost metrics." })}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="gap-1" onClick={exportJSON}><FileJson className="w-4 h-4" />JSON</Button>
@@ -77,7 +79,7 @@ export default function CompanyAdminAnalytics() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <EngagementChart
-          title="Department Comparison"
+          title={t("analyticsDeptComparison", { defaultValue: "Department Comparison" })}
           data={DEPT}
           xKey="dept"
           valueKey="engagement"
@@ -87,17 +89,17 @@ export default function CompanyAdminAnalytics() {
         />
 
         <UtilizationAreaChart
-          title="Company Engagement Trend"
+          title={t("analyticsEngagementTrend", { defaultValue: "Company Engagement Trend" })}
           data={ENGAGEMENT}
           xKey="month"
-          series={[{ key: "pct", label: "Engagement %", color: "#3B5BFF" }]}
+          series={[{ key: "pct", label: t("analyticsEngagementPct", { defaultValue: "Engagement %" }), color: "#3B5BFF" }]}
           loading={isLoading}
           error={errorString}
           height={220}
         />
 
         <GoalsBreakdownChart
-          title="License Utilization"
+          title={t("analyticsLicenseUtilization", { defaultValue: "License Utilization" })}
           data={LICENSE}
           colors={LICENSE_COLORS}
           loading={isLoading}
@@ -106,10 +108,10 @@ export default function CompanyAdminAnalytics() {
         />
 
         <CostTrendChart
-          title="Cost per User Trend"
+          title={t("analyticsCostPerUserTrend", { defaultValue: "Cost per User Trend" })}
           data={COST_TREND}
           xKey="month"
-          primary={{ key: "cost", label: "$/user", color: "#EF4444" }}
+          primary={{ key: "cost", label: t("analyticsPerUser", { defaultValue: "$/user" }), color: "#EF4444" }}
           loading={isLoading}
           error={errorString}
           height={200}

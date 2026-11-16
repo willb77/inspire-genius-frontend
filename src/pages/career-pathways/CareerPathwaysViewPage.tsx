@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useLocation } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { ProfileView } from "@/components/career-pathways/ProfileView"
 import { useDownloadShared, useOpenShared, useRequestCode } from "@/hooks/career-pathways/useCareerPathways"
@@ -14,8 +15,6 @@ import type { FileFormat } from "@/types/careerPathways"
  * of opening. Every refusal of the link reads the same.
  */
 
-const GONE = "This link is not available. It may have expired, been withdrawn, or reached its open limit."
-
 function tokenFrom(hash: string): string {
   return hash.startsWith("#") ? hash.slice(1) : hash
 }
@@ -26,6 +25,7 @@ function isNotFound(err: unknown): boolean {
 
 export default function CareerPathwaysViewPage() {
   const { hash } = useLocation()
+  const { t } = useTranslation("careerToolsPages")
   const token = tokenFrom(hash)
   const requestCode = useRequestCode()
   const open = useOpenShared()
@@ -53,48 +53,47 @@ export default function CareerPathwaysViewPage() {
   const failure = requestCode.error ?? open.error
   return (
     <main className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-1 text-xl font-semibold text-[#1f2937]">Career Pathways Profile</h1>
-      <p className="mb-4 text-sm text-[#6b7280]">Shared with you through Inspires Genius by the candidate.</p>
+      <h1 className="mb-1 text-xl font-semibold text-[#1f2937]">{t("pathwaysTitle", { defaultValue: "Career Pathways Profile" })}</h1>
+      <p className="mb-4 text-sm text-[#6b7280]">{t("pathwaysSharedBy", { defaultValue: "Shared with you through Inspires Genius by the candidate." })}</p>
 
       {!token ? (
         <p role="alert" className="text-sm text-red-700">
-          {GONE}
+          {t("pathwaysGone", { defaultValue: "This link is not available. It may have expired, been withdrawn, or reached its open limit." })}
         </p>
       ) : open.data ? (
         <>
           <p className="mb-3 text-xs text-[#6b7280]">
-            Shared with {open.data.organisation} until {open.data.expiresAt.slice(0, 10)}. The candidate can see each
-            time this is opened and can withdraw it.
+            {t("pathwaysSharedWith", { defaultValue: "Shared with {{organisation}} until {{expiresAt}}. The candidate can see each time this is opened and can withdraw it.", organisation: open.data.organisation, expiresAt: open.data.expiresAt.slice(0, 10) })}
           </p>
           <ProfileView content={open.data.profile} />
           {open.data.allowDownload && open.data.viewKey && (
             <div className="mt-4 flex gap-2">
               <Button variant="outline" onClick={() => save("pdf")} disabled={download.isPending}>
-                Download PDF
+                {t("pathwaysDownloadPdf", { defaultValue: "Download PDF" })}
               </Button>
               <Button variant="outline" onClick={() => save("docx")} disabled={download.isPending}>
-                Download Word
+                {t("pathwaysDownloadWord", { defaultValue: "Download Word" })}
               </Button>
             </div>
           )}
           {download.isError && (
             <p role="alert" className="mt-2 text-sm text-red-700">
-              {isNotFound(download.error) ? GONE : apiErrorMessage(download.error, "The download did not work.")}
+              {isNotFound(download.error) ? t("pathwaysGone", { defaultValue: "This link is not available. It may have expired, been withdrawn, or reached its open limit." }) : apiErrorMessage(download.error, t("pathwaysDownloadFailed", { defaultValue: "The download did not work." }))}
             </p>
           )}
         </>
       ) : (
         <div className="space-y-3">
           <p className="text-sm text-[#374151]">
-            To open it, we will email a code to the address this profile was shared with.
+            {t("pathwaysEmailCode", { defaultValue: "To open it, we will email a code to the address this profile was shared with." })}
           </p>
           <Button onClick={() => requestCode.mutate(token)} disabled={requestCode.isPending}>
-            {requestCode.isSuccess ? "Send another code" : "Send me a code"}
+            {requestCode.isSuccess ? t("pathwaysSendAnother", { defaultValue: "Send another code" }) : t("pathwaysSendCode", { defaultValue: "Send me a code" })}
           </Button>
           {requestCode.isSuccess && (
             <div className="flex items-center gap-2">
               <label className="text-sm">
-                Code
+                {t("pathwaysCode", { defaultValue: "Code" })}
                 <input
                   inputMode="numeric"
                   autoComplete="one-time-code"
@@ -105,13 +104,13 @@ export default function CareerPathwaysViewPage() {
                 />
               </label>
               <Button onClick={() => open.mutate({ token, code })} disabled={code.length !== 6 || open.isPending}>
-                Open
+                {t("pathwaysOpen", { defaultValue: "Open" })}
               </Button>
             </div>
           )}
           {failure && (
             <p role="alert" className="text-sm text-red-700">
-              {isNotFound(failure) ? GONE : apiErrorMessage(failure, "That did not work. Try again.")}
+              {isNotFound(failure) ? t("pathwaysGone", { defaultValue: "This link is not available. It may have expired, been withdrawn, or reached its open limit." }) : apiErrorMessage(failure, t("pathwaysFailed", { defaultValue: "That did not work. Try again." }))}
             </p>
           )}
         </div>

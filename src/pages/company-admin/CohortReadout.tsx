@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { isAxiosError } from "axios"
 import { AlertCircle, Download, FileText, Users } from "lucide-react"
 import { toast } from "sonner"
@@ -24,6 +25,7 @@ import type { CohortCell, CohortExportFormat, CohortMetric, CohortReadoutFull } 
 export type CohortReadoutAudience = "company-admin" | "super-admin"
 
 export default function CohortReadout({ audience = "company-admin" }: { audience?: CohortReadoutAudience }) {
+  const { t } = useTranslation("companyAdminPages")
   const isSuperAdmin = audience === "super-admin"
   const [since, setSince] = useState("")
   const [orgId, setOrgId] = useState("")
@@ -46,7 +48,7 @@ export default function CohortReadout({ audience = "company-admin" }: { audience
           a.click()
           URL.revokeObjectURL(url)
         },
-        onError: () => toast.error("The export failed. Please try again."),
+        onError: () => toast.error(t("cohortExportFailed", { defaultValue: "The export failed. Please try again." })),
       },
     )
   }
@@ -60,19 +62,20 @@ export default function CohortReadout({ audience = "company-admin" }: { audience
       <div className="mx-auto max-w-5xl space-y-6 p-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Cohort read-out</h1>
+            <h1 className="text-2xl font-semibold">{t("cohortTitle", { defaultValue: "Cohort read-out" })}</h1>
             <p className="text-sm text-muted-foreground">
-              {isSuperAdmin ? "An organisation" : "Your organisation"} at a glance — counts and percentages only, never
-              an individual&apos;s result.
+              {isSuperAdmin
+                ? t("cohortIntroSuperAdmin", { defaultValue: "An organisation at a glance — counts and percentages only, never an individual's result." })
+                : t("cohortIntroOwn", { defaultValue: "Your organisation at a glance — counts and percentages only, never an individual's result." })}
             </p>
           </div>
           <div className="flex flex-wrap items-end gap-2">
             {isSuperAdmin && <OrgPicker value={orgId} onChange={setOrgId} />}
             <label className="flex flex-col text-xs text-muted-foreground">
-              Activity since
+              {t("cohortActivitySinceLabel", { defaultValue: "Activity since" })}
               <input
                 type="date"
-                aria-label="Activity since"
+                aria-label={t("cohortActivitySinceLabel", { defaultValue: "Activity since" })}
                 value={since}
                 onChange={(e) => setSince(e.target.value)}
                 className="mt-1 rounded-md border px-2 py-1 text-sm text-foreground"
@@ -86,14 +89,14 @@ export default function CohortReadout({ audience = "company-admin" }: { audience
               <Download className="mr-2 h-4 w-4" /> CSV
             </Button>
             <Button onClick={() => handleExport("docx")} disabled={!data || exportMutation.isPending}>
-              <FileText className="mr-2 h-4 w-4" /> Word (day-90)
+              <FileText className="mr-2 h-4 w-4" /> {t("cohortWordDay90", { defaultValue: "Word (day-90)" })}
             </Button>
           </div>
         </header>
 
         {isSuperAdmin && !orgId && (
           <p className="rounded-md border p-4 text-sm text-muted-foreground">
-            Pick an organisation to see its read-out.
+            {t("cohortPickOrgPrompt", { defaultValue: "Pick an organisation to see its read-out." })}
           </p>
         )}
 
@@ -106,26 +109,25 @@ export default function CohortReadout({ audience = "company-admin" }: { audience
               {forbidden
                 ? (detail ??
                   (isSuperAdmin
-                    ? "The cohort read-out is not enabled for this organisation."
-                    : "The cohort read-out is not enabled for your organisation."))
-                : "The cohort read-out could not be loaded. Please try again."}
+                    ? t("cohortNotEnabledSuperAdmin", { defaultValue: "The cohort read-out is not enabled for this organisation." })
+                    : t("cohortNotEnabledOwn", { defaultValue: "The cohort read-out is not enabled for your organisation." })))
+                : t("cohortLoadFailed", { defaultValue: "The cohort read-out could not be loaded. Please try again." })}
             </span>
           </div>
         )}
 
         {data?.suppressed && (
           <div role="status" className="rounded-md border p-4 text-sm">
-            {isSuperAdmin ? "This organisation" : "Your organisation"} has fewer than {data.threshold} members, so no figures are shown — any number would
-            describe individual people.
+            {isSuperAdmin
+              ? t("cohortSuppressedSuperAdmin", { threshold: data.threshold, defaultValue: "This organisation has fewer than {{threshold}} members, so no figures are shown — any number would describe individual people." })
+              : t("cohortSuppressedOwn", { threshold: data.threshold, defaultValue: "Your organisation has fewer than {{threshold}} members, so no figures are shown — any number would describe individual people." })}
           </div>
         )}
 
         {data && !data.suppressed && <ReadoutBody data={data} />}
 
         <p className="text-xs text-muted-foreground">
-          Any group of fewer than 5 people is shown as &lt;5. Where a hidden number could be worked out from the
-          total, a second number is hidden too. &quot;Confirmed at least one goal&quot; counts members who confirmed a
-          goal they set.
+          {t("cohortFooterNote", { defaultValue: "Any group of fewer than 5 people is shown as <5. Where a hidden number could be worked out from the total, a second number is hidden too. \"Confirmed at least one goal\" counts members who confirmed a goal they set." })}
         </p>
       </div>
     </Layout>
@@ -134,19 +136,20 @@ export default function CohortReadout({ audience = "company-admin" }: { audience
 
 /** Super-admin only: every live organisation, from org-service's directory. */
 function OrgPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const { t } = useTranslation("companyAdminPages")
   const { data: orgs, isLoading, isError } = useOrgDirectory()
   return (
     <label className="flex flex-col text-xs text-muted-foreground">
-      Organisation
+      {t("cohortOrganisationLabel", { defaultValue: "Organisation" })}
       <select
-        aria-label="Organisation"
+        aria-label={t("cohortOrganisationLabel", { defaultValue: "Organisation" })}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={isLoading || isError}
         className="mt-1 min-w-48 rounded-md border px-2 py-1 text-sm text-foreground"
       >
         <option value="">
-          {isLoading ? "Loading organisations…" : isError ? "Organisations could not be loaded" : "Pick an organisation"}
+          {isLoading ? t("cohortOrgsLoading", { defaultValue: "Loading organisations…" }) : isError ? t("cohortOrgsLoadFailed", { defaultValue: "Organisations could not be loaded" }) : t("cohortPickOrganisation", { defaultValue: "Pick an organisation" })}
         </option>
         {(orgs ?? []).map((o) => (
           <option key={o.id} value={o.id}>
@@ -177,6 +180,7 @@ function MetricCard({ title, metric, extra }: { title: string; metric: CohortMet
 }
 
 function ReadoutBody({ data }: { data: CohortReadoutFull }) {
+  const { t } = useTranslation("companyAdminPages")
   const m = data.metrics
   const sessions = m.practice.sessions === null ? "<5" : String(m.practice.sessions)
   return (
@@ -184,29 +188,29 @@ function ReadoutBody({ data }: { data: CohortReadoutFull }) {
       <div className="flex items-center gap-2 text-sm">
         <Users className="h-4 w-4" />
         <span>
-          <strong>{data.members}</strong> members
-          {data.since && ` · activity since ${data.since}`}
+          <strong>{data.members}</strong> {t("cohortMembers", { defaultValue: "members" })}
+          {data.since && ` · ${t("cohortActivitySince", { since: data.since, defaultValue: "activity since {{since}}" })}`}
         </span>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <MetricCard title="PRISM coverage" metric={m.prismCoverage} />
-        <MetricCard title="Goals set" metric={m.goalsSet} />
-        <MetricCard title="Goals progressed" metric={m.goalsProgressed} />
-        <MetricCard title="Practice" metric={m.practice} extra={`Practice sessions in total: ${sessions}`} />
+        <MetricCard title={t("cohortPrismCoverage", { defaultValue: "PRISM coverage" })} metric={m.prismCoverage} />
+        <MetricCard title={t("cohortGoalsSet", { defaultValue: "Goals set" })} metric={m.goalsSet} />
+        <MetricCard title={t("cohortGoalsProgressed", { defaultValue: "Goals progressed" })} metric={m.goalsProgressed} />
+        <MetricCard title={t("cohortPractice", { defaultValue: "Practice" })} metric={m.practice} extra={t("cohortPracticeSessionsTotal", { sessions, defaultValue: "Practice sessions in total: {{sessions}}" })} />
       </div>
       <section className="rounded-lg border p-4">
-        <h2 className="text-sm font-medium">Job Fit distribution</h2>
+        <h2 className="text-sm font-medium">{t("cohortJobFitDistribution", { defaultValue: "Job Fit distribution" })}</h2>
         {data.jobFit.withheld && (
           <p className="mt-1 text-xs text-muted-foreground">
-            Withheld: every member is in the same tier, so the breakdown would state each person&apos;s result.
+            {t("cohortWithheld", { defaultValue: "Withheld: every member is in the same tier, so the breakdown would state each person's result." })}
           </p>
         )}
         <table className="mt-2 w-full text-sm">
           <thead>
             <tr className="text-left text-muted-foreground">
-              <th className="py-1">Tier</th>
-              <th className="py-1">People</th>
-              <th className="py-1">Percent of members</th>
+              <th className="py-1">{t("cohortColTier", { defaultValue: "Tier" })}</th>
+              <th className="py-1">{t("cohortColPeople", { defaultValue: "People" })}</th>
+              <th className="py-1">{t("cohortColPercent", { defaultValue: "Percent of members" })}</th>
             </tr>
           </thead>
           <tbody>

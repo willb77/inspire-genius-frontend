@@ -52,7 +52,11 @@ jest.mock("react-router-dom", () => ({
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, opts?: Record<string, unknown>) => {
+      // Resolve the English defaultValue (as the real i18n does without a bundle); keys with no default stay as the key.
+      if (!opts || typeof opts.defaultValue !== "string") return key
+      return Object.entries(opts).reduce((s, [k, v]) => s.split("{{" + k + "}}").join(String(v)), opts.defaultValue)
+    },
     i18n: { language: "en", changeLanguage: jest.fn() },
   }),
 }));
