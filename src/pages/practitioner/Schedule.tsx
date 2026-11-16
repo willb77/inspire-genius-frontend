@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { format } from "date-fns"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { CalendarClock, Users, Video } from "lucide-react"
 
@@ -37,6 +38,7 @@ const SPACING_OPTIONS = [0, 5, 10, 15, 30] as const
  * through the coachClient hook seam so the backend can be swapped in later.
  */
 export default function PractitionerSchedule() {
+  const { t } = useTranslation("practitionerPages")
   const navigate = useNavigate()
 
   const clientsQuery = useCoachClients()
@@ -95,12 +97,12 @@ export default function PractitionerSchedule() {
     createSessions.mutate(input, {
       onSuccess: (result) => {
         toast.success(
-          `${result.created} sessions created, ${result.emailed} invites emailed`,
+          t("schedule.created", { created: result.created, emailed: result.emailed, defaultValue: "{{created}} sessions created, {{emailed}} invites emailed" }),
         )
         resetForm()
       },
       onError: () => {
-        toast.error("Could not create sessions. Please try again.")
+        toast.error(t("schedule.createFailed", { defaultValue: "Could not create sessions. Please try again." }))
       },
     })
   }
@@ -112,11 +114,10 @@ export default function PractitionerSchedule() {
           <div>
             <h1 className="text-2xl font-semibold text-[#111827] flex items-center gap-2">
               <CalendarClock className="h-6 w-6 text-[#3B5BFF]" />
-              Schedule
+              {t("schedule.title", { defaultValue: "Schedule" })}
             </h1>
             <p className="text-sm text-[#6b7280] mt-1">
-              Batch-schedule coaching sessions across your cohort and review
-              what&apos;s coming up.
+              {t("schedule.subtitle", { defaultValue: "Batch-schedule coaching sessions across your cohort and review what's coming up." })}
             </p>
           </div>
           <Button
@@ -125,30 +126,30 @@ export default function PractitionerSchedule() {
             onClick={() => navigate("/practitioner/meeting")}
           >
             <Video className="h-4 w-4 text-[#3B5BFF]" />
-            Start a Meeting
+            {t("schedule.startMeeting", { defaultValue: "Start a Meeting" })}
           </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Create sessions form */}
-          <DataCard title="Create sessions with clients">
+          <DataCard title={t("schedule.createCard", { defaultValue: "Create sessions with clients" })}>
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="schedule-prompt" className="text-[#111827]">
-                  Describe what you want to schedule
+                  {t("schedule.describe", { defaultValue: "Describe what you want to schedule" })}
                 </Label>
                 <Input
                   id="schedule-prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="e.g. Weekly PRISM debriefs for my new cohort"
+                  placeholder={t("schedule.describePlaceholder", { defaultValue: "e.g. Weekly PRISM debriefs for my new cohort" })}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-[#111827] flex items-center gap-1.5">
                   <Users className="h-4 w-4 text-[#6b7280]" />
-                  Select clients (cohort)
+                  {t("schedule.selectClients", { defaultValue: "Select clients (cohort)" })}
                 </Label>
                 <div className="border border-[#e5e7eb] rounded-md max-h-56 overflow-y-auto divide-y divide-[#e5e7eb]">
                   {clientsQuery.isLoading ? (
@@ -159,7 +160,7 @@ export default function PractitionerSchedule() {
                     </div>
                   ) : clients.length === 0 ? (
                     <div className="p-3 text-sm text-[#6b7280]">
-                      No clients in your cohort yet.
+                      {t("schedule.noClients", { defaultValue: "No clients in your cohort yet." })}
                     </div>
                   ) : (
                     clients.map((client) => {
@@ -191,13 +192,13 @@ export default function PractitionerSchedule() {
                   )}
                 </div>
                 <p className="text-xs text-[#6b7280]">
-                  {selectedIds.size} selected
+                  {t("schedule.selected", { n: selectedIds.size, defaultValue: "{{n}} selected" })}
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="schedule-start" className="text-[#111827]">
-                  Start time
+                  {t("schedule.startTime", { defaultValue: "Start time" })}
                 </Label>
                 <Input
                   id="schedule-start"
@@ -209,7 +210,7 @@ export default function PractitionerSchedule() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-[#111827]">Duration</Label>
+                  <Label className="text-[#111827]">{t("schedule.duration", { defaultValue: "Duration" })}</Label>
                   <Select
                     value={String(durationMin)}
                     onValueChange={(v) => setDurationMin(Number(v))}
@@ -220,7 +221,7 @@ export default function PractitionerSchedule() {
                     <SelectContent>
                       {DURATION_OPTIONS.map((min) => (
                         <SelectItem key={min} value={String(min)}>
-                          {min} minutes
+                          {t("schedule.minutes", { min: min, defaultValue: "{{min}} minutes" })}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -228,7 +229,7 @@ export default function PractitionerSchedule() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-[#111827]">Space between meetings</Label>
+                  <Label className="text-[#111827]">{t("schedule.spacing", { defaultValue: "Space between meetings" })}</Label>
                   <Select
                     value={String(spacingMin)}
                     onValueChange={(v) => setSpacingMin(Number(v))}
@@ -239,7 +240,7 @@ export default function PractitionerSchedule() {
                     <SelectContent>
                       {SPACING_OPTIONS.map((min) => (
                         <SelectItem key={min} value={String(min)}>
-                          {min} minutes
+                          {t("schedule.minutes", { min: min, defaultValue: "{{min}} minutes" })}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -249,25 +250,25 @@ export default function PractitionerSchedule() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="schedule-topic" className="text-[#111827]">
-                  Topic
+                  {t("schedule.topic", { defaultValue: "Topic" })}
                 </Label>
                 <Input
                   id="schedule-topic"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g. PRISM debrief"
+                  placeholder={t("schedule.topicPlaceholder", { defaultValue: "e.g. PRISM debrief" })}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="schedule-message" className="text-[#111827]">
-                  Message
+                  {t("schedule.message", { defaultValue: "Message" })}
                 </Label>
                 <Textarea
                   id="schedule-message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="A short note included with the invitation."
+                  placeholder={t("schedule.messagePlaceholder", { defaultValue: "A short note included with the invitation." })}
                   rows={3}
                 />
               </div>
@@ -282,7 +283,7 @@ export default function PractitionerSchedule() {
                   onCheckedChange={(v) => setSendInvites(v === true)}
                 />
                 <span className="text-sm text-[#111827]">
-                  Email .ics invite to clients (coach cc&apos;d)
+                  {t("schedule.emailInvite", { defaultValue: "Email .ics invite to clients (coach cc'd)" })}
                 </span>
               </label>
 
@@ -291,13 +292,13 @@ export default function PractitionerSchedule() {
                 disabled={!canSubmit}
                 onClick={handleSubmit}
               >
-                {createSessions.isPending ? "Scheduling…" : "Schedule sessions"}
+                {createSessions.isPending ? t("schedule.scheduling", { defaultValue: "Scheduling…" }) : t("schedule.scheduleSessions", { defaultValue: "Schedule sessions" })}
               </Button>
             </div>
           </DataCard>
 
           {/* Upcoming sessions feed */}
-          <DataCard title="Upcoming sessions" badge={entries.length}>
+          <DataCard title={t("schedule.upcoming", { defaultValue: "Upcoming sessions" })} badge={entries.length}>
             {scheduleQuery.isLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -306,7 +307,7 @@ export default function PractitionerSchedule() {
               </div>
             ) : entries.length === 0 ? (
               <div className="text-sm text-[#6b7280] py-8 text-center">
-                No sessions scheduled yet.
+                {t("schedule.noSessions", { defaultValue: "No sessions scheduled yet." })}
               </div>
             ) : (
               <ul className="divide-y divide-[#e5e7eb]">
@@ -326,7 +327,7 @@ export default function PractitionerSchedule() {
                           {formatStart(entry.startsAt)}
                         </p>
                         <p className="text-xs text-[#6b7280] mt-0.5">
-                          {entry.durationMin} min
+                          {t("schedule.durationMin", { min: entry.durationMin, defaultValue: "{{min}} min" })}
                         </p>
                       </div>
                     </div>
