@@ -303,7 +303,10 @@ export default function JoinPage() {
       />
       {/* A plain anchor, not a router Link: the page renders with no router. */}
       <p className="-mt-3 mb-6 text-sm">
-        <a href={ROUTES.EVENTS} className="font-medium text-[#466bc4] underline-offset-4 hover:underline">
+        <a
+          href={ROUTES.EVENTS}
+          className="inline-flex items-center rounded-full bg-[#466bc4] px-5 py-2 font-bold text-white no-underline transition-colors hover:bg-[#3a5aa6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#466bc4] focus-visible:ring-offset-2"
+        >
           See upcoming events →
         </a>
       </p>
