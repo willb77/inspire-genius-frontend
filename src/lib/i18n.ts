@@ -35,4 +35,13 @@ i18n
     },
   });
 
+// Dev-only en-XA pseudo-locale (I18N-3). `import.meta.env.DEV` is a build-time constant, so the
+// production bundle contains neither this branch nor the module. Not in supportedLngs above and
+// not in LanguageSwitcher: switch with i18n.changeLanguage("en-XA") from the dev console.
+if (import.meta.env.DEV) {
+  void import('./i18nPseudo').then(({ installPseudoLocale }) =>
+    installPseudoLocale(i18n, ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat']),
+  );
+}
+
 export default i18n;
