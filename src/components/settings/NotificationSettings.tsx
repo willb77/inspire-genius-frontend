@@ -3,6 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "../ui/label";
 import type { NotificationSettingsProps } from "@/types/settings";
+import { useTranslation } from "react-i18next";
 
 export default function NotificationSettings({
   pushNotifications,
@@ -12,20 +13,21 @@ export default function NotificationSettings({
   onUpdateNotificationsChange,
   onMarketingNotificationsChange,
 }: NotificationSettingsProps) {
+  const { t } = useTranslation("accountUi")
   return (
     <Card className="shadow-none sm:shadow-sm">
       <CardHeader className="text-left">
         <CardTitle className="text-lg font-semibold">
-          Notifications Settings
+          {t("notificationSettings.notificationsSettings", { defaultValue: "Notifications Settings" })}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Push Notifications */}
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-left">Push Notifications</h4>
+            <h4 className="text-sm font-medium text-left">{t("notificationSettings.pushNotifications", { defaultValue: "Push Notifications" })}</h4>
             <p className="text-xs text-gray-500">
-              Receive push notifications on your device
+              {t("notificationSettings.receivePushNotificationsOnYourDevice", { defaultValue: "Receive push notifications on your device" })}
             </p>
           </div>
           <Switch
@@ -50,7 +52,7 @@ export default function NotificationSettings({
               htmlFor="update-notifications"
               className="text-sm font-medium"
             >
-              Update / Maintenance Notification
+              {t("notificationSettings.updateMaintenanceNotification", { defaultValue: "Update / Maintenance Notification" })}
             </Label>
           </div>
 
@@ -67,7 +69,7 @@ export default function NotificationSettings({
               htmlFor="marketing-notifications"
               className="text-sm font-medium"
             >
-              Marketing / Promotional Notifications
+              {t("notificationSettings.marketingPromotionalNotifications", { defaultValue: "Marketing / Promotional Notifications" })}
             </Label>
           </div>
         </div>

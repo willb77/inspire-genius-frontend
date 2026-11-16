@@ -16,6 +16,7 @@
  * this in a bare test harness is safe.
  */
 import { Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { useSupportAgent } from "@/context/useSupportAgent";
@@ -30,12 +31,14 @@ export type AskMeridianButtonProps = {
 };
 
 export default function AskMeridianButton({
-  label = "Ask Meridian",
+  label: labelProp,
   variant = "outline",
   size = "sm",
   className,
 }: AskMeridianButtonProps) {
+  const { t } = useTranslation("accountUi");
   const { open } = useSupportAgent();
+  const label = labelProp ?? t("askMeridianButton.askMeridian", { defaultValue: "Ask Meridian" });
 
   return (
     <Button

@@ -9,8 +9,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { IssueSubmittedDialogProps } from "@/types/help";
+import { useTranslation } from "react-i18next";
 
 export default function IssueSubmittedDialog({ open, onOpenChange }: IssueSubmittedDialogProps) {
+  const { t } = useTranslation("accountUi")
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -21,9 +23,9 @@ export default function IssueSubmittedDialog({ open, onOpenChange }: IssueSubmit
         </div>
 
         <DialogHeader>
-          <DialogTitle className="text-center">Issue Submitted</DialogTitle>
+          <DialogTitle className="text-center">{t("issueSubmittedDialog.issueSubmitted", { defaultValue: "Issue Submitted" })}</DialogTitle>
           <DialogDescription className="text-center">
-            Thanks for reaching out! We'll review your issue soon.
+            {t("issueSubmittedDialog.thanksForReachingOutWeLl", { defaultValue: "Thanks for reaching out! We'll review your issue soon." })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -33,7 +35,7 @@ export default function IssueSubmittedDialog({ open, onOpenChange }: IssueSubmit
             onClick={() => onOpenChange(false)}
             type="button"
           >
-            Back
+            {t("issueSubmittedDialog.back", { defaultValue: "Back" })}
           </Button>
         </DialogFooter>
       </DialogContent>

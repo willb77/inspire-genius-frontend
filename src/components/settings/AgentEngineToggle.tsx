@@ -6,6 +6,7 @@ import { AlertTriangle, Activity } from "lucide-react"
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
 import { agentApi } from "@/lib/agentApi"
+import { useTranslation } from "react-i18next"
 
 type HealthStatus = {
   healthy: boolean
@@ -14,6 +15,7 @@ type HealthStatus = {
 }
 
 export default function AgentEngineToggle() {
+  const { t } = useTranslation("accountUi")
   const queryClient = useQueryClient()
   const [enabled, setEnabled] = useState(() => {
     try {
@@ -66,8 +68,8 @@ export default function AgentEngineToggle() {
 
     toast.success(
       checked
-        ? "Agent calls routed to Agent Engine (ECS Fargate)"
-        : "Agent calls routed to Monolith (CloudFront proxy)"
+        ? t("agentEngineToggle.agentCallsRoutedToAgentEngine", { defaultValue: "Agent calls routed to Agent Engine (ECS Fargate)" })
+        : t("agentEngineToggle.agentCallsRoutedToMonolith", { defaultValue: "Agent calls routed to Monolith (CloudFront proxy)" })
     )
   }
 
@@ -75,18 +77,17 @@ export default function AgentEngineToggle() {
     <Card className="shadow-sm">
       <CardHeader className="text-left">
         <CardTitle className="text-lg font-semibold">
-          Agent Engine Routing
+          {t("agentEngineToggle.agentEngineRouting", { defaultValue: "Agent Engine Routing" })}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Agent Engine is the canonical system. The Monolith path is
-          retained as an emergency fallback only.
+          {t("agentEngineToggle.agentEngineIsTheCanonicalSystem", { defaultValue: "Agent Engine is the canonical system. The Monolith path is retained as an emergency fallback only." })}
         </p>
       </CardHeader>
       <CardContent className="space-y-4 text-left">
         {/* Toggle */}
         <div className="flex items-center justify-between">
           <Label htmlFor="agent-engine-toggle" className="text-sm font-medium">
-            Route agent calls to Agent Engine
+            {t("agentEngineToggle.routeAgentCallsToAgentEngine", { defaultValue: "Route agent calls to Agent Engine" })}
           </Label>
           <Switch
             id="agent-engine-toggle"
@@ -98,11 +99,11 @@ export default function AgentEngineToggle() {
 
         {/* Current target */}
         <p className="text-sm text-muted-foreground">
-          Current target:{" "}
+          {t("agentEngineToggle.currentTarget", { defaultValue: "Current target:" })}{" "}
           <span className="font-medium">
             {enabled
-              ? "Agent Engine (ECS Fargate)"
-              : "Monolith (CloudFront proxy)"}
+              ? t("agentEngineToggle.agentEngineEcsFargate", { defaultValue: "Agent Engine (ECS Fargate)" })
+              : t("agentEngineToggle.monolithCloudfrontProxy", { defaultValue: "Monolith (CloudFront proxy)" })}
           </span>
         </p>
 
@@ -110,14 +111,14 @@ export default function AgentEngineToggle() {
         <div className="flex items-center gap-2 text-sm">
           <Activity className="h-4 w-4" />
           {health.checking ? (
-            <span className="text-muted-foreground">Checking health...</span>
+            <span className="text-muted-foreground">{t("agentEngineToggle.checkingHealth", { defaultValue: "Checking health..." })}</span>
           ) : health.healthy ? (
             <span className="text-green-600 font-medium">
-              Healthy
-              {health.agentCount != null && ` (${health.agentCount} agents)`}
+              {t("agentEngineToggle.healthy", { defaultValue: "Healthy" })}
+              {health.agentCount != null && ` ${t("agentEngineToggle.agentCountInParens", { defaultValue: "({{n}} agents)", n: health.agentCount })}`}
             </span>
           ) : (
-            <span className="text-red-600 font-medium">Unavailable</span>
+            <span className="text-red-600 font-medium">{t("agentEngineToggle.unavailable", { defaultValue: "Unavailable" })}</span>
           )}
         </div>
 
@@ -125,10 +126,7 @@ export default function AgentEngineToggle() {
         <div className="flex gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Monolith path is officially deprecated (2026-05-07). Production
-            WebSocket routing only reaches the Agent Engine; switching to
-            Monolith here will leave chat/voice unreachable from prod. Use
-            only as an emergency fallback for non-WS routes.
+            {t("agentEngineToggle.monolithPathIsOfficiallyDeprecated2026", { defaultValue: "Monolith path is officially deprecated (2026-05-07). Production WebSocket routing only reaches the Agent Engine; switching to Monolith here will leave chat/voice unreachable from prod. Use only as an emergency fallback for non-WS routes." })}
           </span>
         </div>
       </CardContent>

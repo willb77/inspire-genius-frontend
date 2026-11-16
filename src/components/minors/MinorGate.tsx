@@ -4,11 +4,7 @@ import { ShieldCheck } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useMinorConsentStatus } from "@/hooks/useMinorConsent"
 import type { MinorGateSurface } from "@/types/minorConsent"
-
-/** Shown only if the server refused without a message of its own. */
-const FALLBACK_MESSAGE =
-  "This part of Inspires Genius isn't available on your account yet. Nothing is wrong with your account. " +
-  "If you have questions, ask your school contact."
+import { useTranslation } from "react-i18next"
 
 type MinorGateProps = {
   surface: MinorGateSurface
@@ -25,13 +21,17 @@ type MinorGateProps = {
  * component only decides what a refused person sees.
  */
 export default function MinorGate({ surface, children }: MinorGateProps) {
+  const { t } = useTranslation("accountUi")
+  /** Shown only if the server refused without a message of its own. */
+  const fallbackMessage = t("minorGate.fallbackMessage", { defaultValue: "This part of Inspires Genius isn't available on your account yet. Nothing is wrong with your account. If you have questions, ask your school contact." })
   const { data } = useMinorConsentStatus()
   const decision = data?.enabled === true ? data.surfaces?.[surface] : undefined
   if (!decision || decision.allowed !== false) return <>{children}</>
-  return <MinorGateNotice message={decision.message || FALLBACK_MESSAGE} />
+  return <MinorGateNotice message={decision.message || fallbackMessage} />
 }
 
 export function MinorGateNotice({ message }: { message: string }) {
+  const { t } = useTranslation("accountUi")
   return (
     <main className="flex min-h-[60vh] items-center justify-center px-4 py-12">
       <section
@@ -43,11 +43,11 @@ export function MinorGateNotice({ message }: { message: string }) {
           <ShieldCheck className="h-6 w-6 text-slate-500" aria-hidden="true" />
         </div>
         <h1 id="minor-gate-title" className="mb-2 text-base font-semibold text-slate-800">
-          Not available yet
+          {t("minorGateNotice.notAvailableYet", { defaultValue: "Not available yet" })}
         </h1>
         <p className="mb-4 text-sm text-slate-600">{message}</p>
         <Link to={ROUTES.HOME} className="text-sm font-medium text-[#127A8A] underline-offset-2 hover:underline">
-          Go to Home
+          {t("minorGateNotice.goToHome", { defaultValue: "Go to Home" })}
         </Link>
       </section>
     </main>

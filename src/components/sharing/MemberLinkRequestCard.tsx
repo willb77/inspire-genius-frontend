@@ -47,6 +47,8 @@ import {
   shortDate as formatDate,
   statusOf,
 } from "./linkRequestCopy"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 
 const OFFER_KEYS = OFFER_CATEGORIES.map((c) => c.key) as [string, ...string[]]
 
@@ -57,13 +59,13 @@ const askSchema = z.object({
 type AskInput = z.input<typeof askSchema>
 type AskOutput = z.output<typeof askSchema>
 
-function askErrorText(err: unknown): string {
+function askErrorText(err: unknown, t: TFunction): string {
   const code = codeOf(err)
-  if (code === "already_on_a_team") return "You're already on a team. Leave it first to join another."
-  if (code === "members_only") return "Only members can ask to join a team."
-  if (statusOf(err) === 422) return "One of those choices can't be shared. Nothing was sent."
-  if (statusOf(err) === 404) return "Asking to join a team isn't available for your account right now. Nothing was sent."
-  return "That didn't send. Nothing was sent — try again."
+  if (code === "already_on_a_team") return t("askForm.errAlreadyOnATeam", { defaultValue: "You're already on a team. Leave it first to join another." })
+  if (code === "members_only") return t("askForm.errMembersOnly", { defaultValue: "Only members can ask to join a team." })
+  if (statusOf(err) === 422) return t("askForm.errChoiceCantBeShared", { defaultValue: "One of those choices can't be shared. Nothing was sent." })
+  if (statusOf(err) === 404) return t("askForm.errNotAvailableForAccount", { defaultValue: "Asking to join a team isn't available for your account right now. Nothing was sent." })
+  return t("askForm.errDidntSend", { defaultValue: "That didn't send. Nothing was sent — try again." })
 }
 
 type Notice = { tone: "ok" | "error"; text: string }
@@ -81,6 +83,7 @@ function NoticeLine({ notice }: { notice: Notice | null }) {
 }
 
 function AskForm() {
+  const { t } = useTranslation("accountUi")
   const create = useCreateLinkRequest()
   const [notice, setNotice] = useState<Notice | null>(null)
   const form = useForm<AskInput, unknown, AskOutput>({
@@ -95,7 +98,7 @@ function AskForm() {
         setNotice({ tone: "ok", text: SENT_MESSAGE })
         form.reset({ managerEmail: "", categories: [] })
       },
-      onError: (err) => setNotice({ tone: "error", text: askErrorText(err) }),
+      onError: (err) => setNotice({ tone: "error", text: askErrorText(err, t) }),
     })
   })
 
@@ -105,15 +108,15 @@ function AskForm() {
     <form onSubmit={onSubmit} className="mt-3 flex flex-col gap-3" noValidate>
       <Input
         type="email"
-        placeholder="manager@example.com"
-        aria-label="Manager's email address"
+        placeholder={t("askForm.managerExampleCom", { defaultValue: "manager@example.com" })}
+        aria-label={t("askForm.managerSEmailAddress", { defaultValue: "Manager's email address" })}
         className="h-9"
         {...form.register("managerEmail")}
       />
       {emailError && <p className="text-[12px] text-[#C2614F]">{emailError}</p>}
       <fieldset className="flex flex-col gap-1.5">
         <legend className="text-[12.5px] font-semibold text-[#13294B]">
-          Share with them if they accept (optional)
+          {t("askForm.shareWithThemIfTheyAccept", { defaultValue: "Share with them if they accept (optional)" })}
         </legend>
         <Controller
           control={form.control}
@@ -126,7 +129,7 @@ function AskForm() {
                   <label key={c.key} className="flex items-center gap-2 text-[12.5px] text-[#13294B]">
                     <Checkbox
                       checked={checked}
-                      aria-label={`Share ${c.label} if they accept`}
+                      aria-label={t("askForm.shareLabelIfTheyAccept", { defaultValue: "Share {{label}} if they accept", label: c.label })}
                       onCheckedChange={(on) => {
                         const rest = (field.value ?? []).filter((k) => k !== c.key)
                         field.onChange(on === true ? [...rest, c.key] : rest)
@@ -139,12 +142,12 @@ function AskForm() {
             </div>
           )}
         />
-        <p className="text-[12px] text-[#13294B]/70">Shared only if they accept.</p>
+        <p className="text-[12px] text-[#13294B]/70">{t("askForm.sharedOnlyIfTheyAccept", { defaultValue: "Shared only if they accept." })}</p>
       </fieldset>
       <div>
         <Button type="submit" size="sm" className="h-9" disabled={create.isPending}>
           {create.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
-          Send request
+          {t("askForm.sendRequest", { defaultValue: "Send request" })}
         </Button>
       </div>
       <NoticeLine notice={notice} />
@@ -153,6 +156,7 @@ function AskForm() {
 }
 
 function RequestRow({ row }: { row: MemberLinkRequest }) {
+  const { t } = useTranslation("accountUi")
   const act = useLinkRequestAction()
   const leave = useLeaveTeam()
   const revoke = useRevokeGrant()
@@ -167,7 +171,7 @@ function RequestRow({ row }: { row: MemberLinkRequest }) {
   const shareNotApplied =
     approved && row.categories.length > 0 && (row.grantOutcome === null || row.grantOutcome === "failed")
   const date =
-    row.status === "pending" ? `Asked ${formatDate(row.createdAt)}` : approved && row.decidedAt ? `Added ${formatDate(row.decidedAt)}` : ""
+    row.status === "pending" ? t("requestRow.askedDate", { defaultValue: "Asked {{date}}", date: formatDate(row.createdAt) }) : approved && row.decidedAt ? t("requestRow.addedDate", { defaultValue: "Added {{date}}", date: formatDate(row.decidedAt) }) : ""
 
   const run = (action: "withdraw" | "share") => {
     setNotice(null)
@@ -177,7 +181,7 @@ function RequestRow({ row }: { row: MemberLinkRequest }) {
         onError: () =>
           setNotice({
             tone: "error",
-            text: action === "share" ? "Sharing still wasn't applied — try again later." : "That didn't withdraw — try again.",
+            text: action === "share" ? t("requestRow.errShareStillNotApplied", { defaultValue: "Sharing still wasn't applied — try again later." }) : t("requestRow.errDidntWithdraw", { defaultValue: "That didn't withdraw — try again." }),
           }),
       },
     )
@@ -197,25 +201,25 @@ function RequestRow({ row }: { row: MemberLinkRequest }) {
         tone: "error",
         text:
           codeOf(err) === "ask_your_manager"
-            ? "Your manager added you to this team, so only they can remove you."
-            : "That didn't work. You're still on the team — try again.",
+            ? t("requestRow.errAskYourManager", { defaultValue: "Your manager added you to this team, so only they can remove you." })
+            : t("requestRow.errStillOnTheTeam", { defaultValue: "That didn't work. You're still on the team — try again." }),
       })
       return
     }
     setConfirming(false)
     if (!stopSharing) {
-      setNotice({ tone: "ok", text: "You've left the team." })
+      setNotice({ tone: "ok", text: t("requestRow.youveLeftTheTeam", { defaultValue: "You've left the team." }) })
       return
     }
     if (!grantId) {
-      setNotice({ tone: "error", text: `You've left the team. ${NO_SHARE_FOUND}` })
+      setNotice({ tone: "error", text: `${t("requestRow.youveLeftTheTeam", { defaultValue: "You've left the team." })} ${NO_SHARE_FOUND}` })
       return
     }
     try {
       await revoke.mutateAsync(grantId)
-      setNotice({ tone: "ok", text: "You've left the team and stopped sharing with them." })
+      setNotice({ tone: "ok", text: t("requestRow.leftAndStoppedSharing", { defaultValue: "You've left the team and stopped sharing with them." }) })
     } catch {
-      setNotice({ tone: "error", text: "You've left the team, but sharing wasn't stopped — use the switches above." })
+      setNotice({ tone: "error", text: t("requestRow.leftButSharingNotStopped", { defaultValue: "You've left the team, but sharing wasn't stopped — use the switches above." }) })
     }
   }
 
@@ -228,21 +232,21 @@ function RequestRow({ row }: { row: MemberLinkRequest }) {
         </span>
         {date && <span className="text-[11.5px] text-[#7C93B5]">{date}</span>}
       </div>
-      {shareNotApplied && <p className="text-[12.5px] text-[#A9720F]">Sharing wasn&apos;t applied.</p>}
+      {shareNotApplied && <p className="text-[12.5px] text-[#A9720F]">{t("requestRow.sharingWasnTApplied", { defaultValue: "Sharing wasn't applied." })}</p>}
       <div className="flex flex-wrap items-center gap-2">
         {row.status === "pending" && (
           <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => run("withdraw")}>
-            Withdraw
+            {t("requestRow.withdraw", { defaultValue: "Withdraw" })}
           </Button>
         )}
         {shareNotApplied && (
           <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => run("share")}>
-            Try again
+            {t("requestRow.tryAgain", { defaultValue: "Try again" })}
           </Button>
         )}
         {approved && !confirming && (
           <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setConfirming(true)}>
-            Leave team
+            {t("requestRow.leaveTeam", { defaultValue: "Leave team" })}
           </Button>
         )}
         {busy && <Loader2 className="h-4 w-4 animate-spin text-[#7C93B5]" aria-hidden />}
@@ -250,15 +254,15 @@ function RequestRow({ row }: { row: MemberLinkRequest }) {
       {approved && confirming && (
         <div className="flex flex-col gap-2 rounded-xl bg-[#FBF7F0] px-3 py-2.5">
           <label className="flex items-center gap-2 text-[12.5px] text-[#13294B]">
-            <Checkbox checked={stopSharing} onCheckedChange={(on) => setStopSharing(on === true)} aria-label="Also stop sharing with them?" />
-            Also stop sharing with them?
+            <Checkbox checked={stopSharing} onCheckedChange={(on) => setStopSharing(on === true)} aria-label={t("requestRow.alsoStopSharingWithThem", { defaultValue: "Also stop sharing with them?" })} />
+            {t("requestRow.alsoStopSharingWithThem", { defaultValue: "Also stop sharing with them?" })}
           </label>
           <div className="flex gap-2">
             <Button type="button" size="sm" disabled={busy} onClick={confirmLeave}>
-              Leave team
+              {t("requestRow.leaveTeam", { defaultValue: "Leave team" })}
             </Button>
             <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>
-              Keep
+              {t("requestRow.keep", { defaultValue: "Keep" })}
             </Button>
           </div>
         </div>
@@ -269,6 +273,7 @@ function RequestRow({ row }: { row: MemberLinkRequest }) {
 }
 
 function LinkRequestCardBody() {
+  const { t } = useTranslation("accountUi")
   const auth = useContext(AuthContext)
   const isMember = auth?.hasRole(ROLES.USER) === true
   const mine = useMyLinkRequests(isMember)
@@ -285,11 +290,10 @@ function LinkRequestCardBody() {
   return (
     <Card className="!p-[19px]" testId="link-request-card">
       <div className="flex items-center gap-2 text-[15px] font-bold text-[#0B1B33]">
-        <Users className="h-4 w-4 text-[#127A8A]" aria-hidden /> Join a manager&apos;s team
+        <Users className="h-4 w-4 text-[#127A8A]" aria-hidden /> {t("linkRequestCardBody.joinAManagerSTeam", { defaultValue: "Join a manager's team" })}
       </div>
       <p className="mt-1 text-[13px] text-[#13294B]/75">
-        Ask a manager to add you to their team, by their exact email address. Nothing is shared by
-        asking.
+        {t("linkRequestCardBody.askAManagerToAddYou", { defaultValue: "Ask a manager to add you to their team, by their exact email address. Nothing is shared by asking." })}
       </p>
       <AskForm />
       {refreshFailed && (
@@ -299,7 +303,7 @@ function LinkRequestCardBody() {
       )}
       {rows.length > 0 && (
         <div className="mt-3">
-          <div className="text-[13px] font-bold text-[#0B1B33]">My requests</div>
+          <div className="text-[13px] font-bold text-[#0B1B33]">{t("linkRequestCardBody.myRequests", { defaultValue: "My requests" })}</div>
           <ul className="mt-1">
             {rows.map((r) => (
               <RequestRow key={r.id} row={r} />

@@ -33,12 +33,14 @@ import { Info } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useSupportAgent } from "@/context/useSupportAgent";
+import { useTranslation } from "react-i18next";
 
 export type SupportAgentLauncherProps = {
   className?: string;
 };
 
 export default function SupportAgentLauncher({ className }: SupportAgentLauncherProps) {
+  const { t } = useTranslation("accountUi")
   const { isOpen, open } = useSupportAgent();
 
   // The popup owns the corner while it is up.
@@ -48,8 +50,8 @@ export default function SupportAgentLauncher({ className }: SupportAgentLauncher
     <button
       type="button"
       onClick={open}
-      aria-label="Open Help &amp; Support assistant"
-      title="Help & Support"
+      aria-label={t("supportAgentLauncher.openHelpSupportAssistant", { defaultValue: "Open Help & Support assistant" })}
+      title={t("supportAgentLauncher.helpSupport", { defaultValue: "Help & Support" })}
       data-testid="support-agent-launcher"
       className={cn(
         "fixed bottom-6 right-24 z-40",

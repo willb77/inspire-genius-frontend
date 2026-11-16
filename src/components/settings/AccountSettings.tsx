@@ -15,6 +15,7 @@ import { parse, isValid, format as formatDate } from "date-fns";
 import { ROLES } from "@/constants/routes";
 import type { EditProfileFormValues, GenderOption } from "@/types/settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 
 function formatDobForDisplay(rawDob: unknown): string {
   try {
@@ -54,6 +55,7 @@ export default function AccountSettings({
   editProfileForm,
   onEditProfileSubmit,
 }: AccountSettingsProps) {
+  const { t } = useTranslation("accountUi")
   const displayDob = formatDobForDisplay(profileData?.dateOfBirth);
 
   const form = changePasswordForm;
@@ -104,7 +106,7 @@ export default function AccountSettings({
     <Card className="shadow-none sm:shadow-sm">
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CardTitle className="text-lg font-semibold">
-          Account Settings
+          {t("accountSettings.accountSettings", { defaultValue: "Account Settings" })}
         </CardTitle>
 
         {/* Action Buttons */}
@@ -117,7 +119,7 @@ export default function AccountSettings({
             onClick={() => onChangePasswordOpenChange?.(true)}
           >
             <LockKeyhole className="h-4 w-4" />
-            Change Password?
+            {t("accountSettings.changePassword", { defaultValue: "Change Password?" })}
           </Button>}
           <Button
             size="sm"
@@ -126,7 +128,7 @@ export default function AccountSettings({
             onClick={() => onEditProfileOpenChange?.(true)}
           >
             <Edit className="h-4 w-4" />
-            Edit
+            {t("accountSettings.edit", { defaultValue: "Edit" })}
           </Button>
 
           <Button
@@ -137,7 +139,7 @@ export default function AccountSettings({
             className="hidden items-center justify-center gap-2 w-full sm:w-auto bg-[#FFEBEC] text-[#DE3B40] hover:bg-[#FFEBEC]"
           >
             <LogOut className="h-4 w-4" />
-            Logout
+            {t("accountSettings.logout", { defaultValue: "Logout" })}
           </Button>
         </div>
       </CardHeader>
@@ -147,8 +149,8 @@ export default function AccountSettings({
         <Dialog open={!!editProfileOpen} onOpenChange={onEditProfileOpenChange}>
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Edit Profile</DialogTitle>
-              <DialogDescription>Update personal details to stay up-to-date.</DialogDescription>
+              <DialogTitle>{t("accountSettings.editProfile", { defaultValue: "Edit Profile" })}</DialogTitle>
+              <DialogDescription>{t("accountSettings.updatePersonalDetailsToStayUp", { defaultValue: "Update personal details to stay up-to-date." })}</DialogDescription>
             </DialogHeader>
             {editProfileForm ? (
               <form
@@ -157,60 +159,60 @@ export default function AccountSettings({
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">First name</Label>
+                    <Label className="text-sm font-medium">{t("accountSettings.firstName", { defaultValue: "First name" })}</Label>
                     <Input
                       {...editProfileForm.register("firstName", {
-                        required: "First name is required",
-                        maxLength: { value: 50, message: "First name must be at most 50 characters" },
-                        validate: (v) => (v?.trim()?.length ? true : "First name is required"),
+                        required: t("accountSettings.firstNameIsRequired", { defaultValue: "First name is required" }),
+                        maxLength: { value: 50, message: t("accountSettings.firstNameMustBeAtMost50", { defaultValue: "First name must be at most 50 characters" }) },
+                        validate: (v) => (v?.trim()?.length ? true : t("accountSettings.firstNameIsRequired", { defaultValue: "First name is required" })),
                       })}
-                      placeholder="First Name"
+                      placeholder={t("accountSettings.firstName2", { defaultValue: "First Name" })}
                     />
                     {editProfileForm.formState?.errors?.firstName?.message ? (
                       <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.firstName.message)}</p>
                     ) : null}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Last name</Label>
+                    <Label className="text-sm font-medium">{t("accountSettings.lastName", { defaultValue: "Last name" })}</Label>
                     <Input
                       {...editProfileForm.register("lastName", {
-                        required: "Last name is required",
-                        maxLength: { value: 50, message: "Last name must be at most 50 characters" },
-                        validate: (v) => (v?.trim()?.length ? true : "Last name is required"),
+                        required: t("accountSettings.lastNameIsRequired", { defaultValue: "Last name is required" }),
+                        maxLength: { value: 50, message: t("accountSettings.lastNameMustBeAtMost50", { defaultValue: "Last name must be at most 50 characters" }) },
+                        validate: (v) => (v?.trim()?.length ? true : t("accountSettings.lastNameIsRequired", { defaultValue: "Last name is required" })),
                       })}
-                      placeholder="Last Name"
+                      placeholder={t("accountSettings.lastName2", { defaultValue: "Last Name" })}
                     />
                     {editProfileForm.formState?.errors?.lastName?.message ? (
                       <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.lastName.message)}</p>
                     ) : null}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Email</Label>
+                    <Label className="text-sm font-medium">{t("accountSettings.email", { defaultValue: "Email" })}</Label>
                     <Input
                       type="email"
                       {...editProfileForm.register("email")}
                       disabled
-                      placeholder="Email Address"
+                      placeholder={t("accountSettings.emailAddress", { defaultValue: "Email Address" })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Date of birth</Label>
+                    <Label className="text-sm font-medium">{t("accountSettings.dateOfBirth", { defaultValue: "Date of birth" })}</Label>
                     <DatePicker
                       value={editProfileForm.watch("dateOfBirth")}
                       onChange={(v) => editProfileForm.setValue("dateOfBirth", v, { shouldDirty: true, shouldTouch: true })}
-                      placeholder="Date of Birth"
+                      placeholder={t("accountSettings.dateOfBirth2", { defaultValue: "Date of Birth" })}
                       minDate={new Date(1900, 0, 1)}
                       maxDate={getMaxDobDate()}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label className="text-sm font-medium">Additional info</Label>
+                    <Label className="text-sm font-medium">{t("accountSettings.additionalInfo", { defaultValue: "Additional info" })}</Label>
                     <Textarea
                       rows={6}
                       {...editProfileForm.register("additionalInfo", {
-                        maxLength: { value: 500, message: "Additional info must be at most 500 characters" },
+                        maxLength: { value: 500, message: t("accountSettings.additionalInfoMustBeAtMost500", { defaultValue: "Additional info must be at most 500 characters" }) },
                       })}
-                      placeholder="Tell us more about you..."
+                      placeholder={t("accountSettings.tellUsMoreAboutYou", { defaultValue: "Tell us more about you..." })}
                     />
                     {editProfileForm.formState?.errors?.additionalInfo?.message ? (
                       <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.additionalInfo.message)}</p>
@@ -219,44 +221,44 @@ export default function AccountSettings({
 
                   {/* Demographics Section */}
                   <div className="md:col-span-2 pt-2">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Demographics <span className="text-xs font-normal text-muted-foreground">(optional)</span></h3>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-1">{t("accountSettings.demographics", { defaultValue: "Demographics" })} <span className="text-xs font-normal text-muted-foreground">{t("accountSettings.optional", { defaultValue: "(optional)" })}</span></h3>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Gender</Label>
+                    <Label className="text-sm font-medium">{t("accountSettings.gender", { defaultValue: "Gender" })}</Label>
                     <Select
                       value={editProfileForm.watch("gender") || ""}
                       onValueChange={(v) => editProfileForm.setValue("gender", v as GenderOption, { shouldDirty: true })}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select gender" />
+                        <SelectValue placeholder={t("accountSettings.selectGender", { defaultValue: "Select gender" })} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Non-Binary">Non-Binary</SelectItem>
-                        <SelectItem value="N/A">Prefer not to say</SelectItem>
+                        <SelectItem value="Male">{t("accountSettings.male", { defaultValue: "Male" })}</SelectItem>
+                        <SelectItem value="Female">{t("accountSettings.female", { defaultValue: "Female" })}</SelectItem>
+                        <SelectItem value="Non-Binary">{t("accountSettings.nonBinary", { defaultValue: "Non-Binary" })}</SelectItem>
+                        <SelectItem value="N/A">{t("accountSettings.preferNotToSay", { defaultValue: "Prefer not to say" })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Ethnicity</Label>
+                    <Label className="text-sm font-medium">{t("accountSettings.ethnicity", { defaultValue: "Ethnicity" })}</Label>
                     <Input
                       {...editProfileForm.register("ethnicity", {
-                        maxLength: { value: 100, message: "Ethnicity must be at most 100 characters" },
+                        maxLength: { value: 100, message: t("accountSettings.ethnicityMustBeAtMost100", { defaultValue: "Ethnicity must be at most 100 characters" }) },
                       })}
-                      placeholder="e.g. Hispanic, Asian, etc."
+                      placeholder={t("accountSettings.eGHispanicAsianEtc", { defaultValue: "e.g. Hispanic, Asian, etc." })}
                     />
                     {editProfileForm.formState?.errors?.ethnicity?.message ? (
                       <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.ethnicity.message)}</p>
                     ) : null}
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label className="text-sm font-medium">Cultural Affinity</Label>
+                    <Label className="text-sm font-medium">{t("accountSettings.culturalAffinity", { defaultValue: "Cultural Affinity" })}</Label>
                     <Input
                       {...editProfileForm.register("culturalAffinity", {
-                        maxLength: { value: 200, message: "Cultural affinity must be at most 200 characters" },
+                        maxLength: { value: 200, message: t("accountSettings.culturalAffinityMustBeAtMost200", { defaultValue: "Cultural affinity must be at most 200 characters" }) },
                       })}
-                      placeholder="e.g. cultural background, traditions, etc."
+                      placeholder={t("accountSettings.eGCulturalBackgroundTraditionsEtc", { defaultValue: "e.g. cultural background, traditions, etc." })}
                     />
                     {editProfileForm.formState?.errors?.culturalAffinity?.message ? (
                       <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.culturalAffinity.message)}</p>
@@ -270,10 +272,10 @@ export default function AccountSettings({
                     type="button"
                     onClick={handleEditProfileCancel}
                   >
-                    Cancel
+                    {t("accountSettings.cancel", { defaultValue: "Cancel" })}
                   </Button>
                   <Button type="submit" className="flex items-center gap-2 w-full sm:w-[206px]" disabled={!!isUpdatingProfile}>
-                    {isUpdatingProfile ? "Saving..." : "Save"}
+                    {isUpdatingProfile ? t("accountSettings.saving", { defaultValue: "Saving..." }) : t("accountSettings.save", { defaultValue: "Save" })}
                   </Button>
                 </DialogFooter>
               </form>
@@ -283,20 +285,20 @@ export default function AccountSettings({
         <Dialog open={!!changePasswordOpen} onOpenChange={onChangePasswordOpenChange}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Change Password</DialogTitle>
-              <DialogDescription className="mb-4">Update password to secure your account.</DialogDescription>
+              <DialogTitle>{t("accountSettings.changePassword2", { defaultValue: "Change Password" })}</DialogTitle>
+              <DialogDescription className="mb-4">{t("accountSettings.updatePasswordToSecureYourAccount", { defaultValue: "Update password to secure your account." })}</DialogDescription>
             </DialogHeader>
             {form && register && handleSubmit ? (
               <form className="space-y-4" onSubmit={handleSubmit(onValid)}>
                 <PasswordField
-                  placeholder="Enter Current Password"
-                  {...register("current_password", { required: "Current password is required" })}
+                  placeholder={t("accountSettings.enterCurrentPassword", { defaultValue: "Enter Current Password" })}
+                  {...register("current_password", { required: t("accountSettings.currentPasswordIsRequired", { defaultValue: "Current password is required" }) })}
                   error={errors?.current_password?.message}
                 />
 
                 <PasswordField
-                  placeholder="Enter New Password"
-                  {...register("new_password", { required: "New password is required", validate: (val) => passwordMeetsRule(val) || PASSWORD_RULE_TEXT })}
+                  placeholder={t("accountSettings.enterNewPassword", { defaultValue: "Enter New Password" })}
+                  {...register("new_password", { required: t("accountSettings.newPasswordIsRequired", { defaultValue: "New password is required" }), validate: (val) => passwordMeetsRule(val) || PASSWORD_RULE_TEXT })}
                   error={errors?.new_password?.message}
                 />
                 {newPasswordValue && !passwordMeetsRule(newPasswordValue) && (
@@ -304,8 +306,8 @@ export default function AccountSettings({
                 )}
 
                 <PasswordField
-                  placeholder="Confirm New Password"
-                  {...register("confirm_password", { required: "Please confirm your new password", validate: (val) => val === newPasswordValue || "Passwords do not match" })}
+                  placeholder={t("accountSettings.confirmNewPassword", { defaultValue: "Confirm New Password" })}
+                  {...register("confirm_password", { required: t("accountSettings.pleaseConfirmYourNewPassword", { defaultValue: "Please confirm your new password" }), validate: (val) => val === newPasswordValue || t("accountSettings.passwordsDoNotMatch", { defaultValue: "Passwords do not match" }) })}
                   error={errors?.confirm_password?.message}
                 />
 
@@ -316,10 +318,10 @@ export default function AccountSettings({
                     type="button"
                     onClick={handleChangePasswordCancel}
                   >
-                    Cancel
+                    {t("accountSettings.cancel", { defaultValue: "Cancel" })}
                   </Button>
                   <Button className="w-full sm:w-[48%]" type="submit" disabled={!!isChangingPassword || formSubmitting}>
-                    {isChangingPassword || formSubmitting ? "Saving..." : "Save Changes"}
+                    {isChangingPassword || formSubmitting ? t("accountSettings.saving", { defaultValue: "Saving..." }) : t("accountSettings.saveChanges", { defaultValue: "Save Changes" })}
                   </Button>
                 </DialogFooter>
               </form>
@@ -331,7 +333,7 @@ export default function AccountSettings({
           <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-4 text-left">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">
-                First name
+                {t("accountSettings.firstName", { defaultValue: "First name" })}
               </Label>
               {isProfileLoading ? (
                 <Skeleton className="h-9 w-full" />
@@ -342,7 +344,7 @@ export default function AccountSettings({
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">
-                Last name
+                {t("accountSettings.lastName", { defaultValue: "Last name" })}
               </Label>
               {isProfileLoading ? (
                 <Skeleton className="h-9 w-full" />
@@ -353,7 +355,7 @@ export default function AccountSettings({
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">
-                Email
+                {t("accountSettings.email", { defaultValue: "Email" })}
               </Label>
               {isProfileLoading ? (
                 <Skeleton className="h-9 w-full" />
@@ -364,7 +366,7 @@ export default function AccountSettings({
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">
-                Date of birth
+                {t("accountSettings.dateOfBirth", { defaultValue: "Date of birth" })}
               </Label>
               {isProfileLoading ? (
                 <Skeleton className="h-9 w-full" />
@@ -373,11 +375,11 @@ export default function AccountSettings({
               )}
             </div>
             <div className="space-y-2 lg:col-span-2">
-              <Label className="text-sm font-medium text-gray-700">Additional info</Label>
+              <Label className="text-sm font-medium text-gray-700">{t("accountSettings.additionalInfo", { defaultValue: "Additional info" })}</Label>
               {isProfileLoading ? (
                 <Skeleton className="h-28 w-full" />
               ) : (
-                <Textarea placeholder="Add additional info" value={profileData.additionalInfo ?? ""} readOnly rows={6} />
+                <Textarea placeholder={t("accountSettings.addAdditionalInfo", { defaultValue: "Add additional info" })} value={profileData.additionalInfo ?? ""} readOnly rows={6} />
               )}
             </div>
 
@@ -385,23 +387,23 @@ export default function AccountSettings({
             {(profileData.gender || profileData.ethnicity || profileData.culturalAffinity) && (
               <>
                 <div className="lg:col-span-2 pt-2">
-                  <h3 className="text-sm font-semibold text-gray-700">Demographics</h3>
+                  <h3 className="text-sm font-semibold text-gray-700">{t("accountSettings.demographics", { defaultValue: "Demographics" })}</h3>
                 </div>
                 {profileData.gender ? (
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Gender</Label>
+                    <Label className="text-sm font-medium text-gray-700">{t("accountSettings.gender", { defaultValue: "Gender" })}</Label>
                     <Input value={profileData.gender} readOnly />
                   </div>
                 ) : null}
                 {profileData.ethnicity ? (
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Ethnicity</Label>
+                    <Label className="text-sm font-medium text-gray-700">{t("accountSettings.ethnicity", { defaultValue: "Ethnicity" })}</Label>
                     <Input value={profileData.ethnicity} readOnly />
                   </div>
                 ) : null}
                 {profileData.culturalAffinity ? (
                   <div className="space-y-2 lg:col-span-2">
-                    <Label className="text-sm font-medium text-gray-700">Cultural Affinity</Label>
+                    <Label className="text-sm font-medium text-gray-700">{t("accountSettings.culturalAffinity", { defaultValue: "Cultural Affinity" })}</Label>
                     <Input value={profileData.culturalAffinity} readOnly />
                   </div>
                 ) : null}

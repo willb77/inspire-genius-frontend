@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { useRedeemPractitionerCode } from "@/hooks/user/useRedeemPractitionerCode"
 import { registryErrorSummary } from "@/services/super-admin/practitioner-registry/registryErrors"
 import { codeSchema } from "./practitionerCode.schema"
+import { useTranslation } from "react-i18next"
 
 /**
  * "Have a practitioner code?" — Settings card for a client who signed up on
@@ -27,6 +28,7 @@ type CodeInput = z.input<typeof codeSchema>
 type CodeOutput = z.output<typeof codeSchema>
 
 export default function PractitionerCodeCard() {
+  const { t } = useTranslation("accountUi")
   const redeem = useRedeemPractitionerCode()
   const [linkedTo, setLinkedTo] = useState<string | null>(null)
   const form = useForm<CodeInput, unknown, CodeOutput>({
@@ -51,27 +53,27 @@ export default function PractitionerCodeCard() {
       <CardHeader className="text-left">
         <CardTitle className="flex items-center gap-2 text-lg font-semibold">
           <KeyRound className="h-5 w-5" aria-hidden />
-          Have a practitioner code?
+          {t("practitionerCodeCard.haveAPractitionerCode", { defaultValue: "Have a practitioner code?" })}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          If you are working with a PRISM practitioner, enter the code they gave you to connect your account to theirs.
+          {t("practitionerCodeCard.ifYouAreWorkingWithA", { defaultValue: "If you are working with a PRISM practitioner, enter the code they gave you to connect your account to theirs." })}
         </p>
       </CardHeader>
       <CardContent className="text-left">
         <form onSubmit={onSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-end" noValidate>
           <div className="flex-1 space-y-1">
-            <Label htmlFor="practitioner-code">Practitioner code</Label>
+            <Label htmlFor="practitioner-code">{t("practitionerCodeCard.practitionerCode", { defaultValue: "Practitioner code" })}</Label>
             <Input
               id="practitioner-code"
               autoComplete="off"
-              placeholder="ABC-DEF-GHJ"
+              placeholder={t("practitionerCodeCard.abcDefGhj", { defaultValue: "ABC-DEF-GHJ" })}
               aria-invalid={!!fieldError}
               {...form.register("code")}
             />
           </div>
           <Button type="submit" disabled={redeem.isPending}>
             {redeem.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-            Connect
+            {t("practitionerCodeCard.connect", { defaultValue: "Connect" })}
           </Button>
         </form>
         {fieldError && (
@@ -81,12 +83,12 @@ export default function PractitionerCodeCard() {
         )}
         {redeem.error && !fieldError && (
           <p role="alert" className="mt-2 text-sm text-destructive">
-            {registryErrorSummary(redeem.error, "That code could not be used. Please try again.")}
+            {registryErrorSummary(redeem.error, t("practitionerCodeCard.thatCodeCouldNotBeUsed", { defaultValue: "That code could not be used. Please try again." }))}
           </p>
         )}
         {linkedTo && (
           <p role="status" className="mt-2 text-sm text-emerald-700">
-            You are now connected to {linkedTo}.
+            {t("practitionerCodeCard.youAreNowConnectedTo", { defaultValue: "You are now connected to {{name}}.", name: linkedTo })}
           </p>
         )}
       </CardContent>
