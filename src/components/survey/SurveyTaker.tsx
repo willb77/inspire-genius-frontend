@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { Survey, SurveyAnswerValue } from "@/types/survey"
 import { DEFAULT_RATING_SCALE_MAX } from "@/types/survey"
+import { useTranslation } from "react-i18next"
 
 export interface SurveyTakerProps {
   survey: Survey
@@ -44,6 +45,7 @@ export default function SurveyTaker({
   onSubmit,
   onDone,
 }: SurveyTakerProps) {
+  const { t } = useTranslation("studioUi")
   const [answers, setAnswers] = useState<Record<string, SurveyAnswerValue>>({})
   const [submitted, setSubmitted] = useState(false)
   const [invalidId, setInvalidId] = useState<string | null>(null)
@@ -73,12 +75,12 @@ export default function SurveyTaker({
   const handleSubmit = () => {
     if (firstMissingRequired) {
       setInvalidId(firstMissingRequired.id)
-      toast.error("Please answer the required questions before submitting.")
+      toast.error(t("survey.surveyTaker.pleaseAnswerTheRequiredQuestions", { defaultValue: "Please answer the required questions before submitting." }))
       return
     }
     onSubmit(answers)
     setSubmitted(true)
-    toast.success("Response submitted. Thank you!")
+    toast.success(t("survey.surveyTaker.responseSubmittedThankYou", { defaultValue: "Response submitted. Thank you!" }))
   }
 
   const handleRetake = () => {
@@ -93,7 +95,7 @@ export default function SurveyTaker({
         <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
           <CheckCircle2 className="h-12 w-12 text-emerald-500" aria-hidden />
           <div>
-            <h3 className="text-lg font-semibold">Response recorded</h3>
+            <h3 className="text-lg font-semibold">{t("survey.surveyTaker.responseRecorded", { defaultValue: "Response recorded" })}</h3>
             <p className="text-sm text-muted-foreground">
               Your answers to “{survey.title || "Untitled survey"}” were saved.
             </p>
@@ -101,10 +103,10 @@ export default function SurveyTaker({
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleRetake}>
               <RotateCcw className="mr-2 h-4 w-4" />
-              Take again
+              {t("survey.surveyTaker.takeAgain", { defaultValue: "Take again" })}
             </Button>
             {onDone && (
-              <Button onClick={onDone}>Choose another survey</Button>
+              <Button onClick={onDone}>{t("survey.surveyTaker.chooseAnotherSurvey", { defaultValue: "Choose another survey" })}</Button>
             )}
           </div>
         </CardContent>
@@ -128,7 +130,7 @@ export default function SurveyTaker({
       {survey.questions.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            This survey has no questions yet.
+            {t("survey.surveyTaker.thisSurveyHasNoQuestions", { defaultValue: "This survey has no questions yet." })}
           </CardContent>
         </Card>
       )}
@@ -161,7 +163,7 @@ export default function SurveyTaker({
                   aria-label={q.prompt || "Answer"}
                   value={typeof value === "string" ? value : ""}
                   onChange={(e) => setAnswer(q.id, e.target.value)}
-                  placeholder="Type your answer…"
+                  placeholder={t("survey.surveyTaker.typeYourAnswer", { defaultValue: "Type your answer…" })}
                   rows={3}
                 />
               )}
@@ -232,7 +234,7 @@ export default function SurveyTaker({
 
               {invalid && (
                 <p className="mt-2 text-xs text-destructive">
-                  This question is required.
+                  {t("survey.surveyTaker.thisQuestionIsRequired", { defaultValue: "This question is required." })}
                 </p>
               )}
             </CardContent>
@@ -244,7 +246,7 @@ export default function SurveyTaker({
         <div className="flex justify-end">
           <Button onClick={handleSubmit}>
             <Send className="mr-2 h-4 w-4" />
-            Submit response
+            {t("survey.surveyTaker.submitResponse", { defaultValue: "Submit response" })}
           </Button>
         </div>
       )}

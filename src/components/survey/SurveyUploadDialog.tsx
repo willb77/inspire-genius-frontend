@@ -34,6 +34,7 @@ import {
 } from "@/lib/extractRoleText"
 import { useParseSurvey } from "@/hooks/survey/useSurveys"
 import type { Survey } from "@/types/survey"
+import { useTranslation } from "react-i18next"
 
 export interface SurveyUploadDialogProps {
   open: boolean
@@ -47,6 +48,7 @@ export default function SurveyUploadDialog({
   onOpenChange,
   onDraft,
 }: SurveyUploadDialogProps) {
+  const { t } = useTranslation("studioUi")
   const [title, setTitle] = useState("")
   const [text, setText] = useState("")
   const [extracting, setExtracting] = useState(false)
@@ -61,7 +63,7 @@ export default function SurveyUploadDialog({
       const { text: extracted, suggestedTitle } = await extractRoleText(file)
       setText((prev) => (prev ? `${prev}\n${extracted}` : extracted))
       if (!title && suggestedTitle) setTitle(suggestedTitle)
-      toast.success("File imported — review the text, then build the survey.")
+      toast.success(t("survey.surveyUploadDialog.fileImportedReviewTheText", { defaultValue: "File imported — review the text, then build the survey." }))
     } catch (err) {
       const msg =
         err instanceof RoleExtractionError
@@ -76,7 +78,7 @@ export default function SurveyUploadDialog({
 
   const handleBuild = () => {
     if (!text.trim()) {
-      toast.error("Paste or upload some question text first.")
+      toast.error(t("survey.surveyUploadDialog.pasteOrUploadSomeQuestion", { defaultValue: "Paste or upload some question text first." }))
       return
     }
     parse.mutate(
@@ -84,7 +86,7 @@ export default function SurveyUploadDialog({
       {
         onSuccess: (result) => {
           if (!result) {
-            toast.error("Could not parse that text.")
+            toast.error(t("survey.surveyUploadDialog.couldNotParseThatText", { defaultValue: "Could not parse that text." }))
             return
           }
           const draft: Survey = {
@@ -103,7 +105,7 @@ export default function SurveyUploadDialog({
               : "Survey drafted from your text — check each question type, then save.",
           )
         },
-        onError: () => toast.error("Could not build the survey. Try again."),
+        onError: () => toast.error(t("survey.surveyUploadDialog.couldNotBuildTheSurvey", { defaultValue: "Could not build the survey. Try again." })),
       },
     )
   }
@@ -114,30 +116,28 @@ export default function SurveyUploadDialog({
         <DialogHeader className="border-b p-6 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" aria-hidden />
-            Build a survey from questions
+            {t("survey.surveyUploadDialog.buildASurveyFromQuestions", { defaultValue: "Build a survey from questions" })}
           </DialogTitle>
           <DialogDescription>
-            Drop in or paste your questions, answer options, and any instructions.
-            We'll draft a survey you can review and edit — you set the final
-            question types in the next step.
+            {t("survey.surveyUploadDialog.dropInOrPasteYour", { defaultValue: "Drop in or paste your questions, answer options, and any instructions. We'll draft a survey you can review and edit — you set the final question types in the next step." })}
           </DialogDescription>
         </DialogHeader>
 
         {/* Scrollable body */}
         <div className="flex-1 space-y-4 overflow-y-auto p-6">
           <div className="space-y-2">
-            <Label htmlFor="upload-title">Title (optional)</Label>
+            <Label htmlFor="upload-title">{t("survey.surveyUploadDialog.titleOptional", { defaultValue: "Title (optional)" })}</Label>
             <Input
               id="upload-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Baseline Survey"
+              placeholder={t("survey.surveyUploadDialog.eGBaselineSurvey", { defaultValue: "e.g. Baseline Survey" })}
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="upload-text">Questions &amp; instructions</Label>
+              <Label htmlFor="upload-text">{t("survey.surveyUploadDialog.questionsInstructions", { defaultValue: "Questions & instructions" })}</Label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -157,7 +157,7 @@ export default function SurveyUploadDialog({
                 ) : (
                   <FileUp className="mr-1 h-3 w-3" />
                 )}
-                Upload file
+                {t("survey.surveyUploadDialog.uploadFile", { defaultValue: "Upload file" })}
               </Button>
             </div>
 
@@ -191,8 +191,7 @@ export default function SurveyUploadDialog({
             </div>
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <UploadCloud className="h-3.5 w-3.5" aria-hidden />
-              Drag a file onto the box, or use “Upload file.” Word tables and
-              checkbox options come through too.
+              {t("survey.surveyUploadDialog.dragAFileOntoThe", { defaultValue: "Drag a file onto the box, or use “Upload file.” Word tables and checkbox options come through too." })}
             </p>
           </div>
         </div>
@@ -200,7 +199,7 @@ export default function SurveyUploadDialog({
         {/* Pinned footer — always visible so the action is never off-screen. */}
         <div className="flex justify-end gap-2 border-t bg-background p-4">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("survey.surveyUploadDialog.cancel", { defaultValue: "Cancel" })}
           </Button>
           <Button onClick={handleBuild} disabled={parse.isPending || extracting}>
             {parse.isPending ? (
@@ -208,7 +207,7 @@ export default function SurveyUploadDialog({
             ) : (
               <Wand2 className="mr-2 h-4 w-4" />
             )}
-            Build survey
+            {t("survey.surveyUploadDialog.buildSurvey", { defaultValue: "Build survey" })}
           </Button>
         </div>
       </DialogContent>

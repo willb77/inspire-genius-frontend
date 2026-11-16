@@ -1,0 +1,407 @@
+{
+  "fit": {
+    "fitCards": {
+      "thisJob": "This job",
+      "you": "You",
+      "difference": "Difference"
+    },
+    "fitMatchList": {
+      "fit": "{{pct}}% fit",
+      "fit2": "fit",
+      "ofMeasured": "{{evaluated}} of {{total}} measured",
+      "composite": "{{v1}}% composite",
+      "behaviouralFitGoalsAndExperience": "Behavioural fit, goals and experience combined",
+      "overallFit": "Overall fit",
+      "prismFit": "PRISM fit {{pct}}%",
+      "prismFit2": "PRISM fit",
+      "notEnoughAboutYouTo": "Not enough about you to combine — add a résumé"
+    },
+    "fitResult": {
+      "growthAreas": "Growth areas",
+      "priorityFocus": "Priority focus",
+      "yourFitAgainstThisTarget": "Your fit against this target",
+      "decisionSupportOnly": "Decision support only",
+      "prismFitAsRecorded": "PRISM fit as recorded",
+      "yourFitAsRecorded": "Your fit as recorded",
+      "worthPuttingFirst": "Worth putting first",
+      "worthBuildingOverTime": "Worth building over time",
+      "matchingForThisRoleIs": "Matching for this role is still in limited release, so treat this read as a first draft rather than a settled answer.",
+      "overallFitIsnTAvailable": "Overall fit isn't available for a pasted job description yet — your PRISM fit above is your read.",
+      "whatToSayOutLoud": "What to say out loud about this one",
+      "theseAreThePlacesYou": "These are the places you already match or beat what the role asks for. They're yours to claim — worth having ready before an interview.",
+      "strengthsYouTurnUpHigh": "Strengths you turn up high",
+      "theseAreStrengthsNotFaults": "These are strengths, not faults. You express them more strongly than this role typically calls for — which often shows up under pressure. Nothing here needs fixing; it's just useful to know which dial you reach for first."
+    },
+    "fitScoreHeadline": {
+      "overallFit": "Overall fit {{v1}}%"
+    }
+  },
+  "workbench": {
+    "workbenchHome": {
+      "loadingYourRoster": "Loading your roster…",
+      "notMeasuredThisIsNot": "Not measured — this is not a count of zero.",
+      "nameNotOnFile": "Name not on file",
+      "open": "Open",
+      "loadingWorkbench": "Loading workbench",
+      "yourWorkbenchCouldNotBe": "Your workbench could not be loaded.",
+      "tryAgain": "Try again"
+    }
+  },
+  "tasks": {
+    "costEstimateBanner": {
+      "estimatedCostUsdInputTokens": "Estimated cost: ~${{v1}} USD ({{v2}} input tokens × Sonnet input rate). Output cost depends on the agent's response length."
+    },
+    "taskAgentResultCard": {
+      "savedToYourWorkspace": "Saved to your workspace.",
+      "couldNotSave": "Could not save: {{message}}",
+      "cannotSaveMissingTaskIdentity": "Cannot save: missing task identity.",
+      "confidence": "confidence {{v1}}%",
+      "ms": "{{v1}} ms",
+      "suggestedNext": "Suggested next:",
+      "reRunWithDifferentInputs": "Re-run with different inputs",
+      "saved": "Saved",
+      "saveToMyWorkspace": "Save to my workspace"
+    }
+  },
+  "taskAgents": {
+    "interviewPrepBody": {
+      "interviewPrepGenerated": "Interview prep generated.",
+      "mavenInterviewagentFailed": "Maven (InterviewAgent) failed: {{message}}",
+      "interviewPrep": "Interview Prep",
+      "interviewPrep2": "Interview prep",
+      "getAStructured3Section": "Get a structured 3-section interview plan from Maven (InterviewAgent), or browse the shared STAR question bank with scoring anchors.",
+      "generatePrep": "Generate prep",
+      "questionBank": "Question bank",
+      "inputs": "Inputs",
+      "company": "Company",
+      "industry": "Industry",
+      "roleTitle": "Role title",
+      "candidateNameOptional": "Candidate name (optional)",
+      "interviewFocusOptional": "Interview focus (optional)",
+      "runMaven": "Run Maven",
+      "reset": "Reset"
+    },
+    "jobBlueprintBody": {
+      "matchGenerated": "Match generated.",
+      "jamesAdminagentFailed": "James (AdminAgent) failed: {{message}}",
+      "jobBlueprintMatch": "Job Blueprint Match",
+      "jobBlueprintMatch2": "Job blueprint match",
+      "matchACandidateAgainstA": "Match a candidate against a role's blueprint via James (AdminAgent).",
+      "inputs": "Inputs",
+      "roleTitle": "Role title",
+      "company": "Company",
+      "roleResponsibilities": "Role responsibilities",
+      "candidateSummary": "Candidate summary",
+      "desiredOutcomesOptional": "Desired outcomes (optional)",
+      "runJames": "Run James",
+      "reset": "Reset"
+    },
+    "questionBankPanel": {
+      "whatToListenForScoring": "What to listen for (scoring anchors)",
+      "strong5": "Strong (5)",
+      "baseline3": "Baseline (3)",
+      "weak1": "Weak (1)",
+      "starInterviewQuestionBank": "STAR interview question bank"
+    },
+    "teamCompositionBody": {
+      "teamCompositionAnalysisReady": "Team composition analysis ready.",
+      "atlasDashboardagentFailed": "Atlas (DashboardAgent) failed: {{message}}",
+      "atLeastOneMemberSummary": "At least one member summary is required",
+      "teamComposition": "Team Composition",
+      "teamComposition2": "Team composition",
+      "analyseATeamSPrism": "Analyse a team's PRISM mix, skills, and gaps with Atlas (DashboardAgent).",
+      "inputs": "Inputs",
+      "teamName": "Team name",
+      "teamPurpose": "Team purpose",
+      "memberSummariesOnePerLine": "Member summaries (one per line)",
+      "targetSkillsCommaSeparatedOptional": "Target skills (comma-separated, optional)",
+      "strategicThinkingAsyncCommsData": "strategic thinking, async comms, data fluency",
+      "runAtlas": "Run Atlas",
+      "reset": "Reset"
+    }
+  },
+  "survey": {
+    "surveyBuilder": {
+      "giveTheSurveyATitle": "Give the survey a title before saving.",
+      "addAtLeastOneQuestion": "Add at least one question before saving.",
+      "choiceQuestionsNeedAtLeast": "Choice questions need at least two options.",
+      "surveySaved": "Survey saved.",
+      "surveyDetails": "Survey details",
+      "title": "Title",
+      "eGTeamPulseCheck": "e.g. Team Pulse Check",
+      "descriptionOptional": "Description (optional)",
+      "whatIsThisSurveyFor": "What is this survey for?",
+      "exposeToOrganization": "Expose to organization",
+      "organizationIdLeaveBlankTo": "Organization ID (leave blank to use your own)",
+      "membersOfThisOrganizationWill": "Members of this organization will see the survey in their Settings → My Workspace. Leave blank to expose it to your own organization.",
+      "availableToRespondents": "Available to respondents",
+      "offKeepsItHiddenUntil": "Off keeps it hidden until you're ready. Turn on to make it available to your organization.",
+      "question": "Question {{v1}}",
+      "moveQuestionUp": "Move question up",
+      "moveQuestionDown": "Move question down",
+      "removeQuestion": "Remove question",
+      "questionText": "Question text",
+      "whatDoYouWantTo": "What do you want to ask?",
+      "answerType": "Answer type",
+      "maxRating": "Max rating",
+      "required": "Required",
+      "options": "Options",
+      "removeOption": "Remove option",
+      "addOption": "Add option",
+      "addQuestion": "Add question",
+      "cancel": "Cancel",
+      "saveSurvey": "Save survey"
+    },
+    "surveyResults": {
+      "noAnswersYet": "No answers yet.",
+      "answered": "{{answered}} answered",
+      "compilation": "Compilation",
+      "responses": "{{responseCount}} responses",
+      "couldNotLoadTheCompilation": "Could not load the compilation.",
+      "noResponsesYetTheCompilation": "No responses yet. The compilation appears once people submit.",
+      "individualResponses": "Individual responses",
+      "hide": "Hide",
+      "show": "Show",
+      "noResponsesYet": "No responses yet."
+    },
+    "surveySelector": {
+      "build": "Build",
+      "chooseASurvey": "Choose a survey…"
+    },
+    "surveyTaker": {
+      "pleaseAnswerTheRequiredQuestions": "Please answer the required questions before submitting.",
+      "responseSubmittedThankYou": "Response submitted. Thank you!",
+      "responseRecorded": "Response recorded",
+      "takeAgain": "Take again",
+      "chooseAnotherSurvey": "Choose another survey",
+      "thisSurveyHasNoQuestions": "This survey has no questions yet.",
+      "typeYourAnswer": "Type your answer…",
+      "thisQuestionIsRequired": "This question is required.",
+      "submitResponse": "Submit response"
+    },
+    "surveyUploadDialog": {
+      "fileImportedReviewTheText": "File imported — review the text, then build the survey.",
+      "pasteOrUploadSomeQuestion": "Paste or upload some question text first.",
+      "couldNotParseThatText": "Could not parse that text.",
+      "couldNotBuildTheSurvey": "Could not build the survey. Try again.",
+      "buildASurveyFromQuestions": "Build a survey from questions",
+      "dropInOrPasteYour": "Drop in or paste your questions, answer options, and any instructions. We'll draft a survey you can review and edit — you set the final question types in the next step.",
+      "titleOptional": "Title (optional)",
+      "eGBaselineSurvey": "e.g. Baseline Survey",
+      "questionsInstructions": "Questions & instructions",
+      "uploadFile": "Upload file",
+      "dragAFileOntoThe": "Drag a file onto the box, or use “Upload file.” Word tables and checkbox options come through too.",
+      "cancel": "Cancel",
+      "buildSurvey": "Build survey"
+    }
+  },
+  "interview": {
+    "rolePageShell": {
+      "inspireGenius": "Inspire Genius"
+    }
+  },
+  "grant": {
+    "grantPreviewToggle": {
+      "financialAidPreview": "Financial Aid preview",
+      "toggleTheFinancialAidGrant": "Toggle the Financial Aid (GRANT) vertical view"
+    }
+  },
+  "directionSetting": {
+    "goalInterviewPanel": {
+      "question": "Question {{questionNumber}}",
+      "goalsStudio": "Goals Studio",
+      "gettingTheNextQuestions": "Getting the next questions…",
+      "question2": "Question {{askedCount}}",
+      "voice": "Voice",
+      "voiceModeGoalsStudioReads": "Voice mode: Goals Studio reads its questions aloud and listens for your answer",
+      "why": "why",
+      "itWillReadItsQuestions": "It will read its questions aloud and listen for your answer. Turn Voice off to type instead.",
+      "textModeReadAndType": "Text mode — read and type. Turn Voice on to have the conversation out loud.",
+      "youVeExploredOfAreas": "You've explored {{exploredCount}} of {{length}} areas. We'll pick up where you left off.",
+      "continueTheConversation": "Continue the conversation",
+      "startTheConversation": "Start the conversation",
+      "thinking": "Thinking…",
+      "goalsStudioIsSpeaking": "Goals Studio is speaking.",
+      "tryAgain": "Try again",
+      "skipThisArea": "Skip this area",
+      "draftMyGoals": "Draft my goals",
+      "sendingYourAnswer": "Sending your answer…",
+      "holdOnLetMeEdit": "Hold on — let me edit",
+      "voiceInputIsnTSupported": "Voice input isn't supported in this browser",
+      "voiceInputIsnTSupported2": "Voice input isn't supported in this browser — turn Voice off and type your answers instead.",
+      "yourAnswer": "Your answer",
+      "send": "Send"
+    }
+  },
+  "lumen": {
+    "portraitPortraitSections": {
+      "ofSourcesOnFileEverything": "{{present}} of {{length}} sources on file. Everything below is read from those — where a source is missing, the read is thinner rather than wrong.",
+      "onFile": "on file",
+      "notOnFile": "not on file",
+      "thisIsARealRead": "This is a real read of what you have given us. PRISM is the anchor the other sources get read against, so adding it lets the picture be corroborated rather than only described.",
+      "leads": "{{dominant_quadrant}} leads",
+      "energyDirection": "Energy direction",
+      "measuredAlongsideTheEightBut": "Measured alongside the eight, but part of no quadrant — and neither end is better than the other.",
+      "agrees": "agrees",
+      "differs": "differs",
+      "confidence": "confidence {{v1}}",
+      "noTensionsSurfacedYourInstruments": "No tensions surfaced. Your instruments tell a consistent story.",
+      "prismIsTheAnchorWhere": "PRISM is the anchor — where another instrument disagrees, PRISM leads and the difference is shown rather than resolved away."
+    }
+  },
+  "onboarding": {
+    "coachCard": {
+      "help": "Help",
+      "gender": "Gender",
+      "selectGender": "Select gender",
+      "voiceAccent": "Voice Accent",
+      "selectAccent": "Select accent",
+      "voiceTone": "Voice Tone",
+      "selectTones": "Select tones",
+      "ifAnyChangesAreMade": "if any changes are made, Save and play",
+      "cancel": "Cancel",
+      "edit": "Edit"
+    }
+  },
+  "prism": {
+    "prismInitiateForm": {
+      "janeSmithCompanyCom": "jane.smith@company.com"
+    },
+    "narrativeNarrativeExportButtons": {
+      "pdf": "PDF",
+      "word": "Word"
+    }
+  },
+  "user": {
+    "userCoachCard": {
+      "help": "Help",
+      "gender": "Gender",
+      "voiceAccent": "Voice Accent",
+      "voiceTone": "Voice Tone",
+      "chat": "Chat"
+    },
+    "bioBioChaptersStrip": {
+      "continue": "Continue"
+    },
+    "bioCapturedTurnCard": {
+      "capturedToYourProfile": "Captured to your profile"
+    },
+    "bioChronicleChatPanel": {
+      "nothingToSaveYetStart": "Nothing to save yet — start the interview first.",
+      "interviewSavedYouCanContinue": "Interview saved — you can continue it any time.",
+      "couldnTSaveThisSession": "Couldn't save this session — it's still here in the meantime.",
+      "resumed": "Resumed \"{{title}}\".",
+      "couldnTOpenThatSession": "Couldn't open that session — please try again.",
+      "chronicleInterview": "Chronicle interview",
+      "chronicleIsThinking": "Chronicle is thinking…",
+      "readyWhenYouAre": "Ready when you are",
+      "audio": "Audio",
+      "audioReadChronicleSQuestions": "Audio: read Chronicle's questions aloud and answer by speaking",
+      "sessions": "Sessions",
+      "newSession": "New session",
+      "continueASession": "Continue a session",
+      "noSavedSessionsYet": "No saved sessions yet.",
+      "saving": "Saving…",
+      "save": "Save",
+      "endRecap": "End & recap",
+      "chronicleHelpsYouTellYour": "Chronicle helps you tell your story, one memory at a time. Turn on Audio to be guided by voice, or just start typing:",
+      "stop": "Stop",
+      "listen": "Listen",
+      "dismiss": "Dismiss",
+      "goDeeper": "Go deeper",
+      "addTheSmallThingsThe": "Add the small things — the smell of the room, what someone was wearing, what was playing. The detail is the story.",
+      "listeningSpeakYourAnswer": "Listening. Speak your answer.",
+      "voiceInputIsnTSupported": "Voice input isn't supported in this browser",
+      "voiceInputIsnTSupported2": "Voice input isn't supported in this browser — please type your answer.",
+      "messageChronicle": "Message Chronicle",
+      "send": "Send",
+      "sessionInsight": "Session insight",
+      "asYouTalkWhatChronicle": "As you talk, what Chronicle captures — the chapters you touch, the memories distilled, and what stands out — appears here.",
+      "chaptersThisSession": "Chapters this session",
+      "captured": "Captured ({{length}})",
+      "whatStandsOut": "What stands out"
+    },
+    "bioMemoirExportMenu": {
+      "nothingToExportYetCapture": "Nothing to export yet — capture a memory with Chronicle first.",
+      "memoirCopied": "Memoir copied.",
+      "couldnTExportYourMemoir": "Couldn't export your memoir — please try again.",
+      "exportMemoir": "Export memoir",
+      "copy": "Copy",
+      "print": "Print",
+      "wordDoc": "Word (.doc)",
+      "pdf": "PDF"
+    },
+    "bioSessionRecapCard": {
+      "sessionRecap": "Session recap",
+      "chaptersVisited": "Chapters visited",
+      "capturedThisSession": "Captured this session",
+      "whatStandsOut": "What stands out",
+      "nothingWasCapturedThisTime": "Nothing was captured this time — pick a chapter and keep going whenever you're ready."
+    },
+    "chatChatWindow": {
+      "copiedToClipboard": "Copied to clipboard"
+    },
+    "chatDocumentsPanel": {
+      "pdf": "PDF",
+      "csv": "CSV",
+      "ppt": "PPT",
+      "doc": "DOC"
+    },
+    "developmentMyGapsSection": {
+      "markAsClosed": "Mark as closed",
+      "gaps": "Gaps",
+      "addSomethingYouWantTo": "Add something you want to get better at",
+      "whatIsIt": "What is it?",
+      "presentingToARoomI": "Presenting to a room I don't know",
+      "howMuchDoesItMatter": "How much does it matter?",
+      "add": "Add"
+    },
+    "developmentMyLearningSection": {
+      "learning": "Learning",
+      "addSomethingYouAreWorking": "Add something you are working through",
+      "whatIsIt": "What is it?",
+      "negotiationFundamentals": "Negotiation fundamentals",
+      "whereIsItFromOptional": "Where is it from? (optional)",
+      "add": "Add"
+    },
+    "developmentMyMilestonesSection": {
+      "blocked": "Blocked: {{blockedReason}}",
+      "due": "Due {{dueDate}}",
+      "milestones": "Milestones"
+    },
+    "developmentMyPrismReadingSection": {
+      "notScored": "not scored",
+      "myPrismReading": "My PRISM reading",
+      "weCanTShowYour": "We can't show your reading.",
+      "scalesOnFile": "{{coverage}} scales on file",
+      "fromAnOlderRecord": "From an older record",
+      "yourQuadrantMeans": "Your quadrant means"
+    },
+    "developmentMyReviewsSection": {
+      "agreedWithThisGoal": "Agreed with this goal",
+      "wantsToTalkItThrough": "Wants to talk it through",
+      "noCommentLeft": "No comment left.",
+      "coachReviews": "Coach reviews"
+    },
+    "developmentSelfSection": {
+      "tryAgain": "Try again"
+    },
+    "documentsUploadDocumentsModal": {
+      "uploadDocuments": "Upload Documents",
+      "pleaseUploadADocumentFor": "Please upload a document for analysis.",
+      "documentsDropZone": "Documents drop zone",
+      "dragDropYourFilesHere": "Drag & drop your files here",
+      "or": "OR",
+      "browseFiles": "Browse files",
+      "cancel": "Cancel",
+      "upload": "Upload",
+      "close": "Close",
+      "somethingWentWrong": "Something went wrong",
+      "theUploadedDocumentMayNot": "The uploaded document may not be in a supported format or is too large. Please check the file and try again.",
+      "thisMightTakeAFew": "This might take a few seconds. Please don't close this window while uploading.",
+      "documentUploaded": "Document Uploaded",
+      "documentUploadedSuccessfully": "Document Uploaded successfully!",
+      "back": "Back"
+    }
+  }
+}

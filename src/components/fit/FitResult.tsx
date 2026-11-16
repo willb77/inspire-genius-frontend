@@ -15,6 +15,7 @@ import {
   PartialProfileNote,
 } from "./primitives"
 import { FitScoreHeadline } from "./FitScoreHeadline"
+import { useTranslation } from "react-i18next"
 
 /**
  * The three closeness tiles — total variation, growth areas, priority focus —
@@ -38,6 +39,7 @@ export function FitStatTiles({
    */
   shared?: boolean
 }) {
+  const { t } = useTranslation("studioUi")
   return (
     <div className={cn(className, "grid grid-cols-1 gap-4 sm:grid-cols-3")}>
       <FitStat
@@ -48,7 +50,7 @@ export function FitStatTiles({
       />
       <FitStat
         icon={Sprout}
-        label="Growth areas"
+        label={t("fit.fitResult.growthAreas", { defaultValue: "Growth areas" })}
         value={data.coachingGaps.length}
         hint={
           subject === "role"
@@ -59,7 +61,7 @@ export function FitStatTiles({
       />
       <FitStat
         icon={AlertTriangle}
-        label="Priority focus"
+        label={t("fit.fitResult.priorityFocus", { defaultValue: "Priority focus" })}
         value={data.criticalGaps.length}
         hint="Larger growth areas worth prioritizing"
         tone={data.criticalGaps.length > 0 ? "red" : "green"}
@@ -98,6 +100,7 @@ export type FitResultProps =
   | { variant: "ds"; data: FitDetail; overall?: JobOverall["overall"] }
 
 export function FitResult(props: FitResultProps) {
+  const { t } = useTranslation("studioUi")
   const { data } = props
   switch (props.variant) {
     case "target":
@@ -106,7 +109,7 @@ export function FitResult(props: FitResultProps) {
       return (
         <div className="space-y-6">
           <FitCard>
-            <FitSectionTitle>Your fit against this target</FitSectionTitle>
+            <FitSectionTitle>{t("fit.fitResult.yourFitAgainstThisTarget", { defaultValue: "Your fit against this target" })}</FitSectionTitle>
             <FitScoreHeadline source={data} variant="summary" />
             {/* BP-F5: a partial-profile score says what it rests on. */}
             <PartialProfileNote coverage={data} />
@@ -114,7 +117,7 @@ export function FitResult(props: FitResultProps) {
             {/* No fit tier or pre-cap tier here (4.1, option D) — score only. */}
             {data.gated && (
               <div className="flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
-                <FitPill tone="amber">Decision support only</FitPill>
+                <FitPill tone="amber">{t("fit.fitResult.decisionSupportOnly", { defaultValue: "Decision support only" })}</FitPill>
               </div>
             )}
           </FitCard>
@@ -131,7 +134,7 @@ export function FitResult(props: FitResultProps) {
       return (
         <>
           <FitCard className="mb-6">
-            <FitSectionTitle>{props.shared ? "PRISM fit as recorded" : "Your fit as recorded"}</FitSectionTitle>
+            <FitSectionTitle>{props.shared ? t("fit.fitResult.prismFitAsRecorded", { defaultValue: "PRISM fit as recorded" }) : t("fit.fitResult.yourFitAsRecorded", { defaultValue: "Your fit as recorded" })}</FitSectionTitle>
             {props.shared && <PartialProfileNote coverage={data} />}
             <FitScoreHeadline source={data} variant="recorded" />
           </FitCard>
@@ -153,14 +156,14 @@ export function FitResult(props: FitResultProps) {
           <SelfAdvocacyCard lines={data.interviewSelfAdvocacy} />
 
           <GapList
-            title="Worth putting first"
+            title={t("fit.fitResult.worthPuttingFirst", { defaultValue: "Worth putting first" })}
             hint="The furthest from what this role leans on. Closing one of these moves your fit more than anything else you could do."
             gaps={data.criticalGaps}
             tone="red"
           />
 
           <GapList
-            title="Worth building over time"
+            title={t("fit.fitResult.worthBuildingOverTime", { defaultValue: "Worth building over time" })}
             hint="Smaller distances. Steady practice closes these — no leap required."
             gaps={data.coachingGaps}
             tone="amber"
@@ -170,8 +173,7 @@ export function FitResult(props: FitResultProps) {
 
           {data.gated && (
             <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-              Matching for this role is still in limited release, so treat this read as
-              a first draft rather than a settled answer.
+              {t("fit.fitResult.matchingForThisRoleIs", { defaultValue: "Matching for this role is still in limited release, so treat this read as a first draft rather than a settled answer." })}
             </p>
           )}
 
@@ -190,6 +192,7 @@ export function FitResult(props: FitResultProps) {
  * only, and a pasted JD is not one. FIT-5c (a backend package) fills it.
  */
 function ReservedOverallSlot() {
+  const { t } = useTranslation("studioUi")
   return (
     <div
       data-fit-slot="overall"
@@ -197,8 +200,7 @@ function ReservedOverallSlot() {
     >
       <Layers className="h-4 w-4 shrink-0 text-[#9ca3af]" aria-hidden />
       <span>
-        Overall fit isn&apos;t available for a pasted job description yet — your PRISM fit
-        above is your read.
+        {t("fit.fitResult.overallFitIsnTAvailable", { defaultValue: "Overall fit isn't available for a pasted job description yet — your PRISM fit above is your read." })}
       </span>
     </div>
   )
@@ -213,19 +215,19 @@ function ReservedOverallSlot() {
  * needs to read first.
  */
 function SelfAdvocacyCard({ lines }: { lines: string[] }) {
+  const { t } = useTranslation("studioUi")
   if (lines.length === 0) return null
   return (
     <Card className="border-primary/30 bg-primary/[0.03]">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <MessagesSquare className="h-4 w-4 text-primary" aria-hidden />
-          What to say out loud about this one
+          {t("fit.fitResult.whatToSayOutLoud", { defaultValue: "What to say out loud about this one" })}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <p className="mb-3 text-sm text-muted-foreground">
-          These are the places you already match or beat what the role asks for.
-          They&apos;re yours to claim — worth having ready before an interview.
+          {t("fit.fitResult.theseAreThePlacesYou", { defaultValue: "These are the places you already match or beat what the role asks for. They're yours to claim — worth having ready before an interview." })}
         </p>
         <ul className="space-y-2.5">
           {lines.map((line, i) => (
@@ -295,21 +297,19 @@ function GapList({
  * not, so the copy says so explicitly.
  */
 function OverdoneCard({ flags }: { flags: { dimensionName: string; candidateScore: number }[] }) {
+  const { t } = useTranslation("studioUi")
   if (flags.length === 0) return null
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Info className="h-4 w-4 text-muted-foreground" aria-hidden />
-          Strengths you turn up high
+          {t("fit.fitResult.strengthsYouTurnUpHigh", { defaultValue: "Strengths you turn up high" })}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <p className="mb-3 text-sm text-muted-foreground">
-          These are strengths, not faults. You express them more strongly than this
-          role typically calls for — which often shows up under pressure. Nothing
-          here needs fixing; it&apos;s just useful to know which dial you reach for
-          first.
+          {t("fit.fitResult.theseAreStrengthsNotFaults", { defaultValue: "These are strengths, not faults. You express them more strongly than this role typically calls for — which often shows up under pressure. Nothing here needs fixing; it's just useful to know which dial you reach for first." })}
         </p>
         <div className="flex flex-wrap gap-2">
           {flags.map((f) => (
