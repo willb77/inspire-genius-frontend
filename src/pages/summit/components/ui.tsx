@@ -1,5 +1,6 @@
 /** Summit surface — small presentational helpers (platform Tailwind tokens). */
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 export function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
@@ -86,12 +87,12 @@ const STATUS_STYLES: Record<string, string> = {
  * invented scores about themselves is worse than showing them nothing.
  */
 export function SampleNotice({ what }: { what: string }) {
+  const { t } = useTranslation("summitPages");
   return (
     <div className="flex items-start gap-2.5 rounded-xl border border-dashed border-[#C88B1B]/50 bg-[#FBF7F0] px-4 py-3 text-[13px] leading-snug text-[#13294B]">
       <span>
-        <b className="text-[#0B1B33]">This is a sample, not your data.</b> {what}{" "}
-        Nothing on this panel is a reading of you, and nothing here has been
-        saved against your account.
+        <b className="text-[#0B1B33]">{t("ui.sampleLead", { defaultValue: "This is a sample, not your data." })}</b> {what}{" "}
+        {t("ui.sampleTail", { defaultValue: "Nothing on this panel is a reading of you, and nothing here has been saved against your account." })}
       </span>
     </div>
   );

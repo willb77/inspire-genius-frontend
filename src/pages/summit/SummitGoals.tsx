@@ -15,6 +15,8 @@
  */
 import { useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   Heart, Brain, Gauge, Users, Target, Info, Loader2, Lock, Mic, Share2,
   ArrowLeft, Check, Pencil, Upload, X,
@@ -42,10 +44,9 @@ import { useGoalTargetsEnabled } from "@/hooks/switches/useGoalTargetsEnabled";
 import { useMyTargets } from "@/hooks/goals/useGoalTargets";
 import { isJobFitGoal } from "@/pages/summit/_targets";
 import {
-  ALIGN_LABEL,
   ALIGN_STYLES,
-  CATEGORY_LABEL,
   alignKind,
+  alignLabel,
   categoryLabel,
   coachLabel,
   goalStatusLabel,
@@ -55,10 +56,10 @@ import {
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 
 /** A message from a failed mutation, as a person can read it. */
-function errorText(err: unknown): string {
+function errorText(err: unknown, t: TFunction): string {
   const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
   if (typeof detail === "string") return detail;
-  return "That didn't save. Nothing was changed — try again.";
+  return t("goals.errorSave", { defaultValue: "That didn't save. Nothing was changed — try again." });
 }
 
 /**
@@ -68,11 +69,12 @@ function errorText(err: unknown): string {
  * neutral-looking pill would claim a reading that was never taken.
  */
 export function GoalCard({ g, children }: { g: SummitGoal; children?: React.ReactNode }) {
-  const cat = categoryLabel(g.category);
+  const { t } = useTranslation("summitPages");
+  const cat = categoryLabel(g.category, t);
   const align = alignKind(g.prism_alignment);
   const prism = prismSummary(g.prism_alignment);
-  const style = styleLabel(g.execution_style);
-  const coach = coachLabel(g.owning_coach);
+  const style = styleLabel(g.execution_style, t);
+  const coach = coachLabel(g.owning_coach, t);
 
   return (
     <Card className="!p-[19px]">
@@ -81,13 +83,13 @@ export function GoalCard({ g, children }: { g: SummitGoal; children?: React.Reac
       )}
       <div className="mt-1.5 flex items-start justify-between gap-3">
         <div className="text-base font-bold leading-snug text-[#0B1B33]">{g.title}</div>
-        <StatusPill status={g.status} label={goalStatusLabel(g.status)} />
+        <StatusPill status={g.status} label={goalStatusLabel(g.status, t)} />
       </div>
       {g.motivation && (
         <div className="mt-2.5 flex gap-2 rounded-xl border-l-[3px] border-[#C88B1B] bg-[#FBF7F0] px-3 py-2.5 text-[13px] leading-snug text-[#13294B]">
           <Heart className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#C88B1B]" />
           <span>
-            <b className="text-[#0B1B33]">Why it matters:</b> {g.motivation}
+            <b className="text-[#0B1B33]">{t("goals.whyItMatters", { defaultValue: "Why it matters:" })}</b> {g.motivation}
           </span>
         </div>
       )}
@@ -99,7 +101,7 @@ export function GoalCard({ g, children }: { g: SummitGoal; children?: React.Reac
         )}
         {align && (
           <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] font-semibold", ALIGN_STYLES[align])}>
-            {ALIGN_LABEL[align]}
+            {alignLabel(align, t)}
           </span>
         )}
         {style && (
@@ -117,13 +119,13 @@ export function GoalCard({ g, children }: { g: SummitGoal; children?: React.Reac
         <div className="mt-2.5 flex items-center gap-1.5 text-[12.5px] text-[#13294B]">
           <Target className="h-3.5 w-3.5 text-[#127A8A]" />
           <span>
-            <b>Success:</b> {g.success_metric}
+            <b>{t("goals.success", { defaultValue: "Success:" })}</b> {g.success_metric}
           </span>
         </div>
       )}
       {g.first_step && (
         <div className="mt-1.5 text-[12.5px] text-[#13294B]/85">
-          <b>First step:</b> {g.first_step}
+          <b>{t("goals.firstStep", { defaultValue: "First step:" })}</b> {g.first_step}
         </div>
       )}
       {children}
@@ -133,14 +135,15 @@ export function GoalCard({ g, children }: { g: SummitGoal; children?: React.Reac
 
 /** A coach's review, as the member reads it back (Goals offering, Phase 4, D7). */
 function ReviewRow({ review }: { review: GoalReview }) {
+  const { t } = useTranslation("summitPages");
   const when = review.createdAt ? new Date(review.createdAt).toLocaleDateString() : "";
   return (
     <li className="rounded-xl border border-[#F1ECE2] bg-[#FBF7F0] px-3 py-2 text-[12.5px] text-[#13294B]">
       <div className="flex flex-wrap items-center gap-2">
-        <b className="text-[#0B1B33]">{review.reviewerName || "A coach"}</b>
+        <b className="text-[#0B1B33]">{review.reviewerName || t("goals.aCoach", { defaultValue: "A coach" })}</b>
         <StatusPill
           status={review.ratified ? "confirmed" : "proposed"}
-          label={review.ratified ? "Ratified" : "Not ratified"}
+          label={review.ratified ? t("goals.ratified", { defaultValue: "Ratified" }) : t("goals.notRatified", { defaultValue: "Not ratified" })}
         />
         {when && <span className="ml-auto text-[11px] text-[#7C93B5]">{when}</span>}
       </div>
@@ -160,6 +163,7 @@ function SharedGoalCard({
   /** Feeds Phase 3 — present only while the goal_targets switch is on. */
   target?: GoalTargetWithRoadmap;
 }) {
+  const { t } = useTranslation("summitPages");
   const setVisibility = useSetGoalVisibility();
   const unpublish = useUnpublishGoal();
   const isPrivate = goal.visibility === "private";
@@ -175,14 +179,14 @@ function SharedGoalCard({
         <div className="text-base font-bold leading-snug text-[#0B1B33]">{goal.title}</div>
         <StatusPill
           status={goal.status}
-          label={goal.status === "confirmed" ? "Confirmed" : "Provisional"}
+          label={goal.status === "confirmed" ? t("goals.confirmed", { defaultValue: "Confirmed" }) : t("goals.provisional", { defaultValue: "Provisional" })}
         />
       </div>
       {goal.motivation && (
         <div className="mt-2.5 flex gap-2 rounded-xl border-l-[3px] border-[#C88B1B] bg-[#FBF7F0] px-3 py-2.5 text-[13px] leading-snug text-[#13294B]">
           <Heart className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#C88B1B]" />
           <span>
-            <b className="text-[#0B1B33]">Why it matters:</b> {goal.motivation}
+            <b className="text-[#0B1B33]">{t("goals.whyItMatters", { defaultValue: "Why it matters:" })}</b> {goal.motivation}
           </span>
         </div>
       )}
@@ -197,32 +201,32 @@ function SharedGoalCard({
         )}
         <span className="rounded-lg bg-[#127A8A]/13 px-2.5 py-1.5 text-[#0E5F6B]">
           {isJobFitGoal(goal.publishedFrom)
-            ? "From Job Fit"
-            : goal.source === "member" ? "From your interview" : "Seeded"}
+            ? t("goals.fromJobFit", { defaultValue: "From Job Fit" })
+            : goal.source === "member" ? t("goals.fromInterview", { defaultValue: "From your interview" }) : t("goals.seeded", { defaultValue: "Seeded" })}
         </span>
       </div>
       {target && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[13px] text-[#13294B]">
           <Target className="h-3.5 w-3.5 text-[#0E5F6B]" aria-hidden />
           <span>
-            Targets <b>{target.roleTitle || "a role"}</b>
+            {t("goals.targets", { defaultValue: "Targets" })} <b>{target.roleTitle || t("goals.aRole", { defaultValue: "a role" })}</b>
           </span>
           <Link
             to={ROUTES.MY_GOALS.ROADMAP(goal.goalId)}
             className="font-semibold text-[#0E5F6B] underline"
           >
-            View roadmap
+            {t("goals.viewRoadmap", { defaultValue: "View roadmap" })}
           </Link>
         </div>
       )}
       {reviews.length > 0 ? (
-        <ul className="mt-3 space-y-1.5" aria-label="Coach reviews">
+        <ul className="mt-3 space-y-1.5" aria-label={t("goals.coachReviews", { defaultValue: "Coach reviews" })}>
           {reviews.map((r) => (
             <ReviewRow key={r.id} review={r} />
           ))}
         </ul>
       ) : (
-        <p className="mt-3 text-[12.5px] text-[#13294B]/70">No reviews yet.</p>
+        <p className="mt-3 text-[12.5px] text-[#13294B]/70">{t("goals.noReviews", { defaultValue: "No reviews yet." })}</p>
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-[#F1ECE2] pt-3">
@@ -230,7 +234,7 @@ function SharedGoalCard({
           <Switch
             checked={isPrivate}
             disabled={pending}
-            aria-label={`Keep "${goal.title}" private`}
+            aria-label={t("goals.keepPrivate", { defaultValue: "Keep \"{{title}}\" private", title: goal.title })}
             onCheckedChange={(checked) =>
               setVisibility.mutate({
                 goalId: goal.goalId,
@@ -239,7 +243,7 @@ function SharedGoalCard({
             }
           />
           <Lock className="h-3.5 w-3.5 text-[#7C93B5]" aria-hidden />
-          {isPrivate ? "Private — hidden even from people you share with" : "Shareable"}
+          {isPrivate ? t("goals.private", { defaultValue: "Private — hidden even from people you share with" }) : t("goals.shareable", { defaultValue: "Shareable" })}
         </label>
         {goal.publishedFrom && (
           <Button
@@ -250,14 +254,14 @@ function SharedGoalCard({
             onClick={() => unpublish.mutate(goal.publishedFrom as string)}
           >
             <X className="mr-1 h-3.5 w-3.5" aria-hidden />
-            Unpublish
+            {t("goals.unpublish", { defaultValue: "Unpublish" })}
           </Button>
         )}
         {pending && <Loader2 className="h-4 w-4 animate-spin text-[#7C93B5]" aria-hidden />}
       </div>
       {error && (
         <p role="alert" className="mt-2 text-[12.5px] text-[#C2614F]">
-          {errorText(error)}
+          {errorText(error, t)}
         </p>
       )}
     </Card>
@@ -266,6 +270,7 @@ function SharedGoalCard({
 
 /** A session goal not yet published: confirm & publish, or edit the title. */
 function DraftCard({ goal }: { goal: SummitGoal }) {
+  const { t } = useTranslation("summitPages");
   const patch = usePatchGoal();
   const publish = usePublishGoal();
   const [editing, setEditing] = useState(false);
@@ -281,7 +286,7 @@ function DraftCard({ goal }: { goal: SummitGoal }) {
       }
       await publish.mutateAsync(goal.goal_id);
     } catch (err) {
-      setError(errorText(err));
+      setError(errorText(err, t));
     }
   };
 
@@ -297,7 +302,7 @@ function DraftCard({ goal }: { goal: SummitGoal }) {
       await patch.mutateAsync({ goalId: goal.goal_id, body: { title: next } });
       setEditing(false);
     } catch (err) {
-      setError(errorText(err));
+      setError(errorText(err, t));
     }
   };
 
@@ -309,15 +314,15 @@ function DraftCard({ goal }: { goal: SummitGoal }) {
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              aria-label="Goal title"
+              aria-label={t("goals.goalTitle", { defaultValue: "Goal title" })}
               className="h-8"
               maxLength={500}
             />
             <Button type="submit" size="sm" disabled={pending}>
-              Save
+              {t("goals.save", { defaultValue: "Save" })}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
-              Cancel
+              {t("goals.cancel", { defaultValue: "Cancel" })}
             </Button>
           </form>
         ) : (
@@ -328,11 +333,11 @@ function DraftCard({ goal }: { goal: SummitGoal }) {
               ) : (
                 <Upload className="mr-1 h-3.5 w-3.5" aria-hidden />
               )}
-              Confirm &amp; publish
+              {t("goals.confirmPublish", { defaultValue: "Confirm & publish" })}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(true)}>
               <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden />
-              Edit
+              {t("goals.edit", { defaultValue: "Edit" })}
             </Button>
           </>
         )}
@@ -348,6 +353,7 @@ function DraftCard({ goal }: { goal: SummitGoal }) {
 
 /** Title + category → a session goal, then published in the same action. */
 function QuickAdd() {
+  const { t } = useTranslation("summitPages");
   const create = useCreateGoal();
   const publish = usePublishGoal();
   const [title, setTitle] = useState("");
@@ -358,51 +364,50 @@ function QuickAdd() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const t = title.trim();
-    if (!t) return;
+    const trimmed = title.trim();
+    if (!trimmed) return;
     setError(null);
     setDone(false);
     try {
-      const created = await create.mutateAsync({ title: t, category });
+      const created = await create.mutateAsync({ title: trimmed, category });
       await publish.mutateAsync(created.goal_id);
       setTitle("");
       setDone(true);
     } catch (err) {
-      setError(errorText(err));
+      setError(errorText(err, t));
     }
   };
 
   return (
     <Card className="!p-[19px]">
-      <div className="text-[15px] font-bold text-[#0B1B33]">Add a goal</div>
+      <div className="text-[15px] font-bold text-[#0B1B33]">{t("goals.addGoal", { defaultValue: "Add a goal" })}</div>
       <p className="mt-1 text-[13px] text-[#13294B]/75">
-        The interview writes better goals than a form does, but a goal you already
-        know belongs here too. It is published as soon as it is saved.
+        {t("goals.addGoalBody", { defaultValue: "The interview writes better goals than a form does, but a goal you already know belongs here too. It is published as soon as it is saved." })}
       </p>
       <form onSubmit={submit} className="mt-3 flex flex-col gap-2 sm:flex-row">
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="What do you want to achieve?"
-          aria-label="New goal title"
+          placeholder={t("goals.placeholder", { defaultValue: "What do you want to achieve?" })}
+          aria-label={t("goals.newGoalTitle", { defaultValue: "New goal title" })}
           maxLength={500}
           className="h-9 flex-1"
         />
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as SummitCategoryKey)}
-          aria-label="Goal category"
+          aria-label={t("goals.goalCategory", { defaultValue: "Goal category" })}
           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
         >
           {SUMMIT_CATEGORY_KEYS.map((k) => (
             <option key={k} value={k}>
-              {CATEGORY_LABEL[k]}
+              {categoryLabel(k, t)}
             </option>
           ))}
         </select>
         <Button type="submit" size="sm" className="h-9" disabled={pending || !title.trim()}>
           {pending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden /> : <Check className="mr-1 h-3.5 w-3.5" aria-hidden />}
-          Save &amp; publish
+          {t("goals.savePublish", { defaultValue: "Save & publish" })}
         </Button>
       </form>
       {error && (
@@ -411,13 +416,14 @@ function QuickAdd() {
         </p>
       )}
       {done && !error && (
-        <p className="mt-2 text-[12.5px] text-[#5B8A72]">Published. It is in your goals above.</p>
+        <p className="mt-2 text-[12.5px] text-[#5B8A72]">{t("goals.published", { defaultValue: "Published. It is in your goals above." })}</p>
       )}
     </Card>
   );
 }
 
 export default function SummitGoals() {
+  const { t } = useTranslation("summitPages");
   const [params] = useSearchParams();
   const fromJourney = params.get("journey") === "direction-setting";
   const session = useGoalSession();
@@ -428,7 +434,7 @@ export default function SummitGoals() {
   const publishedFrom = new Set(shared.map((g) => g.publishedFrom).filter(Boolean));
   const targetsOn = useGoalTargetsEnabled();
   const targets = useMyTargets(targetsOn);
-  const targetByGoal = new Map((targets.data ?? []).map((t) => [t.goalId, t]));
+  const targetByGoal = new Map((targets.data ?? []).map((tg) => [tg.goalId, tg]));
   const drafts = (session.data?.goals ?? []).filter((g) => !publishedFrom.has(g.goal_id));
 
   const loading = session.isLoading || mine.isLoading;
@@ -447,55 +453,54 @@ export default function SummitGoals() {
           to={ROUTES.DIRECTION_SETTING.GOALS}
           className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#0E5F6B]"
         >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Back to your journey (step 5)
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> {t("goals.backJourney", { defaultValue: "Back to your journey (step 5)" })}
         </Link>
       )}
       <PageHead
-        eyebrow="Yours — private until you share them"
-        title="Your goals"
-        sub="Goals come out of the interview with the reason underneath them. Confirm a draft to publish it; then choose, person by person, who can see it."
+        eyebrow={t("goals.eyebrow", { defaultValue: "Yours — private until you share them" })}
+        title={t("goals.title", { defaultValue: "Your goals" })}
+        sub={t("goals.sub", { defaultValue: "Goals come out of the interview with the reason underneath them. Confirm a draft to publish it; then choose, person by person, who can see it." })}
       />
       <div className="flex flex-wrap gap-2">
         <Button asChild size="sm">
           <Link to={ROUTES.MY_GOALS.INTERVIEW}>
-            <Mic className="mr-1 h-3.5 w-3.5" aria-hidden /> Talk it through with Goals Studio
+            <Mic className="mr-1 h-3.5 w-3.5" aria-hidden /> {t("goals.talkStudio", { defaultValue: "Talk it through with Goals Studio" })}
           </Link>
         </Button>
         <Button asChild size="sm" variant="outline">
           <Link to={ROUTES.MY_GOALS.SHARING}>
-            <Share2 className="mr-1 h-3.5 w-3.5" aria-hidden /> Who can see my goals
+            <Share2 className="mr-1 h-3.5 w-3.5" aria-hidden /> {t("goals.whoCanSee", { defaultValue: "Who can see my goals" })}
           </Link>
         </Button>
       </div>
       {showStretchCallout && (
       <Callout tone="info" icon={<Info className="h-4 w-4 text-[#1D3A66]" />}>
-        A goal marked <strong>Requires stretch</strong> isn&apos;t a weakness call — it&apos;s a deliberate, time-boxed move against type.
+        <Trans i18nKey="goals.stretchCallout" ns="summitPages" components={{ strong: <strong /> }}>
+          A goal marked <strong>Requires stretch</strong> isn&apos;t a weakness call — it&apos;s a deliberate, time-boxed move against type.
+        </Trans>
       </Callout>
       )}
 
       {loading && (
         <div className="flex items-center gap-2 text-[13.5px] text-[#13294B]/70">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Reading your goals…
+          {t("goals.loading", { defaultValue: "Reading your goals…" })}
         </div>
       )}
 
       {!loading && (session.isError || mine.isError) && (
         <Card className="!p-5">
           <p className="text-[14px] text-[#13294B]/80">
-            We couldn&apos;t read your goals just now. Refresh to try again — nothing
-            you&apos;ve worked through has been lost.
+            {t("goals.error", { defaultValue: "We couldn't read your goals just now. Refresh to try again — nothing you've worked through has been lost." })}
           </p>
         </Card>
       )}
 
       {nothingAnywhere && (
         <Card className="!p-5">
-          <div className="text-[15px] font-bold text-[#0B1B33]">No goals yet</div>
+          <div className="text-[15px] font-bold text-[#0B1B33]">{t("goals.noGoals", { defaultValue: "No goals yet" })}</div>
           <p className="mt-1.5 text-[14px] leading-relaxed text-[#13294B]/80">
-            Goals here are written out of the discovery conversation rather than typed
-            into a form. Start the interview and they&apos;ll appear, each with the
-            reason underneath it — or add one you already know below.
+            {t("goals.noGoalsBody", { defaultValue: "Goals here are written out of the discovery conversation rather than typed into a form. Start the interview and they'll appear, each with the reason underneath it — or add one you already know below." })}
           </p>
         </Card>
       )}
@@ -503,7 +508,7 @@ export default function SummitGoals() {
       {!loading && !mine.isError && shared.length > 0 && (
         <section aria-labelledby="shared-goals-heading" className="flex flex-col gap-3">
           <h2 id="shared-goals-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">
-            Your goals
+            {t("goals.sharedHeading", { defaultValue: "Your goals" })}
           </h2>
           {shared.map((g) => (
             <SharedGoalCard
@@ -519,7 +524,7 @@ export default function SummitGoals() {
       {!loading && !session.isError && drafts.length > 0 && (
         <section aria-labelledby="draft-goals-heading" className="flex flex-col gap-3">
           <h2 id="draft-goals-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">
-            Drafts from your interview
+            {t("goals.draftsHeading", { defaultValue: "Drafts from your interview" })}
           </h2>
           {drafts.map((g) => (
             <DraftCard key={g.goal_id} goal={g} />

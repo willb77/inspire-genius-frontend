@@ -1,14 +1,9 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardH, MiniLabel } from "@/pages/summit/components/ui";
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled";
 import { useGoalsWiring } from "@/hooks/job-fit/useFitComponents";
 import type { WiringGoal } from "@/types/job-fit/components";
 
-const GROUPS: { verdict: WiringGoal["verdict"]; label: string; tone: string }[] = [
-  { verdict: "supported", label: "Your wiring carries these", tone: "text-[#15803d]" },
-  { verdict: "mixed", label: "Mixed — some of you for it, some against", tone: "text-[#b45309]" },
-  { verdict: "at-tension", label: "Your wiring pulls against these", tone: "text-[#b91c1c]" },
-  { verdict: "unmapped", label: "Not linked to a career family yet", tone: "text-[#6b7280]" },
-];
 
 /**
  * Feeds Phase 2 — "Your goals and your wiring" on the Goals Studio Overview.
@@ -17,6 +12,7 @@ const GROUPS: { verdict: WiringGoal["verdict"]; label: string; tone: string }[] 
  * the honest part, never hidden. Renders nothing while the server switch is off.
  */
 export function GoalsWiringCard() {
+  const { t } = useTranslation("summitPages");
   const on = useJobFitComponentsEnabled();
   const { data, isError, isLoading } = useGoalsWiring(on);
   if (!on || isLoading) return null;
@@ -24,22 +20,29 @@ export function GoalsWiringCard() {
   if (isError || !data) {
     return (
       <Card>
-        <MiniLabel>Your goals and your wiring</MiniLabel>
+        <MiniLabel>{t("wiring.title", { defaultValue: "Your goals and your wiring" })}</MiniLabel>
         <p role="alert" className="text-[14px] text-[#13294B]/80">
-          We couldn&apos;t read how your goals sit with your PRISM just now.
+          {t("wiring.error", { defaultValue: "We couldn't read how your goals sit with your PRISM just now." })}
         </p>
       </Card>
     );
   }
   if (data.goals.length === 0) return null;
 
+  const GROUPS: { verdict: WiringGoal["verdict"]; label: string; tone: string }[] = [
+    { verdict: "supported", label: t("wiring.group.supported", { defaultValue: "Your wiring carries these" }), tone: "text-[#15803d]" },
+    { verdict: "mixed", label: t("wiring.group.mixed", { defaultValue: "Mixed — some of you for it, some against" }), tone: "text-[#b45309]" },
+    { verdict: "at-tension", label: t("wiring.group.atTension", { defaultValue: "Your wiring pulls against these" }), tone: "text-[#b91c1c]" },
+    { verdict: "unmapped", label: t("wiring.group.unmapped", { defaultValue: "Not linked to a career family yet" }), tone: "text-[#6b7280]" },
+  ];
+
   return (
     <Card testId="goals-wiring-card">
-      <MiniLabel>Your goals and your wiring</MiniLabel>
-      <CardH>How your published goals sit with how you&apos;re wired</CardH>
+      <MiniLabel>{t("wiring.title", { defaultValue: "Your goals and your wiring" })}</MiniLabel>
+      <CardH>{t("wiring.heading", { defaultValue: "How your published goals sit with how you're wired" })}</CardH>
       {!data.scored ? (
         <p className="text-[14px] text-[#13294B]/80">
-          Complete PRISM and this card reads each goal against your profile.
+          {t("wiring.unscored", { defaultValue: "Complete PRISM and this card reads each goal against your profile." })}
         </p>
       ) : (
         <div className="flex flex-col gap-3">
@@ -54,10 +57,10 @@ export function GoalsWiringCard() {
                     <li key={g.goalId ?? g.title ?? ""}>
                       {g.title}
                       {verdict === "at-tension" && g.opposing.length > 0 && (
-                        <span className="text-[#13294B]/70"> — pulling against it: {g.opposing.join(" and ")}</span>
+                        <span className="text-[#13294B]/70"> — {t("wiring.pulling", { defaultValue: "pulling against it: {{list}}", list: g.opposing.join(t("wiring.and", { defaultValue: " and " })) })}</span>
                       )}
                       {verdict === "supported" && g.supporting.length > 0 && (
-                        <span className="text-[#13294B]/70"> — carried by {g.supporting.join(" and ")}</span>
+                        <span className="text-[#13294B]/70"> — {t("wiring.carried", { defaultValue: "carried by {{list}}", list: g.supporting.join(t("wiring.and", { defaultValue: " and " })) })}</span>
                       )}
                     </li>
                   ))}
