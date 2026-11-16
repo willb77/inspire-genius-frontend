@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ROUTES } from "@/constants/routes"
@@ -48,28 +49,26 @@ import { ProvenanceNote } from "@/components/shared/ProvenanceNote"
 
 /** The nothing-on-file state. Explained, with a door — never an error. */
 function NothingYet() {
+  const { t } = useTranslation("directionPages")
   return (
     <div className="space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-semibold">What you&apos;re actually like</h1>
+        <h1 className="text-2xl font-semibold">{t("portrait.whatYouReActuallyLike", "What you're actually like")}</h1>
       </header>
       <Card className="border-dashed">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Nothing to read from yet</CardTitle>
+          <CardTitle className="text-base">{t("portrait.nothingToReadFromYet", "Nothing to read from yet")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            This page reads back what your assessments, résumé and bio say about how
-            you work. We don&apos;t have any of those on file yet, so there&apos;s
-            nothing honest to show you here.
+            {t("portrait.thisPageReadsBackWhat", "This page reads back what your assessments, résumé and bio say about how you work. We don't have any of those on file yet, so there's nothing honest to show you here.")}
           </p>
           <p>
-            Adding any one of them is enough to get a first read — a résumé on its own
-            produces a genuine portrait, just a less corroborated one.
+            {t("portrait.addingAnyOneOfThem", "Adding any one of them is enough to get a first read — a résumé on its own produces a genuine portrait, just a less corroborated one.")}
           </p>
           <Button asChild>
             <Link to={ROUTES.DIRECTION_SETTING.ESTABLISH}>
-              Tell us about you first
+              {t("portrait.tellUsAboutYouFirst", "Tell us about you first")}
             </Link>
           </Button>
         </CardContent>
@@ -79,6 +78,7 @@ function NothingYet() {
 }
 
 export default function PortraitPage() {
+  const { t } = useTranslation("directionPages")
   const { data: portrait, isLoading, isError } = useSelfPortrait()
 
   // Stage 2 is done when there is a portrait to read. `NothingYet` below is the
@@ -100,8 +100,7 @@ export default function PortraitPage() {
       <div className="p-6">
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
-            We couldn&apos;t put your portrait together just now. Refresh to try again
-            — nothing you&apos;ve added has been lost.
+            {t("portrait.weCouldnTPutYour", "We couldn't put your portrait together just now. Refresh to try again — nothing you've added has been lost.")}
           </CardContent>
         </Card>
       </div>
@@ -113,15 +112,14 @@ export default function PortraitPage() {
   return (
     <div className="space-y-6 p-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">What you&apos;re actually like</h1>
+        <h1 className="text-2xl font-semibold">{t("portrait.whatYouReActuallyLike", "What you're actually like")}</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Here&apos;s what we can see so far — how you tend to work, and what sits
-          underneath that. It&apos;s a mirror to think with, not a verdict on you.
+          {t("portrait.hereSWhatWeCan", "Here's what we can see so far — how you tend to work, and what sits underneath that. It's a mirror to think with, not a verdict on you.")}
         </p>
         {/* The journey's door back to Establish. It used to hang off the
             source-coverage card; that card is gone, the door still matters. */}
         <Button asChild variant="outline" size="sm">
-          <Link to={ROUTES.DIRECTION_SETTING.ESTABLISH}>Add what&apos;s missing</Link>
+          <Link to={ROUTES.DIRECTION_SETTING.ESTABLISH}>{t("portrait.addWhatSMissing", "Add what's missing")}</Link>
         </Button>
       </header>
 
@@ -131,23 +129,23 @@ export default function PortraitPage() {
       <SelfPortraitNarrative portrait={portrait} showAsk={false} />
 
       {!portrait.prism ? (
-        <PortraitNoPrism title="What this is built on so far" headline={portrait.headline}>
+        <PortraitNoPrism title={t("portrait.whatThisIsBuiltOn", "What this is built on so far")} headline={portrait.headline}>
           <Button asChild variant="outline" size="sm">
             <Link to={ROUTES.DIRECTION_SETTING.ESTABLISH}>
-              Request or upload PRISM
+              {t("portrait.requestOrUploadPrism", "Request or upload PRISM")}
             </Link>
           </Button>
         </PortraitNoPrism>
       ) : (
         <PortraitDimensions
           prism={portrait.prism}
-          title="What sits underneath that"
+          title={t("portrait.whatSitsUnderneathThat", "What sits underneath that")}
         />
       )}
 
       <PortraitCorroborating
         instruments={portrait.corroborating}
-        title="The other instruments we read"
+        title={t("portrait.theOtherInstrumentsWeRead", "The other instruments we read")}
       />
 
       <PortraitAnchorNote />

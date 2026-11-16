@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom"
 import { ArrowLeft, History } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { ROUTES } from "@/constants/routes"
 import { useFitSnapshot } from "@/hooks/job-fit/useFitHistory"
 import { useFitSharedDisplayEnabled } from "@/hooks/switches/useFitSharedDisplayEnabled"
@@ -26,6 +27,7 @@ function isMatchList(p: FitSnapshot["payload"]): p is FitMatch[] {
  * read, never a verdict.
  */
 export default function FitHistoryPage() {
+  const { t } = useTranslation("jobFitPages")
   const { snapshotId } = useParams<{ snapshotId: string }>()
   const snap = useFitSnapshot(snapshotId)
   // FIT-5b (decision 5): PRISM fit only, labelled "as recorded", with the
@@ -39,16 +41,19 @@ export default function FitHistoryPage() {
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-[#6b7280] hover:text-[#0D9488]"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to matches
+        {t("fitHistoryPage.backToMatches", "Back to matches")}
       </Link>
 
-      {snap.isLoading && <FitLoading label="Loading this fit report…" />}
+      {snap.isLoading && <FitLoading label={t("fitHistoryPage.loading", "Loading this fit report…")} />}
 
       {snap.isError && (
         <FitError>
           {snap.error.response?.status === 404
-            ? "This fit report isn't in your history."
-            : "We couldn't load this fit report. Please try again shortly."}
+            ? t("fitHistoryPage.notInHistory", "This fit report isn't in your history.")
+            : t(
+                "fitHistoryPage.loadError",
+                "We couldn't load this fit report. Please try again shortly.",
+              )}
         </FitError>
       )}
 
@@ -56,8 +61,17 @@ export default function FitHistoryPage() {
         <>
           <FitPageHeader
             icon={History}
-            title={snap.data.roleTitle || (snap.data.source === "matches" ? "Your role matches" : "Fit report")}
-            description={`Recorded ${new Date(snap.data.computedAt).toLocaleString()} · ${snap.data.engineVersion}`}
+            title={
+              snap.data.roleTitle ||
+              (snap.data.source === "matches"
+                ? t("fitHistoryPage.yourRoleMatches", "Your role matches")
+                : t("fitHistoryPage.fitReport", "Fit report"))
+            }
+            description={t("fitHistoryPage.recorded", {
+              defaultValue: "Recorded {{when}} · {{engine}}",
+              when: new Date(snap.data.computedAt).toLocaleString(),
+              engine: snap.data.engineVersion,
+            })}
           />
 
           {isFitDetail(snap.data.payload) ? (
@@ -66,9 +80,13 @@ export default function FitHistoryPage() {
             <MatchesSnapshot matches={snap.data.payload} />
           ) : (
             <FitCard>
-              <FitSectionTitle>Saved report</FitSectionTitle>
+              <FitSectionTitle>{t("fitHistoryPage.savedReport", "Saved report")}</FitSectionTitle>
               {snap.data.fitScore != null && (
-                <FitPill tone={fitPercentTone(snap.data.fitScore)}>{snap.data.fitScore}% fit</FitPill>
+                <FitPill tone={fitPercentTone(snap.data.fitScore)}>{t("fitHistoryPage.fitPercent", {
+                    defaultValue: "{{pct}}% fit",
+                    pct: snap.data.fitScore,
+                  })}
+                </FitPill>
               )}
               {typeof (snap.data.payload as Record<string, unknown>).overview === "string" &&
               (snap.data.payload as Record<string, unknown>).overview ? (
@@ -76,7 +94,9 @@ export default function FitHistoryPage() {
                   {String((snap.data.payload as Record<string, unknown>).overview)}
                 </p>
               ) : (
-                <p className="mt-3 text-sm text-[#6b7280]">This save kept only its headline.</p>
+                <p className="mt-3 text-sm text-[#6b7280]">
+                  {t("fitHistoryPage.headlineOnly", "This save kept only its headline.")}
+                </p>
               )}
             </FitCard>
           )}
@@ -93,16 +113,22 @@ function DetailSnapshot({ detail, shared }: { detail: FitDetail; shared: boolean
 }
 
 function MatchesSnapshot({ matches }: { matches: FitMatch[] }) {
+  const { t } = useTranslation("jobFitPages")
   // FIT-1: each row as it was ranked that day — its own read, not always the gap read.
   return (
     <FitMatchList
       variant="recorded"
       matches={matches}
       slots={{
-        empty: <FitEmptyState>No roles were available to match against when this was recorded.</FitEmptyState>,
+        empty: <FitEmptyState>
+            {t(
+              "fitHistoryPage.noRolesRecorded",
+              "No roles were available to match against when this was recorded.",
+            )}
+          </FitEmptyState>,
         wrapList: (list) => (
           <FitCard>
-            <FitSectionTitle>Roles as ranked that day</FitSectionTitle>
+            <FitSectionTitle>{t("fitHistoryPage.rolesRanked", "Roles as ranked that day")}</FitSectionTitle>
             {list}
           </FitCard>
         ),

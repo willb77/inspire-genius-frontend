@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { discoveryErrorMessage } from "@/hooks/career-discovery/useCareerDiscovery"
 import { useLearningLocal } from "@/hooks/career-discovery/useLearningLocal"
@@ -20,6 +21,7 @@ import { STAGE_ROUTES } from "./stageRoutes"
  * and a stage that is not switched on yet is greyed out and says so.
  */
 export function LearningButtons({ learning, current }: { learning: LearningMark; current: string }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   return (
     <nav aria-label={learning.title} className="flex flex-wrap gap-2">
       {learning.buttons.map((b) => {
@@ -32,7 +34,7 @@ export function LearningButtons({ learning, current }: { learning: LearningMark;
                 {b.label}
               </Button>
               <span id={`cd-learning-why-${b.stageId}`} className="text-xs text-muted-foreground">
-                Not switched on here yet.
+                {t("learnNotOn", "Not switched on here yet.")}
               </span>
             </span>
           )
@@ -51,11 +53,12 @@ export function LearningButtons({ learning, current }: { learning: LearningMark;
 
 /** One kind of local listing. A non-ready answer shows the server's reason, never a bare empty list. */
 function LocalList({ kind, soc, state }: { kind: LocalKind; soc: string; state: string }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const { data, isLoading, isError, error } = useLearningLocal({ soc, kind, state })
-  if (isLoading) return <DiscoveryLoading label={`Finding ${LOCAL_KIND_TITLES[kind].toLowerCase()}`} />
+  if (isLoading) return <DiscoveryLoading label={t("learnFinding", { defaultValue: "Finding {{kind}}", kind: LOCAL_KIND_TITLES[kind].toLowerCase() })} />
   if (isError || !data) return <DiscoveryError message={discoveryErrorMessage(error)} />
   if (data.state !== "ready" || data.data.length === 0) {
-    return <p className="text-sm text-muted-foreground">{data.note ?? "Nothing listed here."}</p>
+    return <p className="text-sm text-muted-foreground">{data.note ?? t("learnNothingListed", "Nothing listed here.")}</p>
   }
   const anyCost = data.data.some((i) => publishedCost(i) !== null)
   return (
@@ -76,15 +79,15 @@ function LocalList({ kind, soc, state }: { kind: LocalKind; soc: string; state: 
                 <span className="text-muted-foreground"> — {i.organisation}</span>
               ) : null}
               {i.location ? <span className="text-muted-foreground">, {i.location}</span> : null}
-              {i.credential ? <span className="block text-xs text-muted-foreground">Credential: {i.credential}</span> : null}
-              {cost ? <span className="block text-xs text-muted-foreground">Cost: {cost}</span> : null}
+              {i.credential ? <span className="block text-xs text-muted-foreground">{t("learnCredential", { defaultValue: "Credential: {{credential}}", credential: i.credential })}</span> : null}
+              {cost ? <span className="block text-xs text-muted-foreground">{t("learnCost", { defaultValue: "Cost: {{cost}}", cost })}</span> : null}
             </li>
           )
         })}
       </ul>
       {kind === "training" && !anyCost ? (
         <p className="text-xs text-muted-foreground">
-          This listing doesn&apos;t publish costs. Check with each provider.
+          {t("learnNoCosts", "This listing doesn't publish costs. Check with each provider.")}
         </p>
       ) : null}
     </div>
@@ -97,10 +100,13 @@ function LocalList({ kind, soc, state }: { kind: LocalKind; soc: string; state: 
  * state is chosen and the person asks.
  */
 export function LocalOptions({ path, state, block }: { path: EducationPath; state: string; block: LearningBlock }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const [open, setOpen] = useState(false)
   const [soc, setSoc] = useState(path.occupations[0]?.soc ?? "")
   if (path.occupations.length === 0) return null
   const why = `cd-local-why-${path.id}`
+  // The link sits mid-sentence, so the sentence is one key and split at the link's position.
+  const fromSource = t("learnFromSource", { defaultValue: "From {{source}}.", source: "\u0000" }).split("\u0000")
   return (
     <div className="space-y-3">
       <Button
@@ -111,18 +117,18 @@ export function LocalOptions({ path, state, block }: { path: EducationPath; stat
         aria-describedby={!state ? why : undefined}
         onClick={() => setOpen((o) => !o)}
       >
-        Training, licences and apprenticeships
+        {t("learnTrainingButton", "Training, licences and apprenticeships")}
       </Button>
       {!state ? (
         <p id={why} className="text-xs text-muted-foreground">
-          Choose a state above first. These are listed by state.
+          {t("learnChooseState", "Choose a state above first. These are listed by state.")}
         </p>
       ) : null}
       {open && state ? (
         <div className="space-y-3 rounded-md border p-3">
           {path.occupations.length > 1 ? (
             <label className="flex max-w-sm flex-col gap-1 text-sm">
-              <span className="font-medium">For which job?</span>
+              <span className="font-medium">{t("learnWhichJob", "For which job?")}</span>
               <select
                 className="rounded-md border bg-background px-3 py-2"
                 value={soc}
@@ -136,7 +142,7 @@ export function LocalOptions({ path, state, block }: { path: EducationPath; stat
               </select>
             </label>
           ) : (
-            <p className="text-sm font-medium">For: {path.occupations[0].title}</p>
+            <p className="text-sm font-medium">{t("learnForJob", { defaultValue: "For: {{title}}", title: path.occupations[0].title })}</p>
           )}
           {block.localKinds.map((kind) => (
             <section key={kind} className="space-y-1">
@@ -145,11 +151,11 @@ export function LocalOptions({ path, state, block }: { path: EducationPath; stat
             </section>
           ))}
           <p className="text-xs text-muted-foreground">
-            From{" "}
+            {fromSource[0]}
             <a className="underline" href={block.localSourceUrl} target="_blank" rel="noopener noreferrer">
               {block.localSource}
             </a>
-            .
+            {fromSource[1]}
           </p>
         </div>
       ) : null}

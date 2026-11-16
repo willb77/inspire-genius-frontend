@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { Label } from "@/components/ui/label"
 import { useTeamDevelopmentRoster } from "@/hooks/manager/development/useTeamDevelopmentRoster"
 import { useStudioInterviewSharingEnabled } from "@/hooks/switches/useStudioInterviewSharingEnabled"
@@ -19,13 +20,14 @@ export default function InterviewSubjectPicker({
   value: string | null
   onChange: (memberId: string | null) => void
 }) {
+  const { t } = useTranslation("interviewPages")
   const enabled = useStudioInterviewSharingEnabled()
   const roster = useTeamDevelopmentRoster()
   if (!enabled) return null
   const members = roster.data ?? []
   return (
     <div className="space-y-1">
-      <Label htmlFor="interview-subject">Add to a team member's development record (optional)</Label>
+      <Label htmlFor="interview-subject">{t("subjectPicker.label", "Add to a team member's development record (optional)")}</Label>
       <select
         id="interview-subject"
         className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
@@ -33,7 +35,7 @@ export default function InterviewSubjectPicker({
         onChange={(e) => onChange(e.target.value || null)}
         disabled={roster.isLoading}
       >
-        <option value="">Don't link this interview</option>
+        <option value="">{t("subjectPicker.noLink", "Don't link this interview")}</option>
         {members.map((m) => (
           <option key={m.memberId} value={m.memberId}>
             {m.name}
@@ -42,11 +44,11 @@ export default function InterviewSubjectPicker({
       </select>
       {roster.isError ? (
         <p className="text-xs text-red-600" role="alert">
-          Couldn't load your team roster — the interview can still run unlinked.
+          {t("subjectPicker.rosterError", "Couldn't load your team roster — the interview can still run unlinked.")}
         </p>
       ) : (
         <p className="text-xs text-slate-500">
-          The summary reaches their development record only if they share interviews with you.
+          {t("subjectPicker.help", "The summary reaches their development record only if they share interviews with you.")}
         </p>
       )}
     </div>

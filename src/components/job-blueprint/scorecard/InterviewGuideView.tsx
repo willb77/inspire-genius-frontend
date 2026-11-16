@@ -2,18 +2,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { InterviewGuide } from '@/types/job-blueprint'
 import { MessageSquare, AlertTriangle, HelpCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type InterviewGuideViewProps = {
   guide: InterviewGuide
 }
 
 export function InterviewGuideView({ guide }: InterviewGuideViewProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-slate-800">Interview Guide</h3>
+        <h3 className="text-lg font-semibold text-slate-800">{t("guide.title", { defaultValue: "Interview Guide" })}</h3>
         <p className="text-sm text-slate-500">
-          Role: {guide.roleTitle} | Generated {new Date(guide.generatedAt).toLocaleDateString()}
+          {t("guide.roleLine", { defaultValue: "Role: {{role}} | Generated {{date}}", role: guide.roleTitle, date: new Date(guide.generatedAt).toLocaleDateString() })}
         </p>
       </div>
 
@@ -26,7 +28,7 @@ export function InterviewGuideView({ guide }: InterviewGuideViewProps) {
               {fd.dimensionName}
               <Badge variant="outline" className="text-xs capitalize">{fd.category}</Badge>
               <span className="text-xs text-slate-400 ml-auto">
-                Benchmark: {fd.benchmarkScore}% | Candidate: {fd.candidateScore}% | Gap: {fd.gap > 0 ? '+' : ''}{fd.gap}
+                {t("guide.scoreLine", { defaultValue: "Benchmark: {{benchmark}}% | Candidate: {{candidate}}% | Gap: {{gap}}", benchmark: fd.benchmarkScore, candidate: fd.candidateScore, gap: `${fd.gap > 0 ? '+' : ''}${fd.gap}` })}
               </span>
             </CardTitle>
           </CardHeader>
@@ -49,7 +51,7 @@ export function InterviewGuideView({ guide }: InterviewGuideViewProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-red-700">
               <AlertTriangle className="w-4 h-4" />
-              Counter-Productive Behavior Questions
+              {t("guide.counterProductive", { defaultValue: "Counter-Productive Behavior Questions" })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -74,7 +76,7 @@ export function InterviewGuideView({ guide }: InterviewGuideViewProps) {
       {guide.generalQuestions.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">General Interview Questions</CardTitle>
+            <CardTitle className="text-sm">{t("guide.general", { defaultValue: "General Interview Questions" })}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">

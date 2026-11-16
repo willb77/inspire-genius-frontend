@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Scale, ListChecks } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
@@ -8,7 +9,7 @@ import {
   useDecisionRuleSets,
 } from "@/hooks/job-blueprint/useDecisionPath"
 import { IntakeForm } from "@/components/job-blueprint/decision-path/DecisionForms"
-import { ROUTE_LABEL } from "@/components/job-blueprint/decision-path/labels"
+import { routeLabel } from "@/components/job-blueprint/decision-path/labels"
 import {
   JobDnaCardSurface,
   JobDnaEmptyState,
@@ -22,6 +23,7 @@ import {
  * "not enabled" unless the server says the switch applies to the caller.
  */
 export default function DecisionPathPage() {
+  const { t } = useTranslation("jobBlueprintPages")
   const status = useDecisionPathStatus()
   const enabled = status !== null
   const navigate = useNavigate()
@@ -32,7 +34,7 @@ export default function DecisionPathPage() {
   if (!status) {
     return (
       <div className="max-w-4xl">
-        <JobDnaEmptyState>The decision path is not enabled for your organisation.</JobDnaEmptyState>
+        <JobDnaEmptyState>{t("decisionPath.notEnabled", { defaultValue: "The decision path is not enabled for your organisation." })}</JobDnaEmptyState>
       </div>
     )
   }
@@ -41,13 +43,13 @@ export default function DecisionPathPage() {
     <div className="max-w-6xl space-y-6">
       <JobDnaPageHeader
         icon={Scale}
-        title="Decision path"
-        description="Check a candidate against your organisation's written minimum standard, see the advisory route, and record the decision and its reason."
+        title={t("decisionPath.title", { defaultValue: "Decision path" })}
+        description={t("decisionPath.description", { defaultValue: "Check a candidate against your organisation's written minimum standard, see the advisory route, and record the decision and its reason." })}
         action={
           status.staff ? (
             <JobDnaLinkButton to={ROUTES.JOB_DNA.DECISION_PATH_RULE_SETS}>
               <ListChecks className="h-4 w-4" />
-              Rule sets
+              {t("decisionPath.ruleSets", { defaultValue: "Rule sets" })}
             </JobDnaLinkButton>
           ) : undefined
         }
@@ -55,9 +57,9 @@ export default function DecisionPathPage() {
 
       {status.staff ? (
         <JobDnaCardSurface>
-          <h2 className="mb-3 text-sm font-semibold text-[#1f2937]">New candidate</h2>
+          <h2 className="mb-3 text-sm font-semibold text-[#1f2937]">{t("decisionPath.newCandidate", { defaultValue: "New candidate" })}</h2>
           {ruleSets.isLoading ? (
-            <JobDnaLoading label="Loading rule sets…" />
+            <JobDnaLoading label={t("decisionPath.loadingRuleSets", { defaultValue: "Loading rule sets…" })} />
           ) : (ruleSets.data ?? []).some((r) => r.status === "active") ? (
             <IntakeForm
               status={status}
@@ -67,30 +69,33 @@ export default function DecisionPathPage() {
             />
           ) : (
             <p className="text-sm text-[#6b7280]">
-              Activate a rule set before opening a case. <Link className="underline" to={ROUTES.JOB_DNA.DECISION_PATH_RULE_SETS}>Rule sets</Link>
+              {t("decisionPath.activateFirst", { defaultValue: "Activate a rule set before opening a case." })}{" "}
+              <Link className="underline" to={ROUTES.JOB_DNA.DECISION_PATH_RULE_SETS}>
+                {t("decisionPath.ruleSets", { defaultValue: "Rule sets" })}
+              </Link>
             </p>
           )}
         </JobDnaCardSurface>
       ) : null}
 
       <JobDnaCardSurface>
-        <h2 className="mb-3 text-sm font-semibold text-[#1f2937]">Cases</h2>
+        <h2 className="mb-3 text-sm font-semibold text-[#1f2937]">{t("decisionPath.cases", { defaultValue: "Cases" })}</h2>
         {cases.isLoading ? (
-          <JobDnaLoading label="Loading cases…" />
+          <JobDnaLoading label={t("decisionPath.loadingCases", { defaultValue: "Loading cases…" })} />
         ) : cases.isError ? (
           <p role="alert" className="text-sm text-red-600">
-            Could not load the cases.
+            {t("decisionPath.casesFailed", { defaultValue: "Could not load the cases." })}
           </p>
         ) : (cases.data ?? []).length === 0 ? (
-          <p className="text-sm text-[#6b7280]">No cases yet.</p>
+          <p className="text-sm text-[#6b7280]">{t("decisionPath.noCases", { defaultValue: "No cases yet." })}</p>
         ) : (
           <table className="w-full text-left text-sm">
             <thead className="text-xs text-[#6b7280]">
               <tr>
-                <th>Candidate</th>
-                <th>Status</th>
-                <th>Recommended (advisory)</th>
-                <th>Decided</th>
+                <th>{t("decisionPath.col.candidate", { defaultValue: "Candidate" })}</th>
+                <th>{t("decisionPath.col.status", { defaultValue: "Status" })}</th>
+                <th>{t("decisionPath.col.recommended", { defaultValue: "Recommended (advisory)" })}</th>
+                <th>{t("decisionPath.col.decided", { defaultValue: "Decided" })}</th>
               </tr>
             </thead>
             <tbody>
@@ -98,12 +103,12 @@ export default function DecisionPathPage() {
                 <tr key={c.id} className="border-t border-[#f3f4f6]">
                   <td className="py-1">
                     <Link className="text-[#7C3AED] underline" to={ROUTES.JOB_DNA.decisionPathCase(c.id)}>
-                      {c.candidateName ?? "(name removed)"}
+                      {c.candidateName ?? t("decisionPath.nameRemoved", { defaultValue: "(name removed)" })}
                     </Link>
                   </td>
                   <td>{c.status}</td>
-                  <td>{c.recommendedRoute ? ROUTE_LABEL[c.recommendedRoute] : "—"}</td>
-                  <td>{c.finalRoute ? ROUTE_LABEL[c.finalRoute] : "—"}</td>
+                  <td>{c.recommendedRoute ? routeLabel(t, c.recommendedRoute) : "—"}</td>
+                  <td>{c.finalRoute ? routeLabel(t, c.finalRoute) : "—"}</td>
                 </tr>
               ))}
             </tbody>

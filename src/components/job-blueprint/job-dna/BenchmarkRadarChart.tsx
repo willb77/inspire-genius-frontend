@@ -1,6 +1,7 @@
 import { BlueprintRadarChart } from '@/components/job-blueprint/shared/RadarChart'
 import type { DimensionBenchmark, DimensionScore } from '@/types/job-blueprint'
 import { CATEGORY_COLORS } from '@/constants/job-blueprint/dimensions'
+import { useTranslation } from 'react-i18next'
 
 type BenchmarkRadarChartProps = {
   behaviors: DimensionBenchmark[]
@@ -17,6 +18,7 @@ export function BenchmarkRadarChart({
   candidateScores,
   height = 400,
 }: BenchmarkRadarChartProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   const allBenchmarks = [...behaviors, ...aptitudes, ...coreTraits]
 
   const data = allBenchmarks.map(b => {
@@ -38,7 +40,7 @@ export function BenchmarkRadarChart({
   const datasets: { key: string; name: string; color: string; fillOpacity: number }[] = [
     {
       key: 'benchmark',
-      name: 'Benchmark',
+      name: t("radar.benchmark", { defaultValue: "Benchmark" }),
       color: CATEGORY_COLORS.behavior.fill,
       fillOpacity: 0.15,
     },
@@ -47,7 +49,7 @@ export function BenchmarkRadarChart({
   if (candidateScores) {
     datasets.push({
       key: 'candidate',
-      name: 'Candidate',
+      name: t("radar.candidate", { defaultValue: "Candidate" }),
       color: '#805AD5',
       fillOpacity: 0.1,
     })

@@ -5,6 +5,7 @@ import { CandidateCard } from './CandidateCard'
 import type { Candidate, PipelineStep } from '@/types/job-blueprint'
 import { PIPELINE_STEP_CONFIG } from '@/constants/job-blueprint/classification'
 import { LayoutGrid, List, Users } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type PipelineDashboardProps = {
   candidates: Candidate[]
@@ -26,6 +27,7 @@ const PIPELINE_STEPS: PipelineStep[] = [
 ]
 
 export function PipelineDashboard({ candidates, onCandidateClick, onAdvance }: PipelineDashboardProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   const [view, setView] = useState<'kanban' | 'table'>('kanban')
 
   const groupedByStep = PIPELINE_STEPS.reduce<Record<string, Candidate[]>>((acc, step) => {
@@ -39,15 +41,15 @@ export function PipelineDashboard({ candidates, onCandidateClick, onAdvance }: P
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-slate-600" />
-          <h3 className="text-lg font-semibold text-slate-800">Pipeline</h3>
-          <span className="text-sm text-slate-500">({candidates.length} candidates)</span>
+          <h3 className="text-lg font-semibold text-slate-800">{t("pipelineBoard.title", { defaultValue: "Pipeline" })}</h3>
+          <span className="text-sm text-slate-500">({t("pipelineBoard.count", { defaultValue: "{{total}} candidates", total: candidates.length })})</span>
         </div>
         <div className="flex gap-1">
           <Button variant={view === 'kanban' ? 'default' : 'outline'} size="sm" onClick={() => setView('kanban')}>
-            <LayoutGrid className="w-4 h-4 mr-1" /> Board
+            <LayoutGrid className="w-4 h-4 mr-1" /> {t("pipelineBoard.board", { defaultValue: "Board" })}
           </Button>
           <Button variant={view === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setView('table')}>
-            <List className="w-4 h-4 mr-1" /> Table
+            <List className="w-4 h-4 mr-1" /> {t("pipelineBoard.table", { defaultValue: "Table" })}
           </Button>
         </div>
       </div>
@@ -68,7 +70,7 @@ export function PipelineDashboard({ candidates, onCandidateClick, onAdvance }: P
                     <CandidateCard key={c.id} candidate={c} onClick={() => onCandidateClick?.(c)} />
                   ))}
                   {items.length === 0 && (
-                    <p className="text-xs text-slate-400 text-center py-6">No candidates</p>
+                    <p className="text-xs text-slate-400 text-center py-6">{t("pipelineBoard.noCandidates", { defaultValue: "No candidates" })}</p>
                   )}
                 </div>
               </div>
@@ -82,12 +84,12 @@ export function PipelineDashboard({ candidates, onCandidateClick, onAdvance }: P
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-slate-500 uppercase border-b bg-slate-50">
-                    <th className="py-2 px-4">Name</th>
-                    <th className="py-2 px-4">Email</th>
-                    <th className="py-2 px-4">Status</th>
-                    <th className="py-2 px-4">Tier</th>
-                    <th className="py-2 px-4">Variation</th>
-                    <th className="py-2 px-4">Actions</th>
+                    <th className="py-2 px-4">{t("pipelineBoard.col.name", { defaultValue: "Name" })}</th>
+                    <th className="py-2 px-4">{t("pipelineBoard.col.email", { defaultValue: "Email" })}</th>
+                    <th className="py-2 px-4">{t("pipelineBoard.col.status", { defaultValue: "Status" })}</th>
+                    <th className="py-2 px-4">{t("pipelineBoard.col.tier", { defaultValue: "Tier" })}</th>
+                    <th className="py-2 px-4">{t("pipelineBoard.col.variation", { defaultValue: "Variation" })}</th>
+                    <th className="py-2 px-4">{t("pipelineBoard.col.actions", { defaultValue: "Actions" })}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -115,7 +117,7 @@ export function PipelineDashboard({ candidates, onCandidateClick, onAdvance }: P
                             size="sm"
                             onClick={e => { e.stopPropagation(); onAdvance(c.id) }}
                           >
-                            Advance
+                            {t("pipelineBoard.advance", { defaultValue: "Advance" })}
                           </Button>
                         )}
                       </td>

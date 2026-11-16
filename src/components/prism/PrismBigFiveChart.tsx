@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { BigFiveItem } from '@/types/prism/api-types'
 
 type PrismBigFiveChartProps = {
@@ -5,12 +6,13 @@ type PrismBigFiveChartProps = {
 }
 
 export default function PrismBigFiveChart({ data }: PrismBigFiveChartProps) {
+  const { t } = useTranslation('prismUi')
   if (!data.length) return null
 
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-muted-foreground">
-        Big Five Personality
+        {t('bigFiveChart.heading', { defaultValue: 'Big Five Personality' })}
       </h3>
       <div className="space-y-2">
         {data.map((item) => (

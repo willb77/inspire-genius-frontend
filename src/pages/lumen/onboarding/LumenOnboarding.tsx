@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Link } from "react-router-dom"
 import { ArrowRight, CheckCircle2, Clock, ExternalLink } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,24 +28,36 @@ import type { OnboardingNextStep } from "@/types/lumen"
  * isn't one, by decision.
  */
 
-const STEP_COPY: Record<OnboardingNextStep, { title: string; body: string }> = {
+const stepCopy = (t: TFunction): Record<OnboardingNextStep, { title: string; body: string }> => ({
   request_prism: {
-    title: "Let's start with how you're wired",
-    body: "Lumen reads your behavioural profile and turns it into guidance you can use in the moment. That starts with one questionnaire — about 20 minutes, done once.",
+    title: t("onbRequestTitle", "Let's start with how you're wired"),
+    body: t(
+      "onbRequestBody",
+      "Lumen reads your behavioural profile and turns it into guidance you can use in the moment. That starts with one questionnaire — about 20 minutes, done once."
+    ),
   },
   complete_survey: {
-    title: "Your questionnaire is ready",
-    body: "Finish it whenever suits you. Your profile composes itself as soon as the results come back.",
+    title: t("onbSurveyTitle", "Your questionnaire is ready"),
+    body: t(
+      "onbSurveyBody",
+      "Finish it whenever suits you. Your profile composes itself as soon as the results come back."
+    ),
   },
   awaiting_report: {
-    title: "Results are on their way",
-    body: "You've finished the questionnaire. We're waiting on the report — this usually takes a short while, and there's nothing for you to do.",
+    title: t("onbAwaitingTitle", "Results are on their way"),
+    body: t(
+      "onbAwaitingBody",
+      "You've finished the questionnaire. We're waiting on the report — this usually takes a short while, and there's nothing for you to do."
+    ),
   },
   ready: {
-    title: "You're set up",
-    body: "Your Self-Portrait has composed. Everything Lumen tells you from here is grounded in it.",
+    title: t("onbReadyTitle", "You're set up"),
+    body: t(
+      "onbReadyBody",
+      "Your Self-Portrait has composed. Everything Lumen tells you from here is grounded in it."
+    ),
   },
-}
+})
 
 function OnboardingSkeleton() {
   return (
@@ -55,6 +69,7 @@ function OnboardingSkeleton() {
 }
 
 export default function LumenOnboarding() {
+  const { t } = useTranslation("lumenPages")
   const [forename, setForename] = useState("")
   const [surname, setSurname] = useState("")
   const { data: status, isLoading } = useOnboardingStatus({
@@ -85,7 +100,7 @@ export default function LumenOnboarding() {
   }
 
   const step: OnboardingNextStep = status?.next_step ?? "request_prism"
-  const copy = STEP_COPY[step]
+  const copy = stepCopy(t)[step]
   const surveyUrl = created?.survey_url ?? status?.prism_request?.survey_url ?? null
   const canSubmit =
     forename.trim().length > 0 && surname.trim().length > 0 && !needsApproval
@@ -93,10 +108,12 @@ export default function LumenOnboarding() {
   return (
     <div className="space-y-6 p-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome to Lumen</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("onbWelcome", "Welcome to Lumen")}</h1>
         <p className="max-w-2xl text-muted-foreground">
-          Personal behavioural diagnostics, and coaching that shows up when you
-          actually need it.
+          {t(
+            "onbWelcomeLead",
+            "Personal behavioural diagnostics, and coaching that shows up when you actually need it."
+          )}
         </p>
       </header>
 
@@ -128,14 +145,14 @@ export default function LumenOnboarding() {
                 <Input
                   value={forename}
                   onChange={(e) => setForename(e.target.value)}
-                  placeholder="First name"
-                  aria-label="First name"
+                  placeholder={t("onbFirstName", "First name")}
+                  aria-label={t("onbFirstName", "First name")}
                 />
                 <Input
                   value={surname}
                   onChange={(e) => setSurname(e.target.value)}
-                  placeholder="Last name"
-                  aria-label="Last name"
+                  placeholder={t("onbLastName", "Last name")}
+                  aria-label={t("onbLastName", "Last name")}
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -145,18 +162,20 @@ export default function LumenOnboarding() {
                     request({ forename: forename.trim(), surname: surname.trim() })
                   }
                 >
-                  {isPending ? "Requesting…" : "Send me the questionnaire"}
+                  {isPending ? t("onbRequesting", "Requesting…") : t("onbSend", "Send me the questionnaire")}
                   <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
                 </Button>
                 {isError && !refused && (
                   <span className="text-sm text-destructive">
-                    That didn't work. Try again in a moment.
+                    {t("onbFailed", "That didn't work. Try again in a moment.")}
                   </span>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Your name goes to the assessment provider so they can issue the
-                questionnaire. Nothing here costs anything.
+                {t(
+                  "onbNameNote",
+                  "Your name goes to the assessment provider so they can issue the questionnaire. Nothing here costs anything."
+                )}
               </p>
             </div>
           )}
@@ -164,7 +183,7 @@ export default function LumenOnboarding() {
           {surveyUrl && step !== "ready" && (
             <Button asChild variant="outline">
               <a href={surveyUrl} target="_blank" rel="noopener noreferrer">
-                Open the questionnaire
+                {t("onbOpenSurvey", "Open the questionnaire")}
                 <ExternalLink className="ml-1 h-4 w-4" aria-hidden />
               </a>
             </Button>
@@ -173,7 +192,7 @@ export default function LumenOnboarding() {
           {step === "ready" && (
             <Button asChild>
               <Link to={ROUTES.LUMEN.SELF_PORTRAIT}>
-                See my Self-Portrait
+                {t("onbSeePortrait", "See my Self-Portrait")}
                 <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
               </Link>
             </Button>
@@ -183,7 +202,7 @@ export default function LumenOnboarding() {
 
       {status?.instruments && status.instruments.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          On file already: {status.instruments.join(", ")}.
+          {t("onbOnFile", { defaultValue: "On file already: {{instruments}}.", instruments: status.instruments.join(", ") })}
         </p>
       )}
     </div>

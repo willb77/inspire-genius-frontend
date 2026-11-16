@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { ClipboardCheck } from "lucide-react"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
@@ -64,6 +65,7 @@ function strip(entries: ScorecardEntry[], offset: number): ScorecardEntry[] {
  * (`GET /v1/blueprint/scorecard/:candidateId` per candidate).
  */
 export default function JobBlueprintScorecardsPage() {
+  const { t } = useTranslation("jobBlueprintPages")
   const { data: jobDnas, isLoading: loadingJobs } = useJobDnaList()
   const [jobId, setJobId] = useState("")
   const [candidateId, setCandidateId] = useState("")
@@ -98,20 +100,20 @@ export default function JobBlueprintScorecardsPage() {
   const sections = useMemo(() => {
     if (!jobDna) return []
     return [
-      { title: "Top 3 Behaviours (max 15)", entries: topEntries(jobDna.behaviors, 3) },
+      { title: t("scorecards.sections.behaviours", { defaultValue: "Top 3 Behaviours (max 15)" }), entries: topEntries(jobDna.behaviors, 3) },
       {
-        title: "Counter-Productive Behaviours (max 10)",
+        title: t("scorecards.sections.counterProductive", { defaultValue: "Counter-Productive Behaviours (max 10)" }),
         isCounterProductive: true,
         entries: topEntries([...jobDna.behaviors].reverse(), 2, CP_OFFSET),
       },
-      { title: "Top 3 Work Aptitudes (max 15)", entries: topEntries(jobDna.aptitudes, 3, APT_OFFSET) },
-      { title: "Top 3 Core Traits (max 15)", entries: topEntries(jobDna.coreTraits, 3, TRAIT_OFFSET) },
+      { title: t("scorecards.sections.aptitudes", { defaultValue: "Top 3 Work Aptitudes (max 15)" }), entries: topEntries(jobDna.aptitudes, 3, APT_OFFSET) },
+      { title: t("scorecards.sections.coreTraits", { defaultValue: "Top 3 Core Traits (max 15)" }), entries: topEntries(jobDna.coreTraits, 3, TRAIT_OFFSET) },
     ]
-  }, [jobDna])
+  }, [jobDna, t])
 
   const handleSubmit = async (entries: ScorecardEntry[], notes: string) => {
     if (!candidateId) {
-      toast.error("Select a candidate before submitting a scorecard.")
+      toast.error(t("scorecards.selectBeforeSubmit", { defaultValue: "Select a candidate before submitting a scorecard." }))
       return
     }
     const behaviorScores = entries.filter((e) => e.dimensionId < APT_OFFSET)
@@ -143,10 +145,10 @@ export default function JobBlueprintScorecardsPage() {
       })
       if (scorecard) {
         setResult(scorecard)
-        toast.success("Scorecard submitted.")
+        toast.success(t("scorecards.submitted", { defaultValue: "Scorecard submitted." }))
       }
     } catch (err) {
-      toast.error(apiErrorMessage(err, "Failed to submit scorecard."))
+      toast.error(apiErrorMessage(err, t("scorecards.submitFailed", { defaultValue: "Failed to submit scorecard." })))
     }
   }
 
@@ -154,8 +156,8 @@ export default function JobBlueprintScorecardsPage() {
     <div className="max-w-5xl">
       <JobDnaPageHeader
         icon={ClipboardCheck}
-        title="Scorecards"
-        description="Structured interview scorecards and guides derived from a role's Job DNA benchmark."
+        title={t("scorecards.title", { defaultValue: "Scorecards" })}
+        description={t("scorecards.description", { defaultValue: "Structured interview scorecards and guides derived from a role's Job DNA benchmark." })}
         action={
           <JobDnaSelect
             jobDnas={jobDnas ?? []}
@@ -171,9 +173,9 @@ export default function JobBlueprintScorecardsPage() {
       />
 
       {loadingJobs ? (
-        <JobDnaLoading label="Loading roles…" />
+        <JobDnaLoading label={t("scorecards.loadingRoles", { defaultValue: "Loading roles…" })} />
       ) : !jobId ? (
-        <JobDnaEmptyState>Select a role to build its scorecard and interview guide.</JobDnaEmptyState>
+        <JobDnaEmptyState>{t("scorecards.selectRole", { defaultValue: "Select a role to build its scorecard and interview guide." })}</JobDnaEmptyState>
       ) : (
         <div className="space-y-6">
           {guide ? (
@@ -182,20 +184,20 @@ export default function JobBlueprintScorecardsPage() {
             </JobDnaCardSurface>
           ) : (
             <JobDnaEmptyState>
-              No interview guide generated for this role yet.
+              {t("scorecards.noGuide", { defaultValue: "No interview guide generated for this role yet." })}
             </JobDnaEmptyState>
           )}
 
           <JobDnaCardSurface>
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <label className="flex items-center gap-2 text-sm text-[#374151]">
-                <span className="font-medium">Candidate:</span>
+                <span className="font-medium">{t("scorecards.candidateLabel", { defaultValue: "Candidate:" })}</span>
                 <select
                   className="h-9 min-w-56 rounded-md border border-input bg-transparent px-3 text-sm"
                   value={candidateId}
                   onChange={(e) => setCandidateId(e.target.value)}
                 >
-                  <option value="">Select a candidate…</option>
+                  <option value="">{t("scorecards.selectCandidate", { defaultValue: "Select a candidate…" })}</option>
                   {(candidates ?? []).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -205,7 +207,7 @@ export default function JobBlueprintScorecardsPage() {
               </label>
               {(candidates ?? []).length === 0 ? (
                 <span className="text-xs text-[#9ca3af]">
-                  Candidate pipeline is gated for this account — the form is preview-only.
+                  {t("scorecards.pipelineGated", { defaultValue: "Candidate pipeline is gated for this account — the form is preview-only." })}
                 </span>
               ) : null}
             </div>
@@ -216,11 +218,11 @@ export default function JobBlueprintScorecardsPage() {
               </div>
             ) : candidateId && draft.isError && !isNoScorecardError(draft.error) ? (
               <p className="mb-4 text-xs text-red-600" role="alert">
-                Could not check for an interview draft for this candidate.
+                {t("scorecards.draftCheckFailed", { defaultValue: "Could not check for an interview draft for this candidate." })}
               </p>
             ) : candidateId && draft.isError ? (
               <p className="mb-4 text-xs text-[#9ca3af]" data-testid="scorecard-draft-none">
-                No finalised interview has written a draft for this candidate yet.
+                {t("scorecards.noDraft", { defaultValue: "No finalised interview has written a draft for this candidate yet." })}
               </p>
             ) : null}
 
@@ -238,13 +240,13 @@ export default function JobBlueprintScorecardsPage() {
           ) : null}
 
           <JobDnaCardSurface>
-            <h2 className="mb-1 text-base font-semibold text-[#1f2937]">Compare scorecards</h2>
+            <h2 className="mb-1 text-base font-semibold text-[#1f2937]">{t("scorecards.compare.title", { defaultValue: "Compare scorecards" })}</h2>
             <p className="mb-3 text-sm text-[#6b7280]">
-              Pick up to {COMPARE_LIMIT} candidates with a submitted scorecard to see their totals side by side.
+              {t("scorecards.compare.intro", { defaultValue: "Pick up to {{limit}} candidates with a submitted scorecard to see their totals side by side.", limit: COMPARE_LIMIT })}
             </p>
             {scoredCandidates.length === 0 ? (
               <JobDnaEmptyState>
-                No submitted scorecards for this role yet — submit one above and it will appear here.
+                {t("scorecards.compare.none", { defaultValue: "No submitted scorecards for this role yet — submit one above and it will appear here." })}
               </JobDnaEmptyState>
             ) : (
               <>
@@ -264,7 +266,7 @@ export default function JobBlueprintScorecardsPage() {
                           checked={checked}
                           disabled={full}
                           onChange={() => toggleCompare(c.id)}
-                          aria-label={`Compare ${c.code ?? c.name}`}
+                          aria-label={t("scorecards.compare.checkboxLabel", { defaultValue: "Compare {{name}}", name: c.code ?? c.name })}
                         />
                         {c.code ?? c.name}
                       </label>
@@ -272,20 +274,19 @@ export default function JobBlueprintScorecardsPage() {
                   })}
                 </div>
                 {compareIds.length === 0 ? (
-                  <JobDnaEmptyState>Select candidates to compare.</JobDnaEmptyState>
+                  <JobDnaEmptyState>{t("scorecards.compare.select", { defaultValue: "Select candidates to compare." })}</JobDnaEmptyState>
                 ) : comparison.pending ? (
-                  <JobDnaLoading label="Loading scorecards…" />
+                  <JobDnaLoading label={t("scorecards.compare.loading", { defaultValue: "Loading scorecards…" })} />
                 ) : comparison.failed ? (
-                  <JobDnaError message="Failed to load one or more scorecards." />
+                  <JobDnaError message={t("scorecards.compare.failed", { defaultValue: "Failed to load one or more scorecards." })} />
                 ) : comparison.scorecards.length === 0 ? (
-                  <JobDnaEmptyState>None of the selected candidates has a scorecard on the server.</JobDnaEmptyState>
+                  <JobDnaEmptyState>{t("scorecards.compare.noneOnServer", { defaultValue: "None of the selected candidates has a scorecard on the server." })}</JobDnaEmptyState>
                 ) : (
                   <>
                     <ScorecardComparison scorecards={comparison.scorecards} />
                     {comparison.missing.length > 0 ? (
                       <p className="mt-2 text-xs text-[#9ca3af]">
-                        {comparison.missing.length} selected candidate{comparison.missing.length === 1 ? " has" : "s have"} no
-                        scorecard on the server and {comparison.missing.length === 1 ? "is" : "are"} not shown.
+                        {t("scorecards.compare.missing", { count: comparison.missing.length, defaultValue: "{{count}} selected candidates have no scorecard on the server and are not shown.", defaultValue_one: "{{count}} selected candidate has no scorecard on the server and is not shown.", defaultValue_other: "{{count}} selected candidates have no scorecard on the server and are not shown." })}
                       </p>
                     ) : null}
                   </>

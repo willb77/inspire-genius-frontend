@@ -2,7 +2,9 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import type { TFunction } from "i18next"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,13 +35,14 @@ import type { Candidate, JobDNA } from "@/types/job-blueprint"
  * shows the allocated code. Only published (`active`) roles are offered: a
  * draft has no benchmark for the candidate to be screened against.
  */
-const schema = z.object({
-  jobId: z.string().min(1, "Pick a published role"),
-  name: z.string().trim().min(1, "Name is required"),
-  email: z.string().trim().email("Enter a valid email address"),
-  code: z.string().trim().max(32, "Codes are at most 32 characters"),
-})
-type FormValues = z.infer<typeof schema>
+const makeSchema = (t: TFunction) =>
+  z.object({
+    jobId: z.string().min(1, t("addCandidate.val.job", { defaultValue: "Pick a published role" })),
+    name: z.string().trim().min(1, t("addCandidate.val.name", { defaultValue: "Name is required" })),
+    email: z.string().trim().email(t("addCandidate.val.email", { defaultValue: "Enter a valid email address" })),
+    code: z.string().trim().max(32, t("addCandidate.val.code", { defaultValue: "Codes are at most 32 characters" })),
+  })
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 export function AddCandidateDialog({
   jobDnas,
@@ -51,13 +54,14 @@ export function AddCandidateDialog({
   defaultJobId?: string
   onAdded?: (candidate: Candidate, jobId: string) => void
 }) {
+  const { t } = useTranslation("jobBlueprintPages")
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const intake = useSubmitIntake()
   const published = jobDnas.filter((jd) => jd.status === "active")
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(makeSchema(t)),
     defaultValues: { jobId: "", name: "", email: "", code: "" },
   })
   const { register, handleSubmit, reset, formState } = form
@@ -81,16 +85,20 @@ export function AddCandidateDialog({
         code: values.code || undefined,
       })
       if (!candidate) {
-        setError("The server accepted the request but returned no candidate. Refresh the pipeline to check.")
+        setError(t("addCandidate.noCandidate", { defaultValue: "The server accepted the request but returned no candidate. Refresh the pipeline to check." }))
         return
       }
       const code = candidate.code
-      toast.success(`${values.name} added to the pipeline${code ? ` as ${code}` : ""}`)
+      toast.success(
+        code
+          ? t("addCandidate.addedAs", { defaultValue: "{{name}} added to the pipeline as {{code}}", name: values.name, code })
+          : t("addCandidate.added", { defaultValue: "{{name}} added to the pipeline", name: values.name })
+      )
       setOpen(false)
       reset()
       onAdded?.(candidate, values.jobId)
     } catch (err) {
-      setError(describeIntakeError(err))
+      setError(describeIntakeError(err, t))
     }
   })
 
@@ -99,28 +107,27 @@ export function AddCandidateDialog({
       <DialogTrigger asChild>
         <Button type="button" variant="outline" size="sm" className="gap-1.5">
           <UserPlus className="h-4 w-4" />
-          Add candidate
+          {t("addCandidate.trigger", { defaultValue: "Add candidate" })}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={onSubmit} noValidate>
           <DialogHeader>
-            <DialogTitle>Add a candidate</DialogTitle>
+            <DialogTitle>{t("addCandidate.title", { defaultValue: "Add a candidate" })}</DialogTitle>
             <DialogDescription>
-              Puts the person into the role&apos;s pipeline under a blind code. Their PRISM
-              profile is scored against the role&apos;s reviewed benchmark once it is on file.
+              {t("addCandidate.description", { defaultValue: "Puts the person into the role's pipeline under a blind code. Their PRISM profile is scored against the role's reviewed benchmark once it is on file." })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="mt-4 space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="intake-job">Role (published Job DNA)</Label>
+              <Label htmlFor="intake-job">{t("addCandidate.role", { defaultValue: "Role (published Job DNA)" })}</Label>
               <select
                 id="intake-job"
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                 {...register("jobId")}
               >
-                <option value="">Select a published role…</option>
+                <option value="">{t("addCandidate.selectRole", { defaultValue: "Select a published role…" })}</option>
                 {published.map((jd) => (
                   <option key={jd.id} value={jd.id}>
                     {jd.roleTitle}
@@ -130,7 +137,7 @@ export function AddCandidateDialog({
               </select>
               {published.length === 0 ? (
                 <p className="text-xs text-[#6b7280]">
-                  No published roles yet. Publish a Job DNA benchmark first.
+                  {t("addCandidate.noRoles", { defaultValue: "No published roles yet. Publish a Job DNA benchmark first." })}
                 </p>
               ) : null}
               {formState.errors.jobId ? (
@@ -139,7 +146,7 @@ export function AddCandidateDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="intake-name">Full name</Label>
+              <Label htmlFor="intake-name">{t("addCandidate.fullName", { defaultValue: "Full name" })}</Label>
               <Input id="intake-name" autoComplete="off" {...register("name")} />
               {formState.errors.name ? (
                 <p className="text-xs text-destructive">{formState.errors.name.message}</p>
@@ -147,7 +154,7 @@ export function AddCandidateDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="intake-email">Email</Label>
+              <Label htmlFor="intake-email">{t("addCandidate.email", { defaultValue: "Email" })}</Label>
               <Input id="intake-email" type="email" autoComplete="off" {...register("email")} />
               {formState.errors.email ? (
                 <p className="text-xs text-destructive">{formState.errors.email.message}</p>
@@ -155,8 +162,8 @@ export function AddCandidateDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="intake-code">Candidate code (optional)</Label>
-              <Input id="intake-code" placeholder="Allocated automatically if blank" {...register("code")} />
+              <Label htmlFor="intake-code">{t("addCandidate.code", { defaultValue: "Candidate code (optional)" })}</Label>
+              <Input id="intake-code" placeholder={t("addCandidate.codePlaceholder", { defaultValue: "Allocated automatically if blank" })} {...register("code")} />
               {formState.errors.code ? (
                 <p className="text-xs text-destructive">{formState.errors.code.message}</p>
               ) : null}
@@ -171,10 +178,10 @@ export function AddCandidateDialog({
 
           <DialogFooter className="mt-5">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={intake.isPending}>
-              Cancel
+              {t("addCandidate.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button type="submit" disabled={intake.isPending || published.length === 0}>
-              {intake.isPending ? "Adding…" : "Add to pipeline"}
+              {intake.isPending ? t("addCandidate.adding", { defaultValue: "Adding…" }) : t("addCandidate.submit", { defaultValue: "Add to pipeline" })}
             </Button>
           </DialogFooter>
         </form>

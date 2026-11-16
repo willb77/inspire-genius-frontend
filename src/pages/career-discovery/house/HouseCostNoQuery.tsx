@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { ROUTES } from "@/constants/routes"
 import { NoticeCard } from "../DiscoveryParts"
 import { costSearch, recallCost } from "./lastCost"
@@ -11,24 +12,27 @@ import { costSearch, recallCost } from "./lastCost"
  * so reaching Cost from a menu is never a dead end.
  */
 export function HouseCostNoQuery() {
+  const { t } = useTranslation("careerDiscoveryPages")
   const last = recallCost()
   return (
-    <NoticeCard title="Choose a school first">
+    <NoticeCard title={t("houseCostTitle", "Choose a school first")}>
       <p>
-        Cost and payback is worked out for one path at one school, because prices and pay differ from school to
-        school. On Education paths, choose a state, then a path, then &quot;Cost and payback&quot; next to a school.
+        {t(
+          "houseCostBody",
+          'Cost and payback is worked out for one path at one school, because prices and pay differ from school to school. On Education paths, choose a state, then a path, then "Cost and payback" next to a school.'
+        )}
       </p>
       <ul className="space-y-1">
         {last ? (
           <li>
             <Link className="underline" to={ROUTES.CAREER_DISCOVERY.COST + costSearch(last)}>
-              Open the last one you looked at
+              {t("houseCostLast", "Open the last one you looked at")}
             </Link>
           </li>
         ) : null}
         <li>
           <Link className="underline" to={ROUTES.CAREER_DISCOVERY.EDUCATION}>
-            Go to Education paths
+            {t("dpGoToEducation", "Go to Education paths")}
           </Link>
         </li>
       </ul>

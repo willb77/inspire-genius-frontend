@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom"
 import { CheckCircle2, Loader2, Sprout, Wrench } from "lucide-react"
 import type { AxiosError } from "axios"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { ROUTES } from "@/constants/routes"
 import { useSkillMatch, useSkillMatchEnabled } from "@/hooks/job-fit/useSkillMatch"
 import type { SkillMatchItem } from "@/types/job-fit/skillMatch"
@@ -27,19 +29,23 @@ export interface SkillsMatchProps {
   onetSocCode: string | null | undefined
 }
 
+// Kept as exported English constants because the tests compare rendered text with
+// them; the page itself renders `t("skillsMatch.noCode" / "skillsMatch.note")`, whose
+// English must stay equal to these (the tests fail if it drifts).
 export const NO_CODE_TEXT =
   "This job isn't linked to an O*NET occupation yet, so its skills can't be listed."
 export const NOTE_TEXT = "Shown beside your fit, not inside it: skills don't change your fit percentage."
 
-function errorText(err: unknown): string {
+function errorText(err: unknown, t: TFunction): string {
   const e = err as AxiosError<{ detail?: unknown }> | undefined
   const detail = e?.response?.data?.detail
   if (typeof detail === "string" && detail) return detail
-  if (e?.response?.status === 403) return "Skills aren't available on your account right now."
-  return "Please try again."
+  if (e?.response?.status === 403) return t("skillsMatch.error403", "Skills aren't available on your account right now.")
+  return t("skillsMatch.errorGeneric", "Please try again.")
 }
 
 function SkillList({ items, label, tone }: { items: SkillMatchItem[]; label: string; tone: "have" | "build" }) {
+  const { t } = useTranslation("jobFitPages")
   return (
     <ul aria-label={label} className="mt-2 flex flex-wrap gap-2">
       {items.map((s) => (
@@ -50,7 +56,11 @@ function SkillList({ items, label, tone }: { items: SkillMatchItem[]; label: str
               ? "inline-flex items-center gap-1 rounded-full bg-[#F0FDFA] px-2.5 py-1 text-xs font-medium text-[#0F766E]"
               : "inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-[#334155]"
           }
-          title={s.yourSkill && s.yourSkill !== s.name ? `Saved as "${s.yourSkill}"` : undefined}
+          title={
+            s.yourSkill && s.yourSkill !== s.name
+              ? t("skillsMatch.savedAs", { defaultValue: "Saved as \"{{skill}}\"", skill: s.yourSkill })
+              : undefined
+          }
         >
           {tone === "have" ? (
             <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
@@ -65,6 +75,7 @@ function SkillList({ items, label, tone }: { items: SkillMatchItem[]; label: str
 }
 
 export function SkillsMatch({ onetSocCode }: SkillsMatchProps) {
+  const { t } = useTranslation("jobFitPages")
   const enabled = useSkillMatchEnabled()
   const code = (onetSocCode ?? "").trim()
   const q = useSkillMatch(code, enabled)
@@ -76,21 +87,33 @@ export function SkillsMatch({ onetSocCode }: SkillsMatchProps) {
     <section aria-labelledby="skills-match-heading" className="rounded-xl border border-slate-200 bg-white p-4">
       <h2 id="skills-match-heading" className="flex items-center gap-2 text-sm font-semibold text-[#0F172A]">
         <Wrench className="h-4 w-4 text-[#0D9488]" aria-hidden />
-        Skills for this job
+        {t("skillsMatch.heading", "Skills for this job")}
       </h2>
-      <p className="mt-1 text-xs text-[#475569]">{NOTE_TEXT}</p>
+      <p className="mt-1 text-xs text-[#475569]">
+        {t(
+          "skillsMatch.note",
+          "Shown beside your fit, not inside it: skills don't change your fit percentage.",
+        )}
+      </p>
 
-      {!code && <p className="mt-3 text-sm text-[#475569]">{NO_CODE_TEXT}</p>}
+      {!code && (
+        <p className="mt-3 text-sm text-[#475569]">
+          {t(
+            "skillsMatch.noCode",
+            "This job isn't linked to an O*NET occupation yet, so its skills can't be listed.",
+          )}
+        </p>
+      )}
 
       {code && q.isLoading && (
         <p className="mt-3 flex items-center gap-2 text-sm text-[#475569]" role="status">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Loading skills…
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> {t("skillsMatch.loading", "Loading skills…")}
         </p>
       )}
 
       {code && q.isError && (
         <p role="alert" className="mt-3 text-sm text-[#B91C1C]">
-          Couldn&apos;t load the skills for this job. {errorText(q.error)}
+          {t("skillsMatch.loadError", "Couldn't load the skills for this job.")} {errorText(q.error, t)}
         </p>
       )}
 
@@ -102,30 +125,39 @@ export function SkillsMatch({ onetSocCode }: SkillsMatchProps) {
               className="mt-1 inline-block text-sm font-medium text-[#0D9488] underline-offset-2 hover:underline"
               to={ROUTES.CAREER_DISCOVERY.ABOUT}
             >
-              Add your skills
+              {t("skillsMatch.addSkills", "Add your skills")}
             </Link>
           )}
 
           {(d.have.length > 0 || d.toBuild.length > 0) && (
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
               <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-[#0F766E]">You have</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-[#0F766E]">
+                  {t("skillsMatch.youHave", "You have")}
+                </h3>
                 {d.have.length > 0 ? (
-                  <SkillList items={d.have} label="Skills you have" tone="have" />
+                  <SkillList items={d.have} label={t("skillsMatch.haveLabel", "Skills you have")} tone="have" />
                 ) : (
                   d.reason !== "no_skills" && (
                     <p className="mt-2 text-sm text-[#475569]">
-                      None of your saved skills match this job&apos;s important O*NET skills yet.
+                      {t(
+                        "skillsMatch.noneMatch",
+                        "None of your saved skills match this job's important O*NET skills yet.",
+                      )}
                     </p>
                   )
                 )}
               </div>
               <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-[#334155]">To build</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-[#334155]">
+                  {t("skillsMatch.toBuild", "To build")}
+                </h3>
                 {d.toBuild.length > 0 ? (
-                  <SkillList items={d.toBuild} label="Skills to build" tone="build" />
+                  <SkillList items={d.toBuild} label={t("skillsMatch.buildLabel", "Skills to build")} tone="build" />
                 ) : (
-                  <p className="mt-2 text-sm text-[#475569]">You have every skill O*NET rates as important here.</p>
+                  <p className="mt-2 text-sm text-[#475569]">
+                    {t("skillsMatch.haveEvery", "You have every skill O*NET rates as important here.")}
+                  </p>
                 )}
               </div>
             </div>

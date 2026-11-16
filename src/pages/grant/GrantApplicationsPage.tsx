@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   ClipboardList,
   CheckCircle2,
@@ -33,6 +34,7 @@ function FafsaFieldRow({
   value: string
   onChange: (v: string) => void
 }) {
+  const { t } = useTranslation("grantPages")
   // DDX + sensitive fields are never collected — show them as locked rows so the
   // student understands the tax section auto-fills and the SSN is entered on the
   // federal site, not here.
@@ -44,7 +46,9 @@ function FafsaFieldRow({
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-[#374151]">{field.label}</span>
             <GrantPill tone={field.ddx ? "teal" : "amber"}>
-              {field.ddx ? "Auto-fills on consent" : "You enter on StudentAid.gov"}
+              {field.ddx
+                ? t("applications.autoFills", "Auto-fills on consent")
+                : t("applications.youEnter", "You enter on StudentAid.gov")}
             </GrantPill>
           </div>
           {field.help && <p className="mt-1 text-xs text-[#9ca3af]">{field.help}</p>}
@@ -69,9 +73,9 @@ function FafsaFieldRow({
           onChange={(e) => onChange(e.target.value)}
           aria-label={field.label}
         >
-          <option value="">Select…</option>
-          <option value="true">Yes</option>
-          <option value="false">No</option>
+          <option value="">{t("applications.select", "Select…")}</option>
+          <option value="true">{t("common.yes", "Yes")}</option>
+          <option value="false">{t("common.no", "No")}</option>
         </select>
       ) : field.type === "select" && field.options.length > 0 ? (
         <select
@@ -80,7 +84,7 @@ function FafsaFieldRow({
           onChange={(e) => onChange(e.target.value)}
           aria-label={field.label}
         >
-          <option value="">Select…</option>
+          <option value="">{t("applications.select", "Select…")}</option>
           {field.options.map((o) => (
             <option key={o} value={o}>
               {o.replace(/_/g, " ")}
@@ -94,7 +98,11 @@ function FafsaFieldRow({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           aria-label={field.label}
-          placeholder={field.type === "school_list" ? "Comma-separated school codes" : undefined}
+          placeholder={
+            field.type === "school_list"
+              ? t("applications.schoolCodesPlaceholder", "Comma-separated school codes")
+              : undefined
+          }
         />
       )}
       {field.help && <p className="mt-1 text-xs text-[#9ca3af]">{field.help}</p>}
@@ -134,6 +142,7 @@ function CollectSection({
   onSave: (patch: Record<string, unknown>) => void
   saving: boolean
 }) {
+  const { t } = useTranslation("grantPages")
   const editable = section.fields.filter((f) => f.collectable)
   const [draft, setDraft] = useState<Record<string, string>>({})
 
@@ -178,7 +187,7 @@ function CollectSection({
             disabled={saving}
             className="rounded-lg bg-[#3B5BFF] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#2f49cc] disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Save section"}
+            {saving ? t("applications.saving", "Saving…") : t("applications.saveSection", "Save section")}
           </button>
         </div>
       )}
@@ -188,22 +197,43 @@ function CollectSection({
 
 /** The generated prep-packet summary. */
 function PacketSummary({ packet }: { packet: FafsaPacket }) {
+  const { t } = useTranslation("grantPages")
   return (
     <GrantCard className="mb-4">
       <div className="mb-2 flex items-center gap-2">
         <FileText className="h-4 w-4 text-[#3B5BFF]" />
         <span className="text-sm font-semibold text-[#1f2937]">
-          Prep packet — FAFSA {packet.awardYear}
+          {t("applications.prepPacketTitle", {
+            year: packet.awardYear,
+            defaultValue: "Prep packet — FAFSA {{year}}",
+          })}
         </span>
         <GrantPill tone={packet.ready ? "green" : "amber"}>
-          {packet.ready ? "Submission-ready" : "In progress"}
+          {packet.ready
+            ? t("applications.submissionReady", "Submission-ready")
+            : t("applications.inProgress", "In progress")}
         </GrantPill>
       </div>
       <div className="mb-3 flex flex-wrap gap-2 text-xs">
-        <GrantPill tone="blue">{packet.counts.prefilled} pre-filled</GrantPill>
-        <GrantPill tone="teal">{packet.counts.collected} completed</GrantPill>
+        <GrantPill tone="blue">
+          {t("applications.prefilled", {
+            count: packet.counts.prefilled,
+            defaultValue: "{{count}} pre-filled",
+          })}
+        </GrantPill>
+        <GrantPill tone="teal">
+          {t("applications.completed", {
+            count: packet.counts.collected,
+            defaultValue: "{{count}} completed",
+          })}
+        </GrantPill>
         {packet.counts.missingRequired > 0 && (
-          <GrantPill tone="amber">{packet.counts.missingRequired} still needed</GrantPill>
+          <GrantPill tone="amber">
+            {t("applications.stillNeeded", {
+              count: packet.counts.missingRequired,
+              defaultValue: "{{count}} still needed",
+            })}
+          </GrantPill>
         )}
       </div>
       <ul className="mb-3 space-y-1">
@@ -231,6 +261,7 @@ function PacketSummary({ packet }: { packet: FafsaPacket }) {
  * required steps.
  */
 export default function GrantApplicationsPage() {
+  const { t } = useTranslation("grantPages")
   const { data: application } = useFafsaApplication()
   const { data: catalog, isLoading: catalogLoading } = useFafsaFieldCatalog()
   const { data: completeness } = useFafsaCompleteness()
@@ -258,8 +289,11 @@ export default function GrantApplicationsPage() {
     <div className="max-w-3xl">
       <GrantPageHeader
         icon={ClipboardList}
-        title="Application Concierge"
-        description="We stage every non-tax field so you confirm instead of hunt — then guide you through the StudentAid.gov steps only you can take."
+        title={t("applications.title", "Application Concierge")}
+        description={t(
+          "applications.description",
+          "We stage every non-tax field so you confirm instead of hunt — then guide you through the StudentAid.gov steps only you can take."
+        )}
       />
 
       {catalogLoading ? (
@@ -270,7 +304,10 @@ export default function GrantApplicationsPage() {
           <GrantCard className="mb-5">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-semibold text-[#374151]">
-                FAFSA {awardYear || "—"} readiness
+                {t("applications.readiness", {
+                  year: awardYear || "—",
+                  defaultValue: "FAFSA {{year}} readiness",
+                })}
               </span>
               <GrantPill tone={completeness?.ready ? "green" : "blue"}>{pct}%</GrantPill>
             </div>
@@ -278,21 +315,29 @@ export default function GrantApplicationsPage() {
             <p className="mt-3 text-sm text-[#6b7280]">
               {completeness
                 ? completeness.ready
-                  ? "Every required non-tax field is staged — you're ready for the StudentAid.gov handoff."
-                  : `${completeness.missingRequired.length} required field(s) still need an answer.`
-                : "Loading your progress…"}
+                  ? t(
+                      "applications.allStaged",
+                      "Every required non-tax field is staged — you're ready for the StudentAid.gov handoff."
+                    )
+                  : t("applications.missingRequired", {
+                      count: completeness.missingRequired.length,
+                      defaultValue: "{{count}} required field(s) still need an answer.",
+                    })
+                : t("applications.loadingProgress", "Loading your progress…")}
             </p>
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-[rgba(45,212,191,0.1)] p-3">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0f766e]" />
               <p className="text-xs leading-relaxed text-[#0f766e]">
-                GRANT never stores your SSN or tax data. Tax figures transfer straight from the IRS
-                when you consent; your SSN is entered on StudentAid.gov. We never submit for you.
+                {t(
+                  "applications.privacyNote",
+                  "GRANT never stores your SSN or tax data. Tax figures transfer straight from the IRS when you consent; your SSN is entered on StudentAid.gov. We never submit for you."
+                )}
               </p>
             </div>
           </GrantCard>
 
           {/* Collect sections */}
-          <GrantSectionTitle>Your information</GrantSectionTitle>
+          <GrantSectionTitle>{t("applications.yourInformation", "Your information")}</GrantSectionTitle>
           {collectSections.map((section) => (
             <CollectSection
               key={section.key}
@@ -308,12 +353,16 @@ export default function GrantApplicationsPage() {
           ))}
 
           {/* Prep packet */}
-          <GrantSectionTitle className="mt-6">Prep packet</GrantSectionTitle>
+          <GrantSectionTitle className="mt-6">
+            {t("applications.prepPacket", "Prep packet")}
+          </GrantSectionTitle>
           <GrantCard className="mb-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-[#6b7280]">
-                Generate a completed packet of everything staged so far — ready to confirm on
-                StudentAid.gov.
+                {t(
+                  "applications.prepPacketBlurb",
+                  "Generate a completed packet of everything staged so far — ready to confirm on StudentAid.gov."
+                )}
               </p>
               <button
                 type="button"
@@ -327,7 +376,9 @@ export default function GrantApplicationsPage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-[#3B5BFF] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#2f49cc] disabled:opacity-60"
               >
                 <Sparkles className="h-4 w-4" />
-                {generatePacket.isPending ? "Generating…" : "Generate prep packet"}
+                {generatePacket.isPending
+                  ? t("applications.generating", "Generating…")
+                  : t("applications.generatePacket", "Generate prep packet")}
               </button>
             </div>
           </GrantCard>
@@ -335,17 +386,24 @@ export default function GrantApplicationsPage() {
 
           {/* Guided handoff */}
           <GrantSectionTitle className="mt-6">
-            Guided StudentAid.gov handoff
+            {t("applications.handoffTitle", "Guided StudentAid.gov handoff")}
           </GrantSectionTitle>
           <GrantCard>
             {handoff ? (
               <>
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm text-[#6b7280]">
-                    {handoff.counts.complete} of {handoff.counts.total} steps done
+                    {t("applications.stepsDone", {
+                      complete: handoff.counts.complete,
+                      total: handoff.counts.total,
+                      defaultValue: "{{complete}} of {{total}} steps done",
+                    })}
                   </span>
                   <GrantPill tone={handoff.complete ? "green" : "blue"}>
-                    {handoff.counts.remaining} left
+                    {t("applications.stepsLeft", {
+                      count: handoff.counts.remaining,
+                      defaultValue: "{{count}} left",
+                    })}
                   </GrantPill>
                 </div>
                 <ul className="space-y-2">
@@ -359,7 +417,17 @@ export default function GrantApplicationsPage() {
                         <button
                           type="button"
                           aria-pressed={done}
-                          aria-label={`Mark "${step.title}" ${done ? "not done" : "done"}`}
+                          aria-label={
+                            done
+                              ? t("applications.markNotDone", {
+                                  title: step.title,
+                                  defaultValue: 'Mark "{{title}}" not done',
+                                })
+                              : t("applications.markDone", {
+                                  title: step.title,
+                                  defaultValue: 'Mark "{{title}}" done',
+                                })
+                          }
                           onClick={() =>
                             setStep.mutate({
                               stepId: step.id,
@@ -390,7 +458,7 @@ export default function GrantApplicationsPage() {
                             rel="noopener noreferrer"
                             className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-[#3B5BFF] hover:underline"
                           >
-                            Open on StudentAid.gov
+                            {t("applications.openOnStudentAid", "Open on StudentAid.gov")}
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         </div>
@@ -400,7 +468,9 @@ export default function GrantApplicationsPage() {
                 </ul>
               </>
             ) : (
-              <p className="text-sm text-[#9ca3af]">Loading your handoff steps…</p>
+              <p className="text-sm text-[#9ca3af]">
+                {t("applications.loadingHandoff", "Loading your handoff steps…")}
+              </p>
             )}
           </GrantCard>
         </>

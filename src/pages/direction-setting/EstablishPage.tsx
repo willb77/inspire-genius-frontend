@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -38,6 +39,7 @@ import { useAdvanceJourney } from "@/hooks/direction-setting/useJourney"
  *    across; it does not open a second door onto the same integration.
  */
 export default function EstablishPage() {
+  const { t } = useTranslation("directionPages")
   const navigate = useNavigate()
 
   // The assessment modal is driven by a target object; `null` means closed.
@@ -75,7 +77,7 @@ export default function EstablishPage() {
       <div className="p-6">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Checking what we already have…
+          {t("establish.checkingWhatWeAlreadyHave", "Checking what we already have…")}
         </div>
       </div>
     )
@@ -84,11 +86,9 @@ export default function EstablishPage() {
   return (
     <div className="space-y-4 p-6">
       <header>
-        <h1 className="text-2xl font-semibold">What we know about you</h1>
+        <h1 className="text-2xl font-semibold">{t("establish.whatWeKnowAboutYou", "What we know about you")}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Four ways to tell us who you are. None of them is required and none of them
-          holds anything up — everything further along works with whatever you give it,
-          and gets sharper as you add more. Do one now and the rest whenever.
+          {t("establish.fourWaysToTellUs", "Four ways to tell us who you are. None of them is required and none of them holds anything up — everything further along works with whatever you give it, and gets sharper as you add more. Do one now and the rest whenever.")}
         </p>
       </header>
 
@@ -96,7 +96,10 @@ export default function EstablishPage() {
         variant="page"
         hasPrism={hasPrismScores}
         onUploadPrism={() =>
-          setAssessmentTarget({ name: "your PRISM report", framework: "PRISM" })
+          setAssessmentTarget({
+            name: t("establish.yourPrismReport", "your PRISM report"),
+            framework: "PRISM",
+          })
         }
         onUploaded={recordProgress}
       />
@@ -108,12 +111,11 @@ export default function EstablishPage() {
           size="sm"
           onClick={() => navigate(ROUTES.DIRECTION_SETTING.PORTRAIT)}
         >
-          Go on to your portrait
+          {t("establish.goOnToYourPortrait", "Go on to your portrait")}
           <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
         </Button>
         <p className="mt-1 text-xs text-muted-foreground">
-          You can carry on without any of this. The portrait will simply say what it
-          can, and tell you what it couldn&apos;t see.
+          {t("establish.youCanCarryOnWithout", "You can carry on without any of this. The portrait will simply say what it can, and tell you what it couldn't see.")}
         </p>
       </footer>
 
