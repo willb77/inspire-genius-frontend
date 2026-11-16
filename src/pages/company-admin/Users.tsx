@@ -25,7 +25,7 @@ const FALLBACK_USERS: User[] = [
 ]
 
 function CompanyAdminUsersClassic() {
-  const { t } = useTranslation(["admin", "common"]);
+  const { t } = useTranslation(["companyAdminPages", "admin", "common"]);
   const [search, setSearch] = useState("")
   const { data: usersData, isLoading, error, refetch } = useCompanyUsers()
 
@@ -49,7 +49,7 @@ function CompanyAdminUsersClassic() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-[#111827]">{t("admin:users.title")}</h1>
-          <p className="text-[13px] text-[#6b7280]">Provision and manage users within your organization.</p>
+          <p className="text-[13px] text-[#6b7280]">{t("usersSubtitle", { defaultValue: "Provision and manage users within your organization." })}</p>
         </div>
         <button
           onClick={() => toast.info(t("admin:users.addFunctionality"))}
@@ -62,10 +62,10 @@ function CompanyAdminUsersClassic() {
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {[
-          { label: "Total Users", value: "247" },
-          { label: "Active", value: "231" },
-          { label: "Managers", value: "16" },
-          { label: "Inactive", value: "16" },
+          { label: t("usersTotal", { defaultValue: "Total Users" }), value: "247" },
+          { label: t("usersActive", { defaultValue: "Active" }), value: "231" },
+          { label: t("usersManagers", { defaultValue: "Managers" }), value: "16" },
+          { label: t("usersInactive", { defaultValue: "Inactive" }), value: "16" },
         ].map((s) => (
           <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5">
             <div className="text-xs text-[#6b7280]">{s.label}</div>
@@ -80,8 +80,8 @@ function CompanyAdminUsersClassic() {
       <DataCard title={t("admin:users.users")}>
         {error && (
           <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+            {t("failedToLoadData", { defaultValue: "Failed to load data." })}
+            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         {/* Search */}
@@ -99,7 +99,7 @@ function CompanyAdminUsersClassic() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                {["Name", "Email", "Role", "Department", "Team", "Status", "Joined"].map((h) => (
+                {[t("usersColName", { defaultValue: "Name" }), t("usersColEmail", { defaultValue: "Email" }), t("usersColRole", { defaultValue: "Role" }), t("usersColDepartment", { defaultValue: "Department" }), t("usersColTeam", { defaultValue: "Team" }), t("usersColStatus", { defaultValue: "Status" }), t("usersColJoined", { defaultValue: "Joined" })].map((h) => (
                   <th key={h} className="text-left text-[10px] font-bold uppercase tracking-wider text-[#6b7280] px-3 py-2.5">{h}</th>
                 ))}
               </tr>

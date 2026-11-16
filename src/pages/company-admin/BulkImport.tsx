@@ -1,4 +1,5 @@
 import { useReducer, useCallback, useState } from "react"
+import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -121,6 +122,7 @@ function stepIndex(step: BulkImportStep): number {
 
 // ── Component ──
 export default function BulkImport() {
+  const { t } = useTranslation("companyAdminPages")
   const [state, dispatch] = useReducer(reducer, initialState)
   const currentIdx = stepIndex(state.currentStep)
 
@@ -210,14 +212,14 @@ export default function BulkImport() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Bulk User Import</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t("bulkImportTitle", { defaultValue: "Bulk User Import" })}</h1>
             <p className="text-muted-foreground">
-              Upload a file to import users and send invitation emails
+              {t("bulkImportSubtitle", { defaultValue: "Upload a file to import users and send invitation emails" })}
             </p>
           </div>
           {state.currentStep !== "upload" && (
             <Button variant="outline" size="sm" onClick={() => dispatch({ type: "RESET" })}>
-              Start Over
+              {t("bulkImportStartOver", { defaultValue: "Start Over" })}
             </Button>
           )}
         </div>
@@ -273,7 +275,7 @@ export default function BulkImport() {
             onClick={() => dispatch({ type: "GO_TO_STEP", step: STEPS[currentIdx - 1].key })}
           >
             <ChevronLeft className="mr-1 h-4 w-4" />
-            Back
+            {t("bulkImportBack", { defaultValue: "Back" })}
           </Button>
         )}
 
@@ -291,13 +293,10 @@ export default function BulkImport() {
               />
               <span className="space-y-1 leading-tight">
                 <span className="block text-sm font-medium">
-                  Skip onboarding for this batch
+                  {t("bulkImportSkipOnboarding", { defaultValue: "Skip onboarding for this batch" })}
                 </span>
                 <span className="block text-xs text-muted-foreground">
-                  Provisions every imported user already onboarded and emails a
-                  one-click magic sign-in link instead of a password-setup
-                  invitation (no compose/send step). For demo cohorts on
-                  Dev/Staging — rejected in production.
+                  {t("bulkImportSkipOnboardingHint", { defaultValue: "Provisions every imported user already onboarded and emails a one-click magic sign-in link instead of a password-setup invitation (no compose/send step). For demo cohorts on Dev/Staging — rejected in production." })}
                 </span>
               </span>
             </label>

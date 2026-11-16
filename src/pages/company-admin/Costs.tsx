@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import ProgressBar from "@/components/dashboard/ProgressBar"
@@ -33,6 +34,7 @@ const FALLBACK_DEPT_COSTS = [
 ]
 
 export default function CompanyAdminCosts() {
+  const { t } = useTranslation("companyAdminPages")
   const { data: costsData, isLoading, error, refetch } = useCompanyCosts()
 
   const cd = costsData as {
@@ -48,14 +50,14 @@ export default function CompanyAdminCosts() {
 
   return (
     <CompanyAdminLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Cost Management</h1>
-      <p className="text-[13px] text-[#6b7280] mb-3">Track platform costs, license expenses, and training spend.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("costsTitle", { defaultValue: "Cost Management" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-3">{t("costsSubtitle", { defaultValue: "Track platform costs, license expenses, and training spend." })}</p>
 
       {/* Placeholder Data Notice */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 flex items-start gap-2">
         <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
         <p className="text-[13px] text-amber-800">
-          Cost data is currently placeholder. Live billing and license cost tracking is in progress.
+          {t("costsPlaceholderNotice", { defaultValue: "Cost data is currently placeholder. Live billing and license cost tracking is in progress." })}
         </p>
       </div>
 
@@ -71,7 +73,7 @@ export default function CompanyAdminCosts() {
       </div>
 
       {/* Monthly Spend Chart */}
-      <DataCard title="Monthly Spend">
+      <DataCard title={t("costsMonthlySpend", { defaultValue: "Monthly Spend" })}>
         <div className="flex items-end justify-around h-[200px] pt-4 pb-2">
           {MONTHLY.map((m) => (
             <div key={m.month} className="flex flex-col items-center gap-1 flex-1">
@@ -85,24 +87,24 @@ export default function CompanyAdminCosts() {
           ))}
         </div>
         <div className="flex items-center gap-4 mt-3 justify-center">
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#3B5BFF]" /><span className="text-[11px] text-[#6b7280]">Licenses</span></div>
-          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#8B5CF6]" /><span className="text-[11px] text-[#6b7280]">Training</span></div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#3B5BFF]" /><span className="text-[11px] text-[#6b7280]">{t("costsLicenses", { defaultValue: "Licenses" })}</span></div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#8B5CF6]" /><span className="text-[11px] text-[#6b7280]">{t("costsTraining", { defaultValue: "Training" })}</span></div>
         </div>
       </DataCard>
 
       {/* Cost by Department */}
-      <DataCard title="Cost by Department">
+      <DataCard title={t("costsByDepartment", { defaultValue: "Cost by Department" })}>
         {error && (
           <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+            {t("failedToLoadData", { defaultValue: "Failed to load data." })}
+            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                {["Department", "Users", "Total Cost", "% of Total", "Cost/User"].map((h) => (
+                {[t("costsColDepartment", { defaultValue: "Department" }), t("costsColUsers", { defaultValue: "Users" }), t("costsColTotalCost", { defaultValue: "Total Cost" }), t("costsColPctOfTotal", { defaultValue: "% of Total" }), t("costsColCostPerUser", { defaultValue: "Cost/User" })].map((h) => (
                   <th key={h} className="text-left text-[10px] font-bold uppercase tracking-wider text-[#6b7280] px-3 py-2.5">{h}</th>
                 ))}
               </tr>
@@ -132,12 +134,12 @@ export default function CompanyAdminCosts() {
       </DataCard>
 
       {/* License Allocation */}
-      <DataCard title="License Allocation">
+      <DataCard title={t("costsLicenseAllocation", { defaultValue: "License Allocation" })}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: "Active Licenses", value: "192", color: "#10B981" },
-            { label: "Unused Licenses", value: "55", color: "#D97706" },
-            { label: "Pending Activation", value: "12", color: "#3B5BFF" },
+            { label: t("costsActiveLicenses", { defaultValue: "Active Licenses" }), value: "192", color: "#10B981" },
+            { label: t("costsUnusedLicenses", { defaultValue: "Unused Licenses" }), value: "55", color: "#D97706" },
+            { label: t("costsPendingActivation", { defaultValue: "Pending Activation" }), value: "12", color: "#3B5BFF" },
           ].map((l) => (
             <div key={l.label} className="text-center p-5 border border-[#e5e7eb] rounded-lg bg-[#f9fafb]">
               <div className="text-xs font-semibold text-[#6b7280]">{l.label}</div>
