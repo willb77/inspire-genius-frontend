@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import type { JSX } from "react"
 import { AlertTriangle, Loader2, Upload } from "lucide-react"
 
@@ -56,6 +57,7 @@ export function ReplacePrismDataDialog({
   open,
   onOpenChange: setOpenExternal,
 }: ReplacePrismDataDialogProps): JSX.Element {
+  const { t } = useTranslation("prismUi")
   const [csv, setCsv] = useState<File | null>(null)
   const [pdf, setPdf] = useState<File | null>(null)
   const [lossSections, setLossSections] = useState<string[] | null>(null)
@@ -96,22 +98,29 @@ export function ReplacePrismDataDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Replace your PRISM data</DialogTitle>
+          <DialogTitle>{t("replaceData.dialogTitle", { defaultValue: "Replace your PRISM data" })}</DialogTitle>
           <DialogDescription>
             {pdfOn
-              ? "Upload your PRISM report PDF and we'll read your scores from it — or upload the PRISM scores CSV, or both."
-              : "Upload your PRISM raw-data CSV to replace your current scores. You can optionally add a replacement report PDF."}{" "}
-            This overwrites your existing PRISM profile — it does not add a second one.
+              ? t("replaceData.descPdfOn", {
+                  defaultValue:
+                    "Upload your PRISM report PDF and we'll read your scores from it — or upload the PRISM scores CSV, or both. This overwrites your existing PRISM profile — it does not add a second one.",
+                })
+              : t("replaceData.descPdfOff", {
+                  defaultValue:
+                    "Upload your PRISM raw-data CSV to replace your current scores. You can optionally add a replacement report PDF. This overwrites your existing PRISM profile — it does not add a second one.",
+                })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
           <Label>
             {pdfOn ? (
-              "PRISM report PDF and/or scores CSV"
+              t("replaceData.labelPdfOn", { defaultValue: "PRISM report PDF and/or scores CSV" })
             ) : (
               <>
-                PRISM scores CSV <span className="text-destructive">*</span>, report PDF optional
+                {t("replaceData.labelCsv", { defaultValue: "PRISM scores CSV" })}{" "}
+                <span className="text-destructive">*</span>
+                {t("replaceData.labelPdfOptional", { defaultValue: ", report PDF optional" })}
               </>
             )}
           </Label>
@@ -129,12 +138,12 @@ export function ReplacePrismDataDialog({
 
           {!pdfOn && pdf && !csv && (
             <p className="text-xs text-muted-foreground" data-testid="prism-replace-needs-csv">
-              Add the PRISM scores CSV to replace your scores. The PDF is stored alongside it.
+              {t("replaceData.needsCsv", { defaultValue: "Add the PRISM scores CSV to replace your scores. The PDF is stored alongside it." })}
             </p>
           )}
           {!pdfOn && csv && !pdf && (
             <p className="text-xs text-muted-foreground">
-              Without a PDF, your report PDF is regenerated from the new scores.
+              {t("replaceData.noPdfRegenerated", { defaultValue: "Without a PDF, your report PDF is regenerated from the new scores." })}
             </p>
           )}
           {oversize && (
@@ -152,11 +161,17 @@ export function ReplacePrismDataDialog({
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="space-y-1">
-                  <p className="font-medium">This report has less than your current PRISM data.</p>
+                  <p className="font-medium">
+                    {t("replaceData.lossHeading", { defaultValue: "This report has less than your current PRISM data." })}
+                  </p>
                   <p>
-                    It does not include{" "}
-                    {lossSections.length ? lossSections.join(", ") : "some sections"} as fully as
-                    your current data does. Replacing will remove what is missing.
+                    {t("replaceData.lossBody", {
+                      defaultValue:
+                        "It does not include {{sections}} as fully as your current data does. Replacing will remove what is missing.",
+                      sections: lossSections.length
+                        ? lossSections.join(", ")
+                        : t("replaceData.lossSomeSections", { defaultValue: "some sections" }),
+                    })}
                   </p>
                 </div>
               </div>
@@ -171,7 +186,7 @@ export function ReplacePrismDataDialog({
             onClick={() => onOpenChange(false)}
             disabled={replace.isPending}
           >
-            Cancel
+            {t("replaceData.cancel", { defaultValue: "Cancel" })}
           </Button>
           {lossSections ? (
             <Button
@@ -182,7 +197,7 @@ export function ReplacePrismDataDialog({
               disabled={!canSubmit}
             >
               {replace.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-              Replace anyway
+              {t("replaceData.replaceAnyway", { defaultValue: "Replace anyway" })}
             </Button>
           ) : (
             <Button
@@ -192,7 +207,9 @@ export function ReplacePrismDataDialog({
               disabled={!canSubmit}
             >
               {replace.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-              {replace.isPending && converting ? "Reading your report…" : "Replace"}
+              {replace.isPending && converting
+                ? t("replaceData.reading", { defaultValue: "Reading your report…" })
+                : t("replaceData.replace", { defaultValue: "Replace" })}
             </Button>
           )}
         </DialogFooter>
@@ -209,11 +226,12 @@ export function ReplacePrismDataDialog({
  * caller — a user can only replace their own data.
  */
 export function ReplacePrismDataButton({
-  label = "Replace PRISM Data",
+  label,
   variant = "outline",
   size = "sm",
   className,
 }: ReplacePrismDataButtonProps): JSX.Element {
+  const { t } = useTranslation("prismUi")
   const [open, setOpen] = useState(false)
 
   return (
@@ -227,7 +245,7 @@ export function ReplacePrismDataButton({
         onClick={() => setOpen(true)}
       >
         <Upload className="mr-1.5 h-4 w-4" />
-        {label}
+        {label ?? t("replaceData.buttonLabel", { defaultValue: "Replace PRISM Data" })}
       </Button>
 
       <ReplacePrismDataDialog open={open} onOpenChange={setOpen} />

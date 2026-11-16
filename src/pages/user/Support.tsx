@@ -19,6 +19,7 @@ import {
   supportRequestSchema,
   type SupportRequestValues,
 } from "@/types/support/component-types";
+import { useTranslation } from "react-i18next";
 
 /**
  * Help & Support — the support-request surface at /help.
@@ -29,6 +30,7 @@ import {
  * posted to the legacy monolith `/v1/issues`, is preserved at /help/classic.
  */
 export default function Support() {
+  const { t } = useTranslation("userPages");
   const { user } = useAuth();
   const [lastSubmittedId, setLastSubmittedId] = useState<string | null>(null);
   const [screenshots, setScreenshots] = useState<File[]>([]);
@@ -101,11 +103,11 @@ export default function Support() {
       }
       if (failed.length === 0) {
         toast.success(
-          `${screenshots.length} screenshot${screenshots.length === 1 ? "" : "s"} attached.`,
+          t("support.screenshotsAttached", { count: screenshots.length, defaultValue_one: "{{count}} screenshot attached.", defaultValue_other: "{{count}} screenshots attached." }),
         );
       } else {
         toast.error(
-          `Your request was sent, but ${failed.length} screenshot${failed.length === 1 ? "" : "s"} could not be attached (${failed.join(", ")}). You can reply to the confirmation email with the image.`,
+          t("support.screenshotsFailed", { count: failed.length, files: failed.join(", "), defaultValue_one: "Your request was sent, but {{count}} screenshot could not be attached ({{files}}). You can reply to the confirmation email with the image.", defaultValue_other: "Your request was sent, but {{count}} screenshots could not be attached ({{files}}). You can reply to the confirmation email with the image." }),
         );
       }
       await listQuery.refetch();
@@ -127,12 +129,11 @@ export default function Support() {
       <div className="space-y-4">
         <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Help and Support
+            {t("support.helpAndSupport", "Help and Support")}
           </h1>
           {listQuery.data?.length ? (
             <Badge variant="secondary">
-              {listQuery.data.length} request
-              {listQuery.data.length === 1 ? "" : "s"}
+              {t("support.requestCount", { count: listQuery.data.length, defaultValue_one: "{{count}} request", defaultValue_other: "{{count}} requests" })}
             </Badge>
           ) : null}
         </div>
@@ -142,9 +143,7 @@ export default function Support() {
             <Mail className="size-5" />
           </div>
           <p className="text-sm text-muted-foreground">
-            Every request you post here is emailed straight to the Inspire
-            Genius support team along with your contact details, so someone can
-            get back to you directly.
+            {t("support.everyRequestYouPostHereIs", "Every request you post here is emailed straight to the Inspire Genius support team along with your contact details, so someone can get back to you directly.")}
           </p>
         </div>
 
@@ -161,10 +160,9 @@ export default function Support() {
             <Phone className="size-6" />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-semibold tracking-tight">Voice Help</h2>
+            <h2 className="text-base font-semibold tracking-tight">{t("support.voiceHelp", "Voice Help")}</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Prefer to talk? Connect with our AI voice support agent for
-              real-time assistance.
+              {t("support.preferToTalkConnectWithOur", "Prefer to talk? Connect with our AI voice support agent for real-time assistance.")}
             </p>
           </div>
           <Button
@@ -172,7 +170,7 @@ export default function Support() {
             className="shrink-0"
             onClick={() => window.dispatchEvent(new CustomEvent("voicedesk:open"))}
           >
-            Speak with Support
+            {t("support.speakWithSupport", "Speak with Support")}
           </Button>
         </div>
 

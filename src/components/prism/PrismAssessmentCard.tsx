@@ -1,4 +1,5 @@
 import { ExternalLink, Unlock, ArrowUpCircle, Eye } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -25,6 +26,7 @@ export default function PrismAssessmentCard({
   onViewReport,
   onUpgrade,
 }: PrismAssessmentCardProps) {
+  const { t } = useTranslation('prismUi')
   const isActive =
     assessment.status !== 'report_ready' &&
     assessment.status !== 'ingested' &&
@@ -67,7 +69,7 @@ export default function PrismAssessmentCard({
               assessment.questionnaireTypeName}
           </CardTitle>
           <CardDescription>
-            Initiated {formatDate(assessment.initiatedAt)}
+            {t('assessmentCard.initiated', { defaultValue: 'Initiated {{date}}', date: formatDate(assessment.initiatedAt) })}
           </CardDescription>
         </div>
         <PrismStatusBadge status={currentStatus} />
@@ -75,13 +77,13 @@ export default function PrismAssessmentCard({
       <CardContent className="space-y-3">
         {/* Timeline */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-          <span className="text-muted-foreground">Sent</span>
+          <span className="text-muted-foreground">{t('assessmentCard.sent', { defaultValue: 'Sent' })}</span>
           <span>{formatDate(assessment.questionnaireSentAt)}</span>
-          <span className="text-muted-foreground">Completed</span>
+          <span className="text-muted-foreground">{t('assessmentCard.completed', { defaultValue: 'Completed' })}</span>
           <span>{formatDate(assessment.questionnaireCompletedAt)}</span>
           {assessment.unlockedAt && (
             <>
-              <span className="text-muted-foreground">Unlocked</span>
+              <span className="text-muted-foreground">{t('assessmentCard.unlocked', { defaultValue: 'Unlocked' })}</span>
               <span>{formatDate(assessment.unlockedAt)}</span>
             </>
           )}
@@ -97,7 +99,7 @@ export default function PrismAssessmentCard({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Open Questionnaire
+                  {t('assessmentCard.openQuestionnaire', { defaultValue: 'Open Questionnaire' })}
                   <ExternalLink className="ml-1 h-3.5 w-3.5" />
                 </a>
               </Button>
@@ -110,7 +112,9 @@ export default function PrismAssessmentCard({
               disabled={unlock.isPending}
             >
               <Unlock className="mr-1 h-3.5 w-3.5" />
-              {unlock.isPending ? 'Unlocking...' : 'Unlock Report'}
+              {unlock.isPending
+                ? t('assessmentCard.unlocking', { defaultValue: 'Unlocking...' })
+                : t('assessmentCard.unlockReport', { defaultValue: 'Unlock Report' })}
             </Button>
           )}
 
@@ -121,7 +125,7 @@ export default function PrismAssessmentCard({
               onClick={() => onViewReport?.(assessment.id)}
             >
               <Eye className="mr-1 h-3.5 w-3.5" />
-              View Report
+              {t('assessmentCard.viewReport', { defaultValue: 'View Report' })}
             </Button>
           )}
 
@@ -132,7 +136,7 @@ export default function PrismAssessmentCard({
               onClick={() => onUpgrade?.(assessment.id)}
             >
               <ArrowUpCircle className="mr-1 h-3.5 w-3.5" />
-              Upgrade
+              {t('assessmentCard.upgrade', { defaultValue: 'Upgrade' })}
             </Button>
           )}
         </div>

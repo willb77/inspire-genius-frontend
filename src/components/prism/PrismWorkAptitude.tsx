@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { WorkAptitude } from '@/types/prism/api-types'
 
 type PrismWorkAptitudeProps = {
@@ -5,12 +6,13 @@ type PrismWorkAptitudeProps = {
 }
 
 export default function PrismWorkAptitude({ data }: PrismWorkAptitudeProps) {
+  const { t } = useTranslation('prismUi')
   if (!data.length) return null
 
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-muted-foreground">
-        Work Aptitude
+        {t('workAptitude.heading', { defaultValue: 'Work Aptitude' })}
       </h3>
       <div className="space-y-3">
         {data.map((apt) => (
@@ -40,8 +42,8 @@ export default function PrismWorkAptitude({ data }: PrismWorkAptitudeProps) {
             </div>
             {apt.occupation_score > 0 && (
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>You: {apt.score}</span>
-                <span>Occupation: {apt.occupation_score}</span>
+                <span>{t('workAptitude.you', { defaultValue: 'You: {{score}}', score: apt.score })}</span>
+                <span>{t('workAptitude.occupation', { defaultValue: 'Occupation: {{score}}', score: apt.occupation_score })}</span>
               </div>
             )}
           </div>
