@@ -8,6 +8,7 @@
  */
 import { useState } from "react"
 import { Check, Wand2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -39,6 +40,7 @@ const SELECT =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
 
 export function ResumeFormatPanel({ options, styles, value, onChange, defaultOption, onFile }: ResumeFormatPanelProps) {
+  const { t } = useTranslation("resumeUi")
   const [situation, setSituation] = useState<Situation | "">("")
   const [where, setWhere] = useState<UseWhere>("online")
   const [hasPosting, setHasPosting] = useState(false)
@@ -63,16 +65,16 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
   return (
     <div className="space-y-4" data-testid="resume-format-panel">
       <fieldset className="space-y-2 rounded-md border border-dashed p-3">
-        <legend className="px-1 text-xs font-medium text-muted-foreground">Not sure? Answer two questions</legend>
+        <legend className="px-1 text-xs font-medium text-muted-foreground">{t("format.notSure", "Not sure? Answer two questions")}</legend>
         <div className="space-y-1">
-          <Label htmlFor="rw-situation">You are…</Label>
+          <Label htmlFor="rw-situation">{t("format.youAre", "You are…")}</Label>
           <select
             id="rw-situation"
             className={SELECT}
             value={situation}
             onChange={(e) => setSituation(e.target.value as Situation)}
           >
-            <option value="">Choose one</option>
+            <option value="">{t("format.chooseOne", "Choose one")}</option>
             {situationsFor(options.map((o) => o.id)).map((s) => (
               <option key={s.id} value={s.id}>
                 {s.label}
@@ -81,7 +83,7 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
           </select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="rw-where">This résumé is for…</Label>
+          <Label htmlFor="rw-where">{t("format.resumeFor", "This résumé is for…")}</Label>
           <select id="rw-where" className={SELECT} value={where} onChange={(e) => setWhere(e.target.value as UseWhere)}>
             {USES.map((u) => (
               <option key={u.id} value={u.id}>
@@ -92,17 +94,22 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={hasPosting} onChange={(e) => setHasPosting(e.target.checked)} />
-          I have the job posting
+          {t("format.havePosting", "I have the job posting")}
         </label>
         <Button size="sm" variant="outline" onClick={recommend} disabled={!situation}>
           <Wand2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          Recommend a format
+          {t("format.recommend", "Recommend a format")}
         </Button>
         {rec ? (
           <div data-testid="resume-format-recommendation" className="space-y-1 rounded-md bg-teal-50 p-2 text-xs">
             <p>
-              <span className="font-medium">Recommended: {nameOf(rec.optionId)}.</span> {rec.why}
-              {rec.alternativeId ? ` Alternative: ${nameOf(rec.alternativeId)}.` : ""}
+              <span className="font-medium">
+                {t("format.recommended", { defaultValue: "Recommended: {{name}}.", name: nameOf(rec.optionId) })}
+              </span>{" "}
+              {rec.why}
+              {rec.alternativeId
+                ? ` ${t("format.alternative", { defaultValue: "Alternative: {{name}}.", name: nameOf(rec.alternativeId) })}`
+                : ""}
             </p>
             {rec.notes.map((n) => (
               <p key={n} className="text-muted-foreground">
@@ -113,7 +120,7 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
         ) : null}
       </fieldset>
 
-      <div role="radiogroup" aria-label="Résumé format" className="space-y-2">
+      <div role="radiogroup" aria-label={t("format.groupLabel", "Résumé format")} className="space-y-2">
         {options.map((o) => {
           const on = o.id === chosen?.id
           return (
@@ -144,13 +151,13 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
       {chosen ? (
         <div data-testid="resume-format-detail" className="space-y-1 rounded-md bg-muted/40 p-3 text-xs">
           <p>
-            <span className="font-medium">You get:</span> {chosen.expect}
+            <span className="font-medium">{t("format.youGet", "You get:")}</span> {chosen.expect}
           </p>
           <p>
-            <span className="font-medium">Avoid when:</span> {chosen.avoidWhen}
+            <span className="font-medium">{t("format.avoidWhen", "Avoid when:")}</span> {chosen.avoidWhen}
           </p>
           <div className="pt-1">
-            <p className="font-medium">To get the best draft, have on file:</p>
+            <p className="font-medium">{t("format.haveOnFile", "To get the best draft, have on file:")}</p>
             <ul className="mt-0.5 space-y-0.5" data-testid="resume-format-inputs">
               {[...chosen.requiredInputs, ...chosen.recommendedInputs].map((k, i) => {
                 const known = onFileFor(k)
@@ -162,21 +169,22 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
                         known === true ? "bg-teal-600" : known === false ? "bg-amber-500" : "bg-slate-400",
                       )}
                     />
-                    {inputLabel(k)}
-                    {i < chosen.requiredInputs.length ? "" : " (helps)"}
+                    {i < chosen.requiredInputs.length
+                      ? inputLabel(k)
+                      : t("format.inputHelps", { defaultValue: "{{label}} (helps)", label: inputLabel(k) })}
                   </li>
                 )
               })}
             </ul>
             <p className="pt-1 text-muted-foreground">
-              Numbers matter most — an estimate is fine if your résumé says it is one. Nothing is invented.
+              {t("format.numbersNote", "Numbers matter most — an estimate is fine if your résumé says it is one. Nothing is invented.")}
             </p>
           </div>
         </div>
       ) : null}
 
       <div className="space-y-1">
-        <Label htmlFor="rw-style">Bullet style</Label>
+        <Label htmlFor="rw-style">{t("format.bulletStyle", "Bullet style")}</Label>
         <select
           id="rw-style"
           className={SELECT}
@@ -185,7 +193,7 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
         >
           {styles.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.name} — {s.structure}
+              {t("format.styleOption", { defaultValue: "{{name}} — {{structure}}", name: s.name, structure: s.structure })}
             </option>
           ))}
         </select>
@@ -194,36 +202,43 @@ export function ResumeFormatPanel({ options, styles, value, onChange, defaultOpt
 
       {chosen?.takesDisclosure ? (
         <div className="space-y-1">
-          <Label htmlFor="rw-disclosure">How should a gap or program be described? (optional)</Label>
+          <Label htmlFor="rw-disclosure">
+            {t("format.disclosureLabel", "How should a gap or program be described? (optional)")}
+          </Label>
           <Textarea
             id="rw-disclosure"
             rows={2}
             maxLength={300}
             value={value.disclosure}
             onChange={(e) => onChange({ ...value, disclosure: e.target.value })}
-            placeholder="e.g. Kitchen Worker, State Workforce Program, 2019–2023"
+            placeholder={t("format.disclosurePlaceholder", "e.g. Kitchen Worker, State Workforce Program, 2019–2023")}
           />
-          <p className="text-xs text-muted-foreground">Used for this draft only. Not saved.</p>
+          <p className="text-xs text-muted-foreground">{t("format.disclosureHint", "Used for this draft only. Not saved.")}</p>
         </div>
       ) : null}
 
       {chosen?.takesFederalDetails ? (
         <div className="space-y-1" data-testid="resume-federal-details">
-          <Label htmlFor="rw-federal">Federal details</Label>
+          <Label htmlFor="rw-federal">{t("format.federalLabel", "Federal details")}</Label>
           <Textarea
             id="rw-federal"
             rows={3}
             maxLength={600}
             value={value.federalDetails}
             onChange={(e) => onChange({ ...value, federalDetails: e.target.value })}
-            placeholder="For each job: hours per week. For any federal job: series and grade (e.g. GS-0343-09). Any current security clearance."
+            placeholder={t(
+              "format.federalPlaceholder",
+              "For each job: hours per week. For any federal job: series and grade (e.g. GS-0343-09). Any current security clearance.",
+            )}
           />
           <p className="text-xs text-muted-foreground">
-            USAJOBS asks for these. Anything not here or in your résumé is left off. Used for this draft only — not saved.
+            {t("format.federalHint", "USAJOBS asks for these. Anything not here or in your résumé is left off. Used for this draft only — not saved.")}
           </p>
           <p className="text-xs text-muted-foreground">
-            Paste the announcement — at least its Qualifications section — in Job description.
-            {chosen.pageLimit ? ` USAJOBS accepts ${chosen.pageLimit} pages at most.` : ""}
+            {t("format.federalPaste", "Paste the announcement — at least its Qualifications section — in Job description.")}
+            {chosen.pageLimit
+              ? ` ${t("format.federalPageLimit", { defaultValue: "USAJOBS accepts {{limit}} pages at most.", limit: chosen.pageLimit })}`
+              : ""}
           </p>
         </div>
       ) : null}

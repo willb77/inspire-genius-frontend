@@ -3,6 +3,7 @@ import { ScoreBar } from '@/components/job-blueprint/shared/ScoreBar'
 import { ClassificationBadge } from '@/components/job-blueprint/shared/ClassificationBadge'
 import type { DimensionBenchmark, DimensionScore, VariationResult, ClassificationTier } from '@/types/job-blueprint'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type FitAnalysisViewProps = {
   candidateName: string
@@ -19,6 +20,7 @@ export function FitAnalysisView({
   variation,
   tier,
 }: FitAnalysisViewProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   const gapRows = benchmark.map(b => {
     const cs = candidateScores.find(c => c.dimensionId === b.dimensionId && c.category === b.category)
     const candidateScore = cs?.score ?? 0
@@ -36,7 +38,7 @@ export function FitAnalysisView({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-800">Fit Analysis: {candidateName}</h3>
+        <h3 className="text-lg font-semibold text-slate-800">{t("fit.title", { defaultValue: "Fit Analysis: {{name}}", name: candidateName })}</h3>
         <ClassificationBadge tier={tier} />
       </div>
 
@@ -45,13 +47,13 @@ export function FitAnalysisView({
         <Card>
           <CardContent className="py-3 text-center">
             <p className="text-2xl font-bold text-slate-800">{variation.totalVariation}</p>
-            <p className="text-xs text-slate-500">Total Variation</p>
+            <p className="text-xs text-slate-500">{t("fit.totalVariation", { defaultValue: "Total Variation" })}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 text-center">
             <p className="text-2xl font-bold text-slate-800">{variation.standardDeviation}</p>
-            <p className="text-xs text-slate-500">Std Deviation</p>
+            <p className="text-xs text-slate-500">{t("fit.stdDeviation", { defaultValue: "Std Deviation" })}</p>
           </CardContent>
         </Card>
         <Card>
@@ -60,15 +62,15 @@ export function FitAnalysisView({
               <SkewIcon className="w-5 h-5 text-slate-600" />
               <p className="text-2xl font-bold text-slate-800">{variation.skew}</p>
             </div>
-            <p className="text-xs text-slate-500">Skew</p>
+            <p className="text-xs text-slate-500">{t("fit.skew", { defaultValue: "Skew" })}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 text-center">
             <div className="space-y-1">
-              <p className="text-sm"><span className="font-bold">{variation.behaviorVariation}</span> <span className="text-slate-400">Behavior</span></p>
-              <p className="text-sm"><span className="font-bold">{variation.aptitudeVariation}</span> <span className="text-slate-400">Aptitude</span></p>
-              <p className="text-sm"><span className="font-bold">{variation.coreTraitVariation}</span> <span className="text-slate-400">Trait</span></p>
+              <p className="text-sm"><span className="font-bold">{variation.behaviorVariation}</span> <span className="text-slate-400">{t("fit.behavior", { defaultValue: "Behavior" })}</span></p>
+              <p className="text-sm"><span className="font-bold">{variation.aptitudeVariation}</span> <span className="text-slate-400">{t("fit.aptitude", { defaultValue: "Aptitude" })}</span></p>
+              <p className="text-sm"><span className="font-bold">{variation.coreTraitVariation}</span> <span className="text-slate-400">{t("fit.trait", { defaultValue: "Trait" })}</span></p>
             </div>
           </CardContent>
         </Card>
@@ -77,18 +79,18 @@ export function FitAnalysisView({
       {/* Dimension gap table */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Gap Analysis</CardTitle>
+          <CardTitle className="text-base">{t("fit.gapAnalysis", { defaultValue: "Gap Analysis" })}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-slate-500 uppercase border-b">
-                  <th className="py-2 pr-4">Dimension</th>
-                  <th className="py-2 pr-4">Category</th>
-                  <th className="py-2 pr-4 text-center">Benchmark</th>
-                  <th className="py-2 pr-4 text-center">Candidate</th>
-                  <th className="py-2 text-center">Gap</th>
+                  <th className="py-2 pr-4">{t("fit.col.dimension", { defaultValue: "Dimension" })}</th>
+                  <th className="py-2 pr-4">{t("fit.col.category", { defaultValue: "Category" })}</th>
+                  <th className="py-2 pr-4 text-center">{t("fit.col.benchmark", { defaultValue: "Benchmark" })}</th>
+                  <th className="py-2 pr-4 text-center">{t("fit.col.candidate", { defaultValue: "Candidate" })}</th>
+                  <th className="py-2 text-center">{t("fit.col.gap", { defaultValue: "Gap" })}</th>
                 </tr>
               </thead>
               <tbody>

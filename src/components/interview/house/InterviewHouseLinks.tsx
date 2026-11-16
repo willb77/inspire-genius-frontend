@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import type { WorkspaceAudience } from "@/layouts/WorkspaceLayout"
 import { interviewLinksFor, type InterviewPage } from "./interviewHouseRoutes"
 
@@ -15,9 +16,10 @@ export default function InterviewHouseLinks({
   audience: WorkspaceAudience
   current: InterviewPage
 }) {
+  const { t } = useTranslation("interviewPages")
   return (
-    <nav aria-label="Interview pages" className="mx-auto flex max-w-3xl flex-wrap gap-4 pt-6 text-sm">
-      {interviewLinksFor(audience, current).map((l) => (
+    <nav aria-label={t("house.links.aria", "Interview pages")} className="mx-auto flex max-w-3xl flex-wrap gap-4 pt-6 text-sm">
+      {interviewLinksFor(audience, current, t).map((l) => (
         <Link key={l.to} to={l.to} className="text-primary underline-offset-4 hover:underline">
           {l.label}
         </Link>

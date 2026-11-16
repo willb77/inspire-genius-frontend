@@ -1,4 +1,5 @@
 import { Mail, Sparkles } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -16,26 +17,31 @@ import { Button } from "@/components/ui/button"
  * vertical layer, leaving Core's gate untouched.
  */
 export default function LumenRequestAccess() {
+  const { t } = useTranslation("lumenPages")
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-6">
       <Card className="max-w-lg">
         <CardHeader className="space-y-2">
           <Sparkles className="h-6 w-6 text-muted-foreground" aria-hidden />
-          <CardTitle>Lumen isn't switched on for your account yet</CardTitle>
+          <CardTitle>{t("accessTitle", "Lumen isn't switched on for your account yet")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-muted-foreground">
           <p>
-            Lumen turns your behavioural profile into guidance you can use in the
-            moment — before the difficult conversation, not after it.
+            {t(
+              "accessIntro",
+              "Lumen turns your behavioural profile into guidance you can use in the moment — before the difficult conversation, not after it."
+            )}
           </p>
           <p>
-            Access is enabled by your administrator or the Inspire Genius team.
-            There's nothing to buy here.
+            {t(
+              "accessGranted",
+              "Access is enabled by your administrator or the Inspire Genius team. There's nothing to buy here."
+            )}
           </p>
           <Button asChild variant="outline">
             <a href="mailto:support@3pp.com?subject=Lumen%20access%20request">
               <Mail className="mr-1 h-4 w-4" aria-hidden />
-              Request access
+              {t("accessRequest", "Request access")}
             </a>
           </Button>
         </CardContent>

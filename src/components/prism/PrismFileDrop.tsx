@@ -1,4 +1,5 @@
 import { useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import type { JSX } from "react"
 import { FileText, Upload, X } from "lucide-react"
 
@@ -30,6 +31,7 @@ export function PrismFileDrop({
   accepts,
   disabled,
 }: PrismFileDropProps): JSX.Element {
+  const { t } = useTranslation("prismUi")
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [refused, setRefused] = useState<string | null>(null)
@@ -45,11 +47,25 @@ export function PrismFileDrop({
       else if (kind === "csv" && accepts.includes("csv")) nextCsv = f
       else rejected.push(f.name)
     }
+    const kindLabel = (k: PrismFileKind): string =>
+      k === "pdf"
+        ? t("fileDrop.kindPdf", { defaultValue: "PRISM report PDF" })
+        : t("fileDrop.kindCsv", { defaultValue: "PRISM scores CSV" })
+    const rejectedNames = rejected.join(", ")
     setRefused(
       rejected.length
-        ? `Not added: ${rejected.join(", ")}. Use a ${accepts
-            .map((k) => (k === "pdf" ? "PRISM report PDF" : "PRISM scores CSV"))
-            .join(" or a ")}.`
+        ? accepts.length === 2
+          ? t("fileDrop.notAddedEither", {
+              defaultValue: "Not added: {{files}}. Use a {{first}} or a {{second}}.",
+              files: rejectedNames,
+              first: kindLabel(accepts[0]),
+              second: kindLabel(accepts[1]),
+            })
+          : t("fileDrop.notAddedOne", {
+              defaultValue: "Not added: {{files}}. Use a {{kind}}.",
+              files: rejectedNames,
+              kind: kindLabel(accepts[0]),
+            })
         : null,
     )
     onChange({ pdf: nextPdf, csv: nextCsv })
@@ -60,10 +76,10 @@ export function PrismFileDrop({
     .join(",")
   const prompt =
     accepts.length === 2
-      ? "Drop your PRISM report PDF and/or scores CSV here, or click to choose"
+      ? t("fileDrop.promptBoth", { defaultValue: "Drop your PRISM report PDF and/or scores CSV here, or click to choose" })
       : accepts[0] === "pdf"
-        ? "Drop your PRISM report PDF here, or click to choose"
-        : "Drop your PRISM scores CSV here, or click to choose"
+        ? t("fileDrop.promptPdf", { defaultValue: "Drop your PRISM report PDF here, or click to choose" })
+        : t("fileDrop.promptCsv", { defaultValue: "Drop your PRISM scores CSV here, or click to choose" })
 
   const slot = (kind: PrismFileKind, file: File | null): JSX.Element | null =>
     file ? (
@@ -76,7 +92,7 @@ export function PrismFileDrop({
         <span className="flex-1 truncate">{file.name}</span>
         <button
           type="button"
-          aria-label={`Remove ${file.name}`}
+          aria-label={t("fileDrop.remove", { defaultValue: "Remove {{name}}", name: file.name })}
           disabled={disabled}
           className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"
           onClick={() => onChange(kind === "pdf" ? { pdf: null, csv } : { pdf, csv: null })}

@@ -1,5 +1,6 @@
 import { useEffect } from "react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SCHOOL_LEVELS } from "@/types/career-discovery"
 import {
@@ -16,6 +17,7 @@ import { LearningButtons } from "./LearningParts"
 
 /** My plan — one page of what the person has found so far. No invented numbers. */
 export default function PlanPage() {
+  const { t } = useTranslation("careerDiscoveryPages")
   const { journey } = useDiscoveryContext()
   const { data, isLoading, isError, error } = useDiscoveryPlan(journey.mayProceed)
   const { mutate } = useAdvanceDiscovery()
@@ -27,27 +29,32 @@ export default function PlanPage() {
     if (hasAreas && !done) mutate({ stageId: "plan" })
   }, [hasAreas, done, mutate])
 
-  if (isLoading) return <DiscoveryLoading label="Putting your plan together" />
+  if (isLoading) return <DiscoveryLoading label={t("planLoading", "Putting your plan together")} />
   if (isError || !data) return <DiscoveryError message={discoveryErrorMessage(error)} />
   const level = SCHOOL_LEVELS.find((l) => l.value === data.schoolLevel)?.label
   return (
     <div className="space-y-6">
-      <StageHeader title="My plan" lead="What you've found so far, and what to do next." />
+      <StageHeader
+        title={t("planTitle", "My plan")}
+        lead={t("planLead", "What you've found so far, and what to do next.")}
+      />
       {learning ? <LearningButtons learning={learning} current="plan" /> : null}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Where you are</CardTitle>
+          <CardTitle className="text-base">{t("planWhereYouAre", "Where you are")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1 text-sm">
-          <p>{level ?? "School level not set yet."}</p>
+          <p>{level ?? t("planNoLevel", "School level not set yet.")}</p>
           <p className="text-muted-foreground">
-            {data.interests.length ? `Into: ${data.interests.join(", ")}` : "No interests added yet."}
+            {data.interests.length
+              ? t("planInterests", { defaultValue: "Into: {{interests}}", interests: data.interests.join(", ") })
+              : t("planNoInterests", "No interests added yet.")}
           </p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Career areas that suit you</CardTitle>
+          <CardTitle className="text-base">{t("planCareerAreasTitle", "Career areas that suit you")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           {hasAreas ? (
@@ -58,23 +65,26 @@ export default function PlanPage() {
               </div>
             ))
           ) : (
-            <p className="text-muted-foreground">Not yet — do Career areas first.</p>
+            <p className="text-muted-foreground">{t("planNoAreas", "Not yet — do Career areas first.")}</p>
           )}
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Your goals</CardTitle>
+          <CardTitle className="text-base">{t("planGoalsTitle", "Your goals")}</CardTitle>
         </CardHeader>
         <CardContent className="text-sm">
-          <p>{data.goalsCount ? `${data.goalsCount} goal(s) set.` : "No goals set yet."}</p>
+          <p>{data.goalsCount
+              ? t("planGoalsSet", { defaultValue: "{{goals}} goal(s) set.", goals: data.goalsCount })
+              : t("planNoGoals", "No goals set yet.")}</p>
           {data.alignment?.note ? <p className="text-muted-foreground">{data.alignment.note}</p> : null}
         </CardContent>
       </Card>
       {data.educationPaths ? (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">{learning ? "Learning and Education Path" : "Education paths"}</CardTitle>
+            <CardTitle className="text-base">{learning ? t("planLearningPath", "Learning and Education Path") : t("planEducationPaths", "Education paths")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 text-sm">
             {data.educationPaths.length ? (
@@ -85,7 +95,10 @@ export default function PlanPage() {
               ))
             ) : (
               <p className="text-muted-foreground">
-                Not yet — do {learning ? "Learning and Education Path" : "Education paths"} first.
+                {t("planNotYetDo", {
+                  defaultValue: "Not yet — do {{stage}} first.",
+                  stage: learning ? t("planLearningPath", "Learning and Education Path") : t("planEducationPaths", "Education paths"),
+                })}
               </p>
             )}
           </CardContent>
@@ -94,7 +107,7 @@ export default function PlanPage() {
       {data.nextSteps.length ? (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Next steps</CardTitle>
+            <CardTitle className="text-base">{t("planNextSteps", "Next steps")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-1 text-sm">
@@ -113,7 +126,10 @@ export default function PlanPage() {
       {/* House style: nothing pending, no "Coming next: ." line. */}
       {data.comingNext.length > 0 || !isHouseStyleOn("career-education") ? (
         <p className="text-xs text-muted-foreground">
-          Coming next: {data.comingNext.map((c) => c.name).join(" and ")}.
+          {t("planComingNext", {
+            defaultValue: "Coming next: {{names}}.",
+            names: data.comingNext.map((c) => c.name).join(t("planAnd", " and ")),
+          })}
         </p>
       ) : null}
     </div>

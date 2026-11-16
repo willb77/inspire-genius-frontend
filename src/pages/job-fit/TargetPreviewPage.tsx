@@ -1,6 +1,8 @@
 import { useRef, useState, type ChangeEvent } from "react"
 import { FileUp, Gauge, Loader2, ScanSearch, Sparkles } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -30,11 +32,22 @@ import { FitResult } from "@/components/fit/FitResult"
 import { FitBreakdown } from "./FitBreakdown"
 
 /** Group definitions in a stable, human order. */
-const GROUPS: { key: keyof Pick<TargetDraft, "behaviors" | "aptitudes" | "coreTraits">; label: string }[] = [
-  { key: "behaviors", label: "Behavioral style" },
-  { key: "aptitudes", label: "Aptitudes" },
-  { key: "coreTraits", label: "Core traits" },
+const GROUPS: { key: keyof Pick<TargetDraft, "behaviors" | "aptitudes" | "coreTraits"> }[] = [
+  { key: "behaviors" },
+  { key: "aptitudes" },
+  { key: "coreTraits" },
 ]
+
+function groupLabel(key: (typeof GROUPS)[number]["key"], t: TFunction): string {
+  switch (key) {
+    case "behaviors":
+      return t("targetPreview.groupBehaviors", "Behavioral style")
+    case "aptitudes":
+      return t("targetPreview.groupAptitudes", "Aptitudes")
+    default:
+      return t("targetPreview.groupCoreTraits", "Core traits")
+  }
+}
 
 function provenanceTone(provenance: ExtractedDimension["provenance"]): Tone {
   return provenance === "measured" ? "green" : "gray"
@@ -42,6 +55,7 @@ function provenanceTone(provenance: ExtractedDimension["provenance"]): Tone {
 
 /** One drafted dimension: its target meter, provenance + confidence, evidence. */
 function DimensionRow({ dim }: { dim: ExtractedDimension }) {
+  const { t } = useTranslation("jobFitPages")
   return (
     <div className="border-b border-[#f1f2f4] py-3 last:border-b-0">
       <FitMeter
@@ -52,10 +66,15 @@ function DimensionRow({ dim }: { dim: ExtractedDimension }) {
       />
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         <FitPill tone={provenanceTone(dim.provenance)}>
-          {dim.provenance === "measured" ? "From the JD" : "Imputed"}
+          {dim.provenance === "measured"
+            ? t("targetPreview.fromJd", "From the JD")
+            : t("targetPreview.imputed", "Imputed")}
         </FitPill>
         <FitPill tone={confidenceTone(dim.confidence)}>
-          {Math.round(dim.confidence * 100)}% confidence
+          {t("targetPreview.confidence", {
+            defaultValue: "{{pct}}% confidence",
+            pct: Math.round(dim.confidence * 100),
+          })}
         </FitPill>
         {dim.evidence && <span className="text-xs text-[#9ca3af]">{dim.evidence}</span>}
       </div>
@@ -79,6 +98,7 @@ function DimensionRow({ dim }: { dim: ExtractedDimension }) {
  * account with no PRISM on file is told so in place, never shown a score.
  */
 export default function TargetPreviewPage() {
+  const { t } = useTranslation("jobFitPages")
   const [jdText, setJdText] = useState("")
   const [draft, setDraft] = useState<TargetDraft | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -114,7 +134,7 @@ export default function TargetPreviewPage() {
     try {
       const { text } = await extractRoleText(file)
       if (!text) {
-        toast.error("That file didn't contain any readable text.")
+        toast.error(t("targetPreview.noText", "That file didn't contain any readable text."))
         return
       }
       setJdText(text)
@@ -122,7 +142,7 @@ export default function TargetPreviewPage() {
       toast.error(
         err instanceof RoleExtractionError
           ? err.message
-          : "Couldn't read that file. Paste the text instead.",
+          : t("targetPreview.readError", "Couldn't read that file. Paste the text instead."),
       )
     }
   }
@@ -131,8 +151,11 @@ export default function TargetPreviewPage() {
     <div className="pb-10">
       <FitPageHeader
         icon={ScanSearch}
-        title="Fit a job description"
-        description="Paste or upload a job description and preview the behavioral target it implies — before it's ever published as a role."
+        title={t("targetPreview.title", "Fit a job description")}
+        description={t(
+          "targetPreview.description",
+          "Paste or upload a job description and preview the behavioral target it implies — before it's ever published as a role.",
+        )}
       />
 
       <FitCard className="mb-6">
@@ -140,11 +163,11 @@ export default function TargetPreviewPage() {
           action={
             <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
               <FileUp className="mr-1.5 h-4 w-4" aria-hidden />
-              Upload a file
+              {t("targetPreview.uploadFile", "Upload a file")}
             </Button>
           }
         >
-          Job description
+          {t("targetPreview.jobDescription", "Job description")}
         </FitSectionTitle>
         <input
           ref={fileRef}
@@ -157,21 +180,21 @@ export default function TargetPreviewPage() {
         <Textarea
           value={jdText}
           onChange={(e) => setJdText(e.target.value)}
-          placeholder="Paste the job description here…"
+          placeholder={t("targetPreview.pastePlaceholder", "Paste the job description here…")}
           rows={8}
-          aria-label="Job description"
+          aria-label={t("targetPreview.jobDescription", "Job description")}
         />
         <div className="mt-3 flex justify-end">
           <Button type="button" onClick={onSubmit} disabled={!canSubmit}>
             {extract.isPending ? (
               <>
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
-                Drafting…
+                {t("targetPreview.drafting", "Drafting…")}
               </>
             ) : (
               <>
                 <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
-                Draft the target
+                {t("targetPreview.draftTarget", "Draft the target")}
               </>
             )}
           </Button>
@@ -180,8 +203,10 @@ export default function TargetPreviewPage() {
 
       {!draft && !extract.isPending && (
         <FitEmptyState>
-          The drafted target will appear here — a blueprint score for each of the 22 dimensions, with
-          where it came from and how confident the extractor is.
+          {t(
+            "targetPreview.emptyDraft",
+            "The drafted target will appear here — a blueprint score for each of the 22 dimensions, with where it came from and how confident the extractor is.",
+          )}
         </FitEmptyState>
       )}
 
@@ -190,23 +215,27 @@ export default function TargetPreviewPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <FitStat
               icon={ScanSearch}
-              label="From the JD"
+              label={t("targetPreview.fromJd", "From the JD")}
               value={draft.measuredCount}
-              hint="dimensions with direct evidence"
+              hint={t("targetPreview.measuredHint", "dimensions with direct evidence")}
               tone="green"
             />
             <FitStat
               icon={Sparkles}
-              label="Imputed"
+              label={t("targetPreview.imputed", "Imputed")}
               value={draft.imputedCount}
-              hint="derived from the role shape"
+              hint={t("targetPreview.imputedHint", "derived from the role shape")}
               tone="gray"
             />
             <FitStat
               icon={ScanSearch}
-              label="Mean confidence"
+              label={t("targetPreview.meanConfidence", "Mean confidence")}
               value={`${Math.round(draft.meanConfidence * 100)}%`}
-              hint={draft.provider === "anthropic" ? "model-drafted" : "keyword-drafted"}
+              hint={
+                draft.provider === "anthropic"
+                  ? t("targetPreview.modelDrafted", "model-drafted")
+                  : t("targetPreview.keywordDrafted", "keyword-drafted")
+              }
               tone={confidenceTone(draft.meanConfidence)}
             />
           </div>
@@ -221,12 +250,12 @@ export default function TargetPreviewPage() {
             </FitCard>
           )}
 
-          {GROUPS.map(({ key, label }) => {
+          {GROUPS.map(({ key }) => {
             const dims = draft[key]
             if (dims.length === 0) return null
             return (
               <FitCard key={key}>
-                <FitSectionTitle>{label}</FitSectionTitle>
+                <FitSectionTitle>{groupLabel(key, t)}</FitSectionTitle>
                 {dims.map((dim) => (
                   <DimensionRow key={dim.dimensionId} dim={dim} />
                 ))}
@@ -235,7 +264,9 @@ export default function TargetPreviewPage() {
           })}
 
           {flattenTargetDraft(draft).length === 0 && (
-            <FitEmptyState>The extractor couldn't draft any dimensions from that text.</FitEmptyState>
+            <FitEmptyState>
+              {t("targetPreview.noDimensions", "The extractor couldn't draft any dimensions from that text.")}
+            </FitEmptyState>
           )}
 
           <FitMethodologyNote note={draft.methodologyNote} />
@@ -248,38 +279,46 @@ export default function TargetPreviewPage() {
                   {score.isPending ? (
                     <>
                       <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
-                      Scoring…
+                      {t("targetPreview.scoring", "Scoring…")}
                     </>
                   ) : (
                     <>
                       <Gauge className="mr-1.5 h-4 w-4" aria-hidden />
-                      Score my fit against this target
+                      {t("targetPreview.scoreButton", "Score my fit against this target")}
                     </>
                   )}
                 </Button>
               }
             >
-              Score my fit
+              {t("targetPreview.scoreTitle", "Score my fit")}
             </FitSectionTitle>
             <p className="text-sm text-[#6b7280]">
-              Compare your own PRISM profile with this drafted target, dimension by dimension —
-              the same read as a published role, so a role that isn&apos;t on the platform yet can
-              still be sized up.
+              {t(
+                "targetPreview.scoreIntro",
+                "Compare your own PRISM profile with this drafted target, dimension by dimension — the same read as a published role, so a role that isn't on the platform yet can still be sized up.",
+              )}
             </p>
           </FitCard>
 
-          {score.isPending && <FitLoading label="Scoring your fit against this target…" />}
+          {score.isPending && <FitLoading
+              label={t("targetPreview.scoringLoading", "Scoring your fit against this target…")}
+            />}
 
           {score.isError && isNoPrismError(score.error) && (
             <FitEmptyState>
-              We can&apos;t score your fit yet — there&apos;s no PRISM assessment on file for your
-              account. Once your PRISM report is uploaded, come back and score this target.
+              {t(
+                "targetPreview.noPrism",
+                "We can't score your fit yet — there's no PRISM assessment on file for your account. Once your PRISM report is uploaded, come back and score this target.",
+              )}
             </FitEmptyState>
           )}
 
           {score.isError && !isNoPrismError(score.error) && (
             <FitError>
-              We couldn&apos;t score your fit against this target. Please try again shortly.
+              {t(
+                "targetPreview.scoreError",
+                "We couldn't score your fit against this target. Please try again shortly.",
+              )}
             </FitError>
           )}
 

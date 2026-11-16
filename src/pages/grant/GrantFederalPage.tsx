@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import type { LucideIcon } from "lucide-react"
 import {
   Landmark,
@@ -31,11 +33,11 @@ import { formatDate, relativeDeadline, daysUntil } from "./_format"
 
 type Tone = "blue" | "teal" | "amber" | "red" | "gray" | "green"
 
-const TYPE_LABELS: Record<DeadlineType, string> = {
-  federal: "Federal",
-  state: "State",
-  institutional: "Institutional",
-  scholarship: "Scholarship",
+const TYPE_LABELS: Record<DeadlineType, (t: TFunction) => string> = {
+  federal: (t) => t("federal.typeFederal", "Federal"),
+  state: (t) => t("federal.typeState", "State"),
+  institutional: (t) => t("federal.typeInstitutional", "Institutional"),
+  scholarship: (t) => t("federal.typeScholarship", "Scholarship"),
 }
 
 const STATUS_TONE: Record<DeadlineStatus, "amber" | "red" | "blue" | "green"> = {
@@ -45,37 +47,43 @@ const STATUS_TONE: Record<DeadlineStatus, "amber" | "red" | "blue" | "green"> = 
   submitted: "green",
 }
 
-const STATUS_LABEL: Record<DeadlineStatus, string> = {
-  "due-soon": "Due soon",
-  overdue: "Overdue",
-  upcoming: "Upcoming",
-  submitted: "Submitted",
+const STATUS_LABEL: Record<DeadlineStatus, (t: TFunction) => string> = {
+  "due-soon": (t) => t("federal.statusDueSoon", "Due soon"),
+  overdue: (t) => t("federal.statusOverdue", "Overdue"),
+  upcoming: (t) => t("federal.statusUpcoming", "Upcoming"),
+  submitted: (t) => t("federal.statusSubmitted", "Submitted"),
 }
 
 type Filter = "all" | DeadlineType
 
 // ── FAFSA readiness ──────────────────────────────────────────────────────────
 
-type FafsaView = { label: string; tone: Tone; pct: number; next: string }
+type FafsaView = { label: (t: TFunction) => string; tone: Tone; pct: number; next: (t: TFunction) => string }
 
 const FAFSA_VIEW: Record<FafsaStatusValue, FafsaView> = {
   submitted: {
-    label: "Submitted",
+    label: (t) => t("federal.fafsaSubmitted", "Submitted"),
     tone: "green",
     pct: 100,
-    next: "Your FAFSA is on file — watch state and institutional deadlines next.",
+    next: (t) =>
+      t("federal.fafsaSubmittedNext", "Your FAFSA is on file — watch state and institutional deadlines next."),
   },
   in_progress: {
-    label: "In progress",
+    label: (t) => t("federal.fafsaInProgress", "In progress"),
     tone: "amber",
     pct: 60,
-    next: "Finish and submit your FAFSA before the federal deadline to lock in aid.",
+    next: (t) =>
+      t("federal.fafsaInProgressNext", "Finish and submit your FAFSA before the federal deadline to lock in aid."),
   },
   not_started: {
-    label: "Not started",
+    label: (t) => t("federal.fafsaNotStarted", "Not started"),
     tone: "red",
     pct: 10,
-    next: "Start your FAFSA at studentaid.gov — it unlocks federal, state, and school aid.",
+    next: (t) =>
+      t(
+        "federal.fafsaNotStartedNext",
+        "Start your FAFSA at studentaid.gov — it unlocks federal, state, and school aid."
+      ),
   },
 }
 
@@ -88,57 +96,90 @@ function deadlineToFafsa(status?: DeadlineStatus): FafsaStatusValue {
 
 // ── Federal aid programs (illustrative 2025–26 figures) ──────────────────────
 
-type FederalTile = { icon: LucideIcon; label: string; value: string; hint: string; tone: Tone }
+type FederalTile = {
+  id: string
+  icon: LucideIcon
+  label: (t: TFunction) => string
+  value: string
+  hint: (t: TFunction) => string
+  tone: Tone
+}
 
 const FEDERAL_TILES: readonly FederalTile[] = [
   {
+    id: "pell",
     icon: GraduationCap,
-    label: "Pell Grant",
+    label: (t) => t("federal.tilePell", "Pell Grant"),
     value: "$7,395",
-    hint: "Need-based, doesn't repay — your SAI sets the award.",
+    hint: (t) => t("federal.tilePellHint", "Need-based, doesn't repay — your SAI sets the award."),
     tone: "blue",
   },
   {
+    id: "subsidized",
     icon: Banknote,
-    label: "Direct Subsidized",
+    label: (t) => t("federal.tileSubsidized", "Direct Subsidized"),
     value: "$3,500",
-    hint: "Stafford, need-based — no interest while enrolled.",
+    hint: (t) => t("federal.tileSubsidizedHint", "Stafford, need-based — no interest while enrolled."),
     tone: "teal",
   },
   {
+    id: "unsubsidized",
     icon: Banknote,
-    label: "Direct Unsubsidized",
+    label: (t) => t("federal.tileUnsubsidized", "Direct Unsubsidized"),
     value: "$2,000",
-    hint: "Stafford, not need-based — interest accrues at once.",
+    hint: (t) => t("federal.tileUnsubsidizedHint", "Stafford, not need-based — interest accrues at once."),
     tone: "amber",
   },
   {
+    id: "workstudy",
     icon: Briefcase,
-    label: "Work-Study",
+    label: (t) => t("federal.tileWorkStudy", "Work-Study"),
     value: "$2,500",
-    hint: "Earn aid through a part-time campus job.",
+    hint: (t) => t("federal.tileWorkStudyHint", "Earn aid through a part-time campus job."),
     tone: "green",
   },
 ]
 
 // ── State programs (keyed by residence, generic fallback) ────────────────────
 
-type StateProgram = { name: string; hint: string }
+type StateProgram = { id: string; name: string; hint: string }
 
-const STATE_PROGRAMS: Record<string, StateProgram[]> = {
-  CA: [
-    { name: "Cal Grant A", hint: "Tuition & fees at four-year schools" },
-    { name: "Cal Grant B", hint: "Living-cost stipend for low-income students" },
-    { name: "Middle Class Scholarship", hint: "Up to 40% of remaining UC/CSU cost" },
-    { name: "Chafee Grant", hint: "For current & former foster youth" },
-  ],
-}
-
-function stateProgramsFor(state?: string): StateProgram[] {
-  if (state && STATE_PROGRAMS[state]) return STATE_PROGRAMS[state]
+function stateProgramsFor(t: TFunction, state?: string): StateProgram[] {
+  if (state === "CA") {
+    return [
+      {
+        id: "ca-cal-grant-a",
+        name: t("federal.stateCalGrantA", "Cal Grant A"),
+        hint: t("federal.stateCalGrantAHint", "Tuition & fees at four-year schools"),
+      },
+      {
+        id: "ca-cal-grant-b",
+        name: t("federal.stateCalGrantB", "Cal Grant B"),
+        hint: t("federal.stateCalGrantBHint", "Living-cost stipend for low-income students"),
+      },
+      {
+        id: "ca-middle-class",
+        name: t("federal.stateMiddleClass", "Middle Class Scholarship"),
+        hint: t("federal.stateMiddleClassHint", "Up to 40% of remaining UC/CSU cost"),
+      },
+      {
+        id: "ca-chafee",
+        name: t("federal.stateChafee", "Chafee Grant"),
+        hint: t("federal.stateChafeeHint", "For current & former foster youth"),
+      },
+    ]
+  }
   return [
-    { name: "State need grant", hint: "Income-based aid from your state agency" },
-    { name: "Merit scholarship", hint: "GPA/test-based award from your state" },
+    {
+      id: "generic-need",
+      name: t("federal.stateNeedGrant", "State need grant"),
+      hint: t("federal.stateNeedGrantHint", "Income-based aid from your state agency"),
+    },
+    {
+      id: "generic-merit",
+      name: t("federal.stateMerit", "Merit scholarship"),
+      hint: t("federal.stateMeritHint", "GPA/test-based award from your state"),
+    },
   ]
 }
 
@@ -152,6 +193,7 @@ function stateProgramsFor(state?: string): StateProgram[] {
  * `useDeadlines` / `useStudentProfile` / `useAidIntake` (mock for UI-0).
  */
 export default function GrantFederalPage() {
+  const { t } = useTranslation("grantPages")
   const { data, isLoading } = useDeadlines()
   const { data: profile } = useStudentProfile()
   const { data: intake } = useAidIntake()
@@ -173,7 +215,7 @@ export default function GrantFederalPage() {
   const types = useMemo(() => {
     const present = new Set(sorted.map((d) => d.type))
     return (["all", "federal", "state", "institutional", "scholarship"] as Filter[]).filter(
-      (t) => t === "all" || present.has(t as DeadlineType)
+      (f) => f === "all" || present.has(f as DeadlineType)
     )
   }, [sorted])
 
@@ -187,15 +229,15 @@ export default function GrantFederalPage() {
     return FAFSA_VIEW[deadlineToFafsa(fafsaDeadline?.status)]
   }, [intake, sorted])
 
-  const statePrograms = stateProgramsFor(profile?.stateOfResidence)
+  const statePrograms = stateProgramsFor(t, profile?.stateOfResidence)
   const sai: StudentProfile["studentAidIndex"] | undefined = profile?.studentAidIndex
 
   return (
     <div className="max-w-3xl">
       <GrantPageHeader
         icon={Landmark}
-        title="Federal & State Aid"
-        description="FAFSA, Pell Grants, and state aid deadlines ordered by what's due next."
+        title={t("federal.title", "Federal & State Aid")}
+        description={t("federal.description", "FAFSA, Pell Grants, and state aid deadlines ordered by what's due next.")}
       />
 
       {/* FAFSA / SAI readiness hero */}
@@ -205,37 +247,37 @@ export default function GrantFederalPage() {
             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[rgba(59,91,255,0.1)]">
               <FileText className="h-3.5 w-3.5 text-[#3B5BFF]" />
             </span>
-            <h2 className="text-sm font-semibold text-[#374151]">FAFSA readiness</h2>
-            <GrantPill tone={fafsa.tone}>{fafsa.label}</GrantPill>
+            <h2 className="text-sm font-semibold text-[#374151]">{t("federal.fafsaReadiness", "FAFSA readiness")}</h2>
+            <GrantPill tone={fafsa.tone}>{fafsa.label(t)}</GrantPill>
           </div>
           <GrantMeter value={fafsa.pct} tone={fafsa.tone} />
           <p className="mt-3 flex items-start gap-1.5 text-sm text-[#374151]">
             <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#3B5BFF]" />
-            <span>{fafsa.next}</span>
+            <span>{fafsa.next(t)}</span>
           </p>
         </div>
         <div className="w-full shrink-0 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-4 sm:w-56">
           <div className="mb-1 flex items-center gap-2 text-[#374151]">
             <Coins className="h-4 w-4 text-[#0f766e]" />
-            <span className="text-sm font-semibold">Student Aid Index</span>
+            <span className="text-sm font-semibold">{t("federal.studentAidIndex", "Student Aid Index")}</span>
           </div>
           <p className="text-3xl font-bold text-[#1f2937]">
             {sai !== undefined ? sai.toLocaleString("en-US") : "—"}
           </p>
-          <p className="mt-1 text-xs text-[#9ca3af]">Lower SAI unlocks more need-based aid.</p>
+          <p className="mt-1 text-xs text-[#9ca3af]">{t("federal.lowerSai", "Lower SAI unlocks more need-based aid.")}</p>
         </div>
       </GrantCard>
 
       {/* Federal aid programs */}
-      <GrantSectionTitle>Federal programs</GrantSectionTitle>
+      <GrantSectionTitle>{t("federal.programs", "Federal programs")}</GrantSectionTitle>
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {FEDERAL_TILES.map((tile) => (
           <GrantStat
-            key={tile.label}
+            key={tile.id}
             icon={tile.icon}
-            label={tile.label}
+            label={tile.label(t)}
             value={tile.value}
-            hint={tile.hint}
+            hint={tile.hint(t)}
             tone={tile.tone}
           />
         ))}
@@ -245,13 +287,14 @@ export default function GrantFederalPage() {
       <GrantSectionTitle>
         <span className="inline-flex items-center gap-1.5">
           <MapPin className="h-3.5 w-3.5" />
-          State programs{profile?.stateOfResidence ? ` · ${profile.stateOfResidence}` : ""}
+          {t("federal.statePrograms", "State programs")}
+          {profile?.stateOfResidence ? ` · ${profile.stateOfResidence}` : ""}
         </span>
       </GrantSectionTitle>
       <GrantCard className="mb-6">
         <ul className="divide-y divide-[#e5e7eb]">
           {statePrograms.map((p) => (
-            <li key={p.name} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+            <li key={p.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
               <span className="text-sm font-medium text-[#1f2937]">{p.name}</span>
               <span className="text-right text-xs text-[#9ca3af]">{p.hint}</span>
             </li>
@@ -260,21 +303,21 @@ export default function GrantFederalPage() {
       </GrantCard>
 
       {/* Deadline tracker */}
-      <GrantSectionTitle>Deadlines</GrantSectionTitle>
+      <GrantSectionTitle>{t("federal.deadlines", "Deadlines")}</GrantSectionTitle>
       <div className="mb-5 flex flex-wrap gap-2">
-        {types.map((t) => (
+        {types.map((ft) => (
           <button
-            key={t}
+            key={ft}
             type="button"
-            onClick={() => setFilter(t)}
+            onClick={() => setFilter(ft)}
             className={cn(
               "rounded-full border px-3 py-1 text-sm font-medium transition",
-              filter === t
+              filter === ft
                 ? "border-[#3B5BFF] bg-[rgba(59,91,255,0.08)] text-[#3B5BFF]"
                 : "border-[#e5e7eb] bg-white text-[#6b7280] hover:border-[#cbd5e1]"
             )}
           >
-            {t === "all" ? "All" : TYPE_LABELS[t as DeadlineType]}
+            {ft === "all" ? t("federal.filterAll", "All") : TYPE_LABELS[ft as DeadlineType](t)}
           </button>
         ))}
       </div>
@@ -286,7 +329,7 @@ export default function GrantFederalPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <GrantEmptyState>No deadlines in this category.</GrantEmptyState>
+        <GrantEmptyState>{t("federal.noDeadlines", "No deadlines in this category.")}</GrantEmptyState>
       ) : (
         <ol className="space-y-3">
           {filtered.map((d: Deadline) => {
@@ -301,7 +344,7 @@ export default function GrantFederalPage() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="truncate text-sm font-semibold text-[#1f2937]">{d.name}</h2>
-                        <GrantPill tone="gray">{TYPE_LABELS[d.type]}</GrantPill>
+                        <GrantPill tone="gray">{TYPE_LABELS[d.type](t)}</GrantPill>
                       </div>
                       <p className="mt-0.5 text-xs text-[#9ca3af]">
                         {formatDate(d.dueDate)}
@@ -310,14 +353,14 @@ export default function GrantFederalPage() {
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <GrantPill tone={STATUS_TONE[d.status]}>{STATUS_LABEL[d.status]}</GrantPill>
+                    <GrantPill tone={STATUS_TONE[d.status]}>{STATUS_LABEL[d.status](t)}</GrantPill>
                     <span
                       className={cn(
                         "text-xs",
                         overdue ? "font-medium text-[#b91c1c]" : "text-[#6b7280]"
                       )}
                     >
-                      {relativeDeadline(d.dueDate)}
+                      {relativeDeadline(d.dueDate, undefined, t)}
                     </span>
                   </div>
                 </GrantCard>

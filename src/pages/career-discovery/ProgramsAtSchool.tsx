@@ -1,5 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ROUTES } from "@/constants/routes"
@@ -26,14 +28,15 @@ import { DiscoveryError, DiscoveryLoading, NoticeCard } from "./DiscoveryParts"
  * education paths below stand.
  */
 export function ProgramsAtSchool() {
+  const { t } = useTranslation("careerDiscoveryPages")
   const schools = useProgramSchools(true)
-  if (schools.isLoading) return <DiscoveryLoading label="Finding school programs" />
+  if (schools.isLoading) return <DiscoveryLoading label={t("progFinding", "Finding school programs")} />
   if (schools.isError || !schools.data) {
     return <DiscoveryError message={discoveryErrorMessage(schools.error)} />
   }
   if (!schools.data.available) {
     return (
-      <NoticeCard title="Programs at your school">
+      <NoticeCard title={t("progAtYourSchool", "Programs at your school")}>
         <p>{schools.data.note}</p>
       </NoticeCard>
     )
@@ -49,6 +52,7 @@ function initialSchool(s: DiscoveryProgramSchools): string | null {
 }
 
 function SchoolPrograms({ schools }: { schools: DiscoveryProgramSchools }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const [picked, setPicked] = useState<string | null>(null)
   const school = picked ?? initialSchool(schools)
   const list = useProgramSuggestions(school, school !== null)
@@ -56,37 +60,37 @@ function SchoolPrograms({ schools }: { schools: DiscoveryProgramSchools }) {
   return (
     <section aria-labelledby="cd-programs-heading" className="space-y-4">
       <h2 id="cd-programs-heading" className="text-lg font-semibold">
-        Programs at your school
+        {t("progAtYourSchool", "Programs at your school")}
       </h2>
       {schools.schools.length === 0 ? (
         <p className="text-sm text-muted-foreground">{schools.note}</p>
       ) : (
         <label className="flex max-w-sm flex-col gap-1 text-sm">
-          <span className="font-medium">Your school</span>
+          <span className="font-medium">{t("progYourSchool", "Your school")}</span>
           <select
             className="rounded-md border bg-background px-3 py-2"
             value={school ?? ""}
             onChange={(e) => setPicked(e.target.value || null)}
           >
-            <option value="">Choose your school</option>
+            <option value="">{t("progChooseSchool", "Choose your school")}</option>
             {schools.schools.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
-                {s.suggested ? " (your organisation)" : ""}
+                {s.suggested ? ` ${t("progYourOrganisation", "(your organisation)")}` : ""}
               </option>
             ))}
           </select>
           <span className="text-xs text-muted-foreground">
-            Only schools that have published their catalog here are listed.
+            {t("progOnlyPublished", "Only schools that have published their catalog here are listed.")}
           </span>
         </label>
       )}
       {school === null ? null : list.isLoading ? (
-        <DiscoveryLoading label="Ranking programs" />
+        <DiscoveryLoading label={t("progRanking", "Ranking programs")} />
       ) : list.isError || !list.data ? (
         <DiscoveryError message={discoveryErrorMessage(list.error)} />
       ) : list.data.mode === "public_paths" ? (
-        <NoticeCard title="Public education paths for now">
+        <NoticeCard title={t("progPublicPathsTitle", "Public education paths for now")}>
           <p>{list.data.note}</p>
         </NoticeCard>
       ) : (
@@ -97,25 +101,32 @@ function SchoolPrograms({ schools }: { schools: DiscoveryProgramSchools }) {
 }
 
 function ProgramList({ data }: { data: DiscoveryProgramsCatalog }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const save = useSaveProgramChoice()
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        {data.school.name ?? "This school"}, {data.catalog.catalogYear} catalog. Ranked by your
-        Overall fit with the roles each program leads to, how well its career areas suit you, and
-        your goals.
+        {t("progRankedBy", {
+          defaultValue:
+            "{{school}}, {{year}} catalog. Ranked by your Overall fit with the roles each program leads to, how well its career areas suit you, and your goals.",
+          school: data.school.name ?? t("progThisSchool", "This school"),
+          year: data.catalog.catalogYear,
+        })}
       </p>
       {data.fit.available ? (
         data.fit.asOf ? (
           <p className="text-xs text-muted-foreground">
-            Fit as of your last Career Fit visit ({data.fit.asOf.slice(0, 10)}).
+            {t("progFitAsOf", {
+              defaultValue: "Fit as of your last Career Fit visit ({{date}}).",
+              date: data.fit.asOf.slice(0, 10),
+            })}
           </p>
         ) : null
       ) : (
         <p className="text-xs text-muted-foreground">{data.fit.reason}</p>
       )}
       {data.carriedForward ? (
-        <NoticeCard title="Your choice moved to the new catalog">
+        <NoticeCard title={t("progCarriedTitle", "Your choice moved to the new catalog")}>
           <p>{data.carriedForward.note}</p>
         </NoticeCard>
       ) : null}
@@ -144,19 +155,24 @@ function ProgramList({ data }: { data: DiscoveryProgramsCatalog }) {
  * renders nothing here; the plan page itself says why.
  */
 function DegreePlanLink() {
+  const { t } = useTranslation("careerDiscoveryPages")
   const plan = useDegreePlan(true)
   if (!plan.data || !plan.data.available) return null
   return (
     <p className="text-sm">
       <Link className="font-medium underline" to={ROUTES.CAREER_DISCOVERY.DEGREE_PLAN}>
-        See your degree plan, term by term
+        {t("progSeeDegreePlan", "See your degree plan, term by term")}
       </Link>
     </p>
   )
 }
 
-function componentLine(label: string, c: ProgramComponent, text: string): string {
-  return c.status === "scored" ? `${label}: ${text}` : `${label}: ${c.reason ?? "not available"}`
+function componentLine(t: TFunction, label: string, c: ProgramComponent, text: string): string {
+  return t("progComponentLine", {
+    defaultValue: "{{label}}: {{text}}",
+    label,
+    text: c.status === "scored" ? text : (c.reason ?? t("progNotAvailable", "not available")),
+  })
 }
 
 function ProgramItem({
@@ -170,8 +186,12 @@ function ProgramItem({
   saving: boolean
   onChoose: () => void
 }) {
+  const { t } = useTranslation("careerDiscoveryPages")
   const { fit, affinity, goal } = p.components
-  const facts = [p.credential, p.totalCredits !== null ? `${p.totalCredits} credits` : null]
+  const facts = [
+    p.credential,
+    p.totalCredits !== null ? t("progCredits", { defaultValue: "{{credits}} credits", credits: p.totalCredits }) : null,
+  ]
     .filter(Boolean)
     .join(" · ")
   return (
@@ -192,23 +212,36 @@ function ProgramItem({
         <ul className="space-y-0.5 text-xs text-muted-foreground">
           <li>
             {componentLine(
-              "Overall fit",
+              t,
+              t("progOverallFit", "Overall fit"),
               fit,
-              `${Math.round(fit.score ?? 0)}% with ${fit.role?.title ?? "its role"}`
+              t("progFitWith", {
+                defaultValue: "{{percent}}% with {{role}}",
+                percent: Math.round(fit.score ?? 0),
+                role: fit.role?.title ?? t("progItsRole", "its role"),
+              })
             )}
           </li>
           <li>
             {componentLine(
-              "Career area",
+              t,
+              t("progCareerArea", "Career area"),
               affinity,
-              `${Math.round(affinity.score ?? 0)}% natural fit (${affinity.family ?? ""})`
+              t("progAffinity", {
+                defaultValue: "{{percent}}% natural fit ({{family}})",
+                percent: Math.round(affinity.score ?? 0),
+                family: affinity.family ?? "",
+              })
             )}
           </li>
           <li>
             {componentLine(
-              "Your goals",
+              t,
+              t("progYourGoals", "Your goals"),
               goal,
-              (goal.score ?? 0) > 0 ? "one points here" : "they point to other career areas"
+              (goal.score ?? 0) > 0
+                ? t("progGoalPointsHere", "one points here")
+                : t("progGoalsPointElsewhere", "they point to other career areas")
             )}
           </li>
         </ul>
@@ -223,7 +256,7 @@ function ProgramItem({
           </ul>
         ) : null}
         <Button size="sm" variant={chosen ? "secondary" : "outline"} disabled={chosen || saving} onClick={onChoose}>
-          {chosen ? "Your choice" : "Choose this program"}
+          {chosen ? t("progYourChoice", "Your choice") : t("progChooseProgram", "Choose this program")}
         </Button>
       </CardContent>
     </Card>

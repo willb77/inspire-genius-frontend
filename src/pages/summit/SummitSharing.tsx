@@ -30,6 +30,8 @@
  * settled.
  */
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Eye, Loader2, Mail, RefreshCw, Search, ShieldAlert, UserPlus } from "lucide-react";
 import { PageHead, Card, Callout } from "@/pages/summit/components/ui";
 import { Button } from "@/components/ui/button";
@@ -55,7 +57,6 @@ import type {
   CategoryDetail,
   LookupResult,
   MyGrantRow,
-  PersonKind,
   VisibilityCategories,
   VisibilityPerson,
 } from "@/types/consent";
@@ -87,46 +88,50 @@ import type {
  * with no basis at all, indistinguishable from one that was never meant to
  * have one.
  */
-const KIND_BASIS: Record<PersonKind, { label: string; because: string }> = {
-  manager_of_record: {
-    label: "Your manager",
-    because: "Your organisation's records show you report to them.",
-  },
-  roster_manager: {
-    label: "Lists you on their team",
-    because:
-      "They added you to a team list they keep here — their own list, not your organisation's records.",
-  },
-  practitioner: {
-    label: "Your coach",
-    because: "They added you as a client.",
-  },
-  requester: {
-    label: "Asked for access",
-    because: "They asked you to share with them.",
-  },
-};
-
-const UNKNOWN_BASIS = {
-  label: "On your list",
-  because: "We can't say how they came to be on this list.",
-};
-
 /**
  * The parameter is a plain string on purpose: `kinds` arrives from the API, so
  * a kind outside the union is a runtime possibility the type cannot exclude,
  * and typing it as `PersonKind` would make the fallback look dead.
  */
-function basisOf(kind: string): { label: string; because: string } {
-  return (KIND_BASIS as Record<string, { label: string; because: string }>)[kind] ?? UNKNOWN_BASIS;
+function basisOf(kind: string, t: TFunction): { label: string; because: string } {
+  switch (kind) {
+    case "manager_of_record":
+      return {
+        label: t("sharing.basis.managerOfRecord.label", { defaultValue: "Your manager" }),
+        because: t("sharing.basis.managerOfRecord.because", { defaultValue: "Your organisation's records show you report to them." }),
+      };
+    case "roster_manager":
+      return {
+        label: t("sharing.basis.rosterManager.label", { defaultValue: "Lists you on their team" }),
+        because: t("sharing.basis.rosterManager.because", { defaultValue: "They added you to a team list they keep here — their own list, not your organisation's records." }),
+      };
+    case "practitioner":
+      return {
+        label: t("sharing.basis.practitioner.label", { defaultValue: "Your coach" }),
+        because: t("sharing.basis.practitioner.because", { defaultValue: "They added you as a client." }),
+      };
+    case "requester":
+      return {
+        label: t("sharing.basis.requester.label", { defaultValue: "Asked for access" }),
+        because: t("sharing.basis.requester.because", { defaultValue: "They asked you to share with them." }),
+      };
+    default:
+      return {
+        label: t("sharing.basis.unknown.label", { defaultValue: "On your list" }),
+        because: t("sharing.basis.unknown.because", { defaultValue: "We can't say how they came to be on this list." }),
+      };
+  }
 }
 
-const SOURCE_LABEL: Record<string, string> = {
-  managers_of_record: "your manager of record",
-  roster_managers: "managers who added you to their team list",
-  practitioners: "your coach",
-  requesters: "requests",
-};
+function sourceLabel(name: string, t: TFunction): string {
+  switch (name) {
+    case "managers_of_record": return t("sharing.source.managersOfRecord", { defaultValue: "your manager of record" });
+    case "roster_managers": return t("sharing.source.rosterManagers", { defaultValue: "managers who added you to their team list" });
+    case "practitioners": return t("sharing.source.practitioners", { defaultValue: "your coach" });
+    case "requesters": return t("sharing.source.requesters", { defaultValue: "requests" });
+    default: return name;
+  }
+}
 
 const GOALS_ONLY = { goals: true } as const;
 
@@ -141,14 +146,36 @@ const GOALS_ONLY = { goals: true } as const;
  * S2-F1).
  */
 type ShareCategory = "goals" | "prism" | "assessments" | "artefacts" | "interviews" | "development";
-const SHARE_CATEGORIES: { key: ShareCategory; label: string; noun: string }[] = [
-  { key: "goals", label: "Goals", noun: "goals" },
-  { key: "prism", label: "PRISM profile", noun: "PRISM profile" },
-  { key: "assessments", label: "Assessments", noun: "assessments" },
-  { key: "artefacts", label: "Profile", noun: "profile documents" },
-  { key: "interviews", label: "Interviews", noun: "interview results" },
-  { key: "development", label: "Development", noun: "development plan" },
+const SHARE_CATEGORIES: { key: ShareCategory }[] = [
+  { key: "goals" },
+  { key: "prism" },
+  { key: "assessments" },
+  { key: "artefacts" },
+  { key: "interviews" },
+  { key: "development" },
 ];
+
+function shareLabel(key: ShareCategory, t: TFunction): string {
+  switch (key) {
+    case "goals": return t("sharing.cat.goals.label", { defaultValue: "Goals" });
+    case "prism": return t("sharing.cat.prism.label", { defaultValue: "PRISM profile" });
+    case "assessments": return t("sharing.cat.assessments.label", { defaultValue: "Assessments" });
+    case "artefacts": return t("sharing.cat.artefacts.label", { defaultValue: "Profile" });
+    case "interviews": return t("sharing.cat.interviews.label", { defaultValue: "Interviews" });
+    case "development": return t("sharing.cat.development.label", { defaultValue: "Development" });
+  }
+}
+
+function shareNoun(key: ShareCategory, t: TFunction): string {
+  switch (key) {
+    case "goals": return t("sharing.cat.goals.noun", { defaultValue: "goals" });
+    case "prism": return t("sharing.cat.prism.noun", { defaultValue: "PRISM profile" });
+    case "assessments": return t("sharing.cat.assessments.noun", { defaultValue: "assessments" });
+    case "artefacts": return t("sharing.cat.artefacts.noun", { defaultValue: "profile documents" });
+    case "interviews": return t("sharing.cat.interviews.noun", { defaultValue: "interview results" });
+    case "development": return t("sharing.cat.development.noun", { defaultValue: "development plan" });
+  }
+}
 const PAGE_KEYS = new Set<string>(SHARE_CATEGORIES.map((c) => c.key));
 
 type Enforcement = Pick<CategoryDetail, "enforced" | "note">;
@@ -180,22 +207,27 @@ function parseCategories(raw: VisibilityCategories | string | null | undefined):
 }
 
 /** "your goals", "your PRISM profile", "your goals and PRISM profile". */
-function describeCategories(cats: VisibilityCategories, possessive = "your"): string {
-  const named = SHARE_CATEGORIES.filter((c) => cats[c.key] === true).map((c) => c.noun);
+function describeCategories(cats: VisibilityCategories, t: TFunction, possessive: "your" | "my" | "" = "your"): string {
+  const named = SHARE_CATEGORIES.filter((c) => cats[c.key] === true).map((c) => shareNoun(c.key, t));
   const other = Object.entries(cats)
     .filter(([k, v]) => v === true && !SHARE_CATEGORIES.some((c) => c.key === k))
     .map(([k]) => k);
   const all = [...named, ...other];
-  const prefix = possessive ? `${possessive} ` : "";
-  if (all.length === 0) return `${prefix}goals`;
-  if (all.length === 1) return `${prefix}${all[0]}`;
-  return `${prefix}${all.slice(0, -1).join(", ")} and ${all[all.length - 1]}`;
+  const list =
+    all.length === 0
+      ? shareNoun("goals", t)
+      : all.length === 1
+        ? all[0]
+        : `${all.slice(0, -1).join(", ")}${t("sharing.and", { defaultValue: " and " })}${all[all.length - 1]}`;
+  if (possessive === "my") return t("sharing.describe.my", { defaultValue: "my {{list}}", list });
+  if (possessive === "your") return t("sharing.describe.your", { defaultValue: "your {{list}}", list });
+  return list;
 }
 
-function errorText(err: unknown): string {
+function errorText(err: unknown, t: TFunction): string {
   const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
   if (typeof detail === "string") return detail;
-  return "That didn't save. Nothing was changed — try again.";
+  return t("sharing.errorSave", { defaultValue: "That didn't save. Nothing was changed — try again." });
 }
 
 function formatDate(iso: string | null | undefined): string {
@@ -214,6 +246,7 @@ function liveCategories(p: VisibilityPerson): VisibilityCategories {
 
 /** One person: name, relation, "Share all", one switch per category, the term, Renew. */
 function PersonRow({ person, details }: { person: VisibilityPerson; details: CategoryDetail[] | undefined }) {
+  const { t } = useTranslation("summitPages");
   const offer = useOfferAccess();
   const revoke = useRevokeGrant();
   const extend = useExtendGrant();
@@ -222,7 +255,7 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
   const pending = offer.isPending || revoke.isPending || extend.isPending;
   const error = offer.error ?? revoke.error ?? extend.error;
   const isPendingRequest = person.grant?.status === "pending";
-  const who = person.displayName || person.email || "this person";
+  const who = person.displayName || person.email || t("sharing.thisPerson", { defaultValue: "this person" });
 
   // One row per person on the backend; an offer replaces its category set.
   // So the next set is computed from what is live, and only when nothing is
@@ -263,14 +296,14 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-bold text-[#0B1B33]">
-            {person.displayName || person.email || "Someone"}
+            {person.displayName || person.email || t("sharing.someone", { defaultValue: "Someone" })}
           </div>
           {person.email && (
             <div className="truncate text-[12px] text-[#13294B]/70">{person.email}</div>
           )}
           <ul className="mt-0.5 flex flex-col gap-0.5" data-testid={`basis-${person.userId}`}>
             {person.kinds.map((k) => {
-              const basis = basisOf(k);
+              const basis = basisOf(k, t);
               return (
                 <li key={k} className="text-[12px] leading-snug text-[#13294B]/70">
                   <span className="font-semibold text-[#13294B]/85">{basis.label}</span>
@@ -283,7 +316,7 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
         </div>
         {isPendingRequest ? (
           <span className="rounded-full bg-[#C88B1B]/15 px-2.5 py-1 text-[11.5px] font-semibold text-[#A9720F]">
-            Waiting on you — see requests below
+            {t("sharing.waitingSee", { defaultValue: "Waiting on you — see requests below" })}
           </span>
         ) : (
           <div className="flex flex-wrap items-center gap-4" data-testid={`share-switches-${person.userId}`}>
@@ -291,10 +324,10 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
               <Switch
                 checked={allOn}
                 disabled={pending}
-                aria-label={`Share everything on this page with ${who}`}
+                aria-label={t("sharing.shareEverythingAria", { defaultValue: "Share everything on this page with {{who}}", who })}
                 onCheckedChange={shareAll}
               />
-              Share all
+              {t("sharing.shareAll", { defaultValue: "Share all" })}
             </label>
             {SHARE_CATEGORIES.map((c) => {
               const e = enforcementOf(details, c.key);
@@ -303,30 +336,29 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
                   <Switch
                     checked={live[c.key] === true}
                     disabled={pending}
-                    aria-label={`Share ${c.noun} with ${who}`}
+                    aria-label={t("sharing.shareCategoryAria", { defaultValue: "Share {{noun}} with {{who}}", noun: shareNoun(c.key, t), who })}
                     onCheckedChange={(checked) => toggle(c.key, checked)}
                   />
-                  {c.label}
+                  {shareLabel(c.key, t)}
                   {e.enforced === "partial" && (
                     <span className="text-[11px] font-normal text-[#A9720F]" data-testid={`partly-${c.key}`} title={e.note}>
-                      (partly protected)
+                      {t("sharing.partlyProtected", { defaultValue: "(partly protected)" })}
                     </span>
                   )}
                   {e.enforced === "no" && (
                     <span className="text-[11px] font-normal text-[#A9720F]" data-testid={`not-enforced-${c.key}`}>
-                      (not protected yet)
+                      {t("sharing.notProtectedYet", { defaultValue: "(not protected yet)" })}
                     </span>
                   )}
                 </label>
               );
             })}
             <span className="text-[12px] text-[#13294B]/70" data-testid={`share-state-${person.userId}`}>
-              {sharedAny ? `Sharing ${describeCategories(live, "")}` : "Not shared"}
+              {sharedAny ? t("sharing.sharingWhat", { defaultValue: "Sharing {{what}}", what: describeCategories(live, t, "") }) : t("sharing.notShared", { defaultValue: "Not shared" })}
             </span>
             {unprotected.length > 0 && (
               <span className="basis-full text-[11.5px] text-[#13294B]/65" data-testid={`share-all-note-${person.userId}`}>
-                &ldquo;Share all&rdquo; includes {unprotected.map((c) => c.label).join(", ")}, which
-                {unprotected.length === 1 ? " is" : " are"} not fully protected yet.
+                {(unprotected.length === 1 ? t("sharing.shareAllIncludes_one", { count: unprotected.length, defaultValue: "“Share all” includes {{list}}, which is not fully protected yet.", list: unprotected.map((c) => shareLabel(c.key, t)).join(", ") }) : t("sharing.shareAllIncludes_other", { count: unprotected.length, defaultValue: "“Share all” includes {{list}}, which are not fully protected yet.", list: unprotected.map((c) => shareLabel(c.key, t)).join(", ") }))}
               </span>
             )}
           </div>
@@ -335,7 +367,7 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
       </div>
       {sharedAny && person.grant && (
         <div className="flex flex-wrap items-center gap-3 text-[12px] text-[#13294B]/75">
-          <span>Until {formatDate(person.grant.expiresAt)}</span>
+          <span>{t("sharing.until", { defaultValue: "Until {{date}}", date: formatDate(person.grant.expiresAt) })}</span>
           <Button
             type="button"
             size="sm"
@@ -344,13 +376,13 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
             disabled={pending}
             onClick={() => extend.mutate({ grantId: person.grant!.id, days: 365 })}
           >
-            <RefreshCw className="mr-1 h-3 w-3" aria-hidden /> Renew for a year
+            <RefreshCw className="mr-1 h-3 w-3" aria-hidden /> {t("sharing.renew", { defaultValue: "Renew for a year" })}
           </Button>
         </div>
       )}
       {error && (
         <p role="alert" className="text-[12.5px] text-[#C2614F]">
-          {errorText(error)}
+          {errorText(error, t)}
         </p>
       )}
     </li>
@@ -359,17 +391,18 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
 
 /** A request waiting on the person, with the reason the requester gave. */
 function RequestRow({ row, name }: { row: MyGrantRow; name: string }) {
+  const { t } = useTranslation("summitPages");
   const respond = useRespondToRequest();
   // What was asked, in the member's words. Approving sends no categories, so
   // the backend stores exactly this set — never a hard-coded one.
-  const asked = describeCategories(parseCategories(row.categories));
+  const asked = describeCategories(parseCategories(row.categories), t);
   return (
     <li className="flex flex-col gap-2 border-b border-[#F1ECE2] py-3 last:border-b-0" data-testid={`request-${row.id}`}>
       <div className="text-[14px] font-bold text-[#0B1B33]">{name}</div>
-      <p className="text-[13px] font-semibold text-[#13294B]">wants to see {asked}.</p>
+      <p className="text-[13px] font-semibold text-[#13294B]">{t("sharing.wantsToSee", { defaultValue: "wants to see {{what}}.", what: asked })}</p>
       <p className="text-[13px] text-[#13294B]/80">
-        {row.reason ? <>&ldquo;{row.reason}&rdquo;</> : <em>No reason given.</em>}
-        {row.requested_at ? <span className="text-[#13294B]/60"> · asked {formatDate(row.requested_at)}</span> : null}
+        {row.reason ? <>&ldquo;{row.reason}&rdquo;</> : <em>{t("sharing.noReason", { defaultValue: "No reason given." })}</em>}
+        {row.requested_at ? <span className="text-[#13294B]/60"> {t("sharing.asked", { defaultValue: "· asked {{date}}", date: formatDate(row.requested_at) })}</span> : null}
       </p>
       <div className="flex flex-wrap gap-2">
         <Button
@@ -378,7 +411,7 @@ function RequestRow({ row, name }: { row: MyGrantRow; name: string }) {
           disabled={respond.isPending}
           onClick={() => respond.mutate({ grantId: row.id, approve: true })}
         >
-          Share {describeCategories(parseCategories(row.categories), "my")}
+          {t("sharing.shareWhat", { defaultValue: "Share {{what}}", what: describeCategories(parseCategories(row.categories), t, "my") })}
         </Button>
         <Button
           type="button"
@@ -387,35 +420,38 @@ function RequestRow({ row, name }: { row: MyGrantRow; name: string }) {
           disabled={respond.isPending}
           onClick={() => respond.mutate({ grantId: row.id, approve: false })}
         >
-          Decline
+          {t("sharing.decline", { defaultValue: "Decline" })}
         </Button>
         {respond.isPending && <Loader2 className="h-4 w-4 animate-spin text-[#7C93B5]" aria-hidden />}
       </div>
       {respond.error && (
         <p role="alert" className="text-[12.5px] text-[#C2614F]">
-          {errorText(respond.error)}
+          {errorText(respond.error, t)}
         </p>
       )}
     </li>
   );
 }
 
-const SURFACE_LABEL: Record<string, string> = {
-  "growth:goals": "read your goals",
-  "growth:goals:super-admin": "read your goals (platform admin)",
-  "growth:dossier": "opened your development dossier",
-  "growth:dossier:super-admin": "opened your development dossier (platform admin)",
-  "growth:ratify": "reviewed a goal",
-  "growth:ratify:super-admin": "reviewed a goal (platform admin)",
-  "growth:goal-reviews": "read the reviews on your goals",
-  "growth:goal-reviews:super-admin": "read the reviews on your goals (platform admin)",
-  offered: "was given access by you",
-  extended: "had access renewed by you",
-};
+function surfaceLabel(surface: string, t: TFunction): string | undefined {
+  switch (surface) {
+    case "growth:goals": return t("sharing.surface.goals", { defaultValue: "read your goals" });
+    case "growth:goals:super-admin": return t("sharing.surface.goalsAdmin", { defaultValue: "read your goals (platform admin)" });
+    case "growth:dossier": return t("sharing.surface.dossier", { defaultValue: "opened your development dossier" });
+    case "growth:dossier:super-admin": return t("sharing.surface.dossierAdmin", { defaultValue: "opened your development dossier (platform admin)" });
+    case "growth:ratify": return t("sharing.surface.ratify", { defaultValue: "reviewed a goal" });
+    case "growth:ratify:super-admin": return t("sharing.surface.ratifyAdmin", { defaultValue: "reviewed a goal (platform admin)" });
+    case "growth:goal-reviews": return t("sharing.surface.goalReviews", { defaultValue: "read the reviews on your goals" });
+    case "growth:goal-reviews:super-admin": return t("sharing.surface.goalReviewsAdmin", { defaultValue: "read the reviews on your goals (platform admin)" });
+    case "offered": return t("sharing.surface.offered", { defaultValue: "was given access by you" });
+    case "extended": return t("sharing.surface.extended", { defaultValue: "had access renewed by you" });
+    default: return undefined;
+  }
+}
 
-function describeSurface(surface: string | null): string {
-  if (!surface) return "looked";
-  return SURFACE_LABEL[surface] ?? `looked (${surface})`;
+function describeSurface(surface: string | null, t: TFunction): string {
+  if (!surface) return t("sharing.surface.looked", { defaultValue: "looked" });
+  return surfaceLabel(surface, t) ?? t("sharing.surface.lookedAt", { defaultValue: "looked ({{surface}})", surface });
 }
 
 function formatWhen(iso: string | null): string {
@@ -431,35 +467,35 @@ function formatWhen(iso: string | null): string {
  * that omits the reads it cannot label is not a log.
  */
 function WhoHasLooked({ nameById }: { nameById: Map<string, string> }) {
+  const { t } = useTranslation("summitPages");
   const log = useAccessLog();
   const rows = (log.data ?? []).slice(0, 50);
   return (
     <section aria-labelledby="looked-heading" className="flex flex-col gap-2" data-testid="who-has-looked">
       <h2 id="looked-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">
-        Who has looked
+        {t("sharing.whoHasLooked", { defaultValue: "Who has looked" })}
       </h2>
       <Card className="!p-5">
         {log.isLoading && (
-          <p className="text-[13.5px] text-[#13294B]/70">Reading the access log…</p>
+          <p className="text-[13.5px] text-[#13294B]/70">{t("sharing.readingLog", { defaultValue: "Reading the access log…" })}</p>
         )}
         {log.isError && (
           <p className="text-[13.5px] text-[#13294B]/80" data-testid="who-has-looked-error">
-            We couldn&apos;t read the access log just now. It is not empty — it is unread.
+            {t("sharing.logError", { defaultValue: "We couldn't read the access log just now. It is not empty — it is unread." })}
           </p>
         )}
         {!log.isLoading && !log.isError && rows.length === 0 && (
           <p className="text-[13.5px] text-[#13294B]/70" data-testid="who-has-looked-empty">
-            Nobody has looked at your goals yet. Every read is recorded here, including reads by
-            platform administrators.
+            {t("sharing.logEmpty", { defaultValue: "Nobody has looked at your goals yet. Every read is recorded here, including reads by platform administrators." })}
           </p>
         )}
         {rows.length > 0 && (
-          <ul className="flex flex-col divide-y divide-[#F1ECE2]" aria-label="Access log">
+          <ul className="flex flex-col divide-y divide-[#F1ECE2]" aria-label={t("sharing.accessLog", { defaultValue: "Access log" })}>
             {rows.map((r: AccessLogRow, i) => (
               <li key={`${r.viewer_user_id}-${r.viewed_at ?? i}`} className="flex flex-wrap items-center gap-2 py-2 text-[13px] text-[#13294B]">
                 <Eye className="h-3.5 w-3.5 text-[#7C93B5]" aria-hidden />
-                <b className="text-[#0B1B33]">{nameById.get(r.viewer_user_id) ?? `Someone (${r.viewer_user_id.slice(0, 8)}…)`}</b>
-                <span>{describeSurface(r.surface)}</span>
+                <b className="text-[#0B1B33]">{nameById.get(r.viewer_user_id) ?? t("sharing.someoneId", { defaultValue: "Someone ({{id}}…)", id: r.viewer_user_id.slice(0, 8) })}</b>
+                <span>{describeSurface(r.surface, t)}</span>
                 <span className="ml-auto text-[11.5px] text-[#7C93B5]">{formatWhen(r.viewed_at)}</span>
               </li>
             ))}
@@ -472,46 +508,50 @@ function WhoHasLooked({ nameById }: { nameById: Map<string, string> }) {
 
 /** Add a person by exact email: find one, then share. Never a search. */
 function AddPerson() {
+  const { t } = useTranslation("summitPages");
   const lookup = useLookupPerson();
   const offer = useOfferAccess();
   const [email, setEmail] = useState("");
   const [found, setFound] = useState<LookupResult | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  // Which kind of message this is. Decided here, not by reading the (translated) text.
+  const [messageOk, setMessageOk] = useState(false);
 
   const find = async (e: FormEvent) => {
     e.preventDefault();
     setMessage(null);
+    setMessageOk(false);
     setFound(null);
     try {
       setFound(await lookup.mutateAsync(email));
     } catch (err) {
       const status = (err as { response?: { status?: number } })?.response?.status;
-      setMessage(status === 404 ? "No account with that email." : errorText(err));
+      setMessage(status === 404 ? t("sharing.noAccount", { defaultValue: "No account with that email." }) : errorText(err, t));
     }
   };
 
   const share = async () => {
     if (!found) return;
     setMessage(null);
+    setMessageOk(false);
     try {
       await offer.mutateAsync({ granteeUserId: found.userId, categories: GOALS_ONLY });
-      setMessage(`Shared with ${found.displayName || found.email}.`);
+      setMessage(t("sharing.sharedWith", { defaultValue: "Shared with {{name}}.", name: found.displayName || found.email }));
+      setMessageOk(true);
       setFound(null);
       setEmail("");
     } catch (err) {
-      setMessage(errorText(err));
+      setMessage(errorText(err, t));
     }
   };
 
   return (
     <Card className="!p-[19px]">
       <div className="flex items-center gap-2 text-[15px] font-bold text-[#0B1B33]">
-        <UserPlus className="h-4 w-4 text-[#127A8A]" aria-hidden /> Add a person
+        <UserPlus className="h-4 w-4 text-[#127A8A]" aria-hidden /> {t("sharing.addPerson", { defaultValue: "Add a person" })}
       </div>
       <p className="mt-1 text-[13px] text-[#13294B]/75">
-        Someone with an IG account who isn&apos;t listed above. Their exact email address;
-        no lookup by name. Your coach doesn&apos;t need one: once they&apos;ve added you as a
-        client they appear in the list above, and you share with them there.
+        {t("sharing.addPersonBody", { defaultValue: "Someone with an IG account who isn't listed above. Their exact email address; no lookup by name. Your coach doesn't need one: once they've added you as a client they appear in the list above, and you share with them there." })}
       </p>
       <form onSubmit={find} className="mt-3 flex flex-col gap-2 sm:flex-row">
         <Input
@@ -519,12 +559,12 @@ function AddPerson() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="name@example.com"
-          aria-label="Email address"
+          aria-label={t("sharing.emailAria", { defaultValue: "Email address" })}
           className="h-9 flex-1"
         />
         <Button type="submit" size="sm" className="h-9" variant="outline" disabled={lookup.isPending || !email.includes("@")}>
           {lookup.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden /> : <Search className="mr-1 h-3.5 w-3.5" aria-hidden />}
-          Find
+          {t("sharing.find", { defaultValue: "Find" })}
         </Button>
       </form>
       {found && (
@@ -534,12 +574,12 @@ function AddPerson() {
           {found.email && <span className="text-[12px] text-[#13294B]/70">{found.email}</span>}
           <Button type="button" size="sm" className="ml-auto" disabled={offer.isPending} onClick={share}>
             {offer.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
-            Share my goals
+            {t("sharing.shareMyGoals", { defaultValue: "Share my goals" })}
           </Button>
         </div>
       )}
       {message && (
-        <p role={message.startsWith("Shared") ? "status" : "alert"} className={message.startsWith("Shared") ? "mt-2 text-[12.5px] text-[#5B8A72]" : "mt-2 text-[12.5px] text-[#C2614F]"}>
+        <p role={messageOk ? "status" : "alert"} className={messageOk ? "mt-2 text-[12.5px] text-[#5B8A72]" : "mt-2 text-[12.5px] text-[#C2614F]"}>
           {message}
         </p>
       )}
@@ -549,6 +589,7 @@ function AddPerson() {
 
 /** The honest summary over the switches: what is not (fully) protected yet. */
 function EnforcementNote({ details }: { details: CategoryDetail[] | undefined }) {
+  const { t } = useTranslation("summitPages");
   const none = SHARE_CATEGORIES.filter((c) => enforcementOf(details, c.key).enforced === "no");
   const partly = SHARE_CATEGORIES.filter((c) => enforcementOf(details, c.key).enforced === "partial");
   if (none.length === 0 && partly.length === 0) return null;
@@ -556,14 +597,12 @@ function EnforcementNote({ details }: { details: CategoryDetail[] | undefined })
     <div className="mt-1 flex flex-col gap-1 text-[12.5px] leading-relaxed text-[#13294B]/75" data-testid="not-enforced-note">
       {none.length > 0 && (
         <p>
-          Not protected yet &mdash; {none.map((c) => c.label).join(", ")}: people on your reporting
-          line can see these whether or not you share them. Your choice is saved and takes effect
-          when protection for them launches.
+          {t("sharing.notProtectedNote", { defaultValue: "Not protected yet — {{list}}: people on your reporting line can see these whether or not you share them. Your choice is saved and takes effect when protection for them launches.", list: none.map((c) => shareLabel(c.key, t)).join(", ") })}
         </p>
       )}
       {partly.map((c) => (
         <p key={c.key} data-testid={`partly-note-${c.key}`}>
-          {c.label}, partly protected: {enforcementOf(details, c.key).note}
+          {t("sharing.partlyNote", { defaultValue: "{{label}}, partly protected: {{note}}", label: shareLabel(c.key, t), note: enforcementOf(details, c.key).note })}
         </p>
       ))}
     </div>
@@ -576,6 +615,7 @@ function EnforcementNote({ details }: { details: CategoryDetail[] | undefined })
  * cannot drift. The page adds its heading and the "what they see" preview.
  */
 export function SharingCore() {
+  const { t } = useTranslation("summitPages");
   const people = usePeople();
   const grants = useMyGrants();
   const categories = useCategoryDetails();
@@ -584,43 +624,41 @@ export function SharingCore() {
   const loading = people.isLoading || grants.isLoading;
   const failed = people.isError || grants.isError;
   const list = people.data?.people ?? [];
-  const nameById = new Map(list.map((p) => [p.userId, p.displayName || p.email || "Someone"]));
+  const nameById = new Map(list.map((p) => [p.userId, p.displayName || p.email || t("sharing.someone", { defaultValue: "Someone" })]));
   const requests = (grants.data ?? []).filter((r) => r.status === "pending");
   const unavailable = Object.entries(people.data?.sources ?? {})
     .filter(([, state]) => state === "unavailable")
-    .map(([name]) => SOURCE_LABEL[name] ?? name);
+    .map(([name]) => sourceLabel(name, t));
 
   return (
     <div className="flex flex-col gap-[18px]">
       {loading && (
         <div className="flex items-center gap-2 text-[13.5px] text-[#13294B]/70" data-testid="sharing-loading">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Reading who you can share with…
+          {t("sharing.loading", { defaultValue: "Reading who you can share with…" })}
         </div>
       )}
 
       {!loading && failed && (
         <Card className="!p-5" testId="sharing-error">
           <p className="text-[14px] text-[#13294B]/80">
-            We couldn&apos;t read your sharing settings just now. Nothing has changed —
-            refresh to try again.
+            {t("sharing.error", { defaultValue: "We couldn't read your sharing settings just now. Nothing has changed — refresh to try again." })}
           </p>
         </Card>
       )}
 
       {!loading && !failed && unavailable.length > 0 && (
         <Callout tone="info" icon={<ShieldAlert className="h-4 w-4 text-[#A9720F]" />}>
-          We couldn&apos;t read {unavailable.join(" or ")} just now, so that part of this list may be
-          missing. It is not empty — it is unread.
+          {t("sharing.unavailable", { defaultValue: "We couldn't read {{sources}} just now, so that part of this list may be missing. It is not empty — it is unread.", sources: unavailable.join(t("sharing.or", { defaultValue: " or " })) })}
         </Callout>
       )}
 
       {!loading && !failed && requests.length > 0 && (
         <Card className="!p-[19px]" testId="sharing-requests">
-          <div className="text-[15px] font-bold text-[#0B1B33]">Waiting on you</div>
+          <div className="text-[15px] font-bold text-[#0B1B33]">{t("sharing.waitingHeading", { defaultValue: "Waiting on you" })}</div>
           <ul className="mt-2">
             {requests.map((r) => (
-              <RequestRow key={r.id} row={r} name={nameById.get(r.grantee_user_id) ?? "Someone"} />
+              <RequestRow key={r.id} row={r} name={nameById.get(r.grantee_user_id) ?? t("sharing.someone", { defaultValue: "Someone" })} />
             ))}
           </ul>
         </Card>
@@ -628,19 +666,18 @@ export function SharingCore() {
 
       {!loading && !failed && list.length === 0 && (
         <Card className="!p-5" testId="sharing-empty">
-          <div className="text-[15px] font-bold text-[#0B1B33]">No one to share with yet</div>
+          <div className="text-[15px] font-bold text-[#0B1B33]">{t("sharing.emptyHeading", { defaultValue: "No one to share with yet" })}</div>
           <p className="mt-1.5 text-[14px] leading-relaxed text-[#13294B]/80">
-            When a manager or coach is linked to you they appear here, with a switch for each
-            part of your record. You can also add someone by their email address below.
+            {t("sharing.emptyBody", { defaultValue: "When a manager or coach is linked to you they appear here, with a switch for each part of your record. You can also add someone by their email address below." })}
           </p>
         </Card>
       )}
 
       {!loading && !failed && list.length > 0 && (
         <Card className="!p-[19px]" testId="sharing-people">
-          <div className="text-[15px] font-bold text-[#0B1B33]">People</div>
+          <div className="text-[15px] font-bold text-[#0B1B33]">{t("sharing.people", { defaultValue: "People" })}</div>
           <p className="mt-1 text-[12.5px] leading-relaxed text-[#13294B]/75" data-testid="basis-note">
-            Under each name is how they came to be on this list.
+            {t("sharing.basisNote", { defaultValue: "Under each name is how they came to be on this list." })}
           </p>
           <EnforcementNote details={details} />
           <ul className="mt-1">
@@ -661,6 +698,7 @@ export function SharingCore() {
 }
 
 export default function SummitSharing() {
+  const { t } = useTranslation("summitPages");
   const mine = useMyGoals();
   const preview = (mine.data?.goals ?? []).find((g) => g.visibility === "shareable");
   // House style (goals, S2a), display only: the preview is a picture of the
@@ -672,25 +710,25 @@ export default function SummitSharing() {
   return (
     <div className="flex flex-col gap-[18px]">
       <PageHead
-        eyebrow="Your choice, person by person"
-        title="Who can see my goals and PRISM profile"
-        sub="Nobody sees your goals or your PRISM profile by rank. You share each with a specific person for a year, can renew, and can take it back at any time. Turning a switch on renews the term for a year. A goal you mark private stays hidden even from them."
+        eyebrow={t("sharing.eyebrow", { defaultValue: "Your choice, person by person" })}
+        title={t("sharing.title", { defaultValue: "Who can see my goals and PRISM profile" })}
+        sub={t("sharing.sub", { defaultValue: "Nobody sees your goals or your PRISM profile by rank. You share each with a specific person for a year, can renew, and can take it back at any time. Turning a switch on renews the term for a year. A goal you mark private stays hidden even from them." })}
       />
 
       <SharingCore />
 
       <section aria-labelledby="preview-heading" className="flex flex-col gap-2">
         <h2 id="preview-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">
-          What they see
+          {t("sharing.whatTheySee", { defaultValue: "What they see" })}
         </h2>
         {preview && house ? (
           <div data-testid="sharing-preview">
             <p className="mb-2 text-[12.5px] text-[#13294B]/75" data-testid="sharing-preview-note">
-              A preview of their view. Nothing on it can be clicked here.
+              {t("sharing.previewNote", { defaultValue: "A preview of their view. Nothing on it can be clicked here." })}
             </p>
             <fieldset
               disabled
-              aria-label="Preview of what they see"
+              aria-label={t("sharing.previewAria", { defaultValue: "Preview of what they see" })}
               className="m-0 min-w-0 border-0 p-0 [&_button]:hidden"
             >
               <CoachGoalCard goal={preview} onRatify={() => undefined} ratifying={false} />
@@ -703,7 +741,7 @@ export default function SummitSharing() {
         ) : (
           <Card className="!p-5">
             <p className="text-[13.5px] text-[#13294B]/80">
-              Publish a goal and it will show here exactly as a person you share with sees it.
+              {t("sharing.previewEmpty", { defaultValue: "Publish a goal and it will show here exactly as a person you share with sees it." })}
             </p>
           </Card>
         )}

@@ -4,22 +4,24 @@ import { ClassificationBadge } from '@/components/job-blueprint/shared/Classific
 import { ScoreBar } from '@/components/job-blueprint/shared/ScoreBar'
 import type { InsightPackage } from '@/types/job-blueprint'
 import { AlertTriangle, CheckCircle, HelpCircle, Target } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type InsightPackageViewProps = {
   insight: InsightPackage
 }
 
 export function InsightPackageView({ insight }: InsightPackageViewProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-slate-800">Insight Package</h3>
-          <p className="text-sm text-slate-500">Generated {new Date(insight.generatedAt).toLocaleString()}</p>
+          <h3 className="text-lg font-semibold text-slate-800">{t("insight.title", { defaultValue: "Insight Package" })}</h3>
+          <p className="text-sm text-slate-500">{t("insight.generated", { defaultValue: "Generated {{when}}", when: new Date(insight.generatedAt).toLocaleString() })}</p>
         </div>
         <div className="flex items-center gap-3">
-          <ScoreBar score={insight.fitScore} label="Fit Score" className="w-32" size="sm" />
+          <ScoreBar score={insight.fitScore} label={t("insight.fitScore", { defaultValue: "Fit Score" })} className="w-32" size="sm" />
           <ClassificationBadge tier={insight.tier} />
         </div>
       </div>
@@ -30,7 +32,7 @@ export function InsightPackageView({ insight }: InsightPackageViewProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-1.5">
               <Target className="w-4 h-4" />
-              Gap Analysis
+              {t("insight.gapAnalysis", { defaultValue: "Gap Analysis" })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -53,7 +55,7 @@ export function InsightPackageView({ insight }: InsightPackageViewProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-1.5">
               <HelpCircle className="w-4 h-4" />
-              Interview Focus Areas
+              {t("insight.focusAreas", { defaultValue: "Interview Focus Areas" })}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -73,7 +75,7 @@ export function InsightPackageView({ insight }: InsightPackageViewProps) {
         {/* Probe Questions */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Probe Questions</CardTitle>
+            <CardTitle className="text-sm">{t("insight.probeQuestions", { defaultValue: "Probe Questions" })}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {insight.probeQuestions.map((pq, i) => (
@@ -91,7 +93,7 @@ export function InsightPackageView({ insight }: InsightPackageViewProps) {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-1.5 text-red-700">
                 <AlertTriangle className="w-4 h-4" />
-                Risk Factors
+                {t("insight.riskFactors", { defaultValue: "Risk Factors" })}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -110,7 +112,7 @@ export function InsightPackageView({ insight }: InsightPackageViewProps) {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-1.5 text-green-700">
                 <CheckCircle className="w-4 h-4" />
-                Opportunity Factors
+                {t("insight.opportunityFactors", { defaultValue: "Opportunity Factors" })}
               </CardTitle>
             </CardHeader>
             <CardContent>

@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -30,16 +32,25 @@ import {
   type PrismRequestAccessState,
 } from '@/services/prism/prism'
 
-const accessSchema = z.object({
-  practitionerName: z
-    .string()
-    .trim()
-    .min(1, 'Enter the name of the PRISM Practitioner who provided your access')
-    .max(200),
-  confirmIsMe: z.boolean().refine((v) => v, 'Confirm that this is you'),
-})
+function makeAccessSchema(t: TFunction) {
+  return z.object({
+    practitionerName: z
+      .string()
+      .trim()
+      .min(
+        1,
+        t('approvalNotice.errPractitionerRequired', {
+          defaultValue: 'Enter the name of the PRISM Practitioner who provided your access',
+        }),
+      )
+      .max(200),
+    confirmIsMe: z
+      .boolean()
+      .refine((v) => v, t('approvalNotice.errConfirmIsMe', { defaultValue: 'Confirm that this is you' })),
+  })
+}
 
-type AccessFormValues = z.infer<typeof accessSchema>
+type AccessFormValues = z.infer<ReturnType<typeof makeAccessSchema>>
 
 interface PrismRequestApprovalNoticeProps {
   /** The server's state, when it has been read. */
@@ -67,6 +78,8 @@ export function PrismRequestApprovalNotice({
   fallbackAccount,
   defaultOpen = false,
 }: PrismRequestApprovalNoticeProps) {
+  const { t } = useTranslation('prismUi')
+  const accessSchema = useMemo(() => makeAccessSchema(t), [t])
   const [open, setOpen] = useState(defaultOpen && !state?.pending)
   const requestAccess = useRequestPrismAccess()
   const account = {
@@ -75,6 +88,26 @@ export function PrismRequestApprovalNotice({
   }
   const last = state?.request ?? null
   const pending = !!state?.pending
+  const sentDate = last ? formatDate(last.requested_at) : ''
+  const practitionerName = last?.practitioner_name ?? ''
+  const waitingMessage =
+    sentDate && practitionerName
+      ? t('approvalNotice.waitingSentPractitioner', {
+          defaultValue: 'Your request is waiting for approval (sent {{date}}) — practitioner: {{name}}.',
+          date: sentDate,
+          name: practitionerName,
+        })
+      : sentDate
+        ? t('approvalNotice.waitingSent', {
+            defaultValue: 'Your request is waiting for approval (sent {{date}}).',
+            date: sentDate,
+          })
+        : practitionerName
+          ? t('approvalNotice.waitingPractitioner', {
+              defaultValue: 'Your request is waiting for approval — practitioner: {{name}}.',
+              name: practitionerName,
+            })
+          : t('approvalNotice.waiting', { defaultValue: 'Your request is waiting for approval.' })
 
   const form = useForm<AccessFormValues>({
     resolver: zodResolver(accessSchema) as Resolver<AccessFormValues>,
@@ -87,12 +120,15 @@ export function PrismRequestApprovalNotice({
         practitionerName: values.practitionerName,
         confirmIsMe: values.confirmIsMe,
       })
-      toast.success('Your request has been sent for approval.')
+      toast.success(
+        t('approvalNotice.sentToast', { defaultValue: 'Your request has been sent for approval.' }),
+      )
       setOpen(false)
       form.reset()
     } catch (err) {
       form.setError('root', {
-        message: apiErrorMessage(err) || 'Your request could not be sent. Please try again.',
+        message: apiErrorMessage(err) ||
+          t('approvalNotice.sendFailed', { defaultValue: 'Your request could not be sent. Please try again.' }),
       })
     }
   }
@@ -101,7 +137,7 @@ export function PrismRequestApprovalNotice({
     <div
       className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-3 dark:border-amber-700 dark:bg-amber-950/40"
       role="status"
-      aria-label="PRISM survey requests need prior approval"
+      aria-label={t('approvalNotice.ariaLabel', { defaultValue: 'PRISM survey requests need prior approval' })}
     >
       <div className="flex items-start gap-2">
         <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
@@ -111,27 +147,25 @@ export function PrismRequestApprovalNotice({
       {pending && last && (
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Clock className="h-3.5 w-3.5" aria-hidden />
-          Your request is waiting for approval
-          {formatDate(last.requested_at) ? ` (sent ${formatDate(last.requested_at)})` : ''}
-          {last.practitioner_name ? ` — practitioner: ${last.practitioner_name}` : ''}.
+          {waitingMessage}
         </p>
       )}
       {!pending && last?.status === 'denied' && (
         <p className="text-sm text-muted-foreground">
-          Your last request was not approved. You can ask again.
+          {t('approvalNotice.denied', { defaultValue: 'Your last request was not approved. You can ask again.' })}
         </p>
       )}
 
       {!pending && (
         <Button type="button" size="sm" onClick={() => setOpen(true)}>
-          Request access
+          {t('approvalNotice.requestAccess', { defaultValue: 'Request access' })}
         </Button>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request access to PRISM surveys</DialogTitle>
+            <DialogTitle>{t('approvalNotice.dialogTitle', { defaultValue: 'Request access to PRISM surveys' })}</DialogTitle>
             <DialogDescription>{PRISM_REQUEST_APPROVAL_MESSAGE}</DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -139,13 +173,13 @@ export function PrismRequestApprovalNotice({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label htmlFor="prism-access-name" className="text-sm font-medium">
-                    Your name
+                    {t('approvalNotice.yourName', { defaultValue: 'Your name' })}
                   </label>
                   <Input id="prism-access-name" value={account.name} readOnly disabled />
                 </div>
                 <div className="space-y-1">
                   <label htmlFor="prism-access-email" className="text-sm font-medium">
-                    Your email
+                    {t('approvalNotice.yourEmail', { defaultValue: 'Your email' })}
                   </label>
                   <Input id="prism-access-email" value={account.email} readOnly disabled />
                 </div>
@@ -162,7 +196,9 @@ export function PrismRequestApprovalNotice({
                         onCheckedChange={(v) => field.onChange(v === true)}
                       />
                     </FormControl>
-                    <FormLabel className="text-sm font-normal">Confirm this is you</FormLabel>
+                    <FormLabel className="text-sm font-normal">
+                      {t('approvalNotice.confirmLabel', { defaultValue: 'Confirm this is you' })}
+                    </FormLabel>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -173,9 +209,11 @@ export function PrismRequestApprovalNotice({
                 name="practitionerName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>PRISM Practitioner who provided your access *</FormLabel>
+                    <FormLabel>
+                      {t('approvalNotice.practitionerLabel', { defaultValue: 'PRISM Practitioner who provided your access *' })}
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="Practitioner's name" {...field} />
+                      <Input placeholder={t('approvalNotice.practitionerPlaceholder', { defaultValue: "Practitioner's name" })} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -190,13 +228,13 @@ export function PrismRequestApprovalNotice({
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
+                  {t('approvalNotice.cancel', { defaultValue: 'Cancel' })}
                 </Button>
                 <Button type="submit" disabled={requestAccess.isPending}>
                   {requestAccess.isPending && (
                     <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
                   )}
-                  Send request
+                  {t('approvalNotice.sendRequest', { defaultValue: 'Send request' })}
                 </Button>
               </DialogFooter>
             </form>

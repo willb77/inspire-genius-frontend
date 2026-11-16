@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Scale,
   Trophy,
@@ -22,6 +23,7 @@ import { useAwardLetters } from "@/hooks/grant/useAwardLetters"
 import type { AwardLetter } from "@/types/grant"
 import { GrantPageHeader, GrantCard, GrantEmptyState, GrantPill, GrantSectionTitle } from "./_shared"
 import { formatCurrency } from "./_format"
+import { RichText } from "./_rich"
 
 /**
  * Deterministic package math for one award letter.
@@ -46,6 +48,7 @@ function packageMath(l: AwardLetter) {
  * Backed by `useAwardLetters` (mock for UI-0 → GET /v1/award-letters when live).
  */
 export default function GrantComparePage() {
+  const { t } = useTranslation("grantPages")
   const { data, isLoading } = useAwardLetters()
   const [appealOpen, setAppealOpen] = useState(false)
 
@@ -67,15 +70,18 @@ export default function GrantComparePage() {
     <div className="max-w-4xl">
       <GrantPageHeader
         icon={Scale}
-        title="Compare Offers"
-        description="Line up your award letters to see which offer costs the least out of pocket."
+        title={t("compare.title", "Compare Offers")}
+        description={t("compare.description", "Line up your award letters to see which offer costs the least out of pocket.")}
       />
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : letters.length === 0 ? (
         <GrantEmptyState>
-          No award letters yet — add them from the Application Concierge to compare offers.
+          {t(
+            "compare.empty",
+            "No award letters yet — add them from the Application Concierge to compare offers."
+          )}
         </GrantEmptyState>
       ) : (
         <>
@@ -85,10 +91,18 @@ export default function GrantComparePage() {
                 <Trophy className="h-4 w-4 text-[#0f766e]" />
               </div>
               <p className="text-sm text-[#374151]">
-                <span className="font-semibold text-[#1f2937]">{best.institutionName}</span> is your
-                lowest net cost at{" "}
-                <span className="font-semibold text-[#0f766e]">{formatCurrency(best.netCost)}</span>{" "}
-                per year.
+                <RichText
+                  text={t("compare.bestBanner", {
+                    institution: best.institutionName,
+                    amount: formatCurrency(best.netCost),
+                    defaultValue:
+                      "<name>{{institution}}</name> is your lowest net cost at <amount>{{amount}}</amount> per year.",
+                  })}
+                  tags={{
+                    name: <span className="font-semibold text-[#1f2937]" />,
+                    amount: <span className="font-semibold text-[#0f766e]" />,
+                  }}
+                />
               </p>
             </GrantCard>
           )}
@@ -97,13 +111,15 @@ export default function GrantComparePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[#374151]">Institution</TableHead>
-                  <TableHead className="text-right text-[#374151]">Cost</TableHead>
-                  <TableHead className="text-right text-[#374151]">Grants</TableHead>
-                  <TableHead className="text-right text-[#374151]">Scholarships</TableHead>
-                  <TableHead className="text-right text-[#374151]">Work-study</TableHead>
-                  <TableHead className="text-right text-[#374151]">Loans</TableHead>
-                  <TableHead className="text-right text-[#374151]">Net cost</TableHead>
+                  <TableHead className="text-[#374151]">{t("compare.colInstitution", "Institution")}</TableHead>
+                  <TableHead className="text-right text-[#374151]">{t("compare.colCost", "Cost")}</TableHead>
+                  <TableHead className="text-right text-[#374151]">{t("compare.colGrants", "Grants")}</TableHead>
+                  <TableHead className="text-right text-[#374151]">
+                    {t("compare.colScholarships", "Scholarships")}
+                  </TableHead>
+                  <TableHead className="text-right text-[#374151]">{t("compare.colWorkStudy", "Work-study")}</TableHead>
+                  <TableHead className="text-right text-[#374151]">{t("compare.colLoans", "Loans")}</TableHead>
+                  <TableHead className="text-right text-[#374151]">{t("compare.colNetCost", "Net cost")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -114,7 +130,7 @@ export default function GrantComparePage() {
                       <TableCell className="font-medium text-[#1f2937]">
                         <span className="flex items-center gap-2">
                           {l.institutionName}
-                          {isBest && <GrantPill tone="teal">Best value</GrantPill>}
+                          {isBest && <GrantPill tone="teal">{t("compare.bestValue", "Best value")}</GrantPill>}
                         </span>
                       </TableCell>
                       <TableCell className="text-right text-[#6b7280]">
@@ -147,13 +163,15 @@ export default function GrantComparePage() {
             </Table>
           </div>
           <p className="mt-3 text-xs text-[#9ca3af]">
-            Net cost = cost of attendance minus gift aid (grants + scholarships). Loans and
-            work-study are money you repay or earn, not discounts.
+            {t(
+              "compare.netCostNote",
+              "Net cost = cost of attendance minus gift aid (grants + scholarships). Loans and work-study are money you repay or earn, not discounts."
+            )}
           </p>
 
           {/* Honest side-by-side: true net cost, gapping, and loans-dressed-as-aid. */}
           <div className="mt-8">
-            <GrantSectionTitle>Priced honestly</GrantSectionTitle>
+            <GrantSectionTitle>{t("compare.pricedHonestly", "Priced honestly")}</GrantSectionTitle>
             <div className="grid gap-4 sm:grid-cols-2">
               {letters.map((l) => {
                 const m = packageMath(l)
@@ -168,26 +186,31 @@ export default function GrantComparePage() {
                         <h3 className="text-base font-semibold text-[#1f2937]">
                           {l.institutionName}
                         </h3>
-                        {isBest && <GrantPill tone="teal">Lowest net cost</GrantPill>}
+                        {isBest && <GrantPill tone="teal">{t("compare.lowestNetCost", "Lowest net cost")}</GrantPill>}
                       </div>
                       <span className="whitespace-nowrap text-xs text-[#9ca3af]">
-                        COA {formatCurrency(l.costOfAttendance)}
+                        {t("compare.coa", {
+                          amount: formatCurrency(l.costOfAttendance),
+                          defaultValue: "COA {{amount}}",
+                        })}
                       </span>
                     </div>
 
                     <dl className="space-y-1.5 text-sm">
                       <div className="flex items-center justify-between">
-                        <dt className="text-[#6b7280]">Gift aid (grants + scholarships)</dt>
+                        <dt className="text-[#6b7280]">
+                          {t("compare.giftAid", "Gift aid (grants + scholarships)")}
+                        </dt>
                         <dd className="font-semibold text-[#15803d]">
                           {formatCurrency(m.giftAid)}
                         </dd>
                       </div>
                       <div className="flex items-center justify-between">
-                        <dt className="text-[#6b7280]">Work-study (earned)</dt>
+                        <dt className="text-[#6b7280]">{t("compare.workStudyEarned", "Work-study (earned)")}</dt>
                         <dd className="font-medium text-[#6b7280]">{formatCurrency(l.workStudy)}</dd>
                       </div>
                       <div className="flex items-center justify-between">
-                        <dt className="text-[#6b7280]">Federal loans (repaid)</dt>
+                        <dt className="text-[#6b7280]">{t("compare.federalLoansRepaid", "Federal loans (repaid)")}</dt>
                         <dd className="font-medium text-[#b45309]">
                           {formatCurrency(l.federalLoans)}
                         </dd>
@@ -196,7 +219,7 @@ export default function GrantComparePage() {
 
                     <div className="mt-3 flex items-center justify-between border-t border-[#f3f4f6] pt-3">
                       <span className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
-                        True net cost
+                        {t("compare.trueNetCost", "True net cost")}
                       </span>
                       <span
                         className={cn(
@@ -205,7 +228,9 @@ export default function GrantComparePage() {
                         )}
                       >
                         {formatCurrency(m.trueNet)}
-                        <span className="ml-1 text-xs font-normal text-[#9ca3af]">/ yr</span>
+                        <span className="ml-1 text-xs font-normal text-[#9ca3af]">
+                          {t("compare.perYear", "/ yr")}
+                        </span>
                       </span>
                     </div>
 
@@ -214,17 +239,27 @@ export default function GrantComparePage() {
                         <div className="flex items-start gap-2 rounded-lg bg-[rgba(239,68,68,0.08)] p-2.5 text-xs text-[#b91c1c]">
                           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                           <span>
-                            <span className="font-semibold">Gapped by {formatCurrency(m.gap)}.</span>{" "}
-                            Even after every grant, loan, and work-study dollar, this much need is
-                            left unmet — you'd cover it out of pocket.
+                            <RichText
+                              text={t("compare.gapped", {
+                                amount: formatCurrency(m.gap),
+                                defaultValue:
+                                  "<b>Gapped by {{amount}}.</b> Even after every grant, loan, and work-study dollar, this much need is left unmet — you'd cover it out of pocket.",
+                              })}
+                              tags={{ b: <span className="font-semibold" /> }}
+                            />
                           </span>
                         </div>
                       ) : (
                         <div className="flex items-start gap-2 rounded-lg bg-[rgba(45,212,191,0.1)] p-2.5 text-xs text-[#0f766e]">
                           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                           <span>
-                            <span className="font-semibold">No gap.</span> Offered aid covers your
-                            full demonstrated need.
+                            <RichText
+                              text={t(
+                                "compare.noGap",
+                                "<b>No gap.</b> Offered aid covers your full demonstrated need."
+                              )}
+                              tags={{ b: <span className="font-semibold" /> }}
+                            />
                           </span>
                         </div>
                       )}
@@ -232,11 +267,14 @@ export default function GrantComparePage() {
                         <div className="flex items-start gap-2 rounded-lg bg-[rgba(245,158,11,0.1)] p-2.5 text-xs text-[#b45309]">
                           <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                           <span>
-                            <span className="font-semibold">
-                              {formatCurrency(l.federalLoans)} labeled as "aid" is a loan.
-                            </span>{" "}
-                            It's bundled beside gift aid but you repay it with interest — it does not
-                            lower true net cost.
+                            <RichText
+                              text={t("compare.loanAsAid", {
+                                amount: formatCurrency(l.federalLoans),
+                                defaultValue:
+                                  '<b>{{amount}} labeled as "aid" is a loan.</b> It\'s bundled beside gift aid but you repay it with interest — it does not lower true net cost.',
+                              })}
+                              tags={{ b: <span className="font-semibold" /> }}
+                            />
                           </span>
                         </div>
                       )}
@@ -262,11 +300,17 @@ export default function GrantComparePage() {
                   </span>
                   <span>
                     <span className="block text-sm font-semibold text-[#1f2937]">
-                      Appeal-letter draft for {worst.institutionName}
+                      {t("compare.appealTitle", {
+                        institution: worst.institutionName,
+                        defaultValue: "Appeal-letter draft for {{institution}}",
+                      })}
                     </span>
                     <span className="block text-xs text-[#9ca3af]">
-                      Cite {best.institutionName}'s {formatCurrency(best.netCost)} net cost to ask
-                      for more aid
+                      {t("compare.appealSubtitle", {
+                        institution: best.institutionName,
+                        amount: formatCurrency(best.netCost),
+                        defaultValue: "Cite {{institution}}'s {{amount}} net cost to ask for more aid",
+                      })}
                     </span>
                   </span>
                 </span>
@@ -280,21 +324,22 @@ export default function GrantComparePage() {
 
               {appealOpen && (
                 <div className="mt-4 whitespace-pre-line rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-4 text-sm leading-relaxed text-[#374151]">
-                  {`Dear ${worst.institutionName} Office of Financial Aid,
-
-Thank you for admitting me and for the aid package you extended. ${worst.institutionName} remains my top choice, and I'm writing to respectfully request a review of my award.
-
-After comparing my offers, my net cost at ${worst.institutionName} is ${formatCurrency(worst.netCost)} per year, versus ${formatCurrency(best.netCost)} at ${best.institutionName} — a difference of ${formatCurrency(worst.netCost - best.netCost)}. My family's financial circumstances are unchanged, and this gap makes attending difficult without additional grant or scholarship support.
-
-Would you be able to reconsider my institutional grant aid in light of this comparison? I'm happy to provide any documentation that would help. Thank you for your time and consideration.
-
-Sincerely,
-[Your name]`}
+                  {t("compare.appealLetter", {
+                    worst: worst.institutionName,
+                    worstNet: formatCurrency(worst.netCost),
+                    best: best.institutionName,
+                    bestNet: formatCurrency(best.netCost),
+                    difference: formatCurrency(worst.netCost - best.netCost),
+                    defaultValue:
+                      "Dear {{worst}} Office of Financial Aid,\n\nThank you for admitting me and for the aid package you extended. {{worst}} remains my top choice, and I'm writing to respectfully request a review of my award.\n\nAfter comparing my offers, my net cost at {{worst}} is {{worstNet}} per year, versus {{bestNet}} at {{best}} — a difference of {{difference}}. My family's financial circumstances are unchanged, and this gap makes attending difficult without additional grant or scholarship support.\n\nWould you be able to reconsider my institutional grant aid in light of this comparison? I'm happy to provide any documentation that would help. Thank you for your time and consideration.\n\nSincerely,\n[Your name]",
+                  })}
                 </div>
               )}
               <p className="mt-3 text-xs text-[#9ca3af]">
-                Template only — review and personalize before sending. Appeals work best with a
-                specific competing offer and a genuine reason.
+                {t(
+                  "compare.appealNote",
+                  "Template only — review and personalize before sending. Appeals work best with a specific competing offer and a genuine reason."
+                )}
               </p>
             </GrantCard>
           )}

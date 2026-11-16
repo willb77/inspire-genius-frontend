@@ -1,5 +1,7 @@
 import { useState } from "react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import {
   ArrowLeft,
   BookText,
@@ -57,15 +59,22 @@ const VALIDITY_BADGE_CLASS: Record<string, string> = {
   needs_review: "bg-amber-100 text-amber-700 border-amber-200",
   deprecated: "bg-slate-100 text-slate-500 border-slate-200",
 }
-const VALIDITY_LABEL: Record<string, string> = {
-  validated: "Validated",
-  provisional: "Provisional",
-  needs_review: "In review",
-  deprecated: "Retired",
-}
 const bandClass = (band: string) =>
   VALIDITY_BADGE_CLASS[band] ?? "bg-slate-100 text-slate-600 border-slate-200"
-const bandLabel = (band: string) => VALIDITY_LABEL[band] ?? band
+function bandLabel(t: TFunction, band: string): string {
+  switch (band) {
+    case "validated":
+      return t("curriculum.band.validated", "Validated")
+    case "provisional":
+      return t("curriculum.band.provisional", "Provisional")
+    case "needs_review":
+      return t("curriculum.band.needs_review", "In review")
+    case "deprecated":
+      return t("curriculum.band.deprecated", "Retired")
+    default:
+      return band
+  }
+}
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—"
@@ -80,10 +89,10 @@ function formatDate(iso: string | null): string {
 // until there is a name to show.
 const UNREADABLE_PUBLISHER = /^(me|self|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
 
-function publisherLabel(publishedBy: string | null | undefined): string {
+function publisherLabel(t: TFunction, publishedBy: string | null | undefined): string {
   const who = publishedBy?.trim()
-  if (!who || UNREADABLE_PUBLISHER.test(who)) return "Published"
-  return `Published by ${who}`
+  if (!who || UNREADABLE_PUBLISHER.test(who)) return t("curriculum.published", "Published")
+  return t("curriculum.publishedBy", { defaultValue: "Published by {{name}}", name: who })
 }
 
 // ── Curriculum picker ─────────────────────────────────────────────────────────
@@ -107,6 +116,7 @@ function CurriculumPicker({
 }: {
   onSelect: (templateId: string) => void
 }) {
+  const { t } = useTranslation("kcPages")
   const { data: curricula, isLoading, isError, error } = useCurricula()
 
   if (isLoading) {
@@ -124,7 +134,7 @@ function CurriculumPicker({
     return (
       <Card>
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          We couldn&apos;t load the curricula right now. Try again shortly.
+          {t("curriculum.picker.loadError", "We couldn't load the curricula right now. Try again shortly.")}
         </CardContent>
       </Card>
     )
@@ -135,7 +145,7 @@ function CurriculumPicker({
     return (
       <Card>
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          No curricula have been published yet.
+          {t("curriculum.picker.empty", "No curricula have been published yet.")}
         </CardContent>
       </Card>
     )
@@ -157,17 +167,27 @@ function CurriculumPicker({
             <CardDescription className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
               <span className="inline-flex items-center gap-1">
                 <Layers className="h-3.5 w-3.5" />
-                {c.module_count} {c.module_count === 1 ? "module" : "modules"}
+                {t("curriculum.picker.moduleCount", {
+                  count: c.module_count,
+                  defaultValue_one: "{{count}} module",
+                  defaultValue_other: "{{count}} modules",
+    defaultValue: "{{count}} modules",
+                })}
               </span>
               <span className="inline-flex items-center gap-1">
                 <BookText className="h-3.5 w-3.5" />
-                {c.cited_unit_count} {c.cited_unit_count === 1 ? "source" : "sources"}
+                {t("curriculum.picker.sourceCount", {
+                  count: c.cited_unit_count,
+                  defaultValue_one: "{{count}} source",
+                  defaultValue_other: "{{count}} sources",
+    defaultValue: "{{count}} sources",
+                })}
               </span>
             </CardDescription>
           </CardHeader>
           <CardContent className="mt-auto space-y-3">
             <p className="text-xs text-muted-foreground">
-              {publisherLabel(c.published_by)} · {formatDate(c.created_at)}
+              {publisherLabel(t, c.published_by)} · {formatDate(c.created_at)}
             </p>
             <Button
               size="sm"
@@ -176,7 +196,7 @@ function CurriculumPicker({
               style={{ backgroundColor: ACCENT }}
             >
               <GraduationCap className="h-4 w-4" />
-              Open curriculum
+              {t("curriculum.picker.open", "Open curriculum")}
             </Button>
           </CardContent>
         </Card>
@@ -188,10 +208,11 @@ function CurriculumPicker({
 // ── Provenance ────────────────────────────────────────────────────────────────
 
 function UnresolvedCitationChip({ unitId }: { unitId: string }) {
+  const { t } = useTranslation("kcPages")
   return (
     <div className="flex items-center gap-2 rounded-md border border-dashed border-slate-200 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
       <Unlink className="h-3.5 w-3.5 shrink-0" />
-      <span>Source no longer available ({unitId})</span>
+      <span>{t("curriculum.sourceGone", { defaultValue: "Source no longer available ({{id}})", id: unitId })}</span>
     </div>
   )
 }
@@ -207,14 +228,17 @@ function UnitProvenanceCard({
   onClarify: (unit: CurriculumUnit) => void
   isSubmitting: boolean
 }) {
+  const { t } = useTranslation("kcPages")
   return (
     <div className="rounded-md border bg-card px-3 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium text-foreground">{unit.title}</span>
         <Badge variant="outline" className={bandClass(unit.validity_band)}>
-          {bandLabel(unit.validity_band)}
+          {bandLabel(t, unit.validity_band)}
         </Badge>
-        <span className="text-xs text-muted-foreground">Confidence {unit.kvi.toFixed(2)}</span>
+        <span className="text-xs text-muted-foreground">
+          {t("curriculum.confidence", { defaultValue: "Confidence {{value}}", value: unit.kvi.toFixed(2) })}
+        </span>
       </div>
       <p className="mt-1.5 whitespace-pre-line text-sm text-muted-foreground">{unit.body}</p>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -226,7 +250,7 @@ function UnitProvenanceCard({
           className="gap-1.5 text-emerald-700 hover:text-emerald-800"
         >
           <CheckCircle2 className="h-4 w-4" />
-          Still accurate
+          {t("curriculum.stillAccurate", "Still accurate")}
         </Button>
         <Button
           size="sm"
@@ -236,7 +260,7 @@ function UnitProvenanceCard({
           className="gap-1.5 text-red-600 hover:text-red-700"
         >
           <ThumbsDown className="h-4 w-4" />
-          No longer true
+          {t("curriculum.noLongerTrue", "No longer true")}
         </Button>
         <Button
           size="sm"
@@ -246,7 +270,7 @@ function UnitProvenanceCard({
           className="gap-1.5"
         >
           <HelpCircle className="h-4 w-4" />
-          Needs clarification
+          {t("curriculum.needsClarification", "Needs clarification")}
         </Button>
       </div>
     </div>
@@ -266,6 +290,7 @@ function ItemProvenance({
   onClarify: (unit: CurriculumUnit) => void
   isSubmitting: boolean
 }) {
+  const { t } = useTranslation("kcPages")
   const [open, setOpen] = useState(false)
   const citedCount = item.cited_unit_ids.length
 
@@ -280,7 +305,9 @@ function ItemProvenance({
               className="inline-flex items-center gap-1.5 text-xs font-medium text-[#127A8A] hover:underline"
             >
               <ChevronsUpDown className="h-3.5 w-3.5" />
-              {open ? "Hide sources" : `Where this comes from (${citedCount})`}
+              {open
+                ? t("curriculum.hideSources", "Hide sources")
+                : t("curriculum.showSources", { defaultValue: "Where this comes from ({{count}})", count: citedCount })}
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 space-y-2">
@@ -316,6 +343,7 @@ function CurriculumWalkthrough({
   templateId: string
   onBack: () => void
 }) {
+  const { t } = useTranslation("kcPages")
   const { data: curriculum, isLoading, isError, error } = useCurriculum(templateId)
   const recordUsage = useRecordUsage()
 
@@ -357,7 +385,7 @@ function CurriculumWalkthrough({
     <div className="space-y-6">
       <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 pl-0 text-muted-foreground">
         <ArrowLeft className="h-4 w-4" />
-        All curricula
+        {t("curriculum.allCurricula", "All curricula")}
       </Button>
 
       {isLoading && (
@@ -373,7 +401,10 @@ function CurriculumWalkthrough({
       {!isLoading && ((isError && !isKceAccessDenied(error)) || (!isError && !curriculum)) && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            We couldn&apos;t open this curriculum. It may have been unpublished — go back and pick another.
+            {t(
+              "curriculum.openError",
+              "We couldn't open this curriculum. It may have been unpublished — go back and pick another."
+            )}
           </CardContent>
         </Card>
       )}
@@ -390,7 +421,7 @@ function CurriculumWalkthrough({
               )}
               <span className="inline-flex items-center gap-1">
                 <User className="h-3.5 w-3.5" />
-                {publisherLabel(curriculum.published_by)}
+                {publisherLabel(t, curriculum.published_by)}
               </span>
               <span>· {formatDate(curriculum.created_at)}</span>
             </div>
@@ -399,7 +430,7 @@ function CurriculumWalkthrough({
           {curriculum.modules.length === 0 ? (
             <Card>
               <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                This curriculum has no modules yet.
+                {t("curriculum.noModules", "This curriculum has no modules yet.")}
               </CardContent>
             </Card>
           ) : (
@@ -414,7 +445,9 @@ function CurriculumWalkthrough({
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {module.items.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No items in this module.</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t("curriculum.noItems", "No items in this module.")}
+                      </p>
                     ) : (
                       module.items.map((item, iIdx) => (
                         <ItemProvenance
@@ -441,25 +474,31 @@ function CurriculumWalkthrough({
       <Dialog open={clarify !== null} onOpenChange={(o) => !o && closeClarify()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Needs clarification{clarify ? ` — ${clarify.unit.title}` : ""}</DialogTitle>
+            <DialogTitle>
+              {clarify
+                ? t("curriculum.clarifyTitleWithUnit", { defaultValue: "Needs clarification — {{title}}", title: clarify.unit.title })
+                : t("curriculum.needsClarification", "Needs clarification")}
+            </DialogTitle>
             <DialogDescription>
-              Tell us what&apos;s unclear or out of date. Your note goes to the reviewer for this
-              knowledge.
+              {t(
+                "curriculum.clarifyDescription",
+                "Tell us what's unclear or out of date. Your note goes to the reviewer for this knowledge."
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor="clarify-notes">Your note</Label>
+            <Label htmlFor="clarify-notes">{t("curriculum.yourNote", "Your note")}</Label>
             <Textarea
               id="clarify-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="What needs clarifying?"
+              placeholder={t("curriculum.notePlaceholder", "What needs clarifying?")}
               autoFocus
             />
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={closeClarify}>
-              Cancel
+              {t("curriculum.cancel", "Cancel")}
             </Button>
             <Button
               type="button"
@@ -468,7 +507,7 @@ function CurriculumWalkthrough({
               className="gap-1.5"
             >
               {recordUsage.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Send
+              {t("curriculum.send", "Send")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -490,6 +529,7 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
   const build = useBuildCurriculum()
   const publish = usePublishCurriculum()
   const [roleTitle, setRoleTitle] = useState("")
+  const { t } = useTranslation("kcPages")
 
   const busy = citable.isPending || build.isPending || publish.isPending
   const selected = roles.find((r) => r.role_title === roleTitle)
@@ -500,7 +540,10 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
       const source = await citable.mutateAsync(selected.taxonomy_id)
       if (source.units.length === 0) {
         toast.error(
-          "This role has no validated knowledge yet. Validate some captured units in the Reviewer Console first."
+          t(
+            "curriculum.build.noValidated",
+            "This role has no validated knowledge yet. Validate some captured units in the Reviewer Console first."
+          )
         )
         return
       }
@@ -515,7 +558,12 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
         })),
       })
       if (built.modules.length === 0) {
-        toast.error("Couldn't assemble a curriculum from this role's validated knowledge.")
+        toast.error(
+          t(
+            "curriculum.build.assembleFailed",
+            "Couldn't assemble a curriculum from this role's validated knowledge."
+          )
+        )
         return
       }
       const res = await publish.mutateAsync({
@@ -530,29 +578,31 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
   }
 
   const buttonLabel = publish.isPending
-    ? "Publishing…"
+    ? t("curriculum.build.publishing", "Publishing…")
     : build.isPending
-      ? "Assembling…"
+      ? t("curriculum.build.assembling", "Assembling…")
       : citable.isPending
-        ? "Gathering knowledge…"
-        : "Build & publish"
+        ? t("curriculum.build.gathering", "Gathering knowledge…")
+        : t("curriculum.build.button", "Build & publish")
 
   return (
     <Card className="border-primary/30 bg-primary/5">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Sparkles className="h-4 w-4 text-[#127A8A]" />
-          Build a curriculum
+          {t("curriculum.build.title", "Build a curriculum")}
         </CardTitle>
         <CardDescription>
-          Turn a role&apos;s validated knowledge into a wiring-adapted learning path for the next
-          person. Only validated and provisional units are used.
+          {t(
+            "curriculum.build.description",
+            "Turn a role's validated knowledge into a wiring-adapted learning path for the next person. Only validated and provisional units are used."
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="build-role">Role</Label>
+            <Label htmlFor="build-role">{t("curriculum.build.role", "Role")}</Label>
             <select
               id="build-role"
               value={roleTitle}
@@ -560,7 +610,11 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
               disabled={rolesLoading || busy}
               className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
-              <option value="">{rolesLoading ? "Loading roles…" : "Select a role"}</option>
+              <option value="">
+                {rolesLoading
+                  ? t("curriculum.build.loadingRoles", "Loading roles…")
+                  : t("curriculum.build.selectRole", "Select a role")}
+              </option>
               {roles.map((r) => (
                 <option key={r.taxonomy_id} value={r.role_title}>
                   {r.role_title}
@@ -576,7 +630,10 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
         {rolesFailed && isKceAccessDenied(rolesError) && <KceAccessInline />}
         {!rolesLoading && !(rolesFailed && isKceAccessDenied(rolesError)) && roles.length === 0 && (
           <p className="text-xs text-muted-foreground">
-            No roles yet — blueprint and capture a role first, then validate its knowledge.
+            {t(
+              "curriculum.build.noRoles",
+              "No roles yet — blueprint and capture a role first, then validate its knowledge."
+            )}
           </p>
         )}
       </CardContent>
@@ -595,6 +652,7 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
  * Deliberately plain language — no raw scoring/formula names surfaced.
  */
 export default function KceCurriculumPage() {
+  const { t } = useTranslation("kcPages")
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
 
   return (
@@ -602,10 +660,10 @@ export default function KceCurriculumPage() {
       <div>
         <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
           <GraduationCap className="h-5 w-5 text-[#127A8A]" />
-          Successor curriculum
+          {t("curriculum.title", "Successor curriculum")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Learn the role from captured expertise — and flag anything that&apos;s no longer accurate.
+          {t("curriculum.subtitle", "Learn the role from captured expertise — and flag anything that's no longer accurate.")}
         </p>
       </div>
 

@@ -1,24 +1,34 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { ArrowRight, Check, Flag, Info, Heart, Loader2 } from "lucide-react";
 /** An illustration of the WHY ladder's shape — not anyone's data. */
-const LADDER: { role: string; body: string; cls: "q" | "a" | "root" }[] = [
-  { role: "Stated goal", body: "“I want to get better at leading through change.”", cls: "a" },
-  { role: "Goals Studio asks", body: "Why does that feel important right now?", cls: "q" },
-  { role: "You", body: "The reorg keeps shifting and my team looks to me for answers.", cls: "a" },
-  { role: "Goals Studio asks", body: "What makes having the answers matter so much to you?", cls: "q" },
-  { role: "You", body: "If I hesitate, they'll think I don't have it together.", cls: "a" },
-  { role: "Goals Studio asks", body: "And why is that particular thing hard to sit with?", cls: "q" },
-  { role: "True motivation", body: "Not a skill to acquire — protecting how the team sees you under pressure. That's what the goal hooks onto.", cls: "root" },
-];
+function ladder(t: TFunction): { role: string; body: string; cls: "q" | "a" | "root" }[] {
+  return [
+    { role: t("discovery.ladder.role.statedGoal", { defaultValue: "Stated goal" }), body: t("discovery.ladder.rung1", { defaultValue: "“I want to get better at leading through change.”" }), cls: "a" },
+    { role: t("discovery.ladder.role.asks", { defaultValue: "Goals Studio asks" }), body: t("discovery.ladder.rung2", { defaultValue: "Why does that feel important right now?" }), cls: "q" },
+    { role: t("discovery.ladder.role.you", { defaultValue: "You" }), body: t("discovery.ladder.rung3", { defaultValue: "The reorg keeps shifting and my team looks to me for answers." }), cls: "a" },
+    { role: t("discovery.ladder.role.asks", { defaultValue: "Goals Studio asks" }), body: t("discovery.ladder.rung4", { defaultValue: "What makes having the answers matter so much to you?" }), cls: "q" },
+    { role: t("discovery.ladder.role.you", { defaultValue: "You" }), body: t("discovery.ladder.rung5", { defaultValue: "If I hesitate, they'll think I don't have it together." }), cls: "a" },
+    { role: t("discovery.ladder.role.asks", { defaultValue: "Goals Studio asks" }), body: t("discovery.ladder.rung6", { defaultValue: "And why is that particular thing hard to sit with?" }), cls: "q" },
+    { role: t("discovery.ladder.role.root", { defaultValue: "True motivation" }), body: t("discovery.ladder.rung7", { defaultValue: "Not a skill to acquire — protecting how the team sees you under pressure. That's what the goal hooks onto." }), cls: "root" },
+  ];
+}
 import { PageHead, Card, MiniLabel, CardH, StatusPill } from "@/pages/summit/components/ui";
 import { cn } from "@/lib/utils";
 import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
 import { ROUTES } from "@/constants/routes";
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 
-const STATUS_LABEL = { explored: "Explored", active: "In progress", todo: "Not started" } as const;
+function statusLabel(status: "explored" | "active" | "todo", t: TFunction): string {
+  if (status === "explored") return t("discovery.status.explored", { defaultValue: "Explored" });
+  if (status === "active") return t("discovery.status.active", { defaultValue: "In progress" });
+  return t("discovery.status.todo", { defaultValue: "Not started" });
+}
 
 export default function SummitDiscovery() {
+  const { t } = useTranslation("summitPages");
+  const LADDER = ladder(t);
   const { data: session, isLoading, isError } = useGoalSession();
   const categories = useSummitCategories(session);
   const whyRoots = (session?.why_roots ?? []).filter((r) => r.root);
@@ -29,9 +39,9 @@ export default function SummitDiscovery() {
   return (
     <div className="flex flex-col gap-[18px]">
       <PageHead
-        eyebrow="The five-category conversation"
-        title="Discovery, not a questionnaire"
-        sub="Goals Studio gathers organically across sessions. For each category it explores, probes for patterns, runs the WHY ladder to your true motivation, then converts the discussion into candidate goals."
+        eyebrow={t("discovery.eyebrow", { defaultValue: "The five-category conversation" })}
+        title={t("discovery.title", { defaultValue: "Discovery, not a questionnaire" })}
+        sub={t("discovery.sub", { defaultValue: "Goals Studio gathers organically across sessions. For each category it explores, probes for patterns, runs the WHY ladder to your true motivation, then converts the discussion into candidate goals." })}
       />
 
       {house && (
@@ -40,7 +50,7 @@ export default function SummitDiscovery() {
             to={ROUTES.MY_GOALS.INTERVIEW}
             className="inline-flex items-center gap-1.5 rounded-lg bg-[#127A8A] px-3.5 py-2 text-[13px] font-bold text-white hover:bg-[#0E5F6B]"
           >
-            Talk it through <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            {t("discovery.talkIt", { defaultValue: "Talk it through" })} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
         </div>
       )}
@@ -48,15 +58,14 @@ export default function SummitDiscovery() {
       {isLoading && (
         <div className="flex items-center gap-2 text-[13.5px] text-[#13294B]/70">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Reading your progress…
+          {t("discovery.loading", { defaultValue: "Reading your progress…" })}
         </div>
       )}
 
       {!isLoading && isError && (
         <Card className="!p-5">
           <p className="text-[14px] text-[#13294B]/80">
-            We couldn&apos;t read your progress just now. Refresh to try again —
-            nothing you&apos;ve worked through has been lost.
+            {t("discovery.error", { defaultValue: "We couldn't read your progress just now. Refresh to try again — nothing you've worked through has been lost." })}
           </p>
         </Card>
       )}
@@ -76,7 +85,7 @@ export default function SummitDiscovery() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <span className="text-[15.5px] font-bold text-[#0B1B33]">{c.label}</span>
-                  <StatusPill status={c.status} label={STATUS_LABEL[c.status]} />
+                  <StatusPill status={c.status} label={statusLabel(c.status, t)} />
                 </div>
                 {/* `summary` is written by the discovery save and is often "".
                     An empty string renders nothing rather than an empty row. */}
@@ -85,11 +94,11 @@ export default function SummitDiscovery() {
                 )}
                 <div className="mt-2 flex flex-wrap gap-3.5 text-[12px] text-[#7C93B5]">
                   <span className="inline-flex items-center gap-1.5">
-                    <Flag className="h-3 w-3" /> {c.goalCount} goal{c.goalCount === 1 ? "" : "s"} surfaced
+                    <Flag className="h-3 w-3" /> {(c.goalCount === 1 ? t("discovery.goalsSurfaced_one", { count: c.goalCount, defaultValue: "{{count}} goal surfaced" }) : t("discovery.goalsSurfaced_other", { count: c.goalCount, defaultValue: "{{count}} goals surfaced" }))}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <Info className="h-3 w-3" />
-                    {c.answers.length} question{c.answers.length === 1 ? "" : "s"} answered
+                    {(c.answers.length === 1 ? t("discovery.questionsAnswered_one", { count: c.answers.length, defaultValue: "{{count}} question answered" }) : t("discovery.questionsAnswered_other", { count: c.answers.length, defaultValue: "{{count}} questions answered" }))}
                   </span>
                 </div>
               </div>
@@ -105,8 +114,8 @@ export default function SummitDiscovery() {
           surface feel like a brochure. */}
       {whyRoots.length > 0 && (
         <Card>
-          <MiniLabel>Your why</MiniLabel>
-          <CardH>What sits underneath what you said you wanted</CardH>
+          <MiniLabel>{t("discovery.yourWhy", { defaultValue: "Your why" })}</MiniLabel>
+          <CardH>{t("discovery.underneath", { defaultValue: "What sits underneath what you said you wanted" })}</CardH>
           <div className="mt-3 flex flex-col gap-3">
             {whyRoots.map((r, i) => (
               <div key={i} className="border-l-2 border-[#C88B1B] pl-3.5">
@@ -127,12 +136,10 @@ export default function SummitDiscovery() {
       <Card>
         {/* Illustration, not this person's data. It was previously headed "Live
             example", which read as a transcript of their own conversation. */}
-        <MiniLabel>How it works · the WHY ladder</MiniLabel>
-        <CardH>How &quot;better leadership&quot; becomes a real goal</CardH>
+        <MiniLabel>{t("discovery.howItWorks", { defaultValue: "How it works · the WHY ladder" })}</MiniLabel>
+        <CardH>{t("discovery.howHeading", { defaultValue: "How \"better leadership\" becomes a real goal" })}</CardH>
         <p className="mb-3 text-[14.5px] leading-relaxed text-[#13294B]/80">
-          We don&apos;t stop at the first answer. Asking &quot;why&quot; a few times
-          reaches the motivation the goal actually hooks onto. This is an example of
-          the shape it takes — yours will be in your own words.
+          {t("discovery.howBody", { defaultValue: "We don't stop at the first answer. Asking \"why\" a few times reaches the motivation the goal actually hooks onto. This is an example of the shape it takes — yours will be in your own words." })}
         </p>
         <div className="flex flex-col">
           {LADDER.map((r, i) => (

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import {
   AlertTriangle,
@@ -71,24 +72,25 @@ import type {
 
 /* ── Wording tables ──────────────────────────────────────────────────────── */
 
-const SEVERITY_COPY: Record<
-  string,
-  { label: string; className: string; critical: boolean }
-> = {
-  critical: {
-    label: "Moves your fit most",
-    className: "text-rose-600",
-    critical: true,
-  },
-  coaching: {
-    label: "Steady build",
-    className: "text-amber-600",
-    critical: false,
-  },
-}
+type TFn = ReturnType<typeof useTranslation>["t"]
 
 /** An unrecognised severity renders plainly rather than disappearing. */
-function severityCopy(severity: string) {
+function severityCopy(severity: string, t: TFn) {
+  const SEVERITY_COPY: Record<
+    string,
+    { label: string; className: string; critical: boolean }
+  > = {
+    critical: {
+      label: t("plan.severity.critical", "Moves your fit most"),
+      className: "text-rose-600",
+      critical: true,
+    },
+    coaching: {
+      label: t("plan.severity.coaching", "Steady build"),
+      className: "text-amber-600",
+      critical: false,
+    },
+  }
   return (
     SEVERITY_COPY[severity] ?? {
       label: severity,
@@ -109,23 +111,23 @@ function severityCopy(severity: string) {
  * An unknown code falls back to its own text, so a refusal this frontend has
  * never heard of still reaches the reader.
  */
-const MISSING_LABEL: Record<string, string> = {
-  "target-role": "No role to aim at yet",
-  "target-occupation": "We don't hold that occupation",
-  "target-salary": "No wage data behind that occupation",
-  "current-income": "We don't know what you earn now",
-  plan: "No plan to price yet",
-  "purchasable-path": "This isn't a transition you can buy",
-  "plan-cost": "Nothing on the plan is priced",
-  "comparable-currency": "The currencies don't line up",
-  "item-prices": "Some of the plan is unpriced",
-}
+const missingLabels = (t: TFn): Record<string, string> => ({
+  "target-role": t("plan.missing.targetRole", "No role to aim at yet"),
+  "target-occupation": t("plan.missing.targetOccupation", "We don't hold that occupation"),
+  "target-salary": t("plan.missing.targetSalary", "No wage data behind that occupation"),
+  "current-income": t("plan.missing.currentIncome", "We don't know what you earn now"),
+  plan: t("plan.missing.plan", "No plan to price yet"),
+  "purchasable-path": t("plan.missing.purchasablePath", "This isn't a transition you can buy"),
+  "plan-cost": t("plan.missing.planCost", "Nothing on the plan is priced"),
+  "comparable-currency": t("plan.missing.comparableCurrency", "The currencies don't line up"),
+  "item-prices": t("plan.missing.itemPrices", "Some of the plan is unpriced"),
+})
 
-const WAGE_POINT_LABEL: Record<string, string> = {
-  entry: "At the entry wage",
-  median: "At the median wage",
-  experienced: "At the experienced end",
-}
+const wagePointLabels = (t: TFn): Record<string, string> => ({
+  entry: t("plan.wagePoint.entry", "At the entry wage"),
+  median: t("plan.wagePoint.median", "At the median wage"),
+  experienced: t("plan.wagePoint.experienced", "At the experienced end"),
+})
 
 /* ── Formatting ──────────────────────────────────────────────────────────── */
 
@@ -137,19 +139,23 @@ function formatMoney(value: number, currency: string): string {
   }).format(value)
 }
 
-function formatYears(value: number): string {
+function formatYears(value: number, t: TFn): string {
   const rounded = Math.round(value * 10) / 10
-  return `${rounded} ${rounded === 1 ? "year" : "years"}`
+  return rounded === 1
+    ? t("plan.yearsOne", { defaultValue: "{{value}} year", value: rounded })
+    : t("plan.yearsMany", { defaultValue: "{{value}} years", value: rounded })
 }
 
-function formatHours(value: number): string {
+function formatHours(value: number, t: TFn): string {
   const rounded = Math.round(value * 10) / 10
-  return `${rounded} ${rounded === 1 ? "hour" : "hours"}`
+  return rounded === 1
+    ? t("plan.hoursOne", { defaultValue: "{{value}} hour", value: rounded })
+    : t("plan.hoursMany", { defaultValue: "{{value}} hours", value: rounded })
 }
 
 /** One band figure, in the band's own unit. `years` and money read differently. */
-function formatBandValue(value: number, unit: string): string {
-  return unit === "years" ? formatYears(value) : formatMoney(value, unit || "USD")
+function formatBandValue(value: number, unit: string, t: TFn): string {
+  return unit === "years" ? formatYears(value, t) : formatMoney(value, unit || "USD")
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -164,7 +170,8 @@ function formatBandValue(value: number, unit: string): string {
  * buy — not a price, not a zero, and not a blank slot that reads as free.
  */
 export function PlanItemCard({ item }: { item: PlanItem }) {
-  const severity = severityCopy(item.severity)
+  const { t } = useTranslation("directionPages")
+  const severity = severityCopy(item.severity, t)
   const effort = item.effort
   // Presence, never value: `"cost" in item` is the whole taxonomy check.
   const purchasable = "cost" in item && item.cost !== undefined
@@ -199,20 +206,34 @@ export function PlanItemCard({ item }: { item: PlanItem }) {
           {/* Effort. Unknown is a state with words of its own, not a blank. */}
           {effort.known && effort.hours !== null ? (
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Effort: {formatHours(effort.hours)}
-              {effort.horizon ? ` · review ${effort.horizon}` : ""}
+              {effort.horizon
+                ? t("plan.effortWithReview", {
+                    defaultValue: "Effort: {{hours}} · review {{horizon}}",
+                    hours: formatHours(effort.hours, t),
+                    horizon: effort.horizon,
+                  })
+                : t("plan.effort", {
+                    defaultValue: "Effort: {{hours}}",
+                    hours: formatHours(effort.hours, t),
+                  })}
             </p>
           ) : (
             <p className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground">
               <TimerOff className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
               <span>
                 <span className="font-medium">
-                  We don&apos;t know how long this takes.
+                  {t("plan.weDonTKnowHow", "We don't know how long this takes.")}
                 </span>{" "}
                 {effort.statement}
-                {effort.horizon
-                  ? ` We'd look at it again ${effort.horizon}.`
-                  : ""}
+                {effort.horizon && (
+                  <>
+                    {" "}
+                    {t("plan.lookAgain", {
+                      defaultValue: "We'd look at it again {{horizon}}.",
+                      horizon: effort.horizon,
+                    })}
+                  </>
+                )}
               </span>
             </p>
           )}
@@ -223,14 +244,19 @@ export function PlanItemCard({ item }: { item: PlanItem }) {
               <HandCoins className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
               <span>
                 {cost?.known && cost.amount !== null && cost.amount !== undefined
-                  ? `Cost: ${formatMoney(cost.amount, cost.currency ?? "USD")}`
-                  : `Cost: not known. ${cost?.statement ?? ""}`}
+                  ? t("plan.costKnown", {
+                      defaultValue: "Cost: {{amount}}",
+                      amount: formatMoney(cost.amount, cost.currency ?? "USD"),
+                    })
+                  : t("plan.costUnknown", {
+                      defaultValue: "Cost: not known. {{statement}}",
+                      statement: cost?.statement ?? "",
+                    })}
               </span>
             </p>
           ) : (
             <p className="mt-1 text-xs text-muted-foreground">
-              Not something you buy — this one is coached, practised and
-              reviewed.
+              {t("plan.notSomethingYouBuyThis", "Not something you buy — this one is coached, practised and reviewed.")}
             </p>
           )}
         </div>
@@ -248,6 +274,7 @@ export function PlanItemCard({ item }: { item: PlanItem }) {
  * printed rather than paraphrased.
  */
 export function PlanSequence({ plan }: { plan: PlanResultPayload | null }) {
+  const { t } = useTranslation("directionPages")
   const items = plan?.sequence ?? []
 
   return (
@@ -255,7 +282,7 @@ export function PlanSequence({ plan }: { plan: PlanResultPayload | null }) {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <ClipboardList className="h-4 w-4 text-muted-foreground" aria-hidden />
-          How you&apos;d close the gap
+          {t("plan.howYouDCloseThe", "How you'd close the gap")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -263,14 +290,14 @@ export function PlanSequence({ plan }: { plan: PlanResultPayload | null }) {
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               {plan?.note ??
-                "There's no plan to show yet. This gets built from your matched role and the gaps between you and it — the biggest ones first, because those are what actually move your fit, not the ones that are easiest to tick off."}
+                t("plan.noPlanYet", "There's no plan to show yet. This gets built from your matched role and the gaps between you and it — the biggest ones first, because those are what actually move your fit, not the ones that are easiest to tick off.")}
             </p>
             {/* The server's note names "stages 7 and 8" — numbers the user has
                 never seen, since the nav calls that page Job matches. Give them
                 the door rather than the internal vocabulary. */}
             <Button asChild variant="outline" size="sm">
               <Link to={ROUTES.DIRECTION_SETTING.MATCHES}>
-                Pick a role to aim at
+                {t("plan.pickARoleToAim", "Pick a role to aim at")}
                 <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Link>
             </Button>
@@ -279,7 +306,7 @@ export function PlanSequence({ plan }: { plan: PlanResultPayload | null }) {
           <>
             {plan?.targetRole?.title && (
               <p className="text-sm">
-                Towards{" "}
+                {t("plan.towards", "Towards")}{" "}
                 <span className="font-medium">{plan.targetRole.title}</span>.
               </p>
             )}
@@ -297,22 +324,32 @@ export function PlanSequence({ plan }: { plan: PlanResultPayload | null }) {
             {/* The two totals, each allowed to say it cannot be totalled. */}
             <div className="grid gap-2 pt-1 sm:grid-cols-2">
               <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
-                <span className="font-medium">Time: </span>
+                <span className="font-medium">{t("plan.time", "Time:")} </span>
                 {plan?.effort.statedHours !== null &&
-                plan?.effort.statedHours !== undefined
-                  ? `${formatHours(plan.effort.statedHours)} stated. `
-                  : ""}
+                plan?.effort.statedHours !== undefined ? (
+                  <>
+                    {t("plan.hoursStated", {
+                      defaultValue: "{{hours}} stated.",
+                      hours: formatHours(plan.effort.statedHours, t),
+                    })}{" "}
+                  </>
+                ) : null}
                 {plan?.effort.statement}
               </p>
               <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
-                <span className="font-medium">Money: </span>
+                <span className="font-medium">{t("plan.money", "Money:")} </span>
                 {plan?.cost.knownTotal !== null &&
-                plan?.cost.knownTotal !== undefined
-                  ? `${formatMoney(
-                      plan.cost.knownTotal,
-                      plan.cost.currency ?? "USD"
-                    )} so far. `
-                  : ""}
+                plan?.cost.knownTotal !== undefined ? (
+                  <>
+                    {t("plan.moneySoFar", {
+                      defaultValue: "{{amount}} so far.",
+                      amount: formatMoney(
+                        plan.cost.knownTotal,
+                        plan.cost.currency ?? "USD"
+                      ),
+                    })}{" "}
+                  </>
+                ) : null}
                 {plan?.cost.statement}
               </p>
             </div>
@@ -320,17 +357,16 @@ export function PlanSequence({ plan }: { plan: PlanResultPayload | null }) {
             {plan && plan.advisories.overdone.length > 0 && (
               <div>
                 <p className="text-sm font-medium">
-                  Strengths you turn up high
+                  {t("plan.strengthsYouTurnUpHigh", "Strengths you turn up high")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Reported, never sequenced — there&apos;s no course for an
-                  over-expression and nothing here needs fixing.
+                  {t("plan.reportedNeverSequencedThereS", "Reported, never sequenced — there's no course for an over-expression and nothing here needs fixing.")}
                 </p>
                 <ul className="mt-1 flex flex-wrap gap-1.5">
                   {plan.advisories.overdone.map((flag, i) => (
                     <li key={`${flag.dimension ?? "dimension"}-${i}`}>
                       <Badge variant="outline">
-                        {flag.dimension ?? "Unnamed dimension"}
+                        {flag.dimension ?? t("plan.unnamedDimension", "Unnamed dimension")}
                       </Badge>
                     </li>
                   ))}
@@ -341,8 +377,15 @@ export function PlanSequence({ plan }: { plan: PlanResultPayload | null }) {
             {plan && plan.refusals.length > 0 && (
               <div className="rounded-lg border border-border p-3">
                 <p className="text-sm font-medium">
-                  {plan.refusals.length} input
-                  {plan.refusals.length === 1 ? " was" : "s were"} refused
+                  {plan.refusals.length === 1
+                    ? t("plan.refusalsOne", {
+                        defaultValue: "{{total}} input was refused",
+                        total: plan.refusals.length,
+                      })
+                    : t("plan.refusalsMany", {
+                        defaultValue: "{{total}} inputs were refused",
+                        total: plan.refusals.length,
+                      })}
                 </p>
                 <ul className="mt-1 space-y-1">
                   {plan.refusals.map((refusal) => (
@@ -402,21 +445,19 @@ export function MilestoneList({
 }: {
   milestones: PlanMilestone[]
 }) {
+  const { t } = useTranslation("directionPages")
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Flag className="h-4 w-4 text-muted-foreground" aria-hidden />
-          How you&apos;ll know it&apos;s working
+          {t("plan.howYouLlKnowIt", "How you'll know it's working")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {milestones.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            We don&apos;t set you dated checkpoints. Nothing in your plan claims
-            a deadline, and invented ones are something you&apos;d end up
-            measuring yourself against unfairly. Each step carries a review
-            horizon instead — when it&apos;s worth looking at that one again.
+            {t("plan.weDonTSetYou", "We don't set you dated checkpoints. Nothing in your plan claims a deadline, and invented ones are something you'd end up measuring yourself against unfairly. Each step carries a review horizon instead — when it's worth looking at that one again.")}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -443,6 +484,7 @@ export function MilestoneList({
  * wage* — a fact about the wage band, not a failure and not a zero.
  */
 export function RoiBandRow({ label, band }: { label: string; band: RoiBand }) {
+  const { t } = useTranslation("directionPages")
   const points: [string, number | null][] = [
     ["entry", band.atEntryWage],
     ["median", band.atMedianWage],
@@ -456,15 +498,15 @@ export function RoiBandRow({ label, band }: { label: string; band: RoiBand }) {
         {points.map(([point, value]) => (
           <div key={point} className="flex items-baseline justify-between gap-3">
             <dt className="text-xs text-muted-foreground">
-              {WAGE_POINT_LABEL[point] ?? point}
+              {wagePointLabels(t)[point] ?? point}
             </dt>
             <dd className="text-sm">
               {value === null ? (
                 <span className="text-muted-foreground">
-                  never reaches payback at this wage
+                  {t("plan.neverReachesPaybackAtThis", "never reaches payback at this wage")}
                 </span>
               ) : (
-                formatBandValue(value, band.unit)
+                formatBandValue(value, band.unit, t)
               )}
             </dd>
           </div>
@@ -486,11 +528,15 @@ export function RoiBandRow({ label, band }: { label: string; band: RoiBand }) {
  * "low confidence *because nobody has priced two of your three courses*".
  */
 export function ConfidencePanel({ confidence }: { confidence: RoiConfidence }) {
+  const { t } = useTranslation("directionPages")
   return (
     <div className="rounded-lg border border-border p-3">
       <p className="flex items-center gap-2 text-sm font-medium">
         <Gauge className="h-4 w-4 text-muted-foreground" aria-hidden />
-        Confidence: {confidence.band}
+        {t("plan.confidence", {
+          defaultValue: "Confidence: {{band}}",
+          band: confidence.band,
+        })}
       </p>
       {confidence.degradedBy.length > 0 && (
         <ul className="mt-2 space-y-1">
@@ -521,6 +567,7 @@ export function RecommendationPanel({
 }: {
   recommendation: RoiRecommendation
 }) {
+  const { t } = useTranslation("directionPages")
   const recommend = recommendation.recommendDifferentTarget
   if (!recommend && recommendation.grounds.length === 0) return null
 
@@ -530,8 +577,8 @@ export function RecommendationPanel({
         <CardTitle className="flex items-center gap-2 text-base">
           <Compass className="h-4 w-4 text-muted-foreground" aria-hidden />
           {recommend
-            ? "There may be a nearer target"
-            : "Worth knowing before you commit"}
+            ? t("plan.nearerTarget", "There may be a nearer target")
+            : t("plan.worthKnowingBeforeCommit", "Worth knowing before you commit")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -541,7 +588,7 @@ export function RecommendationPanel({
 
         {recommendation.grounds.length > 0 && (
           <div>
-            <p className="text-sm font-medium">What that&apos;s based on</p>
+            <p className="text-sm font-medium">{t("plan.whatThatSBasedOn", "What that's based on")}</p>
             <ul className="mt-1 space-y-1.5">
               {recommendation.grounds.map((ground) => (
                 <li
@@ -561,7 +608,7 @@ export function RecommendationPanel({
 
         {recommendation.alternatives.length > 0 && (
           <div>
-            <p className="text-sm font-medium">Areas that sit nearer to you</p>
+            <p className="text-sm font-medium">{t("plan.areasThatSitNearerTo", "Areas that sit nearer to you")}</p>
             <ul className="mt-1 space-y-2">
               {recommendation.alternatives.map((alt) => (
                 <li
@@ -572,7 +619,10 @@ export function RecommendationPanel({
                     <span className="font-medium">{alt.family}</span>
                     {alt.pivotDifficulty && (
                       <Badge variant="outline">
-                        {alt.pivotDifficulty} pivot
+                        {t("plan.pivotBadge", {
+                          defaultValue: "{{difficulty}} pivot",
+                          difficulty: alt.pivotDifficulty,
+                        })}
                       </Badge>
                     )}
                   </div>
@@ -581,9 +631,13 @@ export function RecommendationPanel({
                   </p>
                   {alt.range && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {formatMoney(alt.range.low, "USD")} –{" "}
-                      {formatMoney(alt.range.high, "USD")} · Source:{" "}
-                      {alt.range.source} · as of {alt.range.asOf}
+                      {t("plan.rangeLine", {
+                        defaultValue: "{{low}} – {{high}} · Source: {{source}} · as of {{asOf}}",
+                        low: formatMoney(alt.range.low, "USD"),
+                        high: formatMoney(alt.range.high, "USD"),
+                        source: alt.range.source,
+                        asOf: alt.range.asOf,
+                      })}
                     </p>
                   )}
                 </li>
@@ -593,9 +647,7 @@ export function RecommendationPanel({
         )}
 
         <p className="text-sm text-muted-foreground">
-          This is a read of distances between your profile and a benchmark, and
-          it is yours to overrule. Plenty of people go on to do the thing the
-          arithmetic was lukewarm about, and they are right to.
+          {t("plan.thisIsAReadOf", "This is a read of distances between your profile and a benchmark, and it is yours to overrule. Plenty of people go on to do the thing the arithmetic was lukewarm about, and they are right to.")}
         </p>
       </CardContent>
     </Card>
@@ -612,6 +664,7 @@ export function RecommendationPanel({
  * on it.
  */
 export function RoiSummary({ result }: { result: RoiResultPayload | null }) {
+  const { t } = useTranslation("directionPages")
   const missing = result?.missing ?? []
   const computed = result?.roi ?? null
   const canCompute = computed !== null && missing.length === 0
@@ -626,7 +679,7 @@ export function RoiSummary({ result }: { result: RoiResultPayload | null }) {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Coins className="h-4 w-4 text-muted-foreground" aria-hidden />
-          Is it worth it?
+          {t("plan.isItWorthIt", "Is it worth it?")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -634,14 +687,14 @@ export function RoiSummary({ result }: { result: RoiResultPayload | null }) {
           <>
             <p className="text-sm text-muted-foreground">
               {partial
-                ? "The sum ran, but it rests on inputs we don't have in full — so what it produced is a floor, not an answer, and we're not putting it on screen as though it were one."
-                : "We can't work this out honestly yet. We'd rather show you nothing than a number we made up — you might make a real decision on it."}
+                ? t("plan.roiPartial", "The sum ran, but it rests on inputs we don't have in full — so what it produced is a floor, not an answer, and we're not putting it on screen as though it were one.")
+                : t("plan.roiRefused", "We can't work this out honestly yet. We'd rather show you nothing than a number we made up — you might make a real decision on it.")}
             </p>
 
             {missing.length > 0 && (
               <div>
                 <p className="mb-1.5 text-sm font-medium">
-                  What&apos;s still missing:
+                  {t("plan.whatSStillMissing", "What's still missing:")}
                 </p>
                 <ul className="space-y-2">
                   {missing.map((code, i) => (
@@ -650,7 +703,7 @@ export function RoiSummary({ result }: { result: RoiResultPayload | null }) {
                       className="rounded-lg border border-border p-3"
                     >
                       <p className="text-sm font-medium">
-                        {MISSING_LABEL[code] ?? code}
+                        {missingLabels(t)[code] ?? code}
                       </p>
                       <p className="mt-0.5 text-sm text-muted-foreground">
                         {result?.missingStatements?.[i] ?? ""}
@@ -670,12 +723,15 @@ export function RoiSummary({ result }: { result: RoiResultPayload | null }) {
           <>
             <div className="grid gap-2 sm:grid-cols-3">
               <RoiBandRow
-                label="Before it pays for itself"
+                label={t("plan.beforeItPaysForItself", "Before it pays for itself")}
                 band={computed.paybackYears}
               />
-              <RoiBandRow label="Extra per year" band={computed.upliftPerYear} />
+              <RoiBandRow label={t("plan.extraPerYear", "Extra per year")} band={computed.upliftPerYear} />
               <RoiBandRow
-                label={`Where you'd be after ${computed.horizonYears} years`}
+                label={t("plan.whereYoudBeAfterYears", {
+                  defaultValue: "Where you'd be after {{years}} years",
+                  years: computed.horizonYears,
+                })}
                 band={computed.netOverHorizon}
               />
             </div>
@@ -686,7 +742,11 @@ export function RoiSummary({ result }: { result: RoiResultPayload | null }) {
               {computed.statement}
             </p>
             <p className="text-xs text-muted-foreground">
-              {result?.currentIncome.statement} Priced in {currency}.{" "}
+              {result?.currentIncome.statement}{" "}
+              {t("plan.pricedIn", {
+                defaultValue: "Priced in {{currency}}.",
+                currency,
+              })}{" "}
               {result?.note}
             </p>
           </>
@@ -716,11 +776,12 @@ function JobStates({
   storedFailed: boolean
   onStart: () => void
 }) {
+  const { t } = useTranslation("directionPages")
   if (phase === "loading") {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-        Checking what we already have…
+        {t("plan.checkingWhatWeAlreadyHave", "Checking what we already have…")}
       </div>
     )
   }
@@ -730,9 +791,11 @@ function JobStates({
       <div className="flex items-start gap-2 text-sm text-muted-foreground">
         <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" aria-hidden />
         <span>
-          Working on {what}. It reads what the other steps found and takes a
-          little while — long enough that we hand it off and come back for it.
-          You can leave this page; it carries on without you.
+          {t("plan.workingOn", {
+            defaultValue:
+              "Working on {{what}}. It reads what the other steps found and takes a little while — long enough that we hand it off and come back for it. You can leave this page; it carries on without you.",
+            what,
+          })}
         </span>
       </div>
     )
@@ -742,12 +805,11 @@ function JobStates({
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">That run didn&apos;t finish</CardTitle>
+          <CardTitle className="text-base">{t("plan.thatRunDidnTFinish", "That run didn't finish")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Something broke on our side part-way through. Nothing you&apos;ve
-            entered was lost, and running it again is safe.
+            {t("plan.somethingBrokeOnOurSide", "Something broke on our side part-way through. Nothing you've entered was lost, and running it again is safe.")}
           </p>
           {jobError && (
             <p className="rounded border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
@@ -756,7 +818,7 @@ function JobStates({
           )}
           <Button type="button" onClick={onStart} disabled={isStarting}>
             <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
-            Try again
+            {t("plan.tryAgain", "Try again")}
           </Button>
         </CardContent>
       </Card>
@@ -768,17 +830,16 @@ function JobStates({
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">
-            We&apos;ve lost track of that run
+            {t("plan.weVeLostTrackOf", "We've lost track of that run")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            That job isn&apos;t there any more. Starting a fresh one costs you
-            nothing but the wait.
+            {t("plan.thatJobIsnTThere", "That job isn't there any more. Starting a fresh one costs you nothing but the wait.")}
           </p>
           <Button type="button" onClick={onStart} disabled={isStarting}>
             <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
-            Start a new one
+            {t("plan.startANewOne", "Start a new one")}
           </Button>
         </CardContent>
       </Card>
@@ -791,18 +852,14 @@ function JobStates({
         <CardContent className="space-y-3 p-4">
           {storedFailed && (
             <p className="text-sm text-muted-foreground">
-              We couldn&apos;t check whether you&apos;ve already run this —
-              that&apos;s a fault on our side, not a sign there&apos;s nothing
-              here. Running it again is safe either way.
+              {t("plan.weCouldnTCheckWhether", "We couldn't check whether you've already run this — that's a fault on our side, not a sign there's nothing here. Running it again is safe either way.")}
             </p>
           )}
           <p className="text-sm text-muted-foreground">
-            This one is computed rather than stored, so it has to be asked for.
-            You can run it whatever state the earlier steps are in — it will tell
-            you what it was missing rather than pretend it wasn&apos;t.
+            {t("plan.thisOneIsComputedRather", "This one is computed rather than stored, so it has to be asked for. You can run it whatever state the earlier steps are in — it will tell you what it was missing rather than pretend it wasn't.")}
           </p>
           <Button type="button" onClick={onStart} disabled={isStarting}>
-            Work out {what}
+            {t("plan.workOut", { defaultValue: "Work out {{what}}", what })}
             <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
           </Button>
         </CardContent>
@@ -838,25 +895,25 @@ function CurrentIncomeField({
   onValue: (next: string) => void
   onNotEarning: (next: boolean) => void
 }) {
+  const { t } = useTranslation("directionPages")
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Coins className="h-4 w-4 text-muted-foreground" aria-hidden />
-          What you earn now
+          {t("plan.whatYouEarnNow", "What you earn now")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Working out whether a move pays off needs the side of the sum only you
-          know. It is used for this calculation and nothing else.
+          {t("plan.workingOutWhetherAMove", "Working out whether a move pays off needs the side of the sum only you know. It is used for this calculation and nothing else.")}
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <label
             htmlFor="ds-current-income"
             className="text-sm font-medium text-muted-foreground"
           >
-            Current annual income
+            {t("plan.currentAnnualIncome", "Current annual income")}
           </label>
           <input
             id="ds-current-income"
@@ -867,7 +924,7 @@ function CurrentIncomeField({
             disabled={notEarning}
             value={notEarning ? "" : value}
             onChange={(e) => onValue(e.target.value)}
-            placeholder="e.g. 42000"
+            placeholder={t("plan.incomePlaceholder", "e.g. 42000")}
             className="w-40 rounded-lg border border-border bg-background px-3 py-1.5 text-sm disabled:opacity-50"
           />
         </div>
@@ -878,7 +935,7 @@ function CurrentIncomeField({
             onChange={(e) => onNotEarning(e.target.checked)}
             className="h-4 w-4 rounded border-border"
           />
-          I&apos;m not earning anything at the moment
+          {t("plan.iMNotEarningAnything", "I'm not earning anything at the moment")}
         </label>
       </CardContent>
     </Card>
@@ -886,6 +943,7 @@ function CurrentIncomeField({
 }
 
 export default function PlanPage() {
+  const { t } = useTranslation("directionPages")
   const plan = usePlan()
   const roi = useRoi()
 
@@ -936,16 +994,15 @@ export default function PlanPage() {
   return (
     <div className="space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-semibold">My plan</h1>
+        <h1 className="text-2xl font-semibold">{t("plan.myPlan", "My plan")}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          How you&apos;d close the distance to a role you want, in the order that
-          actually moves it — and an honest read on whether the move pays off.
+          {t("plan.howYouDCloseThe2", "How you'd close the distance to a role you want, in the order that actually moves it — and an honest read on whether the move pays off.")}
         </p>
       </header>
 
-      <section className="space-y-4" aria-label="Your plan">
+      <section className="space-y-4" aria-label={t("plan.yourPlan", "Your plan")}>
         <JobStates
-          what="your plan"
+          what={t("plan.whatYourPlan", "your plan")}
           phase={plan.phase}
           jobError={plan.jobError}
           isStarting={plan.isStarting}
@@ -969,11 +1026,10 @@ export default function PlanPage() {
                   disabled={plan.isStarting}
                 >
                   <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
-                  Rebuild the plan
+                  {t("plan.rebuildThePlan", "Rebuild the plan")}
                 </Button>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Worth doing after you change your target role or run the fit
-                  step again.
+                  {t("plan.worthDoingAfterYouChange", "Worth doing after you change your target role or run the fit step again.")}
                 </p>
               </div>
             )}
@@ -981,7 +1037,7 @@ export default function PlanPage() {
         )}
       </section>
 
-      <section className="space-y-4" aria-label="Is it worth it?">
+      <section className="space-y-4" aria-label={t("plan.isItWorthIt", "Is it worth it?")}>
         <CurrentIncomeField
           value={income}
           notEarning={notEarning}
@@ -989,7 +1045,7 @@ export default function PlanPage() {
           onNotEarning={setNotEarning}
         />
         <JobStates
-          what="whether it pays off"
+          what={t("plan.whatWhetherItPaysOff", "whether it pays off")}
           phase={roi.phase}
           jobError={roi.jobError}
           isStarting={roi.isStarting}
@@ -1008,7 +1064,7 @@ export default function PlanPage() {
       <div>
         <Button asChild variant="outline" size="sm">
           <Link to={ROUTES.DIRECTION_SETTING.JOURNEY}>
-            Back to your journey
+            {t("plan.backToYourJourney", "Back to your journey")}
             <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
           </Link>
         </Button>

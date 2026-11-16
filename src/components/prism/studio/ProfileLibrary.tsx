@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Loader2, Pencil, Trash2, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -53,6 +54,7 @@ export default function ProfileLibrary({
   onLoad: (id: string) => void
   loadingId: string | null
 }) {
+  const { t } = useTranslation("prismUi")
   const { subjects: profiles, isLoading, error } = port.list
 
   const [editing, setEditing] = useState<ProfileSummary | null>(null)
@@ -72,7 +74,9 @@ export default function ProfileLibrary({
     }
     try {
       await port.patch.run(editing.id, draft)
-      toast.success(`Updated ${draft.name.trim()}`)
+      toast.success(
+        t("library.updated", { defaultValue: "Updated {{name}}", name: draft.name.trim() }),
+      )
       setEditing(null)
     } catch (err) {
       // The server refuses a rename onto an existing name with a 409 and says
@@ -88,9 +92,9 @@ export default function ProfileLibrary({
     const name = confirming.name
     try {
       await port.remove.run(confirming.id)
-      toast.success(`Deleted ${name}`)
+      toast.success(t("library.deleted", { defaultValue: "Deleted {{name}}", name }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not delete")
+      toast.error(err instanceof Error ? err.message : t("library.deleteFailed", { defaultValue: "Could not delete" }))
     } finally {
       setConfirming(null)
     }
@@ -117,10 +121,23 @@ export default function ProfileLibrary({
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{p.name}</p>
               <p className="truncate text-xs text-muted-foreground">
-                {p.source || "no source recorded"} · {p.scored} scale
-                {p.scored === 1 ? "" : "s"}
-                {p.has_analysis ? " · analysed" : " · not analysed"}
-                {p.updated_at ? ` · updated ${new Date(p.updated_at).toLocaleDateString()}` : ""}
+                {[
+                  p.source || t("library.noSource", { defaultValue: "no source recorded" }),
+                  p.scored === 1
+                    ? t("library.scaleOne", { defaultValue: "{{count}} scale", count: p.scored })
+                    : t("library.scaleOther", { defaultValue: "{{count}} scales", count: p.scored }),
+                  p.has_analysis
+                    ? t("library.analysed", { defaultValue: "analysed" })
+                    : t("library.notAnalysed", { defaultValue: "not analysed" }),
+                  ...(p.updated_at
+                    ? [
+                        t("library.updatedOn", {
+                          defaultValue: "updated {{date}}",
+                          date: new Date(p.updated_at).toLocaleDateString(),
+                        }),
+                      ]
+                    : []),
+                ].join(" · ")}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
@@ -135,13 +152,13 @@ export default function ProfileLibrary({
                 ) : (
                   <Upload className="mr-1.5 h-3.5 w-3.5" />
                 )}
-                Load
+                {t("library.load", { defaultValue: "Load" })}
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => openEdit(p)}
-                aria-label={`Edit ${p.name}`}
+                aria-label={t("library.editAria", { defaultValue: "Edit {{name}}", name: p.name })}
               >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
@@ -149,7 +166,7 @@ export default function ProfileLibrary({
                 size="sm"
                 variant="ghost"
                 onClick={() => setConfirming(p)}
-                aria-label={`Delete ${p.name}`}
+                aria-label={t("library.deleteAria", { defaultValue: "Delete {{name}}", name: p.name })}
               >
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
@@ -166,7 +183,7 @@ export default function ProfileLibrary({
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="cl-edit-name">Name</Label>
+              <Label htmlFor="cl-edit-name">{t("library.name", { defaultValue: "Name" })}</Label>
               <Input
                 id="cl-edit-name"
                 value={draft.name}
@@ -174,7 +191,7 @@ export default function ProfileLibrary({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cl-edit-source">Source</Label>
+              <Label htmlFor="cl-edit-source">{t("library.source", { defaultValue: "Source" })}</Label>
               <Input
                 id="cl-edit-source"
                 value={draft.source}
@@ -194,11 +211,11 @@ export default function ProfileLibrary({
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setEditing(null)}>
-              Cancel
+              {t("library.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button onClick={saveEdit} disabled={port.patch.pending}>
               {port.patch.pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save changes
+              {t("library.saveChanges", { defaultValue: "Save changes" })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -207,12 +224,14 @@ export default function ProfileLibrary({
       <AlertDialog open={!!confirming} onOpenChange={(o) => !o && setConfirming(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {confirming?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("library.deleteTitle", { defaultValue: "Delete {{name}}?", name: confirming?.name })}
+            </AlertDialogTitle>
             <AlertDialogDescription>{copy.deleteDescription}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("library.cancel", { defaultValue: "Cancel" })}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>{t("library.delete", { defaultValue: "Delete" })}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

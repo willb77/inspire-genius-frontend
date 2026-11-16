@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react"
 import { Bookmark, Check, Pin, Sparkles, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -59,12 +61,12 @@ import type { Moment, MomentState, SavedPrompt } from "@/types/lumen"
  */
 
 /** Situations common enough to be worth one tap instead of typing. */
-const PRESETS = [
-  "A 1:1 with someone more senior who intimidates me",
-  "Giving difficult feedback to a peer",
-  "A salary negotiation",
-  "Presenting to a room I don't know",
-  "A conversation I've been avoiding",
+const presets = (t: TFunction) => [
+  t("momentsPresetSenior", "A 1:1 with someone more senior who intimidates me"),
+  t("momentsPresetFeedback", "Giving difficult feedback to a peer"),
+  t("momentsPresetSalary", "A salary negotiation"),
+  t("momentsPresetPresenting", "Presenting to a room I don't know"),
+  t("momentsPresetAvoiding", "A conversation I've been avoiding"),
 ]
 
 const STATE_BADGE: Record<MomentState, string> = {
@@ -74,11 +76,18 @@ const STATE_BADGE: Record<MomentState, string> = {
   saved: "bg-amber-100 text-amber-800 border-amber-200",
 }
 
-const TRIGGER_LABEL: Record<Moment["trigger"], string> = {
-  pull: "You asked",
-  calendar: "Before your meeting",
-  cadence: "Weekly check-in",
-}
+const triggerLabel = (t: TFunction): Record<Moment["trigger"], string> => ({
+  pull: t("momentsTriggerPull", "You asked"),
+  calendar: t("momentsTriggerCalendar", "Before your meeting"),
+  cadence: t("momentsTriggerCadence", "Weekly check-in"),
+})
+
+const stateLabel = (t: TFunction): Record<MomentState, string> => ({
+  new: t("momentsStateNew", "new"),
+  acted: t("momentsStateActed", "acted"),
+  dismissed: t("momentsStateDismissed", "dismissed"),
+  saved: t("momentsStateSaved", "saved"),
+})
 
 /**
  * How many Moments the history picker can reach.
@@ -109,16 +118,16 @@ const NONE = "__none__"
  * situation, so they fall back to their trigger. The date disambiguates the
  * same situation asked twice, which is exactly the case a picker exists for.
  */
-function momentLabel(moment: Moment): string {
+function momentLabel(t: TFunction, moment: Moment): string {
   const when = moment.created_at
     ? new Date(moment.created_at).toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",
       })
     : null
-  const what = moment.context?.trim() || TRIGGER_LABEL[moment.trigger]
+  const what = moment.context?.trim() || triggerLabel(t)[moment.trigger]
   const trimmed = what.length > 70 ? `${what.slice(0, 69).trimEnd()}…` : what
-  return when ? `${when} — ${trimmed}` : trimmed
+  return when ? t("momentsLabelWithDate", { defaultValue: "{{when}} — {{what}}", when, what: trimmed }) : trimmed
 }
 
 function MomentBody({ body }: { body: string }) {
@@ -136,6 +145,7 @@ function MomentBody({ body }: { body: string }) {
 }
 
 function MomentCard({ moment }: { moment: Moment }) {
+  const { t } = useTranslation("lumenPages")
   const { mutate: setState, isPending } = useSetMomentState()
   const act = (state: MomentState) => setState({ momentId: moment.id, state })
 
@@ -143,8 +153,8 @@ function MomentCard({ moment }: { moment: Moment }) {
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">{TRIGGER_LABEL[moment.trigger]}</Badge>
-          <Badge className={STATE_BADGE[moment.state]}>{moment.state}</Badge>
+          <Badge variant="outline">{triggerLabel(t)[moment.trigger]}</Badge>
+          <Badge className={STATE_BADGE[moment.state]}>{stateLabel(t)[moment.state] ?? moment.state}</Badge>
         </div>
         {moment.created_at && (
           <span className="text-xs text-muted-foreground">
@@ -154,22 +164,24 @@ function MomentCard({ moment }: { moment: Moment }) {
       </CardHeader>
       <CardContent className="space-y-3">
         {moment.context && (
-          <p className="text-xs italic text-muted-foreground">“{moment.context}”</p>
+          <p className="text-xs italic text-muted-foreground">
+            {t("momentsQuoted", { defaultValue: "“{{context}}”", context: moment.context })}
+          </p>
         )}
         <MomentBody body={moment.body} />
         {moment.state === "new" && (
           <div className="flex flex-wrap gap-2 pt-1">
             <Button size="sm" variant="outline" disabled={isPending} onClick={() => act("acted")}>
               <Check className="mr-1 h-4 w-4" aria-hidden />
-              I used this
+              {t("momentsUsed", "I used this")}
             </Button>
             <Button size="sm" variant="outline" disabled={isPending} onClick={() => act("saved")}>
               <Bookmark className="mr-1 h-4 w-4" aria-hidden />
-              Save
+              {t("momentsSave", "Save")}
             </Button>
             <Button size="sm" variant="ghost" disabled={isPending} onClick={() => act("dismissed")}>
               <X className="mr-1 h-4 w-4" aria-hidden />
-              Not useful
+              {t("momentsNotUseful", "Not useful")}
             </Button>
           </div>
         )}
@@ -197,10 +209,11 @@ function SavedSituations({
   onRemove: (id: string) => void
   removing: boolean
 }) {
+  const { t } = useTranslation("lumenPages")
   if (prompts.length === 0) return null
   return (
     <div className="space-y-1.5">
-      <p className="text-xs font-medium text-muted-foreground">Your pinned situations</p>
+      <p className="text-xs font-medium text-muted-foreground">{t("momentsPinned", "Your pinned situations")}</p>
       <div className="flex flex-wrap gap-2">
         {prompts.map((p) => (
           <span
@@ -216,7 +229,7 @@ function SavedSituations({
             </button>
             <button
               type="button"
-              aria-label={`Remove "${p.label || p.text}"`}
+              aria-label={t("momentsRemovePinned", { defaultValue: 'Remove "{{label}}"', label: p.label || p.text })}
               disabled={removing}
               onClick={() => onRemove(p.id)}
               className="border-l px-1.5 py-1.5 text-muted-foreground hover:bg-muted hover:text-destructive disabled:opacity-50"
@@ -245,6 +258,7 @@ export interface MomentsProps {
 }
 
 export default function Moments({ embedded = false }: MomentsProps = {}) {
+  const { t } = useTranslation("lumenPages")
   const [context, setContext] = useState("")
   const [selected, setSelected] = useState<string>(NONE)
   const { data: feed, isLoading } = useMoments(HISTORY_LIMIT)
@@ -297,24 +311,24 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
     <div className={embedded ? "space-y-4" : "space-y-6 p-6"}>
       {!embedded && (
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Prep Me</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("momentsTitle", "Prep Me")}</h1>
           <p className="max-w-2xl text-muted-foreground">
-            Short, specific guidance — grounded in your own behavioral profile.
+            {t("momentsLead", "Short, specific guidance — grounded in your own behavioral profile.")}
           </p>
         </header>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">What's coming up?</CardTitle>
+          <CardTitle className="text-base">{t("momentsComingUp", "What's coming up?")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Textarea
             value={context}
             onChange={(e) => setContext(e.target.value)}
-            placeholder="e.g. a 1:1 with a skip-level who intimidates me, at 3pm"
+            placeholder={t("momentsPlaceholder", "e.g. a 1:1 with a skip-level who intimidates me, at 3pm")}
             rows={3}
-            aria-label="Describe the situation"
+            aria-label={t("momentsDescribeAria", "Describe the situation")}
           />
           <SavedSituations
             prompts={saved}
@@ -324,9 +338,9 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
           />
 
           <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground">Common situations</p>
+            <p className="text-xs font-medium text-muted-foreground">{t("momentsCommon", "Common situations")}</p>
             <div className="flex flex-wrap gap-2">
-              {PRESETS.map((preset) => (
+              {presets(t).map((preset) => (
                 <Button
                   key={preset}
                   size="sm"
@@ -342,7 +356,7 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
           <div className="flex flex-wrap items-center gap-3">
             <Button onClick={submit} disabled={isPending || trimmed.length < 3}>
               <Sparkles className="mr-1 h-4 w-4" aria-hidden />
-              {isPending ? "Composing…" : "Get a Moment"}
+              {isPending ? t("momentsComposing", "Composing…") : t("momentsGet", "Get a Moment")}
             </Button>
             {!pinningUnavailable && (
               <Button
@@ -351,12 +365,12 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
                 onClick={() => savePrompt({ text: trimmed })}
               >
                 <Pin className="mr-1 h-4 w-4" aria-hidden />
-                {alreadyPinned ? "Pinned" : "Pin this situation"}
+                {alreadyPinned ? t("momentsPinnedState", "Pinned") : t("momentsPin", "Pin this situation")}
               </Button>
             )}
             {isError && (
               <span className="text-sm text-destructive">
-                That didn't work. Try again in a moment.
+                {t("momentsFailed", "That didn't work. Try again in a moment.")}
               </span>
             )}
           </div>
@@ -365,12 +379,14 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
 
       {fresh && (
         <section className="space-y-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Just now</h2>
+          <h2 className="text-sm font-medium text-muted-foreground">{t("momentsJustNow", "Just now")}</h2>
           <MomentCard moment={fresh} />
           {fresh.degraded && (
             <p className="text-xs text-muted-foreground">
-              This one was composed without the full model pass — ask again for a
-              sharper read.
+              {t(
+                "momentsDegraded",
+                "This one was composed without the full model pass — ask again for a sharper read."
+              )}
             </p>
           )}
         </section>
@@ -378,7 +394,7 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Your Moments</h2>
+          <h2 className="text-sm font-medium text-muted-foreground">{t("momentsYours", "Your Moments")}</h2>
           {/* Shown from the first Moment, not the second: nothing renders until
               something is picked, so with one Moment the picker is the only way
               to reach it. */}
@@ -386,17 +402,19 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
             <Select value={selected} onValueChange={setSelected}>
               <SelectTrigger
                 className="h-8 w-full max-w-xs text-sm sm:w-72"
-                aria-label="Choose a Moment from your history"
+                aria-label={t("momentsPickAria", "Choose a Moment from your history")}
               >
-                <SelectValue placeholder="Choose a Moment…" />
+                <SelectValue placeholder={t("momentsPickPlaceholder", "Choose a Moment…")} />
               </SelectTrigger>
               <SelectContent>
                 {moments.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
-                    {momentLabel(m)}
+                    {momentLabel(t, m)}
                   </SelectItem>
                 ))}
-                <SelectItem value={ALL}>All Moments ({moments.length})</SelectItem>
+                <SelectItem value={ALL}>
+                  {t("momentsAll", { defaultValue: "All Moments ({{total}})", total: moments.length })}
+                </SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -410,7 +428,7 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
         ) : moments.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-sm text-muted-foreground">
-              No Moments yet. Describe a situation above and you'll get your first one.
+              {t("momentsNone", "No Moments yet. Describe a situation above and you'll get your first one.")}
             </CardContent>
           </Card>
         ) : shown.length === 0 ? (
@@ -420,9 +438,15 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
           // they have none.
           <Card>
             <CardContent className="pt-6 text-sm text-muted-foreground">
-              You have {moments.length}{" "}
-              {moments.length === 1 ? "Moment" : "Moments"} on file. Pick one above
-              to read it.
+              {moments.length === 1
+                ? t("momentsOnFileOne", {
+                    defaultValue: "You have {{total}} Moment on file. Pick one above to read it.",
+                    total: moments.length,
+                  })
+                : t("momentsOnFileMany", {
+                    defaultValue: "You have {{total}} Moments on file. Pick one above to read it.",
+                    total: moments.length,
+                  })}
             </CardContent>
           </Card>
         ) : (
@@ -437,7 +461,7 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
                 className="text-muted-foreground"
                 onClick={() => setSelected(ALL)}
               >
-                Show all {moments.length} Moments
+                {t("momentsShowAll", { defaultValue: "Show all {{total}} Moments", total: moments.length })}
               </Button>
             )}
           </>

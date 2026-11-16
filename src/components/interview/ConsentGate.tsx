@@ -8,6 +8,7 @@
  * expects at session creation.
  */
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Mic, MicOff, ShieldCheck } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,6 +22,7 @@ export type ConsentGateProps = {
 }
 
 export default function ConsentGate({ candidateName, onProceed }: ConsentGateProps) {
+  const { t } = useTranslation("interviewPages")
   const [mode, setMode] = useState<ConsentMode>("no_audio")
   const [acknowledged, setAcknowledged] = useState(false)
 
@@ -35,19 +37,19 @@ export default function ConsentGate({ candidateName, onProceed }: ConsentGatePro
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <ShieldCheck className="h-4 w-4 text-indigo-600" /> Recording &amp; consent
+          <ShieldCheck className="h-4 w-4 text-indigo-600" /> {t("consent.title", "Recording & consent")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-slate-600">
-          {candidateName ? `Before you begin interviewing ${candidateName}, ` : "Before you begin, "}
-          confirm how this interview will be captured. Answer text is always captured for
-          scoring; audio capture is separate and off by default.
+          {candidateName
+            ? t("consent.introNamed", { defaultValue: "Before you begin interviewing {{name}}, confirm how this interview will be captured. Answer text is always captured for scoring; audio capture is separate and off by default.", name: candidateName })
+            : t("consent.intro", "Before you begin, confirm how this interview will be captured. Answer text is always captured for scoring; audio capture is separate and off by default.")}
         </p>
 
         <fieldset className="space-y-2">
           <legend className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Capture mode
+            {t("consent.captureMode", "Capture mode")}
           </legend>
           <label className="flex items-start gap-2 rounded-lg border border-slate-200 p-3 text-sm">
             <input
@@ -60,10 +62,10 @@ export default function ConsentGate({ candidateName, onProceed }: ConsentGatePro
             />
             <span>
               <span className="flex items-center gap-1 font-medium">
-                <MicOff className="h-3.5 w-3.5" /> No audio (default)
+                <MicOff className="h-3.5 w-3.5" /> {t("consent.noAudioTitle", "No audio (default)")}
               </span>
               <span className="block text-xs text-slate-500">
-                Only typed/dictated answer text is captured for scoring. No audio is recorded or stored.
+                {t("consent.noAudioBody", "Only typed/dictated answer text is captured for scoring. No audio is recorded or stored.")}
               </span>
             </span>
           </label>
@@ -78,11 +80,10 @@ export default function ConsentGate({ candidateName, onProceed }: ConsentGatePro
             />
             <span>
               <span className="flex items-center gap-1 font-medium">
-                <Mic className="h-3.5 w-3.5" /> Audio, with consent
+                <Mic className="h-3.5 w-3.5" /> {t("consent.audioTitle", "Audio, with consent")}
               </span>
               <span className="block text-xs text-slate-500">
-                Select this ONLY after the candidate has been informed and has explicitly
-                consented — out loud or in writing — to voice capture during this interview.
+                {t("consent.audioBody", "Select this ONLY after the candidate has been informed and has explicitly consented — out loud or in writing — to voice capture during this interview.")}
               </span>
             </span>
           </label>
@@ -95,14 +96,14 @@ export default function ConsentGate({ candidateName, onProceed }: ConsentGatePro
             className="mt-0.5"
           />
           <span>
-            I confirm the candidate has been informed this is a scored interview
-            {mode === "audio" ? " and has consented to audio capture" : ""}, and I am
-            authorized to proceed.
+            {mode === "audio"
+              ? t("consent.ackAudio", "I confirm the candidate has been informed this is a scored interview and has consented to audio capture, and I am authorized to proceed.")
+              : t("consent.ack", "I confirm the candidate has been informed this is a scored interview, and I am authorized to proceed.")}
           </span>
         </label>
 
         <Button onClick={handleProceed} disabled={!canProceed}>
-          Acknowledge &amp; continue
+          {t("consent.proceed", "Acknowledge & continue")}
         </Button>
       </CardContent>
     </Card>

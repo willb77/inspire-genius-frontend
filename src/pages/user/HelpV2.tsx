@@ -15,6 +15,7 @@ import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { V2Panel, V2Card } from "@/components/v2";
 import { useSupportAgent } from "@/context/useSupportAgent";
+import { useTranslation } from "react-i18next";
 
 /**
  * HelpV2 — the new-design variant of Help. Flag-gated (new_user_surfaces)
@@ -32,6 +33,7 @@ const getPriorityVariant = (priority: string) => {
 };
 
 export default function HelpV2() {
+  const { t } = useTranslation("userPages");
   const { open: openSupportAgent } = useSupportAgent();
   const [showSubmitted, setShowSubmitted] = useState(false);
   const [page, setPage] = useState(1);
@@ -95,7 +97,7 @@ export default function HelpV2() {
       <V2Panel>
         <div className="mb-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <h1 className="font-serif text-[22px] leading-tight tracking-tight text-ink">
-            Help and Support
+            {t("helpV2.helpAndSupport", "Help and Support")}
           </h1>
           <div data-tour="help-search" className="hidden">
             <SearchBar />
@@ -121,9 +123,9 @@ export default function HelpV2() {
             <Phone className="size-6" />
           </div>
           <div className="flex-1">
-            <h2 className="font-serif text-base tracking-tight text-ink">Talk to Meridian</h2>
+            <h2 className="font-serif text-base tracking-tight text-ink">{t("helpV2.talkToMeridian", "Talk to Meridian")}</h2>
             <p className="text-sm text-body-slate mt-0.5">
-              Ask a question by voice or text and get an answer right away. Need a person? Submit a request above.
+              {t("helpV2.askAQuestionByVoiceOr", "Ask a question by voice or text and get an answer right away. Need a person? Submit a request above.")}
             </p>
           </div>
           <Button
@@ -131,13 +133,13 @@ export default function HelpV2() {
             className="shrink-0 bg-ink text-white hover:bg-ink/90"
             onClick={openSupportAgent}
           >
-            Speak with Support
+            {t("helpV2.speakWithSupport", "Speak with Support")}
           </Button>
         </V2Card>
 
         {/* Issues List */}
         <V2Card className="p-4">
-          <div className="text-start mb-3 font-serif text-ink">Recent Issues (TODO: translate)</div>
+          <div className="text-start mb-3 font-serif text-ink">{t("helpV2.recentIssuesTodoTranslate", "Recent Issues (TODO: translate)")}</div>
           {isListing && (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -161,7 +163,7 @@ export default function HelpV2() {
             </div>
           )}
           {!isListing && items.length === 0 && (
-            <div className="text-sm text-body-slate">No issues found.</div>
+            <div className="text-sm text-body-slate">{t("helpV2.noIssuesFound", "No issues found.")}</div>
           )}
           {!isListing && items.length > 0 && (
             <div className="space-y-3">
@@ -178,7 +180,7 @@ export default function HelpV2() {
                   <div className="mt-1 text-sm text-body-slate line-clamp-3">{it.description}</div>
                   {it.admin_comment?.comment ? (
                     <div className="mt-3 rounded-md border border-hairline bg-panel p-3 text-start">
-                      <div className="text-xs font-semibold text-mute">Admin Comment</div>
+                      <div className="text-xs font-semibold text-mute">{t("helpV2.adminComment", "Admin Comment")}</div>
                       <div className="mt-1 text-sm text-ink">{it.admin_comment.comment}</div>
                       <div className="mt-1 text-xs text-body-slate">
                         {it.admin_comment.created_at ? new Date(it.admin_comment.created_at).toLocaleString() : null}

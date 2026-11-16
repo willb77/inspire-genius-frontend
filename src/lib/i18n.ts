@@ -10,7 +10,7 @@ i18n
   .init({
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat', 'joinPages', 'onboardingPages', 'authPages', 'welcomePages'],
+    ns: ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat', 'userPages', 'prismUi', 'careerDiscoveryPages', 'lumenPages', 'directionPages', 'interviewPages', 'jobFitPages', 'summitPages', 'grantPages', 'kcPages', 'jobBlueprintPages', 'resumeUi', 'authPages', 'joinPages', 'onboardingPages', 'welcomePages'],
     supportedLngs: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'zh-CN', 'ar', 'hi', 'it', 'nl', 'ru', 'pl', 'tr', 'th', 'vi', 'id', 'sv', 'nb', 'sq', 'cs'],
     load: 'currentOnly',
 
@@ -40,7 +40,7 @@ i18n
 // not in LanguageSwitcher: switch with i18n.changeLanguage("en-XA") from the dev console.
 if (import.meta.env.DEV) {
   void import('./i18nPseudo').then(({ installPseudoLocale }) =>
-    installPseudoLocale(i18n, ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat', 'joinPages', 'onboardingPages', 'authPages', 'welcomePages']),
+    installPseudoLocale(i18n, ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat']),
   );
 }
 

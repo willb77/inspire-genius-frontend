@@ -7,6 +7,7 @@ import { ScorecardSummary } from './ScorecardSummary'
 import { calculateScorecardTotal } from '@/lib/job-blueprint/scoring'
 import type { ScorecardEntry, ScorecardScore } from '@/types/job-blueprint'
 import { Send } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type ScorecardSection = {
   title: string
@@ -21,6 +22,7 @@ type ScorecardFormProps = {
 }
 
 export function ScorecardForm({ sections, onSubmit, isSubmitting }: ScorecardFormProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   const [allEntries, setAllEntries] = useState<ScorecardEntry[]>(
     sections.flatMap(s => s.entries)
   )
@@ -74,11 +76,11 @@ export function ScorecardForm({ sections, onSubmit, isSubmitting }: ScorecardFor
       {/* Notes */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Additional Notes</CardTitle>
+          <CardTitle className="text-base">{t("form.notes", { defaultValue: "Additional Notes" })}</CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
-            placeholder="Overall interview impressions, follow-up actions..."
+            placeholder={t("form.notesPlaceholder", { defaultValue: "Overall interview impressions, follow-up actions..." })}
             value={notes}
             onChange={e => setNotes(e.target.value)}
             rows={4}
@@ -89,7 +91,7 @@ export function ScorecardForm({ sections, onSubmit, isSubmitting }: ScorecardFor
       <div className="flex justify-end">
         <Button onClick={handleSubmit} disabled={isSubmitting}>
           <Send className="w-4 h-4 mr-1" />
-          {isSubmitting ? 'Submitting...' : 'Submit Scorecard'}
+          {isSubmitting ? t("form.submitting", { defaultValue: "Submitting..." }) : t("form.submit", { defaultValue: "Submit Scorecard" })}
         </Button>
       </div>
     </div>
