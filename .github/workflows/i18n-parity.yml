@@ -1,0 +1,33 @@
+# I18N-3: locale parity gate. Separate file so no existing job is touched.
+#
+# Runs scripts/i18n/check_parity.mjs (en vs es, fr, pt, it, pl, cs; decision D1) on pull requests that
+# touch src/, the locale files or the i18n tooling. It is a RATCHET: findings recorded in
+# scripts/i18n/parity_baseline.json are tolerated, anything new fails. See the header of check_parity.mjs.
+# Dependency-free (plain node), so no npm install is needed. Makes no API call and needs no secret.
+name: i18n parity
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - "src/**"
+      - "public/locales/**"
+      - "scripts/i18n/**"
+      - ".github/workflows/i18n-parity.yml"
+
+jobs:
+  i18n-parity:
+    name: i18n-parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Locale parity (ratchet against baseline)
+        run: node scripts/i18n/check_parity.mjs
+
+      - name: Parity and pipeline unit tests
+        run: node --test scripts/i18n/node-tests/*_test.mjs
