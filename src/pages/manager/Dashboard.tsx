@@ -11,6 +11,7 @@ type Interview = { time: string; name: string; pos: string; color: string }
 type TeamMember = { initials: string; name: string; role: string; prism: number; bg: string; status: string }
 
 export default function ManagerDashboard() {
+  const { t: tm } = useTranslation("managerPages")
   const { t } = useTranslation(["admin", "common"]);
   const { user } = useAuth()
   const name = user?.fullName ?? user?.name ?? "Manager"
@@ -30,10 +31,10 @@ export default function ManagerDashboard() {
   ]
 
   const MINI_STATS = [
-    { val: String(stats?.openPositions ?? 0), label: "Open Positions", color: "#3B5BFF" },
-    { val: String(stats?.totalCandidates ?? 0), label: "Total Candidates", color: "#0D9488" },
-    { val: String(stats?.interviewsThisWeek ?? 0), label: "Interviews This Week", color: "#3B82F6" },
-    { val: String(stats?.avgTimeToHire ?? 0), label: "Avg Time to Hire (days)", color: "#8B5CF6" },
+    { val: String(stats?.openPositions ?? 0), label: tm("dashboard.openPositions", { defaultValue: "Open Positions" }), color: "#3B5BFF" },
+    { val: String(stats?.totalCandidates ?? 0), label: tm("dashboard.totalCandidates", { defaultValue: "Total Candidates" }), color: "#0D9488" },
+    { val: String(stats?.interviewsThisWeek ?? 0), label: tm("dashboard.interviewsThisWeek", { defaultValue: "Interviews This Week" }), color: "#3B82F6" },
+    { val: String(stats?.avgTimeToHire ?? 0), label: tm("dashboard.avgTimeToHireDays", { defaultValue: "Avg Time to Hire (days)" }), color: "#8B5CF6" },
   ]
 
   const interviews = ((interviewData as { interviews?: Interview[] } | undefined)?.interviews ?? []) as Interview[]
@@ -66,9 +67,7 @@ export default function ManagerDashboard() {
       {/* Hiring Pipeline */}
       <DataCard title={t("admin:manager.hiringPipeline")}>
         {hiringError && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetchHiring()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{tm("dashboard.failedToLoadData", { defaultValue: "Failed to load data." })}<button onClick={() => void refetchHiring()} className="underline ml-1 text-[#3B5BFF]">{tm("dashboard.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -88,9 +87,7 @@ export default function ManagerDashboard() {
       {/* Today's Interviews */}
       <DataCard title={t("admin:manager.todaysInterviews")}>
         {interviewError && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetchInterviews()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{tm("dashboard.failedToLoadData", { defaultValue: "Failed to load data." })}<button onClick={() => void refetchInterviews()} className="underline ml-1 text-[#3B5BFF]">{tm("dashboard.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         {interviewLoading
@@ -100,7 +97,7 @@ export default function ManagerDashboard() {
               </div>
             ))
           : interviews.length === 0
-          ? <p className="py-6 text-center text-[13px] text-[#6b7280]">No interviews scheduled.</p>
+          ? <p className="py-6 text-center text-[13px] text-[#6b7280]">{tm("dashboard.noInterviewsScheduled", { defaultValue: "No interviews scheduled." })}</p>
           : interviews.map((i) => (
               <div key={i.name} className="flex items-center gap-3 py-2.5 border-b border-[#f3f4f6] last:border-b-0">
                 <span className="text-xs font-semibold text-[#6b7280] w-[70px] shrink-0">{i.time}</span>
@@ -115,9 +112,7 @@ export default function ManagerDashboard() {
       {/* Team Members */}
       <DataCard title={t("admin:manager.teamMembers")}>
         {teamError && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetchTeam()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{tm("dashboard.failedToLoadData", { defaultValue: "Failed to load data." })}<button onClick={() => void refetchTeam()} className="underline ml-1 text-[#3B5BFF]">{tm("dashboard.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         {teamLoading
@@ -127,7 +122,7 @@ export default function ManagerDashboard() {
               </div>
             ))
           : team.length === 0
-          ? <p className="py-6 text-center text-[13px] text-[#6b7280]">No direct reports yet.</p>
+          ? <p className="py-6 text-center text-[13px] text-[#6b7280]">{tm("dashboard.noDirectReportsYet", { defaultValue: "No direct reports yet." })}</p>
           : team.map((m) => (
               <div key={m.name} className="flex items-center gap-3 py-2.5 border-b border-[#f3f4f6] last:border-b-0">
                 <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-white font-bold text-[11px] shrink-0" style={{ backgroundColor: m.bg }}>{m.initials}</div>
@@ -153,7 +148,7 @@ export default function ManagerDashboard() {
     <ManagerLayout>
       <DashboardFrame
         title={t("admin:manager.title")}
-        subtitle={`Welcome back, ${name}.`}
+        subtitle={tm("dashboard.welcomeBack", { defaultValue: "Welcome back, {{name}}.", name })}
         bannerActions={bannerActions}
         kpis={statsKpi}
         primary={primary}

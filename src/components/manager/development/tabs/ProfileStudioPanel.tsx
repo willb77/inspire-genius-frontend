@@ -25,6 +25,7 @@ import {
 } from "@/lib/prismExportLabels"
 import type { BehavioralProfile } from "@/types/development"
 import { NOT_A_JUDGEMENT } from "./studioCopy"
+import { useTranslation } from "react-i18next"
 
 /**
  * The narrative write-up for one team member.
@@ -49,6 +50,7 @@ export function ProfileStudioPanel({
   /** TDS-1b: the member has not shared their PRISM with this caller. */
   notShared?: boolean
 }) {
+  const { t } = useTranslation("managerPages")
   const narrative = useSubjectNarrative()
   const [text, setText] = useState("")
   const [notice, setNotice] = useState("")
@@ -94,9 +96,9 @@ export function ProfileStudioPanel({
       const out = await narrative.run(subject)
       setText(out.text)
       setNotice(out.notice)
-      if (out.failed) toast.warning(`${out.failed} of ${out.parts} sections failed`)
+      if (out.failed) toast.warning(t("profileStudioPanel.ofSectionsFailed", { defaultValue: "{{failed}} of {{parts}} sections failed", failed: out.failed, parts: out.parts }))
     } catch (err) {
-      toast.error(apiErrorMessage(err, "The write-up could not be generated"))
+      toast.error(apiErrorMessage(err, t("profileStudioPanel.theWriteUpCouldNotBe", { defaultValue: "The write-up could not be generated" })))
     }
   }
 
@@ -136,7 +138,7 @@ export function ProfileStudioPanel({
   function doc(): NarrativeDoc {
     return {
       title: memberName,
-      subtitle: "PRISM behavioural write-up",
+      subtitle: t("profileStudioPanel.prismBehaviouralWriteUp", { defaultValue: "PRISM behavioural write-up" }),
       // The server's notice when it sends one, the real-person notice when it
       // does not. An export about a named colleague must never leave without
       // one — the PDF outlives the tab, and whoever opens it never saw the
@@ -144,7 +146,7 @@ export function ProfileStudioPanel({
       notice: notice || REAL_PERSON_NOTICE,
       meta: [
         {
-          label: "Scales on file",
+          label: t("profileStudioPanel.scalesOnFile", { defaultValue: "Scales on file" }),
           value: String(Object.keys(subject?.scores ?? {}).length),
         },
       ],
@@ -169,11 +171,7 @@ export function ProfileStudioPanel({
   // the cause gives whoever sees it something to act on.
   if (!memberName.trim()) {
     return (
-      <p className="text-sm text-slate-500">
-        This member has no name on their record, so a write-up cannot be attributed to them. The
-        roster shows names correctly — it reads a different source — so this is a data gap on the
-        member record rather than something you did.
-      </p>
+      <p className="text-sm text-slate-500">{t("profileStudioPanel.thisMemberHasNoName", { defaultValue: "This member has no name on their record, so a write-up cannot be attributed to them. The roster shows names correctly — it reads a different source — so this is a data gap on the member record rather than something you did." })}</p>
     )
   }
 
@@ -188,10 +186,7 @@ export function ProfileStudioPanel({
   // conflict is only a lower bound.
   if (conflict) {
     return (
-      <p className="text-sm text-slate-500">
-        {conflict} Nothing can be written up until the records are separated — this is a data
-        fault on the member record, not something you did.
-      </p>
+      <p className="text-sm text-slate-500">{t("profileStudioPanel.nothingCanBeWrittenUp", { defaultValue: "{{conflict}} Nothing can be written up until the records are separated — this is a data fault on the member record, not something you did.", conflict })}</p>
     )
   }
 
@@ -200,7 +195,7 @@ export function ProfileStudioPanel({
   // has nothing — which is the dishonest empty state this surface keeps having
   // to defend against.
   if (full.isLoading) {
-    return <p className="text-sm text-slate-500">Loading {memberName}&apos;s PRISM scores…</p>
+    return <p className="text-sm text-slate-500">{t("profileStudioPanel.loadingSPrismScores", { defaultValue: "Loading {{memberName}}'s PRISM scores…", memberName })}</p>
   }
 
   // No scores means no write-up worth having. Saying so beats generating
@@ -214,20 +209,13 @@ export function ProfileStudioPanel({
   // tab and reaches people who never saw the caveat.
   if (notShared) {
     return (
-      <p className="text-sm text-slate-500" data-testid="studio-state-not-shared">
-        {memberName} has not shared their PRISM profile with you, so there is nothing to write
-        up. You can ask from the Behavioral Profile tab — asking grants nothing, and declining
-        carries no consequence for them.
-      </p>
+      <p className="text-sm text-slate-500" data-testid="studio-state-not-shared">{t("profileStudioPanel.hasNotSharedTheirPrism", { defaultValue: "{{memberName}} has not shared their PRISM profile with you, so there is nothing to write up. You can ask from the Behavioral Profile tab — asking grants nothing, and declining carries no consequence for them.", memberName })}</p>
     )
   }
 
   if (!scored) {
     return (
-      <p className="text-sm text-slate-500">
-        {memberName} has no PRISM scores on file, so there is nothing to write up yet. Invite them
-        to complete PRISM from the header above.
-      </p>
+      <p className="text-sm text-slate-500">{t("profileStudioPanel.hasNoPrismScoresOn", { defaultValue: "{{memberName}} has no PRISM scores on file, so there is nothing to write up yet. Invite them to complete PRISM from the header above.", memberName })}</p>
     )
   }
 
@@ -237,15 +225,12 @@ export function ProfileStudioPanel({
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4" aria-hidden /> Behavioural write-up
-            </CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Read back from {memberName}&apos;s own PRISM scores. {NOT_A_JUDGEMENT}
-            </p>
+              <Sparkles className="h-4 w-4" aria-hidden />{" "}{t("profileStudioPanel.behaviouralWriteUp", { defaultValue: "Behavioural write-up" })}</CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground">{t("profileStudioPanel.readBackFromSOwn", { defaultValue: "Read back from {{memberName}}'s own PRISM scores. {{NOT_A_JUDGEMENT}}", memberName, NOT_A_JUDGEMENT })}</p>
           </div>
           {text && (
             <div className="flex flex-wrap items-center gap-2">
-              <NarrativeExportButtons build={doc} label="a write-up" />
+              <NarrativeExportButtons build={doc} label={t("profileStudioPanel.aWriteUp", { defaultValue: "a write-up" })} />
               {/* TDS-3. Built from `text` and `notice` — the same two values the
                   export above is built from, so the kept row and the exported
                   document can never disagree about what this write-up is. */}
@@ -269,12 +254,11 @@ export function ProfileStudioPanel({
           <Button onClick={onGenerate} disabled={narrative.pending}>
             {narrative.pending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Writing…
-              </>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}{t("profileStudioPanel.writing", { defaultValue: "Writing…" })}</>
             ) : text ? (
-              "Write it again"
+              t("profileStudioPanel.writeItAgain", { defaultValue: "Write it again" })
             ) : (
-              "Write it up"
+              t("profileStudioPanel.writeItUp", { defaultValue: "Write it up" })
             )}
           </Button>
           {text ? <ProfileMarkdown text={text} /> : null}

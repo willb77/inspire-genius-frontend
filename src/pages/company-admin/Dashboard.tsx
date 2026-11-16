@@ -28,10 +28,10 @@ const ADMIN_SURFACES: { label: string; path: string }[] = [
 ]
 
 function CompanyAdminDashboardClassic() {
-  const { t } = useTranslation(["admin", "common"]);
+  const { t } = useTranslation(["companyAdminPages", "admin", "common"]);
   const navigate = useNavigate()
   const { user } = useAuth()
-  const orgName = (user as Record<string, unknown> | null)?.organizationName as string ?? "Your Organization"
+  const orgName = (user as Record<string, unknown> | null)?.organizationName as string ?? t("dashboardYourOrganization", { defaultValue: "Your Organization" })
 
   const { data: deptsData, isLoading: deptsLoading, error: deptsError, refetch: refetchDepts } = useCompanyDepartments()
   const { data: analyticsData, isLoading: analyticsLoading } = useCompanyAdminAnalytics()
@@ -82,13 +82,13 @@ function CompanyAdminDashboardClassic() {
     <DataCard title={t("admin:companyAdmin.departments")}>
       {deptsError && (
         <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-          Failed to load data.
-          <button onClick={() => void refetchDepts()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          {t("failedToLoadData", { defaultValue: "Failed to load data." })}
+          <button onClick={() => void refetchDepts()} className="underline ml-1 text-[#3B5BFF]">{t("retry", { defaultValue: "Retry" })}</button>
         </div>
       )}
       {!deptsLoading && departments.length === 0 && !deptsError ? (
         <p className="py-6 text-center text-[13px] text-[#6b7280]">
-          No departments yet. Departments will appear here as they are created.
+          {t("dashboardNoDepartments", { defaultValue: "No departments yet. Departments will appear here as they are created." })}
         </p>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -97,7 +97,7 @@ function CompanyAdminDashboardClassic() {
             : departments.map((d) => (
                 <div key={d.name} className="bg-white border border-[#e5e7eb] rounded-lg p-3 border-l-[3px] hover:shadow-sm transition-shadow" style={{ borderLeftColor: d.color }}>
                   <div className="text-[13px] font-semibold text-[#1f2937]">{d.name}</div>
-                  <div className="text-xs text-[#6b7280] mt-0.5">{d.count} employees</div>
+                  <div className="text-xs text-[#6b7280] mt-0.5">{t("dashboardEmployeesCount", { n: d.count, defaultValue: "{{n}} employees" })}</div>
                 </div>
               ))
           }
@@ -108,7 +108,7 @@ function CompanyAdminDashboardClassic() {
 
   // Surface 4 §4 — Admin Surfaces tile grid (8 quick-links).
   const adminSurfacesCard = (
-    <DataCard title="Admin Surfaces">
+    <DataCard title={t("dashboardAdminSurfaces", { defaultValue: "Admin Surfaces" })}>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {ADMIN_SURFACES.map((s) => (
           <button
@@ -117,7 +117,7 @@ function CompanyAdminDashboardClassic() {
             className="bg-white border border-[#e5e7eb] rounded-lg p-3 text-left hover:shadow-md hover:border-[#3B5BFF]/30 transition-all cursor-pointer"
           >
             <div className="text-[13px] font-semibold text-[#1f2937]">{s.label}</div>
-            <div className="text-xs text-[#6b7280] mt-0.5">Open →</div>
+            <div className="text-xs text-[#6b7280] mt-0.5">{t("dashboardOpen", { defaultValue: "Open →" })}</div>
           </button>
         ))}
       </div>
@@ -130,22 +130,22 @@ function CompanyAdminDashboardClassic() {
   // when the writer hasn't populated the observability tables yet.
   const ROLLUP_TILES = [
     {
-      label: "Coverage",
+      label: t("dashboardCoverage", { defaultValue: "Coverage" }),
       value: rollupsData != null ? `${rollupsData.coverage_percent}%` : "0%",
     },
     {
-      label: "Active Today",
+      label: t("dashboardActiveToday", { defaultValue: "Active Today" }),
       value: rollupsData != null ? String(rollupsData.active_today) : "0",
     },
     {
-      label: "Avg Sessions per User",
+      label: t("dashboardAvgSessions", { defaultValue: "Avg Sessions per User" }),
       value:
         rollupsData != null
           ? rollupsData.avg_sessions_per_user.toFixed(2)
           : "0.00",
     },
     {
-      label: "Monthly LLM Cost",
+      label: t("dashboardMonthlyLlmCost", { defaultValue: "Monthly LLM Cost" }),
       value:
         rollupsData != null
           ? `$${rollupsData.monthly_llm_cost_usd.toFixed(2)}`
@@ -154,7 +154,7 @@ function CompanyAdminDashboardClassic() {
   ]
 
   const rollupsKpiRow = (
-    <DataCard title="Org Rollups">
+    <DataCard title={t("dashboardOrgRollups", { defaultValue: "Org Rollups" })}>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {ROLLUP_TILES.map((tile) => (
           <div
@@ -189,7 +189,7 @@ function CompanyAdminDashboardClassic() {
     <CompanyAdminLayout>
       <DashboardFrame
         title={`${orgName} ${t("admin:companyAdmin.dashboard")}`}
-        subtitle="Manage your organization's teams, training, and PRISM assessments across all departments."
+        subtitle={t("dashboardSubtitle", { defaultValue: "Manage your organization's teams, training, and PRISM assessments across all departments." })}
         kpis={statsKpi}
         primary={primary}
       />

@@ -18,13 +18,13 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
     const base = "px-2 py-0.5 rounded-md text-xs font-medium";
     switch (k) {
       case "pdf":
-        return <span className={cn(base, "bg-red-50 text-red-600")}>PDF</span>;
+        return <span className={cn(base, "bg-red-50 text-red-600")}>{t("studioUi:user.chatDocumentsPanel.pdf", { defaultValue: "PDF" })}</span>;
       case "csv":
-        return <span className={cn(base, "bg-green-50 text-green-600")}>CSV</span>;
+        return <span className={cn(base, "bg-green-50 text-green-600")}>{t("studioUi:user.chatDocumentsPanel.csv", { defaultValue: "CSV" })}</span>;
       case "ppt":
-        return <span className={cn(base, "bg-orange-50 text-orange-600")}>PPT</span>;
+        return <span className={cn(base, "bg-orange-50 text-orange-600")}>{t("studioUi:user.chatDocumentsPanel.ppt", { defaultValue: "PPT" })}</span>;
       default:
-        return <span className={cn(base, "bg-blue-50 text-blue-600")}>DOC</span>;
+        return <span className={cn(base, "bg-blue-50 text-blue-600")}>{t("studioUi:user.chatDocumentsPanel.doc", { defaultValue: "DOC" })}</span>;
     }
   };
 

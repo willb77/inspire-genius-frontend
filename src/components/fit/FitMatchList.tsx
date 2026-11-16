@@ -15,6 +15,7 @@ import {
 import { FitCard, FitPill } from "./primitives"
 import { VERDICT_LABEL, VERDICT_TONE, asOverall, asV1 } from "./components"
 import { FitScoreFigure } from "./FitScoreFigure"
+import { useTranslation } from "react-i18next"
 
 /**
  * The three kinds of list that rank roles by fit:
@@ -68,6 +69,7 @@ function JobSetLabel({ jobSet }: { jobSet: FitMatch["jobSet"] }) {
 
 /** One ranked role. Its % is always `displayFitPercent(match)` (FIT-1). */
 export function FitMatchRow(props: FitMatchRowProps) {
+  const { t } = useTranslation("studioUi")
   const { match } = props
   const pct = displayFitPercent(match)
   // BP-F5: a partial-profile score says how much it rests on.
@@ -81,7 +83,7 @@ export function FitMatchRow(props: FitMatchRowProps) {
           {match.roleTitle}
         </Link>
         <JobSetLabel jobSet={match.jobSet} />
-        <FitPill tone={fitPercentTone(pct)}>{pct}% fit</FitPill>
+        <FitPill tone={fitPercentTone(pct)}>{t("fit.fitMatchList.fit", { defaultValue: "{{pct}}% fit", pct })}</FitPill>
       </li>
     )
   }
@@ -132,11 +134,11 @@ export function FitMatchRow(props: FitMatchRowProps) {
             <span className="shrink-0 text-right">
               <FitScoreFigure value={pct} variant="row-ds" />
               <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
-                fit
+                {t("fit.fitMatchList.fit2", { defaultValue: "fit" })}
               </span>
               {partial && (
                 <span className="mt-1 block text-[11px] text-amber-700" title={partialProfileDetail(partial)}>
-                  {partial.evaluated} of {partial.total} measured
+                  {t("fit.fitMatchList.ofMeasured", { defaultValue: "{{evaluated}} of {{total}} measured", evaluated: partial.evaluated, total: partial.total })}
                 </span>
               )}
             </span>
@@ -182,15 +184,15 @@ export function FitMatchRow(props: FitMatchRowProps) {
       ) : (
         <div className="shrink-0 text-right">
           <FitScoreFigure value={pct} variant="row" />
-          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">fit</div>
+          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">{t("fit.fitMatchList.fit2", { defaultValue: "fit" })}</div>
           {partial && (
             <div className="mt-1 text-[11px] text-[#b45309]" title={partialProfileDetail(partial)}>
-              {partial.evaluated} of {partial.total} measured
+              {t("fit.fitMatchList.ofMeasured", { defaultValue: "{{evaluated}} of {{total}} measured", evaluated: partial.evaluated, total: partial.total })}
             </div>
           )}
           {composite?.score != null && (
-            <div className="mt-1 text-[11px] text-[#6b7280]" title="Behavioural fit, goals and experience combined">
-              {Math.round(composite.score)}% composite
+            <div className="mt-1 text-[11px] text-[#6b7280]" title={t("fit.fitMatchList.behaviouralFitGoalsAndExperience", { defaultValue: "Behavioural fit, goals and experience combined" })}>
+              {t("fit.fitMatchList.composite", { defaultValue: "{{v1}}% composite", v1: Math.round(composite.score) })}
             </div>
           )}
         </div>
@@ -215,29 +217,30 @@ function OverallFitFigure({
   pct: number
   partial: ReturnType<typeof partialCoverage>
 }) {
+  const { t } = useTranslation("studioUi")
   const score = overall.score
   return (
     <div className="shrink-0 text-right">
       {score != null ? (
         <>
           <FitScoreFigure value={Math.round(score)} variant="row" />
-          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">Overall fit</div>
-          <div className="mt-1 text-[11px] text-[#6b7280]">PRISM fit {pct}%</div>
+          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">{t("fit.fitMatchList.overallFit", { defaultValue: "Overall fit" })}</div>
+          <div className="mt-1 text-[11px] text-[#6b7280]">{t("fit.fitMatchList.prismFit", { defaultValue: "PRISM fit {{pct}}%", pct })}</div>
         </>
       ) : (
         <>
           <FitScoreFigure value={pct} variant="row" />
-          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">PRISM fit</div>
+          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">{t("fit.fitMatchList.prismFit2", { defaultValue: "PRISM fit" })}</div>
           {overall.status !== "not_set_up" && (
             <div className="mt-1 max-w-[11rem] text-[11px] text-[#6b7280]">
-              Not enough about you to combine — add a résumé
+              {t("fit.fitMatchList.notEnoughAboutYouTo", { defaultValue: "Not enough about you to combine — add a résumé" })}
             </div>
           )}
         </>
       )}
       {partial && (
         <div className="mt-1 text-[11px] text-[#b45309]" title={partialProfileDetail(partial)}>
-          {partial.evaluated} of {partial.total} measured
+          {t("fit.fitMatchList.ofMeasured", { defaultValue: "{{evaluated}} of {{total}} measured", evaluated: partial.evaluated, total: partial.total })}
         </div>
       )}
     </div>
@@ -260,6 +263,7 @@ function DsOverallFitFigure({
   pct: number
   partial: ReturnType<typeof partialCoverage>
 }) {
+  const { t } = useTranslation("studioUi")
   const score = overall.score
   return (
     <span className="shrink-0 text-right" data-fit-figure="overall">
@@ -267,26 +271,26 @@ function DsOverallFitFigure({
         <>
           <FitScoreFigure value={Math.round(score)} variant="row-ds" />
           <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Overall fit
+            {t("fit.fitMatchList.overallFit", { defaultValue: "Overall fit" })}
           </span>
-          <span className="mt-1 block text-[11px] text-muted-foreground">PRISM fit {pct}%</span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">{t("fit.fitMatchList.prismFit", { defaultValue: "PRISM fit {{pct}}%", pct })}</span>
         </>
       ) : (
         <>
           <FitScoreFigure value={pct} variant="row-ds" />
           <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
-            PRISM fit
+            {t("fit.fitMatchList.prismFit2", { defaultValue: "PRISM fit" })}
           </span>
           {overall.status !== "not_set_up" && (
             <span className="mt-1 block max-w-[11rem] text-[11px] text-muted-foreground">
-              Not enough about you to combine — add a résumé
+              {t("fit.fitMatchList.notEnoughAboutYouTo", { defaultValue: "Not enough about you to combine — add a résumé" })}
             </span>
           )}
         </>
       )}
       {partial && (
         <span className="mt-1 block text-[11px] text-amber-700" title={partialProfileDetail(partial)}>
-          {partial.evaluated} of {partial.total} measured
+          {t("fit.fitMatchList.ofMeasured", { defaultValue: "{{evaluated}} of {{total}} measured", evaluated: partial.evaluated, total: partial.total })}
         </span>
       )}
     </span>

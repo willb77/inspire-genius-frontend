@@ -1,4 +1,5 @@
 import { Users } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import StatCard from "@/components/dashboard/StatCard"
@@ -29,18 +30,19 @@ function CountSkeleton() {
  * Zero is a real zero; a missing count reads as unavailable, never as zero.
  */
 function ClientsUnderManagementSection() {
+  const { t } = useTranslation("practitionerPages")
   const { data, isLoading, error, refetch } = useCoachCredits()
   const count = data?.clientsUnderManagement ?? null
 
   return (
-    <DataCard title="Clients under management">
+    <DataCard title={t("analytics.underManagement", { defaultValue: "Clients under management" })}>
       {isLoading && <CountSkeleton />}
 
       {!isLoading && error && (
         <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-          Failed to load clients under management.
+          {t("analytics.underManagementFailed", { defaultValue: "Failed to load clients under management." })}
           <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">
-            Retry
+            {t("retry", { defaultValue: "Retry" })}
           </button>
         </div>
       )}
@@ -49,7 +51,7 @@ function ClientsUnderManagementSection() {
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
             <StatCard
-              label="Clients under management"
+              label={t("analytics.underManagement", { defaultValue: "Clients under management" })}
               value={count === null ? "—" : nf(count)}
               icon={Users}
               iconColor="text-[#127A8A]"
@@ -58,8 +60,8 @@ function ClientsUnderManagementSection() {
           </div>
           <p className="text-[12px] text-[#6b7280] mt-3.5">
             {count === null
-              ? "The count is not available right now."
-              : "Clients who have activated their account and are linked to you."}
+              ? t("analytics.countUnavailable", { defaultValue: "The count is not available right now." })
+              : t("analytics.activatedLinked", { defaultValue: "Clients who have activated their account and are linked to you." })}
           </p>
         </>
       )}
@@ -78,26 +80,27 @@ function UsageSkeleton() {
 }
 
 function ClientUseSection() {
+  const { t } = useTranslation("practitionerPages")
   const { data: usage, isLoading, error, refetch } = useClientUsage()
 
   const rows: ClientUsageRow[] = usage ?? []
 
   return (
-    <DataCard title="Client use">
+    <DataCard title={t("analytics.clientUse", { defaultValue: "Client use" })}>
       {isLoading && <UsageSkeleton />}
 
       {!isLoading && error && (
         <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-          Failed to load client usage.
+          {t("analytics.usageFailed", { defaultValue: "Failed to load client usage." })}
           <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">
-            Retry
+            {t("retry", { defaultValue: "Retry" })}
           </button>
         </div>
       )}
 
       {!isLoading && !error && rows.length === 0 && (
         <p className="text-[13px] text-[#6b7280] py-6 text-center">
-          No client usage recorded yet.
+          {t("analytics.noUsage", { defaultValue: "No client usage recorded yet." })}
         </p>
       )}
 
@@ -105,10 +108,10 @@ function ClientUseSection() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-[#6b7280]">Client</TableHead>
-              <TableHead className="text-[#6b7280] text-right">Sessions</TableHead>
-              <TableHead className="text-[#6b7280] text-right">Credits Used</TableHead>
-              <TableHead className="text-[#6b7280]">Last Active</TableHead>
+              <TableHead className="text-[#6b7280]">{t("analytics.colClient", { defaultValue: "Client" })}</TableHead>
+              <TableHead className="text-[#6b7280] text-right">{t("analytics.colSessions", { defaultValue: "Sessions" })}</TableHead>
+              <TableHead className="text-[#6b7280] text-right">{t("analytics.colCreditsUsed", { defaultValue: "Credits Used" })}</TableHead>
+              <TableHead className="text-[#6b7280]">{t("analytics.colLastActive", { defaultValue: "Last Active" })}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -128,11 +131,12 @@ function ClientUseSection() {
 }
 
 export default function PractitionerAnalytics() {
+  const { t } = useTranslation("practitionerPages")
   return (
     <PractitionerLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Analytics</h1>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("analytics.title", { defaultValue: "Analytics" })}</h1>
       <p className="text-[13px] text-[#6b7280] mb-1">
-        Clients under management and per-client usage.
+        {t("analytics.subtitle", { defaultValue: "Clients under management and per-client usage." })}
       </p>
 
       <ClientsUnderManagementSection />

@@ -6,6 +6,7 @@
  * (marks the notification read) so it doesn't nag. Warning/critical only —
  * info/success live in the bell + toast to avoid banner fatigue.
  */
+import { useTranslation } from "react-i18next"
 import { useState } from "react"
 import { X } from "lucide-react"
 
@@ -17,6 +18,7 @@ const BANNER_SEVERITIES: Severity[] = ["critical", "warning"]
 const RANK: Record<Severity, number> = { critical: 3, warning: 2, success: 1, info: 0 }
 
 export function BroadcastAlertBanner() {
+  const { t } = useTranslation("shellUi")
   const { data: notifications = [] } = useNotifications()
   const markRead = useMarkNotificationRead()
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
@@ -47,7 +49,7 @@ export function BroadcastAlertBanner() {
       </span>
       <button
         onClick={dismiss}
-        aria-label="Dismiss alert"
+        aria-label={t("broadcastBanner.dismiss", { defaultValue: "Dismiss alert" })}
         className="shrink-0 rounded p-1 hover:bg-black/5"
         style={{ color: meta.text }}
       >

@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import React from 'react'
 import ModalDialog from '@/components/shared/ModalDialog'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ export type ModalFormFrameProps<T extends FieldValues> = {
 
 export default function ModalFormFrame<T extends FieldValues>(props: ModalFormFrameProps<T>) {
   const { open, onOpenChange, title, defaultValues, onSubmit, submitLabel, children, className } = props
+  const { t } = useTranslation("shellUi")
 
   const form = useForm<T>({
     defaultValues,
@@ -43,7 +45,7 @@ export default function ModalFormFrame<T extends FieldValues>(props: ModalFormFr
         onClick={() => onOpenChange(false)}
         type="button"
       >
-        Cancel
+        {t("modalForm.cancel", { defaultValue: "Cancel" })}
       </Button>
       <Button onClick={handleSubmit} disabled={form.formState.isSubmitting} type="button">
         {submitLabel}

@@ -38,6 +38,7 @@ import {
 import type { Milestone, SummitGoal, DevelopmentGap } from "@/types/development"
 import { useDevSkin } from "./skin"
 import { MeridianExportMenu } from "./MeridianExportMenu"
+import { useTranslation } from "react-i18next"
 
 type DevTab =
   | "profile"
@@ -179,6 +180,7 @@ function growthConversationOpener(memberName: string): string {
 }
 
 export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gaps, goalsNotShared, prismNotShared, seedRequest }: MeridianDevelopmentPanelProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const { user } = useAuth()
   const accessToken = user?.token ?? ""
@@ -240,17 +242,17 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
   }, [turns, partial, error])
 
   const contextChips = useMemo(
-    () => [memberName, `Tab: ${tab}`],
-    [memberName, tab],
+    () => [memberName, t("meridianDevelopmentPanel.tab", { defaultValue: "Tab: {{tab}}", tab })],
+    [memberName, tab, t],
   )
   const goalsNotSharedLine = goalsNotShared
-    ? `${memberName || "This member"} has not shared their goals with you, so Meridian cannot see them either.`
+    ? t("meridianDevelopmentPanel.goalsNotShared", { defaultValue: "{{name}} has not shared their goals with you, so Meridian cannot see them either.", name: memberName || t("meridianDevelopmentPanel.thisMember", { defaultValue: "This member" }) })
     : null
   // TDS-1b. The engine already DROPS the member's USER_PROFILE block when it
   // cannot read their PRISM, so the reply really is ungrounded — say so, or a
   // plausible answer passes for an informed one.
   const prismNotSharedLine = prismNotShared
-    ? `${memberName || "This member"} has not shared their PRISM profile with you, so Meridian is not grounded in it.`
+    ? t("meridianDevelopmentPanel.prismNotShared", { defaultValue: "{{name}} has not shared their PRISM profile with you, so Meridian is not grounded in it.", name: memberName || t("meridianDevelopmentPanel.thisMember", { defaultValue: "This member" }) })
     : null
 
   const memberNameRef = useRef(memberName)
@@ -307,14 +309,14 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
           <Bot className="h-4 w-4" aria-hidden="true" />
         </span>
         <div>
-          <div className={cn("text-sm font-semibold", sk.text800)}>Meridian</div>
+          <div className={cn("text-sm font-semibold", sk.text800)}>{t("meridianDevelopmentPanel.meridian", { defaultValue: "Meridian" })}</div>
           {/* Deliberately NOT a socket indicator. The old dot read "Connected"
               off the WebSocket while the panel was incapable of answering —
               the transport it described had stopped being the one that carries
               the question. This reports the turn, which is what the manager
               can act on. */}
           <div className={cn("flex items-center gap-1 text-[11px]", sk.text400)}>
-            {isProcessing ? "Thinking…" : "Ask about this member"}
+            {isProcessing ? t("meridianDevelopmentPanel.thinking", { defaultValue: "Thinking…" }) : t("meridianDevelopmentPanel.askAboutThisMember", { defaultValue: "Ask about this member" })}
           </div>
         </div>
         {/* T2: export the conversation on screen. Browser-only; "Email" opens
@@ -334,10 +336,8 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
           variant="outline"
           onClick={continueConversation}
           disabled={turns.length === 0}
-          title={turns.length === 0 ? "No earlier conversation about this member yet" : undefined}
-        >
-          Continue session
-        </Button>
+          title={turns.length === 0 ? t("meridianDevelopmentPanel.noEarlierConversationAboutThis", { defaultValue: "No earlier conversation about this member yet" }) : undefined}
+        >{t("meridianDevelopmentPanel.continueSession", { defaultValue: "Continue session" })}</Button>
       </div>
 
       <div className={cn("flex flex-wrap gap-1.5 border-b px-3 py-2", sk.border100)}>
@@ -361,7 +361,7 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-3">
         {turns.length === 0 ? (
           <div className="space-y-2">
-            <p className={cn("text-xs", sk.text400)}>Suggested prompts</p>
+            <p className={cn("text-xs", sk.text400)}>{t("meridianDevelopmentPanel.suggestedPrompts", { defaultValue: "Suggested prompts" })}</p>
             {SUGGESTED_PROMPTS[tab].map((p) => (
               <button
                 key={p}
@@ -391,7 +391,7 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
               <Bot className={cn("h-3.5 w-3.5", sk.accentText)} />
             </span>
             <div className={cn("max-w-[80%] whitespace-pre-wrap rounded-lg p-2 text-xs", sk.bgMuted50, sk.text500)}>
-              {partial ? stripActionBlock(partial) : "Thinking…"}
+              {partial ? stripActionBlock(partial) : t("meridianDevelopmentPanel.thinking", { defaultValue: "Thinking…" })}
             </div>
           </div>
         ) : null}
@@ -412,9 +412,7 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
                 type="button"
                 onClick={clearError}
                 className="mt-1 underline underline-offset-2"
-              >
-                Dismiss
-              </button>
+              >{t("meridianDevelopmentPanel.dismiss", { defaultValue: "Dismiss" })}</button>
             </div>
           </div>
         ) : null}
@@ -424,15 +422,11 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
       {staged ? (
         <Card className={cn("m-3", sk.accentBorderSoft, sk.accentBgFaint)}>
           <CardContent className="space-y-2 p-3">
-            <div className={cn("text-xs font-semibold", sk.text700)}>Proposed action</div>
+            <div className={cn("text-xs font-semibold", sk.text700)}>{t("meridianDevelopmentPanel.proposedAction", { defaultValue: "Proposed action" })}</div>
             <p className={cn("text-xs", sk.text600)}>{staged.label}</p>
             <div className="flex gap-2">
-              <Button size="sm" onClick={applyStaged}>
-                Apply
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setStaged(null)}>
-                Dismiss
-              </Button>
+              <Button size="sm" onClick={applyStaged}>{t("meridianDevelopmentPanel.apply", { defaultValue: "Apply" })}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setStaged(null)}>{t("meridianDevelopmentPanel.dismiss", { defaultValue: "Dismiss" })}</Button>
             </div>
           </CardContent>
         </Card>
@@ -449,13 +443,13 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about this member…"
-          aria-label="Ask Meridian about this member"
+          placeholder={t("meridianDevelopmentPanel.askAboutThisMember2", { defaultValue: "Ask about this member…" })}
+          aria-label={t("meridianDevelopmentPanel.askMeridianAboutThisMember", { defaultValue: "Ask Meridian about this member" })}
           className={cn("flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none", sk.border200, sk.accentBorderFocus)}
         />
         <Button type="submit" size="icon" disabled={!input.trim() || isProcessing}>
           <Send className="h-4 w-4" aria-hidden="true" />
-          <span className="sr-only">Send</span>
+          <span className="sr-only">{t("meridianDevelopmentPanel.send", { defaultValue: "Send" })}</span>
         </Button>
       </form>
     </div>

@@ -3,6 +3,7 @@ import { useStudioCast } from "@/hooks/manager/development/useStudioCast"
 import { useTeamScenarioStore } from "@/hooks/manager/development/useSavedRuns"
 import { useTeamStudioScenario } from "@/hooks/useTeamStudio"
 import { TEAM_STUDIO_SCENARIO_COPY } from "./studioCopy"
+import { useTranslation } from "react-i18next"
 
 /**
  * Team Development Studio's binding of the shared scenario panel.
@@ -18,6 +19,7 @@ import { TEAM_STUDIO_SCENARIO_COPY } from "./studioCopy"
  * reachable.
  */
 export function TeamScenarioPanel({ memberId }: { memberId: string }) {
+  const { t } = useTranslation("managerPages")
   const cast = useStudioCast()
   const port = useTeamStudioScenario(cast.port, cast.resolve)
   const store = useTeamScenarioStore(memberId)
@@ -25,10 +27,7 @@ export function TeamScenarioPanel({ memberId }: { memberId: string }) {
   return (
     <div className="space-y-3">
       {cast.withoutPrism > 0 && (
-        <p className="text-xs text-slate-500">
-          {cast.withoutPrism} team member{cast.withoutPrism === 1 ? " is" : "s are"} not listed —
-          they have no PRISM on file. Invite them from the roster.
-        </p>
+        <p className="text-xs text-slate-500">{cast.withoutPrism === 1 ? t("teamScenarioPanel.withoutPrismOne", { defaultValue: "{{withoutPrism}} team member is not listed — they have no PRISM on file. Invite them from the roster.", withoutPrism: cast.withoutPrism }) : t("teamScenarioPanel.withoutPrismOther", { defaultValue: "{{withoutPrism}} team members are not listed — they have no PRISM on file. Invite them from the roster.", withoutPrism: cast.withoutPrism })}</p>
       )}
       <ScenarioPanel port={{ ...port, store }} copy={TEAM_STUDIO_SCENARIO_COPY} />
     </div>

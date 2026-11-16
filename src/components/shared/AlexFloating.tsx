@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import React from "react";
 import { X, ChevronLeft } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -5,6 +6,7 @@ import AlexChatPanel from "@/components/alex/AlexChatPanel";
 import { getAlexFloatingOpen, setAlexFloatingOpen } from "@/lib/storage";
 
 export default function AlexFloating() {
+  const { t } = useTranslation("shellUi");
   const [open, setOpen] = React.useState<boolean | null>(null);
   const [chatOpen, setChatOpen] = React.useState(false);
 
@@ -61,7 +63,7 @@ export default function AlexFloating() {
           >
             <button
               type="button"
-              aria-label="Close Alex"
+              aria-label={t("alexFloating.close", { defaultValue: "Close Alex" })}
               onClick={closeFloating}
               className="cursor-pointer absolute -top-2 -right-2 grid place-items-center rounded-full bg-blue-primary hover:bg-blue-primary text-white transition-colors size-6"
             >
@@ -80,7 +82,7 @@ export default function AlexFloating() {
             key="alex-handle"
             type="button"
             onClick={openFloating}
-            aria-label="Open Alex Assistant"
+            aria-label={t("alexFloating.open", { defaultValue: "Open Alex Assistant" })}
             initial={{ x: 80, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 80, opacity: 0 }}

@@ -1,4 +1,5 @@
 import { AlertTriangle, Copy, Loader2, UserPlus } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { useNavigate } from "react-router-dom"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
@@ -18,16 +19,9 @@ export const DARK_MESSAGE = "The Practitioner Programme is not switched on yet."
 export const LOAD_ERROR = "Your PRISM registration could not be loaded just now. Please try again later."
 export const INVITES_OFF_TITLE = "Client invite links are not switched on for your practice yet."
 
-function clientMessage(code: string): string {
-  return (
-    `I'd like to work with you on Inspire Genius. After you sign in, open Settings, ` +
-    `choose "Have a practitioner code?" and enter my code: ${code}`
-  )
-}
-
-async function copyWithToast(text: string, what: string) {
-  if (await copyText(text)) toast.success(`${what} copied`)
-  else toast.error(`Could not copy the ${what.toLowerCase()} — select it and copy it by hand.`)
+async function copyWithToast(text: string, messages: { done: string; failed: string }) {
+  if (await copyText(text)) toast.success(messages.done)
+  else toast.error(messages.failed)
 }
 
 function Banner({ children }: { children: React.ReactNode }) {
@@ -52,16 +46,17 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
 }
 
 function Registered({ registration }: { registration: MyPracticeRegistration }) {
+  const { t } = useTranslation("practitionerPages")
   const code = registration.practitionerCode
   return (
     <>
-      {!registration.active && <Banner>{DEACTIVATED_BANNER}</Banner>}
+      {!registration.active && <Banner>{t("myPractice.deactivatedBanner", { defaultValue: DEACTIVATED_BANNER })}</Banner>}
 
       <Card>
         <CardHeader>
-          <CardTitle>Your client code</CardTitle>
+          <CardTitle>{t("myPractice.clientCode", { defaultValue: "Your client code" })}</CardTitle>
           <CardDescription>
-            A client who signed up on their own enters this once, in Settings, to become your client.
+            {t("myPractice.clientCodeHelp", { defaultValue: "A client who signed up on their own enters this once, in Settings, to become your client." })}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -71,23 +66,37 @@ function Registered({ registration }: { registration: MyPracticeRegistration }) 
                 {code}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={() => copyWithToast(code, "Code")}>
+                <Button type="button" variant="outline" onClick={() =>
+                    copyWithToast(code, {
+                      done: t("myPractice.codeCopied", { defaultValue: "Code copied" }),
+                      failed: t("myPractice.codeCopyFailed", { defaultValue: "Could not copy the code — select it and copy it by hand." }),
+                    })
+                  }
+                >
                   <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Copy code
+                  {t("myPractice.copyCode", { defaultValue: "Copy code" })}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => copyWithToast(clientMessage(code), "Message")}
+                  onClick={() =>
+                    copyWithToast(
+                      t("myPractice.clientMessage", { code: code, defaultValue: "I'd like to work with you on Inspire Genius. After you sign in, open Settings, choose \"Have a practitioner code?\" and enter my code: {{code}}" }),
+                      {
+                        done: t("myPractice.messageCopied", { defaultValue: "Message copied" }),
+                        failed: t("myPractice.messageCopyFailed", { defaultValue: "Could not copy the message — select it and copy it by hand." }),
+                      },
+                    )
+                  }
                 >
                   <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Copy a message for your client
+                  {t("myPractice.copyMessage", { defaultValue: "Copy a message for your client" })}
                 </Button>
               </div>
             </>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No code has been issued yet. Please contact support.
+              {t("myPractice.noCode", { defaultValue: "No code has been issued yet. Please contact support." })}
             </p>
           )}
         </CardContent>
@@ -95,16 +104,16 @@ function Registered({ registration }: { registration: MyPracticeRegistration }) 
 
       <Card>
         <CardHeader>
-          <CardTitle>Your PRISM account</CardTitle>
+          <CardTitle>{t("myPractice.prismAccount", { defaultValue: "Your PRISM account" })}</CardTitle>
           <CardDescription>
-            Your clients&apos; surveys are raised under these identifiers. Something wrong? Contact support.
+            {t("myPractice.prismAccountHelp", { defaultValue: "Your clients' surveys are raised under these identifiers. Something wrong? Contact support." })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-3">
-            <ReadOnlyField label="Site ID" value={registration.siteId} />
-            <ReadOnlyField label="Client ID" value={registration.clientId} />
-            <ReadOnlyField label="Reference" value={registration.reference} />
+            <ReadOnlyField label={t("myPractice.siteId", { defaultValue: "Site ID" })} value={registration.siteId} />
+            <ReadOnlyField label={t("myPractice.clientId", { defaultValue: "Client ID" })} value={registration.clientId} />
+            <ReadOnlyField label={t("myPractice.reference", { defaultValue: "Reference" })} value={registration.reference} />
           </dl>
         </CardContent>
       </Card>
@@ -113,6 +122,7 @@ function Registered({ registration }: { registration: MyPracticeRegistration }) 
 }
 
 export default function MyPractice() {
+  const { t } = useTranslation("practitionerPages")
   const { data, isLoading, error } = useMyPracticeRegistration()
   const navigate = useNavigate()
   // PI-4: enabled only when the invite routes apply to this practitioner. The
@@ -125,32 +135,32 @@ export default function MyPractice() {
       <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">My PRISM practice</h1>
+            <h1 className="text-2xl font-semibold">{t("myPractice.title", { defaultValue: "My PRISM practice" })}</h1>
             <p className="text-sm text-muted-foreground">
-              Your client code and the PRISM account your clients&apos; surveys are raised under.
+              {t("myPractice.subtitle", { defaultValue: "Your client code and the PRISM account your clients' surveys are raised under." })}
             </p>
           </div>
           <Button
             type="button"
             className="min-h-11"
             disabled={!invitesLive}
-            title={invitesLive ? undefined : INVITES_OFF_TITLE}
+            title={invitesLive ? undefined : t("myPractice.invitesOffTitle", { defaultValue: INVITES_OFF_TITLE })}
             onClick={() => navigate(ROUTES.PRACTITIONER.CLIENTS)}
           >
             <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Invite a client
+            {t("myPractice.inviteClient", { defaultValue: "Invite a client" })}
           </Button>
         </div>
 
         {isLoading && (
           <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            Loading your registration…
+            {t("myPractice.loading", { defaultValue: "Loading your registration…" })}
           </p>
         )}
-        {!isLoading && error && <Banner>{LOAD_ERROR}</Banner>}
-        {data?.state === "dark" && <Banner>{DARK_MESSAGE}</Banner>}
-        {data?.state === "missing" && <Banner>{NOT_REGISTERED_BANNER}</Banner>}
+        {!isLoading && error && <Banner>{t("myPractice.loadError", { defaultValue: LOAD_ERROR })}</Banner>}
+        {data?.state === "dark" && <Banner>{t("myPractice.dark", { defaultValue: DARK_MESSAGE })}</Banner>}
+        {data?.state === "missing" && <Banner>{t("myPractice.notRegistered", { defaultValue: NOT_REGISTERED_BANNER })}</Banner>}
         {data?.state === "registered" && <Registered registration={data.registration} />}
       </div>
     </PractitionerLayout>

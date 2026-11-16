@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   MoreVertical,
   Eye,
@@ -92,6 +93,7 @@ export default function ActionMenu<Row = unknown>({
   showVerticalEntitlements = false,
   onVerticalEntitlements,
 }: ActionMenuProps<Row>) {
+  const { t } = useTranslation("shellUi");
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -103,7 +105,7 @@ export default function ActionMenu<Row = unknown>({
           }
         >
           <MoreVertical className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
+          <span className="sr-only">{t("actionMenu.openMenu", { defaultValue: "Open menu" })}</span>
         </button>
       </DropdownMenuTrigger>
 
@@ -112,7 +114,7 @@ export default function ActionMenu<Row = unknown>({
           (viewOptions && viewOptions.length ? (
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Eye className="w-4 h-4 mr-2" /> View
+                <Eye className="w-4 h-4 mr-2" /> {t("actionMenu.view", { defaultValue: "View" })}
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
@@ -129,7 +131,7 @@ export default function ActionMenu<Row = unknown>({
             </DropdownMenuSub>
           ) : (
             <DropdownMenuItem onClick={() => onView?.(row)}>
-              <Eye className="w-4 h-4 mr-2" /> View
+              <Eye className="w-4 h-4 mr-2" /> {t("actionMenu.view", { defaultValue: "View" })}
             </DropdownMenuItem>
           ))}
 
@@ -141,7 +143,7 @@ export default function ActionMenu<Row = unknown>({
           (editOptions && editOptions.length ? (
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Edit className="w-4 h-4 mr-2" /> Edit
+                <Edit className="w-4 h-4 mr-2" /> {t("actionMenu.edit", { defaultValue: "Edit" })}
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
@@ -158,46 +160,46 @@ export default function ActionMenu<Row = unknown>({
             </DropdownMenuSub>
           ) : (
             <DropdownMenuItem onClick={() => onEdit?.(row)}>
-              <Edit className="w-4 h-4 mr-2" /> Edit
+              <Edit className="w-4 h-4 mr-2" /> {t("actionMenu.edit", { defaultValue: "Edit" })}
             </DropdownMenuItem>
           ))}
 
         {showResend && (
           <DropdownMenuItem onClick={() => onResend?.(row)}>
-            <Mail className="w-4 h-4 mr-2" /> Resend
+            <Mail className="w-4 h-4 mr-2" /> {t("actionMenu.resend", { defaultValue: "Resend" })}
           </DropdownMenuItem>
         )}
 
         {showActivity && (
           <DropdownMenuItem onClick={() => onActivity?.(row)}>
-            <Activity className="w-4 h-4 mr-2 text-sky-600" /> Activity
+            <Activity className="w-4 h-4 mr-2 text-sky-600" /> {t("actionMenu.activity", { defaultValue: "Activity" })}
           </DropdownMenuItem>
         )}
 
         {showCoaches && (
           <DropdownMenuItem onClick={() => onCoaches?.(row)}>
-            <Bot className="w-4 h-4 mr-2" /> Coaches
+            <Bot className="w-4 h-4 mr-2" /> {t("actionMenu.coaches", { defaultValue: "Coaches" })}
           </DropdownMenuItem>
         )}
 
         {showPrismPdf && (
           <DropdownMenuItem onClick={() => onPrismPdf?.(row)}>
-            <FileUp className="w-4 h-4 mr-2 text-teal-600" /> Upload / Delete PRISM PDF
+            <FileUp className="w-4 h-4 mr-2 text-teal-600" /> {t("actionMenu.prismPdf", { defaultValue: "Upload / Delete PRISM PDF" })}
           </DropdownMenuItem>
         )}
         {showImportPrism && (
           <DropdownMenuItem onClick={() => onImportPrism?.(row)}>
-            <FileUp className="w-4 h-4 mr-2 text-indigo-500" /> Upload PRISM CSV
+            <FileUp className="w-4 h-4 mr-2 text-indigo-500" /> {t("actionMenu.prismCsv", { defaultValue: "Upload PRISM CSV" })}
           </DropdownMenuItem>
         )}
         {showPrismAccess && (
           <DropdownMenuItem onClick={() => onPrismAccess?.(row)}>
-            <ShieldCheck className="w-4 h-4 mr-2 text-emerald-600" /> PRISM survey access
+            <ShieldCheck className="w-4 h-4 mr-2 text-emerald-600" /> {t("actionMenu.prismAccess", { defaultValue: "PRISM survey access" })}
           </DropdownMenuItem>
         )}
         {showVerticalEntitlements && (
           <DropdownMenuItem onClick={() => onVerticalEntitlements?.(row)}>
-            <LayoutGrid className="w-4 h-4 mr-2 text-sky-600" /> Vertical entitlements
+            <LayoutGrid className="w-4 h-4 mr-2 text-sky-600" /> {t("actionMenu.verticalEntitlements", { defaultValue: "Vertical entitlements" })}
           </DropdownMenuItem>
         )}
 
@@ -207,13 +209,13 @@ export default function ActionMenu<Row = unknown>({
 
         {showDeactivate && (
           <DropdownMenuItem onClick={() => onDeactivate?.(row)}>
-            <MessageCircleX className="w-4 h-4 mr-2 text-gray-500" /> Deactivate
+            <MessageCircleX className="w-4 h-4 mr-2 text-gray-500" /> {t("actionMenu.deactivate", { defaultValue: "Deactivate" })}
           </DropdownMenuItem>
         )}
 
         {showActivate && (
           <DropdownMenuItem onClick={() => onActivate?.(row)}>
-            <UserCheck className="w-4 h-4 mr-2 text-emerald-500" /> Activate
+            <UserCheck className="w-4 h-4 mr-2 text-emerald-500" /> {t("actionMenu.activate", { defaultValue: "Activate" })}
           </DropdownMenuItem>
         )}
 
@@ -224,7 +226,7 @@ export default function ActionMenu<Row = unknown>({
 
         {showDelete && (
           <DropdownMenuItem onClick={() => onDelete?.(row)}>
-            <Trash2 className="w-4 h-4 mr-2" /> Delete
+            <Trash2 className="w-4 h-4 mr-2" /> {t("actionMenu.delete", { defaultValue: "Delete" })}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

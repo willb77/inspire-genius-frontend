@@ -9,6 +9,7 @@ import {
   useDecideJoinRequest,
   useJoinRequestQueue,
 } from "@/hooks/org/useOrgMembership"
+import { useTranslation } from "react-i18next"
 
 /**
  * The approval queue.
@@ -23,6 +24,7 @@ import {
  * which is the failure this project keeps meeting.
  */
 export default function JoinRequests() {
+  const { t } = useTranslation("managerPages")
   const { user } = useAuth()
   const orgId = (user as { org_id?: string } | null)?.org_id
   const { data, isLoading, isError } = useJoinRequestQueue(orgId)
@@ -33,39 +35,26 @@ export default function JoinRequests() {
     <ManagerLayout>
       <div className="mx-auto max-w-3xl space-y-6 p-6">
         <header>
-          <h1 className="text-2xl font-semibold">Join requests</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            People who say they belong to your organisation. Approving one gives them
-            access to your team's data, so check you recognise them first.
-          </p>
+          <h1 className="text-2xl font-semibold">{t("joinRequests.joinRequests", { defaultValue: "Join requests" })}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("joinRequests.peopleWhoSayTheyBelong", { defaultValue: "People who say they belong to your organisation. Approving one gives them access to your team's data, so check you recognise them first." })}</p>
         </header>
 
         {!orgId && (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Your account isn't linked to an organisation yet, so there's no queue to
-            show. A company administrator needs to add you before you can approve
-            anyone.
-          </p>
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{t("joinRequests.yourAccountIsnTLinked", { defaultValue: "Your account isn't linked to an organisation yet, so there's no queue to show. A company administrator needs to add you before you can approve anyone." })}</p>
         )}
 
         {orgId && isLoading && (
-          <p className="text-sm text-muted-foreground">Loading requests…</p>
+          <p className="text-sm text-muted-foreground">{t("joinRequests.loadingRequests", { defaultValue: "Loading requests…" })}</p>
         )}
 
         {orgId && isError && (
-          <p className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-            The queue couldn't be loaded. This is a failure to fetch, not an empty
-            queue — try again, and tell an administrator if it keeps happening.
-          </p>
+          <p className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">{t("joinRequests.theQueueCouldnTBe", { defaultValue: "The queue couldn't be loaded. This is a failure to fetch, not an empty queue — try again, and tell an administrator if it keeps happening." })}</p>
         )}
 
         {orgId && !isLoading && !isError && data?.length === 0 && (
           <div className="flex items-center gap-3 rounded-lg border p-6 text-muted-foreground">
             <Inbox className="h-5 w-5" />
-            <p className="text-sm">
-              Nothing waiting. Requests appear here when someone declares your
-              organisation at sign-up — there's no email, so it's worth checking back.
-            </p>
+            <p className="text-sm">{t("joinRequests.nothingWaitingRequestsAppearHere", { defaultValue: "Nothing waiting. Requests appear here when someone declares your organisation at sign-up — there's no email, so it's worth checking back." })}</p>
           </div>
         )}
 
@@ -73,9 +62,7 @@ export default function JoinRequests() {
           <div key={req.id} className="space-y-3 rounded-lg border p-4">
             <div>
               <p className="font-medium">{req.email}</p>
-              <p className="text-sm text-muted-foreground">
-                Requested {new Date(req.created_at).toLocaleDateString()}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("joinRequests.requested", { defaultValue: "Requested {{value}}", value: new Date(req.created_at).toLocaleDateString() })}</p>
               {req.note && <p className="mt-2 text-sm italic">"{req.note}"</p>}
             </div>
             <Input
@@ -83,7 +70,7 @@ export default function JoinRequests() {
               onChange={(e) =>
                 setReasons((r) => ({ ...r, [req.id]: e.target.value }))
               }
-              placeholder="Reason (recorded either way, and shown to them if you reject)"
+              placeholder={t("joinRequests.reasonRecordedEitherWayAnd", { defaultValue: "Reason (recorded either way, and shown to them if you reject)" })}
             />
             <div className="flex gap-2">
               <Button
@@ -97,9 +84,7 @@ export default function JoinRequests() {
                   })
                 }
               >
-                <Check className="mr-1 h-4 w-4" />
-                Approve
-              </Button>
+                <Check className="mr-1 h-4 w-4" />{t("joinRequests.approve", { defaultValue: "Approve" })}</Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -112,9 +97,7 @@ export default function JoinRequests() {
                   })
                 }
               >
-                <X className="mr-1 h-4 w-4" />
-                Reject
-              </Button>
+                <X className="mr-1 h-4 w-4" />{t("joinRequests.reject", { defaultValue: "Reject" })}</Button>
             </div>
           </div>
         ))}

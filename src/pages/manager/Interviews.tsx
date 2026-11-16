@@ -25,6 +25,7 @@ import { useLiveSessions } from "@/hooks/interview/useLiveSessions"
 import type { LiveSessionSummary } from "@/services/interview/live.service"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import InterviewsListHouse from "@/components/interview/house/InterviewsListHouse"
+import { useTranslation } from "react-i18next"
 
 const fmtDate = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—"
@@ -56,6 +57,7 @@ export default function ManagerInterviews() {
 }
 
 function ClassicManagerInterviews() {
+  const { t } = useTranslation("managerPages")
   const { data, isLoading, error, refetch } = useLiveSessions({ limit: 100 })
 
   const sessions = useMemo(() => data?.sessions ?? [], [data])
@@ -66,26 +68,22 @@ function ClassicManagerInterviews() {
   // Every one of these is counted. The old page had `completedCount = 12` as a
   // literal beside three derived numbers, which made all four look equally real.
   const STATS = [
-    { label: "In progress", value: String(inProgress.length), color: "#3B5BFF" },
-    { label: "Completed", value: String(finalized.length), color: "#10B981" },
-    { label: "Abandoned", value: String(abandoned.length), color: "#6b7280" },
-    { label: "Total", value: String(data?.total ?? sessions.length), color: "#0D9488" },
+    { label: t("interviews.inProgress", { defaultValue: "In progress" }), value: String(inProgress.length), color: "#3B5BFF" },
+    { label: t("interviews.completed", { defaultValue: "Completed" }), value: String(finalized.length), color: "#10B981" },
+    { label: t("interviews.abandoned", { defaultValue: "Abandoned" }), value: String(abandoned.length), color: "#6b7280" },
+    { label: t("interviews.total", { defaultValue: "Total" }), value: String(data?.total ?? sessions.length), color: "#0D9488" },
   ]
 
   const groups: { title: string; rows: LiveSessionSummary[] }[] = [
-    { title: "In progress", rows: inProgress },
-    { title: "Completed", rows: finalized },
-    { title: "Abandoned", rows: abandoned },
+    { title: t("interviews.inProgress", { defaultValue: "In progress" }), rows: inProgress },
+    { title: t("interviews.completed", { defaultValue: "Completed" }), rows: finalized },
+    { title: t("interviews.abandoned", { defaultValue: "Abandoned" }), rows: abandoned },
   ]
 
   return (
     <ManagerLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Interviews</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">
-        Interviews you have run. Start a new one from{" "}
-        <Link to={ROUTES.MANAGER.INTERVIEW_STUDIO} className="text-[#3B5BFF] underline">
-          Interview Studio
-        </Link>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("interviews.interviews", { defaultValue: "Interviews" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("interviews.interviewsYouHaveRunStart", { defaultValue: "Interviews you have run. Start a new one from" })}{" "}<Link to={ROUTES.MANAGER.INTERVIEW_STUDIO} className="text-[#3B5BFF] underline">{t("interviews.interviewStudio", { defaultValue: "Interview Studio" })}</Link>
         .
       </p>
 
@@ -103,27 +101,16 @@ function ClassicManagerInterviews() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4" role="alert">
-          Could not load your interviews.
-          <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">
-            Retry
-          </button>
+        <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4" role="alert">{t("interviews.couldNotLoadYourInterviews", { defaultValue: "Could not load your interviews." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("interviews.retry", { defaultValue: "Retry" })}</button>
         </div>
       )}
 
       {/* An honest empty state. It says WHY there is nothing, which the old
           page could not do because it always had eight rows. */}
       {!isLoading && !error && sessions.length === 0 && (
-        <DataCard title="No interviews yet">
-          <p className="text-[13px] text-[#6b7280]">
-            Interviews you run appear here — in progress ones you can return to, and completed
-            ones with their scores.
-            {data && !data.org_scope_applied && (
-              <>
-                {" "}
-                This list shows interviews <span className="font-medium">you</span> ran; it is not
-                organisation-wide.
-              </>
+        <DataCard title={t("interviews.noInterviewsYet", { defaultValue: "No interviews yet" })}>
+          <p className="text-[13px] text-[#6b7280]">{t("interviews.interviewsYouRunAppearHere", { defaultValue: "Interviews you run appear here — in progress ones you can return to, and completed ones with their scores." })}{data && !data.org_scope_applied && (
+              <>{" "}{t("interviews.thisListShowsInterviews", { defaultValue: "This list shows interviews" })}{" "}<span className="font-medium">{t("interviews.you", { defaultValue: "you" })}</span>{" "}{t("interviews.ranItIsNotOrganisation", { defaultValue: "ran; it is not organisation-wide." })}</>
             )}
           </p>
         </DataCard>
@@ -142,13 +129,13 @@ function ClassicManagerInterviews() {
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="text-left text-[11px] text-[#6b7280] border-b border-[#e5e7eb]">
-                      <th className="pb-2 font-medium">Date</th>
-                      <th className="pb-2 font-medium">Candidate</th>
-                      <th className="pb-2 font-medium">Role</th>
-                      <th className="pb-2 font-medium">Opening</th>
-                      <th className="pb-2 font-medium">Kind</th>
-                      <th className="pb-2 font-medium">Score</th>
-                      <th className="pb-2 font-medium">Status</th>
+                      <th className="pb-2 font-medium">{t("interviews.date", { defaultValue: "Date" })}</th>
+                      <th className="pb-2 font-medium">{t("interviews.candidate", { defaultValue: "Candidate" })}</th>
+                      <th className="pb-2 font-medium">{t("interviews.role", { defaultValue: "Role" })}</th>
+                      <th className="pb-2 font-medium">{t("interviews.opening", { defaultValue: "Opening" })}</th>
+                      <th className="pb-2 font-medium">{t("interviews.kind", { defaultValue: "Kind" })}</th>
+                      <th className="pb-2 font-medium">{t("interviews.score", { defaultValue: "Score" })}</th>
+                      <th className="pb-2 font-medium">{t("interviews.status", { defaultValue: "Status" })}</th>
                     </tr>
                   </thead>
                   <tbody>

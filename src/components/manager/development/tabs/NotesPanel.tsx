@@ -46,6 +46,7 @@ import {
   useUpdateCoachingNote,
 } from "@/hooks/manager/development"
 import { useDevSkin } from "../skin"
+import { useTranslation } from "react-i18next"
 
 const NOTE_KINDS: CoachingNoteKind[] = ["observation", "plan", "outcome"]
 
@@ -80,8 +81,9 @@ function KindPicker({
   onChange: (kind: CoachingNoteKind) => void
   idPrefix: string
 }) {
+  const { t } = useTranslation("managerPages")
   return (
-    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Note kind">
+    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("notesPanel.noteKind", { defaultValue: "Note kind" })}>
       {NOTE_KINDS.map((kind) => (
         <Button
           key={`${idPrefix}-${kind}`}
@@ -111,8 +113,9 @@ export type NotesPanelProps = {
 }
 
 export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }: NotesPanelProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
-  const who = memberName?.trim() || "this member"
+  const who = memberName?.trim() || t("notesPanel.thisMember", { defaultValue: "this member" })
 
   const { data: notes, isLoading, isError } = useMemberNotes(memberId)
   const create = useCreateCoachingNote(memberId)
@@ -142,9 +145,9 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
       // costs the note twice.
       setBody("")
       setAbout("none")
-      toast.success("Note saved.")
+      toast.success(t("notesPanel.noteSaved", { defaultValue: "Note saved." }))
     } catch (err) {
-      const message = apiErrorMessage(err, "That note wasn't saved. Nothing was recorded.")
+      const message = apiErrorMessage(err, t("notesPanel.thatNoteWasnTSavedNothing", { defaultValue: "That note wasn't saved. Nothing was recorded." }))
       setComposerError(message)
       toast.error(message)
     }
@@ -165,9 +168,9 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
       // untouched. Sending `null` would CLEAR it.
       await update.mutateAsync({ noteId, input: { kind: editKind, body: text } })
       setEditingId(null)
-      toast.success("Note updated.")
+      toast.success(t("notesPanel.noteUpdated", { defaultValue: "Note updated." }))
     } catch (err) {
-      toast.error(apiErrorMessage(err, "That edit wasn't saved. The note is unchanged."))
+      toast.error(apiErrorMessage(err, t("notesPanel.thatEditWasnTSavedThe", { defaultValue: "That edit wasn't saved. The note is unchanged." })))
     }
   }
 
@@ -175,11 +178,11 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
     try {
       await remove.mutateAsync(noteId)
       setConfirmingDeleteId(null)
-      toast.success("Note deleted.")
+      toast.success(t("notesPanel.noteDeleted", { defaultValue: "Note deleted." }))
     } catch (err) {
       // A 404 here reads "no such note" — never "not allowed", which would tell
       // the caller somebody else's note exists.
-      toast.error(apiErrorMessage(err, "That note is no longer there."))
+      toast.error(apiErrorMessage(err, t("notesPanel.thatNoteIsNoLongerThere", { defaultValue: "That note is no longer there." })))
     }
   }
 
@@ -187,10 +190,7 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
     <div className="space-y-4">
       <p className={cn("flex items-start gap-1.5 rounded-md p-2.5 text-[11px]", sk.bgMuted50, sk.text500)}>
         <Lock className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", sk.text400)} aria-hidden="true" />
-        <span>
-          Only you can see these notes. They are not shared with {who}, with their other coaches, or
-          with anyone who inherits the report.
-        </span>
+        <span>{t("notesPanel.onlyYouCanSeeThese", { defaultValue: "Only you can see these notes. They are not shared with {{who}}, with their other coaches, or with anyone who inherits the report.", who })}</span>
       </p>
 
       {/* Composer */}
@@ -198,7 +198,7 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
         <CardContent className="space-y-3 p-4">
           <form
             className="space-y-3"
-            aria-label="Write a note"
+            aria-label={t("notesPanel.writeANote", { defaultValue: "Write a note" })}
             onSubmit={(e) => {
               e.preventDefault()
               void submitNew()
@@ -208,39 +208,33 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder={`What you observed, what you plan, or what came of it. Only you read this.`}
+              placeholder={t("notesPanel.whatYouObservedWhatYou", { defaultValue: "What you observed, what you plan, or what came of it. Only you read this." })}
               rows={3}
               className="text-sm"
-              aria-label="Note body"
+              aria-label={t("notesPanel.noteBody", { defaultValue: "Note body" })}
             />
             {/* ONE picker, so "a goal or a milestone, not both" cannot be sent. */}
             <div className="flex flex-wrap items-center gap-2">
-              <label className={cn("text-xs font-medium", sk.text600)} htmlFor="note-about">
-                About
-              </label>
+              <label className={cn("text-xs font-medium", sk.text600)} htmlFor="note-about">{t("notesPanel.about", { defaultValue: "About" })}</label>
               <select
                 id="note-about"
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
                 className={cn("rounded-md border px-2 py-1.5 text-xs", sk.border200, sk.text700)}
               >
-                <option value="none">Nothing in particular</option>
+                <option value="none">{t("notesPanel.nothingInParticular", { defaultValue: "Nothing in particular" })}</option>
                 {goals.map((g) => (
-                  <option key={g.goalId} value={`goal:${g.goalId}`}>
-                    Goal: {g.title}
-                  </option>
+                  <option key={g.goalId} value={`goal:${g.goalId}`}>{t("notesPanel.goal", { defaultValue: "Goal: {{title}}", title: g.title })}</option>
                 ))}
                 {milestones.map((m) => (
-                  <option key={m.milestoneId} value={`milestone:${m.milestoneId}`}>
-                    Milestone: {m.title}
-                  </option>
+                  <option key={m.milestoneId} value={`milestone:${m.milestoneId}`}>{t("notesPanel.milestone", { defaultValue: "Milestone: {{title}}", title: m.title })}</option>
                 ))}
               </select>
             </div>
             <div className="flex items-center gap-2">
               <Button type="submit" size="sm" disabled={create.isPending || body.trim().length === 0}>
                 <NotebookPen className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-                {create.isPending ? "Saving…" : "Save note"}
+                {create.isPending ? t("notesPanel.saving", { defaultValue: "Saving…" }) : t("notesPanel.saveNote", { defaultValue: "Save note" })}
               </Button>
             </div>
           </form>
@@ -257,26 +251,22 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
 
       {/* List */}
       {isLoading ? (
-        <div className={cn("py-10 text-center text-sm", sk.text400)}>Loading notes…</div>
+        <div className={cn("py-10 text-center text-sm", sk.text400)}>{t("notesPanel.loadingNotes", { defaultValue: "Loading notes…" })}</div>
       ) : isError ? (
         <Card className="border-dashed">
-          <CardContent className={cn("p-6 text-center text-sm", sk.text500)} role="alert">
-            Couldn&rsquo;t load your notes for {who}. Nothing has been lost — try again.
-          </CardContent>
+          <CardContent className={cn("p-6 text-center text-sm", sk.text500)} role="alert">{t("notesPanel.couldnTLoadYourNotes", { defaultValue: "Couldn’t load your notes for {{who}}. Nothing has been lost — try again.", who })}</CardContent>
         </Card>
       ) : (notes?.length ?? 0) === 0 ? (
         <Card className="border-dashed">
-          <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
-            You haven&rsquo;t written any notes about {who} yet.
-          </CardContent>
+          <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>{t("notesPanel.youHavenTWrittenAny", { defaultValue: "You haven’t written any notes about {{who}} yet.", who })}</CardContent>
         </Card>
       ) : (
-        <ul className="space-y-3" aria-label="Your notes about this member">
+        <ul className="space-y-3" aria-label={t("notesPanel.yourNotesAboutThisMember", { defaultValue: "Your notes about this member" })}>
           {notes?.map((note) => {
             const aboutLine = note.goalId
-              ? `Goal: ${goalTitle.get(note.goalId) ?? note.goalId}`
+              ? t("notesPanel.goalAbout", { defaultValue: "Goal: {{name}}", name: goalTitle.get(note.goalId) ?? note.goalId })
               : note.milestoneId
-                ? `Milestone: ${milestoneTitle.get(note.milestoneId) ?? note.milestoneId}`
+                ? t("notesPanel.milestoneAbout", { defaultValue: "Milestone: {{name}}", name: milestoneTitle.get(note.milestoneId) ?? note.milestoneId })
                 : ""
             const when = formatNoteDate(note.createdAt)
             return (
@@ -294,7 +284,7 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
                     {editingId === note.id ? (
                       <form
                         className="space-y-2"
-                        aria-label="Edit this note"
+                        aria-label={t("notesPanel.editThisNote", { defaultValue: "Edit this note" })}
                         onSubmit={(e) => {
                           e.preventDefault()
                           void submitEdit(note.id)
@@ -306,7 +296,7 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
                           onChange={(e) => setEditBody(e.target.value)}
                           rows={3}
                           className="text-sm"
-                          aria-label="Edit note body"
+                          aria-label={t("notesPanel.editNoteBody", { defaultValue: "Edit note body" })}
                         />
                         <div className="flex gap-2">
                           <Button
@@ -314,11 +304,9 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
                             size="sm"
                             disabled={update.isPending || editBody.trim().length === 0}
                           >
-                            {update.isPending ? "Saving…" : "Save changes"}
+                            {update.isPending ? t("notesPanel.saving", { defaultValue: "Saving…" }) : t("notesPanel.saveChanges", { defaultValue: "Save changes" })}
                           </Button>
-                          <Button type="button" size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                            Cancel
-                          </Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t("notesPanel.cancel", { defaultValue: "Cancel" })}</Button>
                         </div>
                       </form>
                     ) : (
@@ -326,9 +314,7 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
                         <p className={cn("whitespace-pre-wrap text-sm", sk.text700)}>{note.body}</p>
                         {confirmingDeleteId === note.id ? (
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className={cn("text-xs", sk.text600)}>
-                              Delete this note? It cannot be recovered.
-                            </span>
+                            <span className={cn("text-xs", sk.text600)}>{t("notesPanel.deleteThisNoteItCannot", { defaultValue: "Delete this note? It cannot be recovered." })}</span>
                             <Button
                               type="button"
                               size="sm"
@@ -336,32 +322,26 @@ export function NotesPanel({ memberId, memberName, goals = [], milestones = [] }
                               disabled={remove.isPending}
                               onClick={() => void submitDelete(note.id)}
                             >
-                              {remove.isPending ? "Deleting…" : "Delete note"}
+                              {remove.isPending ? t("notesPanel.deleting", { defaultValue: "Deleting…" }) : t("notesPanel.deleteNote", { defaultValue: "Delete note" })}
                             </Button>
                             <Button
                               type="button"
                               size="sm"
                               variant="ghost"
                               onClick={() => setConfirmingDeleteId(null)}
-                            >
-                              Keep it
-                            </Button>
+                            >{t("notesPanel.keepIt", { defaultValue: "Keep it" })}</Button>
                           </div>
                         ) : (
                           <div className="flex gap-2">
                             <Button type="button" size="sm" variant="ghost" onClick={() => beginEdit(note)}>
-                              <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-                              Edit
-                            </Button>
+                              <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden="true" />{t("notesPanel.edit", { defaultValue: "Edit" })}</Button>
                             <Button
                               type="button"
                               size="sm"
                               variant="ghost"
                               onClick={() => setConfirmingDeleteId(note.id)}
                             >
-                              <Trash2 className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-                              Delete
-                            </Button>
+                              <Trash2 className="mr-1 h-3.5 w-3.5" aria-hidden="true" />{t("notesPanel.delete", { defaultValue: "Delete" })}</Button>
                           </div>
                         )}
                       </>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import type { SimpleKind, UploadedFile, UploadDocumentsModalProps } from "@/types/documents";
 import { useDocumentUploadMulti } from "@/hooks/documents/useDocumentUpload";
+import { useTranslation } from "react-i18next"
 
 // Category selection removed per requirement
 
@@ -16,6 +17,7 @@ function kindFromName(name: string): SimpleKind {
 }
 
 export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }: UploadDocumentsModalProps) {
+  const { t: tr } = useTranslation("studioUi")
   type Step = "form" | "progress" | "complete";
   const [step, setStep] = useState<Step>("form");
   const [dragOver, setDragOver] = useState(false);
@@ -214,8 +216,8 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
       <DialogContent className="w-[min(640px,calc(100vw-2rem))] max-h-[85vh] p-0" showCloseButton={false}>
         {step === "form" && (
           <div className="p-6 max-h-[75vh] overflow-y-auto">
-            <div className="mb-1 text-xl font-semibold">Upload Documents</div>
-            <div className="text-sm text-muted-foreground mb-5">Please upload a document for analysis.</div>
+            <div className="mb-1 text-xl font-semibold">{tr("user.documentsUploadDocumentsModal.uploadDocuments", { defaultValue: "Upload Documents" })}</div>
+            <div className="text-sm text-muted-foreground mb-5">{tr("user.documentsUploadDocumentsModal.pleaseUploadADocumentFor", { defaultValue: "Please upload a document for analysis." })}</div>
 
             {/* Category selection removed */}
 
@@ -223,7 +225,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
             <div
               className={`mt-4 rounded-xl border-2 border-dashed ${dragOver ? "border-blue-400 bg-blue-50/40" : "border-gray-300"} p-6`}
               role="region"
-              aria-label="Documents drop zone"
+              aria-label={tr("user.documentsUploadDocumentsModal.documentsDropZone", { defaultValue: "Documents drop zone" })}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
@@ -234,11 +236,11 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
               <div className="flex flex-col items-center justify-center text-center gap-3">
                 <Upload className="size-8 text-blue-primary" />
                 <div className="text-sm text-muted-foreground">
-                  Drag & drop your files here
+                  {tr("user.documentsUploadDocumentsModal.dragDropYourFilesHere", { defaultValue: "Drag & drop your files here" })}
                 </div>
-                <div className="text-xs text-muted-foreground">OR</div>
+                <div className="text-xs text-muted-foreground">{tr("user.documentsUploadDocumentsModal.or", { defaultValue: "OR" })}</div>
                 <Button type="button" className="h-9 bg-blue-primary hover:bg-blue-primary/90" onClick={onPickFiles}>
-                  Browse files
+                  {tr("user.documentsUploadDocumentsModal.browseFiles", { defaultValue: "Browse files" })}
                 </Button>
                 <input
                   ref={inputRef}
@@ -275,14 +277,14 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
                 className="h-10 rounded-lg bg-gray-100 hover:bg-gray-100 text-foreground"
                 onClick={() => onOpenChange(false)}
               >
-                Cancel
+                {tr("user.documentsUploadDocumentsModal.cancel", { defaultValue: "Cancel" })}
               </Button>
               <Button
                 disabled={!isReadyToUpload}
                 className="h-10 rounded-lg bg-blue-primary hover:bg-blue-primary/90"
                 onClick={onUpload}
               >
-                Upload
+                {tr("user.documentsUploadDocumentsModal.upload", { defaultValue: "Upload" })}
                 <Upload className="size-4 ml-2" />
               </Button>
             </div>
@@ -294,7 +296,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
             {uploadError ? (
               <button
                 type="button"
-                aria-label="Close"
+                aria-label={tr("user.documentsUploadDocumentsModal.close", { defaultValue: "Close" })}
                 className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
                 onClick={() => onOpenChange(false)}
               >
@@ -303,7 +305,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
             ) : null}
             <Upload className="size-7 text-blue-primary" />
             {uploadError ? (
-              <div className="text-lg font-semibold text-red-600">Something went wrong</div>
+              <div className="text-lg font-semibold text-red-600">{tr("user.documentsUploadDocumentsModal.somethingWentWrong", { defaultValue: "Something went wrong" })}</div>
             ) : (
               (() => {
                 const nearing = ["text-blue-600", "text-amber-600", "text-violet-600"][colorIndex] || "";
@@ -331,9 +333,9 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
               })()
             )}
             {uploadError ? (
-              <div className="text-sm text-muted-foreground">The uploaded document may not be in a supported format or is too large. Please check the file and try again.</div>
+              <div className="text-sm text-muted-foreground">{tr("user.documentsUploadDocumentsModal.theUploadedDocumentMayNot", { defaultValue: "The uploaded document may not be in a supported format or is too large. Please check the file and try again." })}</div>
             ) : (
-              <div className="text-sm text-muted-foreground">This might take a few seconds. Please don't close this window while uploading.</div>
+              <div className="text-sm text-muted-foreground">{tr("user.documentsUploadDocumentsModal.thisMightTakeAFew", { defaultValue: "This might take a few seconds. Please don't close this window while uploading." })}</div>
             )}
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
@@ -348,7 +350,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
             ) : null}
             {!uploadError ? (
               <Button variant="secondary" className="bg-gray-100 hover:bg-gray-100 text-foreground w-full" onClick={() => handleOpenChange(false)}>
-                Cancel
+                {tr("user.documentsUploadDocumentsModal.cancel", { defaultValue: "Cancel" })}
               </Button>
             ) : null}
           </div>
@@ -357,10 +359,10 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
         {step === "complete" && (
           <div className="p-10 flex flex-col items-center text-center gap-5">
             <Upload className="size-7 text-blue-primary" />
-            <div className="text-lg font-semibold">Document Uploaded</div>
-            <div className="text-sm text-muted-foreground">Document Uploaded successfully!</div>
+            <div className="text-lg font-semibold">{tr("user.documentsUploadDocumentsModal.documentUploaded", { defaultValue: "Document Uploaded" })}</div>
+            <div className="text-sm text-muted-foreground">{tr("user.documentsUploadDocumentsModal.documentUploadedSuccessfully", { defaultValue: "Document Uploaded successfully!" })}</div>
             <Button variant="secondary" className="bg-gray-100 hover:bg-gray-100 text-foreground w-full" onClick={() => onOpenChange(false)}>
-              Back
+              {tr("user.documentsUploadDocumentsModal.back", { defaultValue: "Back" })}
             </Button>
           </div>
         )}

@@ -8,6 +8,7 @@
  * is a future change.
  */
 
+import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,6 +93,9 @@ function pickLatestValue(
 }
 
 export default function PersonalDataSettings() {
+  const { t } = useTranslation("shellUi");
+  const rowLabel = (row: Row) => t(`personalData.rows.${row.key}.label`, { defaultValue: row.label });
+  const rowPlaceholder = (row: Row) => t(`personalData.rows.${row.key}.placeholder`, { defaultValue: row.placeholder });
   const { data: profile, isLoading } = useMyProfile();
   const createFact = useCreateFact();
 
@@ -119,7 +123,7 @@ export default function PersonalDataSettings() {
     const rowKey = `${row.category}.${row.key}`;
     const value = (values[rowKey] ?? "").trim();
     if (!value) {
-      toast.error(`${row.label} is empty.`);
+      toast.error(t("personalData.rowEmpty", { defaultValue: "{{label}} is empty.", label: rowLabel(row) }));
       return;
     }
     setSavingKey(rowKey);
@@ -130,13 +134,13 @@ export default function PersonalDataSettings() {
         value,
         source: "user_input",
       });
-      toast.success(`${row.label} saved.`);
+      toast.success(t("personalData.rowSaved", { defaultValue: "{{label}} saved.", label: rowLabel(row) }));
     } catch (err) {
       const msg =
         (err as { response?: { data?: { message?: string } }; message?: string })
           .response?.data?.message ??
         (err as Error).message ??
-        "Failed to save.";
+        t("personalData.saveFailed", { defaultValue: "Failed to save." });
       toast.error(msg);
     } finally {
       setSavingKey(null);
@@ -160,10 +164,10 @@ export default function PersonalDataSettings() {
       // lands (separate PR) this hook can fire a POST to the agent-engine
       // that parses doc → facts and the profile snapshot will auto-refresh.
       console.debug("TODO: server-side fact extraction not wired yet", doc);
-      toast.success(`Uploaded ${resumeFile.name}.`);
+      toast.success(t("personalData.uploaded", { defaultValue: "Uploaded {{name}}.", name: resumeFile.name }));
       setResumeFile(null);
     } catch (err) {
-      const msg = (err as Error).message ?? "Upload failed.";
+      const msg = (err as Error).message ?? t("personalData.uploadFailed", { defaultValue: "Upload failed." });
       toast.error(msg);
     }
   };
@@ -181,10 +185,9 @@ export default function PersonalDataSettings() {
   return (
     <Card className="shadow-sm" data-testid="personal-data-settings">
       <CardHeader className="text-left">
-        <CardTitle className="text-lg font-semibold">Personal Data</CardTitle>
+        <CardTitle className="text-lg font-semibold">{t("personalData.title", { defaultValue: "Personal Data" })}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Share a short profile so Meridian can be more useful. Each row saves
-          individually — only fields you fill in are stored.
+          {t("personalData.description", { defaultValue: "Share a short profile so Meridian can be more useful. Each row saves individually — only fields you fill in are stored." })}
         </p>
       </CardHeader>
       <CardContent className="space-y-5 text-left">
@@ -196,12 +199,12 @@ export default function PersonalDataSettings() {
           const inputId = `pds-${row.category}-${row.key}`;
           return (
             <div key={rowKey} className="space-y-2">
-              <Label htmlFor={inputId}>{row.label}</Label>
+              <Label htmlFor={inputId}>{rowLabel(row)}</Label>
               {row.multiline ? (
                 <Textarea
                   id={inputId}
                   rows={row.key === "summary" ? 3 : 4}
-                  placeholder={row.placeholder}
+                  placeholder={rowPlaceholder(row)}
                   value={value}
                   disabled={isLoading || isSaving}
                   onChange={(e) =>
@@ -212,7 +215,7 @@ export default function PersonalDataSettings() {
                 <Input
                   id={inputId}
                   type="text"
-                  placeholder={row.placeholder}
+                  placeholder={rowPlaceholder(row)}
                   value={value}
                   disabled={isLoading || isSaving}
                   onChange={(e) => handleChange(rowKey, e.target.value)}
@@ -221,7 +224,7 @@ export default function PersonalDataSettings() {
               <div className="flex items-center justify-between">
                 {row.maxChars !== undefined ? (
                   <span className="text-xs text-muted-foreground">
-                    {remaining ?? 0} characters left
+                    {t("personalData.charactersLeft", { defaultValue: "{{n}} characters left", n: remaining ?? 0 })}
                   </span>
                 ) : (
                   <span />
@@ -237,7 +240,7 @@ export default function PersonalDataSettings() {
                   ) : (
                     <Save className="mr-1.5 h-4 w-4" />
                   )}
-                  Save
+                  {t("personalData.save", { defaultValue: "Save" })}
                 </Button>
               </div>
             </div>
@@ -246,7 +249,7 @@ export default function PersonalDataSettings() {
 
         {/* Resume upload — optional, preserves existing upload pipeline. */}
         <div className="space-y-2 pt-2 border-t">
-          <Label htmlFor="pds-resume">Upload resume (optional)</Label>
+          <Label htmlFor="pds-resume">{t("personalData.uploadResume", { defaultValue: "Upload resume (optional)" })}</Label>
           <div className="flex items-center gap-2 flex-wrap">
             <Input
               id="pds-resume"
@@ -266,12 +269,11 @@ export default function PersonalDataSettings() {
               ) : (
                 <Upload className="mr-1.5 h-4 w-4" />
               )}
-              Upload
+              {t("personalData.upload", { defaultValue: "Upload" })}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            We store the file and (soon) auto-extract role / industry / skills.
-            For now you can still upload — extraction will be wired in a follow-up.
+            {t("personalData.resumeNote", { defaultValue: "We store the file and (soon) auto-extract role / industry / skills. For now you can still upload — extraction will be wired in a follow-up." })}
           </p>
         </div>
       </CardContent>

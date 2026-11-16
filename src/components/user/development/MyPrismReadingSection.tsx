@@ -41,6 +41,7 @@ import apiErrorMessage from "@/lib/apiErrorMessage"
 import { useMyFullPrism } from "@/hooks/me/useMyDevelopment"
 import type { FullPrismScale } from "@/types/development"
 import SelfSection from "./SelfSection"
+import { useTranslation } from "react-i18next"
 
 /** How many of the missing scale names to name before summarising the rest. */
 const MISSING_SHOWN = 6
@@ -65,13 +66,14 @@ function groupScales(scales: FullPrismScale[]): [string, FullPrismScale[]][] {
  * indistinguishable from a measured one.
  */
 function ScaleRow({ scale }: { scale: FullPrismScale }) {
+  const { t } = useTranslation("studioUi")
   const entries = Object.entries(scale.scores ?? {})
   return (
     <li className="flex items-baseline justify-between gap-3 py-1 text-sm">
       <span className="min-w-0 truncate">{scale.label || scale.key}</span>
       <span className="shrink-0 tabular-nums text-muted-foreground">
         {entries.length === 0
-          ? "not scored"
+          ? t("user.developmentMyPrismReadingSection.notScored", { defaultValue: "not scored" })
           : entries.map(([type, value]) => `${type} ${value}`).join(" · ")}
       </span>
     </li>
@@ -79,6 +81,7 @@ function ScaleRow({ scale }: { scale: FullPrismScale }) {
 }
 
 export default function MyPrismReadingSection() {
+  const { t } = useTranslation("studioUi")
   const profile = useMyFullPrism()
   const data = profile.data ?? null
 
@@ -92,7 +95,7 @@ export default function MyPrismReadingSection() {
   return (
     <SelfSection
       id="my-prism"
-      title="My PRISM reading"
+      title={t("user.developmentMyPrismReadingSection.myPrismReading", { defaultValue: "My PRISM reading" })}
       icon={Brain}
       lead="Every PRISM scale on file for you — not the eight behaviours, the full rubric."
       isLoading={profile.isLoading}
@@ -112,7 +115,7 @@ export default function MyPrismReadingSection() {
            no coverage line. */
         <div role="alert" className="space-y-1 rounded-md border border-destructive/40 p-4">
           <p className="text-sm font-medium text-destructive">
-            We can&apos;t show your reading.
+            {t("user.developmentMyPrismReadingSection.weCanTShowYour", { defaultValue: "We can't show your reading." })}
           </p>
           <p className="text-sm text-muted-foreground">
             {data.conflictMessage ||
@@ -123,8 +126,8 @@ export default function MyPrismReadingSection() {
         data && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{data.coverage} scales on file</Badge>
-              {data.fromLegacyRows && <Badge variant="outline">From an older record</Badge>}
+              <Badge variant="secondary">{t("user.developmentMyPrismReadingSection.scalesOnFile", { defaultValue: "{{coverage}} scales on file", coverage: data.coverage })}</Badge>
+              {data.fromLegacyRows && <Badge variant="outline">{t("user.developmentMyPrismReadingSection.fromAnOlderRecord", { defaultValue: "From an older record" })}</Badge>}
             </div>
             {/* Said plainly rather than implied: a partial profile is normal,
                 and the person is entitled to know which parts are absent
@@ -141,7 +144,7 @@ export default function MyPrismReadingSection() {
             {data.colours && Object.keys(data.colours).length > 0 && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Your quadrant means
+                  {t("user.developmentMyPrismReadingSection.yourQuadrantMeans", { defaultValue: "Your quadrant means" })}
                 </p>
                 <ul className="mt-1">
                   {Object.entries(data.colours).map(([name, value]) => (

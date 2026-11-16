@@ -41,6 +41,7 @@ import type {
   BulkImportStep,
   ImportedUser,
 } from "@/types/bulk-import"
+import { useTranslation } from "react-i18next"
 
 // ── Steps config ──
 const STEPS: { key: BulkImportStep; label: string; icon: typeof Upload }[] = [
@@ -124,6 +125,7 @@ function stepIndex(step: BulkImportStep): number {
 
 // ── Component ──
 export default function ManagerBulkImport() {
+  const { t } = useTranslation("managerPages")
   const [state, dispatch] = useReducer(reducer, initialState)
   const currentIdx = stepIndex(state.currentStep)
 
@@ -210,10 +212,8 @@ export default function ManagerBulkImport() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Bulk Team Import</h1>
-            <p className="text-muted-foreground">
-              Upload a file to import team members and send invitation emails
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight">{t("bulkImport.bulkTeamImport", { defaultValue: "Bulk Team Import" })}</h1>
+            <p className="text-muted-foreground">{t("bulkImport.uploadAFileToImport", { defaultValue: "Upload a file to import team members and send invitation emails" })}</p>
           </div>
           <div className="flex items-center gap-2">
             {/*
@@ -227,9 +227,7 @@ export default function ManagerBulkImport() {
             */}
             <JoinRequestsButton />
             {state.currentStep !== "upload" && (
-              <Button variant="outline" size="sm" onClick={() => dispatch({ type: "RESET" })}>
-                Start Over
-              </Button>
+              <Button variant="outline" size="sm" onClick={() => dispatch({ type: "RESET" })}>{t("bulkImport.startOver", { defaultValue: "Start Over" })}</Button>
             )}
           </div>
         </div>
@@ -284,9 +282,7 @@ export default function ManagerBulkImport() {
             size="sm"
             onClick={() => dispatch({ type: "GO_TO_STEP", step: STEPS[currentIdx - 1].key })}
           >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Back
-          </Button>
+            <ChevronLeft className="mr-1 h-4 w-4" />{t("bulkImport.back", { defaultValue: "Back" })}</Button>
         )}
 
         {/* Step content */}
@@ -302,15 +298,8 @@ export default function ManagerBulkImport() {
                 className="mt-0.5"
               />
               <span className="space-y-1 leading-tight">
-                <span className="block text-sm font-medium">
-                  Skip onboarding for this batch
-                </span>
-                <span className="block text-xs text-muted-foreground">
-                  Provisions every imported user already onboarded and emails a
-                  one-click magic sign-in link instead of a password-setup
-                  invitation (no compose/send step). For demo cohorts on
-                  Dev/Staging — rejected in production.
-                </span>
+                <span className="block text-sm font-medium">{t("bulkImport.skipOnboardingForThisBatch", { defaultValue: "Skip onboarding for this batch" })}</span>
+                <span className="block text-xs text-muted-foreground">{t("bulkImport.provisionsEveryImportedUserAlready", { defaultValue: "Provisions every imported user already onboarded and emails a one-click magic sign-in link instead of a password-setup invitation (no compose/send step). For demo cohorts on Dev/Staging — rejected in production." })}</span>
               </span>
             </label>
           </div>
@@ -388,6 +377,7 @@ export default function ManagerBulkImport() {
  * no route to their own queue and nothing indicating one exists.
  */
 function JoinRequestsButton() {
+  const { t } = useTranslation("managerPages")
   const { user } = useAuth()
   const orgId = (user as { org_id?: string } | null)?.org_id
   const { data } = useJoinRequestQueue(orgId)
@@ -396,12 +386,10 @@ function JoinRequestsButton() {
   return (
     <Button asChild variant="outline" size="sm">
       <Link to={ROUTES.MANAGER.JOIN_REQUESTS}>
-        <Inbox className="mr-2 h-4 w-4" aria-hidden />
-        Join Requests
-        {pending > 0 && (
+        <Inbox className="mr-2 h-4 w-4" aria-hidden />{t("bulkImport.joinRequests", { defaultValue: "Join Requests" })}{pending > 0 && (
           <span
             className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-medium text-white"
-            aria-label={`${pending} pending`}
+            aria-label={t("bulkImport.pending", { defaultValue: "{{pending}} pending", pending })}
           >
             {pending}
           </span>

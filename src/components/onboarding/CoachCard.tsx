@@ -11,6 +11,7 @@ import { useCoachAudioPreview } from "@/hooks/useCoachAudioPreview";
 import { useQueryClient } from "@tanstack/react-query";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next"
 
 const AUDIO_ICON: Record<string, ReactNode> = {
   starting: <Loader2 className="h-5 w-5 animate-spin" />,
@@ -43,6 +44,7 @@ export default function CoachCard({
   activeAgentPhase,
   setActiveAgentPhase,
 }: CoachCardProps) {
+  const { t: tr } = useTranslation("studioUi")
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
   const {
@@ -121,7 +123,7 @@ export default function CoachCard({
         <button
           type="button"
           className="text-muted-foreground hover:text-foreground rounded-full p-1"
-          aria-label="Help"
+          aria-label={tr("onboarding.coachCard.help", { defaultValue: "Help" })}
         >
           <CircleQuestionMark className="h-4 w-4" />
         </button>
@@ -130,14 +132,14 @@ export default function CoachCard({
       {/* Fields */}
       <div className="mt-4 space-y-3 text-sm">
         <div>
-          <div className="text-muted-foreground mb-1">Gender</div>
+          <div className="text-muted-foreground mb-1">{tr("onboarding.coachCard.gender", { defaultValue: "Gender" })}</div>
           {isEditing && submitting && (
             <Skeleton className="h-10 w-full rounded-xl" />
           )}
           {isEditing && !submitting && (
             <Select value={g} onValueChange={(v) => setValue("genderId", v, { shouldDirty: true })}>
               <SelectTrigger className="h-11 w-full rounded-xl bg-gray-100 border border-gray-10">
-                <SelectValue placeholder="Select gender" />
+                <SelectValue placeholder={tr("onboarding.coachCard.selectGender", { defaultValue: "Select gender" })} />
               </SelectTrigger>
               <SelectContent>
                 {genders.map((opt) => (
@@ -153,14 +155,14 @@ export default function CoachCard({
           )}
         </div>
         <div>
-          <div className="text-muted-foreground mb-1">Voice Accent</div>
+          <div className="text-muted-foreground mb-1">{tr("onboarding.coachCard.voiceAccent", { defaultValue: "Voice Accent" })}</div>
           {isEditing && submitting && (
             <Skeleton className="h-10 w-full rounded-xl" />
           )}
           {isEditing && !submitting && (
             <Select value={a} onValueChange={(v) => setValue("accentId", v, { shouldDirty: true })}>
               <SelectTrigger className="h-11 w-full rounded-xl bg-gray-100 border border-gray-10">
-                <SelectValue placeholder="Select accent" />
+                <SelectValue placeholder={tr("onboarding.coachCard.selectAccent", { defaultValue: "Select accent" })} />
               </SelectTrigger>
               <SelectContent>
                 {accents.map((opt) => (
@@ -176,7 +178,7 @@ export default function CoachCard({
           )}
         </div>
         <div>
-          <div className="text-muted-foreground mb-1">Voice Tone</div>
+          <div className="text-muted-foreground mb-1">{tr("onboarding.coachCard.voiceTone", { defaultValue: "Voice Tone" })}</div>
           {isEditing && submitting && (
             <Skeleton className="h-10 w-full rounded-xl" />
           )}
@@ -185,7 +187,7 @@ export default function CoachCard({
                 value={t}
                 onChange={(vals) => setValue("toneIds", vals, { shouldDirty: true })}
                 options={tones}
-                placeholder="Select tones"
+                placeholder={tr("onboarding.coachCard.selectTones", { defaultValue: "Select tones" })}
                 className="rounded-xl"
                 maxVisible={2}
               />
@@ -221,7 +223,7 @@ export default function CoachCard({
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <span className="text-xs">if any changes are made, Save and play</span>
+                <span className="text-xs">{tr("onboarding.coachCard.ifAnyChangesAreMade", { defaultValue: "if any changes are made, Save and play" })}</span>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -262,7 +264,7 @@ export default function CoachCard({
                 setIsEditing(false);
               }}
             >
-              Cancel
+              {tr("onboarding.coachCard.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button
               type="submit"
@@ -283,7 +285,7 @@ export default function CoachCard({
             className="h-11 flex-1 rounded-xl bg-blue-10 hover:bg-blue-100 text-blue-primary"
             onClick={() => setIsEditing(true)}
           >
-            Edit
+            {tr("onboarding.coachCard.edit", { defaultValue: "Edit" })}
             <SquarePen className="h-4 w-4 ml-2" />
           </Button>
         )}

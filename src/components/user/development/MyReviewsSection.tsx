@@ -18,14 +18,16 @@ import apiErrorMessage from "@/lib/apiErrorMessage"
 import { useMyGoalReviews } from "@/hooks/summit/useMyGoals"
 import type { GoalReview } from "@/types/development"
 import SelfSection from "./SelfSection"
+import { useTranslation } from "react-i18next"
 
 function ReviewRow({ review }: { review: GoalReview }) {
+  const { t } = useTranslation("studioUi")
   return (
     <li className="space-y-1 rounded-md border border-border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium">{review.reviewerName || "Your coach"}</p>
         <Badge variant={review.ratified ? "secondary" : "outline"}>
-          {review.ratified ? "Agreed with this goal" : "Wants to talk it through"}
+          {review.ratified ? t("user.developmentMyReviewsSection.agreedWithThisGoal", { defaultValue: "Agreed with this goal" }) : t("user.developmentMyReviewsSection.wantsToTalkItThrough", { defaultValue: "Wants to talk it through" })}
         </Badge>
       </div>
       {review.comment ? (
@@ -33,20 +35,21 @@ function ReviewRow({ review }: { review: GoalReview }) {
       ) : (
         // A review row with no comment is a real state — the coach ratified
         // without writing anything — and saying so beats an empty paragraph.
-        <p className="text-sm italic text-muted-foreground">No comment left.</p>
+        <p className="text-sm italic text-muted-foreground">{t("user.developmentMyReviewsSection.noCommentLeft", { defaultValue: "No comment left." })}</p>
       )}
     </li>
   )
 }
 
 export default function MyReviewsSection() {
+  const { t } = useTranslation("studioUi")
   const reviews = useMyGoalReviews()
   const rows = reviews.data?.reviews ?? []
 
   return (
     <SelfSection
       id="my-reviews"
-      title="Coach reviews"
+      title={t("user.developmentMyReviewsSection.coachReviews", { defaultValue: "Coach reviews" })}
       icon={MessagesSquare}
       lead="What a coach wrote back about the goals you shared with them."
       isLoading={reviews.isLoading}

@@ -30,6 +30,7 @@ import { useDecideLinkRequest, useIncomingLinkRequests } from "@/hooks/summit/us
 import type { IncomingLinkRequest } from "@/services/manager/development/growthService"
 import { categoryLabels, codeOf, shortDate, statusOf } from "@/components/sharing/linkRequestCopy"
 import { useDevSkin } from "./skin"
+import { useTranslation } from "react-i18next"
 
 type Notice = { tone: "ok" | "error"; text: string }
 
@@ -52,6 +53,7 @@ function RequestRow({
   busy: boolean
   onDecide: (row: IncomingLinkRequest, action: "approve" | "decline") => void
 }) {
+  const { t: tm } = useTranslation("managerPages")
   const { t } = useDevelopmentText()
   const sk = useDevSkin()
   const [confirming, setConfirming] = useState(false)
@@ -61,7 +63,7 @@ function RequestRow({
   return (
     <li className={cn("flex flex-col gap-2 border-t py-3 first:border-t-0", sk.border200)} data-testid={`incoming-${row.id}`}>
       <div className="flex flex-wrap items-baseline gap-2">
-        <span className={cn("text-sm font-semibold", sk.text700)}>{row.memberName || "A member"}</span>
+        <span className={cn("text-sm font-semibold", sk.text700)}>{row.memberName || tm("linkRequestsPanel.aMember", { defaultValue: "A member" })}</span>
         {asked && (
           <span className={cn("text-xs", sk.text500)}>
             {t("dev.linkRequests.asked")} {asked}

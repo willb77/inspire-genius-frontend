@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 
 interface SearchBarProps {
@@ -6,9 +7,11 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ 
-  placeholder = "Search...", 
+  placeholder: placeholderProp, 
   onSearch 
 }: SearchBarProps) {
+  const { t } = useTranslation("shellUi");
+  const placeholder = placeholderProp ?? t("searchBar.placeholder", { defaultValue: "Search..." });
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearch?.(e.target.value);
   };
@@ -18,7 +21,7 @@ export default function SearchBar({
       <input
         type="text"
         placeholder={placeholder}
-        aria-label="Search"
+        aria-label={t("searchBar.ariaLabel", { defaultValue: "Search" })}
         onChange={handleInputChange}
         disabled={true}
         className="w-full border bg-gray-20 rounded-lg px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400"

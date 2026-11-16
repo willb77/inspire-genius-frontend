@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { tasksService, type TaskAgentResponse } from "@/services/tasks/tasks.service"
+import { useTranslation } from "react-i18next"
 
 interface Props {
   result: TaskAgentResponse
@@ -31,23 +32,24 @@ export default function TaskAgentResultCard({
   requestPayload,
   title,
 }: Props) {
+  const { t } = useTranslation("studioUi")
   const [saved, setSaved] = useState(false)
 
   const save = useMutation({
     mutationFn: tasksService.saveResult,
     onSuccess: () => {
       setSaved(true)
-      toast.success("Saved to your workspace.")
+      toast.success(t("tasks.taskAgentResultCard.savedToYourWorkspace", { defaultValue: "Saved to your workspace." }))
     },
     onError: (err: unknown) => {
       const message = err instanceof Error ? err.message : "Save failed"
-      toast.error(`Could not save: ${message}`)
+      toast.error(t("tasks.taskAgentResultCard.couldNotSave", { defaultValue: "Could not save: {{message}}", message }))
     },
   })
 
   const handleSave = () => {
     if (!taskSlug || !agentId) {
-      toast.error("Cannot save: missing task identity.")
+      toast.error(t("tasks.taskAgentResultCard.cannotSaveMissingTaskIdentity", { defaultValue: "Cannot save: missing task identity." }))
       return
     }
     save.mutate({
@@ -69,11 +71,11 @@ export default function TaskAgentResultCard({
           <CardTitle className="text-lg flex items-center gap-2">
             <span className="text-emerald-700">{result.agent_name}</span>
             <Badge variant="outline" className="text-xs font-normal">
-              confidence {Math.round(result.confidence * 100)}%
+              {t("tasks.taskAgentResultCard.confidence", { defaultValue: "confidence {{v1}}%", v1: Math.round(result.confidence * 100) })}
             </Badge>
             {typeof result.metadata?.elapsed_ms === "number" && (
               <Badge variant="outline" className="text-xs font-normal">
-                {Math.round(result.metadata.elapsed_ms as number)} ms
+                {t("tasks.taskAgentResultCard.ms", { defaultValue: "{{v1}} ms", v1: Math.round(result.metadata.elapsed_ms as number) })}
               </Badge>
             )}
           </CardTitle>
@@ -86,20 +88,20 @@ export default function TaskAgentResultCard({
 
         {result.suggested_next && (
           <div className="rounded-md bg-emerald-100/60 px-3 py-2 text-sm text-emerald-900">
-            <span className="font-medium">Suggested next:</span> {result.suggested_next}
+            <span className="font-medium">{t("tasks.taskAgentResultCard.suggestedNext", { defaultValue: "Suggested next:" })}</span> {result.suggested_next}
           </div>
         )}
 
         <div className="flex gap-2 pt-1">
           <Button variant="outline" onClick={onRerun}>
-            Re-run with different inputs
+            {t("tasks.taskAgentResultCard.reRunWithDifferentInputs", { defaultValue: "Re-run with different inputs" })}
           </Button>
           <Button
             onClick={handleSave}
             disabled={!canSave || save.isPending || saved}
           >
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {saved ? "Saved" : "Save to my workspace"}
+            {saved ? t("tasks.taskAgentResultCard.saved", { defaultValue: "Saved" }) : t("tasks.taskAgentResultCard.saveToMyWorkspace", { defaultValue: "Save to my workspace" })}
           </Button>
         </div>
       </CardContent>

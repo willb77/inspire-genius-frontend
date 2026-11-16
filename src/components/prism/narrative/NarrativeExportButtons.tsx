@@ -68,7 +68,7 @@ export default function NarrativeExportButtons({
         ) : (
           <FileDown className="mr-2 h-3.5 w-3.5" />
         )}
-        PDF
+        {t("studioUi:prism.narrativeNarrativeExportButtons.pdf", { defaultValue: "PDF" })}
       </Button>
       <Button variant="outline" size="sm" disabled={disabled || busy !== null} onClick={() => run("word")}>
         {busy === "word" ? (
@@ -76,7 +76,7 @@ export default function NarrativeExportButtons({
         ) : (
           <FileText className="mr-2 h-3.5 w-3.5" />
         )}
-        Word
+        {t("studioUi:prism.narrativeNarrativeExportButtons.word", { defaultValue: "Word" })}
       </Button>
     </div>
   )

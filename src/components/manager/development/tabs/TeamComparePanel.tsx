@@ -15,6 +15,7 @@ import { useStudioCast } from "@/hooks/manager/development/useStudioCast"
 import { useSavedRuns } from "@/hooks/manager/development/useSavedRuns"
 import { useTeamStudioCompare } from "@/hooks/useTeamStudio"
 import { TEAM_STUDIO_COMPARE_COPY } from "./studioCopy"
+import { useTranslation } from "react-i18next"
 
 /**
  * Team Development Studio's binding of the shared compare panel.
@@ -38,6 +39,7 @@ export function TeamComparePanel({
   memberId: string
   memberName: string
 }) {
+  const { t } = useTranslation("managerPages")
   const cast = useStudioCast()
   const port = useTeamStudioCompare(cast.port, cast.resolve)
   const store = useSavedRuns(memberId, "compare", SAVED_ANALYSIS_COPY.comparisonFallbackTitle)
@@ -101,10 +103,7 @@ export function TeamComparePanel({
   return (
     <div className="space-y-3">
       {cast.withoutPrism > 0 && (
-        <p className="text-xs text-slate-500">
-          {cast.withoutPrism} team member{cast.withoutPrism === 1 ? " is" : "s are"} not listed —
-          they have no PRISM on file. Invite them from the roster.
-        </p>
+        <p className="text-xs text-slate-500">{cast.withoutPrism === 1 ? t("teamComparePanel.withoutPrismOne", { defaultValue: "{{withoutPrism}} team member is not listed — they have no PRISM on file. Invite them from the roster.", withoutPrism: cast.withoutPrism }) : t("teamComparePanel.withoutPrismOther", { defaultValue: "{{withoutPrism}} team members are not listed — they have no PRISM on file. Invite them from the roster.", withoutPrism: cast.withoutPrism })}</p>
       )}
       <ComparePanel
         port={port}
@@ -130,7 +129,7 @@ export function TeamComparePanel({
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-base">{opened.title}</CardTitle>
-            <NarrativeExportButtons build={openedDoc} label="a comparison" />
+            <NarrativeExportButtons build={openedDoc} label={t("teamComparePanel.aComparison", { defaultValue: "a comparison" })} />
           </CardHeader>
           <CardContent>
             <ProfileMarkdown text={opened.body} />

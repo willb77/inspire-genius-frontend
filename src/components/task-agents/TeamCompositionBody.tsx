@@ -21,6 +21,7 @@ import { tasksService, type TaskAgentResponse } from "@/services/tasks/tasks.ser
 import TaskAgentResultCard from "@/components/tasks/TaskAgentResultCard"
 import CostEstimateBanner from "@/components/tasks/CostEstimateBanner"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 const schema = z.object({
   team_name: z.string().min(1, "Team name is required").max(255),
@@ -32,6 +33,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export default function TeamCompositionBody() {
+  const { t } = useTranslation("studioUi")
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
   const [lastRequest, setLastRequest] = useState<Record<string, unknown>>({})
 
@@ -49,11 +51,11 @@ export default function TeamCompositionBody() {
     mutationFn: tasksService.teamComposition,
     onSuccess: (data) => {
       setResult(data)
-      toast.success("Team composition analysis ready.")
+      toast.success(t("taskAgents.teamCompositionBody.teamCompositionAnalysisReady", { defaultValue: "Team composition analysis ready." }))
     },
     onError: (err: unknown) => {
       const message = err instanceof Error ? err.message : "Analysis failed"
-      toast.error(`Atlas (DashboardAgent) failed: ${message}`)
+      toast.error(t("taskAgents.teamCompositionBody.atlasDashboardagentFailed", { defaultValue: "Atlas (DashboardAgent) failed: {{message}}", message }))
     },
   })
 
@@ -66,7 +68,7 @@ export default function TeamCompositionBody() {
       ? values.target_skills.split(",").map((s) => s.trim()).filter(Boolean)
       : undefined
     if (memberSummaries.length === 0) {
-      toast.error("At least one member summary is required")
+      toast.error(t("taskAgents.teamCompositionBody.atLeastOneMemberSummary", { defaultValue: "At least one member summary is required" }))
       return
     }
     const payload = {
@@ -82,14 +84,14 @@ export default function TeamCompositionBody() {
   if (result) {
     return (
       <div className="mx-auto max-w-3xl py-8 space-y-4">
-        <h1 className="text-2xl font-semibold">Team Composition</h1>
+        <h1 className="text-2xl font-semibold">{t("taskAgents.teamCompositionBody.teamComposition", { defaultValue: "Team Composition" })}</h1>
         <TaskAgentResultCard
           result={result}
           onRerun={() => setResult(null)}
           taskSlug="team-composition"
           agentId="atlas"
           requestPayload={lastRequest}
-          title="Team composition"
+          title={t("taskAgents.teamCompositionBody.teamComposition2", { defaultValue: "Team composition" })}
         />
       </div>
     )
@@ -98,20 +100,20 @@ export default function TeamCompositionBody() {
   return (
     <div className="mx-auto max-w-3xl py-8 space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold">Team Composition</h1>
+        <h1 className="text-2xl font-semibold">{t("taskAgents.teamCompositionBody.teamComposition", { defaultValue: "Team Composition" })}</h1>
         <p className="text-sm text-slate-600">
-          Analyse a team's PRISM mix, skills, and gaps with Atlas (DashboardAgent).
+          {t("taskAgents.teamCompositionBody.analyseATeamSPrism", { defaultValue: "Analyse a team's PRISM mix, skills, and gaps with Atlas (DashboardAgent)." })}
         </p>
       </header>
 
       <Card>
         <CardHeader>
-          <CardTitle>Inputs</CardTitle>
+          <CardTitle>{t("taskAgents.teamCompositionBody.inputs", { defaultValue: "Inputs" })}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <Label htmlFor="team_name">Team name</Label>
+              <Label htmlFor="team_name">{t("taskAgents.teamCompositionBody.teamName", { defaultValue: "Team name" })}</Label>
               <Input id="team_name" {...form.register("team_name")} />
               {form.formState.errors.team_name && (
                 <p className="mt-1 text-xs text-red-600">{form.formState.errors.team_name.message}</p>
@@ -119,7 +121,7 @@ export default function TeamCompositionBody() {
             </div>
 
             <div>
-              <Label htmlFor="team_purpose">Team purpose</Label>
+              <Label htmlFor="team_purpose">{t("taskAgents.teamCompositionBody.teamPurpose", { defaultValue: "Team purpose" })}</Label>
               <Textarea id="team_purpose" rows={3} {...form.register("team_purpose")} />
               {form.formState.errors.team_purpose && (
                 <p className="mt-1 text-xs text-red-600">{form.formState.errors.team_purpose.message}</p>
@@ -128,7 +130,7 @@ export default function TeamCompositionBody() {
 
             <div>
               <Label htmlFor="member_summaries">
-                Member summaries (one per line)
+                {t("taskAgents.teamCompositionBody.memberSummariesOnePerLine", { defaultValue: "Member summaries (one per line)" })}
               </Label>
               <Textarea
                 id="member_summaries"
@@ -142,10 +144,10 @@ export default function TeamCompositionBody() {
             </div>
 
             <div>
-              <Label htmlFor="target_skills">Target skills (comma-separated, optional)</Label>
+              <Label htmlFor="target_skills">{t("taskAgents.teamCompositionBody.targetSkillsCommaSeparatedOptional", { defaultValue: "Target skills (comma-separated, optional)" })}</Label>
               <Input
                 id="target_skills"
-                placeholder="strategic thinking, async comms, data fluency"
+                placeholder={t("taskAgents.teamCompositionBody.strategicThinkingAsyncCommsData", { defaultValue: "strategic thinking, async comms, data fluency" })}
                 {...form.register("target_skills")}
               />
             </div>
@@ -155,10 +157,10 @@ export default function TeamCompositionBody() {
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Run Atlas
+                {t("taskAgents.teamCompositionBody.runAtlas", { defaultValue: "Run Atlas" })}
               </Button>
               <Button type="button" variant="outline" onClick={() => form.reset()}>
-                Reset
+                {t("taskAgents.teamCompositionBody.reset", { defaultValue: "Reset" })}
               </Button>
             </div>
           </form>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import type { ClientPrism } from "@/types/practitioner/coachClient"
 
 /** Canon order and names — PRISM has four colours, and Orange is not one. */
@@ -20,6 +21,7 @@ interface ClientPrismPanelProps {
  * must never read that as "this client has no PRISM".
  */
 export function ClientPrismPanel({ prism, clientName }: ClientPrismPanelProps) {
+  const { t } = useTranslation("practitionerPages")
   if (prism.state === "shared" && prism.colours) {
     const colours = prism.colours
     return (
@@ -43,7 +45,9 @@ export function ClientPrismPanel({ prism, clientName }: ClientPrismPanelProps) {
           )
         })}
         {prism.assessedAt && (
-          <p className="text-xs text-[#6b7280]">Assessed {formatDate(prism.assessedAt)}</p>
+          <p className="text-xs text-[#6b7280]">
+            {t("prismPanel.assessed", { date: formatDate(prism.assessedAt), defaultValue: "Assessed {{date}}" })}
+          </p>
         )}
       </div>
     )
@@ -52,8 +56,7 @@ export function ClientPrismPanel({ prism, clientName }: ClientPrismPanelProps) {
   if (prism.state === "not_shared") {
     return (
       <p className="text-sm text-[#6b7280]">
-        {clientName} hasn&rsquo;t shared their PRISM with you. They can share it from their
-        Sharing page.
+        {t("prismPanel.notShared", { name: clientName, defaultValue: "{{name}} hasn’t shared their PRISM with you. They can share it from their Sharing page." })}
       </p>
     )
   }
@@ -61,8 +64,7 @@ export function ClientPrismPanel({ prism, clientName }: ClientPrismPanelProps) {
   if (prism.state === "not_linked") {
     return (
       <p className="text-sm text-[#6b7280]">
-        {clientName} doesn&rsquo;t have a platform account linked to this client record yet, so
-        there is nothing for them to share.
+        {t("prismPanel.notLinked", { name: clientName, defaultValue: "{{name}} doesn’t have a platform account linked to this client record yet, so there is nothing for them to share." })}
       </p>
     )
   }
@@ -70,15 +72,14 @@ export function ClientPrismPanel({ prism, clientName }: ClientPrismPanelProps) {
   if (prism.state === "no_prism") {
     return (
       <p className="text-sm text-[#6b7280]">
-        {clientName} has shared their PRISM with you, but no report is on file yet.
+        {t("prismPanel.noPrism", { name: clientName, defaultValue: "{{name}} has shared their PRISM with you, but no report is on file yet." })}
       </p>
     )
   }
 
   return (
     <p role="alert" className="text-sm text-[#B91C1C]">
-      PRISM couldn&rsquo;t be loaded just now. This is a failure, not an empty profile — try again
-      shortly.
+      {t("prismPanel.loadFailed", { defaultValue: "PRISM couldn’t be loaded just now. This is a failure, not an empty profile — try again shortly." })}
     </p>
   )
 }

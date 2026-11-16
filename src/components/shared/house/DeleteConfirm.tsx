@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import React from "react"
 import ConfirmDialog from "@/components/shared/ConfirmDialog"
 import { BUTTON_WORDS } from "@/lib/house/glossary"
@@ -14,11 +15,12 @@ export interface DeleteConfirmProps {
  * words: "Delete {thing}? This can't be undone."
  */
 export function DeleteConfirm({ thing, trigger, onConfirm }: DeleteConfirmProps) {
+  const { t } = useTranslation("shellUi")
   return (
     <ConfirmDialog
       trigger={trigger}
       title={`${BUTTON_WORDS.delete} ${thing}?`}
-      description="This can't be undone."
+      description={t("deleteConfirm.description", { defaultValue: "This can't be undone." })}
       confirmText={BUTTON_WORDS.delete}
       cancelText={BUTTON_WORDS.cancel}
       confirmVariant="destructive"

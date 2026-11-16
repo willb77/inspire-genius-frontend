@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useQuestionBank } from "@/hooks/interview/useQuestionBank"
 import type { StarCompetency } from "@/services/interview/interview.service"
+import { useTranslation } from "react-i18next"
 
 function ExemplarRow({ label, text, tone }: { label: string; text: string; tone: string }) {
   if (!text) return null
@@ -33,6 +34,7 @@ function ExemplarRow({ label, text, tone }: { label: string; text: string; tone:
 }
 
 function CompetencyCard({ c }: { c: StarCompetency }) {
+  const { t } = useTranslation("studioUi")
   const [open, setOpen] = useState(false)
   return (
     <div className="rounded-lg border border-slate-200 p-4">
@@ -58,13 +60,13 @@ function CompetencyCard({ c }: { c: StarCompetency }) {
         <Collapsible open={open} onOpenChange={setOpen} className="mt-3">
           <CollapsibleTrigger className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700">
             <Target className="h-3.5 w-3.5" />
-            What to listen for (scoring anchors)
+            {t("taskAgents.questionBankPanel.whatToListenForScoring", { defaultValue: "What to listen for (scoring anchors)" })}
             <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 space-y-1.5">
-            <ExemplarRow label="Strong (5)" text={c.exemplars.strong} tone="text-emerald-600" />
-            <ExemplarRow label="Baseline (3)" text={c.exemplars.baseline} tone="text-amber-600" />
-            <ExemplarRow label="Weak (1)" text={c.exemplars.weak} tone="text-rose-600" />
+            <ExemplarRow label={t("taskAgents.questionBankPanel.strong5", { defaultValue: "Strong (5)" })} text={c.exemplars.strong} tone="text-emerald-600" />
+            <ExemplarRow label={t("taskAgents.questionBankPanel.baseline3", { defaultValue: "Baseline (3)" })} text={c.exemplars.baseline} tone="text-amber-600" />
+            <ExemplarRow label={t("taskAgents.questionBankPanel.weak1", { defaultValue: "Weak (1)" })} text={c.exemplars.weak} tone="text-rose-600" />
           </CollapsibleContent>
         </Collapsible>
       )}
@@ -73,6 +75,7 @@ function CompetencyCard({ c }: { c: StarCompetency }) {
 }
 
 export default function QuestionBankPanel() {
+  const { t } = useTranslation("studioUi")
   const { data, isLoading, isError, error } = useQuestionBank({ includeExemplars: true })
 
   if (isLoading) {
@@ -98,7 +101,7 @@ export default function QuestionBankPanel() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">STAR interview question bank</CardTitle>
+          <CardTitle className="text-base">{t("taskAgents.questionBankPanel.starInterviewQuestionBank", { defaultValue: "STAR interview question bank" })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-slate-600">{data.guidance}</p>

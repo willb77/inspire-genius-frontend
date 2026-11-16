@@ -62,6 +62,7 @@ import {
   useRatifyGoal,
 } from "@/hooks/manager/development"
 import { useDevSkin } from "../skin"
+import { useTranslation } from "react-i18next"
 
 const CATEGORY_ORDER: GoalCategory[] = [
   "career_history",
@@ -86,6 +87,7 @@ export function formatShareDate(iso?: string | null): string {
 }
 
 function CoverageStrip({ coverage }: { coverage: GoalCategoryCoverage[] }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const byCat = new Map(coverage.map((c) => [c.category, c.state]))
   const stateColor: Record<string, string> = {
@@ -94,7 +96,7 @@ function CoverageStrip({ coverage }: { coverage: GoalCategoryCoverage[] }) {
     not_started: "bg-slate-200",
   }
   return (
-    <div className="flex flex-wrap gap-2" aria-label="Discovery coverage by category">
+    <div className="flex flex-wrap gap-2" aria-label={t("goalsPanel.discoveryCoverageByCategory", { defaultValue: "Discovery coverage by category" })}>
       {CATEGORY_ORDER.map((cat) => {
         const state = byCat.get(cat) ?? "not_started"
         return (
@@ -129,17 +131,18 @@ function AlignmentBadge({ alignment }: { alignment: PrismAlignment }) {
 
 /** The reviews coaches have written on one goal — the same list the member sees. */
 function ReviewList({ reviews }: { reviews: GoalReview[] }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   if (reviews.length === 0) return null
   return (
-    <ul className="space-y-2" aria-label="Reviews of this goal">
+    <ul className="space-y-2" aria-label={t("goalsPanel.reviewsOfThisGoal", { defaultValue: "Reviews of this goal" })}>
       {reviews.map((r) => (
         <li key={r.id} className={cn("rounded-lg border p-2.5 text-xs", sk.border200)}>
           <div className="flex flex-wrap items-center gap-2">
-            <span className={cn("font-semibold", sk.text700)}>{r.reviewerName || "A coach"}</span>
+            <span className={cn("font-semibold", sk.text700)}>{r.reviewerName || t("goalsPanel.aCoach", { defaultValue: "A coach" })}</span>
             <Badge variant={r.ratified ? "default" : "secondary"} className="gap-1">
               {r.ratified ? <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> : <CircleSlash className="h-3 w-3" aria-hidden="true" />}
-              {r.ratified ? "Ratified" : "Not ratified"}
+              {r.ratified ? t("goalsPanel.ratified", { defaultValue: "Ratified" }) : t("goalsPanel.notRatified", { defaultValue: "Not ratified" })}
             </Badge>
             <span className={cn("ml-auto", sk.text400)}>{formatShareDate(r.createdAt)}</span>
           </div>
@@ -166,13 +169,14 @@ function ReviewForm({
   onSubmit: ReviewSubmit
   pending: boolean
 }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const [ratified, setRatified] = useState(true)
   const [comment, setComment] = useState("")
   return (
     <form
       className={cn("space-y-2 rounded-lg border p-2.5", sk.border200)}
-      aria-label="Review this goal"
+      aria-label={t("goalsPanel.reviewThisGoal", { defaultValue: "Review this goal" })}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit({ goalId, ratified, comment: comment.trim() })
@@ -180,23 +184,21 @@ function ReviewForm({
       }}
     >
       <label className={cn("flex items-center gap-2 text-xs font-medium", sk.text700)}>
-        <Checkbox checked={ratified} onCheckedChange={(v) => setRatified(v === true)} aria-label="Ratify this goal" />
-        Ratify this goal
-      </label>
+        <Checkbox checked={ratified} onCheckedChange={(v) => setRatified(v === true)} aria-label={t("goalsPanel.ratifyThisGoal", { defaultValue: "Ratify this goal" })} />{t("goalsPanel.ratifyThisGoal", { defaultValue: "Ratify this goal" })}</label>
       <Textarea
         value={comment}
         onChange={(e) => setComment(e.target.value)}
-        placeholder="What you see in this goal, and what would make it stronger. The member reads this."
+        placeholder={t("goalsPanel.whatYouSeeInThis", { defaultValue: "What you see in this goal, and what would make it stronger. The member reads this." })}
         rows={2}
         className="text-sm"
-        aria-label="Review comment"
+        aria-label={t("goalsPanel.reviewComment", { defaultValue: "Review comment" })}
       />
       <div className="flex items-center gap-2">
         <Button type="submit" size="sm" variant="outline" disabled={pending}>
           <MessageSquarePlus className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-          {pending ? "Sending…" : "Send review"}
+          {pending ? t("goalsPanel.sending", { defaultValue: "Sending…" }) : t("goalsPanel.sendReview", { defaultValue: "Send review" })}
         </Button>
-        <span className={cn("text-[11px]", sk.text400)}>Coaches co-sign — the member’s own ratification is never overwritten.</span>
+        <span className={cn("text-[11px]", sk.text400)}>{t("goalsPanel.coachesCoSignTheMember", { defaultValue: "Coaches co-sign — the member’s own ratification is never overwritten." })}</span>
       </div>
     </form>
   )
@@ -214,6 +216,7 @@ function NoteComposer({
   onSubmit: NoteSubmit
   pending: boolean
 }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const [open, setOpen] = useState(false)
   const [kind, setKind] = useState<CoachingNoteKind>("observation")
@@ -221,15 +224,13 @@ function NoteComposer({
   if (!open) {
     return (
       <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(true)}>
-        <NotebookPen className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-        Note about this goal
-      </Button>
+        <NotebookPen className="mr-1 h-3.5 w-3.5" aria-hidden="true" />{t("goalsPanel.noteAboutThisGoal", { defaultValue: "Note about this goal" })}</Button>
     )
   }
   return (
     <form
       className={cn("space-y-2 rounded-lg border p-2.5", sk.border200)}
-      aria-label="Note about this goal"
+      aria-label={t("goalsPanel.noteAboutThisGoal", { defaultValue: "Note about this goal" })}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit({ goalId, kind, body: body.trim() })
@@ -237,7 +238,7 @@ function NoteComposer({
         setOpen(false)
       }}
     >
-      <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Note kind">
+      <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("goalsPanel.noteKind", { defaultValue: "Note kind" })}>
         {NOTE_KINDS.map((k) => (
           <Button
             key={k.value}
@@ -255,18 +256,16 @@ function NoteComposer({
       <Textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder="Your own note. Only you see coaching notes."
+        placeholder={t("goalsPanel.yourOwnNoteOnlyYou", { defaultValue: "Your own note. Only you see coaching notes." })}
         rows={2}
         className="text-sm"
-        aria-label="Note body"
+        aria-label={t("goalsPanel.noteBody", { defaultValue: "Note body" })}
       />
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={pending || body.trim().length === 0}>
-          {pending ? "Saving…" : "Save note"}
+          {pending ? t("goalsPanel.saving", { defaultValue: "Saving…" }) : t("goalsPanel.saveNote", { defaultValue: "Save note" })}
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
-        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>{t("goalsPanel.cancel", { defaultValue: "Cancel" })}</Button>
       </div>
     </form>
   )
@@ -308,6 +307,7 @@ export function CoachGoalCard({
    *  their goals and their interviews. */
   practice?: GoalPracticeSummary
 }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const confirmed = goal.status === "confirmed"
   return (
@@ -317,18 +317,18 @@ export function CoachGoalCard({
           <CardTitle className={cn("text-base", sk.heading)}>{goal.title}</CardTitle>
           <Badge variant={confirmed ? "default" : "secondary"} className="shrink-0 gap-1">
             {confirmed ? <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> : null}
-            {confirmed ? "Confirmed" : "Provisional"}
+            {confirmed ? t("goalsPanel.confirmed", { defaultValue: "Confirmed" }) : t("goalsPanel.provisional", { defaultValue: "Provisional" })}
           </Badge>
         </div>
         <div className="flex flex-wrap gap-1.5 text-xs">
           <Badge variant="outline">{GOAL_CATEGORY_LABEL[goal.category]}</Badge>
           <Badge variant="outline">{GOAL_HORIZON_LABEL[goal.horizon]}</Badge>
-          <Badge variant="outline">Coach: {goal.ownerCoach}</Badge>
+          <Badge variant="outline">{t("goalsPanel.coach", { defaultValue: "Coach: {{ownerCoach}}", ownerCoach: goal.ownerCoach })}</Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <div>
-          <div className={cn("text-xs font-semibold", sk.text500)}>Why it matters</div>
+          <div className={cn("text-xs font-semibold", sk.text500)}>{t("goalsPanel.whyItMatters", { defaultValue: "Why it matters" })}</div>
           <p className={sk.text700}>{goal.motivation}</p>
         </div>
         <AlignmentBadge alignment={goal.prismAlignment} />
@@ -337,23 +337,23 @@ export function CoachGoalCard({
         ) : null}
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <div className={cn("text-xs font-semibold", sk.text500)}>Execution style</div>
+            <div className={cn("text-xs font-semibold", sk.text500)}>{t("goalsPanel.executionStyle", { defaultValue: "Execution style" })}</div>
             <p className={sk.text700}>{goal.executionStyle}</p>
           </div>
           <div>
-            <div className={cn("text-xs font-semibold", sk.text500)}>Success metric</div>
+            <div className={cn("text-xs font-semibold", sk.text500)}>{t("goalsPanel.successMetric", { defaultValue: "Success metric" })}</div>
             <p className={sk.text700}>{goal.successMetric}</p>
           </div>
         </div>
         <div className="rounded-lg bg-emerald-50 p-2.5">
-          <div className="text-xs font-semibold text-emerald-700">Reward-framed first step</div>
+          <div className="text-xs font-semibold text-emerald-700">{t("goalsPanel.rewardFramedFirstStep", { defaultValue: "Reward-framed first step" })}</div>
           <p className="text-emerald-800">{goal.firstStep}</p>
         </div>
         {target ? <TargetLine target={target} /> : null}
         {practice ? <PracticeStrip practice={practice} /> : null}
         {goal.provenanceQuotes.length > 0 ? (
           <details className={cn("text-xs", sk.text500)}>
-            <summary className="cursor-pointer font-medium">Provenance ({goal.provenanceQuotes.length})</summary>
+            <summary className="cursor-pointer font-medium">{t("goalsPanel.provenance", { defaultValue: "Provenance ({{length}})", length: goal.provenanceQuotes.length })}</summary>
             <ul className="mt-1 space-y-1">
               {goal.provenanceQuotes.map((q, i) => (
                 <li key={i} className="flex gap-1.5">
@@ -370,10 +370,8 @@ export function CoachGoalCard({
         ) : (
           <div className="flex items-center gap-2 pt-1">
             <Button size="sm" variant="outline" onClick={() => onRatify(goal.goalId)} disabled={ratifying}>
-              <MessageSquarePlus className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-              Co-ratify
-            </Button>
-            <span className={cn("text-[11px]", sk.text400)}>Managers co-sign — the member’s own ratification is never overwritten.</span>
+              <MessageSquarePlus className="mr-1 h-3.5 w-3.5" aria-hidden="true" />{t("goalsPanel.coRatify", { defaultValue: "Co-ratify" })}</Button>
+            <span className={cn("text-[11px]", sk.text400)}>{t("goalsPanel.managersCoSignTheMember", { defaultValue: "Managers co-sign — the member’s own ratification is never overwritten." })}</span>
           </div>
         )}
         {onNote ? <NoteComposer goalId={goal.goalId} onSubmit={onNote} pending={noting} /> : null}
@@ -385,21 +383,21 @@ export function CoachGoalCard({
 /** 3.4 P5a — the target role and the shape of the roadmap toward it. Names
  *  the member's own first step and success metric; nothing PRISM-derived. */
 function TargetLine({ target }: { target: GoalTargetSummary }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const road = target.roadmap
   return (
     <div className="rounded-lg border p-2.5" data-testid="goal-target">
-      <div className={cn("text-xs font-semibold", sk.text500)}>Aiming at</div>
-      <p className={sk.text700}>{target.roleTitle || "A role (title not recorded)"}</p>
+      <div className={cn("text-xs font-semibold", sk.text500)}>{t("goalsPanel.aimingAt", { defaultValue: "Aiming at" })}</div>
+      <p className={sk.text700}>{target.roleTitle || t("goalsPanel.aRoleTitleNotRecorded", { defaultValue: "A role (title not recorded)" })}</p>
       {road ? (
-        <p className={cn("mt-1 text-xs", sk.text500)} data-testid="goal-target-roadmap">
-          Roadmap: {road.steps} {road.steps === 1 ? "step" : "steps"}
-          {road.gapsPending ? " (gaps still being worked out)" : ""}
-          {road.firstStep ? `, starting with “${road.firstStep}”` : ""}
-          {road.successMetric ? `; done when “${road.successMetric}”` : ""}.
+        <p className={cn("mt-1 text-xs", sk.text500)} data-testid="goal-target-roadmap">{road.steps === 1 ? t("goalsPanel.roadmapStepsOne", { defaultValue: "Roadmap: {{steps}} step", steps: road.steps }) : t("goalsPanel.roadmapStepsOther", { defaultValue: "Roadmap: {{steps}} steps", steps: road.steps })}
+          {road.gapsPending ? t("goalsPanel.gapsStillBeingWorkedOut", { defaultValue: " (gaps still being worked out)" }) : ""}
+          {road.firstStep ? t("goalsPanel.startingWith", { defaultValue: ", starting with “{{firstStep}}”", firstStep: road.firstStep }) : ""}
+          {road.successMetric ? t("goalsPanel.doneWhen", { defaultValue: "; done when “{{successMetric}}”", successMetric: road.successMetric }) : ""}.
         </p>
       ) : (
-        <p className={cn("mt-1 text-xs", sk.text500)}>No roadmap built yet.</p>
+        <p className={cn("mt-1 text-xs", sk.text500)}>{t("goalsPanel.noRoadmapBuiltYet", { defaultValue: "No roadmap built yet." })}</p>
       )}
     </div>
   )
@@ -416,28 +414,25 @@ const PRACTICE_BAND_LABEL: Record<string, string> = {
  *  a simulated practice result, and says so; the band is an alignment band,
  *  never a hiring instruction, and anything else is not shown. */
 function PracticeStrip({ practice }: { practice: GoalPracticeSummary }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const latest = practice.latest
   const band = latest?.band ? PRACTICE_BAND_LABEL[latest.band] : undefined
   const when = latest?.finishedAt ? new Date(latest.finishedAt) : null
   const parts = [
-    latest?.roleTitle ? `for ${latest.roleTitle}` : null,
+    latest?.roleTitle ? t("goalsPanel.forRole", { defaultValue: "for {{roleTitle}}", roleTitle: latest.roleTitle }) : null,
     when && !Number.isNaN(when.getTime()) ? when.toLocaleDateString() : null,
-    typeof latest?.overallScore === "number" ? `scored ${latest.overallScore.toFixed(1)}` : null,
+    typeof latest?.overallScore === "number" ? t("goalsPanel.scored", { defaultValue: "scored {{score}}", score: latest.overallScore.toFixed(1) }) : null,
     band ?? null,
   ].filter(Boolean)
   return (
     <div className="rounded-lg border p-2.5" data-testid="goal-practice">
-      <div className={cn("text-xs font-semibold", sk.text500)}>Interview practice</div>
-      <p className={sk.text700}>
-        {practice.sessions} practice {practice.sessions === 1 ? "session" : "sessions"} finished
-      </p>
+      <div className={cn("text-xs font-semibold", sk.text500)}>{t("goalsPanel.interviewPractice", { defaultValue: "Interview practice" })}</div>
+      <p className={sk.text700}>{practice.sessions === 1 ? t("goalsPanel.practiceSessionsOne", { defaultValue: "{{sessions}} practice session finished", sessions: practice.sessions }) : t("goalsPanel.practiceSessionsOther", { defaultValue: "{{sessions}} practice sessions finished", sessions: practice.sessions })}</p>
       {parts.length > 0 ? (
-        <p className={cn("mt-1 text-xs", sk.text500)} data-testid="goal-practice-latest">
-          Latest: {parts.join(" · ")}.
-        </p>
+        <p className={cn("mt-1 text-xs", sk.text500)} data-testid="goal-practice-latest">{t("goalsPanel.latest", { defaultValue: "Latest: {{value}}.", value: parts.join(" · ") })}</p>
       ) : null}
-      <p className={cn("mt-1 text-[11px]", sk.text400)}>Simulated practice results, not a hiring decision.</p>
+      <p className={cn("mt-1 text-[11px]", sk.text400)}>{t("goalsPanel.simulatedPracticeResultsNotA", { defaultValue: "Simulated practice results, not a hiring decision." })}</p>
     </div>
   )
 }
@@ -478,6 +473,7 @@ export type GoalsPanelProps = {
 }
 
 export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const { data, isLoading } = useDevelopmentGoals(memberId)
   const session = useGoalSession(memberId)
@@ -487,10 +483,10 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
   const coverage = data?.coverage ?? []
   const shared = Boolean(data) && !data?.goalsNotShared
   const reviews = useGoalReviews(memberId, shared && goals.length > 0)
-  const who = memberName?.trim() || "This member"
+  const who = memberName?.trim() || t("goalsPanel.thisMember", { defaultValue: "This member" })
 
   if (isLoading) {
-    return <div className={cn("py-10 text-center text-sm", sk.text400)}>Loading goals…</div>
+    return <div className={cn("py-10 text-center text-sm", sk.text400)}>{t("goalsPanel.loadingGoals", { defaultValue: "Loading goals…" })}</div>
   }
 
   // No IG account: a roster-only member cannot sign in, cannot offer.
@@ -499,7 +495,7 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
       <StateCard
         testId="goals-state-no-account"
         icon={<UserX className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />}
-        title="No IG account yet"
+        title={t("goalsPanel.noIgAccountYet", { defaultValue: "No IG account yet" })}
         body={`${who} was added to the roster by hand and has no Inspires Genius account. Goals are shared by the person who owns them, so there is nothing to ask for until they have one.`}
       />
     )
@@ -511,7 +507,7 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
       <StateCard
         testId="goals-state-not-shared"
         icon={<Lock className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />}
-        title="Not shared with you"
+        title={t("goalsPanel.notSharedWithYou", { defaultValue: "Not shared with you" })}
         body={`${who} has not shared their goals with you. Nobody sees goals by rank — they choose, person by person, from Goals › Sharing in their own workspace. Ask them directly.`}
       />
     )
@@ -523,16 +519,14 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
       <StateCard
         testId="goals-state-prism-needed"
         icon={<Sparkles className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />}
-        title="PRISM needed"
-        body="Set this member up with Aura to map their PRISM profile before goal discovery can begin."
+        title={t("goalsPanel.prismNeeded", { defaultValue: "PRISM needed" })}
+        body={t("goalsPanel.setThisMemberUpWith", { defaultValue: "Set this member up with Aura to map their PRISM profile before goal discovery can begin." })}
       >
         {/* TDS-GI-1: a PRISM set-up, not a Goals invite. The server records it and notifies nobody. */}
         <Button
           onClick={() => session.mutate({ action: "invite", channel: "prism_setup" })}
           disabled={session.isPending}
-        >
-          Set up with Aura
-        </Button>
+        >{t("goalsPanel.setUpWithAura", { defaultValue: "Set up with Aura" })}</Button>
       </StateCard>
     )
   }
@@ -541,8 +535,7 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
   const shareLine = (
     <p className={cn("text-xs", sk.text500)} data-testid="goals-state-shared">
       <Lock className="mr-1 inline h-3 w-3" aria-hidden="true" />
-      {sharedUntil ? `Shared with you until ${sharedUntil}.` : "Shared with you."} The member can take this back at any time.
-    </p>
+      {sharedUntil ? t("goalsPanel.sharedWithYouUntil", { defaultValue: "Shared with you until {{sharedUntil}}.", sharedUntil }) : t("goalsPanel.sharedWithYou", { defaultValue: "Shared with you." })}{" "}{t("goalsPanel.theMemberCanTakeThis", { defaultValue: "The member can take this back at any time." })}</p>
   )
 
   // Goals-pending gate
@@ -554,12 +547,10 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
         <StateCard
           testId="goals-state-pending"
           icon={<Sparkles className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />}
-          title="No goals discovered yet"
-          body="Invite this member to a Goals Studio discovery session to formalize their goals."
+          title={t("goalsPanel.noGoalsDiscoveredYet", { defaultValue: "No goals discovered yet" })}
+          body={t("goalsPanel.inviteThisMemberToA", { defaultValue: "Invite this member to a Goals Studio discovery session to formalize their goals." })}
         >
-          <Button onClick={() => session.mutate("invite")} disabled={session.isPending}>
-            Invite to Goals Studio session
-          </Button>
+          <Button onClick={() => session.mutate("invite")} disabled={session.isPending}>{t("goalsPanel.inviteToGoalsStudioSession", { defaultValue: "Invite to Goals Studio session" })}</Button>
         </StateCard>
       </div>
     )
@@ -578,8 +569,8 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
     ratify.mutate(
       { goalId, ratified, comment },
       {
-        onSuccess: () => toast.success(ratified ? "Review sent — goal ratified." : "Review sent."),
-        onError: (err) => toast.error(err.message || "The review could not be saved."),
+        onSuccess: () => toast.success(ratified ? t("goalsPanel.reviewSentGoalRatified", { defaultValue: "Review sent — goal ratified." }) : t("goalsPanel.reviewSent", { defaultValue: "Review sent." })),
+        onError: (err) => toast.error(err.message || t("goalsPanel.theReviewCouldNotBe", { defaultValue: "The review could not be saved." })),
       },
     )
   }
@@ -587,8 +578,8 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
     note.mutate(
       { goalId, kind, body, source: "manual" },
       {
-        onSuccess: () => toast.success("Note saved."),
-        onError: (err) => toast.error(err.message || "The note could not be saved."),
+        onSuccess: () => toast.success(t("goalsPanel.noteSaved", { defaultValue: "Note saved." })),
+        onError: (err) => toast.error(err.message || t("goalsPanel.theNoteCouldNotBe", { defaultValue: "The note could not be saved." })),
       },
     )
   }

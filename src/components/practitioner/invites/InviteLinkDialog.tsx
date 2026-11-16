@@ -1,6 +1,7 @@
 import { useRef } from "react"
 import { Copy } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -28,29 +29,30 @@ interface InviteLinkDialogProps {
  * fresh one (and revokes this one) if it is lost.
  */
 export function InviteLinkDialog({ invitePath, clientLabel, onClose }: InviteLinkDialogProps) {
+  const { t } = useTranslation("practitionerPages")
   const inputRef = useRef<HTMLInputElement>(null)
   const url = invitePath ? inviteUrl(invitePath) : ""
 
   async function handleCopy() {
     if (await copyText(url)) {
-      toast.success("Invite link copied")
+      toast.success(t("inviteDialog.copied", { defaultValue: "Invite link copied" }))
       return
     }
     // Fallback: select the text so the practitioner can copy it by hand.
     inputRef.current?.focus()
     inputRef.current?.select()
-    toast.error("Could not copy the link — it is selected; copy it by hand.")
+    toast.error(t("inviteDialog.copyFailed", { defaultValue: "Could not copy the link — it is selected; copy it by hand." }))
   }
 
   return (
     <Dialog open={invitePath !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite link for {clientLabel}</DialogTitle>
-          <DialogDescription>{SHOWN_ONCE_NOTE}</DialogDescription>
+          <DialogTitle>{t("inviteDialog.title", { name: clientLabel, defaultValue: "Invite link for {{name}}" })}</DialogTitle>
+          <DialogDescription>{t("inviteDialog.shownOnce", { defaultValue: SHOWN_ONCE_NOTE })}</DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
-          <Label htmlFor="invite-link">Invite link</Label>
+          <Label htmlFor="invite-link">{t("inviteDialog.inviteLink", { defaultValue: "Invite link" })}</Label>
           <Input
             id="invite-link"
             ref={inputRef}
@@ -60,18 +62,16 @@ export function InviteLinkDialog({ invitePath, clientLabel, onClose }: InviteLin
             className="font-mono text-xs"
           />
           <p className="text-xs text-muted-foreground">
-            Send it to your client yourself. When they sign up (or sign in) from this link they
-            become your client. If they already have an account, the link connects it to you when
-            they open it.
+            {t("inviteDialog.help", { defaultValue: "Send it to your client yourself. When they sign up (or sign in) from this link they become your client. If they already have an account, the link connects it to you when they open it." })}
           </p>
         </div>
         <DialogFooter className="gap-2">
           <Button type="button" variant="outline" className="min-h-11" onClick={onClose}>
-            Done
+            {t("inviteDialog.done", { defaultValue: "Done" })}
           </Button>
           <Button type="button" className="min-h-11" onClick={handleCopy}>
             <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
-            Copy link
+            {t("inviteDialog.copyLink", { defaultValue: "Copy link" })}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -34,6 +34,7 @@ import type {
   MemoirResponse,
   MemoirStyle,
 } from "@/types/bio"
+import { useTranslation } from "react-i18next"
 
 export type MemoirExportMenuProps = {
   memberId: string
@@ -48,6 +49,7 @@ export function MemoirExportMenu({
   style = "structured",
   disabled,
 }: MemoirExportMenuProps) {
+  const { t } = useTranslation("studioUi")
   const generate = useGenerateMemoir()
   const [busy, setBusy] = useState(false)
   // Cache the last memoir keyed by style, so Copy→Print→Word doesn't
@@ -78,7 +80,7 @@ export function MemoirExportMenu({
   const run = useCallback(
     async (action: "copy" | "print" | TurnExportFormat) => {
       if (!hasContent) {
-        toast.info("Nothing to export yet — capture a memory with Chronicle first.")
+        toast.info(t("user.bioMemoirExportMenu.nothingToExportYetCapture", { defaultValue: "Nothing to export yet — capture a memory with Chronicle first." }))
         return
       }
       setBusy(true)
@@ -86,7 +88,7 @@ export function MemoirExportMenu({
         const memoir = await resolveMemoir()
         if (action === "copy") {
           await navigator.clipboard.writeText(memoir.markdown)
-          toast.success("Memoir copied.")
+          toast.success(t("user.bioMemoirExportMenu.memoirCopied", { defaultValue: "Memoir copied." }))
           return
         }
         if (action === "print") {
@@ -100,7 +102,7 @@ export function MemoirExportMenu({
             : "Exported your memoir as a PDF.",
         )
       } catch {
-        toast.error("Couldn't export your memoir — please try again.")
+        toast.error(t("user.bioMemoirExportMenu.couldnTExportYourMemoir", { defaultValue: "Couldn't export your memoir — please try again." }))
       } finally {
         setBusy(false)
       }
@@ -124,31 +126,31 @@ export function MemoirExportMenu({
           ) : (
             <Download className="mr-2 h-4 w-4" aria-hidden />
           )}
-          Export memoir
+          {t("user.bioMemoirExportMenu.exportMemoir", { defaultValue: "Export memoir" })}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
-        <DropdownMenuLabel>Export memoir</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("user.bioMemoirExportMenu.exportMemoir", { defaultValue: "Export memoir" })}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void run("copy")}>
           <Copy className="mr-2 h-4 w-4" aria-hidden />
-          Copy
+          {t("user.bioMemoirExportMenu.copy", { defaultValue: "Copy" })}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void run("print")}>
           <Printer className="mr-2 h-4 w-4" aria-hidden />
-          Print
+          {t("user.bioMemoirExportMenu.print", { defaultValue: "Print" })}
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => void run("word")}
           data-testid="memoir-export-word"
         >
-          Word (.doc)
+          {t("user.bioMemoirExportMenu.wordDoc", { defaultValue: "Word (.doc)" })}
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => void run("pdf")}
           data-testid="memoir-export-pdf"
         >
-          PDF
+          {t("user.bioMemoirExportMenu.pdf", { defaultValue: "PDF" })}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
