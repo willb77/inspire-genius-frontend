@@ -7,6 +7,7 @@ import type { AxiosError } from "axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useTranslation } from "react-i18next"
 import { useRecordBirthYear } from "@/hooks/career-exercise/useCareerExercise"
 import type { AgeStep } from "@/types/career-exercise/student"
 import { birthYearSchema, type BirthYearForm, type BirthYearInput } from "./birthYear.schema"
@@ -23,6 +24,7 @@ import { exerciseErrorMessage } from "./exerciseErrors"
  * person — the page simply re-checks and moves on.
  */
 export function BirthYearStep({ onDone }: { onDone: (answer: AgeStep | null) => void }) {
+  const { t } = useTranslation("careerToolsPages")
   const record = useRecordBirthYear()
   const schema = useMemo(() => birthYearSchema(), [])
   const form = useForm<BirthYearInput, unknown, BirthYearForm>({
@@ -43,27 +45,27 @@ export function BirthYearStep({ onDone }: { onDone: (answer: AgeStep | null) => 
   const failure =
     record.isError && status !== 409
       ? status === 422
-        ? "Enter the year you were born, for example 2001."
-        : exerciseErrorMessage(record.error, "Your answer could not be saved. Try again shortly.")
+        ? t("birthYearInvalid", { defaultValue: "Enter the year you were born, for example 2001." })
+        : exerciseErrorMessage(record.error, t("birthYearSaveFailed", { defaultValue: "Your answer could not be saved. Try again shortly." }))
       : null
 
   return (
     <section aria-labelledby="birth-year-heading" className="max-w-md rounded-xl border bg-card p-6 text-sm">
       <h2 id="birth-year-heading" className="text-base font-semibold">
-        Before we start
+        {t("beforeWeStart", { defaultValue: "Before we start" })}
       </h2>
       <p className="mt-1 text-muted-foreground">
-        One quick question so the exercise fits you. We only keep a general age range, not the year itself.
+        {t("birthYearIntro", { defaultValue: "One quick question so the exercise fits you. We only keep a general age range, not the year itself." })}
       </p>
       <form onSubmit={onSubmit} className="mt-4 space-y-2" noValidate>
-        <Label htmlFor="career-exercise-birth-year">What year were you born?</Label>
+        <Label htmlFor="career-exercise-birth-year">{t("birthYearQuestion", { defaultValue: "What year were you born?" })}</Label>
         <div className="flex items-start gap-2">
           <Input
             id="career-exercise-birth-year"
             inputMode="numeric"
             autoComplete="bday-year"
             maxLength={4}
-            placeholder="YYYY"
+            placeholder={t("birthYearPlaceholder", { defaultValue: "YYYY" })}
             className="w-28"
             aria-invalid={!!form.formState.errors.birthYear}
             aria-describedby={form.formState.errors.birthYear ? "career-exercise-birth-year-error" : undefined}
@@ -71,7 +73,7 @@ export function BirthYearStep({ onDone }: { onDone: (answer: AgeStep | null) => 
           />
           <Button type="submit" disabled={record.isPending}>
             {record.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-            Continue
+            {t("continue", { defaultValue: "Continue" })}
           </Button>
         </div>
         {form.formState.errors.birthYear && (
