@@ -1,0 +1,49 @@
+{
+  "_note": "Seed glossary for the localisation programme (I18N-0). Names were checked for use in src/ and public/locales/en. A native reviewer must confirm every entry before it is relied on.",
+  "do_not_translate": [
+    "Inspire Genius",
+    "Meridian",
+    "Aura",
+    "Alex",
+    "Nova",
+    "Echo",
+    "Ascend",
+    "Summit",
+    "Chronicle",
+    "Forge",
+    "Atlas",
+    "Sage",
+    "Compass",
+    "James",
+    "Maven",
+    "Sentinel",
+    "Anchor",
+    "Nexus",
+    "Beacon",
+    "Bridge",
+    "Grant",
+    "PRISM",
+    "Lumen",
+    "Honor",
+    "Job Blueprint",
+    "Job Fit",
+    "Direction Setting",
+    "Knowledge Continuity",
+    "Character Lab",
+    "VoiceDesk"
+  ],
+  "fixed": {
+    "Settings": { "es": "Configuración", "fr": "Paramètres", "pt": "Configurações", "it": "Impostazioni", "pl": "Ustawienia", "cs": "Nastavení" },
+    "Profile": { "es": "Perfil", "fr": "Profil", "pt": "Perfil", "it": "Profilo", "pl": "Profil", "cs": "Profil" },
+    "Notifications": { "es": "Notificaciones", "fr": "Notifications", "pt": "Notificações", "it": "Notifiche", "pl": "Powiadomienia", "cs": "Oznámení" },
+    "Save": { "es": "Guardar", "fr": "Enregistrer", "pt": "Salvar", "it": "Salva", "pl": "Zapisz", "cs": "Uložit" },
+    "Cancel": { "es": "Cancelar", "fr": "Annuler", "pt": "Cancelar", "it": "Annulla", "pl": "Anuluj", "cs": "Zrušit" },
+    "Search": { "es": "Buscar", "fr": "Rechercher", "pt": "Pesquisar", "it": "Cerca", "pl": "Szukaj", "cs": "Hledat" }
+  },
+  "_fixed_note": "Only plain UI vocabulary with a standard rendering is listed. The es/fr/pt/it/pl values match strings already shipped in public/locales/*/common.json; cs values are proposed (cs ships English copies today). Domain terms (coach, magic link, sign-in link, brain map, benchmark) are deliberately NOT listed: they need a native reviewer's choice first, then an entry here.",
+  "owner_decision_pending": [
+    "PRISM colour names (src/constants/prism.ts): Green, Blue, Red, Gold - stay English in every language, or translate? Translate nothing until decided.",
+    "PRISM 8D behaviour labels (src/constants/prism.ts): Innovating, Initiating, Supporting, Coordinating, Focusing, Delivering, Finishing, Evaluating - same question.",
+    "PRISM dimension names generally (any wording in report text or UI that names a dimension) - same question."
+  ]
+}
