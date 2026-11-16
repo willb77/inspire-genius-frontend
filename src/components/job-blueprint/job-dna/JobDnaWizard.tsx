@@ -9,15 +9,7 @@ import { RoleContextStep } from './RoleContextStep'
 import { ReviewSubmitStep } from './ReviewSubmitStep'
 import type { DimensionBenchmark, JobTier } from '@/types/job-blueprint'
 import { Check, ChevronLeft, ChevronRight, Send } from 'lucide-react'
-
-const STEPS = [
-  { label: 'Role Info', description: 'Basic role details' },
-  { label: 'Behaviors', description: 'Rank & rate 8 behaviors' },
-  { label: 'Aptitudes', description: 'Rank & rate 8 aptitudes' },
-  { label: 'Core Traits', description: 'Rank & rate 6 traits' },
-  { label: 'Context', description: 'Work environment' },
-  { label: 'Review', description: 'Review & submit' },
-]
+import { useTranslation } from 'react-i18next'
 
 type WizardData = {
   roleTitle: string
@@ -40,6 +32,15 @@ type JobDnaWizardProps = {
 }
 
 export function JobDnaWizard({ onSubmit, isSubmitting }: JobDnaWizardProps) {
+  const { t } = useTranslation("jobBlueprintPages")
+  const STEPS = [
+    { label: t("wizard.steps.roleInfo.label", { defaultValue: "Role Info" }), description: t("wizard.steps.roleInfo.description", { defaultValue: "Basic role details" }) },
+    { label: t("wizard.steps.behaviors.label", { defaultValue: "Behaviors" }), description: t("wizard.steps.behaviors.description", { defaultValue: "Rank & rate 8 behaviors" }) },
+    { label: t("wizard.steps.aptitudes.label", { defaultValue: "Aptitudes" }), description: t("wizard.steps.aptitudes.description", { defaultValue: "Rank & rate 8 aptitudes" }) },
+    { label: t("wizard.steps.coreTraits.label", { defaultValue: "Core Traits" }), description: t("wizard.steps.coreTraits.description", { defaultValue: "Rank & rate 6 traits" }) },
+    { label: t("wizard.steps.context.label", { defaultValue: "Context" }), description: t("wizard.steps.context.description", { defaultValue: "Work environment" }) },
+    { label: t("wizard.steps.review.label", { defaultValue: "Review" }), description: t("wizard.steps.review.description", { defaultValue: "Review & submit" }) },
+  ]
   const [step, setStep] = useState(0)
   const [data, setData] = useState<WizardData>({
     roleTitle: '',
@@ -83,7 +84,7 @@ export function JobDnaWizard({ onSubmit, isSubmitting }: JobDnaWizardProps) {
   return (
     <div className="space-y-6">
       {/* Step indicator */}
-      <nav className="flex items-center justify-center" aria-label="Wizard steps">
+      <nav className="flex items-center justify-center" aria-label={t("wizard.stepsLabel", { defaultValue: "Wizard steps" })}>
         <ol className="flex items-center space-x-2">
           {STEPS.map((s, i) => (
             <li key={i} className="flex items-center">
@@ -169,18 +170,18 @@ export function JobDnaWizard({ onSubmit, isSubmitting }: JobDnaWizardProps) {
           disabled={step === 0}
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
-          Back
+          {t("wizard.back", { defaultValue: "Back" })}
         </Button>
 
         {step < STEPS.length - 1 ? (
           <Button onClick={handleNext} disabled={!canProceed()}>
-            Next
+            {t("wizard.next", { defaultValue: "Next" })}
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         ) : (
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             <Send className="w-4 h-4 mr-1" />
-            {isSubmitting ? 'Submitting...' : 'Create Job DNA'}
+            {isSubmitting ? t("wizard.submitting", { defaultValue: "Submitting..." }) : t("wizard.create", { defaultValue: "Create Job DNA" })}
           </Button>
         )}
       </div>

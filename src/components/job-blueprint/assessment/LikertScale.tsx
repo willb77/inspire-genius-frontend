@@ -1,4 +1,6 @@
+import type { TFunction } from 'i18next'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 type LikertScaleProps = {
   questionId: string
@@ -10,14 +12,25 @@ type LikertScaleProps = {
   maxLabel?: string
 }
 
-const LABELS: Record<number, string> = {
-  1: 'Strongly Disagree',
-  2: 'Disagree',
-  3: 'Somewhat Disagree',
-  4: 'Neutral',
-  5: 'Somewhat Agree',
-  6: 'Agree',
-  7: 'Strongly Agree',
+function scaleLabel(t: TFunction, n: number): string | undefined {
+  switch (n) {
+    case 1:
+      return t("likert.stronglyDisagree", { defaultValue: "Strongly Disagree" })
+    case 2:
+      return t("likert.disagree", { defaultValue: "Disagree" })
+    case 3:
+      return t("likert.somewhatDisagree", { defaultValue: "Somewhat Disagree" })
+    case 4:
+      return t("likert.neutral", { defaultValue: "Neutral" })
+    case 5:
+      return t("likert.somewhatAgree", { defaultValue: "Somewhat Agree" })
+    case 6:
+      return t("likert.agree", { defaultValue: "Agree" })
+    case 7:
+      return t("likert.stronglyAgree", { defaultValue: "Strongly Agree" })
+    default:
+      return undefined
+  }
 }
 
 export function LikertScale({
@@ -26,25 +39,26 @@ export function LikertScale({
   onChange,
   min = 1,
   max = 7,
-  minLabel = 'Strongly Disagree',
-  maxLabel = 'Strongly Agree',
+  minLabel,
+  maxLabel,
 }: LikertScaleProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   const options = Array.from({ length: max - min + 1 }, (_, i) => min + i)
 
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-xs text-slate-400">
-        <span>{minLabel}</span>
-        <span>{maxLabel}</span>
+        <span>{minLabel ?? t("likert.stronglyDisagree", { defaultValue: "Strongly Disagree" })}</span>
+        <span>{maxLabel ?? t("likert.stronglyAgree", { defaultValue: "Strongly Agree" })}</span>
       </div>
-      <div className="flex justify-between gap-1" role="radiogroup" aria-label="Likert scale">
+      <div className="flex justify-between gap-1" role="radiogroup" aria-label={t("likert.groupLabel", { defaultValue: "Likert scale" })}>
         {options.map(opt => (
           <button
             key={opt}
             type="button"
             role="radio"
             aria-checked={value === opt}
-            aria-label={LABELS[opt] ?? `${opt}`}
+            aria-label={scaleLabel(t, opt) ?? `${opt}`}
             onClick={() => onChange(opt)}
             className={cn(
               'flex-1 py-3 rounded-lg text-sm font-medium transition-all border',
@@ -58,7 +72,7 @@ export function LikertScale({
         ))}
       </div>
       {value && (
-        <p className="text-xs text-center text-slate-500">{LABELS[value]}</p>
+        <p className="text-xs text-center text-slate-500">{scaleLabel(t, value)}</p>
       )}
     </div>
   )

@@ -1,0 +1,885 @@
+{
+  "accuracy": {
+    "empty": "No predicted classifications yet.",
+    "misalignment": "Misalignment",
+    "moderateFit": "Moderate fit",
+    "potentialFit": "Potential fit",
+    "strongFit": "Strong fit",
+    "title": "Predicted fit distribution"
+  },
+  "activity": {
+    "title": "Recent activity"
+  },
+  "addCandidate": {
+    "added": "{{name}} added to the pipeline",
+    "addedAs": "{{name}} added to the pipeline as {{code}}",
+    "adding": "Adding…",
+    "cancel": "Cancel",
+    "code": "Candidate code (optional)",
+    "codePlaceholder": "Allocated automatically if blank",
+    "description": "Puts the person into the role's pipeline under a blind code. Their PRISM profile is scored against the role's reviewed benchmark once it is on file.",
+    "email": "Email",
+    "fullName": "Full name",
+    "noCandidate": "The server accepted the request but returned no candidate. Refresh the pipeline to check.",
+    "noRoles": "No published roles yet. Publish a Job DNA benchmark first.",
+    "role": "Role (published Job DNA)",
+    "selectRole": "Select a published role…",
+    "submit": "Add to pipeline",
+    "title": "Add a candidate",
+    "trigger": "Add candidate",
+    "val": {
+      "code": "Codes are at most 32 characters",
+      "email": "Enter a valid email address",
+      "job": "Pick a published role",
+      "name": "Name is required"
+    }
+  },
+  "analytics": {
+    "description": "Hiring funnel, predicted fit distribution and time-to-fill across your Job DNAs.",
+    "emptyAccuracy": "No accuracy data yet.",
+    "emptyActivity": "No activity yet.",
+    "emptyFunnel": "No funnel data yet.",
+    "emptyHires": "No hires recorded yet.",
+    "emptyStats": "No stats available yet.",
+    "emptyTimeToFill": "No time-to-fill data yet.",
+    "loading": "Loading analytics…",
+    "title": "Analytics"
+  },
+  "aptitudes": {
+    "description": "Rank the 8 work aptitude preferences in order of importance for this role, then rate each on its significance.",
+    "title": "Work Aptitude Preferences"
+  },
+  "authoring": {
+    "changeMethod": "Change method",
+    "created": "Job DNA created and benchmarked.",
+    "description": "Draft a benchmark from a role, or build one by hand across behaviours, aptitudes and core traits. Either way a person reviews it before it is used — this is not a PRISM-validated job benchmark.",
+    "draft": {
+      "body": "Give a title or upload a job description and the Job DNA engine drafts all 22 dimensions from the PRISM definitions of each one. A starting point for you to review and edit, not a validated benchmark. Fastest way to a first draft.",
+      "title": "Draft from a role"
+    },
+    "manual": {
+      "body": "Rank and rate every behaviour, aptitude and core trait yourself with the step-by-step wizard. Full control.",
+      "title": "Build manually"
+    },
+    "noId": "Job DNA was created but no id was returned.",
+    "saveFailed": "Failed to save Job DNA. Please try again.",
+    "title": "Create a Job DNA"
+  },
+  "barChart": {
+    "natural": "Natural",
+    "veryHigh": "Very High"
+  },
+  "behaviors": {
+    "description": "Rank the 8 behavior preferences in order of importance for this role, then rate each on its significance. The system will calculate the final benchmark score using the Rank-then-Rate methodology.",
+    "title": "Behavior Preferences"
+  },
+  "candidateComparison": {
+    "benchmark": "Benchmark",
+    "dimension": "Dimension",
+    "title": "Candidate Comparison",
+    "totalVariation": "Total Variation"
+  },
+  "candidateDetail": {
+    "advance": "Advance to next stage",
+    "advanceFailed": "Failed to advance this candidate.",
+    "advancedTo": "Candidate {{code}} advanced to {{status}}.",
+    "advancing": "Advancing…",
+    "back": "Back to candidates",
+    "blind": "Blind screening — identity is held in the blind map and never shown here.",
+    "description": "Fit, insights and the interview scorecard for one candidate.",
+    "loadFailed": "Failed to load this candidate.",
+    "loading": "Loading candidate…",
+    "loadingInsights": "Loading insights…",
+    "loadingScorecard": "Loading scorecard…",
+    "markHiredFailed": "Failed to mark this candidate hired.",
+    "markedHired": "Candidate {{code}} marked hired.",
+    "nextStage": "the next stage",
+    "noInsights": "No insight package has been generated for this candidate yet.",
+    "noScorecard": "No interview scorecard has been submitted for this candidate yet.",
+    "notScored": "This candidate has not been fit-scored yet — no assessment is on file to compare with the role's benchmark.",
+    "openScorecards": "Open scorecards",
+    "pipelineComplete": "Pipeline complete",
+    "scorecardFailed": "Failed to load the scorecard.",
+    "scorecardHeading": "Interview scorecard",
+    "title": "Candidate {{code}}",
+    "totalVariation": "Total variation {{value}}"
+  },
+  "candidates": {
+    "candidateLabel": "Candidate",
+    "description": "Screen and review candidates: each one's PRISM profile scored against the role's reviewed Job DNA benchmark.",
+    "emptyPipeline": "No candidates in this pipeline yet. Use “Add candidate” above to put one in; fit scoring runs once their PRISM assessment is on file.",
+    "interview": "Interview this candidate",
+    "loadFailed": "Failed to load candidates.",
+    "loading": "Loading candidates…",
+    "loadingRoles": "Loading roles…",
+    "notScored": "This candidate has not been fit-scored yet.",
+    "open": "Open candidate",
+    "selectCandidate": "Select a candidate to view their fit analysis.",
+    "selectRole": "Select a role to see its candidate roster.",
+    "title": "Candidates"
+  },
+  "card": {
+    "code": "Code: {{code}}",
+    "variation": "Variation: {{value}}"
+  },
+  "coreTraits": {
+    "description": "Rank the 6 core traits in order of importance for this role, then rate each on its significance.",
+    "title": "Core Traits"
+  },
+  "dashboard": {
+    "createFirst": "Create your first Job DNA",
+    "description": "Job blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it.",
+    "empty": "No Job DNAs yet.",
+    "loadError": "Failed to load Job DNAs.",
+    "loading": "Loading Job DNAs…",
+    "newJobDna": "New Job DNA",
+    "title": "Career Blueprint",
+    "yourJobDnas": "Your Job DNAs"
+  },
+  "decisionPath": {
+    "activateFirst": "Activate a rule set before opening a case.",
+    "case": {
+      "loadFailed": "This case could not be loaded.",
+      "loading": "Loading the record…",
+      "title": "Decision record"
+    },
+    "cases": "Cases",
+    "casesFailed": "Could not load the cases.",
+    "col": {
+      "candidate": "Candidate",
+      "decided": "Decided",
+      "recommended": "Recommended (advisory)",
+      "status": "Status"
+    },
+    "description": "Check a candidate against your organisation's written minimum standard, see the advisory route, and record the decision and its reason.",
+    "entry": {
+      "body": "— check candidates against your written minimum standard and record each decision with its reason.",
+      "title": "Decision path"
+    },
+    "loadingCases": "Loading cases…",
+    "loadingRuleSets": "Loading rule sets…",
+    "nameRemoved": "(name removed)",
+    "newCandidate": "New candidate",
+    "noCases": "No cases yet.",
+    "notEnabled": "The decision path is not enabled for your organisation.",
+    "route": {
+      "apprentice": "Apprentice",
+      "hold": "Hold",
+      "refer": "Refer",
+      "residency": "Residency"
+    },
+    "ruleSets": "Rule sets",
+    "title": "Decision path"
+  },
+  "dnaDetail": {
+    "aptitudes": "Aptitudes",
+    "backToDashboard": "Back to dashboard",
+    "behaviours": "Behaviours",
+    "benchmarkNote": "Authored here — drafted by the Job DNA engine or built by hand — and reviewed by a person. Candidates' PRISM profiles are scored against it. It is not a PRISM-validated job benchmark.",
+    "benchmarkProfile": "Benchmark profile",
+    "cancel": "Cancel",
+    "coreTraits": "Core traits",
+    "department": "Department",
+    "editDetails": "Edit details",
+    "editTitle": "Edit role details",
+    "loadFailed": "Failed to load this Job DNA.",
+    "loading": "Loading Job DNA…",
+    "provenance": {
+      "reviewed": "reviewed {{date}}",
+      "reviewerNotRecorded": "reviewer not recorded"
+    },
+    "roleTitle": "Role title",
+    "save": "Save",
+    "saving": "Saving…",
+    "shapeConforms": "Tier shape conforms to the methodology: 3 critical per block, 2 counter-productive behaviours.",
+    "shapeDiffers": "Tier shape differs from the methodology: {{violations}}.",
+    "source": {
+      "incumbentContrast": "proposed from incumbent interviews",
+      "jdExtract": "extracted from a job description",
+      "llmDraft": "drafted by the Job DNA engine",
+      "manual": "built by hand",
+      "unknown": "source not recorded"
+    },
+    "status": "Status:",
+    "tier": "Tier",
+    "updateFailed": "Failed to update Job DNA.",
+    "updated": "Job DNA updated."
+  },
+  "draft": {
+    "open": "Open the interview",
+    "session": "Interview session {{id}}…",
+    "summary": "Written {{date}} · {{count}} dimensions scored · not yet submitted, so it does not count.",
+    "summary_one": "Written {{date}} · {{count}} dimension scored · not yet submitted, so it does not count.",
+    "summary_other": "Written {{date}} · {{count}} dimensions scored · not yet submitted, so it does not count.",
+    "title": "Draft from a finalised interview"
+  },
+  "draftFlow": {
+    "archetype": {
+      "auto": {
+        "hint": "Classify from the title",
+        "label": "Auto-detect"
+      },
+      "executive": {
+        "hint": "Strategy + relationships",
+        "label": "Executive"
+      },
+      "managerial": {
+        "hint": "Judgment + people",
+        "label": "Managerial"
+      },
+      "operational": {
+        "hint": "Hands-on / task-led",
+        "label": "Operational"
+      }
+    },
+    "blocks": {
+      "aptitudes": "Work Aptitudes",
+      "behaviors": "Behaviors",
+      "coreTraits": "Core Traits"
+    },
+    "context": "Context",
+    "contextOptional": "(optional)",
+    "contextPlaceholder": "Paste a job description, or a few lines on what this role really demands. (An uploaded file fills this in.)",
+    "description": "Draft all 22 dimensions for a role from a title, an uploaded job description, or a role from another vertical. The draft is the engine's reading of the role against the PRISM definition of each dimension — a starting point, not a validated PRISM benchmark. You review and edit the profile before anything is saved.",
+    "done": {
+      "another": "Draft another",
+      "anotherNote": "Benchmark the next role.",
+      "body": "The benchmark is saved and the role is now available across your Job DNA surfaces.",
+      "saved": "Saved “{{role}}”",
+      "view": "View the blueprint",
+      "viewNote": "Open the benchmark profile and its charts."
+    },
+    "draftButton": "Draft the blueprint",
+    "draftNew": "Draft a new role…",
+    "drafted": "Blueprint drafted — 22 dimensions to review.",
+    "drafting": "Drafting the blueprint",
+    "kceLoadFailed": "Couldn't load the roles saved in Knowledge Continuity.",
+    "loaded": "Loaded \"{{title}}\".",
+    "loadedFile": "Loaded \"{{name}}\" — {{chars}} characters of context.",
+    "loadedFromKce": "Loaded \"{{title}}\" from Knowledge Continuity.",
+    "loadingRole": "Loading the role…",
+    "pickRole": "Pick an existing role — a Job DNA role opens its blueprint; a Knowledge Continuity role seeds this draft.",
+    "progress": {
+      "assessing": "Assessing the behavioral demands…",
+      "balancing": "Balancing the profile…",
+      "finalizing": "Finalizing the blueprint…",
+      "reading": "Reading the role…",
+      "setting": "Setting the 22 benchmarks…"
+    },
+    "readFailed": "Couldn't read that file.",
+    "review": {
+      "changedFromAi": "{{changed}} changed from the AI's proposal",
+      "confirm": "I have reviewed all {{total}} rates{{changed}} and confirm them. Saving publishes this benchmark with me recorded as its reviewer.",
+      "dimsDrafted": "22 dimensions drafted ·",
+      "drafted": "Blueprint drafted",
+      "percentNote": "This is a draft for you to review, not a validated benchmark. Adjust the percents below, then save.",
+      "rankRateNote": "Each target comes from the dimension's rank and a rate the AI proposed. Check every rate, change any you disagree with, then confirm and save. Nothing is saved until you do.",
+      "save": "Save role & blueprint",
+      "saving": "Saving…",
+      "shape": "shape.",
+      "startOver": "Start over"
+    },
+    "role": "Role",
+    "roleShape": "Role shape",
+    "roleTitle": "Role title",
+    "roleTitlePlaceholder": "e.g. Senior Wastewater Treatment Operator, or CIO",
+    "row": {
+      "aiProposed": "AI proposed {{rate}} of {{max}}",
+      "benchmarkPercent": "{{name}} benchmark percent",
+      "heldBack": "it suggested {{ai}}; held at {{held}} so this stays {{tier}}",
+      "rank": "Rank {{rank}} of {{size}}",
+      "rate": "Rate",
+      "rateAria": "{{name}} rate",
+      "rateOption": "{{rate}} of {{max}}",
+      "rateOptionAi": "{{rate}} of {{max}} (AI)",
+      "ratesKeep": "rates {{lo}}–{{hi}} keep it {{tier}}",
+      "target": "target",
+      "targetAria": "{{name}} target",
+      "youSet": "you set {{value}}"
+    },
+    "saved": "Job DNA saved.",
+    "shapeNote": "The shape tilts which dimensions the drafter marks critical — an executive leans on judgment and relationships, not a task list.",
+    "sourceJobDna": "Job DNA",
+    "sourceKce": "KCE",
+    "tier": {
+      "counterProductive": "Counter-productive",
+      "critical": "Critical",
+      "unimportant": "Unimportant"
+    },
+    "title": "Draft a blueprint",
+    "upload": {
+      "ariaLabel": "Upload a role document",
+      "label": "Upload a role",
+      "note": "Drop in a job description or role charter — we read the text into the context below and guess the title. Nothing is uploaded to a server.",
+      "optional": "(optional — Word, PDF, or text)",
+      "reading": "Reading…"
+    },
+    "val": {
+      "roleTitle": "Name the role to benchmark"
+    }
+  },
+  "entry": {
+    "counterProductive": "(Counter-productive - inverted)",
+    "evidencePlaceholder": "Evidence and observations...",
+    "score0": "Unable to demonstrate satisfactorily",
+    "score3": "Demonstrated to moderate extent",
+    "score5": "Demonstrated to large extent",
+    "scoreFor": "Score for {{name}}"
+  },
+  "fit": {
+    "aptitude": "Aptitude",
+    "behavior": "Behavior",
+    "col": {
+      "benchmark": "Benchmark",
+      "candidate": "Candidate",
+      "category": "Category",
+      "dimension": "Dimension",
+      "gap": "Gap"
+    },
+    "gapAnalysis": "Gap Analysis",
+    "skew": "Skew",
+    "stdDeviation": "Std Deviation",
+    "title": "Fit Analysis: {{name}}",
+    "totalVariation": "Total Variation",
+    "trait": "Trait"
+  },
+  "form": {
+    "notes": "Additional Notes",
+    "notesPlaceholder": "Overall interview impressions, follow-up actions...",
+    "submit": "Submit Scorecard",
+    "submitting": "Submitting..."
+  },
+  "forms": {
+    "commentsOptional": "Comments (optional)",
+    "decision": {
+      "amendTitle": "Amend the decision",
+      "amended": "Amendment recorded.",
+      "chooseRoute": "Choose a route. There is no default.",
+      "departRecommendation": "Say why you are departing from the recommendation (at least {{min}} characters).",
+      "departRecorded": "Say why you are departing from the recorded decision (at least {{min}} characters).",
+      "giveReason": "Give a reason (at least {{min}} characters).",
+      "mustChange": "An amendment must change the route.",
+      "reason": "Reason",
+      "recordFailed": "Could not record the decision.",
+      "recordTitle": "Record the decision",
+      "recorded": "Decision recorded.",
+      "recording": "Recording…"
+    },
+    "intake": {
+      "answersLegend": "Answers against the written standard",
+      "attest": "These answers are as the district's records show.",
+      "candidateEmail": "Candidate's email (optional)",
+      "candidateName": "Candidate's name",
+      "chooseRole": "Choose the role",
+      "chooseRuleSet": "Choose the rule set",
+      "confirmAnswers": "Confirm the answers are as your records show",
+      "formLabel": "Candidate intake",
+      "giveName": "Give the candidate's name",
+      "missingAnswer": "A missing answer holds the case; it is never a reason to refer.",
+      "openFailed": "Could not open the case.",
+      "opened": "Case opened.",
+      "opening": "Opening…",
+      "role": "Role",
+      "ruleSet": "Minimum standard (rule set)",
+      "ruleSetOption": "{{name}} (version {{version}})",
+      "selectRole": "Select a role…",
+      "selectRuleSet": "Select a rule set…",
+      "submit": "Open case and check",
+      "validEmail": "Enter a valid email address"
+    },
+    "no": "no",
+    "notAnswered": "Not answered yet",
+    "notesSummary": "Optional: why a dimension matters in this role",
+    "organisation": "Organisation",
+    "record": {
+      "attest": "The SME reviewed this version's benchmark and attested that it reflects the role.",
+      "dateSigned": "Date signed",
+      "failed": "Could not record the attestation.",
+      "formLabel": "Record an attestation",
+      "intro": "For an employer or subject-matter expert with no IG account who signed off outside IG. The report says it was recorded by you and that the SME did not sign in IG. Their name, organisation and title are kept for 90 days.",
+      "recorded": "Attestation recorded.",
+      "recording": "Recording…",
+      "smeName": "SME name",
+      "submit": "Record attestation",
+      "val": {
+        "attest": "Confirm the SME attested to this benchmark",
+        "dateFormat": "Enter the date the SME signed",
+        "dateFuture": "The date cannot be in the future",
+        "name": "The SME's name is required",
+        "org": "The SME's organisation is required"
+      }
+    },
+    "request": {
+      "failed": "Could not request validation.",
+      "formLabel": "Request validation",
+      "intro": "The reviewer must hold the manager role or above in this role's organisation and have an IG account. Nothing is emailed: they see the request when they sign in.",
+      "note": "Note to the reviewer (optional)",
+      "requested": "Validation requested.",
+      "requesting": "Requesting…",
+      "reviewerEmail": "Reviewer's email",
+      "submit": "Request validation",
+      "val": {
+        "email": "Enter the reviewer's email address"
+      }
+    },
+    "titleOptional": "Title (optional)",
+    "verdict": {
+      "changesNeeded": "Changes needed",
+      "changesRequested": "Changes requested.",
+      "failed": "Could not save your verdict.",
+      "formLabel": "Your verdict",
+      "saving": "Saving…",
+      "submit": "Submit verdict",
+      "val": {
+        "comments": "Say what needs to change",
+        "name": "Your name as it should appear on the report",
+        "org": "Your organisation"
+      },
+      "validate": "It reflects the role — validate",
+      "validated": "Validated.",
+      "whatChange": "What needs to change",
+      "yourName": "Your name"
+    },
+    "yes": "yes"
+  },
+  "funnel": {
+    "count": "Count",
+    "title": "Hiring Funnel"
+  },
+  "guide": {
+    "counterProductive": "Counter-Productive Behavior Questions",
+    "general": "General Interview Questions",
+    "roleLine": "Role: {{role}} | Generated {{date}}",
+    "scoreLine": "Benchmark: {{benchmark}}% | Candidate: {{candidate}}% | Gap: {{gap}}",
+    "title": "Interview Guide"
+  },
+  "hire": {
+    "cancel": "Cancel",
+    "description": "Record why. The reason is kept with this step and with who made it.",
+    "reason": "Reason",
+    "saving": "Saving…",
+    "submit": "Mark hired",
+    "title": "Mark candidate {{code}} hired",
+    "val": {
+      "max": "At most {{max}} characters",
+      "required": "Say why this candidate is being marked hired"
+    }
+  },
+  "hires": {
+    "avgFit": "Avg predicted fit",
+    "hires": "Hires",
+    "period": "Period",
+    "title": "Hires by period"
+  },
+  "insight": {
+    "fitScore": "Fit Score",
+    "focusAreas": "Interview Focus Areas",
+    "gapAnalysis": "Gap Analysis",
+    "generated": "Generated {{when}}",
+    "opportunityFactors": "Opportunity Factors",
+    "probeQuestions": "Probe Questions",
+    "riskFactors": "Risk Factors",
+    "title": "Insight Package"
+  },
+  "intake": {
+    "failed": "Could not add the candidate. Please try again.",
+    "notEnabled": "Your account is not enabled for Job DNA authoring, so it cannot add candidates."
+  },
+  "likert": {
+    "agree": "Agree",
+    "disagree": "Disagree",
+    "groupLabel": "Likert scale",
+    "neutral": "Neutral",
+    "somewhatAgree": "Somewhat Agree",
+    "somewhatDisagree": "Somewhat Disagree",
+    "stronglyAgree": "Strongly Agree",
+    "stronglyDisagree": "Strongly Disagree"
+  },
+  "panel": {
+    "awaiting": "awaiting {{name}}",
+    "awaitingYou": "This role is awaiting your validation.",
+    "building": "Building…",
+    "description": "Whether an employer or subject-matter expert has confirmed this version's benchmark. Validation is per version and does not change how the role is matched.",
+    "event": {
+      "aReviewer": "a reviewer",
+      "anSme": "an SME (name no longer held)",
+      "changes": "{{when}} — {{actor}} asked for changes",
+      "recorded": "{{when}} — {{actor}} recorded an attestation by {{validator}}",
+      "requested": "{{when}} — {{actor}} asked {{reviewer}} to validate",
+      "validatedInIg": "{{when}} — validated by {{validator}} in IG",
+      "withdrawn": "{{when}} — {{actor}} withdrew the request"
+    },
+    "exportButton": "Rationale Report (.docx)",
+    "exportFailed": "Could not build the Rationale Report.",
+    "history": "History",
+    "loadFailed": "Could not load this role's validation.",
+    "loading": "Loading validation…",
+    "nameNotHeld": "Name no longer held (90-day retention)",
+    "record": "Record an attestation",
+    "recordedAttestation": "recorded attestation",
+    "recordedBy": "recorded by {{name}}",
+    "request": "Request validation",
+    "state": {
+      "changesRequested": "Changes requested",
+      "inReview": "In review",
+      "none": "Not validated",
+      "validated": "Validated",
+      "withdrawn": "Request withdrawn"
+    },
+    "title": "Employer / SME validation",
+    "withdraw": "Withdraw the request",
+    "withdrawFailed": "Could not withdraw the request.",
+    "withdrawn": "Request withdrawn."
+  },
+  "pipeline": {
+    "advanceFailed": "Failed to advance candidate.",
+    "advanced": "Candidate advanced.",
+    "description": "Track candidates through each stage of the hiring pipeline for a role.",
+    "emptyGated": "No candidates in this pipeline yet. Candidate intake and matching are gated for this account.",
+    "loadFailed": "Failed to load the pipeline.",
+    "loading": "Loading pipeline…",
+    "loadingRoles": "Loading roles…",
+    "markHiredFailed": "Failed to mark this candidate hired.",
+    "markedHired": "Candidate {{code}} marked hired.",
+    "selectRole": "Select a role to see its pipeline.",
+    "title": "Pipeline"
+  },
+  "pipelineBoard": {
+    "advance": "Advance",
+    "board": "Board",
+    "col": {
+      "actions": "Actions",
+      "email": "Email",
+      "name": "Name",
+      "status": "Status",
+      "tier": "Tier",
+      "variation": "Variation"
+    },
+    "count": "{{total}} candidates",
+    "noCandidates": "No candidates",
+    "table": "Table",
+    "title": "Pipeline"
+  },
+  "progress": {
+    "complete": "{{pct}}% complete",
+    "question": "Question {{current}} of {{total}}"
+  },
+  "queue": {
+    "askedLine": "· v{{version}} · asked by {{by}} on {{date}}",
+    "col": {
+      "dimension": "Dimension",
+      "target": "Target",
+      "tier": "Tier"
+    },
+    "loadFailed": "Could not load this role's benchmark.",
+    "loading": "Loading the benchmark…",
+    "title": "Awaiting your validation"
+  },
+  "radar": {
+    "benchmark": "Benchmark",
+    "candidate": "Candidate"
+  },
+  "rankRate": {
+    "dimension": "Dimension",
+    "move": "Move",
+    "moveDown": "Move {{name}} down",
+    "moveUp": "Move {{name}} up",
+    "rank": "Rank",
+    "rankFor": "Rank for {{name}}",
+    "rate": "Rate (1-{{max}})",
+    "rateFor": "Rate for {{name}}",
+    "score": "Score"
+  },
+  "record": {
+    "activatedLine": "Activated {{when}}{{by}} · decision-makers: {{makers}} · integrity: {{integrity}}",
+    "answers": "Answers:",
+    "answersUpdated": "Answers updated:",
+    "by": "by {{name}}",
+    "call": "Call: {{call}}",
+    "candidate": "Candidate",
+    "case": "Case",
+    "changedFrom": "changed from {{route}}",
+    "col": {
+      "onFail": "On fail",
+      "recorded": "Recorded",
+      "required": "Required",
+      "rule": "Rule",
+      "standard": "Written standard"
+    },
+    "confirmedRecommendation": "confirmed the recommendation",
+    "decidedBy": "By {{name}}",
+    "decidedByIntake": "decided by the person who did the intake",
+    "decidedOn": "on {{when}}",
+    "engineVersion": "engine {{version}}",
+    "events": "Every event, in order",
+    "finalRoute": "Final route {{route}}",
+    "fit": {
+      "heading": "Strengths profile (for information — not used for the route)",
+      "line": "Fit {{score}} / 100",
+      "roleVersion": "role version {{version}}",
+      "tierWithheld": "tier withheld (partial profile)"
+    },
+    "intakeAlsoDecided": "The person who did the intake also decided.",
+    "kind": {
+      "amendment": "Amendment",
+      "decision": "Decision",
+      "exported": "Record read or exported",
+      "goForward": "Go-forward call",
+      "intake": "Intake",
+      "qualificationCheck": "Minimum-qualification check",
+      "recommendation": "Recommendation (advisory)",
+      "withdrawn": "Withdrawn"
+    },
+    "limits": "Limits",
+    "meetsMinimum": "Meets the minimum standard.",
+    "no": "no",
+    "noAnswer": "no answer",
+    "noDecision": "No decision recorded yet.",
+    "noRecommendation": "No recommendation yet",
+    "notMeetsMinimum": "Does not yet meet the minimum standard.",
+    "notReconstructed": "Does not reconstruct. {{note}}",
+    "notValidated": "This role's benchmark is not validated.",
+    "opened": "Opened",
+    "reason": "Reason: {{reason}}",
+    "recommendedRoute": "Recommended {{route}}.",
+    "reconstructed": "Reconstructed: re-running the stored engine over the stored inputs gives this result.",
+    "role": "Role",
+    "roleVersion": "{{title}} (version {{version}})",
+    "ruleSetTitle": "Rule set: {{name}}, version {{version}} ({{status}})",
+    "ruleSetVersion": "rule set v{{version}}",
+    "status": "Status",
+    "yes": "yes"
+  },
+  "results": {
+    "behaviorPreferences": "Behavior Preferences",
+    "confidence": "Confidence:",
+    "coreTraits": "Core Traits",
+    "title": "Assessment Results",
+    "workAptitudes": "Work Aptitudes"
+  },
+  "review": {
+    "aptitudes": "Aptitudes",
+    "behaviors": "Behaviors",
+    "benchmarkRadar": "Benchmark Radar",
+    "benchmarkScores": "Benchmark Scores",
+    "coreTraits": "Core Traits",
+    "culturalFactors": "Cultural Factors",
+    "departmentLabel": "Department:",
+    "description": "Review the Job DNA benchmark before finalizing. This will create the behavioral profile used to screen candidates.",
+    "environmentalFactors": "Environmental Factors",
+    "notSet": "Not set",
+    "requiredWorkStyles": "Required Work Styles",
+    "roleContext": "Role Context",
+    "roleDetails": "Role Details",
+    "tier": {
+      "executive": "Executive",
+      "frontLine": "Front Line",
+      "professional": "Professional"
+    },
+    "tierLabel": "Tier:",
+    "title": "Review & Submit",
+    "titleLabel": "Title:",
+    "top3Aptitudes": "Top 3 Aptitudes",
+    "top3Behaviors": "Top 3 Behaviors",
+    "top3CoreTraits": "Top 3 Core Traits",
+    "topDimensions": "Top Dimensions",
+    "workPressures": "Work Pressures"
+  },
+  "roleContext": {
+    "culturalFactors": "Cultural Factors",
+    "culturalFactorsPlaceholder": "e.g. Innovation-driven culture\nStrong compliance requirements\nCustomer-first mentality",
+    "description": "Describe the work environment and context for this role. Enter one item per line.",
+    "environmentalFactors": "Environmental Factors",
+    "environmentalFactorsPlaceholder": "e.g. Open-plan office\nRegular travel required\nRemote/hybrid working",
+    "requiredWorkStyles": "Required Work Styles",
+    "requiredWorkStylesPlaceholder": "e.g. Collaborative team environment\nIndependent decision-making\nFast-paced execution",
+    "title": "Role Context & Environment",
+    "workPressures": "Work Pressures",
+    "workPressuresPlaceholder": "e.g. Tight deadlines\nHigh client expectations\nMulti-tasking requirements"
+  },
+  "roleInfo": {
+    "department": "Department",
+    "departmentPlaceholder": "e.g. Sales",
+    "description": "Define the basic details of the role you are benchmarking.",
+    "roleTier": "Role Tier",
+    "roleTitle": "Role Title",
+    "roleTitlePlaceholder": "e.g. Senior Account Manager",
+    "selectTier": "Select tier",
+    "tier": {
+      "executive": "Executive ($150k+)",
+      "frontLine": "Front Line (<$75k)",
+      "professional": "Professional ($75k-$150k)"
+    },
+    "tierNote": "Tier determines pricing for screening, interview guides, and onboarding.",
+    "title": "Role Information"
+  },
+  "ruleEditor": {
+    "acceptedValues": "Accepted values, comma-separated",
+    "addRule": "Add a rule",
+    "clause": "Clause of the written standard",
+    "formLabel": "Rule set",
+    "ifNotMet": "If not met",
+    "kind": {
+      "attested": "Attested requirement (yes)",
+      "backgroundCheck": "Background-check status, as attested (one of)",
+      "degree": "Degree (at least)",
+      "label": "Kind",
+      "licensurePath": "Licensure path (one of)"
+    },
+    "label": "Label",
+    "lowestDegree": "Lowest degree ({{levels}})",
+    "makersCurrent": "Currently: {{names}} — enter them again to keep them.",
+    "makersLabel": "Decision-makers' emails (comma-separated)",
+    "makersNote": "Each must hold the manager role or above in your organisation. Only they can record a decision under this version.",
+    "name": "Name",
+    "onFail": {
+      "hold": "Hold",
+      "none": "Nothing (used only to choose the route)",
+      "refer": "Refer"
+    },
+    "removeRule": "Remove rule {{n}}",
+    "residencyNote": "Otherwise a candidate who meets the minimum is recommended Apprentice.",
+    "residencyWhen": "Recommend Residency when these rule ids all pass (comma-separated)",
+    "ruleId": "Rule id",
+    "ruleN": "Rule {{n}}",
+    "saveDraft": "Save draft",
+    "saveFailed": "Could not save the rule set.",
+    "saved": "Draft saved.",
+    "saving": "Saving…",
+    "val": {
+      "id": "Letters, digits or '-'",
+      "label": "Give the rule a label",
+      "makers": "Name at least one decision-maker by email",
+      "name": "Name the rule set",
+      "rules": "Add at least one rule",
+      "sourceRef": "Name the clause of the written standard"
+    }
+  },
+  "ruleSets": {
+    "actionFailed": "That did not work.",
+    "activate": "Activate",
+    "activated": "Activated.",
+    "description": "Your organisation's written minimum standard, as rules. Each version is frozen when activated.",
+    "editDraft": "Edit draft",
+    "ifNotMet": "{{onFail}} if not met",
+    "loading": "Loading rule sets…",
+    "new": "New rule set",
+    "newVersion": "Start a new version",
+    "newVersionStarted": "New draft version started.",
+    "none": "No rule sets yet.",
+    "routeOnly": "route only",
+    "ruleLine": "{{label}} — {{source}} ({{outcome}})",
+    "staffOnly": "Rule sets are managed by your organisation's recruiting staff.",
+    "summaryLine": "{{rules}} rules · decision-makers: {{makers}}",
+    "title": "Rule sets",
+    "versionLine": "{{name}} — version {{version}} ({{status}})"
+  },
+  "scorecardComparison": {
+    "candidate": "Candidate {{id}}",
+    "title": "Scorecard Comparison"
+  },
+  "scorecards": {
+    "candidateLabel": "Candidate:",
+    "compare": {
+      "checkboxLabel": "Compare {{name}}",
+      "failed": "Failed to load one or more scorecards.",
+      "intro": "Pick up to {{limit}} candidates with a submitted scorecard to see their totals side by side.",
+      "loading": "Loading scorecards…",
+      "missing": "{{count}} selected candidates have no scorecard on the server and are not shown.",
+      "missing_one": "{{count}} selected candidate has no scorecard on the server and is not shown.",
+      "missing_other": "{{count}} selected candidates have no scorecard on the server and are not shown.",
+      "none": "No submitted scorecards for this role yet — submit one above and it will appear here.",
+      "noneOnServer": "None of the selected candidates has a scorecard on the server.",
+      "select": "Select candidates to compare.",
+      "title": "Compare scorecards"
+    },
+    "description": "Structured interview scorecards and guides derived from a role's Job DNA benchmark.",
+    "draftCheckFailed": "Could not check for an interview draft for this candidate.",
+    "loadingRoles": "Loading roles…",
+    "noDraft": "No finalised interview has written a draft for this candidate yet.",
+    "noGuide": "No interview guide generated for this role yet.",
+    "pipelineGated": "Candidate pipeline is gated for this account — the form is preview-only.",
+    "sections": {
+      "aptitudes": "Top 3 Work Aptitudes (max 15)",
+      "behaviours": "Top 3 Behaviours (max 15)",
+      "coreTraits": "Top 3 Core Traits (max 15)",
+      "counterProductive": "Counter-Productive Behaviours (max 10)"
+    },
+    "selectBeforeSubmit": "Select a candidate before submitting a scorecard.",
+    "selectCandidate": "Select a candidate…",
+    "selectRole": "Select a role to build its scorecard and interview guide.",
+    "submitFailed": "Failed to submit scorecard.",
+    "submitted": "Scorecard submitted.",
+    "title": "Scorecards"
+  },
+  "shared": {
+    "error": {
+      "default": "Something went wrong loading this data.",
+      "retry": "Retry"
+    },
+    "loading": "Loading…",
+    "select": {
+      "label": "Job DNA",
+      "placeholder": "Select a role…"
+    }
+  },
+  "stats": {
+    "activeJobs": "Active Jobs",
+    "avgTimeToFill": "Avg Time to Fill",
+    "daysShort": "{{n}}d",
+    "hiresThisMonth": "Hires This Month",
+    "strongFitRate": "Strong Fit Rate",
+    "totalCandidates": "Total Candidates",
+    "totalJobDnas": "Total Job DNAs"
+  },
+  "summary": {
+    "evidence": "What the evidence shows",
+    "grandTotal": "Grand Total"
+  },
+  "survey": {
+    "goTo": "Go to question {{n}}",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "title": "Brain Mapping Light Assessment"
+  },
+  "timeToFill": {
+    "series": "Days to Fill",
+    "title": "Time to Fill (Days)",
+    "tooltip": "{{value}} days"
+  },
+  "wizard": {
+    "back": "Back",
+    "create": "Create Job DNA",
+    "next": "Next",
+    "steps": {
+      "aptitudes": {
+        "description": "Rank & rate 8 aptitudes",
+        "label": "Aptitudes"
+      },
+      "behaviors": {
+        "description": "Rank & rate 8 behaviors",
+        "label": "Behaviors"
+      },
+      "context": {
+        "description": "Work environment",
+        "label": "Context"
+      },
+      "coreTraits": {
+        "description": "Rank & rate 6 traits",
+        "label": "Core Traits"
+      },
+      "review": {
+        "description": "Review & submit",
+        "label": "Review"
+      },
+      "roleInfo": {
+        "description": "Basic role details",
+        "label": "Role Info"
+      }
+    },
+    "stepsLabel": "Wizard steps",
+    "submitting": "Submitting..."
+  }
+}

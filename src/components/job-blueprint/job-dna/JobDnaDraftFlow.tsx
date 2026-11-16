@@ -3,7 +3,9 @@ import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useNavigate } from "react-router-dom"
+import type { TFunction } from "i18next"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import {
   ArrowRight,
   CheckCircle2,
@@ -38,20 +40,24 @@ import type {
   JobTier,
 } from "@/types/job-blueprint"
 
-const ARCHETYPE_CHOICES: { value: DraftArchetype; label: string; hint: string }[] = [
-  { value: "", label: "Auto-detect", hint: "Classify from the title" },
-  { value: "operational", label: "Operational", hint: "Hands-on / task-led" },
-  { value: "managerial", label: "Managerial", hint: "Judgment + people" },
-  { value: "executive", label: "Executive", hint: "Strategy + relationships" },
-]
+function archetypeChoices(t: TFunction): { value: DraftArchetype; label: string; hint: string }[] {
+  return [
+    { value: "", label: t("draftFlow.archetype.auto.label", { defaultValue: "Auto-detect" }), hint: t("draftFlow.archetype.auto.hint", { defaultValue: "Classify from the title" }) },
+    { value: "operational", label: t("draftFlow.archetype.operational.label", { defaultValue: "Operational" }), hint: t("draftFlow.archetype.operational.hint", { defaultValue: "Hands-on / task-led" }) },
+    { value: "managerial", label: t("draftFlow.archetype.managerial.label", { defaultValue: "Managerial" }), hint: t("draftFlow.archetype.managerial.hint", { defaultValue: "Judgment + people" }) },
+    { value: "executive", label: t("draftFlow.archetype.executive.label", { defaultValue: "Executive" }), hint: t("draftFlow.archetype.executive.hint", { defaultValue: "Strategy + relationships" }) },
+  ]
+}
 
-const PROGRESS_STAGES = [
-  "Reading the role…",
-  "Assessing the behavioral demands…",
-  "Setting the 22 benchmarks…",
-  "Balancing the profile…",
-  "Finalizing the blueprint…",
-]
+function progressStages(t: TFunction): string[] {
+  return [
+    t("draftFlow.progress.reading", { defaultValue: "Reading the role…" }),
+    t("draftFlow.progress.assessing", { defaultValue: "Assessing the behavioral demands…" }),
+    t("draftFlow.progress.setting", { defaultValue: "Setting the 22 benchmarks…" }),
+    t("draftFlow.progress.balancing", { defaultValue: "Balancing the profile…" }),
+    t("draftFlow.progress.finalizing", { defaultValue: "Finalizing the blueprint…" }),
+  ]
+}
 
 // The archetype shapes the benchmark; it also maps to the persisted tier so the
 // saved Job DNA carries the right seniority band.
@@ -67,10 +73,13 @@ const DRAFT_TIER_STYLE: Record<DraftDimension["interpretation"], string> = {
   unimportant: "bg-slate-100 text-slate-600 border-slate-300",
 }
 
-const DRAFT_TIER_LABEL: Record<DraftDimension["interpretation"], string> = {
-  critical: "Critical",
-  "counter-productive": "Counter-productive",
-  unimportant: "Unimportant",
+function draftTierLabel(t: TFunction, interpretation: DraftDimension["interpretation"]): string {
+  const labels: Record<DraftDimension["interpretation"], string> = {
+    critical: t("draftFlow.tier.critical", { defaultValue: "Critical" }),
+    "counter-productive": t("draftFlow.tier.counterProductive", { defaultValue: "Counter-productive" }),
+    unimportant: t("draftFlow.tier.unimportant", { defaultValue: "Unimportant" }),
+  }
+  return labels[interpretation]
 }
 
 const selectClass = cn(
@@ -126,22 +135,26 @@ type View =
 
 // ── Step 1: the draft form ───────────────────────────────────────────────────
 
-const formSchema = z.object({
-  role_title: z.string().min(1, "Name the role to benchmark"),
-  context: z.string().optional(),
-  archetype: z.enum(["", "operational", "managerial", "executive"]),
-})
+const makeFormSchema = (t: TFunction) =>
+  z.object({
+    role_title: z.string().min(1, t("draftFlow.val.roleTitle", { defaultValue: "Name the role to benchmark" })),
+    context: z.string().optional(),
+    archetype: z.enum(["", "operational", "managerial", "executive"]),
+  })
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<ReturnType<typeof makeFormSchema>>
 
 function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) => void }) {
+  const { t } = useTranslation("jobBlueprintPages")
+  const PROGRESS_STAGES = progressStages(t)
+  const ARCHETYPE_CHOICES = archetypeChoices(t)
   const navigate = useNavigate()
   const draft = useDraftBenchmark()
   const { roles, isLoading: rolesLoading, kceError } = useAllRoles()
 
   const { register, handleSubmit, control, setValue, getValues, formState: { errors } } =
     useForm<FormValues>({
-      resolver: zodResolver(formSchema),
+      resolver: zodResolver(makeFormSchema(t)),
       defaultValues: { role_title: "", context: "", archetype: "" },
     })
 
@@ -199,10 +212,10 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
           { shouldValidate: true },
         )
       }
-      toast.success(`Loaded "${role.role_title}" from Knowledge Continuity.`)
+      toast.success(t("draftFlow.loadedFromKce", { defaultValue: "Loaded \"{{title}}\" from Knowledge Continuity.", title: role.role_title }))
     } catch {
       // Best-effort only — the title prefill is enough to draft from.
-      toast.success(`Loaded "${role.role_title}".`)
+      toast.success(t("draftFlow.loaded", { defaultValue: "Loaded \"{{title}}\".", title: role.role_title }))
     } finally {
       setLoadingRole(false)
     }
@@ -219,9 +232,9 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
         setValue("role_title", suggestedTitle, { shouldValidate: true })
       }
       setUploadName(file.name)
-      toast.success(`Loaded "${file.name}" — ${text.length.toLocaleString()} characters of context.`)
+      toast.success(t("draftFlow.loadedFile", { defaultValue: "Loaded \"{{name}}\" — {{chars}} characters of context.", name: file.name, chars: text.length.toLocaleString() }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't read that file.")
+      toast.error(err instanceof Error ? err.message : t("draftFlow.readFailed", { defaultValue: "Couldn't read that file." }))
     } finally {
       setExtracting(false)
       if (fileRef.current) fileRef.current.value = "" // allow re-uploading the same file
@@ -239,7 +252,7 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
       {
         onSuccess: (result) => {
           stopProgress(true)
-          toast.success("Blueprint drafted — 22 dimensions to review.")
+          toast.success(t("draftFlow.drafted", { defaultValue: "Blueprint drafted — 22 dimensions to review." }))
           onDrafted(result)
         },
         onError: () => stopProgress(false), // the hook surfaces the error toast
@@ -254,13 +267,10 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wand2 className="h-5 w-5 text-primary" />
-          Draft a blueprint
+          {t("draftFlow.title", { defaultValue: "Draft a blueprint" })}
         </CardTitle>
         <CardDescription>
-          Draft all 22 dimensions for a role from a title, an uploaded job description, or a role
-          from another vertical. The draft is the engine&apos;s reading of the role against the PRISM
-          definition of each dimension — a starting point, not a validated PRISM benchmark. You review
-          and edit the profile before anything is saved.
+          {t("draftFlow.description", { defaultValue: "Draft all 22 dimensions for a role from a title, an uploaded job description, or a role from another vertical. The draft is the engine's reading of the role against the PRISM definition of each dimension — a starting point, not a validated PRISM benchmark. You review and edit the profile before anything is saved." })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -268,7 +278,7 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
           {/* Cross-vertical role picker */}
           {roles.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="role_picker">Role</Label>
+              <Label htmlFor="role_picker">{t("draftFlow.role", { defaultValue: "Role" })}</Label>
               <select
                 id="role_picker"
                 defaultValue=""
@@ -276,29 +286,32 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
                 disabled={rolesLoading || loadingRole}
                 className={selectClass}
               >
-                <option value="">Draft a new role…</option>
+                <option value="">{t("draftFlow.draftNew", { defaultValue: "Draft a new role…" })}</option>
                 {roles.map((r) => (
                   <option key={roleOptionValue(r)} value={roleOptionValue(r)}>
-                    {r.role_title} — {r.source === "job-dna" ? "Job DNA" : "KCE"}
+                    {r.role_title} — {r.source === "job-dna" ? t("draftFlow.sourceJobDna", { defaultValue: "Job DNA" }) : t("draftFlow.sourceKce", { defaultValue: "KCE" })}
                   </option>
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
                 {loadingRole
-                  ? "Loading the role…"
-                  : "Pick an existing role — a Job DNA role opens its blueprint; a Knowledge Continuity role seeds this draft."}
+                  ? t("draftFlow.loadingRole", { defaultValue: "Loading the role…" })
+                  : t("draftFlow.pickRole", { defaultValue: "Pick an existing role — a Job DNA role opens its blueprint; a Knowledge Continuity role seeds this draft." })}
               </p>
             </div>
           )}
           {kceError != null && (
             <p role="alert" className="text-xs text-muted-foreground">
-              {kceErrorMessage(kceError, "Couldn't load the roles saved in Knowledge Continuity.")}
+              {kceErrorMessage(kceError, t("draftFlow.kceLoadFailed", { defaultValue: "Couldn't load the roles saved in Knowledge Continuity." }))}
             </p>
           )}
 
           {/* Upload a role document */}
           <div className="space-y-2">
-            <Label>Upload a role <span className="text-muted-foreground">(optional — Word, PDF, or text)</span></Label>
+            <Label>
+              {t("draftFlow.upload.label", { defaultValue: "Upload a role" })}{" "}
+              <span className="text-muted-foreground">{t("draftFlow.upload.optional", { defaultValue: "(optional — Word, PDF, or text)" })}</span>
+            </Label>
             <div className="flex flex-wrap items-center gap-2">
               <input
                 ref={fileRef}
@@ -306,7 +319,7 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
                 accept={ACCEPTED_ROLE_FILE_TYPES}
                 onChange={onFileChosen}
                 className="hidden"
-                aria-label="Upload a role document"
+                aria-label={t("draftFlow.upload.ariaLabel", { defaultValue: "Upload a role document" })}
               />
               <Button
                 type="button"
@@ -315,9 +328,9 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
                 disabled={extracting}
               >
                 {extracting ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reading…</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("draftFlow.upload.reading", { defaultValue: "Reading…" })}</>
                 ) : (
-                  <><FileUp className="mr-2 h-4 w-4" /> Upload a role</>
+                  <><FileUp className="mr-2 h-4 w-4" /> {t("draftFlow.upload.label", { defaultValue: "Upload a role" })}</>
                 )}
               </Button>
               {uploadName && !extracting && (
@@ -327,16 +340,15 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Drop in a job description or role charter — we read the text into the context below and
-              guess the title. Nothing is uploaded to a server.
+              {t("draftFlow.upload.note", { defaultValue: "Drop in a job description or role charter — we read the text into the context below and guess the title. Nothing is uploaded to a server." })}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role_title">Role title</Label>
+            <Label htmlFor="role_title">{t("draftFlow.roleTitle", { defaultValue: "Role title" })}</Label>
             <Input
               id="role_title"
-              placeholder="e.g. Senior Wastewater Treatment Operator, or CIO"
+              placeholder={t("draftFlow.roleTitlePlaceholder", { defaultValue: "e.g. Senior Wastewater Treatment Operator, or CIO" })}
               {...register("role_title")}
             />
             {errors.role_title && (
@@ -345,17 +357,20 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="context">Context <span className="text-muted-foreground">(optional)</span></Label>
+            <Label htmlFor="context">
+              {t("draftFlow.context", { defaultValue: "Context" })}{" "}
+              <span className="text-muted-foreground">{t("draftFlow.contextOptional", { defaultValue: "(optional)" })}</span>
+            </Label>
             <Textarea
               id="context"
               rows={4}
-              placeholder="Paste a job description, or a few lines on what this role really demands. (An uploaded file fills this in.)"
+              placeholder={t("draftFlow.contextPlaceholder", { defaultValue: "Paste a job description, or a few lines on what this role really demands. (An uploaded file fills this in.)" })}
               {...register("context")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Role shape</Label>
+            <Label>{t("draftFlow.roleShape", { defaultValue: "Role shape" })}</Label>
             <Controller
               control={control}
               name="archetype"
@@ -381,15 +396,14 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
               )}
             />
             <p className="text-xs text-muted-foreground">
-              The shape tilts which dimensions the drafter marks critical — an executive leans on
-              judgment and relationships, not a task list.
+              {t("draftFlow.shapeNote", { defaultValue: "The shape tilts which dimensions the drafter marks critical — an executive leans on judgment and relationships, not a task list." })}
             </p>
           </div>
 
           {/* Draft button + progress */}
           {drafting ? (
             <div className="space-y-2" role="status" aria-live="polite">
-              <Progress value={progress} aria-label="Drafting the blueprint" />
+              <Progress value={progress} aria-label={t("draftFlow.drafting", { defaultValue: "Drafting the blueprint" })} />
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {statusMsg} <span className="tabular-nums">({Math.round(progress)}%)</span>
@@ -397,7 +411,7 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
             </div>
           ) : (
             <Button type="submit" className="w-full">
-              <Sparkles className="mr-2 h-4 w-4" /> Draft the blueprint
+              <Sparkles className="mr-2 h-4 w-4" /> {t("draftFlow.draftButton", { defaultValue: "Draft the blueprint" })}
             </Button>
           )}
         </form>
@@ -409,11 +423,6 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
 // ── Step 2: review + edit the drafted benchmark ──────────────────────────────
 
 type Block = { key: "behaviors" | "aptitudes" | "core_traits"; title: string }
-const BLOCKS: Block[] = [
-  { key: "behaviors", title: "Behaviors" },
-  { key: "aptitudes", title: "Work Aptitudes" },
-  { key: "core_traits", title: "Core Traits" },
-]
 
 function DimensionRow({
   dim,
@@ -422,12 +431,13 @@ function DimensionRow({
   dim: DraftDimension
   onPercentChange: (value: number) => void
 }) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border p-2.5">
       <div className="flex-1">
         <div className="text-sm font-medium">{dim.dimension_name}</div>
         <Badge variant="outline" className={cn("mt-1 text-[10px]", DRAFT_TIER_STYLE[dim.interpretation])}>
-          {DRAFT_TIER_LABEL[dim.interpretation]}
+          {draftTierLabel(t, dim.interpretation)}
         </Badge>
       </div>
       <div className="flex items-center gap-1.5">
@@ -436,7 +446,7 @@ function DimensionRow({
           min={0}
           max={100}
           value={dim.final_benchmark_percent}
-          aria-label={`${dim.dimension_name} benchmark percent`}
+          aria-label={t("draftFlow.row.benchmarkPercent", { defaultValue: "{{name}} benchmark percent", name: dim.dimension_name })}
           onChange={(e) => {
             const n = Number(e.target.value)
             onPercentChange(Number.isNaN(n) ? 0 : Math.max(0, Math.min(100, n)))
@@ -467,11 +477,12 @@ function RateRow({
   proposedRate: number
   onRateChange: (rate: number) => void
 }) {
+  const { t } = useTranslation("jobBlueprintPages")
   const lo = dim.rate_min ?? 1
   const hi = dim.rate_max ?? lo
   const maxRate = dim.max_rate ?? hi
   const rates = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i)
-  const tier = DRAFT_TIER_LABEL[dim.interpretation].toLowerCase()
+  const tier = draftTierLabel(t, dim.interpretation).toLowerCase()
   const heldBack = typeof dim.ai_rate === "number" && dim.ai_rate !== proposedRate
   const changed = dim.rate_value !== proposedRate
 
@@ -482,47 +493,50 @@ function RateRow({
           <div className="text-sm font-medium">{dim.dimension_name}</div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <Badge variant="outline" className={cn("text-[10px]", DRAFT_TIER_STYLE[dim.interpretation])}>
-              {DRAFT_TIER_LABEL[dim.interpretation]}
+              {draftTierLabel(t, dim.interpretation)}
             </Badge>
             <span className="text-[11px] text-muted-foreground">
-              Rank {dim.rank_position} of {blockSize}
+              {t("draftFlow.row.rank", { defaultValue: "Rank {{rank}} of {{size}}", rank: dim.rank_position, size: blockSize })}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Label htmlFor={`rate-${dimKey(dim)}`} className="text-xs text-muted-foreground">
-            Rate
+            {t("draftFlow.row.rate", { defaultValue: "Rate" })}
           </Label>
           <select
             id={`rate-${dimKey(dim)}`}
-            aria-label={`${dim.dimension_name} rate`}
+            aria-label={t("draftFlow.row.rateAria", { defaultValue: "{{name}} rate", name: dim.dimension_name })}
             value={dim.rate_value}
             onChange={(e) => onRateChange(Number(e.target.value))}
             className={cn(selectClass, "h-8 w-28 py-1")}
           >
             {rates.map((r) => (
               <option key={r} value={r}>
-                {r} of {maxRate}
-                {r === proposedRate ? " (AI)" : ""}
+                {r === proposedRate
+                  ? t("draftFlow.row.rateOptionAi", { defaultValue: "{{rate}} of {{max}} (AI)", rate: r, max: maxRate })
+                  : t("draftFlow.row.rateOption", { defaultValue: "{{rate}} of {{max}}", rate: r, max: maxRate })}
               </option>
             ))}
           </select>
           <div className="w-16 text-right">
             <div
               className="text-sm font-semibold tabular-nums"
-              aria-label={`${dim.dimension_name} target`}
+              aria-label={t("draftFlow.row.targetAria", { defaultValue: "{{name}} target", name: dim.dimension_name })}
             >
               {dim.final_benchmark_percent}%
             </div>
-            <div className="text-[10px] text-muted-foreground">target</div>
+            <div className="text-[10px] text-muted-foreground">{t("draftFlow.row.target", { defaultValue: "target" })}</div>
           </div>
         </div>
       </div>
       <p className="mt-1.5 text-[11px] text-muted-foreground">
-        AI proposed {proposedRate} of {maxRate}
-        {heldBack ? ` (it suggested ${dim.ai_rate}; held at ${proposedRate} so this stays ${tier})` : ""}
-        {changed ? ` · you set ${dim.rate_value}` : ""}
-        {` · rates ${lo}–${hi} keep it ${tier}`}
+        {t("draftFlow.row.aiProposed", { defaultValue: "AI proposed {{rate}} of {{max}}", rate: proposedRate, max: maxRate })}
+        {heldBack
+          ? ` (${t("draftFlow.row.heldBack", { defaultValue: "it suggested {{ai}}; held at {{held}} so this stays {{tier}}", ai: dim.ai_rate, held: proposedRate, tier })})`
+          : ""}
+        {changed ? ` · ${t("draftFlow.row.youSet", { defaultValue: "you set {{value}}", value: dim.rate_value })}` : ""}
+        {` · ${t("draftFlow.row.ratesKeep", { defaultValue: "rates {{lo}}–{{hi}} keep it {{tier}}", lo, hi, tier })}`}
       </p>
     </div>
   )
@@ -537,6 +551,12 @@ function ReviewStep({
   onStartOver: () => void
   onSaved: (roleTitle: string, id: string) => void
 }) {
+  const { t } = useTranslation("jobBlueprintPages")
+  const BLOCKS: Block[] = [
+    { key: "behaviors", title: t("draftFlow.blocks.behaviors", { defaultValue: "Behaviors" }) },
+    { key: "aptitudes", title: t("draftFlow.blocks.aptitudes", { defaultValue: "Work Aptitudes" }) },
+    { key: "core_traits", title: t("draftFlow.blocks.coreTraits", { defaultValue: "Core Traits" }) },
+  ]
   const createJobDna = useCreateJobDna()
   const finalizeBenchmark = useFinalizeBenchmark()
   const rankRate = isRankThenRate(draft)
@@ -617,7 +637,7 @@ function ReviewStep({
       })
 
       if (!created?.id) {
-        toast.error("Job DNA was created but no id was returned.")
+        toast.error(t("authoring.noId", { defaultValue: "Job DNA was created but no id was returned." }))
         return
       }
 
@@ -626,10 +646,10 @@ function ReviewStep({
         benchmark: { behaviors, aptitudes, coreTraits },
       })
 
-      toast.success("Job DNA saved.")
+      toast.success(t("draftFlow.saved", { defaultValue: "Job DNA saved." }))
       onSaved(draft.role_title, created.id)
     } catch {
-      toast.error("Failed to save Job DNA. Please try again.")
+      toast.error(t("authoring.saveFailed", { defaultValue: "Failed to save Job DNA. Please try again." }))
     } finally {
       setSaving(false)
     }
@@ -642,13 +662,14 @@ function ReviewStep({
         <CardContent className="flex flex-wrap items-center gap-3 py-4">
           <CheckCircle2 className="h-6 w-6 shrink-0 text-primary" />
           <div>
-            <div className="font-semibold">Blueprint drafted</div>
+            <div className="font-semibold">{t("draftFlow.review.drafted", { defaultValue: "Blueprint drafted" })}</div>
             <div className="text-sm text-muted-foreground">
-              22 dimensions drafted · <span className="capitalize">{draft.archetype}</span> shape.
+              {t("draftFlow.review.dimsDrafted", { defaultValue: "22 dimensions drafted ·" })} <span className="capitalize">{draft.archetype}</span>{" "}
+              {t("draftFlow.review.shape", { defaultValue: "shape." })}
               {draft.rationale ? ` ${draft.rationale}` : ""}{" "}
               {rankRate
-                ? "Each target comes from the dimension's rank and a rate the AI proposed. Check every rate, change any you disagree with, then confirm and save. Nothing is saved until you do."
-                : "This is a draft for you to review, not a validated benchmark. Adjust the percents below, then save."}
+                ? t("draftFlow.review.rankRateNote", { defaultValue: "Each target comes from the dimension's rank and a rate the AI proposed. Check every rate, change any you disagree with, then confirm and save. Nothing is saved until you do." })
+                : t("draftFlow.review.percentNote", { defaultValue: "This is a draft for you to review, not a validated benchmark. Adjust the percents below, then save." })}
             </div>
           </div>
         </CardContent>
@@ -691,23 +712,25 @@ function ReviewStep({
             className="mt-0.5 h-4 w-4"
           />
           <Label htmlFor="confirm-rates" className="text-sm font-normal leading-snug">
-            I have reviewed all {allDims.length} rates
-            {changedCount > 0 ? ` (${changedCount} changed from the AI's proposal)` : ""} and confirm
-            them. Saving publishes this benchmark with me recorded as its reviewer.
+            {t("draftFlow.review.confirm", { defaultValue: "I have reviewed all {{total}} rates{{changed}} and confirm them. Saving publishes this benchmark with me recorded as its reviewer.", total: allDims.length,
+              changed:
+                changedCount > 0
+                  ? ` (${t("draftFlow.review.changedFromAi", { defaultValue: "{{changed}} changed from the AI's proposal", changed: changedCount })})`
+                  : "", })}
           </Label>
         </div>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button type="button" variant="ghost" onClick={onStartOver} disabled={saving}>
-          <RotateCcw className="mr-2 h-4 w-4" /> Start over
+          <RotateCcw className="mr-2 h-4 w-4" /> {t("draftFlow.review.startOver", { defaultValue: "Start over" })}
         </Button>
         <Button type="button" onClick={save} disabled={saving || (rankRate && !confirmed)}>
           {saving ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("draftFlow.review.saving", { defaultValue: "Saving…" })}</>
           ) : (
             <>
-              <CheckCircle2 className="mr-2 h-4 w-4" /> Save role &amp; blueprint
+              <CheckCircle2 className="mr-2 h-4 w-4" /> {t("draftFlow.review.save", { defaultValue: "Save role & blueprint" })}
               <ArrowRight className="ml-2 h-4 w-4" />
             </>
           )}
@@ -728,15 +751,16 @@ function DoneStep({
   id: string
   onDraftAnother: () => void
 }) {
+  const { t } = useTranslation("jobBlueprintPages")
   const navigate = useNavigate()
   return (
     <Card>
       <CardContent className="space-y-6 py-8 text-center">
         <div className="flex flex-col items-center gap-2">
           <CheckCircle2 className="h-12 w-12 text-primary" />
-          <h2 className="text-xl font-semibold">Saved “{roleTitle}”</h2>
+          <h2 className="text-xl font-semibold">{t("draftFlow.done.saved", { defaultValue: "Saved “{{role}}”", role: roleTitle })}</h2>
           <p className="max-w-md text-sm text-muted-foreground">
-            The benchmark is saved and the role is now available across your Job DNA surfaces.
+            {t("draftFlow.done.body", { defaultValue: "The benchmark is saved and the role is now available across your Job DNA surfaces." })}
           </p>
         </div>
 
@@ -748,9 +772,9 @@ function DoneStep({
           >
             <ArrowRight className="h-5 w-5 shrink-0 text-primary" />
             <div className="flex-1">
-              <div className="text-sm font-semibold">View the blueprint</div>
+              <div className="text-sm font-semibold">{t("draftFlow.done.view", { defaultValue: "View the blueprint" })}</div>
               <div className="text-xs text-muted-foreground">
-                Open the benchmark profile and its charts.
+                {t("draftFlow.done.viewNote", { defaultValue: "Open the benchmark profile and its charts." })}
               </div>
             </div>
           </button>
@@ -762,8 +786,8 @@ function DoneStep({
           >
             <Wand2 className="h-5 w-5 shrink-0 text-muted-foreground" />
             <div className="flex-1">
-              <div className="text-sm font-semibold">Draft another</div>
-              <div className="text-xs text-muted-foreground">Benchmark the next role.</div>
+              <div className="text-sm font-semibold">{t("draftFlow.done.another", { defaultValue: "Draft another" })}</div>
+              <div className="text-xs text-muted-foreground">{t("draftFlow.done.anotherNote", { defaultValue: "Benchmark the next role." })}</div>
             </div>
           </button>
         </div>

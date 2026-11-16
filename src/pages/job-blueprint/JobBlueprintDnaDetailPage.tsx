@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import type { JobDNA } from "@/types/job-blueprint"
 import { useParams, Link } from "react-router-dom"
 import { toast } from "sonner"
+import type { TFunction } from "i18next"
+import { useTranslation } from "react-i18next"
 import { Dna, Pencil, Save, X } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -25,26 +27,33 @@ const TIERS: JobTier[] = ["front-line", "professional", "executive"]
  * details (title, department, tier) can be edited inline and saved via
  * `PUT /v1/blueprint/job-dna/:id` (useUpdateJobDna).
  */
-const SOURCE_LABEL: Record<string, string> = {
-  "llm-draft": "drafted by the Job DNA engine",
-  manual: "built by hand",
-  "jd-extract": "extracted from a job description",
-  "incumbent-contrast": "proposed from incumbent interviews",
-  unknown: "source not recorded",
+function sourceLabels(t: TFunction): Record<string, string> {
+  return {
+    "llm-draft": t("dnaDetail.source.llmDraft", { defaultValue: "drafted by the Job DNA engine" }),
+    manual: t("dnaDetail.source.manual", { defaultValue: "built by hand" }),
+    "jd-extract": t("dnaDetail.source.jdExtract", { defaultValue: "extracted from a job description" }),
+    "incumbent-contrast": t("dnaDetail.source.incumbentContrast", { defaultValue: "proposed from incumbent interviews" }),
+    unknown: t("dnaDetail.source.unknown", { defaultValue: "source not recorded" }),
+  }
 }
 
 /** V2 — " · drafted by the Job DNA engine · reviewed 21 Sep 2026" or " · source not recorded". */
-function provenanceLine(jobDna: JobDNA): string {
-  const source = SOURCE_LABEL[jobDna.benchmarkSource ?? "unknown"] ?? "source not recorded"
+function provenanceLine(jobDna: JobDNA, t: TFunction): string {
+  const labels = sourceLabels(t)
+  const source = labels[jobDna.benchmarkSource ?? "unknown"] ?? labels.unknown
   const reviewed = jobDna.reviewedAt
-    ? ` · reviewed ${new Date(jobDna.reviewedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`
+    ? ` · ${t("dnaDetail.provenance.reviewed", {
+        defaultValue: "reviewed {{date}}",
+        date: new Date(jobDna.reviewedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }),
+      })}`
     : jobDna.status === "active"
-      ? " · reviewer not recorded"
+      ? ` · ${t("dnaDetail.provenance.reviewerNotRecorded", { defaultValue: "reviewer not recorded" })}`
       : ""
   return ` · ${source}${reviewed}`
 }
 
 export default function JobBlueprintDnaDetailPage() {
+  const { t } = useTranslation("jobBlueprintPages")
   const { id = "" } = useParams<{ id: string }>()
   const { data: jobDna, isLoading, isError, refetch } = useJobDnaDetail(id)
   const updateJobDna = useUpdateJobDna()
@@ -62,13 +71,13 @@ export default function JobBlueprintDnaDetailPage() {
     }
   }, [jobDna])
 
-  if (isLoading) return <JobDnaLoading label="Loading Job DNA…" />
+  if (isLoading) return <JobDnaLoading label={t("dnaDetail.loading", { defaultValue: "Loading Job DNA…" })} />
   if (isError || !jobDna)
     return (
       <div className="max-w-2xl">
-        <JobDnaError message="Failed to load this Job DNA." onRetry={() => void refetch()} />
+        <JobDnaError message={t("dnaDetail.loadFailed", { defaultValue: "Failed to load this Job DNA." })} onRetry={() => void refetch()} />
         <Link to={ROUTES.JOB_DNA.DASHBOARD} className="mt-3 inline-block text-sm text-[#7C3AED] underline">
-          Back to dashboard
+          {t("dnaDetail.backToDashboard", { defaultValue: "Back to dashboard" })}
         </Link>
       </div>
     )
@@ -79,10 +88,10 @@ export default function JobBlueprintDnaDetailPage() {
         id,
         data: { roleTitle: form.roleTitle, department: form.department, tier: form.tier },
       })
-      toast.success("Job DNA updated.")
+      toast.success(t("dnaDetail.updated", { defaultValue: "Job DNA updated." }))
       setEditing(false)
     } catch {
-      toast.error("Failed to update Job DNA.")
+      toast.error(t("dnaDetail.updateFailed", { defaultValue: "Failed to update Job DNA." }))
     }
   }
 
@@ -91,12 +100,12 @@ export default function JobBlueprintDnaDetailPage() {
       <JobDnaPageHeader
         icon={Dna}
         title={jobDna.roleTitle}
-        description={`${jobDna.department} · ${jobDna.tier} · v${jobDna.version}${provenanceLine(jobDna)}`}
+        description={`${jobDna.department} · ${jobDna.tier} · v${jobDna.version}${provenanceLine(jobDna, t)}`}
         action={
           !editing ? (
             <Button variant="outline" onClick={() => setEditing(true)}>
               <Pencil className="mr-1 h-4 w-4" />
-              Edit details
+              {t("dnaDetail.editDetails", { defaultValue: "Edit details" })}
             </Button>
           ) : null
         }
@@ -105,12 +114,12 @@ export default function JobBlueprintDnaDetailPage() {
       {editing ? (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base">Edit role details</CardTitle>
+            <CardTitle className="text-base">{t("dnaDetail.editTitle", { defaultValue: "Edit role details" })}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-1.5">
-                <Label htmlFor="roleTitle">Role title</Label>
+                <Label htmlFor="roleTitle">{t("dnaDetail.roleTitle", { defaultValue: "Role title" })}</Label>
                 <Input
                   id="roleTitle"
                   value={form.roleTitle}
@@ -118,7 +127,7 @@ export default function JobBlueprintDnaDetailPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="department">Department</Label>
+                <Label htmlFor="department">{t("dnaDetail.department", { defaultValue: "Department" })}</Label>
                 <Input
                   id="department"
                   value={form.department}
@@ -126,16 +135,16 @@ export default function JobBlueprintDnaDetailPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="tier">Tier</Label>
+                <Label htmlFor="tier">{t("dnaDetail.tier", { defaultValue: "Tier" })}</Label>
                 <select
                   id="tier"
                   className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                   value={form.tier}
                   onChange={(e) => setForm((p) => ({ ...p, tier: e.target.value as JobTier }))}
                 >
-                  {TIERS.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                  {TIERS.map((tier) => (
+                    <option key={tier} value={tier}>
+                      {tier}
                     </option>
                   ))}
                 </select>
@@ -144,11 +153,11 @@ export default function JobBlueprintDnaDetailPage() {
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={updateJobDna.isPending}>
                 <Save className="mr-1 h-4 w-4" />
-                {updateJobDna.isPending ? "Saving…" : "Save"}
+                {updateJobDna.isPending ? t("dnaDetail.saving", { defaultValue: "Saving…" }) : t("dnaDetail.save", { defaultValue: "Save" })}
               </Button>
               <Button variant="outline" onClick={() => setEditing(false)}>
                 <X className="mr-1 h-4 w-4" />
-                Cancel
+                {t("dnaDetail.cancel", { defaultValue: "Cancel" })}
               </Button>
             </div>
           </CardContent>
@@ -156,7 +165,7 @@ export default function JobBlueprintDnaDetailPage() {
       ) : null}
 
       <div className="mb-4 flex items-center gap-2">
-        <span className="text-sm text-[#6b7280]">Status:</span>
+        <span className="text-sm text-[#6b7280]">{t("dnaDetail.status", { defaultValue: "Status:" })}</span>
         <span className="rounded-full bg-[rgba(124,58,237,0.1)] px-2.5 py-0.5 text-xs font-medium text-[#7C3AED]">
           {jobDna.status}
         </span>
@@ -170,19 +179,18 @@ export default function JobBlueprintDnaDetailPage() {
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-base">Benchmark profile</CardTitle>
+          <CardTitle className="text-base">{t("dnaDetail.benchmarkProfile", { defaultValue: "Benchmark profile" })}</CardTitle>
           <CardDescription>
-            Authored here — drafted by the Job DNA engine or built by hand — and reviewed by a person.
-            Candidates&apos; PRISM profiles are scored against it. It is not a PRISM-validated job benchmark.
+            {t("dnaDetail.benchmarkNote", { defaultValue: "Authored here — drafted by the Job DNA engine or built by hand — and reviewed by a person. Candidates' PRISM profiles are scored against it. It is not a PRISM-validated job benchmark." })}
           </CardDescription>
           {jobDna.shape ? (
             jobDna.shape.conforms ? (
               <p className="text-xs text-emerald-700" data-testid="shape-report">
-                Tier shape conforms to the methodology: 3 critical per block, 2 counter-productive behaviours.
+                {t("dnaDetail.shapeConforms", { defaultValue: "Tier shape conforms to the methodology: 3 critical per block, 2 counter-productive behaviours." })}
               </p>
             ) : (
               <p className="text-xs text-amber-700" role="alert" data-testid="shape-report">
-                Tier shape differs from the methodology: {jobDna.shape.violations.join("; ")}.
+                {t("dnaDetail.shapeDiffers", { defaultValue: "Tier shape differs from the methodology: {{violations}}.", violations: jobDna.shape.violations.join("; ") })}
               </p>
             )
           ) : null}
@@ -199,7 +207,7 @@ export default function JobBlueprintDnaDetailPage() {
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="min-w-0">
           <CardHeader>
-            <CardTitle className="text-sm">Behaviours</CardTitle>
+            <CardTitle className="text-sm">{t("dnaDetail.behaviours", { defaultValue: "Behaviours" })}</CardTitle>
           </CardHeader>
           <CardContent>
             <BenchmarkBarChart benchmarks={jobDna.behaviors} height={250} />
@@ -207,7 +215,7 @@ export default function JobBlueprintDnaDetailPage() {
         </Card>
         <Card className="min-w-0">
           <CardHeader>
-            <CardTitle className="text-sm">Aptitudes</CardTitle>
+            <CardTitle className="text-sm">{t("dnaDetail.aptitudes", { defaultValue: "Aptitudes" })}</CardTitle>
           </CardHeader>
           <CardContent>
             <BenchmarkBarChart benchmarks={jobDna.aptitudes} height={250} />
@@ -215,7 +223,7 @@ export default function JobBlueprintDnaDetailPage() {
         </Card>
         <Card className="min-w-0">
           <CardHeader>
-            <CardTitle className="text-sm">Core traits</CardTitle>
+            <CardTitle className="text-sm">{t("dnaDetail.coreTraits", { defaultValue: "Core traits" })}</CardTitle>
           </CardHeader>
           <CardContent>
             <BenchmarkBarChart benchmarks={jobDna.coreTraits} height={200} />
