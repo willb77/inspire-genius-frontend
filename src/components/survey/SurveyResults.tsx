@@ -19,12 +19,14 @@ import type {
   Survey,
   SurveyAnswerValue,
 } from "@/types/survey"
+import { useTranslation } from "react-i18next"
 
 function Distribution({ counts }: { counts: Record<string, number> }) {
+  const { t } = useTranslation("studioUi")
   const entries = Object.entries(counts)
   const max = Math.max(1, ...entries.map(([, n]) => n))
   if (entries.length === 0)
-    return <p className="text-sm text-muted-foreground">No answers yet.</p>
+    return <p className="text-sm text-muted-foreground">{t("survey.surveyResults.noAnswersYet", { defaultValue: "No answers yet." })}</p>
   return (
     <div className="space-y-1.5">
       {entries.map(([label, n]) => (
@@ -46,12 +48,13 @@ function Distribution({ counts }: { counts: Record<string, number> }) {
 }
 
 function QuestionCompilation({ q }: { q: QuestionSummary }) {
+  const { t } = useTranslation("studioUi")
   return (
     <div className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
       <div className="flex items-start justify-between gap-2">
         <p className="font-medium">{q.prompt || "Untitled question"}</p>
         <Badge variant="secondary" className="shrink-0">
-          {q.answered} answered
+          {t("survey.surveyResults.answered", { defaultValue: "{{answered}} answered", answered: q.answered })}
         </Badge>
       </div>
 
@@ -74,7 +77,7 @@ function QuestionCompilation({ q }: { q: QuestionSummary }) {
       {q.type === "text" && (
         <div className="space-y-1">
           {q.textAnswers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No answers yet.</p>
+            <p className="text-sm text-muted-foreground">{t("survey.surveyResults.noAnswersYet", { defaultValue: "No answers yet." })}</p>
           ) : (
             q.textAnswers.map((a, i) => (
               <p
@@ -102,6 +105,7 @@ export interface SurveyResultsProps {
 }
 
 export default function SurveyResults({ survey }: SurveyResultsProps) {
+  const { t } = useTranslation("studioUi")
   const [showIndividual, setShowIndividual] = useState(false)
   const summary = useSurveySummary(survey.id)
   const responses = useSurveyResponses(survey.id, showIndividual)
@@ -115,10 +119,10 @@ export default function SurveyResults({ survey }: SurveyResultsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <BarChart3 className="h-4 w-4" aria-hidden />
-            Compilation
+            {t("survey.surveyResults.compilation", { defaultValue: "Compilation" })}
             {summary.data && (
               <Badge variant="outline" className="ml-1">
-                {summary.data.responseCount} responses
+                {t("survey.surveyResults.responses", { defaultValue: "{{responseCount}} responses", responseCount: summary.data.responseCount })}
               </Badge>
             )}
           </CardTitle>
@@ -130,11 +134,11 @@ export default function SurveyResults({ survey }: SurveyResultsProps) {
             </div>
           ) : summary.isError ? (
             <p className="py-4 text-sm text-destructive">
-              Could not load the compilation.
+              {t("survey.surveyResults.couldNotLoadTheCompilation", { defaultValue: "Could not load the compilation." })}
             </p>
           ) : summary.data && summary.data.responseCount === 0 ? (
             <p className="py-4 text-sm text-muted-foreground">
-              No responses yet. The compilation appears once people submit.
+              {t("survey.surveyResults.noResponsesYetTheCompilation", { defaultValue: "No responses yet. The compilation appears once people submit." })}
             </p>
           ) : (
             <div className="space-y-4">
@@ -151,14 +155,14 @@ export default function SurveyResults({ survey }: SurveyResultsProps) {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" aria-hidden />
-            Individual responses
+            {t("survey.surveyResults.individualResponses", { defaultValue: "Individual responses" })}
           </CardTitle>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowIndividual((v) => !v)}
           >
-            {showIndividual ? "Hide" : "Show"}
+            {showIndividual ? t("survey.surveyResults.hide", { defaultValue: "Hide" }) : t("survey.surveyResults.show", { defaultValue: "Show" })}
           </Button>
         </CardHeader>
         {showIndividual && (
@@ -204,7 +208,7 @@ export default function SurveyResults({ survey }: SurveyResultsProps) {
               </div>
             ) : (
               <p className="py-4 text-sm text-muted-foreground">
-                No responses yet.
+                {t("survey.surveyResults.noResponsesYet", { defaultValue: "No responses yet." })}
               </p>
             )}
           </CardContent>

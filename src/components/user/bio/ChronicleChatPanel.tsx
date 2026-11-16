@@ -85,6 +85,7 @@ import SessionRecapCard, {
   type SessionRecap,
 } from "@/components/user/bio/SessionRecapCard"
 import type { CaptureResponse } from "@/types/bio"
+import { useTranslation } from "react-i18next"
 
 type ChatTurn = { role: "user" | "assistant"; content: string; id: string }
 
@@ -134,6 +135,7 @@ export function ChronicleChatPanel({
   registerSeed,
   className,
 }: ChronicleChatPanelProps) {
+  const { t: tr } = useTranslation("studioUi")
   const { user } = useAuth()
   const accessToken = user?.token ?? ""
 
@@ -298,7 +300,7 @@ export function ChronicleChatPanel({
 
   const handleSave = useCallback(async () => {
     if (turns.length === 0) {
-      toast.info("Nothing to save yet — start the interview first.")
+      toast.info(tr("user.bioChronicleChatPanel.nothingToSaveYetStart", { defaultValue: "Nothing to save yet — start the interview first." }))
       return
     }
     try {
@@ -309,11 +311,11 @@ export function ChronicleChatPanel({
         summary: buildSummary(),
       })
       setCurrentSessionId(saved.sessionId)
-      toast.success("Interview saved — you can continue it any time.")
+      toast.success(tr("user.bioChronicleChatPanel.interviewSavedYouCanContinue", { defaultValue: "Interview saved — you can continue it any time." }))
     } catch {
-      toast.error("Couldn't save this session — it's still here in the meantime.")
+      toast.error(tr("user.bioChronicleChatPanel.couldnTSaveThisSession", { defaultValue: "Couldn't save this session — it's still here in the meantime." }))
     }
-  }, [turns.length, saveSession, memberId, currentSessionId, transcriptForSave, buildSummary])
+  }, [turns.length, saveSession, memberId, currentSessionId, transcriptForSave, buildSummary, tr])
 
   const handleEndAndRecap = useCallback(() => {
     dictation.stop()
@@ -380,12 +382,12 @@ export function ChronicleChatPanel({
         setInput("")
         setCurrentSessionId(detail.sessionId)
         spokenRef.current = null
-        toast.success(`Resumed "${detail.title}".`)
+        toast.success(tr("user.bioChronicleChatPanel.resumed", { defaultValue: "Resumed \"{{title}}\".", title: detail.title }))
       } catch {
-        toast.error("Couldn't open that session — please try again.")
+        toast.error(tr("user.bioChronicleChatPanel.couldnTOpenThatSession", { defaultValue: "Couldn't open that session — please try again." }))
       }
     },
-    [loadSession, memberId, dictation, stopSpeaking],
+    [loadSession, memberId, dictation, stopSpeaking, tr],
   )
 
   return (
@@ -401,13 +403,13 @@ export function ChronicleChatPanel({
           <Bot className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <div className="text-sm font-semibold">Chronicle interview</div>
+          <div className="text-sm font-semibold">{tr("user.bioChronicleChatPanel.chronicleInterview", { defaultValue: "Chronicle interview" })}</div>
           {/* Not a socket indicator: the socket no longer carries the answer,
               so reporting it as "Connected" described a transport the member
               does not depend on — and it read green throughout the outage that
               made this panel mute. Report the turn instead. */}
           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            {isProcessing ? "Chronicle is thinking…" : "Ready when you are"}
+            {isProcessing ? tr("user.bioChronicleChatPanel.chronicleIsThinking", { defaultValue: "Chronicle is thinking…" }) : tr("user.bioChronicleChatPanel.readyWhenYouAre", { defaultValue: "Ready when you are" })}
           </div>
         </div>
 
@@ -423,13 +425,13 @@ export function ChronicleChatPanel({
               htmlFor="chronicle-voice-mode"
               className="text-[11px] text-muted-foreground"
             >
-              Audio
+              {tr("user.bioChronicleChatPanel.audio", { defaultValue: "Audio" })}
             </Label>
             <Switch
               id="chronicle-voice-mode"
               checked={voiceMode}
               onCheckedChange={toggleVoiceMode}
-              aria-label="Audio: read Chronicle's questions aloud and answer by speaking"
+              aria-label={tr("user.bioChronicleChatPanel.audioReadChronicleSQuestions", { defaultValue: "Audio: read Chronicle's questions aloud and answer by speaking" })}
             />
           </div>
 
@@ -438,19 +440,19 @@ export function ChronicleChatPanel({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8 gap-1.5">
                 <History className="h-3.5 w-3.5" aria-hidden />
-                Sessions
+                {tr("user.bioChronicleChatPanel.sessions", { defaultValue: "Sessions" })}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="max-h-80 w-64 overflow-y-auto">
               <DropdownMenuItem onSelect={resetInterview}>
                 <FilePlus2 className="mr-2 h-4 w-4" aria-hidden />
-                New session
+                {tr("user.bioChronicleChatPanel.newSession", { defaultValue: "New session" })}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Continue a session</DropdownMenuLabel>
+              <DropdownMenuLabel>{tr("user.bioChronicleChatPanel.continueASession", { defaultValue: "Continue a session" })}</DropdownMenuLabel>
               {savedSessions.length === 0 ? (
                 <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                  No saved sessions yet.
+                  {tr("user.bioChronicleChatPanel.noSavedSessionsYet", { defaultValue: "No saved sessions yet." })}
                 </div>
               ) : (
                 savedSessions.map((s) => (
@@ -481,7 +483,7 @@ export function ChronicleChatPanel({
             disabled={saving || turns.length === 0}
           >
             <Save className="h-3.5 w-3.5" aria-hidden />
-            {saving ? "Saving…" : "Save"}
+            {saving ? tr("user.bioChronicleChatPanel.saving", { defaultValue: "Saving…" }) : tr("user.bioChronicleChatPanel.save", { defaultValue: "Save" })}
           </Button>
 
           {/* End & recap */}
@@ -493,7 +495,7 @@ export function ChronicleChatPanel({
             disabled={turns.length === 0}
           >
             <Square className="h-3.5 w-3.5" aria-hidden />
-            End &amp; recap
+            {tr("user.bioChronicleChatPanel.endRecap", { defaultValue: "End & recap" })}
           </Button>
         </div>
       </div>
@@ -510,8 +512,7 @@ export function ChronicleChatPanel({
               {turns.length === 0 && !recap ? (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    Chronicle helps you tell your story, one memory at a time.
-                    Turn on Audio to be guided by voice, or just start typing:
+                    {tr("user.bioChronicleChatPanel.chronicleHelpsYouTellYour", { defaultValue: "Chronicle helps you tell your story, one memory at a time. Turn on Audio to be guided by voice, or just start typing:" })}
                   </p>
                   {SUGGESTED_PROMPTS.map((p) => (
                     <button
@@ -576,7 +577,7 @@ export function ChronicleChatPanel({
                                 ) : (
                                   <Volume2 className="h-3 w-3" aria-hidden />
                                 )}
-                                {speaking ? "Stop" : "Listen"}
+                                {speaking ? tr("user.bioChronicleChatPanel.stop", { defaultValue: "Stop" }) : tr("user.bioChronicleChatPanel.listen", { defaultValue: "Listen" })}
                               </Button>
                             )}
                           </div>
@@ -620,7 +621,7 @@ export function ChronicleChatPanel({
                       onClick={clearError}
                       className="mt-1 underline underline-offset-2"
                     >
-                      Dismiss
+                      {tr("user.bioChronicleChatPanel.dismiss", { defaultValue: "Dismiss" })}
                     </button>
                   </div>
                 </div>
@@ -631,7 +632,7 @@ export function ChronicleChatPanel({
             <div className="border-t px-3 pt-2 pb-1">
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-[11px] font-medium text-muted-foreground">
-                  Go deeper
+                  {tr("user.bioChronicleChatPanel.goDeeper", { defaultValue: "Go deeper" })}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -648,14 +649,13 @@ export function ChronicleChatPanel({
                 ))}
               </div>
               <p className="mt-1.5 text-[11px] italic text-muted-foreground">
-                Add the small things — the smell of the room, what someone was
-                wearing, what was playing. The detail is the story.
+                {tr("user.bioChronicleChatPanel.addTheSmallThingsThe", { defaultValue: "Add the small things — the smell of the room, what someone was wearing, what was playing. The detail is the story." })}
               </p>
             </div>
 
             {/* Live region: announces listening state to assistive tech. */}
             <div className="sr-only" role="status" aria-live="polite">
-              {dictation.listening ? "Listening. Speak your answer." : ""}
+              {dictation.listening ? tr("user.bioChronicleChatPanel.listeningSpeakYourAnswer", { defaultValue: "Listening. Speak your answer." }) : ""}
             </div>
 
             <form
@@ -695,15 +695,14 @@ export function ChronicleChatPanel({
                           size="icon"
                           variant="outline"
                           disabled
-                          aria-label="Voice input isn't supported in this browser"
+                          aria-label={tr("user.bioChronicleChatPanel.voiceInputIsnTSupported", { defaultValue: "Voice input isn't supported in this browser" })}
                         >
                           <MicOff className="h-4 w-4" aria-hidden />
                         </Button>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
-                      Voice input isn&apos;t supported in this browser — please type
-                      your answer.
+                      {tr("user.bioChronicleChatPanel.voiceInputIsnTSupported2", { defaultValue: "Voice input isn't supported in this browser — please type your answer." })}
                     </TooltipContent>
                   </Tooltip>
                 ))}
@@ -713,12 +712,12 @@ export function ChronicleChatPanel({
                 placeholder={
                   dictation.listening ? "Listening…" : "Tell Chronicle a memory…"
                 }
-                aria-label="Message Chronicle"
+                aria-label={tr("user.bioChronicleChatPanel.messageChronicle", { defaultValue: "Message Chronicle" })}
                 className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
               />
               <Button type="submit" size="icon" disabled={!input.trim() || isProcessing}>
                 <Send className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only">Send</span>
+                <span className="sr-only">{tr("user.bioChronicleChatPanel.send", { defaultValue: "Send" })}</span>
               </Button>
             </form>
           </div>
@@ -726,21 +725,20 @@ export function ChronicleChatPanel({
           {/* Insight rail — the results & insight, live, inside the scroll tile. */}
           <aside className="hidden w-[16rem] shrink-0 flex-col overflow-y-auto border-l bg-muted/20 p-3 sm:flex">
             <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Session insight
+              {tr("user.bioChronicleChatPanel.sessionInsight", { defaultValue: "Session insight" })}
             </div>
 
             {insight.capturedTitles.length === 0 &&
             insight.standouts.length === 0 ? (
               <p className="text-[11px] italic text-muted-foreground">
-                As you talk, what Chronicle captures — the chapters you touch, the
-                memories distilled, and what stands out — appears here.
+                {tr("user.bioChronicleChatPanel.asYouTalkWhatChronicle", { defaultValue: "As you talk, what Chronicle captures — the chapters you touch, the memories distilled, and what stands out — appears here." })}
               </p>
             ) : (
               <div className="space-y-3">
                 {insight.modulesTouched.length > 0 && (
                   <div>
                     <div className="mb-1 text-[11px] font-medium text-muted-foreground">
-                      Chapters this session
+                      {tr("user.bioChronicleChatPanel.chaptersThisSession", { defaultValue: "Chapters this session" })}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {insight.modulesTouched.map((m) => (
@@ -758,7 +756,7 @@ export function ChronicleChatPanel({
                 {insight.capturedTitles.length > 0 && (
                   <div>
                     <div className="mb-1 text-[11px] font-medium text-muted-foreground">
-                      Captured ({insight.capturedTitles.length})
+                      {tr("user.bioChronicleChatPanel.captured", { defaultValue: "Captured ({{length}})", length: insight.capturedTitles.length })}
                     </div>
                     <ul className="list-inside list-disc space-y-0.5 text-[11px] text-muted-foreground">
                       {insight.capturedTitles.slice(0, 8).map((t, i) => (
@@ -773,7 +771,7 @@ export function ChronicleChatPanel({
                 {insight.standouts.length > 0 && (
                   <div>
                     <div className="mb-1 text-[11px] font-medium text-muted-foreground">
-                      What stands out
+                      {tr("user.bioChronicleChatPanel.whatStandsOut", { defaultValue: "What stands out" })}
                     </div>
                     <ul className="space-y-1 text-[11px] italic text-muted-foreground">
                       {insight.standouts.slice(-3).map((s, i) => (

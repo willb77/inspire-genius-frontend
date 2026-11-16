@@ -21,6 +21,7 @@ import {
 import { NOT_MEASURED } from "@/lib/job-fit/coverage"
 import { formatGap } from "./fit"
 import type { FitCardGroup, FitCardItem } from "./FitCardsModel"
+import { useTranslation } from "react-i18next"
 
 /** One neutral accent per group (border + heading rule). Never a status colour. */
 const GROUP_ACCENT: Record<DimensionCategory, string> = {
@@ -118,6 +119,7 @@ function Rating({ label, value }: { label: string; value: ReactNode }) {
 }
 
 function FitCardTile({ item }: { item: FitCardItem }) {
+  const { t } = useTranslation("studioUi")
   return (
     <li
       data-testid="fit-card"
@@ -138,14 +140,14 @@ function FitCardTile({ item }: { item: FitCardItem }) {
       </div>
       {item.personRating === null || item.difference === null ? (
         <dl className="grid grid-cols-2 gap-2">
-          <Rating label="This job" value={item.jobRating} />
-          <Rating label="You" value={<span className="text-sm font-medium text-[#6b7280]">{NOT_MEASURED}</span>} />
+          <Rating label={t("fit.fitCards.thisJob", { defaultValue: "This job" })} value={item.jobRating} />
+          <Rating label={t("fit.fitCards.you", { defaultValue: "You" })} value={<span className="text-sm font-medium text-[#6b7280]">{NOT_MEASURED}</span>} />
         </dl>
       ) : (
         <dl className="grid grid-cols-3 gap-2">
-          <Rating label="This job" value={item.jobRating} />
-          <Rating label="You" value={item.personRating} />
-          <Rating label="Difference" value={formatGap(item.difference)} />
+          <Rating label={t("fit.fitCards.thisJob", { defaultValue: "This job" })} value={item.jobRating} />
+          <Rating label={t("fit.fitCards.you", { defaultValue: "You" })} value={item.personRating} />
+          <Rating label={t("fit.fitCards.difference", { defaultValue: "Difference" })} value={formatGap(item.difference)} />
         </dl>
       )}
     </li>

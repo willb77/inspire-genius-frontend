@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { moduleLabel } from "@/lib/bio/clientMemoir"
 import type { CaptureResponse } from "@/types/bio"
+import { useTranslation } from "react-i18next"
 
 export type CapturedTurnCardProps = {
   capture: CaptureResponse
@@ -24,6 +25,7 @@ export type CapturedTurnCardProps = {
 }
 
 export function CapturedTurnCard({ capture, className }: CapturedTurnCardProps) {
+  const { t } = useTranslation("studioUi")
   const { moduleType, episodes, whatStandsOut } = capture
 
   // Defensive: never render an empty card. The caller already gates on
@@ -41,7 +43,7 @@ export function CapturedTurnCard({ capture, className }: CapturedTurnCardProps) 
       <div className="mb-2 flex items-center gap-1.5">
         <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
         <span className="text-[11px] font-semibold text-primary">
-          Captured to your profile
+          {t("user.bioCapturedTurnCard.capturedToYourProfile", { defaultValue: "Captured to your profile" })}
         </span>
         <Badge variant="secondary" className="ml-auto text-[10px]">
           {moduleLabel(moduleType)}

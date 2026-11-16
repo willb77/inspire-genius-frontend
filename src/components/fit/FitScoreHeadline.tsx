@@ -9,6 +9,7 @@ import { displayFitPercent, fitPercentLabel, fitPercentTone, type FitPercentSour
 import { FitMeter } from "./primitives"
 import { FitScoreFigure } from "./FitScoreFigure"
 import type { JobOverall } from "@/types/job-fit/components"
+import { useTranslation } from "react-i18next"
 
 /**
  * Where the headline sits:
@@ -42,6 +43,7 @@ export function FitScoreHeadline({
    */
   overall?: JobOverall["overall"]
 }) {
+  const { t } = useTranslation("studioUi")
   const pct = displayFitPercent(source)
   switch (variant) {
     case "summary":
@@ -86,7 +88,7 @@ export function FitScoreHeadline({
             <span data-fit-figure="overall" className="block w-full text-sm text-muted-foreground">
               {overall.score != null ? (
                 <>
-                  <span className="font-medium text-foreground">Overall fit {Math.round(overall.score)}%</span>
+                  <span className="font-medium text-foreground">{t("fit.fitScoreHeadline.overallFit", { defaultValue: "Overall fit {{v1}}%", v1: Math.round(overall.score) })}</span>
                   {" "}— your PRISM fit combined with your field, level, experience and goals. The
                   PRISM fit above is unchanged.
                 </>

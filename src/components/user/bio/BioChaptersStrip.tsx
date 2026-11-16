@@ -20,6 +20,7 @@ import {
   type MemberNarrative,
 } from "@/types/bio"
 import { moduleLabel } from "@/lib/bio/clientMemoir"
+import { useTranslation } from "react-i18next"
 
 function statusDot(status: string): string {
   const s = status.toLowerCase()
@@ -48,6 +49,7 @@ export function BioChaptersStrip({
   narrative,
   onStartSuggested,
 }: BioChaptersStripProps) {
+  const { t } = useTranslation("studioUi")
   // Modules in canonical order, synthesising placeholders so all six always show.
   const modules = useMemo<BioModule[]>(() => {
     const byType = new Map(narrative.modules.map((m) => [m.moduleType, m]))
@@ -81,7 +83,7 @@ export function BioChaptersStrip({
               onClick={() => onStartSuggested(next)}
               className="ml-auto inline-flex shrink-0 items-center gap-1 font-medium text-primary hover:underline"
             >
-              Continue
+              {t("user.bioBioChaptersStrip.continue", { defaultValue: "Continue" })}
               <ArrowRight className="h-3 w-3" aria-hidden />
             </button>
           )}

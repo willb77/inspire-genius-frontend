@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { CircleHelp, RefreshCcw } from "lucide-react";
 import type { UserCoachCardProps } from "@/types/dashboard";
+import { useTranslation } from "react-i18next"
 
 export default function UserCoachCard({
   title,
@@ -11,6 +12,7 @@ export default function UserCoachCard({
   onChat,
   disableButton = false,
 }: UserCoachCardProps) {
+  const { t } = useTranslation("studioUi")
   return (
     <div className="bg-white rounded-2xl border shadow-[4px_4px_20px_4px_rgba(0,0,0,0.1)] p-5">
       {/* Header */}
@@ -19,7 +21,7 @@ export default function UserCoachCard({
         <button
           type="button"
           className="text-muted-foreground hover:text-foreground rounded-full p-1"
-          aria-label="Help"
+          aria-label={t("user.userCoachCard.help", { defaultValue: "Help" })}
         >
           <CircleHelp className="h-4 w-4" />
         </button>
@@ -28,15 +30,15 @@ export default function UserCoachCard({
       {/* Fields */}
       <div className="mt-4 space-y-3 text-sm">
         <div>
-          <div className="text-muted-foreground mb-1">Gender</div>
+          <div className="text-muted-foreground mb-1">{t("user.userCoachCard.gender", { defaultValue: "Gender" })}</div>
           <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium">{gender}</div>
         </div>
         <div>
-          <div className="text-muted-foreground mb-1">Voice Accent</div>
+          <div className="text-muted-foreground mb-1">{t("user.userCoachCard.voiceAccent", { defaultValue: "Voice Accent" })}</div>
           <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium">{accent}</div>
         </div>
         <div>
-          <div className="text-muted-foreground mb-1">Voice Tone</div>
+          <div className="text-muted-foreground mb-1">{t("user.userCoachCard.voiceTone", { defaultValue: "Voice Tone" })}</div>
           <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium flex items-center gap-2">
             <span className="flex-1">{tone}</span>
             {extraCount > 0 ? (
@@ -55,7 +57,7 @@ export default function UserCoachCard({
           onClick={onChat}
           disabled={disableButton}
         >
-          Chat
+          {t("user.userCoachCard.chat", { defaultValue: "Chat" })}
           <RefreshCcw className="h-4 w-4 ml-2" />
         </Button>
       </div>
