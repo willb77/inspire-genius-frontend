@@ -4,6 +4,7 @@
  */
 import { useState } from "react"
 import { Check, FileUp, Target } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -50,6 +51,7 @@ export function StepPurpose({
   onWhere: (w: UseWhere) => void
   onOption: (id: string) => void
 }) {
+  const { t } = useTranslation("resumeUi")
   const available = options.map((o) => o.id)
   const chosen = options.find((o) => o.id === optionId)
   const rec = situation ? recommendFormat(situation, where, false, available, defaultOption) : null
@@ -59,10 +61,12 @@ export function StepPurpose({
   return (
     <div className="space-y-5" data-testid="guided-step-purpose">
       <div>
-        <h2 className="text-xl font-semibold">What is this résumé for?</h2>
-        <p className="text-sm text-muted-foreground">Pick the one closest to you. We&apos;ll choose the format.</p>
+        <h2 className="text-xl font-semibold">{t("purpose.title", "What is this résumé for?")}</h2>
+        <p className="text-sm text-muted-foreground">
+          {t("purpose.intro", "Pick the one closest to you. We'll choose the format.")}
+        </p>
       </div>
-      <div role="radiogroup" aria-label="What it's for" className="grid gap-2 sm:grid-cols-2">
+      <div role="radiogroup" aria-label={t("purpose.groupLabel", "What it's for")} className="grid gap-2 sm:grid-cols-2">
         {situationsFor(available).map((s) => {
           const on = s.id === situation
           return (
@@ -84,7 +88,7 @@ export function StepPurpose({
         })}
       </div>
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Where will you use it?</legend>
+        <legend className="text-sm font-medium">{t("purpose.where", "Where will you use it?")}</legend>
         <div className="flex flex-wrap gap-2">
           {USES.map((u) => (
             <button
@@ -108,7 +112,7 @@ export function StepPurpose({
       {rec && chosen ? (
         <div data-testid="guided-format-choice" className="space-y-1 rounded-lg bg-teal-50 p-3 text-sm">
           <p>
-            <span className="font-semibold">Format: {chosen.name}.</span>{" "}
+            <span className="font-semibold">{t("purpose.format", { defaultValue: "Format: {{name}}.", name: chosen.name })}</span>{" "}
             {chosen.id === rec.optionId ? rec.why : chosen.useWhen}
           </p>
           {rec.notes.slice(0, 1).map((n) => (
@@ -119,8 +123,8 @@ export function StepPurpose({
         </div>
       ) : null}
       <details className="rounded-lg border p-3" data-testid="guided-all-formats">
-        <summary className="cursor-pointer text-sm font-medium">See all formats</summary>
-        <div role="radiogroup" aria-label="Résumé format" className="mt-3 space-y-2">
+        <summary className="cursor-pointer text-sm font-medium">{t("purpose.seeAll", "See all formats")}</summary>
+        <div role="radiogroup" aria-label={t("purpose.formatGroupLabel", "Résumé format")} className="mt-3 space-y-2">
           {options.map((o) => (
             <button
               key={o.id}
@@ -171,49 +175,65 @@ export function StepInformation({
   roles?: RoleDraft[]
   onRoles?: (r: RoleDraft[]) => void
 }) {
+  const { t } = useTranslation("resumeUi")
   const s = data.sources
   const ready = [s.resume || documentIds.length > 0, s.bio, s.assessments.length > 0, !!(contact.email && contact.phone)]
   const score = Math.round((ready.filter(Boolean).length / ready.length) * 100)
   const fixes = [
-    !s.resume && documentIds.length === 0 ? "Add your résumé — every line of the draft comes from it." : null,
-    !(contact.email && contact.phone) ? "Add your phone and email so employers can reach you." : null,
-    !s.bio ? "A short bio helps the summary sound like you." : null,
+    !s.resume && documentIds.length === 0 ? t("info.fixResume", "Add your résumé — every line of the draft comes from it.") : null,
+    !(contact.email && contact.phone) ? t("info.fixContact", "Add your phone and email so employers can reach you.") : null,
+    !s.bio ? t("info.fixBio", "A short bio helps the summary sound like you.") : null,
   ].filter((x): x is string => !!x)
   return (
     <div className="space-y-5" data-testid="guided-step-info">
       <div>
-        <h2 className="text-xl font-semibold">Your information</h2>
-        <p className="text-sm text-muted-foreground">Your draft is written only from what&apos;s here. Nothing is invented.</p>
+        <h2 className="text-xl font-semibold">{t("info.title", "Your information")}</h2>
+        <p className="text-sm text-muted-foreground">
+          {t("info.intro", "Your draft is written only from what's here. Nothing is invented.")}
+        </p>
       </div>
       <div className="space-y-2 rounded-lg border p-4">
         {[
-          ["Résumé", s.resume, "resume"] as const,
-          ["Bio", s.bio, "bio"] as const,
+          [t("info.resumeLabel", "Résumé:"), s.resume, "resume"] as const,
+          [t("info.bioLabel", "Bio:"), s.bio, "bio"] as const,
         ].map(([label, on, kind]) => (
           <div key={kind} className="flex items-center justify-between gap-2 text-sm">
             <span>
-              {label}: <span className={on ? "text-teal-700" : "text-muted-foreground"}>{on ? "on file" : "not on file"}</span>
+              {label}{" "}
+              <span className={on ? "text-teal-700" : "text-muted-foreground"}>
+                {on ? t("info.onFile", "on file") : t("info.notOnFile", "not on file")}
+              </span>
             </span>
             <Button size="sm" variant="outline" onClick={() => onUpload(kind)}>
               <FileUp className="mr-1.5 h-4 w-4" aria-hidden="true" />
-              {on ? "Replace" : "Add"}
+              {on ? t("info.replace", "Replace") : t("info.add", "Add")}
             </Button>
           </div>
         ))}
         <p className="text-sm">
-          Assessments:{" "}
+          {t("info.assessmentsLabel", "Assessments:")}{" "}
           <span className={s.assessments.length ? "text-teal-700" : "text-muted-foreground"}>
-            {s.assessments.length ? `${s.assessments.join(", ")} — shapes what's emphasised, never named` : "none on file"}
+            {s.assessments.length
+              ? t("info.assessmentsOnFile", {
+                  defaultValue: "{{list}} — shapes what's emphasised, never named",
+                  list: s.assessments.join(", "),
+                })
+              : t("info.assessmentsNone", "none on file")}
           </span>
         </p>
         {roles?.length ? (
           <p className="text-sm" data-testid="guided-roles-count">
-            Roles you added: <span className="text-teal-700">{roles.length} — on file for this draft</span>
+            {t("info.rolesAddedLabel", "Roles you added:")}{" "}
+            <span className="text-teal-700">
+              {t("info.rolesAddedCount", { defaultValue: "{{n}} — on file for this draft", n: roles.length })}
+            </span>
           </p>
         ) : null}
         {data.documents.length ? (
           <fieldset className="space-y-1 pt-1">
-            <legend className="text-xs font-medium text-muted-foreground">Also use these documents (optional)</legend>
+            <legend className="text-xs font-medium text-muted-foreground">
+              {t("info.alsoUseDocs", "Also use these documents (optional)")}
+            </legend>
             {data.documents.map((d) => (
               <div key={d.id} className="flex items-center gap-2">
                 <Checkbox
@@ -232,7 +252,7 @@ export function StepInformation({
       {roles && onRoles ? <GuidedRoles roles={roles} onRoles={onRoles} /> : null}
       <div className="space-y-2 rounded-lg border p-4" data-testid="guided-readiness">
         <div className="flex items-center justify-between text-sm font-medium">
-          <span>Ready to write</span>
+          <span>{t("info.readyToWrite", "Ready to write")}</span>
           <span>{score}%</span>
         </div>
         <div className="h-2 rounded-full bg-muted" aria-hidden="true">
@@ -245,13 +265,17 @@ export function StepInformation({
         ))}
       </div>
       <div className="space-y-2 rounded-lg border p-4">
-        <h3 className="text-sm font-semibold">Contact details</h3>
-        <p className="text-xs text-muted-foreground">For the top of your résumé. Kept on this page only.</p>
+        <h3 className="text-sm font-semibold">{t("info.contactTitle", "Contact details")}</h3>
+        <p className="text-xs text-muted-foreground">
+          {t("info.contactHint", "For the top of your résumé. Kept on this page only.")}
+        </p>
         <ResumeContactFields value={contact} onChange={onContact} />
       </div>
       {chosen?.takesDisclosure ? (
         <div className="space-y-1">
-          <Label htmlFor="g-disclosure">How should we describe any gap or program? (optional)</Label>
+          <Label htmlFor="g-disclosure">
+            {t("info.disclosureLabel", "How should we describe any gap or program? (optional)")}
+          </Label>
           <Textarea
             id="g-disclosure"
             rows={2}
@@ -263,7 +287,9 @@ export function StepInformation({
       ) : null}
       {chosen?.takesFederalDetails ? (
         <div className="space-y-1">
-          <Label htmlFor="g-federal">Federal details: hours per week, series/grade, clearance</Label>
+          <Label htmlFor="g-federal">
+            {t("info.federalLabel", "Federal details: hours per week, series/grade, clearance")}
+          </Label>
           <Textarea
             id="g-federal"
             rows={3}
@@ -336,6 +362,7 @@ export function StepAim({
   limit: number
   jobFile?: JobFileStorage
 }) {
+  const { t } = useTranslation("resumeUi")
   const [reading, setReading] = useState(false)
   const [fileNote, setFileNote] = useState<{ ok: boolean; text: string } | null>(null)
   const careerFitRole = tailoredRole ?? goalTarget
@@ -351,10 +378,19 @@ export function StepAim({
         jobFile.onFile(file, text)
       } else {
         onRoleText(text)
-        setFileNote({ ok: true, text: `${file.name} — read on this device. Its text is in the box above; edit it if you like.` })
+        setFileNote({
+          ok: true,
+          text: t("aim.fileRead", {
+            defaultValue: "{{name}} — read on this device. Its text is in the box above; edit it if you like.",
+            name: file.name,
+          }),
+        })
       }
     } catch (err) {
-      setFileNote({ ok: false, text: err instanceof JobFileRefused ? err.message : "Couldn't read that file. Paste the text instead." })
+      setFileNote({
+        ok: false,
+        text: err instanceof JobFileRefused ? err.message : t("aim.fileReadFailed", "Couldn't read that file. Paste the text instead."),
+      })
     } finally {
       setReading(false)
     }
@@ -381,50 +417,75 @@ export function StepAim({
   return (
     <div className="space-y-5" data-testid="guided-step-aim">
       <div>
-        <h2 className="text-xl font-semibold">Which job is it for?</h2>
-        <p className="text-sm text-muted-foreground">Aiming at one job gets the most callbacks. Choose one way:</p>
+        <h2 className="text-xl font-semibold">{t("aim.title", "Which job is it for?")}</h2>
+        <p className="text-sm text-muted-foreground">
+          {t("aim.intro", "Aiming at one job gets the most callbacks. Choose one way:")}
+        </p>
       </div>
-      <div role="radiogroup" aria-label="Aim" className="space-y-2">
-        {option("posting", "I have a job posting", "Describe the role, paste the posting, or read it from a file")}
+      <div role="radiogroup" aria-label={t("aim.groupLabel", "Aim")} className="space-y-2">
+        {option(
+          "posting",
+          t("aim.postingHeading", "I have a job posting"),
+          t("aim.postingSub", "Describe the role, paste the posting, or read it from a file"),
+        )}
         {careerFitRole
-          ? option("role", "A role from Career Fit", `${tailoredRole ? "Chosen" : "Your goal"}: ${careerFitRole.title}`)
+          ? option(
+              "role",
+              t("aim.roleHeading", "A role from Career Fit"),
+              tailoredRole
+                ? t("aim.roleChosen", { defaultValue: "Chosen: {{title}}", title: careerFitRole.title })
+                : t("aim.roleGoal", { defaultValue: "Your goal: {{title}}", title: careerFitRole.title }),
+            )
           : null}
-        {option("general", "No specific job yet", "A general résumé for a type of work")}
+        {option(
+          "general",
+          t("aim.generalHeading", "No specific job yet"),
+          t("aim.generalSub", "A general résumé for a type of work"),
+        )}
       </div>
 
       {aim === "posting" ? (
         <div className="space-y-3 rounded-lg border p-4">
           <div className="space-y-1">
-            <Label htmlFor="g-title">Job title</Label>
-            <Input id="g-title" value={title} onChange={(e) => onTitle(e.target.value)} placeholder="e.g. Operations Manager" />
+            <Label htmlFor="g-title">{t("aim.jobTitle", "Job title")}</Label>
+            <Input id="g-title" value={title} onChange={(e) => onTitle(e.target.value)} placeholder={t("aim.jobTitlePlaceholder", "e.g. Operations Manager")} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="g-describe">Describe the role</Label>
+            <Label htmlFor="g-describe">{t("aim.describe", "Describe the role")}</Label>
             <Textarea
               id="g-describe"
               rows={5}
               value={roleText}
               onChange={(e) => onRoleText(e.target.value)}
-              placeholder="Describe the role in your own words, or paste the posting — we'll match its wording where your résumé supports it."
+              placeholder={t(
+                "aim.describePlaceholder",
+                "Describe the role in your own words, or paste the posting — we'll match its wording where your résumé supports it.",
+              )}
             />
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
             <span className="h-px flex-1 bg-border" />
-            or
+            {t("aim.or", "or")}
             <span className="h-px flex-1 bg-border" />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-dashed p-3">
             <div className="space-y-0.5">
-              <p className="text-sm font-medium">Read the job description from a file</p>
-              <p className="text-xs text-muted-foreground">PDF, Word (.docx) or text (.txt), up to 10 MB.</p>
+              <p className="text-sm font-medium">{t("aim.readFromFile", "Read the job description from a file")}</p>
+              <p className="text-xs text-muted-foreground">{t("aim.fileTypes", "PDF, Word (.docx) or text (.txt), up to 10 MB.")}</p>
               <p className="text-xs text-muted-foreground" data-testid="guided-file-promise">
                 {jobFile
-                  ? "Read on your device, checked for viruses, and kept with your account for 90 days, then deleted. Programs and other file types are refused."
-                  : "Read on your device — the file isn't uploaded or kept. Programs and other file types are refused."}
+                  ? t(
+                      "aim.promiseKept",
+                      "Read on your device, checked for viruses, and kept with your account for 90 days, then deleted. Programs and other file types are refused.",
+                    )
+                  : t(
+                      "aim.promiseNotKept",
+                      "Read on your device — the file isn't uploaded or kept. Programs and other file types are refused.",
+                    )}
               </p>
             </div>
             <label className="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-teal-600 px-3 text-sm text-teal-700">
-              {reading ? "Reading…" : "Choose file"}
+              {reading ? t("aim.reading", "Reading…") : t("aim.chooseFile", "Choose file")}
               <input
                 type="file"
                 accept={JOB_FILE_ACCEPT}
@@ -445,14 +506,27 @@ export function StepAim({
             >
               <span>
                 {jobFile.loaded.status === "checking"
-                  ? `Checking ${jobFile.loaded.name} for viruses…`
-                  : `Loaded ${jobFile.loaded.name} — it will be used to aim your résumé.`}
+                  ? t("aim.checking", { defaultValue: "Checking {{name}} for viruses…", name: jobFile.loaded.name })
+                  : t("aim.loaded", {
+                      defaultValue: "Loaded {{name}} — it will be used to aim your résumé.",
+                      name: jobFile.loaded.name,
+                    })}
                 {jobFile.loaded.status === "loaded" && jobFile.both
-                  ? ` Your description and ${jobFile.loaded.name} are both used${jobFile.truncated ? " (the file's text is shortened to fit)" : ""}.`
+                  ? ` ${
+                      jobFile.truncated
+                        ? t("aim.bothUsedShortened", {
+                            defaultValue: "Your description and {{name}} are both used (the file's text is shortened to fit).",
+                            name: jobFile.loaded.name,
+                          })
+                        : t("aim.bothUsed", {
+                            defaultValue: "Your description and {{name}} are both used.",
+                            name: jobFile.loaded.name,
+                          })
+                    }`
                   : ""}
               </span>
               <Button size="sm" variant="ghost" onClick={jobFile.onRemove} data-testid="guided-job-remove">
-                Remove
+                {t("aim.remove", "Remove")}
               </Button>
             </div>
           ) : null}
@@ -463,7 +537,7 @@ export function StepAim({
           ) : null}
           {jobFile && jobFile.saved.length && !jobFile.loaded ? (
             <div className="space-y-1" data-testid="guided-saved-jobs">
-              <p className="text-xs font-medium text-muted-foreground">Use a saved job description</p>
+              <p className="text-xs font-medium text-muted-foreground">{t("aim.useSaved", "Use a saved job description")}</p>
               {jobFile.saved.map((sj) => (
                 <button
                   key={sj.id}
@@ -501,25 +575,30 @@ export function StepAim({
       {aim === "general" ? (
         <div className="space-y-3 rounded-lg border p-4">
           <div className="space-y-1">
-            <Label htmlFor="g-role">The kind of job you want (optional)</Label>
-            <Input id="g-role" value={title} onChange={(e) => onTitle(e.target.value)} placeholder="e.g. Warehouse supervisor" />
+            <Label htmlFor="g-role">{t("aim.kindOfJob", "The kind of job you want (optional)")}</Label>
+            <Input id="g-role" value={title} onChange={(e) => onTitle(e.target.value)} placeholder={t("aim.kindOfJobPlaceholder", "e.g. Warehouse supervisor")} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="g-area">Career area (optional)</Label>
-            <Input id="g-area" value={area} onChange={(e) => onArea(e.target.value)} placeholder="e.g. Logistics" />
+            <Label htmlFor="g-area">{t("aim.careerArea", "Career area (optional)")}</Label>
+            <Input id="g-area" value={area} onChange={(e) => onArea(e.target.value)} placeholder={t("aim.careerAreaPlaceholder", "e.g. Logistics")} />
           </div>
         </div>
       ) : null}
 
       {styles.length ? (
         <details className="rounded-lg border p-3">
-          <summary className="cursor-pointer text-sm font-medium">More options: how bullets are written</summary>
+          <summary className="cursor-pointer text-sm font-medium">
+            {t("aim.moreOptions", "More options: how bullets are written")}
+          </summary>
           <div className="mt-2 space-y-1">
             {styles.map((s) => (
               <label key={s.id} className="flex items-start gap-2 text-sm">
                 <input type="radio" name="g-style" checked={s.id === styleId} onChange={() => onStyle(s.id)} />
                 <span>
-                  {s.name} <span className="text-xs text-muted-foreground">— {s.structure}</span>
+                  {s.name}{" "}
+                  <span className="text-xs text-muted-foreground">
+                    {t("aim.styleStructure", { defaultValue: "— {{structure}}", structure: s.structure })}
+                  </span>
                 </span>
               </label>
             ))}
@@ -528,8 +607,19 @@ export function StepAim({
       ) : null}
 
       <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900" data-testid="guided-cost">
-        Writing a draft uses 1 of your {left} draft{left === 1 ? "" : "s"} left today (of {limit}). The questions and the
-        assistant&apos;s answers are free.
+        {left === 1
+          ? t("aim.cost_one", {
+              defaultValue:
+                "Writing a draft uses 1 of your {{left}} draft left today (of {{limit}}). The questions and the assistant's answers are free.",
+              left,
+              limit,
+            })
+          : t("aim.cost_other", {
+              defaultValue:
+                "Writing a draft uses 1 of your {{left}} drafts left today (of {{limit}}). The questions and the assistant's answers are free.",
+              left,
+              limit,
+            })}
       </p>
     </div>
   )

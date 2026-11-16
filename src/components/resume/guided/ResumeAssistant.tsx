@@ -18,17 +18,21 @@
  */
 import { useEffect, useRef, useState } from "react"
 import { Loader2, Send, Sparkles } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useMeridianChat } from "@/hooks/agents/useMeridianChat"
 import { cn } from "@/lib/utils"
 import { INSTRUCTION_MAX } from "@/lib/resume/guided/choices"
 
-const SUGGESTIONS = [
-  "Why were some lines left out?",
-  "Make it one page",
-  "Use the job posting's words",
-  "What should I add?",
+// Resolved at render (hooks cannot run at module level). A chip's text is also the
+// question it sends, so it follows the language the person is reading.
+const suggestions = (t: TFunction): string[] => [
+  t("assistant.suggestions.leftOut", "Why were some lines left out?"),
+  t("assistant.suggestions.onePage", "Make it one page"),
+  t("assistant.suggestions.postingWords", "Use the job posting's words"),
+  t("assistant.suggestions.whatToAdd", "What should I add?"),
 ]
 
 type Turn = { id: number; role: "user" | "assistant"; content: string }
@@ -66,6 +70,7 @@ export function ResumeAssistant({
    */
   prefill?: { text: string } | null
 }) {
+  const { t } = useTranslation("resumeUi")
   const [turns, setTurns] = useState<Turn[]>([])
   const [text, setText] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -105,30 +110,30 @@ export function ResumeAssistant({
   }, [pendingAsk])
 
   return (
-    <section aria-label="Résumé assistant" className="flex flex-col gap-3 rounded-lg border p-4" data-testid="resume-assistant">
+    <section aria-label={t("assistant.title", "Résumé assistant")} className="flex flex-col gap-3 rounded-lg border p-4" data-testid="resume-assistant">
       <div>
-        <h3 className="text-sm font-semibold">Résumé assistant</h3>
+        <h3 className="text-sm font-semibold">{t("assistant.title", "Résumé assistant")}</h3>
         <p className="text-xs text-muted-foreground">
-          Ask why something is or isn&apos;t there, or tell it what to change. Questions are free.
+          {t("assistant.intro", "Ask why something is or isn't there, or tell it what to change. Questions are free.")}
         </p>
       </div>
       <ol className="flex max-h-96 flex-col gap-2 overflow-y-auto" aria-live="polite">
-        {turns.map((t) => (
-          <li key={t.id} className={cn("flex flex-col gap-1", t.role === "user" ? "items-end" : "items-start")}>
+        {turns.map((turn) => (
+          <li key={turn.id} className={cn("flex flex-col gap-1", turn.role === "user" ? "items-end" : "items-start")}>
             <p
               className={cn(
                 "max-w-[92%] whitespace-pre-wrap rounded-xl px-3 py-2 text-sm",
-                t.role === "user" ? "bg-teal-700 text-white" : "bg-muted",
+                turn.role === "user" ? "bg-teal-700 text-white" : "bg-muted",
               )}
             >
-              {t.content}
+              {turn.content}
             </p>
-            {t.role === "user" && showApply ? (
+            {turn.role === "user" && showApply ? (
               <Button
                 size="sm"
                 variant="outline"
                 disabled={!canApply || applying}
-                onClick={() => onApply(t.content.slice(0, INSTRUCTION_MAX))}
+                onClick={() => onApply(turn.content.slice(0, INSTRUCTION_MAX))}
                 data-testid="resume-assistant-apply"
               >
                 {applying ? (
@@ -136,14 +141,14 @@ export function ResumeAssistant({
                 ) : (
                   <Sparkles className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 )}
-                Apply to my draft (uses 1 of {left} left of {limit})
+                {t("assistant.apply", { defaultValue: "Apply to my draft (uses 1 of {{left}} left of {{limit}})", left, limit })}
               </Button>
             ) : null}
           </li>
         ))}
         {isProcessing ? (
           <li className="text-sm text-muted-foreground" role="status">
-            {partial || "Thinking…"}
+            {partial || t("assistant.thinking", "Thinking…")}
           </li>
         ) : null}
       </ol>
@@ -153,7 +158,7 @@ export function ResumeAssistant({
         </div>
       ) : null}
       <div className="flex flex-wrap gap-1.5">
-        {SUGGESTIONS.map((s) => (
+        {suggestions(t).map((s) => (
           <button
             key={s}
             type="button"
@@ -176,16 +181,16 @@ export function ResumeAssistant({
           ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Ask, or say what to change"
-          aria-label="Ask or give direction"
+          placeholder={t("assistant.placeholder", "Ask, or say what to change")}
+          aria-label={t("assistant.inputLabel", "Ask or give direction")}
         />
-        <Button type="submit" size="icon" aria-label="Send" disabled={isProcessing || !text.trim()}>
+        <Button type="submit" size="icon" aria-label={t("assistant.send", "Send")} disabled={isProcessing || !text.trim()}>
           <Send className="h-4 w-4" aria-hidden="true" />
         </Button>
       </form>
       {showApply && left <= 0 ? (
         <p className="text-xs text-muted-foreground" data-testid="resume-assistant-no-apply">
-          Applying a change needs one of today&apos;s drafts — you have none left. Questions still work.
+          {t("assistant.noApply", "Applying a change needs one of today's drafts — you have none left. Questions still work.")}
         </p>
       ) : null}
     </section>

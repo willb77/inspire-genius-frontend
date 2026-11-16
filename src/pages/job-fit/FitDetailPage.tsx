@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from "react"
 import { Link, useParams, useSearchParams } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { ArrowLeft, Route as RouteIcon, Target } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
@@ -114,12 +115,16 @@ function JobPageV2({
   attribution?: string | null
   skillsMatch?: ReactNode
 }) {
+  const { t } = useTranslation("jobFitPages")
   return (
     <>
       <FitPageHeader
         icon={Target}
         title={data.roleTitle}
-        description="How your behavioral profile compares with the dimensions this role puts first."
+        description={t(
+          "fitDetailPage.v2Description",
+          "How your behavioral profile compares with the dimensions this role puts first.",
+        )}
       />
 
       {/* BP-F5: a partial-profile score says what it rests on. */}
@@ -143,8 +148,10 @@ function JobPageV2({
         <FitCard className="mb-6">
           <FitSectionTitle>{T_CARDS}</FitSectionTitle>
           <p className="mb-4 text-sm text-[#6b7280]">
-            The dimensions this role puts first: what the job asks for, your rating, and the difference. Hover,
-            focus or tap a name for its definition.
+            {t(
+              "fitDetailPage.cardsIntro",
+              "The dimensions this role puts first: what the job asks for, your rating, and the difference. Hover, focus or tap a name for its definition.",
+            )}
           </p>
           <FitCards groups={report.groups} />
         </FitCard>
@@ -167,9 +174,19 @@ function JobPageV2({
       <div data-jf6-section="local">
         <FitCard className="mb-6">
           <FitSectionTitle>{T_LOCAL}</FitSectionTitle>
-          <h3 className="mb-1 text-sm font-semibold text-[#1f2937]">Pay — {report.pay.areaLabel}</h3>
+          <h3 className="mb-1 text-sm font-semibold text-[#1f2937]">
+            {t("fitDetailPage.payHeading", {
+              defaultValue: "Pay — {{area}}",
+              area: report.pay.areaLabel,
+            })}
+          </h3>
           <SectionLines text={report.pay} />
-          <h3 className="mb-1 mt-4 text-sm font-semibold text-[#1f2937]">Education — {EDUCATION_AREA_LABEL}</h3>
+          <h3 className="mb-1 mt-4 text-sm font-semibold text-[#1f2937]">
+            {t("fitDetailPage.educationHeading", {
+              defaultValue: "Education — {{area}}",
+              area: EDUCATION_AREA_LABEL,
+            })}
+          </h3>
           <SectionLines text={report.education} />
         </FitCard>
       </div>
@@ -192,7 +209,7 @@ function JobPageV2({
           className="inline-flex items-center gap-1.5 rounded-lg bg-[#0D9488] px-3 py-2 text-sm font-medium text-white hover:bg-[#0b8078]"
         >
           <RouteIcon className="h-4 w-4" aria-hidden />
-          Career Pathway
+          {t("fitDetailPage.careerPathway", "Career Pathway")}
         </Link>
       </div>
     </>
@@ -205,6 +222,7 @@ function JobPageV2({
  * plain-language interview self-advocacy. Nothing here presents a hiring verdict.
  */
 export default function FitDetailPage() {
+  const { t } = useTranslation("jobFitPages")
   const { jobId } = useParams<{ jobId: string }>()
   // FIT-1: open under the read the list row used (`?method=`), so the row and
   // this page show the same %. No/unknown param = the backend default (gap).
@@ -291,13 +309,18 @@ export default function FitDetailPage() {
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-[#6b7280] hover:text-[#0D9488]"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to matches
+        {t("fitDetailPage.backToMatches", "Back to matches")}
       </Link>
 
-      {isLoading && <FitLoading label="Loading your fit for this role…" />}
+      {isLoading && <FitLoading label={t("fitDetailPage.loading", "Loading your fit for this role…")} />}
 
       {isError && (
-        <FitError>We couldn&apos;t load this role&apos;s breakdown. Please try again shortly.</FitError>
+        <FitError>
+          {t(
+            "fitDetailPage.loadError",
+            "We couldn't load this role's breakdown. Please try again shortly.",
+          )}
+        </FitError>
       )}
 
       {!isLoading && !isError && data && report && (
@@ -317,7 +340,10 @@ export default function FitDetailPage() {
           <FitPageHeader
             icon={Target}
             title={data.roleTitle}
-            description="How your behavioral profile compares with this role, dimension by dimension."
+            description={t(
+              "fitDetailPage.description",
+              "How your behavioral profile compares with this role, dimension by dimension.",
+            )}
           />
 
           {/* BP-F5: a partial-profile score says what it rests on. */}
@@ -333,7 +359,12 @@ export default function FitDetailPage() {
               rests on an uncalibrated cut, so the person sees the score only. */}
           {typeof data.blueprintVersion === "number" && (
             <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[#6b7280]">
-              <FitPill tone="gray">Scored against blueprint v{data.blueprintVersion}</FitPill>
+              <FitPill tone="gray">
+                {t("fitDetailPage.scoredAgainst", {
+                  defaultValue: "Scored against blueprint v{{version}}",
+                  version: data.blueprintVersion,
+                })}
+              </FitPill>
             </div>
           )}
 
@@ -362,7 +393,9 @@ export default function FitDetailPage() {
       )}
 
       {!isLoading && !isError && !data && (
-        <FitEmptyState>This role&apos;s fit breakdown isn&apos;t available.</FitEmptyState>
+        <FitEmptyState>
+          {t("fitDetailPage.unavailable", "This role's fit breakdown isn't available.")}
+        </FitEmptyState>
       )}
     </div>
   )

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { ArrowLeft, PencilRuler, Sparkles, Wand2 } from "lucide-react"
 import { JobDnaWizard, JobDnaDraftFlow } from "@/components/job-blueprint/job-dna"
 import { useCreateJobDna, useFinalizeBenchmark } from "@/hooks/job-blueprint/useJobDna"
@@ -42,6 +43,7 @@ type Mode = "chooser" | "draft" | "manual"
  * persistence but seeds the benchmark from an LLM draft.
  */
 export default function JobBlueprintAuthoringPage() {
+  const { t } = useTranslation("jobBlueprintPages")
   const navigate = useNavigate()
   const createJobDna = useCreateJobDna()
   const finalizeBenchmark = useFinalizeBenchmark()
@@ -64,7 +66,7 @@ export default function JobBlueprintAuthoringPage() {
       })
 
       if (!created?.id) {
-        toast.error("Job DNA was created but no id was returned.")
+        toast.error(t("authoring.noId", { defaultValue: "Job DNA was created but no id was returned." }))
         return
       }
 
@@ -77,10 +79,10 @@ export default function JobBlueprintAuthoringPage() {
         },
       })
 
-      toast.success("Job DNA created and benchmarked.")
+      toast.success(t("authoring.created", { defaultValue: "Job DNA created and benchmarked." }))
       navigate(ROUTES.JOB_DNA.dnaDetail(created.id))
     } catch {
-      toast.error("Failed to save Job DNA. Please try again.")
+      toast.error(t("authoring.saveFailed", { defaultValue: "Failed to save Job DNA. Please try again." }))
     } finally {
       setSubmitting(false)
     }
@@ -90,8 +92,8 @@ export default function JobBlueprintAuthoringPage() {
     <div className="max-w-5xl">
       <JobDnaPageHeader
         icon={PencilRuler}
-        title="Create a Job DNA"
-        description="Draft a benchmark from a role, or build one by hand across behaviours, aptitudes and core traits. Either way a person reviews it before it is used — this is not a PRISM-validated job benchmark."
+        title={t("authoring.title", { defaultValue: "Create a Job DNA" })}
+        description={t("authoring.description", { defaultValue: "Draft a benchmark from a role, or build one by hand across behaviours, aptitudes and core traits. Either way a person reviews it before it is used — this is not a PRISM-validated job benchmark." })}
         action={
           mode !== "chooser" ? (
             <button
@@ -99,7 +101,7 @@ export default function JobBlueprintAuthoringPage() {
               onClick={() => setMode("chooser")}
               className="inline-flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-medium text-[#374151] transition hover:border-[#7C3AED]"
             >
-              <ArrowLeft className="h-4 w-4" /> Change method
+              <ArrowLeft className="h-4 w-4" /> {t("authoring.changeMethod", { defaultValue: "Change method" })}
             </button>
           ) : undefined
         }
@@ -115,11 +117,9 @@ export default function JobBlueprintAuthoringPage() {
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(124,58,237,0.1)]">
               <Sparkles className="h-5 w-5 text-[#7C3AED]" />
             </span>
-            <span className="text-base font-semibold text-[#1f2937]">Draft from a role</span>
+            <span className="text-base font-semibold text-[#1f2937]">{t("authoring.draft.title", { defaultValue: "Draft from a role" })}</span>
             <span className="text-sm text-[#6b7280]">
-              Give a title or upload a job description and the Job DNA engine drafts all 22 dimensions
-              from the PRISM definitions of each one. A starting point for you to review and edit, not
-              a validated benchmark. Fastest way to a first draft.
+              {t("authoring.draft.body", { defaultValue: "Give a title or upload a job description and the Job DNA engine drafts all 22 dimensions from the PRISM definitions of each one. A starting point for you to review and edit, not a validated benchmark. Fastest way to a first draft." })}
             </span>
           </button>
 
@@ -131,10 +131,9 @@ export default function JobBlueprintAuthoringPage() {
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(124,58,237,0.1)]">
               <Wand2 className="h-5 w-5 text-[#7C3AED]" />
             </span>
-            <span className="text-base font-semibold text-[#1f2937]">Build manually</span>
+            <span className="text-base font-semibold text-[#1f2937]">{t("authoring.manual.title", { defaultValue: "Build manually" })}</span>
             <span className="text-sm text-[#6b7280]">
-              Rank and rate every behaviour, aptitude and core trait yourself with the step-by-step
-              wizard. Full control.
+              {t("authoring.manual.body", { defaultValue: "Rank and rate every behaviour, aptitude and core trait yourself with the step-by-step wizard. Full control." })}
             </span>
           </button>
         </div>

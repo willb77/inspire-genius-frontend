@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { useForm, Controller, type FieldPath } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { AlertCircle, CalendarClock, CheckCircle2, Loader2 } from "lucide-react"
@@ -20,8 +21,9 @@ import {
   PRISM_LABELS,
   ROLE_LABELS,
   formFieldFor,
-  joinSchema,
+  makeJoinSchema,
   toPayload,
+  type JoinT,
   type JoinFormValues,
 } from "./join.schema"
 
@@ -38,6 +40,7 @@ import {
 const selectClass =
   "border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:border-destructive md:text-sm"
 
+// English defaults. The rendered text goes through `t("formError.<kind>")` with these as the default.
 const FORM_LEVEL_MESSAGE: Record<Exclude<PublicRegistrationFailure["kind"], "not_open" | "invalid">, string> = {
   rate_limited: "There have been too many submissions from your connection. Please try again later.",
   too_large: "That submission was too long to send. Please shorten your answers and try again.",
@@ -75,12 +78,16 @@ function Field({
 }
 
 export default function JoinPage() {
+  const { t } = useTranslation("joinPages")
   const registration = usePublicRegistration()
   const [failure, setFailure] = useState<PublicRegistrationFailure | null>(null)
   const [consentsError, setConsentsError] = useState<string | null>(null)
 
+  // Same rules as the exported `joinSchema`; only the message text is resolved through `t`.
+  const schema = useMemo(() => makeJoinSchema(((key, options) => t(key, options)) as JoinT), [t])
+
   const form = useForm<JoinFormValues>({
-    resolver: zodResolver(joinSchema),
+    resolver: zodResolver(schema),
     defaultValues: JOIN_DEFAULTS,
     mode: "onSubmit",
   })
@@ -124,9 +131,9 @@ export default function JoinPage() {
     body = (
       <div role="status" className="flex flex-col items-center gap-3 py-8 text-center">
         <CheckCircle2 className="h-10 w-10 text-emerald-600" aria-hidden="true" />
-        <h2 className="text-lg font-semibold">Thank you</h2>
+        <h2 className="text-lg font-semibold">{t("success.title", { defaultValue: "Thank you" })}</h2>
         <p className="max-w-md text-sm text-muted-foreground">
-          We've received your details. Thank you for your interest in Inspires Genius.
+          {t("success.body", { defaultValue: "We've received your details. Thank you for your interest in Inspires Genius." })}
         </p>
       </div>
     )
@@ -134,29 +141,29 @@ export default function JoinPage() {
     body = (
       <div role="alert" className="flex flex-col items-center gap-3 py-8 text-center">
         <CalendarClock className="h-10 w-10 text-slate-500" aria-hidden="true" />
-        <h2 className="text-lg font-semibold">Registration isn't open yet</h2>
+        <h2 className="text-lg font-semibold">{t("notOpen.title", { defaultValue: "Registration isn't open yet" })}</h2>
         <p className="max-w-md text-sm text-muted-foreground">
-          Registration isn't open yet. Please check back soon.
+          {t("notOpen.body", { defaultValue: "Registration isn't open yet. Please check back soon." })}
         </p>
         <Button type="button" variant="outline" onClick={() => setFailure(null)}>
-          Back to the form
+          {t("notOpen.back", { defaultValue: "Back to the form" })}
         </Button>
       </div>
     )
   } else {
     body = (
-      <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" aria-label="Register your interest">
+      <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" aria-label={t("form.aria", { defaultValue: "Register your interest" })}>
         {failure && failure.kind !== "invalid" && (
           <div role="alert" className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>{FORM_LEVEL_MESSAGE[failure.kind]}</span>
+            <span>{t(`formError.${failure.kind}`, { defaultValue: FORM_LEVEL_MESSAGE[failure.kind] })}</span>
           </div>
         )}
         {failure?.kind === "invalid" && (
           <div role="alert" className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <div>
-              <p>We couldn't accept that submission. Please check your answers and try again.</p>
+              <p>{t("formError.invalid", { defaultValue: "We couldn't accept that submission. Please check your answers and try again." })}</p>
               {failure.problems.length > 0 && (
                 <ul className="mt-1 list-disc pl-5">
                   {failure.problems.map((p) => (
@@ -169,91 +176,95 @@ export default function JoinPage() {
         )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field name="first_name" label="First name" error={errors.first_name?.message}>
+          <Field name="first_name" label={t("fields.firstName", { defaultValue: "First name" })} error={errors.first_name?.message}>
             <Input {...register("first_name")} {...ariaFor("first_name")} autoComplete="given-name" />
           </Field>
-          <Field name="last_name" label="Last name" error={errors.last_name?.message}>
+          <Field name="last_name" label={t("fields.lastName", { defaultValue: "Last name" })} error={errors.last_name?.message}>
             <Input {...register("last_name")} {...ariaFor("last_name")} autoComplete="family-name" />
           </Field>
-          <Field name="email" label="Email" error={errors.email?.message}>
+          <Field name="email" label={t("fields.email", { defaultValue: "Email" })} error={errors.email?.message}>
             <Input type="email" {...register("email")} {...ariaFor("email")} autoComplete="email" inputMode="email" />
           </Field>
-          <Field name="phone" label="Phone (optional)" error={errors.phone?.message}>
+          <Field name="phone" label={t("fields.phone", { defaultValue: "Phone (optional)" })} error={errors.phone?.message}>
             <Input type="tel" {...register("phone")} {...ariaFor("phone")} autoComplete="tel" />
           </Field>
         </div>
 
-        <Field name="role" label="Which best describes you?" error={errors.role?.message}>
+        <Field name="role" label={t("fields.role", { defaultValue: "Which best describes you?" })} error={errors.role?.message}>
           <select {...register("role")} {...ariaFor("role")} className={selectClass}>
-            <option value="">Choose one</option>
+            <option value="">{t("chooseOne", { defaultValue: "Choose one" })}</option>
             {INTAKE_ROLES.map((r) => (
               <option key={r} value={r}>
-                {ROLE_LABELS[r]}
+                {t(`roles.${r}`, { defaultValue: ROLE_LABELS[r] })}
               </option>
             ))}
           </select>
         </Field>
         {role === "other" && (
-          <Field name="role_other" label="Your role" error={errors.role_other?.message}>
+          <Field name="role_other" label={t("fields.roleOther", { defaultValue: "Your role" })} error={errors.role_other?.message}>
             <Input {...register("role_other")} {...ariaFor("role_other")} />
           </Field>
         )}
 
-        <Field name="prism_accredited" label="Are you PRISM accredited?" error={errors.prism_accredited?.message}>
+        <Field name="prism_accredited" label={t("fields.prism", { defaultValue: "Are you PRISM accredited?" })} error={errors.prism_accredited?.message}>
           <select {...register("prism_accredited")} {...ariaFor("prism_accredited")} className={selectClass}>
-            <option value="">Choose one</option>
+            <option value="">{t("chooseOne", { defaultValue: "Choose one" })}</option>
             {INTAKE_PRISM_ACCREDITED.map((p) => (
               <option key={p} value={p}>
-                {PRISM_LABELS[p]}
+                {t(`prismOptions.${p}`, { defaultValue: PRISM_LABELS[p] })}
               </option>
             ))}
           </select>
         </Field>
         {prism === "yes" && (
-          <Field name="site_id" label="PRISM site ID (optional)" error={errors.site_id?.message}>
+          <Field name="site_id" label={t("fields.siteId", { defaultValue: "PRISM site ID (optional)" })} error={errors.site_id?.message}>
             <Input {...register("site_id")} {...ariaFor("site_id")} />
           </Field>
         )}
 
-        <Field name="context" label="Where would you use Inspires Genius?" error={errors.context?.message}>
+        <Field name="context" label={t("fields.context", { defaultValue: "Where would you use Inspires Genius?" })} error={errors.context?.message}>
           <select {...register("context")} {...ariaFor("context")} className={selectClass}>
-            <option value="">Choose one</option>
+            <option value="">{t("chooseOne", { defaultValue: "Choose one" })}</option>
             {INTAKE_CONTEXTS.map((c) => (
               <option key={c} value={c}>
-                {CONTEXT_LABELS[c]}
+                {t(`contexts.${c}`, { defaultValue: CONTEXT_LABELS[c] })}
               </option>
             ))}
           </select>
         </Field>
         {context === "other" && (
-          <Field name="context_other" label="Describe the setting" error={errors.context_other?.message}>
+          <Field name="context_other" label={t("fields.contextOther", { defaultValue: "Describe the setting" })} error={errors.context_other?.message}>
             <Input {...register("context_other")} {...ariaFor("context_other")} />
           </Field>
         )}
 
         <Field
           name="organisation"
-          label={context === "company" || context === "education" ? "Organisation" : "Organisation (optional)"}
+          label={
+            context === "company" || context === "education"
+              ? t("fields.organisation", { defaultValue: "Organisation" })
+              : t("fields.organisationOptional", { defaultValue: "Organisation (optional)" })
+          }
           error={errors.organisation?.message}
         >
           <Input {...register("organisation")} {...ariaFor("organisation")} autoComplete="organization" />
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field name="region" label="State, province or region" error={errors.region?.message}>
+          <Field name="region" label={t("fields.region", { defaultValue: "State, province or region" })} error={errors.region?.message}>
             <Input {...register("region")} {...ariaFor("region")} autoComplete="address-level1" />
           </Field>
-          <Field name="country" label="Country" error={errors.country?.message}>
+          <Field name="country" label={t("fields.country", { defaultValue: "Country" })} error={errors.country?.message}>
             <Input {...register("country")} {...ariaFor("country")} autoComplete="country-name" />
           </Field>
         </div>
 
-        <Field name="heard_from" label="How did you hear about us? (optional)" error={errors.heard_from?.message}>
+        <Field name="heard_from" label={t("fields.heardFrom", { defaultValue: "How did you hear about us? (optional)" })} error={errors.heard_from?.message}>
           <Input {...register("heard_from")} {...ariaFor("heard_from")} />
         </Field>
 
         <fieldset className="flex flex-col gap-3" aria-describedby={consentsError ? "join-consents-error" : undefined}>
-          <legend className="mb-1 text-sm font-medium">Keeping in touch (optional)</legend>
+          <legend className="mb-1 text-sm font-medium">{t("consent.legend", { defaultValue: "Keeping in touch (optional)" })}</legend>
           {(["webinar_email", "mailing_list"] as const).map((purpose) => {
             const name = purpose === "webinar_email" ? "consent_webinar_email" : "consent_mailing_list"
             return (
@@ -271,7 +282,7 @@ export default function JoinPage() {
                   )}
                 />
                 <Label htmlFor={`join-${name}`} className="font-normal leading-snug">
-                  {CONSENT_WORDING[purpose]}
+                  {t(`consent.${purpose}`, { defaultValue: CONSENT_WORDING[purpose] })}
                 </Label>
               </div>
             )
@@ -281,13 +292,13 @@ export default function JoinPage() {
 
         {/* Honeypot: hidden from people and assistive tech; only a bot fills it. */}
         <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
-          <label htmlFor="join-website">Leave this field empty</label>
+          <label htmlFor="join-website">{t("honeypotLabel", { defaultValue: "Leave this field empty" })}</label>
           <input id="join-website" type="text" tabIndex={-1} autoComplete="off" {...register("website")} />
         </div>
 
         <Button type="submit" disabled={registration.isPending} className="w-full mt-2">
           {registration.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
-          Register your interest
+          {t("submit", { defaultValue: "Register your interest" })}
         </Button>
       </form>
     )
@@ -298,13 +309,16 @@ export default function JoinPage() {
     // reads no auth state and makes no request, so it cannot redirect anyone.
     <AuthLayout contentClassName="max-w-[760px]" showTestimonial={false} brandPanel={<JoinBrandPanel />}>
       <AuthHeader
-        title="Register your interest"
-        subtitle="Inspires Genius is an AI mentoring platform. Leave your details below to register your interest."
+        title={t("header.title", { defaultValue: "Register your interest" })}
+        subtitle={t("header.subtitle", { defaultValue: "Inspires Genius is an AI mentoring platform. Leave your details below to register your interest." })}
       />
       {/* A plain anchor, not a router Link: the page renders with no router. */}
       <p className="-mt-3 mb-6 text-sm">
-        <a href={ROUTES.EVENTS} className="font-medium text-[#466bc4] underline-offset-4 hover:underline">
-          See upcoming events →
+        <a
+          href={ROUTES.EVENTS}
+          className="inline-flex items-center rounded-full bg-[#466bc4] px-5 py-2 font-bold text-white no-underline transition-colors hover:bg-[#3a5aa6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#466bc4] focus-visible:ring-offset-2"
+        >
+          {t("seeEvents", { defaultValue: "See upcoming events →" })}
         </a>
       </p>
       {body}

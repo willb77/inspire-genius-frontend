@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { HiresByPeriod } from '@/types/job-blueprint'
+import { useTranslation } from 'react-i18next'
 
 type HiresPanelProps = {
   data: HiresByPeriod[]
@@ -12,18 +13,19 @@ type HiresPanelProps = {
  * empty state when there are no rows.
  */
 export function HiresPanel({ data }: HiresPanelProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Hires by period</CardTitle>
+        <CardTitle className="text-base">{t("hires.title", { defaultValue: "Hires by period" })}</CardTitle>
       </CardHeader>
       <CardContent>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-slate-500">
-              <th className="py-1 font-medium">Period</th>
-              <th className="py-1 text-right font-medium">Hires</th>
-              <th className="py-1 text-right font-medium">Avg predicted fit</th>
+              <th className="py-1 font-medium">{t("hires.period", { defaultValue: "Period" })}</th>
+              <th className="py-1 text-right font-medium">{t("hires.hires", { defaultValue: "Hires" })}</th>
+              <th className="py-1 text-right font-medium">{t("hires.avgFit", { defaultValue: "Avg predicted fit" })}</th>
             </tr>
           </thead>
           <tbody>

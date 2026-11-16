@@ -1,0 +1,397 @@
+{
+  "ui": {
+    "sampleLead": "This is a sample, not your data.",
+    "sampleTail": "Nothing on this panel is a reading of you, and nothing here has been saved against your account."
+  },
+  "comingSoon": {
+    "prism": {
+      "title": "PRISM lens",
+      "body": "Your goals read against your own PRISM profile — which ones lean on a strength, which ask for a stretch."
+    },
+    "progress": {
+      "title": "Progress",
+      "body": "Milestones and check-ins against each goal, with your coach's reviews beside them."
+    },
+    "documents": {
+      "title": "Documents",
+      "body": "A résumé, bio or profile drafted from your real history and goals — never from a template career."
+    },
+    "eyebrow": "Not built yet",
+    "title": "Coming soon",
+    "sub": "These three panels are planned. They will read your own data or they will not show at all.",
+    "back": "Back to your goals"
+  },
+  "coaches": {
+    "job_mentor": {
+      "role": "Job Mentor",
+      "focus": "Current-role excellence — performance, team dynamics, job-specific skills, day-to-day productivity."
+    },
+    "career_coach": {
+      "role": "Career Coach",
+      "focus": "Strategic advancement — next-role prep, pivots, leadership development, positioning, long-term trajectory."
+    },
+    "prism_coach": {
+      "role": "PRISM Coach",
+      "focus": "Behavioral effectiveness — stress, adaptability, communication style, conflict, emotional intelligence."
+    },
+    "callout": "You always hear one voice. Behind Meridian, <strong>Echo</strong> and <strong>Forge</strong> build current-role skill, <strong>Nova</strong> and <strong>Ascend</strong> plan advancement, and <strong>Aura</strong> works the behavioral foundations — each seeing only the goals routed to them.",
+    "goalCount_one": "goal",
+    "goalCount_other": "goals",
+    "eyebrow": "Discover, structure, route",
+    "title": "Your coaching team",
+    "sub": "Goals Studio doesn't coach the goals itself — it hands each one to the specialist who owns that kind of growth, then Meridian brings their work back to you in one voice."
+  },
+  "interview": {
+    "eyebrow": "A conversation, not a form",
+    "title": "Talk it through with Goals Studio",
+    "sub": "Five areas of your working life, a category at a time, with the WHY ladder underneath each stated goal. Voice leads; text is one toggle away.",
+    "drafted_one": "{{count}} goal drafted from this conversation.",
+    "drafted_other": "{{count}} goals drafted from this conversation.",
+    "reviewLink": "Review and publish them"
+  },
+  "targets": {
+    "error403": "Goal targets aren't available on your account right now.",
+    "error404": "That role or goal couldn't be found.",
+    "error413": "This fit is too large to save as a target.",
+    "errorDefault": "That didn't work. Please try again."
+  },
+  "labels": {
+    "category": {
+      "history": "Career History",
+      "job": "Current Job",
+      "workplace": "Workplace",
+      "ambitions": "Career Ambitions",
+      "personal": "Personal"
+    },
+    "align": {
+      "lever": "Leverages strength",
+      "stretch": "Requires stretch",
+      "counter": "Counterbalance"
+    },
+    "style": {
+      "gold_stepwise": "Stepwise",
+      "blue_metrics": "Metric-led",
+      "red_action": "Action-first",
+      "green_momentum": "Momentum-based"
+    },
+    "coach": {
+      "job_mentor": "Job Mentor",
+      "career_coach": "Career Coach",
+      "prism_coach": "PRISM Coach"
+    },
+    "status": {
+      "proposed": "Proposed",
+      "confirmed": "Confirmed"
+    }
+  },
+  "wiring": {
+    "and": " and ",
+    "group": {
+      "supported": "Your wiring carries these",
+      "mixed": "Mixed — some of you for it, some against",
+      "atTension": "Your wiring pulls against these",
+      "unmapped": "Not linked to a career family yet"
+    },
+    "title": "Your goals and your wiring",
+    "error": "We couldn't read how your goals sit with your PRISM just now.",
+    "heading": "How your published goals sit with how you're wired",
+    "unscored": "Complete PRISM and this card reads each goal against your profile.",
+    "pulling": "pulling against it: {{list}}",
+    "carried": "carried by {{list}}"
+  },
+  "progress": {
+    "status": {
+      "explored": "Done",
+      "active": "In progress",
+      "todo": "Not started"
+    },
+    "error": "We couldn't read your progress just now. Nothing you've worked through has been lost.",
+    "notStarted": "You haven't started yet. The conversation below begins with {{label}}.",
+    "allExplored": "Every area is explored.",
+    "carryingOn": "Carrying on with {{label}}.",
+    "nextUp": "Next up: {{label}}.",
+    "ariaLabel": "Your progress",
+    "areasExplored": "{{explored}} of {{total}} areas explored",
+    "goalsDrafted_one": "{{count}} goal drafted · see My goals",
+    "goalsDrafted_other": "{{count}} goals drafted · see My goals"
+  },
+  "discovery": {
+    "ladder": {
+      "role": {
+        "statedGoal": "Stated goal",
+        "asks": "Goals Studio asks",
+        "you": "You",
+        "root": "True motivation"
+      },
+      "rung1": "“I want to get better at leading through change.”",
+      "rung2": "Why does that feel important right now?",
+      "rung3": "The reorg keeps shifting and my team looks to me for answers.",
+      "rung4": "What makes having the answers matter so much to you?",
+      "rung5": "If I hesitate, they'll think I don't have it together.",
+      "rung6": "And why is that particular thing hard to sit with?",
+      "rung7": "Not a skill to acquire — protecting how the team sees you under pressure. That's what the goal hooks onto."
+    },
+    "status": {
+      "explored": "Explored",
+      "active": "In progress",
+      "todo": "Not started"
+    },
+    "eyebrow": "The five-category conversation",
+    "title": "Discovery, not a questionnaire",
+    "sub": "Goals Studio gathers organically across sessions. For each category it explores, probes for patterns, runs the WHY ladder to your true motivation, then converts the discussion into candidate goals.",
+    "talkIt": "Talk it through",
+    "loading": "Reading your progress…",
+    "error": "We couldn't read your progress just now. Refresh to try again — nothing you've worked through has been lost.",
+    "goalsSurfaced_one": "{{count}} goal surfaced",
+    "goalsSurfaced_other": "{{count}} goals surfaced",
+    "questionsAnswered_one": "{{count}} question answered",
+    "questionsAnswered_other": "{{count}} questions answered",
+    "yourWhy": "Your why",
+    "underneath": "What sits underneath what you said you wanted",
+    "howItWorks": "How it works · the WHY ladder",
+    "howHeading": "How \"better leadership\" becomes a real goal",
+    "howBody": "We don't stop at the first answer. Asking \"why\" a few times reaches the motivation the goal actually hooks onto. This is an example of the shape it takes — yours will be in your own words."
+  },
+  "dashboard": {
+    "brainCallout": "Every goal here is aligned to your brain map: we prefer goals that <strong>leverage your natural strengths</strong>, and we frame any stretch as a conscious, time-boxed adaptation — never a permanent rewrite of who you are.",
+    "eyebrow": "Your goal-setting journey",
+    "titleNamed": "Let's turn the conversation into goals, {{name}}.",
+    "title": "Let's turn the conversation into goals.",
+    "sub": "Goals Studio works through five areas of your life, asks why until it reaches something you actually care about, and turns that into goals with the reason still attached.",
+    "loading": "Reading where you've got to…",
+    "error": "We couldn't read your goal-setting session just now. Refresh to try again — nothing you've worked through has been lost.",
+    "discoveryProgress": "Discovery progress · {{explored}} of {{total}} categories",
+    "pctExplored": "{{pct}}% explored",
+    "start": "Start",
+    "resume": "Resume",
+    "categoryN": "Category {{n}}",
+    "nextStep": "Your next step",
+    "finishCategory": "Finish the {{label}} category",
+    "startCategory": "Start the {{label}} category",
+    "summaryFallback": "Goals Studio gathers this in conversation rather than as a form — a few minutes now is enough to move it on.",
+    "talkIt": "Talk it through",
+    "continueDiscovery": "Continue discovery",
+    "surfaced": "Goals surfaced so far · Goals Studio",
+    "noGoals": "No goals yet",
+    "goalsBuilt": "Goals built on how you think",
+    "seeAll": "See all {{count}}",
+    "houseEmpty": "Goals are written out of the conversation rather than typed into a form, so they appear here as you talk it through.",
+    "emptyDiscovery": "Goals are written out of the discovery conversation rather than typed into a form, so they appear here as you talk to Goals Studio — on the right of this screen."
+  },
+  "roadmap": {
+    "step": "Step {{rank}}",
+    "priority": "Priority",
+    "inPrism": "{{dimension}} in PRISM:",
+    "back": "Back to my goals",
+    "unavailable": "Goal roadmaps aren't available yet.",
+    "loading": "Loading your roadmap…",
+    "notFound": "This goal doesn't target a role. Open a role in Job Fit and choose “Make this my target”.",
+    "loadError": "We couldn't load this roadmap. Please try again shortly.",
+    "thisRole": "this role",
+    "eyebrow": "Roadmap",
+    "defaultTitle": "Your roadmap",
+    "sub": "Toward {{role}}. Built from the fit you were looking at when you chose it.",
+    "noRoadmap": "No roadmap has been built for this target yet.",
+    "start": "Start",
+    "noFirstStep": "This goal has no first step yet — the steps below are where the gaps are.",
+    "noGaps": "The fit you chose this role from showed no gaps to close — nothing stands between your profile and this role's benchmark.",
+    "steps": "Steps",
+    "finish": "Finish",
+    "noFinish": "This goal has no success measure yet, so the roadmap has no finish line.",
+    "overuse": "Watch for over-use of {{dimensions}} in this role.",
+    "rebuild": "Rebuild roadmap",
+    "stopTargeting": "Stop targeting this role",
+    "practise": "Practise for this role"
+  },
+  "layout": {
+    "nav": {
+      "myGoals": "My Goals",
+      "interview": "Interview",
+      "sharing": "Sharing",
+      "overview": "Overview",
+      "discovery": "Discovery",
+      "coaches": "Coaches",
+      "comingSoon": "Coming soon",
+      "houseMyGoals": "My goals",
+      "houseTalk": "Talk it through",
+      "houseWho": "Who can see them"
+    },
+    "title": "Goals Studio",
+    "sub": "Your goals, the conversation that surfaces them, and who gets to see them.",
+    "navLabel": "Goals Studio sections"
+  },
+  "goals": {
+    "stretchCallout": "A goal marked <strong>Requires stretch</strong> isn't a weakness call — it's a deliberate, time-boxed move against type.",
+    "errorSave": "That didn't save. Nothing was changed — try again.",
+    "whyItMatters": "Why it matters:",
+    "success": "Success:",
+    "firstStep": "First step:",
+    "aCoach": "A coach",
+    "ratified": "Ratified",
+    "notRatified": "Not ratified",
+    "confirmed": "Confirmed",
+    "provisional": "Provisional",
+    "fromJobFit": "From Job Fit",
+    "fromInterview": "From your interview",
+    "seeded": "Seeded",
+    "targets": "Targets",
+    "aRole": "a role",
+    "viewRoadmap": "View roadmap",
+    "coachReviews": "Coach reviews",
+    "noReviews": "No reviews yet.",
+    "keepPrivate": "Keep \"{{title}}\" private",
+    "private": "Private — hidden even from people you share with",
+    "shareable": "Shareable",
+    "unpublish": "Unpublish",
+    "goalTitle": "Goal title",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirmPublish": "Confirm & publish",
+    "edit": "Edit",
+    "addGoal": "Add a goal",
+    "addGoalBody": "The interview writes better goals than a form does, but a goal you already know belongs here too. It is published as soon as it is saved.",
+    "placeholder": "What do you want to achieve?",
+    "newGoalTitle": "New goal title",
+    "goalCategory": "Goal category",
+    "savePublish": "Save & publish",
+    "published": "Published. It is in your goals above.",
+    "backJourney": "Back to your journey (step 5)",
+    "eyebrow": "Yours — private until you share them",
+    "title": "Your goals",
+    "sub": "Goals come out of the interview with the reason underneath them. Confirm a draft to publish it; then choose, person by person, who can see it.",
+    "talkStudio": "Talk it through with Goals Studio",
+    "whoCanSee": "Who can see my goals",
+    "loading": "Reading your goals…",
+    "error": "We couldn't read your goals just now. Refresh to try again — nothing you've worked through has been lost.",
+    "noGoals": "No goals yet",
+    "noGoalsBody": "Goals here are written out of the discovery conversation rather than typed into a form. Start the interview and they'll appear, each with the reason underneath it — or add one you already know below.",
+    "sharedHeading": "Your goals",
+    "draftsHeading": "Drafts from your interview"
+  },
+  "sharing": {
+    "basis": {
+      "managerOfRecord": {
+        "label": "Your manager",
+        "because": "Your organisation's records show you report to them."
+      },
+      "rosterManager": {
+        "label": "Lists you on their team",
+        "because": "They added you to a team list they keep here — their own list, not your organisation's records."
+      },
+      "practitioner": {
+        "label": "Your coach",
+        "because": "They added you as a client."
+      },
+      "requester": {
+        "label": "Asked for access",
+        "because": "They asked you to share with them."
+      },
+      "unknown": {
+        "label": "On your list",
+        "because": "We can't say how they came to be on this list."
+      }
+    },
+    "source": {
+      "managersOfRecord": "your manager of record",
+      "rosterManagers": "managers who added you to their team list",
+      "practitioners": "your coach",
+      "requesters": "requests"
+    },
+    "cat": {
+      "goals": {
+        "label": "Goals",
+        "noun": "goals"
+      },
+      "prism": {
+        "label": "PRISM profile",
+        "noun": "PRISM profile"
+      },
+      "assessments": {
+        "label": "Assessments",
+        "noun": "assessments"
+      },
+      "artefacts": {
+        "label": "Profile",
+        "noun": "profile documents"
+      },
+      "interviews": {
+        "label": "Interviews",
+        "noun": "interview results"
+      },
+      "development": {
+        "label": "Development",
+        "noun": "development plan"
+      }
+    },
+    "describe": {
+      "my": "my {{list}}",
+      "your": "your {{list}}"
+    },
+    "and": " and ",
+    "errorSave": "That didn't save. Nothing was changed — try again.",
+    "surface": {
+      "goals": "read your goals",
+      "goalsAdmin": "read your goals (platform admin)",
+      "dossier": "opened your development dossier",
+      "dossierAdmin": "opened your development dossier (platform admin)",
+      "ratify": "reviewed a goal",
+      "ratifyAdmin": "reviewed a goal (platform admin)",
+      "goalReviews": "read the reviews on your goals",
+      "goalReviewsAdmin": "read the reviews on your goals (platform admin)",
+      "offered": "was given access by you",
+      "extended": "had access renewed by you",
+      "looked": "looked",
+      "lookedAt": "looked ({{surface}})"
+    },
+    "thisPerson": "this person",
+    "someone": "Someone",
+    "waitingSee": "Waiting on you — see requests below",
+    "shareEverythingAria": "Share everything on this page with {{who}}",
+    "shareAll": "Share all",
+    "shareCategoryAria": "Share {{noun}} with {{who}}",
+    "partlyProtected": "(partly protected)",
+    "notProtectedYet": "(not protected yet)",
+    "sharingWhat": "Sharing {{what}}",
+    "notShared": "Not shared",
+    "shareAllIncludes_one": "“Share all” includes {{list}}, which is not fully protected yet.",
+    "shareAllIncludes_other": "“Share all” includes {{list}}, which are not fully protected yet.",
+    "until": "Until {{date}}",
+    "renew": "Renew for a year",
+    "wantsToSee": "wants to see {{what}}.",
+    "noReason": "No reason given.",
+    "asked": "· asked {{date}}",
+    "shareWhat": "Share {{what}}",
+    "decline": "Decline",
+    "whoHasLooked": "Who has looked",
+    "readingLog": "Reading the access log…",
+    "logError": "We couldn't read the access log just now. It is not empty — it is unread.",
+    "logEmpty": "Nobody has looked at your goals yet. Every read is recorded here, including reads by platform administrators.",
+    "accessLog": "Access log",
+    "someoneId": "Someone ({{id}}…)",
+    "noAccount": "No account with that email.",
+    "sharedWith": "Shared with {{name}}.",
+    "addPerson": "Add a person",
+    "addPersonBody": "Someone with an IG account who isn't listed above. Their exact email address; no lookup by name. Your coach doesn't need one: once they've added you as a client they appear in the list above, and you share with them there.",
+    "emailAria": "Email address",
+    "find": "Find",
+    "shareMyGoals": "Share my goals",
+    "notProtectedNote": "Not protected yet — {{list}}: people on your reporting line can see these whether or not you share them. Your choice is saved and takes effect when protection for them launches.",
+    "partlyNote": "{{label}}, partly protected: {{note}}",
+    "loading": "Reading who you can share with…",
+    "error": "We couldn't read your sharing settings just now. Nothing has changed — refresh to try again.",
+    "unavailable": "We couldn't read {{sources}} just now, so that part of this list may be missing. It is not empty — it is unread.",
+    "waitingHeading": "Waiting on you",
+    "emptyHeading": "No one to share with yet",
+    "emptyBody": "When a manager or coach is linked to you they appear here, with a switch for each part of your record. You can also add someone by their email address below.",
+    "people": "People",
+    "basisNote": "Under each name is how they came to be on this list.",
+    "eyebrow": "Your choice, person by person",
+    "title": "Who can see my goals and PRISM profile",
+    "sub": "Nobody sees your goals or your PRISM profile by rank. You share each with a specific person for a year, can renew, and can take it back at any time. Turning a switch on renews the term for a year. A goal you mark private stays hidden even from them.",
+    "whatTheySee": "What they see",
+    "previewNote": "A preview of their view. Nothing on it can be clicked here.",
+    "previewAria": "Preview of what they see",
+    "previewEmpty": "Publish a goal and it will show here exactly as a person you share with sees it.",
+    "or": " or "
+  }
+}

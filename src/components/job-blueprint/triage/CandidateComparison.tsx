@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ClassificationBadge } from '@/components/job-blueprint/shared/ClassificationBadge'
 import type { Candidate, DimensionBenchmark } from '@/types/job-blueprint'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 type CandidateComparisonProps = {
   candidates: Candidate[]
@@ -17,6 +18,7 @@ function getCellColor(variation: number): string {
 }
 
 export function CandidateComparison({ candidates, benchmark }: CandidateComparisonProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   const sorted = [...candidates]
     .filter(c => c.variationScores)
     .sort((a, b) => (a.variationScores?.totalVariation ?? 999) - (b.variationScores?.totalVariation ?? 999))
@@ -24,15 +26,15 @@ export function CandidateComparison({ candidates, benchmark }: CandidateComparis
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Candidate Comparison</CardTitle>
+        <CardTitle className="text-base">{t("candidateComparison.title", { defaultValue: "Candidate Comparison" })}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-slate-500 uppercase border-b">
-                <th className="py-2 pr-4 sticky left-0 bg-white">Dimension</th>
-                <th className="py-2 pr-4 text-center">Benchmark</th>
+                <th className="py-2 pr-4 sticky left-0 bg-white">{t("candidateComparison.dimension", { defaultValue: "Dimension" })}</th>
+                <th className="py-2 pr-4 text-center">{t("candidateComparison.benchmark", { defaultValue: "Benchmark" })}</th>
                 {sorted.map(c => (
                   <th key={c.id} className="py-2 px-2 text-center min-w-[100px]">
                     <div className="space-y-1">
@@ -72,7 +74,7 @@ export function CandidateComparison({ candidates, benchmark }: CandidateComparis
               ))}
               {/* Totals row */}
               <tr className="border-t-2 font-semibold">
-                <td className="py-2 pr-4 sticky left-0 bg-white text-xs">Total Variation</td>
+                <td className="py-2 pr-4 sticky left-0 bg-white text-xs">{t("candidateComparison.totalVariation", { defaultValue: "Total Variation" })}</td>
                 <td className="py-2 pr-4 text-center">--</td>
                 {sorted.map(c => (
                   <td key={c.id} className="py-2 px-2 text-center text-xs">

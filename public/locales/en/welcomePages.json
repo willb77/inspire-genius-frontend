@@ -1,0 +1,19 @@
+{
+  "messages": {
+    "notValid": "That invitation link is not valid. Ask your practitioner to send you a new link.",
+    "tooMany": "Too many attempts just now. Wait a while, then open your practitioner's link again.",
+    "ownInvite": "This is one of your own invitation links — you cannot be your own client.",
+    "claimError": "We could not connect you just now. Open your practitioner's link again later, or ask them for a new one.",
+    "noInvite": "There is no invitation waiting in this browser tab. If your practitioner sent you a link, open it again."
+  },
+  "prism": {
+    "checking": "Checking your PRISM survey access…",
+    "shareNotice": "When you request your survey you can choose to share your results with {{name}}. Nothing is shared unless you tick that option.",
+    "takeSurvey": "Take your PRISM survey"
+  },
+  "title": "Connect to your practitioner",
+  "connecting": "Connecting you to your practitioner…",
+  "connected": "You're now connected to {{name}}.",
+  "nextSurvey": "Next: take your PRISM survey.",
+  "goHome": "Go to your home page"
+}

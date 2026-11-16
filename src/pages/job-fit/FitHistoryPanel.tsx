@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react"
 import { Link } from "react-router-dom"
 import { History, ChevronRight } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { ROUTES } from "@/constants/routes"
 import { useFitHistory, useSaveFitReport } from "@/hooks/job-fit/useFitHistory"
 import {
@@ -12,11 +14,19 @@ import type { FitSnapshotSource, FitSnapshotSummary } from "@/types/job-fit"
 import { FitCard, FitEmptyState, FitPill, FitSectionTitle } from "@/components/fit/primitives"
 import { fitPercentTone } from "@/components/fit/fit"
 
-const SOURCE_LABEL: Record<FitSnapshotSource, string> = {
-  matches: "Role matches",
-  detail: "Role fit",
-  target: "Pasted job description",
-  saved: "Saved report",
+function sourceLabel(source: FitSnapshotSource, t: TFunction): string {
+  switch (source) {
+    case "matches":
+      return t("fitHistoryPanel.sourceMatches", "Role matches")
+    case "detail":
+      return t("fitHistoryPanel.sourceDetail", "Role fit")
+    case "target":
+      return t("fitHistoryPanel.sourceTarget", "Pasted job description")
+    case "saved":
+      return t("fitHistoryPanel.sourceSaved", "Saved report")
+    default:
+      return source
+  }
 }
 
 function when(ts: string): string {
@@ -36,6 +46,7 @@ function reopenPath(row: FitSnapshotSummary): string {
  * "Save" left behind (once, then the key is removed).
  */
 export function FitHistoryPanel() {
+  const { t } = useTranslation("jobFitPages")
   const history = useFitHistory()
   const save = useSaveFitReport()
   const imported = useRef(false)
@@ -56,14 +67,21 @@ export function FitHistoryPanel() {
 
   return (
     <FitCard className="mt-6">
-      <FitSectionTitle>Your fit reports</FitSectionTitle>
+      <FitSectionTitle>{t("fitHistoryPanel.title", "Your fit reports")}</FitSectionTitle>
       {history.isLoading ? (
-        <p className="text-sm text-[#6b7280]">Loading your fit reports…</p>
+        <p className="text-sm text-[#6b7280]">
+          {t("fitHistoryPanel.loading", "Loading your fit reports…")}
+        </p>
       ) : history.isError ? (
-        <p className="text-sm text-[#b91c1c]">We couldn&apos;t load your fit reports right now.</p>
+        <p className="text-sm text-[#b91c1c]">
+          {t("fitHistoryPanel.loadError", "We couldn't load your fit reports right now.")}
+        </p>
       ) : rows.length === 0 ? (
         <FitEmptyState>
-          No fit reports yet. Every role fit you open, and every report you save, is kept here.
+          {t(
+            "fitHistoryPanel.empty",
+            "No fit reports yet. Every role fit you open, and every report you save, is kept here.",
+          )}
         </FitEmptyState>
       ) : (
         <ul className="divide-y divide-[#f1f3f5]">
@@ -76,14 +94,21 @@ export function FitHistoryPanel() {
                 <History className="h-4 w-4 shrink-0 text-[#9ca3af]" aria-hidden />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium text-[#1f2937]">
-                    {row.roleTitle || (row.source === "matches" ? "Your role matches" : "Fit report")}
+                    {row.roleTitle ||
+                      (row.source === "matches"
+                        ? t("fitHistoryPanel.yourRoleMatches", "Your role matches")
+                        : t("fitHistoryPanel.fitReport", "Fit report"))}
                   </span>
                   <span className="block text-xs text-[#6b7280]">
-                    {SOURCE_LABEL[row.source] ?? row.source} · {when(row.computedAt)}
+                    {sourceLabel(row.source, t)} · {when(row.computedAt)}
                   </span>
                 </span>
                 {row.fitScore != null && (
-                  <FitPill tone={fitPercentTone(row.fitScore)}>{row.fitScore}% fit</FitPill>
+                  <FitPill tone={fitPercentTone(row.fitScore)}>{t("fitHistoryPanel.fitPercent", {
+                      defaultValue: "{{pct}}% fit",
+                      pct: row.fitScore,
+                    })}
+                  </FitPill>
                 )}
                 <ChevronRight className="h-4 w-4 shrink-0 text-[#9ca3af] group-hover:text-[#0D9488]" aria-hidden />
               </Link>

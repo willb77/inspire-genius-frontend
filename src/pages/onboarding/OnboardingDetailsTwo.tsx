@@ -14,6 +14,7 @@ import { useCoachData } from "@/hooks/coaches/useCoachData";
 import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 type SpeechPhase = 'idle' | 'starting' | 'speaking' | 'paused' | 'error';
 
@@ -23,13 +24,8 @@ const AUDIO_ICON: Record<string, ReactNode> = {
 };
 const AUDIO_ICON_DEFAULT = <Volume2 className="w-4 h-4" />;
 
-const AUDIO_ARIA_LABEL: Record<string, string> = {
-  speaking: "Pause audio",
-  paused: "Resume audio",
-  starting: "Loading audio",
-};
-
 export default function OnboardingDetailsTwo() {
+  const { t } = useTranslation("onboardingPages");
   const navigate = useNavigate();
   const { user, markOnboardingCompleted } = useAuth();
   const { resolveFrontendText } = useTour();
@@ -53,8 +49,8 @@ export default function OnboardingDetailsTwo() {
     resolveFrontendText({ selector: detTwoSelector }) ||
     resolveFrontendText({ routeKey: 'ONBOARDING_DETAILS.TWO' });
   const stepId = detailTwoItem?.id;
-  const overlayTitle = detailTwoItem?.title || 'Quick tip';
-  const overlayDesc = detailTwoItem?.description || 'We highlighted key elements: You can edit coaches anytime.';
+  const overlayTitle = detailTwoItem?.title || t("configure.tourFallbackTitle", { defaultValue: "Quick tip" });
+  const overlayDesc = detailTwoItem?.description || t("configure.tourFallbackDescription", { defaultValue: "We highlighted key elements: You can edit coaches anytime." });
 
   // Consolidated coach data (shared with Coaches.tsx)
   const { agents, toneOptions, accentOptions, genderOptions, isLoading } = useCoachData({ page: 1, page_size: 9 });
@@ -74,6 +70,12 @@ export default function OnboardingDetailsTwo() {
   }, [markOnboardingCompleted]);
 
   
+
+  const AUDIO_ARIA_LABEL: Record<string, string> = {
+    speaking: t("configure.audio.pause", { defaultValue: "Pause audio" }),
+    paused: t("configure.audio.resume", { defaultValue: "Resume audio" }),
+    starting: t("configure.audio.loading", { defaultValue: "Loading audio" }),
+  };
 
   const handleCloseTour = () => {
     tourStop();
@@ -118,15 +120,15 @@ export default function OnboardingDetailsTwo() {
             type="button"
             onClick={() => handleMarkOnboarded(ROUTES.ONBOARDING_DETAILS.ONE)}
           >
-            Prev
+            {t("configure.prev", { defaultValue: "Prev" })}
           </button>
           <ProgressBar current={2} total={2} />
         </div>
 
         <div className="space-y-1 text-center md:text-left">
-          <h2 className="text-xl font-semibold">Configure your mentor</h2>
+          <h2 className="text-xl font-semibold">{t("configure.title", { defaultValue: "Configure your mentor" })}</h2>
           <p className="text-xs md:text-sm text-muted-foreground">
-            Choose each mentor&apos;s voice tone, gender, and accent so conversations feel natural to you. You can change these settings later.
+            {t("configure.subtitle", { defaultValue: "Choose each mentor's voice tone, gender, and accent so conversations feel natural to you. You can change these settings later." })}
           </p>
         </div>
 
@@ -208,14 +210,14 @@ export default function OnboardingDetailsTwo() {
                   }
                 }}
               >
-                Help <HelpCircle className="ml-2 h-4 w-4" />
+                {t("configure.help", { defaultValue: "Help" })}{" "}<HelpCircle className="ml-2 h-4 w-4" />
               </Button>
               <Button
                 className="h-10 w-32"
                 type="button"
                 onClick={() => handleMarkOnboarded(ROUTES.HOME)}
               >
-                Let's go <ChevronRight className="ml-1 h-4 w-4" />
+                {t("configure.letsGo", { defaultValue: "Let's go" })}{" "}<ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -229,7 +231,7 @@ export default function OnboardingDetailsTwo() {
             onClick={handleCloseTour}
             role="button"
             tabIndex={0}
-            aria-label="Close tour"
+            aria-label={t("configure.closeTour", { defaultValue: "Close tour" })}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") handleCloseTour();
             }}
@@ -252,7 +254,7 @@ export default function OnboardingDetailsTwo() {
               <div className="flex items-center gap-4">
               <button
                 type="button"
-                aria-label={AUDIO_ARIA_LABEL[phase] ?? "Play audio"}
+                aria-label={AUDIO_ARIA_LABEL[phase] ?? t("configure.audio.play", { defaultValue: "Play audio" })}
                 onClick={() => {
                   if (!stepId) return;
                   if (phase === 'speaking') { pause(); return; }
@@ -268,7 +270,7 @@ export default function OnboardingDetailsTwo() {
               {stepId && hasCached(stepId) ? (
                 <button
                   type="button"
-                  aria-label="Replay audio"
+                  aria-label={t("configure.audio.replay", { defaultValue: "Replay audio" })}
                   onClick={() => {
                     if (!stepId) return;
                     replay(stepId);
@@ -280,7 +282,7 @@ export default function OnboardingDetailsTwo() {
                 </button>
               ) : null}
               </div>
-              <Button size="sm" className="h-8 bg-blue-primary hover:bg-blue-primary/90" onClick={handleCloseTour}>Got it!</Button>
+              <Button size="sm" className="h-8 bg-blue-primary hover:bg-blue-primary/90" onClick={handleCloseTour}>{t("configure.gotIt", { defaultValue: "Got it!" })}</Button>
             </div>
           </div>
           <img src="/images/tour/right-alex.svg" alt="Alex" className="absolute bottom-0 left-1/10 w-48" />

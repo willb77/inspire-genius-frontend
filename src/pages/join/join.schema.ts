@@ -52,53 +52,79 @@ export const CONSENT_WORDING: Record<IntakeConsentPurpose, string> = {
 
 const ORG_REQUIRED: ReadonlySet<IntakeContext> = new Set<IntakeContext>(["company", "education"])
 
-const required = (label: string, max: number) =>
-  z.string().trim().min(1, `${label} is required`).max(max, `${label} must be ${max} characters or fewer`)
+/**
+ * How a validation message is resolved. The page passes i18next's `t`; the exported
+ * `joinSchema` below passes `englishT`, which returns the English default, so a consumer
+ * that never touches i18n (tests, non-React callers) sees exactly the strings it always did.
+ * The RULES are the same either way — only the message text goes through `t`.
+ */
+export type JoinT = (key: string, options: { defaultValue: string } & Record<string, unknown>) => string
 
-const optional = (label: string, max: number) =>
-  z.string().trim().max(max, `${label} must be ${max} characters or fewer`)
+const englishT: JoinT = (_key, options) =>
+  options.defaultValue.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => String(options[name]))
 
-const choice = <T extends readonly [string, ...string[]]>(values: T, message: string) =>
-  z
-    .string()
-    .refine((v): v is T[number] => (values as readonly string[]).includes(v), { message })
+export function makeJoinSchema(t: JoinT) {
+  const msg = (key: string, defaultValue: string, extra: Record<string, unknown> = {}) =>
+    t(`validation.${key}`, { defaultValue, ...extra })
 
-export const joinSchema = z
-  .object({
-    first_name: required("First name", 200),
-    last_name: required("Last name", 200),
-    email: z
+  const required = (field: string, label: string, max: number) =>
+    z
       .string()
       .trim()
-      .min(1, "Email is required")
-      .max(320, "Email must be 320 characters or fewer")
-      .email("Enter a valid email address"),
-    phone: optional("Phone", 64),
-    organisation: optional("Organisation", 300),
-    role: choice(INTAKE_ROLES, "Choose the option that best describes you"),
-    role_other: optional("Role", 200),
-    prism_accredited: choice(INTAKE_PRISM_ACCREDITED, "Tell us whether you are PRISM accredited"),
-    site_id: optional("PRISM site ID", 100),
-    context: choice(INTAKE_CONTEXTS, "Choose where you would use Inspires Genius"),
-    context_other: optional("Setting", 200),
-    region: required("Region", 100),
-    country: required("Country", 100),
-    heard_from: optional("This answer", 300),
-    consent_webinar_email: z.boolean(),
-    consent_mailing_list: z.boolean(),
-    website: z.string().max(1000),
-  })
-  .superRefine((v, ctx) => {
-    if (ORG_REQUIRED.has(v.context as IntakeContext) && !v.organisation) {
-      ctx.addIssue({ code: "custom", path: ["organisation"], message: "Organisation is required for a company or education setting" })
-    }
-    if (v.role === "other" && !v.role_other) {
-      ctx.addIssue({ code: "custom", path: ["role_other"], message: "Please describe your role" })
-    }
-    if (v.context === "other" && !v.context_other) {
-      ctx.addIssue({ code: "custom", path: ["context_other"], message: "Please describe the setting" })
-    }
-  })
+      .min(1, msg(`${field}.required`, `${label} is required`))
+      .max(max, msg(`${field}.max`, `${label} must be {{max}} characters or fewer`, { max }))
+
+  const optional = (field: string, label: string, max: number) =>
+    z.string().trim().max(max, msg(`${field}.max`, `${label} must be {{max}} characters or fewer`, { max }))
+
+  const choice = <T extends readonly [string, ...string[]]>(values: T, message: string) =>
+    z
+      .string()
+      .refine((v): v is T[number] => (values as readonly string[]).includes(v), { message })
+
+  return z
+    .object({
+      first_name: required("firstName", "First name", 200),
+      last_name: required("lastName", "Last name", 200),
+      email: z
+        .string()
+        .trim()
+        .min(1, msg("email.required", "Email is required"))
+        .max(320, msg("email.max", "Email must be {{max}} characters or fewer", { max: 320 }))
+        .email(msg("email.invalid", "Enter a valid email address")),
+      phone: optional("phone", "Phone", 64),
+      organisation: optional("organisation", "Organisation", 300),
+      role: choice(INTAKE_ROLES, msg("role.choose", "Choose the option that best describes you")),
+      role_other: optional("roleOther", "Role", 200),
+      prism_accredited: choice(INTAKE_PRISM_ACCREDITED, msg("prism.choose", "Tell us whether you are PRISM accredited")),
+      site_id: optional("siteId", "PRISM site ID", 100),
+      context: choice(INTAKE_CONTEXTS, msg("context.choose", "Choose where you would use Inspires Genius")),
+      context_other: optional("contextOther", "Setting", 200),
+      region: required("region", "Region", 100),
+      country: required("country", "Country", 100),
+      heard_from: optional("heardFrom", "This answer", 300),
+      consent_webinar_email: z.boolean(),
+      consent_mailing_list: z.boolean(),
+      website: z.string().max(1000),
+    })
+    .superRefine((v, ctx) => {
+      if (ORG_REQUIRED.has(v.context as IntakeContext) && !v.organisation) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["organisation"],
+          message: msg("organisation.requiredForSetting", "Organisation is required for a company or education setting"),
+        })
+      }
+      if (v.role === "other" && !v.role_other) {
+        ctx.addIssue({ code: "custom", path: ["role_other"], message: msg("roleOther.describe", "Please describe your role") })
+      }
+      if (v.context === "other" && !v.context_other) {
+        ctx.addIssue({ code: "custom", path: ["context_other"], message: msg("contextOther.describe", "Please describe the setting") })
+      }
+    })
+}
+
+export const joinSchema = makeJoinSchema(englishT)
 
 export type JoinFormValues = z.input<typeof joinSchema>
 

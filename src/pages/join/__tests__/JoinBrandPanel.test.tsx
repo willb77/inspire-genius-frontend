@@ -96,4 +96,12 @@ describe("/join upcoming-events link", () => {
     expect(form).not.toContainElement(link)
     expect(link.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
+
+  it("is a pill with bold text", () => {
+    renderPage()
+    const link = screen.getByRole("link", { name: /see upcoming events/i })
+    expect(link.className).toContain("rounded-full")
+    expect(link.className).toContain("font-bold")
+    expect(link.className).toContain("bg-[#466bc4]")
+  })
 })

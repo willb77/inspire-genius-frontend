@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Scale } from "lucide-react"
 import { useDecisionPathStatus, useDecisionRecord } from "@/hooks/job-blueprint/useDecisionPath"
 import { DecisionRecord, Recommendation } from "@/components/job-blueprint/decision-path/DecisionRecord"
@@ -13,6 +14,7 @@ import { JobDnaCardSurface, JobDnaEmptyState, JobDnaError, JobDnaLoading, JobDna
  * it is given. A refused decision comes back in the server's own words.
  */
 export default function DecisionPathCasePage() {
+  const { t } = useTranslation("jobBlueprintPages")
   const { caseId = "" } = useParams()
   const status = useDecisionPathStatus()
   const record = useDecisionRecord(caseId, status !== null)
@@ -20,19 +22,19 @@ export default function DecisionPathCasePage() {
   if (!status) {
     return (
       <div className="max-w-4xl">
-        <JobDnaEmptyState>The decision path is not enabled for your organisation.</JobDnaEmptyState>
+        <JobDnaEmptyState>{t("decisionPath.notEnabled", { defaultValue: "The decision path is not enabled for your organisation." })}</JobDnaEmptyState>
       </div>
     )
   }
-  if (record.isLoading) return <JobDnaLoading label="Loading the record…" />
+  if (record.isLoading) return <JobDnaLoading label={t("decisionPath.case.loading", { defaultValue: "Loading the record…" })} />
   if (record.isError || !record.data) {
-    return <JobDnaError message="This case could not be loaded." onRetry={() => void record.refetch()} />
+    return <JobDnaError message={t("decisionPath.case.loadFailed", { defaultValue: "This case could not be loaded." })} onRetry={() => void record.refetch()} />
   }
   const view = record.data
   const canDecide = view.access === "record" && !status.superAdmin
   return (
     <div className="max-w-5xl space-y-4">
-      <JobDnaPageHeader icon={Scale} title="Decision record" description={view.advisoryNote} />
+      <JobDnaPageHeader icon={Scale} title={t("decisionPath.case.title", { defaultValue: "Decision record" })} description={view.advisoryNote} />
       {view.access === "summary" ? (
         <Recommendation view={view} />
       ) : (

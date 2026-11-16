@@ -1,0 +1,97 @@
+{
+  "step": {
+    "one": {
+      "imageAlt": "Onboarding step one",
+      "title": "Let's get started!",
+      "subtitle": "Upload your personal info to begin working with your AI Coach.",
+      "callout": "Actionable insights"
+    },
+    "two": {
+      "imageAlt": "Onboarding step two",
+      "title": "Empower your business",
+      "subtitle": "Leverage AI-driven insights tailored to your goals.",
+      "callout": "Actionable insights"
+    },
+    "three": {
+      "imageAlt": "Onboarding step three",
+      "title": "Insights that matter",
+      "subtitle": "We prioritize clarity so you can act with confidence.",
+      "callout": "Actionable insights"
+    },
+    "four": {
+      "imageAlt": "Onboarding step four",
+      "title": "Collaborate with your AI Coach",
+      "subtitle": "We keep things simple and effective — so you can focus on impact.",
+      "callout": "Smart decisions with AI"
+    },
+    "five": {
+      "imageAlt": "Onboarding step five",
+      "title": "You're all set!",
+      "subtitle": "Let's get you into the app to start making progress.",
+      "callout": "Upload Documents"
+    }
+  },
+  "screen": {
+    "letsGo": "Let's go"
+  },
+  "wizard": {
+    "planGenerated": "Onboarding plan generated.",
+    "planFailed": "Plan generation failed",
+    "forgeFailed": "Forge (OnboardingAgent) failed: {{message}}",
+    "title": "Onboarding Wizard",
+    "resultTitle": "Onboarding plan",
+    "intro": "Generate a tailored onboarding plan for a new hire with Forge (OnboardingAgent).",
+    "inputs": "Inputs",
+    "newHireName": "New hire name",
+    "role": "Role",
+    "company": "Company",
+    "weekNumber": "Week number (1-12)",
+    "cultureNotes": "Company culture notes (optional)",
+    "run": "Run Forge",
+    "reset": "Reset"
+  },
+  "details": {
+    "firstName": {
+      "required": "First name is required",
+      "minLength": "First name must be at least 2 characters",
+      "placeholder": "Enter your first name (e.g. John)"
+    },
+    "namePattern": "Only letters, spaces, hyphen and apostrophe allowed",
+    "lastName": {
+      "required": "Last name is required",
+      "minLength": "Last name must be at least 1 character",
+      "placeholder": "Enter your last name (e.g. Doe)"
+    },
+    "dob": {
+      "required": "Date of birth is required",
+      "invalid": "Invalid date",
+      "tooYoung": "You must be at least 13 years old",
+      "placeholder": "Select your date of birth"
+    },
+    "about": {
+      "placeholder": "e.g I am student preparing for exams",
+      "label": "Share a few lines about your goals and background (optional)"
+    },
+    "title": "Tell us more about you",
+    "subtitle": "Fill the forms below to add your details.",
+    "next": "Next"
+  },
+  "configure": {
+    "tourFallbackTitle": "Quick tip",
+    "tourFallbackDescription": "We highlighted key elements: You can edit coaches anytime.",
+    "audio": {
+      "pause": "Pause audio",
+      "resume": "Resume audio",
+      "loading": "Loading audio",
+      "play": "Play audio",
+      "replay": "Replay audio"
+    },
+    "prev": "Prev",
+    "title": "Configure your mentor",
+    "subtitle": "Choose each mentor's voice tone, gender, and accent so conversations feel natural to you. You can change these settings later.",
+    "help": "Help",
+    "letsGo": "Let's go",
+    "closeTour": "Close tour",
+    "gotIt": "Got it!"
+  }
+}

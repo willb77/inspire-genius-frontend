@@ -43,6 +43,7 @@ export default function Login() {
   const magicLinkMutation = useRequestMagicLink();
   const { t } = useTranslation('auth');
   const { t: tc } = useTranslation('common');
+  const { t: ta } = useTranslation('authPages');
   const [providerActive, setProviderActive] = useState<boolean>(() => {
     try {
       return Boolean(sessionStorage.getItem("auth:provider"));
@@ -84,11 +85,11 @@ export default function Login() {
   const validateEmail = (value: string): boolean => {
     const trimmed = value.trim();
     if (!trimmed) {
-      toast.error("Please enter your email address.");
+      toast.error(ta("login.toast.emailRequired", { defaultValue: "Please enter your email address." }));
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      toast.error("Please enter a valid email address.");
+      toast.error(ta("login.toast.emailInvalid", { defaultValue: "Please enter a valid email address." }));
       return false;
     }
     return true;
@@ -112,7 +113,7 @@ export default function Login() {
     e.preventDefault();
     if (!validateEmail(email)) return;
     if (!password) {
-      toast.error("Please enter your password.");
+      toast.error(ta("login.toast.passwordRequired", { defaultValue: "Please enter your password." }));
       return;
     }
     try { sessionStorage.removeItem("auth:provider"); } catch { /* storage blocked */ }
@@ -123,7 +124,7 @@ export default function Login() {
         // login() already shows toast on error via mutation onError
       }
     } catch {
-      toast.error("An unexpected error occurred. Please try again.");
+      toast.error(ta("login.toast.unexpected", { defaultValue: "An unexpected error occurred. Please try again." }));
     } finally {
       setSubmitting(false);
     }
@@ -177,7 +178,7 @@ export default function Login() {
         <form className="space-y-4" onSubmit={handlePasswordLogin}>
           <EmailField value={email} onChange={setEmail} />
           <p className="text-xs text-muted-foreground">
-            You can sign in with your primary or secondary email address
+            {ta("login.emailHint", { defaultValue: "You can sign in with your primary or secondary email address" })}
           </p>
           <PasswordField value={password} onChange={setPassword} />
 
@@ -192,13 +193,13 @@ export default function Login() {
 
           {LOGIN_HARDENED && (
             <p className="text-xs text-muted-foreground text-center">
-              Forgot your password?{' '}
+              {ta("login.hardened.forgotPrefix", { defaultValue: "Forgot your password?" })}{' '}
               <button
                 type="button"
                 className="underline text-blue-primary hover:text-blue-700"
                 onClick={() => setShowPasswordLogin(false)}
               >
-                Use a magic-link instead
+                {ta("login.hardened.useMagicLink", { defaultValue: "Use a magic-link instead" })}
               </button>
               .
             </p>
@@ -234,7 +235,7 @@ export default function Login() {
       <form className="space-y-4" onSubmit={handleMagicLink}>
         <EmailField value={email} onChange={setEmail} />
         <p className="text-xs text-muted-foreground">
-          You can sign in with your primary or secondary email address
+          {ta("login.emailHint", { defaultValue: "You can sign in with your primary or secondary email address" })}
         </p>
 
         <Button type="submit" className="w-full mt-8" disabled={isBusy}>
@@ -243,7 +244,7 @@ export default function Login() {
 
         {LOGIN_HARDENED && (
           <p className="text-xs text-muted-foreground text-center">
-            We'll email you a one-time sign-in link, valid for 15 minutes.
+            {ta("login.hardened.linkValidity", { defaultValue: "We'll email you a one-time sign-in link, valid for 15 minutes." })}
           </p>
         )}
       </form>
@@ -269,13 +270,13 @@ export default function Login() {
 
       {LOGIN_HARDENED && (
         <p className="mt-3 text-xs text-muted-foreground text-center">
-          Email not arriving? Check spam or{' '}
+          {ta("login.hardened.notArrivingPrefix", { defaultValue: "Email not arriving? Check spam or" })}{' '}
           <button
             type="button"
             className="underline text-blue-primary hover:text-blue-700"
             onClick={() => setShowPasswordLogin(true)}
           >
-            sign in with password instead
+            {ta("login.hardened.signInWithPasswordInstead", { defaultValue: "sign in with password instead" })}
           </button>
           .
         </p>

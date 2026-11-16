@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { FileDown, FileText, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -23,26 +24,37 @@ import {
 export default function NarrativeExportButtons({
   build,
   disabled,
-  label = "this write-up",
+  label,
 }: {
   build: () => NarrativeDoc
   disabled?: boolean
   label?: string
 }) {
+  const { t } = useTranslation("prismUi")
+  const what = label ?? t("narrativeExport.defaultLabel", { defaultValue: "this write-up" })
   const [busy, setBusy] = useState<"word" | "pdf" | null>(null)
 
   async function run(kind: "word" | "pdf") {
     const doc = build()
     if (!hasNarrative(doc)) {
-      toast.error(`Nothing to export yet — generate ${label} first.`)
+      toast.error(
+        t("narrativeExport.nothingToExport", {
+          defaultValue: "Nothing to export yet — generate {{what}} first.",
+          what,
+        }),
+      )
       return
     }
     setBusy(kind)
     try {
       await (kind === "word" ? exportNarrativeWord(doc) : exportNarrativePdf(doc))
-      toast.success(`Saved the ${kind === "word" ? "Word" : "PDF"} document`)
+      toast.success(
+        kind === "word"
+          ? t("narrativeExport.savedWord", { defaultValue: "Saved the Word document" })
+          : t("narrativeExport.savedPdf", { defaultValue: "Saved the PDF document" }),
+      )
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Export failed")
+      toast.error(err instanceof Error ? err.message : t("narrativeExport.failed", { defaultValue: "Export failed" }))
     } finally {
       setBusy(null)
     }
