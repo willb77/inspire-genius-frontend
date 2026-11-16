@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -14,13 +15,18 @@ type Props = {
 
 export default function ConfirmDialog({
   trigger,
-  title = 'Are you sure?',
-  description = 'Please confirm to proceed.',
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  title: titleProp,
+  description: descriptionProp,
+  confirmText: confirmTextProp,
+  cancelText: cancelTextProp,
   confirmVariant = 'destructive',
   onConfirm,
 }: Props) {
+  const { t } = useTranslation("shellUi")
+  const title = titleProp ?? t("confirmDialog.title", { defaultValue: "Are you sure?" })
+  const description = descriptionProp ?? t("confirmDialog.description", { defaultValue: "Please confirm to proceed." })
+  const confirmText = confirmTextProp ?? t("confirmDialog.confirm", { defaultValue: "Confirm" })
+  const cancelText = cancelTextProp ?? t("confirmDialog.cancel", { defaultValue: "Cancel" })
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import SearchBar from "@/components/shared/SearchBar";
@@ -63,6 +64,7 @@ export default function Settings({
   variant?: SettingsVariant;
   surface?: SettingsSurface;
 } = {}) {
+  const { t } = useTranslation("shellUi");
   const isV2 = variant ? variant === "v2" : isNewUserSurfacesEnabled();
   const { user, markFullName } = useAuth();
   const role = user?.role;
@@ -118,7 +120,7 @@ export default function Settings({
   }) => {
     changePasswordMutation.mutate(payload, {
       onSuccess: (response) => {
-        toast.success(response.message ?? "Password changed successfully");
+        toast.success(response.message ?? t("settings.passwordChanged", { defaultValue: "Password changed successfully" }));
         setChangePasswordOpen(false);
         changePasswordForm.reset();
       },
@@ -131,7 +133,7 @@ export default function Settings({
             }
           ).response?.data?.message ??
           error.message ??
-          "Failed to change password";
+          t("settings.passwordChangeFailed", { defaultValue: "Failed to change password" });
         toast.error(msg);
       },
     });
@@ -189,7 +191,7 @@ export default function Settings({
     };
     upsertProfileMutation.mutate(payload, {
       onSuccess: (resp) => {
-        toast.success(resp?.message ?? "Profile updated successfully");
+        toast.success(resp?.message ?? t("settings.profileUpdated", { defaultValue: "Profile updated successfully" }));
         setProfileData((prev) => ({
           ...prev,
           firstName: values.firstName,
@@ -217,15 +219,15 @@ export default function Settings({
             }
           ).response?.data?.message ??
           (error as Error).message ??
-          "Failed to update profile";
+          t("settings.profileUpdateFailed", { defaultValue: "Failed to update profile" });
         toast.error(msg);
       },
     });
   };
 
   const handleLogout = () => {
-    if (confirm("Are you sure you want to logout?")) {
-      alert("Logged out successfully!");
+    if (confirm(t("settings.logoutConfirm", { defaultValue: "Are you sure you want to logout?" }))) {
+      alert(t("settings.loggedOut", { defaultValue: "Logged out successfully!" }));
     }
   };
 
@@ -238,14 +240,14 @@ export default function Settings({
     <>
         {isV2 ? (
           <div data-testid="settings-v2-header">
-            <SectionLabel>Account &amp; Preferences</SectionLabel>
+            <SectionLabel>{t("settings.eyebrow", { defaultValue: "Account & Preferences" })}</SectionLabel>
             <h1 className="font-serif text-[22px] leading-tight tracking-tight text-ink">
-              Settings
+              {t("settings.title", { defaultValue: "Settings" })}
             </h1>
           </div>
         ) : (
           <div className="invisible mb-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t("settings.title", { defaultValue: "Settings" })}</h1>
             <SearchBar />
           </div>
         )}
@@ -359,16 +361,16 @@ export default function Settings({
         {role === ROLES.USER && (
           <Card className="shadow-sm">
             <CardHeader className="text-left">
-              <CardTitle className="text-lg font-semibold">Legal</CardTitle>
+              <CardTitle className="text-lg font-semibold">{t("settings.legal", { defaultValue: "Legal" })}</CardTitle>
             </CardHeader>
             <CardContent className="text-left">
               <div>
                 <Link to="/terms" className={legalLinkClass}>
-                  Terms of Use
+                  {t("settings.terms", { defaultValue: "Terms of Use" })}
                 </Link>
                 <br />
                 <Link to="/privacy" className={legalLinkClass}>
-                  Privacy Policy
+                  {t("settings.privacy", { defaultValue: "Privacy Policy" })}
                 </Link>
               </div>
             </CardContent>

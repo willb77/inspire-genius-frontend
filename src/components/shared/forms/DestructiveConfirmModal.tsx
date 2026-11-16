@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 
@@ -31,11 +32,14 @@ export default function DestructiveConfirmModal({
   description,
   confirmPhrase,
   confirmHint,
-  confirmLabel = "Permanently delete",
-  cancelLabel = "Cancel",
+  confirmLabel: confirmLabelProp,
+  cancelLabel: cancelLabelProp,
   loading = false,
   onConfirm,
 }: DestructiveConfirmModalProps) {
+  const { t } = useTranslation("shellUi");
+  const confirmLabel = confirmLabelProp ?? t("destructiveConfirm.confirm", { defaultValue: "Permanently delete" });
+  const cancelLabel = cancelLabelProp ?? t("destructiveConfirm.cancel", { defaultValue: "Cancel" });
   const [typed, setTyped] = useState("");
 
   const match = typed.trim() === confirmPhrase.trim();
@@ -61,8 +65,9 @@ export default function DestructiveConfirmModal({
 
         <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
           <label className="block text-xs font-medium mb-2 text-foreground">
-            To confirm, type
-            {confirmHint ? ` the ${confirmHint}` : ""}:{" "}
+            {confirmHint
+              ? t("destructiveConfirm.typeWithHint", { defaultValue: "To confirm, type the {{hint}}:", hint: confirmHint })
+              : t("destructiveConfirm.type", { defaultValue: "To confirm, type:" })}{" "}
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
               {confirmPhrase}
             </code>
@@ -76,7 +81,7 @@ export default function DestructiveConfirmModal({
             autoComplete="off"
             autoCorrect="off"
             data-testid="destructive-confirm-input"
-            aria-label="Type to confirm destructive action"
+            aria-label={t("destructiveConfirm.inputLabel", { defaultValue: "Type to confirm destructive action" })}
           />
         </div>
 
@@ -97,7 +102,7 @@ export default function DestructiveConfirmModal({
             data-testid="destructive-confirm-button"
             type="button"
           >
-            {loading ? "Working..." : confirmLabel}
+            {loading ? t("destructiveConfirm.working", { defaultValue: "Working..." }) : confirmLabel}
           </Button>
         </div>
       </div>

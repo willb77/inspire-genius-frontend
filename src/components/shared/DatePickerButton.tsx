@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,12 +19,14 @@ export type DatePickerButtonProps = {
 export default function DatePickerButton({
   date,
   onSelect,
-  placeholder = "Pick a date",
+  placeholder: placeholderProp,
   disabled,
   buttonClassName,
   align = "start",
   formatStr = "dd-MM-yyyy",
 }: DatePickerButtonProps) {
+  const { t } = useTranslation("shellUi");
+  const placeholder = placeholderProp ?? t("datePicker.placeholder", { defaultValue: "Pick a date" });
   return (
     <Popover>
       <PopoverTrigger asChild>

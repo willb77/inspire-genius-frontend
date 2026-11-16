@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,16 +30,17 @@ export default function CoachFormModal({
   submitLabel,
   toneOptions = [],
 }: CoachFormModalProps) {
+  const { t: tr } = useTranslation("shellUi");
   const dv: CoachFormValues = { ...COACH_FORM_DEFAULTS, ...(defaultValues ?? {}) } as CoachFormValues;
 
   return (
     <ModalFormFrame<CoachFormValues>
       open={open}
       onOpenChange={onOpenChange}
-      title={title ?? (mode === "add" ? "Add Mentor" : "Edit Mentor")}
+      title={title ?? (mode === "add" ? tr("coachForm.addMentor", { defaultValue: "Add Mentor" }) : tr("coachForm.editMentor", { defaultValue: "Edit Mentor" }))}
       mode={mode}
       defaultValues={dv}
-      submitLabel={submitLabel ?? (mode === "add" ? "Add Mentor" : "Save Changes")}
+      submitLabel={submitLabel ?? (mode === "add" ? tr("coachForm.addMentor", { defaultValue: "Add Mentor" }) : tr("coachForm.saveChanges", { defaultValue: "Save Changes" }))}
       onSubmit={onSubmit}
       className="sm:max-w-2xl"
     >
@@ -50,9 +52,9 @@ export default function CoachFormModal({
             rules={COACH_FORM_RULES.name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-xs">Mentor Name *</FormLabel>
+                <FormLabel className="block text-xs">{tr("coachForm.mentorName", { defaultValue: "Mentor Name *" })}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Name" disabled={mode === "edit"} {...field} />
+                  <Input placeholder={tr("coachForm.namePlaceholder", { defaultValue: "Enter Name" })} disabled={mode === "edit"} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -65,9 +67,9 @@ export default function CoachFormModal({
             rules={COACH_FORM_RULES.category}
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-xs">Category *</FormLabel>
+                <FormLabel className="block text-xs">{tr("coachForm.category", { defaultValue: "Category *" })}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Category" disabled={mode === "edit"} {...field} />
+                  <Input placeholder={tr("coachForm.categoryPlaceholder", { defaultValue: "Enter Category" })} disabled={mode === "edit"} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -81,15 +83,15 @@ export default function CoachFormModal({
               rules={COACH_FORM_RULES.status}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="block text-xs">Status</FormLabel>
+                  <FormLabel className="block text-xs">{tr("coachForm.status", { defaultValue: "Status" })}</FormLabel>
                   <FormControl>
                     <Select value={String(field.value || "active")} onValueChange={field.onChange}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue placeholder={tr("coachForm.selectStatus", { defaultValue: "Select status" })} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="deactivated">Deactivated</SelectItem>
+                        <SelectItem value="active">{tr("coachForm.active", { defaultValue: "Active" })}</SelectItem>
+                        <SelectItem value="deactivated">{tr("coachForm.deactivated", { defaultValue: "Deactivated" })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -105,11 +107,11 @@ export default function CoachFormModal({
             rules={COACH_FORM_RULES.persona}
             render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel className="block text-xs">Persona</FormLabel>
+                <FormLabel className="block text-xs">{tr("coachForm.persona", { defaultValue: "Persona" })}</FormLabel>
                 <FormControl>
                   <Textarea
                     rows={3}
-                    placeholder="Define the mentor's personality, communication style, and approach (e.g. empathetic listener, direct challenger, supportive guide)"
+                    placeholder={tr("coachForm.personaPlaceholder", { defaultValue: "Define the mentor's personality, communication style, and approach (e.g. empathetic listener, direct challenger, supportive guide)" })}
                     {...field}
                   />
                 </FormControl>
@@ -125,14 +127,14 @@ export default function CoachFormModal({
               rules={COACH_FORM_RULES.voice_style}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="block text-xs">Voice Style</FormLabel>
+                  <FormLabel className="block text-xs">{tr("coachForm.voiceStyle", { defaultValue: "Voice Style" })}</FormLabel>
                   <FormControl>
                     <Select
                       value={String(field.value || "")}
                       onValueChange={field.onChange}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select voice style" />
+                        <SelectValue placeholder={tr("coachForm.selectVoiceStyle", { defaultValue: "Select voice style" })} />
                       </SelectTrigger>
                       <SelectContent>
                         {toneOptions.map((t) => (
@@ -155,11 +157,11 @@ export default function CoachFormModal({
             rules={COACH_FORM_RULES.voice_description}
             render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel className="block text-xs">System Prompt</FormLabel>
+                <FormLabel className="block text-xs">{tr("coachForm.systemPrompt", { defaultValue: "System Prompt" })}</FormLabel>
                 <FormControl>
                   <Textarea
                     rows={6}
-                    placeholder="Enter the system prompt that defines how this mentor behaves, responds, and coaches users"
+                    placeholder={tr("coachForm.systemPromptPlaceholder", { defaultValue: "Enter the system prompt that defines how this mentor behaves, responds, and coaches users" })}
                     {...field}
                   />
                 </FormControl>

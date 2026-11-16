@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export default function ModalDialog({
   showClose = true,
   className,
 }: ModalDialogProps) {
+  const { t } = useTranslation("shellUi");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -49,7 +51,7 @@ export default function ModalDialog({
               className="rounded-full hover:bg-gray-100"
             >
               <X className="h-5 w-5" />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{t("modalDialog.close", { defaultValue: "Close" })}</span>
             </Button>
           )}
         </div>

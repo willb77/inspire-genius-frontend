@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { useAuth } from "@/context/useAuth"
 import PRISMPills from "@/components/dashboard/PRISMPills"
 import type { PRISMDimension, UpcomingEvent } from "@/types/dashboard/data-types"
@@ -29,14 +30,15 @@ type RightPanelProps = {
 }
 
 export default function RightPanel({ prism = DEFAULT_PRISM, upcoming = DEFAULT_UPCOMING }: RightPanelProps) {
+  const { t } = useTranslation("shellUi")
   const { user } = useAuth()
   const initials = getInitials(user?.fullName ?? user?.name, user?.email)
-  const displayName = user?.fullName ?? user?.name ?? user?.email ?? "User"
+  const displayName = user?.fullName ?? user?.name ?? user?.email ?? t("rightPanel.fallbackName", { defaultValue: "User" })
   const displayRole = (user?.role ?? "user").replace("-", " ")
   const displayEmail = user?.email ?? ""
 
   return (
-    <aside role="complementary" aria-label="User profile and upcoming events" className="hidden lg:flex fixed top-[var(--spacing-header-h)] right-0 bottom-0 w-[var(--spacing-right-panel-w)] bg-white border-l border-[#e5e7eb] overflow-y-auto flex-col gap-5 p-4">
+    <aside role="complementary" aria-label={t("rightPanel.ariaLabel", { defaultValue: "User profile and upcoming events" })} className="hidden lg:flex fixed top-[var(--spacing-header-h)] right-0 bottom-0 w-[var(--spacing-right-panel-w)] bg-white border-l border-[#e5e7eb] overflow-y-auto flex-col gap-5 p-4">
       {/* Profile */}
       <div className="text-center">
         <div className="w-14 h-14 rounded-full bg-gradient-to-br from-ink to-accent-orange flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
@@ -49,13 +51,13 @@ export default function RightPanel({ prism = DEFAULT_PRISM, upcoming = DEFAULT_U
 
       {/* PRISM Profile */}
       <div>
-        <div className="text-xs font-semibold text-[#374151] mb-2">PRISM Profile</div>
+        <div className="text-xs font-semibold text-[#374151] mb-2">{t("rightPanel.prismProfile", { defaultValue: "PRISM Profile" })}</div>
         <PRISMPills dimensions={prism} />
       </div>
 
       {/* Upcoming */}
       <div>
-        <div className="text-xs font-semibold text-[#374151] mb-2">Upcoming</div>
+        <div className="text-xs font-semibold text-[#374151] mb-2">{t("rightPanel.upcoming", { defaultValue: "Upcoming" })}</div>
         {upcoming.map((event) => (
           <div key={event.id} className="flex gap-2.5 py-2 border-b border-[#f3f4f6] last:border-b-0">
             <div className="w-[3px] rounded self-stretch shrink-0" style={{ backgroundColor: event.color }} />

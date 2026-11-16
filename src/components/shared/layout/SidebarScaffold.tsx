@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import React from "react";
 import {
   SidebarProvider,
@@ -26,6 +27,7 @@ import { ChevronDown, ChevronRight, Lock, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
+import { translateNavLabel } from "@/components/shared/layout/navLabels";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useAuth } from "@/context/useAuth";
 import IgThemeApplier from "@/components/shared/theme/IgThemeApplier";
@@ -120,7 +122,9 @@ function sectionHoldsActiveRoute(pathname: string, section: Pick<NavSectionDef, 
 }
 
 /** A nested entry: same lock / active semantics as {@link NavItem}, rendered in the sub-menu. */
-function NavSubItem({ to, icon: Icon, label, state, disabled, disabledReason, activePrefix }: NavItemDef) {
+function NavSubItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix }: NavItemDef) {
+  const { t } = useTranslation("shellUi");
+  const label = translateNavLabel(t, "items", rawLabel);
   const navigate = useNavigate();
   const location = useLocation();
   const isActive = isItemActive(location.pathname, { to, activePrefix });
@@ -138,7 +142,7 @@ function NavSubItem({ to, icon: Icon, label, state, disabled, disabledReason, ac
         <button
           type="button"
           aria-label={label}
-          title={disabled ? disabledReason ?? `${label} — not included in your plan` : undefined}
+          title={disabled ? disabledReason ?? t("sidebar.notInPlan", { defaultValue: "{{label}} — not included in your plan", label: label }) : undefined}
           onClick={() => {
             if (disabled) return;
             navigate(to, state ? { state } : undefined);
@@ -153,7 +157,9 @@ function NavSubItem({ to, icon: Icon, label, state, disabled, disabledReason, ac
   );
 }
 
-function NavItem({ to, icon: Icon, label, state, disabled, disabledReason, activePrefix, children, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
+function NavItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix, children, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
+  const { t } = useTranslation("shellUi");
+  const label = translateNavLabel(t, "items", rawLabel);
   const navigate = useNavigate();
   const location = useLocation();
   const { open, setOpen } = useSidebar();
@@ -192,7 +198,7 @@ function NavItem({ to, icon: Icon, label, state, disabled, disabledReason, activ
           <span>{label}</span>
         </SidebarMenuButton>
         <SidebarMenuAction
-          aria-label={`${groupOpen ? "Collapse" : "Expand"} ${label}`}
+          aria-label={groupOpen ? t("sidebar.collapse", { defaultValue: "Collapse {{label}}", label: label }) : t("sidebar.expand", { defaultValue: "Expand {{label}}", label: label })}
           aria-expanded={groupOpen}
           onClick={(e) => {
             e.stopPropagation();
@@ -219,7 +225,7 @@ function NavItem({ to, icon: Icon, label, state, disabled, disabledReason, activ
         isActive={!disabled && isActive}
         disabled={disabled}
         aria-disabled={disabled || undefined}
-        title={disabled ? disabledReason ?? `${label} — not included in your plan` : undefined}
+        title={disabled ? disabledReason ?? t("sidebar.notInPlan", { defaultValue: "{{label}} — not included in your plan", label: label }) : undefined}
         onClick={() => {
           if (disabled) return;
           if (expandOnPath && to === expandOnPath && !open) {
@@ -249,6 +255,7 @@ function CollapsibleNavSection({
   showSeparator: boolean;
   expandOnPath?: string;
 }) {
+  const { t } = useTranslation("shellUi");
   const location = useLocation();
   // The page you are on is in this section: open it, whatever was saved, so a
   // deep link or a click from another group never lands with nothing
@@ -282,7 +289,7 @@ function CollapsibleNavSection({
         aria-expanded={open}
         className="w-full flex items-center justify-between px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden"
       >
-        <span>{section.label}</span>
+        <span>{translateNavLabel(t, "sections", section.label)}</span>
         <Chevron className="size-3.5 shrink-0" />
       </button>
       {open && (
@@ -300,6 +307,7 @@ function CollapsibleNavSection({
 }
 
 function MobileMenuTrigger() {
+  const { t } = useTranslation("shellUi");
   const { toggleSidebar, isMobile } = useSidebar();
   if (!isMobile) return null;
   return (
@@ -307,7 +315,7 @@ function MobileMenuTrigger() {
       variant="ghost"
       size="icon"
       onClick={toggleSidebar}
-      aria-label="Open menu"
+      aria-label={t("sidebar.openMenu", { defaultValue: "Open menu" })}
       className="md:hidden size-11 shrink-0"
     >
       <Menu className="size-5" />
@@ -339,6 +347,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
     if (typeof window === 'undefined') return true;
     return getUIFlag(STORAGE_KEYS.UI_SIDEBAR_OPEN);
   });
+  const { t } = useTranslation("shellUi");
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   // Toast on newly-arrived broadcast alerts (mounted once, app-wide).
@@ -352,7 +361,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
           <button
             type="button"
             onClick={() => navigate(ROUTES.HOME)}
-            aria-label="Go to home"
+            aria-label={t("sidebar.goHome", { defaultValue: "Go to home" })}
             className="flex items-center gap-2 min-w-0 mr-auto hover:opacity-80 transition-opacity"
           >
             <img src="/Icon-Dark.svg" alt="Inspire Genius" className="ig-rail-logo size-8" />
@@ -382,7 +391,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
                     // in the 48px rail. Newly load-bearing: Meridian Chat now
                     // opens with the rail collapsed.
                     <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden">
-                      {section.label}
+                      {translateNavLabel(t, "sections", section.label)}
                     </div>
                   )}
                   <SidebarGroupContent>
@@ -415,14 +424,14 @@ export default function SidebarScaffold({ navItems, navSections, children, class
           <SidebarMenu>
             <SidebarMenuItem>
               <ConfirmDialog
-                title="Log out"
-                description="Are you sure you want to log out?"
-                confirmText="Log out"
+                title={t("sidebar.logoutTitle", { defaultValue: "Log out" })}
+                description={t("sidebar.logoutDescription", { defaultValue: "Are you sure you want to log out?" })}
+                confirmText={t("sidebar.logoutConfirm", { defaultValue: "Log out" })}
                 onConfirm={logout}
                 trigger={
                   <SidebarMenuButton asChild>
                     <Button variant="ghost" className="w-full justify-start" type="button">
-                      <LogOut className="mr-2 size-4" /> Logout
+                      <LogOut className="mr-2 size-4" /> {t("sidebar.logout", { defaultValue: "Logout" })}
                     </Button>
                   </SidebarMenuButton>
                 }

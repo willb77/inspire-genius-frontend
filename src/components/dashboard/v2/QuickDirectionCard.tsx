@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import type { JSX } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowRight, Compass, RotateCcw } from "lucide-react"
@@ -51,6 +52,7 @@ type CardCopy = {
 }
 
 export function QuickDirectionCard(): JSX.Element | null {
+  const { t } = useTranslation("shellUi")
   const navigate = useNavigate()
 
   // Entitlement first — a user without the vertical must not trigger the
@@ -103,22 +105,22 @@ export function QuickDirectionCard(): JSX.Element | null {
   const copy: CardCopy =
     journey.status === "complete" || next.id === null
       ? {
-          lead: "You've been all the way through Direction Setting.",
+          lead: t("quickDirection.completeLead", { defaultValue: "You've been all the way through Direction Setting." }),
           detail:
-            "Things change — a new role in mind, a different goal. It's all still here whenever you want to go back over it.",
-          cta: "Revisit your journey",
+            t("quickDirection.completeDetail", { defaultValue: "Things change — a new role in mind, a different goal. It's all still here whenever you want to go back over it." }),
+          cta: t("quickDirection.completeCta", { defaultValue: "Revisit your journey" }),
         }
       : journey.status === "in_progress"
         ? {
-            lead: `Next: ${next.name} — ${next.question}`,
+            lead: t("quickDirection.nextLead", { defaultValue: "Next: {{name}} — {{question}}", name: next.name, question: next.question }),
             detail: next.outcome,
-            cta: "Continue",
+            cta: t("quickDirection.continue", { defaultValue: "Continue" }),
           }
         : {
-            lead: "Not sure what's next? Start here.",
+            lead: t("quickDirection.startLead", { defaultValue: "Not sure what's next? Start here." }),
             detail:
-              "A guided path from “I don't know what I should be doing” to a role worth going for and a plan to get there. Take it at your own pace — every step is saved.",
-            cta: "Start",
+              t("quickDirection.startDetail", { defaultValue: "A guided path from “I don't know what I should be doing” to a role worth going for and a plan to get there. Take it at your own pace — every step is saved." }),
+            cta: t("quickDirection.start", { defaultValue: "Start" }),
           }
 
   const showProgress = journey.status === "in_progress" && position > 0 && total > 0
@@ -130,11 +132,11 @@ export function QuickDirectionCard(): JSX.Element | null {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h3 className="flex items-center gap-2 font-serif text-lg font-semibold text-[#0B1B33]">
           <Compass className="h-5 w-5 text-[#127A8A]" aria-hidden="true" />
-          Direction Setting
+          {t("quickDirection.title", { defaultValue: "Direction Setting" })}
         </h3>
         {showProgress && (
           <span className="text-[12px] text-[#7C93B5]">
-            Step {position} of {total}
+            {t("quickDirection.step", { defaultValue: "Step {{position}} of {{total}}", position: position, total: total })}
           </span>
         )}
       </div>
@@ -155,7 +157,7 @@ export function QuickDirectionCard(): JSX.Element | null {
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Direction Setting progress"
+          aria-label={t("quickDirection.progress", { defaultValue: "Direction Setting progress" })}
         >
           <div
             className="h-full rounded-full bg-[#127A8A] transition-all"
