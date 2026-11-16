@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { Sprout, MessagesSquare } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { FitDetail, PerDimensionFit } from "@/types/job-fit"
 import type {
   DimensionBenchmark,
@@ -70,6 +71,7 @@ function toRadarInputs(perDimension: PerDimensionFit[]): {
  * follow-up, actions) stay with the role page — they need a published role id.
  */
 export function FitBreakdown({ data }: { data: FitDetail }) {
+  const { t } = useTranslation("jobFitPages")
   const radar = useMemo(() => toRadarInputs(data.perDimension), [data])
   // JF-5: cards only on a priority-scored read (job_fit_v2 applied server-side);
   // null on every other read, which draws today's radar exactly as before.
@@ -79,17 +81,19 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
     <>
       {cards ? (
         <FitCard className="mb-6">
-          <FitSectionTitle>Your profile vs. this role</FitSectionTitle>
+          <FitSectionTitle>{t("fitBreakdown.profileVsRole", "Your profile vs. this role")}</FitSectionTitle>
           <p className="mb-4 text-sm text-[#6b7280]">
-            The dimensions this role puts first: what the job asks for, your rating, and the
-            difference. Hover, focus or tap a name for its definition.
+            {t(
+              "fitBreakdown.priorityIntro",
+              "The dimensions this role puts first: what the job asks for, your rating, and the difference. Hover, focus or tap a name for its definition.",
+            )}
           </p>
           <FitCards groups={cards} />
         </FitCard>
       ) : (
         /* Radar: your profile vs the role benchmark */
         <FitCard className="mb-6">
-          <FitSectionTitle>Your profile vs. this role</FitSectionTitle>
+          <FitSectionTitle>{t("fitBreakdown.profileVsRole", "Your profile vs. this role")}</FitSectionTitle>
           <BenchmarkRadarChart
             behaviors={radar.behaviors}
             aptitudes={radar.aptitudes}
@@ -102,7 +106,9 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
 
       {/* Per-dimension gap table with coaching */}
       <FitCard className="mb-6">
-        <FitSectionTitle>Where you stand, dimension by dimension</FitSectionTitle>
+        <FitSectionTitle>
+          {t("fitBreakdown.perDimensionTitle", "Where you stand, dimension by dimension")}
+        </FitSectionTitle>
         <div className="space-y-4">
           {data.perDimension.map((d) =>
             isMeasured(d) && d.candidateScore !== null && d.gap !== null ? (
@@ -112,8 +118,8 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
                   <FitPill tone={gapTone(d.gap)}>{formatGap(d.gap)}</FitPill>
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <ScoreBar score={d.candidateScore} label="You" size="sm" showValue />
-                  <ScoreBar score={d.benchmarkScore} label="Role blueprint" size="sm" showValue color="bg-[#0D9488]" />
+                  <ScoreBar score={d.candidateScore} label={t("fitBreakdown.you", "You")} size="sm" showValue />
+                  <ScoreBar score={d.benchmarkScore} label={t("fitBreakdown.roleBlueprint", "Role blueprint")} size="sm" showValue color="bg-[#0D9488]" />
                 </div>
                 {d.coaching && <p className="mt-2 text-sm text-[#6b7280]">{d.coaching}</p>}
               </div>
@@ -134,7 +140,7 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
       {/* Coaching micro-habits */}
       {data.coachingGaps.length > 0 && (
         <FitCard className="mb-6">
-          <FitSectionTitle>Growth focus</FitSectionTitle>
+          <FitSectionTitle>{t("fitBreakdown.growthFocus", "Growth focus")}</FitSectionTitle>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {data.coachingGaps.map((g) => (
               <div key={`${g.category}-${g.dimensionName}`} className="rounded-lg border border-[#e5e7eb] p-3">
@@ -143,8 +149,11 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
                   <span className="text-sm font-medium text-[#1f2937]">{g.dimensionName}</span>
                 </div>
                 <p className="text-xs text-[#6b7280]">
-                  Currently {Math.abs(g.gap)} points below this role&apos;s blueprint — a good area
-                  to build on.
+                  {t("fitBreakdown.growthFocusItem", {
+                    defaultValue:
+                      "Currently {{points}} points below this role's blueprint — a good area to build on.",
+                    points: Math.abs(g.gap),
+                  })}
                 </p>
               </div>
             ))}
@@ -155,7 +164,7 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
       {/* Over-use flags */}
       {data.overdoneFlags.length > 0 && (
         <FitCard className="mb-6">
-          <FitSectionTitle>Watch for over-use</FitSectionTitle>
+          <FitSectionTitle>{t("fitBreakdown.overUseTitle", "Watch for over-use")}</FitSectionTitle>
           <div className="flex flex-wrap gap-2">
             {data.overdoneFlags.map((o) => (
               <FitPill key={o.dimensionName} tone="amber">
@@ -164,8 +173,10 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
             ))}
           </div>
           <p className="mt-3 text-sm text-[#6b7280]">
-            Strengths you express strongly can crowd out other behaviors this role also values —
-            worth balancing.
+            {t(
+              "fitBreakdown.overUseIntro",
+              "Strengths you express strongly can crowd out other behaviors this role also values — worth balancing.",
+            )}
           </p>
         </FitCard>
       )}
@@ -173,7 +184,9 @@ export function FitBreakdown({ data }: { data: FitDetail }) {
       {/* Interview self-advocacy */}
       {data.interviewSelfAdvocacy.length > 0 && (
         <FitCard className="mb-6">
-          <FitSectionTitle>How to speak to your fit in an interview</FitSectionTitle>
+          <FitSectionTitle>
+            {t("fitBreakdown.interviewTitle", "How to speak to your fit in an interview")}
+          </FitSectionTitle>
           <ul className="space-y-2">
             {data.interviewSelfAdvocacy.map((tip, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-[#374151]">

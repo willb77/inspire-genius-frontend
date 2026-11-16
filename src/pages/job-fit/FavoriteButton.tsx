@@ -1,4 +1,5 @@
 import { Heart, Loader2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   useRemoveSavedJob,
@@ -16,6 +17,7 @@ import { savedJobErrorText } from "@/pages/job-fit/_savedJobs"
  * card and its own `goal_targets` path).
  */
 export function FavoriteButton({ jobId, roleTitle }: { jobId: string; roleTitle?: string | null }) {
+  const { t } = useTranslation("jobFitPages")
   const enabled = useSavedJobsEnabled()
   const list = useSavedJobs(enabled)
   const save = useSaveJob()
@@ -50,11 +52,13 @@ export function FavoriteButton({ jobId, roleTitle }: { jobId: string; roleTitle?
         ) : (
           <Heart className={saved ? "mr-1 h-3.5 w-3.5 fill-current" : "mr-1 h-3.5 w-3.5"} aria-hidden />
         )}
-        {saved ? "Saved to Favorites" : "Save to Favorites"}
+        {saved
+          ? t("favoriteButton.saved", "Saved to Favorites")
+          : t("favoriteButton.save", "Save to Favorites")}
       </Button>
       {failure && (
         <p role="alert" className="text-xs text-[#B91C1C]">
-          {savedJobErrorText(failure)}
+          {savedJobErrorText(failure, t)}
         </p>
       )}
     </div>

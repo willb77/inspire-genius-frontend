@@ -1,4 +1,6 @@
 import { Layers } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import type { JobOverall, OverallPerson, OverallSignal, OverallSignalKey } from "@/types/job-fit/components"
 import { FitCard, FitSectionTitle } from "@/components/fit/primitives"
 import { LEVEL_NAME, OVERALL_LABEL, OVERALL_SIGNALS, overallAbsentReason } from "@/components/fit/components"
@@ -11,33 +13,81 @@ type Props = {
 }
 
 /** What one present signal rests on, in the person's own words where it can. */
-function signalDetail(key: OverallSignalKey, s: OverallSignal): string | null {
+function signalDetail(key: OverallSignalKey, s: OverallSignal, t: TFunction): string | null {
   switch (key) {
     case "function": {
-      const yours =
-        s.score === 100
-          ? `your main field is ${s.personFamily}`
-          : s.score === 60
-            ? `${s.roleFamily} is one of your other fields`
-            : `your main field is ${s.personFamily}`
-      const quote = s.evidence ? ` — from "${s.evidence}"` : ""
-      return `This role is ${s.roleFamily}; ${yours}${quote}.`
+      const other = s.score === 60
+      const vars = {
+        roleFamily: s.roleFamily,
+        personFamily: s.personFamily,
+        evidence: s.evidence,
+      }
+      if (other) {
+        return s.evidence
+          ? t("overallFitCard.functionOtherQuote", {
+              defaultValue:
+                "This role is {{roleFamily}}; {{roleFamily}} is one of your other fields — from \"{{evidence}}\".",
+              ...vars,
+            })
+          : t("overallFitCard.functionOther", {
+              defaultValue: "This role is {{roleFamily}}; {{roleFamily}} is one of your other fields.",
+              ...vars,
+            })
+      }
+      return s.evidence
+        ? t("overallFitCard.functionMainQuote", {
+            defaultValue:
+              "This role is {{roleFamily}}; your main field is {{personFamily}} — from \"{{evidence}}\".",
+            ...vars,
+          })
+        : t("overallFitCard.functionMain", {
+            defaultValue: "This role is {{roleFamily}}; your main field is {{personFamily}}.",
+            ...vars,
+          })
     }
     case "seniority": {
       const role = s.roleLevel ? LEVEL_NAME[s.roleLevel] : null
       const yours = s.personLevel ? LEVEL_NAME[s.personLevel] : null
-      const quote = s.evidence ? ` ("${s.evidence}")` : ""
-      return `This role is ${role} level; the highest you've held is ${yours}${quote}.`
+      return s.evidence
+        ? t("overallFitCard.seniorityQuote", {
+            defaultValue:
+              "This role is {{role}} level; the highest you've held is {{yours}} (\"{{evidence}}\").",
+            role,
+            yours,
+            evidence: s.evidence,
+          })
+        : t("overallFitCard.seniority", {
+            defaultValue: "This role is {{role}} level; the highest you've held is {{yours}}.",
+            role,
+            yours,
+          })
     }
     case "skills":
-      return `${s.covered} of ${s.total} of this role's activities show on your résumé` +
-        (s.uncovered && s.uncovered.length > 0 ? `. Not yet: ${s.uncovered.join("; ")}.` : ".")
+      return s.uncovered && s.uncovered.length > 0
+        ? t("overallFitCard.skillsUncovered", {
+            defaultValue:
+              "{{covered}} of {{total}} of this role's activities show on your résumé. Not yet: {{items}}.",
+            covered: s.covered,
+            total: s.total,
+            items: s.uncovered.join("; "),
+          })
+        : t("overallFitCard.skills", {
+            defaultValue: "{{covered}} of {{total}} of this role's activities show on your résumé.",
+            covered: s.covered,
+            total: s.total,
+          })
     case "goal":
       return s.score === 100
-        ? "One of your goals points toward this kind of role."
-        : `Your goals point toward ${(s.goalFamilies ?? []).join(" and ")}, not this kind of role.`
+        ? t("overallFitCard.goalAligned", "One of your goals points toward this kind of role.")
+        : t("overallFitCard.goalElsewhere", {
+            defaultValue: "Your goals point toward {{families}}, not this kind of role.",
+            families: (s.goalFamilies ?? []).join(t("shared.listAnd", " and ")),
+          })
     case "prism":
-      return "How your behavioural profile sits with this role's blueprint — unchanged."
+      return t(
+        "overallFitCard.prism",
+        "How your behavioural profile sits with this role's blueprint — unchanged.",
+      )
   }
 }
 
@@ -48,20 +98,36 @@ function signalDetail(key: OverallSignalKey, s: OverallSignal): string | null {
  * server's overall_fit switch is on.
  */
 export function OverallFitCard({ job, weights, person, benchmarksValidated }: Props) {
+  const { t } = useTranslation("jobFitPages")
   const { overall } = job
   const others = person?.otherAssessments ?? []
   return (
     <FitCard className="mb-6">
-      <FitSectionTitle>Overall fit</FitSectionTitle>
+      <FitSectionTitle>{t("overallFitCard.title", "Overall fit")}</FitSectionTitle>
 
       <div className="mb-4 flex items-center gap-2 rounded-lg bg-[#f9fafb] p-3 text-sm font-medium text-[#1f2937]">
         <Layers className="h-4 w-4 text-[#0D9488]" />
         {overall.score != null ? (
-          <span>Overall fit: {Math.round(overall.score)}%</span>
+          <span>
+            {t("overallFitCard.scoreLine", {
+              defaultValue: "Overall fit: {{score}}%",
+              score: Math.round(overall.score),
+            })}
+          </span>
         ) : overall.status === "not_set_up" ? (
-          <span>Overall fit isn&apos;t set up on this service yet — your PRISM fit above is your read.</span>
+          <span>
+            {t(
+              "overallFitCard.notSetUp",
+              "Overall fit isn't set up on this service yet — your PRISM fit above is your read.",
+            )}
+          </span>
         ) : (
-          <span>Not enough about you to combine yet — add a résumé. Your PRISM fit above is your read.</span>
+          <span>
+            {t(
+              "overallFitCard.notEnough",
+              "Not enough about you to combine yet — add a résumé. Your PRISM fit above is your read.",
+            )}
+          </span>
         )}
       </div>
 
@@ -74,12 +140,16 @@ export function OverallFitCard({ job, weights, person, benchmarksValidated }: Pr
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium text-[#1f2937]">{OVERALL_LABEL[key]}</span>
                 <span className="text-[#6b7280]">
-                  {present ? `${Math.round(s.score as number)}%` : "not counted"}
-                  {weights?.[key] != null && ` · weight ${weights[key]}`}
+                  {present ? `${Math.round(s.score as number)}%` : t("overallFitCard.notCounted", "not counted")}
+                  {weights?.[key] != null &&
+                    ` ${t("overallFitCard.weight", {
+                      defaultValue: "· weight {{weight}}",
+                      weight: weights[key],
+                    })}`}
                 </span>
               </div>
               <p className={present ? "text-[#4b5563]" : "text-[#6b7280]"}>
-                {present && s ? signalDetail(key, s) : overallAbsentReason(key, s)}
+                {present && s ? signalDetail(key, s, t) : overallAbsentReason(key, s)}
               </p>
             </li>
           )
@@ -89,21 +159,35 @@ export function OverallFitCard({ job, weights, person, benchmarksValidated }: Pr
       <div className="mt-4 space-y-1 text-xs text-[#6b7280]">
         {overall.score != null && overall.missing.length > 0 && (
           <p>
-            Rescaled without{" "}
-            {overall.missing.map((k) => OVERALL_LABEL[k].toLowerCase()).join(", ")} — a part we
-            don&apos;t know is left out, never counted as zero.
+            {t("overallFitCard.rescaled", {
+              defaultValue:
+                "Rescaled without {{missing}} — a part we don't know is left out, never counted as zero.",
+              missing: overall.missing.map((k) => OVERALL_LABEL[k].toLowerCase()).join(", "),
+            })}
           </p>
         )}
         {benchmarksValidated === false && (
-          <p>Role blueprints are not yet validated against people working in these roles.</p>
+          <p>
+            {t(
+              "overallFitCard.notValidated",
+              "Role blueprints are not yet validated against people working in these roles.",
+            )}
+          </p>
         )}
         {others.length > 0 && (
           <p>
-            Other assessments not used: {others.map((o) => o.framework).join(", ")} — no role
-            mapping yet.
+            {t("overallFitCard.otherAssessments", {
+              defaultValue: "Other assessments not used: {{items}} — no role mapping yet.",
+              items: others.map((o) => o.framework).join(", "),
+            })}
           </p>
         )}
-        <p>Decision support for your own development — never a selection verdict.</p>
+        <p>
+          {t(
+            "overallFitCard.disclaimer",
+            "Decision support for your own development — never a selection verdict.",
+          )}
+        </p>
       </div>
     </FitCard>
   )
