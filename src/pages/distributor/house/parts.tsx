@@ -1,4 +1,5 @@
 import React from "react"
+import { useTranslation } from "react-i18next"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { DASH } from "./distributorData"
@@ -14,6 +15,7 @@ export function StatTile({
   value: string
   loading?: boolean
 }) {
+  const { t } = useTranslation("distributorPages")
   const missing = value === DASH
   return (
     <div className="rounded-lg border border-border bg-card p-4" data-testid={`stat-${label}`}>
@@ -23,7 +25,7 @@ export function StatTile({
       ) : (
         <>
           <div className="mt-1 text-2xl font-semibold text-foreground">{value}</div>
-          {missing && <div className="text-xs text-muted-foreground">Not available yet</div>}
+          {missing && <div className="text-xs text-muted-foreground">{t("statNotAvailable", { defaultValue: "Not available yet" })}</div>}
         </>
       )}
     </div>

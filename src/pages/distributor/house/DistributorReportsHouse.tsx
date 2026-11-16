@@ -1,4 +1,5 @@
 import DistributorLayout from "@/layouts/DistributorLayout"
+import { useTranslation } from "react-i18next"
 import { PageHeader } from "@/components/shared/house/PageHeader"
 import { PageState } from "@/components/shared/house/PageState"
 import { useDistributorPractitioners, useDistributorTransactions } from "@/hooks/distributor/useDistributor"
@@ -14,6 +15,7 @@ import { Section } from "./parts"
  * they are not shown here.
  */
 export default function DistributorReportsHouse() {
+  const { t } = useTranslation("distributorPages")
   const practs = useDistributorPractitioners()
   const txs = useDistributorTransactions()
   const practitioners = practs.error ? null : readPractitioners(practs.data)
@@ -24,34 +26,34 @@ export default function DistributorReportsHouse() {
 
   return (
     <DistributorLayout>
-      <PageHeader title="Reports" description="How your credits are being used, by region and by month." />
+      <PageHeader title={t("reportsTitle", { defaultValue: "Reports" })} description={t("reportsDescription", { defaultValue: "How your credits are being used, by region and by month." })} />
       <div className="space-y-4">
-        <Section title="Credits by region">
+        <Section title={t("creditsByRegion", { defaultValue: "Credits by region" })}>
           {practs.isLoading ? (
             <PageState kind="loading" rows={3} />
           ) : practs.error ? (
             <PageState
               kind="error"
-              message="We couldn't load this report."
+              message={t("loadReportError", { defaultValue: "We couldn't load this report." })}
               onRetry={() => void practs.refetch()}
             />
           ) : !practitioners ? (
-            <PageState kind="unavailable" message="This report isn't available yet." />
+            <PageState kind="unavailable" message={t("reportUnavailable", { defaultValue: "This report isn't available yet." })} />
           ) : regions.length === 0 ? (
             <PageState
               kind="empty"
-              title="Nothing to report yet"
-              message="This fills in once practitioners join your network."
+              title={t("nothingToReportTitle", { defaultValue: "Nothing to report yet" })}
+              message={t("nothingToReportRegionBody", { defaultValue: "This fills in once practitioners join your network." })}
             />
           ) : (
             <table className="w-full text-sm">
-              <caption className="sr-only">Practitioners and credits given and used, by region</caption>
+              <caption className="sr-only">{t("regionTableCaption", { defaultValue: "Practitioners and credits given and used, by region" })}</caption>
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Region</th>
-                  <th className="py-2 font-medium">Practitioners</th>
-                  <th className="py-2 font-medium">Credits given</th>
-                  <th className="py-2 font-medium">Credits used</th>
+                  <th className="py-2 font-medium">{t("colRegion", { defaultValue: "Region" })}</th>
+                  <th className="py-2 font-medium">{t("practitioners", { defaultValue: "Practitioners" })}</th>
+                  <th className="py-2 font-medium">{t("colCreditsGiven", { defaultValue: "Credits given" })}</th>
+                  <th className="py-2 font-medium">{t("colCreditsUsed", { defaultValue: "Credits used" })}</th>
                 </tr>
               </thead>
               <tbody>
@@ -68,28 +70,28 @@ export default function DistributorReportsHouse() {
           )}
         </Section>
 
-        <Section title="Credits by month">
+        <Section title={t("creditsByMonth", { defaultValue: "Credits by month" })}>
           {txs.isLoading ? (
             <PageState kind="loading" rows={3} />
           ) : txs.error ? (
-            <PageState kind="error" message="We couldn't load this report." onRetry={() => void txs.refetch()} />
+            <PageState kind="error" message={t("loadReportError", { defaultValue: "We couldn't load this report." })} onRetry={() => void txs.refetch()} />
           ) : !transactions ? (
-            <PageState kind="unavailable" message="This report isn't available yet." />
+            <PageState kind="unavailable" message={t("reportUnavailable", { defaultValue: "This report isn't available yet." })} />
           ) : months.length === 0 ? (
             <PageState
               kind="empty"
-              title="Nothing to report yet"
-              message="This fills in once you buy credits or give them to practitioners."
+              title={t("nothingToReportTitle", { defaultValue: "Nothing to report yet" })}
+              message={t("nothingToReportMonthBody", { defaultValue: "This fills in once you buy credits or give them to practitioners." })}
             />
           ) : (
             <table className="w-full text-sm">
-              <caption className="sr-only">Credits bought, given and used each month, newest first</caption>
+              <caption className="sr-only">{t("monthTableCaption", { defaultValue: "Credits bought, given and used each month, newest first" })}</caption>
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Month</th>
-                  <th className="py-2 font-medium">Bought</th>
-                  <th className="py-2 font-medium">Given</th>
-                  <th className="py-2 font-medium">Used</th>
+                  <th className="py-2 font-medium">{t("colMonth", { defaultValue: "Month" })}</th>
+                  <th className="py-2 font-medium">{t("colBought", { defaultValue: "Bought" })}</th>
+                  <th className="py-2 font-medium">{t("colGiven", { defaultValue: "Given" })}</th>
+                  <th className="py-2 font-medium">{t("colUsed", { defaultValue: "Used" })}</th>
                 </tr>
               </thead>
               <tbody>

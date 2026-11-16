@@ -2,6 +2,7 @@ import { useCallback, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { AlertTriangle, Bot, Loader2, Send, User, UserRound } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -49,6 +50,9 @@ export type ExerciseChatProps = {
 
 export function ExerciseChat({ sessionId, canSend, disabledReason, onTurnSettled }: ExerciseChatProps) {
   const { user } = useAuth()
+  const { t } = useTranslation("careerToolsPages")
+  const youSaid = t("chatYouSaid", { defaultValue: "You said:" })
+  const meridianSaid = t("chatMeridianSaid", { defaultValue: "Meridian said:" })
   const [turns, setTurns] = useState<Turn[]>([])
   const [counselor, setCounselor] = useState<string | null>(null)
 
@@ -84,11 +88,11 @@ export function ExerciseChat({ sessionId, canSend, disabledReason, onTurnSettled
   const disabled = !canSend || isProcessing
 
   return (
-    <section aria-label="Talk it through" className="flex min-h-[28rem] flex-col rounded-xl border bg-card">
+    <section aria-label={t("chatTitle", { defaultValue: "Talk it through" })} className="flex min-h-[28rem] flex-col rounded-xl border bg-card">
       <header className="border-b px-4 py-3">
-        <h2 className="text-base font-semibold">Talk it through</h2>
+        <h2 className="text-base font-semibold">{t("chatTitle", { defaultValue: "Talk it through" })}</h2>
         <p className="text-xs text-muted-foreground">
-          Your worksheet fills in as you go. You can stop at any time and pick up where you left off.
+          {t("chatSubtitle", { defaultValue: "Your worksheet fills in as you go. You can stop at any time and pick up where you left off." })}
         </p>
       </header>
 
@@ -96,10 +100,10 @@ export function ExerciseChat({ sessionId, canSend, disabledReason, onTurnSettled
         <div role="alert" className="m-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           <p className="flex items-center gap-2 font-medium">
             <UserRound className="h-4 w-4" aria-hidden />
-            Talk to your counselor
+            {t("talkToCounselor", { defaultValue: "Talk to your counselor" })}
           </p>
           <p className="mt-1">
-            The exercise has stopped here for now and your counselor is the next step. The message below says why.
+            {t("chatCounselorBody", { defaultValue: "The exercise has stopped here for now and your counselor is the next step. The message below says why." })}
           </p>
         </div>
       )}
@@ -107,7 +111,7 @@ export function ExerciseChat({ sessionId, canSend, disabledReason, onTurnSettled
       <ol className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
         {turns.length === 0 && !isProcessing && (
           <li className="text-sm text-muted-foreground">
-            {canSend ? "Say hello to start, or pick up where you left off." : disabledReason}
+            {canSend ? t("chatEmptyPrompt", { defaultValue: "Say hello to start, or pick up where you left off." }) : disabledReason}
           </li>
         )}
         {turns.map((t) => (
@@ -121,7 +125,7 @@ export function ExerciseChat({ sessionId, canSend, disabledReason, onTurnSettled
                     : "max-w-[85%] rounded-lg bg-muted px-3 py-2 text-sm"
               }
             >
-              <span className="sr-only">{t.role === "user" ? "You said:" : "Meridian said:"}</span>
+              <span className="sr-only">{t.role === "user" ? youSaid : meridianSaid}</span>
               {t.role === "user" ? (
                 <span className="inline-flex items-start gap-2">
                   <User className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -143,7 +147,7 @@ export function ExerciseChat({ sessionId, canSend, disabledReason, onTurnSettled
                 <AssistantMarkdown text={partial} />
               ) : (
                 <span className="inline-flex items-center gap-2">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> Thinking…
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> {t("chatThinking", { defaultValue: "Thinking…" })}
                 </span>
               )}
             </div>
@@ -156,23 +160,23 @@ export function ExerciseChat({ sessionId, canSend, disabledReason, onTurnSettled
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden />
           <div className="flex-1">
             <p>{error}</p>
-            <p className="text-xs text-muted-foreground">Your worksheet is saved; nothing was lost.</p>
+            <p className="text-xs text-muted-foreground">{t("chatSavedNote", { defaultValue: "Your worksheet is saved; nothing was lost." })}</p>
           </div>
           <Button type="button" variant="ghost" size="sm" onClick={clearError}>
-            Dismiss
+            {t("dismiss", { defaultValue: "Dismiss" })}
           </Button>
         </div>
       )}
 
       <form onSubmit={onSubmit} className="border-t p-3">
         <Label htmlFor="career-exercise-message" className="sr-only">
-          Your message
+          {t("chatYourMessage", { defaultValue: "Your message" })}
         </Label>
         <div className="flex items-end gap-2">
           <Textarea
             id="career-exercise-message"
             rows={2}
-            placeholder={canSend ? "Type your answer…" : disabledReason}
+            placeholder={canSend ? t("chatPlaceholder", { defaultValue: "Type your answer…" }) : disabledReason}
             disabled={!canSend}
             {...form.register("message")}
             onKeyDown={(e) => {
@@ -182,7 +186,7 @@ export function ExerciseChat({ sessionId, canSend, disabledReason, onTurnSettled
               }
             }}
           />
-          <Button type="submit" disabled={disabled} aria-label="Send">
+          <Button type="submit" disabled={disabled} aria-label={t("send", { defaultValue: "Send" })}>
             {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
           </Button>
         </div>
