@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { CheckCircle2, ClipboardList, Loader2, Link2Off } from "lucide-react"
 import UserLayout from "@/layouts/UserLayout"
 import { Button } from "@/components/ui/button"
@@ -25,14 +26,22 @@ export const CLAIM_ERROR_MESSAGE =
 export const NO_INVITE_MESSAGE =
   "There is no invitation waiting in this browser tab. If your practitioner sent you a link, open it again."
 
+// English defaults; the rendered text goes through `t("messages.<key>")` with these as the default.
 const FAILURE_MESSAGE: Record<Exclude<ClaimOutcome["outcome"], "claimed">, string> = {
   not_valid: NOT_VALID_MESSAGE,
   too_many: TOO_MANY_MESSAGE,
   own_invite: OWN_INVITE_MESSAGE,
   error: CLAIM_ERROR_MESSAGE,
 }
+const FAILURE_KEY: Record<Exclude<ClaimOutcome["outcome"], "claimed">, string> = {
+  not_valid: "messages.notValid",
+  too_many: "messages.tooMany",
+  own_invite: "messages.ownInvite",
+  error: "messages.claimError",
+}
 
 function PrismNextStep({ practitionerName }: { practitionerName: string }) {
+  const { t } = useTranslation("welcomePages")
   const navigate = useNavigate()
   const { user } = useAuth()
   const access = usePrismRequestAccess()
@@ -41,7 +50,7 @@ function PrismNextStep({ practitionerName }: { practitionerName: string }) {
     return (
       <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-        Checking your PRISM survey access…
+        {t("prism.checking", { defaultValue: "Checking your PRISM survey access…" })}
       </p>
     )
   }
@@ -60,12 +69,11 @@ function PrismNextStep({ practitionerName }: { practitionerName: string }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        When you request your survey you can choose to share your results with {practitionerName}.
-        Nothing is shared unless you tick that option.
+        {t("prism.shareNotice", { defaultValue: "When you request your survey you can choose to share your results with {{name}}. Nothing is shared unless you tick that option.", name: practitionerName })}
       </p>
       <Button type="button" className="min-h-11" onClick={() => navigate(ROUTES.PRISM_ASSESSMENT)}>
         <ClipboardList className="mr-2 h-4 w-4" aria-hidden="true" />
-        Take your PRISM survey
+        {t("prism.takeSurvey", { defaultValue: "Take your PRISM survey" })}
       </Button>
     </div>
   )
@@ -79,6 +87,7 @@ function PrismNextStep({ practitionerName }: { practitionerName: string }) {
  * redirect to /login.
  */
 export default function PractitionerWelcome() {
+  const { t } = useTranslation("welcomePages")
   const navigate = useNavigate()
   const { user } = useAuth()
   const claim = useClaimClientInvite()
@@ -108,14 +117,14 @@ export default function PractitionerWelcome() {
   return (
     <UserLayout>
       <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
-        <h1 className="text-2xl font-semibold">Connect to your practitioner</h1>
+        <h1 className="text-2xl font-semibold">{t("title", { defaultValue: "Connect to your practitioner" })}</h1>
 
         {!hadInvite && result === null && (
           <Card>
             <CardContent className="space-y-4 pt-6">
-              <p className="text-sm">{NO_INVITE_MESSAGE}</p>
+              <p className="text-sm">{t("messages.noInvite", { defaultValue: NO_INVITE_MESSAGE })}</p>
               <Button type="button" variant="outline" className="min-h-11" onClick={() => navigate(home)}>
-                Go to your home page
+                {t("goHome", { defaultValue: "Go to your home page" })}
               </Button>
             </CardContent>
           </Card>
@@ -124,7 +133,7 @@ export default function PractitionerWelcome() {
         {waiting && (
           <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            Connecting you to your practitioner…
+            {t("connecting", { defaultValue: "Connecting you to your practitioner…" })}
           </p>
         )}
 
@@ -133,9 +142,9 @@ export default function PractitionerWelcome() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden="true" />
-                You&apos;re now connected to {result.practitionerName}.
+                {t("connected", { defaultValue: "You're now connected to {{name}}.", name: result.practitionerName })}
               </CardTitle>
-              <CardDescription>Next: take your PRISM survey.</CardDescription>
+              <CardDescription>{t("nextSurvey", { defaultValue: "Next: take your PRISM survey." })}</CardDescription>
             </CardHeader>
             <CardContent>
               <PrismNextStep practitionerName={result.practitionerName} />
@@ -148,10 +157,10 @@ export default function PractitionerWelcome() {
             <CardContent className="space-y-4 pt-6">
               <div role="alert" className="flex items-start gap-3 text-sm">
                 <Link2Off className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                <p>{FAILURE_MESSAGE[result.outcome]}</p>
+                <p>{t(FAILURE_KEY[result.outcome], { defaultValue: FAILURE_MESSAGE[result.outcome] })}</p>
               </div>
               <Button type="button" variant="outline" className="min-h-11" onClick={() => navigate(home)}>
-                Go to your home page
+                {t("goHome", { defaultValue: "Go to your home page" })}
               </Button>
             </CardContent>
           </Card>
