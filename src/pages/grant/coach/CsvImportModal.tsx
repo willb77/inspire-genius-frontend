@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Download, FileUp, Loader2, UploadCloud } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { useImportStudents } from "@/hooks/grant/useCoachRoster"
 import type { CoachImportResult, CoachStudentImportRow } from "@/types/grant/coach"
+import { RichText } from "../_rich"
 import { CSV_HEADERS, parseCsvToRows, templateDataUri } from "./csv"
 
 const PREVIEW_LIMIT = 10
@@ -23,6 +25,7 @@ export function CsvImportModal({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation("grantPages")
   const importMutation = useImportStudents()
   const inputRef = useRef<HTMLInputElement>(null)
   const [fileName, setFileName] = useState<string | null>(null)
@@ -53,13 +56,18 @@ export function CsvImportModal({
       const parsed = parseCsvToRows(text)
       if (parsed.length === 0) {
         setRows([])
-        setParseError("No data rows found. Make sure the file has a header row and at least one student.")
+        setParseError(
+          t(
+            "csvImport.noDataRows",
+            "No data rows found. Make sure the file has a header row and at least one student."
+          )
+        )
         return
       }
       setRows(parsed)
     } catch {
       setRows([])
-      setParseError("Couldn't read that file. Please upload a plain .csv file.")
+      setParseError(t("csvImport.readError", "Couldn't read that file. Please upload a plain .csv file."))
     }
   }
 
@@ -76,10 +84,15 @@ export function CsvImportModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import students from CSV</DialogTitle>
+          <DialogTitle>{t("csvImport.title", "Import students from CSV")}</DialogTitle>
           <DialogDescription>
-            Upload a roster and we&apos;ll create a managed profile for each student. Only{" "}
-            <code className="rounded bg-[#f3f4f6] px-1 text-[#374151]">first_name</code> is required.
+            <RichText
+              text={t(
+                "csvImport.description",
+                "Upload a roster and we'll create a managed profile for each student. Only <code>first_name</code> is required."
+              )}
+              tags={{ code: <code className="rounded bg-[#f3f4f6] px-1 text-[#374151]" /> }}
+            />
           </DialogDescription>
         </DialogHeader>
 
@@ -87,18 +100,18 @@ export function CsvImportModal({
         {result ? (
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2">
-              <ResultTile label="Created" value={result.created} tone="green" />
-              <ResultTile label="Duplicates" value={result.duplicates} tone="amber" />
-              <ResultTile label="Errors" value={result.errors} tone="red" />
+              <ResultTile label={t("csvImport.created", "Created")} value={result.created} tone="green" />
+              <ResultTile label={t("csvImport.duplicates", "Duplicates")} value={result.duplicates} tone="amber" />
+              <ResultTile label={t("csvImport.errors", "Errors")} value={result.errors} tone="red" />
             </div>
             <div className="max-h-64 overflow-auto rounded-lg border border-[#e5e7eb]">
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 bg-[#f9fafb] text-xs uppercase tracking-wide text-[#6b7280]">
                   <tr>
-                    <th className="px-3 py-2">Row</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Name</th>
-                    <th className="px-3 py-2">Detail</th>
+                    <th className="px-3 py-2">{t("csvImport.colRow", "Row")}</th>
+                    <th className="px-3 py-2">{t("csvImport.colStatus", "Status")}</th>
+                    <th className="px-3 py-2">{t("csvImport.colName", "Name")}</th>
+                    <th className="px-3 py-2">{t("csvImport.colDetail", "Detail")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -126,13 +139,13 @@ export function CsvImportModal({
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={reset}>
-                Import another file
+                {t("csvImport.importAnother", "Import another file")}
               </Button>
               <Button
                 className="bg-[#3B5BFF] hover:bg-[#2f49cc]"
                 onClick={() => handleOpenChange(false)}
               >
-                Done
+                {t("common.done", "Done")}
               </Button>
             </DialogFooter>
           </div>
@@ -145,13 +158,13 @@ export function CsvImportModal({
                 onClick={() => inputRef.current?.click()}
                 className="gap-2"
               >
-                <FileUp className="h-4 w-4" /> Choose .csv file
+                <FileUp className="h-4 w-4" /> {t("csvImport.chooseFile", "Choose .csv file")}
               </Button>
               <input
                 ref={inputRef}
                 type="file"
                 accept=".csv,text/csv"
-                aria-label="CSV file"
+                aria-label={t("csvImport.fileAria", "CSV file")}
                 className="hidden"
                 onChange={(e) => handleFile(e.target.files?.[0])}
               />
@@ -160,13 +173,16 @@ export function CsvImportModal({
                 download="grant-students-template.csv"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-[#3B5BFF] hover:underline"
               >
-                <Download className="h-4 w-4" /> Download template
+                <Download className="h-4 w-4" /> {t("csvImport.downloadTemplate", "Download template")}
               </a>
               {fileName && <span className="text-sm text-[#6b7280]">{fileName}</span>}
             </div>
 
             <p className="text-xs text-[#9ca3af]">
-              Columns: {CSV_HEADERS.join(", ")}
+              {t("csvImport.columns", {
+                columns: CSV_HEADERS.join(", "),
+                defaultValue: "Columns: {{columns}}",
+              })}
             </p>
 
             {parseError && <p className="text-sm text-[#b91c1c]">{parseError}</p>}
@@ -176,21 +192,34 @@ export function CsvImportModal({
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-[#374151]">
-                    Preview — {rows.length} {rows.length === 1 ? "student" : "students"}
+                    {rows.length === 1
+                      ? t("csvImport.previewOne", {
+                          count: rows.length,
+                          defaultValue: "Preview — {{count}} student",
+                        })
+                      : t("csvImport.previewOther", {
+                          count: rows.length,
+                          defaultValue: "Preview — {{count}} students",
+                        })}
                   </span>
                   {rows.length > PREVIEW_LIMIT && (
-                    <span className="text-[#9ca3af]">showing first {PREVIEW_LIMIT}</span>
+                    <span className="text-[#9ca3af]">
+                      {t("csvImport.showingFirst", {
+                        limit: PREVIEW_LIMIT,
+                        defaultValue: "showing first {{limit}}",
+                      })}
+                    </span>
                   )}
                 </div>
                 <div className="max-h-64 overflow-auto rounded-lg border border-[#e5e7eb]">
                   <table className="w-full text-left text-sm">
                     <thead className="sticky top-0 bg-[#f9fafb] text-xs uppercase tracking-wide text-[#6b7280]">
                       <tr>
-                        <th className="px-3 py-2">First</th>
-                        <th className="px-3 py-2">Last</th>
-                        <th className="px-3 py-2">Email</th>
-                        <th className="px-3 py-2">State</th>
-                        <th className="px-3 py-2">Grade</th>
+                        <th className="px-3 py-2">{t("csvImport.colFirst", "First")}</th>
+                        <th className="px-3 py-2">{t("csvImport.colLast", "Last")}</th>
+                        <th className="px-3 py-2">{t("csvImport.colEmail", "Email")}</th>
+                        <th className="px-3 py-2">{t("csvImport.colState", "State")}</th>
+                        <th className="px-3 py-2">{t("csvImport.colGrade", "Grade")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -202,7 +231,7 @@ export function CsvImportModal({
                               r.first_name ? "text-[#1f2937]" : "text-[#b91c1c]"
                             )}
                           >
-                            {r.first_name || "missing"}
+                            {r.first_name || t("csvImport.missing", "missing")}
                           </td>
                           <td className="px-3 py-1.5 text-[#6b7280]">{r.last_name ?? ""}</td>
                           <td className="px-3 py-1.5 text-[#6b7280]">{r.email ?? ""}</td>
@@ -218,7 +247,7 @@ export function CsvImportModal({
 
             <DialogFooter>
               <Button variant="ghost" onClick={() => handleOpenChange(false)}>
-                Cancel
+                {t("common.cancel", "Cancel")}
               </Button>
               <Button
                 className="bg-[#3B5BFF] hover:bg-[#2f49cc]"
@@ -230,8 +259,17 @@ export function CsvImportModal({
                 ) : (
                   <UploadCloud className="mr-1 h-4 w-4" />
                 )}
-                Import {rows.length > 0 ? `${rows.length} ` : ""}
-                {rows.length === 1 ? "student" : "students"}
+                {rows.length > 0
+                  ? rows.length === 1
+                    ? t("csvImport.importOne", {
+                        count: rows.length,
+                        defaultValue: "Import {{count}} student",
+                      })
+                    : t("csvImport.importOther", {
+                        count: rows.length,
+                        defaultValue: "Import {{count}} students",
+                      })
+                  : t("csvImport.importZero", "Import students")}
               </Button>
             </DialogFooter>
           </div>

@@ -1,4 +1,6 @@
 import { UserRound } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { useAidIntake } from "@/hooks/grant/useAidIntake"
 import {
   activeModuleIds,
@@ -7,59 +9,65 @@ import {
   type PartialAidIntake,
 } from "@/types/grant/intake"
 import { GrantCard, GrantMeter, GrantPill } from "./_shared"
+import { moduleLabel } from "./_labels"
 import GrantIntakeFlow from "./intake/GrantIntakeFlow"
 
-/** Friendly labels for the population modules an intake screener activates. */
-const MODULE_LABELS: Record<string, string> = {
-  military: "Military / Veteran",
-  justice: "Justice-impacted",
-  disability: "Disability",
-  adult: "Returning adult",
-  first_time: "First-time student",
-  foster: "Foster care",
-  undocumented: "Undocumented / DACA",
-  homeless: "Housing insecure",
-  caregiver: "Caregiver",
-  field: "Field-specific",
-  tribal: "Tribal",
+const ENROLLMENT_LABELS: Record<string, (t: TFunction) => string> = {
+  prospective: (t) => t("profile.enrollment.prospective", "Prospective"),
+  enrolled: (t) => t("profile.enrollment.enrolled", "Enrolled"),
+  transferring: (t) => t("profile.enrollment.transferring", "Transferring"),
+  returning_adult: (t) => t("profile.enrollment.returning_adult", "Returning adult"),
 }
-
-const ENROLLMENT_LABELS: Record<string, string> = {
-  prospective: "Prospective",
-  enrolled: "Enrolled",
-  transferring: "Transferring",
-  returning_adult: "Returning adult",
+const INSTITUTION_LABELS: Record<string, (t: TFunction) => string> = {
+  community_college: (t) => t("profile.institution.community_college", "Community college"),
+  four_year: (t) => t("profile.institution.four_year", "Four-year"),
+  trade_vocational: (t) => t("profile.institution.trade_vocational", "Trade / vocational"),
+  grad: (t) => t("profile.institution.grad", "Graduate"),
 }
-const INSTITUTION_LABELS: Record<string, string> = {
-  community_college: "Community college",
-  four_year: "Four-year",
-  trade_vocational: "Trade / vocational",
-  grad: "Graduate",
-}
-const INCOME_LABELS: Record<string, string> = {
-  under_30k: "Under $30k",
-  "30k_60k": "$30k–$60k",
-  "60k_100k": "$60k–$100k",
-  "100k_150k": "$100k–$150k",
-  over_150k: "Over $150k",
+const INCOME_LABELS: Record<string, (t: TFunction) => string> = {
+  under_30k: (t) => t("profile.income.under_30k", "Under $30k"),
+  "30k_60k": (t) => t("profile.income.30k_60k", "$30k–$60k"),
+  "60k_100k": (t) => t("profile.income.60k_100k", "$60k–$100k"),
+  "100k_150k": (t) => t("profile.income.100k_150k", "$100k–$150k"),
+  over_150k: (t) => t("profile.income.over_150k", "Over $150k"),
 }
 
 /** Build the short "answered so far" summary rows from the saved intake. */
-function summaryFields(intake: PartialAidIntake): { label: string; value: string }[] {
+function summaryFields(intake: PartialAidIntake, t: TFunction): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = []
-  if (intake.student_age !== undefined) rows.push({ label: "Age", value: String(intake.student_age) })
-  if (intake.enrollment_status) {
-    rows.push({ label: "Enrollment", value: ENROLLMENT_LABELS[intake.enrollment_status] })
+  if (intake.student_age !== undefined) {
+    rows.push({ label: t("profile.field.age", "Age"), value: String(intake.student_age) })
   }
-  if (intake.state_of_residence) rows.push({ label: "State", value: intake.state_of_residence })
+  if (intake.enrollment_status) {
+    rows.push({
+      label: t("profile.field.enrollment", "Enrollment"),
+      value: ENROLLMENT_LABELS[intake.enrollment_status](t),
+    })
+  }
+  if (intake.state_of_residence) {
+    rows.push({ label: t("profile.field.state", "State"), value: intake.state_of_residence })
+  }
   if (intake.institution_type) {
-    rows.push({ label: "School type", value: INSTITUTION_LABELS[intake.institution_type] })
+    rows.push({
+      label: t("profile.field.schoolType", "School type"),
+      value: INSTITUTION_LABELS[intake.institution_type](t),
+    })
   }
   if (intake.household_income_range) {
-    rows.push({ label: "Household income", value: INCOME_LABELS[intake.household_income_range] })
+    rows.push({
+      label: t("profile.field.householdIncome", "Household income"),
+      value: INCOME_LABELS[intake.household_income_range](t),
+    })
   }
-  if (intake.intended_field) rows.push({ label: "Intended field", value: intake.intended_field })
-  if (intake.first_generation) rows.push({ label: "First-generation", value: "Yes" })
+  if (intake.intended_field) {
+    rows.push({ label: t("profile.field.intendedField", "Intended field"), value: intake.intended_field })
+  }
+  if (intake.first_generation) {
+    rows.push({
+      label: t("profile.field.firstGeneration", "First-generation"),
+      value: t("common.yes", "Yes"),
+    })
+  }
   return rows
 }
 
@@ -71,12 +79,13 @@ function summaryFields(intake: PartialAidIntake): { label: string; value: string
  * is rendered exactly as before.
  */
 export default function GrantProfilePage() {
+  const { t } = useTranslation("grantPages")
   const { data: intake } = useAidIntake()
   const profile = intake ?? {}
 
   const answered = triggerProgress(profile)
   const completionPct = Math.round((answered / TRIGGER_FIELDS.length) * 100)
-  const fields = summaryFields(profile)
+  const fields = summaryFields(profile, t)
   const modules = activeModuleIds(profile)
 
   return (
@@ -88,23 +97,27 @@ export default function GrantProfilePage() {
               <UserRound className="h-5 w-5 text-[#3B5BFF]" />
             </span>
             <div>
-              <h2 className="text-sm font-semibold text-[#1f2937]">Your aid profile at a glance</h2>
+              <h2 className="text-sm font-semibold text-[#1f2937]">{t("profile.glanceTitle", "Your aid profile at a glance")}</h2>
               <p className="text-xs text-[#6b7280]">
                 {answered === TRIGGER_FIELDS.length
-                  ? "Essentials complete — refine anytime below."
-                  : "Answer the essentials below to unlock your matches."}
+                  ? t("profile.essentialsComplete", "Essentials complete — refine anytime below.")
+                  : t("profile.essentialsPending", "Answer the essentials below to unlock your matches.")}
               </p>
             </div>
           </div>
           <GrantPill tone={answered === TRIGGER_FIELDS.length ? "green" : "blue"}>
-            {answered}/{TRIGGER_FIELDS.length} essentials
+            {t("profile.essentialsPill", {
+              answered,
+              total: TRIGGER_FIELDS.length,
+              defaultValue: "{{answered}}/{{total}} essentials",
+            })}
           </GrantPill>
         </div>
 
         <GrantMeter
           value={completionPct}
           tone={answered === TRIGGER_FIELDS.length ? "green" : "blue"}
-          label="Profile completeness"
+          label={t("common.profileCompleteness", "Profile completeness")}
           right={`${completionPct}%`}
           className="mb-4"
         />
@@ -120,7 +133,7 @@ export default function GrantProfilePage() {
           </dl>
         ) : (
           <p className="text-sm text-[#6b7280]">
-            Nothing saved yet — the conversation below walks you through it in a few minutes.
+            {t("profile.nothingSaved", "Nothing saved yet — the conversation below walks you through it in a few minutes.")}
           </p>
         )}
 
@@ -128,7 +141,7 @@ export default function GrantProfilePage() {
           <div className="mt-4 flex flex-wrap gap-2 border-t border-[#e5e7eb] pt-4">
             {modules.map((id) => (
               <GrantPill key={id} tone="teal">
-                {MODULE_LABELS[id] ?? id}
+                {moduleLabel(id, t)}
               </GrantPill>
             ))}
           </div>

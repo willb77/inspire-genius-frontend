@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Award, Search, ExternalLink, TrendingUp, Sparkles, Target } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,17 +28,17 @@ function scoreTone(score: number): "teal" | "blue" | "gray" {
 }
 
 /** Award size → competitiveness cue. Bigger purses draw a deeper applicant pool. */
-function difficulty(amount: number): { label: string; tone: Tone } {
-  if (amount >= 5000) return { label: "Competitive", tone: "amber" }
-  if (amount >= 2500) return { label: "Moderate", tone: "blue" }
-  return { label: "Accessible", tone: "green" }
+function difficulty(amount: number, t: TFunction): { label: string; tone: Tone } {
+  if (amount >= 5000) return { label: t("scholarships.competitive", "Competitive"), tone: "amber" }
+  if (amount >= 2500) return { label: t("scholarships.moderate", "Moderate"), tone: "blue" }
+  return { label: t("scholarships.accessible", "Accessible"), tone: "green" }
 }
 
-const ENROLLMENT_LABEL: Record<StudentProfile["enrollmentStatus"], string> = {
-  "full-time": "full-time",
-  "part-time": "part-time",
-  "less-than-half": "less-than-half-time",
-  unknown: "enrolled",
+const ENROLLMENT_LABEL: Record<StudentProfile["enrollmentStatus"], (t: TFunction) => string> = {
+  "full-time": (t) => t("scholarships.enrollment.fullTime", "full-time"),
+  "part-time": (t) => t("scholarships.enrollment.partTime", "part-time"),
+  "less-than-half": (t) => t("scholarships.enrollment.lessThanHalf", "less-than-half-time"),
+  unknown: (t) => t("scholarships.enrollment.unknown", "enrolled"),
 }
 
 /**
@@ -44,20 +46,33 @@ const ENROLLMENT_LABEL: Record<StudentProfile["enrollmentStatus"], string> = {
  * and the student's saved aid profile (enrollment, state, GPA). Degrades cleanly
  * to just the eligibility summary before the profile resolves.
  */
-function whyItFits(s: Scholarship, profile?: StudentProfile): string {
+function whyItFits(s: Scholarship, t: TFunction, profile?: StudentProfile): string {
   const base = s.eligibilitySummary.replace(/\.$/, "")
-  if (!profile) return `Matches on: ${base}.`
-  const you = `a ${ENROLLMENT_LABEL[profile.enrollmentStatus]} student in ${profile.stateOfResidence}`
-  const gpa = profile.gpa ? ` with a ${profile.gpa.toFixed(1)} GPA` : ""
-  return `Matches on ${base.toLowerCase()} — you're ${you}${gpa}.`
+  if (!profile) return t("scholarships.matchesOnBase", { base, defaultValue: "Matches on: {{base}}." })
+  const enrollment = ENROLLMENT_LABEL[profile.enrollmentStatus](t)
+  if (profile.gpa) {
+    return t("scholarships.whyFitsGpa", {
+      base: base.toLowerCase(),
+      enrollment,
+      state: profile.stateOfResidence,
+      gpa: profile.gpa.toFixed(1),
+      defaultValue: "Matches on {{base}} — you're a {{enrollment}} student in {{state}} with a {{gpa}} GPA.",
+    })
+  }
+  return t("scholarships.whyFits", {
+    base: base.toLowerCase(),
+    enrollment,
+    state: profile.stateOfResidence,
+    defaultValue: "Matches on {{base}} — you're a {{enrollment}} student in {{state}}.",
+  })
 }
 
 /** Pipeline funnel stage config; counts are derived from match strength. */
-const PIPELINE_STAGES: readonly { key: string; label: string; tone: Tone }[] = [
-  { key: "identified", label: "Identified", tone: "gray" },
-  { key: "in-progress", label: "In Progress", tone: "blue" },
-  { key: "submitted", label: "Submitted", tone: "teal" },
-  { key: "awarded", label: "Awarded", tone: "green" },
+const PIPELINE_STAGES: readonly { key: string; label: (t: TFunction) => string; tone: Tone }[] = [
+  { key: "identified", label: (t) => t("scholarships.stageIdentified", "Identified"), tone: "gray" },
+  { key: "in-progress", label: (t) => t("scholarships.stageInProgress", "In Progress"), tone: "blue" },
+  { key: "submitted", label: (t) => t("scholarships.stageSubmitted", "Submitted"), tone: "teal" },
+  { key: "awarded", label: (t) => t("scholarships.stageAwarded", "Awarded"), tone: "green" },
 ]
 
 /**
@@ -70,6 +85,7 @@ const PIPELINE_STAGES: readonly { key: string; label: string; tone: Tone }[] = [
  * this fits" line). Mock-backed for UI-0 until /v1/scholarships is wired.
  */
 export default function GrantScholarshipsPage() {
+  const { t } = useTranslation("grantPages")
   const [query, setQuery] = useState("")
   const [minAmount, setMinAmount] = useState("")
   const [params, setParams] = useState<ScholarshipQuery>({})
@@ -111,22 +127,25 @@ export default function GrantScholarshipsPage() {
     <div className="max-w-4xl">
       <GrantPageHeader
         icon={Award}
-        title="Scholarships"
-        description="Matched scholarships ranked by relevance to your aid profile."
+        title={t("scholarships.title", "Scholarships")}
+        description={t("scholarships.description", "Matched scholarships ranked by relevance to your aid profile.")}
       />
 
       {/* Pipeline funnel — a quick read on how far your matches have advanced. */}
       <GrantCard className="mb-6">
         <GrantSectionTitle
-          action={<span className="text-xs font-normal text-[#9ca3af]">{pipeline.conversion}% advancing</span>}
+          action={<span className="text-xs font-normal text-[#9ca3af]">
+              {t("scholarships.advancing", { pct: pipeline.conversion, defaultValue: "{{pct}}% advancing" })}
+            </span>
+          }
         >
-          Pipeline
+          {t("scholarships.pipeline", "Pipeline")}
         </GrantSectionTitle>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {PIPELINE_STAGES.map((stage) => (
             <div key={stage.key} className="rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-[#6b7280]">{stage.label}</span>
+                <span className="text-xs font-medium text-[#6b7280]">{stage.label(t)}</span>
                 <GrantPill tone={stage.tone}>{pipeline.counts[stage.key]}</GrantPill>
               </div>
             </div>
@@ -136,26 +155,30 @@ export default function GrantScholarshipsPage() {
           className="mt-4"
           value={pipeline.conversion}
           tone="teal"
-          label="Submission rate"
-          right={`${pipeline.counts.submitted} of ${pipeline.counts.identified}`}
+          label={t("scholarships.submissionRate", "Submission rate")}
+          right={t("scholarships.submittedOf", {
+            submitted: pipeline.counts.submitted,
+            identified: pipeline.counts.identified,
+            defaultValue: "{{submitted}} of {{identified}}",
+          })}
         />
       </GrantCard>
 
       <form onSubmit={runSearch} className="mb-6 flex flex-wrap items-end gap-3">
         <div className="min-w-[220px] flex-1">
           <label htmlFor="sch-query" className="mb-1 block text-xs font-medium text-[#6b7280]">
-            Keywords
+            {t("scholarships.keywords", "Keywords")}
           </label>
           <Input
             id="sch-query"
-            placeholder="e.g. STEM, first-generation, nursing"
+            placeholder={t("scholarships.keywordsPlaceholder", "e.g. STEM, first-generation, nursing")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         <div className="w-40">
           <label htmlFor="sch-min" className="mb-1 block text-xs font-medium text-[#6b7280]">
-            Min award ($)
+            {t("scholarships.minAward", "Min award ($)")}
           </label>
           <Input
             id="sch-min"
@@ -167,7 +190,7 @@ export default function GrantScholarshipsPage() {
           />
         </div>
         <Button type="submit" className="gap-2 bg-[#3B5BFF] hover:bg-[#2f4ad9]">
-          <Search className="h-4 w-4" /> Search
+          <Search className="h-4 w-4" /> {t("scholarships.search", "Search")}
         </Button>
       </form>
 
@@ -178,11 +201,13 @@ export default function GrantScholarshipsPage() {
           ))}
         </div>
       ) : results.length === 0 ? (
-        <GrantEmptyState>No scholarships matched — try broadening your keywords.</GrantEmptyState>
+        <GrantEmptyState>
+          {t("scholarships.noMatches", "No scholarships matched — try broadening your keywords.")}
+        </GrantEmptyState>
       ) : (
         <div className="space-y-4">
           {results.map((s) => {
-            const diff = difficulty(s.amount)
+            const diff = difficulty(s.amount, t)
             return (
               <GrantCard
                 key={s.id}
@@ -193,7 +218,7 @@ export default function GrantScholarshipsPage() {
                     <h2 className="truncate text-base font-semibold text-[#1f2937]">{s.name}</h2>
                     <GrantPill tone={scoreTone(s.matchScore)}>
                       <TrendingUp className="mr-1 h-3 w-3" />
-                      {s.matchScore}% match
+                      {t("scholarships.matchPct", { pct: s.matchScore, defaultValue: "{{pct}}% match" })}
                     </GrantPill>
                     <GrantPill tone={diff.tone}>{diff.label}</GrantPill>
                   </div>
@@ -201,7 +226,7 @@ export default function GrantScholarshipsPage() {
 
                   <p className="mt-2 flex items-start gap-1.5 text-sm text-[#374151]">
                     <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2DD4BF]" />
-                    <span>{whyItFits(s, profile)}</span>
+                    <span>{whyItFits(s, t, profile)}</span>
                   </p>
 
                   <GrantMeter
@@ -210,7 +235,7 @@ export default function GrantScholarshipsPage() {
                     tone={scoreTone(s.matchScore)}
                     label={
                       <span className="inline-flex items-center gap-1">
-                        <Target className="h-3.5 w-3.5" /> Match strength
+                        <Target className="h-3.5 w-3.5" /> {t("scholarships.matchStrength", "Match strength")}
                       </span>
                     }
                     right={`${s.matchScore}%`}
@@ -220,7 +245,7 @@ export default function GrantScholarshipsPage() {
                 <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
                   <p className="text-xl font-bold text-[#1f2937]">{formatCurrency(s.amount)}</p>
                   <p className="text-xs text-[#9ca3af]">
-                    {relativeDeadline(s.deadline)} · {formatDate(s.deadline)}
+                    {relativeDeadline(s.deadline, undefined, t)} · {formatDate(s.deadline)}
                   </p>
                   <a
                     href={s.url}
@@ -228,7 +253,7 @@ export default function GrantScholarshipsPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-sm font-medium text-[#3B5BFF] hover:underline"
                   >
-                    View &amp; apply <ExternalLink className="h-3.5 w-3.5" />
+                    {t("scholarships.viewApply", "View & apply")} <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 </div>
               </GrantCard>

@@ -1,0 +1,811 @@
+{
+  "applications": {
+    "allStaged": "Every required non-tax field is staged — you're ready for the StudentAid.gov handoff.",
+    "autoFills": "Auto-fills on consent",
+    "completed": "{{count}} completed",
+    "description": "We stage every non-tax field so you confirm instead of hunt — then guide you through the StudentAid.gov steps only you can take.",
+    "generatePacket": "Generate prep packet",
+    "generating": "Generating…",
+    "handoffTitle": "Guided StudentAid.gov handoff",
+    "inProgress": "In progress",
+    "loadingHandoff": "Loading your handoff steps…",
+    "loadingProgress": "Loading your progress…",
+    "markDone": "Mark \"{{title}}\" done",
+    "markNotDone": "Mark \"{{title}}\" not done",
+    "missingRequired": "{{count}} required field(s) still need an answer.",
+    "openOnStudentAid": "Open on StudentAid.gov",
+    "prefilled": "{{count}} pre-filled",
+    "prepPacket": "Prep packet",
+    "prepPacketBlurb": "Generate a completed packet of everything staged so far — ready to confirm on StudentAid.gov.",
+    "prepPacketTitle": "Prep packet — FAFSA {{year}}",
+    "privacyNote": "GRANT never stores your SSN or tax data. Tax figures transfer straight from the IRS when you consent; your SSN is entered on StudentAid.gov. We never submit for you.",
+    "readiness": "FAFSA {{year}} readiness",
+    "saveSection": "Save section",
+    "saving": "Saving…",
+    "schoolCodesPlaceholder": "Comma-separated school codes",
+    "select": "Select…",
+    "stepsDone": "{{complete}} of {{total}} steps done",
+    "stepsLeft": "{{count}} left",
+    "stillNeeded": "{{count}} still needed",
+    "submissionReady": "Submission-ready",
+    "title": "Application Concierge",
+    "youEnter": "You enter on StudentAid.gov",
+    "yourInformation": "Your information"
+  },
+  "coach": {
+    "aidProfileFor": "Aid profile for",
+    "backToRoster": "Back to roster",
+    "student": "Student"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "done": "Done",
+    "no": "No",
+    "profileCompleteness": "Profile completeness",
+    "yes": "Yes"
+  },
+  "compare": {
+    "appealLetter": "Dear {{worst}} Office of Financial Aid,\n\nThank you for admitting me and for the aid package you extended. {{worst}} remains my top choice, and I'm writing to respectfully request a review of my award.\n\nAfter comparing my offers, my net cost at {{worst}} is {{worstNet}} per year, versus {{bestNet}} at {{best}} — a difference of {{difference}}. My family's financial circumstances are unchanged, and this gap makes attending difficult without additional grant or scholarship support.\n\nWould you be able to reconsider my institutional grant aid in light of this comparison? I'm happy to provide any documentation that would help. Thank you for your time and consideration.\n\nSincerely,\n[Your name]",
+    "appealNote": "Template only — review and personalize before sending. Appeals work best with a specific competing offer and a genuine reason.",
+    "appealSubtitle": "Cite {{institution}}'s {{amount}} net cost to ask for more aid",
+    "appealTitle": "Appeal-letter draft for {{institution}}",
+    "bestBanner": "<name>{{institution}}</name> is your lowest net cost at <amount>{{amount}}</amount> per year.",
+    "bestValue": "Best value",
+    "coa": "COA {{amount}}",
+    "colCost": "Cost",
+    "colGrants": "Grants",
+    "colInstitution": "Institution",
+    "colLoans": "Loans",
+    "colNetCost": "Net cost",
+    "colScholarships": "Scholarships",
+    "colWorkStudy": "Work-study",
+    "description": "Line up your award letters to see which offer costs the least out of pocket.",
+    "empty": "No award letters yet — add them from the Application Concierge to compare offers.",
+    "federalLoansRepaid": "Federal loans (repaid)",
+    "gapped": "<b>Gapped by {{amount}}.</b> Even after every grant, loan, and work-study dollar, this much need is left unmet — you'd cover it out of pocket.",
+    "giftAid": "Gift aid (grants + scholarships)",
+    "loanAsAid": "<b>{{amount}} labeled as \"aid\" is a loan.</b> It's bundled beside gift aid but you repay it with interest — it does not lower true net cost.",
+    "lowestNetCost": "Lowest net cost",
+    "netCostNote": "Net cost = cost of attendance minus gift aid (grants + scholarships). Loans and work-study are money you repay or earn, not discounts.",
+    "noGap": "<b>No gap.</b> Offered aid covers your full demonstrated need.",
+    "perYear": "/ yr",
+    "pricedHonestly": "Priced honestly",
+    "title": "Compare Offers",
+    "trueNetCost": "True net cost",
+    "workStudyEarned": "Work-study (earned)"
+  },
+  "csvImport": {
+    "chooseFile": "Choose .csv file",
+    "colDetail": "Detail",
+    "colEmail": "Email",
+    "colFirst": "First",
+    "colGrade": "Grade",
+    "colLast": "Last",
+    "colName": "Name",
+    "colRow": "Row",
+    "colState": "State",
+    "colStatus": "Status",
+    "columns": "Columns: {{columns}}",
+    "created": "Created",
+    "description": "Upload a roster and we'll create a managed profile for each student. Only <code>first_name</code> is required.",
+    "downloadTemplate": "Download template",
+    "duplicates": "Duplicates",
+    "errors": "Errors",
+    "fileAria": "CSV file",
+    "importAnother": "Import another file",
+    "importOne": "Import {{count}} student",
+    "importOther": "Import {{count}} students",
+    "importZero": "Import students",
+    "missing": "missing",
+    "noDataRows": "No data rows found. Make sure the file has a header row and at least one student.",
+    "previewOne": "Preview — {{count}} student",
+    "previewOther": "Preview — {{count}} students",
+    "readError": "Couldn't read that file. Please upload a plain .csv file.",
+    "showingFirst": "showing first {{limit}}",
+    "title": "Import students from CSV"
+  },
+  "dashboard": {
+    "actionApply": "Apply to {{name}}",
+    "actionCompleteProfile": "Complete your aid profile — {{answered}}/{{total}} essentials answered",
+    "actionSubmit": "Submit {{name}} — {{when}}",
+    "aidJourney": "Aid journey",
+    "allCaughtUp": "You're all caught up — nothing outstanding right now.",
+    "completeProfileBody": "{{answered}}/{{total}} essentials answered — finish to unlock your matches.",
+    "completeProfileTitle": "Complete your aid profile",
+    "firstGen": "First-gen",
+    "nextActions": "Next actions",
+    "nextStep": "Next: {{step}}",
+    "overview": "Your financial-aid overview.",
+    "screenerPrompt": "Answer the screener in your profile to unlock population-specific aid.",
+    "statDeadlines": "Upcoming Deadlines",
+    "statDeadlinesHint": "federal, state & institutional",
+    "statSai": "Student Aid Index",
+    "statSaiHint": "from your financial profile",
+    "statScholarships": "Scholarship Matches",
+    "statScholarshipsHint": "ranked by match score",
+    "tailoringFor": "GRANT is tailoring for",
+    "title": "Aid Dashboard",
+    "welcomeBack": "Welcome back, {{name}}."
+  },
+  "federal": {
+    "deadlines": "Deadlines",
+    "description": "FAFSA, Pell Grants, and state aid deadlines ordered by what's due next.",
+    "fafsaInProgress": "In progress",
+    "fafsaInProgressNext": "Finish and submit your FAFSA before the federal deadline to lock in aid.",
+    "fafsaNotStarted": "Not started",
+    "fafsaNotStartedNext": "Start your FAFSA at studentaid.gov — it unlocks federal, state, and school aid.",
+    "fafsaReadiness": "FAFSA readiness",
+    "fafsaSubmitted": "Submitted",
+    "fafsaSubmittedNext": "Your FAFSA is on file — watch state and institutional deadlines next.",
+    "filterAll": "All",
+    "lowerSai": "Lower SAI unlocks more need-based aid.",
+    "noDeadlines": "No deadlines in this category.",
+    "programs": "Federal programs",
+    "stateCalGrantA": "Cal Grant A",
+    "stateCalGrantAHint": "Tuition & fees at four-year schools",
+    "stateCalGrantB": "Cal Grant B",
+    "stateCalGrantBHint": "Living-cost stipend for low-income students",
+    "stateChafee": "Chafee Grant",
+    "stateChafeeHint": "For current & former foster youth",
+    "stateMerit": "Merit scholarship",
+    "stateMeritHint": "GPA/test-based award from your state",
+    "stateMiddleClass": "Middle Class Scholarship",
+    "stateMiddleClassHint": "Up to 40% of remaining UC/CSU cost",
+    "stateNeedGrant": "State need grant",
+    "stateNeedGrantHint": "Income-based aid from your state agency",
+    "statePrograms": "State programs",
+    "statusDueSoon": "Due soon",
+    "statusOverdue": "Overdue",
+    "statusSubmitted": "Submitted",
+    "statusUpcoming": "Upcoming",
+    "studentAidIndex": "Student Aid Index",
+    "tilePell": "Pell Grant",
+    "tilePellHint": "Need-based, doesn't repay — your SAI sets the award.",
+    "tileSubsidized": "Direct Subsidized",
+    "tileSubsidizedHint": "Stafford, need-based — no interest while enrolled.",
+    "tileUnsubsidized": "Direct Unsubsidized",
+    "tileUnsubsidizedHint": "Stafford, not need-based — interest accrues at once.",
+    "tileWorkStudy": "Work-Study",
+    "tileWorkStudyHint": "Earn aid through a part-time campus job.",
+    "title": "Federal & State Aid",
+    "typeFederal": "Federal",
+    "typeInstitutional": "Institutional",
+    "typeScholarship": "Scholarship",
+    "typeState": "State"
+  },
+  "format": {
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago",
+    "dueToday": "due today",
+    "dueTomorrow": "due tomorrow",
+    "inDays_one": "in {{count}} day",
+    "inDays_other": "in {{count}} days"
+  },
+  "institutions": {
+    "aidCovers": "Aid covers",
+    "autoMerit": "Auto-merit likely",
+    "autoMeritTitle": "Your GPA clears a typical automatic-merit threshold — expect merit aid without a separate application.",
+    "bandMatch": "Match",
+    "bandReach": "Reach",
+    "bandSafety": "Safety",
+    "costOfAttendance": "Cost of attendance",
+    "dependency": "Dependency",
+    "dependent": "Dependent",
+    "description": "Estimate your net price — cost of attendance minus expected grant aid.",
+    "empty": "Run an estimate to see your net price broken down here.",
+    "estGrantAid": "Est. grant aid",
+    "estimate": "Estimate net price",
+    "estimating": "Estimating…",
+    "hintMatch": "A realistic cost — plan for the gap with scholarships or work-study.",
+    "hintReach": "A stretch on cost — lean on appeals and outside scholarships.",
+    "hintSafety": "Net price sits comfortably within a typical family budget.",
+    "householdIncome": "Household income ($)",
+    "independent": "Independent",
+    "institution": "Institution",
+    "institutionPlaceholder": "e.g. State University",
+    "meritByApplication": "Merit by application",
+    "meritByApplicationTitle": "Merit aid here is competitive rather than automatic at your current GPA — apply for it explicitly.",
+    "needAware": "Need-aware",
+    "needAwareTitle": "This school weighs ability to pay and may leave part of your demonstrated need unmet (a gap).",
+    "needBlind": "Need-blind",
+    "needBlindTitle": "Admissions don't factor your ability to pay, and this school meets essentially all demonstrated need.",
+    "needMet": "% of demonstrated need met",
+    "netPerYear": "net / yr",
+    "notSure": "Not sure",
+    "sapRequired": "SAP required",
+    "sapTitle": "Satisfactory Academic Progress: hold a minimum GPA and credit pace once enrolled, or aid can be suspended.",
+    "stateOfResidence": "State of residence",
+    "title": "Institutions"
+  },
+  "intake": {
+    "back": "Back",
+    "checkAnswer": "Please check this answer",
+    "earlyExit": "Skip the extras and search now?",
+    "earlyExitCoach": "Essentials are in — save now?",
+    "essentialsToUnlock": "Essentials to unlock matches",
+    "readyToSearch": "You're ready to search — anything more just sharpens your matches.",
+    "review": "Save your profile to lock in your matches. You can edit any answer above.",
+    "reviewCoach": "Save this student's profile to lock in their matches. You can edit any answer above.",
+    "saveDashboard": "Save & go to dashboard",
+    "saveFind": "Save & find scholarships",
+    "saveStudentProfile": "Save student profile",
+    "searchScholarships": "Search scholarships",
+    "selectOne": "Select one",
+    "selectState": "Select your state",
+    "skip": "Skip",
+    "skipped": "Skipped",
+    "steps": {
+      "citizenship_status": {
+        "helper": "The biggest factor in which federal and state aid you can get — and we'll find awards for every status.",
+        "options": {
+          "daca": "DACA",
+          "eligible_noncitizen": "Eligible non-citizen",
+          "international": "International student",
+          "permanent_resident": "Permanent resident",
+          "refugee_asylee": "Refugee / asylee",
+          "undocumented": "Undocumented",
+          "us_citizen": "U.S. citizen"
+        },
+        "question": "What's your citizenship or immigration status?"
+      },
+      "city_or_county": {
+        "helper": "Surfaces hyper-local awards from community foundations.",
+        "placeholder": "e.g. Alameda County",
+        "question": "Which city or county are you in?"
+      },
+      "credential_sought": {
+        "options": {
+          "associate": "Associate degree",
+          "bachelor": "Bachelor's degree",
+          "certificate": "Certificate",
+          "doctoral": "Doctoral degree",
+          "license": "License",
+          "master": "Master's degree",
+          "vocational": "Vocational / trade"
+        },
+        "question": "What credential are you going for?"
+      },
+      "dependency_status": {
+        "helper": "Independent students often qualify for more need-based aid. Not sure? That's fine.",
+        "options": {
+          "dependent": "Dependent",
+          "independent": "Independent",
+          "unknown": "Not sure yet"
+        },
+        "question": "For federal aid, are you a dependent or independent student?"
+      },
+      "enrollment_status": {
+        "options": {
+          "enrolled": "Currently enrolled",
+          "prospective": "Planning to enroll",
+          "returning_adult": "Returning adult learner",
+          "transferring": "Transferring schools"
+        },
+        "question": "Where are you in your education journey?"
+      },
+      "fafsa_status": {
+        "helper": "We'll tailor your next steps to where you are.",
+        "options": {
+          "in_progress": "In progress",
+          "not_started": "Not started",
+          "submitted": "Submitted"
+        },
+        "question": "Have you started your FAFSA?"
+      },
+      "first_generation": {
+        "helper": "Many awards are set aside for first-generation students.",
+        "question": "Will you be the first in your family to attend college?"
+      },
+      "gpa": {
+        "helper": "Optional — average grades still qualify for the vast majority of aid.",
+        "placeholder": "e.g. 3.4",
+        "question": "What's your GPA?"
+      },
+      "household_income_range": {
+        "helper": "Used only to match need-based aid — a range is all we need, and it's never shared.",
+        "options": {
+          "100k_150k": "$100,000 – $150,000",
+          "30k_60k": "$30,000 – $60,000",
+          "60k_100k": "$60,000 – $100,000",
+          "over_150k": "Over $150,000",
+          "under_30k": "Under $30,000"
+        },
+        "question": "Roughly, what's your household's yearly income?"
+      },
+      "household_size": {
+        "placeholder": "e.g. 4",
+        "question": "How many people are in your household?",
+        "suffix": "people"
+      },
+      "institution_type": {
+        "options": {
+          "community_college": "Community college",
+          "four_year": "Four-year college / university",
+          "grad": "Graduate school",
+          "trade_vocational": "Trade or vocational school"
+        },
+        "question": "What kind of school are you headed to?"
+      },
+      "intended_field": {
+        "helper": "Opens up field-specific scholarships.",
+        "placeholder": "e.g. Nursing, Computer Science",
+        "question": "What do you plan to study?"
+      },
+      "m_adl_dislocated": {
+        "helper": "Opens dislocated-worker (WIOA) and trade-adjustment funds.",
+        "question": "Were you laid off, or is your industry declining?"
+      },
+      "m_adl_employer_benefit": {
+        "helper": "Often the single largest source for working adults.",
+        "question": "Does your employer offer tuition assistance or reimbursement?"
+      },
+      "m_adl_wioa": {
+        "question": "Have you visited an American Job Center or been assessed for WIOA?"
+      },
+      "m_car_childcare": {
+        "helper": "Opens CCAMPIS campus childcare grants.",
+        "question": "Do you need childcare to attend?"
+      },
+      "m_dis_categories": {
+        "options": {
+          "chronic_illness": "Chronic illness",
+          "learning": "Learning",
+          "mental_health": "Mental health",
+          "physical": "Physical",
+          "sensory": "Sensory (vision / hearing)"
+        },
+        "question": "What kind of disability or condition? (select all that apply)"
+      },
+      "m_dis_vr_client": {
+        "helper": "VR can fund tuition, books, and assistive tech — a major, often-missed source.",
+        "question": "Are you a client of your state Vocational Rehabilitation agency?"
+      },
+      "m_fld_nursing": {
+        "helper": "Nurse Corps / HRSA scholarships + loan repayment.",
+        "question": "Is it nursing or healthcare?"
+      },
+      "m_fld_public_service": {
+        "helper": "We'll flag PSLF early to shape any borrowing.",
+        "question": "Is it public service or government?"
+      },
+      "m_fld_stem": {
+        "question": "Is it STEM or defense-relevant?"
+      },
+      "m_fld_teaching": {
+        "helper": "TEACH Grant + teacher-service forgiveness.",
+        "question": "Is your field teaching?"
+      },
+      "m_fos_chafee": {
+        "helper": "Up to ~$5,000/yr for former foster youth — plus many states waive tuition.",
+        "question": "Have you used the Chafee Education & Training Voucher (ETV)?"
+      },
+      "m_ft_access_programs": {
+        "question": "Are you in TRIO, Upward Bound, or a college-access program?"
+      },
+      "m_ft_hs_grad_year": {
+        "placeholder": "e.g. 2027",
+        "question": "What year do you graduate high school (or complete your GED)?"
+      },
+      "m_hom_emergency": {
+        "question": "Do you need emergency funds for basics right now?"
+      },
+      "m_jus_reentry": {
+        "question": "Are you in — or able to join — a prison-education or reentry program?"
+      },
+      "m_jus_status": {
+        "helper": "The FAFSA drug-conviction bar was removed and Second Chance Pell is now permanent.",
+        "options": {
+          "incarcerated": "Currently incarcerated",
+          "parole_probation": "On parole or probation",
+          "released": "Released"
+        },
+        "question": "Where are you now?"
+      },
+      "m_mil_affiliation": {
+        "helper": "This decides whether you use your own benefits or transferred/dependent benefits.",
+        "options": {
+          "dependent_child": "A parent's service (I'm their child)",
+          "self_active": "My own — active duty",
+          "self_reserve_guard": "My own — Reserve / National Guard",
+          "self_veteran": "My own — veteran",
+          "spouse": "A spouse's service",
+          "survivor": "Survivor / dependent benefits"
+        },
+        "question": "What's the military connection?"
+      },
+      "m_mil_gi_bill": {
+        "options": {
+          "ch1606": "Selected Reserve (Ch. 1606)",
+          "ch30": "Montgomery (Ch. 30)",
+          "ch33": "Post-9/11 (Ch. 33)",
+          "ch35": "Dependents (DEA Ch. 35)"
+        },
+        "question": "Which GI Bill do you have?"
+      },
+      "m_mil_rating": {
+        "helper": "A rating can open VR&E (Ch. 31), which sometimes exceeds the GI Bill.",
+        "placeholder": "e.g. 30",
+        "question": "Do you have a service-connected disability rating?",
+        "suffix": "%"
+      },
+      "m_mil_yellow_ribbon": {
+        "question": "Is your school in the Yellow Ribbon program?"
+      },
+      "m_trb_tribe": {
+        "helper": "Unlocks Tribal higher-ed grants, BIE funding, and Native scholarships.",
+        "placeholder": "e.g. Navajo Nation",
+        "question": "Which Tribe are you enrolled in (or descended from)?"
+      },
+      "m_und_has_ssn": {
+        "helper": "Either way, we'll focus on state aid and scholarships that don't require citizenship.",
+        "question": "Do you have a Social Security number and work authorization (DACA)?"
+      },
+      "sc_caregiver": {
+        "question": "Are you a parent or primary caregiver?"
+      },
+      "sc_disability": {
+        "helper": "Can unlock state Vocational Rehab tuition funding and disability scholarships.",
+        "question": "Do you have a disability or ongoing health condition?"
+      },
+      "sc_field_specific": {
+        "question": "Is your field nursing, teaching, STEM, or public service?"
+      },
+      "sc_first_time": {
+        "question": "Are you in high school or heading to college for the first time?"
+      },
+      "sc_foster_care": {
+        "question": "Were you ever in foster care or a ward of the court?"
+      },
+      "sc_homeless": {
+        "question": "In the last few years, have you lacked stable housing?"
+      },
+      "sc_justice": {
+        "helper": "Recent law changes restored broad aid access — most people are surprised they now qualify.",
+        "question": "Have you ever been involved with the justice system?"
+      },
+      "sc_military": {
+        "helper": "Military benefits are the richest source of education funding — worth a look.",
+        "question": "Have you, a parent, or a spouse served in the military?"
+      },
+      "sc_returning_adult": {
+        "helper": "Opens employer, workforce, and short-term-Pell funding.",
+        "question": "Are you an adult returning to school or changing careers?"
+      },
+      "sc_tribal": {
+        "question": "Are you an enrolled member of a Tribe or of Native American / Alaska Native descent?"
+      },
+      "sc_undocumented_daca": {
+        "question": "Would you describe your immigration status as undocumented or DACA?"
+      },
+      "state_of_residence": {
+        "helper": "Unlocks state-specific grants and scholarships.",
+        "options": {
+          "AK": "Alaska",
+          "AL": "Alabama",
+          "AR": "Arkansas",
+          "AZ": "Arizona",
+          "CA": "California",
+          "CO": "Colorado",
+          "CT": "Connecticut",
+          "DC": "District of Columbia",
+          "DE": "Delaware",
+          "FL": "Florida",
+          "GA": "Georgia",
+          "HI": "Hawaii",
+          "IA": "Iowa",
+          "ID": "Idaho",
+          "IL": "Illinois",
+          "IN": "Indiana",
+          "KS": "Kansas",
+          "KY": "Kentucky",
+          "LA": "Louisiana",
+          "MA": "Massachusetts",
+          "MD": "Maryland",
+          "ME": "Maine",
+          "MI": "Michigan",
+          "MN": "Minnesota",
+          "MO": "Missouri",
+          "MS": "Mississippi",
+          "MT": "Montana",
+          "NC": "North Carolina",
+          "ND": "North Dakota",
+          "NE": "Nebraska",
+          "NH": "New Hampshire",
+          "NJ": "New Jersey",
+          "NM": "New Mexico",
+          "NV": "Nevada",
+          "NY": "New York",
+          "OH": "Ohio",
+          "OK": "Oklahoma",
+          "OR": "Oregon",
+          "PA": "Pennsylvania",
+          "RI": "Rhode Island",
+          "SC": "South Carolina",
+          "SD": "South Dakota",
+          "TN": "Tennessee",
+          "TX": "Texas",
+          "UT": "Utah",
+          "VA": "Virginia",
+          "VT": "Vermont",
+          "WA": "Washington",
+          "WI": "Wisconsin",
+          "WV": "West Virginia",
+          "WY": "Wyoming"
+        },
+        "question": "Which state do you live in?"
+      },
+      "student_age": {
+        "helper": "Age decides which awards you're eligible for. Under-18 awards are handled for you.",
+        "placeholder": "e.g. 17",
+        "question": "First — how old are you?",
+        "suffix": "years"
+      }
+    },
+    "subtitle": "A few quick questions so we can find the grants and scholarships you actually qualify for.",
+    "subtitleCoach": "A few quick questions so we can find the grants and scholarships they actually qualify for.",
+    "thatsEverything": "That's everything",
+    "title": "Build your aid profile",
+    "titleCoach": "Build this student's aid profile",
+    "toastFinishEssentials": "You can finish the essentials anytime to unlock matches.",
+    "toastRankTheirs": "We'll rank their matches from these answers.",
+    "toastRankYours": "We'll rank your matches from these answers.",
+    "toastSaveError": "Couldn't save your profile. Please try again.",
+    "toastSaved": "Aid profile saved",
+    "toastStudentSaveError": "Couldn't save this student's profile. Please try again.",
+    "toastStudentSaved": "Student profile saved"
+  },
+  "journey": {
+    "apply": "Apply",
+    "compare": "Compare",
+    "fafsa": "FAFSA",
+    "plan": "Plan",
+    "profile": "Profile",
+    "search": "Search"
+  },
+  "loans": {
+    "addOccupation": "Add an occupation to estimate",
+    "approaching": "Approaching",
+    "bandComfortable": "Comfortable",
+    "bandHighBurden": "High burden",
+    "bandManageable": "Manageable",
+    "calculating": "Calculating…",
+    "compareGraduatedName": "Graduated",
+    "compareGraduatedSub": "Starts low, rises every 2 years",
+    "compareGraduatedSuffix": "/mo start",
+    "comparePlans": "Compare repayment plans",
+    "compareRapName": "RAP",
+    "compareRapSub": "New federal plan · 1–10% of income, up to 30 yrs",
+    "compareRapSuffix": "/mo early career",
+    "compareStandardName": "Standard (10-yr)",
+    "compareStandardSub": "Fixed payment · lowest total interest",
+    "compareStandardSuffix": "/mo",
+    "debtToIncome": "Debt-to-income",
+    "description": "Project monthly repayment and sanity-check it against expected earnings.",
+    "entryLevel": "Entry level",
+    "expectedEarnings": "Expected earnings",
+    "expectedSalaryMultiple": "{{ratio}}× expected salary",
+    "grantPick": "GRANT pick",
+    "healthy": "Healthy",
+    "interest": "Interest",
+    "lookUp": "Look up",
+    "median": "Median",
+    "monthly": "Monthly",
+    "occupation": "Occupation",
+    "occupationPlaceholder": "e.g. Software Developer",
+    "ofIncome": "of income",
+    "overCeiling": "Over ceiling",
+    "overCeilingNote": "Projected borrowing exceeds GRANT's 1× expected-salary ceiling — consider lower-cost aid before borrowing more.",
+    "paymentShare": "Payment is {{pct}}% of entry-level monthly income",
+    "plan": "Plan",
+    "planGraduated": "Graduated",
+    "planIncomeDriven": "Income-driven (RAP)",
+    "planStandard10": "Standard (10-year)",
+    "policyCallout": "<head>Repayment changed in 2026.</head> The <save>SAVE plan is closed to new enrollment</save> and is being phased out — superseded by the new <rap>Repayment Assistance Plan (RAP)</rap> (1–10% of income, up to 30 years). New borrowers now choose between Standard and RAP.",
+    "principal": "Principal ($)",
+    "projectRepayment": "Project repayment",
+    "projector": "Repayment projector",
+    "rapRange": "1–10%",
+    "rate": "Rate (%)",
+    "tenYearGrowth": "10-yr growth",
+    "term": "Term (months)",
+    "title": "Loans & Debt",
+    "totalPaid": "Total paid",
+    "withinCeilingNote": "GRANT keeps total borrowing under 1× your expected first-year salary. You're within a low-risk profile."
+  },
+  "modules": {
+    "adult": "Returning adult",
+    "caregiver": "Caregiver",
+    "disability": "Disability",
+    "field": "Field-specific",
+    "first_time": "First-time student",
+    "foster": "Foster care",
+    "homeless": "Housing insecure",
+    "justice": "Justice-impacted",
+    "military": "Military / Veteran",
+    "tribal": "Tribal",
+    "undocumented": "Undocumented / DACA"
+  },
+  "plan": {
+    "actionApply": "Apply to {{name}} ({{amount}})",
+    "actionFinishProfile": "Finish your aid profile — {{answered}}/{{total}} essentials answered",
+    "actionReviewOffer": "Review your best offer — {{institution}} at {{amount}}/yr",
+    "actionSubmit": "Submit {{name}} — {{when}}",
+    "activeStage": "Your active stage on the aid journey.",
+    "addAwardLetter": "Add an award letter to compare offers.",
+    "allCaughtUp": "You're all caught up — no outstanding aid actions right now.",
+    "atAGlance": "Plan at a glance",
+    "bestNetCost": "Best net cost",
+    "completeProfileForMatches": "Complete your profile to see matches.",
+    "coveredByGiftAid": "Covered by gift aid",
+    "deadlines": "Deadlines",
+    "description": "Your consolidated financial-aid plan.",
+    "descriptionNamed": "{{name}}'s consolidated financial-aid plan.",
+    "federalLoansInOffer": "federal loans in your best offer",
+    "fromYourProfile": "from your profile",
+    "giftAidPct": "{{pct}}% gift aid",
+    "loans": "Loans",
+    "matchPct": "{{pct}}% match",
+    "matched": "{{count}} matched",
+    "modelRepayment": "Model repayment once you have an offer.",
+    "netPerYear": "{{amount}}/yr net",
+    "netPrice": "Net price",
+    "nextDeadline": "Next deadline",
+    "noDeadlines": "No deadlines scheduled yet.",
+    "noOffersYet": "no offers yet",
+    "nothingScheduled": "nothing scheduled",
+    "pctComplete": "{{pct}}% complete",
+    "planRepayment": "Plan repayment",
+    "potentialAid": "Potential aid",
+    "potentialAidHint": "across matched scholarships",
+    "scholarships": "Scholarships",
+    "stepOf": "Step {{current}} of {{total}}: {{step}}",
+    "strongestMatch": "your strongest match",
+    "studentAidIndex": "Student Aid Index",
+    "title": "My Aid Plan",
+    "tracked": "{{count}} tracked",
+    "workStudySuffix": "· {{amount}} work-study",
+    "yourNextActions": "Your next actions"
+  },
+  "profile": {
+    "enrollment": {
+      "enrolled": "Enrolled",
+      "prospective": "Prospective",
+      "returning_adult": "Returning adult",
+      "transferring": "Transferring"
+    },
+    "essentialsComplete": "Essentials complete — refine anytime below.",
+    "essentialsPending": "Answer the essentials below to unlock your matches.",
+    "essentialsPill": "{{answered}}/{{total}} essentials",
+    "field": {
+      "age": "Age",
+      "enrollment": "Enrollment",
+      "firstGeneration": "First-generation",
+      "householdIncome": "Household income",
+      "intendedField": "Intended field",
+      "schoolType": "School type",
+      "state": "State"
+    },
+    "glanceTitle": "Your aid profile at a glance",
+    "income": {
+      "100k_150k": "$100k–$150k",
+      "30k_60k": "$30k–$60k",
+      "60k_100k": "$60k–$100k",
+      "over_150k": "Over $150k",
+      "under_30k": "Under $30k"
+    },
+    "institution": {
+      "community_college": "Community college",
+      "four_year": "Four-year",
+      "grad": "Graduate",
+      "trade_vocational": "Trade / vocational"
+    },
+    "nothingSaved": "Nothing saved yet — the conversation below walks you through it in a few minutes."
+  },
+  "roster": {
+    "addDialogBody": "Create a managed profile. You can open it to complete the aid questionnaire next.",
+    "addDialogTitle": "Add a student",
+    "addStudent": "Add student",
+    "bulkDialogBody": "Each selected student gets an email with a secure set-password / magic link so they can sign in and take over their own aid profile.",
+    "bulkDialogTitleOne": "Invite {{count}} student to Inspire Genius?",
+    "bulkDialogTitleOther": "Invite {{count}} students to Inspire Genius?",
+    "bulkResultsBody": "Here's how each selected student was handled.",
+    "bulkResultsTitle": "Bulk invite results",
+    "coAccessLabel": "Keep co-access after they claim their account",
+    "coAccessOff": "Off — full hand-off. You'll no longer see this student after they claim their account.",
+    "coAccessOn": "On — you stay on their roster and can still open their profile.",
+    "colActions": "Actions",
+    "colCompleteness": "Completeness",
+    "colReady": "Ready",
+    "colStatus": "Status",
+    "colStudent": "Student",
+    "colUpdated": "Updated",
+    "converted": "Converted",
+    "description": "Import and manage the students you're building aid profiles for, then convert them into their own Inspire Genius login.",
+    "emailOptional": "Email (optional)",
+    "emptyBody": "Add a student or import a roster to get started.",
+    "emptyTitle": "No students yet",
+    "errors": "Errors",
+    "firstName": "First name",
+    "firstNameRequired": "First name is required",
+    "gradeLevel": "Grade level",
+    "gradePlaceholder": "e.g. 12",
+    "importCsv": "Import CSV",
+    "invalidEmail": "Enter a valid email",
+    "invite": "Invite",
+    "inviteDialogBody": "We'll email {{email}} a secure set-password / magic link so they can sign in and take over their own aid profile.",
+    "inviteDialogTitle": "Invite {{name}} to Inspire Genius?",
+    "inviteSelected": "Invite selected to IG ({{count}})",
+    "inviteTitleNoEmail": "Every selected student needs an email to invite",
+    "inviteTitleNone": "Select students to invite",
+    "inviteTitleSelected": "Invite {{count}} selected to Inspire Genius",
+    "lastName": "Last name",
+    "loading": "Loading your roster…",
+    "noMatch": "No students match “{{query}}”.",
+    "notYet": "Not yet",
+    "open": "Open",
+    "ready": "Ready",
+    "remove": "Remove",
+    "removeDialogBody": "This removes the student from your roster. Their profile data is not deleted if they already have their own linked login.",
+    "removeDialogTitle": "Remove {{name}}?",
+    "removeStudent": "Remove {{name}}",
+    "rowInviteAlready": "Already invited",
+    "rowInviteNoEmail": "Add an email to invite this student",
+    "rowInviteTitle": "Invite to Inspire Genius",
+    "searchAria": "Search students",
+    "searchPlaceholder": "Search by name",
+    "selectAll": "Select all students",
+    "selectStudent": "Select {{name}}",
+    "sendBulkOne": "Send {{count}} invitation",
+    "sendBulkOther": "Send {{count}} invitations",
+    "sendInvitation": "Send invitation",
+    "skipped": "Skipped",
+    "state": "State",
+    "statePlaceholder": "e.g. CA",
+    "statusInvited": "Invited",
+    "statusLinked": "Linked",
+    "statusManaged": "Managed",
+    "title": "My Students",
+    "toastAddError": "Couldn't add the student. Please try again.",
+    "toastAdded": "Added {{name}}",
+    "toastBulkInviteError": "Couldn't send the invitations. Please try again.",
+    "toastBulkInvitedOne": "Invited {{converted}} of {{total}} student",
+    "toastBulkInvitedOther": "Invited {{converted}} of {{total}} students",
+    "toastInvitationSent": "Invitation sent to {{name}}",
+    "toastInviteError": "Couldn't send the invitation. Please try again.",
+    "toastRemoveError": "Couldn't remove this student. Please try again.",
+    "toastRemoved": "Removed {{name}} from your roster"
+  },
+  "scholarships": {
+    "accessible": "Accessible",
+    "advancing": "{{pct}}% advancing",
+    "competitive": "Competitive",
+    "description": "Matched scholarships ranked by relevance to your aid profile.",
+    "enrollment": {
+      "fullTime": "full-time",
+      "lessThanHalf": "less-than-half-time",
+      "partTime": "part-time",
+      "unknown": "enrolled"
+    },
+    "keywords": "Keywords",
+    "keywordsPlaceholder": "e.g. STEM, first-generation, nursing",
+    "matchPct": "{{pct}}% match",
+    "matchStrength": "Match strength",
+    "matchesOnBase": "Matches on: {{base}}.",
+    "minAward": "Min award ($)",
+    "moderate": "Moderate",
+    "noMatches": "No scholarships matched — try broadening your keywords.",
+    "pipeline": "Pipeline",
+    "search": "Search",
+    "stageAwarded": "Awarded",
+    "stageIdentified": "Identified",
+    "stageInProgress": "In Progress",
+    "stageSubmitted": "Submitted",
+    "submissionRate": "Submission rate",
+    "submittedOf": "{{submitted}} of {{identified}}",
+    "title": "Scholarships",
+    "viewApply": "View & apply",
+    "whyFits": "Matches on {{base}} — you're a {{enrollment}} student in {{state}}.",
+    "whyFitsGpa": "Matches on {{base}} — you're a {{enrollment}} student in {{state}} with a {{gpa}} GPA."
+  }
+}

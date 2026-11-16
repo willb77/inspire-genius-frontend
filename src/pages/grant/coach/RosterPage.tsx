@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useNavigate } from "react-router-dom"
@@ -58,9 +60,10 @@ import { CsvImportModal } from "./CsvImportModal"
 
 /** Status → GrantPill tone + label. */
 function StatusBadge({ status }: { status: CoachStudentStatus }) {
-  if (status === "linked") return <GrantPill tone="green">Linked</GrantPill>
-  if (status === "invited") return <GrantPill tone="amber">Invited</GrantPill>
-  return <GrantPill tone="gray">Managed</GrantPill>
+  const { t } = useTranslation("grantPages")
+  if (status === "linked") return <GrantPill tone="green">{t("roster.statusLinked", "Linked")}</GrantPill>
+  if (status === "invited") return <GrantPill tone="amber">{t("roster.statusInvited", "Invited")}</GrantPill>
+  return <GrantPill tone="gray">{t("roster.statusManaged", "Managed")}</GrantPill>
 }
 
 /** Shared "keep co-access" toggle used by both the single and bulk invite flows. */
@@ -73,11 +76,12 @@ function CoAccessToggle({
   checked: boolean
   onCheckedChange: (value: boolean) => void
 }) {
+  const { t } = useTranslation("grantPages")
   return (
     <div className="rounded-md border border-[#e5e7eb] bg-[#f9fafb] p-3 text-left">
       <div className="flex items-center justify-between gap-3">
         <Label htmlFor={id} className="text-sm font-medium text-[#1f2937]">
-          Keep co-access after they claim their account
+          {t("roster.coAccessLabel", "Keep co-access after they claim their account")}
         </Label>
         <Switch
           id={id}
@@ -88,14 +92,18 @@ function CoAccessToggle({
       </div>
       <p className="mt-1.5 text-xs text-[#6b7280]">
         {checked
-          ? "On — you stay on their roster and can still open their profile."
-          : "Off — full hand-off. You'll no longer see this student after they claim their account."}
+          ? t("roster.coAccessOn", "On — you stay on their roster and can still open their profile.")
+          : t(
+              "roster.coAccessOff",
+              "Off — full hand-off. You'll no longer see this student after they claim their account."
+            )}
       </p>
     </div>
   )
 }
 
 export default function RosterPage() {
+  const { t } = useTranslation("grantPages")
   const navigate = useNavigate()
   const { data: students = [], isLoading } = useCoachRoster()
   const inviteMutation = useInviteStudent()
@@ -174,8 +182,14 @@ export default function RosterPage() {
         onSuccess: (res) =>
           res.status === "noop"
             ? toast.error(res.message)
-            : toast.success(`Invitation sent to ${target.fullName}`),
-        onError: () => toast.error("Couldn't send the invitation. Please try again."),
+            : toast.success(
+                t("roster.toastInvitationSent", {
+                  name: target.fullName,
+                  defaultValue: "Invitation sent to {{name}}",
+                })
+              ),
+        onError: () =>
+          toast.error(t("roster.toastInviteError", "Couldn't send the invitation. Please try again.")),
       }
     )
     setInviteTarget(null)
@@ -195,9 +209,22 @@ export default function RosterPage() {
         onSuccess: (res) => {
           setBulkResult(res)
           setSelectedIds(new Set())
-          toast.success(`Invited ${res.converted} of ${ids.length} student${ids.length === 1 ? "" : "s"}`)
+          toast.success(
+            ids.length === 1
+              ? t("roster.toastBulkInvitedOne", {
+                  converted: res.converted,
+                  total: ids.length,
+                  defaultValue: "Invited {{converted}} of {{total}} student",
+                })
+              : t("roster.toastBulkInvitedOther", {
+                  converted: res.converted,
+                  total: ids.length,
+                  defaultValue: "Invited {{converted}} of {{total}} students",
+                })
+          )
         },
-        onError: () => toast.error("Couldn't send the invitations. Please try again."),
+        onError: () =>
+          toast.error(t("roster.toastBulkInviteError", "Couldn't send the invitations. Please try again.")),
       }
     )
     setBulkOpen(false)
@@ -207,8 +234,14 @@ export default function RosterPage() {
     if (!removeTarget) return
     const target = removeTarget
     removeMutation.mutate(target.id, {
-      onSuccess: () => toast.success(`Removed ${target.fullName} from your roster`),
-      onError: () => toast.error("Couldn't remove this student. Please try again."),
+      onSuccess: () =>
+        toast.success(
+          t("roster.toastRemoved", {
+            name: target.fullName,
+            defaultValue: "Removed {{name}} from your roster",
+          })
+        ),
+      onError: () => toast.error(t("roster.toastRemoveError", "Couldn't remove this student. Please try again.")),
     })
     setRemoveTarget(null)
   }
@@ -217,8 +250,11 @@ export default function RosterPage() {
     <div className="max-w-5xl">
       <GrantPageHeader
         icon={Users}
-        title="My Students"
-        description="Import and manage the students you're building aid profiles for, then convert them into their own Inspire Genius login."
+        title={t("roster.title", "My Students")}
+        description={t(
+          "roster.description",
+          "Import and manage the students you're building aid profiles for, then convert them into their own Inspire Genius login."
+        )}
       />
 
       {/* Toolbar */}
@@ -226,8 +262,8 @@ export default function RosterPage() {
         <div className="relative min-w-[14rem] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
           <Input
-            aria-label="Search students"
-            placeholder="Search by name"
+            aria-label={t("roster.searchAria", "Search students")}
+            placeholder={t("roster.searchPlaceholder", "Search by name")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-9"
@@ -239,40 +275,51 @@ export default function RosterPage() {
           disabled={!canBulkInvite}
           title={
             selectedStudents.length === 0
-              ? "Select students to invite"
+              ? t("roster.inviteTitleNone", "Select students to invite")
               : !selectedAllHaveEmail
-                ? "Every selected student needs an email to invite"
-                : `Invite ${selectedStudents.length} selected to Inspire Genius`
+                ? t("roster.inviteTitleNoEmail", "Every selected student needs an email to invite")
+                : t("roster.inviteTitleSelected", {
+                    count: selectedStudents.length,
+                    defaultValue: "Invite {{count}} selected to Inspire Genius",
+                  })
           }
           onClick={openBulkInvite}
         >
-          <MailPlus className="h-4 w-4" /> Invite selected to IG ({selectedStudents.length})
+          <MailPlus className="h-4 w-4" />{" "}
+          {t("roster.inviteSelected", {
+            count: selectedStudents.length,
+            defaultValue: "Invite selected to IG ({{count}})",
+          })}
         </Button>
         <Button className="gap-2 bg-[#3B5BFF] hover:bg-[#2f49cc]" onClick={() => setAddOpen(true)}>
-          <UserPlus className="h-4 w-4" /> Add student
+          <UserPlus className="h-4 w-4" /> {t("roster.addStudent", "Add student")}
         </Button>
         <Button variant="outline" className="gap-2" onClick={() => setImportOpen(true)}>
-          <Users className="h-4 w-4" /> Import CSV
+          <Users className="h-4 w-4" /> {t("roster.importCsv", "Import CSV")}
         </Button>
       </div>
 
       {isLoading ? (
-        <GrantEmptyState>Loading your roster…</GrantEmptyState>
+        <GrantEmptyState>{t("roster.loading", "Loading your roster…")}</GrantEmptyState>
       ) : students.length === 0 ? (
         <GrantEmptyState>
-          <p className="mb-3 font-medium text-[#6b7280]">No students yet</p>
-          <p className="mb-4 text-sm">Add a student or import a roster to get started.</p>
+          <p className="mb-3 font-medium text-[#6b7280]">{t("roster.emptyTitle", "No students yet")}</p>
+          <p className="mb-4 text-sm">
+            {t("roster.emptyBody", "Add a student or import a roster to get started.")}
+          </p>
           <div className="flex justify-center gap-2">
             <Button className="gap-2 bg-[#3B5BFF] hover:bg-[#2f49cc]" onClick={() => setAddOpen(true)}>
-              <UserPlus className="h-4 w-4" /> Add student
+              <UserPlus className="h-4 w-4" /> {t("roster.addStudent", "Add student")}
             </Button>
             <Button variant="outline" className="gap-2" onClick={() => setImportOpen(true)}>
-              <Users className="h-4 w-4" /> Import CSV
+              <Users className="h-4 w-4" /> {t("roster.importCsv", "Import CSV")}
             </Button>
           </div>
         </GrantEmptyState>
       ) : filtered.length === 0 ? (
-        <GrantEmptyState>No students match “{query}”.</GrantEmptyState>
+        <GrantEmptyState>
+          {t("roster.noMatch", { query, defaultValue: "No students match “{{query}}”." })}
+        </GrantEmptyState>
       ) : (
         <GrantCard className="p-0">
           <div className="overflow-x-auto">
@@ -281,18 +328,18 @@ export default function RosterPage() {
                 <tr>
                   <th className="px-4 py-3 w-10">
                     <Checkbox
-                      aria-label="Select all students"
+                      aria-label={t("roster.selectAll", "Select all students")}
                       checked={headerCheckState}
                       disabled={selectableRows.length === 0}
                       onCheckedChange={(c) => toggleAll(c === true)}
                     />
                   </th>
-                  <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 w-48">Completeness</th>
-                  <th className="px-4 py-3">Ready</th>
-                  <th className="px-4 py-3">Updated</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">{t("roster.colStudent", "Student")}</th>
+                  <th className="px-4 py-3">{t("roster.colStatus", "Status")}</th>
+                  <th className="px-4 py-3 w-48">{t("roster.colCompleteness", "Completeness")}</th>
+                  <th className="px-4 py-3">{t("roster.colReady", "Ready")}</th>
+                  <th className="px-4 py-3">{t("roster.colUpdated", "Updated")}</th>
+                  <th className="px-4 py-3 text-right">{t("roster.colActions", "Actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -300,7 +347,7 @@ export default function RosterPage() {
                   <tr key={s.id} className="border-b border-[#f3f4f6] last:border-0">
                     <td className="px-4 py-3">
                       <Checkbox
-                        aria-label={`Select ${s.fullName}`}
+                        aria-label={t("roster.selectStudent", { name: s.fullName, defaultValue: "Select {{name}}" })}
                         checked={selectedIds.has(s.id)}
                         disabled={s.status === "linked"}
                         onCheckedChange={(c) => toggleOne(s.id, c === true)}
@@ -331,11 +378,11 @@ export default function RosterPage() {
                     <td className="px-4 py-3">
                       {s.readyToSearch ? (
                         <span className="inline-flex items-center gap-1 text-[#0f766e]">
-                          <CheckCircle2 className="h-4 w-4" /> Ready
+                          <CheckCircle2 className="h-4 w-4" /> {t("roster.ready", "Ready")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[#9ca3af]">
-                          <MinusCircle className="h-4 w-4" /> Not yet
+                          <MinusCircle className="h-4 w-4" /> {t("roster.notYet", "Not yet")}
                         </span>
                       )}
                     </td>
@@ -343,7 +390,7 @@ export default function RosterPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1.5">
                         <Button size="sm" variant="outline" onClick={() => openStudent(s)}>
-                          Open
+                          {t("roster.open", "Open")}
                         </Button>
                         <Button
                           size="sm"
@@ -352,19 +399,19 @@ export default function RosterPage() {
                           disabled={!s.email || s.status !== "managed"}
                           title={
                             !s.email
-                              ? "Add an email to invite this student"
+                              ? t("roster.rowInviteNoEmail", "Add an email to invite this student")
                               : s.status !== "managed"
-                                ? "Already invited"
-                                : "Invite to Inspire Genius"
+                                ? t("roster.rowInviteAlready", "Already invited")
+                                : t("roster.rowInviteTitle", "Invite to Inspire Genius")
                           }
                           onClick={() => openInvite(s)}
                         >
-                          <MailPlus className="h-4 w-4" /> Invite
+                          <MailPlus className="h-4 w-4" /> {t("roster.invite", "Invite")}
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
-                          aria-label={`Remove ${s.fullName}`}
+                          aria-label={t("roster.removeStudent", { name: s.fullName, defaultValue: "Remove {{name}}" })}
                           className="text-[#9ca3af] hover:bg-[rgba(239,68,68,0.08)] hover:text-[#b91c1c]"
                           onClick={() => setRemoveTarget(s)}
                         >
@@ -390,10 +437,18 @@ export default function RosterPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Invite {inviteTarget?.fullName} to Inspire Genius?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("roster.inviteDialogTitle", {
+                name: inviteTarget?.fullName,
+                defaultValue: "Invite {{name}} to Inspire Genius?",
+              })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              We&apos;ll email {inviteTarget?.email} a secure set-password / magic link so they can
-              sign in and take over their own aid profile.
+              {t("roster.inviteDialogBody", {
+                email: inviteTarget?.email,
+                defaultValue:
+                  "We'll email {{email}} a secure set-password / magic link so they can sign in and take over their own aid profile.",
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <CoAccessToggle
@@ -402,12 +457,12 @@ export default function RosterPage() {
             onCheckedChange={setInviteKeepAccess}
           />
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-[#3B5BFF] hover:bg-[#2f49cc]"
               onClick={confirmInvite}
             >
-              Send invitation
+              {t("roster.sendInvitation", "Send invitation")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -418,12 +473,21 @@ export default function RosterPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Invite {selectedStudents.length} student{selectedStudents.length === 1 ? "" : "s"} to
-              Inspire Genius?
+              {selectedStudents.length === 1
+                ? t("roster.bulkDialogTitleOne", {
+                    count: selectedStudents.length,
+                    defaultValue: "Invite {{count}} student to Inspire Genius?",
+                  })
+                : t("roster.bulkDialogTitleOther", {
+                    count: selectedStudents.length,
+                    defaultValue: "Invite {{count}} students to Inspire Genius?",
+                  })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Each selected student gets an email with a secure set-password / magic link so they
-              can sign in and take over their own aid profile.
+              {t(
+                "roster.bulkDialogBody",
+                "Each selected student gets an email with a secure set-password / magic link so they can sign in and take over their own aid profile."
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <CoAccessToggle
@@ -432,9 +496,17 @@ export default function RosterPage() {
             onCheckedChange={setBulkKeepAccess}
           />
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction className="bg-[#3B5BFF] hover:bg-[#2f49cc]" onClick={confirmBulkInvite}>
-              Send {selectedStudents.length} invitation{selectedStudents.length === 1 ? "" : "s"}
+              {selectedStudents.length === 1
+                ? t("roster.sendBulkOne", {
+                    count: selectedStudents.length,
+                    defaultValue: "Send {{count}} invitation",
+                  })
+                : t("roster.sendBulkOther", {
+                    count: selectedStudents.length,
+                    defaultValue: "Send {{count}} invitations",
+                  })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -454,19 +526,26 @@ export default function RosterPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove {removeTarget?.fullName}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("roster.removeDialogTitle", {
+                name: removeTarget?.fullName,
+                defaultValue: "Remove {{name}}?",
+              })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the student from your roster. Their profile data is not deleted if they
-              already have their own linked login.
+              {t(
+                "roster.removeDialogBody",
+                "This removes the student from your roster. Their profile data is not deleted if they already have their own linked login."
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-[#b91c1c] hover:bg-[#991b1b]"
               onClick={confirmRemove}
             >
-              Remove
+              {t("roster.remove", "Remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -494,28 +573,31 @@ function BulkInviteReport({
   students: CoachStudent[]
   onClose: () => void
 }) {
+  const { t } = useTranslation("grantPages")
   const nameFor = (id: string) => students.find((s) => s.id === id)?.fullName ?? id
   return (
     <Dialog open={result !== null} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Bulk invite results</DialogTitle>
-          <DialogDescription>Here&apos;s how each selected student was handled.</DialogDescription>
+          <DialogTitle>{t("roster.bulkResultsTitle", "Bulk invite results")}</DialogTitle>
+          <DialogDescription>
+            {t("roster.bulkResultsBody", "Here's how each selected student was handled.")}
+          </DialogDescription>
         </DialogHeader>
         {result && (
           <>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="rounded-md border border-[#e5e7eb] bg-[#f0fdf4] p-3">
                 <div className="text-lg font-semibold text-[#0f766e]">{result.converted}</div>
-                <div className="text-xs text-[#6b7280]">Converted</div>
+                <div className="text-xs text-[#6b7280]">{t("roster.converted", "Converted")}</div>
               </div>
               <div className="rounded-md border border-[#e5e7eb] bg-[#fffbeb] p-3">
                 <div className="text-lg font-semibold text-[#b45309]">{result.skipped}</div>
-                <div className="text-xs text-[#6b7280]">Skipped</div>
+                <div className="text-xs text-[#6b7280]">{t("roster.skipped", "Skipped")}</div>
               </div>
               <div className="rounded-md border border-[#e5e7eb] bg-[#fef2f2] p-3">
                 <div className="text-lg font-semibold text-[#b91c1c]">{result.errors}</div>
-                <div className="text-xs text-[#6b7280]">Errors</div>
+                <div className="text-xs text-[#6b7280]">{t("roster.errors", "Errors")}</div>
               </div>
             </div>
             <ul className="mt-2 max-h-56 space-y-1.5 overflow-y-auto text-sm">
@@ -536,7 +618,7 @@ function BulkInviteReport({
         )}
         <DialogFooter>
           <Button className="bg-[#3B5BFF] hover:bg-[#2f49cc]" onClick={onClose}>
-            Done
+            {t("common.done", "Done")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -546,15 +628,20 @@ function BulkInviteReport({
 
 // ── Add-student dialog ───────────────────────────────────────────────────────
 
-const addStudentSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().optional(),
-  email: z.union([z.string().email("Enter a valid email"), z.literal("")]).optional(),
-  state: z.string().optional(),
-  gradeLevel: z.string().optional(),
-})
+/** Built per render so the validation messages follow the active language. */
+function makeAddStudentSchema(t: TFunction) {
+  return z.object({
+    firstName: z.string().min(1, t("roster.firstNameRequired", "First name is required")),
+    lastName: z.string().optional(),
+    email: z
+      .union([z.string().email(t("roster.invalidEmail", "Enter a valid email")), z.literal("")])
+      .optional(),
+    state: z.string().optional(),
+    gradeLevel: z.string().optional(),
+  })
+}
 
-type AddStudentValues = z.infer<typeof addStudentSchema>
+type AddStudentValues = z.infer<ReturnType<typeof makeAddStudentSchema>>
 
 function AddStudentDialog({
   open,
@@ -563,7 +650,9 @@ function AddStudentDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation("grantPages")
   const createMutation = useCreateStudent()
+  const addStudentSchema = useMemo(() => makeAddStudentSchema(t), [t])
   const {
     register,
     handleSubmit,
@@ -590,11 +679,11 @@ function AddStudentDialog({
       },
       {
         onSuccess: (student) => {
-          toast.success(`Added ${student.fullName}`)
+          toast.success(t("roster.toastAdded", { name: student.fullName, defaultValue: "Added {{name}}" }))
           reset()
           onOpenChange(false)
         },
-        onError: () => toast.error("Couldn't add the student. Please try again."),
+        onError: () => toast.error(t("roster.toastAddError", "Couldn't add the student. Please try again.")),
       }
     )
   }
@@ -603,43 +692,46 @@ function AddStudentDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add a student</DialogTitle>
+          <DialogTitle>{t("roster.addDialogTitle", "Add a student")}</DialogTitle>
           <DialogDescription>
-            Create a managed profile. You can open it to complete the aid questionnaire next.
+            {t(
+              "roster.addDialogBody",
+              "Create a managed profile. You can open it to complete the aid questionnaire next."
+            )}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="firstName">First name</Label>
+              <Label htmlFor="firstName">{t("roster.firstName", "First name")}</Label>
               <Input id="firstName" autoFocus {...register("firstName")} />
               {errors.firstName && (
                 <p className="text-xs text-[#dc2626]">{errors.firstName.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="lastName">Last name</Label>
+              <Label htmlFor="lastName">{t("roster.lastName", "Last name")}</Label>
               <Input id="lastName" {...register("lastName")} />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email (optional)</Label>
+            <Label htmlFor="email">{t("roster.emailOptional", "Email (optional)")}</Label>
             <Input id="email" type="email" {...register("email")} />
             {errors.email && <p className="text-xs text-[#dc2626]">{errors.email.message}</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="state">State</Label>
-              <Input id="state" placeholder="e.g. CA" {...register("state")} />
+              <Label htmlFor="state">{t("roster.state", "State")}</Label>
+              <Input id="state" placeholder={t("roster.statePlaceholder", "e.g. CA")} {...register("state")} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="gradeLevel">Grade level</Label>
-              <Input id="gradeLevel" placeholder="e.g. 12" {...register("gradeLevel")} />
+              <Label htmlFor="gradeLevel">{t("roster.gradeLevel", "Grade level")}</Label>
+              <Input id="gradeLevel" placeholder={t("roster.gradePlaceholder", "e.g. 12")} {...register("gradeLevel")} />
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {t("common.cancel", "Cancel")}
             </Button>
             <Button
               type="submit"
@@ -647,7 +739,7 @@ function AddStudentDialog({
               disabled={createMutation.isPending}
             >
               {createMutation.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-              Add student
+              {t("roster.addStudent", "Add student")}
             </Button>
           </DialogFooter>
         </form>
