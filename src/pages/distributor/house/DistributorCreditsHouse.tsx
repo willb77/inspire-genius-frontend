@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import DistributorLayout from "@/layouts/DistributorLayout"
 import { PageHeader } from "@/components/shared/house/PageHeader"
 import { PageState } from "@/components/shared/house/PageState"
@@ -33,6 +34,7 @@ import { Section, StatTile } from "./parts"
  * showing a button that does nothing.
  */
 export default function DistributorCreditsHouse({ writeEnabled = CREDITS_WRITE }: { writeEnabled?: boolean }) {
+  const { t } = useTranslation("distributorPages")
   const credits = useDistributorCredits()
   const practs = useDistributorPractitioners()
   const txs = useDistributorTransactions()
@@ -44,8 +46,8 @@ export default function DistributorCreditsHouse({ writeEnabled = CREDITS_WRITE }
   return (
     <DistributorLayout>
       <PageHeader
-        title="Credits"
-        description="Buy PRISM assessment credits and give them to your practitioners."
+        title={t("credits", { defaultValue: "Credits" })}
+        description={t("creditsDescription", { defaultValue: "Buy PRISM assessment credits and give them to your practitioners." })}
         action={
           writeEnabled ? (
             <div className="flex items-center gap-2">
@@ -60,48 +62,48 @@ export default function DistributorCreditsHouse({ writeEnabled = CREDITS_WRITE }
         <PageState
           kind="unavailable"
           className="mb-6"
-          message="Buying and giving credits here isn't available yet. To order credits, contact us."
+          message={t("creditsWriteOff", { defaultValue: "Buying and giving credits here isn't available yet. To order credits, contact us." })}
           action={
             <Link to={ROUTES.HELP} className="text-sm text-primary hover:underline">
-              Contact us
+              {t("contactUs", { defaultValue: "Contact us" })}
             </Link>
           }
         />
       )}
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatTile label="Credits available" value={formatCredits(figures?.available)} loading={credits.isLoading} />
-        <StatTile label="Given to practitioners" value={formatCredits(figures?.given)} loading={credits.isLoading} />
-        <StatTile label="Used by practitioners" value={formatCredits(figures?.used)} loading={credits.isLoading} />
+        <StatTile label={t("creditsAvailable", { defaultValue: "Credits available" })} value={formatCredits(figures?.available)} loading={credits.isLoading} />
+        <StatTile label={t("givenToPractitioners", { defaultValue: "Given to practitioners" })} value={formatCredits(figures?.given)} loading={credits.isLoading} />
+        <StatTile label={t("usedByPractitioners", { defaultValue: "Used by practitioners" })} value={formatCredits(figures?.used)} loading={credits.isLoading} />
       </div>
 
       <div className="space-y-4">
-        <Section title="Credits by practitioner">
+        <Section title={t("creditsByPractitioner", { defaultValue: "Credits by practitioner" })}>
           {practs.isLoading ? (
             <PageState kind="loading" rows={3} />
           ) : practs.error ? (
             <PageState
               kind="error"
-              message="We couldn't load your practitioners."
+              message={t("loadPractitionersError", { defaultValue: "We couldn't load your practitioners." })}
               onRetry={() => void practs.refetch()}
             />
           ) : !practitioners ? (
-            <PageState kind="unavailable" message="Credits by practitioner aren't available yet." />
+            <PageState kind="unavailable" message={t("creditsByPractitionerUnavailable", { defaultValue: "Credits by practitioner aren't available yet." })} />
           ) : practitioners.length === 0 ? (
             <PageState
               kind="empty"
-              title="No practitioners yet"
-              message="Once practitioners join your network, you'll see how many credits each has used."
+              title={t("noPractitionersTitle", { defaultValue: "No practitioners yet" })}
+              message={t("noPractitionersUsageBody", { defaultValue: "Once practitioners join your network, you'll see how many credits each has used." })}
             />
           ) : (
             <table className="w-full text-sm">
-              <caption className="sr-only">Credits given to and used by each practitioner</caption>
+              <caption className="sr-only">{t("creditsByPractitionerCaption", { defaultValue: "Credits given to and used by each practitioner" })}</caption>
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Practitioner</th>
-                  <th className="py-2 font-medium">Given</th>
-                  <th className="py-2 font-medium">Used</th>
-                  <th className="py-2 font-medium">Share used</th>
+                  <th className="py-2 font-medium">{t("colPractitioner", { defaultValue: "Practitioner" })}</th>
+                  <th className="py-2 font-medium">{t("colGiven", { defaultValue: "Given" })}</th>
+                  <th className="py-2 font-medium">{t("colUsed", { defaultValue: "Used" })}</th>
+                  <th className="py-2 font-medium">{t("colShareUsed", { defaultValue: "Share used" })}</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,31 +120,31 @@ export default function DistributorCreditsHouse({ writeEnabled = CREDITS_WRITE }
           )}
         </Section>
 
-        <Section title="Credit history">
+        <Section title={t("creditHistory", { defaultValue: "Credit history" })}>
           {txs.isLoading ? (
             <PageState kind="loading" rows={4} />
           ) : txs.error ? (
             <PageState
               kind="error"
-              message="We couldn't load your credit history."
+              message={t("loadCreditHistoryError", { defaultValue: "We couldn't load your credit history." })}
               onRetry={() => void txs.refetch()}
             />
           ) : !transactions ? (
-            <PageState kind="unavailable" message="Credit history isn't available yet." />
+            <PageState kind="unavailable" message={t("creditHistoryUnavailable", { defaultValue: "Credit history isn't available yet." })} />
           ) : transactions.length === 0 ? (
             <PageState
               kind="empty"
-              title="No credit activity yet"
-              message="Credits you buy or give to practitioners will be listed here."
+              title={t("noCreditActivityTitle", { defaultValue: "No credit activity yet" })}
+              message={t("noCreditActivityBody", { defaultValue: "Credits you buy or give to practitioners will be listed here." })}
             />
           ) : (
             <table className="w-full text-sm">
-              <caption className="sr-only">Credit history, newest first</caption>
+              <caption className="sr-only">{t("creditHistoryCaption", { defaultValue: "Credit history, newest first" })}</caption>
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Date</th>
-                  <th className="py-2 font-medium">What happened</th>
-                  <th className="py-2 font-medium">Credits</th>
+                  <th className="py-2 font-medium">{t("colDate", { defaultValue: "Date" })}</th>
+                  <th className="py-2 font-medium">{t("colWhatHappened", { defaultValue: "What happened" })}</th>
+                  <th className="py-2 font-medium">{t("credits", { defaultValue: "Credits" })}</th>
                 </tr>
               </thead>
               <tbody>

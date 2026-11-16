@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useSearchParams } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import DistributorLayout from "@/layouts/DistributorLayout"
 import { PageHeader } from "@/components/shared/house/PageHeader"
 import { PageState } from "@/components/shared/house/PageState"
@@ -15,21 +16,22 @@ function isTab(v: string | null): v is Tab {
 }
 
 function PractitionersTab() {
+  const { t } = useTranslation("distributorPages")
   const [search, setSearch] = useState("")
   const q = useDistributorPractitioners()
   const all = q.error ? null : readPractitioners(q.data)
 
   if (q.isLoading) return <PageState kind="loading" rows={5} />
   if (q.error) {
-    return <PageState kind="error" message="We couldn't load your practitioners." onRetry={() => void q.refetch()} />
+    return <PageState kind="error" message={t("loadPractitionersError", { defaultValue: "We couldn't load your practitioners." })} onRetry={() => void q.refetch()} />
   }
-  if (!all) return <PageState kind="unavailable" message="Your practitioner list isn't available yet." />
+  if (!all) return <PageState kind="unavailable" message={t("practitionerListUnavailable", { defaultValue: "Your practitioner list isn't available yet." })} />
   if (all.length === 0) {
     return (
       <PageState
         kind="empty"
-        title="No practitioners yet"
-        message="When practitioners join your network, they'll appear here."
+        title={t("noPractitionersTitle", { defaultValue: "No practitioners yet" })}
+        message={t("noPractitionersBody", { defaultValue: "When practitioners join your network, they'll appear here." })}
       />
     )
   }
@@ -45,30 +47,30 @@ function PractitionersTab() {
     : all
 
   return (
-    <Section title={`Practitioners (${all.length})`}>
+    <Section title={t("practitionersTitle", { defaultValue: "Practitioners ({{total}})", total: all.length })}>
       <label className="mb-4 block max-w-md">
-        <span className="sr-only">Search by name, email or region</span>
+        <span className="sr-only">{t("searchPractitioners", { defaultValue: "Search by name, email or region" })}</span>
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, email or region"
+          placeholder={t("searchPractitioners", { defaultValue: "Search by name, email or region" })}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </label>
       {shown.length === 0 ? (
-        <PageState kind="empty" title="No matches" message="No practitioner matches that search." />
+        <PageState kind="empty" title={t("noMatchesTitle", { defaultValue: "No matches" })} message={t("noMatchesBody", { defaultValue: "No practitioner matches that search." })} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <caption className="sr-only">Your practitioners and the credits each has been given and used</caption>
+            <caption className="sr-only">{t("practitionersTableCaption", { defaultValue: "Your practitioners and the credits each has been given and used" })}</caption>
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground">
-                <th className="py-2 font-medium">Name</th>
-                <th className="py-2 font-medium">Region</th>
-                <th className="py-2 font-medium">Credits given</th>
-                <th className="py-2 font-medium">Credits used</th>
-                <th className="py-2 font-medium">Share used</th>
+                <th className="py-2 font-medium">{t("colName", { defaultValue: "Name" })}</th>
+                <th className="py-2 font-medium">{t("colRegion", { defaultValue: "Region" })}</th>
+                <th className="py-2 font-medium">{t("colCreditsGiven", { defaultValue: "Credits given" })}</th>
+                <th className="py-2 font-medium">{t("colCreditsUsed", { defaultValue: "Credits used" })}</th>
+                <th className="py-2 font-medium">{t("colShareUsed", { defaultValue: "Share used" })}</th>
               </tr>
             </thead>
             <tbody>
@@ -93,32 +95,33 @@ function PractitionersTab() {
 }
 
 function TerritoryTab() {
+  const { t } = useTranslation("distributorPages")
   const q = useDistributorTerritory()
   const rows = q.error ? null : readTerritories(q.data)
 
   if (q.isLoading) return <PageState kind="loading" rows={4} />
   if (q.error) {
-    return <PageState kind="error" message="We couldn't load your territory." onRetry={() => void q.refetch()} />
+    return <PageState kind="error" message={t("loadTerritoryError", { defaultValue: "We couldn't load your territory." })} onRetry={() => void q.refetch()} />
   }
-  if (!rows) return <PageState kind="unavailable" message="Territory details aren't available yet." />
+  if (!rows) return <PageState kind="unavailable" message={t("territoryUnavailable", { defaultValue: "Territory details aren't available yet." })} />
   if (rows.length === 0) {
     return (
       <PageState
         kind="empty"
-        title="No regions yet"
-        message="Regions assigned to you will appear here."
+        title={t("noRegionsTitle", { defaultValue: "No regions yet" })}
+        message={t("noRegionsBody", { defaultValue: "Regions assigned to you will appear here." })}
       />
     )
   }
   return (
-    <Section title={`Regions (${rows.length})`}>
+    <Section title={t("regionsTitle", { defaultValue: "Regions ({{total}})", total: rows.length })}>
       <table className="w-full text-sm">
-        <caption className="sr-only">Your regions, with practitioners and coverage in each</caption>
+        <caption className="sr-only">{t("regionsTableCaption", { defaultValue: "Your regions, with practitioners and coverage in each" })}</caption>
         <thead>
           <tr className="border-b border-border text-left text-muted-foreground">
-            <th className="py-2 font-medium">Region</th>
-            <th className="py-2 font-medium">Practitioners</th>
-            <th className="py-2 font-medium">Coverage</th>
+            <th className="py-2 font-medium">{t("colRegion", { defaultValue: "Region" })}</th>
+            <th className="py-2 font-medium">{t("practitioners", { defaultValue: "Practitioners" })}</th>
+            <th className="py-2 font-medium">{t("colCoverage", { defaultValue: "Coverage" })}</th>
           </tr>
         </thead>
         <tbody>
@@ -143,6 +146,7 @@ function TerritoryTab() {
  * "Onboard Practitioner" button (it did nothing).
  */
 export default function DistributorPractitionersHouse({ defaultTab = "practitioners" }: { defaultTab?: Tab }) {
+  const { t } = useTranslation("distributorPages")
   const [searchParams, setSearchParams] = useSearchParams()
   const queryTab = searchParams.get("tab")
   const [tab, setTab] = useState<Tab>(isTab(queryTab) ? queryTab : defaultTab)
@@ -158,13 +162,13 @@ export default function DistributorPractitionersHouse({ defaultTab = "practition
   return (
     <DistributorLayout>
       <PageHeader
-        title="My practitioners"
-        description="The practitioners in your network and the regions you cover."
+        title={t("myPractitionersTitle", { defaultValue: "My practitioners" })}
+        description={t("myPractitionersDescription", { defaultValue: "The practitioners in your network and the regions you cover." })}
       />
       <Tabs value={tab} onValueChange={onChange} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="practitioners">Practitioners</TabsTrigger>
-          <TabsTrigger value="territory">Regions</TabsTrigger>
+          <TabsTrigger value="practitioners">{t("practitioners", { defaultValue: "Practitioners" })}</TabsTrigger>
+          <TabsTrigger value="territory">{t("tabRegions", { defaultValue: "Regions" })}</TabsTrigger>
         </TabsList>
         <TabsContent value="practitioners">
           <PractitionersTab />

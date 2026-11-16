@@ -10,7 +10,7 @@ i18n
   .init({
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat', 'userPages', 'prismUi', 'careerDiscoveryPages', 'lumenPages', 'directionPages', 'interviewPages', 'jobFitPages', 'summitPages', 'grantPages', 'kcPages', 'jobBlueprintPages', 'resumeUi', 'authPages', 'joinPages', 'onboardingPages', 'welcomePages', 'shellUi'],
+    ns: ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat', 'userPages', 'prismUi', 'careerDiscoveryPages', 'lumenPages', 'directionPages', 'interviewPages', 'jobFitPages', 'summitPages', 'grantPages', 'kcPages', 'jobBlueprintPages', 'resumeUi', 'authPages', 'joinPages', 'onboardingPages', 'welcomePages', 'distributorPages', 'careerToolsPages', 'shellUi'],
     supportedLngs: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'zh-CN', 'ar', 'hi', 'it', 'nl', 'ru', 'pl', 'tr', 'th', 'vi', 'id', 'sv', 'nb', 'sq', 'cs'],
     load: 'currentOnly',
 
