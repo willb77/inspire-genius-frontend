@@ -121,6 +121,8 @@ export function WebinarFormDialog({ webinar, onClose }: { webinar: Webinar | nul
     defaultValues: defaults(webinar),
   })
   const errs = form.formState.errors
+  // The stored Markdown length: what the service and the database count.
+  const publicDescriptionLength = (form.watch("publicDescription") ?? "").length
 
   const onSubmit = form.handleSubmit((values) => {
     setServerErrors([])
@@ -253,6 +255,15 @@ export function WebinarFormDialog({ webinar, onClose }: { webinar: Webinar | nul
                   />
                 )}
               />
+              <p
+                id="webinar-publicDescription-count"
+                className={
+                  publicDescriptionLength > PUBLIC_DESCRIPTION_MAX ? "text-xs text-destructive" : "text-xs text-muted-foreground"
+                }
+              >
+                {publicDescriptionLength.toLocaleString("en-US")} / {PUBLIC_DESCRIPTION_MAX.toLocaleString("en-US")} characters
+                (formatting marks count)
+              </p>
               {errs.publicDescription?.message && (
                 <p className="text-xs text-destructive">{errs.publicDescription.message}</p>
               )}

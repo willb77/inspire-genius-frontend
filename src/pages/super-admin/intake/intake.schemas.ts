@@ -2,7 +2,7 @@ import { z } from "zod"
 import { SEGMENT_CONTEXTS, SEGMENT_STATUSES, type WebinarInput } from "@/types/intake"
 
 /** The server's CHECK on `intake.webinars.public_description`. */
-export const PUBLIC_DESCRIPTION_MAX = 2000
+export const PUBLIC_DESCRIPTION_MAX = 5000
 
 /**
  * The New / Edit session form. Mirrors the server rules in intake-service
