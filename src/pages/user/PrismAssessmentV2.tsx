@@ -27,6 +27,7 @@ const ACTIVE_STATUSES: Set<string> = new Set([
  * re-skinned to the cream panel + tokens + serif headings. RTL-safe (logical CSS).
  */
 export default function PrismAssessmentV2() {
+  const { t: tu } = useTranslation("userPages");
   const { t } = useTranslation(["common", "coaching"]);
   const { user } = useAuth()
   const { data, isLoading } = usePrismHistory(user?.id ?? null)
@@ -54,7 +55,7 @@ export default function PrismAssessmentV2() {
           </div>
           <div>
             <ReplacePrismDataButton
-              label="Import / Replace Report"
+              label={tu("prismAssessmentV2.importReplaceReport", "Import / Replace Report")}
               variant="outline"
               size="sm"
             />

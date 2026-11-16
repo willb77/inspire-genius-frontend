@@ -83,50 +83,54 @@ import {
   type ResumeContact,
 } from "@/lib/resume/resumeDocument"
 import { isResumeWriterDisabled, type GeneratedResume, type RemovedLine } from "@/types/resumeWriter"
+import { useTranslation } from "react-i18next"
 
 const RESUME_UPLOAD: AddPersonalDocTarget = { name: "Résumé", docKind: "resume" }
 const BIO_UPLOAD: AddPersonalDocTarget = { name: "Bio", docKind: "bio" }
 
 function SourceChip({ on, label }: { on: boolean; label: string }) {
+  const { t } = useTranslation("userPages")
   return (
     <Badge
       variant={on ? "default" : "outline"}
       className={cn(!on && "text-muted-foreground")}
       data-testid={`source-${label.toLowerCase()}`}
     >
-      {label}: {on ? "on file" : "not on file"}
+      {t("myResumePage.sourceChip", { defaultValue: "{{label}}: {{state}}", label, state: on ? t("myResumePage.onFile", "on file") : t("myResumePage.notOnFile", "not on file") })}
     </Badge>
   )
 }
 
-const REMOVED_REASON: Record<string, string> = {
-  employer: "Employer not in anything you've given us",
-  title: "Job title not in anything you've given us",
-  dates: "Dates not in anything you've given us",
-  education: "Education not in anything you've given us",
-  certification: "Certification not in anything you've given us",
-  number: "A number that isn't in anything you've given us",
-  activity: "A claim nothing you've given us backs up",
-  training: "Training not in anything you've given us",
-  assessment: "Assessment wording — kept off your résumé",
+// Resolved at render (hooks cannot run at module level): the key is stored, t() is called where it is shown.
+const REMOVED_REASON: Record<string, { key: string; text: string }> = {
+  employer: { key: "myResumePage.removedReason.employer", text: "Employer not in anything you've given us" },
+  title: { key: "myResumePage.removedReason.title", text: "Job title not in anything you've given us" },
+  dates: { key: "myResumePage.removedReason.dates", text: "Dates not in anything you've given us" },
+  education: { key: "myResumePage.removedReason.education", text: "Education not in anything you've given us" },
+  certification: { key: "myResumePage.removedReason.certification", text: "Certification not in anything you've given us" },
+  number: { key: "myResumePage.removedReason.number", text: "A number that isn't in anything you've given us" },
+  activity: { key: "myResumePage.removedReason.activity", text: "A claim nothing you've given us backs up" },
+  training: { key: "myResumePage.removedReason.training", text: "Training not in anything you've given us" },
+  assessment: { key: "myResumePage.removedReason.assessment", text: "Assessment wording — kept off your résumé" },
 }
 
 /** RW2 — what the check took out, and what the role asks for that the résumé doesn't show. */
 function TailoredNotes({ resume }: { resume: GeneratedResume }) {
+  const { t } = useTranslation("userPages")
   const removed: RemovedLine[] = resume.removed ?? []
   const notEvidenced = resume.notEvidenced ?? []
   return (
     <div className="space-y-3 rounded-md border bg-muted/30 p-3 text-sm" data-testid="resume-tailored-notes">
       {removed.length ? (
         <section data-testid="resume-removed">
-          <h3 className="mb-1 font-semibold">Taken out — not in anything you've given us ({removed.length})</h3>
+          <h3 className="mb-1 font-semibold">{t("myResumePage.takenOutHeading", { defaultValue: "Taken out — not in anything you've given us ({{total}})", total: removed.length })}</h3>
           <p className="mb-1 text-xs text-muted-foreground">
-            The draft only keeps what your résumé shows. If one of these is true, add it to your résumé and draft again.
+            {t("myResumePage.theDraftOnlyKeepsWhatYour", "The draft only keeps what your résumé shows. If one of these is true, add it to your résumé and draft again.")}
           </p>
           <ul className="list-disc space-y-0.5 pl-5">
             {removed.map((r, i) => (
               <li key={`${r.reason}-${i}`}>
-                <span className="text-muted-foreground">{REMOVED_REASON[r.reason] ?? "Not in anything you've given us"}:</span>{" "}
+                <span className="text-muted-foreground">{REMOVED_REASON[r.reason] ? t(REMOVED_REASON[r.reason].key, REMOVED_REASON[r.reason].text) : t("myResumePage.notInAnythingYouveGivenUs", "Not in anything you've given us")}:</span>{" "}
                 {r.text}
               </li>
             ))}
@@ -134,14 +138,14 @@ function TailoredNotes({ resume }: { resume: GeneratedResume }) {
         </section>
       ) : (
         <p data-testid="resume-removed-none" className="text-xs text-muted-foreground">
-          Nothing was taken out: every line was found in your résumé.
+          {t("myResumePage.nothingWasTakenOutEveryLine", "Nothing was taken out: every line was found in your résumé.")}
         </p>
       )}
       {notEvidenced.length ? (
         <section data-testid="resume-not-evidenced">
-          <h3 className="mb-1 font-semibold">This role also asks for</h3>
+          <h3 className="mb-1 font-semibold">{t("myResumePage.thisRoleAlsoAsksFor", "This role also asks for")}</h3>
           <p className="mb-1 text-xs text-muted-foreground">
-            Your résumé doesn&apos;t show these yet, so the draft doesn&apos;t claim them.
+            {t("myResumePage.yourResumeDoesntShowTheseYet", "Your résumé doesn't show these yet, so the draft doesn't claim them.")}
           </p>
           <ul className="list-disc space-y-0.5 pl-5">
             {notEvidenced.map((a) => (
@@ -155,24 +159,25 @@ function TailoredNotes({ resume }: { resume: GeneratedResume }) {
 }
 
 function ResumeView({ resume, name }: { resume: GeneratedResume; name: string }) {
+  const { t } = useTranslation("userPages")
   return (
     <div className="space-y-4" data-testid="resume-draft">
       <div>
         <h2 className="text-xl font-semibold">{name}</h2>
         {resume.headline ? <p className="text-sm font-medium text-teal-700">{resume.headline}</p> : null}
         {resume.target ? (
-          <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">Target — {resume.target}</p>
+          <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{t("myResumePage.targetLine", { defaultValue: "Target — {{target}}", target: resume.target })}</p>
         ) : null}
       </div>
       {resume.summary ? (
         <section>
-          <h3 className="mb-1 text-sm font-semibold">Professional summary</h3>
+          <h3 className="mb-1 text-sm font-semibold">{t("myResumePage.professionalSummary", "Professional summary")}</h3>
           <p className="text-sm leading-relaxed">{resume.summary}</p>
         </section>
       ) : null}
       {resume.competencies.length ? (
         <section>
-          <h3 className="mb-1 text-sm font-semibold">Core competencies</h3>
+          <h3 className="mb-1 text-sm font-semibold">{t("myResumePage.coreCompetencies", "Core competencies")}</h3>
           <div className="flex flex-wrap gap-1.5">
             {resume.competencies.map((c) => (
               <Badge key={c} variant="secondary">
@@ -184,7 +189,7 @@ function ResumeView({ resume, name }: { resume: GeneratedResume; name: string })
       ) : null}
       {resume.experience.length ? (
         <section>
-          <h3 className="mb-1 text-sm font-semibold">Experience</h3>
+          <h3 className="mb-1 text-sm font-semibold">{t("myResumePage.experience", "Experience")}</h3>
           <div className="space-y-3">
             {resume.experience.map((e, i) => (
               <div key={`${e.title}-${i}`}>
@@ -206,8 +211,8 @@ function ResumeView({ resume, name }: { resume: GeneratedResume; name: string })
         </section>
       ) : null}
       {[
-        ["Education", resume.education],
-        ["Certifications", resume.certifications],
+        [t("myResumePage.education", "Education"), resume.education],
+        [t("myResumePage.certifications", "Certifications"), resume.certifications],
       ].map(([title, items]) =>
         (items as string[]).length ? (
           <section key={title as string}>
@@ -221,7 +226,7 @@ function ResumeView({ resume, name }: { resume: GeneratedResume; name: string })
         ) : null,
       )}
       <p className="border-t pt-2 text-xs text-muted-foreground">
-        {resume.sources.length ? `Drafted from: ${resume.sources.join(" · ")}. ` : ""}
+        {resume.sources.length ? t("myResumePage.draftedFrom", { defaultValue: "Drafted from: {{list}}. ", list: resume.sources.join(" · ") }) : ""}
         {resume.disclaimer}
       </p>
     </div>
@@ -229,6 +234,7 @@ function ResumeView({ resume, name }: { resume: GeneratedResume; name: string })
 }
 
 export default function MyResumePage() {
+  const { t } = useTranslation("userPages")
   const { user } = useAuth()
   const [params, setParams] = useSearchParams()
   const jobId = params.get("jobId") || undefined
@@ -254,7 +260,7 @@ export default function MyResumePage() {
     link: "",
   }))
 
-  const name = user?.fullName || "My résumé"
+  const name = user?.fullName || t("myResumePage.myResume", "My résumé")
   const data = sources.data
   const result = generate.data
   const draft = result && !isResumeWriterDisabled(result) ? result : null
@@ -364,9 +370,9 @@ export default function MyResumePage() {
     if (!draft) return
     try {
       await navigator.clipboard.writeText(doc ? documentToPlainText(doc) : resumeToPlainText(draft, name))
-      toast.success("Résumé copied.")
+      toast.success(t("myResumePage.resumeCopied", "Résumé copied."))
     } catch {
-      toast.error("Couldn't copy. Select the text and copy it instead.")
+      toast.error(t("myResumePage.couldntCopySelectTheTextAnd", "Couldn't copy. Select the text and copy it instead."))
     }
   }
 
@@ -379,7 +385,7 @@ export default function MyResumePage() {
         : await renderResumePdf(draft, name)
       downloadBlob(fileName, blob)
     } catch {
-      toast.error("Couldn't build the PDF. Try again, or use Copy.")
+      toast.error(t("myResumePage.couldntBuildThePdfTryAgain", "Couldn't build the PDF. Try again, or use Copy."))
     } finally {
       setExporting(false)
     }
@@ -394,7 +400,7 @@ export default function MyResumePage() {
         : await renderResumeDocx(draft, name)
       downloadBlob(fileName, blob)
     } catch {
-      toast.error("Couldn't build the Word file. Try again, or use Copy.")
+      toast.error(t("myResumePage.couldntBuildTheWordFileTry", "Couldn't build the Word file. Try again, or use Copy."))
     } finally {
       setExporting(false)
     }
@@ -407,7 +413,7 @@ export default function MyResumePage() {
       <UserLayout>
         <div className="mx-auto w-full max-w-6xl p-4 md:p-6">
           <p role="status" className="text-sm text-muted-foreground" data-testid="resume-writer-loading">
-            Loading the Résumé Writer…
+            {t("myResumePage.loadingTheResumeWriter", "Loading the Résumé Writer…")}
           </p>
         </div>
       </UserLayout>
@@ -422,15 +428,15 @@ export default function MyResumePage() {
           <header className="flex items-start gap-3">
             <ScrollText className="mt-1 h-6 w-6 text-teal-700" aria-hidden="true" />
             <div>
-              <h1 className="text-2xl font-semibold">Résumé Writer</h1>
+              <h1 className="text-2xl font-semibold">{t("myResumePage.resumeWriter", "Résumé Writer")}</h1>
               <p className="text-sm text-muted-foreground">
-                A few short steps: what it&apos;s for, your information, the job — then review it with the assistant.
+                {t("myResumePage.aFewShortStepsWhatIts", "A few short steps: what it's for, your information, the job — then review it with the assistant.")}
               </p>
             </div>
           </header>
           {sources.isError ? (
             <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {apiErrorMessage(sources.error, "Couldn't load what you have on file. Try again in a moment.")}
+              {apiErrorMessage(sources.error, t("myResumePage.couldntLoadOnFile", "Couldn't load what you have on file. Try again in a moment."))}
             </div>
           ) : null}
           <GuidedResumeWriter
@@ -460,16 +466,16 @@ export default function MyResumePage() {
         <header className="flex items-start gap-3">
           <ScrollText className="mt-1 h-6 w-6 text-teal-700" aria-hidden="true" />
           <div>
-            <h1 className="text-2xl font-semibold">Résumé Writer</h1>
+            <h1 className="text-2xl font-semibold">{t("myResumePage.resumeWriter", "Résumé Writer")}</h1>
             <p className="text-sm text-muted-foreground">
-              Draft your résumé from the résumé, bio and assessments you have on file, aimed at the role you want.
+              {t("myResumePage.draftYourResumeFromTheResume", "Draft your résumé from the résumé, bio and assessments you have on file, aimed at the role you want.")}
             </p>
           </div>
         </header>
 
         {sources.isError ? (
           <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {apiErrorMessage(sources.error, "Couldn't load what you have on file. Try again in a moment.")}
+            {apiErrorMessage(sources.error, t("myResumePage.couldntLoadOnFile", "Couldn't load what you have on file. Try again in a moment."))}
           </div>
         ) : null}
 
@@ -479,7 +485,7 @@ export default function MyResumePage() {
             data-testid="resume-writer-off"
             className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
           >
-            Résumé Writer is turned off right now. Your documents are still on file; try again later.
+            {t("myResumePage.resumeWriterIsTurnedOffRight", "Résumé Writer is turned off right now. Your documents are still on file; try again later.")}
           </div>
         ) : null}
 
@@ -487,38 +493,37 @@ export default function MyResumePage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">What&apos;s on file</CardTitle>
-                <CardDescription>Your draft is written only from these. Nothing is invented.</CardDescription>
+                <CardTitle className="text-base">{t("myResumePage.whatsOnFile", "What's on file")}</CardTitle>
+                <CardDescription>{t("myResumePage.yourDraftIsWrittenOnlyFrom", "Your draft is written only from these. Nothing is invented.")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {sources.isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
+                  <p className="text-sm text-muted-foreground">{t("myResumePage.loading", "Loading…")}</p>
                 ) : data ? (
                   <>
                     <div className="flex flex-wrap gap-2">
-                      <SourceChip on={data.sources.resume} label="Résumé" />
-                      <SourceChip on={data.sources.bio} label="Bio" />
-                      <SourceChip on={data.sources.assessments.length > 0} label="Assessments" />
+                      <SourceChip on={data.sources.resume} label={t("myResumePage.resume", "Résumé")} />
+                      <SourceChip on={data.sources.bio} label={t("myResumePage.bio", "Bio")} />
+                      <SourceChip on={data.sources.assessments.length > 0} label={t("myResumePage.assessments", "Assessments")} />
                     </div>
                     {data.sources.assessments.length ? (
                       <p className="text-xs text-muted-foreground">
-                        Assessments: {data.sources.assessments.join(", ")}
+                        {t("myResumePage.assessmentsList", { defaultValue: "Assessments: {{list}}", list: data.sources.assessments.join(", ") })}
                       </p>
                     ) : null}
                     {!hasText ? (
                       <div data-testid="resume-no-source" className="rounded-md border border-dashed p-3 text-sm">
-                        <p className="font-medium">Add your résumé or bio first</p>
+                        <p className="font-medium">{t("myResumePage.addYourResumeOrBioFirst", "Add your résumé or bio first")}</p>
                         <p className="mt-1 text-muted-foreground">
-                          With neither on file, a draft would rest on your assessments alone and could not list your
-                          experience.
+                          {t("myResumePage.withNeitherOnFileADraft", "With neither on file, a draft would rest on your assessments alone and could not list your experience.")}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           <Button size="sm" variant="outline" onClick={() => setUploadTarget(RESUME_UPLOAD)}>
                             <FileUp className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                            Add your résumé
+                            {t("myResumePage.addYourResume", "Add your résumé")}
                           </Button>
                           <Button size="sm" variant="ghost" onClick={() => setUploadTarget(BIO_UPLOAD)}>
-                            Add a bio
+                            {t("myResumePage.addABio", "Add a bio")}
                           </Button>
                         </div>
                       </div>
@@ -526,7 +531,7 @@ export default function MyResumePage() {
                     {data.documents.length ? (
                       <fieldset className="space-y-2">
                         <legend className="text-xs font-medium text-muted-foreground">
-                          Also use these documents (optional)
+                          {t("myResumePage.alsoUseTheseDocumentsOptional", "Also use these documents (optional)")}
                         </legend>
                         {data.documents.map((d) => (
                           <div key={d.id} className="flex items-center gap-2">
@@ -550,8 +555,8 @@ export default function MyResumePage() {
             {optionsOn && data ? (
               <Card data-testid="resume-format-card">
                 <CardHeader>
-                  <CardTitle className="text-base">Format</CardTitle>
-                  <CardDescription>How the résumé is laid out. Pick the one that fits what it&apos;s for.</CardDescription>
+                  <CardTitle className="text-base">{t("myResumePage.format", "Format")}</CardTitle>
+                  <CardDescription>{t("myResumePage.howTheResumeIsLaidOut", "How the résumé is laid out. Pick the one that fits what it's for.")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResumeFormatPanel
@@ -572,30 +577,30 @@ export default function MyResumePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Target</CardTitle>
+                <CardTitle className="text-base">{t("myResumePage.target", "Target")}</CardTitle>
                 <CardDescription>
                   {tailoredRole
-                    ? "Built on your current résumé and aimed at this role."
-                    : "Optional. Without one, the draft follows your own background."}
+                    ? t("myResumePage.builtOnYourCurrentResumeAnd", "Built on your current résumé and aimed at this role.")
+                    : t("myResumePage.optionalTarget", "Optional. Without one, the draft follows your own background.")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {roleUnavailable ? (
                   <p role="status" data-testid="resume-role-unavailable" className="text-xs text-amber-700">
-                    That role isn&apos;t available to you, so this draft follows the target you type below.
+                    {t("myResumePage.thatRoleIsntAvailableToYou", "That role isn't available to you, so this draft follows the target you type below.")}
                   </p>
                 ) : null}
                 {roleIgnored ? (
                   <p role="status" data-testid="resume-role-ignored" className="text-xs text-amber-700">
-                    Aiming the draft at a Career Fit role isn&apos;t on right now — name the role below.
+                    {t("myResumePage.aimingTheDraftAtACareer", "Aiming the draft at a Career Fit role isn't on right now — name the role below.")}
                   </p>
                 ) : null}
                 {goalTarget ? (
                   <div data-testid="resume-goal-target" className="space-y-2 rounded-md border border-dashed border-teal-300 p-3">
-                    <p className="text-xs text-muted-foreground">You set this role as your goal target.</p>
+                    <p className="text-xs text-muted-foreground">{t("myResumePage.youSetThisRoleAsYour", "You set this role as your goal target.")}</p>
                     <Button size="sm" variant="outline" onClick={() => pickGoalTarget(goalTarget)}>
                       <Target className="mr-1.5 h-4 w-4 text-teal-700" aria-hidden="true" />
-                      Tailor to your goal target: {goalTarget.title}
+                      {t("myResumePage.tailorToGoalTarget", { defaultValue: "Tailor to your goal target: {{title}}", title: goalTarget.title })}
                     </Button>
                   </div>
                 ) : null}
@@ -609,47 +614,46 @@ export default function MyResumePage() {
                       ) : null}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Every role on your résumé is kept and rewritten toward what this role asks for. Anything that
-                      isn&apos;t in your résumé is taken out and listed with the draft.
+                      {t("myResumePage.everyRoleOnYourResumeIs", "Every role on your résumé is kept and rewritten toward what this role asks for. Anything that isn't in your résumé is taken out and listed with the draft.")}
                     </p>
                     {!hasResume && data ? (
                       <p data-testid="resume-tailored-needs-resume" className="text-xs text-amber-700">
-                        Add your résumé first — this draft is built on the one you have.
+                        {t("myResumePage.addYourResumeFirstThisDraft", "Add your résumé first — this draft is built on the one you have.")}
                       </p>
                     ) : null}
                     <Button size="sm" variant="ghost" onClick={clearRole}>
-                      Write without this role instead
+                      {t("myResumePage.writeWithoutThisRoleInstead", "Write without this role instead")}
                     </Button>
                   </div>
                 ) : null}
                 {tailoredRole ? null : (
                   <>
                     <div className="space-y-1">
-                      <Label htmlFor="rw-role">Role</Label>
+                      <Label htmlFor="rw-role">{t("myResumePage.role", "Role")}</Label>
                       <Input
                         id="rw-role"
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
-                        placeholder="e.g. Operations Manager"
+                        placeholder={t("myResumePage.eGOperationsManager", "e.g. Operations Manager")}
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="rw-area">Career area</Label>
+                      <Label htmlFor="rw-area">{t("myResumePage.careerArea", "Career area")}</Label>
                       <Input
                         id="rw-area"
                         value={careerArea}
                         onChange={(e) => setCareerArea(e.target.value)}
-                        placeholder="e.g. Healthcare administration"
+                        placeholder={t("myResumePage.eGHealthcareAdministration", "e.g. Healthcare administration")}
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="rw-jd">Job description</Label>
+                      <Label htmlFor="rw-jd">{t("myResumePage.jobDescription", "Job description")}</Label>
                       <Textarea
                         id="rw-jd"
                         rows={5}
                         value={positionText}
                         onChange={(e) => setPositionText(e.target.value)}
-                        placeholder="Paste a job posting to aim the draft at it"
+                        placeholder={t("myResumePage.pasteAJobPostingToAim", "Paste a job posting to aim the draft at it")}
                       />
                     </div>
                   </>
@@ -661,22 +665,22 @@ export default function MyResumePage() {
                     ) : (
                       <Sparkles className="mr-1.5 h-4 w-4" aria-hidden="true" />
                     )}
-                    {generate.isPending ? "Drafting…" : "Generate résumé"}
+                    {generate.isPending ? t("myResumePage.drafting", "Drafting…") : t("myResumePage.generateResume", "Generate résumé")}
                   </Button>
                   {data && limit > 0 ? (
                     <span className="text-xs text-muted-foreground" data-testid="resume-left-today">
-                      {left} of {limit} left today
+                      {t("myResumePage.leftToday", { defaultValue: "{{left}} of {{limit}} left today", left, limit })}
                     </span>
                   ) : null}
                 </div>
                 {limitReached ? (
                   <p role="status" data-testid="resume-limit-reached" className="text-xs text-amber-700">
-                    You&apos;ve used today&apos;s {limit} drafts. You can draft again tomorrow.
+                    {t("myResumePage.limitReached", { defaultValue: "You've used today's {{limit}} drafts. You can draft again tomorrow.", limit })}
                   </p>
                 ) : null}
                 {generate.isError ? (
                   <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    {apiErrorMessage(generate.error, "The draft couldn't be written. Try again in a moment.")}
+                    {apiErrorMessage(generate.error, t("myResumePage.theDraftCouldntBeWrittenTry", "The draft couldn't be written. Try again in a moment."))}
                   </div>
                 ) : null}
               </CardContent>
@@ -685,8 +689,8 @@ export default function MyResumePage() {
             {optionsOn ? (
               <Card data-testid="resume-contact-card">
                 <CardHeader>
-                  <CardTitle className="text-base">Contact details</CardTitle>
-                  <CardDescription>For the top of your downloaded résumé.</CardDescription>
+                  <CardTitle className="text-base">{t("myResumePage.contactDetails", "Contact details")}</CardTitle>
+                  <CardDescription>{t("myResumePage.forTheTopOfYourDownloaded", "For the top of your downloaded résumé.")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResumeContactFields value={contact} onChange={setContact} />
@@ -698,22 +702,22 @@ export default function MyResumePage() {
           <Card className="min-h-[24rem]">
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
               <div>
-                <CardTitle className="text-base">Your draft</CardTitle>
-                <CardDescription>Review it before you use it. You can generate again any time today.</CardDescription>
+                <CardTitle className="text-base">{t("myResumePage.yourDraft", "Your draft")}</CardTitle>
+                <CardDescription>{t("myResumePage.reviewItBeforeYouUseIt", "Review it before you use it. You can generate again any time today.")}</CardDescription>
               </div>
               {draft ? (
                 <div className="flex shrink-0 gap-2">
                   <Button size="sm" variant="outline" onClick={onCopy}>
                     <Copy className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                    Copy
+                    {t("myResumePage.copy", "Copy")}
                   </Button>
                   <Button size="sm" variant="outline" onClick={onDownloadWord} disabled={exporting}>
                     <FileText className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                    Download Word
+                    {t("myResumePage.downloadWord", "Download Word")}
                   </Button>
                   <Button size="sm" onClick={onDownload} disabled={exporting}>
                     <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                    {exporting ? "Building…" : "Download PDF"}
+                    {exporting ? t("myResumePage.building", "Building…") : t("myResumePage.downloadPdf", "Download PDF")}
                   </Button>
                 </div>
               ) : null}
@@ -732,15 +736,17 @@ export default function MyResumePage() {
                       )}
                     >
                       {pages > pageLimit
-                        ? `This résumé runs to ${pages} pages. USAJOBS won't accept more than ${pageLimit} — shorten it or draft again before you upload it.`
-                        : `This résumé is ${pages} page${pages === 1 ? "" : "s"} as a PDF (USAJOBS allows ${pageLimit}). Check the Word file is too.`}
+                        ? t("myResumePage.pagesOverLimit", { defaultValue: "This résumé runs to {{pages}} pages. USAJOBS won't accept more than {{pageLimit}} — shorten it or draft again before you upload it.", pages, pageLimit })
+                        : pages === 1
+                          ? t("myResumePage.pagesWithinLimitOne", { defaultValue: "This résumé is {{pages}} page as a PDF (USAJOBS allows {{pageLimit}}). Check the Word file is too.", pages, pageLimit })
+                          : t("myResumePage.pagesWithinLimitOther", { defaultValue: "This résumé is {{pages}} pages as a PDF (USAJOBS allows {{pageLimit}}). Check the Word file is too.", pages, pageLimit })}
                     </p>
                   ) : null}
                   <ResumeCrosswalk rows={draft.qualifications_crosswalk ?? []} />
                   <ResumeTalkingPoints points={draft.talking_points ?? []} />
                   <ResumeDocumentView
                     doc={doc}
-                    footnote={`${draft.sources.length ? `Drafted from: ${draft.sources.join(" · ")}. ` : ""}${draft.disclaimer}`}
+                    footnote={`${draft.sources.length ? t("myResumePage.draftedFrom", { defaultValue: "Drafted from: {{list}}. ", list: draft.sources.join(" · ") }) : ""}${draft.disclaimer}`}
                   />
                   <ResumeMiniCardPanel draft={draft} contact={contact} />
                 </div>
@@ -751,7 +757,7 @@ export default function MyResumePage() {
                 </div>
               ) : (
                 <p className="py-16 text-center text-sm text-muted-foreground">
-                  {generate.isPending ? "Drafting your résumé…" : "Your draft will appear here."}
+                  {generate.isPending ? t("myResumePage.draftingYourResume", "Drafting your résumé…") : t("myResumePage.yourDraftWillAppearHere", "Your draft will appear here.")}
                 </p>
               )}
             </CardContent>

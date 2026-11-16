@@ -14,6 +14,8 @@
  */
 import { ExternalLink, ClipboardCopy, CheckCircle2, Clock } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -26,10 +28,12 @@ import {
 import { useActivePrismRequests } from '@/hooks/prism/usePrismRequest'
 import { QUEST_TYPE_OPTIONS } from '@/constants/prism'
 
-function questTypeLabel(qtypeId: number | null): string {
-  if (qtypeId == null) return 'PRISM questionnaire'
+function questTypeLabel(qtypeId: number | null, t: TFunction): string {
+  if (qtypeId == null) return t('activeRequest.questionnaireDefault', { defaultValue: 'PRISM questionnaire' })
   const match = QUEST_TYPE_OPTIONS.find((o) => o.id === qtypeId)
-  return match ? `${match.label} questionnaire` : `Questionnaire type ${qtypeId}`
+  return match
+    ? t('activeRequest.questionnaireNamed', { defaultValue: '{{type}} questionnaire', type: match.label })
+    : t('activeRequest.questionnaireTypeId', { defaultValue: 'Questionnaire type {{id}}', id: qtypeId })
 }
 
 function formatRequested(iso: string | null | undefined): string | null {
@@ -40,6 +44,7 @@ function formatRequested(iso: string | null | undefined): string | null {
 }
 
 export default function ActivePrismRequestCard() {
+  const { t } = useTranslation('prismUi')
   const { active, isLoading } = useActivePrismRequests()
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -55,7 +60,7 @@ export default function ActivePrismRequestCard() {
 
   return (
     <div className="space-y-3" data-testid="active-prism-requests">
-      <h2 className="text-lg font-semibold">Your open PRISM surveys</h2>
+      <h2 className="text-lg font-semibold">{t('activeRequest.heading', { defaultValue: 'Your open PRISM surveys' })}</h2>
       {active.map(({ row, questionnaireUrl }) => {
         const requested = formatRequested(row.requested_at ?? row.created_at)
         return (
@@ -63,15 +68,15 @@ export default function ActivePrismRequestCard() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Clock className="h-4 w-4 text-amber-500" />
-                {questTypeLabel(row.qtype_id)}
+                {questTypeLabel(row.qtype_id, t)}
                 <Badge variant="outline" className="ml-1 font-normal">
-                  In progress
+                  {t('activeRequest.inProgress', { defaultValue: 'In progress' })}
                 </Badge>
               </CardTitle>
               <CardDescription>
                 {requested
-                  ? `Requested ${requested}`
-                  : 'Requested — not yet completed'}
+                  ? t('activeRequest.requestedOn', { defaultValue: 'Requested {{date}}', date: requested })
+                  : t('activeRequest.requestedPending', { defaultValue: 'Requested — not yet completed' })}
                 {row.email ? ` · ${row.email}` : null}
               </CardDescription>
             </CardHeader>
@@ -88,7 +93,7 @@ export default function ActivePrismRequestCard() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        Open Questionnaire
+                        {t('activeRequest.openQuestionnaire', { defaultValue: 'Open Questionnaire' })}
                         <ExternalLink className="ml-1 h-3.5 w-3.5" />
                       </a>
                     </Button>
@@ -102,14 +107,18 @@ export default function ActivePrismRequestCard() {
                       ) : (
                         <ClipboardCopy className="mr-1 h-3.5 w-3.5" />
                       )}
-                      {copiedId === row.id ? 'Copied' : 'Copy link'}
+                      {copiedId === row.id
+                        ? t('activeRequest.copied', { defaultValue: 'Copied' })
+                        : t('activeRequest.copyLink', { defaultValue: 'Copy link' })}
                     </Button>
                   </div>
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  PRISM has not issued a questionnaire link for this request
-                  yet. It will appear here once they do.
+                  {t('activeRequest.noLinkYet', {
+                    defaultValue:
+                      'PRISM has not issued a questionnaire link for this request yet. It will appear here once they do.',
+                  })}
                 </p>
               )}
             </CardContent>

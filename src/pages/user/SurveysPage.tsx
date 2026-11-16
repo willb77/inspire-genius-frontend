@@ -48,6 +48,7 @@ import SurveyTaker from "@/components/survey/SurveyTaker"
 import SurveyBuilder from "@/components/survey/SurveyBuilder"
 import SurveyResults from "@/components/survey/SurveyResults"
 import SurveyUploadDialog from "@/components/survey/SurveyUploadDialog"
+import { Trans, useTranslation } from "react-i18next"
 
 type BuilderState =
   | { mode: "list" }
@@ -65,6 +66,7 @@ function toInput(s: Survey): SurveyInput {
 }
 
 export default function SurveysPage() {
+  const { t } = useTranslation("userPages")
   const auth = useAuth()
   const role: UserRole = (auth.user?.role as UserRole) ?? "user"
   // Explicit sets rather than `isAtLeast`. The values currently coincide with a
@@ -134,25 +136,25 @@ export default function SurveysPage() {
       : createSurvey.mutateAsync(input)
     mut
       .then(() => {
-        toast.success(isExisting ? "Survey updated." : "Survey created.")
+        toast.success(isExisting ? t("surveysPage.surveyUpdated", "Survey updated.") : t("surveysPage.surveyCreated", "Survey created."))
         setBuilder({ mode: "list" })
       })
-      .catch(() => toast.error("Could not save the survey."))
+      .catch(() => toast.error(t("surveysPage.couldNotSaveTheSurvey", "Could not save the survey.")))
   }
 
   const handleDelete = (id: string) => {
     deleteSurvey
       .mutateAsync(id)
-      .then(() => toast.success("Survey deleted."))
-      .catch(() => toast.error("Could not delete the survey."))
+      .then(() => toast.success(t("surveysPage.surveyDeleted", "Survey deleted.")))
+      .catch(() => toast.error(t("surveysPage.couldNotDeleteTheSurvey", "Could not delete the survey.")))
   }
 
   const handleToggleEnabled = (s: Survey) => {
     const next = !s.enabled
     updateSurvey
       .mutateAsync({ id: s.id, input: { ...toInput(s), enabled: next } })
-      .then(() => toast.success(next ? "Survey is now available." : "Survey hidden."))
-      .catch(() => toast.error("Could not change availability."))
+      .then(() => toast.success(next ? t("surveysPage.surveyIsNowAvailable", "Survey is now available.") : t("surveysPage.surveyHidden", "Survey hidden.")))
+      .catch(() => toast.error(t("surveysPage.couldNotChangeAvailability", "Could not change availability.")))
   }
 
   const handleSubmitResponse = (surveyId: string, answers: Record<string, unknown>) => {
@@ -167,12 +169,11 @@ export default function SurveysPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <ClipboardList className="h-4 w-4" aria-hidden />
-                Surveys aren&apos;t available for your role
+                {t("surveysPage.surveysArentAvailableForYourRole", "Surveys aren't available for your role")}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Your account&apos;s role is not recognised by the survey surface,
-              so there is nothing to show here.
+              {t("surveysPage.yourAccountsRoleIsNotRecognised", "Your account's role is not recognised by the survey surface, so there is nothing to show here.")}
             </CardContent>
           </Card>
         </div>
@@ -188,20 +189,20 @@ export default function SurveysPage() {
             <ClipboardList className="h-5 w-5" aria-hidden />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold">Surveys</h1>
+            <h1 className="text-2xl font-semibold">{t("surveysPage.surveys", "Surveys")}</h1>
             <p className="text-sm text-muted-foreground">
               {isAuthor
-                ? "Build a survey, expose it to your organization, and see the results."
-                : "Take the surveys shared with your organization."}
+                ? t("surveysPage.buildASurveyExposeItTo", "Build a survey, expose it to your organization, and see the results.")
+                : t("surveysPage.takeTheSurveysSharedWithYour", "Take the surveys shared with your organization.")}
             </p>
           </div>
         </header>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="mb-4">
-            {canTake && <TabsTrigger value="take">Take a survey</TabsTrigger>}
-            {isAuthor && <TabsTrigger value="build">Build surveys</TabsTrigger>}
-            {isAuthor && <TabsTrigger value="results">Results</TabsTrigger>}
+            {canTake && <TabsTrigger value="take">{t("surveysPage.takeASurvey", "Take a survey")}</TabsTrigger>}
+            {isAuthor && <TabsTrigger value="build">{t("surveysPage.buildSurveys", "Build surveys")}</TabsTrigger>}
+            {isAuthor && <TabsTrigger value="results">{t("surveysPage.results", "Results")}</TabsTrigger>}
           </TabsList>
 
           {/* -------------------------------------------------------- Take --- */}
@@ -210,7 +211,7 @@ export default function SurveysPage() {
               <CardContent className="pt-6">
                 {takeQuery.isLoading ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading surveys…
+                    <Loader2 className="h-4 w-4 animate-spin" /> {t("surveysPage.loadingSurveys", "Loading surveys…")}
                   </div>
                 ) : (
                   <SurveySelector
@@ -232,7 +233,7 @@ export default function SurveysPage() {
             ) : (
               takeSurveys.length > 0 && (
                 <p className="text-center text-sm text-muted-foreground">
-                  Pick a survey above to begin.
+                  {t("surveysPage.pickASurveyAboveToBegin", "Pick a survey above to begin.")}
                 </p>
               )
             )}
@@ -244,15 +245,15 @@ export default function SurveysPage() {
               {builder.mode === "list" && (
                 <>
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-medium">Your surveys</h2>
+                    <h2 className="text-lg font-medium">{t("surveysPage.yourSurveys", "Your surveys")}</h2>
                     <div className="flex gap-2">
                       <Button variant="outline" onClick={() => setUploadOpen(true)}>
                         <Sparkles className="mr-2 h-4 w-4" />
-                        Upload / paste
+                        {t("surveysPage.uploadPaste", "Upload / paste")}
                       </Button>
                       <Button onClick={() => setBuilder({ mode: "new" })}>
                         <Plus className="mr-2 h-4 w-4" />
-                        New survey
+                        {t("surveysPage.newSurvey", "New survey")}
                       </Button>
                     </div>
                   </div>
@@ -260,15 +261,23 @@ export default function SurveysPage() {
                   {manageQuery.isLoading ? (
                     <Card>
                       <CardContent className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                        <Loader2 className="h-4 w-4 animate-spin" /> {t("surveysPage.loading", "Loading…")}
                       </CardContent>
                     </Card>
                   ) : manageSurveys.length === 0 ? (
                     <Card>
                       <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                        No surveys yet. Click <strong>New survey</strong> to add your
-                        questions, or <strong>Upload / paste</strong> to build one from
-                        text.
+                        <Trans
+                          i18nKey="surveysPage.noSurveysYet"
+                          ns="userPages"
+                          defaults="No surveys yet. Click <1>{{newSurvey}}</1> to add your questions, or <3>{{uploadPaste}}</3> to build one from text."
+                          values={{ newSurvey: t("surveysPage.newSurvey", "New survey"), uploadPaste: t("surveysPage.uploadPaste", "Upload / paste") }}
+                          components={{ 1: <strong />, 3: <strong /> }}
+                        >
+                          No surveys yet. Click <strong>{t("surveysPage.newSurvey", "New survey")}</strong> to add your
+                          questions, or <strong>{t("surveysPage.uploadPaste", "Upload / paste")}</strong> to build one from
+                          text.
+                        </Trans>
                       </CardContent>
                     </Card>
                   ) : (
@@ -278,7 +287,7 @@ export default function SurveysPage() {
                           <CardHeader className="flex flex-row items-start justify-between gap-3">
                             <div className="min-w-0">
                               <CardTitle className="text-base">
-                                {s.title || "Untitled survey"}
+                                {s.title || t("surveysPage.untitledSurvey", "Untitled survey")}
                               </CardTitle>
                               {s.description && (
                                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
@@ -287,23 +296,22 @@ export default function SurveysPage() {
                               )}
                               <div className="mt-2 flex flex-wrap items-center gap-2">
                                 <Badge variant={s.enabled ? "default" : "outline"}>
-                                  {s.enabled ? "Available" : "Off"}
+                                  {s.enabled ? t("surveysPage.statusAvailable", "Available") : t("surveysPage.statusOff", "Off")}
                                 </Badge>
                                 <Badge variant="secondary">
-                                  {s.questions.length}{" "}
-                                  {s.questions.length === 1 ? "question" : "questions"}
+                                  {t("surveysPage.questionCount", { count: s.questions.length, defaultValue_one: "{{count}} question", defaultValue_other: "{{count}} questions" })}
                                 </Badge>
                                 <Badge variant="outline">
-                                  {s.responseCount ?? 0} responses
+                                  {t("surveysPage.responseCount", { defaultValue: "{{count}} responses", count: s.responseCount ?? 0 })}
                                 </Badge>
                                 {s.orgId && (
-                                  <Badge variant="outline">org: {s.orgId}</Badge>
+                                  <Badge variant="outline">{t("surveysPage.orgBadge", { defaultValue: "org: {{org}}", org: s.orgId })}</Badge>
                                 )}
                               </div>
                               {(s.createdByName || s.createdByEmail) && (
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  Created by {s.createdByName || "—"}
-                                  {s.createdByEmail ? ` · ${s.createdByEmail}` : ""}
+                                  {t("surveysPage.createdBy", { defaultValue: "Created by {{name}}", name: s.createdByName || "—" })}
+                                  {s.createdByEmail ? t("surveysPage.createdByEmail", { defaultValue: " · {{email}}", email: s.createdByEmail }) : ""}
                                 </p>
                               )}
                             </div>
@@ -311,13 +319,13 @@ export default function SurveysPage() {
                               <Switch
                                 checked={!!s.enabled}
                                 onCheckedChange={() => handleToggleEnabled(s)}
-                                aria-label={`Toggle availability for ${s.title || "survey"}`}
+                                aria-label={t("surveysPage.toggleAvailability", { defaultValue: "Toggle availability for {{title}}", title: s.title || t("surveysPage.surveyFallback", "survey") })}
                               />
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setBuilder({ mode: "edit", survey: s })}
-                                aria-label={`Edit ${s.title || "survey"}`}
+                                aria-label={t("surveysPage.editSurvey", { defaultValue: "Edit {{title}}", title: s.title || t("surveysPage.surveyFallback", "survey") })}
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -325,7 +333,7 @@ export default function SurveysPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDelete(s.id)}
-                                aria-label={`Delete ${s.title || "survey"}`}
+                                aria-label={t("surveysPage.deleteSurvey", { defaultValue: "Delete {{title}}", title: s.title || t("surveysPage.surveyFallback", "survey") })}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -365,7 +373,7 @@ export default function SurveysPage() {
                     surveys={manageSurveys}
                     value={selectedResultsId}
                     onChange={setSelectedResultsId}
-                    label="Select a survey to see results"
+                    label={t("surveysPage.selectASurveyToSeeResults", "Select a survey to see results")}
                     id="results-selector"
                   />
                 </CardContent>
@@ -375,7 +383,7 @@ export default function SurveysPage() {
               ) : (
                 manageSurveys.length > 0 && (
                   <p className="text-center text-sm text-muted-foreground">
-                    Pick a survey above to see its results.
+                    {t("surveysPage.pickASurveyAboveToSee", "Pick a survey above to see its results.")}
                   </p>
                 )
               )}
