@@ -1,0 +1,165 @@
+{
+  "validation": {
+    "firstName": {
+      "required": "First name is required",
+      "max": "First name must be {{max}} characters or fewer"
+    },
+    "lastName": {
+      "required": "Last name is required",
+      "max": "Last name must be {{max}} characters or fewer"
+    },
+    "region": {
+      "required": "Region is required",
+      "max": "Region must be {{max}} characters or fewer"
+    },
+    "country": {
+      "required": "Country is required",
+      "max": "Country must be {{max}} characters or fewer"
+    },
+    "phone": {
+      "max": "Phone must be {{max}} characters or fewer"
+    },
+    "organisation": {
+      "max": "Organisation must be {{max}} characters or fewer",
+      "requiredForSetting": "Organisation is required for a company or education setting"
+    },
+    "roleOther": {
+      "max": "Role must be {{max}} characters or fewer",
+      "describe": "Please describe your role"
+    },
+    "siteId": {
+      "max": "PRISM site ID must be {{max}} characters or fewer"
+    },
+    "contextOther": {
+      "max": "Setting must be {{max}} characters or fewer",
+      "describe": "Please describe the setting"
+    },
+    "heardFrom": {
+      "max": "This answer must be {{max}} characters or fewer"
+    },
+    "email": {
+      "required": "Email is required",
+      "max": "Email must be {{max}} characters or fewer",
+      "invalid": "Enter a valid email address"
+    },
+    "role": {
+      "choose": "Choose the option that best describes you"
+    },
+    "prism": {
+      "choose": "Tell us whether you are PRISM accredited"
+    },
+    "context": {
+      "choose": "Choose where you would use Inspires Genius"
+    }
+  },
+  "brand": {
+    "settings": {
+      "individuals": "Individuals",
+      "teams": "Teams",
+      "organisations": "Organisations",
+      "education": "Education",
+      "enterprise": "Enterprise",
+      "title": "For every setting",
+      "body": "One platform, sized to the work.",
+      "aria": "Settings"
+    },
+    "nextStep": {
+      "join": "No account and nothing to install. Tick the first box to hear when the next webinar is scheduled.",
+      "events": "No account and nothing to install. Register your interest to hear when the next event is announced."
+    },
+    "eyebrow": "Register your interest",
+    "headingLead": "Support every client",
+    "headingAccent": "between sessions",
+    "intro": "Inspires Genius gives mentors and practitioners an AI mentoring partner that works alongside them, so clients keep making progress after the session ends.",
+    "offersAria": "What Inspires Genius offers",
+    "practitioners": {
+      "title": "Built for practitioners",
+      "body": "Invite your clients, follow their progress, and give each one an AI mentor that is there between your sessions."
+    },
+    "assessments": {
+      "title": "Works with the assessments you already use",
+      "body": "(DISC, CliftonStrengths, MBTI, Big Five) grounded in PRISM to enhance all mentoring results."
+    },
+    "whatNext": "What happens next"
+  },
+  "events": {
+    "loading": "Loading events…",
+    "listAria": "Upcoming events",
+    "title": "Upcoming events",
+    "backToRegister": "← Register your interest",
+    "error": "We could not load the events just now. Please try again in a few minutes.",
+    "notOpen": "No events are scheduled yet. Register your interest and tick the webinar box to hear when the next one is announced.",
+    "empty": "No upcoming events right now"
+  },
+  "formError": {
+    "rate_limited": "There have been too many submissions from your connection. Please try again later.",
+    "too_large": "That submission was too long to send. Please shorten your answers and try again.",
+    "network": "We couldn't reach the server. Check your connection and try again.",
+    "server": "Something went wrong on our side. Please try again in a few minutes.",
+    "invalid": "We couldn't accept that submission. Please check your answers and try again."
+  },
+  "roles": {
+    "practitioner": "PRISM practitioner",
+    "distributor": "PRISM distributor",
+    "career_coach": "Career coach",
+    "education_coach": "Education coach",
+    "mentor": "Mentor",
+    "hr": "HR professional",
+    "recruiter": "Recruiter",
+    "company": "Company leader or manager",
+    "other": "Other"
+  },
+  "prismOptions": {
+    "yes": "Yes",
+    "no": "No",
+    "not_sure": "Not sure"
+  },
+  "contexts": {
+    "individual": "As an individual",
+    "company": "In a company",
+    "education": "In education",
+    "other": "Other"
+  },
+  "consent": {
+    "webinar_email": "Email me when an Inspires Genius webinar session is scheduled.",
+    "mailing_list": "Add me to the Inspires Genius mailing list for occasional news.",
+    "legend": "Keeping in touch (optional)"
+  },
+  "chooseOne": "Choose one",
+  "success": {
+    "title": "Thank you",
+    "body": "We've received your details. Thank you for your interest in Inspires Genius."
+  },
+  "notOpen": {
+    "title": "Registration isn't open yet",
+    "body": "Registration isn't open yet. Please check back soon.",
+    "back": "Back to the form"
+  },
+  "form": {
+    "aria": "Register your interest"
+  },
+  "fields": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "phone": "Phone (optional)",
+    "role": "Which best describes you?",
+    "roleOther": "Your role",
+    "prism": "Are you PRISM accredited?",
+    "siteId": "PRISM site ID (optional)",
+    "context": "Where would you use Inspires Genius?",
+    "contextOther": "Describe the setting",
+    "organisation": "Organisation",
+    "organisationOptional": "Organisation (optional)",
+    "region": "State, province or region",
+    "country": "Country",
+    "heardFrom": "How did you hear about us? (optional)"
+  },
+  "honeypotLabel": "Leave this field empty",
+  "submit": "Register your interest",
+  "header": {
+    "title": "Register your interest",
+    "subtitle": "Inspires Genius is an AI mentoring platform. Leave your details below to register your interest."
+  },
+  "seeEvents": "See upcoming events →"
+}

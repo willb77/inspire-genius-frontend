@@ -19,8 +19,10 @@ import type { FormValues } from "@/types/onboarding";
 import { useCreateProfileMutation } from "@/hooks/onboarding/useCreateProfile";
 import { useAuth } from "@/context/useAuth";
 import { DeclareOrganisation } from "@/components/org/DeclareOrganisation";
+import { useTranslation } from "react-i18next";
 
 export default function OnboardingDetailsOne() {
+  const { t } = useTranslation("onboardingPages");
   const navigate = useNavigate();
   const { markFullName } = useAuth();
 
@@ -81,9 +83,9 @@ export default function OnboardingDetailsOne() {
 
         <div className="bg-white rounded-2xl shadow-[4px_4px_20px_4px_rgba(0,0,0,0.1)] p-6 md:p-8">
           <div className="text-center space-y-1">
-            <h2 className="text-2xl font-semibold">Tell us more about you</h2>
+            <h2 className="text-2xl font-semibold">{t("details.title", { defaultValue: "Tell us more about you" })}</h2>
             <p className="text-sm text-muted-foreground">
-              Fill the forms below to add your details.
+              {t("details.subtitle", { defaultValue: "Fill the forms below to add your details." })}
             </p>
           </div>
 
@@ -97,16 +99,16 @@ export default function OnboardingDetailsOne() {
                 control={form.control}
                 name="firstName"
                 rules={{
-                  required: "First name is required",
-                  minLength: { value: 2, message: "First name must be at least 2 characters" },
-                  pattern: { value: /^[A-Za-z][A-Za-z\s'-]*$/, message: "Only letters, spaces, hyphen and apostrophe allowed" },
+                  required: t("details.firstName.required", { defaultValue: "First name is required" }),
+                  minLength: { value: 2, message: t("details.firstName.minLength", { defaultValue: "First name must be at least 2 characters" }) },
+                  pattern: { value: /^[A-Za-z][A-Za-z\s'-]*$/, message: t("details.namePattern", { defaultValue: "Only letters, spaces, hyphen and apostrophe allowed" }) },
                 }}
                 render={({ field }) => (
                   <FormItem className="relative">
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your first name (e.g. John)"
+                        placeholder={t("details.firstName.placeholder", { defaultValue: "Enter your first name (e.g. John)" })}
                         className="peer h-11 w-full rounded-md border border-gray-10 bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
                       />
                     </FormControl>
@@ -120,16 +122,16 @@ export default function OnboardingDetailsOne() {
                 control={form.control}
                 name="lastName"
                 rules={{
-                  required: "Last name is required",
-                  minLength: { value: 1, message: "Last name must be at least 1 character" },
-                  pattern: { value: /^[A-Za-z][A-Za-z\s'-]*$/, message: "Only letters, spaces, hyphen and apostrophe allowed" },
+                  required: t("details.lastName.required", { defaultValue: "Last name is required" }),
+                  minLength: { value: 1, message: t("details.lastName.minLength", { defaultValue: "Last name must be at least 1 character" }) },
+                  pattern: { value: /^[A-Za-z][A-Za-z\s'-]*$/, message: t("details.namePattern", { defaultValue: "Only letters, spaces, hyphen and apostrophe allowed" }) },
                 }}
                 render={({ field }) => (
                   <FormItem className="relative">
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your last name (e.g. Doe)"
+                        placeholder={t("details.lastName.placeholder", { defaultValue: "Enter your last name (e.g. Doe)" })}
                         className="peer h-11 w-full rounded-md border border-gray-10 bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
                       />
                     </FormControl>
@@ -143,10 +145,10 @@ export default function OnboardingDetailsOne() {
                 control={form.control}
                 name="dob"
                 rules={{
-                  required: "Date of birth is required",
+                  required: t("details.dob.required", { defaultValue: "Date of birth is required" }),
                   validate: (v: string) => {
                     const d = parse(v, "d LLL yyyy", new Date());
-                    if (!isValid(d)) return "Invalid date";
+                    if (!isValid(d)) return t("details.dob.invalid", { defaultValue: "Invalid date" });
                     const today = new Date();
                     const cutoff = new Date(
                       today.getFullYear() - 13,
@@ -155,7 +157,7 @@ export default function OnboardingDetailsOne() {
                     );
                     cutoff.setHours(0, 0, 0, 0);
                     d.setHours(0, 0, 0, 0);
-                    if (d > cutoff) return "You must be at least 13 years old";
+                    if (d > cutoff) return t("details.dob.tooYoung", { defaultValue: "You must be at least 13 years old" });
                     return true;
                   },
                 }}
@@ -166,7 +168,7 @@ export default function OnboardingDetailsOne() {
                       onChange={(v) => {
                         field.onChange(v);
                       }}
-                      placeholder="Select your date of birth"
+                      placeholder={t("details.dob.placeholder", { defaultValue: "Select your date of birth" })}
                       minDate={new Date(1900, 0, 1)}
                       maxDate={(() => { const t=new Date(); return new Date(t.getFullYear()-13, t.getMonth(), t.getDate()); })()}
                     />
@@ -181,11 +183,11 @@ export default function OnboardingDetailsOne() {
                 name="about"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2 col-span-1 relative mt-2">
-                    <p className="text-left text-[10px] font-normal text-muted-foreground">Share a few lines about your goals and background (optional)</p>
+                    <p className="text-left text-[10px] font-normal text-muted-foreground">{t("details.about.label", { defaultValue: "Share a few lines about your goals and background (optional)" })}</p>
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="e.g I am student preparing for exams"
+                        placeholder={t("details.about.placeholder", { defaultValue: "e.g I am student preparing for exams" })}
                         className="min-h-24 w-full rounded-md border border-gray-10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
                       />
                     </FormControl>
@@ -195,7 +197,7 @@ export default function OnboardingDetailsOne() {
 
               <div className="md:col-span-2 col-span-1 mt-2 flex justify-end">
                 <Button type="submit" className="h-11 w-52" disabled={createProfile.isPending}>
-                  Next
+                  {t("details.next", { defaultValue: "Next" })}
                 </Button>
               </div>
             </form>

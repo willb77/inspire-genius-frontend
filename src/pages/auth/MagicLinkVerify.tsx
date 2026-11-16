@@ -7,8 +7,10 @@ import { useAuth } from "@/context/useAuth"
 import { getToken } from "@/lib/storage"
 import { ROUTES } from "@/constants/routes"
 import type { LoginDataPayload } from "@/types/auth/api-types"
+import { useTranslation } from "react-i18next"
 
 export default function MagicLinkVerify() {
+  const { t: ta } = useTranslation('authPages')
   const [params] = useSearchParams()
   const token = params.get("token") ?? ""
   const { completeAuthFromPayload } = useAuth()
@@ -29,7 +31,7 @@ export default function MagicLinkVerify() {
           if (!payload?.access_token) return
           const email = payload.email ?? ""
           await completeAuthFromPayload(payload, email, {
-            message: resp?.message ?? "Signed in successfully",
+            message: resp?.message ?? ta("verify.signedIn", { defaultValue: "Signed in successfully" }),
           })
           // Honor standalone entry stashes a post-auth intent so a coach who
           // signed in from /honor lands in the workbench, not the generic home.
@@ -81,15 +83,14 @@ export default function MagicLinkVerify() {
     return (
       <AuthLayout>
         <AuthHeader
-          title="This sign-in link has expired"
-          subtitle="Sign-in links work once, and only for 15 minutes"
+          title={ta("verify.expiredTitle", { defaultValue: "This sign-in link has expired" })}
+          subtitle={ta("verify.expiredSubtitle", { defaultValue: "Sign-in links work once, and only for 15 minutes" })}
         />
         <p className="text-sm text-muted-foreground text-center mt-4">
-          If you already opened this link, it has been used. Older emails
-          won&rsquo;t work either — request a fresh one and use the newest email.
+          {ta("verify.expiredBody", { defaultValue: "If you already opened this link, it has been used. Older emails won’t work either — request a fresh one and use the newest email." })}
         </p>
         <p className="text-sm text-center mt-4">
-          <Link className="underline" to={ROUTES.LOGIN}>Send me a new sign-in link</Link>
+          <Link className="underline" to={ROUTES.LOGIN}>{ta("verify.sendNew", { defaultValue: "Send me a new sign-in link" })}</Link>
         </p>
       </AuthLayout>
     )
@@ -98,7 +99,7 @@ export default function MagicLinkVerify() {
   return (
     <AuthLayout>
       <div className="text-center space-y-4">
-        <AuthHeader title="Verifying..." subtitle="Please wait while we sign you in" />
+        <AuthHeader title={ta("verify.verifying", { defaultValue: "Verifying..." })} subtitle={ta("verify.pleaseWait", { defaultValue: "Please wait while we sign you in" })} />
         <div className="animate-spin mx-auto size-8 border-4 border-teal-200 border-t-teal-600 rounded-full" />
       </div>
     </AuthLayout>

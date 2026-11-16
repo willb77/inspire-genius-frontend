@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import AuthHeader from "@/components/auth/AuthHeader"
 import AuthLayout from "@/components/auth/AuthLayout"
 import { ROUTES } from "@/constants/routes"
@@ -42,6 +43,7 @@ function EventItem({ event }: { event: PublicEvent }) {
  * - a network or server error → a visible `role="alert"`.
  */
 export default function EventsPage() {
+  const { t } = useTranslation("joinPages")
   const events = usePublicEvents()
   const data = events.data
 
@@ -49,30 +51,30 @@ export default function EventsPage() {
   if (events.isPending) {
     body = (
       <p role="status" aria-busy="true" className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading events…
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> {t("events.loading", { defaultValue: "Loading events…" })}
       </p>
     )
   } else if (events.isError || !data) {
     body = (
       <p role="alert" className="rounded-lg border border-destructive/40 px-4 py-6 text-sm text-destructive">
-        {EVENTS_ERROR_COPY}
+        {t("events.error", { defaultValue: EVENTS_ERROR_COPY })}
       </p>
     )
   } else if (data.kind === "not_open") {
     body = (
       <p role="status" className={STATUS_CLASS}>
-        {EVENTS_NOT_OPEN_COPY}
+        {t("events.notOpen", { defaultValue: EVENTS_NOT_OPEN_COPY })}
       </p>
     )
   } else if (data.events.length === 0) {
     body = (
       <p role="status" className={STATUS_CLASS}>
-        {EVENTS_EMPTY_COPY}
+        {t("events.empty", { defaultValue: EVENTS_EMPTY_COPY })}
       </p>
     )
   } else {
     body = (
-      <ul className="flex flex-col gap-3" aria-label="Upcoming events">
+      <ul className="flex flex-col gap-3" aria-label={t("events.listAria", { defaultValue: "Upcoming events" })}>
         {data.events.map((e, i) => (
           <EventItem key={`${e.starts_at}-${i}`} event={e} />
         ))}
@@ -86,12 +88,12 @@ export default function EventsPage() {
       showTestimonial={false}
       brandPanel={<JoinBrandPanel nextStep={EVENTS_NEXT_STEP} />}
     >
-      <AuthHeader title="Upcoming events" />
+      <AuthHeader title={t("events.title", { defaultValue: "Upcoming events" })} />
       {body}
       <p className="mt-6 text-sm">
         {/* A plain anchor, not a router Link: the page renders with no router. */}
         <a href={ROUTES.JOIN} className="font-medium text-[#466bc4] underline-offset-4 hover:underline">
-          ← Register your interest
+          {t("events.backToRegister", { defaultValue: "← Register your interest" })}
         </a>
       </p>
     </AuthLayout>

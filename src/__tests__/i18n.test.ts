@@ -131,10 +131,19 @@ describe("Locale file existence", () => {
   });
 
   it("every namespace file exists for every language", () => {
+    // A namespace registered in scripts/i18n/pending/ is English-only until its translation run
+    // (I18N-5 extraction adds en first), so it is not part of the six-file set. The parity gate
+    // (scripts/i18n/check_parity.mjs) owns tracking those.
+    const pendingDir = path.resolve(LOCALES_DIR, "../../scripts/i18n/pending");
+    const pending = new Set(
+      fs.existsSync(pendingDir)
+        ? fs.readdirSync(pendingDir).filter((f) => f.endsWith(".json"))
+        : []
+    );
     for (const lang of SUPPORTED_LNGS) {
       const files = fs
         .readdirSync(path.join(LOCALES_DIR, lang))
-        .filter((f) => f.endsWith(".json"));
+        .filter((f) => f.endsWith(".json") && !pending.has(f));
       expect(files.length).toBe(NAMESPACES.length);
     }
   });

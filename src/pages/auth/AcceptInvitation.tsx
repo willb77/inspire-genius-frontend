@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { useState } from "react"
 import { passwordMeetsRule } from "@/lib/house/passwordRule"
 import { PasswordChecklist } from "@/components/shared/house/PasswordChecklist"
+import { useTranslation } from "react-i18next"
 
 type FormValues = {
   new_password: string
@@ -17,6 +18,7 @@ type FormValues = {
 }
 
 export default function AcceptInvitation() {
+  const { t: ta } = useTranslation('authPages')
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const mutation = useAcceptInvitation()
@@ -35,7 +37,7 @@ export default function AcceptInvitation() {
   const onSubmit = async (values: FormValues) => {
     const token = params.get('token') || ''
     if (!token) {
-      toast.error('Invalid or missing invitation token')
+      toast.error(ta("invitation.toast.invalidToken", { defaultValue: "Invalid or missing invitation token" }))
       return
     }
     const res = await mutation.mutateAsync({ invitation_token: token, new_password: values.new_password })
@@ -44,13 +46,13 @@ export default function AcceptInvitation() {
   }
 
   return (
-    <AuthLayout leftTitleOne="Upload. Ask." leftTitleTwo="Analyze. Achieve." subTitle="Set a strong password to activate your account.">
-      <AuthHeader title="Accept Invitation" subtitle="Create your password to continue" />
+    <AuthLayout leftTitleOne={ta("invitation.leftTitleOne", { defaultValue: "Upload. Ask." })} leftTitleTwo={ta("invitation.leftTitleTwo", { defaultValue: "Analyze. Achieve." })} subTitle={ta("invitation.leftSubtitle", { defaultValue: "Set a strong password to activate your account." })}>
+      <AuthHeader title={ta("invitation.title", { defaultValue: "Accept Invitation" })} subtitle={ta("invitation.subtitle", { defaultValue: "Create your password to continue" })} />
 
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-        <div role="group" aria-label="New password" onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
+        <div role="group" aria-label={ta("invitation.newPasswordGroup", { defaultValue: "New password" })} onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
           <PasswordField
-            placeholder="Enter New Password"
+            placeholder={ta("invitation.newPasswordPlaceholder", { defaultValue: "Enter New Password" })}
             value={newPasswordValue}
             onChange={(e) => setValue("new_password", e.target.value, { shouldDirty: true, shouldTouch: true, shouldValidate: true })}
           />
@@ -61,22 +63,22 @@ export default function AcceptInvitation() {
 
         <div>
           <PasswordField
-            placeholder="Confirm New Password"
+            placeholder={ta("invitation.confirmPasswordPlaceholder", { defaultValue: "Confirm New Password" })}
             value={confirmValue}
             onChange={(e) => setValue("confirm_password", e.target.value, { shouldDirty: true, shouldTouch: true, shouldValidate: true })}
           />
           {dirtyFields.confirm_password && confirmValue && newPasswordValue !== confirmValue && (
-            <p className="text-left mt-2 text-xs text-red-500">Passwords do not match</p>
+            <p className="text-left mt-2 text-xs text-red-500">{ta("invitation.passwordsDoNotMatch", { defaultValue: "Passwords do not match" })}</p>
           )}
         </div>
 
         <Button type="submit" className="w-full mt-2" disabled={mutation.isPending || !newPasswordValue || !confirmValue || !passwordOk || newPasswordValue !== confirmValue}>
-          {mutation.isPending ? "Saving..." : "Set Password"}
+          {mutation.isPending ? ta("invitation.saving", { defaultValue: "Saving..." }) : ta("invitation.submit", { defaultValue: "Set Password" })}
         </Button>
       </form>
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
-        Already have an account? <Link className="underline" to={ROUTES.LOGIN}>Log In</Link>
+        {ta("invitation.hasAccount", { defaultValue: "Already have an account?" })} <Link className="underline" to={ROUTES.LOGIN}>{ta("invitation.logIn", { defaultValue: "Log In" })}</Link>
       </p>
     </AuthLayout>
   )
