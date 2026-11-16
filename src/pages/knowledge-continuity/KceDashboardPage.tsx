@@ -1,4 +1,6 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import {
   BookOpenCheck,
   Gauge,
@@ -52,11 +54,20 @@ const VALIDITY_BADGE_CLASS = {
   deprecated: "bg-slate-100 text-slate-500 border-slate-200",
 } as const
 
-const VALIDITY_LABELS: Record<keyof typeof VALIDITY_BADGE_CLASS, string> = {
-  validated: "Validated",
-  provisional: "Provisional",
-  needs_review: "Needs review",
-  deprecated: "Deprecated",
+type ValidityBand = keyof typeof VALIDITY_BADGE_CLASS
+const VALIDITY_BANDS: ValidityBand[] = ["validated", "provisional", "needs_review", "deprecated"]
+
+function validityLabel(t: TFunction, band: ValidityBand): string {
+  switch (band) {
+    case "validated":
+      return t("dashboard.validity.validated", "Validated")
+    case "provisional":
+      return t("dashboard.validity.provisional", "Provisional")
+    case "needs_review":
+      return t("dashboard.validity.needs_review", "Needs review")
+    case "deprecated":
+      return t("dashboard.validity.deprecated", "Deprecated")
+  }
 }
 
 // Chart fills for the validity-band distribution — meaningful, theme-consistent.
@@ -68,18 +79,34 @@ const VALIDITY_FILL: Record<keyof typeof VALIDITY_BADGE_CLASS, string> = {
 }
 
 // The capture pipeline funnel, in flow order.
-const CAPTURE_STAGES: { key: keyof CaptureSessionStats; label: string }[] = [
-  { key: "scheduled", label: "Scheduled" },
-  { key: "in_progress", label: "In progress" },
-  { key: "captured", label: "Captured" },
-  { key: "synthesized", label: "Synthesized" },
-  { key: "validated", label: "Validated" },
+const CAPTURE_STAGE_KEYS: (keyof CaptureSessionStats)[] = [
+  "scheduled",
+  "in_progress",
+  "captured",
+  "synthesized",
+  "validated",
 ]
 
+function captureStageLabel(t: TFunction, key: keyof CaptureSessionStats): string {
+  switch (key) {
+    case "scheduled":
+      return t("dashboard.stage.scheduled", "Scheduled")
+    case "in_progress":
+      return t("dashboard.stage.in_progress", "In progress")
+    case "captured":
+      return t("dashboard.stage.captured", "Captured")
+    case "synthesized":
+      return t("dashboard.stage.synthesized", "Synthesized")
+    default:
+      return t("dashboard.stage.validated", "Validated")
+  }
+}
+
 function NoDataYet() {
+  const { t } = useTranslation("kcPages")
   return (
     <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
-      No data yet.
+      {t("dashboard.noDataYet", "No data yet.")}
     </div>
   )
 }
@@ -136,21 +163,20 @@ function StatCardSkeletons() {
 function ValidityDistributionCard({
   bands,
 }: {
-  bands: Record<keyof typeof VALIDITY_LABELS, number>
+  bands: Record<ValidityBand, number>
 }) {
-  const data = (Object.keys(VALIDITY_LABELS) as (keyof typeof VALIDITY_LABELS)[]).map(
-    (band) => ({
-      label: VALIDITY_LABELS[band],
-      count: bands[band],
-      fill: VALIDITY_FILL[band],
-    })
-  )
+  const { t } = useTranslation("kcPages")
+  const data = VALIDITY_BANDS.map((band) => ({
+    label: validityLabel(t, band),
+    count: bands[band],
+    fill: VALIDITY_FILL[band],
+  }))
   const total = data.reduce((sum, d) => sum + d.count, 0)
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Validity-band distribution</CardTitle>
+        <CardTitle className="text-base">{t("dashboard.validityDistributionTitle", "Validity-band distribution")}</CardTitle>
       </CardHeader>
       <CardContent>
         {total === 0 ? (
@@ -167,7 +193,10 @@ function ValidityDistributionCard({
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "currentColor" }} className="text-muted-foreground" />
               <Tooltip
                 cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
-                formatter={(value: number) => [`${value} units`, "Count"]}
+                formatter={(value: number) => [
+                  t("dashboard.tooltipUnits", { defaultValue: "{{value}} units", value }),
+                  t("dashboard.tooltipCount", "Count"),
+                ]}
               />
               <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                 {data.map((entry) => (
@@ -183,16 +212,17 @@ function ValidityDistributionCard({
 }
 
 function CapturePipelineCard({ sessions }: { sessions: CaptureSessionStats }) {
-  const data = CAPTURE_STAGES.map((stage) => ({
-    label: stage.label,
-    count: sessions[stage.key],
+  const { t } = useTranslation("kcPages")
+  const data = CAPTURE_STAGE_KEYS.map((key) => ({
+    label: captureStageLabel(t, key),
+    count: sessions[key],
   }))
   const total = data.reduce((sum, d) => sum + d.count, 0)
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Capture pipeline</CardTitle>
+        <CardTitle className="text-base">{t("dashboard.capturePipelineTitle", "Capture pipeline")}</CardTitle>
       </CardHeader>
       <CardContent>
         {total === 0 ? (
@@ -214,7 +244,10 @@ function CapturePipelineCard({ sessions }: { sessions: CaptureSessionStats }) {
               />
               <Tooltip
                 cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
-                formatter={(value: number) => [`${value} sessions`, "Count"]}
+                formatter={(value: number) => [
+                  t("dashboard.tooltipSessions", { defaultValue: "{{value}} sessions", value }),
+                  t("dashboard.tooltipCount", "Count"),
+                ]}
               />
               <Bar dataKey="count" fill="#127A8A" radius={[0, 4, 4, 0]} />
             </BarChart>
@@ -233,6 +266,7 @@ function CapturePipelineCard({ sessions }: { sessions: CaptureSessionStats }) {
  * language — no raw PRISM dimension names surfaced here.
  */
 export default function KceDashboardPage() {
+  const { t } = useTranslation("kcPages")
   const { data: analytics, isLoading, isError, error } = useContinuityAnalytics()
 
   return (
@@ -240,10 +274,10 @@ export default function KceDashboardPage() {
       <div>
         <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
           <BookOpenCheck className="h-5 w-5 text-[#127A8A]" />
-          Program Health
+          {t("dashboard.title", "Program Health")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Capture progress, freshness, and knowledge-at-risk across the org.
+          {t("dashboard.subtitle", "Capture progress, freshness, and knowledge-at-risk across the org.")}
         </p>
       </div>
 
@@ -254,7 +288,7 @@ export default function KceDashboardPage() {
       {!isLoading && isError && !isKceAccessDenied(error) && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            We couldn't load Program Health right now. Try again shortly.
+            {t("dashboard.loadError", "We couldn't load Program Health right now. Try again shortly.")}
           </CardContent>
         </Card>
       )}
@@ -262,8 +296,10 @@ export default function KceDashboardPage() {
       {!isLoading && !isError && !analytics && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            No knowledge-capture activity yet. Once sessions are scheduled,
-            program health will show up here.
+            {t(
+              "dashboard.empty",
+              "No knowledge-capture activity yet. Once sessions are scheduled, program health will show up here."
+            )}
           </CardContent>
         </Card>
       )}
@@ -273,70 +309,73 @@ export default function KceDashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <StatCard
               icon={<Gauge className="h-4 w-4" />}
-              label="Mean KVI"
+              label={t("dashboard.stat.meanKvi", "Mean KVI")}
               value={formatPct(analytics.mean_kvi, 0)}
-              hint="knowledge validity index"
+              hint={t("dashboard.stat.meanKviHint", "knowledge validity index")}
             />
             <StatCard
               icon={<Layers className="h-4 w-4" />}
-              label="Coverage"
-              value={`${analytics.coverage.nodes_with_units}/${analytics.coverage.taxonomy_nodes_total} nodes`}
-              hint={`${analytics.coverage.units_total} units captured`}
+              label={t("dashboard.stat.coverage", "Coverage")}
+              value={t("dashboard.stat.coverageValue", { defaultValue: "{{withUnits}}/{{total}} nodes", withUnits: analytics.coverage.nodes_with_units, total: analytics.coverage.taxonomy_nodes_total })}
+              hint={t("dashboard.stat.coverageHint", { defaultValue: "{{units}} units captured", units: analytics.coverage.units_total })}
             />
             <StatCard
               icon={<Clock className="h-4 w-4" />}
-              label="Currency"
+              label={t("dashboard.stat.currency", "Currency")}
               value={formatPct(analytics.currency.pct_fresh, 0)}
-              hint="of captured knowledge is fresh"
+              hint={t("dashboard.stat.currencyHint", "of captured knowledge is fresh")}
             />
             <StatCard
               icon={<Inbox className="h-4 w-4" />}
-              label="Review backlog"
+              label={t("dashboard.stat.reviewBacklog", "Review backlog")}
               value={
                 analytics.review_queue.pending_approvals +
                 analytics.review_queue.unresolved_contradictions
               }
-              hint={`${analytics.review_queue.pending_approvals} pending, ${analytics.review_queue.unresolved_contradictions} contradictions`}
+              hint={t(
+                "dashboard.stat.reviewBacklogHint",
+                { defaultValue: "{{pending}} pending, {{contradictions}} contradictions", pending: analytics.review_queue.pending_approvals, contradictions: analytics.review_queue.unresolved_contradictions }
+              )}
             />
             <StatCard
               icon={<GraduationCap className="h-4 w-4" />}
-              label="Curricula"
+              label={t("dashboard.stat.curricula", "Curricula")}
               value={analytics.curricula.count}
-              hint="published from captured knowledge"
+              hint={t("dashboard.stat.curriculaHint", "published from captured knowledge")}
             />
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Currency of captured knowledge</CardTitle>
+              <CardTitle className="text-base">{t("dashboard.currencyTitle", "Currency of captured knowledge")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Progress value={(analytics.currency.pct_fresh ?? 0) * 100} />
               <p className="text-xs text-muted-foreground">
-                {analytics.currency.fresh_units} fresh · {analytics.currency.stale_units} stale
-                (freshness window: {analytics.fresh_days} days)
+                {t(
+                  "dashboard.currencySummary",
+                  { defaultValue: "{{fresh}} fresh · {{stale}} stale (freshness window: {{days}} days)", fresh: analytics.currency.fresh_units, stale: analytics.currency.stale_units, days: analytics.fresh_days }
+                )}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Validity of captured knowledge</CardTitle>
+              <CardTitle className="text-base">{t("dashboard.validityTitle", "Validity of captured knowledge")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3">
-                {(Object.keys(VALIDITY_LABELS) as (keyof typeof VALIDITY_LABELS)[]).map(
-                  (band) => (
-                    <div key={band} className="flex items-center gap-2">
-                      <Badge variant="outline" className={VALIDITY_BADGE_CLASS[band]}>
-                        {VALIDITY_LABELS[band]}
-                      </Badge>
-                      <span className="text-sm font-medium text-foreground">
-                        {analytics.validity_bands[band]}
-                      </span>
-                    </div>
-                  )
-                )}
+                {VALIDITY_BANDS.map((band) => (
+                  <div key={band} className="flex items-center gap-2">
+                    <Badge variant="outline" className={VALIDITY_BADGE_CLASS[band]}>
+                      {validityLabel(t, band)}
+                    </Badge>
+                    <span className="text-sm font-medium text-foreground">
+                      {analytics.validity_bands[band]}
+                    </span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -350,30 +389,33 @@ export default function KceDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <AlertTriangle className="h-4 w-4 text-red-500" />
-                Knowledge at risk
+                {t("dashboard.atRiskTitle", "Knowledge at risk")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {analytics.risk_register.uncaptured_urgent > 0 && (
                 <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {analytics.risk_register.uncaptured_urgent} urgent{" "}
-                  {analytics.risk_register.uncaptured_urgent === 1 ? "role has" : "roles have"}{" "}
-                  not been captured yet.
+                  {t("dashboard.urgentUncaptured", {
+                    count: analytics.risk_register.uncaptured_urgent,
+                    defaultValue_one: "{{count}} urgent role has not been captured yet.",
+                    defaultValue_other: "{{count}} urgent roles have not been captured yet.",
+    defaultValue: "{{count}} urgent roles have not been captured yet.",
+                  })}
                 </div>
               )}
 
               {analytics.risk_register.top_at_risk.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No roles currently flagged as at risk.
+                  {t("dashboard.noAtRisk", "No roles currently flagged as at risk.")}
                 </p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Role</TableHead>
-                      <TableHead>KRI</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Capture status</TableHead>
+                      <TableHead>{t("dashboard.col.role", "Role")}</TableHead>
+                      <TableHead>{t("dashboard.col.kri", "KRI")}</TableHead>
+                      <TableHead>{t("dashboard.col.priority", "Priority")}</TableHead>
+                      <TableHead>{t("dashboard.col.captureStatus", "Capture status")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
