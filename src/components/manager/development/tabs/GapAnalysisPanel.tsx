@@ -72,6 +72,7 @@ import type {
 import { useCloseGapPlan, useGapAnalysis } from "@/hooks/manager/development"
 import { classifyGap } from "@/lib/developmentGaps"
 import { useDevSkin } from "../skin"
+import { useTranslation } from "react-i18next"
 
 /** TDS-8: why there is nothing in the measured group, in words. */
 const MEASURED_STATE_COPY: Record<Exclude<GapsState, "ok">, string> = {
@@ -130,6 +131,7 @@ export function GapAnalysisPanel({
   gapsState,
   gapsTargetRole,
 }: GapAnalysisPanelProps) {
+  const { t } = useTranslation("managerPages")
   const classified = gapsState !== undefined
   const sk = useDevSkin()
   const targetOptions = useMemo(
@@ -173,7 +175,7 @@ export function GapAnalysisPanel({
         onSuccess: () => {
           setClosingGapId(null)
           toast.success(
-            `${gap.competency} gap closed, with a learning item${gap.goalId ? " and a milestone" : ""} on the plan.`,
+            t("gapAnalysisPanel.gapClosedWithALearning", { defaultValue: "{{competency}} gap closed, with a learning item{{value}} on the plan.", competency: gap.competency, value: gap.goalId ? " and a milestone" : "" }),
           )
         },
         // The hook's message always names what was written and what was not, so
@@ -189,11 +191,11 @@ export function GapAnalysisPanel({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className={cn("text-sm", sk.text600)}>Analyze gaps against a target role.</div>
+        <div className={cn("text-sm", sk.text600)}>{t("gapAnalysisPanel.analyzeGapsAgainstATarget", { defaultValue: "Analyze gaps against a target role." })}</div>
         {targetOptions.length > 0 ? (
           <Select value={targetId} onValueChange={setTargetId}>
-            <SelectTrigger className="w-[240px]" aria-label="Target role">
-              <SelectValue placeholder="Select a target role" />
+            <SelectTrigger className="w-[240px]" aria-label={t("gapAnalysisPanel.targetRole", { defaultValue: "Target role" })}>
+              <SelectValue placeholder={t("gapAnalysisPanel.selectATargetRole", { defaultValue: "Select a target role" })} />
             </SelectTrigger>
             <SelectContent>
               {targetOptions.map((m) => (
@@ -204,7 +206,7 @@ export function GapAnalysisPanel({
             </SelectContent>
           </Select>
         ) : (
-          <span className={cn("text-xs", sk.text400)}>No target roles available yet.</span>
+          <span className={cn("text-xs", sk.text400)}>{t("gapAnalysisPanel.noTargetRolesAvailableYet", { defaultValue: "No target roles available yet." })}</span>
         )}
       </div>
 
@@ -216,9 +218,7 @@ export function GapAnalysisPanel({
             return <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           })()}
           <div>
-            <div className="font-medium">
-              James assessment: {FIT_CLASSIFICATION_LABEL[selectedMatch.classification]} for {selectedMatch.title}
-            </div>
+            <div className="font-medium">{t("gapAnalysisPanel.jamesAssessmentFor", { defaultValue: "James assessment: {{value}} for {{title}}", value: FIT_CLASSIFICATION_LABEL[selectedMatch.classification], title: selectedMatch.title })}</div>
             <p className="mt-0.5 text-xs opacity-90">{selectedMatch.rationale}</p>
           </div>
         </div>
@@ -228,23 +228,17 @@ export function GapAnalysisPanel({
 
       {view === "not_shared" ? (
         <Card className="border-dashed">
-          <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="gaps-not-shared">
-            These development gaps haven&apos;t been shared with you. That isn&apos;t the same as having none.
-          </CardContent>
+          <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="gaps-not-shared">{t("gapAnalysisPanel.theseDevelopmentGapsHavenT", { defaultValue: "These development gaps haven't been shared with you. That isn't the same as having none." })}</CardContent>
         </Card>
       ) : view === "unavailable" ? (
         <Card className="border-dashed">
-          <CardContent className="p-6 text-center text-sm text-amber-700" role="status" data-testid="gaps-unavailable">
-            Gaps couldn&apos;t be loaded right now. That isn&apos;t the same as having none.
-          </CardContent>
+          <CardContent className="p-6 text-center text-sm text-amber-700" role="status" data-testid="gaps-unavailable">{t("gapAnalysisPanel.gapsCouldnTBeLoaded", { defaultValue: "Gaps couldn't be loaded right now. That isn't the same as having none." })}</CardContent>
         </Card>
       ) : view === "loading" ? (
-        <div className={cn("py-10 text-center text-sm", sk.text400)}>Analyzing gaps…</div>
+        <div className={cn("py-10 text-center text-sm", sk.text400)}>{t("gapAnalysisPanel.analyzingGaps", { defaultValue: "Analyzing gaps…" })}</div>
       ) : view === "none" ? (
         <Card className="border-dashed">
-          <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
-            No gaps identified against this target.
-          </CardContent>
+          <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>{t("gapAnalysisPanel.noGapsIdentifiedAgainstThis", { defaultValue: "No gaps identified against this target." })}</CardContent>
         </Card>
       ) : classified ? (
         <ClassifiedGroups
@@ -277,11 +271,11 @@ export function GapAnalysisPanel({
         <CardContent className="space-y-3">
           {opts.levels ? (
             <div className={cn("flex items-center gap-3 text-xs", sk.text500)} data-testid="gap-levels">
-              <span>Current {gap.currentLevel}</span>
+              <span>{t("gapAnalysisPanel.current", { defaultValue: "Current {{currentLevel}}", currentLevel: gap.currentLevel })}</span>
               <div className={cn("h-2 flex-1 overflow-hidden rounded", sk.bgMuted100)}>
                 <div className={cn("h-full rounded", sk.accentBg)} style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
               </div>
-              <span>Target {gap.targetLevel}</span>
+              <span>{t("gapAnalysisPanel.target", { defaultValue: "Target {{targetLevel}}", targetLevel: gap.targetLevel })}</span>
               <Badge variant="secondary" className="capitalize">{opts.label ?? gap.source}</Badge>
             </div>
           ) : (
@@ -293,8 +287,8 @@ export function GapAnalysisPanel({
             <p className={cn("flex items-center gap-1.5 text-xs", sk.text500)}>
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
               {gap.closedReason === "resolved_by_engine"
-                ? "Closed: the latest fit no longer shows this gap."
-                : "Closed. The learning item and milestone stay on the plan."}
+                ? t("gapAnalysisPanel.closedTheLatestFitNo", { defaultValue: "Closed: the latest fit no longer shows this gap." })
+                : t("gapAnalysisPanel.closedTheLearningItemAnd", { defaultValue: "Closed. The learning item and milestone stay on the plan." })}
             </p>
           ) : (
             <Button
@@ -303,7 +297,7 @@ export function GapAnalysisPanel({
               onClick={() => handleClose(gap)}
               disabled={closingGapId === gap.gapId}
             >
-              {closingGapId === gap.gapId ? "Closing…" : "Close this gap"}
+              {closingGapId === gap.gapId ? t("gapAnalysisPanel.closing", { defaultValue: "Closing…" }) : t("gapAnalysisPanel.closeThisGap", { defaultValue: "Close this gap" })}
             </Button>
           )}
         </CardContent>
@@ -326,6 +320,7 @@ function ClassifiedGroups({
   gapsTargetRole?: string | null
   renderGap: RenderGap
 }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   // A row is filed by `engineVersion`, never by `source` — a legacy
   // `behavioral` row is indicative. `unclassified` (a row from an older
@@ -341,18 +336,16 @@ function ClassifiedGroups({
 
   return (
     <div className="space-y-6">
-      <section className="space-y-3" aria-label="Measured gaps" data-testid="gaps-measured">
+      <section className="space-y-3" aria-label={t("gapAnalysisPanel.measuredGaps", { defaultValue: "Measured gaps" })} data-testid="gaps-measured">
         <h3 className={heading}>
-          {gapsState === "ok" && gapsTargetRole ? `Measured against ${gapsTargetRole}` : "Measured gaps"}
+          {gapsState === "ok" && gapsTargetRole ? t("gapAnalysisPanel.measuredAgainst", { defaultValue: "Measured against {{gapsTargetRole}}", gapsTargetRole }) : t("gapAnalysisPanel.measuredGaps", { defaultValue: "Measured gaps" })}
         </h3>
         {gapsState === "ok" ? (
           measured.length > 0 ? (
-            measured.map((g) => renderGap(g, { levels: true, label: "Measured" }))
+            measured.map((g) => renderGap(g, { levels: true, label: t("gapAnalysisPanel.measured", { defaultValue: "Measured" }) }))
           ) : (
             <Card className="border-dashed">
-              <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
-                The latest fit shows no gaps against this role.
-              </CardContent>
+              <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>{t("gapAnalysisPanel.theLatestFitShowsNo", { defaultValue: "The latest fit shows no gaps against this role." })}</CardContent>
             </Card>
           )
         ) : (
@@ -364,22 +357,20 @@ function ClassifiedGroups({
         )}
       </section>
 
-      <section className="space-y-3" aria-label="Indicative gaps" data-testid="gaps-indicative">
-        <h3 className={heading}>Indicative (coaching)</h3>
-        <p className={cn("text-xs", sk.text500)}>
-          Suggested from goals and coaching conversations. These are not measurements, so no levels are shown.
-        </p>
+      <section className="space-y-3" aria-label={t("gapAnalysisPanel.indicativeGaps", { defaultValue: "Indicative gaps" })} data-testid="gaps-indicative">
+        <h3 className={heading}>{t("gapAnalysisPanel.indicativeCoaching", { defaultValue: "Indicative (coaching)" })}</h3>
+        <p className={cn("text-xs", sk.text500)}>{t("gapAnalysisPanel.suggestedFromGoalsAndCoaching", { defaultValue: "Suggested from goals and coaching conversations. These are not measurements, so no levels are shown." })}</p>
         {indicative.length > 0 ? (
-          indicative.map((g) => renderGap(g, { levels: false, label: "Indicative" }))
+          indicative.map((g) => renderGap(g, { levels: false, label: t("gapAnalysisPanel.indicative", { defaultValue: "Indicative" }) }))
         ) : (
-          <p className={cn("text-xs", sk.text400)}>No coaching suggestions yet.</p>
+          <p className={cn("text-xs", sk.text400)}>{t("gapAnalysisPanel.noCoachingSuggestionsYet", { defaultValue: "No coaching suggestions yet." })}</p>
         )}
       </section>
 
       {skill.length > 0 ? (
-        <section className="space-y-3" aria-label="Added gaps" data-testid="gaps-skill">
-          <h3 className={heading}>Added by hand</h3>
-          {skill.map((g) => renderGap(g, { levels: true, label: "Skill" }))}
+        <section className="space-y-3" aria-label={t("gapAnalysisPanel.addedGaps", { defaultValue: "Added gaps" })} data-testid="gaps-skill">
+          <h3 className={heading}>{t("gapAnalysisPanel.addedByHand", { defaultValue: "Added by hand" })}</h3>
+          {skill.map((g) => renderGap(g, { levels: true, label: t("gapAnalysisPanel.skill", { defaultValue: "Skill" }) }))}
         </section>
       ) : null}
     </div>

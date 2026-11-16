@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useOrgChart } from "@/hooks/manager/development/useOrgChart"
 import { ancestorsOf, buildOrgTree, visibleRows, type OrgTreeNode } from "@/lib/orgTree"
+import { useTranslation } from "react-i18next"
 
 /**
  * The organisation's reporting tree — roll up to the top, down any branch.
@@ -39,6 +40,7 @@ import { ancestorsOf, buildOrgTree, visibleRows, type OrgTreeNode } from "@/lib/
 const MAX_DRAWN_DEPTH = 40
 
 export function OrgChartPanel({ memberRoute }: { memberRoute: string }) {
+  const { t } = useTranslation("managerPages")
   const { data, isLoading, isError } = useOrgChart()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
@@ -78,10 +80,7 @@ export function OrgChartPanel({ memberRoute }: { memberRoute: string }) {
     // here would be the dishonest empty state this surface keeps having to
     // defend against.
     return (
-      <p className="text-sm text-slate-500">
-        The organisation chart could not be loaded. This is a load failure, not an empty
-        organisation — try again shortly.
-      </p>
+      <p className="text-sm text-slate-500">{t("orgChartPanel.theOrganisationChartCouldNot", { defaultValue: "The organisation chart could not be loaded. This is a load failure, not an empty organisation — try again shortly." })}</p>
     )
   }
 
@@ -91,39 +90,28 @@ export function OrgChartPanel({ memberRoute }: { memberRoute: string }) {
   // stating something about an organisation that had never been identified.
   if (data?.orgResolved === false) {
     return (
-      <p className="text-sm text-slate-500">
-        We could not work out which organisation you belong to, so there is no chart to
-        show. This is not an empty organisation — your profile does not have one on it.
-      </p>
+      <p className="text-sm text-slate-500">{t("orgChartPanel.weCouldNotWorkOut", { defaultValue: "We could not work out which organisation you belong to, so there is no chart to show. This is not an empty organisation — your profile does not have one on it." })}</p>
     )
   }
 
   if (!roots.length) {
     return (
-      <p className="text-sm text-slate-500">Nobody is on file for your organisation yet.</p>
+      <p className="text-sm text-slate-500">{t("orgChartPanel.nobodyIsOnFileFor", { defaultValue: "Nobody is on file for your organisation yet." })}</p>
     )
   }
 
   return (
     <div className="space-y-3">
       {data?.truncated && (
-        <p className="text-xs text-amber-700">
-          This organisation is larger than the chart can show, so it is cut short. Nobody has
-          been hidden deliberately — the list below is incomplete.
-        </p>
+        <p className="text-xs text-amber-700">{t("orgChartPanel.thisOrganisationIsLargerThan", { defaultValue: "This organisation is larger than the chart can show, so it is cut short. Nobody has been hidden deliberately — the list below is incomplete." })}</p>
       )}
 
       {!hasHierarchy && total > 1 && (
-        <p className="text-xs text-slate-500">
-          No reporting lines are on file yet, so everyone appears at the top level. The
-          chart is built from each person&apos;s manager on their employment record.
-        </p>
+        <p className="text-xs text-slate-500">{t("orgChartPanel.noReportingLinesAreOn", { defaultValue: "No reporting lines are on file yet, so everyone appears at the top level. The chart is built from each person's manager on their employment record." })}</p>
       )}
 
       {chain.length > 0 && (
-        <p className="text-xs text-slate-500">
-          You report up through{" "}
-          {chain.map((a, i) => (
+        <p className="text-xs text-slate-500">{t("orgChartPanel.youReportUpThrough", { defaultValue: "You report up through" })}{" "}{chain.map((a, i) => (
             <span key={a.id}>
               {i > 0 && " › "}
               <span className="font-medium text-slate-700">{a.name}</span>
@@ -152,7 +140,7 @@ export function OrgChartPanel({ memberRoute }: { memberRoute: string }) {
       <div className="w-0 min-w-full overflow-x-auto pb-2">
         <ul
           className="flex w-max min-w-full justify-center gap-2"
-          aria-label="Organisation chart"
+          aria-label={t("orgChartPanel.organisationChart", { defaultValue: "Organisation chart" })}
         >
           {roots.map((node) => (
             <OrgNode
@@ -170,8 +158,8 @@ export function OrgChartPanel({ memberRoute }: { memberRoute: string }) {
 
       <p className="text-xs text-slate-400">
         {rows.length === total
-          ? `${total} ${total === 1 ? "person" : "people"}`
-          : `Showing ${rows.length} of ${total} people — some branches are collapsed.`}
+          ? (total === 1 ? t("orgChartPanel.personCountOne", { defaultValue: "{{total}} person", total }) : t("orgChartPanel.personCountOther", { defaultValue: "{{total}} people", total }))
+          : t("orgChartPanel.showingOfPeopleSomeBranches", { defaultValue: "Showing {{length}} of {{total}} people — some branches are collapsed.", length: rows.length, total })}
       </p>
     </div>
   )
@@ -192,6 +180,7 @@ function OrgNode({
   onToggle: (id: string) => void
   onOpen: (id: string) => void
 }) {
+  const { t } = useTranslation("managerPages")
   const hasChildren = node.children.length > 0
   const isCollapsed = collapsed.has(node.id)
   const tooDeep = depth >= MAX_DRAWN_DEPTH
@@ -233,11 +222,11 @@ function OrgNode({
           type="button"
           onClick={() => onOpen(node.id)}
           className="truncate text-sm font-medium text-slate-800 hover:underline"
-          aria-label={`Open ${node.name}'s workspace`}
+          aria-label={t("orgChartPanel.openSWorkspace", { defaultValue: "Open {{name}}'s workspace", name: node.name })}
           title={node.name}
         >
           {node.name}
-          {node.isViewer && <span className="ml-1 text-xs text-slate-500">(you)</span>}
+          {node.isViewer && <span className="ml-1 text-xs text-slate-500">{t("orgChartPanel.you", { defaultValue: "(you)" })}</span>}
         </button>
 
         {node.title && (
@@ -257,7 +246,7 @@ function OrgNode({
             onClick={() => onToggle(node.id)}
             aria-expanded={!isCollapsed}
             aria-label={
-              isCollapsed ? `Show ${node.name}'s reports` : `Hide ${node.name}'s reports`
+              isCollapsed ? t("orgChartPanel.showSReports", { defaultValue: "Show {{name}}'s reports", name: node.name }) : t("orgChartPanel.hideSReports", { defaultValue: "Hide {{name}}'s reports", name: node.name })
             }
             className="mt-1 flex items-center justify-center gap-1 rounded text-xs text-slate-500 hover:bg-slate-100"
           >
@@ -295,10 +284,7 @@ function OrgNode({
       )}
 
       {hasChildren && !isCollapsed && tooDeep && (
-        <p className="mt-2 max-w-44 text-xs text-amber-700">
-          This branch goes deeper than the chart draws. {node.children.length} more{" "}
-          {node.children.length === 1 ? "person reports" : "people report"} to {node.name}.
-        </p>
+        <p className="mt-2 max-w-44 text-xs text-amber-700">{node.children.length === 1 ? t("orgChartPanel.deeperBranchOne", { defaultValue: "This branch goes deeper than the chart draws. {{length}} more person reports to {{name}}.", length: node.children.length, name: node.name }) : t("orgChartPanel.deeperBranchOther", { defaultValue: "This branch goes deeper than the chart draws. {{length}} more people report to {{name}}.", length: node.children.length, name: node.name })}</p>
       )}
     </li>
   )

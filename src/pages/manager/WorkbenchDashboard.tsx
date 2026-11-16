@@ -7,6 +7,7 @@ import { useAuth } from "@/context/useAuth"
 import { ROUTES } from "@/constants/routes"
 import { useManagerTeam, useManagerInterviews } from "@/hooks/manager/useManagerTeam"
 import type { ManagerTeamMember, ManagerTeamResponse } from "@/types/manager/team"
+import { useTranslation } from "react-i18next"
 
 /**
  * Manager Workbench dashboard — the V2 surface from the manager-workbench
@@ -27,8 +28,9 @@ import type { ManagerTeamMember, ManagerTeamResponse } from "@/types/manager/tea
  * real: `prism_color` is null exactly when no PRISM result exists.
  */
 export default function ManagerWorkbenchDashboard() {
+  const { t } = useTranslation("managerPages")
   const { user } = useAuth()
-  const firstName = (user?.fullName ?? user?.name ?? "").split(" ")[0] || "there"
+  const firstName = (user?.fullName ?? user?.name ?? "").split(" ")[0] || t("workbenchDashboard.there", { defaultValue: "there" })
 
   const teamQ = useManagerTeam()
   const interviewsQ = useManagerInterviews()
@@ -47,7 +49,7 @@ export default function ManagerWorkbenchDashboard() {
     const upcoming: WorkbenchPerson[] = interviews.slice(0, 5).map((iv, i) => ({
       id: iv.id ?? `interview-${i}`,
       name: iv.candidate_name?.trim() || null,
-      meta: [iv.scheduled_at, iv.position].filter(Boolean).join(" · ") || "No date recorded",
+      meta: [iv.scheduled_at, iv.position].filter(Boolean).join(" · ") || t("workbenchDashboard.noDateRecorded", { defaultValue: "No date recorded" }),
       href: ROUTES.MANAGER.INTERVIEWS,
     }))
 
@@ -55,8 +57,8 @@ export default function ManagerWorkbenchDashboard() {
     const attention: WorkbenchPerson[] = prismOutstanding.slice(0, 5).map((m) => ({
       id: m.id,
       name: m.name?.trim() || null,
-      meta: "No PRISM result on file",
-      badge: "PRISM outstanding",
+      meta: t("workbenchDashboard.noPrismResultOnFile", { defaultValue: "No PRISM result on file" }),
+      badge: t("workbenchDashboard.prismOutstanding", { defaultValue: "PRISM outstanding" }),
       badgeTone: "muted" as const,
       href: ROUTES.MANAGER.TEAM,
     }))
@@ -66,49 +68,49 @@ export default function ManagerWorkbenchDashboard() {
     // to look like an empty team.
     const emptyMessage =
       team?.empty_reason === "no_assignments"
-        ? "Nobody is assigned to you yet. An administrator assigns direct reports."
-        : "No one on your roster is missing a PRISM result."
+        ? t("workbenchDashboard.nobodyIsAssignedToYou", { defaultValue: "Nobody is assigned to you yet. An administrator assigns direct reports." })
+        : t("workbenchDashboard.noOneOnYourRoster", { defaultValue: "No one on your roster is missing a PRISM result." })
 
     return {
       role: "manager",
       hero: "gradient",
-      greeting: `Good morning, ${firstName}`,
-      subtitle: `${members.length} on your roster · ${prismOutstanding.length} without a PRISM result.`,
+      greeting: t("workbenchDashboard.goodMorning", { defaultValue: "Good morning, {{firstName}}", firstName }),
+      subtitle: t("workbenchDashboard.onYourRosterWithoutA", { defaultValue: "{{length}} on your roster · {{length2}} without a PRISM result.", length: members.length, length2: prismOutstanding.length }),
       actions: [
-        { label: "View roster", to: ROUTES.MANAGER.TEAM, variant: "primary" },
-        { label: "Team import", to: ROUTES.MANAGER.BULK_IMPORT, variant: "secondary" },
+        { label: t("workbenchDashboard.viewRoster", { defaultValue: "View roster" }), to: ROUTES.MANAGER.TEAM, variant: "primary" },
+        { label: t("workbenchDashboard.teamImport", { defaultValue: "Team import" }), to: ROUTES.MANAGER.BULK_IMPORT, variant: "secondary" },
       ],
       stats: [
-        { key: "roster", label: "On your roster", value: members.length, hint: "direct reports" },
+        { key: "roster", label: t("workbenchDashboard.onYourRoster", { defaultValue: "On your roster" }), value: members.length, hint: t("workbenchDashboard.directReports", { defaultValue: "direct reports" }) },
         {
           key: "checkins",
-          label: "Check-ins booked",
+          label: t("workbenchDashboard.checkInsBooked", { defaultValue: "Check-ins booked" }),
           value: interviews.length,
-          hint: "on the schedule",
+          hint: t("workbenchDashboard.onTheSchedule", { defaultValue: "on the schedule" }),
         },
         {
           key: "attention",
-          label: "Needs attention",
+          label: t("workbenchDashboard.needsAttention", { defaultValue: "Needs attention" }),
           // See the module note. Not measured — never rendered as 0.
           value: null,
-          hint: "not measured yet",
+          hint: t("workbenchDashboard.notMeasuredYet", { defaultValue: "not measured yet" }),
           tone: "alert",
         },
         {
           key: "prism",
-          label: "PRISM outstanding",
+          label: t("workbenchDashboard.prismOutstanding", { defaultValue: "PRISM outstanding" }),
           value: prismOutstanding.length,
-          hint: "not yet scored",
+          hint: t("workbenchDashboard.notYetScored", { defaultValue: "not yet scored" }),
         },
       ],
       upcoming: {
-        title: "Upcoming check-ins",
-        action: { label: "Open roster", to: ROUTES.MANAGER.TEAM },
+        title: t("workbenchDashboard.upcomingCheckIns", { defaultValue: "Upcoming check-ins" }),
+        action: { label: t("workbenchDashboard.openRoster", { defaultValue: "Open roster" }), to: ROUTES.MANAGER.TEAM },
         rows: upcoming,
-        emptyMessage: "Nothing is scheduled.",
+        emptyMessage: t("workbenchDashboard.nothingIsScheduled", { defaultValue: "Nothing is scheduled." }),
       },
       attention: {
-        title: "PRISM outstanding",
+        title: t("workbenchDashboard.prismOutstanding", { defaultValue: "PRISM outstanding" }),
         rows: attention,
         emptyMessage,
       },
@@ -119,7 +121,7 @@ export default function ManagerWorkbenchDashboard() {
         void interviewsQ.refetch?.()
       },
     }
-  }, [members, team, interviewsQ, teamQ, firstName])
+  }, [members, team, interviewsQ, teamQ, firstName, t])
 
   return (
     <ManagerLayout>

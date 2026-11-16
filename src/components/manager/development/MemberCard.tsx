@@ -14,6 +14,7 @@ import { PlanStatusBadge } from "./PlanStatusBadge"
 import { ProgressRing } from "./ProgressRing"
 import { ConfidenceDot } from "./ConfidenceDot"
 import { useDevSkin } from "./skin"
+import { useTranslation } from "react-i18next"
 
 function initials(name: string): string {
   return name
@@ -35,6 +36,7 @@ function TopMatchLine({
   /** BP-F5: set when the score rests on fewer than all of the role's dimensions. */
   coverage?: PartialCoverage | null
 }) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   return (
     <div
@@ -49,7 +51,7 @@ function TopMatchLine({
         {coverage && (
           <span
             className="ml-1 font-normal text-amber-700"
-            title={`Partial profile: ${coverage.evaluated} of ${coverage.total} dimensions measured`}
+            title={t("memberCard.partialProfileOfDimensionsMeasured", { defaultValue: "Partial profile: {{evaluated}} of {{total}} dimensions measured", evaluated: coverage.evaluated, total: coverage.total })}
             data-testid="member-card-top-match-coverage"
           >
             · {coverage.evaluated}/{coverage.total}
@@ -85,6 +87,7 @@ export type MemberCardProps = {
  * development workspace. Coverage/severity conveyed with icon + label.
  */
 export function MemberCard({ member, onInvite }: MemberCardProps) {
+  const { t } = useTranslation("managerPages")
   const navigate = useNavigate()
   const sk = useDevSkin()
   const target = ROUTES.MANAGER.DEVELOPMENT_MEMBER.replace(":memberId", member.memberId)
@@ -97,7 +100,7 @@ export function MemberCard({ member, onInvite }: MemberCardProps) {
     <Card
       role="button"
       tabIndex={0}
-      aria-label={`Open development workspace for ${member.name}`}
+      aria-label={t("memberCard.openDevelopmentWorkspaceFor", { defaultValue: "Open development workspace for {{name}}", name: member.name })}
       onClick={go}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -123,13 +126,13 @@ export function MemberCard({ member, onInvite }: MemberCardProps) {
           <div className={cn("truncate text-sm font-semibold", sk.text900)}>{member.name}</div>
           <div className={cn("truncate text-xs", sk.text500)}>
             {member.title ?? "—"}
-            {member.department ? ` · ${member.department}` : ""}
+            {member.department ? t("memberCard.text", { defaultValue: " · {{department}}", department: member.department }) : ""}
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
           <PlanStatusBadge status={member.planStatus} />
           {typeof member.milestoneProgress === "number" ? (
-            <ProgressRing value={member.milestoneProgress} label={`${Math.round(member.milestoneProgress)}% of milestones complete`} />
+            <ProgressRing value={member.milestoneProgress} label={t("memberCard.ofMilestonesComplete", { defaultValue: "{{value}}% of milestones complete", value: Math.round(member.milestoneProgress) })} />
           ) : null}
         </div>
       </div>
@@ -146,7 +149,7 @@ export function MemberCard({ member, onInvite }: MemberCardProps) {
           <p className={cn("line-clamp-2 text-xs", sk.text600)}>{headline}</p>
         </div>
       ) : needsPrism ? (
-        <p className={cn("text-xs italic", sk.text400)}>Invite to complete PRISM to build a profile.</p>
+        <p className={cn("text-xs italic", sk.text400)}>{t("memberCard.inviteToCompletePrismTo", { defaultValue: "Invite to complete PRISM to build a profile." })}</p>
       ) : null}
 
       {FIT_ENGINE_MATCHES_ENABLED ? (

@@ -2,6 +2,7 @@ import { Check, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { FrameworkCoverage } from "@/types/development"
 import { useDevSkin } from "./skin"
+import { useTranslation } from "react-i18next"
 
 type FrameworkKey = "prism" | "clifton" | "disc"
 
@@ -40,9 +41,10 @@ export function CoverageChips({
   className,
   size = "md",
 }: CoverageChipsProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   return (
-    <ul className={cn("flex flex-wrap items-center gap-2", className)} aria-label="Assessment coverage">
+    <ul className={cn("flex flex-wrap items-center gap-2", className)} aria-label={t("coverageChips.assessmentCoverage", { defaultValue: "Assessment coverage" })}>
       {FRAMEWORKS.map(({ key, label, dateKey }) => {
         const complete = coverage[key]
         const date = showDates ? formatDate(coverage[dateKey] as string | undefined) : undefined
@@ -59,7 +61,7 @@ export function CoverageChips({
               >
                 <Check className="h-3 w-3" aria-hidden="true" />
                 {label}
-                <span className="sr-only"> assessment complete</span>
+                <span className="sr-only">{" "}{t("coverageChips.assessmentComplete", { defaultValue: "assessment complete" })}</span>
               </span>
             ) : onInvite ? (
               <button
@@ -76,17 +78,17 @@ export function CoverageChips({
               >
                 <Plus className="h-3 w-3" aria-hidden="true" />
                 {label}
-                <span className="sr-only"> — invite to complete</span>
+                <span className="sr-only">{" "}{t("coverageChips.inviteToComplete", { defaultValue: "— invite to complete" })}</span>
               </button>
             ) : (
               <span
                 className={cn(chipBase, "border-dashed bg-transparent", sk.border300, sk.text400)}
                 data-testid={`coverage-${key}-missing`}
-                title={`${label} is not on file for this member`}
+                title={t("coverageChips.isNotOnFileFor", { defaultValue: "{{label}} is not on file for this member", label })}
               >
                 <Plus className="h-3 w-3" aria-hidden="true" />
                 {label}
-                <span className="sr-only"> — not assessed</span>
+                <span className="sr-only">{" "}{t("coverageChips.notAssessed", { defaultValue: "— not assessed" })}</span>
               </span>
             )}
             {date ? <span className={cn("pl-1 text-[10px]", sk.text400)}>{date}</span> : null}

@@ -31,6 +31,7 @@ const FALLBACK_MEMBER_TREND = [{ month: "Oct", score: 78 }, { month: "Nov", scor
 const STAGE_COLORS = ["#3B5BFF", "#2DD4BF", "#ECC94B", "#10B981", "#8B5CF6"]
 
 export default function ManagerAnalytics() {
+  const { t: tm } = useTranslation("managerPages")
   const { t } = useTranslation(["admin", "common"]);
   const { data: analyticsData, isLoading, error, refetch } = useManagerAnalytics()
 
@@ -48,18 +49,16 @@ export default function ManagerAnalytics() {
   const TIME_TO_HIRE = ad?.timeToHire ?? FALLBACK_TIME_TO_HIRE
   const MEMBER_TREND = ad?.memberTrend ?? FALLBACK_MEMBER_TREND
 
-  const errorString = error ? "Failed to load analytics data." : undefined
+  const errorString = error ? tm("analytics.failedToLoadAnalyticsData", { defaultValue: "Failed to load analytics data." }) : undefined
 
   return (
     <ManagerLayout>
       <PlaceholderBanner />
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Team Analytics (TODO: translate)</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Track coaching engagement, goals, training, and hiring metrics.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{tm("analytics.teamAnalyticsTodoTranslate", { defaultValue: "Team Analytics (TODO: translate)" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{tm("analytics.trackCoachingEngagementGoalsTraining", { defaultValue: "Track coaching engagement, goals, training, and hiring metrics." })}</p>
 
       {error && (
-        <div className="flex items-center gap-2 py-2 mb-4 text-[13px] text-[#EF4444]">
-          Failed to load analytics data.
-          <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+        <div className="flex items-center gap-2 py-2 mb-4 text-[13px] text-[#EF4444]">{tm("analytics.failedToLoadAnalyticsData", { defaultValue: "Failed to load analytics data." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{tm("analytics.retry", { defaultValue: "Retry" })}</button>
         </div>
       )}
 
@@ -89,7 +88,7 @@ export default function ManagerAnalytics() {
           title={t("admin:manager.memberPerformance")}
           data={MEMBER_TREND}
           xKey="month"
-          primary={{ key: "score", label: "Score", color: "#3B5BFF" }}
+          primary={{ key: "score", label: tm("analytics.score", { defaultValue: "Score" }), color: "#3B5BFF" }}
           loading={isLoading}
           error={errorString}
           height={200}

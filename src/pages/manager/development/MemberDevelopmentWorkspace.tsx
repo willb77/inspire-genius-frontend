@@ -55,6 +55,7 @@ import {
   resolveDevV2,
   type DevVariant,
 } from "@/components/manager/development/skin"
+import { useTranslation } from "react-i18next"
 
 // Lazy-loaded tab panels
 const BehavioralProfilePanel = lazy(() =>
@@ -170,6 +171,7 @@ export default function MemberDevelopmentWorkspace({
   variant?: DevVariant
   audience?: "manager" | "practitioner"
 }) {
+  const { t: tm } = useTranslation("managerPages")
   const Layout = audience === "practitioner" ? PractitionerLayout : ManagerLayout
   const studioRoute =
     audience === "practitioner"
@@ -220,7 +222,7 @@ export default function MemberDevelopmentWorkspace({
         categories: { prism: true },
         reason: "Requested from the Team Development Studio.",
       }),
-    onSuccess: () => toast.success("Asked. They decide, and declining costs them nothing."),
+    onSuccess: () => toast.success(tm("memberDevelopmentWorkspace.askedTheyDecideAndDeclining", { defaultValue: "Asked. They decide, and declining costs them nothing." })),
     // TDS-1c part B. This mutation shipped with onSuccess ALONE, so a failed ask
     // was silent: the manager clicked, the request never opened, and nothing on
     // screen changed. That is not a hypothetical path — `ux_svg_live_pair` is
@@ -241,7 +243,7 @@ export default function MemberDevelopmentWorkspace({
     // React an object as a child and took the page down (see the file's header).
     onError: (err) =>
       toast.error(
-        apiErrorMessage(err, "That didn't send — nothing was asked. Try again in a moment."),
+        apiErrorMessage(err, tm("memberDevelopmentWorkspace.thatDidnTSendNothing", { defaultValue: "That didn't send — nothing was asked. Try again in a moment." })),
       ),
   })
 
@@ -294,10 +296,8 @@ export default function MemberDevelopmentWorkspace({
       >
         <p className={cn("text-sm", sk.text700)}>{dossierError.message}</p>
         <div className="flex gap-2">
-          <Button onClick={() => void refetchDossier()}>Try again</Button>
-          <Button variant="outline" onClick={() => navigate(studioRoute)}>
-            Back to roster
-          </Button>
+          <Button onClick={() => void refetchDossier()}>{tm("memberDevelopmentWorkspace.tryAgain", { defaultValue: "Try again" })}</Button>
+          <Button variant="outline" onClick={() => navigate(studioRoute)}>{tm("memberDevelopmentWorkspace.backToRoster", { defaultValue: "Back to roster" })}</Button>
         </div>
       </div>,
     )
@@ -310,7 +310,7 @@ export default function MemberDevelopmentWorkspace({
     // TDS-P1 (c). This was the spinner and nothing else for the whole compute.
     // The tabs that need no dossier work now; the rest appear when it lands.
     const computingTab = COMPUTING_TAB_VALUES.includes(activeTab) ? activeTab : undefined
-    const name = cachedName || "This member"
+    const name = cachedName || tm("memberDevelopmentWorkspace.thisMember", { defaultValue: "This member" })
     return frame(
       <div className="space-y-4">
         <button
@@ -318,18 +318,12 @@ export default function MemberDevelopmentWorkspace({
           onClick={() => navigate(studioRoute)}
           className={cn("inline-flex items-center gap-1 text-xs hover:text-slate-800", sk.text500)}
         >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Back to roster
-        </button>
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />{tm("memberDevelopmentWorkspace.backToRoster", { defaultValue: "Back to roster" })}</button>
         <header className={cn("border bg-white p-4", sk.radius, sk.border200)}>
           <h1 className={cn("text-lg font-semibold", sk.heading)}>{name}</h1>
           <p role="status" className={cn("mt-1 flex items-center gap-2 text-sm", sk.text500)}>
-            <RefreshCw className={cn("h-4 w-4 animate-spin", sk.text400)} aria-hidden="true" />
-            Generating the development dossier — this can take up to a minute…
-          </p>
-          <p className={cn("mt-1 text-xs", sk.text400)}>
-            Goals and Notes work now; the other tabs appear when it&apos;s ready.
-          </p>
+            <RefreshCw className={cn("h-4 w-4 animate-spin", sk.text400)} aria-hidden="true" />{tm("memberDevelopmentWorkspace.generatingTheDevelopmentDossierThis", { defaultValue: "Generating the development dossier — this can take up to a minute…" })}</p>
+          <p className={cn("mt-1 text-xs", sk.text400)}>{tm("memberDevelopmentWorkspace.goalsAndNotesWorkNow", { defaultValue: "Goals and Notes work now; the other tabs appear when it's ready." })}</p>
         </header>
         <Tabs value={computingTab ?? ""} onValueChange={setTab}>
           <TabsList className="flex w-full flex-wrap justify-start">
@@ -362,9 +356,7 @@ export default function MemberDevelopmentWorkspace({
             ) : (
               <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
                 <RefreshCw className={cn("h-6 w-6 animate-spin", sk.text400)} aria-hidden="true" />
-                <p className={cn("text-sm", sk.text500)}>
-                  This tab needs the dossier. Open Goals or Notes while it&apos;s generated.
-                </p>
+                <p className={cn("text-sm", sk.text500)}>{tm("memberDevelopmentWorkspace.thisTabNeedsTheDossier", { defaultValue: "This tab needs the dossier. Open Goals or Notes while it's generated." })}</p>
               </div>
             )}
           </div>
@@ -377,9 +369,7 @@ export default function MemberDevelopmentWorkspace({
     return frame(
       <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
         <p className={cn("text-sm", sk.text500)}>{isError ? t("dev.workspace.error") : t("dev.workspace.notFound")}</p>
-        <Button variant="outline" onClick={() => navigate(studioRoute)}>
-          Back to roster
-        </Button>
+        <Button variant="outline" onClick={() => navigate(studioRoute)}>{tm("memberDevelopmentWorkspace.backToRoster", { defaultValue: "Back to roster" })}</Button>
       </div>,
     )
   }
@@ -398,9 +388,7 @@ export default function MemberDevelopmentWorkspace({
         onClick={() => navigate(studioRoute)}
         className={cn("inline-flex items-center gap-1 text-xs hover:text-slate-800", sk.text500)}
       >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-        Back to roster
-      </button>
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />{tm("memberDevelopmentWorkspace.backToRoster", { defaultValue: "Back to roster" })}</button>
 
       {/* Persistent header */}
       <header className={cn("border bg-white p-4", sk.radius, sk.border200)}>
@@ -421,7 +409,7 @@ export default function MemberDevelopmentWorkspace({
               </div>
               <p className={cn("text-xs", sk.text500)}>
                 {member.title ?? "—"}
-                {member.department ? ` · ${member.department}` : ""}
+                {member.department ? tm("memberDevelopmentWorkspace.text", { defaultValue: " · {{department}}", department: member.department }) : ""}
               </p>
               <div className="mt-1.5 flex items-start gap-1.5">
                 <ConfidenceDot level={overallConfidence} className="mt-1" />
@@ -440,15 +428,13 @@ export default function MemberDevelopmentWorkspace({
             {dossier.events && dossier.events.length > 0 ? (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    Provenance
-                  </Button>
+                  <Button variant="ghost" size="sm">{tm("memberDevelopmentWorkspace.provenance", { defaultValue: "Provenance" })}</Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-80">
                   {/* The rows are this dossier's recent activity (shares, invites,
                       closed gaps, recomputes), not only agent interpretations. */}
-                  <div className={cn("text-xs font-semibold", sk.text700)}>Recent activity</div>
-                  <p className={cn("mt-0.5 text-[11px]", sk.text400)}>What changed on this dossier, and which agent or action did it.</p>
+                  <div className={cn("text-xs font-semibold", sk.text700)}>{tm("memberDevelopmentWorkspace.recentActivity", { defaultValue: "Recent activity" })}</div>
+                  <p className={cn("mt-0.5 text-[11px]", sk.text400)}>{tm("memberDevelopmentWorkspace.whatChangedOnThisDossier", { defaultValue: "What changed on this dossier, and which agent or action did it." })}</p>
                   <ul className="mt-2 space-y-2">
                     {dossier.events.map((ev, i) => (
                       <li key={i} className={cn("rounded-md border p-2 text-xs", sk.border100)}>
@@ -501,9 +487,9 @@ export default function MemberDevelopmentWorkspace({
               onClick={() => {
                 try {
                   exportDossierPdf(dossier)
-                  toast.success("Dossier exported as PDF.")
+                  toast.success(tm("memberDevelopmentWorkspace.dossierExportedAsPdf", { defaultValue: "Dossier exported as PDF." }))
                 } catch {
-                  toast.error("Couldn't generate the PDF.")
+                  toast.error(tm("memberDevelopmentWorkspace.couldnTGenerateThePdf", { defaultValue: "Couldn't generate the PDF." }))
                 }
               }}
             >

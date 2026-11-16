@@ -28,6 +28,7 @@ import { toUtcInstant } from "@/services/manager/teamSchedule.service"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { MAX_LOCATION } from "@/types/manager/teamSchedule"
 import type { TeamScheduleInput, TeamScheduleResult } from "@/types/manager/teamSchedule"
+import { useTranslation } from "react-i18next"
 
 const DURATION_OPTIONS = [30, 45, 60, 90] as const
 const SPACING_OPTIONS = [0, 5, 10, 15, 30] as const
@@ -57,6 +58,7 @@ const SPACING_OPTIONS = [0, 5, 10, 15, 30] as const
  * per-person booking dialog.
  */
 export default function ManagerSchedule() {
+  const { t } = useTranslation("managerPages")
   const teamQuery = useManagerTeam()
   const scheduleQuery = useTeamSchedule()
   const createSessions = useCreateTeamSessions()
@@ -118,7 +120,7 @@ export default function ManagerSchedule() {
     try {
       startsAtUtc = toUtcInstant(startsAt)
     } catch (err) {
-      setSubmitError(apiErrorMessage(err, "Start time is not a valid date."))
+      setSubmitError(apiErrorMessage(err, t("schedule.startTimeIsNotAValid", { defaultValue: "Start time is not a valid date." })))
       return
     }
     const input: TeamScheduleInput = {
@@ -134,13 +136,13 @@ export default function ManagerSchedule() {
     createSessions.mutate(input, {
       onSuccess: (result) => {
         setLastResult(result)
-        const emailed = sendInvites ? `, ${result.emailed} invites emailed` : ""
-        if (result.created > 0) toast.success(`${result.created} sessions created${emailed}`)
-        else toast.error("No sessions were created — see the reasons below.")
+        const emailed = sendInvites ? t("schedule.invitesEmailed", { defaultValue: ", {{emailed}} invites emailed", emailed: result.emailed }) : ""
+        if (result.created > 0) toast.success(t("schedule.sessionsCreated", { defaultValue: "{{created}} sessions created{{emailed}}", created: result.created, emailed }))
+        else toast.error(t("schedule.noSessionsWereCreatedSee", { defaultValue: "No sessions were created — see the reasons below." }))
         resetForm()
       },
       onError: (err) => {
-        const text = apiErrorMessage(err, "Could not create sessions.")
+        const text = apiErrorMessage(err, t("schedule.couldNotCreateSessions", { defaultValue: "Could not create sessions." }))
         setSubmitError(text)
         toast.error(text)
       },
@@ -152,31 +154,21 @@ export default function ManagerSchedule() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="mb-5">
           <h1 className="text-2xl font-semibold text-[#111827] flex items-center gap-2">
-            <CalendarClock className="h-6 w-6 text-[#466BC4]" />
-            Schedule
-          </h1>
-          <p className="text-sm text-[#6b7280] mt-1">
-            Batch-schedule sessions across your team and review what&apos;s coming up.
-          </p>
+            <CalendarClock className="h-6 w-6 text-[#466BC4]" />{t("schedule.schedule", { defaultValue: "Schedule" })}</h1>
+          <p className="text-sm text-[#6b7280] mt-1">{t("schedule.batchScheduleSessionsAcrossYour", { defaultValue: "Batch-schedule sessions across your team and review what's coming up." })}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <DataCard title="Create sessions with your team">
+          <DataCard title={t("schedule.createSessionsWithYourTeam", { defaultValue: "Create sessions with your team" })}>
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <Label className="text-[#111827] flex items-center gap-1.5">
-                    <Users className="h-4 w-4 text-[#6b7280]" />
-                    Select team members
-                  </Label>
+                    <Users className="h-4 w-4 text-[#6b7280]" />{t("schedule.selectTeamMembers", { defaultValue: "Select team members" })}</Label>
                   {members.length > 0 && (
                     <div className="flex items-center gap-2 text-xs">
-                      <button type="button" onClick={selectAll} className="text-[#466BC4] underline">
-                        Select all
-                      </button>
-                      <button type="button" onClick={clearAll} className="text-[#6b7280] underline">
-                        Clear
-                      </button>
+                      <button type="button" onClick={selectAll} className="text-[#466BC4] underline">{t("schedule.selectAll", { defaultValue: "Select all" })}</button>
+                      <button type="button" onClick={clearAll} className="text-[#6b7280] underline">{t("schedule.clear", { defaultValue: "Clear" })}</button>
                     </div>
                   )}
                 </div>
@@ -189,22 +181,13 @@ export default function ManagerSchedule() {
                       ))}
                     </div>
                   ) : teamQuery.error ? (
-                    <div className="p-3 text-sm text-[#EF4444]">
-                      Could not load your team.{" "}
-                      <button onClick={() => void teamQuery.refetch()} className="underline">
-                        Retry
-                      </button>
+                    <div className="p-3 text-sm text-[#EF4444]">{t("schedule.couldNotLoadYourTeam", { defaultValue: "Could not load your team." })}{" "}<button onClick={() => void teamQuery.refetch()} className="underline">{t("schedule.retry", { defaultValue: "Retry" })}</button>
                     </div>
                   ) : members.length === 0 ? (
                     // The honest empty state. Nobody reports to this manager
                     // yet, and saying so — with the fix — beats an empty box
                     // that reads identically to a failed request.
-                    <div className="p-3 text-sm text-[#6b7280]">
-                      Nobody reports to you yet. Add your team under{" "}
-                      <span className="font-medium text-[#111827]">Team Import</span> with a{" "}
-                      <span className="font-mono text-xs">Manager</span> column naming your email
-                      address.
-                    </div>
+                    <div className="p-3 text-sm text-[#6b7280]">{t("schedule.nobodyReportsToYouYet", { defaultValue: "Nobody reports to you yet. Add your team under" })}{" "}<span className="font-medium text-[#111827]">{t("schedule.teamImport", { defaultValue: "Team Import" })}</span>{" "}{t("schedule.withA", { defaultValue: "with a" })}{" "}<span className="font-mono text-xs">{t("schedule.manager", { defaultValue: "Manager" })}</span>{" "}{t("schedule.columnNamingYourEmailAddress", { defaultValue: "column naming your email address." })}</div>
                   ) : (
                     members.map((member) => {
                       const checked = selectedIds.has(member.user_id)
@@ -232,13 +215,11 @@ export default function ManagerSchedule() {
                     })
                   )}
                 </div>
-                <p className="text-xs text-[#6b7280]">{selectedIds.size} selected</p>
+                <p className="text-xs text-[#6b7280]">{t("schedule.selected", { defaultValue: "{{size}} selected", size: selectedIds.size })}</p>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="schedule-start" className="text-[#111827]">
-                  Start time
-                </Label>
+                <Label htmlFor="schedule-start" className="text-[#111827]">{t("schedule.startTime", { defaultValue: "Start time" })}</Label>
                 <Input
                   id="schedule-start"
                   type="datetime-local"
@@ -249,32 +230,28 @@ export default function ManagerSchedule() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-[#111827]">Duration</Label>
+                  <Label className="text-[#111827]">{t("schedule.duration", { defaultValue: "Duration" })}</Label>
                   <Select value={String(durationMin)} onValueChange={(v) => setDurationMin(Number(v))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {DURATION_OPTIONS.map((min) => (
-                        <SelectItem key={min} value={String(min)}>
-                          {min} minutes
-                        </SelectItem>
+                        <SelectItem key={min} value={String(min)}>{t("schedule.minutes", { defaultValue: "{{min}} minutes", min })}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-[#111827]">Space between meetings</Label>
+                  <Label className="text-[#111827]">{t("schedule.spaceBetweenMeetings", { defaultValue: "Space between meetings" })}</Label>
                   <Select value={String(spacingMin)} onValueChange={(v) => setSpacingMin(Number(v))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {SPACING_OPTIONS.map((min) => (
-                        <SelectItem key={min} value={String(min)}>
-                          {min} minutes
-                        </SelectItem>
+                        <SelectItem key={min} value={String(min)}>{t("schedule.minutes", { defaultValue: "{{min}} minutes", min })}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -282,45 +259,39 @@ export default function ManagerSchedule() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="schedule-topic" className="text-[#111827]">
-                  Topic
-                </Label>
+                <Label htmlFor="schedule-topic" className="text-[#111827]">{t("schedule.topic", { defaultValue: "Topic" })}</Label>
                 <Input
                   id="schedule-topic"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g. Development check-in"
+                  placeholder={t("schedule.eGDevelopmentCheckIn", { defaultValue: "e.g. Development check-in" })}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="schedule-message" className="text-[#111827]">
-                  Message
-                </Label>
+                <Label htmlFor="schedule-message" className="text-[#111827]">{t("schedule.message", { defaultValue: "Message" })}</Label>
                 <Textarea
                   id="schedule-message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="A short note included with the invitation."
+                  placeholder={t("schedule.aShortNoteIncludedWith", { defaultValue: "A short note included with the invitation." })}
                   rows={3}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="schedule-location" className="text-[#111827]">
-                  Location
-                </Label>
+                <Label htmlFor="schedule-location" className="text-[#111827]">{t("schedule.location", { defaultValue: "Location" })}</Label>
                 <Input
                   id="schedule-location"
                   value={location}
                   onChange={(e) => setLocationDraft(e.target.value)}
-                  placeholder="A video meeting link, a phone number or an address"
+                  placeholder={t("schedule.aVideoMeetingLinkA", { defaultValue: "A video meeting link, a phone number or an address" })}
                   aria-invalid={locationTooLong}
                 />
                 <p className="text-xs text-[#6b7280]">
                   {locationTooLong
-                    ? `At most ${MAX_LOCATION} characters.`
-                    : "Your default comes from Settings. It goes in the invite."}
+                    ? t("schedule.atMostCharacters", { defaultValue: "At most {{MAX_LOCATION}} characters.", MAX_LOCATION })
+                    : t("schedule.yourDefaultComesFromSettings", { defaultValue: "Your default comes from Settings. It goes in the invite." })}
                 </p>
               </div>
 
@@ -330,9 +301,7 @@ export default function ManagerSchedule() {
                   checked={sendInvites}
                   onCheckedChange={(v) => setSendInvites(v === true)}
                 />
-                <span className="text-sm text-[#111827]">
-                  Email .ics invite to attendees (you cc&apos;d)
-                </span>
+                <span className="text-sm text-[#111827]">{t("schedule.emailIcsInviteToAttendees", { defaultValue: "Email .ics invite to attendees (you cc'd)" })}</span>
               </label>
 
               <Button
@@ -340,7 +309,7 @@ export default function ManagerSchedule() {
                 disabled={!canSubmit}
                 onClick={handleSubmit}
               >
-                {createSessions.isPending ? "Scheduling…" : "Schedule sessions"}
+                {createSessions.isPending ? t("schedule.scheduling", { defaultValue: "Scheduling…" }) : t("schedule.scheduleSessions", { defaultValue: "Schedule sessions" })}
               </Button>
 
               {submitError && (
@@ -353,7 +322,7 @@ export default function ManagerSchedule() {
                 <div role="status" className="text-sm space-y-2 rounded-md border border-[#e5e7eb] p-3">
                   {lastResult.skipped.length > 0 && (
                     <div>
-                      <p className="font-medium text-[#111827]">Not scheduled</p>
+                      <p className="font-medium text-[#111827]">{t("schedule.notScheduled", { defaultValue: "Not scheduled" })}</p>
                       <ul className="list-disc pl-5 text-[#6b7280]">
                         {lastResult.skipped.map((s, i) => (
                           <li key={`skip-${s.personId}-${i}`}>
@@ -365,7 +334,7 @@ export default function ManagerSchedule() {
                   )}
                   {lastResult.notEmailed.length > 0 && (
                     <div>
-                      <p className="font-medium text-[#111827]">Scheduled, but no invite sent</p>
+                      <p className="font-medium text-[#111827]">{t("schedule.scheduledButNoInviteSent", { defaultValue: "Scheduled, but no invite sent" })}</p>
                       <ul className="list-disc pl-5 text-[#6b7280]">
                         {lastResult.notEmailed.map((s, i) => (
                           <li key={`mail-${s.personId}-${i}`}>
@@ -380,7 +349,7 @@ export default function ManagerSchedule() {
             </div>
           </DataCard>
 
-          <DataCard title="Upcoming sessions" badge={entries.length}>
+          <DataCard title={t("schedule.upcomingSessions", { defaultValue: "Upcoming sessions" })} badge={entries.length}>
             {scheduleQuery.isLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -389,15 +358,11 @@ export default function ManagerSchedule() {
               </div>
             ) : scheduleQuery.error ? (
               <div role="alert" className="text-sm text-[#EF4444] py-8 text-center">
-                {apiErrorMessage(scheduleQuery.error, "Could not load your sessions.")}{" "}
-                <button onClick={() => void scheduleQuery.refetch()} className="underline">
-                  Retry
-                </button>
+                {apiErrorMessage(scheduleQuery.error, t("schedule.couldNotLoadYourSessions", { defaultValue: "Could not load your sessions." }))}{" "}
+                <button onClick={() => void scheduleQuery.refetch()} className="underline">{t("schedule.retry", { defaultValue: "Retry" })}</button>
               </div>
             ) : entries.length === 0 ? (
-              <div className="text-sm text-[#6b7280] py-8 text-center">
-                No sessions scheduled yet.
-              </div>
+              <div className="text-sm text-[#6b7280] py-8 text-center">{t("schedule.noSessionsScheduledYet", { defaultValue: "No sessions scheduled yet." })}</div>
             ) : (
               <ul className="divide-y divide-[#e5e7eb]">
                 {entries.map((entry) => (
@@ -419,7 +384,7 @@ export default function ManagerSchedule() {
                         <p className="text-xs font-medium text-[#111827]">
                           {formatStart(entry.startsAt)}
                         </p>
-                        <p className="text-xs text-[#6b7280] mt-0.5">{entry.durationMin} min</p>
+                        <p className="text-xs text-[#6b7280] mt-0.5">{t("schedule.min", { defaultValue: "{{durationMin}} min", durationMin: entry.durationMin })}</p>
                       </div>
                     </div>
                   </li>

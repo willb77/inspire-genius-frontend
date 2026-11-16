@@ -15,6 +15,7 @@ import { ROLES } from "@/constants/routes"
 import { useAuth } from "@/context/useAuth"
 import { usePersonLookup, type PersonOption } from "@/hooks/manager/development"
 import { LOOKUP_MIN_CHARS } from "@/hooks/manager/development/usePersonLookup"
+import { useTranslation } from "react-i18next"
 
 export function PersonLookup({
   selected,
@@ -23,6 +24,7 @@ export function PersonLookup({
   selected: PersonOption | null
   onSelect: (person: PersonOption | null) => void
 }) {
+  const { t } = useTranslation("managerPages")
   const { hasRole } = useAuth()
   const isSuperAdmin = hasRole(ROLES.SUPER_ADMIN)
   const [query, setQuery] = useState("")
@@ -32,16 +34,15 @@ export function PersonLookup({
   if (selected) {
     return (
       <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-        <span>
-          Adding <strong>{selected.name}</strong>
-          {selected.email ? ` (${selected.email})` : ""}
+        <span>{t("personLookup.adding", { defaultValue: "Adding" })}{" "}<strong>{selected.name}</strong>
+          {selected.email ? t("personLookup.text", { defaultValue: " ({{email}})", email: selected.email }) : ""}
         </span>
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={() => onSelect(null)}
-          aria-label="Clear the selected person"
+          aria-label={t("personLookup.clearTheSelectedPerson", { defaultValue: "Clear the selected person" })}
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </Button>
@@ -51,7 +52,7 @@ export function PersonLookup({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="member-lookup">Find a person</Label>
+      <Label htmlFor="member-lookup">{t("personLookup.findAPerson", { defaultValue: "Find a person" })}</Label>
       <div className="relative">
         <Search
           className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
@@ -62,7 +63,7 @@ export function PersonLookup({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={
-            isSuperAdmin ? "Search everyone by name or email" : "Search your organisation by name"
+            isSuperAdmin ? t("personLookup.searchEveryoneByNameOr", { defaultValue: "Search everyone by name or email" }) : t("personLookup.searchYourOrganisationByName", { defaultValue: "Search your organisation by name" })
           }
           className="pl-8"
           autoComplete="off"
@@ -71,15 +72,11 @@ export function PersonLookup({
       {searching && (
         <div className="max-h-48 overflow-y-auto rounded-md border" aria-live="polite">
           {isError ? (
-            <p role="alert" className="px-3 py-2 text-sm text-destructive">
-              Couldn&apos;t search people right now. You can still type their details below.
-            </p>
+            <p role="alert" className="px-3 py-2 text-sm text-destructive">{t("personLookup.couldnTSearchPeopleRight", { defaultValue: "Couldn't search people right now. You can still type their details below." })}</p>
           ) : isLoading ? (
-            <p className="px-3 py-2 text-sm text-muted-foreground">Searching…</p>
+            <p className="px-3 py-2 text-sm text-muted-foreground">{t("personLookup.searching", { defaultValue: "Searching…" })}</p>
           ) : results.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-muted-foreground">
-              No one found. You can still type their details below.
-            </p>
+            <p className="px-3 py-2 text-sm text-muted-foreground">{t("personLookup.noOneFoundYouCan", { defaultValue: "No one found. You can still type their details below." })}</p>
           ) : (
             <ul>
               {results.map((p) => (
@@ -103,10 +100,7 @@ export function PersonLookup({
           )}
         </div>
       )}
-      <p className="text-xs text-muted-foreground">
-        Or type their details below. Only a person&apos;s manager, a company admin of their
-        organisation or a super admin can add someone who already has an account.
-      </p>
+      <p className="text-xs text-muted-foreground">{t("personLookup.orTypeTheirDetailsBelow", { defaultValue: "Or type their details below. Only a person's manager, a company admin of their organisation or a super admin can add someone who already has an account." })}</p>
     </div>
   )
 }
