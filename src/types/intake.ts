@@ -180,7 +180,7 @@ export type Webinar = {
    * predates the public events list (monorepo CSA 2026-11-10); read absent as false.
    */
   is_public?: boolean
-  /** Plain text for the public events page, at most 2,000 characters. Absent on an older service. */
+  /** Markdown text for the public events page, at most 5,000 characters. Absent on an older service. */
   public_description?: string | null
 }
 

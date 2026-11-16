@@ -568,29 +568,43 @@ describe("Intake — Webinars: public events fields", () => {
     expect(sent).not.toHaveProperty("is_public")
   })
 
-  it("refuses a description over 2,000 characters before calling the server", async () => {
+  it("refuses a description over 5,000 characters before calling the server", async () => {
     webinars = { data: { items: [PUBLIC], none_of_these_times_count: 0 } }
     const user = userEvent.setup()
     renderAt("/super-admin/intake?tab=webinars")
     await user.click(screen.getByRole("button", { name: "Edit PRISM for coaches" }))
     const dialog = screen.getByRole("dialog")
-    fireEvent.change(within(dialog).getByLabelText("Public description"), { target: { value: "x".repeat(2001) } })
+    fireEvent.change(within(dialog).getByLabelText("Public description"), { target: { value: "x".repeat(5001) } })
     await user.click(within(dialog).getByRole("button", { name: "Save" }))
-    expect(await screen.findByText("Public description must be at most 2,000 characters")).toBeInTheDocument()
+    expect(await screen.findByText("Public description must be at most 5,000 characters")).toBeInTheDocument()
     expect(updateMutate).not.toHaveBeenCalled()
   })
 
-  it("accepts exactly 2,000 characters", async () => {
+  it("accepts exactly 5,000 characters", async () => {
     webinars = { data: { items: [PUBLIC], none_of_these_times_count: 0 } }
     updateMutate.mockImplementation((_v: unknown, opts: MutateOpts) => opts.onSuccess?.({}))
     const user = userEvent.setup()
     renderAt("/super-admin/intake?tab=webinars")
     await user.click(screen.getByRole("button", { name: "Edit PRISM for coaches" }))
     const dialog = screen.getByRole("dialog")
-    fireEvent.change(within(dialog).getByLabelText("Public description"), { target: { value: "y".repeat(2000) } })
+    fireEvent.change(within(dialog).getByLabelText("Public description"), { target: { value: "y".repeat(5000) } })
     await user.click(within(dialog).getByRole("button", { name: "Save" }))
     await waitFor(() => expect(updateMutate).toHaveBeenCalled())
-    expect(updateMutate.mock.calls[0][0].public_description).toHaveLength(2000)
+    expect(updateMutate.mock.calls[0][0].public_description).toHaveLength(5000)
+  })
+
+  it("shows the stored length against the 5,000 limit, and warns when over", async () => {
+    webinars = { data: { items: [PUBLIC], none_of_these_times_count: 0 } }
+    const user = userEvent.setup()
+    renderAt("/super-admin/intake?tab=webinars")
+    await user.click(screen.getByRole("button", { name: "Edit PRISM for coaches" }))
+    const dialog = screen.getByRole("dialog")
+    const counter = () => dialog.querySelector("#webinar-publicDescription-count") as HTMLElement
+    expect(counter()).toHaveTextContent("17 / 5,000 characters")
+    expect(counter().className).not.toContain("text-destructive")
+    fireEvent.change(within(dialog).getByLabelText("Public description"), { target: { value: "z".repeat(5001) } })
+    await waitFor(() => expect(counter()).toHaveTextContent("5,001 / 5,000 characters"))
+    expect(counter().className).toContain("text-destructive")
   })
 
   it("says changes reach the public page within about 2 minutes", async () => {
