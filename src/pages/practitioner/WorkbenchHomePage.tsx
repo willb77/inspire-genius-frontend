@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { format } from "date-fns"
+import { useTranslation } from "react-i18next"
 
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { WorkbenchHome } from "@/components/workbench/WorkbenchHome"
@@ -30,8 +31,9 @@ function fullName(c: Client): string | null {
 }
 
 export default function PractitionerWorkbenchHome() {
+  const { t } = useTranslation("practitionerPages")
   const { user } = useAuth()
-  const firstName = (user?.fullName ?? user?.name ?? "").split(" ")[0] || "there"
+  const firstName = (user?.fullName ?? user?.name ?? "").split(" ")[0] || t("workbench.fallbackName", { defaultValue: "there" })
 
   const clientsQ = useCoachClients()
   const creditsQ = useCoachCredits()
@@ -46,8 +48,8 @@ export default function PractitionerWorkbenchHome() {
       name: s.client_name?.trim() || null,
       meta: s.starts_at
         ? format(new Date(s.starts_at), "d MMM yyyy, HH:mm")
-        : "No date recorded",
-      badge: s.prepared ? undefined : "No prep",
+        : t("workbench.noDate", { defaultValue: "No date recorded" }),
+      badge: s.prepared ? undefined : t("workbench.noPrep", { defaultValue: "No prep" }),
       badgeTone: "muted" as const,
       href: ROUTES.PRACTITIONER.SCHEDULE,
     }))
@@ -62,7 +64,7 @@ export default function PractitionerWorkbenchHome() {
       .map((c, i) => ({
         id: c.client_id ?? c.id ?? `client-${i}`,
         name: fullName(c),
-        meta: "No next session booked",
+        meta: t("workbench.noNextSession", { defaultValue: "No next session booked" }),
         href: ROUTES.PRACTITIONER.CLIENTS,
       }))
 
@@ -71,44 +73,46 @@ export default function PractitionerWorkbenchHome() {
     return {
       role: "practitioner",
       hero: "cream",
-      greeting: `Good morning, ${firstName}.`,
+      greeting: t("workbench.greeting", { name: firstName, defaultValue: "Good morning, {{name}}." }),
       subtitle:
         sessions.length > 0
-          ? `${sessions.length} session${sessions.length === 1 ? "" : "s"} on your schedule.`
-          : "Nothing on your schedule yet.",
+          ? sessions.length === 1
+            ? t("workbench.sessionsOne", { n: sessions.length, defaultValue: "{{n}} session on your schedule." })
+            : t("workbench.sessionsOther", { n: sessions.length, defaultValue: "{{n}} sessions on your schedule." })
+          : t("workbench.nothingScheduled", { defaultValue: "Nothing on your schedule yet." }),
       actions: [
-        { label: "Client roster", to: ROUTES.PRACTITIONER.CLIENTS, variant: "primary" },
-        { label: "Open schedule", to: ROUTES.PRACTITIONER.SCHEDULE, variant: "secondary" },
+        { label: t("workbench.clientRoster", { defaultValue: "Client roster" }), to: ROUTES.PRACTITIONER.CLIENTS, variant: "primary" },
+        { label: t("workbench.openSchedule", { defaultValue: "Open schedule" }), to: ROUTES.PRACTITIONER.SCHEDULE, variant: "secondary" },
       ],
       stats: [
-        { key: "clients", label: "Active clients", value: clients.length, hint: "on your roster" },
-        { key: "sessions", label: "Sessions booked", value: sessions.length, hint: "on the schedule" },
+        { key: "clients", label: t("workbench.activeClients", { defaultValue: "Active clients" }), value: clients.length, hint: t("workbench.onRoster", { defaultValue: "on your roster" }) },
+        { key: "sessions", label: t("workbench.sessionsBooked", { defaultValue: "Sessions booked" }), value: sessions.length, hint: t("workbench.onSchedule", { defaultValue: "on the schedule" }) },
         {
           key: "attention",
-          label: "Needs attention",
+          label: t("workbench.needsAttention", { defaultValue: "Needs attention" }),
           value: attention.length,
-          hint: "no next session booked",
+          hint: t("workbench.noNextSessionHint", { defaultValue: "no next session booked" }),
           tone: "alert",
         },
         {
           key: "under-management",
-          label: "Under management",
+          label: t("workbench.underManagement", { defaultValue: "Under management" }),
           value: underManagement,
           // A dash means the count was not reported — not that there are none.
           // Zero is a real zero: no client has activated a linked account yet.
-          hint: underManagement === null ? "count not available" : "activated, linked clients",
+          hint: underManagement === null ? t("workbench.countUnavailable", { defaultValue: "count not available" }) : t("workbench.activatedLinked", { defaultValue: "activated, linked clients" }),
         },
       ],
       upcoming: {
-        title: "Upcoming sessions",
-        action: { label: "Open schedule", to: ROUTES.PRACTITIONER.SCHEDULE },
+        title: t("workbench.upcomingSessions", { defaultValue: "Upcoming sessions" }),
+        action: { label: t("workbench.openSchedule", { defaultValue: "Open schedule" }), to: ROUTES.PRACTITIONER.SCHEDULE },
         rows: upcoming,
-        emptyMessage: "No sessions are booked. Use the schedule to add one.",
+        emptyMessage: t("workbench.noSessionsBooked", { defaultValue: "No sessions are booked. Use the schedule to add one." }),
       },
       attention: {
-        title: "Needs attention",
+        title: t("workbench.needsAttention", { defaultValue: "Needs attention" }),
         rows: attention,
-        emptyMessage: "Every client has a next session booked.",
+        emptyMessage: t("workbench.everyClientBooked", { defaultValue: "Every client has a next session booked." }),
       },
       isLoading: clientsQ.isLoading || scheduleQ.isLoading,
       error: clientsQ.error ?? scheduleQ.error ?? undefined,
@@ -117,7 +121,7 @@ export default function PractitionerWorkbenchHome() {
         void scheduleQ.refetch?.()
       },
     }
-  }, [clients, sessions, creditsQ.data, firstName, clientsQ, scheduleQ])
+  }, [clients, sessions, creditsQ.data, firstName, clientsQ, scheduleQ, t])
 
   return (
     <PractitionerLayout>

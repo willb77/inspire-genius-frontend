@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { AlertCircle, Loader2, RefreshCw, XCircle } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { useRevokeClientInvite, useRotateClientInvite } from "@/hooks/practitioner/useClientInvites"
 import { inviteErrorMessage } from "@/services/practitioner-invites/clientInvites.service"
@@ -30,13 +31,14 @@ interface ClientInvitesPanelProps {
 
 /** S5 — the practitioner's invitations, as list rows (they wrap on a phone). */
 export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelProps) {
+  const { t } = useTranslation("practitionerPages")
   const revoke = useRevokeClientInvite()
   const rotate = useRotateClientInvite()
   const [issued, setIssued] = useState<{ path: string; label: string } | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
 
   function labelFor(inv: ClientInvite): string {
-    return clientNames[inv.clientId] || inv.email || "your client"
+    return clientNames[inv.clientId] || inv.email || t("invites.yourClient", { defaultValue: "your client" })
   }
 
   function handleRotate(inv: ClientInvite) {
@@ -44,7 +46,7 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
     rotate.mutate(inv.id, {
       onSuccess: (res) => setIssued({ path: res.invitePath, label: labelFor(inv) }),
       onError: (err) =>
-        toast.error(inviteErrorMessage(err) ?? "Could not issue a new link. Please try again."),
+        toast.error(inviteErrorMessage(err) ?? t("invites.rotateFailed", { defaultValue: "Could not issue a new link. Please try again." })),
       onSettled: () => setBusyId(null),
     })
   }
@@ -52,9 +54,9 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
   function handleRevoke(inv: ClientInvite) {
     setBusyId(inv.id)
     revoke.mutate(inv.id, {
-      onSuccess: () => toast.success("Invite link revoked — it no longer works."),
+      onSuccess: () => toast.success(t("invites.revoked", { defaultValue: "Invite link revoked — it no longer works." })),
       onError: (err) =>
-        toast.error(inviteErrorMessage(err) ?? "Could not revoke the link. Please try again."),
+        toast.error(inviteErrorMessage(err) ?? t("invites.revokeFailed", { defaultValue: "Could not revoke the link. Please try again." })),
       onSettled: () => setBusyId(null),
     })
   }
@@ -62,14 +64,14 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
   if (invites.length === 0) {
     return (
       <p className="py-12 text-center text-sm text-muted-foreground">
-        No invitations yet. Use “Invite” on a client in your roster to create a link.
+        {t("invites.none", { defaultValue: "No invitations yet. Use “Invite” on a client in your roster to create a link." })}
       </p>
     )
   }
 
   return (
     <>
-      <ul className="divide-y rounded-lg border bg-card" aria-label="Invitations">
+      <ul className="divide-y rounded-lg border bg-card" aria-label={t("invites.listLabel", { defaultValue: "Invitations" })}>
         {invites.map((inv) => {
           const busy = busyId === inv.id
           // One action at a time: a second link issued while the first is in
@@ -91,22 +93,25 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
                   <span
                     className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[inv.status]}`}
                   >
-                    {STATUS_LABEL[inv.status]}
+                    {t(`invites.status.${inv.status}`, { defaultValue: STATUS_LABEL[inv.status] })}
                   </span>
                 </div>
                 {inv.email && <div className="break-all text-xs text-muted-foreground">{inv.email}</div>}
                 {claimedDiffers && (
                   <div className="break-all text-xs">
-                    Claimed with a different email: <span className="font-medium">{inv.claimedEmail}</span>
+                    {t("invites.claimedDifferent", { defaultValue: "Claimed with a different email:" })}{" "}
+                    <span className="font-medium">{inv.claimedEmail}</span>
                   </div>
                 )}
                 <div className="text-xs text-muted-foreground">
-                  Sent {day(inv.createdAt)} ·{" "}
+                  {t("invites.sent", { date: day(inv.createdAt), defaultValue: "Sent {{date}}" })} ·{" "}
                   {inv.status === "claimed" || inv.status === "claimed_by_other"
-                    ? `Claimed ${day(inv.claimedAt)}`
+                    ? t("invites.claimedOn", { date: day(inv.claimedAt), defaultValue: "Claimed {{date}}" })
                     : inv.status === "revoked"
-                      ? `Revoked ${day(inv.revokedAt)}`
-                      : `${inv.status === "expired" ? "Expired" : "Expires"} ${day(inv.expiresAt)}`}
+                      ? t("invites.revokedOn", { date: day(inv.revokedAt), defaultValue: "Revoked {{date}}" })
+                      : inv.status === "expired"
+                        ? t("invites.expiredOn", { date: day(inv.expiresAt), defaultValue: "Expired {{date}}" })
+                        : t("invites.expiresOn", { date: day(inv.expiresAt), defaultValue: "Expires {{date}}" })}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -123,7 +128,7 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
                     ) : (
                       <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
                     )}
-                    Copy new link
+                    {t("invites.copyNewLink", { defaultValue: "Copy new link" })}
                   </Button>
                 )}
                 {canRevoke(inv.status) && (
@@ -135,7 +140,7 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
                     onClick={() => handleRevoke(inv)}
                   >
                     <XCircle className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Revoke
+                    {t("invites.revoke", { defaultValue: "Revoke" })}
                   </Button>
                 )}
               </div>
@@ -154,12 +159,13 @@ export function ClientInvitesPanel({ invites, clientNames }: ClientInvitesPanelP
 
 /** The panel's load failure — honest, with a retry. */
 export function ClientInvitesLoadError({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation("practitionerPages")
   return (
     <div role="alert" className="flex flex-col items-center gap-3 py-12 text-center">
       <AlertCircle className="h-8 w-8 text-destructive" aria-hidden="true" />
-      <p className="text-sm text-muted-foreground">Your invitations could not be loaded.</p>
+      <p className="text-sm text-muted-foreground">{t("invites.loadFailed", { defaultValue: "Your invitations could not be loaded." })}</p>
       <Button variant="outline" className="min-h-11" onClick={onRetry}>
-        Retry
+        {t("retry", { defaultValue: "Retry" })}
       </Button>
     </div>
   )
