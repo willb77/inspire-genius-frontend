@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,6 +18,7 @@ type PrismReportViewerProps = {
 export default function PrismReportViewer({
   assessmentId,
 }: PrismReportViewerProps) {
+  const { t } = useTranslation('prismUi')
   const { data, isLoading } = usePrismReport(assessmentId)
   const report = data?.data
 
@@ -38,7 +40,7 @@ export default function PrismReportViewer({
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
-          Report data is not available yet.
+          {t('reportViewer.notAvailable', { defaultValue: 'Report data is not available yet.' })}
         </CardContent>
       </Card>
     )
@@ -47,17 +49,17 @@ export default function PrismReportViewer({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>PRISM Report</CardTitle>
+        <CardTitle>{t('reportViewer.title', { defaultValue: 'PRISM Report' })}</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="overview">
           <TabsList className="mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="behaviours">Behaviours</TabsTrigger>
-            <TabsTrigger value="work">Work Profile</TabsTrigger>
-            <TabsTrigger value="personality">Personality</TabsTrigger>
+            <TabsTrigger value="overview">{t('reportViewer.tabOverview', { defaultValue: 'Overview' })}</TabsTrigger>
+            <TabsTrigger value="behaviours">{t('reportViewer.tabBehaviours', { defaultValue: 'Behaviours' })}</TabsTrigger>
+            <TabsTrigger value="work">{t('reportViewer.tabWork', { defaultValue: 'Work Profile' })}</TabsTrigger>
+            <TabsTrigger value="personality">{t('reportViewer.tabPersonality', { defaultValue: 'Personality' })}</TabsTrigger>
             {report.reportPdfUrl && (
-              <TabsTrigger value="pdf">Report PDF</TabsTrigger>
+              <TabsTrigger value="pdf">{t('reportViewer.tabPdf', { defaultValue: 'Report PDF' })}</TabsTrigger>
             )}
           </TabsList>
 
@@ -67,7 +69,7 @@ export default function PrismReportViewer({
               <div className="flex justify-center">
                 <img
                   src={report.mapImageUrl}
-                  alt="PRISM Brain Map"
+                  alt={t('reportViewer.mapAlt', { defaultValue: 'PRISM Brain Map' })}
                   className="max-w-md rounded-lg"
                 />
               </div>
@@ -82,7 +84,7 @@ export default function PrismReportViewer({
             {report.reportData?.fourDText && (
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-muted-foreground">
-                  Analysis
+                  {t('reportViewer.analysis', { defaultValue: 'Analysis' })}
                 </h3>
                 <p className="text-sm leading-relaxed">
                   {report.reportData.fourDText}
@@ -96,7 +98,7 @@ export default function PrismReportViewer({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-green-700">
-                      Strengths
+                      {t('reportViewer.strengths', { defaultValue: 'Strengths' })}
                     </h4>
                     <div className="flex flex-wrap gap-1">
                       {report.reportData.kwdsMost.map((kw, i) => (
@@ -112,7 +114,7 @@ export default function PrismReportViewer({
                   {report.reportData.kwdsleast.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium text-amber-700">
-                        Areas to Develop
+                        {t('reportViewer.areasToDevelop', { defaultValue: 'Areas to Develop' })}
                       </h4>
                       <div className="flex flex-wrap gap-1">
                         {report.reportData.kwdsleast.map((kw, i) => (
@@ -139,7 +141,7 @@ export default function PrismReportViewer({
             {report.reportData?.dtTopBehData && (
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-muted-foreground">
-                  Top Behaviours
+                  {t('reportViewer.topBehaviours', { defaultValue: 'Top Behaviours' })}
                 </h3>
                 <div className="space-y-1">
                   {Object.entries(report.reportData.dtTopBehData).map(
@@ -194,7 +196,7 @@ export default function PrismReportViewer({
             <TabsContent value="pdf">
               <iframe
                 src={report.reportPdfUrl}
-                title="PRISM Report PDF"
+                title={t('reportViewer.pdfTitle', { defaultValue: 'PRISM Report PDF' })}
                 className="h-[600px] w-full rounded-lg border"
               />
             </TabsContent>

@@ -7,6 +7,7 @@
 // in types/grant/intake.ts are the single source of truth the flow renders from
 // (P2-A) — adding a question is a config edit, not a component change.
 
+import type { TFunction } from "i18next"
 import type { AidIntakeProfile } from "@/types/grant/intake"
 import {
   CITIZENSHIP_STATUS,
@@ -338,10 +339,46 @@ export const INTAKE_STEPS: IntakeStep[] = [
   },
 ]
 
-/** Human-readable answer for the transcript chips. */
-export function labelForAnswer(step: IntakeStep, value: unknown): string {
+/**
+ * Translate a step's visible copy (question, helper, placeholder, suffix and the
+ * option labels) at render time. The English above stays the source of truth and
+ * the `defaultValue`, so nothing changes if a key is missing. Keys are derived
+ * from the step's `field` (and each option's persisted `value`):
+ *   intake.steps.<field>.{question,helper,placeholder,suffix}
+ *   intake.steps.<field>.options.<value>
+ * `public/locales/en/grantPages.json` is generated from this array, so the two
+ * cannot drift; add a question here and add its keys there.
+ */
+export function localizeStep(step: IntakeStep, t: TFunction): IntakeStep {
+  const base = `intake.steps.${step.field}`
+  const out = {
+    ...step,
+    question: t(`${base}.question`, { defaultValue: step.question }),
+  } as IntakeStep
+  if (step.helper) out.helper = t(`${base}.helper`, { defaultValue: step.helper })
+  if ("placeholder" in step && step.placeholder) {
+    ;(out as NumberStep | TextStep).placeholder = t(`${base}.placeholder`, {
+      defaultValue: step.placeholder,
+    })
+  }
+  if ("suffix" in step && step.suffix) {
+    ;(out as NumberStep).suffix = t(`${base}.suffix`, { defaultValue: step.suffix })
+  }
+  if ("options" in step) {
+    ;(out as SelectStep | MultiSelectStep).options = step.options.map((o) => ({
+      value: o.value,
+      label: t(`${base}.options.${o.value}`, { defaultValue: o.label }),
+    }))
+  }
+  return out
+}
+
+/** Human-readable answer for the transcript chips. Pass `t` to localise Yes/No. */
+export function labelForAnswer(step: IntakeStep, value: unknown, t?: TFunction): string {
   if (value === undefined || value === null || value === "") return ""
-  if (step.kind === "bool") return value ? "Yes" : "No"
+  if (step.kind === "bool") {
+    return value ? (t ? t("common.yes", "Yes") : "Yes") : t ? t("common.no", "No") : "No"
+  }
   if (step.kind === "multiselect") {
     const vals = Array.isArray(value) ? value : []
     if (vals.length === 0) return ""

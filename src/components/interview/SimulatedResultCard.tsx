@@ -8,23 +8,29 @@
  * goal in Goals Studio, naming where it came from.
  */
 import { Target } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCreateGoal } from "@/hooks/summit/useMyGoals"
+import type { TFn } from "@/components/interview/tFallback"
 import type { ScoredPracticeResult } from "@/services/interview/scoredPractice.service"
 
-const BAND_LABEL: Record<string, string> = {
-  "strong-alignment": "Strong alignment",
-  "good-alignment": "Good alignment",
-  "partial-alignment": "Partial alignment",
-  "limited-alignment": "Limited alignment",
-}
-
-function bandLabel(band: string): string {
-  return BAND_LABEL[band] ?? band
+function bandLabel(band: string, t: TFn): string {
+  switch (band) {
+    case "strong-alignment":
+      return t("simulated.band.strongAlignment", "Strong alignment")
+    case "good-alignment":
+      return t("simulated.band.goodAlignment", "Good alignment")
+    case "partial-alignment":
+      return t("simulated.band.partialAlignment", "Partial alignment")
+    case "limited-alignment":
+      return t("simulated.band.limitedAlignment", "Limited alignment")
+    default:
+      return band
+  }
 }
 
 export default function SimulatedResultCard({
@@ -37,6 +43,7 @@ export default function SimulatedResultCard({
   competencyNames: Record<string, string>
   roleTitle?: string
 }) {
+  const { t } = useTranslation("interviewPages")
   const createGoal = useCreateGoal()
   const scored = result.answers.filter((a): a is typeof a & { score: number } => typeof a.score === "number")
   const weakest = scored.length
@@ -56,8 +63,8 @@ export default function SimulatedResultCard({
           `${weakestName} scored ${weakest.score} of 5 (simulated).`,
       },
       {
-        onSuccess: () => toast.success("Added to Goals Studio as a draft goal."),
-        onError: () => toast.error("The goal couldn't be added. Try again from Goals Studio."),
+        onSuccess: () => toast.success(t("simulated.goalAdded", "Added to Goals Studio as a draft goal.")),
+        onError: () => toast.error(t("simulated.goalFailed", "The goal couldn't be added. Try again from Goals Studio.")),
       },
     )
   }
@@ -65,7 +72,7 @@ export default function SimulatedResultCard({
   return (
     <Card data-testid="simulated-result">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-base">Simulated result — practice only</CardTitle>
+        <CardTitle className="text-base">{t("simulated.title", "Simulated result — practice only")}</CardTitle>
         <p className="text-xs text-muted-foreground">{result.notice}</p>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -73,14 +80,14 @@ export default function SimulatedResultCard({
           <span className="text-2xl font-semibold" data-testid="simulated-score">
             {result.overall_score.toFixed(1)}
           </span>
-          <span className="text-muted-foreground">of 5</span>
-          <Badge variant="secondary" data-testid="simulated-band">{bandLabel(result.recommendation)}</Badge>
+          <span className="text-muted-foreground">{t("simulated.ofFive", "of 5")}</span>
+          <Badge variant="secondary" data-testid="simulated-band">{bandLabel(result.recommendation, t)}</Badge>
         </div>
         <ul className="space-y-1">
           {result.answers.map((a) => (
             <li key={a.competency_id} className="flex justify-between gap-3">
               <span>{competencyNames[a.competency_id] ?? a.competency_id}</span>
-              <span className="tabular-nums">{a.score ?? "—"} / 5</span>
+              <span className="tabular-nums">{t("simulated.scoreOfFive", { defaultValue: "{{score}} / 5", score: a.score ?? "—" })}</span>
             </li>
           ))}
         </ul>
@@ -88,10 +95,10 @@ export default function SimulatedResultCard({
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <Button size="sm" variant="outline" onClick={makeGoal} disabled={createGoal.isPending}>
               <Target className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-              Make “{weakestName}” a goal
+              {t("simulated.makeGoal", { defaultValue: "Make “{{name}}” a goal", name: weakestName })}
             </Button>
             {createGoal.isSuccess ? (
-              <span className="text-xs text-muted-foreground" role="status">Added to Goals Studio.</span>
+              <span className="text-xs text-muted-foreground" role="status">{t("simulated.added", "Added to Goals Studio.")}</span>
             ) : null}
           </div>
         ) : null}

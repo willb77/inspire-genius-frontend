@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -29,6 +30,7 @@ import { LUMEN_TOOLS } from "@/constants/vertical-subnav"
 const TOOLS = LUMEN_TOOLS
 
 export function LumenNav() {
+  const { t } = useTranslation("lumenPages")
   const navigate = useNavigate()
 
   return (
@@ -65,7 +67,7 @@ export function LumenNav() {
           className="ms-auto"
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden />
-          Back to Inspire Genius
+          {t("navBackToIg", "Back to Inspire Genius")}
         </Button>
       </nav>
     </div>

@@ -9,6 +9,7 @@ import {
   Sprout,
   Waves,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useNavigate } from "react-router-dom"
@@ -150,6 +151,22 @@ export type AlignmentReport = {
  * Wire → view model.
  * ──────────────────────────────────────────────────────────────────────────── */
 
+/**
+ * The translate function the adapter below writes its sentences with. The page
+ * hands in the real `t`; called bare (a unit test, a non-React caller) the
+ * adapter falls back to the English default carried at each call site, so the
+ * wording is identical either way.
+ */
+type Tr = (
+  key: string,
+  options: { defaultValue: string; [name: string]: unknown }
+) => string
+
+const englishTr: Tr = (_key, { defaultValue, ...vars }) =>
+  defaultValue.replace(/\{\{(\w+)\}\}/g, (_match, name: string) =>
+    String(vars[name] ?? "")
+  )
+
 /** 63.0 → "63", 63.4 → "63.4". Trailing zeroes read as false precision. */
 function num(value: number): string {
   return String(Number(value.toFixed(1)))
@@ -166,64 +183,125 @@ function num(value: number): string {
  * says "nothing on file" and never a number: printing the neutral placeholder
  * would be reporting a measurement that was never taken.
  */
-function describeDimension(dimension: AlignmentDimension): string {
+function describeDimension(dimension: AlignmentDimension, tr: Tr): string {
   if (dimension.yourScore === null || dimension.yourScore === undefined) {
-    return `${dimension.dimension} (nothing on file for this one yet)`
+    return tr("alignment.dimensionNothingOnFile", {
+      defaultValue: "{{dimension}} (nothing on file for this one yet)",
+      dimension: dimension.dimension,
+    })
   }
-  return `${dimension.dimension} (you ${num(dimension.yourScore)}, this kind of work usually asks ${num(dimension.roleNeeds)})`
+  return tr("alignment.dimensionYouVersusRole", {
+    defaultValue:
+      "{{dimension}} (you {{yours}}, this kind of work usually asks {{needs}})",
+    dimension: dimension.dimension,
+    yours: num(dimension.yourScore),
+    needs: num(dimension.roleNeeds),
+  })
 }
 
-function describeDimensions(dimensions: AlignmentDimension[] | undefined): string {
-  return (dimensions ?? []).map(describeDimension).join("; ")
+function describeDimensions(
+  dimensions: AlignmentDimension[] | undefined,
+  tr: Tr
+): string {
+  return (dimensions ?? []).map((d) => describeDimension(d, tr)).join("; ")
 }
 
 /** "the Research & Analysis family", or a neutral fallback when unnamed. */
-function familyPhrase(goal: AlignmentGoal): string {
-  return goal.family ? `${goal.family} work` : "this kind of work"
+function familyPhrase(goal: AlignmentGoal, tr: Tr): string {
+  return goal.family
+    ? tr("alignment.familyWork", {
+        defaultValue: "{{family}} work",
+        family: goal.family,
+      })
+    : tr("alignment.thisKindOfWork", { defaultValue: "this kind of work" })
 }
 
-function toSupported(goal: AlignmentGoal): SupportedGoal {
-  const carrying = describeDimensions(goal.drivers?.supporting)
+function toSupported(goal: AlignmentGoal, tr: Tr): SupportedGoal {
+  const carrying = describeDimensions(goal.drivers?.supporting, tr)
   return {
     goal: goal.title,
-    supportedBy: carrying || `the shape of ${familyPhrase(goal)} overall`,
+    supportedBy:
+      carrying ||
+      tr("alignment.supportedByShape", {
+        defaultValue: "the shape of {{family}} overall",
+        family: familyPhrase(goal, tr),
+      }),
     note:
       goal.score === null
         ? undefined
-        : `You score ${num(goal.score)} out of 100 against ${familyPhrase(goal)}. This is the one you don't have to force.`,
+        : tr("alignment.supportedNote", {
+            defaultValue:
+              "You score {{score}} out of 100 against {{family}}. This is the one you don't have to force.",
+            score: num(goal.score),
+            family: familyPhrase(goal, tr),
+          }),
   }
 }
 
-function toTension(goal: AlignmentGoal): GoalTension {
-  const opposing = describeDimensions(goal.drivers?.opposing)
-  const carrying = describeDimensions(goal.drivers?.supporting)
+function toTension(goal: AlignmentGoal, tr: Tr): GoalTension {
+  const opposing = describeDimensions(goal.drivers?.opposing, tr)
+  const carrying = describeDimensions(goal.drivers?.supporting, tr)
   const score = goal.score === null ? null : num(goal.score)
 
   return {
     goal: goal.title,
     runsAgainst:
       opposing ||
-      `${familyPhrase(goal)} as a whole — no single dimension dominates, the distance is spread across the profile`,
+      tr("alignment.tensionRunsAgainstWhole", {
+        defaultValue:
+          "{{family}} as a whole — no single dimension dominates, the distance is spread across the profile",
+        family: familyPhrase(goal, tr),
+      }),
     cost: score
-      ? `You score ${score} out of 100 against ${familyPhrase(goal)}. That distance is effort: work leaning on a dimension you sit below takes more out of your day than it takes out of someone who sits above it.`
-      : `The distance between you and ${familyPhrase(goal)} will show up as effort — more out of your day than it takes out of someone whose profile sits closer to it.`,
+      ? tr("alignment.tensionCostScored", {
+          defaultValue:
+            "You score {{score}} out of 100 against {{family}}. That distance is effort: work leaning on a dimension you sit below takes more out of your day than it takes out of someone who sits above it.",
+          score,
+          family: familyPhrase(goal, tr),
+        })
+      : tr("alignment.tensionCostUnscored", {
+          defaultValue:
+            "The distance between you and {{family}} will show up as effort — more out of your day than it takes out of someone whose profile sits closer to it.",
+          family: familyPhrase(goal, tr),
+        }),
     // Never omitted. A cost with no answer next to it is a verdict, and this
     // page does not get to hand down verdicts about someone's own goals.
     whatHelps: carrying
-      ? `Lean on what is already carrying it — ${carrying}. Build the approach around those rather than around the parts that drain you.`
-      : `Your profile doesn't point at one specific lever here. That's worth taking to a coach along with the numbers above, rather than guessing at an answer.`,
+      ? tr("alignment.tensionHelpsCarrying", {
+          defaultValue:
+            "Lean on what is already carrying it — {{carrying}}. Build the approach around those rather than around the parts that drain you.",
+          carrying,
+        })
+      : tr("alignment.tensionHelpsNoLever", {
+          defaultValue:
+            "Your profile doesn't point at one specific lever here. That's worth taking to a coach along with the numbers above, rather than guessing at an answer.",
+        }),
   }
 }
 
-function toMixed(goal: AlignmentGoal): MixedGoal {
-  const opposing = describeDimensions(goal.drivers?.opposing)
+function toMixed(goal: AlignmentGoal, tr: Tr): MixedGoal {
+  const opposing = describeDimensions(goal.drivers?.opposing, tr)
   const score = goal.score === null ? null : num(goal.score)
   return {
     goal: goal.title,
     readsAs: score
-      ? `You score ${score} out of 100 against ${familyPhrase(goal)} — close enough to be workable, far enough to cost you something.`
-      : `A mixed read against ${familyPhrase(goal)} — workable, and not free.`,
-    whatItCosts: opposing ? `Where the effort goes: ${opposing}.` : undefined,
+      ? tr("alignment.mixedReadsAsScored", {
+          defaultValue:
+            "You score {{score}} out of 100 against {{family}} — close enough to be workable, far enough to cost you something.",
+          score,
+          family: familyPhrase(goal, tr),
+        })
+      : tr("alignment.mixedReadsAsUnscored", {
+          defaultValue:
+            "A mixed read against {{family}} — workable, and not free.",
+          family: familyPhrase(goal, tr),
+        }),
+    whatItCosts: opposing
+      ? tr("alignment.mixedWhereEffortGoes", {
+          defaultValue: "Where the effort goes: {{dimensions}}.",
+          dimensions: opposing,
+        })
+      : undefined,
   }
 }
 
@@ -242,7 +320,10 @@ function toMixed(goal: AlignmentGoal): MixedGoal {
 // rather than only through rendered output. The cost is a full HMR reload when
 // this file is edited, which is the right side of that trade.
 // eslint-disable-next-line react-refresh/only-export-components
-export function toReportView(payload: AlignmentResultPayload): AlignmentReport {
+export function toReportView(
+  payload: AlignmentResultPayload,
+  tr: Tr = englishTr
+): AlignmentReport {
   const goals = payload.goals ?? []
   const by = (verdict: AlignmentGoal["verdict"]) =>
     goals.filter((goal) => goal.verdict === verdict)
@@ -250,12 +331,12 @@ export function toReportView(payload: AlignmentResultPayload): AlignmentReport {
   const unscored = by("unscored")
 
   return {
-    supported: by("supported").map(toSupported),
-    tensions: by("at-tension").map(toTension),
+    supported: by("supported").map((goal) => toSupported(goal, tr)),
+    tensions: by("at-tension").map((goal) => toTension(goal, tr)),
     // Empty on purpose — the backend scores goals individually and never pairs
     // them. See the note at the top of this file.
     conflicts: [],
-    mixed: by("mixed").map(toMixed),
+    mixed: by("mixed").map((goal) => toMixed(goal, tr)),
     unplaced: (payload.unmapped ?? []).map((goal) => ({
       goal: goal.title,
       why: goal.statement,
@@ -265,7 +346,10 @@ export function toReportView(payload: AlignmentResultPayload): AlignmentReport {
           goals: unscored.map((goal) => goal.title),
           why:
             unscored[0]?.statement ??
-            "These are on file but there's no behavioural assessment to compare them against yet.",
+            tr("alignment.unscoredDefaultWhy", {
+              defaultValue:
+                "These are on file but there's no behavioural assessment to compare them against yet.",
+            }),
         }
       : undefined,
     note: payload.note,
@@ -278,13 +362,14 @@ export function toReportView(payload: AlignmentResultPayload): AlignmentReport {
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export function SupportedGoalRow({ item }: { item: SupportedGoal }) {
+  const { t } = useTranslation("directionPages")
   return (
     <li className="flex gap-3 rounded-lg border border-emerald-200/70 bg-emerald-50/40 p-3">
       <Sprout className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
       <div className="min-w-0">
         <p className="font-medium">{item.goal}</p>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          <span className="text-foreground/70">Supported by:</span>{" "}
+          <span className="text-foreground/70">{t("alignment.supportedBy", "Supported by:")}</span>{" "}
           {item.supportedBy}
         </p>
         {item.note && (
@@ -296,27 +381,28 @@ export function SupportedGoalRow({ item }: { item: SupportedGoal }) {
 }
 
 export function AtTensionRow({ item }: { item: GoalTension }) {
+  const { t } = useTranslation("directionPages")
   return (
     <li className="flex gap-3 rounded-lg border border-amber-200/80 bg-amber-50/40 p-3">
       <Scale className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
       <div className="min-w-0 space-y-1">
         <p className="font-medium">{item.goal}</p>
         <p className="text-sm text-muted-foreground">
-          <span className="text-foreground/70">Runs against:</span>{" "}
+          <span className="text-foreground/70">{t("alignment.runsAgainst", "Runs against:")}</span>{" "}
           {item.runsAgainst}
         </p>
         <p className="text-sm text-muted-foreground">
-          <span className="text-foreground/70">What that costs:</span>{" "}
+          <span className="text-foreground/70">{t("alignment.whatThatCosts", "What that costs:")}</span>{" "}
           {item.cost}
         </p>
         <p className="text-sm text-muted-foreground">
-          <span className="text-foreground/70">What helps:</span>{" "}
+          <span className="text-foreground/70">{t("alignment.whatHelps", "What helps:")}</span>{" "}
           {item.whatHelps}
         </p>
         {/* Said every time, not once at the top of the list. Someone reading a
             single row about their own goal needs it in front of them. */}
         <p className="pt-0.5 text-xs text-muted-foreground/90">
-          This doesn&apos;t mean don&apos;t. It means go in knowing the price.
+          {t("alignment.thisDoesnTMeanDon", "This doesn't mean don't. It means go in knowing the price.")}
         </p>
       </div>
     </li>
@@ -324,6 +410,7 @@ export function AtTensionRow({ item }: { item: GoalTension }) {
 }
 
 export function ConflictCallout({ item }: { item: GoalConflict }) {
+  const { t } = useTranslation("directionPages")
   return (
     <div className="rounded-lg border border-border bg-muted/40 p-4">
       <div className="flex items-start gap-3">
@@ -333,7 +420,7 @@ export function ConflictCallout({ item }: { item: GoalConflict }) {
         />
         <div className="min-w-0 space-y-2">
           <p className="text-sm font-medium">
-            {item.goals[0]} <span className="text-muted-foreground">vs</span>{" "}
+            {item.goals[0]} <span className="text-muted-foreground">{t("alignment.vs", "vs")}</span>{" "}
             {item.goals[1]}
           </p>
           <p className="text-sm text-muted-foreground">{item.explanation}</p>
@@ -346,13 +433,14 @@ export function ConflictCallout({ item }: { item: GoalConflict }) {
 
 /** Workable and not free. Same register as the tension row, lower temperature. */
 export function MixedGoalRow({ item }: { item: MixedGoal }) {
+  const { t } = useTranslation("directionPages")
   return (
     <li className="flex gap-3 rounded-lg border border-sky-200/70 bg-sky-50/40 p-3">
       <Waves className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" aria-hidden />
       <div className="min-w-0 space-y-1">
         <p className="font-medium">{item.goal}</p>
         <p className="text-sm text-muted-foreground">
-          <span className="text-foreground/70">How it reads:</span>{" "}
+          <span className="text-foreground/70">{t("alignment.howItReads", "How it reads:")}</span>{" "}
           {item.readsAs}
         </p>
         {item.whatItCosts && (
@@ -398,6 +486,7 @@ export function UnscoredNotice({
   item: UnscoredGoals
   onEstablish?: () => void
 }) {
+  const { t } = useTranslation("directionPages")
   return (
     <section
       aria-labelledby="alignment-unscored"
@@ -410,12 +499,14 @@ export function UnscoredNotice({
         />
         <div className="min-w-0 space-y-2">
           <h2 id="alignment-unscored" className="text-sm font-medium">
-            Not scored yet — we need your PRISM first
+            {t("alignment.notScoredYetWeNeed", "Not scored yet — we need your PRISM first")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {item.why} Nothing below is a low score; these goals simply
-            haven&apos;t been measured against anything, and we&apos;d rather say
-            that than show you a number we made up.
+            {t("alignment.unscoredExplanation", {
+              defaultValue:
+                "{{why}} Nothing below is a low score; these goals simply haven't been measured against anything, and we'd rather say that than show you a number we made up.",
+              why: item.why,
+            })}
           </p>
           <ul className="space-y-1">
             {item.goals.map((goal, index) => (
@@ -431,7 +522,7 @@ export function UnscoredNotice({
               size="sm"
               onClick={onEstablish}
             >
-              Take the PRISM assessment
+              {t("alignment.takeThePrismAssessment", "Take the PRISM assessment")}
               <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
             </Button>
           )}
@@ -449,6 +540,7 @@ export function AlignmentReportView({
   report: AlignmentReport
   onEstablish?: () => void
 }) {
+  const { t } = useTranslation("directionPages")
   const mixed = report.mixed ?? []
   const unplaced = report.unplaced ?? []
 
@@ -465,12 +557,11 @@ export function AlignmentReportView({
 
       <section aria-labelledby="alignment-supported">
         <h2 id="alignment-supported" className="mb-2 text-sm font-medium">
-          Goals your wiring is behind
+          {t("alignment.goalsYourWiringIsBehind", "Goals your wiring is behind")}
         </h2>
         {report.supported.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nothing here yet — that usually means the goals and the profile
-            haven&apos;t both been done, not that none of your goals fit.
+            {t("alignment.nothingHereYetThatUsually", "Nothing here yet — that usually means the goals and the profile haven't both been done, not that none of your goals fit.")}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -483,11 +574,11 @@ export function AlignmentReportView({
 
       <section aria-labelledby="alignment-tensions">
         <h2 id="alignment-tensions" className="mb-2 text-sm font-medium">
-          Goals that will cost you something
+          {t("alignment.goalsThatWillCostYou", "Goals that will cost you something")}
         </h2>
         {report.tensions.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            None found. That&apos;s a real result, not a blank.
+            {t("alignment.noneFoundThatSA", "None found. That's a real result, not a blank.")}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -501,7 +592,7 @@ export function AlignmentReportView({
       {mixed.length > 0 && (
         <section aria-labelledby="alignment-mixed">
           <h2 id="alignment-mixed" className="mb-2 text-sm font-medium">
-            Goals that could go either way
+            {t("alignment.goalsThatCouldGoEither", "Goals that could go either way")}
           </h2>
           <ul className="space-y-2">
             {mixed.map((item, index) => (
@@ -514,12 +605,10 @@ export function AlignmentReportView({
       {unplaced.length > 0 && (
         <section aria-labelledby="alignment-unplaced">
           <h2 id="alignment-unplaced" className="mb-2 text-sm font-medium">
-            Goals we couldn&apos;t place
+            {t("alignment.goalsWeCouldnTPlace", "Goals we couldn't place")}
           </h2>
           <p className="mb-2 text-sm text-muted-foreground">
-            These are yours and they still count — our matcher just couldn&apos;t
-            tell which kind of work they point at, so it declined to guess. That
-            is a limit of ours, not a judgement on the goal.
+            {t("alignment.theseAreYoursAndThey", "These are yours and they still count — our matcher just couldn't tell which kind of work they point at, so it declined to guess. That is a limit of ours, not a judgement on the goal.")}
           </p>
           <ul className="space-y-2">
             {unplaced.map((item, index) => (
@@ -532,11 +621,10 @@ export function AlignmentReportView({
       {report.conflicts.length > 0 && (
         <section aria-labelledby="alignment-conflicts" className="space-y-2">
           <h2 id="alignment-conflicts" className="text-sm font-medium">
-            Two things you want that pull apart
+            {t("alignment.twoThingsYouWantThat", "Two things you want that pull apart")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            We&apos;re naming these rather than quietly averaging them. Which way
-            you go is yours to decide.
+            {t("alignment.weReNamingTheseRather", "We're naming these rather than quietly averaging them. Which way you go is yours to decide.")}
           </p>
           {report.conflicts.map((item) => (
             <ConflictCallout key={item.goals.join("|")} item={item} />
@@ -557,23 +645,23 @@ export function AlignmentReportView({
  * does.
  */
 export function AlignmentWaiting() {
+  const { t } = useTranslation("directionPages")
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden />
-          Reading your goals against your profile — this takes a moment
+          {t("alignment.readingYourGoalsAgainstYour", "Reading your goals against your profile — this takes a moment")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <ul className="space-y-1 text-sm text-muted-foreground">
-          <li>Pulling the goals you set in the goal interview</li>
-          <li>Reading your behavioural profile</li>
-          <li>Scoring each goal against the nine career families</li>
+          <li>{t("alignment.pullingTheGoalsYouSet", "Pulling the goals you set in the goal interview")}</li>
+          <li>{t("alignment.readingYourBehaviouralProfile", "Reading your behavioural profile")}</li>
+          <li>{t("alignment.scoringEachGoalAgainstThe", "Scoring each goal against the nine career families")}</li>
         </ul>
         <p className="text-sm text-muted-foreground">
-          You can leave this page — it keeps going without you, and the result
-          will be here when you come back.
+          {t("alignment.youCanLeaveThisPage", "You can leave this page — it keeps going without you, and the result will be here when you come back.")}
         </p>
       </CardContent>
     </Card>
@@ -583,42 +671,37 @@ export function AlignmentWaiting() {
 /* ──────────────────────────────────────────────────────────────────────────── */
 
 export default function AlignmentPage() {
+  const { t } = useTranslation("directionPages")
   const navigate = useNavigate()
   const { phase, report, jobError, isStarting, start, storedFailed } =
     useAlignment()
 
-  const view = report ? toReportView(report) : null
+  const view = report
+    ? toReportView(report, (key, options) => String(t(key, options)))
+    : null
   const goEstablish = () => navigate(ROUTES.DIRECTION_SETTING.ESTABLISH)
 
   return (
     <div className="space-y-6 p-6">
       <header>
         <h1 className="text-2xl font-semibold">
-          Do my goals and my wiring agree?
+          {t("alignment.doMyGoalsAndMy", "Do my goals and my wiring agree?")}
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Step 6 of the journey. It lays your goals next to the career areas you
-          picked and next to how you&apos;re actually built, and says plainly
-          where those three agree and where they don&apos;t.
+          {t("alignment.step6OfTheJourney", "Step 6 of the journey. It lays your goals next to the career areas you picked and next to how you're actually built, and says plainly where those three agree and where they don't.")}
         </p>
       </header>
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">What this step does</CardTitle>
+          <CardTitle className="text-base">{t("alignment.whatThisStepDoes", "What this step does")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            Some of what you want will come easily to you. Some of it will take
-            more out of you than it takes out of other people. That&apos;s worth
-            knowing before you build a plan on top of it — not so you drop the
-            hard thing, but so you go in with your eyes open and some support in
-            place.
+            {t("alignment.someOfWhatYouWant", "Some of what you want will come easily to you. Some of it will take more out of you than it takes out of other people. That's worth knowing before you build a plan on top of it — not so you drop the hard thing, but so you go in with your eyes open and some support in place.")}
           </p>
           <p>
-            Where two of your goals genuinely pull against each other, this step
-            says so instead of smoothing it over. A tension is information about
-            a trade-off, not a judgement about you, and nothing here is a score.
+            {t("alignment.whereTwoOfYourGoals", "Where two of your goals genuinely pull against each other, this step says so instead of smoothing it over. A tension is information about a trade-off, not a judgement about you, and nothing here is a score.")}
           </p>
         </CardContent>
       </Card>
@@ -626,7 +709,7 @@ export default function AlignmentPage() {
       {phase === "loading" && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Checking what we already have…
+          {t("alignment.checkingWhatWeAlreadyHave", "Checking what we already have…")}
         </div>
       )}
 
@@ -636,13 +719,12 @@ export default function AlignmentPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              That run didn&apos;t finish
+              {t("alignment.thatRunDidnTFinish", "That run didn't finish")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Something broke on our side part-way through. Nothing you&apos;ve
-              entered was lost, and running it again is safe.
+              {t("alignment.somethingBrokeOnOurSide", "Something broke on our side part-way through. Nothing you've entered was lost, and running it again is safe.")}
             </p>
             {jobError && (
               <p className="rounded border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
@@ -651,7 +733,7 @@ export default function AlignmentPage() {
             )}
             <Button type="button" onClick={start} disabled={isStarting}>
               <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
-              Try again
+              {t("alignment.tryAgain", "Try again")}
             </Button>
           </CardContent>
         </Card>
@@ -661,17 +743,16 @@ export default function AlignmentPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              We&apos;ve lost track of that run
+              {t("alignment.weVeLostTrackOf", "We've lost track of that run")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              That job isn&apos;t there any more. Starting a fresh one costs you
-              nothing but the wait.
+              {t("alignment.thatJobIsnTThere", "That job isn't there any more. Starting a fresh one costs you nothing but the wait.")}
             </p>
             <Button type="button" onClick={start} disabled={isStarting}>
               <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
-              Start a new one
+              {t("alignment.startANewOne", "Start a new one")}
             </Button>
           </CardContent>
         </Card>
@@ -685,29 +766,24 @@ export default function AlignmentPage() {
                 className="h-4 w-4 text-muted-foreground"
                 aria-hidden
               />
-              Nothing has been run yet
+              {t("alignment.nothingHasBeenRunYet", "Nothing has been run yet")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {storedFailed && (
               <p className="text-sm text-muted-foreground">
-                We couldn&apos;t check whether you&apos;ve already run this —
-                that&apos;s a fault on our side, not a sign there&apos;s nothing
-                here. Running it again is safe either way.
+                {t("alignment.weCouldnTCheckWhether", "We couldn't check whether you've already run this — that's a fault on our side, not a sign there's nothing here. Running it again is safe either way.")}
               </p>
             )}
             <p className="text-sm text-muted-foreground">
-              This one is computed rather than stored, so it has to be asked for.
-              It reads your goals and your behavioural profile and takes a little
-              while — long enough that we hand it off and come back for it.
+              {t("alignment.thisOneIsComputedRather", "This one is computed rather than stored, so it has to be asked for. It reads your goals and your behavioural profile and takes a little while — long enough that we hand it off and come back for it.")}
             </p>
             <p className="text-sm text-muted-foreground">
-              You can run it now whatever state those two steps are in. It will
-              tell you what it was missing rather than pretend it wasn&apos;t.
+              {t("alignment.youCanRunItNow", "You can run it now whatever state those two steps are in. It will tell you what it was missing rather than pretend it wasn't.")}
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
               <Button type="button" onClick={start} disabled={isStarting}>
-                Run the alignment
+                {t("alignment.runTheAlignment", "Run the alignment")}
                 <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Button>
               <Button
@@ -715,7 +791,7 @@ export default function AlignmentPage() {
                 variant="outline"
                 onClick={() => navigate(ROUTES.DIRECTION_SETTING.GOALS)}
               >
-                Set my goals
+                {t("alignment.setMyGoals", "Set my goals")}
                 <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Button>
               <Button
@@ -723,7 +799,7 @@ export default function AlignmentPage() {
                 variant="outline"
                 onClick={() => navigate(ROUTES.DIRECTION_SETTING.PORTRAIT)}
               >
-                See who I am
+                {t("alignment.seeWhoIAm", "See who I am")}
                 <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Button>
             </div>
@@ -737,7 +813,7 @@ export default function AlignmentPage() {
         <div className="space-y-4">
           {phase !== "ready" && (
             <p className="text-sm text-muted-foreground">
-              Below is your most recent completed run.
+              {t("alignment.belowIsYourMostRecent", "Below is your most recent completed run.")}
             </p>
           )}
           <AlignmentReportView report={view} onEstablish={goEstablish} />
@@ -751,11 +827,10 @@ export default function AlignmentPage() {
                 disabled={isStarting}
               >
                 <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
-                Run it again
+                {t("alignment.runItAgain", "Run it again")}
               </Button>
               <p className="mt-1 text-xs text-muted-foreground">
-                Worth doing after you change your goals or take a new
-                assessment. Nothing else about this reads differently.
+                {t("alignment.worthDoingAfterYouChange", "Worth doing after you change your goals or take a new assessment. Nothing else about this reads differently.")}
               </p>
             </div>
           )}

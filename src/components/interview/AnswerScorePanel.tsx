@@ -17,6 +17,7 @@
  * has loaded via `useQuestionBank`.
  */
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { ChevronDown, Loader2, Mic, MicOff, Save, Sparkles, Target } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,6 +31,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
+import { SLOT, slotParts, type TFn } from "@/components/interview/tFallback"
 import { useSpeechDictation } from "@/hooks/interview/useSpeechDictation"
 import type { ConsentMode } from "@/services/interview/live.service"
 import type {
@@ -40,11 +42,19 @@ import type {
 } from "@/services/interview/live.service"
 import type { StarCompetency } from "@/services/interview/interview.service"
 
-const STAR_LABELS: Record<keyof StarEvidence, string> = {
-  S: "Situation",
-  T: "Task",
-  A: "Action",
-  R: "Result",
+const STAR_KEYS: (keyof StarEvidence)[] = ["S", "T", "A", "R"]
+
+function starLabel(k: keyof StarEvidence, t: TFn): string {
+  switch (k) {
+    case "S":
+      return t("answer.star.situation", "Situation")
+    case "T":
+      return t("answer.star.task", "Task")
+    case "A":
+      return t("answer.star.action", "Action")
+    default:
+      return t("answer.star.result", "Result")
+  }
 }
 
 const SCORES = [1, 2, 3, 4, 5] as const
@@ -89,6 +99,7 @@ export default function AnswerScorePanel({
   onSubmitAnswer,
   onSaveScore,
 }: AnswerScorePanelProps) {
+  const { t } = useTranslation("interviewPages")
   const [capturedAnswer, setCapturedAnswer] = useState("")
   const [finalScore, setFinalScore] = useState<number | null>(null)
   const [interviewerNotes, setInterviewerNotes] = useState("")
@@ -114,10 +125,13 @@ export default function AnswerScorePanel({
   }, [question.competency_id, suggestion?.suggested_score, scored?.final_score])
 
   const hasSubmitted = Boolean(suggestion) || Boolean(scored)
+  const [suggestedBefore, suggestedAfter] = slotParts(
+    t("answer.suggestedScore", { defaultValue: "Suggested score: {{slot}} / 5", slot: SLOT }),
+  )
   const evidence = scored?.star_evidence ?? suggestion?.star_evidence
   const capped = scored?.capped ?? suggestion?.capped
   const starPresentCount = evidence
-    ? (Object.keys(STAR_LABELS) as (keyof StarEvidence)[]).filter((k) => evidence[k]?.present).length
+    ? STAR_KEYS.filter((k) => evidence[k]?.present).length
     : 0
 
   const handleSubmit = () => {
@@ -137,7 +151,7 @@ export default function AnswerScorePanel({
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-xs text-slate-500">
-              Question {number} of {total} · {question.section}
+              {t("answer.questionOf", { defaultValue: "Question {{number}} of {{total}} · {{section}}", number, total, section: question.section })}
             </p>
             <Badge variant="secondary" className="my-1 w-fit">
               {question.competency_label ?? question.competency_id}
@@ -158,11 +172,11 @@ export default function AnswerScorePanel({
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label htmlFor={`captured-answer-${question.competency_id}`}>Captured answer</Label>
+          <Label htmlFor={`captured-answer-${question.competency_id}`}>{t("answer.capturedLabel", "Captured answer")}</Label>
           <Textarea
             id={`captured-answer-${question.competency_id}`}
             rows={5}
-            placeholder="Type — or capture by voice — what the candidate says…"
+            placeholder={t("answer.capturedPlaceholder", "Type — or capture by voice — what the candidate says…")}
             value={capturedAnswer}
             onChange={(e) => setCapturedAnswer(e.target.value)}
             disabled={hasSubmitted}
@@ -177,21 +191,21 @@ export default function AnswerScorePanel({
                   onClick={dictation.toggle}
                 >
                   {dictation.listening ? (
-                    <><MicOff className="mr-2 h-4 w-4" /> Stop capture</>
+                    <><MicOff className="mr-2 h-4 w-4" /> {t("answer.stopCapture", "Stop capture")}</>
                   ) : (
-                    <><Mic className="mr-2 h-4 w-4" /> Capture by voice</>
+                    <><Mic className="mr-2 h-4 w-4" /> {t("answer.captureByVoice", "Capture by voice")}</>
                   )}
                 </Button>
               ) : (
-                <span className="text-xs text-slate-500">Voice capture isn't supported in this browser — please type.</span>
+                <span className="text-xs text-slate-500">{t("answer.voiceUnsupported", "Voice capture isn't supported in this browser — please type.")}</span>
               )}
-              {dictation.listening && <span className="text-xs text-indigo-600">Listening…</span>}
+              {dictation.listening && <span className="text-xs text-indigo-600">{t("answer.listening", "Listening…")}</span>}
             </div>
           )}
           {!hasSubmitted && (
             <div className="mt-2">
               <Button onClick={handleSubmit} disabled={submitting || !capturedAnswer.trim()}>
-                {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…</> : "Submit answer"}
+                {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("answer.submitting", "Submitting…")}</> : t("answer.submit", "Submit answer")}
               </Button>
             </div>
           )}
@@ -202,26 +216,28 @@ export default function AnswerScorePanel({
             <div className="mb-2 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-indigo-600" />
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                AI suggestion — you decide
+                {t("answer.aiSuggestion", "AI suggestion — you decide")}
               </p>
             </div>
             <p className="text-sm text-slate-700">
-              Suggested score:{" "}
-              <span className="font-semibold">{suggestion?.suggested_score ?? "—"}</span> / 5
+              {suggestedBefore}
+              <span className="font-semibold">{suggestion?.suggested_score ?? "—"}</span>
+              {suggestedAfter}
               {capped?.applied && (
                 <span className="ml-1 text-xs text-amber-600">
-                  (capped at {capped.reason === "no_measurable_result" ? "3 — no measurable result yet" : "the section limit"})
+                  {capped.reason === "no_measurable_result"
+                    ? t("answer.cappedNoResult", "(capped at 3 — no measurable result yet)")
+                    : t("answer.cappedSection", "(capped at the section limit)")}
                 </span>
               )}
             </p>
             {developmentMode && (
               <p className="mt-2 text-xs text-slate-500">
-                Noted in the answer — descriptive only. A development conversation
-                is not scored on the STAR arc.
+                {t("answer.devNote", "Noted in the answer — descriptive only. A development conversation is not scored on the STAR arc.")}
               </p>
             )}
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
-              {(Object.keys(STAR_LABELS) as (keyof StarEvidence)[]).map((k) => (
+              {STAR_KEYS.map((k) => (
                 <span
                   key={k}
                   className={cn(
@@ -229,12 +245,12 @@ export default function AnswerScorePanel({
                     evidence[k]?.present ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500",
                   )}
                 >
-                  {STAR_LABELS[k]} {evidence[k]?.present ? "✓" : "—"}
+                  {starLabel(k, t)} {evidence[k]?.present ? "✓" : "—"}
                 </span>
               ))}
             </div>
             <p className="mt-2 text-xs text-slate-500">
-              Rubric tally: {starPresentCount} of 4 STAR elements confirmed present.
+              {t("answer.rubricTally", { defaultValue: "Rubric tally: {{present}} of 4 STAR elements confirmed present.", present: starPresentCount })}
             </p>
           </div>
         )}
@@ -242,9 +258,9 @@ export default function AnswerScorePanel({
         {hasSubmitted && (
           <div className="space-y-3 rounded-lg border border-slate-200 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Your rating (authoritative)
+              {t("answer.yourRating", "Your rating (authoritative)")}
             </p>
-            <div role="radiogroup" aria-label="Authoritative score" className="flex gap-2">
+            <div role="radiogroup" aria-label={t("answer.authoritativeScore", "Authoritative score")} className="flex gap-2">
               {SCORES.map((s) => (
                 <button
                   key={s}
@@ -264,17 +280,17 @@ export default function AnswerScorePanel({
               ))}
             </div>
             <div>
-              <Label htmlFor={`interviewer-notes-${question.competency_id}`}>Interviewer notes</Label>
+              <Label htmlFor={`interviewer-notes-${question.competency_id}`}>{t("answer.notesLabel", "Interviewer notes")}</Label>
               <Textarea
                 id={`interviewer-notes-${question.competency_id}`}
                 rows={3}
                 value={interviewerNotes}
                 onChange={(e) => setInterviewerNotes(e.target.value)}
-                placeholder="Optional — anything that informed your rating."
+                placeholder={t("answer.notesPlaceholder", "Optional — anything that informed your rating.")}
               />
             </div>
             <Button onClick={handleSave} disabled={finalScore == null || saving}>
-              {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</> : <><Save className="mr-2 h-4 w-4" /> Save rating</>}
+              {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("answer.saving", "Saving…")}</> : <><Save className="mr-2 h-4 w-4" /> {t("answer.saveRating", "Save rating")}</>}
             </Button>
             {/* `scored` alone is not enough: the row carries a seeded
                 final_score from the moment the answer is submitted, so keying
@@ -282,11 +298,11 @@ export default function AnswerScorePanel({
                 made. final_source is the fact that says somebody decided. */}
             {hasSubmitted && !scored?.final_source && (
               <p className="text-xs font-medium text-amber-700">
-                Not yet rated — this answer will be left out of the score until you rate it.
+                {t("answer.notRated", "Not yet rated — this answer will be left out of the score until you rate it.")}
               </p>
             )}
             {scored?.final_source && typeof scored.final_score === "number" && (
-              <p className="text-xs text-slate-500">Saved rating: {scored.final_score} / 5</p>
+              <p className="text-xs text-slate-500">{t("answer.savedRating", { defaultValue: "Saved rating: {{score}} / 5", score: scored.final_score })}</p>
             )}
           </div>
         )}
@@ -295,13 +311,13 @@ export default function AnswerScorePanel({
           <Collapsible open={refOpen} onOpenChange={setRefOpen}>
             <CollapsibleTrigger className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700">
               <Target className="h-3.5 w-3.5" />
-              What to listen for (scoring anchors)
+              {t("answer.listenFor", "What to listen for (scoring anchors)")}
               <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", refOpen && "rotate-180")} />
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2 space-y-1.5 text-xs">
-              <p><span className="font-semibold text-emerald-600">Strong (5):</span> <span className="text-slate-600">{bankEntry.exemplars.strong}</span></p>
-              <p><span className="font-semibold text-amber-600">Baseline (3):</span> <span className="text-slate-600">{bankEntry.exemplars.baseline}</span></p>
-              <p><span className="font-semibold text-rose-600">Weak (1):</span> <span className="text-slate-600">{bankEntry.exemplars.weak}</span></p>
+              <p><span className="font-semibold text-emerald-600">{t("answer.strong", "Strong (5):")}</span> <span className="text-slate-600">{bankEntry.exemplars.strong}</span></p>
+              <p><span className="font-semibold text-amber-600">{t("answer.baseline", "Baseline (3):")}</span> <span className="text-slate-600">{bankEntry.exemplars.baseline}</span></p>
+              <p><span className="font-semibold text-rose-600">{t("answer.weak", "Weak (1):")}</span> <span className="text-slate-600">{bankEntry.exemplars.weak}</span></p>
             </CollapsibleContent>
           </Collapsible>
         )}

@@ -5,6 +5,7 @@
  * Driven by the useMeridianVoice return shape.
  */
 import { Rewind, FastForward, Play, Pause, Square, Loader2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 
 function fmt(t: number): string {
@@ -27,24 +28,25 @@ export type AudioControlsProps = {
 }
 
 export default function AudioControls(p: AudioControlsProps) {
+  const { t } = useTranslation("interviewPages")
   if (!p.ready && !p.loading) return null
   const pct = p.duration > 0 ? Math.min(100, (p.currentTime / p.duration) * 100) : 0
   return (
     <div className={`flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 ${p.className ?? ""}`}>
       {p.loading ? (
-        <span className="flex items-center text-xs text-slate-500"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparing audio…</span>
+        <span className="flex items-center text-xs text-slate-500"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("audio.preparing", "Preparing audio…")}</span>
       ) : (
         <>
-          <Button variant="ghost" size="icon" className="h-8 w-8" title="Rewind 10s" onClick={() => p.onSeek(-10)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title={t("audio.rewind", "Rewind 10s")} onClick={() => p.onSeek(-10)}>
             <Rewind className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" title={p.playing ? "Pause" : "Play"} onClick={p.onPlayPause}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title={p.playing ? t("audio.pause", "Pause") : t("audio.play", "Play")} onClick={p.onPlayPause}>
             {p.playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" title="Stop" onClick={p.onStop}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title={t("audio.stop", "Stop")} onClick={p.onStop}>
             <Square className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" title="Forward 10s" onClick={() => p.onSeek(10)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title={t("audio.forward", "Forward 10s")} onClick={() => p.onSeek(10)}>
             <FastForward className="h-4 w-4" />
           </Button>
           <div className="mx-1 h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">

@@ -1,18 +1,24 @@
+import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { discoveryErrorMessage, useDiscoveryPays } from "@/hooks/career-discovery/useCareerDiscovery"
 import { DiscoveryError, DiscoveryLoading, PayRange, StageHeader } from "./DiscoveryParts"
 import { useDiscoveryContext } from "./discoveryContext"
 
 export default function PaysPage() {
+  const { t } = useTranslation("careerDiscoveryPages")
   const { journey } = useDiscoveryContext()
   const { data, isLoading, isError, error } = useDiscoveryPays(journey.mayProceed)
-  if (isLoading) return <DiscoveryLoading label="Loading pay ranges" />
+  if (isLoading) return <DiscoveryLoading label={t("paysLoading", "Loading pay ranges")} />
   if (isError || !data) return <DiscoveryError message={discoveryErrorMessage(error)} />
   return (
     <div className="space-y-6">
       <StageHeader
-        title="What it pays"
-        lead={data.ranked ? "Pay for your top career areas." : "Pay across every career area — add your PRISM to rank them for you."}
+        title={t("paysTitle", "What it pays")}
+        lead={
+          data.ranked
+            ? t("paysLeadRanked", "Pay for your top career areas.")
+            : t("paysLeadUnranked", "Pay across every career area — add your PRISM to rank them for you.")
+        }
       />
       <div className="grid gap-3 md:grid-cols-2">
         {data.areas.map((a) => (

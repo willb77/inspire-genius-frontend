@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { QUADRANT_CONFIG } from "@/constants/prism"
 import { QUADRANT_MEANING } from "@/lib/exportCharacterProfile"
 import type { DerivedQuadrant } from "@/types/character-lab"
@@ -21,6 +22,7 @@ const CONFIG_BY_NAME = Object.fromEntries(
 ) as Record<string, { label: string; color: string; bgClass: string }>
 
 export default function BrainMap({ quadrants }: { quadrants: DerivedQuadrant[] }) {
+  const { t } = useTranslation("prismUi")
   if (!quadrants.length) return null
   const byName = Object.fromEntries(quadrants.map((q) => [q.name, q]))
   const top = Math.max(...quadrants.map((q) => q.value))
@@ -60,7 +62,7 @@ export default function BrainMap({ quadrants }: { quadrants: DerivedQuadrant[] }
             </div>
             <p className="mt-1.5 text-[11px] text-muted-foreground">
               {q.band}
-              {dominant && <span className="ml-1 font-semibold">· dominant</span>}
+              {dominant && <span className="ml-1 font-semibold">{t("brainMap.dominant", { defaultValue: "· dominant" })}</span>}
             </p>
           </li>
         )

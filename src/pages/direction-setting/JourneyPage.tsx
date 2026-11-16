@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import {
   AlertTriangle,
@@ -68,28 +69,8 @@ const STAGE_ROUTE: Record<string, string> = {
  * to three lines and the sentence around it to five. The long form is still
  * what the tooltip says — this is only what fits on the face.
  */
-const NEEDS_SHORT: Record<string, string> = {
-  prism: "PRISM",
-  goals: "goals",
-  careers: "careers",
-  blueprints: "benchmarks",
-  gaps: "gaps",
-  plan: "plan",
-  salary: "salary",
-  guide: "guide",
-}
-
-/** Plain-language reason a stage will be thin, keyed by the backend's `needs`. */
-const NEEDS_LABEL: Record<string, string> = {
-  prism: "your PRISM results",
-  goals: "your goals",
-  careers: "your career areas",
-  blueprints: "published role benchmarks",
-  gaps: "your gap analysis",
-  plan: "your plan",
-  salary: "salary data",
-  guide: "your interview guide",
-}
+// Resolved at render inside `StageTile` (hooks cannot run at module level); the
+// backend's `needs` ids are the keys, and an unknown id falls through to itself.
 
 function StateIcon({ state }: { state: StageState }) {
   if (state === "complete") {
@@ -134,7 +115,29 @@ function StageTile({
   isNext: boolean
   onOpen: (id: string) => void
 }) {
+  const { t } = useTranslation("directionPages")
   const done = stage.state === "complete" || stage.state === "skipped"
+  const NEEDS_SHORT: Record<string, string> = {
+    prism: "PRISM",
+    goals: t("journey.needsShort.goals", "goals"),
+    careers: t("journey.needsShort.careers", "careers"),
+    blueprints: t("journey.needsShort.blueprints", "benchmarks"),
+    gaps: t("journey.needsShort.gaps", "gaps"),
+    plan: t("journey.needsShort.plan", "plan"),
+    salary: t("journey.needsShort.salary", "salary"),
+    guide: t("journey.needsShort.guide", "guide"),
+  }
+  /** Plain-language reason a stage will be thin, keyed by the backend's `needs`. */
+  const NEEDS_LABEL: Record<string, string> = {
+    prism: t("journey.needsLabel.prism", "your PRISM results"),
+    goals: t("journey.needsLabel.goals", "your goals"),
+    careers: t("journey.needsLabel.careers", "your career areas"),
+    blueprints: t("journey.needsLabel.blueprints", "published role benchmarks"),
+    gaps: t("journey.needsLabel.gaps", "your gap analysis"),
+    plan: t("journey.needsLabel.plan", "your plan"),
+    salary: t("journey.needsLabel.salary", "salary data"),
+    guide: t("journey.needsLabel.guide", "your interview guide"),
+  }
   // `unmetNeeds` is the live view; `needs` is the standing list. Fall back only
   // when the backend predates the field — `?? stage.needs` on an empty served
   // array would wrongly re-list satisfied requirements.
@@ -148,11 +151,14 @@ function StageTile({
     stage.question,
     stage.outcome,
     thin
-      ? `Thin without ${missing
-          .map((n) => NEEDS_LABEL[n] ?? n)
-          .join(" and ")} — you can still open it`
+      ? t("journey.thinWithoutTooltip", {
+          defaultValue: "Thin without {{needs}} — you can still open it",
+          needs: missing
+            .map((n) => NEEDS_LABEL[n] ?? n)
+            .join(t("journey.needsJoiner", " and ")),
+        })
       : ready
-        ? "Ready — everything it needs is on file"
+        ? t("journey.readyTooltip", "Ready — everything it needs is on file")
         : null,
   ]
     .filter(Boolean)
@@ -199,12 +205,12 @@ function StageTile({
         <span className="mt-auto flex flex-wrap items-center gap-1">
           {isNext && (
             <span className="rounded bg-primary/10 px-1 py-px text-[10px] font-medium text-primary">
-              Next
+              {t("journey.next", "Next")}
             </span>
           )}
           {stage.optional && !done && (
             <span className="rounded bg-muted px-1 py-px text-[10px] font-medium text-muted-foreground">
-              Optional
+              {t("journey.optional", "Optional")}
             </span>
           )}
           {/* Only what is missing *now*. `unmetNeeds` is served; the fallback to
@@ -214,12 +220,15 @@ function StageTile({
           {thin && (
             <span className="inline-flex items-center gap-0.5 rounded bg-muted px-1 py-px text-[10px] font-medium text-muted-foreground">
               <Lock className="h-2.5 w-2.5 shrink-0" aria-hidden />
-              Thin: {missing.map((n) => NEEDS_SHORT[n] ?? n).join(", ")}
+              {t("journey.thinChip", {
+                defaultValue: "Thin: {{needs}}",
+                needs: missing.map((n) => NEEDS_SHORT[n] ?? n).join(", "),
+              })}
             </span>
           )}
           {ready && (
             <span className="rounded bg-emerald-50 px-1 py-px text-[10px] font-medium text-emerald-700">
-              Ready
+              {t("journey.ready", "Ready")}
             </span>
           )}
         </span>
@@ -249,6 +258,7 @@ function StageTile({
  *    press is indistinguishable from a dead button.
  */
 function ExportCard({ done, total }: { done: number; total: number }) {
+  const { t } = useTranslation("directionPages")
   const [format, setFormat] = useState<ReportFormat>("docx")
   const report = useJourneyReport()
 
@@ -271,27 +281,28 @@ function ExportCard({ done, total }: { done: number; total: number }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Take it with you</CardTitle>
+        <CardTitle className="text-base">{t("journey.takeItWithYou", "Take it with you")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Everything you&apos;ve done so far, as one document — your portrait, career
-          areas, goals, target role, gaps and plan. Steps you haven&apos;t reached yet
-          are listed as not done rather than left out, so nobody reading it can
-          mistake a short document for a thin person.
+          {t("journey.everythingYouVeDoneSo", "Everything you've done so far, as one document — your portrait, career areas, goals, target role, gaps and plan. Steps you haven't reached yet are listed as not done rather than left out, so nobody reading it can mistake a short document for a thin person.")}
         </p>
         <p className="text-sm">
           <span className="font-medium">
-            {done} of {total} steps
+            {t("journey.exportStepsCount", {
+              defaultValue: "{{done}} of {{total}} steps",
+              done,
+              total,
+            })}
           </span>{" "}
           <span className="text-muted-foreground">
             {done === 0
-              ? "— you can still export it, it will just be mostly empty."
-              : "are in the document."}
+              ? t("journey.exportMostlyEmpty", "— you can still export it, it will just be mostly empty.")
+              : t("journey.exportAreInDocument", "are in the document.")}
           </span>
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <div role="radiogroup" aria-label="File format" className="flex gap-1">
+          <div role="radiogroup" aria-label={t("journey.fileFormat", "File format")} className="flex gap-1">
             {(["docx", "pdf", "md", "html"] as ReportFormat[]).map((f) => (
               <button
                 key={f}
@@ -316,14 +327,15 @@ function ExportCard({ done, total }: { done: number; total: number }) {
             ) : (
               <Download className="mr-1.5 h-4 w-4" aria-hidden />
             )}
-            {report.isPending ? "Building…" : "Download"}
+            {report.isPending
+              ? t("journey.building", "Building…")
+              : t("journey.download", "Download")}
           </Button>
         </div>
         {report.isError && (
           <p className="flex items-start gap-1.5 text-sm text-amber-700">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            We couldn&apos;t build the document just now. Try again — nothing you&apos;ve
-            done has been lost.
+            {t("journey.weCouldnTBuildThe", "We couldn't build the document just now. Try again — nothing you've done has been lost.")}
           </p>
         )}
       </CardContent>
@@ -332,6 +344,7 @@ function ExportCard({ done, total }: { done: number; total: number }) {
 }
 
 export default function JourneyPage() {
+  const { t } = useTranslation("directionPages")
   const navigate = useNavigate()
   const { data: journey, isLoading, isError } = useJourney()
   const reset = useResetJourney()
@@ -355,7 +368,7 @@ export default function JourneyPage() {
       <div className="p-6">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Loading your journey…
+          {t("journey.loadingYourJourney", "Loading your journey…")}
         </div>
       </div>
     )
@@ -367,8 +380,7 @@ export default function JourneyPage() {
         <Card>
           <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">
-              We couldn&apos;t load your journey just now. Refresh to try again — nothing
-              you&apos;ve done has been lost.
+              {t("journey.weCouldnTLoadYour", "We couldn't load your journey just now. Refresh to try again — nothing you've done has been lost.")}
             </p>
           </CardContent>
         </Card>
@@ -384,9 +396,7 @@ export default function JourneyPage() {
       <header>
         <h1 className="text-2xl font-semibold">Direction Setting</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          A guided path from &ldquo;I don&apos;t know what I should be doing&rdquo; to a
-          named role, an honest read of the gap, and a plan to close it. Come back to
-          it whenever — nothing here expires, and every step is saved.
+          {t("journey.aGuidedPathFromI", "A guided path from “I don't know what I should be doing” to a named role, an honest read of the gap, and a plan to close it. Come back to it whenever — nothing here expires, and every step is saved.")}
         </p>
       </header>
 
@@ -394,13 +404,21 @@ export default function JourneyPage() {
       <Card className="border-primary/30 bg-primary/[0.03]">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">
-            {finished ? "You've been all the way through" : "Your next step"}
+            {finished
+              ? t("journey.allTheWayThrough", "You've been all the way through")
+              : t("journey.yourNextStep", "Your next step")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
             <p className="font-medium">
-              {finished ? next.outcome : `${next.name} — ${next.question}`}
+              {finished
+                ? next.outcome
+                : t("journey.nextNameQuestion", {
+                    defaultValue: "{{name}} — {{question}}",
+                    name: next.name,
+                    question: next.question,
+                  })}
             </p>
             {!finished && (
               <p className="mt-1 text-sm text-muted-foreground">{next.outcome}</p>
@@ -408,7 +426,9 @@ export default function JourneyPage() {
           </div>
           {!finished && next.id && (
             <Button type="button" onClick={() => open(next.id as string)}>
-              {next.state === "in_progress" ? "Continue" : "Start"}
+              {next.state === "in_progress"
+                ? t("journey.continue", "Continue")
+                : t("journey.start", "Start")}
               <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
             </Button>
           )}
@@ -418,10 +438,17 @@ export default function JourneyPage() {
       <section aria-labelledby="journey-progress">
         <div className="mb-2 flex items-baseline justify-between">
           <h2 id="journey-progress" className="text-sm font-medium">
-            All {progress.total} steps
+            {t("journey.allSteps", {
+              defaultValue: "All {{total}} steps",
+              total: progress.total,
+            })}
           </h2>
           <span className="text-xs text-muted-foreground">
-            {progress.done} of {progress.total} done
+            {t("journey.progressDone", {
+              defaultValue: "{{done}} of {{total}} done",
+              done: progress.done,
+              total: progress.total,
+            })}
           </span>
         </div>
         <div
@@ -430,7 +457,7 @@ export default function JourneyPage() {
           aria-valuenow={progress.pct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Journey progress"
+          aria-label={t("journey.journeyProgress", "Journey progress")}
         >
           <div
             className="h-full rounded-full bg-primary transition-all"
@@ -465,11 +492,10 @@ export default function JourneyPage() {
             onClick={() => reset.mutate()}
           >
             <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden />
-            Start over
+            {t("journey.startOver", "Start over")}
           </Button>
           <p className="mt-1 text-xs text-muted-foreground">
-            Clears your progress through these steps. Your PRISM results, documents
-            and goals are untouched.
+            {t("journey.clearsYourProgressThroughThese", "Clears your progress through these steps. Your PRISM results, documents and goals are untouched.")}
           </p>
         </footer>
       )}
