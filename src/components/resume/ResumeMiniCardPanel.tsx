@@ -6,6 +6,7 @@
 import { useState } from "react"
 import { Copy, Download, IdCard } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { downloadBlob } from "@/lib/exportTranscript"
 import { renderAtsResume } from "@/lib/resume/exportResumeAts"
@@ -14,6 +15,7 @@ import type { ResumeContact } from "@/lib/resume/resumeDocument"
 import type { GeneratedResume } from "@/types/resumeWriter"
 
 export function ResumeMiniCardPanel({ draft, contact }: { draft: GeneratedResume; contact: ResumeContact }) {
+  const { t } = useTranslation("resumeUi")
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const card = buildMiniCard(draft, contact)
@@ -21,9 +23,9 @@ export function ResumeMiniCardPanel({ draft, contact }: { draft: GeneratedResume
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(miniCardText(card))
-      toast.success("Mini card copied.")
+      toast.success(t("miniCard.copied", "Mini card copied."))
     } catch {
-      toast.error("Couldn't copy. Select the text and copy it instead.")
+      toast.error(t("miniCard.copyFailed", "Couldn't copy. Select the text and copy it instead."))
     }
   }
   const onPdf = async () => {
@@ -32,7 +34,7 @@ export function ResumeMiniCardPanel({ draft, contact }: { draft: GeneratedResume
       const { fileName, blob } = await renderAtsResume(miniCardDocument(card), "pdf", null, "Profile-Card")
       downloadBlob(fileName, blob)
     } catch {
-      toast.error("Couldn't build the PDF. Try again, or use Copy.")
+      toast.error(t("miniCard.pdfFailed", "Couldn't build the PDF. Try again, or use Copy."))
     } finally {
       setBusy(false)
     }
@@ -42,7 +44,7 @@ export function ResumeMiniCardPanel({ draft, contact }: { draft: GeneratedResume
     return (
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)} data-testid="resume-mini-open">
         <IdCard className="mr-1.5 h-4 w-4" aria-hidden="true" />
-        Make a Mini card for networking
+        {t("miniCard.open", "Make a Mini card for networking")}
       </Button>
     )
 
@@ -50,17 +52,19 @@ export function ResumeMiniCardPanel({ draft, contact }: { draft: GeneratedResume
     <section data-testid="resume-mini-card" className="space-y-2 rounded-md border p-3 text-sm">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h3 className="font-semibold">Mini card</h3>
-          <p className="text-xs text-muted-foreground">For career fairs and networking — not for applications.</p>
+          <h3 className="font-semibold">{t("miniCard.title", "Mini card")}</h3>
+          <p className="text-xs text-muted-foreground">
+            {t("miniCard.subtitle", "For career fairs and networking — not for applications.")}
+          </p>
         </div>
         <div className="flex shrink-0 gap-2">
           <Button size="sm" variant="outline" onClick={onCopy}>
             <Copy className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            Copy
+            {t("miniCard.copy", "Copy")}
           </Button>
           <Button size="sm" onClick={onPdf} disabled={busy}>
             <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            PDF
+            {t("miniCard.pdf", "PDF")}
           </Button>
         </div>
       </div>

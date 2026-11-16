@@ -15,6 +15,7 @@
  */
 import { useEffect, useRef, useState } from "react"
 import { MessageCircleQuestion, PencilLine } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import type { ResumeDocument } from "@/lib/resume/resumeDocument"
 
@@ -30,6 +31,7 @@ type LineProps = {
 }
 
 function Line({ at, text, changed, openLine, onOpen, onAsk, onRewrite }: LineProps) {
+  const { t } = useTranslation("resumeUi")
   const open = openLine === at
   const lineRef = useRef<HTMLButtonElement>(null)
   const firstRef = useRef<HTMLButtonElement>(null)
@@ -51,7 +53,7 @@ function Line({ at, text, changed, openLine, onOpen, onAsk, onRewrite }: LinePro
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`${text} — ask about or rewrite this line`}
+        aria-label={t("draftView.lineAria", { defaultValue: "{{text}} — ask about or rewrite this line", text })}
         onClick={() => onOpen(open ? null : at)}
         {...(isChanged ? { "data-changed": "true" } : {})}
         className={cn(
@@ -69,7 +71,7 @@ function Line({ at, text, changed, openLine, onOpen, onAsk, onRewrite }: LinePro
       {open ? (
         <span
           role="menu"
-          aria-label="This line"
+          aria-label={t("draftView.menuLabel", "This line")}
           data-testid="guided-line-menu"
           onKeyDown={(e) => {
             if (e.key === "Escape") {
@@ -90,7 +92,7 @@ function Line({ at, text, changed, openLine, onOpen, onAsk, onRewrite }: LinePro
             className="inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-xs hover:bg-muted"
           >
             <MessageCircleQuestion className="h-4 w-4" aria-hidden="true" />
-            Ask about this line
+            {t("draftView.ask", "Ask about this line")}
           </button>
           <button
             type="button"
@@ -102,7 +104,7 @@ function Line({ at, text, changed, openLine, onOpen, onAsk, onRewrite }: LinePro
             className="inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-xs hover:bg-muted"
           >
             <PencilLine className="h-4 w-4" aria-hidden="true" />
-            Rewrite this line
+            {t("draftView.rewrite", "Rewrite this line")}
           </button>
         </span>
       ) : null}
@@ -123,6 +125,7 @@ export function GuidedDraftView({
   onAsk: (line: string) => void
   onRewrite: (line: string) => void
 }) {
+  const { t } = useTranslation("resumeUi")
   const [openLine, setOpenLine] = useState<string | null>(null)
   const line = (at: string, text: string) => (
     <Line
@@ -192,7 +195,7 @@ export function GuidedDraftView({
         </section>
       ))}
       <p className="text-xs text-muted-foreground" data-testid="guided-line-hint">
-        Highlighted: changed in your last revision. Click any line to ask about it or edit it.
+        {t("draftView.hint", "Highlighted: changed in your last revision. Click any line to ask about it or edit it.")}
       </p>
       <p className="border-t pt-2 text-xs text-muted-foreground" data-testid="resume-footnote">
         {footnote}

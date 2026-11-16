@@ -6,6 +6,7 @@
  * off the file, on the page). Interview talking points are their own panel and
  * never part of the document.
  */
+import { useTranslation } from "react-i18next"
 import type { ResumeDocument } from "@/lib/resume/resumeDocument"
 
 /** RWO-8 — lines new since the previous draft are marked. Absent (today's page), nothing is. */
@@ -93,19 +94,22 @@ export function ResumeDocumentView({
  * the person — never part of the document.
  */
 export function ResumeCrosswalk({ rows }: { rows: { requirement: string; evidence: string }[] }) {
+  const { t } = useTranslation("resumeUi")
   if (!rows.length) return null
   return (
     <section data-testid="resume-crosswalk" className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm">
-      <h3 className="mb-1 font-semibold">Announcement requirements</h3>
+      <h3 className="mb-1 font-semibold">{t("crosswalk.title", "Announcement requirements")}</h3>
       <p className="mb-1 text-xs text-muted-foreground">
-        What your résumé shows for each requirement. Not part of your résumé.
+        {t("crosswalk.hint", "What your résumé shows for each requirement. Not part of your résumé.")}
       </p>
       <ul className="space-y-1">
         {rows.map((r, i) => (
           <li key={i}>
             <span className="font-medium">{r.requirement}</span>
             <span className="block text-xs text-muted-foreground">
-              {r.evidence ? `Shown by: ${r.evidence}` : "Not shown yet — add it to your résumé if it is true."}
+              {r.evidence
+                ? t("crosswalk.shownBy", { defaultValue: "Shown by: {{evidence}}", evidence: r.evidence })
+                : t("crosswalk.notShown", "Not shown yet — add it to your résumé if it is true.")}
             </span>
           </li>
         ))}
@@ -115,11 +119,14 @@ export function ResumeCrosswalk({ rows }: { rows: { requirement: string; evidenc
 }
 
 export function ResumeTalkingPoints({ points }: { points: string[] }) {
+  const { t } = useTranslation("resumeUi")
   if (!points.length) return null
   return (
     <section data-testid="resume-talking-points" className="rounded-md border border-teal-200 bg-teal-50 p-3 text-sm">
-      <h3 className="mb-1 font-semibold">For your interview</h3>
-      <p className="mb-1 text-xs text-muted-foreground">Points you can use if a gap comes up. They are not in your résumé.</p>
+      <h3 className="mb-1 font-semibold">{t("talkingPoints.title", "For your interview")}</h3>
+      <p className="mb-1 text-xs text-muted-foreground">
+        {t("talkingPoints.hint", "Points you can use if a gap comes up. They are not in your résumé.")}
+      </p>
       <ul className="list-disc space-y-0.5 pl-5">
         {points.map((p, i) => (
           <li key={i}>{p}</li>
