@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
@@ -29,10 +30,11 @@ import { useProfileMerged } from "@/hooks/career-discovery/useProfileMerged"
  * These mirror the server's gates; they are presentation, not security.
  */
 export function DiscoveryNav() {
+  const { t } = useTranslation("careerDiscoveryPages")
   // JF-11: one "My profile" entry when the server folds Who I am into About me.
   const items = discoveryMenu(CAREER_DISCOVERY_TOOLS, useProfileMerged())
   return (
-    <nav aria-label="Career & Education Discovery" className="mb-6 flex flex-wrap gap-1.5">
+    <nav aria-label={t("shellNavLabel", "Career & Education Discovery")} className="mb-6 flex flex-wrap gap-1.5">
       {items.map(({ to, icon: Icon, label }) => (
         <NavLink
           key={to}
@@ -56,21 +58,27 @@ export function DiscoveryNav() {
 }
 
 function Gate() {
+  const { t } = useTranslation("careerDiscoveryPages")
   const { pathname } = useLocation()
   const status = useDiscoveryStatus()
   const enabled = status.data?.enabled === true
   const journey = useDiscoveryJourney(enabled)
 
-  if (status.isLoading) return <DiscoveryLoading label="Checking Discovery" />
+  if (status.isLoading) return <DiscoveryLoading label={t("shellChecking", "Checking Discovery")} />
   if (status.isError) return <DiscoveryError message={discoveryErrorMessage(status.error)} />
   if (!enabled) {
     return (
-      <NoticeCard title="Not switched on yet">
-        <p>Career &amp; Education Discovery isn&apos;t switched on yet. Nothing is wrong with your account.</p>
+      <NoticeCard title={t("shellOffTitle", "Not switched on yet")}>
+        <p>
+          {t(
+            "shellOffBody",
+            "Career & Education Discovery isn't switched on yet. Nothing is wrong with your account."
+          )}
+        </p>
       </NoticeCard>
     )
   }
-  if (journey.isLoading) return <DiscoveryLoading label="Loading your journey" />
+  if (journey.isLoading) return <DiscoveryLoading label={t("shellLoadingJourney", "Loading your journey")} />
   if (journey.isError || !journey.data) {
     return <DiscoveryError message={discoveryErrorMessage(journey.error)} />
   }
@@ -78,10 +86,13 @@ function Gate() {
   const j = journey.data
   if (j.ageBand === "under_13") {
     return (
-      <NoticeCard title="Discovery is for ages 13 and over">
+      <NoticeCard title={t("shellUnder13Title", "Discovery is for ages 13 and over")}>
         <p>
-          Discovery is for people aged {j.ageFloor} and over, so it can&apos;t collect or show anything
-          for you yet. Nothing about you has been kept here except that answer.
+          {t("shellUnder13Body", {
+            defaultValue:
+              "Discovery is for people aged {{age}} and over, so it can't collect or show anything for you yet. Nothing about you has been kept here except that answer.",
+            age: j.ageFloor,
+          })}
         </p>
       </NoticeCard>
     )
@@ -89,10 +100,10 @@ function Gate() {
   const onJourney = pathname === ROUTES.CAREER_DISCOVERY.JOURNEY
   if (!j.mayProceed && !onJourney) {
     return (
-      <NoticeCard title="Start on the first step">
-        <p>Discovery needs your age range before anything else.</p>
+      <NoticeCard title={t("shellStartTitle", "Start on the first step")}>
+        <p>{t("shellStartBody", "Discovery needs your age range before anything else.")}</p>
         <Button asChild size="sm">
-          <Link to={ROUTES.CAREER_DISCOVERY.JOURNEY}>Go to the first step</Link>
+          <Link to={ROUTES.CAREER_DISCOVERY.JOURNEY}>{t("shellStartLink", "Go to the first step")}</Link>
         </Button>
       </NoticeCard>
     )

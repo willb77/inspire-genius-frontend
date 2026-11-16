@@ -1,4 +1,7 @@
 import { Link } from "react-router-dom"
+import { useMemo } from "react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -16,11 +19,12 @@ import { isProfileMerged, PROFILE_LABEL } from "@/lib/career-discovery/profileSe
 import { SkillsSection } from "./profile/SkillsSection"
 import { WhoSection } from "./profile/WhoSection"
 
-const aboutSchema = z.object({
-  schoolLevel: z.string().min(1, "Pick where you are now."),
-  interests: z.string().max(700, "That's a lot — keep it to about ten things."),
-})
-type AboutForm = z.infer<typeof aboutSchema>
+const makeAboutSchema = (t: TFunction) =>
+  z.object({
+    schoolLevel: z.string().min(1, t("aboutErrPickLevel", "Pick where you are now.")),
+    interests: z.string().max(700, t("aboutErrInterestsLong", "That's a lot — keep it to about ten things.")),
+  })
+type AboutForm = z.infer<ReturnType<typeof makeAboutSchema>>
 
 /**
  * About me. JF-11: when the server shows About me and Who I am as one section
@@ -29,6 +33,8 @@ type AboutForm = z.infer<typeof aboutSchema>
  * exactly as before.
  */
 export default function AboutPage() {
+  const { t } = useTranslation("careerDiscoveryPages")
+  const aboutSchema = useMemo(() => makeAboutSchema(t), [t])
   const { journey } = useDiscoveryContext()
   const merged = isProfileMerged(journey.stages)
   const save = useSaveAbout()
@@ -48,22 +54,28 @@ export default function AboutPage() {
       {merged ? (
         <StageHeader
           title={PROFILE_LABEL}
-          lead="Where you're starting from, your skills, and how you tend to work. You can change any of this later."
+          lead={t(
+            "aboutMergedLead",
+            "Where you're starting from, your skills, and how you tend to work. You can change any of this later."
+          )}
         />
       ) : (
-        <StageHeader title="About me" lead="Where you're starting from. You can change any of this later." />
+        <StageHeader
+          title={t("aboutTitle", "About me")}
+          lead={t("aboutLead", "Where you're starting from. You can change any of this later.")}
+        />
       )}
       <Card className="max-w-2xl">
         <CardContent className="p-6">
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
             <div className="space-y-1.5">
-              <Label htmlFor="cd-school-level">Where are you now?</Label>
+              <Label htmlFor="cd-school-level">{t("aboutLevelLabel", "Where are you now?")}</Label>
               <select
                 id="cd-school-level"
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 {...form.register("schoolLevel")}
               >
-                <option value="">Choose one</option>
+                <option value="">{t("aboutChooseOne", "Choose one")}</option>
                 {SCHOOL_LEVELS.map((l) => (
                   <option key={l.value} value={l.value}>
                     {l.label}
@@ -73,14 +85,14 @@ export default function AboutPage() {
               {errors.schoolLevel ? <p className="text-sm text-destructive">{errors.schoolLevel.message}</p> : null}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cd-interests">What are you into? (separate with commas)</Label>
-              <Input id="cd-interests" placeholder="e.g. drawing, robotics, helping people" {...form.register("interests")} />
+              <Label htmlFor="cd-interests">{t("aboutInterestsLabel", "What are you into? (separate with commas)")}</Label>
+              <Input id="cd-interests" placeholder={t("aboutInterestsPlaceholder", "e.g. drawing, robotics, helping people")} {...form.register("interests")} />
               {errors.interests ? <p className="text-sm text-destructive">{errors.interests.message}</p> : null}
             </div>
             {save.isError ? <DiscoveryError message={discoveryErrorMessage(save.error)} /> : null}
-            {save.isSuccess ? <p className="text-sm text-muted-foreground">Saved.</p> : null}
+            {save.isSuccess ? <p className="text-sm text-muted-foreground">{t("aboutSaved", "Saved.")}</p> : null}
             <Button type="submit" disabled={save.isPending}>
-              Save
+              {t("aboutSave", "Save")}
             </Button>
           </form>
         </CardContent>
@@ -88,23 +100,23 @@ export default function AboutPage() {
       <div className="grid gap-3 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Your PRISM</CardTitle>
+            <CardTitle className="text-base">{t("aboutPrismTitle", "Your PRISM")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Career areas are ranked from your PRISM. If you haven&apos;t taken it yet, start here.</p>
+            <p>{t("aboutPrismBody", "Career areas are ranked from your PRISM. If you haven't taken it yet, start here.")}</p>
             <Button asChild variant="outline" size="sm">
-              <Link to={ROUTES.PRISM_ASSESSMENT}>Take or check PRISM</Link>
+              <Link to={ROUTES.PRISM_ASSESSMENT}>{t("aboutPrismLink", "Take or check PRISM")}</Link>
             </Button>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">A résumé (optional)</CardTitle>
+            <CardTitle className="text-base">{t("aboutResumeTitle", "A résumé (optional)")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>If you have one, add it to your documents. You don&apos;t need one to carry on.</p>
+            <p>{t("aboutResumeBody", "If you have one, add it to your documents. You don't need one to carry on.")}</p>
             <Button asChild variant="outline" size="sm">
-              <Link to={ROUTES.DOCUMENTS}>Open my documents</Link>
+              <Link to={ROUTES.DOCUMENTS}>{t("aboutResumeLink", "Open my documents")}</Link>
             </Button>
           </CardContent>
         </Card>

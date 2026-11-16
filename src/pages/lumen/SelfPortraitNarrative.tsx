@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import {
   Sparkles,
   Send,
@@ -28,11 +30,11 @@ import {
 import type { SelfPortrait } from "@/types/lumen"
 
 /** Starter prompts — concrete, non-clinical, grounded in what a portrait holds. */
-const SUGGESTIONS = [
-  "What are my strengths, in plain language?",
-  "Where might I have blind spots?",
-  "How do I tend to behave under pressure?",
-  "What would sharpen this portrait next?",
+const suggestions = (t: TFunction) => [
+  t("narrSuggestStrengths", "What are my strengths, in plain language?"),
+  t("narrSuggestBlindSpots", "Where might I have blind spots?"),
+  t("narrSuggestPressure", "How do I tend to behave under pressure?"),
+  t("narrSuggestNext", "What would sharpen this portrait next?"),
 ]
 
 /**
@@ -57,6 +59,7 @@ export function SelfPortraitNarrative({
   portrait: SelfPortrait
   showAsk?: boolean
 }) {
+  const { t } = useTranslation("lumenPages")
   const describe = useSelfPortraitDescription()
   const ask = useAskSelfPortrait()
   const [question, setQuestion] = useState("")
@@ -77,7 +80,7 @@ export function SelfPortraitNarrative({
       if (answer) setHistory((prev) => [...prev, { question: q, answer }])
       setQuestion("")
     } catch {
-      toast.error("That didn't go through — please try again in a moment.")
+      toast.error(t("narrAskFailed", "That didn't go through — please try again in a moment."))
     }
   }
 
@@ -125,9 +128,9 @@ export function SelfPortraitNarrative({
     try {
       const blob = await renderHtmlToPdf(buildPortraitReportHtml(reportInput()))
       downloadBlob(`${portraitReportFileBase()}.pdf`, blob)
-      toast.success("Self-portrait exported to PDF.")
+      toast.success(t("narrPdfOk", "Self-portrait exported to PDF."))
     } catch {
-      toast.error("Could not generate the PDF.")
+      toast.error(t("narrPdfFailed", "Could not generate the PDF."))
     } finally {
       setBusy(null)
     }
@@ -137,9 +140,9 @@ export function SelfPortraitNarrative({
     setBusy("doc")
     try {
       downloadBlob(`${portraitReportFileBase()}.doc`, buildPortraitReportDoc(reportInput()))
-      toast.success("Self-portrait exported to Word.")
+      toast.success(t("narrWordOk", "Self-portrait exported to Word."))
     } catch {
-      toast.error("Could not generate the Word document.")
+      toast.error(t("narrWordFailed", "Could not generate the Word document."))
     } finally {
       setBusy(null)
     }
@@ -155,7 +158,7 @@ export function SelfPortraitNarrative({
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <Sparkles className="h-4 w-4 text-violet-600" aria-hidden />
-            In plain language
+            {t("narrPlainLanguage", "In plain language")}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
@@ -164,7 +167,7 @@ export function SelfPortraitNarrative({
               size="sm"
               onClick={exportPdf}
               disabled={!canExport || exporting}
-              title="Export your self-portrait as a PDF"
+              title={t("narrExportPdfTitle", "Export your self-portrait as a PDF")}
             >
               {busy === "pdf" ? (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -179,7 +182,7 @@ export function SelfPortraitNarrative({
               size="sm"
               onClick={exportDoc}
               disabled={!canExport || exporting}
-              title="Export your self-portrait as a Word document"
+              title={t("narrExportWordTitle", "Export your self-portrait as a Word document")}
             >
               {busy === "doc" ? (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -199,8 +202,10 @@ export function SelfPortraitNarrative({
             </div>
           ) : describe.isError ? (
             <p className="text-sm text-muted-foreground">
-              We couldn&apos;t compose a description just now. The portrait below still
-              stands — try refreshing in a moment.
+              {t(
+                "narrDescribeFailed",
+                "We couldn't compose a description just now. The portrait below still stands — try refreshing in a moment."
+              )}
             </p>
           ) : (
             <AssistantMarkdown
@@ -220,7 +225,7 @@ export function SelfPortraitNarrative({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <MessagesSquare className="h-4 w-4 text-violet-600" aria-hidden />
-            Ask your self-portrait
+            {t("narrAskTitle", "Ask your self-portrait")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -243,13 +248,13 @@ export function SelfPortraitNarrative({
 
           {ask.isPending && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Reading your portrait…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("narrReading", "Reading your portrait…")}
             </div>
           )}
 
           <div className="space-y-2">
             <Textarea
-              aria-label="Ask a question about your self-portrait"
+              aria-label={t("narrAskAria", "Ask a question about your self-portrait")}
               rows={2}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
@@ -259,12 +264,15 @@ export function SelfPortraitNarrative({
                   void submit(question)
                 }
               }}
-              placeholder="Ask anything about what your portrait says — e.g. “Where might I have blind spots?”"
+              placeholder={t(
+                "narrAskPlaceholder",
+                "Ask anything about what your portrait says — e.g. “Where might I have blind spots?”"
+              )}
               disabled={ask.isPending}
             />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap gap-1.5">
-                {SUGGESTIONS.map((s) => (
+                {suggestions(t).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -286,7 +294,7 @@ export function SelfPortraitNarrative({
                 ) : (
                   <Send className="mr-1.5 h-4 w-4" />
                 )}
-                Ask
+                {t("narrAsk", "Ask")}
               </Button>
             </div>
           </div>
