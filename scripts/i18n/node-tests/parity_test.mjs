@@ -93,3 +93,26 @@ test("translate.mjs: refuses a language outside the gated set (decision D1)", ()
   const r = spawnSync("node", [join(SCRIPTS, "translate.mjs"), "--lang", "de"], { encoding: "utf8" });
   assert.notEqual(r.status, 0);
 });
+
+test("pending namespace: missing and identical are tolerated, placeholder mismatch is not, other namespaces still fail", () => {
+  const d = fixture({
+    en: { areaX: { a: "Alpha text {{n}}", b: "Beta text", d: "Delta text" }, common: { c: "Gamma text" } },
+    es: { areaX: { b: "Beta text", a: "Texto {{m}}" }, common: {} },
+  });
+  const f = computeFindings({ ...opts(d), pendingNamespaces: ["areaX"] }).es;
+  assert.deepEqual(f.missing, ["es/common/c"], "only the non-pending namespace is missing");
+  assert.deepEqual(f.identical, [], "English copy in a pending namespace is tolerated");
+  assert.deepEqual(f.placeholder, ["es/areaX/a"], "a placeholder mismatch is never tolerated");
+  const strict = computeFindings(opts(d)).es;
+  assert.ok(strict.missing.length === 2 && strict.identical.length === 1, "without the registration the same files are findings");
+});
+
+test("loadPendingNamespaces reads namespace from each pending/*.json", async () => {
+  const { loadPendingNamespaces } = await import("../lib.mjs");
+  const dir = mkdtempSync(join(tmpdir(), "i18n-pending-"));
+  writeFileSync(join(dir, "a.json"), JSON.stringify({ namespace: "areaA" }));
+  writeFileSync(join(dir, "b.json"), JSON.stringify({ namespace: "areaB", wave: "5A" }));
+  writeFileSync(join(dir, "ignore.txt"), "x");
+  assert.deepEqual(loadPendingNamespaces(dir).sort(), ["areaA", "areaB"]);
+  assert.deepEqual(loadPendingNamespaces(join(dir, "nope")), []);
+});

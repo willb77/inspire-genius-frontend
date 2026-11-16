@@ -15,13 +15,14 @@
 //   --shrink-baseline  drop baseline entries that are now fixed (never adds entries)
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { HERE, computeFindings, readJsonFile, regressions, resolved, KINDS, TARGET_LANGS } from "./lib.mjs";
+import { HERE, loadPendingNamespaces, computeFindings, readJsonFile, regressions, resolved, KINDS, TARGET_LANGS } from "./lib.mjs";
 
 const BASELINE = join(HERE, "parity_baseline.json");
 const args = new Set(process.argv.slice(2));
 const glossary = readJsonFile(join(HERE, "glossary.json"), {});
 const allow = readJsonFile(join(HERE, "allow_identical.json"), {});
-const findings = computeFindings({ glossary, allow });
+const pendingNamespaces = loadPendingNamespaces();
+const findings = computeFindings({ glossary, allow, pendingNamespaces });
 
 function toBaseline(src) {
   const languages = {};
@@ -58,6 +59,7 @@ if (args.has("--shrink-baseline")) {
   process.exit(0);
 }
 
+if (pendingNamespaces.length) console.log(`Namespaces awaiting first translation (scripts/i18n/pending): ${pendingNamespaces.join(", ")}\n`);
 console.log("lang  missing  identical  placeholder-mismatch  plural   (current / baselined)");
 for (const lang of TARGET_LANGS) {
   const cells = KINDS.map((k) => `${findings[lang][k].length}/${(baseline.languages?.[lang]?.[k] ?? []).length}`);
