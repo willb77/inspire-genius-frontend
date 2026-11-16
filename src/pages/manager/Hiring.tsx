@@ -4,6 +4,7 @@ import StatusBadge from "@/components/dashboard/StatusBadge"
 import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerHiringStats, useManagerInterviews } from "@/hooks/manager/useManagerTeam"
+import { useTranslation } from "react-i18next"
 
 const FALLBACK_CANDIDATES = [
   { name: "Sarah Chen", position: "Frontend Developer", stage: "Interview", appliedDate: "Mar 10", prismMatch: 85, status: "scheduled" },
@@ -38,16 +39,17 @@ const matchColor = (score: number) =>
   score >= 85 ? "text-[#10B981]" : score >= 75 ? "text-[#3B82F6]" : "text-[#D97706]"
 
 export default function ManagerHiring() {
+  const { t } = useTranslation("managerPages")
   const { data: hiringStatsData, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useManagerHiringStats()
   const { data: interviewData, isLoading: interviewLoading, error: interviewError, refetch: refetchInterviews } = useManagerInterviews()
 
   const stats = hiringStatsData as { openPositions?: number; totalCandidates?: number; interviewsThisWeek?: number; avgTimeToHire?: number } | undefined
 
   const PIPELINE_STATS = [
-    { label: "Open Positions", value: String(stats?.openPositions ?? 3), color: "#3B5BFF" },
-    { label: "Total Candidates", value: String(stats?.totalCandidates ?? 47), color: "#0D9488" },
-    { label: "Interviews This Week", value: String(stats?.interviewsThisWeek ?? 8), color: "#3B82F6" },
-    { label: "Avg Time to Hire", value: `${stats?.avgTimeToHire ?? 23} days`, color: "#8B5CF6" },
+    { label: t("hiring.openPositions", { defaultValue: "Open Positions" }), value: String(stats?.openPositions ?? 3), color: "#3B5BFF" },
+    { label: t("hiring.totalCandidates", { defaultValue: "Total Candidates" }), value: String(stats?.totalCandidates ?? 47), color: "#0D9488" },
+    { label: t("hiring.interviewsThisWeek", { defaultValue: "Interviews This Week" }), value: String(stats?.interviewsThisWeek ?? 8), color: "#3B82F6" },
+    { label: t("hiring.avgTimeToHire", { defaultValue: "Avg Time to Hire" }), value: `${stats?.avgTimeToHire ?? 23} days`, color: "#8B5CF6" },
   ]
 
   const interviewsToday = ((interviewData as { interviews?: InterviewItem[] } | undefined)?.interviews ?? FALLBACK_INTERVIEWS_TODAY) as InterviewItem[]
@@ -55,8 +57,8 @@ export default function ManagerHiring() {
   return (
     <ManagerLayout>
       <PlaceholderBanner />
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Hiring Pipeline</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Track candidates, interviews, and Job DNA matching.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("hiring.hiringPipeline", { defaultValue: "Hiring Pipeline" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("hiring.trackCandidatesInterviewsAndJob", { defaultValue: "Track candidates, interviews, and Job DNA matching." })}</p>
 
       {/* Pipeline Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -73,18 +75,16 @@ export default function ManagerHiring() {
       </div>
 
       {/* Candidates */}
-      <DataCard title="Candidates" badge={47}>
+      <DataCard title={t("hiring.candidates", { defaultValue: "Candidates" })} badge={47}>
         {statsError && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetchStats()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{t("hiring.failedToLoadData", { defaultValue: "Failed to load data." })}<button onClick={() => void refetchStats()} className="underline ml-1 text-[#3B5BFF]">{t("hiring.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                {["Candidate", "Position", "Stage", "Applied", "PRISM Match", "Status"].map((h) => (
+                {[t("hiring.hCandidate", { defaultValue: "Candidate" }), t("hiring.hPosition", { defaultValue: "Position" }), t("hiring.hStage", { defaultValue: "Stage" }), t("hiring.hApplied", { defaultValue: "Applied" }), t("hiring.hPRISMMatch", { defaultValue: "PRISM Match" }), t("hiring.hStatus", { defaultValue: "Status" })].map((h) => (
                   <th key={h} className="text-left text-[10px] font-bold uppercase tracking-wider text-[#6b7280] px-3 py-2.5">{h}</th>
                 ))}
               </tr>
@@ -110,11 +110,9 @@ export default function ManagerHiring() {
       </DataCard>
 
       {/* Today's Interviews */}
-      <DataCard title="Today's Interviews">
+      <DataCard title={t("hiring.todaySInterviews", { defaultValue: "Today's Interviews" })}>
         {interviewError && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetchInterviews()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{t("hiring.failedToLoadData", { defaultValue: "Failed to load data." })}<button onClick={() => void refetchInterviews()} className="underline ml-1 text-[#3B5BFF]">{t("hiring.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         {interviewLoading
@@ -136,12 +134,12 @@ export default function ManagerHiring() {
       </DataCard>
 
       {/* Job DNA */}
-      <DataCard title="Job DNA Profiles">
+      <DataCard title={t("hiring.jobDnaProfiles", { defaultValue: "Job DNA Profiles" })}>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                {["Position", "PRISM Profile", "Key Traits", "Openings"].map((h) => (
+                {[t("hiring.hPosition", { defaultValue: "Position" }), t("hiring.hPRISMProfile", { defaultValue: "PRISM Profile" }), t("hiring.hKeyTraits", { defaultValue: "Key Traits" }), t("hiring.hOpenings", { defaultValue: "Openings" })].map((h) => (
                   <th key={h} className="text-left text-[10px] font-bold uppercase tracking-wider text-[#6b7280] px-3 py-2.5">{h}</th>
                 ))}
               </tr>

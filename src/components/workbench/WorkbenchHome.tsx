@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import type { WorkbenchConfig, WorkbenchListPanel, WorkbenchPerson } from "./types"
+import { useTranslation } from "react-i18next"
 
 /**
  * The shared manager / practitioner Workbench home.
@@ -52,6 +53,7 @@ export function WorkbenchHome(config: WorkbenchConfig) {
 }
 
 function Hero({ config }: { config: WorkbenchConfig }) {
+  const { t } = useTranslation("studioUi")
   const actions = config.actions ?? []
 
   // The subtitle is a COUNT SENTENCE ("2 on your roster · 1 without a PRISM
@@ -71,7 +73,7 @@ function Hero({ config }: { config: WorkbenchConfig }) {
         {subtitle ? (
           <p className="mt-1 text-sm text-white/90">{subtitle}</p>
         ) : (
-          <p className="mt-1 text-sm text-white/70">Loading your roster&hellip;</p>
+          <p className="mt-1 text-sm text-white/70">{t("workbench.workbenchHome.loadingYourRoster", { defaultValue: "Loading your roster…" })}</p>
         )}
         {actions.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -103,7 +105,7 @@ function Hero({ config }: { config: WorkbenchConfig }) {
       {subtitle ? (
         <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
       ) : (
-        <p className="mt-1 text-sm text-muted-foreground">Loading your roster&hellip;</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("workbench.workbenchHome.loadingYourRoster", { defaultValue: "Loading your roster…" })}</p>
       )}
       {actions.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -124,6 +126,7 @@ function Hero({ config }: { config: WorkbenchConfig }) {
 }
 
 function StatRow({ stats }: { stats: WorkbenchConfig["stats"] }) {
+  const { t } = useTranslation("studioUi")
   if (stats.length === 0) return null
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -139,7 +142,7 @@ function StatRow({ stats }: { stats: WorkbenchConfig["stats"] }) {
             {s.value === null ? (
               <span
                 className="text-muted-foreground"
-                title="Not measured — this is not a count of zero."
+                title={t("workbench.workbenchHome.notMeasuredThisIsNot", { defaultValue: "Not measured — this is not a count of zero." })}
               >
                 &mdash;
               </span>
@@ -165,6 +168,7 @@ function orderRows(rows: WorkbenchPerson[]): WorkbenchPerson[] {
 }
 
 function ListPanel({ panel }: { panel: WorkbenchListPanel }) {
+  const { t } = useTranslation("studioUi")
   const rows = orderRows(panel.rows)
   return (
     <V2Card className="p-0">
@@ -189,7 +193,7 @@ function ListPanel({ panel }: { panel: WorkbenchListPanel }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">
                   {r.name ?? (
-                    <span className="text-muted-foreground">Name not on file</span>
+                    <span className="text-muted-foreground">{t("workbench.workbenchHome.nameNotOnFile", { defaultValue: "Name not on file" })}</span>
                   )}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">{r.meta}</p>
@@ -207,7 +211,7 @@ function ListPanel({ panel }: { panel: WorkbenchListPanel }) {
                 </span>
               )}
               <Button asChild size="sm" className="shrink-0">
-                <Link to={r.href}>Open</Link>
+                <Link to={r.href}>{t("workbench.workbenchHome.open", { defaultValue: "Open" })}</Link>
               </Button>
             </li>
           ))}
@@ -236,8 +240,9 @@ function Avatar({ name }: { name: string | null }) {
 }
 
 function LoadingBody() {
+  const { t } = useTranslation("studioUi")
   return (
-    <div className="space-y-3" role="status" aria-label="Loading workbench">
+    <div className="space-y-3" role="status" aria-label={t("workbench.workbenchHome.loadingWorkbench", { defaultValue: "Loading workbench" })}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
           <Skeleton key={i} className="h-24 w-full rounded-2xl" />
@@ -249,13 +254,14 @@ function LoadingBody() {
 }
 
 function ErrorBody({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+  const { t } = useTranslation("studioUi")
   return (
     <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
       <div className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
         <div className="space-y-2">
           <p className="text-sm font-medium text-red-900">
-            Your workbench could not be loaded.
+            {t("workbench.workbenchHome.yourWorkbenchCouldNotBe", { defaultValue: "Your workbench could not be loaded." })}
           </p>
           <p className="text-sm text-red-800">
             {(error as Error)?.message ?? "The service did not respond."} This is
@@ -264,7 +270,7 @@ function ErrorBody({ error, onRetry }: { error: unknown; onRetry?: () => void })
           </p>
           {onRetry && (
             <Button variant="outline" size="sm" onClick={onRetry}>
-              Try again
+              {t("workbench.workbenchHome.tryAgain", { defaultValue: "Try again" })}
             </Button>
           )}
         </div>

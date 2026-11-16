@@ -24,8 +24,10 @@ import apiErrorMessage from "@/lib/apiErrorMessage"
 import { useMyMilestones } from "@/hooks/me/useMyDevelopment"
 import type { Milestone } from "@/types/development"
 import SelfSection from "./SelfSection"
+import { useTranslation } from "react-i18next"
 
 function MilestoneRow({ milestone }: { milestone: Milestone }) {
+  const { t } = useTranslation("studioUi")
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3">
       <div className="min-w-0">
@@ -34,11 +36,11 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
           // Surfaced rather than reduced to the badge: "Blocked" without the
           // reason tells the person nothing they can do next.
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Blocked: {milestone.blockedReason}
+            {t("user.developmentMyMilestonesSection.blocked", { defaultValue: "Blocked: {{blockedReason}}", blockedReason: milestone.blockedReason })}
           </p>
         )}
         {milestone.dueDate && (
-          <p className="mt-0.5 text-xs text-muted-foreground">Due {milestone.dueDate}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{t("user.developmentMyMilestonesSection.due", { defaultValue: "Due {{dueDate}}", dueDate: milestone.dueDate })}</p>
         )}
       </div>
       <Badge variant={milestone.status === "done" ? "secondary" : "outline"}>
@@ -49,13 +51,14 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
 }
 
 export default function MyMilestonesSection() {
+  const { t } = useTranslation("studioUi")
   const milestones = useMyMilestones()
   const rows = milestones.data ?? []
 
   return (
     <SelfSection
       id="my-milestones"
-      title="Milestones"
+      title={t("user.developmentMyMilestonesSection.milestones", { defaultValue: "Milestones" })}
       icon={Flag}
       lead="Your roadmap — the checkpoints on the way to your goals, in the order they come."
       isLoading={milestones.isLoading}

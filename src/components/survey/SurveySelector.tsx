@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import type { Survey } from "@/types/survey"
+import { useTranslation } from "react-i18next"
 
 export interface SurveySelectorProps {
   surveys: Survey[]
@@ -31,10 +32,11 @@ export default function SurveySelector({
   label = "Select a survey to take",
   id = "survey-selector",
 }: SurveySelectorProps) {
+  const { t } = useTranslation("studioUi")
   if (surveys.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No surveys yet. Build one in the <strong>Build</strong> tab to make it
+        No surveys yet. Build one in the <strong>{t("survey.surveySelector.build", { defaultValue: "Build" })}</strong> tab to make it
         selectable here.
       </p>
     )
@@ -48,7 +50,7 @@ export default function SurveySelector({
       </Label>
       <Select value={value ?? undefined} onValueChange={onChange}>
         <SelectTrigger id={id} className="w-full sm:max-w-md">
-          <SelectValue placeholder="Choose a survey…" />
+          <SelectValue placeholder={t("survey.surveySelector.chooseASurvey", { defaultValue: "Choose a survey…" })} />
         </SelectTrigger>
         <SelectContent>
           {surveys.map((s) => (

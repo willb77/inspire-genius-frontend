@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -22,12 +23,13 @@ export function MultiAgentIndicator({
   synthesized,
   className,
 }: MultiAgentIndicatorProps) {
+  const { t } = useTranslation("shellUi");
   if (!synthesized || !contributingAgents || contributingAgents.length < 2) {
     return null;
   }
 
   const agentList = contributingAgents.join(", ");
-  const tooltipText = `Collaborative response from ${agentList}`;
+  const tooltipText = t("multiAgent.tooltip", { defaultValue: "Collaborative response from {{agents}}", agents: agentList });
 
   return (
     <Tooltip>
@@ -48,7 +50,7 @@ export function MultiAgentIndicator({
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-violet-500" />
           </span>
           <Sparkles className="h-3 w-3" />
-          <span>Multi-Agent &middot; {contributingAgents.length} agents</span>
+          <span>{t("multiAgent.badge", { defaultValue: "Multi-Agent · {{n}} agents", n: contributingAgents.length })}</span>
         </span>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="max-w-xs">

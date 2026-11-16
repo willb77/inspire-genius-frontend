@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 /**
  * Pre-submit cost estimate (Combined Plan §A.E3.4).
  *
@@ -17,11 +18,12 @@ function estimateTokens(text: string): number {
 }
 
 export default function CostEstimateBanner({ promptText }: Props) {
+  const { t } = useTranslation("studioUi")
   const tokens = estimateTokens(promptText)
   const usd = (tokens / 1_000_000) * DEV_INPUT_PRICE_PER_MTOK
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-      Estimated cost: ~${usd.toFixed(4)} USD ({tokens.toLocaleString()} input tokens × Sonnet input rate). Output cost depends on the agent's response length.
+      {t("tasks.costEstimateBanner.estimatedCostUsdInputTokens", { defaultValue: "Estimated cost: ~${{v1}} USD ({{v2}} input tokens × Sonnet input rate). Output cost depends on the agent's response length.", v1: usd.toFixed(4), v2: tokens.toLocaleString() })}
     </div>
   )
 }

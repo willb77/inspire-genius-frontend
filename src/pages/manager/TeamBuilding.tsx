@@ -5,6 +5,7 @@ import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerTeamComposition } from "@/hooks/manager/useManagerTeam"
 import { AlertTriangle, CheckCircle } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 type TeamMember = { name: string; role: string; primaryPrism: string; secondaryPrism: string; score: number }
 
@@ -33,6 +34,7 @@ const COLLABORATIONS = [
 ]
 
 export default function ManagerTeamBuilding() {
+  const { t } = useTranslation("managerPages")
   const { data: compData, isLoading, error, refetch } = useManagerTeamComposition()
   const members = ((compData as { members?: TeamMember[] } | undefined)?.members ?? FALLBACK_MEMBERS) as TeamMember[]
 
@@ -45,29 +47,27 @@ export default function ManagerTeamBuilding() {
   return (
     <ManagerLayout>
       <PlaceholderBanner />
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Team Building</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">PRISM team composition, conflict insights, and collaboration suggestions.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("teamBuilding.teamBuilding", { defaultValue: "Team Building" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("teamBuilding.prismTeamCompositionConflictInsights", { defaultValue: "PRISM team composition, conflict insights, and collaboration suggestions." })}</p>
 
       {error && (
-        <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4">
-          Failed to load team data.
-          <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+        <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4">{t("teamBuilding.failedToLoadTeamData", { defaultValue: "Failed to load team data." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("teamBuilding.retry", { defaultValue: "Retry" })}</button>
         </div>
       )}
 
-      <DataCard title="PRISM Color Distribution">
+      <DataCard title={t("teamBuilding.prismColorDistribution", { defaultValue: "PRISM Color Distribution" })}>
         {isLoading ? (
           <div className="space-y-3">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-6 w-full" />)}</div>
         ) : (
           <div className="space-y-2.5">
             {distribution.map((d) => (
-              <ProgressBar key={d.label} label={`${d.label} (${members.filter((m) => m.primaryPrism === d.label).length})`} value={d.value} color={d.color} />
+              <ProgressBar key={d.label} label={t("teamBuilding.text", { defaultValue: "{{label}} ({{length}})", label: d.label, length: members.filter((m) => m.primaryPrism === d.label).length })} value={d.value} color={d.color} />
             ))}
           </div>
         )}
       </DataCard>
 
-      <DataCard title="Team Composition" badge={members.length}>
+      <DataCard title={t("teamBuilding.teamComposition", { defaultValue: "Team Composition" })} badge={members.length}>
         {isLoading ? (
           <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
         ) : (
@@ -75,11 +75,11 @@ export default function ManagerTeamBuilding() {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-left text-[11px] text-[#6b7280] border-b border-[#e5e7eb]">
-                  <th className="pb-2 font-medium">Name</th>
-                  <th className="pb-2 font-medium">Role</th>
-                  <th className="pb-2 font-medium">Primary</th>
-                  <th className="pb-2 font-medium">Secondary</th>
-                  <th className="pb-2 font-medium">Score</th>
+                  <th className="pb-2 font-medium">{t("teamBuilding.name", { defaultValue: "Name" })}</th>
+                  <th className="pb-2 font-medium">{t("teamBuilding.role", { defaultValue: "Role" })}</th>
+                  <th className="pb-2 font-medium">{t("teamBuilding.primary", { defaultValue: "Primary" })}</th>
+                  <th className="pb-2 font-medium">{t("teamBuilding.secondary", { defaultValue: "Secondary" })}</th>
+                  <th className="pb-2 font-medium">{t("teamBuilding.score", { defaultValue: "Score" })}</th>
                 </tr>
               </thead>
               <tbody>
@@ -103,7 +103,7 @@ export default function ManagerTeamBuilding() {
       </DataCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DataCard title="Conflict Insights">
+        <DataCard title={t("teamBuilding.conflictInsights", { defaultValue: "Conflict Insights" })}>
           <div className="space-y-3">
             {CONFLICTS.map((c, i) => (
               <div key={i} className="flex items-start gap-2.5 p-2.5 bg-[#FEF3C7] rounded-lg">
@@ -114,7 +114,7 @@ export default function ManagerTeamBuilding() {
           </div>
         </DataCard>
 
-        <DataCard title="Collaboration Suggestions">
+        <DataCard title={t("teamBuilding.collaborationSuggestions", { defaultValue: "Collaboration Suggestions" })}>
           <div className="space-y-3">
             {COLLABORATIONS.map((c, i) => (
               <div key={i} className="flex items-start gap-2.5 p-2.5 bg-[#D1FAE5] rounded-lg">

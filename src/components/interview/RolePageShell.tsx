@@ -19,7 +19,7 @@ export default function RolePageShell({ children }: { children: React.ReactNode 
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2 font-semibold text-slate-900">
             <Sparkles className="h-5 w-5 text-indigo-600" />
-            Inspire Genius
+            {t("studioUi:interview.rolePageShell.inspireGenius", { defaultValue: "Inspire Genius" })}
           </Link>
           <Button asChild size="sm">
             <Link to={ROUTES.INTERVIEW_PRACTICE}>

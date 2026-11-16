@@ -27,6 +27,7 @@ import { AlertCircle, RefreshCw, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useTranslation } from "react-i18next"
 
 export type SelfSectionProps = {
   /** Anchors the heading for the in-page section links. */
@@ -71,6 +72,7 @@ export default function SelfSection({
   always,
   children,
 }: SelfSectionProps) {
+  const { t } = useTranslation("studioUi")
   return (
     <Card id={id} className="shadow-sm scroll-mt-20">
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 text-left">
@@ -103,7 +105,7 @@ export default function SelfSection({
               {onRetry && (
                 <Button type="button" size="sm" variant="outline" onClick={onRetry}>
                   <RefreshCw className="mr-2 h-3.5 w-3.5" aria-hidden />
-                  Try again
+                  {t("user.developmentSelfSection.tryAgain", { defaultValue: "Try again" })}
                 </Button>
               )}
             </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalDialog from "@/components/shared/ModalDialog";
@@ -31,6 +32,7 @@ export default function ConfirmActionModal({
   confirmDisabled,
   confirmLoading,
 }: ConfirmActionModalProps) {
+  const { t } = useTranslation("shellUi");
   return (
     <ModalDialog
       open={open}
@@ -45,14 +47,14 @@ export default function ConfirmActionModal({
             onClick={() => onOpenChange(false)}
             type="button"
           >
-            Cancel
+            {t("modalForm.cancel", { defaultValue: "Cancel" })}
           </Button>
           <Button
             variant={confirmVariant}
             onClick={onConfirm}
             disabled={!!confirmDisabled}
           >
-            {confirmLoading ? "Processing..." : confirmLabel}
+            {confirmLoading ? t("confirmAction.processing", { defaultValue: "Processing..." }) : confirmLabel}
           </Button>
         </>
       }

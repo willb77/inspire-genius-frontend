@@ -10,6 +10,7 @@
  * - MBTI      → raw_payload = { type, clarity } (4-letter type + 0–100 clarity)
  */
 
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -113,6 +114,7 @@ function DiscDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useTranslation("shellUi");
   const create = useCreateAssessment();
   const {
     register,
@@ -140,11 +142,11 @@ function DiscDialog({
     };
     try {
       await create.mutateAsync(payload);
-      toast.success("DISC result added.");
+      toast.success(t("assessments.discAdded", { defaultValue: "DISC result added." }));
       reset({ D: "", I: "", S: "", C: "", assessed_at: isoToday() });
       onOpenChange(false);
     } catch (err) {
-      toast.error((err as Error).message ?? "Failed to add DISC result.");
+      toast.error((err as Error).message ?? t("assessments.discFailed", { defaultValue: "Failed to add DISC result." }));
     }
   };
 
@@ -152,12 +154,12 @@ function DiscDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-testid="disc-dialog">
         <DialogHeader>
-          <DialogTitle>Add DISC result</DialogTitle>
+          <DialogTitle>{t("assessments.addDisc", { defaultValue: "Add DISC result" })}</DialogTitle>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           {(["D", "I", "S", "C"] as const).map((k) => (
             <div key={k} className="space-y-1">
-              <Label htmlFor={`disc-${k}`}>{k} (0–100)</Label>
+              <Label htmlFor={`disc-${k}`}>{t("assessments.scoreLabel", { defaultValue: "{{label}} (0–100)", label: k })}</Label>
               <Input
                 id={`disc-${k}`}
                 type="number"
@@ -172,7 +174,7 @@ function DiscDialog({
             </div>
           ))}
           <div className="space-y-1">
-            <Label htmlFor="disc-date">Assessed on</Label>
+            <Label htmlFor="disc-date">{t("assessments.assessedOn", { defaultValue: "Assessed on" })}</Label>
             <Input id="disc-date" type="date" {...register("assessed_at")} />
             {errors.assessed_at && (
               <p className="text-xs text-destructive">{errors.assessed_at.message}</p>
@@ -184,13 +186,13 @@ function DiscDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t("assessments.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button type="submit" disabled={isSubmitting || create.isPending}>
               {(isSubmitting || create.isPending) && (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
               )}
-              Save
+              {t("assessments.save", { defaultValue: "Save" })}
             </Button>
           </DialogFooter>
         </form>
@@ -210,6 +212,7 @@ function BigFiveDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useTranslation("shellUi");
   const create = useCreateAssessment();
   const {
     register,
@@ -245,11 +248,11 @@ function BigFiveDialog({
     };
     try {
       await create.mutateAsync(payload);
-      toast.success("Big Five result added.");
+      toast.success(t("assessments.bigFiveAdded", { defaultValue: "Big Five result added." }));
       reset({ O: "", C: "", E: "", A: "", N: "", assessed_at: isoToday() });
       onOpenChange(false);
     } catch (err) {
-      toast.error((err as Error).message ?? "Failed to add Big Five result.");
+      toast.error((err as Error).message ?? t("assessments.bigFiveFailed", { defaultValue: "Failed to add Big Five result." }));
     }
   };
 
@@ -265,12 +268,12 @@ function BigFiveDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-testid="bigfive-dialog">
         <DialogHeader>
-          <DialogTitle>Add Big Five result</DialogTitle>
+          <DialogTitle>{t("assessments.addBigFive", { defaultValue: "Add Big Five result" })}</DialogTitle>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           {(["O", "C", "E", "A", "N"] as const).map((k) => (
             <div key={k} className="space-y-1">
-              <Label htmlFor={`bf-${k}`}>{labels[k]} (0–100)</Label>
+              <Label htmlFor={`bf-${k}`}>{t("assessments.scoreLabel", { defaultValue: "{{label}} (0–100)", label: t(`assessments.bigFive.${k}`, { defaultValue: labels[k] }) })}</Label>
               <Input
                 id={`bf-${k}`}
                 type="number"
@@ -285,7 +288,7 @@ function BigFiveDialog({
             </div>
           ))}
           <div className="space-y-1">
-            <Label htmlFor="bf-date">Assessed on</Label>
+            <Label htmlFor="bf-date">{t("assessments.assessedOn", { defaultValue: "Assessed on" })}</Label>
             <Input id="bf-date" type="date" {...register("assessed_at")} />
             {errors.assessed_at && (
               <p className="text-xs text-destructive">{errors.assessed_at.message}</p>
@@ -297,13 +300,13 @@ function BigFiveDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t("assessments.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button type="submit" disabled={isSubmitting || create.isPending}>
               {(isSubmitting || create.isPending) && (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
               )}
-              Save
+              {t("assessments.save", { defaultValue: "Save" })}
             </Button>
           </DialogFooter>
         </form>
@@ -323,6 +326,7 @@ function MbtiDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useTranslation("shellUi");
   const create = useCreateAssessment();
   const {
     register,
@@ -351,11 +355,11 @@ function MbtiDialog({
     };
     try {
       await create.mutateAsync(payload);
-      toast.success("MBTI type added.");
+      toast.success(t("assessments.mbtiAdded", { defaultValue: "MBTI type added." }));
       reset({ type: "", clarity: "50", assessed_at: isoToday() });
       onOpenChange(false);
     } catch (err) {
-      toast.error((err as Error).message ?? "Failed to add MBTI type.");
+      toast.error((err as Error).message ?? t("assessments.mbtiFailed", { defaultValue: "Failed to add MBTI type." }));
     }
   };
 
@@ -363,11 +367,11 @@ function MbtiDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-testid="mbti-dialog">
         <DialogHeader>
-          <DialogTitle>Add MBTI type</DialogTitle>
+          <DialogTitle>{t("assessments.addMbti", { defaultValue: "Add MBTI type" })}</DialogTitle>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-1">
-            <Label htmlFor="mbti-type">Type (e.g. INTJ)</Label>
+            <Label htmlFor="mbti-type">{t("assessments.mbtiType", { defaultValue: "Type (e.g. INTJ)" })}</Label>
             <Input
               id="mbti-type"
               type="text"
@@ -380,7 +384,7 @@ function MbtiDialog({
             )}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="mbti-clarity">Clarity (0–100)</Label>
+            <Label htmlFor="mbti-clarity">{t("assessments.mbtiClarity", { defaultValue: "Clarity (0–100)" })}</Label>
             <Input
               id="mbti-clarity"
               type="number"
@@ -393,7 +397,7 @@ function MbtiDialog({
             )}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="mbti-date">Assessed on</Label>
+            <Label htmlFor="mbti-date">{t("assessments.assessedOn", { defaultValue: "Assessed on" })}</Label>
             <Input id="mbti-date" type="date" {...register("assessed_at")} />
             {errors.assessed_at && (
               <p className="text-xs text-destructive">{errors.assessed_at.message}</p>
@@ -405,13 +409,13 @@ function MbtiDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t("assessments.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button type="submit" disabled={isSubmitting || create.isPending}>
               {(isSubmitting || create.isPending) && (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
               )}
-              Save
+              {t("assessments.save", { defaultValue: "Save" })}
             </Button>
           </DialogFooter>
         </form>
@@ -425,6 +429,7 @@ function MbtiDialog({
 // ---------------------------------------------------------------------------
 
 export default function AssessmentsSettings() {
+  const { t } = useTranslation("shellUi");
   const [discOpen, setDiscOpen] = useState(false);
   const [bfOpen, setBfOpen] = useState(false);
   const [mbtiOpen, setMbtiOpen] = useState(false);
@@ -432,10 +437,9 @@ export default function AssessmentsSettings() {
   return (
     <Card className="shadow-sm" data-testid="assessments-settings">
       <CardHeader className="text-left">
-        <CardTitle className="text-lg font-semibold">Other Assessments</CardTitle>
+        <CardTitle className="text-lg font-semibold">{t("assessments.title", { defaultValue: "Other Assessments" })}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Add prior assessment results so Meridian can take them into account.
-          Use these for reports you already have on hand.
+          {t("assessments.description", { defaultValue: "Add prior assessment results so Meridian can take them into account. Use these for reports you already have on hand." })}
         </p>
       </CardHeader>
       <CardContent className="space-y-4 text-left">
@@ -444,13 +448,12 @@ export default function AssessmentsSettings() {
           data-testid="prism-data-settings"
         >
           <div>
-            <p className="text-sm font-medium">Your PRISM data</p>
+            <p className="text-sm font-medium">{t("assessments.prismData", { defaultValue: "Your PRISM data" })}</p>
             <p className="text-xs text-muted-foreground">
-              Replace your PRISM scores from a raw-data CSV, and optionally your
-              report PDF. This overwrites your current PRISM profile.
+              {t("assessments.prismDataHelp", { defaultValue: "Replace your PRISM scores from a raw-data CSV, and optionally your report PDF. This overwrites your current PRISM profile." })}
             </p>
           </div>
-          <ReplacePrismDataButton label="Replace PRISM data" variant="outline" size="sm" />
+          <ReplacePrismDataButton label={t("assessments.replacePrism", { defaultValue: "Replace PRISM data" })} variant="outline" size="sm" />
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -460,7 +463,7 @@ export default function AssessmentsSettings() {
             size="sm"
             onClick={() => setDiscOpen(true)}
           >
-            <Plus className="mr-1.5 h-4 w-4" /> Add DISC result
+            <Plus className="mr-1.5 h-4 w-4" /> {t("assessments.addDisc", { defaultValue: "Add DISC result" })}
           </Button>
           <Button
             type="button"
@@ -468,7 +471,7 @@ export default function AssessmentsSettings() {
             size="sm"
             onClick={() => setBfOpen(true)}
           >
-            <Plus className="mr-1.5 h-4 w-4" /> Add Big Five result
+            <Plus className="mr-1.5 h-4 w-4" /> {t("assessments.addBigFive", { defaultValue: "Add Big Five result" })}
           </Button>
           <Button
             type="button"
@@ -476,7 +479,7 @@ export default function AssessmentsSettings() {
             size="sm"
             onClick={() => setMbtiOpen(true)}
           >
-            <Plus className="mr-1.5 h-4 w-4" /> Add MBTI type
+            <Plus className="mr-1.5 h-4 w-4" /> {t("assessments.addMbti", { defaultValue: "Add MBTI type" })}
           </Button>
         </div>
       </CardContent>

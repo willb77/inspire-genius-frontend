@@ -5,6 +5,7 @@ import ProgressBar from "@/components/dashboard/ProgressBar"
 import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerTraining } from "@/hooks/manager/useManagerTeam"
+import { useTranslation } from "react-i18next"
 
 type TrainingProgram = {
   name: string
@@ -24,6 +25,7 @@ const FALLBACK_PROGRAMS: TrainingProgram[] = [
 ]
 
 export default function ManagerTraining() {
+  const { t } = useTranslation("managerPages")
   const { data: trainingData, isLoading, error, refetch } = useManagerTraining()
   const programs = ((trainingData as { programs?: TrainingProgram[] } | undefined)?.programs ?? FALLBACK_PROGRAMS) as TrainingProgram[]
 
@@ -31,17 +33,17 @@ export default function ManagerTraining() {
   const totalEnrolled = programs.reduce((s, p) => s + p.enrolled, 0)
 
   const STATS = [
-    { label: "Active Programs", value: String(programs.filter((p) => p.status === "active").length), color: "#3B5BFF" },
-    { label: "Total Enrolled", value: String(totalEnrolled), color: "#0D9488" },
-    { label: "Avg Completion", value: `${avgCompletion}%`, color: "#10B981" },
-    { label: "PRISM Recommended", value: String(programs.length), color: "#8B5CF6" },
+    { label: t("training.activePrograms", { defaultValue: "Active Programs" }), value: String(programs.filter((p) => p.status === "active").length), color: "#3B5BFF" },
+    { label: t("training.totalEnrolled", { defaultValue: "Total Enrolled" }), value: String(totalEnrolled), color: "#0D9488" },
+    { label: t("training.avgCompletion", { defaultValue: "Avg Completion" }), value: `${avgCompletion}%`, color: "#10B981" },
+    { label: t("training.prismRecommended", { defaultValue: "PRISM Recommended" }), value: String(programs.length), color: "#8B5CF6" },
   ]
 
   return (
     <ManagerLayout>
       <PlaceholderBanner />
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Training</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Manage training programs and track team completion.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("training.training", { defaultValue: "Training" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("training.manageTrainingProgramsAndTrack", { defaultValue: "Manage training programs and track team completion." })}</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {STATS.map((s) => (
@@ -56,11 +58,9 @@ export default function ManagerTraining() {
         ))}
       </div>
 
-      <DataCard title="Training Programs" badge={programs.length}>
+      <DataCard title={t("training.trainingPrograms", { defaultValue: "Training Programs" })} badge={programs.length}>
         {error && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load training programs.
-            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{t("training.failedToLoadTrainingPrograms", { defaultValue: "Failed to load training programs." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("training.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
 
@@ -73,11 +73,11 @@ export default function ManagerTraining() {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-left text-[11px] text-[#6b7280] border-b border-[#e5e7eb]">
-                  <th className="pb-2 font-medium">Program</th>
-                  <th className="pb-2 font-medium">Enrolled</th>
-                  <th className="pb-2 font-medium w-[200px]">Completion</th>
-                  <th className="pb-2 font-medium">PRISM Recommendation</th>
-                  <th className="pb-2 font-medium">Status</th>
+                  <th className="pb-2 font-medium">{t("training.program", { defaultValue: "Program" })}</th>
+                  <th className="pb-2 font-medium">{t("training.enrolled", { defaultValue: "Enrolled" })}</th>
+                  <th className="pb-2 font-medium w-[200px]">{t("training.completion", { defaultValue: "Completion" })}</th>
+                  <th className="pb-2 font-medium">{t("training.prismRecommendation", { defaultValue: "PRISM Recommendation" })}</th>
+                  <th className="pb-2 font-medium">{t("training.status", { defaultValue: "Status" })}</th>
                 </tr>
               </thead>
               <tbody>

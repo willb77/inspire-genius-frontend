@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import type React from "react"
 import { useRef, useState } from "react"
 import { motion } from "framer-motion"
@@ -7,6 +8,7 @@ import { Upload, AlertCircle } from "lucide-react"
 import { AudioPlayer } from "./audio-player"
 
 export function AudioBufferHandler() {
+  const { t } = useTranslation("shellUi")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -36,7 +38,7 @@ export function AudioBufferHandler() {
       const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer)
       setAudioBuffer(decodedBuffer)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to load audio file"
+      const errorMessage = err instanceof Error ? err.message : t("audioPlayer.loadFileFailed", { defaultValue: "Failed to load audio file" })
       setError(errorMessage)
       setAudioBuffer(null)
     } finally {
@@ -94,7 +96,7 @@ export function AudioBufferHandler() {
           accept="audio/*"
           onChange={handleFileUpload}
           className="hidden"
-          aria-label="Upload audio file"
+          aria-label={t("audioPlayer.uploadLabel", { defaultValue: "Upload audio file" })}
         />
 
         <div className="flex flex-col items-center justify-center gap-3">
@@ -103,9 +105,9 @@ export function AudioBufferHandler() {
           </motion.div>
           <div className="text-center">
             <p className="font-semibold text-foreground">
-              {isLoading ? "Loading audio..." : "Drag and drop your audio file here"}
+              {isLoading ? t("audioPlayer.loading", { defaultValue: "Loading audio..." }) : t("audioPlayer.dropHere", { defaultValue: "Drag and drop your audio file here" })}
             </p>
-            <p className="text-sm text-muted-foreground">or click to browse • Supports MP3, WAV, FLAC, and more</p>
+            <p className="text-sm text-muted-foreground">{t("audioPlayer.browseHint", { defaultValue: "or click to browse • Supports MP3, WAV, FLAC, and more" })}</p>
           </div>
         </div>
       </motion.div>
@@ -117,7 +119,7 @@ export function AudioBufferHandler() {
           animate={{ opacity: 1, x: 0 }}
           className="p-3 bg-card border border-border rounded-lg"
         >
-          <p className="text-sm font-medium text-foreground">Loaded: {fileName}</p>
+          <p className="text-sm font-medium text-foreground">{t("audioPlayer.loaded", { defaultValue: "Loaded: {{name}}", name: fileName })}</p>
         </motion.div>
       )}
 

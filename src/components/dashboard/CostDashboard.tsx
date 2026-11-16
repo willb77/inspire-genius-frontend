@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { useState } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import DataCard from "./DataCard"
@@ -30,6 +31,7 @@ export default function CostDashboard({
   dateRange = "30d",
   onDateRangeChange,
 }: CostDashboardProps) {
+  const { t } = useTranslation("shellUi")
   const [range, setRange] = useState(dateRange)
 
   function handleRangeChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -37,25 +39,30 @@ export default function CostDashboard({
     onDateRangeChange?.(e.target.value)
   }
 
-  const levelLabel = { platform: "Platform", company: "Company", team: "Team", user: "User" }[level]
+  const overviewTitle = {
+    platform: t("costDashboard.overview.platform", { defaultValue: "Platform Cost Overview" }),
+    company: t("costDashboard.overview.company", { defaultValue: "Company Cost Overview" }),
+    team: t("costDashboard.overview.team", { defaultValue: "Team Cost Overview" }),
+    user: t("costDashboard.overview.user", { defaultValue: "User Cost Overview" }),
+  }[level]
 
   return (
     <div className="mt-5">
       {/* Header row */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[15px] font-bold text-[#111827]">{levelLabel} Cost Overview</h3>
+        <h3 className="text-[15px] font-bold text-[#111827]">{overviewTitle}</h3>
         <div className="flex items-center gap-2">
           <select
             value={range}
             onChange={handleRangeChange}
             className="px-2 py-1 border border-[#e5e7eb] rounded text-xs focus:ring-1 focus:ring-[#00A3A3] outline-none"
           >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
+            <option value="7d">{t("costDashboard.last7", { defaultValue: "Last 7 days" })}</option>
+            <option value="30d">{t("costDashboard.last30", { defaultValue: "Last 30 days" })}</option>
+            <option value="90d">{t("costDashboard.last90", { defaultValue: "Last 90 days" })}</option>
           </select>
           <button className="flex items-center gap-1 px-2 py-1 bg-[#00A3A3] text-white rounded text-xs font-medium hover:bg-[#008F8F] transition-colors">
-            Export
+            {t("costDashboard.export", { defaultValue: "Export" })}
           </button>
         </div>
       </div>
@@ -77,7 +84,7 @@ export default function CostDashboard({
       {(costByWeek.length > 0 || costDistribution.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
           {costByWeek.length > 0 && (
-            <DataCard title="Cost by Period" className="lg:col-span-2 !mt-0">
+            <DataCard title={t("costDashboard.costByPeriod", { defaultValue: "Cost by Period" })} className="lg:col-span-2 !mt-0">
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={costByWeek}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -90,7 +97,7 @@ export default function CostDashboard({
             </DataCard>
           )}
           {costDistribution.length > 0 && (
-            <DataCard title="Cost Distribution" className="!mt-0">
+            <DataCard title={t("costDashboard.costDistribution", { defaultValue: "Cost Distribution" })} className="!mt-0">
               <div className="flex items-center gap-3">
                 <ResponsiveContainer width={100} height={100}>
                   <PieChart>

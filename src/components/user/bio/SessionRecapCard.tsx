@@ -10,6 +10,7 @@
  */
 import { BookOpenCheck, Layers, MessageSquare, Sparkles } from "lucide-react"
 import { moduleLabel } from "@/lib/bio/clientMemoir"
+import { useTranslation } from "react-i18next"
 
 export type SessionRecap = {
   summary: string
@@ -42,13 +43,14 @@ function Stat({
 }
 
 export function SessionRecapCard({ recap }: { recap: SessionRecap }) {
+  const { t: tr } = useTranslation("studioUi")
   const { summary, turnCount, modulesTouched, capturedTitles, standouts } = recap
 
   return (
     <div className="rounded-lg border border-primary/30 bg-primary/[0.04] p-3">
       <div className="mb-2 flex items-center gap-1.5">
         <BookOpenCheck className="h-4 w-4 text-primary" aria-hidden />
-        <span className="text-sm font-semibold text-primary">Session recap</span>
+        <span className="text-sm font-semibold text-primary">{tr("user.bioSessionRecapCard.sessionRecap", { defaultValue: "Session recap" })}</span>
       </div>
 
       {summary && (
@@ -76,7 +78,7 @@ export function SessionRecapCard({ recap }: { recap: SessionRecap }) {
       {modulesTouched.length > 0 && (
         <div className="mb-3">
           <div className="mb-1 text-[11px] font-medium text-muted-foreground">
-            Chapters visited
+            {tr("user.bioSessionRecapCard.chaptersVisited", { defaultValue: "Chapters visited" })}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {modulesTouched.map((m) => (
@@ -94,7 +96,7 @@ export function SessionRecapCard({ recap }: { recap: SessionRecap }) {
       {capturedTitles.length > 0 && (
         <div className="mb-3">
           <div className="mb-1 text-[11px] font-medium text-muted-foreground">
-            Captured this session
+            {tr("user.bioSessionRecapCard.capturedThisSession", { defaultValue: "Captured this session" })}
           </div>
           <ul className="list-inside list-disc space-y-0.5 text-xs text-muted-foreground">
             {capturedTitles.map((t, i) => (
@@ -107,7 +109,7 @@ export function SessionRecapCard({ recap }: { recap: SessionRecap }) {
       {standouts.length > 0 && (
         <div className="border-t border-primary/10 pt-2">
           <div className="mb-1 text-[11px] font-medium text-muted-foreground">
-            What stands out
+            {tr("user.bioSessionRecapCard.whatStandsOut", { defaultValue: "What stands out" })}
           </div>
           <ul className="space-y-1 text-[11px] italic text-muted-foreground">
             {standouts.map((s, i) => (
@@ -119,8 +121,7 @@ export function SessionRecapCard({ recap }: { recap: SessionRecap }) {
 
       {capturedTitles.length === 0 && standouts.length === 0 && (
         <p className="text-xs italic text-muted-foreground">
-          Nothing was captured this time — pick a chapter and keep going whenever
-          you&apos;re ready.
+          {tr("user.bioSessionRecapCard.nothingWasCapturedThisTime", { defaultValue: "Nothing was captured this time — pick a chapter and keep going whenever you're ready." })}
         </p>
       )}
     </div>

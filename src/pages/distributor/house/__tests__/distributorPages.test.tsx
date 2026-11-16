@@ -22,9 +22,6 @@ jest.mock("@/layouts/DistributorLayout", () => ({
 jest.mock("@/components/job-blueprint/validation/ValidationReviewQueue", () => ({
   ValidationReviewQueue: () => <div data-testid="validation-queue" />,
 }))
-jest.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}))
 
 const mockUser: { current: { fullName?: string | null; name?: string | null } | null } = {
   current: { fullName: "Carolina Reyes" },

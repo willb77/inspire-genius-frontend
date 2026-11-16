@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import React from "react"
 import { Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -10,11 +11,14 @@ type EmptyStateProps = {
 }
 
 export default function EmptyState({
-  title = "No data yet",
-  message = "There's nothing to show here right now.",
+  title: titleProp,
+  message: messageProp,
   action,
   className,
 }: EmptyStateProps) {
+  const { t } = useTranslation("shellUi")
+  const title = titleProp ?? t("emptyState.title", { defaultValue: "No data yet" })
+  const message = messageProp ?? t("emptyState.message", { defaultValue: "There's nothing to show here right now." })
   return (
     <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
       <div className="w-12 h-12 rounded-full bg-[#f3f4f6] flex items-center justify-center mb-3">

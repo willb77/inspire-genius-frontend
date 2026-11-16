@@ -613,7 +613,7 @@ export default function PrismInitiateForm({
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="jane.smith@company.com"
+                      placeholder={t("studioUi:prism.prismInitiateForm.janeSmithCompanyCom", { defaultValue: "jane.smith@company.com" })}
                       disabled={formDisabled}
                       {...field}
                     />

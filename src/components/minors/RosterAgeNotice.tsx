@@ -1,4 +1,5 @@
 import type { RosterAgesResult } from "@/types/minorConsent"
+import { useTranslation } from "react-i18next"
 
 type RosterAgeNoticeProps = {
   isPending: boolean
@@ -15,18 +16,18 @@ type RosterAgeNoticeProps = {
  * Renders nothing unless a recording was attempted.
  */
 export default function RosterAgeNotice({ isPending, isError, data }: RosterAgeNoticeProps) {
+  const { t } = useTranslation("accountUi")
   if (isPending) {
     return (
       <p role="status" className="mt-3 text-sm text-slate-600">
-        Recording dates of birth…
+        {t("rosterAgeNotice.recordingDatesOfBirth", { defaultValue: "Recording dates of birth…" })}
       </p>
     )
   }
   if (isError) {
     return (
       <p role="alert" className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-        The dates of birth could not be recorded. The people were imported, but none of their dates of
-        birth were saved. Import the file again to retry.
+        {t("rosterAgeNotice.theDatesOfBirthCouldNot", { defaultValue: "The dates of birth could not be recorded. The people were imported, but none of their dates of birth were saved. Import the file again to retry." })}
       </p>
     )
   }
@@ -42,14 +43,14 @@ export default function RosterAgeNotice({ isPending, isError, data }: RosterAgeN
       }
     >
       <p>
-        Dates of birth recorded for {data.recorded} of {data.total} people.
+        {t("rosterAgeNotice.datesOfBirthRecorded", { defaultValue: "Dates of birth recorded for {{recorded}} of {{total}} people.", recorded: data.recorded, total: data.total })}
       </p>
       {notRecorded > 0 && (
         <ul className="mt-1 list-disc pl-5">
-          {data.invalid_date > 0 && <li>{data.invalid_date} had a date that could not be used.</li>}
-          {data.not_permitted > 0 && <li>{data.not_permitted} belong to another organisation.</li>}
+          {data.invalid_date > 0 && <li>{t("rosterAgeNotice.invalidDate", { defaultValue: "{{n}} had a date that could not be used.", n: data.invalid_date })}</li>}
+          {data.not_permitted > 0 && <li>{t("rosterAgeNotice.notPermitted", { defaultValue: "{{n}} belong to another organisation.", n: data.not_permitted })}</li>}
           {data.not_enabled > 0 && (
-            <li>{data.not_enabled} are in an organisation where under-18 support is not switched on.</li>
+            <li>{t("rosterAgeNotice.notEnabled", { defaultValue: "{{n}} are in an organisation where under-18 support is not switched on.", n: data.not_enabled })}</li>
           )}
         </ul>
       )}

@@ -4,6 +4,7 @@
  * (`PrismRadialMap`, via the shared `PrismSelfMapContent`) plus the numeric
  * scores. Rendered next to the PRISM CSV filename.
  */
+import { useTranslation } from "react-i18next"
 import { useState } from "react"
 import { Sparkles } from "lucide-react"
 import {
@@ -16,6 +17,7 @@ import {
 import { PrismSelfMapContent } from "@/components/prism/PrismSelfMapContent"
 
 export function BehavioralMapDialog() {
+  const { t } = useTranslation("shellUi")
   const [open, setOpen] = useState(false)
 
   return (
@@ -26,15 +28,15 @@ export function BehavioralMapDialog() {
         className="inline-flex shrink-0 items-center gap-1 rounded-full border border-ig-accent-hover/40 bg-ig-accent-hover/10 px-2 py-0.5 text-[11px] font-medium text-ig-accent transition-colors hover:bg-ig-accent-hover/20"
       >
         <Sparkles className="size-3" aria-hidden="true" />
-        Behavioral map
+        {t("behavioralMap.trigger", { defaultValue: "Behavioral map" })}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Your behavioral map</DialogTitle>
+            <DialogTitle>{t("behavioralMap.title", { defaultValue: "Your behavioral map" })}</DialogTitle>
             <DialogDescription>
-              Your PRISM 8-dimension profile and scores.
+              {t("behavioralMap.description", { defaultValue: "Your PRISM 8-dimension profile and scores." })}
             </DialogDescription>
           </DialogHeader>
           {/* Mount (and fetch) only while open — keeps the query out of the

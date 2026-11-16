@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { Button } from '@/components/ui/button'
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
 }
 
 export default function ModalFormFooter({ onCancel, onSubmit, isSubmitting, submitLabel }: Props) {
+  const { t } = useTranslation("shellUi")
   return (
     <>
       <Button
@@ -16,7 +18,7 @@ export default function ModalFormFooter({ onCancel, onSubmit, isSubmitting, subm
         onClick={onCancel}
         type="button"
       >
-        Cancel
+        {t("modalForm.cancel", { defaultValue: "Cancel" })}
       </Button>
       <Button onClick={onSubmit} disabled={!!isSubmitting} type="button">
         {submitLabel}

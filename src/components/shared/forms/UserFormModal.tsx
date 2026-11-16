@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
@@ -98,6 +99,7 @@ function InvitationSection({
 }: {
   context: InvitationContext;
 }) {
+  const { t } = useTranslation("shellUi");
   // Fetch on mount; the query is gated on enabled=true here because the
   // parent only renders InvitationSection when the user actually has an
   // invitation (so the gate at the hook level is just defense-in-depth).
@@ -138,10 +140,10 @@ function InvitationSection({
   return (
     <div className="md:col-span-2 mt-2 rounded-md border border-border bg-muted/30 p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Invitation</h3>
+        <h3 className="text-sm font-semibold">{t("userForm.invitation", { defaultValue: "Invitation" })}</h3>
         {badge ? (
           <Badge variant="secondary" className={badge.className}>
-            {badge.label}
+            {t(`userForm.invitationStatus.${statusKey}`, { defaultValue: badge.label })}
           </Badge>
         ) : null}
       </div>
@@ -149,29 +151,29 @@ function InvitationSection({
       {isLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          Loading invitation details…
+          {t("userForm.loadingInvitation", { defaultValue: "Loading invitation details…" })}
         </div>
       ) : isError ? (
         <p className="text-sm text-destructive">
           {(error as { response?: { data?: { message?: string } } } | undefined)?.response?.data
-            ?.message ?? "Failed to load invitation details"}
+            ?.message ?? t("userForm.loadInvitationFailed", { defaultValue: "Failed to load invitation details" })}
         </p>
       ) : data ? (
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-          <dt className="text-muted-foreground">Email</dt>
+          <dt className="text-muted-foreground">{t("userForm.email", { defaultValue: "Email" })}</dt>
           <dd className="text-foreground">{data.email}</dd>
 
-          <dt className="text-muted-foreground">Role</dt>
+          <dt className="text-muted-foreground">{t("userForm.role", { defaultValue: "Role" })}</dt>
           <dd className="text-foreground">{data.role ?? "—"}</dd>
 
-          <dt className="text-muted-foreground">Sent</dt>
+          <dt className="text-muted-foreground">{t("userForm.sent", { defaultValue: "Sent" })}</dt>
           <dd className="text-foreground">
             {data.sent_at
               ? format(new Date(data.sent_at), "d LLL yyyy, HH:mm")
               : "—"}
           </dd>
 
-          <dt className="text-muted-foreground">Expires</dt>
+          <dt className="text-muted-foreground">{t("userForm.expires", { defaultValue: "Expires" })}</dt>
           <dd className="text-foreground">
             {data.expires_at
               ? format(new Date(data.expires_at), "d LLL yyyy, HH:mm")
@@ -186,7 +188,7 @@ function InvitationSection({
             htmlFor="invitation-new-expiry"
             className="block text-xs mb-1 text-muted-foreground"
           >
-            Set new expiry
+            {t("userForm.setNewExpiry", { defaultValue: "Set new expiry" })}
           </label>
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
@@ -200,7 +202,7 @@ function InvitationSection({
                 <CalendarIcon className="mr-2 size-4" aria-hidden="true" />
                 {selectedDate
                   ? format(selectedDate, "d LLL yyyy")
-                  : "Pick a future date"}
+                  : t("userForm.pickFutureDate", { defaultValue: "Pick a future date" })}
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-auto p-0">
@@ -225,10 +227,10 @@ function InvitationSection({
           {updateExpiry.isPending ? (
             <>
               <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-              Updating…
+              {t("userForm.updating", { defaultValue: "Updating…" })}
             </>
           ) : (
-            "Update Expiry"
+            t("userForm.updateExpiry", { defaultValue: "Update Expiry" })
           )}
         </Button>
         <Button
@@ -240,10 +242,10 @@ function InvitationSection({
           {resend.isPending ? (
             <>
               <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-              Resending…
+              {t("userForm.resending", { defaultValue: "Resending…" })}
             </>
           ) : (
-            "Resend Invitation"
+            t("userForm.resendInvitation", { defaultValue: "Resend Invitation" })
           )}
         </Button>
       </div>
@@ -263,6 +265,7 @@ export default function UserFormModal({
   invitationContext,
   organizations,
 }: UserFormModalProps) {
+  const { t } = useTranslation("shellUi");
   const defaultValuesMerged: UserFormValues = {
     ...User_FORM_DEFAULTS,
     ...defaultValues,
@@ -283,11 +286,11 @@ export default function UserFormModal({
     <ModalFormFrame<UserFormValues>
       open={open}
       onOpenChange={onOpenChange}
-      title={title ?? (mode === "add" ? "Add User" : "Edit User")}
+      title={title ?? (mode === "add" ? t("userForm.addUser", { defaultValue: "Add User" }) : t("userForm.editUser", { defaultValue: "Edit User" }))}
       mode={mode}
       defaultValues={defaultValuesMerged}
       submitLabel={
-        submitLabel ?? (mode === "add" ? "Add User" : "Save Changes")
+        submitLabel ?? (mode === "add" ? t("userForm.addUser", { defaultValue: "Add User" }) : t("userForm.saveChanges", { defaultValue: "Save Changes" }))
       }
       onSubmit={onSubmit}
     >
@@ -299,9 +302,9 @@ export default function UserFormModal({
             rules={User_FORM_RULES.first_name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-xs">First Name *</FormLabel>
+                <FormLabel className="block text-xs">{t("userForm.firstName", { defaultValue: "First Name *" })}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter First Name" {...field} />
+                  <Input placeholder={t("userForm.firstNamePlaceholder", { defaultValue: "Enter First Name" })} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -314,9 +317,9 @@ export default function UserFormModal({
             rules={User_FORM_RULES.last_name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-xs">Last Name *</FormLabel>
+                <FormLabel className="block text-xs">{t("userForm.lastName", { defaultValue: "Last Name *" })}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Last Name" {...field} />
+                  <Input placeholder={t("userForm.lastNamePlaceholder", { defaultValue: "Enter Last Name" })} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -328,10 +331,10 @@ export default function UserFormModal({
               rules={User_FORM_RULES.email}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="block text-xs">Email *</FormLabel>
+                  <FormLabel className="block text-xs">{t("userForm.emailRequired", { defaultValue: "Email *" })}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter Email"
+                      placeholder={t("userForm.emailPlaceholder", { defaultValue: "Enter Email" })}
                       readOnly={mode === "edit"}
                       className={
                         mode === "edit" ? "bg-gray-100 cursor-not-allowed" : ""
@@ -350,11 +353,11 @@ export default function UserFormModal({
             rules={User_FORM_RULES.role}
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-xs">Role *</FormLabel>
+                <FormLabel className="block text-xs">{t("userForm.roleRequired", { defaultValue: "Role *" })}</FormLabel>
                 <FormControl>
                   <Select value={field.value || ""} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select role" />
+                      <SelectValue placeholder={t("userForm.selectRole", { defaultValue: "Select role" })} />
                     </SelectTrigger>
                     <SelectContent>
                       {[ROLES.USER, ROLES.MANAGER, ROLES.COMPANY_ADMIN, ROLES.PRACTITIONER, ROLES.DISTRIBUTOR, ROLES.SUPER_ADMIN].map((role) => (
@@ -377,7 +380,7 @@ export default function UserFormModal({
               rules={User_FORM_RULES.organization_id}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="block text-xs">Organization</FormLabel>
+                  <FormLabel className="block text-xs">{t("userForm.organization", { defaultValue: "Organization" })}</FormLabel>
                   <FormControl>
                     <Select
                       value={field.value || NO_ORG_VALUE}
@@ -385,11 +388,11 @@ export default function UserFormModal({
                         field.onChange(v === NO_ORG_VALUE ? "" : v)
                       }
                     >
-                      <SelectTrigger className="w-full" aria-label="Organization">
-                        <SelectValue placeholder="Select organization" />
+                      <SelectTrigger className="w-full" aria-label={t("userForm.organization", { defaultValue: "Organization" })}>
+                        <SelectValue placeholder={t("userForm.selectOrganization", { defaultValue: "Select organization" })} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={NO_ORG_VALUE}>No organization</SelectItem>
+                        <SelectItem value={NO_ORG_VALUE}>{t("userForm.noOrganization", { defaultValue: "No organization" })}</SelectItem>
                         {organizations.map((o) => (
                           <SelectItem key={o.id} value={o.id}>
                             {o.name}
@@ -421,13 +424,10 @@ export default function UserFormModal({
                     </FormControl>
                     <div className="space-y-1 leading-tight">
                       <FormLabel className="text-sm font-medium">
-                        Skip onboarding process
+                        {t("userForm.skipOnboarding", { defaultValue: "Skip onboarding process" })}
                       </FormLabel>
                       <p className="text-xs text-muted-foreground">
-                        Provisions the user already onboarded and emails a
-                        one-click magic sign-in link instead of a password-setup
-                        invitation. For demo accounts on Dev/Staging — ignored
-                        (rejected) in production.
+                        {t("userForm.skipOnboardingHelp", { defaultValue: "Provisions the user already onboarded and emails a one-click magic sign-in link instead of a password-setup invitation. For demo accounts on Dev/Staging — ignored (rejected) in production." })}
                       </p>
                     </div>
                   </div>
@@ -444,7 +444,7 @@ export default function UserFormModal({
               rules={User_FORM_RULES.status}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="block text-xs">Status</FormLabel>
+                  <FormLabel className="block text-xs">{t("userForm.status", { defaultValue: "Status" })}</FormLabel>
                   <FormControl>
                     <Select
                       value={String(field.value || "Active")}
@@ -453,11 +453,11 @@ export default function UserFormModal({
                       }
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue placeholder={t("userForm.selectStatus", { defaultValue: "Select status" })} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Deactivated">Deactivated</SelectItem>
+                        <SelectItem value="Active">{t("userForm.active", { defaultValue: "Active" })}</SelectItem>
+                        <SelectItem value="Deactivated">{t("userForm.deactivated", { defaultValue: "Deactivated" })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>

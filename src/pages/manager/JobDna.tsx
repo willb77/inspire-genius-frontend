@@ -7,6 +7,7 @@ import type { DimensionBenchmark } from "@/types/job-blueprint"
 import { useState } from "react"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { ValidationReviewQueue } from "@/components/job-blueprint/validation/ValidationReviewQueue"
+import { useTranslation } from "react-i18next"
 
 /** Top-N benchmark dimensions by rank, used for the collapsed "key traits" line. */
 function topDimensions(dims: DimensionBenchmark[], n: number): DimensionBenchmark[] {
@@ -19,6 +20,7 @@ function topDimensions(dims: DimensionBenchmark[], n: number): DimensionBenchmar
  * role's benchmarked behaviour profile.
  */
 export default function ManagerJobDna() {
+  const { t } = useTranslation("managerPages")
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const { data: jobs, isLoading, error, refetch } = useJobDnaList()
 
@@ -26,21 +28,15 @@ export default function ManagerJobDna() {
 
   return (
     <ManagerLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Job DNA</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">
-        PRISM-based job profiles and candidate matching criteria.
-      </p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("jobDna.jobDna", { defaultValue: "Job DNA" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("jobDna.prismBasedJobProfilesAnd", { defaultValue: "PRISM-based job profiles and candidate matching criteria." })}</p>
 
       {/* N-4: the reviewer's queue; renders nothing unless blueprint_validation is on and a request names this manager */}
       <ValidationReviewQueue />
 
-      <DataCard title="Job DNA Profiles" badge={rows.length}>
+      <DataCard title={t("jobDna.jobDnaProfiles", { defaultValue: "Job DNA Profiles" })} badge={rows.length}>
         {error && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load Job DNA profiles.
-            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">
-              Retry
-            </button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{t("jobDna.failedToLoadJobDna", { defaultValue: "Failed to load Job DNA profiles." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("jobDna.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
 
@@ -51,18 +47,16 @@ export default function ManagerJobDna() {
             ))}
           </div>
         ) : rows.length === 0 && !error ? (
-          <div className="py-6 text-center text-[13px] text-[#9ca3af]">
-            No Job DNA profiles yet.
-          </div>
+          <div className="py-6 text-center text-[13px] text-[#9ca3af]">{t("jobDna.noJobDnaProfilesYet", { defaultValue: "No Job DNA profiles yet." })}</div>
         ) : (
           <div className="space-y-0">
             <div className="grid grid-cols-[auto_1fr_1fr_1fr_90px_80px] gap-4 text-[11px] text-[#6b7280] font-medium pb-2 border-b border-[#e5e7eb] px-1">
               <div className="w-5" />
-              <div>Role</div>
-              <div>Department</div>
-              <div>Top Behaviours</div>
-              <div className="text-center">Tier</div>
-              <div className="text-center">Status</div>
+              <div>{t("jobDna.role", { defaultValue: "Role" })}</div>
+              <div>{t("jobDna.department", { defaultValue: "Department" })}</div>
+              <div>{t("jobDna.topBehaviours", { defaultValue: "Top Behaviours" })}</div>
+              <div className="text-center">{t("jobDna.tier", { defaultValue: "Tier" })}</div>
+              <div className="text-center">{t("jobDna.status", { defaultValue: "Status" })}</div>
             </div>
             {rows.map((job) => {
               const topBehaviours = topDimensions(job.behaviors, 2)
@@ -98,9 +92,7 @@ export default function ManagerJobDna() {
                   </button>
                   {expandedId === job.id && (
                     <div className="bg-[#f9fafb] p-4 border-b border-[#e5e7eb]">
-                      <div className="text-[11px] font-semibold text-[#6b7280] mb-3">
-                        Behaviour Benchmark
-                      </div>
+                      <div className="text-[11px] font-semibold text-[#6b7280] mb-3">{t("jobDna.behaviourBenchmark", { defaultValue: "Behaviour Benchmark" })}</div>
                       <div className="space-y-2 max-w-md">
                         {topDimensions(job.behaviors, 8).map((d) => (
                           <ScoreBar

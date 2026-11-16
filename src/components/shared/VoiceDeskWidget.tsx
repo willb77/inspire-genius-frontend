@@ -11,6 +11,7 @@
  * z-index: 50 (below modals/dialogs, above all page content)
  */
 
+import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { Headphones, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ export default function VoiceDeskWidget({
   language = "en-US",
   theme = "light",
 }: VoiceDeskWidgetProps) {
+  const { t } = useTranslation("shellUi");
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -104,7 +106,7 @@ export default function VoiceDeskWidget({
           )}
           style={{ height: 520 }}
           role="dialog"
-          aria-label="VoiceDesk voice help agent"
+          aria-label={t("voiceDesk.agentLabel", { defaultValue: "VoiceDesk voice help agent" })}
         >
           {/* Panel header */}
           <div
@@ -116,11 +118,11 @@ export default function VoiceDeskWidget({
             <div className="flex items-center gap-2">
               <Headphones className="h-4 w-4 text-blue-500" />
               <span className={cn("text-sm font-semibold", theme === "dark" ? "text-white" : "text-slate-900")}>
-                Voice Help
+                {t("voiceDesk.panelTitle", { defaultValue: "Voice Help" })}
               </span>
             </div>
             <button
-              aria-label="Close voice help"
+              aria-label={t("voiceDesk.close", { defaultValue: "Close voice help" })}
               onClick={() => setIsOpen(false)}
               className={cn(
                 "rounded-full p-1 transition-colors",
@@ -144,7 +146,7 @@ export default function VoiceDeskWidget({
           <iframe
             ref={iframeRef}
             src={iframeSrc}
-            title="VoiceDesk voice help agent"
+            title={t("voiceDesk.agentLabel", { defaultValue: "VoiceDesk voice help agent" })}
             allow="microphone; autoplay"
             className="w-full h-full border-0"
             onLoad={() => {
@@ -161,7 +163,7 @@ export default function VoiceDeskWidget({
 
       {/* Floating trigger button */}
       <button
-        aria-label={isOpen ? "Close voice help" : "Open voice help"}
+        aria-label={isOpen ? t("voiceDesk.close", { defaultValue: "Close voice help" }) : t("voiceDesk.open", { defaultValue: "Open voice help" })}
         onClick={() => {
           if (!isOpen) {
             setIsLoaded(false); // reset load state on re-open

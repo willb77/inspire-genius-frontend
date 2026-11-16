@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import React from "react"
 import { Link } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
@@ -20,6 +21,7 @@ export interface PageHeaderProps {
  * Theme tokens only, so it follows dark mode and the accessible themes.
  */
 export function PageHeader({ title, description, back, action, className }: PageHeaderProps) {
+  const { t } = useTranslation("shellUi")
   return (
     <header className={cn("mb-6 flex flex-col gap-2", className)}>
       {back && (
@@ -28,7 +30,7 @@ export function PageHeader({ title, description, back, action, className }: Page
           className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back to {back.label}
+          {t("pageHeader.backTo", { defaultValue: "Back to {{label}}", label: back.label })}
         </Link>
       )}
       <div className="flex flex-wrap items-start justify-between gap-4">

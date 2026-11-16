@@ -126,6 +126,14 @@ jobs:
           # localStorage `house_style_<area>` still overrides it. Visual only — never
           # a security control. staging-b reads STAGING_B_HOUSE_STYLE_AREAS below.
           echo "VITE_HOUSE_STYLE_AREAS=${{ vars.DEV_HOUSE_STYLE_AREAS }}" >> .env
+          # Cloudflare Turnstile SITE key for the public event-registration form
+          # (src/components/shared/TurnstileWidget.tsx). PUBLIC by design (it is
+          # served to every browser), so a repo VARIABLE, never a secret; the
+          # matching SECRET key lives only in AWS Secrets Manager. Unset writes an
+          # empty value: the dialog then says registration is unavailable instead
+          # of showing a form that can never submit. staging-b reads
+          # STAGING_B_TURNSTILE_SITE_KEY below.
+          echo "VITE_TURNSTILE_SITE_KEY=${{ vars.DEV_TURNSTILE_SITE_KEY }}" >> .env
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
@@ -549,6 +557,10 @@ jobs:
             # House-style areas for stable — same contract as the dev job's
             # DEV_HOUSE_STYLE_AREAS; unset = every area OFF.
             echo "VITE_HOUSE_STYLE_AREAS=${{ vars.STAGING_B_HOUSE_STYLE_AREAS }}"
+            # Cloudflare Turnstile SITE key (public) for the event-registration form;
+            # same contract as the dev job's DEV_TURNSTILE_SITE_KEY. Unset = empty =
+            # the dialog says registration is unavailable.
+            echo "VITE_TURNSTILE_SITE_KEY=${{ vars.STAGING_B_TURNSTILE_SITE_KEY }}"
           } >> .env
 
       - name: Install dependencies

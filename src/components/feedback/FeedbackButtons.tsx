@@ -3,6 +3,7 @@ import { ThumbsUp, ThumbsDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useSubmitFeedback } from "@/hooks/feedback/useFeedback"
+import { useTranslation } from "react-i18next"
 
 type FeedbackButtonsProps = {
   responseId: string
@@ -21,6 +22,7 @@ export default function FeedbackButtons({
   onFeedback,
   onCorrectionRequest,
 }: FeedbackButtonsProps) {
+  const { t } = useTranslation("accountUi")
   const [selected, setSelected] = useState<"positive" | "negative" | null>(null)
   const submitFeedback = useSubmitFeedback()
 
@@ -40,7 +42,7 @@ export default function FeedbackButtons({
         onCorrectionRequest()
       }
     } catch {
-      toast.error("Failed to submit feedback")
+      toast.error(t("feedbackButtons.failedToSubmitFeedback", { defaultValue: "Failed to submit feedback" }))
       setSelected(null)
     }
   }
@@ -54,7 +56,7 @@ export default function FeedbackButtons({
           "p-1 rounded hover:bg-[#ECFDF5] transition-colors",
           selected === "positive" && "bg-[#ECFDF5]"
         )}
-        aria-label="Thumbs up"
+        aria-label={t("feedbackButtons.thumbsUp", { defaultValue: "Thumbs up" })}
       >
         <ThumbsUp className={cn("w-3.5 h-3.5", selected === "positive" ? "text-[#10B981] fill-[#10B981]" : "text-[#9ca3af]")} />
       </button>
@@ -65,7 +67,7 @@ export default function FeedbackButtons({
           "p-1 rounded hover:bg-[#FEF2F2] transition-colors",
           selected === "negative" && "bg-[#FEF2F2]"
         )}
-        aria-label="Thumbs down"
+        aria-label={t("feedbackButtons.thumbsDown", { defaultValue: "Thumbs down" })}
       >
         <ThumbsDown className={cn("w-3.5 h-3.5", selected === "negative" ? "text-[#EF4444] fill-[#EF4444]" : "text-[#9ca3af]")} />
       </button>

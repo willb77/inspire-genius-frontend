@@ -14,8 +14,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ROUTES } from "@/constants/routes"
 import { useSurveys } from "@/hooks/survey/useSurveys"
+import { useTranslation } from "react-i18next"
 
 export default function SurveysSettingsCard() {
+  const { t } = useTranslation("accountUi")
   const navigate = useNavigate()
   const { data: surveys = [], isLoading } = useSurveys("take")
 
@@ -24,18 +26,18 @@ export default function SurveysSettingsCard() {
       <CardHeader className="text-left">
         <CardTitle className="flex items-center gap-2 text-lg font-semibold">
           <ClipboardList className="h-5 w-5" aria-hidden />
-          Surveys
+          {t("surveysSettingsCard.surveys", { defaultValue: "Surveys" })}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Surveys shared with your organization.
+          {t("surveysSettingsCard.surveysSharedWithYourOrganization", { defaultValue: "Surveys shared with your organization." })}
         </p>
       </CardHeader>
       <CardContent className="text-left">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t("surveysSettingsCard.loading", { defaultValue: "Loading…" })}</p>
         ) : surveys.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No surveys have been shared with your organization yet.
+            {t("surveysSettingsCard.noSurveysHaveBeenSharedWith", { defaultValue: "No surveys have been shared with your organization yet." })}
           </p>
         ) : (
           <ul className="divide-y">
@@ -46,11 +48,11 @@ export default function SurveysSettingsCard() {
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium">
-                    {s.title || "Untitled survey"}
+                    {s.title || t("surveysSettingsCard.untitledSurvey", { defaultValue: "Untitled survey" })}
                   </p>
                   <Badge variant="secondary" className="mt-0.5">
                     {s.questions.length}{" "}
-                    {s.questions.length === 1 ? "question" : "questions"}
+                    {s.questions.length === 1 ? t("surveysSettingsCard.question", { defaultValue: "question" }) : t("surveysSettingsCard.questions", { defaultValue: "questions" })}
                   </Badge>
                 </div>
                 <Button
@@ -60,7 +62,7 @@ export default function SurveysSettingsCard() {
                     navigate(ROUTES.SURVEYS, { state: { surveyId: s.id } })
                   }
                 >
-                  Take
+                  {t("surveysSettingsCard.take", { defaultValue: "Take" })}
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               </li>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import React from "react"
 import { cn } from "@/lib/utils"
 import WelcomeBanner from "./WelcomeBanner"
@@ -29,10 +30,11 @@ type KpiStripProps = {
  * - Desktop (lg+): 1x4 row
  */
 function KpiStrip({ children, className }: KpiStripProps) {
+  const { t } = useTranslation("shellUi")
   return (
     <div
       role="list"
-      aria-label="Key performance indicators"
+      aria-label={t("dashboardFrame.kpiStrip", { defaultValue: "Key performance indicators" })}
       className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5", className)}
     >
       {React.Children.map(children, (child, idx) => (
@@ -64,23 +66,24 @@ function DashboardFrame({
   side,
   className,
 }: DashboardFrameProps) {
+  const { t } = useTranslation("shellUi")
   return (
     <div className={cn("space-y-6", className)}>
       <WelcomeBanner title={title} subtitle={subtitle}>
         {bannerActions}
       </WelcomeBanner>
 
-      {kpis && <section aria-label="Dashboard KPIs">{kpis}</section>}
+      {kpis && <section aria-label={t("dashboardFrame.kpis", { defaultValue: "Dashboard KPIs" })}>{kpis}</section>}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <section
-          aria-label="Primary dashboard content"
+          aria-label={t("dashboardFrame.primary", { defaultValue: "Primary dashboard content" })}
           className={cn("space-y-5", side ? "lg:col-span-2" : "lg:col-span-3")}
         >
           {primary}
         </section>
         {side && (
-          <aside aria-label="Side rail" className="lg:col-span-1 space-y-5">
+          <aside aria-label={t("dashboardFrame.sideRail", { defaultValue: "Side rail" })} className="lg:col-span-1 space-y-5">
             {side}
           </aside>
         )}

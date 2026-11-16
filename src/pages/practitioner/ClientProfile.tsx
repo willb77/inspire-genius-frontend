@@ -1,5 +1,6 @@
 import { useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import {
   ArrowLeft,
   Calendar,
@@ -34,6 +35,7 @@ function formatDate(dateStr: string) {
 }
 
 export default function PractitionerClientProfile() {
+  const { t } = useTranslation("practitionerPages")
   const { clientId } = useParams<{ clientId: string }>()
   const navigate = useNavigate()
   const { data, isLoading } = useCoachClient(clientId)
@@ -64,7 +66,7 @@ export default function PractitionerClientProfile() {
       className="inline-flex items-center gap-1.5 text-sm font-medium text-[#3B5BFF] hover:text-[#2A47CC]"
     >
       <ArrowLeft className="h-4 w-4" />
-      Back to My Clients
+      {t("clientProfile.backToClients", { defaultValue: "Back to My Clients" })}
     </button>
   )
 
@@ -87,14 +89,15 @@ export default function PractitionerClientProfile() {
         <div className="space-y-6">
           {backLink}
           <div className="rounded-lg border border-[#e5e7eb] bg-white py-16 text-center">
-            <p className="text-sm text-[#6b7280]">Client not found.</p>
+            <p className="text-sm text-[#6b7280]">{t("clientProfile.notFound", { defaultValue: "Client not found." })}</p>
           </div>
         </div>
       </PractitionerLayout>
     )
   }
 
-  const statusLabel = data.status === "active" ? "Active" : "New"
+  const statusLabel =
+    data.status === "active" ? t("clientProfile.statusActive", { defaultValue: "Active" }) : t("clientProfile.statusNew", { defaultValue: "New" })
   const statusClass =
     data.status === "active"
       ? "bg-[#D1FAE5] text-[#065F46]"
@@ -121,7 +124,10 @@ export default function PractitionerClientProfile() {
         </div>
 
         {/* Sessions */}
-        <DataCard title="Sessions" badge={`${data.sessions} sessions`}>
+        <DataCard
+          title={t("clientProfile.sessions", { defaultValue: "Sessions" })}
+          badge={t("clientProfile.sessionsBadge", { sessions: data.sessions, defaultValue: "{{sessions}} sessions" })}
+        >
           {data.sessionsList.length ? (
             <ul className="divide-y divide-[#e5e7eb]">
               {data.sessionsList.map((s) => (
@@ -133,17 +139,17 @@ export default function PractitionerClientProfile() {
                       <div className="text-xs text-[#6b7280]">{formatDate(s.date)}</div>
                     </div>
                   </div>
-                  <span className="text-xs tabular-nums text-[#6b7280]">{s.durationMin} min</span>
+                  <span className="text-xs tabular-nums text-[#6b7280]">{t("clientProfile.minutes", { min: s.durationMin, defaultValue: "{{min}} min" })}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-[#6b7280]">No sessions logged yet.</p>
+            <p className="text-sm text-[#6b7280]">{t("clientProfile.noSessions", { defaultValue: "No sessions logged yet." })}</p>
           )}
         </DataCard>
 
         {/* Goals */}
-        <DataCard title="Top Goals & Objectives" badge={data.goals.length}>
+        <DataCard title={t("clientProfile.goals", { defaultValue: "Top Goals & Objectives" })} badge={data.goals.length}>
           {data.goals.length ? (
             <ul className="space-y-3">
               {data.goals.map((g) => (
@@ -157,17 +163,16 @@ export default function PractitionerClientProfile() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-[#6b7280]">No goals defined yet.</p>
+            <p className="text-sm text-[#6b7280]">{t("clientProfile.noGoals", { defaultValue: "No goals defined yet." })}</p>
           )}
         </DataCard>
 
         {/* PRISM */}
-        <DataCard title="PRISM Scores">
+        <DataCard title={t("clientProfile.prismScores", { defaultValue: "PRISM Scores" })}>
           <div className="space-y-3">
             {prismQuery.isError ? (
               <p role="alert" className="text-sm text-[#B91C1C]">
-                PRISM couldn&rsquo;t be loaded just now. This is a failure, not an empty profile —
-                try again shortly.
+                {t("clientProfile.prismLoadFailed", { defaultValue: "PRISM couldn’t be loaded just now. This is a failure, not an empty profile — try again shortly." })}
               </p>
             ) : prismQuery.isLoading ? (
               <Skeleton className="h-16 w-full" />
@@ -189,7 +194,7 @@ export default function PractitionerClientProfile() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[#6b7280]">No PRISM scores on file for this client yet.</p>
+              <p className="text-sm text-[#6b7280]">{t("clientProfile.noPrism", { defaultValue: "No PRISM scores on file for this client yet." })}</p>
             )}
             <Button
               variant="outline"
@@ -198,13 +203,13 @@ export default function PractitionerClientProfile() {
               onClick={() => setPrismOpen(true)}
             >
               <Upload className="mr-1.5 h-4 w-4" />
-              Upload PRISM .csv
+              {t("clientProfile.uploadPrism", { defaultValue: "Upload PRISM .csv" })}
             </Button>
           </div>
         </DataCard>
 
         {/* Resources */}
-        <DataCard title="Resources">
+        <DataCard title={t("clientProfile.resources", { defaultValue: "Resources" })}>
           <ArtifactStatusMatrix
             resources={data.resources}
             unchecked={data.resourcesUnchecked}
@@ -213,10 +218,10 @@ export default function PractitionerClientProfile() {
         </DataCard>
 
         {/* Follow-Ups & Topics */}
-        <DataCard title="Follow-Ups & Topics">
+        <DataCard title={t("clientProfile.followUpsTopics", { defaultValue: "Follow-Ups & Topics" })}>
           <div className="space-y-4">
             <div>
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">Follow-ups</div>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">{t("clientProfile.followUps", { defaultValue: "Follow-ups" })}</div>
               {data.followUps.length ? (
                 <ul className="divide-y divide-[#e5e7eb]">
                   {data.followUps.map((f) => (
@@ -227,31 +232,31 @@ export default function PractitionerClientProfile() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-[#6b7280]">No follow-ups scheduled.</p>
+                <p className="text-sm text-[#6b7280]">{t("clientProfile.noFollowUps", { defaultValue: "No follow-ups scheduled." })}</p>
               )}
             </div>
             <div>
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">Topics</div>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">{t("clientProfile.topics", { defaultValue: "Topics" })}</div>
               {data.topics.length ? (
                 <div className="flex flex-wrap gap-2">
-                  {data.topics.map((t) => (
+                  {data.topics.map((topic) => (
                     <span
-                      key={t}
+                      key={topic}
                       className="inline-flex items-center rounded-full bg-[#eef1ff] px-2.5 py-0.5 text-xs font-medium text-[#3B5BFF]"
                     >
-                      {t}
+                      {topic}
                     </span>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[#6b7280]">No topics recorded.</p>
+                <p className="text-sm text-[#6b7280]">{t("clientProfile.noTopics", { defaultValue: "No topics recorded." })}</p>
               )}
             </div>
           </div>
         </DataCard>
 
         {/* Past conversations */}
-        <DataCard title="Past Conversations" badge={data.conversations.length}>
+        <DataCard title={t("clientProfile.pastConversations", { defaultValue: "Past Conversations" })} badge={data.conversations.length}>
           {data.conversations.length ? (
             <ul className="divide-y divide-[#e5e7eb]">
               {data.conversations.map((c) => (
@@ -265,7 +270,7 @@ export default function PractitionerClientProfile() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-[#6b7280]">No past conversations.</p>
+            <p className="text-sm text-[#6b7280]">{t("clientProfile.noConversations", { defaultValue: "No past conversations." })}</p>
           )}
         </DataCard>
 
@@ -276,7 +281,7 @@ export default function PractitionerClientProfile() {
             onClick={() => navigate("/practitioner/meridian-chat")}
           >
             <MessagesSquare className="mr-1.5 h-4 w-4" />
-            Chat with Meridian
+            {t("clientProfile.chatWithMeridian", { defaultValue: "Chat with Meridian" })}
           </Button>
         </div>
       </div>
@@ -285,13 +290,13 @@ export default function PractitionerClientProfile() {
       <Dialog open={prismOpen} onOpenChange={setPrismOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upload PRISM .csv</DialogTitle>
+            <DialogTitle>{t("clientProfile.uploadPrism", { defaultValue: "Upload PRISM .csv" })}</DialogTitle>
             <DialogDescription>
-              Import a PRISM score export for {data.name}. The parsed scores attach to this client.
+              {t("clientProfile.uploadDescription", { name: data.name, defaultValue: "Import a PRISM score export for {{name}}. The parsed scores attach to this client." })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 pt-1">
-            <Label htmlFor="prism-csv-file">PRISM CSV file</Label>
+            <Label htmlFor="prism-csv-file">{t("clientProfile.csvFile", { defaultValue: "PRISM CSV file" })}</Label>
             <input
               ref={prismFileRef}
               id="prism-csv-file"
@@ -302,7 +307,7 @@ export default function PractitionerClientProfile() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPrismOpen(false)}>
-              Cancel
+              {t("clientProfile.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button
               className="bg-[#3B5BFF] text-white hover:bg-[#2A47CC]"
@@ -310,7 +315,7 @@ export default function PractitionerClientProfile() {
               onClick={handlePrismUpload}
             >
               {prismImport.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              Upload
+              {t("clientProfile.upload", { defaultValue: "Upload" })}
             </Button>
           </DialogFooter>
         </DialogContent>

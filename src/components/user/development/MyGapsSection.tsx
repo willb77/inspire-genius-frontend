@@ -39,6 +39,7 @@ import { classifyGap, type GapKind } from "@/lib/developmentGaps"
 import type { DevelopmentGap } from "@/types/development"
 import SelfSection from "./SelfSection"
 import { selfGapSchema } from "./myDevelopment.schema"
+import { useTranslation } from "react-i18next"
 
 type GapInput = z.input<typeof selfGapSchema>
 type GapOutput = z.output<typeof selfGapSchema>
@@ -66,6 +67,7 @@ function GapRow({
   onClose: (gapId: string) => void
   closing: boolean
 }) {
+  const { t } = useTranslation("studioUi")
   // TDS-8: an indicative (coaching) row carries no real levels, so none are
   // shown; an older backend's rows ("unclassified") render as they always did.
   const kind = classifyGap(gap)
@@ -88,7 +90,7 @@ function GapRow({
           onClick={() => onClose(gap.gapId)}
         >
           {closing && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" aria-hidden />}
-          Mark as closed
+          {t("user.developmentMyGapsSection.markAsClosed", { defaultValue: "Mark as closed" })}
         </Button>
       )}
     </li>
@@ -96,6 +98,7 @@ function GapRow({
 }
 
 export default function MyGapsSection() {
+  const { t } = useTranslation("studioUi")
   const gaps = useMyGaps()
   const createGap = useCreateMyGap()
   const closeGap = useCloseMyGap()
@@ -118,7 +121,7 @@ export default function MyGapsSection() {
   return (
     <SelfSection
       id="my-gaps"
-      title="Gaps"
+      title={t("user.developmentMyGapsSection.gaps", { defaultValue: "Gaps" })}
       icon={Target}
       lead="The things you are working on closing — the ones your assessment surfaced, and the ones you named yourself."
       isLoading={gaps.isLoading}
@@ -132,19 +135,19 @@ export default function MyGapsSection() {
       emptyBody="Two things put one here: completing a PRISM assessment, which surfaces behavioural gaps automatically, or adding one yourself below. Your coach can also add one from the Team Development Studio."
       always={
         <form onSubmit={onSubmit} className="space-y-2 border-t border-border pt-4" noValidate>
-          <p className="text-sm font-medium">Add something you want to get better at</p>
+          <p className="text-sm font-medium">{t("user.developmentMyGapsSection.addSomethingYouWantTo", { defaultValue: "Add something you want to get better at" })}</p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-1">
-              <Label htmlFor="my-gap-competency">What is it?</Label>
+              <Label htmlFor="my-gap-competency">{t("user.developmentMyGapsSection.whatIsIt", { defaultValue: "What is it?" })}</Label>
               <Input
                 id="my-gap-competency"
-                placeholder="Presenting to a room I don't know"
+                placeholder={t("user.developmentMyGapsSection.presentingToARoomI", { defaultValue: "Presenting to a room I don't know" })}
                 aria-invalid={!!fieldError}
                 {...form.register("competency")}
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="my-gap-severity">How much does it matter?</Label>
+              <Label htmlFor="my-gap-severity">{t("user.developmentMyGapsSection.howMuchDoesItMatter", { defaultValue: "How much does it matter?" })}</Label>
               <Select
                 value={form.watch("severity")}
                 onValueChange={(v) =>
@@ -169,7 +172,7 @@ export default function MyGapsSection() {
               {createGap.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
               )}
-              Add
+              {t("user.developmentMyGapsSection.add", { defaultValue: "Add" })}
             </Button>
           </div>
           {fieldError && (

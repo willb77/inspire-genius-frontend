@@ -30,6 +30,7 @@ import type {
   SurveyQuestionType,
 } from "@/types/survey"
 import { SURVEY_QUESTION_TYPE_LABELS } from "@/types/survey"
+import { useTranslation } from "react-i18next"
 
 export interface SurveyBuilderProps {
   /** An existing survey to edit, or undefined to start a fresh draft. */
@@ -50,6 +51,7 @@ export default function SurveyBuilder({
   onSave,
   onCancel,
 }: SurveyBuilderProps) {
+  const { t: tr } = useTranslation("studioUi")
   const [draft, setDraft] = useState<Survey>(
     () => initial ?? createDraftSurvey(),
   )
@@ -133,11 +135,11 @@ export default function SurveyBuilder({
 
   const handleSave = () => {
     if (!draft.title.trim()) {
-      toast.error("Give the survey a title before saving.")
+      toast.error(tr("survey.surveyBuilder.giveTheSurveyATitle", { defaultValue: "Give the survey a title before saving." }))
       return
     }
     if (draft.questions.length === 0) {
-      toast.error("Add at least one question before saving.")
+      toast.error(tr("survey.surveyBuilder.addAtLeastOneQuestion", { defaultValue: "Add at least one question before saving." }))
       return
     }
     // Trim empty option rows for choice questions.
@@ -161,64 +163,62 @@ export default function SurveyBuilder({
         (q.options?.length ?? 0) < 2,
     )
     if (badChoice) {
-      toast.error("Choice questions need at least two options.")
+      toast.error(tr("survey.surveyBuilder.choiceQuestionsNeedAtLeast", { defaultValue: "Choice questions need at least two options." }))
       return
     }
     onSave(cleaned)
-    toast.success("Survey saved.")
+    toast.success(tr("survey.surveyBuilder.surveySaved", { defaultValue: "Survey saved." }))
   }
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Survey details</CardTitle>
+          <CardTitle className="text-base">{tr("survey.surveyBuilder.surveyDetails", { defaultValue: "Survey details" })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="survey-title">Title</Label>
+            <Label htmlFor="survey-title">{tr("survey.surveyBuilder.title", { defaultValue: "Title" })}</Label>
             <Input
               id="survey-title"
               value={draft.title}
               onChange={(e) => patch({ title: e.target.value })}
-              placeholder="e.g. Team Pulse Check"
+              placeholder={tr("survey.surveyBuilder.eGTeamPulseCheck", { defaultValue: "e.g. Team Pulse Check" })}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="survey-desc">Description (optional)</Label>
+            <Label htmlFor="survey-desc">{tr("survey.surveyBuilder.descriptionOptional", { defaultValue: "Description (optional)" })}</Label>
             <Textarea
               id="survey-desc"
               value={draft.description ?? ""}
               onChange={(e) => patch({ description: e.target.value })}
-              placeholder="What is this survey for?"
+              placeholder={tr("survey.surveyBuilder.whatIsThisSurveyFor", { defaultValue: "What is this survey for?" })}
               rows={2}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="survey-org">Expose to organization</Label>
+            <Label htmlFor="survey-org">{tr("survey.surveyBuilder.exposeToOrganization", { defaultValue: "Expose to organization" })}</Label>
             <Input
               id="survey-org"
               value={draft.orgId ?? ""}
               onChange={(e) => patch({ orgId: e.target.value })}
-              placeholder="Organization ID (leave blank to use your own)"
+              placeholder={tr("survey.surveyBuilder.organizationIdLeaveBlankTo", { defaultValue: "Organization ID (leave blank to use your own)" })}
             />
             <p className="text-xs text-muted-foreground">
-              Members of this organization will see the survey in their Settings →
-              My Workspace. Leave blank to expose it to your own organization.
+              {tr("survey.surveyBuilder.membersOfThisOrganizationWill", { defaultValue: "Members of this organization will see the survey in their Settings → My Workspace. Leave blank to expose it to your own organization." })}
             </p>
           </div>
           <label className="flex items-start justify-between gap-4 rounded-md border p-3">
             <span className="space-y-0.5">
-              <span className="text-sm font-medium">Available to respondents</span>
+              <span className="text-sm font-medium">{tr("survey.surveyBuilder.availableToRespondents", { defaultValue: "Available to respondents" })}</span>
               <span className="block text-xs text-muted-foreground">
-                Off keeps it hidden until you're ready. Turn on to make it
-                available to your organization.
+                {tr("survey.surveyBuilder.offKeepsItHiddenUntil", { defaultValue: "Off keeps it hidden until you're ready. Turn on to make it available to your organization." })}
               </span>
             </span>
             <Switch
               checked={!!draft.enabled}
               onCheckedChange={(v) => patch({ enabled: v })}
-              aria-label="Available to respondents"
+              aria-label={tr("survey.surveyBuilder.availableToRespondents", { defaultValue: "Available to respondents" })}
             />
           </label>
         </CardContent>
@@ -229,7 +229,7 @@ export default function SurveyBuilder({
           <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <GripVertical className="h-4 w-4" aria-hidden />
-              Question {idx + 1}
+              {tr("survey.surveyBuilder.question", { defaultValue: "Question {{v1}}", v1: idx + 1 })}
             </CardTitle>
             <div className="flex items-center gap-1">
               <Button
@@ -238,7 +238,7 @@ export default function SurveyBuilder({
                 size="sm"
                 onClick={() => moveQuestion(q.id, -1)}
                 disabled={idx === 0}
-                aria-label="Move question up"
+                aria-label={tr("survey.surveyBuilder.moveQuestionUp", { defaultValue: "Move question up" })}
               >
                 ↑
               </Button>
@@ -248,7 +248,7 @@ export default function SurveyBuilder({
                 size="sm"
                 onClick={() => moveQuestion(q.id, 1)}
                 disabled={idx === draft.questions.length - 1}
-                aria-label="Move question down"
+                aria-label={tr("survey.surveyBuilder.moveQuestionDown", { defaultValue: "Move question down" })}
               >
                 ↓
               </Button>
@@ -257,7 +257,7 @@ export default function SurveyBuilder({
                 variant="ghost"
                 size="sm"
                 onClick={() => removeQuestion(q.id)}
-                aria-label="Remove question"
+                aria-label={tr("survey.surveyBuilder.removeQuestion", { defaultValue: "Remove question" })}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
@@ -265,18 +265,18 @@ export default function SurveyBuilder({
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor={`prompt-${q.id}`}>Question text</Label>
+              <Label htmlFor={`prompt-${q.id}`}>{tr("survey.surveyBuilder.questionText", { defaultValue: "Question text" })}</Label>
               <Input
                 id={`prompt-${q.id}`}
                 value={q.prompt}
                 onChange={(e) => updateQuestion(q.id, { prompt: e.target.value })}
-                placeholder="What do you want to ask?"
+                placeholder={tr("survey.surveyBuilder.whatDoYouWantTo", { defaultValue: "What do you want to ask?" })}
               />
             </div>
 
             <div className="flex flex-wrap items-end gap-4">
               <div className="space-y-2">
-                <Label htmlFor={`type-${q.id}`}>Answer type</Label>
+                <Label htmlFor={`type-${q.id}`}>{tr("survey.surveyBuilder.answerType", { defaultValue: "Answer type" })}</Label>
                 <Select
                   value={q.type}
                   onValueChange={(v) =>
@@ -298,7 +298,7 @@ export default function SurveyBuilder({
 
               {q.type === "rating" && (
                 <div className="space-y-2">
-                  <Label htmlFor={`scale-${q.id}`}>Max rating</Label>
+                  <Label htmlFor={`scale-${q.id}`}>{tr("survey.surveyBuilder.maxRating", { defaultValue: "Max rating" })}</Label>
                   <Input
                     id={`scale-${q.id}`}
                     type="number"
@@ -322,15 +322,15 @@ export default function SurveyBuilder({
                 <Switch
                   checked={!!q.required}
                   onCheckedChange={(v) => updateQuestion(q.id, { required: v })}
-                  aria-label="Required"
+                  aria-label={tr("survey.surveyBuilder.required", { defaultValue: "Required" })}
                 />
-                Required
+                {tr("survey.surveyBuilder.required", { defaultValue: "Required" })}
               </label>
             </div>
 
             {(q.type === "single" || q.type === "multi") && (
               <div className="space-y-2">
-                <Label>Options</Label>
+                <Label>{tr("survey.surveyBuilder.options", { defaultValue: "Options" })}</Label>
                 {(q.options ?? []).map((opt, optIdx) => (
                   <div key={optIdx} className="flex items-center gap-2">
                     <Input
@@ -344,7 +344,7 @@ export default function SurveyBuilder({
                       variant="ghost"
                       size="sm"
                       onClick={() => removeOption(q.id, optIdx)}
-                      aria-label="Remove option"
+                      aria-label={tr("survey.surveyBuilder.removeOption", { defaultValue: "Remove option" })}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -357,7 +357,7 @@ export default function SurveyBuilder({
                   onClick={() => addOption(q.id)}
                 >
                   <Plus className="mr-1 h-3 w-3" />
-                  Add option
+                  {tr("survey.surveyBuilder.addOption", { defaultValue: "Add option" })}
                 </Button>
               </div>
             )}
@@ -368,17 +368,17 @@ export default function SurveyBuilder({
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" variant="outline" onClick={addQuestion}>
           <Plus className="mr-2 h-4 w-4" />
-          Add question
+          {tr("survey.surveyBuilder.addQuestion", { defaultValue: "Add question" })}
         </Button>
         <div className="flex-1" />
         {onCancel && (
           <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancel
+            {tr("survey.surveyBuilder.cancel", { defaultValue: "Cancel" })}
           </Button>
         )}
         <Button type="button" onClick={handleSave}>
           <Save className="mr-2 h-4 w-4" />
-          Save survey
+          {tr("survey.surveyBuilder.saveSurvey", { defaultValue: "Save survey" })}
         </Button>
       </div>
     </div>
