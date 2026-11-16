@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { Plus, Upload, Search, Loader2, AlertCircle, Link2 } from "lucide-react"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { Button } from "@/components/ui/button"
@@ -42,6 +43,7 @@ import {
 const TOTAL_RESOURCES = 10
 
 function PrismCell({ client }: { client: ClientSummary }) {
+  const { t } = useTranslation("practitionerPages")
   if (client.prismStatus === "ready" && client.prismScore !== null) {
     return (
       <span className="inline-flex items-center rounded-full bg-[#D1FAE5] px-2.5 py-0.5 text-xs font-semibold text-[#065F46]">
@@ -52,13 +54,13 @@ function PrismCell({ client }: { client: ClientSummary }) {
   if (client.prismStatus === "in_progress") {
     return (
       <span className="inline-flex items-center rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-xs font-medium text-[#92400E]">
-        In progress
+        {t("clients.inProgress", { defaultValue: "In progress" })}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center rounded-full bg-[#F3F4F6] px-2.5 py-0.5 text-xs font-medium text-[#6b7280]">
-      None
+      {t("clients.none", { defaultValue: "None" })}
     </span>
   )
 }
@@ -78,6 +80,7 @@ function ResourceMeter({ present }: { present: number }) {
 }
 
 export default function PractitionerClients() {
+  const { t } = useTranslation("practitionerPages")
   const navigate = useNavigate()
   const { data, isLoading, error, refetch } = useCoachClients()
   const addClient = useAddCoachClient()
@@ -126,14 +129,14 @@ export default function PractitionerClients() {
 
   function handleAdd() {
     if (!name.trim() || !email.trim()) {
-      toast.error("Name and email are required.")
+      toast.error(t("clients.nameEmailRequired", { defaultValue: "Name and email are required." }))
       return
     }
     addClient.mutate(
       { name: name.trim(), email: email.trim(), org: org.trim() || undefined },
       {
         onSuccess: (c) => {
-          toast.success(`Added ${c.name} to your client roster.`)
+          toast.success(t("clients.added", { name: c.name, defaultValue: "Added {{name}} to your client roster." }))
           resetAdd()
           setAddOpen(false)
         },
@@ -146,7 +149,7 @@ export default function PractitionerClients() {
     createInvite.mutate(c.id, {
       onSuccess: (res) => setIssued({ path: res.invitePath, label: c.name }),
       onError: (err) =>
-        toast.error(inviteErrorMessage(err) ?? "Could not create the invite link. Please try again."),
+        toast.error(inviteErrorMessage(err) ?? t("clients.inviteFailed", { defaultValue: "Could not create the invite link. Please try again." })),
       onSettled: () => setInvitingId(null),
     })
   }
@@ -179,12 +182,16 @@ export default function PractitionerClients() {
     const source = fileText ?? csvText
     const rows = parseCsv(source)
     if (rows.length === 0) {
-      toast.error("No valid rows found. Use: name,email,org")
+      toast.error(t("clients.noValidRows", { defaultValue: "No valid rows found. Use: name,email,org" }))
       return
     }
     bulkImport.mutate(rows, {
       onSuccess: (res) => {
-        toast.success(`Imported ${res.imported} client${res.imported === 1 ? "" : "s"}.`)
+        toast.success(
+          res.imported === 1
+            ? t("clients.importedOne", { n: res.imported, defaultValue: "Imported {{n}} client." })
+            : t("clients.importedOther", { n: res.imported, defaultValue: "Imported {{n}} clients." }),
+        )
         setCsvText("")
         setBulkOpen(false)
       },
@@ -207,7 +214,7 @@ export default function PractitionerClients() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, or organization…"
+            placeholder={t("clients.searchPlaceholder", { defaultValue: "Search by name, email, or organization…" })}
             className="pl-9"
           />
         </div>
@@ -223,28 +230,28 @@ export default function PractitionerClients() {
           ) : error ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
               <AlertCircle className="h-8 w-8 text-[#dc2626]" />
-              <p className="text-sm text-[#6b7280]">Failed to load your client roster.</p>
+              <p className="text-sm text-[#6b7280]">{t("clients.loadFailed", { defaultValue: "Failed to load your client roster." })}</p>
               <Button variant="outline" onClick={() => refetch()}>
-                Retry
+                {t("retry", { defaultValue: "Retry" })}
               </Button>
             </div>
           ) : filtered.length === 0 ? (
             <p className="py-16 text-center text-sm text-[#6b7280]">
               {clients.length === 0
-                ? "No clients yet — add your first one."
-                : "No clients match your search."}
+                ? t("clients.noClients", { defaultValue: "No clients yet — add your first one." })
+                : t("clients.noMatch", { defaultValue: "No clients match your search." })}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Organization</TableHead>
-                  <TableHead className="text-center"># Sessions</TableHead>
-                  <TableHead>Top Goals</TableHead>
-                  <TableHead>PRISM</TableHead>
-                  <TableHead>Resources</TableHead>
-                  {invitesLive && <TableHead className="text-right">Invite</TableHead>}
+                  <TableHead>{t("clients.colClient", { defaultValue: "Client" })}</TableHead>
+                  <TableHead>{t("clients.colOrganization", { defaultValue: "Organization" })}</TableHead>
+                  <TableHead className="text-center">{t("clients.colSessions", { defaultValue: "# Sessions" })}</TableHead>
+                  <TableHead>{t("clients.colTopGoals", { defaultValue: "Top Goals" })}</TableHead>
+                  <TableHead>{t("clients.colPrism", { defaultValue: "PRISM" })}</TableHead>
+                  <TableHead>{t("clients.colResources", { defaultValue: "Resources" })}</TableHead>
+                  {invitesLive && <TableHead className="text-right">{t("clients.colInvite", { defaultValue: "Invite" })}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -281,8 +288,8 @@ export default function PractitionerClients() {
                           size="sm"
                           className="min-h-11"
                           disabled={!c.email || invitingId !== null}
-                          title={c.email ? undefined : "Add an email address to invite this client"}
-                          aria-label={`Invite ${c.name}`}
+                          title={c.email ? undefined : t("clients.inviteNeedsEmail", { defaultValue: "Add an email address to invite this client" })}
+                          aria-label={t("clients.inviteAria", { name: c.name, defaultValue: "Invite {{name}}" })}
                           onClick={(e) => {
                             e.stopPropagation()
                             handleInvite(c)
@@ -293,7 +300,7 @@ export default function PractitionerClients() {
                           ) : (
                             <Link2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
                           )}
-                          Invite
+                          {t("clients.invite", { defaultValue: "Invite" })}
                         </Button>
                       </TableCell>
                     )}
@@ -312,9 +319,9 @@ export default function PractitionerClients() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#111827]">My Clients</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[#111827]">{t("clients.title", { defaultValue: "My Clients" })}</h1>
             <p className="text-sm text-[#6b7280]">
-              Your coaching roster — resources, PRISM, and session history at a glance.
+              {t("clients.subtitle", { defaultValue: "Your coaching roster — resources, PRISM, and session history at a glance." })}
             </p>
           </div>
           <div className="flex gap-2">
@@ -324,14 +331,14 @@ export default function PractitionerClients() {
               onClick={() => setBulkOpen(true)}
             >
               <Upload className="mr-1.5 h-4 w-4" />
-              Bulk Import
+              {t("clients.bulkImport", { defaultValue: "Bulk Import" })}
             </Button>
             <Button
               className="bg-[#3B5BFF] text-white hover:bg-[#2A47CC]"
               onClick={() => setAddOpen(true)}
             >
               <Plus className="mr-1.5 h-4 w-4" />
-              Add Client
+              {t("clients.addClient", { defaultValue: "Add Client" })}
             </Button>
           </div>
         </div>
@@ -339,8 +346,8 @@ export default function PractitionerClients() {
         {showInvites ? (
           <Tabs value={tab} onValueChange={handleTab} className="space-y-4">
             <TabsList>
-              <TabsTrigger value="clients" className="min-h-11">Clients</TabsTrigger>
-              <TabsTrigger value="invites" className="min-h-11">Invitations</TabsTrigger>
+              <TabsTrigger value="clients" className="min-h-11">{t("clients.tabClients", { defaultValue: "Clients" })}</TabsTrigger>
+              <TabsTrigger value="invites" className="min-h-11">{t("clients.tabInvitations", { defaultValue: "Invitations" })}</TabsTrigger>
             </TabsList>
             <TabsContent value="clients" className="space-y-6">
               {rosterSection}
@@ -368,32 +375,32 @@ export default function PractitionerClients() {
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Client</DialogTitle>
-            <DialogDescription>Add a single client to your coaching roster.</DialogDescription>
+            <DialogTitle>{t("clients.addClient", { defaultValue: "Add Client" })}</DialogTitle>
+            <DialogDescription>{t("clients.addDescription", { defaultValue: "Add a single client to your coaching roster." })}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-1">
             <div className="space-y-1.5">
-              <Label htmlFor="add-name">Name</Label>
-              <Input id="add-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Doe" />
+              <Label htmlFor="add-name">{t("clients.name", { defaultValue: "Name" })}</Label>
+              <Input id="add-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("clients.namePlaceholder", { defaultValue: "Jane Doe" })} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="add-email">Email</Label>
+              <Label htmlFor="add-email">{t("clients.email", { defaultValue: "Email" })}</Label>
               <Input
                 id="add-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="jane@company.com"
+                placeholder={t("clients.emailPlaceholder", { defaultValue: "jane@company.com" })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="add-org">Organization</Label>
-              <Input id="add-org" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Company Inc" />
+              <Label htmlFor="add-org">{t("clients.organization", { defaultValue: "Organization" })}</Label>
+              <Input id="add-org" value={org} onChange={(e) => setOrg(e.target.value)} placeholder={t("clients.orgPlaceholder", { defaultValue: "Company Inc" })} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>
-              Cancel
+              {t("clients.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button
               className="bg-[#3B5BFF] text-white hover:bg-[#2A47CC]"
@@ -401,7 +408,7 @@ export default function PractitionerClients() {
               onClick={handleAdd}
             >
               {addClient.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              Add Client
+              {t("clients.addClient", { defaultValue: "Add Client" })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -411,15 +418,15 @@ export default function PractitionerClients() {
       <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Bulk Import Clients</DialogTitle>
+            <DialogTitle>{t("clients.bulkTitle", { defaultValue: "Bulk Import Clients" })}</DialogTitle>
             <DialogDescription>
-              Paste one client per line as{" "}
-              <code className="rounded bg-[#f3f4f6] px-1">name,email,org</code>, or upload a CSV file.
+              {t("clients.bulkDescriptionBefore", { defaultValue: "Paste one client per line as" })}{" "}
+              <code className="rounded bg-[#f3f4f6] px-1">name,email,org</code>{t("clients.bulkDescriptionAfter", { defaultValue: ", or upload a CSV file." })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-1">
             <div className="space-y-1.5">
-              <Label htmlFor="bulk-csv">Paste rows</Label>
+              <Label htmlFor="bulk-csv">{t("clients.pasteRows", { defaultValue: "Paste rows" })}</Label>
               <Textarea
                 id="bulk-csv"
                 value={csvText}
@@ -432,7 +439,7 @@ export default function PractitionerClients() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="bulk-file">…or upload a CSV file</Label>
+              <Label htmlFor="bulk-file">{t("clients.uploadCsv", { defaultValue: "…or upload a CSV file" })}</Label>
               <input
                 id="bulk-file"
                 type="file"
@@ -444,7 +451,7 @@ export default function PractitionerClients() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkOpen(false)}>
-              Cancel
+              {t("clients.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button
               className="bg-[#3B5BFF] text-white hover:bg-[#2A47CC]"
@@ -452,7 +459,7 @@ export default function PractitionerClients() {
               onClick={() => handleBulk()}
             >
               {bulkImport.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              Import
+              {t("clients.import", { defaultValue: "Import" })}
             </Button>
           </DialogFooter>
         </DialogContent>

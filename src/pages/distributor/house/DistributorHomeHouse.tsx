@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import DistributorLayout from "@/layouts/DistributorLayout"
 import { PageHeader } from "@/components/shared/house/PageHeader"
 import { PageState } from "@/components/shared/house/PageState"
@@ -34,13 +35,14 @@ const PREVIEW_ROWS = 5
  */
 export default function DistributorHomeHouse() {
   const { user } = useAuth()
+  const { t } = useTranslation("distributorPages")
   const practs = useDistributorPractitioners()
   const credits = useDistributorCredits()
   const txs = useDistributorTransactions()
 
   const name = firstNameOf(user)
   const greeting = greetingFor(new Date().getHours())
-  const title = name ? `${greeting}, ${name}` : greeting
+  const title = name ? t("homeGreetingNamed", { defaultValue: "{{greeting}}, {{name}}", greeting, name }) : greeting
 
   const creditFigures = credits.error ? null : readCredits(credits.data)
   const practitioners = practs.error ? null : readPractitioners(practs.data)
@@ -48,24 +50,24 @@ export default function DistributorHomeHouse() {
 
   return (
     <DistributorLayout>
-      <PageHeader title={title} description="Your practitioners and PRISM credits at a glance." />
+      <PageHeader title={title} description={t("homeDescription", { defaultValue: "Your practitioners and PRISM credits at a glance." })} />
 
       {/* The reviewer's queue; renders nothing unless a validation request names this distributor. */}
       <ValidationReviewQueue />
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatTile
-          label="Credits available"
+          label={t("creditsAvailable", { defaultValue: "Credits available" })}
           value={formatCredits(creditFigures?.available)}
           loading={credits.isLoading}
         />
         <StatTile
-          label="Given to practitioners"
+          label={t("givenToPractitioners", { defaultValue: "Given to practitioners" })}
           value={formatCredits(creditFigures?.given)}
           loading={credits.isLoading}
         />
         <StatTile
-          label="Practitioners"
+          label={t("practitioners", { defaultValue: "Practitioners" })}
           value={practitioners ? String(practitioners.length) : DASH}
           loading={practs.isLoading}
         />
@@ -73,10 +75,10 @@ export default function DistributorHomeHouse() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Section
-          title="Your practitioners"
+          title={t("yourPractitioners", { defaultValue: "Your practitioners" })}
           action={
             <Link to={ROUTES.DISTRIBUTOR.NETWORK} className="text-sm text-primary hover:underline">
-              See all
+              {t("seeAll", { defaultValue: "See all" })}
             </Link>
           }
         >
@@ -85,16 +87,16 @@ export default function DistributorHomeHouse() {
           ) : practs.error ? (
             <PageState
               kind="error"
-              message="We couldn't load your practitioners."
+              message={t("loadPractitionersError", { defaultValue: "We couldn't load your practitioners." })}
               onRetry={() => void practs.refetch()}
             />
           ) : !practitioners ? (
-            <PageState kind="unavailable" message="Your practitioner list isn't available yet." />
+            <PageState kind="unavailable" message={t("practitionerListUnavailable", { defaultValue: "Your practitioner list isn't available yet." })} />
           ) : practitioners.length === 0 ? (
             <PageState
               kind="empty"
-              title="No practitioners yet"
-              message="When practitioners join your network, they'll appear here."
+              title={t("noPractitionersTitle", { defaultValue: "No practitioners yet" })}
+              message={t("noPractitionersBody", { defaultValue: "When practitioners join your network, they'll appear here." })}
             />
           ) : (
             <ul className="divide-y divide-border">
@@ -102,7 +104,7 @@ export default function DistributorHomeHouse() {
                 <li key={p.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                   <span className="min-w-0 truncate font-medium text-foreground">{p.name}</span>
                   <span className="shrink-0 text-muted-foreground">
-                    {formatCredits(p.used)} of {formatCredits(p.given)} credits used
+                    {t("creditsUsedOfGiven", { defaultValue: "{{used}} of {{given}} credits used", used: formatCredits(p.used), given: formatCredits(p.given) })}
                   </span>
                 </li>
               ))}
@@ -111,10 +113,10 @@ export default function DistributorHomeHouse() {
         </Section>
 
         <Section
-          title="Recent credit activity"
+          title={t("recentCreditActivity", { defaultValue: "Recent credit activity" })}
           action={
             <Link to={ROUTES.DISTRIBUTOR.CREDITS} className="text-sm text-primary hover:underline">
-              Credits
+              {t("credits", { defaultValue: "Credits" })}
             </Link>
           }
         >
@@ -123,16 +125,16 @@ export default function DistributorHomeHouse() {
           ) : txs.error ? (
             <PageState
               kind="error"
-              message="We couldn't load your credit activity."
+              message={t("loadCreditActivityError", { defaultValue: "We couldn't load your credit activity." })}
               onRetry={() => void txs.refetch()}
             />
           ) : !transactions ? (
-            <PageState kind="unavailable" message="Credit activity isn't available yet." />
+            <PageState kind="unavailable" message={t("creditActivityUnavailable", { defaultValue: "Credit activity isn't available yet." })} />
           ) : transactions.length === 0 ? (
             <PageState
               kind="empty"
-              title="No credit activity yet"
-              message="Credits you buy or give to practitioners will be listed here."
+              title={t("noCreditActivityTitle", { defaultValue: "No credit activity yet" })}
+              message={t("noCreditActivityBody", { defaultValue: "Credits you buy or give to practitioners will be listed here." })}
             />
           ) : (
             <ul className="divide-y divide-border">

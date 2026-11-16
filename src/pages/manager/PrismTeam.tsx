@@ -22,8 +22,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Eye, Users } from 'lucide-react'
 import { QUEST_TYPE_NAMES } from '@/constants/prism'
 import { useManagerTeamPrism } from '@/hooks/manager/useManagerTeamPrism'
+import { useTranslation } from "react-i18next"
 
 export default function PrismTeam() {
+  const { t } = useTranslation("managerPages")
   const { data, isLoading } = useManagerTeamPrism()
   const [viewingReportId, setViewingReportId] = useState<string | null>(null)
 
@@ -50,21 +52,15 @@ export default function PrismTeam() {
     <ManagerLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Team PRISM Assessments
-          </h1>
-          <p className="text-muted-foreground">
-            Track your team members' PRISM assessment progress
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("prismTeam.teamPrismAssessments", { defaultValue: "Team PRISM Assessments" })}</h1>
+          <p className="text-muted-foreground">{t("prismTeam.trackYourTeamMembersPrism", { defaultValue: "Track your team members' PRISM assessment progress" })}</p>
         </div>
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Team Members
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">{t("prismTeam.teamMembers", { defaultValue: "Team Members" })}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -73,7 +69,7 @@ export default function PrismTeam() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("prismTeam.completed", { defaultValue: "Completed" })}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{completedCount}</div>
@@ -81,9 +77,7 @@ export default function PrismTeam() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Completion Rate
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">{t("prismTeam.completionRate", { defaultValue: "Completion Rate" })}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{completionRate}%</div>
@@ -94,24 +88,20 @@ export default function PrismTeam() {
         {viewingReportId ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Team Member Report</h2>
+              <h2 className="text-lg font-semibold">{t("prismTeam.teamMemberReport", { defaultValue: "Team Member Report" })}</h2>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setViewingReportId(null)}
-              >
-                Back to Team
-              </Button>
+              >{t("prismTeam.backToTeam", { defaultValue: "Back to Team" })}</Button>
             </div>
             <PrismReportViewer assessmentId={viewingReportId} />
           </div>
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle>Team Assessments</CardTitle>
-              <CardDescription>
-                {assessments.length} team member
-                {assessments.length !== 1 ? 's' : ''}
+              <CardTitle>{t("prismTeam.teamAssessments", { defaultValue: "Team Assessments" })}</CardTitle>
+              <CardDescription>{assessments.length === 1 ? t("prismTeam.teamMemberOne", { defaultValue: "{{length}} team member", length: assessments.length }) : t("prismTeam.teamMemberOther", { defaultValue: "{{length}} team members", length: assessments.length })}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -122,19 +112,17 @@ export default function PrismTeam() {
                   ))}
                 </div>
               ) : assessments.length === 0 ? (
-                <p className="py-8 text-center text-muted-foreground">
-                  No team assessments yet.
-                </p>
+                <p className="py-8 text-center text-muted-foreground">{t("prismTeam.noTeamAssessmentsYet", { defaultValue: "No team assessments yet." })}</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Team Member</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Initiated</TableHead>
-                      <TableHead>Completed</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("prismTeam.teamMember2", { defaultValue: "Team Member" })}</TableHead>
+                      <TableHead>{t("prismTeam.type", { defaultValue: "Type" })}</TableHead>
+                      <TableHead>{t("prismTeam.status", { defaultValue: "Status" })}</TableHead>
+                      <TableHead>{t("prismTeam.initiated", { defaultValue: "Initiated" })}</TableHead>
+                      <TableHead>{t("prismTeam.completed", { defaultValue: "Completed" })}</TableHead>
+                      <TableHead className="text-right">{t("prismTeam.actions", { defaultValue: "Actions" })}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -165,9 +153,7 @@ export default function PrismTeam() {
                                 setViewingReportId(assessment.id)
                               }
                             >
-                              <Eye className="mr-1 h-3.5 w-3.5" />
-                              View
-                            </Button>
+                              <Eye className="mr-1 h-3.5 w-3.5" />{t("prismTeam.view", { defaultValue: "View" })}</Button>
                           )}
                         </TableCell>
                       </TableRow>

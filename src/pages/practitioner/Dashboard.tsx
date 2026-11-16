@@ -55,6 +55,7 @@ const priorityBg = (p: string) =>
 
 export default function PractitionerDashboard() {
   const { t } = useTranslation(["coaching", "common"]);
+  const { t: tp } = useTranslation("practitionerPages")
 
   const { data: sessionsData, isLoading: sessionsLoading, error: sessionsError, refetch: refetchSessions } = usePractitionerSessions()
   const { data: clientsData, isLoading: clientsLoading, error: clientsError, refetch: refetchClients } = usePractitionerClients()
@@ -76,7 +77,7 @@ export default function PractitionerDashboard() {
   const bannerActions = (
     <div className="flex gap-6">
       <div className="text-[13px] font-semibold opacity-85"><strong className="text-lg block opacity-100">24</strong> {t("coaching:practitioner.activeClients")}</div>
-      <div className="text-[13px] font-semibold opacity-85"><strong className="text-lg block opacity-100">84</strong> PRISM Score</div>
+      <div className="text-[13px] font-semibold opacity-85"><strong className="text-lg block opacity-100">84</strong> {tp("dashboard.prismScore", { defaultValue: "PRISM Score" })}</div>
     </div>
   )
 
@@ -98,8 +99,8 @@ export default function PractitionerDashboard() {
       <DataCard title={t("coaching:practitioner.todaysSessions")}>
         {sessionsError && (
           <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetchSessions()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+            {tp("dashboard.loadFailed", { defaultValue: "Failed to load data." })}
+            <button onClick={() => void refetchSessions()} className="underline ml-1 text-[#3B5BFF]">{tp("retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         {sessionsLoading
@@ -113,7 +114,7 @@ export default function PractitionerDashboard() {
                   <div className="text-[11px] text-[#6b7280]">{s.type}</div>
                 </div>
                 <span className="text-xs font-semibold text-[#374151] shrink-0">{s.time}</span>
-                <StatusBadge status={s.status} label={s.status === "confirmed" ? "Confirmed" : "Pending"} />
+                <StatusBadge status={s.status} label={s.status === "confirmed" ? tp("dashboard.confirmed", { defaultValue: "Confirmed" }) : tp("dashboard.pending", { defaultValue: "Pending" })} />
               </div>
             ))
         }
@@ -123,15 +124,15 @@ export default function PractitionerDashboard() {
       <DataCard title={t("coaching:practitioner.clientPortfolio")}>
         {clientsError && (
           <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetchClients()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+            {tp("dashboard.loadFailed", { defaultValue: "Failed to load data." })}
+            <button onClick={() => void refetchClients()} className="underline ml-1 text-[#3B5BFF]">{tp("retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                {["Client Name", "Organization", "PRISM Score", "Sessions", "Status", "Last Session"].map((h) => (
+                {[tp("dashboard.colClientName", { defaultValue: "Client Name" }), tp("dashboard.colOrganization", { defaultValue: "Organization" }), tp("dashboard.colPrismScore", { defaultValue: "PRISM Score" }), tp("dashboard.colSessions", { defaultValue: "Sessions" }), tp("dashboard.colStatus", { defaultValue: "Status" }), tp("dashboard.colLastSession", { defaultValue: "Last Session" })].map((h) => (
                   <th key={h} className="text-left text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] px-3 py-2.5">{h}</th>
                 ))}
               </tr>
@@ -165,8 +166,8 @@ export default function PractitionerDashboard() {
       <DataCard title={t("coaching:practitioner.followUpsDueThisWeek")} badge={5}>
         {followupsError && (
           <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetchFollowups()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+            {tp("dashboard.loadFailed", { defaultValue: "Failed to load data." })}
+            <button onClick={() => void refetchFollowups()} className="underline ml-1 text-[#3B5BFF]">{tp("retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         {followupsLoading

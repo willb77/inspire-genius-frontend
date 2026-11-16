@@ -51,6 +51,7 @@ function tintFor(key: string): string {
 }
 
 export default function ManagerTeam() {
+  const { t: tm } = useTranslation("managerPages")
   const { t } = useTranslation(["admin", "common"])
   const { data, isLoading, error, refetch } = useManagerTeam()
 
@@ -60,18 +61,18 @@ export default function ManagerTeam() {
 
   return (
     <ManagerLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Team Roster (Client)</h1>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{tm("team.teamRosterClient", { defaultValue: "Team Roster (Client)" })}</h1>
       <p className="text-[13px] text-[#6b7280] mb-5">{t("admin:manager.manageDescription")}</p>
 
       {/* Summary stats — computed, not typed in. A hardcoded "14 members" above
           a table of 3 is the same class of bug as the fallback roster. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {[
-          { label: "Direct Reports", value: isLoading ? "—" : String(members.length) },
-          { label: "PRISM Assessed", value: isLoading ? "—" : `${assessed}/${members.length}` },
-          { label: "Departments", value: isLoading ? "—" : String(departments) },
+          { label: tm("team.directReports", { defaultValue: "Direct Reports" }), value: isLoading ? "—" : String(members.length) },
+          { label: tm("team.prismAssessed", { defaultValue: "PRISM Assessed" }), value: isLoading ? "—" : `${assessed}/${members.length}` },
+          { label: tm("team.departments", { defaultValue: "Departments" }), value: isLoading ? "—" : String(departments) },
           {
-            label: "Awaiting PRISM",
+            label: tm("team.awaitingPrism", { defaultValue: "Awaiting PRISM" }),
             value: isLoading ? "—" : String(members.length - assessed),
           },
         ].map((s) => (
@@ -84,11 +85,7 @@ export default function ManagerTeam() {
 
       <DataCard title={t("admin:manager.directReports")}>
         {error && (
-          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load your team.
-            <button onClick={() => void refetch()} className="underline ml-1 text-[#466BC4]">
-              Retry
-            </button>
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">{tm("team.failedToLoadYourTeam", { defaultValue: "Failed to load your team." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#466BC4]">{tm("team.retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
 
@@ -98,19 +95,11 @@ export default function ManagerTeam() {
             layer that can tell them apart. */}
         {!isLoading && !error && members.length === 0 && (
           <div className="py-10 text-center">
-            <p className="text-[13px] font-medium text-[#111827]">
-              Nobody reports to you yet.
-            </p>
-            <p className="text-[13px] text-[#6b7280] mt-1 max-w-md mx-auto">
-              A person appears here once their record names you as their manager. Import your team
-              with a <span className="font-mono text-xs">Manager</span> column containing your email
-              address, and they land on this roster.
-            </p>
+            <p className="text-[13px] font-medium text-[#111827]">{tm("team.nobodyReportsToYouYet", { defaultValue: "Nobody reports to you yet." })}</p>
+            <p className="text-[13px] text-[#6b7280] mt-1 max-w-md mx-auto">{tm("team.aPersonAppearsHereOnce", { defaultValue: "A person appears here once their record names you as their manager. Import your team with a" })}{" "}<span className="font-mono text-xs">{tm("team.manager", { defaultValue: "Manager" })}</span>{" "}{tm("team.columnContainingYourEmailAddress", { defaultValue: "column containing your email address, and they land on this roster." })}</p>
             <Button asChild className="mt-4 bg-[#466BC4] hover:bg-[#3A59A6] text-white gap-2">
               <Link to={ROUTES.MANAGER.BULK_IMPORT}>
-                <UserPlus className="h-4 w-4" />
-                Team Import
-              </Link>
+                <UserPlus className="h-4 w-4" />{tm("team.teamImport", { defaultValue: "Team Import" })}</Link>
             </Button>
           </div>
         )}
@@ -120,7 +109,7 @@ export default function ManagerTeam() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                  {["Member", "Position", "Department", "PRISM", "Role", ""].map((h, i) => (
+                  {[tm("team.hMember", { defaultValue: "Member" }), tm("team.hPosition", { defaultValue: "Position" }), tm("team.hDepartment", { defaultValue: "Department" }), tm("team.hPRISM", { defaultValue: "PRISM" }), tm("team.hRole", { defaultValue: "Role" }), ""].map((h, i) => (
                     <th
                       key={h || `col-${i}`}
                       className="text-left text-[10px] font-bold uppercase tracking-wider text-[#6b7280] px-3 py-2.5"
@@ -177,7 +166,7 @@ export default function ManagerTeam() {
                                 {swatch.label}
                               </span>
                             ) : (
-                              <span className="text-xs text-[#9ca3af]">Not assessed</span>
+                              <span className="text-xs text-[#9ca3af]">{tm("team.notAssessed", { defaultValue: "Not assessed" })}</span>
                             )}
                           </td>
                           <td className="px-3 py-3 text-xs text-[#6b7280]">{m.role}</td>
@@ -188,9 +177,7 @@ export default function ManagerTeam() {
                             <Link
                               to={`${ROUTES.MANAGER.DEVELOPMENT}/${m.user_id}`}
                               className="text-xs font-medium text-[#466BC4] underline whitespace-nowrap"
-                            >
-                              Open profile
-                            </Link>
+                            >{tm("team.openProfile", { defaultValue: "Open profile" })}</Link>
                           </td>
                         </tr>
                       )

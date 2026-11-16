@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { DEVELOPMENT_INPUT_DISCLAIMER, FIT_CLASSIFICATION_LABEL } from "@/constants/development"
 import type { CareerMatch, FitClassification } from "@/types/development"
 import { useDevSkin } from "../skin"
+import { useTranslation } from "react-i18next"
 
 const CLASS_STYLE: Record<FitClassification, string> = {
   strong_fit: "border-emerald-200 text-emerald-700",
@@ -40,6 +41,7 @@ export function CareerMatchPanel({
   onViewGaps,
   notShared,
 }: CareerMatchPanelProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const [kind, setKind] = useState<"internal" | "external">("internal")
   const matches = kind === "internal" ? internal : external
@@ -47,7 +49,7 @@ export function CareerMatchPanel({
 
   return (
     <div className="space-y-4">
-      <div className={cn("inline-flex rounded-lg border p-0.5", sk.border200)} role="tablist" aria-label="Match kind">
+      <div className={cn("inline-flex rounded-lg border p-0.5", sk.border200)} role="tablist" aria-label={t("careerMatchPanel.matchKind", { defaultValue: "Match kind" })}>
         {(["internal", "external"] as const).map((k) => (
           <button
             key={k}
@@ -72,17 +74,13 @@ export function CareerMatchPanel({
 
       {notShared ? (
         <Card className="border-dashed">
-          <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="matches-not-shared">
-            These career matches haven&apos;t been shared with you. That isn&apos;t the same as having none.
-          </CardContent>
+          <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="matches-not-shared">{t("careerMatchPanel.theseCareerMatchesHavenT", { defaultValue: "These career matches haven't been shared with you. That isn't the same as having none." })}</CardContent>
         </Card>
       ) : loading ? (
-        <div className={cn("py-10 text-center text-sm", sk.text400)}>Loading matches…</div>
+        <div className={cn("py-10 text-center text-sm", sk.text400)}>{t("careerMatchPanel.loadingMatches", { defaultValue: "Loading matches…" })}</div>
       ) : sorted.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
-            No {kind} matches yet.
-          </CardContent>
+          <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>{t("careerMatchPanel.noMatchesYet", { defaultValue: "No {{kind}} matches yet.", kind })}</CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
@@ -109,9 +107,7 @@ export function CareerMatchPanel({
                   <div className={cn("flex flex-wrap gap-2 text-[11px]", sk.text500)}>
                     {m.onetCode ? (
                       <span className={cn("inline-flex items-center gap-1 rounded px-1.5 py-0.5", sk.bgMuted100)}>
-                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                        O*NET {m.onetCode}
-                      </span>
+                        <ExternalLink className="h-3 w-3" aria-hidden="true" />{t("careerMatchPanel.oNet", { defaultValue: "O*NET {{onetCode}}", onetCode: m.onetCode })}</span>
                     ) : null}
                     {m.requiredEducation ? (
                       <span className={cn("inline-flex items-center gap-1 rounded px-1.5 py-0.5", sk.bgMuted100)}>
@@ -129,14 +125,10 @@ export function CareerMatchPanel({
                 ) : null}
                 <div className="flex flex-wrap gap-2">
                   {onSetTarget ? (
-                    <Button size="sm" variant="outline" onClick={() => onSetTarget(m)}>
-                      Set as target
-                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => onSetTarget(m)}>{t("careerMatchPanel.setAsTarget", { defaultValue: "Set as target" })}</Button>
                   ) : null}
                   {onViewGaps ? (
-                    <Button size="sm" variant="ghost" onClick={() => onViewGaps(m)}>
-                      View gaps to this role
-                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => onViewGaps(m)}>{t("careerMatchPanel.viewGapsToThisRole", { defaultValue: "View gaps to this role" })}</Button>
                   ) : null}
                 </div>
               </CardContent>

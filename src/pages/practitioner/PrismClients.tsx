@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import PractitionerLayout from '@/layouts/PractitionerLayout'
 import PrismStatusBadge from '@/components/prism/PrismStatusBadge'
 import PrismReportViewer from '@/components/prism/PrismReportViewer'
@@ -43,6 +44,7 @@ import { usePractitionerClients } from '@/hooks/practitioner/usePractitioner'
 import { usePrismImport } from '@/hooks/prism/usePrismImport'
 
 export default function PrismClients() {
+  const { t } = useTranslation("practitionerPages")
   const { data, isLoading } = usePractitionerClients()
   const importMutation = usePrismImport()
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -88,39 +90,38 @@ export default function PrismClients() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              Client PRISM Assessments
+              {t("prismClients.title", { defaultValue: "Client PRISM Assessments" })}
             </h1>
             <p className="text-muted-foreground">
-              View and manage your clients' PRISM assessments
+              {t("prismClients.subtitle", { defaultValue: "View and manage your clients' PRISM assessments" })}
             </p>
           </div>
           <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
                 <Upload className="mr-1.5 h-4 w-4" />
-                Import Client Report
+                {t("prismClients.importReport", { defaultValue: "Import Client Report" })}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Import Client PRISM Report</DialogTitle>
+                <DialogTitle>{t("prismClients.importTitle", { defaultValue: "Import Client PRISM Report" })}</DialogTitle>
                 <DialogDescription>
-                  Upload an existing PRISM report file for a client.
-                  Supported formats: PDF, DOCX, CSV, XLS, XLSX.
+                  {t("prismClients.importDescription", { defaultValue: "Upload an existing PRISM report file for a client. Supported formats: PDF, DOCX, CSV, XLS, XLSX." })}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <Label htmlFor="client-id">Client ID</Label>
+                  <Label htmlFor="client-id">{t("prismClients.clientId", { defaultValue: "Client ID" })}</Label>
                   <Input
                     id="client-id"
-                    placeholder="Enter client user ID"
+                    placeholder={t("prismClients.clientIdPlaceholder", { defaultValue: "Enter client user ID" })}
                     value={importClientId}
                     onChange={(e) => setImportClientId(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="prism-file">Report File</Label>
+                  <Label htmlFor="prism-file">{t("prismClients.reportFile", { defaultValue: "Report File" })}</Label>
                   <input
                     ref={fileInputRef}
                     id="prism-file"
@@ -139,7 +140,7 @@ export default function PrismClients() {
                   ) : (
                     <Upload className="mr-1.5 h-4 w-4" />
                   )}
-                  {importMutation.isPending ? 'Importing...' : 'Import Report'}
+                  {importMutation.isPending ? t("prismClients.importing", { defaultValue: "Importing..." }) : t("prismClients.import", { defaultValue: "Import Report" })}
                 </Button>
               </div>
             </DialogContent>
@@ -149,13 +150,13 @@ export default function PrismClients() {
         {viewingReportId ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Client Report</h2>
+              <h2 className="text-lg font-semibold">{t("prismClients.clientReport", { defaultValue: "Client Report" })}</h2>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setViewingReportId(null)}
               >
-                Back to List
+                {t("prismClients.backToList", { defaultValue: "Back to List" })}
               </Button>
             </div>
             <PrismReportViewer assessmentId={viewingReportId} />
@@ -164,9 +165,11 @@ export default function PrismClients() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
-                <CardTitle>Assessments</CardTitle>
+                <CardTitle>{t("prismClients.assessments", { defaultValue: "Assessments" })}</CardTitle>
                 <CardDescription>
-                  {filtered.length} assessment{filtered.length !== 1 ? 's' : ''}
+                  {filtered.length !== 1
+                    ? t("prismClients.assessmentCountOther", { n: filtered.length, defaultValue: "{{n}} assessments" })
+                    : t("prismClients.assessmentCountOne", { n: filtered.length, defaultValue: "{{n}} assessment" })}
                 </CardDescription>
               </div>
               <Select
@@ -174,10 +177,10 @@ export default function PrismClients() {
                 onValueChange={setStatusFilter}
               >
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Filter status" />
+                  <SelectValue placeholder={t("prismClients.filterStatus", { defaultValue: "Filter status" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="all">{t("prismClients.allStatuses", { defaultValue: "All Statuses" })}</SelectItem>
                   {(
                     Object.keys(STATUS_CONFIG) as AssessmentStatus[]
                   ).map((status) => (
@@ -197,18 +200,18 @@ export default function PrismClients() {
                 </div>
               ) : filtered.length === 0 ? (
                 <p className="py-8 text-center text-muted-foreground">
-                  No assessments found.
+                  {t("prismClients.none", { defaultValue: "No assessments found." })}
                 </p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Initiated</TableHead>
-                      <TableHead>Completed</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("prismClients.colClient", { defaultValue: "Client" })}</TableHead>
+                      <TableHead>{t("prismClients.colType", { defaultValue: "Type" })}</TableHead>
+                      <TableHead>{t("prismClients.colStatus", { defaultValue: "Status" })}</TableHead>
+                      <TableHead>{t("prismClients.colInitiated", { defaultValue: "Initiated" })}</TableHead>
+                      <TableHead>{t("prismClients.colCompleted", { defaultValue: "Completed" })}</TableHead>
+                      <TableHead className="text-right">{t("prismClients.colActions", { defaultValue: "Actions" })}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -240,7 +243,7 @@ export default function PrismClients() {
                               }
                             >
                               <Eye className="mr-1 h-3.5 w-3.5" />
-                              View
+                              {t("prismClients.view", { defaultValue: "View" })}
                             </Button>
                           )}
                         </TableCell>

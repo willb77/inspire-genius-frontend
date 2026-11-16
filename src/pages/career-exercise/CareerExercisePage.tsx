@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { Navigate } from "react-router-dom"
 import { FileDown, Loader2, Pause, Play, UserRound } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -39,10 +40,11 @@ import { STAGE_LABELS, STATUS_LABELS, buildWorksheetHtml, worksheetFileBase } fr
  * security: every exercise route refuses itself while the switch is off.
  */
 export default function CareerExercisePage() {
+  const { t } = useTranslation("careerToolsPages")
   const sw = useCareerExerciseSwitch()
   if (sw === "loading") {
     return (
-      <div className="space-y-3 p-6" aria-busy="true" aria-label="Checking the career exercise">
+      <div className="space-y-3 p-6" aria-busy="true" aria-label={t("checkingExercise", { defaultValue: "Checking the career exercise" })}>
         <Skeleton className="h-8 w-1/3" />
         <Skeleton className="h-48 w-full" />
       </div>
@@ -66,18 +68,20 @@ function Alert({ message }: { message: string }) {
  * about why, so no cut-off can be read from it.
  */
 function CounselorNotice() {
+  const { t } = useTranslation("careerToolsPages")
   return (
     <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
       <p className="flex items-center gap-2 font-medium">
         <UserRound className="h-4 w-4" aria-hidden />
-        Talk to your counselor
+        {t("talkToCounselor", { defaultValue: "Talk to your counselor" })}
       </p>
-      <p className="mt-1">The exercise has stopped here for now and your counselor is the next step.</p>
+      <p className="mt-1">{t("counselorNoticeBody", { defaultValue: "The exercise has stopped here for now and your counselor is the next step." })}</p>
     </div>
   )
 }
 
 function ExerciseHome() {
+  const { t } = useTranslation("careerToolsPages")
   const sessions = useMyExerciseSessions(true)
   const start = useStartExercise()
   // CX-AGE: a failed read of the step is not a block — the exercise's own
@@ -87,7 +91,7 @@ function ExerciseHome() {
 
   if (sessions.isPending || ageStep.isPending) {
     return (
-      <div className="space-y-3 p-6" aria-busy="true" aria-label="Loading your exercise">
+      <div className="space-y-3 p-6" aria-busy="true" aria-label={t("loadingExercise", { defaultValue: "Loading your exercise" })}>
         <Skeleton className="h-8 w-1/3" />
         <Skeleton className="h-48 w-full" />
       </div>
@@ -96,10 +100,9 @@ function ExerciseHome() {
 
   const header = (
     <header className="space-y-1">
-      <h1 className="text-2xl font-semibold">Career exploration</h1>
+      <h1 className="text-2xl font-semibold">{t("exerciseTitle", { defaultValue: "Career exploration" })}</h1>
       <p className="max-w-3xl text-sm text-muted-foreground">
-        Work out how you work best, what matters to you, and which careers are worth a closer look — then test them
-        in the real world. Nothing here is a verdict: every option is a hypothesis to test.
+        {t("exerciseIntro", { defaultValue: "Work out how you work best, what matters to you, and which careers are worth a closer look — then test them in the real world. Nothing here is a verdict: every option is a hypothesis to test." })}
       </p>
     </header>
   )
@@ -108,7 +111,7 @@ function ExerciseHome() {
     return (
       <div className="space-y-6 p-6">
         {header}
-        <Alert message={exerciseErrorMessage(sessions.error, "Your exercise could not be loaded. Try again shortly.")} />
+        <Alert message={exerciseErrorMessage(sessions.error, t("loadExerciseFailed", { defaultValue: "Your exercise could not be loaded. Try again shortly." }))} />
       </div>
     )
   }
@@ -131,7 +134,7 @@ function ExerciseHome() {
         {label}
       </Button>
       {start.isError && (
-        <Alert message={exerciseErrorMessage(start.error, "The exercise could not be started. Try again shortly.")} />
+        <Alert message={exerciseErrorMessage(start.error, t("startExerciseFailed", { defaultValue: "The exercise could not be started. Try again shortly." }))} />
       )}
     </div>
   )
@@ -143,9 +146,9 @@ function ExerciseHome() {
         {counselorNotice}
         <div className="rounded-xl border bg-card p-6 text-sm">
           <p className="mb-4">
-            It takes a few short sessions. You can stop whenever you like and pick up exactly where you left off.
+            {t("exerciseIntroSessions", { defaultValue: "It takes a few short sessions. You can stop whenever you like and pick up exactly where you left off." })}
           </p>
-          {startButton("Start the exercise")}
+          {startButton(t("startExercise", { defaultValue: "Start the exercise" }))}
         </div>
       </div>
     )
@@ -158,8 +161,8 @@ function ExerciseHome() {
       <SessionView session={session} />
       {session.status === "closed" && (
         <div className="rounded-xl border bg-card p-4 text-sm">
-          <p className="mb-3">You finished this exercise. Your worksheet is above; you can start a fresh one at any time.</p>
-          {startButton("Start a new exercise")}
+          <p className="mb-3">{t("exerciseFinished", { defaultValue: "You finished this exercise. Your worksheet is above; you can start a fresh one at any time." })}</p>
+          {startButton(t("startNewExercise", { defaultValue: "Start a new exercise" }))}
         </div>
       )}
     </div>
@@ -167,6 +170,7 @@ function ExerciseHome() {
 }
 
 function SessionView({ session }: { session: ExerciseSession }) {
+  const { t } = useTranslation("careerToolsPages")
   const pause = usePauseExercise()
   const resume = useResumeExercise()
   const refresh = useRefreshMyExercise()
@@ -188,9 +192,9 @@ function SessionView({ session }: { session: ExerciseSession }) {
     try {
       const blob = await renderHtmlToPdf(buildWorksheetHtml(session, cells))
       downloadBlob(`${worksheetFileBase(session)}.pdf`, blob)
-      toast.success("Worksheet downloaded.")
+      toast.success(t("worksheetDownloaded", { defaultValue: "Worksheet downloaded." }))
     } catch {
-      toast.error("Could not generate the PDF.")
+      toast.error(t("worksheetPdfFailed", { defaultValue: "Could not generate the PDF." }))
     } finally {
       setPdfBusy(false)
     }
@@ -198,9 +202,9 @@ function SessionView({ session }: { session: ExerciseSession }) {
 
   const disabledReason =
     session.status === "paused"
-      ? "Your exercise is paused. Resume it to carry on."
+      ? t("pausedReason", { defaultValue: "Your exercise is paused. Resume it to carry on." })
       : session.status === "closed"
-        ? "You finished this exercise."
+        ? t("finishedReason", { defaultValue: "You finished this exercise." })
         : undefined
 
   return (
@@ -208,27 +212,27 @@ function SessionView({ session }: { session: ExerciseSession }) {
       <div className="flex flex-wrap items-center gap-3">
         <p className="text-sm">
           <span className="font-medium">{STATUS_LABELS[session.status]}</span>
-          <span className="text-muted-foreground"> · step: {STAGE_LABELS[session.stage]}</span>
+          <span className="text-muted-foreground"> · {t("exerciseStep", { defaultValue: "step: {{stage}}", stage: STAGE_LABELS[session.stage] })}</span>
         </p>
         <div className="ml-auto flex flex-wrap gap-2">
           {session.status === "active" && (
             <Button type="button" variant="outline" size="sm" disabled={pause.isPending} onClick={() => pause.mutate(versioned)}>
-              <Pause className="mr-1 h-4 w-4" aria-hidden /> Pause
+              <Pause className="mr-1 h-4 w-4" aria-hidden /> {t("pause", { defaultValue: "Pause" })}
             </Button>
           )}
           {session.status === "paused" && (
             <Button type="button" size="sm" disabled={resume.isPending} onClick={() => resume.mutate(versioned)}>
-              <Play className="mr-1 h-4 w-4" aria-hidden /> Resume where I left off
+              <Play className="mr-1 h-4 w-4" aria-hidden /> {t("resume", { defaultValue: "Resume where I left off" })}
             </Button>
           )}
           <Button type="button" variant="outline" size="sm" disabled={pdfBusy} onClick={() => void downloadPdf()}>
             {pdfBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden /> : <FileDown className="mr-1 h-4 w-4" aria-hidden />}
-            Download worksheet (PDF)
+            {t("downloadWorksheet", { defaultValue: "Download worksheet (PDF)" })}
           </Button>
         </div>
       </div>
       {actionError && (
-        <Alert message={exerciseErrorMessage(actionError, "That didn't work. Try again shortly.")} />
+        <Alert message={exerciseErrorMessage(actionError, t("actionFailed", { defaultValue: "That didn't work. Try again shortly." }))} />
       )}
       <div className="grid gap-6 lg:grid-cols-2">
         <Worksheet session={session} cells={cells} />

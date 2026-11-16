@@ -28,6 +28,7 @@ import {
   formatAsOf,
   partialMatchesMessage,
 } from "./fitEngineMatchCopy"
+import { useTranslation } from "react-i18next"
 
 export interface FitEngineMatchPanelProps {
   memberName: string
@@ -39,20 +40,20 @@ export interface FitEngineMatchPanelProps {
 
 /** BP-F5: "8 of 22 measured" beside a partial-profile score; nothing otherwise. */
 function CoverageLabel({ match }: { match: FitEngineMatch }) {
+  const { t } = useTranslation("managerPages")
   const p = fitMatchCoverage(match)
   if (!p) return null
   return (
-    <span className="ml-1 text-[11px] font-normal text-amber-700" data-testid="fit-match-coverage">
-      {p.evaluated} of {p.total} measured
-    </span>
+    <span className="ml-1 text-[11px] font-normal text-amber-700" data-testid="fit-match-coverage">{t("fitEngineMatchPanel.ofMeasured", { defaultValue: "{{evaluated}} of {{total}} measured", evaluated: p.evaluated, total: p.total })}</span>
   )
 }
 
 export function FitEngineMatchPanel({ memberName, result, loading, error }: FitEngineMatchPanelProps) {
+  const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
 
   if (loading) {
-    return <div className={cn("py-10 text-center text-sm", sk.text400)}>Loading matches…</div>
+    return <div className={cn("py-10 text-center text-sm", sk.text400)}>{t("fitEngineMatchPanel.loadingMatches", { defaultValue: "Loading matches…" })}</div>
   }
 
   const state: FitEngineMatchesState = error || !result ? "unavailable" : result.state
@@ -79,8 +80,7 @@ export function FitEngineMatchPanel({ memberName, result, loading, error }: FitE
         </Card>
       ) : (
         <>
-          <p className={cn("text-xs", sk.text500)} data-testid="fit-matches-as-of">
-            From {memberName}&rsquo;s own My fit{asOf ? `, as of ${asOf}` : ""}.
+          <p className={cn("text-xs", sk.text500)} data-testid="fit-matches-as-of">{t("fitEngineMatchPanel.fromSOwnMyFit", { defaultValue: "From {{memberName}}’s own My fit", memberName })}{asOf ? t("fitEngineMatchPanel.asOf", { defaultValue: ", as of {{asOf}}", asOf }) : ""}.
           </p>
           {partial && (
             // BP-F5: say what a partial-profile score rests on, once.
@@ -110,9 +110,7 @@ export function FitEngineMatchPanel({ memberName, result, loading, error }: FitE
             </ol>
           ) : (
             <Card className="border-dashed">
-              <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="fit-matches-no-roles">
-                {memberName}&rsquo;s My fit had no published roles to compare against.
-              </CardContent>
+              <CardContent className={cn("p-6 text-center text-sm", sk.text500)} data-testid="fit-matches-no-roles">{t("fitEngineMatchPanel.sMyFitHadNo", { defaultValue: "{{memberName}}’s My fit had no published roles to compare against.", memberName })}</CardContent>
             </Card>
           )}
         </>

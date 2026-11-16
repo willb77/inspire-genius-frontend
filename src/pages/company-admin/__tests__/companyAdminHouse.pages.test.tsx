@@ -25,7 +25,11 @@ jest.mock("@/components/job-blueprint/validation/ValidationReviewQueue", () => (
 }))
 jest.mock("@/context/useAuth", () => ({ useAuth: () => ({ user: null }) }))
 jest.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (k: string) => k, i18n: { language: "en" } }),
+  useTranslation: () => ({ t: (key: string, opts?: Record<string, unknown>) => {
+      // Resolve the English defaultValue (as the real i18n does without a bundle); keys with no default stay as the key.
+      if (!opts || typeof opts.defaultValue !== "string") return key
+      return Object.entries(opts).reduce((s, [k, v]) => s.split("{{" + k + "}}").join(String(v)), opts.defaultValue)
+    }, i18n: { language: "en" } }),
 }))
 jest.mock("sonner", () => ({ toast: { info: jest.fn(), success: jest.fn(), error: jest.fn() } }))
 jest.mock("@/hooks/useMinorConsent", () => ({

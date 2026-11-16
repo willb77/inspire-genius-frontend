@@ -62,7 +62,13 @@ jest.mock("recharts", () => ({
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    // Honours defaultValue (the English kept inline by the managerPages extraction); keys
+    // without one still come back as the key, as before.
+    t: (key: string, opts?: Record<string, unknown>) => {
+      const dv = opts?.defaultValue
+      if (typeof dv !== "string") return key
+      return dv.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => String(opts?.[k] ?? ""))
+    },
     i18n: { language: "en", changeLanguage: jest.fn() },
   }),
 }));
