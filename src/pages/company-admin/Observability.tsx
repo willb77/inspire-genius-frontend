@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import { Button } from "@/components/ui/button"
 import { Eye, RefreshCw } from "lucide-react"
@@ -9,6 +10,7 @@ import CostBoard from "@/components/super-admin/CostBoard"
 import ObservabilityBoard from "@/components/super-admin/ObservabilityBoard"
 
 export default function CompanyAdminObservability() {
+  const { t } = useTranslation("companyAdminPages")
   const { isLoading, refetch } = useDashboardMetrics()
 
   return (
@@ -18,10 +20,10 @@ export default function CompanyAdminObservability() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <Eye className="h-6 w-6" />
-              AI Observability
+              {t("observabilityTitle", { defaultValue: "AI Observability" })}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Agent performance and cost metrics for your organization
+              {t("observabilitySubtitle", { defaultValue: "Agent performance and cost metrics for your organization" })}
             </p>
           </div>
           <Button

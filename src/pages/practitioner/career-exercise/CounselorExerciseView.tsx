@@ -1,4 +1,6 @@
 import { useState } from "react"
+import type { TFunction } from "i18next"
+import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { z } from "zod"
@@ -68,8 +70,24 @@ function when(iso: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString()
 }
 
-function roleLabel(role: string | null | undefined): string {
-  return role ? `Counselor (${role})` : "Counselor"
+function roleLabel(t: TFunction, role: string | null | undefined): string {
+  return role
+    ? t("careerExercise.counselorRole", { role: role, defaultValue: "Counselor ({{role}})" })
+    : t("careerExercise.counselor", { defaultValue: "Counselor" })
+}
+
+function stageTitle(t: TFunction, stage: ExerciseStage): string {
+  return t(`careerExercise.stage.${stage}`, { defaultValue: STAGE_TITLES[stage] })
+}
+
+function bucketLabel(t: TFunction, bucket: string | null | undefined): string | null | undefined {
+  const known = bucket ? BUCKET_LABELS[bucket] : undefined
+  return known ? t(`careerExercise.bucket.${bucket}`, { defaultValue: known }) : bucket
+}
+
+function statusLabel(t: TFunction, status: string): string {
+  const known = STATUS_LABELS[status]
+  return known ? t(`careerExercise.status.${status}`, { defaultValue: known }) : status
 }
 
 function money(n: number | null): string | null {
@@ -77,7 +95,10 @@ function money(n: number | null): string | null {
 }
 
 function StudentWords({ session, stage }: { session: ExerciseSession; stage: ExerciseStage }) {
-  const none = <p className="text-sm text-muted-foreground">Nothing recorded for this step yet.</p>
+  const { t } = useTranslation("practitionerPages")
+  const none = (
+    <p className="text-sm text-muted-foreground">{t("careerExercise.nothingRecorded", { defaultValue: "Nothing recorded for this step yet." })}</p>
+  )
   switch (stage) {
     case "discover":
       if (!session.self_portrait && session.profile_reactions.length === 0) return none
@@ -121,14 +142,18 @@ function StudentWords({ session, stage }: { session: ExerciseSession; stage: Exe
                 <li key={r.onet_soc}>
                   <span className="font-medium">{r.title}</span> · {r.cluster}
                   {r.typical_education ? ` · ${r.typical_education}` : ""}
-                  {pay[1] ? ` · median ${pay[1]}${r.wage_area ? ` (${r.wage_area})` : ""}` : ""}
+                  {pay[1]
+                    ? r.wage_area
+                      ? t("careerExercise.medianArea", { pay: pay[1], area: r.wage_area, defaultValue: " · median {{pay}} ({{area}})" })
+                      : t("careerExercise.median", { pay: pay[1], defaultValue: " · median {{pay}}" })
+                    : ""}
                 </li>
               )
             })}
           </ul>
           {reactions.map(([k, v]) => (
             <p key={k}>
-              <span className="font-medium">{k === "look_forward" ? "Looks forward to" : k === "dread" ? "Dreads" : k}:</span>{" "}
+              <span className="font-medium">{k === "look_forward" ? t("careerExercise.looksForward", { defaultValue: "Looks forward to" }) : k === "dread" ? t("careerExercise.dreads", { defaultValue: "Dreads" }) : k}:</span>{" "}
               {v.join(", ")}
             </p>
           ))}
@@ -142,7 +167,7 @@ function StudentWords({ session, stage }: { session: ExerciseSession; stage: Exe
         <ul className="space-y-1 text-sm">
           {sorted.map((r) => (
             <li key={r.onet_soc}>
-              <span className="font-medium">{r.title}</span> — {BUCKET_LABELS[r.bucket ?? ""] ?? r.bucket}
+              <span className="font-medium">{r.title}</span> — {bucketLabel(t, r.bucket ?? "")}
               {r.reason ? `: ${r.reason}` : ""}
             </li>
           ))}
@@ -158,7 +183,9 @@ function StudentWords({ session, stage }: { session: ExerciseSession; stage: Exe
             return (
               <li key={i}>
                 {x.kind} — {role?.title ?? x.onet_soc}
-                {x.target_date ? ` by ${when(x.target_date)}` : ""}
+                {x.target_date
+                  ? t("careerExercise.byDate", { date: when(x.target_date), defaultValue: " by {{date}}" })
+                  : ""}
               </li>
             )
           })}
@@ -169,11 +196,11 @@ function StudentWords({ session, stage }: { session: ExerciseSession; stage: Exe
       return (
         <dl className="grid gap-2 text-sm sm:grid-cols-2">
           <div>
-            <dt className="font-medium">Primary Path</dt>
+            <dt className="font-medium">{t("careerExercise.primaryPath", { defaultValue: "Primary Path" })}</dt>
             <dd>{session.paths.primary}</dd>
           </div>
           <div>
-            <dt className="font-medium">Backup Path</dt>
+            <dt className="font-medium">{t("careerExercise.backupPath", { defaultValue: "Backup Path" })}</dt>
             <dd>{session.paths.backup}</dd>
           </div>
         </dl>
@@ -187,6 +214,7 @@ type NoteInput = z.input<typeof counselorNoteSchema>
 type NoteOutput = z.output<typeof counselorNoteSchema>
 
 function NoteForm({ studentId, sessionId, stage }: { studentId: string; sessionId: string; stage: ExerciseStage }) {
+  const { t } = useTranslation("practitionerPages")
   const add = useAddStudentNote(studentId)
   const form = useForm<NoteInput, unknown, NoteOutput>({
     resolver: zodResolver(counselorNoteSchema),
@@ -203,31 +231,32 @@ function NoteForm({ studentId, sessionId, stage }: { studentId: string; sessionI
   return (
     <form onSubmit={onSubmit} className="space-y-2" noValidate>
       <Label htmlFor={fieldId} className="text-xs text-muted-foreground">
-        Add a note on “{STAGE_TITLES[stage]}”
+        {t("careerExercise.addNoteOn", { stage: stageTitle(t, stage), defaultValue: "Add a note on “{{stage}}”" })}
       </Label>
       <Textarea id={fieldId} rows={2} {...form.register("text")} />
       {fieldError && <p className="text-xs text-destructive">{fieldError}</p>}
       {add.isError && (
         <p role="alert" className="text-xs text-destructive">
-          {counselorErrorMessage(add.error, "The note could not be saved.")}
+          {counselorErrorMessage(add.error, t("careerExercise.noteSaveFailed", { defaultValue: "The note could not be saved." }))}
         </p>
       )}
       <Button type="submit" size="sm" variant="outline" disabled={add.isPending}>
         {add.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden /> : <MessageSquarePlus className="mr-1 h-4 w-4" aria-hidden />}
-        Add note
+        {t("careerExercise.addNote", { defaultValue: "Add note" })}
       </Button>
     </form>
   )
 }
 
 function Notes({ notes }: { notes: CounselorNote[] }) {
+  const { t } = useTranslation("practitionerPages")
   if (notes.length === 0) return null
   return (
-    <ul className="space-y-2" aria-label="Counselor notes">
+    <ul className="space-y-2" aria-label={t("careerExercise.counselorNotes", { defaultValue: "Counselor notes" })}>
       {notes.map((n) => (
         <li key={n.id} className="rounded-md bg-muted/60 p-2 text-sm">
           <p className="text-xs text-muted-foreground">
-            Note · {roleLabel(n.by_role)} · {when(n.at)}
+            {t("careerExercise.noteMeta", { role: roleLabel(t, n.by_role), date: when(n.at), defaultValue: "Note · {{role}} · {{date}}" })}
           </p>
           <p className="whitespace-pre-wrap">{n.text}</p>
         </li>
@@ -237,6 +266,7 @@ function Notes({ notes }: { notes: CounselorNote[] }) {
 }
 
 function ConfirmPaths({ studentId, session }: { studentId: string; session: ExerciseSession }) {
+  const { t } = useTranslation("practitionerPages")
   const confirm = useConfirmStudentPaths(studentId)
   const c = session.paths_confirmation
   if (!session.paths) return null
@@ -245,18 +275,18 @@ function ConfirmPaths({ studentId, session }: { studentId: string; session: Exer
       {c && c.current && (
         <p className="flex items-center gap-1 text-sm text-emerald-700">
           <CheckCircle2 className="h-4 w-4" aria-hidden />
-          Confirmed by {roleLabel(c.by_role).toLowerCase()} on {when(c.at)}
+          {t("careerExercise.confirmedBy", { role: roleLabel(t, c.by_role).toLowerCase(), date: when(c.at), defaultValue: "Confirmed by {{role}} on {{date}}" })}
         </p>
       )}
       {c && !c.current && (
         <p className="flex items-center gap-1 text-sm text-amber-700">
           <AlertTriangle className="h-4 w-4" aria-hidden />
-          The student changed their paths after they were confirmed on {when(c.at)}.
+          {t("careerExercise.pathsChanged", { date: when(c.at), defaultValue: "The student changed their paths after they were confirmed on {{date}}." })}
         </p>
       )}
       {confirm.isError && (
         <p role="alert" className="text-sm text-destructive">
-          {counselorErrorMessage(confirm.error, "The paths could not be confirmed.")}
+          {counselorErrorMessage(confirm.error, t("careerExercise.confirmFailed", { defaultValue: "The paths could not be confirmed." }))}
         </p>
       )}
       {!(c && c.current) && (
@@ -266,7 +296,7 @@ function ConfirmPaths({ studentId, session }: { studentId: string; session: Exer
           onClick={() => confirm.mutate({ sessionId: session.session_id, version: session.version })}
         >
           {confirm.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />}
-          Confirm Primary and Backup Paths
+          {t("careerExercise.confirmPaths", { defaultValue: "Confirm Primary and Backup Paths" })}
         </Button>
       )}
     </div>
@@ -274,6 +304,7 @@ function ConfirmPaths({ studentId, session }: { studentId: string; session: Exer
 }
 
 function SessionDetail({ studentId, session }: { studentId: string; session: ExerciseSession }) {
+  const { t } = useTranslation("practitionerPages")
   const reached = EXERCISE_STAGES.slice(0, EXERCISE_STAGES.indexOf(session.stage) + 1)
   const notes = session.annotations.filter((a): a is CounselorNote => a.kind === "note")
   return (
@@ -281,7 +312,7 @@ function SessionDetail({ studentId, session }: { studentId: string; session: Exe
       {reached.map((stage) => (
         <section key={stage} aria-labelledby={`h-${session.session_id}-${stage}`} className="space-y-3 rounded-lg border p-4">
           <h3 id={`h-${session.session_id}-${stage}`} className="font-semibold">
-            {STAGE_TITLES[stage]}
+            {stageTitle(t, stage)}
           </h3>
           <StudentWords session={session} stage={stage} />
           {stage === "commit" && <ConfirmPaths studentId={studentId} session={session} />}
@@ -294,6 +325,7 @@ function SessionDetail({ studentId, session }: { studentId: string; session: Exe
 }
 
 export function CounselorExerciseView({ studentId }: { studentId: string | undefined }) {
+  const { t } = useTranslation("practitionerPages")
   const sw = useCareerExerciseSwitch()
   const q = useStudentExerciseSessions(studentId, sw === "on")
   const [picked, setPicked] = useState<string | null>(null)
@@ -302,21 +334,21 @@ export function CounselorExerciseView({ studentId }: { studentId: string | undef
   if (sw === "off") {
     return (
       <p className="text-sm text-muted-foreground">
-        The career exploration exercise is not switched on for your organization.
+        {t("careerExercise.off", { defaultValue: "The career exploration exercise is not switched on for your organization." })}
       </p>
     )
   }
-  if (!studentId) return <p role="alert">No student was named.</p>
+  if (!studentId) return <p role="alert">{t("careerExercise.noStudent", { defaultValue: "No student was named." })}</p>
   if (q.isPending) return <Skeleton className="h-40 w-full" />
   if (q.isError) {
     return (
       <div role="alert" className="flex items-start gap-2 rounded-md border border-destructive/40 p-3 text-sm">
         <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" aria-hidden />
         <div>
-          <p>{counselorErrorMessage(q.error, "We couldn't load this student's career exercise.")}</p>
+          <p>{counselorErrorMessage(q.error, t("careerExercise.loadFailed", { defaultValue: "We couldn't load this student's career exercise." }))}</p>
           {(q.error as { response?: { status?: number } } | null)?.response?.status === 403 && (
             <p className="text-muted-foreground">
-              Only a counselor the student has shared their development with can see it.
+              {t("careerExercise.onlyShared", { defaultValue: "Only a counselor the student has shared their development with can see it." })}
             </p>
           )}
         </div>
@@ -326,13 +358,15 @@ export function CounselorExerciseView({ studentId }: { studentId: string | undef
 
   const sessions = q.data.sessions
   if (sessions.length === 0) {
-    return <p className="text-sm">This student has not started the career exploration exercise yet.</p>
+    return <p className="text-sm">
+        {t("careerExercise.notStarted", { defaultValue: "This student has not started the career exploration exercise yet." })}
+      </p>
   }
   const current = sessions.find((s) => s.session_id === picked) ?? sessions[0]
   return (
     <div className="space-y-4">
       {sessions.length > 1 && (
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Sessions">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t("careerExercise.sessions", { defaultValue: "Sessions" })}>
           {sessions.map((s) => (
             <Button
               key={s.session_id}
@@ -341,13 +375,13 @@ export function CounselorExerciseView({ studentId }: { studentId: string | undef
               aria-pressed={s.session_id === current.session_id}
               onClick={() => setPicked(s.session_id)}
             >
-              {when(s.updated_at)} · {STATUS_LABELS[s.status] ?? s.status}
+              {when(s.updated_at)} · {statusLabel(t, s.status)}
             </Button>
           ))}
         </div>
       )}
       <p className="text-sm text-muted-foreground">
-        {STATUS_LABELS[current.status] ?? current.status} · at “{STAGE_TITLES[current.stage]}” · updated {when(current.updated_at)}
+        {t("careerExercise.statusLine", { status: statusLabel(t, current.status), stage: stageTitle(t, current.stage), date: when(current.updated_at), defaultValue: "{{status}} · at “{{stage}}” · updated {{date}}" })}
       </p>
       <SessionDetail studentId={studentId} session={current} />
     </div>

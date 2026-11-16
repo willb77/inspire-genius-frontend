@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import { Building2, Users, Info } from "lucide-react"
@@ -22,6 +23,7 @@ const FALLBACK_DEPARTMENTS: OrgDept[] = [
 const COLORS = ["#3B5BFF", "#2DD4BF", "#10B981", "#8B5CF6", "#3B82F6", "#e9c46a", "#EF4444", "#4b5563"]
 
 function CompanyAdminOrganizationClassic() {
+  const { t } = useTranslation("companyAdminPages")
   const { data: deptsData, isLoading, error, refetch } = useCompanyDepartments()
 
   const depts = ((deptsData as { departments?: OrgDept[] } | undefined)?.departments ?? FALLBACK_DEPARTMENTS) as OrgDept[]
@@ -30,24 +32,24 @@ function CompanyAdminOrganizationClassic() {
 
   return (
     <CompanyAdminLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Organization</h1>
-      <p className="text-[13px] text-[#6b7280] mb-3">Organization structure, departments, and team hierarchy.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("organizationTitle", { defaultValue: "Organization" })}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-3">{t("organizationSubtitle", { defaultValue: "Organization structure, departments, and team hierarchy." })}</p>
 
       {/* Placeholder Data Notice */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 flex items-start gap-2">
         <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
         <p className="text-[13px] text-amber-800">
-          Organization data is currently placeholder. Interactive org chart and department management is in progress.
+          {t("organizationPlaceholderNotice", { defaultValue: "Organization data is currently placeholder. Interactive org chart and department management is in progress." })}
         </p>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {[
-          { label: "Departments", value: String(depts.length), icon: Building2, color: "#3B5BFF" },
-          { label: "Total Headcount", value: String(totalHeadcount), icon: Users, color: "#10B981" },
-          { label: "Teams", value: String(totalTeams), icon: Users, color: "#8B5CF6" },
-          { label: "Avg Dept Size", value: depts.length > 0 ? String(Math.round(totalHeadcount / depts.length)) : "0", icon: Users, color: "#D97706" },
+          { label: t("organizationDepartments", { defaultValue: "Departments" }), value: String(depts.length), icon: Building2, color: "#3B5BFF" },
+          { label: t("organizationTotalHeadcount", { defaultValue: "Total Headcount" }), value: String(totalHeadcount), icon: Users, color: "#10B981" },
+          { label: t("organizationTeams", { defaultValue: "Teams" }), value: String(totalTeams), icon: Users, color: "#8B5CF6" },
+          { label: t("organizationAvgDeptSize", { defaultValue: "Avg Dept Size" }), value: depts.length > 0 ? String(Math.round(totalHeadcount / depts.length)) : "0", icon: Users, color: "#D97706" },
         ].map((s) => (
           <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5">
             <div className="flex items-center gap-2 mb-1">
@@ -60,18 +62,18 @@ function CompanyAdminOrganizationClassic() {
       </div>
 
       {/* Org Chart Placeholder */}
-      <DataCard title="Organization Chart">
+      <DataCard title={t("organizationChart", { defaultValue: "Organization Chart" })}>
         {error && (
           <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
-            Failed to load data.
-            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+            {t("failedToLoadData", { defaultValue: "Failed to load data." })}
+            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("retry", { defaultValue: "Retry" })}</button>
           </div>
         )}
         <div className="flex flex-col items-center py-6">
           {/* CEO */}
           <div className="bg-gradient-to-r from-[#3B5BFF] to-[#2DD4BF] text-white rounded-lg px-6 py-3 text-center shadow-md">
-            <div className="text-sm font-bold">CEO</div>
-            <div className="text-[11px] opacity-80">Chief Executive Officer</div>
+            <div className="text-sm font-bold">{t("organizationCeo", { defaultValue: "CEO" })}</div>
+            <div className="text-[11px] opacity-80">{t("organizationCeoTitle", { defaultValue: "Chief Executive Officer" })}</div>
           </div>
           <div className="w-px h-6 bg-[#d1d5db]" />
           {/* Department row */}
@@ -86,7 +88,7 @@ function CompanyAdminOrganizationClassic() {
                   >
                     <div className="text-[12px] font-semibold text-[#1f2937]">{d.name}</div>
                     <div className="text-[10px] text-[#6b7280] mt-0.5">{d.lead}</div>
-                    <div className="text-[10px] text-[#9ca3af] mt-0.5">{d.headcount} people &middot; {d.teams} teams</div>
+                    <div className="text-[10px] text-[#9ca3af] mt-0.5">{t("organizationHeadcountTeams", { headcount: d.headcount, teams: d.teams, defaultValue: "{{headcount}} people · {{teams}} teams" })}</div>
                   </div>
                 ))
             }
@@ -95,12 +97,12 @@ function CompanyAdminOrganizationClassic() {
       </DataCard>
 
       {/* Department Details Table */}
-      <DataCard title="Department Details">
+      <DataCard title={t("organizationDeptDetails", { defaultValue: "Department Details" })}>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                {["Department", "Lead Role", "Headcount", "Teams", "% of Org"].map((h) => (
+                {[t("organizationColDepartment", { defaultValue: "Department" }), t("organizationColLeadRole", { defaultValue: "Lead Role" }), t("organizationColHeadcount", { defaultValue: "Headcount" }), t("organizationColTeams", { defaultValue: "Teams" }), t("organizationColPctOfOrg", { defaultValue: "% of Org" })].map((h) => (
                   <th key={h} className="text-left text-[10px] font-bold uppercase tracking-wider text-[#6b7280] px-3 py-2.5">{h}</th>
                 ))}
               </tr>
