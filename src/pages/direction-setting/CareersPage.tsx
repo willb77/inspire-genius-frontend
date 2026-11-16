@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { ArrowRight, Compass, Loader2, ListOrdered, Scale } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -49,13 +50,13 @@ const PIVOT_CLASS: Record<string, string> = {
 }
 
 /** Plain-language read of a band, so the badge isn't jargon on its own. */
-const PIVOT_MEANING: Record<string, string> = {
-  low: "close to how you already work",
-  easy: "close to how you already work",
-  moderate: "a real but ordinary stretch",
-  medium: "a real but ordinary stretch",
-  high: "a deliberate change of gear",
-  hard: "a deliberate change of gear",
+const PIVOT_MEANING_KEY: Record<string, string> = {
+  low: "close",
+  easy: "close",
+  moderate: "stretch",
+  medium: "stretch",
+  high: "gear",
+  hard: "gear",
 }
 
 function bandKey(band: string): string {
@@ -63,7 +64,13 @@ function bandKey(band: string): string {
 }
 
 function FamilyRow({ family, rank }: { family: RoleFamilyAffinity; rank: number }) {
+  const { t } = useTranslation("directionPages")
   const key = bandKey(family.pivotDifficulty)
+  const pivotMeanings: Record<string, string> = {
+    close: t("careers.pivotMeaning.close", "close to how you already work"),
+    stretch: t("careers.pivotMeaning.stretch", "a real but ordinary stretch"),
+    gear: t("careers.pivotMeaning.gear", "a deliberate change of gear"),
+  }
   return (
     <li className="rounded-lg border p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -72,23 +79,41 @@ function FamilyRow({ family, rank }: { family: RoleFamilyAffinity; rank: number 
         </span>
         <span className="font-medium">{family.family}</span>
         <Badge className={cn("border", PIVOT_CLASS[key])}>
-          {family.pivotDifficulty} pivot
+          {t("careers.pivotBadge", {
+            defaultValue: "{{difficulty}} pivot",
+            difficulty: family.pivotDifficulty,
+          })}
         </Badge>
         <span className="ml-auto text-sm text-muted-foreground">
-          {Math.round(family.affinity)} / 100
+          {t("careers.affinityOutOf100", {
+            defaultValue: "{{score}} / 100",
+            score: Math.round(family.affinity),
+          })}
         </span>
       </div>
 
       <Progress
         className="mt-3"
         value={family.affinity}
-        aria-label={`${family.family} affinity`}
+        aria-label={t("careers.familyAffinityAria", {
+          defaultValue: "{{family}} affinity",
+          family: family.family,
+        })}
       />
 
       <p className="mt-2 text-sm text-muted-foreground">
-        {PIVOT_MEANING[key] ?? "moving into this asks for some adaptation"} — scored
-        across {family.dimensionsConsidered} of your behavioural dimensions, at a
-        distance of {family.distance.toFixed(2)} from the family&apos;s profile.
+        {t("careers.familyScoreDetail", {
+          defaultValue:
+            "{{meaning}} — scored across {{dimensions}} of your behavioural dimensions, at a distance of {{distance}} from the family's profile.",
+          meaning:
+            pivotMeanings[PIVOT_MEANING_KEY[key]] ??
+            t(
+              "careers.pivotMeaning.default",
+              "moving into this asks for some adaptation"
+            ),
+          dimensions: family.dimensionsConsidered,
+          distance: family.distance.toFixed(2),
+        })}
       </p>
     </li>
   )
@@ -96,21 +121,20 @@ function FamilyRow({ family, rank }: { family: RoleFamilyAffinity; rank: number 
 
 /** No PRISM on file. The backend explains why; we add the way out. */
 function NoDataYet({ note }: { note: string }) {
+  const { t } = useTranslation("directionPages")
   return (
     <Card className="border-dashed">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Nothing to rank yet</CardTitle>
+        <CardTitle className="text-base">{t("careers.nothingToRankYet", "Nothing to rank yet")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         <p>{note}</p>
         <p>
-          This stage works by comparing how you prefer to work against what each kind
-          of role tends to ask for — so it needs your side of that comparison before it
-          can say anything worth reading. Nothing here is lost in the meantime.
+          {t("careers.thisStageWorksByComparing", "This stage works by comparing how you prefer to work against what each kind of role tends to ask for — so it needs your side of that comparison before it can say anything worth reading. Nothing here is lost in the meantime.")}
         </p>
         <Button asChild>
           <Link to={ROUTES.DIRECTION_SETTING.ESTABLISH}>
-            Add your PRISM
+            {t("careers.addYourPrism", "Add your PRISM")}
             <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
           </Link>
         </Button>
@@ -120,6 +144,7 @@ function NoDataYet({ note }: { note: string }) {
 }
 
 export default function CareersPage() {
+  const { t } = useTranslation("directionPages")
   const { data, isLoading, isError } = useCareerAreas()
 
   // Ranked families, not a page view. With no PRISM on file the route returns
@@ -132,7 +157,7 @@ export default function CareersPage() {
       <div className="p-6">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Working out which kinds of work suit you…
+          {t("careers.workingOutWhichKindsOf", "Working out which kinds of work suit you…")}
         </div>
       </div>
     )
@@ -145,8 +170,7 @@ export default function CareersPage() {
       <div className="p-6">
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
-            We couldn&apos;t work out your career areas just now. Refresh to try again
-            — nothing you&apos;ve added has been lost.
+            {t("careers.weCouldnTWorkOut", "We couldn't work out your career areas just now. Refresh to try again — nothing you've added has been lost.")}
           </CardContent>
         </Card>
       </div>
@@ -160,11 +184,9 @@ export default function CareersPage() {
   return (
     <div className="space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-semibold">What kind of work suits you</h1>
+        <h1 className="text-2xl font-semibold">{t("careers.whatKindOfWorkSuits", "What kind of work suits you")}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Families of roles, ordered by how closely each one matches the way you
-          already prefer to work. It&apos;s a shortlist to explore, not a ceiling —
-          nothing further down this list is off-limits to you.
+          {t("careers.familiesOfRolesOrderedBy", "Families of roles, ordered by how closely each one matches the way you already prefer to work. It's a shortlist to explore, not a ceiling — nothing further down this list is off-limits to you.")}
         </p>
       </header>
 
@@ -172,7 +194,10 @@ export default function CareersPage() {
         <NoDataYet
           note={
             data.note ??
-            "We don't have enough about you yet to rank anything honestly."
+            t(
+              "careers.notEnoughToRank",
+              "We don't have enough about you yet to rank anything honestly."
+            )
           }
         />
       ) : (
@@ -184,11 +209,14 @@ export default function CareersPage() {
                 className="flex items-center gap-1.5 text-sm font-medium"
               >
                 <Compass className="h-4 w-4 text-muted-foreground" aria-hidden />
-                Role families, best match first
+                {t("careers.roleFamiliesBestMatchFirst", "Role families, best match first")}
               </h2>
               {data.dimensionsEvaluated !== undefined && (
                 <span className="text-xs text-muted-foreground">
-                  {data.dimensionsEvaluated} dimensions evaluated
+                  {t("careers.dimensionsEvaluated", {
+                    defaultValue: "{{dimensions}} dimensions evaluated",
+                    dimensions: data.dimensionsEvaluated,
+                  })}
                 </span>
               )}
             </div>
@@ -206,7 +234,7 @@ export default function CareersPage() {
                 className="flex items-center gap-1.5 text-sm font-medium"
               >
                 <ListOrdered className="h-4 w-4 text-muted-foreground" aria-hidden />
-                How you&apos;d actually get there
+                {t("careers.howYouDActuallyGet", "How you'd actually get there")}
               </h2>
               <div className="grid gap-4 md:grid-cols-2">
                 {ladders.map((ladder) => (
@@ -237,10 +265,7 @@ export default function CareersPage() {
       <footer className="space-y-2 border-t pt-4">
         <p className="flex items-start gap-2 text-xs text-muted-foreground">
           <Scale className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-          This ranking is deterministic: the same profile always produces the same
-          order. There&apos;s no model guessing here and no randomness — every number
-          above comes from comparing your dimensions with the ones a family of roles
-          tends to ask for, and you can see all of them.
+          {t("careers.thisRankingIsDeterministicThe", "This ranking is deterministic: the same profile always produces the same order. There's no model guessing here and no randomness — every number above comes from comparing your dimensions with the ones a family of roles tends to ask for, and you can see all of them.")}
         </p>
       </footer>
     </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { PrismMap } from "@/types/chat/data-types";
 
@@ -17,6 +18,7 @@ import type { PrismMap } from "@/types/chat/data-types";
  * characters (↔, ·) that would make `btoa` throw.
  */
 export default function PrismMapFigure({ map }: { map: PrismMap }) {
+  const { t } = useTranslation("prismUi");
   const [showTable, setShowTable] = useState(false);
 
   const src = useMemo(() => {
@@ -37,9 +39,9 @@ export default function PrismMapFigure({ map }: { map: PrismMap }) {
         loading="lazy"
       />
       <figcaption className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-        <span>PRISM Brain Map</span>
+        <span>{t("mapFigure.caption", { defaultValue: "PRISM Brain Map" })}</span>
         {map.assessed_at ? (
-          <span>· assessed {String(map.assessed_at).slice(0, 10)}</span>
+          <span>{t("mapFigure.assessedOn", { defaultValue: "· assessed {{date}}", date: String(map.assessed_at).slice(0, 10) })}</span>
         ) : null}
         <button
           type="button"
@@ -47,7 +49,9 @@ export default function PrismMapFigure({ map }: { map: PrismMap }) {
           className="underline underline-offset-2 hover:text-foreground"
           data-testid="prism-map-toggle-table"
         >
-          {showTable ? "Hide the numbers" : "Show the numbers"}
+          {showTable
+            ? t("mapFigure.hideNumbers", { defaultValue: "Hide the numbers" })
+            : t("mapFigure.showNumbers", { defaultValue: "Show the numbers" })}
         </button>
       </figcaption>
       {showTable ? (
