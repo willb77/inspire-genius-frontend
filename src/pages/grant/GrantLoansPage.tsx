@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { Banknote, LineChart, Briefcase, Info, Scale, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,30 +16,41 @@ import { useSalary } from "@/hooks/grant/useSalary"
 import type { RepaymentPlanType } from "@/types/grant"
 import { GrantPageHeader, GrantCard, GrantPill, GrantMeter, GrantSectionTitle } from "./_shared"
 import { formatCurrency } from "./_format"
+import { RichText } from "./_rich"
 
-const PLAN_OPTIONS: { value: RepaymentPlanType; label: string }[] = [
-  { value: "standard", label: "Standard (10-year)" },
-  { value: "graduated", label: "Graduated" },
-  { value: "income-driven", label: "Income-driven (RAP)" },
+const PLAN_OPTIONS: { value: RepaymentPlanType; label: (t: TFunction) => string }[] = [
+  { value: "standard", label: (t) => t("loans.planStandard10", "Standard (10-year)") },
+  { value: "graduated", label: (t) => t("loans.planGraduated", "Graduated") },
+  { value: "income-driven", label: (t) => t("loans.planIncomeDriven", "Income-driven (RAP)") },
 ]
 
 /** Plan comparison metadata — RAP is the current GRANT-recommended default. */
 const COMPARE_PLANS: {
   value: RepaymentPlanType
-  name: string
-  sub: string
-  suffix: string
+  name: (t: TFunction) => string
+  sub: (t: TFunction) => string
+  suffix: (t: TFunction) => string
   best?: boolean
 }[] = [
   {
     value: "income-driven",
-    name: "RAP",
-    sub: "New federal plan · 1–10% of income, up to 30 yrs",
-    suffix: "/mo early career",
+    name: (t) => t("loans.compareRapName", "RAP"),
+    sub: (t) => t("loans.compareRapSub", "New federal plan · 1–10% of income, up to 30 yrs"),
+    suffix: (t) => t("loans.compareRapSuffix", "/mo early career"),
     best: true,
   },
-  { value: "standard", name: "Standard (10-yr)", sub: "Fixed payment · lowest total interest", suffix: "/mo" },
-  { value: "graduated", name: "Graduated", sub: "Starts low, rises every 2 years", suffix: "/mo start" },
+  {
+    value: "standard",
+    name: (t) => t("loans.compareStandardName", "Standard (10-yr)"),
+    sub: (t) => t("loans.compareStandardSub", "Fixed payment · lowest total interest"),
+    suffix: (t) => t("loans.compareStandardSuffix", "/mo"),
+  },
+  {
+    value: "graduated",
+    name: (t) => t("loans.compareGraduatedName", "Graduated"),
+    sub: (t) => t("loans.compareGraduatedSub", "Starts low, rises every 2 years"),
+    suffix: (t) => t("loans.compareGraduatedSuffix", "/mo start"),
+  },
 ]
 
 /** Standard amortized monthly payment. Returns 0 for degenerate inputs. */
@@ -49,12 +62,12 @@ function amortizedMonthly(principal: number, annualRatePct: number, termMonths: 
 }
 
 /** Payment-to-income affordability band using the entry-level monthly salary. */
-function affordability(monthlyPayment: number, monthlyIncome: number) {
+function affordability(monthlyPayment: number, monthlyIncome: number, t: TFunction) {
   if (monthlyIncome <= 0) return null
   const pct = Math.round((monthlyPayment / monthlyIncome) * 100)
-  if (pct <= 8) return { pct, tone: "green" as const, label: "Comfortable" }
-  if (pct <= 15) return { pct, tone: "amber" as const, label: "Manageable" }
-  return { pct, tone: "red" as const, label: "High burden" }
+  if (pct <= 8) return { pct, tone: "green" as const, label: t("loans.bandComfortable", "Comfortable") }
+  if (pct <= 15) return { pct, tone: "amber" as const, label: t("loans.bandManageable", "Manageable") }
+  return { pct, tone: "red" as const, label: t("loans.bandHighBurden", "High burden") }
 }
 
 /**
@@ -68,6 +81,7 @@ function affordability(monthlyPayment: number, monthlyIncome: number) {
  * (mock for UI-0 → live endpoints when wired).
  */
 export default function GrantLoansPage() {
+  const { t } = useTranslation("grantPages")
   const { mutate, data: estimate, isPending } = useRepayment()
 
   const [principal, setPrincipal] = useState("20000")
@@ -113,26 +127,32 @@ export default function GrantLoansPage() {
 
   const band =
     estimate && monthlyIncome != null
-      ? affordability(estimate.monthlyPayment, monthlyIncome)
+      ? affordability(estimate.monthlyPayment, monthlyIncome, t)
       : null
 
   return (
     <div className="max-w-4xl">
       <GrantPageHeader
         icon={Banknote}
-        title="Loans & Debt"
-        description="Project monthly repayment and sanity-check it against expected earnings."
+        title={t("loans.title", "Loans & Debt")}
+        description={t("loans.description", "Project monthly repayment and sanity-check it against expected earnings.")}
       />
 
       {/* Policy callout — repayment rules changed in 2026. */}
       <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#e5e7eb] bg-[#f9fafb] p-4">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#3B5BFF]" />
         <p className="text-xs leading-relaxed text-[#6b7280]">
-          <span className="font-semibold text-[#b45309]">Repayment changed in 2026.</span> The{" "}
-          <span className="font-medium text-[#374151]">SAVE plan is closed to new enrollment</span>{" "}
-          and is being phased out — superseded by the new{" "}
-          <span className="font-medium text-[#374151]">Repayment Assistance Plan (RAP)</span> (1–10%
-          of income, up to 30 years). New borrowers now choose between Standard and RAP.
+          <RichText
+            text={t(
+              "loans.policyCallout",
+              "<head>Repayment changed in 2026.</head> The <save>SAVE plan is closed to new enrollment</save> and is being phased out — superseded by the new <rap>Repayment Assistance Plan (RAP)</rap> (1–10% of income, up to 30 years). New borrowers now choose between Standard and RAP."
+            )}
+            tags={{
+              head: <span className="font-semibold text-[#b45309]" />,
+              save: <span className="font-medium text-[#374151]" />,
+              rap: <span className="font-medium text-[#374151]" />,
+            }}
+          />
         </p>
       </div>
 
@@ -141,12 +161,14 @@ export default function GrantLoansPage() {
         <GrantCard>
           <div className="mb-4 flex items-center gap-2">
             <LineChart className="h-4 w-4 text-[#3B5BFF]" />
-            <h2 className="text-sm font-semibold text-[#374151]">Repayment projector</h2>
+            <h2 className="text-sm font-semibold text-[#374151]">
+              {t("loans.projector", "Repayment projector")}
+            </h2>
           </div>
           <form onSubmit={project} className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="loan-principal" className="mb-1 block text-xs font-medium text-[#6b7280]">
-                Principal ($)
+                {t("loans.principal", "Principal ($)")}
               </label>
               <Input
                 id="loan-principal"
@@ -158,7 +180,7 @@ export default function GrantLoansPage() {
             </div>
             <div>
               <label htmlFor="loan-rate" className="mb-1 block text-xs font-medium text-[#6b7280]">
-                Rate (%)
+                {t("loans.rate", "Rate (%)")}
               </label>
               <Input
                 id="loan-rate"
@@ -171,7 +193,7 @@ export default function GrantLoansPage() {
             </div>
             <div>
               <label htmlFor="loan-term" className="mb-1 block text-xs font-medium text-[#6b7280]">
-                Term (months)
+                {t("loans.term", "Term (months)")}
               </label>
               <Input
                 id="loan-term"
@@ -182,7 +204,9 @@ export default function GrantLoansPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-[#6b7280]">Plan</label>
+              <label className="mb-1 block text-xs font-medium text-[#6b7280]">
+                {t("loans.plan", "Plan")}
+              </label>
               <Select value={plan} onValueChange={(v) => setPlan(v as RepaymentPlanType)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -190,7 +214,7 @@ export default function GrantLoansPage() {
                 <SelectContent>
                   {PLAN_OPTIONS.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
-                      {o.label}
+                      {o.label(t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -201,26 +225,26 @@ export default function GrantLoansPage() {
               disabled={isPending}
               className="col-span-2 mt-1 bg-[#3B5BFF] hover:bg-[#2f4ad9]"
             >
-              {isPending ? "Calculating…" : "Project repayment"}
+              {isPending ? t("loans.calculating", "Calculating…") : t("loans.projectRepayment", "Project repayment")}
             </Button>
           </form>
 
           {estimate && (
             <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-[#f0f1f3] pt-4 text-center">
               <div>
-                <dt className="text-xs text-[#9ca3af]">Monthly</dt>
+                <dt className="text-xs text-[#9ca3af]">{t("loans.monthly", "Monthly")}</dt>
                 <dd className="text-lg font-bold text-[#3B5BFF]">
                   {formatCurrency(estimate.monthlyPayment)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-[#9ca3af]">Total paid</dt>
+                <dt className="text-xs text-[#9ca3af]">{t("loans.totalPaid", "Total paid")}</dt>
                 <dd className="text-lg font-bold text-[#1f2937]">
                   {formatCurrency(estimate.totalPaid)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-[#9ca3af]">Interest</dt>
+                <dt className="text-xs text-[#9ca3af]">{t("loans.interest", "Interest")}</dt>
                 <dd className="text-lg font-bold text-[#b45309]">
                   {formatCurrency(estimate.totalInterest)}
                 </dd>
@@ -233,22 +257,24 @@ export default function GrantLoansPage() {
         <GrantCard>
           <div className="mb-4 flex items-center gap-2">
             <Briefcase className="h-4 w-4 text-[#2DD4BF]" />
-            <h2 className="text-sm font-semibold text-[#374151]">Expected earnings</h2>
+            <h2 className="text-sm font-semibold text-[#374151]">
+              {t("loans.expectedEarnings", "Expected earnings")}
+            </h2>
           </div>
           <form onSubmit={lookUp} className="flex items-end gap-2">
             <div className="flex-1">
               <label htmlFor="salary-occ" className="mb-1 block text-xs font-medium text-[#6b7280]">
-                Occupation
+                {t("loans.occupation", "Occupation")}
               </label>
               <Input
                 id="salary-occ"
-                placeholder="e.g. Software Developer"
+                placeholder={t("loans.occupationPlaceholder", "e.g. Software Developer")}
                 value={occupationInput}
                 onChange={(e) => setOccupationInput(e.target.value)}
               />
             </div>
             <Button type="submit" variant="outline">
-              Look up
+              {t("loans.lookUp", "Look up")}
             </Button>
           </form>
 
@@ -256,19 +282,19 @@ export default function GrantLoansPage() {
             <>
               <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-[#f0f1f3] pt-4 text-center">
                 <div>
-                  <dt className="text-xs text-[#9ca3af]">Median</dt>
+                  <dt className="text-xs text-[#9ca3af]">{t("loans.median", "Median")}</dt>
                   <dd className="text-base font-bold text-[#1f2937]">
                     {formatCurrency(salary.medianAnnualSalary)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-[#9ca3af]">Entry level</dt>
+                  <dt className="text-xs text-[#9ca3af]">{t("loans.entryLevel", "Entry level")}</dt>
                   <dd className="text-base font-bold text-[#1f2937]">
                     {formatCurrency(salary.entryLevelSalary)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-[#9ca3af]">10-yr growth</dt>
+                  <dt className="text-xs text-[#9ca3af]">{t("loans.tenYearGrowth", "10-yr growth")}</dt>
                   <dd className="text-base font-bold text-[#15803d]">
                     +{salary.projectedGrowthPct}%
                   </dd>
@@ -281,7 +307,10 @@ export default function GrantLoansPage() {
           {band && (
             <div className="mt-4 flex items-center justify-between rounded-lg bg-[#f9fafb] px-3 py-2">
               <span className="text-xs text-[#6b7280]">
-                Payment is {band.pct}% of entry-level monthly income
+                {t("loans.paymentShare", {
+                  pct: band.pct,
+                  defaultValue: "Payment is {{pct}}% of entry-level monthly income",
+                })}
               </span>
               <GrantPill tone={band.tone}>{band.label}</GrantPill>
             </div>
@@ -292,23 +321,36 @@ export default function GrantLoansPage() {
               <div className="mb-2 flex items-center gap-2">
                 <Scale className="h-4 w-4 text-[#3B5BFF]" />
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
-                  Debt-to-income
+                  {t("loans.debtToIncome", "Debt-to-income")}
                 </h3>
               </div>
               <GrantMeter
                 value={Math.min(100, debtRatio * 100)}
                 tone={dtiTone}
-                label={`${debtRatio.toFixed(2)}× expected salary`}
+                label={t("loans.expectedSalaryMultiple", {
+                  ratio: debtRatio.toFixed(2),
+                  defaultValue: "{{ratio}}× expected salary",
+                })}
                 right={
                   <GrantPill tone={dtiTone}>
-                    {debtRatio > 1 ? "Over ceiling" : debtRatio > 0.7 ? "Approaching" : "Healthy"}
+                    {debtRatio > 1
+                      ? t("loans.overCeiling", "Over ceiling")
+                      : debtRatio > 0.7
+                        ? t("loans.approaching", "Approaching")
+                        : t("loans.healthy", "Healthy")}
                   </GrantPill>
                 }
               />
               <p className="mt-2 text-xs text-[#9ca3af]">
                 {debtRatio > 1
-                  ? "Projected borrowing exceeds GRANT's 1× expected-salary ceiling — consider lower-cost aid before borrowing more."
-                  : "GRANT keeps total borrowing under 1× your expected first-year salary. You're within a low-risk profile."}
+                  ? t(
+                      "loans.overCeilingNote",
+                      "Projected borrowing exceeds GRANT's 1× expected-salary ceiling — consider lower-cost aid before borrowing more."
+                    )
+                  : t(
+                      "loans.withinCeilingNote",
+                      "GRANT keeps total borrowing under 1× your expected first-year salary. You're within a low-risk profile."
+                    )}
               </p>
             </div>
           )}
@@ -317,7 +359,7 @@ export default function GrantLoansPage() {
 
       {/* Plan comparison */}
       <div className="mt-6">
-        <GrantSectionTitle>Compare repayment plans</GrantSectionTitle>
+        <GrantSectionTitle>{t("loans.comparePlans", "Compare repayment plans")}</GrantSectionTitle>
         <div className="grid gap-3 sm:grid-cols-3">
           {COMPARE_PLANS.map((pl) => {
             const monthly = planMonthly[pl.value]
@@ -336,23 +378,25 @@ export default function GrantLoansPage() {
                 }
               >
                 <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-[#1f2937]">{pl.name}</span>
+                  <span className="text-sm font-semibold text-[#1f2937]">{pl.name(t)}</span>
                   {pl.best && (
                     <GrantPill tone="teal">
                       <CheckCircle2 className="mr-1 h-3 w-3" />
-                      GRANT pick
+                      {t("loans.grantPick", "GRANT pick")}
                     </GrantPill>
                   )}
                 </div>
-                <p className="text-xs leading-snug text-[#9ca3af]">{pl.sub}</p>
+                <p className="text-xs leading-snug text-[#9ca3af]">{pl.sub(t)}</p>
                 <p className="mt-3 text-2xl font-bold text-[#3B5BFF]">
-                  {monthly != null ? formatCurrency(monthly) : "1–10%"}
+                  {monthly != null ? formatCurrency(monthly) : t("loans.rapRange", "1–10%")}
                   <span className="ml-1 text-xs font-medium text-[#9ca3af]">
-                    {monthly != null ? pl.suffix : "of income"}
+                    {monthly != null ? pl.suffix(t) : t("loans.ofIncome", "of income")}
                   </span>
                 </p>
                 {monthly == null && (
-                  <p className="mt-1 text-xs text-[#9ca3af]">Add an occupation to estimate</p>
+                  <p className="mt-1 text-xs text-[#9ca3af]">
+                    {t("loans.addOccupation", "Add an occupation to estimate")}
+                  </p>
                 )}
               </button>
             )

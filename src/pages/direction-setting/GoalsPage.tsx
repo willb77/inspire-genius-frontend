@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import {
   ArrowRight,
@@ -38,29 +39,48 @@ const STAGE_ID = "5"
 
 /** The rungs, as a person actually experiences them. Illustration, not data. */
 const LADDER_EXAMPLE = [
-  { role: "You say", body: "I want a better job." },
-  { role: "Why does that matter?", body: "Because this one is going nowhere." },
-  { role: "And why does that matter?", body: "I've stopped learning anything." },
-  {
-    role: "And underneath that?",
-    body: "I want to be someone who's still getting better at something.",
-    root: true,
-  },
+  { id: "say", root: false },
+  { id: "why1", root: false },
+  { id: "why2", root: false },
+  { id: "underneath", root: true },
 ] as const
 
+function useLadderText(): Record<(typeof LADDER_EXAMPLE)[number]["id"], { role: string; body: string }> {
+  const { t } = useTranslation("directionPages")
+  return {
+    say: {
+      role: t("goals.ladder.say.role", "You say"),
+      body: t("goals.ladder.say.body", "I want a better job."),
+    },
+    why1: {
+      role: t("goals.ladder.why1.role", "Why does that matter?"),
+      body: t("goals.ladder.why1.body", "Because this one is going nowhere."),
+    },
+    why2: {
+      role: t("goals.ladder.why2.role", "And why does that matter?"),
+      body: t("goals.ladder.why2.body", "I've stopped learning anything."),
+    },
+    underneath: {
+      role: t("goals.ladder.underneath.role", "And underneath that?"),
+      body: t("goals.ladder.underneath.body", "I want to be someone who's still getting better at something."),
+    },
+  }
+}
+
 function StageBadge({ state }: { state: StageState }) {
+  const { t } = useTranslation("directionPages")
   if (state === "complete") {
     return (
       <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
         <Check className="h-3 w-3" aria-hidden />
-        Done
+        {t("goals.done", "Done")}
       </span>
     )
   }
   if (state === "in_progress") {
     return (
       <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-        In progress
+        {t("goals.inProgress", "In progress")}
       </span>
     )
   }
@@ -68,6 +88,8 @@ function StageBadge({ state }: { state: StageState }) {
 }
 
 export default function GoalsPage() {
+  const { t } = useTranslation("directionPages")
+  const LADDER_TEXT = useLadderText()
   const { data: journey, isLoading, isError } = useJourney()
   const { data: session } = useGoalSession()
   const advance = useAdvanceJourney()
@@ -103,13 +125,11 @@ export default function GoalsPage() {
     <div className="space-y-6 p-6">
       <header>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">What do I actually want?</h1>
+          <h1 className="text-2xl font-semibold">{t("goals.whatDoIActuallyWant", "What do I actually want?")}</h1>
           {!isLoading && <StageBadge state={state} />}
         </div>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Step 5 of the journey. This is a conversation, not a form — you talk it
-          through with Goals Studio over as many sittings as you need, and it keeps
-          everything between visits.
+          {t("goals.step5OfTheJourney", "Step 5 of the journey. This is a conversation, not a form — you talk it through with Goals Studio over as many sittings as you need, and it keeps everything between visits.")}
         </p>
       </header>
 
@@ -117,18 +137,16 @@ export default function GoalsPage() {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Mountain className="h-4 w-4 text-primary" aria-hidden />
-            Your goals live in one place
+            {t("goals.yourGoalsLiveInOne", "Your goals live in one place")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            The interview, your drafts, publishing and who can see them are all at
-            My Goals. This step is done when you have confirmed a goal there — the
-            map picks that up when you come back.
+            {t("goals.theInterviewYourDraftsPublishing", "The interview, your drafts, publishing and who can see them are all at My Goals. This step is done when you have confirmed a goal there — the map picks that up when you come back.")}
           </p>
           <Button asChild>
             <Link to={`${ROUTES.MY_GOALS.BASE}?journey=direction-setting`}>
-              Go to My Goals
+              {t("goals.goToMyGoals", "Go to My Goals")}
               <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
             </Link>
           </Button>
@@ -140,7 +158,7 @@ export default function GoalsPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Mountain className="h-4 w-4 text-primary" aria-hidden />
-              The goals you have so far
+              {t("goals.theGoalsYouHaveSo", "The goals you have so far")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -150,7 +168,7 @@ export default function GoalsPage() {
                   <p className="text-sm font-medium">
                     {goal.title}
                     {goal.status === "confirmed" && (
-                      <span className="ml-2 text-xs font-normal text-emerald-700">confirmed</span>
+                      <span className="ml-2 text-xs font-normal text-emerald-700">{t("goals.confirmed", "confirmed")}</span>
                     )}
                   </p>
                   {goal.motivation && (
@@ -168,19 +186,15 @@ export default function GoalsPage() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Goals with the reason underneath them</CardTitle>
+          <CardTitle className="text-base">{t("goals.goalsWithTheReasonUnderneath", "Goals with the reason underneath them")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Most goal-setting stops at the first answer, which is why most goals
-            don&apos;t survive a bad week. Goals Studio keeps asking why — up to five
-            times, and no further — until it reaches something you actually care
-            about rather than something you think you should say. That root is
-            what everything after this step gets aimed at.
+            {t("goals.mostGoalSettingStopsAt", "Most goal-setting stops at the first answer, which is why most goals don't survive a bad week. Goals Studio keeps asking why — up to five times, and no further — until it reaches something you actually care about rather than something you think you should say. That root is what everything after this step gets aimed at.")}
           </p>
-          <ol className="space-y-2" aria-label="How the WHY ladder works">
+          <ol className="space-y-2" aria-label={t("goals.howTheWhyLadderWorks", "How the WHY ladder works")}>
             {LADDER_EXAMPLE.map((rung) => (
-              <li key={rung.role} className="flex gap-2.5">
+              <li key={rung.id} className="flex gap-2.5">
                 <span className="mt-0.5 shrink-0">
                   {"root" in rung && rung.root ? (
                     <Heart className="h-4 w-4 text-amber-600" aria-hidden />
@@ -190,10 +204,10 @@ export default function GoalsPage() {
                 </span>
                 <span className="min-w-0">
                   <span className="block text-xs uppercase tracking-wide text-muted-foreground">
-                    {rung.role}
+                    {LADDER_TEXT[rung.id].role}
                   </span>
                   <span className={"root" in rung && rung.root ? "block text-sm font-medium" : "block text-sm"}>
-                    {rung.body}
+                    {LADDER_TEXT[rung.id].body}
                   </span>
                 </span>
               </li>
@@ -204,8 +218,7 @@ export default function GoalsPage() {
 
       {isError && (
         <p className="text-xs text-muted-foreground">
-          We couldn&apos;t read your progress just now, so this step may show as
-          not started. Your goals themselves are unaffected.
+          {t("goals.weCouldnTReadYour", "We couldn't read your progress just now, so this step may show as not started. Your goals themselves are unaffected.")}
         </p>
       )}
 
@@ -213,7 +226,7 @@ export default function GoalsPage() {
         <footer className="border-t pt-4">
           <Button type="button" variant="ghost" onClick={markDone} disabled={advance.isPending}>
             <Check className="mr-2 h-4 w-4" aria-hidden />
-            Mark this step done
+            {t("goals.markThisStepDone", "Mark this step done")}
           </Button>
         </footer>
       )}

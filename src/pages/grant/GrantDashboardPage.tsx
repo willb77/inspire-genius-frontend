@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import type { LucideIcon } from "lucide-react"
 import {
   GraduationCap,
@@ -32,25 +33,11 @@ import {
 import { ROUTES } from "@/constants/routes"
 import { GrantPageHeader, GrantCard, GrantStat, GrantMeter, GrantPill, GrantSectionTitle } from "./_shared"
 import { relativeDeadline } from "./_format"
+import { moduleLabel } from "./_labels"
 
 type ChipTone = "blue" | "teal"
 type NextAction = { id: string; label: string; to: string }
 type JourneyStep = { key: string; label: string; icon: LucideIcon; done: boolean }
-
-/** Friendly labels for the population modules an intake screener can activate. */
-const MODULE_LABELS: Record<string, string> = {
-  military: "Military / Veteran",
-  justice: "Justice-impacted",
-  disability: "Disability",
-  adult: "Returning adult",
-  first_time: "First-time student",
-  foster: "Foster care",
-  undocumented: "Undocumented / DACA",
-  homeless: "Housing insecure",
-  caregiver: "Caregiver",
-  field: "Field-specific",
-  tribal: "Tribal",
-}
 
 /**
  * GRANT vertical landing page. Renders inside the shared AppShell (light theme)
@@ -61,6 +48,7 @@ const MODULE_LABELS: Record<string, string> = {
  * consolidated plan so the two surfaces stay in sync.
  */
 export default function GrantDashboardPage() {
+  const { t } = useTranslation("grantPages")
   const { data: profile } = useStudentProfile()
   const { data: deadlines } = useDeadlines()
   const { data: scholarships } = useScholarships()
@@ -77,14 +65,14 @@ export default function GrantDashboardPage() {
     const hasSubmittedApp = (deadlines ?? []).some((d) => d.status === "submitted")
     const hasOffers = (awards?.length ?? 0) > 0
     return [
-      { key: "profile", label: "Profile", icon: UserRound, done: aidReady },
-      { key: "fafsa", label: "FAFSA", icon: FileText, done: fafsaSubmitted },
-      { key: "search", label: "Search", icon: Search, done: hasMatches },
-      { key: "apply", label: "Apply", icon: ClipboardList, done: hasSubmittedApp },
-      { key: "compare", label: "Compare", icon: Scale, done: hasOffers },
-      { key: "plan", label: "Plan", icon: Target, done: false },
+      { key: "profile", label: t("journey.profile", "Profile"), icon: UserRound, done: aidReady },
+      { key: "fafsa", label: t("journey.fafsa", "FAFSA"), icon: FileText, done: fafsaSubmitted },
+      { key: "search", label: t("journey.search", "Search"), icon: Search, done: hasMatches },
+      { key: "apply", label: t("journey.apply", "Apply"), icon: ClipboardList, done: hasSubmittedApp },
+      { key: "compare", label: t("journey.compare", "Compare"), icon: Scale, done: hasOffers },
+      { key: "plan", label: t("journey.plan", "Plan"), icon: Target, done: false },
     ]
-  }, [aidReady, intake, scholarships, deadlines, awards])
+  }, [aidReady, intake, scholarships, deadlines, awards, t])
 
   const firstTodo = steps.findIndex((s) => !s.done)
   const activeIndex = firstTodo === -1 ? steps.length - 1 : firstTodo
@@ -92,12 +80,14 @@ export default function GrantDashboardPage() {
 
   const populationChips: { label: string; tone: ChipTone }[] = useMemo(() => {
     const chips: { label: string; tone: ChipTone }[] = []
-    if ((intake ?? {}).first_generation) chips.push({ label: "First-gen", tone: "blue" })
+    if ((intake ?? {}).first_generation) {
+      chips.push({ label: t("dashboard.firstGen", "First-gen"), tone: "blue" })
+    }
     for (const id of activeModuleIds(intake ?? {})) {
-      chips.push({ label: MODULE_LABELS[id] ?? id, tone: "teal" })
+      chips.push({ label: moduleLabel(id, t), tone: "teal" })
     }
     return chips
-  }, [intake])
+  }, [intake, t])
 
   const nearestDeadline = useMemo(() => {
     return [...(deadlines ?? [])]
@@ -115,26 +105,37 @@ export default function GrantDashboardPage() {
     if (!aidReady) {
       actions.push({
         id: "intake",
-        label: `Complete your aid profile — ${answered}/${TRIGGER_FIELDS.length} essentials answered`,
+        label: t("dashboard.actionCompleteProfile", {
+          answered,
+          total: TRIGGER_FIELDS.length,
+          defaultValue: "Complete your aid profile — {{answered}}/{{total}} essentials answered",
+        }),
         to: ROUTES.GRANT.PROFILE,
       })
     }
     if (nearestDeadline) {
       actions.push({
         id: "deadline",
-        label: `Submit ${nearestDeadline.name} — ${relativeDeadline(nearestDeadline.dueDate)}`,
+        label: t("dashboard.actionSubmit", {
+          name: nearestDeadline.name,
+          when: relativeDeadline(nearestDeadline.dueDate, undefined, t),
+          defaultValue: "Submit {{name}} — {{when}}",
+        }),
         to: ROUTES.GRANT.APPLICATIONS,
       })
     }
     if (topScholarship) {
       actions.push({
         id: "scholarship",
-        label: `Apply to ${topScholarship.name}`,
+        label: t("dashboard.actionApply", {
+          name: topScholarship.name,
+          defaultValue: "Apply to {{name}}",
+        }),
         to: ROUTES.GRANT.SCHOLARSHIPS,
       })
     }
     return actions
-  }, [aidReady, answered, nearestDeadline, topScholarship])
+  }, [aidReady, answered, nearestDeadline, topScholarship, t])
 
   return (
     <div className="max-w-5xl">
@@ -148,22 +149,30 @@ export default function GrantDashboardPage() {
               <Sparkles className="h-4 w-4 text-[#3B5BFF]" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#1f2937]">Complete your aid profile</p>
+              <p className="text-sm font-semibold text-[#1f2937]">{t("dashboard.completeProfileTitle", "Complete your aid profile")}</p>
               <p className="text-xs text-[#6b7280]">
-                {answered}/{TRIGGER_FIELDS.length} essentials answered — finish to unlock your matches.
+                {t("dashboard.completeProfileBody", {
+                  answered,
+                  total: TRIGGER_FIELDS.length,
+                  defaultValue: "{{answered}}/{{total}} essentials answered — finish to unlock your matches.",
+                })}
               </p>
             </div>
           </div>
           <span className="flex items-center gap-1 text-sm font-medium text-[#3B5BFF]">
-            Continue <ArrowRight className="h-4 w-4" />
+            {t("common.continue", "Continue")} <ArrowRight className="h-4 w-4" />
           </span>
         </Link>
       )}
 
       <GrantPageHeader
         icon={GraduationCap}
-        title="Aid Dashboard"
-        description={profile ? `Welcome back, ${profile.fullName}.` : "Your financial-aid overview."}
+        title={t("dashboard.title", "Aid Dashboard")}
+        description={
+          profile
+            ? t("dashboard.welcomeBack", { name: profile.fullName, defaultValue: "Welcome back, {{name}}." })
+            : t("dashboard.overview", "Your financial-aid overview.")
+        }
       />
 
       {/* Aid journey strip + completeness meter */}
@@ -171,17 +180,17 @@ export default function GrantDashboardPage() {
         <GrantSectionTitle
           action={
             <span className="text-xs font-medium text-[#3B5BFF]">
-              Next: {activeStep.label}
+              {t("dashboard.nextStep", { step: activeStep.label, defaultValue: "Next: {{step}}" })}
             </span>
           }
         >
-          Aid journey
+          {t("dashboard.aidJourney", "Aid journey")}
         </GrantSectionTitle>
 
         <GrantMeter
           value={completionPct}
           tone="blue"
-          label="Profile completeness"
+          label={t("common.profileCompleteness", "Profile completeness")}
           right={`${answered}/${TRIGGER_FIELDS.length}`}
           className="mb-5"
         />
@@ -237,23 +246,23 @@ export default function GrantDashboardPage() {
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <GrantStat
           icon={CalendarClock}
-          label="Upcoming Deadlines"
+          label={t("dashboard.statDeadlines", "Upcoming Deadlines")}
           value={deadlines?.length ?? 0}
-          hint="federal, state & institutional"
+          hint={t("dashboard.statDeadlinesHint", "federal, state & institutional")}
           tone="blue"
         />
         <GrantStat
           icon={Award}
-          label="Scholarship Matches"
+          label={t("dashboard.statScholarships", "Scholarship Matches")}
           value={scholarships?.length ?? 0}
-          hint="ranked by match score"
+          hint={t("dashboard.statScholarshipsHint", "ranked by match score")}
           tone="teal"
         />
         <GrantStat
           icon={GraduationCap}
-          label="Student Aid Index"
+          label={t("dashboard.statSai", "Student Aid Index")}
           value={profile ? profile.studentAidIndex.toLocaleString() : "—"}
-          hint="from your financial profile"
+          hint={t("dashboard.statSaiHint", "from your financial profile")}
           tone="blue"
         />
       </div>
@@ -261,7 +270,7 @@ export default function GrantDashboardPage() {
       {/* Populations + next actions */}
       <div className="grid gap-4 lg:grid-cols-2">
         <GrantCard>
-          <GrantSectionTitle>GRANT is tailoring for</GrantSectionTitle>
+          <GrantSectionTitle>{t("dashboard.tailoringFor", "GRANT is tailoring for")}</GrantSectionTitle>
           {populationChips.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {populationChips.map((chip) => (
@@ -273,17 +282,17 @@ export default function GrantDashboardPage() {
           ) : (
             <div className="flex items-center gap-2 text-sm text-[#6b7280]">
               <Users className="h-4 w-4 text-[#9ca3af]" />
-              <p>Answer the screener in your profile to unlock population-specific aid.</p>
+              <p>{t("dashboard.screenerPrompt", "Answer the screener in your profile to unlock population-specific aid.")}</p>
             </div>
           )}
         </GrantCard>
 
         <GrantCard>
-          <GrantSectionTitle>Next actions</GrantSectionTitle>
+          <GrantSectionTitle>{t("dashboard.nextActions", "Next actions")}</GrantSectionTitle>
           {nextActions.length === 0 ? (
             <div className="flex items-center gap-2 text-sm text-[#374151]">
               <Check className="h-4 w-4 text-[#2DD4BF]" />
-              <p>You're all caught up — nothing outstanding right now.</p>
+              <p>{t("dashboard.allCaughtUp", "You're all caught up — nothing outstanding right now.")}</p>
             </div>
           ) : (
             <ul className="space-y-2">

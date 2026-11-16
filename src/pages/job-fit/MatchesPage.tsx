@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react"
 import { Target } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { useFitMatches } from "@/hooks/job-fit/useFitMatches"
 import type { FitMethod } from "@/types/job-fit"
 import {
@@ -30,22 +32,33 @@ import {
  */
 // FIT-3 (owner, Q2): "Overall" means the Overall fit only, so the D4 method
 // that is a PRISM formula says so.
-const METHOD_OPTIONS: { value: FitMethod; label: string; hint: string }[] = [
-  { value: "gap", label: "Growth areas vs blueprint", hint: "Distance from the role's target profile" },
-  { value: "closeness", label: "PRISM closeness", hint: "Weighted similarity to the role" },
-]
+function methodOptions(t: TFunction): { value: FitMethod; label: string; hint: string }[] {
+  return [
+    {
+      value: "gap",
+      label: t("matchesPage.methodGapLabel", "Growth areas vs blueprint"),
+      hint: t("matchesPage.methodGapHint", "Distance from the role's target profile"),
+    },
+    {
+      value: "closeness",
+      label: t("matchesPage.methodClosenessLabel", "PRISM closeness"),
+      hint: t("matchesPage.methodClosenessHint", "Weighted similarity to the role"),
+    },
+  ]
+}
 
 function OrderToggle({ order, onChange }: { order: ListOrder; onChange: (o: ListOrder) => void }) {
+  const { t } = useTranslation("jobFitPages")
   const options: { value: ListOrder; label: string }[] = [
-    { value: "overall", label: "Overall fit" },
-    { value: "prism", label: "PRISM fit" },
+    { value: "overall", label: t("matchesPage.orderOverall", "Overall fit") },
+    { value: "prism", label: t("matchesPage.orderPrism", "PRISM fit") },
   ]
   return (
     <div className="inline-flex items-center gap-2 text-xs text-[#374151]">
-      <span>Order by:</span>
+      <span>{t("matchesPage.orderByLabel", "Order by:")}</span>
       <div
         role="radiogroup"
-        aria-label="Order by"
+        aria-label={t("matchesPage.orderByAria", "Order by")}
         className="inline-flex rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-0.5"
       >
         {options.map((opt) => {
@@ -81,13 +94,14 @@ function MethodToggle({
   method: FitMethod
   onChange: (m: FitMethod) => void
 }) {
+  const { t } = useTranslation("jobFitPages")
   return (
     <div
       role="radiogroup"
-      aria-label="Scoring method"
+      aria-label={t("matchesPage.scoringMethod", "Scoring method")}
       className="inline-flex rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-0.5"
     >
-      {METHOD_OPTIONS.map((opt) => {
+      {methodOptions(t).map((opt) => {
         const active = method === opt.value
         return (
           <button
@@ -113,6 +127,7 @@ function MethodToggle({
 }
 
 export default function MatchesPage() {
+  const { t } = useTranslation("jobFitPages")
   const [method, setMethod] = useState<FitMethod>("gap")
   const { data, isLoading, isError, gated } = useFitMatches(method)
   // Feeds Phase 2 — dark unless the server switch is on: no request, no chip,
@@ -152,8 +167,11 @@ export default function MatchesPage() {
     <div className="mx-auto max-w-4xl">
       <FitPageHeader
         icon={Target}
-        title="Your Role Matches"
-        description="How your behavioral profile lines up with open roles — ranked from closest match."
+        title={t("matchesPage.title", "Your Role Matches")}
+        description={t(
+          "matchesPage.description",
+          "How your behavioral profile lines up with open roles — ranked from closest match.",
+        )}
       />
 
       <FitPurpose />
@@ -167,7 +185,7 @@ export default function MatchesPage() {
               onChange={(e) => setByGoals(e.target.checked)}
               disabled={components.isError}
             />
-            Sort by my goals
+            {t("matchesPage.sortByGoals", "Sort by my goals")}
           </label>
         )}
         {overallOn && <OrderToggle order={order} onChange={setOrder} />}
@@ -176,7 +194,7 @@ export default function MatchesPage() {
 
       {componentsOn && components.isError && (
         <p role="alert" className="mb-3 text-xs text-[#6b7280]">
-          Couldn&apos;t read your goals — sorted by fit.
+          {t("matchesPage.goalsReadError", "Couldn't read your goals — sorted by fit.")}
         </p>
       )}
 
@@ -186,29 +204,40 @@ export default function MatchesPage() {
         components={components.data?.jobs}
         state={{ isLoading, isError, gated, gatedHidesRows: false }}
         slots={{
-          loading: <FitLoading label="Matching your profile to open roles…" />,
+          loading: <FitLoading
+              label={t("matchesPage.loading", "Matching your profile to open roles…")}
+            />,
           error: (
             <FitError>
-              We couldn&apos;t load your matches right now. Please try again in a moment.
+              {t(
+                "matchesPage.loadError",
+                "We couldn't load your matches right now. Please try again in a moment.",
+              )}
             </FitError>
           ),
           // FIT-1: matching switched off platform-side is not "no roles".
           gated: (
             <FitEmptyState>
-              Role matching is paused for now. It&apos;s a deliberate hold, not a problem with your
-              profile — your matches will appear here once it&apos;s switched back on.
+              {t(
+                "matchesPage.gated",
+                "Role matching is paused for now. It's a deliberate hold, not a problem with your profile — your matches will appear here once it's switched back on.",
+              )}
             </FitEmptyState>
           ),
           gatedNote: (
             <p role="note" className="mb-3 text-xs text-[#6b7280]">
-              Role matching is still in limited release, so treat these as a first draft rather than a
-              settled read.
+              {t(
+                "matchesPage.gatedNote",
+                "Role matching is still in limited release, so treat these as a first draft rather than a settled read.",
+              )}
             </p>
           ),
           empty: (
             <FitEmptyState>
-              No published roles are available to match against yet. Check back once your organization
-              publishes role blueprints.
+              {t(
+                "matchesPage.empty",
+                "No published roles are available to match against yet. Check back once your organization publishes role blueprints.",
+              )}
             </FitEmptyState>
           ),
           // BP-F5: one explanation for the page, from the first partial row.

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { MessagesSquare, Send, Loader2, ExternalLink } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -34,6 +35,7 @@ const selectClass = cn(
 type QA = { question: string; answer: string }
 
 export default function CoachPage() {
+  const { t } = useTranslation("jobFitPages")
   const navigate = useNavigate()
   const matches = useFitMatches("gap")
   const roles = matches.data ?? []
@@ -77,24 +79,27 @@ export default function CoachPage() {
     <div className="mx-auto max-w-3xl p-4 sm:p-6">
       <FitPageHeader
         icon={MessagesSquare}
-        title="Coaching"
-        description="Work through one of your roles — fit, growth areas, how to develop them, goals, and interview prep. Pick a role and a question; the answer appears right here."
+        title={t("coachPage.title", "Coaching")}
+        description={t(
+          "coachPage.description",
+          "Work through one of your roles — fit, growth areas, how to develop them, goals, and interview prep. Pick a role and a question; the answer appears right here.",
+        )}
       />
 
       {matches.isLoading ? (
-        <FitLoading label="Loading your roles…" />
+        <FitLoading label={t("coachPage.loadingRoles", "Loading your roles…")} />
       ) : roles.length === 0 ? (
         <FitEmptyState>
-          <p className="mb-3">No matched roles yet.</p>
+          <p className="mb-3">{t("coachPage.noRoles", "No matched roles yet.")}</p>
           <Button type="button" onClick={() => navigate(ROUTES.JOB_FIT.MATCHES)}>
-            See your role matches
+            {t("coachPage.seeMatches", "See your role matches")}
           </Button>
         </FitEmptyState>
       ) : (
         <div className="space-y-4">
           <FitCard className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fit_role">Which role are we talking about?</Label>
+              <Label htmlFor="fit_role">{t("coachPage.whichRole", "Which role are we talking about?")}</Label>
               <select
                 id="fit_role"
                 value={jobId}
@@ -104,7 +109,7 @@ export default function CoachPage() {
                 }}
                 className={selectClass}
               >
-                <option value="">Choose a role…</option>
+                <option value="">{t("coachPage.chooseRole", "Choose a role…")}</option>
                 {roles.map((r) => (
                   <option key={r.jobId} value={r.jobId}>
                     {r.roleTitle}
@@ -112,12 +117,12 @@ export default function CoachPage() {
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
-                Answers are grounded in your fit against this role.
+                {t("coachPage.grounded", "Answers are grounded in your fit against this role.")}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fit_category">What do you want to work on?</Label>
+              <Label htmlFor="fit_category">{t("coachPage.whatWork", "What do you want to work on?")}</Label>
               <select
                 id="fit_category"
                 value={groupKey}
@@ -134,7 +139,7 @@ export default function CoachPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fit_question">Question</Label>
+              <Label htmlFor="fit_question">{t("coachPage.question", "Question")}</Label>
               <select
                 id="fit_question"
                 value=""
@@ -146,10 +151,10 @@ export default function CoachPage() {
               >
                 <option value="">
                   {detailQuery.isLoading
-                    ? "Loading this role…"
+                    ? t("coachPage.loadingRole", "Loading this role…")
                     : canAsk
-                      ? "Pick a question to answer it here…"
-                      : "Choose a role first…"}
+                      ? t("coachPage.pickQuestion", "Pick a question to answer it here…")
+                      : t("coachPage.chooseRoleFirst", "Choose a role first…")}
                 </option>
                 {group.questions.map((q) => (
                   <option key={q} value={q}>
@@ -176,25 +181,31 @@ export default function CoachPage() {
               ))}
               {explain.isPending && (
                 <div className="flex items-center gap-2 text-sm text-[#6b7280]">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Thinking about your fit…
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("coachPage.thinking", "Thinking about your fit…")}
                 </div>
               )}
               {error && (
                 <p className="text-sm text-[#b91c1c]">
-                  That didn&apos;t go through — please try again in a moment.
+                  {t(
+                    "coachPage.error",
+                    "That didn't go through — please try again in a moment.",
+                  )}
                 </p>
               )}
             </FitCard>
           )}
 
           <FitCard className="space-y-3">
-            <Label htmlFor="fit_custom">Or ask your own</Label>
+            <Label htmlFor="fit_custom">{t("coachPage.askOwn", "Or ask your own")}</Label>
             <Textarea
               id="fit_custom"
               rows={3}
               value={custom}
               onChange={(e) => setCustom(e.target.value)}
-              placeholder="Anything else you want to work through about this role…"
+              placeholder={t(
+                "coachPage.customPlaceholder",
+                "Anything else you want to work through about this role…",
+              )}
               disabled={!canAsk}
             />
             <div className="flex flex-wrap gap-2">
@@ -208,17 +219,17 @@ export default function CoachPage() {
                 ) : (
                   <Send className="mr-2 h-4 w-4" aria-hidden />
                 )}
-                Answer here
+                {t("coachPage.answerHere", "Answer here")}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => openInMeridian(custom || group.questions[0])}
                 disabled={!roleTitle}
-                title="Continue this in a full Meridian conversation"
+                title={t("coachPage.openMeridianTitle", "Continue this in a full Meridian conversation")}
               >
                 <ExternalLink className="mr-2 h-4 w-4" aria-hidden />
-                Open in Meridian
+                {t("coachPage.openMeridian", "Open in Meridian")}
               </Button>
             </div>
           </FitCard>

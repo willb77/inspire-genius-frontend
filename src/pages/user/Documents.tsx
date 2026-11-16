@@ -77,6 +77,7 @@ function kindFromFilename(filename: string): DocKind {
 // ─── Component ─────────────────────────────────────────────────────────────
 
 export default function Documents() {
+  const { t: tu } = useTranslation("userPages");
   const { t } = useTranslation(["common", "dashboard"]);
 
   // UI state
@@ -139,7 +140,7 @@ export default function Documents() {
       if (!hits.length) return [];
       return [
         {
-          title: `Search Results (${hits.length})`,
+          title: tu("documents.searchResults", { defaultValue: "Search Results ({{count}})", count: hits.length }),
           items: hits.map(
             (h): UIDocItem => ({
               id: h.document_id,
@@ -193,11 +194,14 @@ export default function Documents() {
 
     const keys = ["Today", "Yesterday", ...otherKeys].filter((k) => groups[k]?.length);
     return keys.map((k) => ({ title: k, items: groups[k]! }));
-  }, [semanticSearch, searchMutation.data, docListData]);
+  }, [semanticSearch, searchMutation.data, docListData, tu]);
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const selectedCount = selected.size;
   const listLoading = isLoading || isFetching;
+
+  const sectionTitle = (title: string) =>
+    title === "Today" ? tu("documents.today", "Today") : title === "Yesterday" ? tu("documents.yesterday", "Yesterday") : title;
 
   const toggleSection = (title: string) => {
     setCollapsed((prev) => ({ ...prev, [title]: !prev[title] }));
@@ -223,11 +227,11 @@ export default function Documents() {
       }
       setSelected(new Set());
       toast.success(t("common:success"), {
-        description: "Selected documents were removed successfully.",
+        description: tu("documents.selectedDocumentsWereRemovedSuccessfully", "Selected documents were removed successfully."),
       });
     } catch (e) {
       toast.error(t("common:error"), {
-        description: e instanceof Error ? e.message : "Unable to delete one or more documents",
+        description: e instanceof Error ? e.message : tu("documents.unableToDeleteOneOrMore", "Unable to delete one or more documents"),
       });
     }
   };
@@ -244,7 +248,7 @@ export default function Documents() {
       toast.success(t("common:success"));
     } catch (e) {
       toast.error(t("common:error"), {
-        description: e instanceof Error ? e.message : "Unable to delete document",
+        description: e instanceof Error ? e.message : tu("documents.unableToDeleteDocument", "Unable to delete document"),
       });
     }
   };
@@ -263,7 +267,7 @@ export default function Documents() {
       a.remove();
     } catch (e) {
       toast.error(t("common:error"), {
-        description: e instanceof Error ? e.message : "Unable to get download link",
+        description: e instanceof Error ? e.message : tu("documents.unableToGetDownloadLink", "Unable to get download link"),
       });
     } finally {
       setDownloadingId(null);
@@ -278,7 +282,7 @@ export default function Documents() {
       setViewerOpen(true);
     } catch (e) {
       toast.error(t("common:error"), {
-        description: e instanceof Error ? e.message : "Unable to open document",
+        description: e instanceof Error ? e.message : tu("documents.unableToOpenDocument", "Unable to open document"),
       });
     } finally {
       setViewingId(null);
@@ -294,7 +298,7 @@ export default function Documents() {
       });
     } catch (e) {
       toast.error(t("common:error"), {
-        description: e instanceof Error ? e.message : "Unable to mark as PRISM",
+        description: e instanceof Error ? e.message : tu("documents.unableToMarkAsPrism", "Unable to mark as PRISM"),
       });
     } finally {
       setMarkingPrismId(null);
@@ -305,7 +309,7 @@ export default function Documents() {
     queryClient.invalidateQueries({ queryKey: ["documents"] });
     setUploadOpen(false);
     toast.success(t("common:success"), {
-      description: `${files.length} document(s) uploaded successfully.`,
+      description: tu("documents.uploadedSuccess", { defaultValue: "{{count}} document(s) uploaded successfully.", count: files.length }),
     });
   };
 
@@ -317,9 +321,9 @@ export default function Documents() {
         {/* Header row */}
         <div className="flex items-start justify-between">
           <div className="text-left flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Document Library</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{tu("documents.documentLibrary", "Document Library")}</h1>
             <p className="text-xs text-muted-foreground">
-              Upload documents to access them in the chat.
+              {tu("documents.uploadDocumentsToAccessThemIn", "Upload documents to access them in the chat.")}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2" data-tour="docs-toolbar">
@@ -350,13 +354,13 @@ export default function Documents() {
                     size="icon"
                     className="size-9 shrink-0"
                     onClick={() => setSemanticSearch((v) => !v)}
-                    aria-label={semanticSearch ? "Disable semantic search" : "Enable semantic search"}
+                    aria-label={semanticSearch ? tu("documents.disableSemanticSearch", "Disable semantic search") : tu("documents.enableSemanticSearch", "Enable semantic search")}
                   >
                     <Sparkles className="size-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  {semanticSearch ? "Semantic search ON" : "Enable semantic search"}
+                  {semanticSearch ? tu("documents.semanticSearchOn", "Semantic search ON") : tu("documents.enableSemanticSearch", "Enable semantic search")}
                 </TooltipContent>
               </Tooltip>
               {selectedCount > 0 ? (
@@ -367,19 +371,19 @@ export default function Documents() {
                       className="h-9 px-4 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
                       disabled={bulkDeleteMutation.isPending || deleteMutation.isPending}
                     >
-                      Delete
+                      {tu("documents.delete", "Delete")}
                       <Trash2 className="size-4 ml-2" />
                     </Button>
                   }
-                  title="Confirm delete"
-                  description={`Are you sure you want to delete ${selectedCount} selected document(s)? This action cannot be undone.`}
-                  confirmText="Delete"
+                  title={tu("documents.confirmDelete", "Confirm delete")}
+                  description={tu("documents.confirmDeleteSelected", { defaultValue: "Are you sure you want to delete {{count}} selected document(s)? This action cannot be undone.", count: selectedCount })}
+                  confirmText={tu("documents.delete", "Delete")}
                   onConfirm={handleDeleteSelected}
                 />
               ) : null}
               {selectedCount === 0 ? (
                 <button
-                  aria-label="Settings"
+                  aria-label={tu("documents.settings", "Settings")}
                   className="invisible p-2 rounded-md hover:bg-gray-100"
                 >
                   <Settings className="size-5" />
@@ -395,13 +399,13 @@ export default function Documents() {
             <DatePicker
               value={filterDate}
               onChange={setFilterDate}
-              placeholder="Filter by date"
+              placeholder={tu("documents.filterByDate", "Filter by date")}
               maxDate={new Date()}
             />
           </div>
           {selectedCount > 0 ? (
             <span className="text-blue-primary bg-blue-50 rounded-lg px-3 py-1 text-sm font-medium">
-              Selected ({String(selectedCount).padStart(2, "0")})
+              {tu("documents.selectedCount", { defaultValue: "Selected ({{count}})", count: String(selectedCount).padStart(2, "0") })}
             </span>
           ) : null}
 
@@ -414,13 +418,13 @@ export default function Documents() {
                     className="h-9 px-4 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
                     disabled={bulkDeleteMutation.isPending || deleteMutation.isPending}
                   >
-                    Delete
+                    {tu("documents.delete", "Delete")}
                     <Trash2 className="size-4 ml-2" />
                   </Button>
                 }
-                title="Confirm delete"
-                description={`Are you sure you want to delete ${selectedCount} selected document(s)? This action cannot be undone.`}
-                confirmText="Delete"
+                title={tu("documents.confirmDelete", "Confirm delete")}
+                description={tu("documents.confirmDeleteSelected", { defaultValue: "Are you sure you want to delete {{count}} selected document(s)? This action cannot be undone.", count: selectedCount })}
+                confirmText={tu("documents.delete", "Delete")}
                 onConfirm={handleDeleteSelected}
               />
             ) : null}
@@ -461,9 +465,9 @@ export default function Documents() {
           )}
           {!listLoading && sections.length === 0 && (
             <div className="py-16 grid place-items-center text-center">
-              <div className="text-lg font-semibold mb-1">No files found</div>
+              <div className="text-lg font-semibold mb-1">{tu("documents.noFilesFound", "No files found")}</div>
               <div className="text-sm text-muted-foreground mb-4">
-                {query ? "No documents match your search." : "Click Upload to add files"}
+                {query ? tu("documents.noDocumentsMatchYourSearch", "No documents match your search.") : tu("documents.clickUploadToAddFiles", "Click Upload to add files")}
               </div>
               {!query && (
                 <Button
@@ -489,7 +493,7 @@ export default function Documents() {
                   ) : (
                     <ChevronDown className="size-4" />
                   )}
-                  {sec.title}
+                  {sectionTitle(sec.title)}
                 </button>
                 {!collapsed[sec.title] && (
                   <div className="mt-2 space-y-2">
@@ -534,21 +538,21 @@ export default function Documents() {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span
-                                  aria-label="Marked as my PRISM report"
+                                  aria-label={tu("documents.markedAsMyPrismReport", "Marked as my PRISM report")}
                                   className="cursor-default text-amber-500"
                                 >
                                   <Star className="size-4 fill-current" />
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent sideOffset={6}>
-                                Your PRISM report — Meridian auto-attaches this
+                                {tu("documents.yourPrismReportMeridianAutoAttaches", "Your PRISM report — Meridian auto-attaches this")}
                               </TooltipContent>
                             </Tooltip>
                           ) : (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
-                                  aria-label="Mark as my PRISM report"
+                                  aria-label={tu("documents.markAsMyPrismReport", "Mark as my PRISM report")}
                                   className="cursor-pointer text-muted-foreground hover:text-amber-500"
                                   onClick={() => void handleMarkAsPrism(d)}
                                   disabled={markingPrismId === d.id}
@@ -561,27 +565,27 @@ export default function Documents() {
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent sideOffset={6}>
-                                Mark as my PRISM Rpt
+                                {tu("documents.markAsMyPrismRpt", "Mark as my PRISM Rpt")}
                               </TooltipContent>
                             </Tooltip>
                           )}
                           <ConfirmDialog
                             trigger={
                               <button
-                                title="Delete"
+                                title={tu("documents.delete", "Delete")}
                                 className="cursor-pointer text-red-600 hover:text-red-700"
                                 disabled={deleteMutation.isPending}
                               >
                                 <Trash2 className="size-4" />
                               </button>
                             }
-                            title="Confirm delete"
-                            description="Are you sure you want to delete this document? This action cannot be undone."
-                            confirmText="Delete"
+                            title={tu("documents.confirmDelete", "Confirm delete")}
+                            description={tu("documents.areYouSureYouWantTo", "Are you sure you want to delete this document? This action cannot be undone.")}
+                            confirmText={tu("documents.delete", "Delete")}
                             onConfirm={() => handleDeleteOne(d.id)}
                           />
                           <button
-                            title="Download"
+                            title={tu("documents.download", "Download")}
                             className="cursor-pointer text-muted-foreground hover:text-foreground"
                             onClick={() => void handleDownload(d)}
                             disabled={downloadingId === d.id}
@@ -593,7 +597,7 @@ export default function Documents() {
                             )}
                           </button>
                           <button
-                            title="View"
+                            title={tu("documents.view", "View")}
                             className="cursor-pointer text-muted-foreground hover:text-foreground"
                             onClick={() => void handleView(d)}
                             disabled={viewingId === d.id}

@@ -31,6 +31,7 @@ type Agent = {
 };
 
 export default function DashboardV2() {
+  const { t: tu } = useTranslation("userPages");
   const navigate = useNavigate();
   const { t } = useTranslation(["dashboard", "common"]);
   const [query, setQuery] = useState("");
@@ -87,9 +88,9 @@ export default function DashboardV2() {
             <div className="flex items-center gap-3">
               <Sparkles className="h-8 w-8 text-accent-orange" />
               <div className="flex-1">
-                <h3 className="font-serif text-lg text-ink">Chat with Meridian</h3>
+                <h3 className="font-serif text-lg text-ink">{tu("dashboardV2.chatWithMeridian", "Chat with Meridian")}</h3>
                 <p className="text-sm text-body-slate">
-                  Meridian is your unified AI coaching persona. All 18 agents are accessible through a single conversation.
+                  {tu("dashboardV2.meridianIsYourUnifiedAiCoaching", "Meridian is your unified AI coaching persona. All 18 agents are accessible through a single conversation.")}
                 </p>
               </div>
               {recentCollaboration && (
@@ -103,7 +104,7 @@ export default function DashboardV2() {
                 onClick={() => navigate(ROUTES.MERIDIAN_CHAT)}
                 className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink/90"
               >
-                Start Chatting
+                {tu("dashboardV2.startChatting", "Start Chatting")}
               </button>
             </div>
           </V2Card>

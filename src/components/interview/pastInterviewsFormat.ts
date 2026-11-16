@@ -6,6 +6,7 @@
  * are the panel's only pure logic and are worth testing on their own.
  */
 import type { LiveSessionSummary } from "@/services/interview/live.service"
+import { englishT, type TFn } from "@/components/interview/tFallback"
 
 /**
  * Who the interview was with.
@@ -17,19 +18,19 @@ import type { LiveSessionSummary } from "@/services/interview/live.service"
  * hash rather than an em-dash — an anonymous row is still a real interview, and
  * a blank reads as a broken record.
  */
-export function candidateLabel(s: LiveSessionSummary): string {
+export function candidateLabel(s: LiveSessionSummary, t: TFn = englishT): string {
   const name = s.candidate_ref?.display_name?.trim()
   if (name) return name
   const hash = s.candidate_ref?.candidate_hash
-  if (hash) return `Candidate ${hash.slice(0, 8)}`
-  return "Candidate not recorded"
+  if (hash) return t("past.candidateHash", { defaultValue: "Candidate {{hash}}", hash: hash.slice(0, 8) })
+  return t("past.candidateNotRecorded", "Candidate not recorded")
 }
 
 /** A date the interviewer can read, or nothing at all if the row has none. */
-export function formatWhen(iso?: string | null): string {
-  if (!iso) return "date not recorded"
+export function formatWhen(iso?: string | null, t: TFn = englishT): string {
+  if (!iso) return t("past.dateNotRecorded", "date not recorded")
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return "date not recorded"
+  if (Number.isNaN(d.getTime())) return t("past.dateNotRecorded", "date not recorded")
   return d.toLocaleString(undefined, {
     year: "numeric",
     month: "short",

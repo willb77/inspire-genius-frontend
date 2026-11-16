@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Flag, Loader2, Map } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/constants/routes"
 import { useMyGoals } from "@/hooks/summit/useMyGoals"
@@ -18,14 +19,15 @@ const CREATE_NEW = "__new__"
  * server has said so.
  */
 export function MakeTargetCard({ data }: { data: FitDetail }) {
+  const { t } = useTranslation("jobFitPages")
   const mine = useMyGoals()
   const targets = useMyTargets(true)
   const make = useMakeTarget()
   const [choice, setChoice] = useState<string>(CREATE_NEW)
 
   const goals = mine.data?.goals ?? []
-  const already = (targets.data ?? []).filter((t) => t.jobId === data.jobId)
-  const titleOf = (goalId: string) => goals.find((g) => g.goalId === goalId)?.title ?? "A goal"
+  const already = (targets.data ?? []).filter((tg) => tg.jobId === data.jobId)
+  const titleOf = (goalId: string) => goals.find((g) => g.goalId === goalId)?.title ?? t("makeTargetCard.aGoal", "A goal")
   const done = make.data
   // Feeds-F5: once a goal targets this role, the card offers the roadmap, not a
   // second create (which only re-aimed the same goal and rebuilt its roadmap).
@@ -40,20 +42,25 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
     >
       <h2 id="make-target-heading" className="flex items-center gap-2 text-sm font-semibold text-[#0F172A]">
         <Flag className="h-4 w-4 text-[#0D9488]" aria-hidden />
-        Make this my target
+        {t("makeTargetCard.title", "Make this my target")}
       </h2>
       <p className="mt-1 text-sm text-[#475569]">
-        Point one of your goals at this role and get a roadmap toward it, built from the fit
-        shown on this page.
+        {t(
+          "makeTargetCard.intro",
+          "Point one of your goals at this role and get a roadmap toward it, built from the fit shown on this page.",
+        )}
       </p>
 
       {already.length > 0 && (
-        <ul className="mt-2 space-y-1 text-sm text-[#0F172A]" aria-label="Goals already aimed at this role">
-          {already.map((t) => (
-            <li key={t.goalId}>
-              &ldquo;{titleOf(t.goalId)}&rdquo; already targets this role —{" "}
-              <Link className="font-semibold text-[#0D9488] underline" to={ROUTES.MY_GOALS.ROADMAP(t.goalId)}>
-                view roadmap
+        <ul className="mt-2 space-y-1 text-sm text-[#0F172A]" aria-label={t("makeTargetCard.alreadyLabel", "Goals already aimed at this role")}>
+          {already.map((tg) => (
+            <li key={tg.goalId}>
+              {t("makeTargetCard.alreadyTargets", {
+                defaultValue: "“{{title}}” already targets this role —",
+                title: titleOf(tg.goalId),
+              })}{" "}
+              <Link className="font-semibold text-[#0D9488] underline" to={ROUTES.MY_GOALS.ROADMAP(tg.goalId)}>
+                {t("makeTargetCard.viewRoadmapLower", "view roadmap")}
               </Link>
             </li>
           ))}
@@ -64,7 +71,7 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
       <>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <label className="text-sm text-[#475569]" htmlFor="target-goal">
-          Goal
+          {t("makeTargetCard.goalLabel", "Goal")}
         </label>
         <select
           id="target-goal"
@@ -73,7 +80,9 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
           disabled={make.isPending}
           onChange={(e) => setChoice(e.target.value)}
         >
-          <option value={CREATE_NEW}>Create a new goal for this role</option>
+          <option value={CREATE_NEW}>
+            {t("makeTargetCard.createNew", "Create a new goal for this role")}
+          </option>
           {goals.map((g) => (
             <option key={g.goalId} value={g.goalId}>
               {g.title}
@@ -93,12 +102,15 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
           }
         >
           {make.isPending && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden />}
-          Make this my target
+          {t("makeTargetCard.title", "Make this my target")}
         </Button>
       </div>
       {mine.isError && (
         <p className="mt-2 text-xs text-[#475569]">
-          Couldn&apos;t read your goals — you can still create a new one for this role.
+          {t(
+            "makeTargetCard.goalsReadError",
+            "Couldn't read your goals — you can still create a new one for this role.",
+          )}
         </p>
       )}
       </>
@@ -106,12 +118,16 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
 
       {done && (
         <p role="status" className="mt-3 text-sm text-[#0F172A]">
-          &ldquo;{done.goal.title}&rdquo; now targets {done.target.roleTitle || "this role"}.{" "}
+          {t("makeTargetCard.nowTargets", {
+            defaultValue: "“{{title}}” now targets {{role}}.",
+            title: done.goal.title,
+            role: done.target.roleTitle || t("makeTargetCard.thisRole", "this role"),
+          })}{" "}
           <Link
             className="inline-flex items-center gap-1 font-semibold text-[#0D9488] underline"
             to={ROUTES.MY_GOALS.ROADMAP(done.goal.goalId)}
           >
-            <Map className="h-3.5 w-3.5" aria-hidden /> View roadmap
+            <Map className="h-3.5 w-3.5" aria-hidden /> {t("makeTargetCard.viewRoadmap", "View roadmap")}
           </Link>
         </p>
       )}

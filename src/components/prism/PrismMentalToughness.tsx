@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { MentalToughnessItem } from '@/types/prism/api-types'
 
 type PrismMentalToughnessProps = {
@@ -7,12 +8,13 @@ type PrismMentalToughnessProps = {
 export default function PrismMentalToughness({
   data,
 }: PrismMentalToughnessProps) {
+  const { t } = useTranslation('prismUi')
   if (!data.length) return null
 
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-muted-foreground">
-        Mental Toughness
+        {t('mentalToughness.heading', { defaultValue: 'Mental Toughness' })}
       </h3>
       <div className="space-y-3">
         {data.map((item) => (

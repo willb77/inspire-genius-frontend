@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import { Flag, Heart, Loader2, Map } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/constants/routes"
 import { useMyTargets } from "@/hooks/goals/useGoalTargets"
@@ -21,6 +22,7 @@ import { savedJobErrorText } from "@/pages/job-fit/_savedJobs"
  * that failed to load says so; it is never shown as an empty list.
  */
 export function FavoritesList() {
+  const { t } = useTranslation("jobFitPages")
   const enabled = useSavedJobsEnabled()
   const list = useSavedJobs(enabled)
   const remove = useRemoveSavedJob()
@@ -36,35 +38,42 @@ export function FavoritesList() {
     <section aria-labelledby="favorites-heading" className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
       <h2 id="favorites-heading" className="flex items-center gap-2 text-sm font-semibold text-[#0F172A]">
         <Heart className="h-4 w-4 text-[#0D9488]" aria-hidden />
-        Favorites
+        {t("favoritesList.heading", "Favorites")}
       </h2>
       <p className="mt-1 text-sm text-[#475569]">
-        Jobs you are keeping as options. Make one of them your target to get a roadmap toward it.
+        {t(
+          "favoritesList.intro",
+          "Jobs you are keeping as options. Make one of them your target to get a roadmap toward it.",
+        )}
       </p>
 
       {list.isLoading && (
         <p className="mt-3 flex items-center gap-2 text-sm text-[#475569]" role="status">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Loading your favorites…
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />{" "}
+          {t("favoritesList.loading", "Loading your favorites…")}
         </p>
       )}
 
       {list.isError && (
         <p role="alert" className="mt-3 text-sm text-[#B91C1C]">
-          Couldn&apos;t load your favorites. {savedJobErrorText(list.error)}
+          {t("favoritesList.loadError", "Couldn't load your favorites.")} {savedJobErrorText(list.error, t)}
         </p>
       )}
 
       {list.isSuccess && jobs.length === 0 && (
         <p className="mt-3 text-sm text-[#475569]">
-          No favorites yet. Use &ldquo;Save to Favorites&rdquo; on a job to keep it here.
+          {t(
+            "favoritesList.empty",
+            "No favorites yet. Use “Save to Favorites” on a job to keep it here.",
+          )}
         </p>
       )}
 
       {jobs.length > 0 && (
-        <ul className="mt-3 divide-y divide-slate-100" aria-label="Your favorite jobs">
+        <ul className="mt-3 divide-y divide-slate-100" aria-label={t("favoritesList.listLabel", "Your favorite jobs")}>
           {jobs.map((job) => {
             const target = targetOf(job.jobId)
-            const title = job.roleTitle || "Saved job"
+            const title = job.roleTitle || t("favoritesList.savedJobFallback", "Saved job")
             return (
               <li key={job.jobId} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div className="min-w-0">
@@ -76,7 +85,7 @@ export function FavoritesList() {
                   </Link>
                   {target && (
                     <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#F0FDFA] px-2 py-0.5 text-xs font-semibold text-[#0D9488]">
-                      <Flag className="h-3 w-3" aria-hidden /> Your target
+                      <Flag className="h-3 w-3" aria-hidden /> {t("favoritesList.yourTarget", "Your target")}
                     </span>
                   )}
                 </div>
@@ -86,16 +95,16 @@ export function FavoritesList() {
                       className="inline-flex items-center gap-1 text-sm font-semibold text-[#0D9488] underline"
                       to={ROUTES.MY_GOALS.ROADMAP(target.goalId)}
                     >
-                      <Map className="h-3.5 w-3.5" aria-hidden /> View roadmap
+                      <Map className="h-3.5 w-3.5" aria-hidden /> {t("favoritesList.viewRoadmap", "View roadmap")}
                     </Link>
                   ) : (
                     targetsOn && (
                       <Link
                         className="text-sm font-semibold text-[#0D9488] underline"
                         to={ROUTES.JOB_FIT.detail(job.jobId)}
-                        aria-label={`Make ${title} my target`}
+                        aria-label={t("favoritesList.makeTargetLabel", { defaultValue: "Make {{title}} my target", title })}
                       >
-                        Make this my target
+                        {t("favoritesList.makeTarget", "Make this my target")}
                       </Link>
                     )
                   )}
@@ -104,10 +113,13 @@ export function FavoritesList() {
                     size="sm"
                     variant="ghost"
                     disabled={remove.isPending}
-                    aria-label={`Remove ${title} from favorites`}
+                    aria-label={t("favoritesList.removeLabel", {
+                      defaultValue: "Remove {{title}} from favorites",
+                      title,
+                    })}
                     onClick={() => remove.mutate(job.jobId)}
                   >
-                    Remove
+                    {t("favoritesList.remove", "Remove")}
                   </Button>
                 </div>
               </li>
@@ -118,7 +130,7 @@ export function FavoritesList() {
 
       {remove.isError && (
         <p role="alert" className="mt-2 text-sm text-[#B91C1C]">
-          {savedJobErrorText(remove.error)}
+          {savedJobErrorText(remove.error, t)}
         </p>
       )}
     </section>

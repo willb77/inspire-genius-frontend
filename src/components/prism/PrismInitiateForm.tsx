@@ -1,6 +1,8 @@
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import {
   ExternalLink,
   ClipboardCopy,
@@ -59,49 +61,51 @@ import { QUEST_TYPE_OPTIONS, PRISM_LANGUAGES } from '@/constants/prism'
 // ── Zod Schema ─────────────────────────────────────────────────────
 // Covers all fields needed by PRISM CreateCandidate + IG user registration
 
-const initiateSchema = z.object({
-  // User / candidate details
-  forename: z.string().min(1, 'First name is required').max(50),
-  surname: z.string().min(1, 'Last name is required').max(50),
-  email: z.string().email('Enter a valid email address'),
-  organisation: z.string().min(1, 'Organisation is required').max(100),
+function makeInitiateSchema(t: TFunction) {
+  return z.object({
+    // User / candidate details
+    forename: z.string().min(1, t('initiateForm.errFirstName', { defaultValue: 'First name is required' })).max(50),
+    surname: z.string().min(1, t('initiateForm.errLastName', { defaultValue: 'Last name is required' })).max(50),
+    email: z.string().email(t('initiateForm.errEmail', { defaultValue: 'Enter a valid email address' })),
+    organisation: z.string().min(1, t('initiateForm.errOrganisation', { defaultValue: 'Organisation is required' })).max(100),
 
-  // Questionnaire config
-  questionnaireTypeId: z.coerce.number({
-    error: 'Select a questionnaire type',
-  }),
-  languageId: z.coerce.number().default(1),
-  reference: z.string().max(100).optional(),
+    // Questionnaire config
+    questionnaireTypeId: z.coerce.number({
+      error: t('initiateForm.errQuestionnaireType', { defaultValue: 'Select a questionnaire type' }),
+    }),
+    languageId: z.coerce.number().default(1),
+    reference: z.string().max(100).optional(),
 
-  // PRISM options
-  createUser: z.boolean().default(true),
-  isGift: z.boolean().default(false),
-  shareWithPractitioner: z.boolean().default(false),
+    // PRISM options
+    createUser: z.boolean().default(true),
+    isGift: z.boolean().default(false),
+    shareWithPractitioner: z.boolean().default(false),
 
-  // Only when the survey is for an email that is not the caller's own: the
-  // PRISM Practitioner who authorised it, and the caller's confirmation.
-  practitionerName: z.string().max(200).optional(),
-  practitionerConfirmed: z.boolean().default(false),
-})
+    // Only when the survey is for an email that is not the caller's own: the
+    // PRISM Practitioner who authorised it, and the caller's confirmation.
+    practitionerName: z.string().max(200).optional(),
+    practitionerConfirmed: z.boolean().default(false),
+  })
+}
 
-type InitiateFormValues = z.infer<typeof initiateSchema>
+type InitiateFormValues = z.infer<ReturnType<typeof makeInitiateSchema>>
 
 /** The schema, with the "someone else's email" rule bound to this account. */
-function schemaFor(accountEmail: string) {
-  return initiateSchema.superRefine((v, ctx) => {
+function schemaFor(accountEmail: string, t: TFunction) {
+  return makeInitiateSchema(t).superRefine((v, ctx) => {
     if (!isOtherEmail(v.email, accountEmail)) return
     if (!v.practitionerName?.trim()) {
       ctx.addIssue({
         code: 'custom',
         path: ['practitionerName'],
-        message: 'Name the PRISM Practitioner who authorised a survey for this email',
+        message: t('initiateForm.errPractitionerName', { defaultValue: 'Name the PRISM Practitioner who authorised a survey for this email' }),
       })
     }
     if (!v.practitionerConfirmed) {
       ctx.addIssue({
         code: 'custom',
         path: ['practitionerConfirmed'],
-        message: 'Confirm the practitioner authorised it',
+        message: t('initiateForm.errPractitionerConfirm', { defaultValue: 'Confirm the practitioner authorised it' }),
       })
     }
   })
@@ -133,6 +137,7 @@ export default function PrismInitiateForm({
   onSubmit: onSubmitProp,
   showPayloadPreview = false,
 }: PrismInitiateFormProps) {
+  const { t } = useTranslation('prismUi')
   const [submittedPayload, setSubmittedPayload] = useState<Record<string, unknown> | null>(null)
   const [questionnaireUrl, setQuestionnaireUrl] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
@@ -167,8 +172,8 @@ export default function PrismInitiateForm({
   const accountEmail = (access.data?.account?.email || user?.email || '').trim()
   const accountName = access.data?.account?.name || user?.fullName || user?.name || ''
   const resolver = useMemo(
-    () => zodResolver(schemaFor(accountEmail)) as Resolver<InitiateFormValues>,
-    [accountEmail],
+    () => zodResolver(schemaFor(accountEmail, t)) as Resolver<InitiateFormValues>,
+    [accountEmail, t],
   )
   // Offered only when the server says the caller has a practitioner to share
   // with. A failed read hides the option; it never blocks the request.
@@ -176,8 +181,11 @@ export default function PrismInitiateForm({
   const shareable = mine.data?.enabled ? mine.data.practitioners : []
   const shareLabel =
     shareable.length === 1
-      ? `Share my results with ${shareable[0].displayName}`
-      : 'Share my results with the practitioner I choose'
+      ? t('initiateForm.shareWithOne', {
+          defaultValue: 'Share my results with {{name}}',
+          name: shareable[0].displayName,
+        })
+      : t('initiateForm.shareWithChosen', { defaultValue: 'Share my results with the practitioner I choose' })
 
   const form = useForm<InitiateFormValues>({
     resolver,
@@ -294,7 +302,11 @@ export default function PrismInitiateForm({
       setSubmittedPayload(apiPayload)
       setQuestionnaireUrl(res?.action_url_1 ?? null)
       setSubmitted(true)
-      toast.success('PRISM assessment requested — the questionnaire link is ready.')
+      toast.success(
+        t('initiateForm.requestedToast', {
+          defaultValue: 'PRISM assessment requested — the questionnaire link is ready.',
+        }),
+      )
       onSubmitProp?.(values, apiPayload)
     } catch (err) {
       const asked = practitionerChoiceFrom(err)
@@ -316,7 +328,14 @@ export default function PrismInitiateForm({
       // A structured `detail` must never reach the toast as "[object Object]".
       const detail = apiErrorMessage(err)
       toast.error(
-        `Failed to request PRISM assessment${detail ? `: ${detail}` : '. Please try again.'}`,
+        detail
+          ? t('initiateForm.requestFailedDetail', {
+              defaultValue: 'Failed to request PRISM assessment: {{detail}}',
+              detail,
+            })
+          : t('initiateForm.requestFailed', {
+              defaultValue: 'Failed to request PRISM assessment. Please try again.',
+            }),
       )
     }
   }
@@ -360,6 +379,14 @@ export default function PrismInitiateForm({
     form.reset()
   }
 
+  // The candidate's name is bolded, so the sentence is split at the {{name}}
+  // slot rather than concatenated: word order stays the translator's.
+  const NAME_SLOT = '\u0001'
+  const [submittedBefore, submittedAfter = ''] = t('initiateForm.submittedDescription', {
+    defaultValue: 'The PRISM questionnaire has been created for {{name}}',
+    name: NAME_SLOT,
+  }).split(NAME_SLOT)
+
   // ── Success state ──
   // Gated on `submitted`, NOT on the presence of a questionnaire URL — a
   // request that succeeds without an `action_url_1` must still confirm to
@@ -370,13 +397,14 @@ export default function PrismInitiateForm({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-green-500" />
-            Assessment Request Submitted
+            {t('initiateForm.submittedTitle', { defaultValue: 'Assessment Request Submitted' })}
           </CardTitle>
           <CardDescription>
-            The PRISM questionnaire has been created for{' '}
+            {submittedBefore}
             <strong>
               {form.getValues('forename')} {form.getValues('surname')}
             </strong>
+            {submittedAfter}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -384,23 +412,23 @@ export default function PrismInitiateForm({
               immediately; fall back to an explanatory note. */}
           {questionnaireUrl ? (
             <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
-              <p className="text-sm font-medium">Questionnaire Link</p>
+              <p className="text-sm font-medium">{t('initiateForm.questionnaireLink', { defaultValue: 'Questionnaire Link' })}</p>
               <p className="text-xs text-muted-foreground break-all">
                 {questionnaireUrl}
               </p>
               <Button size="sm" asChild>
                 <a href={questionnaireUrl} target="_blank" rel="noopener noreferrer">
-                  Open Questionnaire <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                  {t('initiateForm.openQuestionnaire', { defaultValue: 'Open Questionnaire' })} <ExternalLink className="ml-1 h-3.5 w-3.5" />
                 </a>
               </Button>
             </div>
           ) : (
             <div className="rounded-lg border bg-muted/50 p-4">
               <p className="text-sm text-muted-foreground">
-                PRISM has accepted the request but has not returned a
-                questionnaire link yet. The candidate will receive the
-                questionnaire by email, and the link will appear here once
-                PRISM issues it.
+                {t('initiateForm.noLinkYet', {
+                  defaultValue:
+                    'PRISM has accepted the request but has not returned a questionnaire link yet. The candidate will receive the questionnaire by email, and the link will appear here once PRISM issues it.',
+                })}
               </p>
             </div>
           )}
@@ -410,7 +438,7 @@ export default function PrismInitiateForm({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">
-                  API Payload (sent to IG backend → PRISM)
+                  {t('initiateForm.apiPayload', { defaultValue: 'API Payload (sent to IG backend → PRISM)' })}
                 </p>
                 <Button variant="ghost" size="sm" onClick={handleCopyPayload}>
                   {copied ? (
@@ -418,7 +446,7 @@ export default function PrismInitiateForm({
                   ) : (
                     <ClipboardCopy className="mr-1 h-3.5 w-3.5" />
                   )}
-                  {copied ? 'Copied' : 'Copy'}
+                  {copied ? t('initiateForm.copied', { defaultValue: 'Copied' }) : t('initiateForm.copy', { defaultValue: 'Copy' })}
                 </Button>
               </div>
               <pre className="max-h-80 overflow-auto rounded-lg bg-slate-950 p-4 text-xs text-slate-300">
@@ -428,7 +456,7 @@ export default function PrismInitiateForm({
           )}
 
           <Button variant="outline" onClick={handleReset}>
-            Submit Another Request
+            {t('initiateForm.submitAnother', { defaultValue: 'Submit Another Request' })}
           </Button>
         </CardContent>
       </Card>
@@ -439,10 +467,12 @@ export default function PrismInitiateForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Request PRISM Assessment</CardTitle>
+        <CardTitle>{t('initiateForm.formTitle', { defaultValue: 'Request PRISM Assessment' })}</CardTitle>
         <CardDescription>
-          Register a user and request a PRISM Brain Mapping questionnaire.
-          All fields map to the PRISM CreateCandidate API.
+          {t('initiateForm.formDescription', {
+            defaultValue:
+              'Register a user and request a PRISM Brain Mapping questionnaire. All fields map to the PRISM CreateCandidate API.',
+          })}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -459,10 +489,12 @@ export default function PrismInitiateForm({
             <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="space-y-0.5">
-                  <p className="text-sm font-medium">Already a PRISM customer?</p>
+                  <p className="text-sm font-medium">{t('initiateForm.alreadyCustomer', { defaultValue: 'Already a PRISM customer?' })}</p>
                   <p className="text-xs text-muted-foreground">
-                    Check by email and questionnaire type — an existing customer
-                    can still request a new report without recreating the account.
+                    {t('initiateForm.checkHelp', {
+                      defaultValue:
+                        'Check by email and questionnaire type — an existing customer can still request a new report without recreating the account.',
+                    })}
                   </p>
                 </div>
                 <Button
@@ -477,7 +509,7 @@ export default function PrismInitiateForm({
                   ) : (
                     <Search className="mr-1.5 h-4 w-4" />
                   )}
-                  Check existing customer
+                  {t('initiateForm.checkExisting', { defaultValue: 'Check existing customer' })}
                 </Button>
               </div>
 
@@ -489,19 +521,24 @@ export default function PrismInitiateForm({
                       className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
                     >
                       <UserCheck className="h-3 w-3" />
-                      Existing PRISM customer found
+                      {t('initiateForm.customerFound', { defaultValue: 'Existing PRISM customer found' })}
                     </Badge>
                   ) : (
                     <Badge variant="outline">
                       <UserPlus className="h-3 w-3" />
-                      No existing record
+                      {t('initiateForm.noRecord', { defaultValue: 'No existing record' })}
                     </Badge>
                   )}
                   <p className="text-xs text-muted-foreground">
                     {customerCheck.message ??
                       (customerCheck.exists
-                        ? 'You can still request a new report — submit below to create another questionnaire for them.'
-                        : 'A new customer will be created when you submit.')}
+                        ? t('initiateForm.existsHint', {
+                            defaultValue:
+                              'You can still request a new report — submit below to create another questionnaire for them.',
+                          })
+                        : t('initiateForm.newHint', {
+                            defaultValue: 'A new customer will be created when you submit.',
+                          }))}
                   </p>
                   {customerCheck.exists && customerCheck.actionUrl && (
                     <Button size="sm" variant="ghost" asChild>
@@ -510,7 +547,7 @@ export default function PrismInitiateForm({
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        Open in PRISM
+                        {t('initiateForm.openInPrism', { defaultValue: 'Open in PRISM' })}
                         <ExternalLink className="ml-1 h-3.5 w-3.5" />
                       </a>
                     </Button>
@@ -523,9 +560,9 @@ export default function PrismInitiateForm({
 
             {/* ── Section: User Details ── */}
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold">Candidate Details</h3>
+              <h3 className="text-sm font-semibold">{t('initiateForm.candidateDetails', { defaultValue: 'Candidate Details' })}</h3>
               <p className="text-xs text-muted-foreground">
-                Personal information for PRISM registration
+                {t('initiateForm.candidateDetailsHelp', { defaultValue: 'Personal information for PRISM registration' })}
               </p>
             </div>
 
@@ -535,10 +572,10 @@ export default function PrismInitiateForm({
                 name="forename"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name *</FormLabel>
+                    <FormLabel>{t('initiateForm.firstName', { defaultValue: 'First Name *' })}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Jane"
+                        placeholder={t('initiateForm.firstNamePlaceholder', { defaultValue: 'Jane' })}
                         disabled={formDisabled}
                         {...field}
                       />
@@ -553,10 +590,10 @@ export default function PrismInitiateForm({
                 name="surname"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Last Name *</FormLabel>
+                    <FormLabel>{t('initiateForm.lastName', { defaultValue: 'Last Name *' })}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Smith"
+                        placeholder={t('initiateForm.lastNamePlaceholder', { defaultValue: 'Smith' })}
                         disabled={formDisabled}
                         {...field}
                       />
@@ -572,7 +609,7 @@ export default function PrismInitiateForm({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address *</FormLabel>
+                  <FormLabel>{t('initiateForm.email', { defaultValue: 'Email Address *' })}</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -588,8 +625,10 @@ export default function PrismInitiateForm({
                         is their configuration, unverified by us. Promising
                         delivery here made users wait for mail that may never
                         arrive instead of using the link we show on submit. */}
-                    Identifies the candidate to PRISM. The questionnaire link
-                    appears here on submit — use that to start the survey
+                    {t('initiateForm.emailHelp', {
+                      defaultValue:
+                        'Identifies the candidate to PRISM. The questionnaire link appears here on submit — use that to start the survey',
+                    })}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -599,18 +638,20 @@ export default function PrismInitiateForm({
             {otherEmail && (
               <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-3 dark:border-amber-700 dark:bg-amber-950/40">
                 <p className="text-sm">
-                  This email is not your account&apos;s. A survey for someone else
-                  needs the PRISM Practitioner who authorised it.
+                  {t('initiateForm.otherEmailNotice', {
+                    defaultValue:
+                      "This email is not your account's. A survey for someone else needs the PRISM Practitioner who authorised it.",
+                  })}
                 </p>
                 <FormField
                   control={form.control}
                   name="practitionerName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>PRISM Practitioner who authorised it *</FormLabel>
+                      <FormLabel>{t('initiateForm.practitionerAuthorised', { defaultValue: 'PRISM Practitioner who authorised it *' })}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Practitioner's name"
+                          placeholder={t('initiateForm.practitionerPlaceholder', { defaultValue: "Practitioner's name" })}
                           disabled={formDisabled}
                           {...field}
                         />
@@ -632,7 +673,7 @@ export default function PrismInitiateForm({
                         />
                       </FormControl>
                       <FormLabel className="text-sm font-normal">
-                        I confirm this practitioner authorised a survey for this person
+                        {t('initiateForm.practitionerConfirm', { defaultValue: 'I confirm this practitioner authorised a survey for this person' })}
                       </FormLabel>
                       <FormMessage />
                     </FormItem>
@@ -646,9 +687,9 @@ export default function PrismInitiateForm({
               name="organisation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Organisation *</FormLabel>
+                  <FormLabel>{t('initiateForm.organisation', { defaultValue: 'Organisation *' })}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Acme Corp" disabled={formDisabled} {...field} />
+                    <Input placeholder={t('initiateForm.organisationPlaceholder', { defaultValue: 'Acme Corp' })} disabled={formDisabled} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -659,9 +700,9 @@ export default function PrismInitiateForm({
 
             {/* ── Section: Questionnaire Config ── */}
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold">Questionnaire Configuration</h3>
+              <h3 className="text-sm font-semibold">{t('initiateForm.questionnaireConfig', { defaultValue: 'Questionnaire Configuration' })}</h3>
               <p className="text-xs text-muted-foreground">
-                Select the type and language for the PRISM questionnaire
+                {t('initiateForm.questionnaireConfigHelp', { defaultValue: 'Select the type and language for the PRISM questionnaire' })}
               </p>
             </div>
 
@@ -671,7 +712,7 @@ export default function PrismInitiateForm({
                 name="questionnaireTypeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Questionnaire Type *</FormLabel>
+                    <FormLabel>{t('initiateForm.questionnaireType', { defaultValue: 'Questionnaire Type *' })}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value?.toString()}
@@ -679,7 +720,7 @@ export default function PrismInitiateForm({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue placeholder={t('initiateForm.selectType', { defaultValue: 'Select type' })} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -691,7 +732,7 @@ export default function PrismInitiateForm({
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Foundation → Personal → Professional (upgradeable)
+                      {t('initiateForm.tierHelp', { defaultValue: 'Foundation → Personal → Professional (upgradeable)' })}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -703,7 +744,7 @@ export default function PrismInitiateForm({
                 name="languageId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Language</FormLabel>
+                    <FormLabel>{t('initiateForm.language', { defaultValue: 'Language' })}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value?.toString()}
@@ -711,7 +752,7 @@ export default function PrismInitiateForm({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select language" />
+                          <SelectValue placeholder={t('initiateForm.selectLanguage', { defaultValue: 'Select language' })} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -733,16 +774,16 @@ export default function PrismInitiateForm({
               name="reference"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Internal Reference</FormLabel>
+                  <FormLabel>{t('initiateForm.reference', { defaultValue: 'Internal Reference' })}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g. EMP-2026-042, Q1-Review"
+                      placeholder={t('initiateForm.referencePlaceholder', { defaultValue: 'e.g. EMP-2026-042, Q1-Review' })}
                       disabled={formDisabled}
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    Optional reference for tracking within your organisation
+                    {t('initiateForm.referenceHelp', { defaultValue: 'Optional reference for tracking within your organisation' })}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -753,9 +794,9 @@ export default function PrismInitiateForm({
 
             {/* ── Section: PRISM Options ── */}
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold">PRISM Options</h3>
+              <h3 className="text-sm font-semibold">{t('initiateForm.options', { defaultValue: 'PRISM Options' })}</h3>
               <p className="text-xs text-muted-foreground">
-                Account creation and payment settings
+                {t('initiateForm.optionsHelp', { defaultValue: 'Account creation and payment settings' })}
               </p>
             </div>
 
@@ -767,11 +808,13 @@ export default function PrismInitiateForm({
                   <FormItem className="flex items-center justify-between rounded-lg border p-3">
                     <div className="space-y-0.5">
                       <FormLabel className="text-sm font-medium">
-                        Create PRISM User Account
+                        {t('initiateForm.createUser', { defaultValue: 'Create PRISM User Account' })}
                       </FormLabel>
                       <FormDescription>
-                        Creates a login on the PRISM platform for this
-                        candidate. Only needed for first-time users.
+                        {t('initiateForm.createUserHelp', {
+                          defaultValue:
+                            'Creates a login on the PRISM platform for this candidate. Only needed for first-time users.',
+                        })}
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -793,11 +836,13 @@ export default function PrismInitiateForm({
                   <FormItem className="flex items-center justify-between rounded-lg border p-3">
                     <div className="space-y-0.5">
                       <FormLabel className="text-sm font-medium">
-                        Gift / Pre-paid
+                        {t('initiateForm.gift', { defaultValue: 'Gift / Pre-paid' })}
                       </FormLabel>
                       <FormDescription>
-                        Auto-marks as paid — the report will be immediately
-                        available without calling UnlockReport
+                        {t('initiateForm.giftHelp', {
+                          defaultValue:
+                            'Auto-marks as paid — the report will be immediately available without calling UnlockReport',
+                        })}
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -822,8 +867,10 @@ export default function PrismInitiateForm({
                     <div className="space-y-0.5">
                       <FormLabel className="text-sm font-medium">{shareLabel}</FormLabel>
                       <FormDescription>
-                        When your report is ready they will be able to see your PRISM
-                        profile. You can stop sharing at any time from Sharing.
+                        {t('initiateForm.shareHelp', {
+                          defaultValue:
+                            'When your report is ready they will be able to see your PRISM profile. You can stop sharing at any time from Sharing.',
+                        })}
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -846,11 +893,13 @@ export default function PrismInitiateForm({
                 aria-describedby="practitioner-choice-help"
               >
                 <legend className="px-1 text-sm font-medium">
-                  Which practitioner is this assessment for?
+                  {t('initiateForm.choiceLegend', { defaultValue: 'Which practitioner is this assessment for?' })}
                 </legend>
                 <p id="practitioner-choice-help" className="text-sm text-muted-foreground">
-                  You work with more than one practitioner. Choose whose PRISM
-                  account this survey is raised under.
+                  {t('initiateForm.choiceHelp', {
+                    defaultValue:
+                      'You work with more than one practitioner. Choose whose PRISM account this survey is raised under.',
+                  })}
                 </p>
                 <div className="space-y-2">
                   {choices.map((c) => (
@@ -871,7 +920,7 @@ export default function PrismInitiateForm({
                   onClick={submitWithPractitioner}
                   disabled={!chosen || requestSurvey.isPending}
                 >
-                  Request under this practitioner
+                  {t('initiateForm.requestUnder', { defaultValue: 'Request under this practitioner' })}
                 </Button>
               </fieldset>
             )}
@@ -882,7 +931,9 @@ export default function PrismInitiateForm({
                 {requestSurvey.isPending && (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 )}
-                {requestSurvey.isPending ? 'Requesting…' : 'Request Assessment'}
+                {requestSurvey.isPending
+                  ? t('initiateForm.requesting', { defaultValue: 'Requesting…' })
+                  : t('initiateForm.requestAssessment', { defaultValue: 'Request Assessment' })}
               </Button>
               <Button
                 type="button"
@@ -890,7 +941,7 @@ export default function PrismInitiateForm({
                 onClick={() => form.reset()}
                 disabled={formDisabled || requestSurvey.isPending}
               >
-                Clear Form
+                {t('initiateForm.clearForm', { defaultValue: 'Clear Form' })}
               </Button>
             </div>
           </form>

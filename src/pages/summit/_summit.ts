@@ -11,15 +11,19 @@
  * tidied, rather than vanishing: a label we haven't seen before is still better
  * information than an empty box.
  */
+import type { TFunction } from "i18next"
 import type { SummitGoal, SummitPrismAlignment } from "@/types/summit"
 
-/** Backend category key → the label a person reads. */
-export const CATEGORY_LABEL: Record<string, string> = {
-  history: "Career History",
-  job: "Current Job",
-  workplace: "Workplace",
-  ambitions: "Career Ambitions",
-  personal: "Personal",
+/** Backend category key → the label a person reads, or undefined for an unknown key. */
+function categoryText(raw: string, t: TFunction): string | undefined {
+  switch (raw) {
+    case "history": return t("labels.category.history", { defaultValue: "Career History" })
+    case "job": return t("labels.category.job", { defaultValue: "Current Job" })
+    case "workplace": return t("labels.category.workplace", { defaultValue: "Workplace" })
+    case "ambitions": return t("labels.category.ambitions", { defaultValue: "Career Ambitions" })
+    case "personal": return t("labels.category.personal", { defaultValue: "Personal" })
+    default: return undefined
+  }
 }
 
 /** The three ways a goal can sit against how someone is wired. */
@@ -31,10 +35,12 @@ const ALIGN_KIND: Record<string, AlignKind> = {
   counterbalance: "counter",
 }
 
-export const ALIGN_LABEL: Record<AlignKind, string> = {
-  lever: "Leverages strength",
-  stretch: "Requires stretch",
-  counter: "Counterbalance",
+export function alignLabel(kind: AlignKind, t: TFunction): string {
+  switch (kind) {
+    case "lever": return t("labels.align.lever", { defaultValue: "Leverages strength" })
+    case "stretch": return t("labels.align.stretch", { defaultValue: "Requires stretch" })
+    case "counter": return t("labels.align.counter", { defaultValue: "Counterbalance" })
+  }
 }
 
 export const ALIGN_STYLES: Record<AlignKind, string> = {
@@ -44,18 +50,24 @@ export const ALIGN_STYLES: Record<AlignKind, string> = {
 }
 
 /** How the goal is paced, given the person's dominant quadrant. */
-const STYLE_LABEL: Record<string, string> = {
-  gold_stepwise: "Stepwise",
-  blue_metrics: "Metric-led",
-  red_action: "Action-first",
-  green_momentum: "Momentum-based",
+function styleText(raw: string, t: TFunction): string | undefined {
+  switch (raw) {
+    case "gold_stepwise": return t("labels.style.gold_stepwise", { defaultValue: "Stepwise" })
+    case "blue_metrics": return t("labels.style.blue_metrics", { defaultValue: "Metric-led" })
+    case "red_action": return t("labels.style.red_action", { defaultValue: "Action-first" })
+    case "green_momentum": return t("labels.style.green_momentum", { defaultValue: "Momentum-based" })
+    default: return undefined
+  }
 }
 
 /** Which coach owns the goal. */
-const COACH_LABEL: Record<string, string> = {
-  job_mentor: "Job Mentor",
-  career_coach: "Career Coach",
-  prism_coach: "PRISM Coach",
+function coachText(raw: string, t: TFunction): string | undefined {
+  switch (raw) {
+    case "job_mentor": return t("labels.coach.job_mentor", { defaultValue: "Job Mentor" })
+    case "career_coach": return t("labels.coach.career_coach", { defaultValue: "Career Coach" })
+    case "prism_coach": return t("labels.coach.prism_coach", { defaultValue: "PRISM Coach" })
+    default: return undefined
+  }
 }
 
 /** `some_enum_value` → `Some enum value`. The fallback for every map above. */
@@ -65,21 +77,19 @@ function humanise(raw: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
-function lookup(map: Record<string, string>, raw: string | undefined): string {
+export function categoryLabel(raw: string | undefined, t: TFunction): string {
   if (!raw) return ""
-  return map[raw] ?? humanise(raw)
+  return categoryText(raw, t) ?? humanise(raw)
 }
 
-export function categoryLabel(raw: string | undefined): string {
-  return lookup(CATEGORY_LABEL, raw)
+export function styleLabel(raw: string | undefined, t: TFunction): string {
+  if (!raw) return ""
+  return styleText(raw, t) ?? humanise(raw)
 }
 
-export function styleLabel(raw: string | undefined): string {
-  return lookup(STYLE_LABEL, raw)
-}
-
-export function coachLabel(raw: string | undefined): string {
-  return lookup(COACH_LABEL, raw)
+export function coachLabel(raw: string | undefined, t: TFunction): string {
+  if (!raw) return ""
+  return coachText(raw, t) ?? humanise(raw)
 }
 
 /**
@@ -116,8 +126,8 @@ export function prismSummary(
 }
 
 /** Status → the pill's wording. Anything unrecognised renders as itself. */
-export function goalStatusLabel(status: SummitGoal["status"]): string {
-  if (status === "proposed") return "Proposed"
-  if (status === "confirmed") return "Confirmed"
+export function goalStatusLabel(status: SummitGoal["status"], t: TFunction): string {
+  if (status === "proposed") return t("labels.status.proposed", { defaultValue: "Proposed" })
+  if (status === "confirmed") return t("labels.status.confirmed", { defaultValue: "Confirmed" })
   return humanise(String(status ?? ""))
 }

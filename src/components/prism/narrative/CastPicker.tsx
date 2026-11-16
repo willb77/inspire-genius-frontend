@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -42,15 +43,26 @@ export default function CastPicker({
    */
   capHint?: ReactNode
 }) {
+  const { t } = useTranslation("prismUi")
   if (loading) return <Skeleton className="h-24 w-full" />
+
+  // The tab name is bolded, so the sentence is split at the {{tab}} slot rather
+  // than concatenated: word order stays the translator's.
+  const TAB_SLOT = "\u0001"
+  const [emptyBefore, emptyAfter = ""] = t("castPicker.empty", {
+    defaultValue:
+      "No saved characters yet. Build one on the {{tab}} tab and save it — this list reads from what you have saved, not from the tab you left open.",
+    tab: TAB_SLOT,
+  }).split(TAB_SLOT)
 
   if (!profiles.length) {
     return (
       <p className="text-sm text-muted-foreground">
         {empty ?? (
           <>
-            No saved characters yet. Build one on the <strong>Build</strong> tab and save it —
-            this list reads from what you have saved, not from the tab you left open.
+            {emptyBefore}
+            <strong>{t("castPicker.buildTab", { defaultValue: "Build" })}</strong>
+            {emptyAfter}
           </>
         )}
       </p>
@@ -97,10 +109,12 @@ export default function CastPicker({
                 {(typeof p.scored === "number" || p.has_analysis) && (
                   <span className="mt-0.5 block text-xs text-muted-foreground">
                     {typeof p.scored === "number"
-                      ? `${p.scored} scale${p.scored === 1 ? "" : "s"} scored`
+                      ? p.scored === 1
+                        ? t("castPicker.scaleScoredOne", { defaultValue: "{{count}} scale scored", count: p.scored })
+                        : t("castPicker.scaleScoredOther", { defaultValue: "{{count}} scales scored", count: p.scored })
                       : ""}
                     {typeof p.scored === "number" && p.has_analysis ? " · " : ""}
-                    {p.has_analysis ? "analysed" : ""}
+                    {p.has_analysis ? t("castPicker.analysed", { defaultValue: "analysed" }) : ""}
                   </span>
                 )}
               </Label>
@@ -109,8 +123,19 @@ export default function CastPicker({
         })}
       </div>
       <p className="text-xs text-muted-foreground">
-        {selected.length} selected · needs at least {min}, at most {max}.
-        {atCap && (capHint ?? " Deselect one to choose a different character.")}
+        {t("castPicker.selectionSummary", {
+          defaultValue: "{{selected}} selected · needs at least {{min}}, at most {{max}}.",
+          selected: selected.length,
+          min,
+          max,
+        })}
+        {atCap &&
+          (capHint ?? (
+            <>
+              {" "}
+              {t("castPicker.capHint", { defaultValue: "Deselect one to choose a different character." })}
+            </>
+          ))}
       </p>
     </div>
   )

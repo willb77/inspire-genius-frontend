@@ -1,22 +1,27 @@
+import { useTranslation } from "react-i18next"
 import { Card, CardContent } from "@/components/ui/card"
 import { discoveryErrorMessage, useDiscoveryCareers } from "@/hooks/career-discovery/useCareerDiscovery"
 import { DiscoveryError, DiscoveryLoading, NoticeCard, StageHeader } from "./DiscoveryParts"
 import { useDiscoveryContext } from "./discoveryContext"
 
 export default function CareersPage() {
+  const { t } = useTranslation("careerDiscoveryPages")
   const { journey } = useDiscoveryContext()
   const { data, isLoading, isError, error } = useDiscoveryCareers(journey.mayProceed)
-  if (isLoading) return <DiscoveryLoading label="Ranking career areas" />
+  if (isLoading) return <DiscoveryLoading label={t("careersLoading", "Ranking career areas")} />
   if (isError || !data) return <DiscoveryError message={discoveryErrorMessage(error)} />
   return (
     <div className="space-y-6">
       <StageHeader
-        title="Career areas"
-        lead="Kinds of work ranked against how you're wired. Closer is a better natural fit — not the only thing you can do."
+        title={t("careersTitle", "Career areas")}
+        lead={t(
+          "careersLead",
+          "Kinds of work ranked against how you're wired. Closer is a better natural fit — not the only thing you can do."
+        )}
       />
       {data.families.length === 0 ? (
-        <NoticeCard title="Nothing to rank yet">
-          <p>{data.note ?? "Add your PRISM and your career areas will appear here."}</p>
+        <NoticeCard title={t("careersEmptyTitle", "Nothing to rank yet")}>
+          <p>{data.note ?? t("careersEmptyBody", "Add your PRISM and your career areas will appear here.")}</p>
         </NoticeCard>
       ) : (
         <ol className="space-y-3">
@@ -27,7 +32,7 @@ export default function CareersPage() {
                   <span className="font-medium">
                     {i + 1}. {f.family}
                   </span>
-                  <span className="text-muted-foreground">{Math.round(f.affinity)}% natural fit</span>
+                  <span className="text-muted-foreground">{t("careersNaturalFit", { defaultValue: "{{percent}}% natural fit", percent: Math.round(f.affinity) })}</span>
                 </CardContent>
               </Card>
             </li>
