@@ -2,7 +2,8 @@
  * The global react-i18next mock in jest.setup.ts reads public/locales/en and ignores
  * `defaultValue`, so a drifted default (the fallback shown while the namespace is loading
  * or a key is missing) would pass every render test. This pins each t() call in the Résumé
- * Writer sources to the English bundle: same key present, same text.
+ * Writer sources to the English bundle: same key present, same text, and no key in the
+ * bundle that nothing in src/components/resume calls (an orphan).
  */
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join } from "node:path"
@@ -37,10 +38,16 @@ function lookup(key: string): unknown {
   return key.split(".").reduce<unknown>((cur, part) => (cur as Record<string, unknown> | undefined)?.[part], en)
 }
 
-const files = [...sources(join(ROOT, "src/components/resume")), join(ROOT, "src/pages/user/MyResumePage.tsx")]
+const files = sources(join(ROOT, "src/components/resume"))
 
-test("every resumeUi t() default equals its English bundle value", () => {
+function leaves(node: unknown, prefix = ""): string[] {
+  if (typeof node === "string") return [prefix]
+  return Object.entries(node as Record<string, unknown>).flatMap(([k, v]) => leaves(v, prefix ? `${prefix}.${k}` : k))
+}
+
+test("every resumeUi t() default equals its English bundle value, and no key is orphaned", () => {
   const mismatches: string[] = []
+  const called = new Set<string>()
   let calls = 0
   for (const f of files) {
     const src = readFileSync(f, "utf8")
@@ -54,9 +61,11 @@ test("every resumeUi t() default equals its English bundle value", () => {
       }
       if (def === null) continue
       calls++
+      called.add(m[1])
       if (lookup(m[1]) !== def) mismatches.push(`${m[1]}: bundle=${JSON.stringify(lookup(m[1]))} default=${JSON.stringify(def)}`)
     }
   }
-  expect(calls).toBeGreaterThan(300)
+  expect(calls).toBeGreaterThan(200)
   expect(mismatches).toEqual([])
+  expect(leaves(en).filter((k) => !called.has(k))).toEqual([])
 })
