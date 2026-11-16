@@ -78,6 +78,17 @@ const LOCALES_DIR = path.resolve(
   "../../public/locales"
 );
 
+// Namespaces registered in scripts/i18n/pending/ are extracted (present in en) but not yet
+// translated, so the other languages do not have the file. Only a REGISTERED namespace is
+// excused from the per-language file count below; an unregistered stray file still fails.
+const PENDING_DIR = path.resolve(__dirname, "../../scripts/i18n/pending");
+const PENDING_NAMESPACES = fs.existsSync(PENDING_DIR)
+  ? fs
+      .readdirSync(PENDING_DIR)
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => f.replace(/\.json$/, ""))
+  : [];
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  Helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -134,7 +145,11 @@ describe("Locale file existence", () => {
     for (const lang of SUPPORTED_LNGS) {
       const files = fs
         .readdirSync(path.join(LOCALES_DIR, lang))
-        .filter((f) => f.endsWith(".json"));
+        .filter(
+          (f) =>
+            f.endsWith(".json") &&
+            !PENDING_NAMESPACES.includes(f.replace(/\.json$/, ""))
+        );
       expect(files.length).toBe(NAMESPACES.length);
     }
   });
