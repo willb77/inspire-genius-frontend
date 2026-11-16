@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { useRef, useEffect, useState, useCallback } from "react"
 import { motion } from "framer-motion"
 import WaveSurfer from "wavesurfer.js"
@@ -14,6 +15,7 @@ interface AudioPlayerProps {
 }
 
 export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloadWhilePlaying = true }: AudioPlayerProps) {
+  const { t } = useTranslation("shellUi")
   const SPEAKER_OFF_KEY = "isSpeker"
   const containerRef = useRef<HTMLDivElement>(null)
   const waveRef = useRef<HTMLDivElement>(null)
@@ -340,7 +342,7 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
             <button
               type="button"
               onClick={skipBackward}
-              aria-label="Skip backward 10 seconds"
+              aria-label={t("audioPlayer.skipBack", { defaultValue: "Skip backward 10 seconds" })}
               className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/20 text-white grid place-items-center"
             >
               <SkipBack className="h-4 w-4" />
@@ -349,7 +351,7 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
             <button
               type="button"
               onClick={togglePlayPause}
-              aria-label={isPlaying ? "Pause" : "Play"}
+              aria-label={isPlaying ? t("audioPlayer.pause", { defaultValue: "Pause" }) : t("audioPlayer.play", { defaultValue: "Play" })}
               className="h-9 w-9 rounded-full bg-white text-indigo-700 grid place-items-center shadow ring-2 ring-white/50"
             >
               {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
@@ -358,7 +360,7 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
             <button
               type="button"
               onClick={skipForward}
-              aria-label="Skip forward 10 seconds"
+              aria-label={t("audioPlayer.skipForward", { defaultValue: "Skip forward 10 seconds" })}
               className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/20 text-white grid place-items-center"
             >
               <SkipForward className="h-4 w-4" />
@@ -392,7 +394,7 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
                   seekToTime(t)
                 }}
                 className="w-full h-1.5 rounded-full bg-white/25 accent-white cursor-pointer"
-                aria-label="Seek"
+                aria-label={t("audioPlayer.seek", { defaultValue: "Seek" })}
                 disabled={duration <= 0}
               />
               <div className="text-white/90 text-xs font-semibold whitespace-nowrap">
@@ -404,7 +406,7 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
           <button
             type="button"
             onClick={replay}
-            aria-label="Replay from start"
+            aria-label={t("audioPlayer.replay", { defaultValue: "Replay from start" })}
             className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/20 text-white grid place-items-center"
           >
             <RotateCcw className="h-4 w-4" />
@@ -417,7 +419,7 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
             <button
               type="button"
               onClick={toggleMute}
-              aria-label={isMuted ? "Unmute" : "Mute"}
+              aria-label={isMuted ? t("audioPlayer.unmute", { defaultValue: "Unmute" }) : t("audioPlayer.mute", { defaultValue: "Mute" })}
               className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/20 text-white grid place-items-center"
             >
               {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -442,13 +444,13 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
                 }
               }}
               className="w-full h-1.5 rounded-full bg-white/25 accent-white cursor-pointer"
-              aria-label="Volume control"
+              aria-label={t("audioPlayer.volume", { defaultValue: "Volume control" })}
             />
           </div>
 
           <div className="flex items-center gap-2 text-white/90 text-xs font-semibold whitespace-nowrap">
             <span className={`h-1.5 w-1.5 rounded-full ${isPlaying ? "bg-green-400" : "bg-yellow-300"}`} />
-            {isPlaying ? "PLAYING" : "PAUSED"}
+            {isPlaying ? t("audioPlayer.playing", { defaultValue: "PLAYING" }) : t("audioPlayer.paused", { defaultValue: "PAUSED" })}
           </div>
 
           <div className="flex items-center gap-2">

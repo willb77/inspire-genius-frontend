@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import React from "react"
 import { AlertTriangle, Inbox, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -45,9 +46,10 @@ export type PageStateProps =
     }
 
 export function PageState(props: PageStateProps) {
+  const { t } = useTranslation("shellUi")
   if (props.kind === "loading") {
     return (
-      <div className={cn("space-y-3", props.className)} role="status" aria-label="Loading">
+      <div className={cn("space-y-3", props.className)} role="status" aria-label={t("pageState.loading", { defaultValue: "Loading" })}>
         {Array.from({ length: props.rows ?? 3 }).map((_, i) => (
           <Skeleton key={i} className="h-12 w-full bg-muted" />
         ))}
@@ -71,7 +73,7 @@ export function PageState(props: PageStateProps) {
           )}
           {props.helpHref && (
             <Button variant="ghost" size="sm" asChild>
-              <a href={props.helpHref}>Get help</a>
+              <a href={props.helpHref}>{t("pageState.getHelp", { defaultValue: "Get help" })}</a>
             </Button>
           )}
         </div>
@@ -109,6 +111,7 @@ export function PageState(props: PageStateProps) {
 
 /** One shared banner for any page still showing sample data (demo builds only). */
 export function SampleDataBanner({ className }: { className?: string }) {
+  const { t } = useTranslation("shellUi")
   return (
     <div
       role="note"
@@ -117,7 +120,7 @@ export function SampleDataBanner({ className }: { className?: string }) {
         className,
       )}
     >
-      Sample data — not your organization's.
+      {t("pageState.sampleData", { defaultValue: "Sample data — not your organization's." })}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { Check, Circle } from "lucide-react"
 import { checkPassword } from "@/lib/house/passwordRule"
 import { cn } from "@/lib/utils"
@@ -7,8 +8,9 @@ import { cn } from "@/lib/utils"
  * met, so people see what is missing before they submit, not after.
  */
 export function PasswordChecklist({ password, className }: { password: string; className?: string }) {
+  const { t } = useTranslation("shellUi")
   return (
-    <ul className={cn("mt-2 space-y-1 text-left text-xs", className)} aria-label="Password rules">
+    <ul className={cn("mt-2 space-y-1 text-left text-xs", className)} aria-label={t("passwordChecklist.ariaLabel", { defaultValue: "Password rules" })}>
       {checkPassword(password).map((c) => (
         <li
           key={c.key}
@@ -22,7 +24,7 @@ export function PasswordChecklist({ password, className }: { password: string; c
           )}
           <span>
             {c.label}
-            <span className="sr-only">{c.met ? " — done" : " — still needed"}</span>
+            <span className="sr-only">{c.met ? t("passwordChecklist.done", { defaultValue: " — done" }) : t("passwordChecklist.needed", { defaultValue: " — still needed" })}</span>
           </span>
         </li>
       ))}

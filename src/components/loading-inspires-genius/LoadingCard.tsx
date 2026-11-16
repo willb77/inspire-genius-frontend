@@ -1,9 +1,11 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { motion } from "framer-motion"
 import AINeuralLoader from "./ai-neural-loader"
 
 export default function LoadingPage() {
+  const { t } = useTranslation("shellUi")
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 overflow-hidden relative">
       <div className="absolute inset-0 overflow-hidden">
@@ -51,7 +53,7 @@ export default function LoadingPage() {
               INSPIRES GENIUS
             </span>
           </h1>
-          <p className="text-cyan-200/60 mt-4 text-lg font-light">Initializing AI Intelligence...</p>
+          <p className="text-cyan-200/60 mt-4 text-lg font-light">{t("loadingCard.initializing", { defaultValue: "Initializing AI Intelligence..." })}</p>
         </motion.div>
 
         <motion.div className="flex items-center gap-3">
@@ -60,7 +62,7 @@ export default function LoadingPage() {
             transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
             className="text-sm text-cyan-300 font-semibold tracking-widest"
           >
-            PROCESSING
+            {t("loadingCard.processing", { defaultValue: "PROCESSING" })}
           </motion.div>
           <div className="flex gap-1">
             {[0, 1, 2].map((i) => (

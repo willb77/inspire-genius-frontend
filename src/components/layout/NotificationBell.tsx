@@ -6,6 +6,7 @@
  * with severity accents and a "mark all read" action. Clicking an item marks
  * it read and opens its full branded body in a dialog.
  */
+import { useTranslation } from "react-i18next"
 import { useState } from "react"
 import { Bell, CheckCheck } from "lucide-react"
 
@@ -22,6 +23,7 @@ import {
 import type { NotificationItem } from "@/types/broadcast"
 
 export default function NotificationBell() {
+  const { t } = useTranslation("shellUi")
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState<NotificationItem | null>(null)
   const { data: unread = 0 } = useUnreadCount()
@@ -40,7 +42,7 @@ export default function NotificationBell() {
         <PopoverTrigger asChild>
           <button
             className="relative flex h-11 w-11 items-center justify-center rounded-lg hover:bg-ig-icon-hover md:h-9 md:w-9"
-            aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}
+            aria-label={unread ? t("notificationBell.ariaLabelUnread", { defaultValue: "Notifications ({{n}} unread)", n: unread }) : t("notificationBell.ariaLabel", { defaultValue: "Notifications" })}
           >
             <Bell className="h-[18px] w-[18px] text-ig-icon-muted" />
             {unread > 0 && (
@@ -52,21 +54,21 @@ export default function NotificationBell() {
         </PopoverTrigger>
         <PopoverContent align="end" className="ig-light-island w-80 p-0">
           <div className="flex items-center justify-between border-b border-[#e5e7eb] px-3 py-2">
-            <span className="text-sm font-semibold text-[#111827]">Notifications</span>
+            <span className="text-sm font-semibold text-[#111827]">{t("notificationBell.title", { defaultValue: "Notifications" })}</span>
             {notifications.some((n) => !n.read_at) && (
               <button
                 onClick={() => markAll.mutate()}
                 className="flex items-center gap-1 text-xs font-medium text-[#3B5BFF] hover:underline"
               >
-                <CheckCheck className="h-3.5 w-3.5" /> Mark all read
+                <CheckCheck className="h-3.5 w-3.5" /> {t("notificationBell.markAllRead", { defaultValue: "Mark all read" })}
               </button>
             )}
           </div>
           <div className="max-h-96 overflow-y-auto">
             {isLoading ? (
-              <p className="px-3 py-6 text-center text-sm text-[#9ca3af]">Loading…</p>
+              <p className="px-3 py-6 text-center text-sm text-[#9ca3af]">{t("notificationBell.loading", { defaultValue: "Loading…" })}</p>
             ) : notifications.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-[#9ca3af]">You&apos;re all caught up.</p>
+              <p className="px-3 py-6 text-center text-sm text-[#9ca3af]">{t("notificationBell.caughtUp", { defaultValue: "You're all caught up." })}</p>
             ) : (
               notifications.map((n) => {
                 const meta = SEVERITY_META[n.severity]
@@ -98,7 +100,7 @@ export default function NotificationBell() {
       <Dialog open={!!active} onOpenChange={(o) => !o && setActive(null)}>
         <DialogContent className="max-w-2xl p-0">
           <DialogHeader className="sr-only">
-            <DialogTitle>{active?.title ?? "Notification"}</DialogTitle>
+            <DialogTitle>{active?.title ?? t("notificationBell.fallbackTitle", { defaultValue: "Notification" })}</DialogTitle>
           </DialogHeader>
           {active && (
             <iframe

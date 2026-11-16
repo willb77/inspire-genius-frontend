@@ -19,6 +19,7 @@
  * while the menu is open — so the report query never runs just because the
  * page rendered, matching the lazy pattern the "Behavioral map" dialog uses.
  */
+import { useTranslation } from "react-i18next"
 import { useState, type JSX } from "react"
 import { ChevronDown, Brain, FileText, Loader2 } from "lucide-react"
 import { toast } from "sonner"
@@ -49,6 +50,7 @@ import {
  * — not on every HomeV2 render.
  */
 function PrismReportPdfItem(): JSX.Element {
+  const { t } = useTranslation("shellUi")
   const { data: report, isLoading } = useMyPrismReport()
   const download = useMyPrismReportDownloadUrl()
   // Availability no longer requires a poll-ingest row: the resolver serves the
@@ -81,9 +83,9 @@ function PrismReportPdfItem(): JSX.Element {
           // the current tab would lose Home — the very thing being fixed — so
           // offer the link instead. Clicking the toast action is itself a user
           // gesture, so opening with the URL up front is not blocked.
-          toast.error("Your browser blocked the report window.", {
+          toast.error(t("prismDataMenu.popupBlocked", { defaultValue: "Your browser blocked the report window." }), {
             action: {
-              label: "Open report",
+              label: t("prismDataMenu.openReport", { defaultValue: "Open report" }),
               onClick: () => window.open(url, "_blank", "noopener,noreferrer"),
             },
           })
@@ -91,7 +93,7 @@ function PrismReportPdfItem(): JSX.Element {
       })
       .catch(() => {
         win?.close()
-        toast.error("Couldn't open your PRISM report. Please try again.")
+        toast.error(t("prismDataMenu.openFailed", { defaultValue: "Couldn't open your PRISM report. Please try again." }))
       })
   }
 
@@ -111,11 +113,11 @@ function PrismReportPdfItem(): JSX.Element {
         ) : (
           <FileText className="size-4" aria-hidden="true" />
         )}
-        <span>PRISM Report (PDF)</span>
+        <span>{t("prismDataMenu.reportPdf", { defaultValue: "PRISM Report (PDF)" })}</span>
       </DropdownMenuItem>
       {!isLoading && !pdfReady ? (
         <p className="px-2 pb-1.5 pt-0.5 text-[11px] text-muted-foreground">
-          Your PDF isn't ready yet.
+          {t("prismDataMenu.pdfNotReady", { defaultValue: "Your PDF isn't ready yet." })}
         </p>
       ) : null}
     </>
@@ -123,6 +125,7 @@ function PrismReportPdfItem(): JSX.Element {
 }
 
 export function PrismDataMenu(): JSX.Element {
+  const { t } = useTranslation("shellUi")
   const [mapOpen, setMapOpen] = useState(false)
 
   return (
@@ -136,7 +139,7 @@ export function PrismDataMenu(): JSX.Element {
             className="w-full border-ig-line text-ig-ink sm:w-auto"
           >
             <FileText className="size-4" />
-            Prism Data
+            {t("prismDataMenu.trigger", { defaultValue: "Prism Data" })}
             <ChevronDown className="size-4 opacity-70" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
@@ -147,7 +150,7 @@ export function PrismDataMenu(): JSX.Element {
             onSelect={() => setMapOpen(true)}
           >
             <Brain className="size-4" aria-hidden="true" />
-            <span>Brain Map</span>
+            <span>{t("prismDataMenu.brainMap", { defaultValue: "Brain Map" })}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -155,9 +158,9 @@ export function PrismDataMenu(): JSX.Element {
       <Dialog open={mapOpen} onOpenChange={setMapOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Your PRISM Brain Map</DialogTitle>
+            <DialogTitle>{t("prismDataMenu.dialogTitle", { defaultValue: "Your PRISM Brain Map" })}</DialogTitle>
             <DialogDescription>
-              Your PRISM 8-dimension profile plotted on the behavioral map.
+              {t("prismDataMenu.dialogDescription", { defaultValue: "Your PRISM 8-dimension profile plotted on the behavioral map." })}
             </DialogDescription>
           </DialogHeader>
           {mapOpen ? <PrismSelfMapContent /> : null}

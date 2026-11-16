@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
@@ -40,6 +41,7 @@ function formatDate(d: Date): string {
 }
 
 export default function QuickActions({ actions }: QuickActionsProps) {
+  const { t } = useTranslation("shellUi")
   const navigate = useNavigate()
   const [dateMode, setDateMode] = useState<DateMode>("day")
   const today = new Date()
@@ -49,7 +51,7 @@ export default function QuickActions({ actions }: QuickActionsProps) {
       {/* Date Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
         <div className="text-xs sm:text-[13px] font-semibold text-[#111827]">
-          Quick Actions — <span className="text-[#3B5BFF]">{formatDate(today)}</span>
+          {t("quickActions.title", { defaultValue: "Quick Actions —" })}{" "}<span className="text-[#3B5BFF]">{formatDate(today)}</span>
         </div>
         <div className="flex rounded-lg border border-[#e5e7eb] overflow-hidden">
           {(["day", "month", "range"] as const).map((m) => (
@@ -61,7 +63,7 @@ export default function QuickActions({ actions }: QuickActionsProps) {
                 dateMode === m ? "bg-[#3B5BFF] text-white" : "bg-white text-[#374151] hover:bg-[#f3f4f6]"
               )}
             >
-              {m}
+              {t(`quickActions.mode.${m}`, { defaultValue: m })}
             </button>
           ))}
         </div>

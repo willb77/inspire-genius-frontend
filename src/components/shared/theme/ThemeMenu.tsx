@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Palette } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -10,6 +11,7 @@ import { IG_THEMES, IG_TILES, findIgTheme, isThemedPath } from "@/lib/theme/igTh
  * (UserTopHeader checks `useThemesAllowed`).
  */
 export default function ThemeMenu() {
+  const { t: tr } = useTranslation("shellUi");
   const { pathname } = useLocation();
   const { theme, tile, setTheme, setTile } = useIgTheme();
   const current = findIgTheme(theme);
@@ -20,7 +22,7 @@ export default function ThemeMenu() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`Theme: ${current.label}`}
+          aria-label={tr("themeMenu.triggerLabel", { defaultValue: "Theme: {{label}}", label: current.label })}
           data-testid="ig-theme-menu-trigger"
           className="flex h-11 w-11 items-center justify-center rounded-lg text-ig-icon-muted hover:bg-ig-icon-hover md:h-9 md:w-9"
         >
@@ -28,15 +30,15 @@ export default function ThemeMenu() {
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-4" data-testid="ig-theme-menu">
-        <p className="text-sm font-semibold">Appearance</p>
+        <p className="text-sm font-semibold">{tr("themeMenu.appearance", { defaultValue: "Appearance" })}</p>
         {!themedHere && (
           <p className="mt-1 text-xs text-muted-foreground" data-testid="ig-theme-scope-note">
-            Colour themes show on Home for now. Night Light and Grayscale work on every page.
+            {tr("themeMenu.scopeNote", { defaultValue: "Colour themes show on Home for now. Night Light and Grayscale work on every page." })}
           </p>
         )}
 
         <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground" id="ig-theme-label">
-          Theme
+          {tr("themeMenu.theme", { defaultValue: "Theme" })}
         </p>
         <div role="radiogroup" aria-labelledby="ig-theme-label" className="mt-2 grid grid-cols-2 gap-2">
           {IG_THEMES.map((t) => {
@@ -64,7 +66,7 @@ export default function ThemeMenu() {
         </div>
 
         <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground" id="ig-tile-label">
-          Tile colour
+          {tr("themeMenu.tileColour", { defaultValue: "Tile colour" })}
         </p>
         <div role="radiogroup" aria-labelledby="ig-tile-label" className="mt-2 flex flex-wrap gap-2">
           {IG_TILES.map((t) => {
@@ -75,7 +77,7 @@ export default function ThemeMenu() {
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                aria-label={`Tile colour: ${t.label}`}
+                aria-label={tr("themeMenu.tileColourLabel", { defaultValue: "Tile colour: {{label}}", label: t.label })}
                 title={t.label}
                 onClick={() => setTile(t.id)}
                 className={cn(
@@ -85,7 +87,7 @@ export default function ThemeMenu() {
                 )}
                 style={t.id ? { background: t.id } : undefined}
               >
-                {t.id ? null : "Auto"}
+                {t.id ? null : tr("themeMenu.auto", { defaultValue: "Auto" })}
               </button>
             );
           })}

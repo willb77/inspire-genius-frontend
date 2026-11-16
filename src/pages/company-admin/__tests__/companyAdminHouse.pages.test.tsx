@@ -25,7 +25,11 @@ jest.mock("@/components/job-blueprint/validation/ValidationReviewQueue", () => (
 }))
 jest.mock("@/context/useAuth", () => ({ useAuth: () => ({ user: null }) }))
 jest.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (k: string) => k, i18n: { language: "en" } }),
+  // Honour defaultValue like the real library: shared chrome (PageState) now translates its own words.
+  useTranslation: () => ({
+    t: (k: string, o?: { defaultValue?: string }) => o?.defaultValue ?? k,
+    i18n: { language: "en" },
+  }),
 }))
 jest.mock("sonner", () => ({ toast: { info: jest.fn(), success: jest.fn(), error: jest.fn() } }))
 jest.mock("@/hooks/useMinorConsent", () => ({

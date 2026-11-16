@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { AlertTriangle } from "lucide-react";
 import { useSystemStatus } from "@/hooks/agents/useSystemStatus";
 
@@ -13,6 +14,7 @@ import { useSystemStatus } from "@/hooks/agents/useSystemStatus";
  * `useSystemStatus().data?.ecosystem_enabled`.
  */
 export function EcosystemStatusBanner() {
+  const { t } = useTranslation("shellUi");
   const { data, isLoading, isError } = useSystemStatus();
 
   // Treat unreachable agent-engine as a degraded state too (non-fatal —
@@ -23,8 +25,8 @@ export function EcosystemStatusBanner() {
   if (ecosystemUp) return null;
 
   const message = isError
-    ? "Agent ecosystem is unreachable. Chat is running on the monolith fallback."
-    : "Agent ecosystem is temporarily disabled. Chat is running on the monolith fallback.";
+    ? t("ecosystemBanner.unreachable", { defaultValue: "Agent ecosystem is unreachable. Chat is running on the monolith fallback." })
+    : t("ecosystemBanner.disabled", { defaultValue: "Agent ecosystem is temporarily disabled. Chat is running on the monolith fallback." });
 
   return (
     <div

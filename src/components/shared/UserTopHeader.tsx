@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ChevronDown, PlayCircle } from "lucide-react";
 import NotificationBell from "@/components/layout/NotificationBell";
 import {
@@ -17,6 +18,7 @@ import ThemeMenu from "@/components/shared/theme/ThemeMenu";
 import { useThemesAllowed } from "@/hooks/useIgTheme";
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 import { INTERVIEW_GUIDE_LABEL } from "@/components/interview/house/practiceWords";
+import type { TFunction } from "i18next";
 
 /**
  * The My Workspace tour (4:13), narrated: Home and the seven sidebar pages.
@@ -102,40 +104,41 @@ const matchesPrefix = (pathname: string, prefixes: string[]) =>
 type GuidePill = { label: string; url: string; testId: string };
 
 /** Which guide film, if any, the header offers on this route. */
-function guidePillFor(pathname: string): GuidePill | null {
+function guidePillFor(pathname: string, t: TFunction): GuidePill | null {
   if (matchesPrefix(pathname, INTERVIEW_STUDIO_PREFIXES)) {
     return {
       // House style (interview area, OFF by default): the film covers every
       // interview page, not just Interview Studio, so it is titled for that.
-      label: isHouseStyleOn("interview") ? INTERVIEW_GUIDE_LABEL : "Watch: Interview Studio",
+      label: isHouseStyleOn("interview") ? INTERVIEW_GUIDE_LABEL : t("userTopHeader.watchInterviewStudio", { defaultValue: "Watch: Interview Studio" }),
       url: INTERVIEW_STUDIO_GUIDE_VIDEO_URL,
       testId: "interview-studio-guide-video",
     };
   }
   if (matchesPrefix(pathname, GOALS_STUDIO_PREFIXES)) {
     return {
-      label: "Watch: Goals Studio",
+      label: t("userTopHeader.watchGoalsStudio", { defaultValue: "Watch: Goals Studio" }),
       url: GOALS_STUDIO_GUIDE_VIDEO_URL,
       testId: "goals-studio-guide-video",
     };
   }
   if (matchesPrefix(pathname, ROLE_CONSOLE_PREFIXES)) return null;
   return {
-    label: "Watch: My Workspace guide",
+    label: t("userTopHeader.watchWorkspaceGuide", { defaultValue: "Watch: My Workspace guide" }),
     url: WORKSPACE_GUIDE_VIDEO_URL,
     testId: "workspace-guide-video",
   };
 }
 
 export default function UserTopHeader() {
+  const { t } = useTranslation("shellUi");
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const guide = guidePillFor(pathname);
+  const guide = guidePillFor(pathname, t);
   const themesOn = useThemesAllowed();
   const email = user?.email ?? "";
   const role = user?.role ?? "";
-  const fallbackName = (email && email.split("@")[0]) || "User";
+  const fallbackName = (email && email.split("@")[0]) || t("userTopHeader.fallbackName", { defaultValue: "User" });
   const displayName = (user?.fullName && user.fullName.trim()) ? (user.fullName as string) : fallbackName;
   const initial = (displayName?.[0] ?? "U").toUpperCase();
   return (
@@ -146,9 +149,9 @@ export default function UserTopHeader() {
           name keep truncating instead of pushing the pill off the header. */}
       <div className="ml-1 flex-1 min-w-0 flex items-center gap-3">
         <div className="min-w-0 flex flex-col text-left">
-          <p className="font-serif text-sm sm:text-base md:text-2xl font-medium text-ig-ink truncate">Welcome! {displayName}</p>
+          <p className="font-serif text-sm sm:text-base md:text-2xl font-medium text-ig-ink truncate">{t("userTopHeader.welcome", { defaultValue: "Welcome! {{name}}", name: displayName })}</p>
           <p className="text-xs text-ig-nav-fg hidden sm:block">
-            Your AI coaches are ready—let’s begin!
+            {t("userTopHeader.subtitle", { defaultValue: "Your AI coaches are ready—let’s begin!" })}
           </p>
         </div>
         {/* Orientation film for the current surface. A plain anchor, not
@@ -180,7 +183,7 @@ export default function UserTopHeader() {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label="Open profile menu"
+              aria-label={t("userTopHeader.openProfileMenu", { defaultValue: "Open profile menu" })}
               className="flex items-center gap-2 rounded-2xl bg-ig-raised px-2.5 py-1.5 shadow-sm hover:bg-ig-raised-hover"
             >
               <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-amber-200 text-ig-avatar-ink">
@@ -203,17 +206,17 @@ export default function UserTopHeader() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {/* <DropdownMenuItem>Profile</DropdownMenuItem> */}
-            <DropdownMenuItem onSelect={() => navigate(role === ROLES.SUPER_ADMIN ? ROUTES.SUPER_ADMIN.SETTINGS : ROUTES.SETTINGS)}>Settings</DropdownMenuItem>
-            {role === ROLES.USER && <DropdownMenuItem onSelect={() => navigate(ROUTES.HELP)}>Help &amp; Support</DropdownMenuItem>}
+            <DropdownMenuItem onSelect={() => navigate(role === ROLES.SUPER_ADMIN ? ROUTES.SUPER_ADMIN.SETTINGS : ROUTES.SETTINGS)}>{t("userTopHeader.settings", { defaultValue: "Settings" })}</DropdownMenuItem>
+            {role === ROLES.USER && <DropdownMenuItem onSelect={() => navigate(ROUTES.HELP)}>{t("userTopHeader.helpSupport", { defaultValue: "Help & Support" })}</DropdownMenuItem>}
             <DropdownMenuSeparator />
             <ConfirmDialog
-              title="Log out"
-              description="Are you sure you want to log out?"
-              confirmText="Log out"
+              title={t("userTopHeader.logoutTitle", { defaultValue: "Log out" })}
+              description={t("userTopHeader.logoutDescription", { defaultValue: "Are you sure you want to log out?" })}
+              confirmText={t("userTopHeader.logoutConfirm", { defaultValue: "Log out" })}
               onConfirm={logout}
               trigger={
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  Logout
+                  {t("userTopHeader.logout", { defaultValue: "Logout" })}
                 </DropdownMenuItem>
               }
             />

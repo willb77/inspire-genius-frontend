@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -10,11 +11,14 @@ type ErrorStateProps = {
 }
 
 export default function ErrorState({
-  title = "Something went wrong",
-  message = "We couldn't load this content. Please try again.",
+  title: titleProp,
+  message: messageProp,
   onRetry,
   className,
 }: ErrorStateProps) {
+  const { t } = useTranslation("shellUi")
+  const title = titleProp ?? t("errorState.title", { defaultValue: "Something went wrong" })
+  const message = messageProp ?? t("errorState.message", { defaultValue: "We couldn't load this content. Please try again." })
   return (
     <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
       <div className="w-12 h-12 rounded-full bg-[#FEF2F2] flex items-center justify-center mb-3">
@@ -24,7 +28,7 @@ export default function ErrorState({
       <p className="text-[13px] text-[#9ca3af] max-w-xs mb-4">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          Try Again
+          {t("errorState.retry", { defaultValue: "Try Again" })}
         </Button>
       )}
     </div>

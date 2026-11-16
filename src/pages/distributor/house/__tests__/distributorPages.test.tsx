@@ -23,7 +23,8 @@ jest.mock("@/components/job-blueprint/validation/ValidationReviewQueue", () => (
   ValidationReviewQueue: () => <div data-testid="validation-queue" />,
 }))
 jest.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  // Honour defaultValue like the real library: shared chrome (PageState) now translates its own words.
+  useTranslation: () => ({ t: (key: string, o?: { defaultValue?: string }) => o?.defaultValue ?? key }),
 }))
 
 const mockUser: { current: { fullName?: string | null; name?: string | null } | null } = {

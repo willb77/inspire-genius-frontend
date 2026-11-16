@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { useState } from "react"
 import { ArrowLeftRight } from "lucide-react"
 import { toast } from "sonner"
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils"
  * unreachable from prod.
  */
 export function SystemSwitch() {
+  const { t } = useTranslation("shellUi")
   const queryClient = useQueryClient()
   const enabled = useAgentEngine()
   const [pending, setPending] = useState(false)
@@ -41,8 +43,8 @@ export function SystemSwitch() {
 
     toast.success(
       next
-        ? "Switched to Agent Engine for this conversation"
-        : "Switched to Monolith. Production WS only reaches the Agent Engine — chat/voice may be unreachable."
+        ? t("systemSwitch.toAgentEngine", { defaultValue: "Switched to Agent Engine for this conversation" })
+        : t("systemSwitch.toMonolith", { defaultValue: "Switched to Monolith. Production WS only reaches the Agent Engine — chat/voice may be unreachable." })
     )
     // Brief delay so the toast renders before the reload swallows it.
     setTimeout(() => {
@@ -54,8 +56,8 @@ export function SystemSwitch() {
     }, 800)
   }
 
-  const target = enabled ? "Agent Engine" : "Monolith"
-  const next = enabled ? "Monolith" : "Agent Engine"
+  const target = enabled ? t("systemSwitch.agentEngine", { defaultValue: "Agent Engine" }) : t("systemSwitch.monolith", { defaultValue: "Monolith" })
+  const next = enabled ? t("systemSwitch.monolith", { defaultValue: "Monolith" }) : t("systemSwitch.agentEngine", { defaultValue: "Agent Engine" })
 
   return (
     <button
@@ -63,13 +65,13 @@ export function SystemSwitch() {
       onClick={handleSwitch}
       disabled={pending}
       data-testid="system-switch"
-      aria-label={`Switch agent system. Current: ${target}. Click to switch to ${next}.`}
+      aria-label={t("systemSwitch.ariaLabel", { defaultValue: "Switch agent system. Current: {{target}}. Click to switch to {{next}}.", target: target, next: next })}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm",
         "hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
         "disabled:cursor-not-allowed disabled:opacity-60",
       )}
-      title={`Current: ${target}. Click to switch to ${next}.`}
+      title={t("systemSwitch.title", { defaultValue: "Current: {{target}}. Click to switch to {{next}}.", target: target, next: next })}
     >
       <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
       <span>{target}</span>

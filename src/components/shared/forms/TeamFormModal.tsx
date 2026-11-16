@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -25,16 +26,17 @@ export default function TeamFormModal({
   onSubmit,
   submitLabel,
 }: TeamFormModalProps) {
+  const { t } = useTranslation("shellUi");
   const dv: TeamFormValues = { ...TEAM_FORM_DEFAULTS, ...(defaultValues ?? {}) } as TeamFormValues;
 
   return (
     <ModalFormFrame<TeamFormValues>
       open={open}
       onOpenChange={onOpenChange}
-      title={title ?? (mode === "add" ? "Add User" : "Edit User")}
+      title={title ?? (mode === "add" ? t("teamForm.addUser", { defaultValue: "Add User" }) : t("teamForm.editUser", { defaultValue: "Edit User" }))}
       mode={mode}
       defaultValues={dv}
-      submitLabel={submitLabel ?? (mode === "add" ? "Add User" : "Save Changes")}
+      submitLabel={submitLabel ?? (mode === "add" ? t("teamForm.addUser", { defaultValue: "Add User" }) : t("teamForm.saveChanges", { defaultValue: "Save Changes" }))}
       onSubmit={onSubmit}
     >
       {(form) => (
@@ -45,9 +47,9 @@ export default function TeamFormModal({
             rules={TEAM_FORM_RULES.name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-xs">Name *</FormLabel>
+                <FormLabel className="block text-xs">{t("teamForm.name", { defaultValue: "Name *" })}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Name" {...field} />
+                  <Input placeholder={t("teamForm.namePlaceholder", { defaultValue: "Enter Name" })} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -60,9 +62,9 @@ export default function TeamFormModal({
             rules={TEAM_FORM_RULES.email}
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-xs">Email *</FormLabel>
+                <FormLabel className="block text-xs">{t("teamForm.email", { defaultValue: "Email *" })}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Email" {...field} />
+                  <Input placeholder={t("teamForm.emailPlaceholder", { defaultValue: "Enter Email" })} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -75,11 +77,11 @@ export default function TeamFormModal({
             rules={TEAM_FORM_RULES.role}
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-xs">Role *</FormLabel>
+                <FormLabel className="block text-xs">{t("teamForm.role", { defaultValue: "Role *" })}</FormLabel>
                 <FormControl>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select Role" />
+                      <SelectValue placeholder={t("teamForm.selectRole", { defaultValue: "Select Role" })} />
                     </SelectTrigger>
                     <SelectContent>
                       {TEAM_ROLES.map((r) => (
@@ -100,15 +102,15 @@ export default function TeamFormModal({
               rules={TEAM_FORM_RULES.status}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="block text-xs">Status</FormLabel>
+                  <FormLabel className="block text-xs">{t("teamForm.status", { defaultValue: "Status" })}</FormLabel>
                   <FormControl>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Status" />
+                        <SelectValue placeholder={t("teamForm.selectStatus", { defaultValue: "Select Status" })} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Deactivated">Deactivated</SelectItem>
+                        <SelectItem value="Active">{t("teamForm.active", { defaultValue: "Active" })}</SelectItem>
+                        <SelectItem value="Deactivated">{t("teamForm.deactivated", { defaultValue: "Deactivated" })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>
