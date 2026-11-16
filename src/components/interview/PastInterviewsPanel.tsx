@@ -14,6 +14,7 @@
  * is exactly the failure this shares code to avoid.
  */
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { AlertTriangle, History, Loader2, PlayCircle, RefreshCw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -21,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAbandonLiveSession, useLiveSessions } from "@/hooks/interview/useLiveSessions"
 import { candidateLabel, formatWhen } from "@/components/interview/pastInterviewsFormat"
+import { SLOT, slotParts, type TFn } from "@/components/interview/tFallback"
 import type { LiveSessionSummary } from "@/services/interview/live.service"
 
 const STATUS_STYLE: Record<string, string> = {
@@ -29,10 +31,17 @@ const STATUS_STYLE: Record<string, string> = {
   abandoned: "bg-slate-200 text-slate-700",
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  in_progress: "In progress",
-  finalized: "Finalized",
-  abandoned: "Abandoned",
+function statusLabel(status: string, t: TFn): string {
+  switch (status) {
+    case "in_progress":
+      return t("past.status.inProgress", "In progress")
+    case "finalized":
+      return t("past.status.finalized", "Finalized")
+    case "abandoned":
+      return t("past.status.abandoned", "Abandoned")
+    default:
+      return status
+  }
 }
 
 export type PastInterviewsPanelProps = {
@@ -52,17 +61,15 @@ export default function PastInterviewsPanel({
   onReopen,
   busySessionId = null,
 }: PastInterviewsPanelProps) {
+  const { t } = useTranslation("interviewPages")
   const { data, isLoading, error, refetch, isFetching } = useLiveSessions({ limit: 25 })
   const abandon = useAbandonLiveSession()
   const [abandoning, setAbandoning] = useState<string | null>(null)
 
-  const noun = surface === "studio" ? "practice interviews" : "interviews"
-
   const handleAbandon = async (s: LiveSessionSummary) => {
     if (
       !window.confirm(
-        `Abandon the interview with ${candidateLabel(s)}? The answers and ratings already saved are kept, ` +
-          `but the interview is closed unfinished and cannot be scored.`,
+        t("past.confirmAbandon", { defaultValue: "Abandon the interview with {{name}}? The answers and ratings already saved are kept, but the interview is closed unfinished and cannot be scored.", name: candidateLabel(s, t) }),
       )
     ) {
       return
@@ -70,55 +77,59 @@ export default function PastInterviewsPanel({
     setAbandoning(s.id)
     try {
       await abandon.mutateAsync(s.id)
-      toast.success("Interview marked abandoned.")
+      toast.success(t("past.abandoned", "Interview marked abandoned."))
     } catch (e) {
       // Never a silent failure: the row stays in_progress and the list is
       // refetched either way, so what the interviewer sees matches the server.
-      toast.error(e instanceof Error && e.message ? e.message : "Could not abandon that interview.")
+      toast.error(e instanceof Error && e.message ? e.message : t("past.abandonFailed", "Could not abandon that interview."))
     } finally {
       setAbandoning(null)
     }
   }
+
+  const [orgNoteBefore, orgNoteAfter] = slotParts(
+    t("past.orgScopeNote", { defaultValue: "This list is the interviews {{slot}} ran. Your sign-in did not carry an organisation, so colleagues' interviews are not included even if you administer their organisation.", slot: SLOT }),
+  )
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
         <div>
           <CardTitle className="flex items-center gap-2 text-base">
-            <History className="h-4 w-4 text-indigo-600" /> Past {noun}
+            <History className="h-4 w-4 text-indigo-600" />{" "}
+            {surface === "studio"
+              ? t("past.titleStudio", "Past practice interviews")
+              : t("past.titleLive", "Past interviews")}
           </CardTitle>
           <p className="mt-1 text-sm text-slate-600">
-            Pick up an unfinished interview where you left it, or reopen a finished one to
-            review and re-export it.
+            {t("past.intro", "Pick up an unfinished interview where you left it, or reopen a finished one to review and re-export it.")}
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => void refetch()} disabled={isFetching}>
           {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          <span className="sr-only">Refresh</span>
+          <span className="sr-only">{t("past.refresh", "Refresh")}</span>
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading ? (
           <p className="flex items-center py-4 text-sm text-slate-500">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading your past interviews…
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("past.loading", "Loading your past interviews…")}
           </p>
         ) : error ? (
           <div className="space-y-2 rounded-md border border-rose-200 bg-rose-50/60 p-3 text-sm">
             <p className="flex items-center gap-2 font-medium text-rose-900">
-              <AlertTriangle className="h-4 w-4" /> Your past interviews could not be loaded.
+              <AlertTriangle className="h-4 w-4" /> {t("past.loadFailedTitle", "Your past interviews could not be loaded.")}
             </p>
             <p className="text-xs text-rose-800">
-              This is a loading failure, not an empty history — nothing has been lost. You can
-              still start a new interview below.
+              {t("past.loadFailedBody", "This is a loading failure, not an empty history — nothing has been lost. You can still start a new interview below.")}
             </p>
             <Button size="sm" variant="outline" onClick={() => void refetch()}>
-              <RefreshCw className="mr-2 h-4 w-4" /> Try again
+              <RefreshCw className="mr-2 h-4 w-4" /> {t("past.tryAgain", "Try again")}
             </Button>
           </div>
         ) : (data?.sessions.length ?? 0) === 0 ? (
           <p className="py-4 text-sm text-slate-500">
-            You haven&apos;t run any interviews yet. The first one will appear here as soon as
-            it starts — including if you close the tab part-way through.
+            {t("past.empty", "You haven't run any interviews yet. The first one will appear here as soon as it starts — including if you close the tab part-way through.")}
           </p>
         ) : (
           <ul className="divide-y divide-slate-100">
@@ -130,10 +141,10 @@ export default function PastInterviewsPanel({
                 <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-900">
-                      {candidateLabel(s)}
+                      {candidateLabel(s, t)}
                     </p>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600">
-                      <span>{formatWhen(s.created_at)}</span>
+                      <span>{formatWhen(s.created_at, t)}</span>
                       {s.frame?.roleTitle && <span>· {s.frame.roleTitle}</span>}
                       {s.frame?.mode && <span>· {s.frame.mode}</span>}
                       {s.requisition_label && <span>· {s.requisition_label}</span>}
@@ -142,7 +153,7 @@ export default function PastInterviewsPanel({
                           STATUS_STYLE[s.status] ?? "bg-slate-100 text-slate-700"
                         }`}
                       >
-                        {STATUS_LABEL[s.status] ?? s.status}
+                        {statusLabel(s.status, t)}
                       </span>
                     </p>
                   </div>
@@ -155,7 +166,7 @@ export default function PastInterviewsPanel({
                           ) : (
                             <PlayCircle className="mr-2 h-4 w-4" />
                           )}
-                          Resume
+                          {t("past.resume", "Resume")}
                         </Button>
                         <Button
                           size="sm"
@@ -168,13 +179,13 @@ export default function PastInterviewsPanel({
                           ) : (
                             <Trash2 className="mr-2 h-4 w-4" />
                           )}
-                          Abandon
+                          {t("past.abandon", "Abandon")}
                         </Button>
                       </>
                     ) : (
                       <Button size="sm" variant="outline" onClick={() => onReopen(s.id)} disabled={busy}>
                         {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Reopen
+                        {t("past.reopen", "Reopen")}
                       </Button>
                     )}
                   </div>
@@ -190,9 +201,9 @@ export default function PastInterviewsPanel({
              their OWN interviews. Saying so is the difference between an honest
              list and one that reads as the whole organisation's. */
           <p className="border-t border-slate-100 pt-3 text-xs text-slate-500">
-            This list is the interviews <span className="font-medium">you</span> ran. Your sign-in
-            did not carry an organisation, so colleagues&apos; interviews are not included even if
-            you administer their organisation.
+            {orgNoteBefore}
+            <span className="font-medium">{t("past.orgScopeYou", "you")}</span>
+            {orgNoteAfter}
           </p>
         )}
       </CardContent>
