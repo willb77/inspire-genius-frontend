@@ -1,11 +1,17 @@
+import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import AuthHeader from "@/components/auth/AuthHeader"
 import AuthLayout from "@/components/auth/AuthLayout"
 import { ROUTES } from "@/constants/routes"
+import { Button } from "@/components/ui/button"
+import { useEventOptions } from "@/hooks/intake/useEventRegistration"
 import { usePublicEvents } from "@/hooks/intake/usePublicEvents"
+import type { EventOption } from "@/types/eventRegistration"
 import type { PublicEvent } from "@/types/publicEvents"
 import { EventDescription } from "./EventDescription"
+import { EventRegistrationDialog } from "./EventRegistrationDialog"
+import { optionFor } from "./eventRegistration"
 import { formatEventTime } from "./eventTime"
 import { EVENTS_NEXT_STEP, JoinBrandPanel } from "./JoinBrandPanel"
 
@@ -18,7 +24,15 @@ export const EVENTS_ERROR_COPY = "We could not load the events just now. Please 
 
 const STATUS_CLASS = "rounded-lg border border-dashed px-4 py-6 text-sm text-muted-foreground"
 
-function EventItem({ event }: { event: PublicEvent }) {
+function EventItem({
+  event,
+  option,
+  onRegister,
+}: {
+  event: PublicEvent
+  option?: EventOption
+  onRegister: (o: EventOption) => void
+}) {
   return (
     <li className="rounded-lg border px-4 py-4">
       <h2 className="text-base font-semibold">{event.title}</h2>
@@ -27,6 +41,14 @@ function EventItem({ event }: { event: PublicEvent }) {
       </p>
       {/* Markdown through an allow-list: no raw HTML, http(s)/mailto links only. */}
       {event.description && <EventDescription markdown={event.description} />}
+      {option &&
+        (option.full ? (
+          <p className="mt-3 text-sm font-medium text-muted-foreground">This event is full.</p>
+        ) : (
+          <Button type="button" className="mt-3" onClick={() => onRegister(option)}>
+            Register for this event
+          </Button>
+        ))}
     </li>
   )
 }
@@ -46,6 +68,10 @@ export default function EventsPage() {
   const { t } = useTranslation("joinPages")
   const events = usePublicEvents()
   const data = events.data
+  // Asked only once the list shows an event, so a tier with nothing listed (or the
+  // switch off) makes no second request; any failure of it just means no buttons.
+  const options = useEventOptions(data?.kind === "list" && data.events.length > 0)
+  const [registering, setRegistering] = useState<EventOption | null>(null)
 
   let body
   if (events.isPending) {
@@ -76,7 +102,12 @@ export default function EventsPage() {
     body = (
       <ul className="flex flex-col gap-3" aria-label={t("events.listAria", { defaultValue: "Upcoming events" })}>
         {data.events.map((e, i) => (
-          <EventItem key={`${e.starts_at}-${i}`} event={e} />
+          <EventItem
+            key={`${e.starts_at}-${i}`}
+            event={e}
+            option={optionFor(e, options.data)}
+            onRegister={setRegistering}
+          />
         ))}
       </ul>
     )
@@ -90,6 +121,7 @@ export default function EventsPage() {
     >
       <AuthHeader title={t("events.title", { defaultValue: "Upcoming events" })} />
       {body}
+      {registering && <EventRegistrationDialog key={registering.id} event={registering} onClose={() => setRegistering(null)} />}
       <p className="mt-6 text-sm">
         {/* A plain anchor, not a router Link: the page renders with no router. */}
         <a href={ROUTES.JOIN} className="font-medium text-[#466bc4] underline-offset-4 hover:underline">
