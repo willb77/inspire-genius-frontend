@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { ScorecardRecommendation } from '@/types/job-blueprint'
 import { SCORECARD_BAND_LABELS, SCORECARD_THRESHOLDS } from '@/constants/job-blueprint/classification'
+import { useTranslation } from 'react-i18next'
 
 type ScorecardSummaryProps = {
   grandTotal: number
@@ -19,16 +20,17 @@ const recColors: Record<ScorecardRecommendation, string> = {
 }
 
 export function ScorecardSummary({ grandTotal, recommendation }: ScorecardSummaryProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <Card className="border-2">
       <CardContent className="py-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-500">Grand Total</p>
+            <p className="text-sm font-medium text-slate-500">{t("summary.grandTotal", { defaultValue: "Grand Total" })}</p>
             <p className="text-3xl font-bold text-slate-800">{grandTotal} <span className="text-lg text-slate-400">/ 55</span></p>
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium text-slate-500 mb-1">What the evidence shows</p>
+            <p className="text-sm font-medium text-slate-500 mb-1">{t("summary.evidence", { defaultValue: "What the evidence shows" })}</p>
             <Badge className={`text-sm px-3 py-1 ${recColors[recommendation]}`}>
               {SCORECARD_BAND_LABELS[recommendation]}
             </Badge>

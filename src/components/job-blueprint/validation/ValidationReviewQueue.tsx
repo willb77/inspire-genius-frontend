@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import DataCard from "@/components/dashboard/DataCard"
 import {
   useAwaitingValidation,
@@ -10,6 +11,7 @@ import { RationaleExportButton } from "./BlueprintValidationPanel"
 import { VerdictForm } from "./ValidationForms"
 
 function ReviewItem({ item }: { item: AwaitingValidation }) {
+  const { t } = useTranslation("jobBlueprintPages")
   const [open, setOpen] = useState(false)
   const { data: report, isLoading, isError } = useRationale(item.blueprintId, open)
   const dims = (report?.dimensions ?? []).map((d) => ({
@@ -26,25 +28,25 @@ function ReviewItem({ item }: { item: AwaitingValidation }) {
         <span className="font-medium text-[#111827]">{item.roleTitle}</span>
         <span className="text-[#6b7280]">
           {" "}
-          · v{item.version} · asked by {item.requestedBy} on {item.requestedAt.slice(0, 10)}
+          {t("queue.askedLine", { defaultValue: "· v{{version}} · asked by {{by}} on {{date}}", version: item.version, by: item.requestedBy, date: item.requestedAt.slice(0, 10) })}
         </span>
       </button>
       {item.note ? <p className="mt-1 text-xs text-[#6b7280]">“{item.note}”</p> : null}
       {open ? (
         <div className="mt-3 space-y-3">
-          {isLoading ? <p className="text-xs text-[#6b7280]">Loading the benchmark…</p> : null}
+          {isLoading ? <p className="text-xs text-[#6b7280]">{t("queue.loading", { defaultValue: "Loading the benchmark…" })}</p> : null}
           {isError ? (
             <p role="alert" className="text-xs text-red-600">
-              Could not load this role&apos;s benchmark.
+              {t("queue.loadFailed", { defaultValue: "Could not load this role's benchmark." })}
             </p>
           ) : null}
           {report ? (
             <table className="w-full text-xs" data-testid="review-dimensions">
               <thead>
                 <tr className="text-left text-[#6b7280]">
-                  <th className="py-1">Dimension</th>
-                  <th>Target</th>
-                  <th>Tier</th>
+                  <th className="py-1">{t("queue.col.dimension", { defaultValue: "Dimension" })}</th>
+                  <th>{t("queue.col.target", { defaultValue: "Target" })}</th>
+                  <th>{t("queue.col.tier", { defaultValue: "Tier" })}</th>
                 </tr>
               </thead>
               <tbody>
@@ -74,12 +76,13 @@ function ReviewItem({ item }: { item: AwaitingValidation }) {
  * off for the caller or nothing is waiting, so the page is otherwise unchanged.
  */
 export function ValidationReviewQueue() {
+  const { t } = useTranslation("jobBlueprintPages")
   const enabled = useValidationEnabled()
   const { data } = useAwaitingValidation(enabled)
   if (!enabled || !data?.length) return null
   return (
     <div className="mb-5" data-testid="validation-review-queue">
-      <DataCard title="Awaiting your validation" badge={data.length}>
+      <DataCard title={t("queue.title", { defaultValue: "Awaiting your validation" })} badge={data.length}>
         {data.map((item) => (
           <ReviewItem key={item.blueprintId} item={item} />
         ))}

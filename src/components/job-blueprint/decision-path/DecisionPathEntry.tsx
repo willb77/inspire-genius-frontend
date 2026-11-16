@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Scale } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useDecisionPathStatus } from "@/hooks/job-blueprint/useDecisionPath"
@@ -9,6 +10,7 @@ import { useDecisionPathStatus } from "@/hooks/job-blueprint/useDecisionPath"
  * switch off the dashboard is exactly what it was.
  */
 export function DecisionPathEntry() {
+  const { t } = useTranslation("jobBlueprintPages")
   const status = useDecisionPathStatus()
   if (!status) return null
   return (
@@ -18,8 +20,8 @@ export function DecisionPathEntry() {
     >
       <Scale className="h-5 w-5 text-[#7C3AED]" />
       <span>
-        <span className="font-medium text-[#1f2937]">Decision path</span> — check candidates against your written
-        minimum standard and record each decision with its reason.
+        <span className="font-medium text-[#1f2937]">{t("decisionPath.entry.title", { defaultValue: "Decision path" })}</span>{" "}
+        {t("decisionPath.entry.body", { defaultValue: "— check candidates against your written minimum standard and record each decision with its reason." })}
       </span>
     </Link>
   )

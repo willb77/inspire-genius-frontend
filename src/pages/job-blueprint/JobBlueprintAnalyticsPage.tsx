@@ -1,4 +1,5 @@
 import { BarChart3 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { StatsGrid } from "@/components/job-blueprint/analytics/StatsGrid"
 import { HiringFunnel } from "@/components/job-blueprint/analytics/HiringFunnel"
 import { AccuracyChart } from "@/components/job-blueprint/analytics/AccuracyChart"
@@ -22,6 +23,7 @@ import { JobDnaPageHeader, JobDnaLoading, JobDnaEmptyState } from "./_shared"
  * with no rows says so; it never renders as a chart of nothing.
  */
 export default function JobBlueprintAnalyticsPage() {
+  const { t } = useTranslation("jobBlueprintPages")
   const { data: stats, isLoading: loadingStats } = useBlueprintStats()
   const { data: funnel } = useBlueprintFunnel()
   const { data: accuracy } = useBlueprintAccuracy()
@@ -33,45 +35,45 @@ export default function JobBlueprintAnalyticsPage() {
     <div className="max-w-6xl">
       <JobDnaPageHeader
         icon={BarChart3}
-        title="Analytics"
-        description="Hiring funnel, predicted fit distribution and time-to-fill across your Job DNAs."
+        title={t("analytics.title", { defaultValue: "Analytics" })}
+        description={t("analytics.description", { defaultValue: "Hiring funnel, predicted fit distribution and time-to-fill across your Job DNAs." })}
       />
 
       {loadingStats ? (
-        <JobDnaLoading label="Loading analytics…" />
+        <JobDnaLoading label={t("analytics.loading", { defaultValue: "Loading analytics…" })} />
       ) : (
         <div className="space-y-6">
-          {stats ? <StatsGrid stats={stats} /> : <JobDnaEmptyState>No stats available yet.</JobDnaEmptyState>}
+          {stats ? <StatsGrid stats={stats} /> : <JobDnaEmptyState>{t("analytics.emptyStats", { defaultValue: "No stats available yet." })}</JobDnaEmptyState>}
 
           <div className="grid gap-6 lg:grid-cols-2">
             {funnel && funnel.length > 0 ? (
               <HiringFunnel data={funnel} />
             ) : (
-              <JobDnaEmptyState>No funnel data yet.</JobDnaEmptyState>
+              <JobDnaEmptyState>{t("analytics.emptyFunnel", { defaultValue: "No funnel data yet." })}</JobDnaEmptyState>
             )}
             {accuracy ? (
               <AccuracyChart report={accuracy} />
             ) : (
-              <JobDnaEmptyState>No accuracy data yet.</JobDnaEmptyState>
+              <JobDnaEmptyState>{t("analytics.emptyAccuracy", { defaultValue: "No accuracy data yet." })}</JobDnaEmptyState>
             )}
           </div>
 
           {timeToFill && timeToFill.length > 0 ? (
             <TimeToFillChart data={timeToFill} />
           ) : (
-            <JobDnaEmptyState>No time-to-fill data yet.</JobDnaEmptyState>
+            <JobDnaEmptyState>{t("analytics.emptyTimeToFill", { defaultValue: "No time-to-fill data yet." })}</JobDnaEmptyState>
           )}
 
           <div className="grid gap-6 lg:grid-cols-2">
             {hires && hires.length > 0 ? (
               <HiresPanel data={hires} />
             ) : (
-              <JobDnaEmptyState>No hires recorded yet.</JobDnaEmptyState>
+              <JobDnaEmptyState>{t("analytics.emptyHires", { defaultValue: "No hires recorded yet." })}</JobDnaEmptyState>
             )}
             {activity && activity.length > 0 ? (
               <ActivityFeed items={activity} />
             ) : (
-              <JobDnaEmptyState>No activity yet.</JobDnaEmptyState>
+              <JobDnaEmptyState>{t("analytics.emptyActivity", { defaultValue: "No activity yet." })}</JobDnaEmptyState>
             )}
           </div>
         </div>

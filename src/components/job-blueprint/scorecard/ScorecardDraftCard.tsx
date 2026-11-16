@@ -7,6 +7,7 @@
  * session — so they can review the interview before scoring the candidate.
  */
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { ClipboardList, ExternalLink } from "lucide-react"
 
 import type { ScorecardDraft } from "@/types/job-blueprint"
@@ -23,6 +24,7 @@ function fmtDate(iso: string): string {
 }
 
 export function ScorecardDraftCard({ draft, sessionHref }: Props) {
+  const { t } = useTranslation("jobBlueprintPages")
   const scored =
     draft.behaviorScores.length +
     draft.counterProductiveScores.length +
@@ -36,11 +38,10 @@ export function ScorecardDraftCard({ draft, sessionHref }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5 font-medium">
-            <ClipboardList className="h-4 w-4" aria-hidden /> Draft from a finalised interview
+            <ClipboardList className="h-4 w-4" aria-hidden /> {t("draft.title", { defaultValue: "Draft from a finalised interview" })}
           </div>
           <p className="mt-1 text-xs text-indigo-900/80">
-            Written {fmtDate(draft.createdAt)} · {scored} dimension{scored === 1 ? "" : "s"} scored · not yet
-            submitted, so it does not count.
+            {t("draft.summary", { count: scored, date: fmtDate(draft.createdAt), defaultValue: "Written {{date}} · {{count}} dimensions scored · not yet submitted, so it does not count.", defaultValue_one: "Written {{date}} · {{count}} dimension scored · not yet submitted, so it does not count.", defaultValue_other: "Written {{date}} · {{count}} dimensions scored · not yet submitted, so it does not count." })}
           </p>
         </div>
         {sessionHref ? (
@@ -48,10 +49,10 @@ export function ScorecardDraftCard({ draft, sessionHref }: Props) {
             to={sessionHref}
             className="inline-flex items-center gap-1.5 rounded-md border border-indigo-300 bg-white px-3 py-1.5 text-xs font-medium text-indigo-900 hover:bg-indigo-100"
           >
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Open the interview
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden /> {t("draft.open", { defaultValue: "Open the interview" })}
           </Link>
         ) : draft.interviewSessionId ? (
-          <span className="text-xs text-indigo-900/70">Interview session {draft.interviewSessionId.slice(0, 8)}…</span>
+          <span className="text-xs text-indigo-900/70">{t("draft.session", { defaultValue: "Interview session {{id}}…", id: draft.interviewSessionId.slice(0, 8) })}</span>
         ) : null}
       </div>
       {draft.notes ? <p className="mt-2 whitespace-pre-line text-xs text-indigo-900/80">{draft.notes}</p> : null}

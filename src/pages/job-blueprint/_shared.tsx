@@ -7,6 +7,7 @@
 
 import type { LucideIcon } from "lucide-react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { AlertTriangle, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { JobDNA } from "@/types/job-blueprint"
@@ -19,22 +20,23 @@ export function JobDnaSelect({
   jobDnas,
   value,
   onChange,
-  label = "Job DNA",
+  label,
 }: {
   jobDnas: JobDNA[]
   value: string
   onChange: (id: string) => void
   label?: string
 }) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <label className="flex items-center gap-2 text-sm text-[#374151]">
-      <span className="font-medium">{label}:</span>
+      <span className="font-medium">{label ?? t("shared.select.label", { defaultValue: "Job DNA" })}:</span>
       <select
         className="h-9 min-w-56 rounded-md border border-input bg-transparent px-3 text-sm"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="">Select a role…</option>
+        <option value="">{t("shared.select.placeholder", { defaultValue: "Select a role…" })}</option>
         {jobDnas.map((jd) => (
           <option key={jd.id} value={jd.id}>
             {jd.roleTitle} — {jd.department}
@@ -121,30 +123,32 @@ export function JobDnaEmptyState({ children }: { children: React.ReactNode }) {
 }
 
 /** Centered spinner used while a live endpoint read is in flight. */
-export function JobDnaLoading({ label = "Loading…" }: { label?: string }) {
+export function JobDnaLoading({ label }: { label?: string }) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <div className="flex items-center justify-center gap-2 rounded-xl border border-[#e5e7eb] bg-white p-10 text-sm text-[#6b7280]">
       <Loader2 className="h-4 w-4 animate-spin text-[#7C3AED]" />
-      {label}
+      {label ?? t("shared.loading", { defaultValue: "Loading…" })}
     </div>
   )
 }
 
 /** Inline error panel with an optional retry action. */
 export function JobDnaError({
-  message = "Something went wrong loading this data.",
+  message,
   onRetry,
 }: {
   message?: string
   onRetry?: () => void
 }) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <div className="flex items-center gap-2 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4 text-sm text-[#b91c1c]">
       <AlertTriangle className="h-4 w-4 shrink-0" />
-      <span>{message}</span>
+      <span>{message ?? t("shared.error.default", { defaultValue: "Something went wrong loading this data." })}</span>
       {onRetry ? (
         <button onClick={onRetry} className="ml-1 underline text-[#7C3AED]">
-          Retry
+          {t("shared.error.retry", { defaultValue: "Retry" })}
         </button>
       ) : null}
     </div>

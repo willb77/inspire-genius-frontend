@@ -1,19 +1,21 @@
 import { Card, CardContent } from '@/components/ui/card'
 import type { BlueprintStats } from '@/types/job-blueprint'
 import { Briefcase, Users, Clock, TrendingUp, Target, UserCheck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type StatsGridProps = {
   stats: BlueprintStats
 }
 
 export function StatsGrid({ stats }: StatsGridProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   const items = [
-    { label: 'Total Job DNAs', value: stats.totalJobDnas, icon: Briefcase, color: 'text-blue-600' },
-    { label: 'Active Jobs', value: stats.activeJobs, icon: Target, color: 'text-green-600' },
-    { label: 'Total Candidates', value: stats.totalCandidates, icon: Users, color: 'text-purple-600' },
-    { label: 'Avg Time to Fill', value: `${stats.avgTimeToFill}d`, icon: Clock, color: 'text-orange-600' },
-    { label: 'Strong Fit Rate', value: `${stats.strongFitRate}%`, icon: TrendingUp, color: 'text-emerald-600' },
-    { label: 'Hires This Month', value: stats.hiresThisMonth, icon: UserCheck, color: 'text-indigo-600' },
+    { label: t("stats.totalJobDnas", { defaultValue: "Total Job DNAs" }), value: stats.totalJobDnas, icon: Briefcase, color: 'text-blue-600' },
+    { label: t("stats.activeJobs", { defaultValue: "Active Jobs" }), value: stats.activeJobs, icon: Target, color: 'text-green-600' },
+    { label: t("stats.totalCandidates", { defaultValue: "Total Candidates" }), value: stats.totalCandidates, icon: Users, color: 'text-purple-600' },
+    { label: t("stats.avgTimeToFill", { defaultValue: "Avg Time to Fill" }), value: t("stats.daysShort", { defaultValue: "{{n}}d", n: stats.avgTimeToFill }), icon: Clock, color: 'text-orange-600' },
+    { label: t("stats.strongFitRate", { defaultValue: "Strong Fit Rate" }), value: `${stats.strongFitRate}%`, icon: TrendingUp, color: 'text-emerald-600' },
+    { label: t("stats.hiresThisMonth", { defaultValue: "Hires This Month" }), value: stats.hiresThisMonth, icon: UserCheck, color: 'text-indigo-600' },
   ]
 
   return (

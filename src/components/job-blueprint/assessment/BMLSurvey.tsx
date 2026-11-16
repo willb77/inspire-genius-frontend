@@ -6,6 +6,7 @@ import { BMLProgressBar } from './BMLProgressBar'
 import type { BMLQuestion, BMLResponse, DimensionScore } from '@/types/job-blueprint'
 import { normalizeBMLResponses } from '@/lib/job-blueprint/scoring'
 import { ChevronLeft, ChevronRight, Clock, Send } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type BMLSurveyProps = {
   questions: BMLQuestion[]
@@ -14,6 +15,7 @@ type BMLSurveyProps = {
 }
 
 export function BMLSurvey({ questions, onSubmit, isSubmitting }: BMLSurveyProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   const [currentIndex, setCurrentIndex] = useState(0)
   const [responses, setResponses] = useState<Map<string, number>>(new Map())
   const [startTime] = useState(Date.now())
@@ -65,7 +67,7 @@ export function BMLSurvey({ questions, onSubmit, isSubmitting }: BMLSurveyProps)
     <div className="space-y-6 max-w-2xl mx-auto">
       {/* Header with timer */}
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-slate-800">Brain Mapping Light Assessment</h3>
+        <h3 className="text-lg font-semibold text-slate-800">{t("survey.title", { defaultValue: "Brain Mapping Light Assessment" })}</h3>
         <div className="flex items-center gap-1.5 text-sm text-slate-500">
           <Clock className="w-4 h-4" />
           <span>{formatTime(elapsed)}</span>
@@ -103,7 +105,7 @@ export function BMLSurvey({ questions, onSubmit, isSubmitting }: BMLSurveyProps)
           disabled={currentIndex === 0}
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
-          Previous
+          {t("survey.previous", { defaultValue: "Previous" })}
         </Button>
 
         <span className="text-sm text-slate-500">
@@ -115,7 +117,7 @@ export function BMLSurvey({ questions, onSubmit, isSubmitting }: BMLSurveyProps)
             size="sm"
             onClick={() => setCurrentIndex(i => Math.min(questions.length - 1, i + 1))}
           >
-            Next
+            {t("survey.next", { defaultValue: "Next" })}
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         ) : (
@@ -125,7 +127,7 @@ export function BMLSurvey({ questions, onSubmit, isSubmitting }: BMLSurveyProps)
             disabled={!allAnswered || isSubmitting}
           >
             <Send className="w-4 h-4 mr-1" />
-            {isSubmitting ? 'Submitting...' : 'Submit'}
+            {isSubmitting ? t("survey.submitting", { defaultValue: "Submitting..." }) : t("survey.submit", { defaultValue: "Submit" })}
           </Button>
         )}
       </div>
@@ -144,7 +146,7 @@ export function BMLSurvey({ questions, onSubmit, isSubmitting }: BMLSurveyProps)
                 ? 'bg-green-400'
                 : 'bg-slate-200'
             }`}
-            aria-label={`Go to question ${i + 1}`}
+            aria-label={t("survey.goTo", { defaultValue: "Go to question {{n}}", n: i + 1 })}
           />
         ))}
       </div>

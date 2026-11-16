@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { ActivityItem } from '@/types/job-blueprint'
 import { Briefcase, UserPlus, ClipboardList, Tags, ClipboardCheck, UserCheck, Activity } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type ActivityFeedProps = {
   items: ActivityItem[]
@@ -27,10 +28,11 @@ function when(ts: string): string {
  * being dropped. The caller renders the honest empty state when there is none.
  */
 export function ActivityFeed({ items }: ActivityFeedProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Recent activity</CardTitle>
+        <CardTitle className="text-base">{t("activity.title", { defaultValue: "Recent activity" })}</CardTitle>
       </CardHeader>
       <CardContent>
         <ul className="space-y-3">

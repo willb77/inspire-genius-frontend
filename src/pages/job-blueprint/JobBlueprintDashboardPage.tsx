@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { Dna, Plus } from "lucide-react"
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna"
 import { useBlueprintStats } from "@/hooks/job-blueprint/useAnalytics"
@@ -24,6 +25,7 @@ import {
  */
 export default function JobBlueprintDashboardPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation("jobBlueprintPages")
   const { data: jobDnas, isLoading, isError, refetch } = useJobDnaList()
   const { data: stats } = useBlueprintStats()
 
@@ -31,12 +33,12 @@ export default function JobBlueprintDashboardPage() {
     <div className="max-w-6xl">
       <JobDnaPageHeader
         icon={Dna}
-        title="Career Blueprint"
-        description="Job blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it."
+        title={t("dashboard.title", { defaultValue: "Career Blueprint" })}
+        description={t("dashboard.description", { defaultValue: "Job blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it." })}
         action={
           <JobDnaLinkButton to={ROUTES.JOB_DNA.AUTHORING}>
             <Plus className="h-4 w-4" />
-            New Job DNA
+            {t("dashboard.newJobDna", { defaultValue: "New Job DNA" })}
           </JobDnaLinkButton>
         }
       />
@@ -49,18 +51,18 @@ export default function JobBlueprintDashboardPage() {
         </div>
       ) : null}
 
-      <h2 className="mb-3 text-sm font-semibold text-[#374151]">Your Job DNAs</h2>
+      <h2 className="mb-3 text-sm font-semibold text-[#374151]">{t("dashboard.yourJobDnas", { defaultValue: "Your Job DNAs" })}</h2>
 
       {isLoading ? (
-        <JobDnaLoading label="Loading Job DNAs…" />
+        <JobDnaLoading label={t("dashboard.loading", { defaultValue: "Loading Job DNAs…" })} />
       ) : isError ? (
-        <JobDnaError message="Failed to load Job DNAs." onRetry={() => void refetch()} />
+        <JobDnaError message={t("dashboard.loadError", { defaultValue: "Failed to load Job DNAs." })} onRetry={() => void refetch()} />
       ) : !jobDnas || jobDnas.length === 0 ? (
         <JobDnaEmptyState>
-          <p className="mb-3">No Job DNAs yet.</p>
+          <p className="mb-3">{t("dashboard.empty", { defaultValue: "No Job DNAs yet." })}</p>
           <JobDnaLinkButton to={ROUTES.JOB_DNA.AUTHORING}>
             <Plus className="h-4 w-4" />
-            Create your first Job DNA
+            {t("dashboard.createFirst", { defaultValue: "Create your first Job DNA" })}
           </JobDnaLinkButton>
         </JobDnaEmptyState>
       ) : (

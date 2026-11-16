@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import type { DimensionBenchmark } from '@/types/job-blueprint'
 import { CATEGORY_COLORS } from '@/constants/job-blueprint/dimensions'
+import { useTranslation } from 'react-i18next'
 
 type BenchmarkBarChartProps = {
   benchmarks: DimensionBenchmark[]
@@ -18,6 +19,7 @@ type BenchmarkBarChartProps = {
 }
 
 export function BenchmarkBarChart({ benchmarks, title, height = 300 }: BenchmarkBarChartProps) {
+  const { t } = useTranslation("jobBlueprintPages")
   const sorted = [...benchmarks].sort((a, b) => a.rankPosition - b.rankPosition)
 
   const data = sorted.map(b => ({
@@ -39,8 +41,8 @@ export function BenchmarkBarChart({ benchmarks, title, height = 300 }: Benchmark
           <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
           <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={96} />
           <Tooltip formatter={(value: number) => `${value}%`} />
-          <ReferenceLine x={85} stroke="#38A169" strokeDasharray="3 3" label={{ value: 'Very High', fontSize: 9, fill: '#38A169' }} />
-          <ReferenceLine x={65} stroke="#3182CE" strokeDasharray="3 3" label={{ value: 'Natural', fontSize: 9, fill: '#3182CE' }} />
+          <ReferenceLine x={85} stroke="#38A169" strokeDasharray="3 3" label={{ value: t("barChart.veryHigh", { defaultValue: "Very High" }), fontSize: 9, fill: '#38A169' }} />
+          <ReferenceLine x={65} stroke="#3182CE" strokeDasharray="3 3" label={{ value: t("barChart.natural", { defaultValue: "Natural" }), fontSize: 9, fill: '#3182CE' }} />
           <Bar dataKey="score" radius={[0, 4, 4, 0]}>
             {data.map((entry, i) => (
               <Cell
