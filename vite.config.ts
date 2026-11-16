@@ -35,8 +35,8 @@ export default defineConfig(({ mode }) => {
   // ── Content-Security-Policy ──────────────────────────────────
   // Dev needs unsafe-inline / unsafe-eval for Vite HMR
   const scriptSrc = isDev
-    ? "'self' 'unsafe-inline' 'unsafe-eval'"
-    : "'self'"
+    ? "'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com"
+    : "'self' https://challenges.cloudflare.com"
 
   const sentryDsn = env.VITE_SENTRY_DSN || ""
   const sentryIngest = sentryDsn ? new URL(sentryDsn).origin : ""
@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
     .filter(Boolean)
     .join(" ")
 
-  const frameSrc = `'self' https://lottie.host blob: ${apiBase}`
+  const frameSrc = `'self' https://lottie.host https://challenges.cloudflare.com blob: ${apiBase}`
   const imgSrc = `'self' data: blob: ${apiBase}`
   const mediaSrc = `'self' blob: ${apiBase}`
 
