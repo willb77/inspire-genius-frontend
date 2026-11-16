@@ -53,11 +53,12 @@ function getReportStatus(status: string | undefined, t: (key: string) => string)
 }
 
 export default function Home() {
+  const { t: tu } = useTranslation("userPages");
   const { user } = useAuth();
   const { open: openSupportAgent } = useSupportAgent();
   const navigate = useNavigate();
   const { t } = useTranslation(["common", "dashboard", "coaching"]);
-  const firstName = user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
+  const firstName = user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? tu("home.fallbackName", "there");
 
   // Audit stats — real data from GET /v1/audit/stats (admin-gated in the hook).
   const { data: auditData, isLoading: auditLoading } = useAuditStats();
@@ -138,13 +139,13 @@ export default function Home() {
     if (latestPrism.completed_at) {
       const d = new Date(latestPrism.completed_at);
       if (!isNaN(d.getTime())) {
-        return `Last result: ${d.toLocaleDateString()}`;
+        return tu("home.lastResult", { defaultValue: "Last result: {{date}}", date: d.toLocaleDateString() });
       }
     }
     if (latestPrism.requested_at && !latestPrism.completed_at) {
-      return "Survey in progress";
+      return tu("home.surveyInProgress", "Survey in progress");
     }
-    return "Not started";
+    return tu("home.notStarted", "Not started");
   })();
   const assessments = (prismData as { data?: { assessments?: Array<{ status: string; initiatedAt?: string | null; completedAt?: string | null }> } } | undefined)?.data?.assessments ?? [];
   const latestAssessment = assessments[0];
@@ -184,7 +185,7 @@ export default function Home() {
               <CalendarDays className="w-3.5 h-3.5" />
               <span>
                 {lastReportDate
-                  ? `Last report: ${new Date(lastReportDate).toLocaleDateString()}`
+                  ? tu("home.lastReport", { defaultValue: "Last report: {{date}}", date: new Date(lastReportDate).toLocaleDateString() })
                   : t("dashboard:lastReportNotCompleted")}
               </span>
             </div>
@@ -238,9 +239,9 @@ export default function Home() {
                 <Brain className="w-5 h-5 text-violet-600" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold">Take PRISM Assessment</h3>
+                <h3 className="text-sm font-semibold">{tu("home.takePrismAssessment", "Take PRISM Assessment")}</h3>
                 <p className="text-xs text-muted-foreground">
-                  Start your behavioural survey
+                  {tu("home.startYourBehaviouralSurvey", "Start your behavioural survey")}
                 </p>
                 {/* G9 Agent C — secondary status text */}
                 <p
@@ -260,7 +261,7 @@ export default function Home() {
                 handleRequestSurvey();
               }}
             >
-              Take PRISM Assessment
+              {tu("home.takePrismAssessment", "Take PRISM Assessment")}
             </Button>
           </CardContent>
         </Card>
