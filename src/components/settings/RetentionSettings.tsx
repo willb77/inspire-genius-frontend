@@ -48,6 +48,7 @@ import type {
 } from "@/services/retention/retentionService";
 import { useAuth } from "@/context/useAuth";
 import { ROLES } from "@/constants/routes";
+import { useTranslation } from "react-i18next";
 
 const ALL_TIERS: { value: RetentionTier; label: string; help: string }[] = [
   {
@@ -99,6 +100,7 @@ const EMPTY_DRAFT: Draft = {
 };
 
 export default function RetentionSettings() {
+  const { t } = useTranslation("accountUi")
   const { user } = useAuth();
   const role = (user?.role ?? "user").toLowerCase();
   const canWriteAnyScope = SCOPE_OPTIONS_BY_ROLE[role]?.length ?? 0;
@@ -120,11 +122,11 @@ export default function RetentionSettings() {
 
   const handleSave = () => {
     if (!scopeOptions.includes(draft.scope)) {
-      toast.error(`Your role cannot write at scope=${draft.scope}.`);
+      toast.error(t("retentionSettings.yourRoleCannotWriteAtScope", { defaultValue: "Your role cannot write at scope={{scope}}.", scope: draft.scope }));
       return;
     }
     if (draft.scope !== "system" && !draft.scope_id.trim()) {
-      toast.error("Scope ID is required for non-system scopes.");
+      toast.error(t("retentionSettings.scopeIdIsRequiredForNon", { defaultValue: "Scope ID is required for non-system scopes." }));
       return;
     }
     upsert.mutate(
@@ -136,11 +138,11 @@ export default function RetentionSettings() {
         archive_to_s3: draft.archive_to_s3,
       },
       {
-        onSuccess: () => toast.success("Retention policy saved"),
+        onSuccess: () => toast.success(t("retentionSettings.retentionPolicySaved", { defaultValue: "Retention policy saved" })),
         onError: (err: unknown) => {
           const msg =
             (err as { response?: { data?: { detail?: string } } }).response
-              ?.data?.detail ?? "Failed to save retention policy";
+              ?.data?.detail ?? t("retentionSettings.failedToSaveRetentionPolicy", { defaultValue: "Failed to save retention policy" });
           toast.error(msg);
         },
       },
@@ -149,15 +151,15 @@ export default function RetentionSettings() {
 
   const handleDelete = (p: RetentionPolicy) => {
     if (!scopeOptions.includes(p.scope)) {
-      toast.error("You don't have permission to delete this policy.");
+      toast.error(t("retentionSettings.youDonTHavePermissionTo", { defaultValue: "You don't have permission to delete this policy." }));
       return;
     }
     remove.mutate(p.id, {
-      onSuccess: () => toast.success("Policy deleted — falling back to parent scope"),
+      onSuccess: () => toast.success(t("retentionSettings.policyDeletedFallingBackToParent", { defaultValue: "Policy deleted — falling back to parent scope" })),
       onError: (err: unknown) => {
         const msg =
           (err as { response?: { data?: { detail?: string } } }).response?.data
-            ?.detail ?? "Failed to delete";
+            ?.detail ?? t("retentionSettings.failedToDelete", { defaultValue: "Failed to delete" });
         toast.error(msg);
       },
     });
@@ -173,37 +175,34 @@ export default function RetentionSettings() {
       <CardHeader className="text-left">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <ShieldCheck className="h-5 w-5" />
-          Memory Retention
+          {t("retentionSettings.memoryRetention", { defaultValue: "Memory Retention" })}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Control how long each tier of agent memory is kept before the
-          nightly archive Lambda moves it to S3 and deletes it from Aurora.
-          More-specific scopes override less-specific ones (user &gt; manager
-          &gt; org &gt; system).
+          {t("retentionSettings.controlHowLongEachTierOf", { defaultValue: "Control how long each tier of agent memory is kept before the nightly archive Lambda moves it to S3 and deletes it from Aurora. More-specific scopes override less-specific ones (user > manager > org > system)." })}
         </p>
       </CardHeader>
       <CardContent className="space-y-6 text-left">
         {/* ── Existing policies ── */}
         <div>
-          <h4 className="text-sm font-medium mb-2">Active policies</h4>
+          <h4 className="text-sm font-medium mb-2">{t("retentionSettings.activePolicies", { defaultValue: "Active policies" })}</h4>
           {policiesQuery.isPending ? (
             <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("retentionSettings.loading", { defaultValue: "Loading…" })}
             </p>
           ) : policies.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No policies configured.
+              {t("retentionSettings.noPoliciesConfigured", { defaultValue: "No policies configured." })}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-left text-xs text-muted-foreground">
                   <tr>
-                    <th className="py-1 pr-3">Scope</th>
-                    <th className="py-1 pr-3">Scope ID</th>
-                    <th className="py-1 pr-3">Tier</th>
-                    <th className="py-1 pr-3">Retention</th>
-                    <th className="py-1 pr-3">Archive?</th>
+                    <th className="py-1 pr-3">{t("retentionSettings.scope", { defaultValue: "Scope" })}</th>
+                    <th className="py-1 pr-3">{t("retentionSettings.scopeId", { defaultValue: "Scope ID" })}</th>
+                    <th className="py-1 pr-3">{t("retentionSettings.tier", { defaultValue: "Tier" })}</th>
+                    <th className="py-1 pr-3">{t("retentionSettings.retention", { defaultValue: "Retention" })}</th>
+                    <th className="py-1 pr-3">{t("retentionSettings.archive", { defaultValue: "Archive?" })}</th>
                     <th className="py-1"></th>
                   </tr>
                 </thead>
@@ -217,11 +216,11 @@ export default function RetentionSettings() {
                       <td className="py-1 pr-3">{p.memory_tier}</td>
                       <td className="py-1 pr-3">
                         {p.retention_days == null
-                          ? "never"
-                          : `${p.retention_days}d`}
+                          ? t("retentionSettings.never", { defaultValue: "never" })
+                          : t("retentionSettings.daysShort", { defaultValue: "{{days}}d", days: p.retention_days })}
                       </td>
                       <td className="py-1 pr-3">
-                        {p.archive_to_s3 ? "yes" : "no"}
+                        {p.archive_to_s3 ? t("retentionSettings.yes", { defaultValue: "yes" }) : t("retentionSettings.no", { defaultValue: "no" })}
                       </td>
                       <td className="py-1 text-right">
                         {scopeOptions.includes(p.scope) ? (
@@ -230,7 +229,7 @@ export default function RetentionSettings() {
                             size="sm"
                             onClick={() => handleDelete(p)}
                             disabled={remove.isPending}
-                            aria-label="Delete policy"
+                            aria-label={t("retentionSettings.deletePolicy", { defaultValue: "Delete policy" })}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -247,11 +246,11 @@ export default function RetentionSettings() {
         {/* ── Upsert form ── */}
         {scopeOptions.length > 0 && (
           <div className="border-t pt-4 space-y-3">
-            <h4 className="text-sm font-medium">Add or update a policy</h4>
+            <h4 className="text-sm font-medium">{t("retentionSettings.addOrUpdateAPolicy", { defaultValue: "Add or update a policy" })}</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Scope */}
               <div>
-                <Label className="text-xs">Scope</Label>
+                <Label className="text-xs">{t("retentionSettings.scope", { defaultValue: "Scope" })}</Label>
                 <Select
                   value={draft.scope}
                   onValueChange={(v) =>
@@ -259,7 +258,7 @@ export default function RetentionSettings() {
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Scope" />
+                    <SelectValue placeholder={t("retentionSettings.scope", { defaultValue: "Scope" })} />
                   </SelectTrigger>
                   <SelectContent>
                     {scopeOptions.map((s) => (
@@ -274,7 +273,7 @@ export default function RetentionSettings() {
               {/* Scope ID */}
               <div>
                 <Label className="text-xs" htmlFor="retention-scope-id">
-                  Scope ID {draft.scope === "system" && "(unused for system scope)"}
+                  {t("retentionSettings.scopeId", { defaultValue: "Scope ID" })} {draft.scope === "system" && t("retentionSettings.unusedForSystemScope", { defaultValue: "(unused for system scope)" })}
                 </Label>
                 <Input
                   id="retention-scope-id"
@@ -283,13 +282,13 @@ export default function RetentionSettings() {
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, scope_id: e.target.value }))
                   }
-                  placeholder="UUID for org / user / manager"
+                  placeholder={t("retentionSettings.uuidForOrgUserManager", { defaultValue: "UUID for org / user / manager" })}
                 />
               </div>
 
               {/* Tier */}
               <div>
-                <Label className="text-xs">Tier</Label>
+                <Label className="text-xs">{t("retentionSettings.tier", { defaultValue: "Tier" })}</Label>
                 <Select
                   value={draft.memory_tier}
                   onValueChange={(v) =>
@@ -300,7 +299,7 @@ export default function RetentionSettings() {
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Tier" />
+                    <SelectValue placeholder={t("retentionSettings.tier", { defaultValue: "Tier" })} />
                   </SelectTrigger>
                   <SelectContent>
                     {ALL_TIERS.map((t) => (
@@ -324,7 +323,7 @@ export default function RetentionSettings() {
               {/* Retention days */}
               <div>
                 <Label className="text-xs" htmlFor="retention-days">
-                  Retention days (blank = never expire)
+                  {t("retentionSettings.retentionDaysBlankNeverExpire", { defaultValue: "Retention days (blank = never expire)" })}
                 </Label>
                 <Input
                   id="retention-days"
@@ -354,7 +353,7 @@ export default function RetentionSettings() {
                   htmlFor="retention-archive"
                   className="text-sm font-medium"
                 >
-                  Archive to S3 before delete
+                  {t("retentionSettings.archiveToS3BeforeDelete", { defaultValue: "Archive to S3 before delete" })}
                 </Label>
               </div>
             </div>
@@ -370,7 +369,7 @@ export default function RetentionSettings() {
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
-                Save policy
+                {t("retentionSettings.savePolicy", { defaultValue: "Save policy" })}
               </Button>
             </div>
           </div>

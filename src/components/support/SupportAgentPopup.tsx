@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useAgentSpeech } from "@/hooks/agents/useAgentSpeech";
 import { useSupportAgentChat } from "@/hooks/support/useSupportAgentChat";
+import { useTranslation } from "react-i18next";
 
 export type SupportAgentPopupProps = {
   open: boolean;
@@ -42,9 +43,12 @@ export type SupportAgentPopupProps = {
 export default function SupportAgentPopup({
   open,
   onClose,
-  userLabel = "You",
-  title = "Ask Meridian",
+  userLabel: userLabelProp,
+  title: titleProp,
 }: SupportAgentPopupProps) {
+  const { t } = useTranslation("accountUi")
+  const userLabel = userLabelProp ?? t("supportAgentPopup.you", { defaultValue: "You" })
+  const title = titleProp ?? t("supportAgentPopup.askMeridian", { defaultValue: "Ask Meridian" })
   // Voice output is opt-in and remembered — a help popup that starts talking
   // unprompted in an open-plan office is worse than one that stays quiet.
   const [voiceOn, setVoiceOn] = useState(() => {
@@ -133,7 +137,7 @@ export default function SupportAgentPopup({
     <div
       className="ig-light-island fixed bottom-6 right-6 z-50 w-[min(26rem,calc(100vw-3rem))]"
       role="dialog"
-      aria-label="Ask Meridian — support assistant"
+      aria-label={t("supportAgentPopup.askMeridianSupportAssistant", { defaultValue: "Ask Meridian — support assistant" })}
       data-testid="support-agent-popup"
     >
       <div className="flex flex-col rounded-2xl border bg-white shadow-2xl overflow-hidden h-[min(34rem,calc(100vh-6rem))]">
@@ -146,7 +150,7 @@ export default function SupportAgentPopup({
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate">{title}</p>
               <p className="text-xs text-muted-foreground truncate">
-                {isBusy ? "Thinking…" : "AI support assistant"}
+                {isBusy ? t("supportAgentPopup.thinking", { defaultValue: "Thinking…" }) : t("supportAgentPopup.aiSupportAssistant", { defaultValue: "AI support assistant" })}
               </p>
             </div>
           </div>
@@ -156,7 +160,7 @@ export default function SupportAgentPopup({
               variant="ghost"
               size="icon"
               className="size-8"
-              aria-label={voiceOn ? "Turn voice replies off" : "Turn voice replies on"}
+              aria-label={voiceOn ? t("supportAgentPopup.turnVoiceRepliesOff", { defaultValue: "Turn voice replies off" }) : t("supportAgentPopup.turnVoiceRepliesOn", { defaultValue: "Turn voice replies on" })}
               aria-pressed={voiceOn}
               onClick={toggleVoice}
             >
@@ -167,7 +171,7 @@ export default function SupportAgentPopup({
               variant="ghost"
               size="icon"
               className="size-8"
-              aria-label="Export this conversation"
+              aria-label={t("supportAgentPopup.exportThisConversation", { defaultValue: "Export this conversation" })}
               disabled={chat.isExporting}
               onClick={() => void chat.exportChat()}
             >
@@ -182,7 +186,7 @@ export default function SupportAgentPopup({
               variant="ghost"
               size="icon"
               className="size-8"
-              aria-label="Start a new conversation"
+              aria-label={t("supportAgentPopup.startANewConversation", { defaultValue: "Start a new conversation" })}
               onClick={() => {
                 speech.stopSpeaking();
                 chat.clear();
@@ -195,7 +199,7 @@ export default function SupportAgentPopup({
               variant="ghost"
               size="icon"
               className="size-8"
-              aria-label="Close support assistant"
+              aria-label={t("supportAgentPopup.closeSupportAssistant", { defaultValue: "Close support assistant" })}
               onClick={() => {
                 speech.stopSpeaking();
                 onClose();
@@ -256,7 +260,7 @@ export default function SupportAgentPopup({
                 variant={speech.isRecording ? "default" : "outline"}
                 size="icon"
                 className="size-9 shrink-0"
-                aria-label={speech.isRecording ? "Stop dictating" : "Dictate a message"}
+                aria-label={speech.isRecording ? t("supportAgentPopup.stopDictating", { defaultValue: "Stop dictating" }) : t("supportAgentPopup.dictateAMessage", { defaultValue: "Dictate a message" })}
                 aria-pressed={speech.isRecording}
                 onClick={speech.toggleRecording}
               >
@@ -280,16 +284,16 @@ export default function SupportAgentPopup({
               }}
               rows={1}
               placeholder={
-                speech.isRecording ? "Listening…" : "Ask about Inspire Genius…"
+                speech.isRecording ? t("supportAgentPopup.listening", { defaultValue: "Listening…" }) : t("supportAgentPopup.askAboutInspireGenius", { defaultValue: "Ask about Inspire Genius…" })
               }
-              aria-label="Message"
+              aria-label={t("supportAgentPopup.message", { defaultValue: "Message" })}
               className="min-h-9 max-h-28 resize-none py-2"
             />
             <Button
               type="button"
               size="icon"
               className="size-9 shrink-0"
-              aria-label="Send message"
+              aria-label={t("supportAgentPopup.sendMessage", { defaultValue: "Send message" })}
               disabled={!draft.trim() || isBusy}
               onClick={submitDraft}
             >

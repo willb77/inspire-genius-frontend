@@ -23,8 +23,10 @@ import {
 } from "@/hooks/manager/useTeamSchedule"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { MAX_LOCATION } from "@/types/manager/teamSchedule"
+import { useTranslation } from "react-i18next"
 
 export default function MeetingLocationSettings() {
+  const { t } = useTranslation("accountUi")
   const prefs = useTeamSchedulePreferences()
   const save = useSaveTeamSchedulePreferences()
   // null = not edited yet, so the field shows what is saved.
@@ -43,9 +45,9 @@ export default function MeetingLocationSettings() {
       {
         onSuccess: (result) => {
           setDraft(null)
-          toast.success(result.defaultLocation ? "Default location saved" : "Default location cleared")
+          toast.success(result.defaultLocation ? t("meetingLocationSettings.defaultLocationSaved", { defaultValue: "Default location saved" }) : t("meetingLocationSettings.defaultLocationCleared", { defaultValue: "Default location cleared" }))
         },
-        onError: (err) => setError(apiErrorMessage(err, "Could not save your default location.")),
+        onError: (err) => setError(apiErrorMessage(err, t("meetingLocationSettings.couldNotSaveYourDefaultLocation", { defaultValue: "Could not save your default location." }))),
       },
     )
   }
@@ -55,31 +57,31 @@ export default function MeetingLocationSettings() {
       <CardHeader className="text-left">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <MapPin className="h-5 w-5 text-[#466BC4]" />
-          Meeting location
+          {t("meetingLocationSettings.meetingLocation", { defaultValue: "Meeting location" })}
         </CardTitle>
       </CardHeader>
       <CardContent className="text-left space-y-3">
         <div className="space-y-1.5">
-          <Label htmlFor="default-meeting-location">Default location for sessions you schedule</Label>
+          <Label htmlFor="default-meeting-location">{t("meetingLocationSettings.defaultLocationForSessionsYouSchedule", { defaultValue: "Default location for sessions you schedule" })}</Label>
           <Input
             id="default-meeting-location"
             value={value}
             disabled={prefs.isLoading}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="A video meeting link, a phone number or an address"
+            placeholder={t("meetingLocationSettings.aVideoMeetingLinkAPhone", { defaultValue: "A video meeting link, a phone number or an address" })}
             aria-invalid={tooLong}
           />
           <p className="text-xs text-[#6b7280]">
-            Fills in the Location box on Schedule. You can still change it for each booking.
+            {t("meetingLocationSettings.fillsInTheLocationBoxOn", { defaultValue: "Fills in the Location box on Schedule. You can still change it for each booking." })}
           </p>
           {tooLong && (
-            <p className="text-xs text-[#EF4444]">At most {MAX_LOCATION} characters.</p>
+            <p className="text-xs text-[#EF4444]">{t("meetingLocationSettings.atMostCharacters", { defaultValue: "At most {{max}} characters.", max: MAX_LOCATION })}</p>
           )}
         </div>
 
         {prefs.error && (
           <p role="alert" className="text-sm text-[#EF4444]">
-            {apiErrorMessage(prefs.error, "Could not load your default location.")}
+            {apiErrorMessage(prefs.error, t("meetingLocationSettings.couldNotLoadYourDefaultLocation", { defaultValue: "Could not load your default location." }))}
           </p>
         )}
         {error && (
@@ -98,7 +100,7 @@ export default function MeetingLocationSettings() {
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          Save
+          {t("meetingLocationSettings.save", { defaultValue: "Save" })}
         </Button>
       </CardContent>
     </Card>

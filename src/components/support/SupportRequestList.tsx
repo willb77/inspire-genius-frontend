@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { TicketOut } from "@/services/support/support.service";
+import { useTranslation } from "react-i18next";
 
 export type SupportRequestListProps = {
   tickets: TicketOut[];
@@ -28,9 +29,10 @@ export default function SupportRequestList({
   isLoading,
   highlightId,
 }: SupportRequestListProps) {
+  const { t } = useTranslation("accountUi")
   return (
     <div className="bg-white rounded-2xl border shadow-sm p-4">
-      <div className="text-left mb-3 font-semibold">Your requests</div>
+      <div className="text-left mb-3 font-semibold">{t("supportRequestList.yourRequests", { defaultValue: "Your requests" })}</div>
 
       {isLoading && (
         <div className="space-y-3">
@@ -51,43 +53,43 @@ export default function SupportRequestList({
 
       {!isLoading && tickets.length === 0 && (
         <div className="text-sm text-muted-foreground">
-          You have not posted any support requests yet.
+          {t("supportRequestList.youHaveNotPostedAnySupport", { defaultValue: "You have not posted any support requests yet." })}
         </div>
       )}
 
       {!isLoading && tickets.length > 0 && (
         <div className="space-y-3">
-          {tickets.map((t) => (
+          {tickets.map((ticket) => (
             <div
-              key={t.id}
+              key={ticket.id}
               className={cn(
                 "border rounded-lg p-3",
-                t.id === highlightId && "border-blue-300 bg-blue-50/40",
+                ticket.id === highlightId && "border-blue-300 bg-blue-50/40",
               )}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="font-medium">
-                  {t.ticket_number ? (
+                  {ticket.ticket_number ? (
                     <span className="mr-2 text-muted-foreground tabular-nums">
-                      #{t.ticket_number}
+                      #{ticket.ticket_number}
                     </span>
                   ) : null}
-                  {t.subject}
+                  {ticket.subject}
                 </div>
                 <div className="flex items-center gap-2">
-                  {t.source === "assistant" && (
-                    <Badge variant="outline">Support chat</Badge>
+                  {ticket.source === "assistant" && (
+                    <Badge variant="outline">{t("supportRequestList.supportChat", { defaultValue: "Support chat" })}</Badge>
                   )}
-                  <Badge variant={t.status === "open" ? "secondary" : "default"}>
-                    {t.status}
+                  <Badge variant={ticket.status === "open" ? "secondary" : "default"}>
+                    {ticket.status}
                   </Badge>
-                  <Badge variant={priorityVariant(t.priority)}>
-                    {t.priority}
+                  <Badge variant={priorityVariant(ticket.priority)}>
+                    {ticket.priority}
                   </Badge>
                 </div>
               </div>
               <div className="mt-1 text-sm text-muted-foreground line-clamp-3 whitespace-pre-line">
-                {t.description}
+                {ticket.description}
               </div>
 
               {/* Sent / resolved provenance. `resolved_at` is null both while
@@ -95,48 +97,49 @@ export default function SupportRequestList({
                   recording it, so the closed-without-a-time case is stated
                   rather than left looking like an open request. */}
               <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                <dt className="font-medium">Sent</dt>
-                <dd>{fmt(t.created_at) ?? "—"}</dd>
+                <dt className="font-medium">{t("supportRequestList.sent", { defaultValue: "Sent" })}</dt>
+                <dd>{fmt(ticket.created_at) ?? "—"}</dd>
 
-                <dt className="font-medium">Assigned</dt>
+                <dt className="font-medium">{t("supportRequestList.assigned", { defaultValue: "Assigned" })}</dt>
                 <dd>
-                  {t.assigned_to
-                    ? `${t.assigned_to_name ?? t.assigned_to}${
-                        fmt(t.assigned_at) ? ` — ${fmt(t.assigned_at)}` : ""
+                  {ticket.assigned_to
+                    ? `${ticket.assigned_to_name ?? ticket.assigned_to}${
+                        fmt(ticket.assigned_at) ? ` — ${fmt(ticket.assigned_at)}` : ""
                       }`
-                    : "Awaiting assignment"}
+                    : t("supportRequestList.awaitingAssignment", { defaultValue: "Awaiting assignment" })}
                 </dd>
 
-                {t.resolved_at ? (
+                {ticket.resolved_at ? (
                   <>
-                    <dt className="font-medium">Resolved</dt>
-                    <dd>{fmt(t.resolved_at)}</dd>
-                    <dt className="font-medium">Resolved by</dt>
-                    <dd>{t.resolved_by ?? "Not recorded"}</dd>
+                    <dt className="font-medium">{t("supportRequestList.resolved", { defaultValue: "Resolved" })}</dt>
+                    <dd>{fmt(ticket.resolved_at)}</dd>
+                    <dt className="font-medium">{t("supportRequestList.resolvedBy", { defaultValue: "Resolved by" })}</dt>
+                    <dd>{ticket.resolved_by ?? t("supportRequestList.notRecorded", { defaultValue: "Not recorded" })}</dd>
                   </>
-                ) : t.status === "closed" ? (
+                ) : ticket.status === "closed" ? (
                   <>
-                    <dt className="font-medium">Resolved</dt>
-                    <dd>Closed — time not recorded</dd>
+                    <dt className="font-medium">{t("supportRequestList.resolved", { defaultValue: "Resolved" })}</dt>
+                    <dd>{t("supportRequestList.closedTimeNotRecorded", { defaultValue: "Closed — time not recorded" })}</dd>
                   </>
                 ) : (
                   <>
-                    <dt className="font-medium">Resolved</dt>
-                    <dd>Not yet resolved</dd>
+                    <dt className="font-medium">{t("supportRequestList.resolved", { defaultValue: "Resolved" })}</dt>
+                    <dd>{t("supportRequestList.notYetResolved", { defaultValue: "Not yet resolved" })}</dd>
                   </>
                 )}
               </dl>
 
-              {t.attachments?.length ? (
+              {ticket.attachments?.length ? (
                 <div className="mt-2 text-xs text-muted-foreground">
-                  {t.attachments.length} screenshot
-                  {t.attachments.length === 1 ? "" : "s"} attached
+                  {ticket.attachments.length === 1
+                    ? t("supportRequestList.screenshotAttachedOne", { defaultValue: "{{n}} screenshot attached", n: ticket.attachments.length })
+                    : t("supportRequestList.screenshotsAttachedOther", { defaultValue: "{{n}} screenshots attached", n: ticket.attachments.length })}
                 </div>
               ) : null}
 
-              {t.contact_email ? (
+              {ticket.contact_email ? (
                 <div className="mt-2 text-xs text-muted-foreground">
-                  We will reply to {t.contact_email}
+                  {t("supportRequestList.weWillReplyTo", { defaultValue: "We will reply to {{email}}", email: ticket.contact_email })}
                 </div>
               ) : null}
             </div>

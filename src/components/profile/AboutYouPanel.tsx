@@ -11,6 +11,7 @@ import {
 } from "@/components/dashboard/v2/AddPersonalDocModal"
 import { useMyProfile } from "@/hooks/profile/useProfile"
 import { useLatestPrismStatus } from "@/hooks/prism/usePrismRequest"
+import { useTranslation } from "react-i18next"
 
 /**
  * "What we know about you": four ways to tell IG who you are (request the
@@ -179,8 +180,6 @@ function Tile({
   )
 }
 
-const UNKNOWN_LABEL = "Couldn't check just now"
-
 export function AboutYouPanel({
   hasPrism,
   prismUnknown = false,
@@ -189,6 +188,7 @@ export function AboutYouPanel({
   onUploaded,
   variant = "page",
 }: AboutYouPanelProps) {
+  const { t } = useTranslation("accountUi")
   const navigate = useNavigate()
   const [personalTarget, setPersonalTarget] = useState<AddPersonalDocTarget | null>(null)
   const [expanded, setExpanded] = useState(false)
@@ -224,7 +224,7 @@ export function AboutYouPanel({
         )}
       >
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-        Checking what we already have…
+        {t("aboutYouPanel.checkingWhatWeAlreadyHave", { defaultValue: "Checking what we already have…" })}
       </div>
     )
   }
@@ -237,68 +237,70 @@ export function AboutYouPanel({
   const allOnFile = hasPrism && hasResume && hasBio && !profileError
   const collapsed = isHome && allOnFile && !expanded
 
+  const unknownLabel = t("aboutYouPanel.couldntCheckJustNow", { defaultValue: "Couldn't check just now" })
+
   const counter =
     doneCount === 0
-      ? "Nothing on file yet — that's a fine place to start."
-      : `${doneCount} of 3 on file: PRISM, résumé, bio. Anything you add from here sharpens what comes next.`
+      ? t("aboutYouPanel.nothingOnFileYetThatsA", { defaultValue: "Nothing on file yet — that's a fine place to start." })
+      : t("aboutYouPanel.countOfThreeOnFile", { defaultValue: "{{done}} of 3 on file: PRISM, résumé, bio. Anything you add from here sharpens what comes next.", done: doneCount })
 
   const tiles = (
     <section
-      aria-label="Ways to tell us about you"
+      aria-label={t("aboutYouPanel.waysToTellUsAboutYou", { defaultValue: "Ways to tell us about you" })}
       className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
     >
       <Tile
         variant={variant}
         icon={ClipboardList}
-        title="Request your PRISM survey"
-        blurb="A short questionnaire about how you prefer to work. It's the anchor everything else is read against — the single biggest step you can take here."
+        title={t("aboutYouPanel.requestYourPrismSurvey", { defaultValue: "Request your PRISM survey" })}
+        blurb={t("aboutYouPanel.surveyBlurb", { defaultValue: "A short questionnaire about how you prefer to work. It's the anchor everything else is read against — the single biggest step you can take here." })}
         state={surveyState}
         statusLabel={
           surveyState === "done"
-            ? "Results are in"
+            ? t("aboutYouPanel.resultsAreIn", { defaultValue: "Results are in" })
             : surveyState === "waiting"
-              ? "Requested — we'll pick the results up automatically"
+              ? t("aboutYouPanel.requestedWellPickTheResults", { defaultValue: "Requested — we'll pick the results up automatically" })
               : prismUnresolved
-                ? UNKNOWN_LABEL
-                : "Not requested yet"
+                ? unknownLabel
+                : t("aboutYouPanel.notRequestedYet", { defaultValue: "Not requested yet" })
         }
-        actionLabel={surveyState === "todo" ? "Request it" : "View status"}
+        actionLabel={surveyState === "todo" ? t("aboutYouPanel.requestIt", { defaultValue: "Request it" }) : t("aboutYouPanel.viewStatus", { defaultValue: "View status" })}
         onAction={() => navigate(ROUTES.PRISM_ASSESSMENT)}
       />
 
       <Tile
         variant={variant}
         icon={FileText}
-        title="Upload a PRISM report you already have"
-        blurb="Done PRISM somewhere else? Upload the report and we'll read the scores off it. You get to check what we read before anything is saved."
+        title={t("aboutYouPanel.uploadAPrismReportYouAlready", { defaultValue: "Upload a PRISM report you already have" })}
+        blurb={t("aboutYouPanel.uploadReportBlurb", { defaultValue: "Done PRISM somewhere else? Upload the report and we'll read the scores off it. You get to check what we read before anything is saved." })}
         state={hasPrism ? "done" : "todo"}
         statusLabel={
-          hasPrism ? "Scores on file" : prismUnresolved ? UNKNOWN_LABEL : "Nothing uploaded yet"
+          hasPrism ? t("aboutYouPanel.scoresOnFile", { defaultValue: "Scores on file" }) : prismUnresolved ? unknownLabel : t("aboutYouPanel.nothingUploadedYet", { defaultValue: "Nothing uploaded yet" })
         }
-        actionLabel={hasPrism ? "Replace report" : "Upload report"}
+        actionLabel={hasPrism ? t("aboutYouPanel.replaceReport", { defaultValue: "Replace report" }) : t("aboutYouPanel.uploadReport", { defaultValue: "Upload report" })}
         onAction={onUploadPrism}
       />
 
       <Tile
         variant={variant}
         icon={FileText}
-        title="Upload your résumé"
-        blurb="The record of what you've actually done. It gives the later stages real roles and real dates to work from instead of guesses."
+        title={t("aboutYouPanel.uploadYourReSume", { defaultValue: "Upload your résumé" })}
+        blurb={t("aboutYouPanel.resumeBlurb", { defaultValue: "The record of what you've actually done. It gives the later stages real roles and real dates to work from instead of guesses." })}
         state={hasResume ? "done" : "todo"}
-        statusLabel={hasResume ? "On file" : profileError ? UNKNOWN_LABEL : "Not added yet"}
-        actionLabel={hasResume ? "Replace résumé" : "Upload résumé"}
-        onAction={() => setPersonalTarget({ name: "Résumé", docKind: "resume" })}
+        statusLabel={hasResume ? t("aboutYouPanel.onFile", { defaultValue: "On file" }) : profileError ? unknownLabel : t("aboutYouPanel.notAddedYet", { defaultValue: "Not added yet" })}
+        actionLabel={hasResume ? t("aboutYouPanel.replaceResume", { defaultValue: "Replace résumé" }) : t("aboutYouPanel.uploadResume", { defaultValue: "Upload résumé" })}
+        onAction={() => setPersonalTarget({ name: t("aboutYouPanel.resume", { defaultValue: "Résumé" }), docKind: "resume" })}
       />
 
       <Tile
         variant={variant}
         icon={UserRound}
-        title="Add a bio"
-        blurb="A few lines in your own words. How you'd describe yourself is a signal in its own right, and it's the quickest of the four."
+        title={t("aboutYouPanel.addABio", { defaultValue: "Add a bio" })}
+        blurb={t("aboutYouPanel.bioBlurb", { defaultValue: "A few lines in your own words. How you'd describe yourself is a signal in its own right, and it's the quickest of the four." })}
         state={hasBio ? "done" : "todo"}
-        statusLabel={hasBio ? "On file" : profileError ? UNKNOWN_LABEL : "Not added yet"}
-        actionLabel={hasBio ? "Update bio" : "Add bio"}
-        onAction={() => setPersonalTarget({ name: "Bio", docKind: "bio" })}
+        statusLabel={hasBio ? t("aboutYouPanel.onFile", { defaultValue: "On file" }) : profileError ? unknownLabel : t("aboutYouPanel.notAddedYet", { defaultValue: "Not added yet" })}
+        actionLabel={hasBio ? t("aboutYouPanel.updateBio", { defaultValue: "Update bio" }) : t("aboutYouPanel.addBio", { defaultValue: "Add bio" })}
+        onAction={() => setPersonalTarget({ name: t("aboutYouPanel.bio", { defaultValue: "Bio" }), docKind: "bio" })}
       />
     </section>
   )
@@ -320,11 +322,11 @@ export function AboutYouPanel({
   return (
     <section
       data-testid="home-about-you-panel"
-      aria-label="What we know about you"
+      aria-label={t("aboutYouPanel.whatWeKnowAboutYou", { defaultValue: "What we know about you" })}
       className="ig-tile rounded-2xl border border-ig-line bg-ig-surface px-5 py-4 shadow-sm"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-ig-ink">What we know about you</h2>
+        <h2 className="text-base font-semibold text-ig-ink">{t("aboutYouPanel.whatWeKnowAboutYou", { defaultValue: "What we know about you" })}</h2>
         {allOnFile ? (
           <button
             type="button"
@@ -332,13 +334,13 @@ export function AboutYouPanel({
             onClick={() => setExpanded((v) => !v)}
             className="text-xs font-medium text-ig-accent hover:text-ig-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ig-accent"
           >
-            {collapsed ? "Show" : "Hide"}
+            {collapsed ? t("aboutYouPanel.show", { defaultValue: "Show" }) : t("aboutYouPanel.hide", { defaultValue: "Hide" })}
           </button>
         ) : null}
       </div>
       {collapsed ? (
         <p data-testid="about-you-collapsed" className="mt-1 text-sm text-ig-body">
-          PRISM, résumé and bio are on file.
+          {t("aboutYouPanel.prismReSumeAndBioAre", { defaultValue: "PRISM, résumé and bio are on file." })}
         </p>
       ) : (
         <div className="mt-2 space-y-3">

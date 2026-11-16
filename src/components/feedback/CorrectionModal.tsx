@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "react-i18next"
 
 const correctionSchema = z.object({
   correctedText: z.string().min(1, "Corrected response is required"),
@@ -45,6 +46,7 @@ export default function CorrectionModal({
   coachId,
   originalText,
 }: CorrectionModalProps) {
+  const { t } = useTranslation("accountUi")
   const submitFeedback = useSubmitFeedback()
   const { register, handleSubmit, reset, formState: { errors } } = useForm<CorrectionForm>({
     resolver: zodResolver(correctionSchema),
@@ -60,11 +62,11 @@ export default function CorrectionModal({
         value: 1,
         text: `[${data.reason}] ${data.correctedText}`,
       })
-      toast.success("Correction submitted. Thank you!")
+      toast.success(t("correctionModal.correctionSubmittedThankYou", { defaultValue: "Correction submitted. Thank you!" }))
       reset()
       onOpenChange(false)
     } catch {
-      toast.error("Failed to submit correction")
+      toast.error(t("correctionModal.failedToSubmitCorrection", { defaultValue: "Failed to submit correction" }))
     }
   }
 
@@ -72,22 +74,22 @@ export default function CorrectionModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Submit Correction</DialogTitle>
+          <DialogTitle>{t("correctionModal.submitCorrection", { defaultValue: "Submit Correction" })}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-[#6b7280] block mb-1">Original Response</label>
+            <label className="text-xs font-semibold text-[#6b7280] block mb-1">{t("correctionModal.originalResponse", { defaultValue: "Original Response" })}</label>
             <div className="text-[13px] text-[#374151] bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-3 max-h-24 overflow-y-auto">
               {originalText}
             </div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-[#6b7280] block mb-1">Reason</label>
+            <label className="text-xs font-semibold text-[#6b7280] block mb-1">{t("correctionModal.reason", { defaultValue: "Reason" })}</label>
             <select
               {...register("reason")}
               className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#3B5BFF]"
             >
-              <option value="">Select a reason...</option>
+              <option value="">{t("correctionModal.selectAReason", { defaultValue: "Select a reason..." })}</option>
               {REASONS.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
@@ -95,19 +97,19 @@ export default function CorrectionModal({
             {errors.reason && <p className="text-xs text-[#EF4444] mt-1">{errors.reason.message}</p>}
           </div>
           <div>
-            <label className="text-xs font-semibold text-[#6b7280] block mb-1">Corrected Response</label>
+            <label className="text-xs font-semibold text-[#6b7280] block mb-1">{t("correctionModal.correctedResponse", { defaultValue: "Corrected Response" })}</label>
             <textarea
               {...register("correctedText")}
               rows={4}
-              placeholder="Enter the corrected response..."
+              placeholder={t("correctionModal.enterTheCorrectedResponse", { defaultValue: "Enter the corrected response..." })}
               className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#3B5BFF] resize-y"
             />
             {errors.correctedText && <p className="text-xs text-[#EF4444] mt-1">{errors.correctedText.message}</p>}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("correctionModal.cancel", { defaultValue: "Cancel" })}</Button>
             <Button type="submit" disabled={submitFeedback.isPending}>
-              {submitFeedback.isPending ? "Submitting..." : "Submit Correction"}
+              {submitFeedback.isPending ? t("correctionModal.submitting", { defaultValue: "Submitting..." }) : t("correctionModal.submitCorrection", { defaultValue: "Submit Correction" })}
             </Button>
           </DialogFooter>
         </form>

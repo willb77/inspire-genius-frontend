@@ -35,6 +35,7 @@ import {
   type SupportRequestFormProps,
   type SupportRequestValues,
 } from "@/types/support/component-types";
+import { useTranslation } from "react-i18next";
 
 /** Matches the server's per-file ceiling (support-service max_attachment_bytes). */
 const MAX_SCREENSHOT_BYTES = 10 * 1024 * 1024;
@@ -47,6 +48,7 @@ export default function SupportRequestForm({
   screenshots = [],
   onScreenshotsChange,
 }: SupportRequestFormProps) {
+  const { t } = useTranslation("accountUi")
   const description = form.watch("description") ?? "";
   const used = description.length;
   const remainingToMinimum = Math.max(0, MIN_DESCRIPTION_CHARS - used);
@@ -59,11 +61,10 @@ export default function SupportRequestForm({
     <Card className="shadow-none sm:shadow-sm">
       <CardHeader className="text-left">
         <CardTitle className="text-base font-medium tracking-tight">
-          Post a support request
+          {t("supportRequestForm.postASupportRequest", { defaultValue: "Post a support request" })}
         </CardTitle>
         <CardDescription>
-          Tell us what is going wrong and we will get back to you. The more
-          detail you give, the faster we can help.
+          {t("supportRequestForm.tellUsWhatIsGoingWrong", { defaultValue: "Tell us what is going wrong and we will get back to you. The more detail you give, the faster we can help." })}
         </CardDescription>
       </CardHeader>
 
@@ -74,12 +75,10 @@ export default function SupportRequestForm({
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-semibold tracking-tight">
-                  Your contact details
+                  {t("supportRequestForm.yourContactDetails", { defaultValue: "Your contact details" })}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Sent with your request so we can reply directly. Prefilled
-                  from your account — edit if you would rather we used something
-                  else.
+                  {t("supportRequestForm.sentWithYourRequestSoWe", { defaultValue: "Sent with your request so we can reply directly. Prefilled from your account — edit if you would rather we used something else." })}
                 </p>
               </div>
 
@@ -90,10 +89,10 @@ export default function SupportRequestForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel className="mb-2 block text-xs">
-                        Full name
+                        {t("supportRequestForm.fullName", { defaultValue: "Full name" })}
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Your name" {...field} />
+                        <Input placeholder={t("supportRequestForm.yourName", { defaultValue: "Your name" })} {...field} />
                       </FormControl>
                       <div className="min-h-[20px]">
                         <FormMessage />
@@ -108,12 +107,12 @@ export default function SupportRequestForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel className="mb-2 block text-xs">
-                        Email address
+                        {t("supportRequestForm.emailAddress", { defaultValue: "Email address" })}
                       </FormLabel>
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="you@example.com"
+                          placeholder={t("supportRequestForm.youExampleCom", { defaultValue: "you@example.com" })}
                           {...field}
                         />
                       </FormControl>
@@ -130,7 +129,7 @@ export default function SupportRequestForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel className="mb-2 block text-xs">
-                        Phone (optional)
+                        {t("supportRequestForm.phoneOptional", { defaultValue: "Phone (optional)" })}
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -152,7 +151,7 @@ export default function SupportRequestForm({
             {/* ── Request block ───────────────────────────────────────── */}
             <div className="space-y-4 border-t pt-5">
               <h3 className="text-sm font-semibold tracking-tight">
-                About the issue
+                {t("supportRequestForm.aboutTheIssue", { defaultValue: "About the issue" })}
               </h3>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -162,7 +161,7 @@ export default function SupportRequestForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel className="mb-2 block text-xs">
-                        What is this about?
+                        {t("supportRequestForm.whatIsThisAbout", { defaultValue: "What is this about?" })}
                       </FormLabel>
                       <Select
                         value={field.value}
@@ -170,7 +169,7 @@ export default function SupportRequestForm({
                       >
                         <FormControl>
                           <SelectTrigger className="h-10 w-full">
-                            <SelectValue placeholder="Select a category" />
+                            <SelectValue placeholder={t("supportRequestForm.selectACategory", { defaultValue: "Select a category" })} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -194,7 +193,7 @@ export default function SupportRequestForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel className="mb-2 block text-xs">
-                        How urgent is it?
+                        {t("supportRequestForm.howUrgentIsIt", { defaultValue: "How urgent is it?" })}
                       </FormLabel>
                       <Select
                         value={field.value}
@@ -202,7 +201,7 @@ export default function SupportRequestForm({
                       >
                         <FormControl>
                           <SelectTrigger className="h-10 w-full">
-                            <SelectValue placeholder="Select a priority" />
+                            <SelectValue placeholder={t("supportRequestForm.selectAPriority", { defaultValue: "Select a priority" })} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -226,11 +225,11 @@ export default function SupportRequestForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel className="mb-2 block text-xs">
-                        Subject
+                        {t("supportRequestForm.subject", { defaultValue: "Subject" })}
                       </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Short summary of the problem"
+                          placeholder={t("supportRequestForm.shortSummaryOfTheProblem", { defaultValue: "Short summary of the problem" })}
                           {...field}
                         />
                       </FormControl>
@@ -249,7 +248,7 @@ export default function SupportRequestForm({
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel className="mb-2 block text-xs">
-                        Describe the issue in detail
+                        {t("supportRequestForm.describeTheIssueInDetail", { defaultValue: "Describe the issue in detail" })}
                       </FormLabel>
                       <span
                         className="text-[11px] text-muted-foreground"
@@ -257,7 +256,7 @@ export default function SupportRequestForm({
                       >
                         {used}/{MAX_DESCRIPTION_CHARS}
                         {remainingToMinimum > 0
-                          ? ` — ${remainingToMinimum} more to go`
+                          ? ` — ${t("supportRequestForm.moreToGo", { defaultValue: "{{n}} more to go", n: remainingToMinimum })}`
                           : null}
                       </span>
                     </div>
@@ -265,7 +264,7 @@ export default function SupportRequestForm({
                       <Textarea
                         rows={8}
                         placeholder={
-                          "Please describe the issue in detail. For example:\n" +
+                          t("supportRequestForm.describeIssuePlaceholderIntro", { defaultValue: "Please describe the issue in detail. For example:" }) + "\n" +
                           DESCRIPTION_PROMPTS.map((p) => `• ${p}`).join("\n")
                         }
                         {...field}
@@ -277,7 +276,7 @@ export default function SupportRequestForm({
                       />
                     </FormControl>
                     <FormDescription className="pt-1">
-                      Helpful things to include:{" "}
+                      {t("supportRequestForm.helpfulThingsToInclude", { defaultValue: "Helpful things to include:" })}{" "}
                       {DESCRIPTION_PROMPTS.join(" ")}
                     </FormDescription>
                     <FormMessage />
@@ -294,15 +293,13 @@ export default function SupportRequestForm({
             {onScreenshotsChange && (
               <div className="mt-4 text-left">
                 <div className="text-sm font-medium mb-1">
-                  Screenshots{" "}
+                  {t("supportRequestForm.screenshots", { defaultValue: "Screenshots" })}{" "}
                   <span className="font-normal text-muted-foreground">
-                    (optional)
+                    {t("supportRequestForm.optional", { defaultValue: "(optional)" })}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Images only, up to {MAX_SCREENSHOTS} files, 10&nbsp;MB each. A
-                  picture of the screen you are describing usually resolves a
-                  request faster than any description.
+                  {t("supportRequestForm.imagesOnlyHint", { defaultValue: "Images only, up to {{max}} files, 10 MB each. A picture of the screen you are describing usually resolves a request faster than any description.", max: MAX_SCREENSHOTS })}
                 </p>
 
                 <label
@@ -310,7 +307,7 @@ export default function SupportRequestForm({
                   className="inline-flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm cursor-pointer hover:bg-muted/50"
                 >
                   <ImagePlus className="h-4 w-4" />
-                  Add screenshots
+                  {t("supportRequestForm.addScreenshots", { defaultValue: "Add screenshots" })}
                 </label>
                 <input
                   id="support-screenshots"
@@ -344,11 +341,11 @@ export default function SupportRequestForm({
                       >
                         <span className="max-w-[16rem] truncate">{f.name}</span>
                         <span className="text-muted-foreground">
-                          {(f.size / 1024).toFixed(0)} KB
+                          {t("supportRequestForm.sizeKb", { defaultValue: "{{size}} KB", size: (f.size / 1024).toFixed(0) })}
                         </span>
                         <button
                           type="button"
-                          aria-label={`Remove ${f.name}`}
+                          aria-label={t("supportRequestForm.removeFile", { defaultValue: "Remove {{name}}", name: f.name })}
                           className="rounded p-0.5 hover:bg-muted"
                           onClick={() =>
                             onScreenshotsChange(
@@ -373,7 +370,7 @@ export default function SupportRequestForm({
                 disabled={isSubmitting}
                 className="w-full sm:w-52"
               >
-                Clear
+                {t("supportRequestForm.clear", { defaultValue: "Clear" })}
               </Button>
               <Button
                 type="submit"
@@ -381,10 +378,10 @@ export default function SupportRequestForm({
                 className="w-full sm:w-52"
               >
                 {isSubmitting ? (
-                  "Sending…"
+                  t("supportRequestForm.sending", { defaultValue: "Sending…" })
                 ) : (
                   <>
-                    Send request
+                    {t("supportRequestForm.sendRequest", { defaultValue: "Send request" })}
                     <Send className="h-4 w-4" />
                   </>
                 )}
