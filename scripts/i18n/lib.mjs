@@ -80,7 +80,8 @@ export function isAllowedIdentical(value, ctx) {
  * Compute findings for every gated language.
  * Returns { [lang]: { missing:[id], identical:[id], placeholder:[id], plural:[id] } }, ids are "lang/ns/key".
  */
-export function computeFindings({ locales = LOCALES, langs = TARGET_LANGS, glossary, allow } = {}) {
+export function computeFindings({ locales = LOCALES, langs = TARGET_LANGS, glossary, allow, pendingNamespaces = [] } = {}) {
+  const pending = new Set(pendingNamespaces);
   const ctx = {
     doNotTranslate: new Set((glossary?.do_not_translate ?? []).map((s) => s.trim())),
     allowValues: new Set(allow?.values ?? []),
@@ -91,6 +92,9 @@ export function computeFindings({ locales = LOCALES, langs = TARGET_LANGS, gloss
   for (const lang of langs) {
     const f = { missing: [], identical: [], placeholder: [], plural: [] };
     for (const ns of namespaces) {
+      // A namespace registered under scripts/i18n/pending/ is awaiting its first translation run: its keys
+      // may be missing or still English. Placeholder and plural checks still apply to keys that exist.
+      const isPending = pending.has(ns);
       const en = loadFlat("en", ns, locales) ?? {};
       const t = loadFlat(lang, ns, locales);
       const bases = pluralBases(en);
@@ -99,14 +103,14 @@ export function computeFindings({ locales = LOCALES, langs = TARGET_LANGS, gloss
         const isPluralForm = PLURAL_RE.test(k) && bases.has(PLURAL_RE.exec(k)[1]);
         if (!t || !(k in t)) {
           // A plural form the language does not use (e.g. en _one/_other vs pl _few) is not "missing".
-          if (!isPluralForm) f.missing.push(id);
+          if (!isPluralForm && !isPending) f.missing.push(id);
           continue;
         }
         if (!samePlaceholders(v, t[k])) f.placeholder.push(id);
-        if (t[k] === v && v.length > 3 && !allowKeys.has(id) && !allowKeys.has(`*/${ns}/${k}`) && !isAllowedIdentical(v, ctx))
+        if (!isPending && t[k] === v && v.length > 3 && !allowKeys.has(id) && !allowKeys.has(`*/${ns}/${k}`) && !isAllowedIdentical(v, ctx))
           f.identical.push(id);
       }
-      if (t) {
+      if (t && !isPending) {
         const req = requiredPluralForms(lang);
         for (const base of bases) {
           const need = req.filter((c) => !((base + "_" + c) in t));
@@ -144,4 +148,13 @@ export function resolved(findings, baseline) {
     }
   }
   return res;
+}
+
+/** Namespaces registered as awaiting first translation: scripts/i18n/pending/*.json, each {"namespace": "...", ...}. */
+export function loadPendingNamespaces(dir = join(HERE, "pending")) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => readJsonFile(join(dir, f), {}).namespace)
+    .filter((n) => typeof n === "string" && n.length > 0);
 }
