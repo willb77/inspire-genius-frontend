@@ -1,0 +1,403 @@
+{
+  "sharing": {
+    "basis": {
+      "managerOfRecord": {
+        "label": "Váš nadřízený",
+        "because": "Podle záznamů vaší organizace jim podléháte."
+      },
+      "rosterManager": {
+        "label": "Uvádí vás ve svém týmu",
+        "because": "Přidali vás do seznamu týmu, který si zde vedou – jde o jejich vlastní seznam, nikoli o záznamy vaší organizace."
+      },
+      "practitioner": {
+        "label": "Váš kouč",
+        "because": "Přidali vás jako klienta."
+      },
+      "requester": {
+        "label": "Požádali o přístup",
+        "because": "Požádali vás o sdílení."
+      },
+      "unknown": {
+        "label": "Na vašem seznamu",
+        "because": "Nevíme, jak se na tento seznam dostali."
+      }
+    },
+    "source": {
+      "managersOfRecord": "váš evidovaný nadřízený",
+      "rosterManagers": "nadřízení, kteří vás přidali do seznamu svého týmu",
+      "practitioners": "váš kouč",
+      "requesters": "žádosti"
+    },
+    "cat": {
+      "goals": {
+        "label": "Cíle",
+        "noun": "cíle"
+      },
+      "prism": {
+        "label": "Profil PRISM",
+        "noun": "profil PRISM"
+      },
+      "assessments": {
+        "label": "Hodnocení",
+        "noun": "hodnocení"
+      },
+      "artefacts": {
+        "label": "Profil",
+        "noun": "profilové dokumenty"
+      },
+      "interviews": {
+        "label": "Rozhovory",
+        "noun": "výsledky rozhovorů"
+      },
+      "development": {
+        "label": "Rozvoj",
+        "noun": "plán rozvoje"
+      }
+    },
+    "describe": {
+      "my": "můj seznam: {{list}}",
+      "your": "váš seznam: {{list}}"
+    },
+    "and": " a ",
+    "errorSave": "Uložení se nepodařilo. Nic se nezměnilo – zkuste to znovu.",
+    "surface": {
+      "goals": "si přečetl(a) vaše cíle",
+      "goalsAdmin": "si přečetl(a) vaše cíle (správce platformy)",
+      "dossier": "otevřel(a) váš rozvojový spis",
+      "dossierAdmin": "otevřel(a) váš rozvojový spis (správce platformy)",
+      "ratify": "zkontroloval(a) cíl",
+      "ratifyAdmin": "zkontroloval(a) cíl (správce platformy)",
+      "goalReviews": "si přečetl(a) hodnocení vašich cílů",
+      "goalReviewsAdmin": "si přečetl(a) hodnocení vašich cílů (správce platformy)",
+      "offered": "získal(a) přístup od vás",
+      "extended": "mu (jí) byl přístup obnoven vámi",
+      "looked": "nahlédl(a)",
+      "lookedAt": "nahlédl(a) ({{surface}})"
+    },
+    "thisPerson": "tato osoba",
+    "someone": "Někdo",
+    "waitingSee": "Čeká se na vás – viz žádosti níže",
+    "shareEverythingAria": "Sdílet vše na této stránce s uživatelem {{who}}",
+    "shareAll": "Sdílet vše",
+    "shareCategoryAria": "Sdílet {{noun}} s uživatelem {{who}}",
+    "partlyProtected": "(částečně chráněno)",
+    "notProtectedYet": "(zatím nechráněno)",
+    "sharingWhat": "Sdílení: {{what}}",
+    "notShared": "Nesdíleno",
+    "shareAllIncludes_one": "„Sdílet vše“ zahrnuje {{list}}, což zatím není plně chráněno.",
+    "shareAllIncludes_other": "„Sdílet vše“ zahrnuje {{list}}, což zatím není plně chráněno.",
+    "until": "Do {{date}}",
+    "renew": "Obnovit na rok",
+    "wantsToSee": "chce vidět: {{what}}.",
+    "noReason": "Důvod nebyl uveden.",
+    "asked": "· požádáno {{date}}",
+    "shareWhat": "Sdílet: {{what}}",
+    "decline": "Odmítnout",
+    "whoHasLooked": "Kdo se díval",
+    "readingLog": "Načítání protokolu přístupů…",
+    "logError": "Protokol přístupů se nám právě nepodařilo načíst. Není prázdný – je nenačtený.",
+    "logEmpty": "Na vaše cíle se zatím nikdo nedíval. Každé zobrazení se zaznamenává zde, včetně zobrazení správci platformy.",
+    "accessLog": "Protokol přístupů",
+    "someoneId": "Někdo ({{id}}…)",
+    "noAccount": "S tímto e-mailem neexistuje žádný účet.",
+    "sharedWith": "Sdíleno s osobou {{name}}.",
+    "addPerson": "Přidat osobu",
+    "addPersonBody": "Někoho, kdo má účet IG a není uveden výše. Zadejte přesnou e-mailovou adresu; vyhledávání podle jména není možné. Váš kouč ji nepotřebuje: jakmile si Vás přidá jako klienta, objeví se v seznamu výše a tam s ním můžete sdílet.",
+    "emailAria": "E-mailová adresa",
+    "find": "Najít",
+    "shareMyGoals": "Sdílet moje cíle",
+    "notProtectedNote": "Zatím nechráněno – {{list}}: lidé ve Vaší linii podřízenosti je vidí, ať je sdílíte, nebo ne. Vaše volba se uloží a projeví se po spuštění ochrany pro tyto položky.",
+    "partlyNote": "{{label}}, částečně chráněno: {{note}}",
+    "loading": "Zjišťujeme, s kým můžete sdílet…",
+    "error": "Vaše nastavení sdílení se nám právě nepodařilo načíst. Nic se nezměnilo – zkuste to znovu po obnovení stránky.",
+    "unavailable": "Položku {{sources}} se nám právě nepodařilo načíst, takže v tomto seznamu mohou některé záznamy chybět. Není prázdný – je nenačtený.",
+    "waitingHeading": "Čeká na Vás",
+    "emptyHeading": "Zatím není s kým sdílet",
+    "emptyBody": "Jakmile s Vámi bude propojen manažer nebo kouč, objeví se zde s přepínačem pro každou část Vašeho záznamu. Další osobu můžete přidat také pomocí e-mailové adresy níže.",
+    "people": "Lidé",
+    "basisNote": "Pod každým jménem je uvedeno, jak se daná osoba dostala do tohoto seznamu.",
+    "eyebrow": "Vaše volba, osobu po osobě",
+    "title": "Kdo může vidět moje cíle a profil PRISM",
+    "sub": "Nikdo nevidí Vaše cíle ani Váš profil PRISM na základě postavení. Každé z nich sdílíte s konkrétní osobou na jeden rok, můžete sdílení obnovit a kdykoli ho odvolat. Zapnutím přepínače se platnost obnoví na rok. Cíl, který označíte jako soukromý, zůstane skrytý i před nimi.",
+    "whatTheySee": "Co vidí",
+    "previewNote": "Náhled jejich pohledu. Nic v něm zde nelze kliknout.",
+    "previewAria": "Náhled toho, co vidí",
+    "previewEmpty": "Zveřejněte cíl a zobrazí se zde přesně tak, jak ho vidí osoba, se kterou sdílíte.",
+    "or": " nebo ",
+    "shareAllIncludes_few": "„Sdílet vše“ zahrnuje {{list}}, které zatím nejsou plně chráněny."
+  },
+  "coaches": {
+    "goalCount_few": "cíle",
+    "job_mentor": {
+      "role": "Mentor pro práci",
+      "focus": "Excelence v současné roli – výkon, týmová dynamika, dovednosti specifické pro práci, každodenní produktivita."
+    },
+    "career_coach": {
+      "role": "Kariérní kouč",
+      "focus": "Strategický postup – příprava na další roli, změny směru, rozvoj vedení, positioning, dlouhodobý směr."
+    },
+    "prism_coach": {
+      "role": "Kouč PRISM",
+      "focus": "Behaviorální efektivita – stres, přizpůsobivost, styl komunikace, konflikty, emoční inteligence."
+    },
+    "callout": "Vždy slyšíte jeden hlas. Za Meridian stojí <strong>Echo</strong> a <strong>Forge</strong>, které rozvíjejí dovednosti v současné roli, <strong>Nova</strong> a <strong>Ascend</strong>, které plánují postup, a <strong>Aura</strong>, která pracuje na behaviorálních základech – každý vidí pouze cíle, které mu byly přiděleny.",
+    "goalCount_one": "cíl",
+    "goalCount_other": "cílů",
+    "eyebrow": "Objevit, uspořádat, přidělit",
+    "title": "Váš koučovací tým",
+    "sub": "Goals Studio cíle samo nekoučuje – každý předá specialistovi, který má na starosti daný druh růstu, a Meridian pak jejich práci přináší zpět k Vám jedním hlasem."
+  },
+  "interview": {
+    "drafted_few": "Z tohoto rozhovoru byly navrženy {{count}} cíle.",
+    "eyebrow": "Rozhovor, ne formulář",
+    "title": "Proberte to s Goals Studio",
+    "sub": "Pět oblastí Vašeho pracovního života, po jedné kategorii, s žebříčkem PROČ pod každým uvedeným cílem. Vede hlas; text je na jedno přepnutí.",
+    "drafted_one": "Z tohoto rozhovoru byl navržen {{count}} cíl.",
+    "drafted_other": "Z tohoto rozhovoru bylo navrženo {{count}} cílů.",
+    "reviewLink": "Zkontrolujte je a publikujte"
+  },
+  "progress": {
+    "goalsDrafted_few": "Navrženo {{count}} cíle · viz Moje cíle",
+    "status": {
+      "explored": "Hotovo",
+      "active": "Probíhá",
+      "todo": "Nezačato"
+    },
+    "error": "Právě teď se nám nepodařilo načíst Váš postup. Nic z toho, co jste dosud udělali, se neztratilo.",
+    "notStarted": "Zatím jste nezačali. Konverzace níže začíná tématem {{label}}.",
+    "allExplored": "Všechny oblasti jsou prozkoumány.",
+    "carryingOn": "Pokračujeme tématem {{label}}.",
+    "nextUp": "Další na řadě: {{label}}.",
+    "ariaLabel": "Váš postup",
+    "areasExplored": "Prozkoumáno oblastí: {{explored}} z {{total}}",
+    "goalsDrafted_one": "Navržen {{count}} cíl · viz Moje cíle",
+    "goalsDrafted_other": "Navrženo cílů: {{count}} · viz Moje cíle"
+  },
+  "discovery": {
+    "goalsSurfaced_few": "Nalezeny {{count}} cíle",
+    "questionsAnswered_few": "Zodpovězeny {{count}} otázky",
+    "title": "Objevování, ne dotazník",
+    "sub": "Goals Studio shromažďuje informace přirozeně napříč sezeními. U každé kategorie, kterou prozkoumává, hledá vzorce, pomocí žebříku PROČ se dostane k Vaší skutečné motivaci a poté převede diskusi na návrhy cílů.",
+    "talkIt": "Probrat to v rozhovoru",
+    "loading": "Načítání Vašeho pokroku…",
+    "error": "Váš pokrok se nyní nepodařilo načíst. Obnovte stránku a zkuste to znovu – nic z toho, co jste již zpracovali, se neztratilo.",
+    "goalsSurfaced_one": "Objevil se {{count}} cíl",
+    "goalsSurfaced_other": "Objevilo se {{count}} cílů",
+    "questionsAnswered_one": "Zodpovězena {{count}} otázka",
+    "questionsAnswered_other": "Zodpovězeno {{count}} otázek",
+    "yourWhy": "Vaše proč",
+    "underneath": "Co se skrývá za tím, co jste řekli, že chcete",
+    "howItWorks": "Jak to funguje · žebřík PROČ",
+    "howHeading": "Jak se „lepší vedení“ stane skutečným cílem",
+    "howBody": "Nezastavujeme se u první odpovědi. Několikanásobné zeptání se „proč“ dospěje k motivaci, na kterou se cíl skutečně váže. Toto je příklad podoby, kterou to má – Váš bude Vašimi vlastními slovy.",
+    "ladder": {
+      "role": {
+        "statedGoal": "Uvedený cíl",
+        "asks": "Goals Studio se ptá",
+        "you": "Vy",
+        "root": "Skutečná motivace"
+      },
+      "rung1": "„Chci se zlepšit ve vedení lidí během změn.“",
+      "rung2": "Proč se Vám to právě teď zdá důležité?",
+      "rung3": "Reorganizace se pořád mění a můj tým se na mě obrací s otázkami.",
+      "rung4": "Proč pro Vás tolik znamená mít odpovědi?",
+      "rung5": "Když zaváhám, budou si myslet, že nemám věci pod kontrolou.",
+      "rung6": "A proč je právě tohle tak těžké unést?",
+      "rung7": "Nejde o dovednost, kterou si osvojit, ale o ochranu toho, jak Vás tým vnímá pod tlakem. Na to se ten cíl napojuje."
+    },
+    "status": {
+      "explored": "Prozkoumáno",
+      "active": "Probíhá",
+      "todo": "Nezačato"
+    },
+    "eyebrow": "Konverzace o pěti kategoriích"
+  },
+  "dashboard": {
+    "brainCallout": "Každý cíl zde odpovídá Vaší mapě mozku: upřednostňujeme cíle, které <strong>využívají Vaše přirozené silné stránky</strong>, a jakýkoli přesah vnímáme jako vědomou, časově omezenou adaptaci – nikdy ne trvalé přepsání toho, kým jste.",
+    "eyebrow": "Vaše cesta stanovování cílů",
+    "titleNamed": "Pojďme proměnit rozhovor v cíle, {{name}}.",
+    "title": "Pojďme proměnit rozhovor v cíle.",
+    "sub": "Goals Studio projde pět oblastí Vašeho života, ptá se proč, dokud nedospěje k něčemu, na čem Vám skutečně záleží, a promění to v cíle, u kterých zůstane i důvod.",
+    "loading": "Zjišťování, kde jste skončili…",
+    "error": "Vaše sezení stanovování cílů se nyní nepodařilo načíst. Obnovte stránku a zkuste to znovu – nic z toho, co jste již zpracovali, se neztratilo.",
+    "discoveryProgress": "Pokrok objevování · {{explored}} z {{total}} kategorií",
+    "pctExplored": "Prozkoumáno {{pct}} %",
+    "start": "Začít",
+    "resume": "Pokračovat",
+    "categoryN": "Kategorie {{n}}",
+    "nextStep": "Váš další krok",
+    "finishCategory": "Dokončete kategorii {{label}}",
+    "startCategory": "Začněte kategorii {{label}}",
+    "summaryFallback": "Goals Studio to shromažďuje v rozhovoru, ne formou formuláře – stačí pár minut a posunete to dál.",
+    "talkIt": "Probrat to v rozhovoru",
+    "continueDiscovery": "Pokračovat v objevování",
+    "surfaced": "Dosud objevené cíle · Goals Studio",
+    "noGoals": "Zatím žádné cíle",
+    "goalsBuilt": "Cíle postavené na tom, jak myslíte",
+    "seeAll": "Zobrazit všech {{count}}",
+    "houseEmpty": "Cíle se píší z rozhovoru, ne zadávají do formuláře, takže se zde objeví, jakmile je probereme.",
+    "emptyDiscovery": "Cíle se píší z objevovacího rozhovoru, ne zadávají do formuláře, takže se zde objeví, jakmile budete mluvit s Goals Studio – vpravo na této obrazovce."
+  },
+  "roadmap": {
+    "step": "Krok {{rank}}",
+    "priority": "Priorita",
+    "inPrism": "{{dimension}} v PRISM:",
+    "back": "Zpět na moje cíle",
+    "unavailable": "Plány cílů zatím nejsou k dispozici.",
+    "loading": "Načítání Vašeho plánu…",
+    "notFound": "Tento cíl nemíří na žádnou roli. Otevřete roli v Job Fit a zvolte „Make this my target“.",
+    "loadError": "Tento plán se nepodařilo načíst. Zkuste to prosím za chvíli znovu.",
+    "thisRole": "tuto roli",
+    "eyebrow": "Plán",
+    "defaultTitle": "Váš plán",
+    "sub": "Směrem k roli {{role}}. Sestaveno z shody, kterou jste si prohlíželi, když jste ji vybrali.",
+    "noRoadmap": "Pro tento cíl zatím nebyl sestaven žádný plán.",
+    "start": "Začátek",
+    "noFirstStep": "Tento cíl zatím nemá první krok – kroky níže ukazují, kde jsou mezery.",
+    "noGaps": "Shoda, ze které jste tuto roli vybrali, neukázala žádné mezery k zacelení – mezi Vaším profilem a měřítkem této role nic nestojí.",
+    "steps": "Kroky",
+    "finish": "Cíl",
+    "noFinish": "Tento cíl zatím nemá žádné měřítko úspěchu, takže plán nemá cílovou čáru.",
+    "overuse": "Dejte si pozor na nadměrné využívání {{dimensions}} v této roli.",
+    "rebuild": "Přestavět plán",
+    "stopTargeting": "Přestat mířit na tuto roli",
+    "practise": "Procvičte si tuto roli"
+  },
+  "ui": {
+    "sampleLead": "Toto je ukázka, nikoli Vaše data.",
+    "sampleTail": "Nic na tomto panelu není hodnocením Vaší osoby a nic zde nebylo uloženo k Vašemu účtu."
+  },
+  "comingSoon": {
+    "prism": {
+      "title": "Pohled PRISM",
+      "body": "Vaše cíle porovnané s Vaším vlastním profilem PRISM – které stavějí na silné stránce a které vyžadují posun."
+    },
+    "progress": {
+      "title": "Pokrok",
+      "body": "Milníky a kontroly u každého cíle spolu s hodnocením Vašeho kouče."
+    },
+    "documents": {
+      "title": "Dokumenty",
+      "body": "Životopis, medailonek nebo profil vytvořený z Vaší skutečné historie a cílů – nikdy ne ze šablonové kariéry."
+    },
+    "eyebrow": "Zatím nevytvořeno",
+    "title": "Již brzy",
+    "sub": "Tyto tři panely jsou v plánu. Buď budou pracovat s Vašimi vlastními daty, nebo se nezobrazí vůbec.",
+    "back": "Zpět na Vaše cíle"
+  },
+  "layout": {
+    "nav": {
+      "myGoals": "Moje cíle",
+      "interview": "Rozhovor",
+      "sharing": "Sdílení",
+      "overview": "Přehled",
+      "discovery": "Objevování",
+      "coaches": "Koučové",
+      "comingSoon": "Již brzy",
+      "houseMyGoals": "Moje cíle",
+      "houseTalk": "Probrat to v rozhovoru",
+      "houseWho": "Kdo je může vidět"
+    },
+    "title": "Goals Studio",
+    "sub": "Vaše cíle, rozhovor, ze kterého vzejdou, a to, kdo je smí vidět.",
+    "navLabel": "Sekce Goals Studio"
+  },
+  "goals": {
+    "stretchCallout": "Cíl označený jako <strong>Vyžaduje překročení komfortní zóny</strong> neznamená slabinu – je to záměrný, časově omezený krok proti vašemu typu.",
+    "errorSave": "Uložení se nezdařilo. Nic se nezměnilo – zkuste to znovu.",
+    "whyItMatters": "Proč na tom záleží:",
+    "success": "Úspěch:",
+    "firstStep": "První krok:",
+    "aCoach": "Kouč",
+    "ratified": "Schváleno",
+    "notRatified": "Neschváleno",
+    "confirmed": "Potvrzeno",
+    "provisional": "Předběžné",
+    "fromJobFit": "Z Job Fit",
+    "fromInterview": "Z vašeho rozhovoru",
+    "seeded": "Předvyplněno",
+    "targets": "Cílí na",
+    "aRole": "roli",
+    "viewRoadmap": "Zobrazit plán",
+    "coachReviews": "Hodnocení kouče",
+    "noReviews": "Zatím žádná hodnocení.",
+    "keepPrivate": "Ponechat „{{title}}“ soukromé",
+    "private": "Soukromé – skryté i před lidmi, se kterými sdílíte",
+    "shareable": "Lze sdílet",
+    "unpublish": "Zrušit publikování",
+    "goalTitle": "Název cíle",
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "confirmPublish": "Potvrdit a publikovat",
+    "edit": "Upravit",
+    "addGoal": "Přidat cíl",
+    "addGoalBody": "Rozhovor píše lepší cíle než formulář, ale cíl, který už znáte, sem patří také. Po uložení se okamžitě publikuje.",
+    "placeholder": "Čeho chcete dosáhnout?",
+    "newGoalTitle": "Název nového cíle",
+    "goalCategory": "Kategorie cíle",
+    "savePublish": "Uložit a publikovat",
+    "published": "Publikováno. Najdete to ve svých cílech výše.",
+    "backJourney": "Zpět na vaši cestu (krok 5)",
+    "eyebrow": "Vaše – soukromé, dokud je nesdílíte",
+    "title": "Vaše cíle",
+    "sub": "Cíle vzejdou z rozhovoru spolu s důvodem, který za nimi stojí. Potvrzením návrhu jej publikujete a poté po jednotlivých osobách určíte, kdo jej může vidět.",
+    "talkStudio": "Probrat to s Goals Studio",
+    "whoCanSee": "Kdo může vidět mé cíle",
+    "loading": "Načítání vašich cílů…",
+    "error": "Vaše cíle se teď nepodařilo načíst. Obnovte stránku a zkuste to znovu – nic z toho, co jste vypracovali, se neztratilo.",
+    "noGoals": "Zatím žádné cíle",
+    "noGoalsBody": "Cíle zde vznikají z objevovacího rozhovoru, nikoli vyplněním formuláře. Zahajte rozhovor a cíle se objeví, každý s důvodem, který za ním stojí – nebo níže přidejte cíl, který už znáte.",
+    "sharedHeading": "Vaše cíle",
+    "draftsHeading": "Návrhy z vašeho rozhovoru"
+  },
+  "targets": {
+    "error403": "Cíle nejsou pro Váš účet momentálně dostupné.",
+    "error404": "Tuto roli nebo tento cíl se nepodařilo najít.",
+    "error413": "Tato shoda je příliš rozsáhlá na to, aby ji bylo možné uložit jako cíl.",
+    "errorDefault": "To se nepovedlo. Zkuste to prosím znovu."
+  },
+  "labels": {
+    "category": {
+      "history": "Profesní historie",
+      "job": "Současné zaměstnání",
+      "workplace": "Pracoviště",
+      "ambitions": "Kariérní ambice",
+      "personal": "Osobní"
+    },
+    "align": {
+      "lever": "Využívá silnou stránku",
+      "stretch": "Vyžaduje překonání sebe sama",
+      "counter": "Vyvažuje"
+    },
+    "style": {
+      "gold_stepwise": "Postupný",
+      "blue_metrics": "Řízený metrikami",
+      "red_action": "Nejdřív akce",
+      "green_momentum": "Založený na dynamice"
+    },
+    "coach": {
+      "job_mentor": "Mentor pro práci",
+      "career_coach": "Kariérní kouč",
+      "prism_coach": "Kouč PRISM"
+    },
+    "status": {
+      "proposed": "Navrženo",
+      "confirmed": "Potvrzeno"
+    }
+  },
+  "wiring": {
+    "and": " a ",
+    "group": {
+      "supported": "Vaše nastavení tyto cíle podporuje",
+      "mixed": "Smíšené — část Vás k nim vede, část odrazuje",
+      "atTension": "Vaše nastavení jde proti těmto cílům",
+      "unmapped": "Zatím nepropojeno s kariérní rodinou"
+    },
+    "title": "Vaše cíle a Vaše nastavení",
+    "error": "Právě teď se nám nepodařilo zjistit, jak Vaše cíle sedí k Vašemu PRISM.",
+    "heading": "Jak Vaše publikované cíle sedí k tomu, jak jste nastaven(i)",
+    "unscored": "Dokončete PRISM a tato karta vyhodnotí každý cíl vzhledem k Vašemu profilu.",
+    "pulling": "jde proti tomu: {{list}}",
+    "carried": "podporuje to: {{list}}"
+  }
+}

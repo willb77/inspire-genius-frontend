@@ -835,7 +835,8 @@
     "staffOnly": "Les ensembles de règles sont gérés par le personnel de recrutement de votre organisation.",
     "summaryLine": "{{rules}} règles · décideurs : {{makers}}",
     "title": "Ensembles de règles",
-    "versionLine": "{{name}} — version {{version}} ({{status}})"
+    "versionLine": "{{name}} — version {{version}} ({{status}})",
+    "ruleLine": "{{label}} — {{source}} ({{outcome}})"
   },
   "scorecardComparison": {
     "candidate": "Candidat {{id}}",

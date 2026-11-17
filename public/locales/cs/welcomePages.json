@@ -1,0 +1,19 @@
+{
+  "messages": {
+    "notValid": "Tento odkaz na pozvánku není platný. Požádejte svého odborníka o zaslání nového odkazu.",
+    "tooMany": "Právě proběhlo příliš mnoho pokusů. Chvíli počkejte a potom odkaz svého odborníka otevřete znovu.",
+    "ownInvite": "Toto je jeden z Vašich vlastních odkazů na pozvánku – nemůžete být svým vlastním klientem.",
+    "claimError": "Nepodařilo se nám Vás teď propojit. Odkaz svého odborníka otevřete znovu později nebo si od něj vyžádejte nový.",
+    "noInvite": "V této kartě prohlížeče nečeká žádná pozvánka. Pokud Vám odborník poslal odkaz, otevřete ho znovu."
+  },
+  "prism": {
+    "checking": "Ověřujeme Váš přístup k dotazníku PRISM…",
+    "shareNotice": "Při vyžádání dotazníku se můžete rozhodnout sdílet své výsledky s uživatelem {{name}}. Pokud tuto možnost nezaškrtnete, nic se nesdílí.",
+    "takeSurvey": "Vyplňte dotazník PRISM"
+  },
+  "title": "Propojení s Vaším odborníkem",
+  "connecting": "Propojujeme Vás s Vaším odborníkem…",
+  "connected": "Nyní jste propojeni s uživatelem {{name}}.",
+  "nextSurvey": "Další krok: vyplňte dotazník PRISM.",
+  "goHome": "Přejít na domovskou stránku"
+}

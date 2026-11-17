@@ -55,7 +55,8 @@
     "wedRatherShowNothing": "Preferiamo non mostrarti nulla piuttosto che un numero che non puoi verificare.",
     "payRangeAria": "Fascia retributiva per {{role}}: da {{low}} a {{high}}, valore mediano {{median}}",
     "lowerEnd": "Estremo inferiore",
-    "midpoint": "Valore mediano"
+    "midpoint": "Valore mediano",
+    "asOfMonthYear": "{{month}} {{year}}"
   },
   "matches": {
     "thisGatesJobMatchesAnd": "Questo passaggio sblocca Job Matches, e Job Matches sblocca My Plan e Interview Prep: per questo tutti e tre tornano insieme.",
@@ -311,7 +312,8 @@
       "plan": "piano",
       "salary": "stipendio",
       "guide": "guida"
-    }
+    },
+    "nextNameQuestion": "{{name}} — {{question}}"
   },
   "portrait": {
     "whatYouReActuallyLike": "Come sei davvero",
@@ -482,6 +484,7 @@
     "roleFamiliesBestMatchFirst": "Famiglie di ruoli, prima la migliore corrispondenza",
     "dimensionsEvaluated": "{{dimensions}} dimensioni valutate",
     "howYouDActuallyGet": "Come arriveresti davvero lì",
-    "thisRankingIsDeterministicThe": "Questa classifica è deterministica: lo stesso profilo produce sempre lo stesso ordine. Qui non c'è nessun modello che tira a indovinare e nessuna casualità — ogni numero qui sopra deriva dal confronto tra le tue dimensioni e quelle che una famiglia di ruoli tende a richiedere, e puoi vederle tutte."
+    "thisRankingIsDeterministicThe": "Questa classifica è deterministica: lo stesso profilo produce sempre lo stesso ordine. Qui non c'è nessun modello che tira a indovinare e nessuna casualità — ogni numero qui sopra deriva dal confronto tra le tue dimensioni e quelle che una famiglia di ruoli tende a richiedere, e puoi vederle tutte.",
+    "affinityOutOf100": "{{score}} / 100"
   }
 }

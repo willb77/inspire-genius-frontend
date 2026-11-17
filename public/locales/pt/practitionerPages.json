@@ -248,7 +248,8 @@
     "bulkDescriptionAfter": ", ou envie um arquivo CSV.",
     "pasteRows": "Colar linhas",
     "uploadCsv": "…ou envie um arquivo CSV",
-    "import": "Importar"
+    "import": "Importar",
+    "colPrism": "PRISM"
   },
   "comingSoon": {
     "schedule": {

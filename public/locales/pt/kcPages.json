@@ -23,7 +23,8 @@
         "doc_gap": "Lacuna de documentação",
         "bus_factor": "Fator ônibus"
       },
-      "riskTitle": "Registrar uma função em risco"
+      "riskTitle": "Registrar uma função em risco",
+      "factorRange": "{{label}} (0–1)"
     },
     "title": "Console do revisor",
     "subtitle": "Valide o conhecimento capturado e sinalize funções em risco para captura.",
@@ -62,7 +63,8 @@
       "notes": "Notas",
       "notesPlaceholder": "O que precisa mudar?",
       "cancel": "Cancelar",
-      "submit": "Enviar"
+      "submit": "Enviar",
+      "noteTitle": "{{verdict}} — {{title}}"
     }
   },
   "curriculum": {

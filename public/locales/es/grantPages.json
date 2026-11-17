@@ -10,7 +10,10 @@
         "helper": "Solo se usa para encontrar ayudas basadas en necesidad económica: solo necesitamos un rango y nunca se comparte.",
         "options": {
           "over_150k": "Más de 150.000 $",
-          "under_30k": "Menos de 30.000 $"
+          "under_30k": "Menos de 30.000 $",
+          "100k_150k": "$100,000 – $150,000",
+          "30k_60k": "$30,000 – $60,000",
+          "60k_100k": "$60,000 – $100,000"
         },
         "question": "Aproximadamente, ¿cuál es el ingreso anual de tu hogar?"
       },
@@ -188,7 +191,8 @@
       "m_mil_rating": {
         "helper": "Una calificación puede abrir la puerta a VR&E (Cap. 31), que a veces supera al GI Bill.",
         "placeholder": "p. ej., 30",
-        "question": "¿Tienes una calificación de discapacidad relacionada con el servicio?"
+        "question": "¿Tienes una calificación de discapacidad relacionada con el servicio?",
+        "suffix": "%"
       },
       "m_mil_yellow_ribbon": {
         "question": "¿Tu centro educativo participa en el programa Yellow Ribbon?"
@@ -379,7 +383,8 @@
     "compareRapSuffix": "/mes al inicio de la carrera",
     "compareStandardName": "Estándar (10 años)",
     "compareStandardSub": "Pago fijo · menor interés total",
-    "compareStandardSuffix": "/mes"
+    "compareStandardSuffix": "/mes",
+    "rapRange": "1–10%"
   },
   "modules": {
     "adult": "Adulto que regresa a estudiar",

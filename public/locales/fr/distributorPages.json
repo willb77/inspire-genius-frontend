@@ -66,5 +66,6 @@
   "colMonth": "Mois",
   "colName": "Nom",
   "colPractitioner": "Praticien",
-  "colRegion": "Région"
+  "colRegion": "Région",
+  "homeGreetingNamed": "{{greeting}}, {{name}}"
 }

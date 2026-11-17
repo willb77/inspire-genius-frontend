@@ -10,7 +10,8 @@
       "noContradictions": "Aucune contradiction non résolue.",
       "noteDescription": "Ajoutez une note expliquant ce qui doit être modifié avant de pouvoir la valider.",
       "notes": "Notes",
-      "notesPlaceholder": "Que faut-il modifier ?"
+      "notesPlaceholder": "Que faut-il modifier ?",
+      "noteTitle": "{{verdict}} — {{title}}"
     },
     "intake": {
       "rangeError": "Saisissez une valeur comprise entre 0 et 1",
@@ -35,7 +36,8 @@
       "practice": "Session d'entraînement",
       "practiceHint": "Activé : entraînement synthétique, aucun enregistrement de consentement requis. Désactivé : session réelle avec un expert.",
       "consentId": "Identifiant de l'enregistrement de consentement",
-      "startSession": "Démarrer la session"
+      "startSession": "Démarrer la session",
+      "factorRange": "{{label}} (0–1)"
     },
     "title": "Console de relecture",
     "subtitle": "Validez les connaissances capturées et signalez les postes à risque à capturer.",

@@ -156,7 +156,8 @@
     "bulkTitle": "Importer des clients en masse",
     "bulkDescriptionBefore": "Collez un client par ligne sous la forme",
     "bulkDescriptionAfter": ", ou téléversez un fichier CSV.",
-    "pasteRows": "Coller des lignes"
+    "pasteRows": "Coller des lignes",
+    "colPrism": "PRISM"
   },
   "comingSoon": {
     "schedule": {

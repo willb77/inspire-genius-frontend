@@ -55,7 +55,8 @@
     "submit": "Invia Magic Link"
   },
   "signup": {
-    "passwordGroup": "Password"
+    "passwordGroup": "Password",
+    "termsAnd": "&"
   },
   "social": {
     "processing": "Completamento dell'accesso social...",

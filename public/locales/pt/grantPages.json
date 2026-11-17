@@ -138,7 +138,8 @@
       "m_mil_rating": {
         "helper": "Uma classificação pode abrir o VR&E (Cap. 31), que às vezes supera o GI Bill.",
         "placeholder": "ex.: 30",
-        "question": "Você tem uma classificação de invalidez relacionada ao serviço militar?"
+        "question": "Você tem uma classificação de invalidez relacionada ao serviço militar?",
+        "suffix": "%"
       },
       "m_mil_yellow_ribbon": {
         "question": "Sua instituição de ensino participa do programa Yellow Ribbon?"
@@ -255,7 +256,10 @@
         "helper": "Usado apenas para encontrar auxílios baseados em necessidade financeira — só precisamos de uma faixa, e ela nunca é compartilhada.",
         "options": {
           "over_150k": "Mais de US$ 150.000",
-          "under_30k": "Menos de US$ 30.000"
+          "under_30k": "Menos de US$ 30.000",
+          "100k_150k": "$100,000 – $150,000",
+          "30k_60k": "$30,000 – $60,000",
+          "60k_100k": "$60,000 – $100,000"
         },
         "question": "Aproximadamente, qual é a renda anual da sua família?"
       },
@@ -514,7 +518,8 @@
     "compareRapSub": "Novo plano federal · 1–10% da renda, até 30 anos",
     "compareRapSuffix": "/mês no início da carreira",
     "compareStandardName": "Padrão (10 anos)",
-    "compareStandardSub": "Parcela fixa · menor total de juros"
+    "compareStandardSub": "Parcela fixa · menor total de juros",
+    "rapRange": "1–10%"
   },
   "modules": {
     "adult": "Adulto que retorna aos estudos",

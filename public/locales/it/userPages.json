@@ -36,7 +36,8 @@
     "surveyIsNowAvailable": "Il sondaggio è ora disponibile.",
     "surveyHidden": "Sondaggio nascosto.",
     "couldNotChangeAvailability": "Impossibile modificare la disponibilità.",
-    "surveysArentAvailableForYourRole": "I sondaggi non sono disponibili per il tuo ruolo"
+    "surveysArentAvailableForYourRole": "I sondaggi non sono disponibili per il tuo ruolo",
+    "createdByEmail": " · {{email}}"
   },
   "documentsV2": {
     "selectedDocumentsWereRemovedSuccessfully": "I documenti selezionati sono stati rimossi con successo.",
@@ -223,7 +224,8 @@
     "onFile": "in archivio",
     "notOnFile": "non in archivio",
     "pagesWithinLimitOne": "Questo curriculum è di {{pages}} pagina in PDF (USAJOBS ne consente {{pageLimit}}). Controlla che lo sia anche il file Word.",
-    "pagesWithinLimitOther": "Questo curriculum è di {{pages}} pagine in PDF (USAJOBS ne consente {{pageLimit}}). Controlla che lo sia anche il file Word."
+    "pagesWithinLimitOther": "Questo curriculum è di {{pages}} pagine in PDF (USAJOBS ne consente {{pageLimit}}). Controlla che lo sia anche il file Word.",
+    "sourceChip": "{{label}}: {{state}}"
   },
   "analyticsV2": {
     "goalsByStatus": "Obiettivi per stato",
@@ -360,7 +362,8 @@
     "experienceBadge": "Esperienza: {{years}} anni",
     "assessedOn": "Valutato il {{date}}",
     "includeInChat": "Includi {{field}} nella chat",
-    "clarity": " · chiarezza {{value}}"
+    "clarity": " · chiarezza {{value}}",
+    "sourceSuffix": " · {{source}}"
   },
   "settingsPrivacyV2": {
     "memoryPrivacy": "Memoria e privacy",
@@ -460,7 +463,8 @@
     "whatMeridianSeesAboutYouAnd": "Ciò che Meridian vede di te e come lo usa.",
     "weCouldntLoadYourProfileRight": "Al momento non siamo riusciti a caricare il tuo profilo. Se ti sei appena registrato/a è normale: riprova dopo aver aggiunto il tuo primo dato in Impostazioni.",
     "roleBadge": "Ruolo: {{role}}",
-    "industryBadge": "Settore: {{industry}}"
+    "industryBadge": "Settore: {{industry}}",
+    "sourceSuffix": " · {{source}}"
   },
   "dashboardV2": {
     "chatWithMeridian": "Chatta con Meridian",

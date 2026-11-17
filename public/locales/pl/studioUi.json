@@ -1,0 +1,407 @@
+{
+  "survey": {
+    "surveyBuilder": {
+      "saveSurvey": "Zapisz ankietę",
+      "giveTheSurveyATitle": "Przed zapisaniem nadaj ankiecie tytuł.",
+      "addAtLeastOneQuestion": "Przed zapisaniem dodaj co najmniej jedno pytanie.",
+      "choiceQuestionsNeedAtLeast": "Pytania wyboru wymagają co najmniej dwóch opcji.",
+      "surveySaved": "Ankieta zapisana.",
+      "surveyDetails": "Szczegóły ankiety",
+      "title": "Tytuł",
+      "eGTeamPulseCheck": "np. Szybki przegląd nastrojów w zespole",
+      "descriptionOptional": "Opis (opcjonalnie)",
+      "whatIsThisSurveyFor": "Do czego służy ta ankieta?",
+      "exposeToOrganization": "Udostępnij organizacji",
+      "organizationIdLeaveBlankTo": "ID organizacji (pozostaw puste, aby użyć własnej)",
+      "membersOfThisOrganizationWill": "Członkowie tej organizacji zobaczą ankietę w Ustawienia → Moja przestrzeń robocza. Pozostaw puste, aby udostępnić ją własnej organizacji.",
+      "availableToRespondents": "Dostępna dla respondentów",
+      "offKeepsItHiddenUntil": "Wyłączone ukrywa ankietę, dopóki nie będzie gotowa. Włącz, aby udostępnić ją swojej organizacji.",
+      "question": "Pytanie {{v1}}",
+      "moveQuestionUp": "Przesuń pytanie w górę",
+      "moveQuestionDown": "Przesuń pytanie w dół",
+      "removeQuestion": "Usuń pytanie",
+      "questionText": "Treść pytania",
+      "whatDoYouWantTo": "O co chcesz zapytać?",
+      "answerType": "Typ odpowiedzi",
+      "maxRating": "Maksymalna ocena",
+      "required": "Wymagane",
+      "options": "Opcje",
+      "removeOption": "Usuń opcję",
+      "addOption": "Dodaj opcję",
+      "addQuestion": "Dodaj pytanie",
+      "cancel": "Anuluj"
+    },
+    "surveyResults": {
+      "noAnswersYet": "Brak odpowiedzi.",
+      "answered": "Odpowiedzi: {{answered}}",
+      "compilation": "Zestawienie",
+      "responses": "Liczba odpowiedzi: {{responseCount}}",
+      "couldNotLoadTheCompilation": "Nie udało się wczytać zestawienia.",
+      "noResponsesYetTheCompilation": "Brak odpowiedzi. Zestawienie pojawi się, gdy ktoś prześle ankietę.",
+      "individualResponses": "Odpowiedzi indywidualne",
+      "hide": "Ukryj",
+      "show": "Pokaż",
+      "noResponsesYet": "Brak odpowiedzi."
+    },
+    "surveySelector": {
+      "build": "Utwórz",
+      "chooseASurvey": "Wybierz ankietę…"
+    },
+    "surveyTaker": {
+      "pleaseAnswerTheRequiredQuestions": "Przed przesłaniem odpowiedz na wymagane pytania.",
+      "responseSubmittedThankYou": "Odpowiedź została przesłana. Dziękujemy!",
+      "responseRecorded": "Odpowiedź zapisana",
+      "takeAgain": "Wypełnij ponownie",
+      "chooseAnotherSurvey": "Wybierz inną ankietę",
+      "thisSurveyHasNoQuestions": "Ta ankieta nie ma jeszcze pytań.",
+      "typeYourAnswer": "Wpisz swoją odpowiedź…",
+      "thisQuestionIsRequired": "To pytanie jest wymagane.",
+      "submitResponse": "Prześlij odpowiedź"
+    },
+    "surveyUploadDialog": {
+      "fileImportedReviewTheText": "Plik zaimportowany — sprawdź tekst, a następnie utwórz ankietę.",
+      "pasteOrUploadSomeQuestion": "Najpierw wklej lub prześlij tekst pytań.",
+      "couldNotParseThatText": "Nie udało się przetworzyć tego tekstu.",
+      "couldNotBuildTheSurvey": "Nie udało się utworzyć ankiety. Spróbuj ponownie.",
+      "buildASurveyFromQuestions": "Utwórz ankietę z pytań",
+      "dropInOrPasteYour": "Przeciągnij lub wklej pytania, opcje odpowiedzi i ewentualne instrukcje. Przygotujemy szkic ankiety, który możesz przejrzeć i edytować — ostateczne typy pytań ustawisz w następnym kroku.",
+      "titleOptional": "Tytuł (opcjonalnie)",
+      "eGBaselineSurvey": "np. Ankieta wyjściowa",
+      "questionsInstructions": "Pytania i instrukcje",
+      "uploadFile": "Prześlij plik",
+      "dragAFileOntoThe": "Przeciągnij plik na pole lub użyj opcji „Prześlij plik”. Tabele Worda i opcje z polami wyboru również zostaną wczytane.",
+      "cancel": "Anuluj",
+      "buildSurvey": "Utwórz ankietę"
+    }
+  },
+  "grant": {
+    "grantPreviewToggle": {
+      "financialAidPreview": "Podgląd pomocy finansowej",
+      "toggleTheFinancialAidGrant": "Przełącz widok pionu pomocy finansowej (GRANT)"
+    }
+  },
+  "directionSetting": {
+    "goalInterviewPanel": {
+      "question": "Pytanie {{questionNumber}}",
+      "goalsStudio": "Goals Studio",
+      "gettingTheNextQuestions": "Pobieranie kolejnych pytań…",
+      "question2": "Pytanie {{askedCount}}",
+      "voice": "Głos",
+      "voiceModeGoalsStudioReads": "Tryb głosowy: Goals Studio czyta pytania na głos i słucha Twojej odpowiedzi",
+      "why": "dlaczego",
+      "itWillReadItsQuestions": "Będzie czytać pytania na głos i słuchać Twojej odpowiedzi. Wyłącz Głos, aby pisać.",
+      "textModeReadAndType": "Tryb tekstowy — czytaj i pisz. Włącz Głos, aby rozmawiać na głos.",
+      "youVeExploredOfAreas": "Omówione obszary: {{exploredCount}} z {{length}}. Wrócimy do miejsca, w którym skończyłeś(-aś).",
+      "continueTheConversation": "Kontynuuj rozmowę",
+      "startTheConversation": "Rozpocznij rozmowę",
+      "thinking": "Myślę…",
+      "goalsStudioIsSpeaking": "Goals Studio mówi.",
+      "tryAgain": "Spróbuj ponownie",
+      "skipThisArea": "Pomiń ten obszar",
+      "draftMyGoals": "Przygotuj szkic moich celów",
+      "sendingYourAnswer": "Wysyłanie odpowiedzi…",
+      "holdOnLetMeEdit": "Chwila — chcę edytować",
+      "voiceInputIsnTSupported": "Wprowadzanie głosowe nie jest obsługiwane w tej przeglądarce",
+      "voiceInputIsnTSupported2": "Wprowadzanie głosowe nie jest obsługiwane w tej przeglądarce — wyłącz Głos i wpisz odpowiedzi.",
+      "yourAnswer": "Twoja odpowiedź",
+      "send": "Wyślij"
+    }
+  },
+  "taskAgents": {
+    "jobBlueprintBody": {
+      "matchGenerated": "Dopasowanie wygenerowane.",
+      "jamesAdminagentFailed": "James (AdminAgent) nie powiódł się: {{message}}",
+      "jobBlueprintMatch": "Job Blueprint Match",
+      "jobBlueprintMatch2": "Job Blueprint match",
+      "matchACandidateAgainstA": "Dopasuj kandydata do Job Blueprint dla danej roli za pomocą Jamesa (AdminAgent).",
+      "inputs": "Dane wejściowe",
+      "roleTitle": "Nazwa stanowiska",
+      "company": "Firma",
+      "roleResponsibilities": "Zakres obowiązków",
+      "candidateSummary": "Podsumowanie kandydata",
+      "desiredOutcomesOptional": "Oczekiwane rezultaty (opcjonalnie)",
+      "runJames": "Uruchom Jamesa",
+      "reset": "Resetuj"
+    },
+    "questionBankPanel": {
+      "whatToListenForScoring": "Na co zwrócić uwagę (wzorce oceny)",
+      "strong5": "Mocna odpowiedź (5)",
+      "baseline3": "Poziom podstawowy (3)",
+      "weak1": "Słaba odpowiedź (1)",
+      "starInterviewQuestionBank": "Bank pytań rekrutacyjnych STAR"
+    },
+    "teamCompositionBody": {
+      "teamCompositionAnalysisReady": "Analiza składu zespołu gotowa.",
+      "atlasDashboardagentFailed": "Atlas (DashboardAgent) nie powiódł się: {{message}}",
+      "atLeastOneMemberSummary": "Wymagane jest co najmniej jedno podsumowanie członka zespołu",
+      "teamComposition": "Skład zespołu",
+      "teamComposition2": "Skład zespołu",
+      "analyseATeamSPrism": "Analizuj miks PRISM, umiejętności i luki zespołu za pomocą Atlasa (DashboardAgent).",
+      "inputs": "Dane wejściowe",
+      "teamName": "Nazwa zespołu",
+      "teamPurpose": "Cel zespołu",
+      "memberSummariesOnePerLine": "Podsumowania członków zespołu (po jednym w wierszu)",
+      "targetSkillsCommaSeparatedOptional": "Docelowe umiejętności (oddzielone przecinkami, opcjonalnie)",
+      "strategicThinkingAsyncCommsData": "myślenie strategiczne, komunikacja asynchroniczna, biegłość w danych",
+      "runAtlas": "Uruchom Atlasa",
+      "reset": "Resetuj"
+    },
+    "interviewPrepBody": {
+      "interviewPrepGenerated": "Przygotowanie do rozmowy zostało wygenerowane.",
+      "mavenInterviewagentFailed": "Maven (InterviewAgent) nie powiódł się: {{message}}",
+      "interviewPrep": "Przygotowanie do rozmowy",
+      "interviewPrep2": "Przygotowanie do rozmowy",
+      "getAStructured3Section": "Otrzymaj od Maven (InterviewAgent) uporządkowany plan rozmowy w 3 częściach lub przeglądaj wspólny bank pytań STAR z kryteriami oceny.",
+      "generatePrep": "Generuj przygotowanie",
+      "questionBank": "Bank pytań",
+      "inputs": "Dane wejściowe",
+      "company": "Firma",
+      "industry": "Branża",
+      "roleTitle": "Nazwa stanowiska",
+      "candidateNameOptional": "Imię i nazwisko kandydata (opcjonalnie)",
+      "interviewFocusOptional": "Cel rozmowy (opcjonalnie)",
+      "runMaven": "Uruchom Maven",
+      "reset": "Resetuj"
+    }
+  },
+  "lumen": {
+    "portraitPortraitSections": {
+      "ofSourcesOnFileEverything": "{{present}} z {{length}} źródeł w aktach. Wszystko poniżej jest odczytywane z nich — tam, gdzie brakuje źródła, obraz jest uboższy, ale nie błędny.",
+      "onFile": "dostępne",
+      "notOnFile": "niedostępne",
+      "thisIsARealRead": "To prawdziwy odczyt tego, co nam przekazałeś(-aś). PRISM jest punktem odniesienia, względem którego odczytywane są pozostałe źródła, więc jego dodanie pozwala potwierdzić obraz, a nie tylko go opisać.",
+      "leads": "{{dominant_quadrant}} przoduje",
+      "energyDirection": "Kierunek energii",
+      "measuredAlongsideTheEightBut": "Mierzone razem z ośmioma, ale nienależące do żadnej ćwiartki — i żaden z końców nie jest lepszy od drugiego.",
+      "agrees": "zgodne",
+      "differs": "różni się",
+      "confidence": "pewność {{v1}}",
+      "noTensionsSurfacedYourInstruments": "Nie wykryto napięć. Twoje narzędzia opowiadają spójną historię.",
+      "prismIsTheAnchorWhere": "PRISM jest punktem odniesienia — gdy inne narzędzie jest niezgodne, przewodzi PRISM, a różnica jest pokazana, a nie zatuszowana."
+    }
+  },
+  "onboarding": {
+    "coachCard": {
+      "help": "Pomoc",
+      "gender": "Płeć",
+      "selectGender": "Wybierz płeć",
+      "voiceAccent": "Akcent głosu",
+      "selectAccent": "Wybierz akcent",
+      "voiceTone": "Ton głosu",
+      "selectTones": "Wybierz tony",
+      "ifAnyChangesAreMade": "jeśli wprowadzisz zmiany, zapisz i odtwórz",
+      "cancel": "Anuluj",
+      "edit": "Edytuj"
+    }
+  },
+  "prism": {
+    "prismInitiateForm": {
+      "janeSmithCompanyCom": "jane.smith@company.com"
+    },
+    "narrativeNarrativeExportButtons": {
+      "pdf": "PDF",
+      "word": "Word"
+    }
+  },
+  "user": {
+    "userCoachCard": {
+      "help": "Pomoc",
+      "gender": "Płeć",
+      "voiceAccent": "Akcent głosu",
+      "voiceTone": "Ton głosu",
+      "chat": "Czat"
+    },
+    "bioBioChaptersStrip": {
+      "continue": "Kontynuuj"
+    },
+    "bioCapturedTurnCard": {
+      "capturedToYourProfile": "Zapisano w Twoim profilu"
+    },
+    "bioChronicleChatPanel": {
+      "nothingToSaveYetStart": "Nie ma jeszcze nic do zapisania — najpierw rozpocznij wywiad.",
+      "interviewSavedYouCanContinue": "Wywiad zapisany — możesz go kontynuować w dowolnym momencie.",
+      "couldnTSaveThisSession": "Nie udało się zapisać tej sesji — na razie nadal tu jest.",
+      "resumed": "Wznowiono „{{title}}”.",
+      "couldnTOpenThatSession": "Nie udało się otworzyć tej sesji — spróbuj ponownie.",
+      "chronicleInterview": "Wywiad z Chronicle",
+      "chronicleIsThinking": "Chronicle myśli…",
+      "readyWhenYouAre": "Gotowe, gdy będziesz gotowy(-a)",
+      "audio": "Audio",
+      "audioReadChronicleSQuestions": "Audio: czytaj pytania Chronicle na głos i odpowiadaj mówiąc",
+      "sessions": "Sesje",
+      "newSession": "Nowa sesja",
+      "continueASession": "Kontynuuj sesję",
+      "noSavedSessionsYet": "Brak zapisanych sesji.",
+      "saving": "Zapisywanie…",
+      "save": "Zapisz",
+      "endRecap": "Zakończ i podsumuj",
+      "chronicleHelpsYouTellYour": "Chronicle pomaga opowiedzieć Twoją historię, wspomnienie po wspomnieniu. Włącz Audio, aby prowadził Cię głos, albo po prostu zacznij pisać:",
+      "stop": "Zatrzymaj",
+      "listen": "Słuchaj",
+      "dismiss": "Odrzuć",
+      "goDeeper": "Zgłęb temat",
+      "addTheSmallThingsThe": "Dodaj drobiazgi — zapach pomieszczenia, w co ktoś był ubrany, co grało. Szczegół jest historią.",
+      "listeningSpeakYourAnswer": "Słucham. Powiedz swoją odpowiedź.",
+      "voiceInputIsnTSupported": "Wprowadzanie głosowe nie jest obsługiwane w tej przeglądarce",
+      "voiceInputIsnTSupported2": "Wprowadzanie głosowe nie jest obsługiwane w tej przeglądarce — wpisz odpowiedź.",
+      "messageChronicle": "Napisz do Chronicle",
+      "send": "Wyślij",
+      "sessionInsight": "Wnioski z sesji",
+      "asYouTalkWhatChronicle": "Podczas rozmowy tutaj pojawia się to, co zapisuje Chronicle — poruszane rozdziały, wydobyte wspomnienia i to, co się wyróżnia.",
+      "chaptersThisSession": "Rozdziały w tej sesji",
+      "captured": "Zapisane ({{length}})",
+      "whatStandsOut": "Co się wyróżnia"
+    },
+    "documentsUploadDocumentsModal": {
+      "theUploadedDocumentMayNot": "Przesłany dokument może mieć nieobsługiwany format lub jest zbyt duży. Sprawdź plik i spróbuj ponownie.",
+      "thisMightTakeAFew": "Może to potrwać kilka sekund. Nie zamykaj tego okna podczas przesyłania.",
+      "documentUploaded": "Dokument przesłany",
+      "documentUploadedSuccessfully": "Dokument został przesłany!",
+      "back": "Wstecz",
+      "uploadDocuments": "Prześlij dokumenty",
+      "pleaseUploadADocumentFor": "Prześlij dokument do analizy.",
+      "documentsDropZone": "Strefa upuszczania dokumentów",
+      "dragDropYourFilesHere": "Przeciągnij i upuść pliki tutaj",
+      "or": "LUB",
+      "browseFiles": "Przeglądaj pliki",
+      "cancel": "Anuluj",
+      "upload": "Prześlij",
+      "close": "Zamknij",
+      "somethingWentWrong": "Coś poszło nie tak"
+    },
+    "bioMemoirExportMenu": {
+      "nothingToExportYetCapture": "Nie ma jeszcze nic do wyeksportowania — najpierw zapisz wspomnienie z Chronicle.",
+      "memoirCopied": "Skopiowano pamiętnik.",
+      "couldnTExportYourMemoir": "Nie udało się wyeksportować pamiętnika — spróbuj ponownie.",
+      "exportMemoir": "Eksportuj pamiętnik",
+      "copy": "Kopiuj",
+      "print": "Drukuj",
+      "wordDoc": "Word (.doc)",
+      "pdf": "PDF"
+    },
+    "bioSessionRecapCard": {
+      "sessionRecap": "Podsumowanie sesji",
+      "chaptersVisited": "Odwiedzone rozdziały",
+      "capturedThisSession": "Zapisane w tej sesji",
+      "whatStandsOut": "Co się wyróżnia",
+      "nothingWasCapturedThisTime": "Tym razem nic nie zostało zapisane — wybierz rozdział i kontynuuj, kiedy będziesz gotów/gotowa."
+    },
+    "chatChatWindow": {
+      "copiedToClipboard": "Skopiowano do schowka"
+    },
+    "chatDocumentsPanel": {
+      "pdf": "PDF",
+      "csv": "CSV",
+      "ppt": "PPT",
+      "doc": "DOC"
+    },
+    "developmentMyGapsSection": {
+      "markAsClosed": "Oznacz jako zamknięte",
+      "gaps": "Luki",
+      "addSomethingYouWantTo": "Dodaj coś, w czym chcesz być lepszy/lepsza",
+      "whatIsIt": "Czego dotyczy?",
+      "presentingToARoomI": "Przemawianie przed nieznaną publicznością",
+      "howMuchDoesItMatter": "Jak bardzo to ważne?",
+      "add": "Dodaj"
+    },
+    "developmentMyLearningSection": {
+      "learning": "Nauka",
+      "addSomethingYouAreWorking": "Dodaj coś, nad czym pracujesz",
+      "whatIsIt": "Czego dotyczy?",
+      "negotiationFundamentals": "Podstawy negocjacji",
+      "whereIsItFromOptional": "Skąd to pochodzi? (opcjonalnie)",
+      "add": "Dodaj"
+    },
+    "developmentMyMilestonesSection": {
+      "blocked": "Zablokowane: {{blockedReason}}",
+      "due": "Termin: {{dueDate}}",
+      "milestones": "Kamienie milowe"
+    },
+    "developmentMyPrismReadingSection": {
+      "notScored": "brak oceny",
+      "myPrismReading": "Mój odczyt PRISM",
+      "weCanTShowYour": "Nie możemy wyświetlić Twojego odczytu.",
+      "scalesOnFile": "Skale w zapisie: {{coverage}}",
+      "fromAnOlderRecord": "Ze starszego zapisu",
+      "yourQuadrantMeans": "Co oznacza Twoja ćwiartka"
+    },
+    "developmentMyReviewsSection": {
+      "agreedWithThisGoal": "Zgoda na ten cel",
+      "wantsToTalkItThrough": "Chce to omówić",
+      "noCommentLeft": "Brak komentarza.",
+      "coachReviews": "Oceny coacha"
+    },
+    "developmentSelfSection": {
+      "tryAgain": "Spróbuj ponownie"
+    }
+  },
+  "fit": {
+    "fitCards": {
+      "thisJob": "To stanowisko",
+      "you": "Ty",
+      "difference": "Różnica"
+    },
+    "fitMatchList": {
+      "fit": "dopasowanie {{pct}}%",
+      "fit2": "dopasowanie",
+      "ofMeasured": "zmierzono {{evaluated}} z {{total}}",
+      "composite": "{{v1}}% łącznie",
+      "behaviouralFitGoalsAndExperience": "Dopasowanie behawioralne, cele i doświadczenie łącznie",
+      "overallFit": "Dopasowanie ogólne",
+      "prismFit": "Dopasowanie PRISM {{pct}}%",
+      "prismFit2": "Dopasowanie PRISM",
+      "notEnoughAboutYouTo": "Za mało danych o Tobie, aby je połączyć — dodaj CV"
+    },
+    "fitResult": {
+      "growthAreas": "Obszary rozwoju",
+      "priorityFocus": "Priorytet",
+      "yourFitAgainstThisTarget": "Twoje dopasowanie do tego celu",
+      "decisionSupportOnly": "Wyłącznie wsparcie decyzji",
+      "prismFitAsRecorded": "Dopasowanie PRISM wg zapisu",
+      "yourFitAsRecorded": "Twoje dopasowanie wg zapisu",
+      "worthPuttingFirst": "Warto postawić na pierwszym miejscu",
+      "worthBuildingOverTime": "Warto rozwijać z czasem",
+      "matchingForThisRoleIs": "Dopasowanie do tej roli jest wciąż w ograniczonym wydaniu, więc potraktuj ten wynik jako pierwszy szkic, a nie ostateczną odpowiedź.",
+      "overallFitIsnTAvailable": "Dopasowanie ogólne nie jest jeszcze dostępne dla wklejonego opisu stanowiska — Twoje dopasowanie PRISM powyżej jest Twoim wynikiem.",
+      "whatToSayOutLoud": "Co warto powiedzieć na głos o tej ofercie",
+      "theseAreThePlacesYou": "To obszary, w których już spełniasz lub przewyższasz wymagania roli. Są Twoje — warto mieć je w pogotowiu przed rozmową kwalifikacyjną.",
+      "strengthsYouTurnUpHigh": "Mocne strony, które wyraźnie uwydatniasz",
+      "theseAreStrengthsNotFaults": "To mocne strony, a nie wady. Wyrażasz je silniej, niż zwykle wymaga ta rola — co często widać pod presją. Nic tu nie wymaga naprawy; warto po prostu wiedzieć, po które pokrętło sięgasz najpierw."
+    },
+    "fitScoreHeadline": {
+      "overallFit": "Dopasowanie ogólne {{v1}}%"
+    }
+  },
+  "workbench": {
+    "workbenchHome": {
+      "loadingYourRoster": "Wczytywanie listy…",
+      "notMeasuredThisIsNot": "Nie zmierzono — to nie jest wynik zero.",
+      "nameNotOnFile": "Brak imienia i nazwiska w danych",
+      "open": "Otwórz",
+      "loadingWorkbench": "Wczytywanie przestrzeni roboczej",
+      "yourWorkbenchCouldNotBe": "Nie udało się wczytać Twojej przestrzeni roboczej.",
+      "tryAgain": "Spróbuj ponownie"
+    }
+  },
+  "tasks": {
+    "costEstimateBanner": {
+      "estimatedCostUsdInputTokens": "Szacowany koszt: ok. ${{v1}} USD ({{v2}} tokenów wejściowych × stawka wejściowa Sonnet). Koszt wyjścia zależy od długości odpowiedzi agenta."
+    },
+    "taskAgentResultCard": {
+      "savedToYourWorkspace": "Zapisano w Twojej przestrzeni roboczej.",
+      "couldNotSave": "Nie udało się zapisać: {{message}}",
+      "cannotSaveMissingTaskIdentity": "Nie można zapisać: brak identyfikatora zadania.",
+      "confidence": "pewność {{v1}}%",
+      "ms": "{{v1}} ms",
+      "suggestedNext": "Sugerowany następny krok:",
+      "reRunWithDifferentInputs": "Uruchom ponownie z innymi danymi",
+      "saved": "Zapisano",
+      "saveToMyWorkspace": "Zapisz w mojej przestrzeni roboczej"
+    }
+  },
+  "interview": {
+    "rolePageShell": {
+      "inspireGenius": "Inspire Genius"
+    }
+  }
+}

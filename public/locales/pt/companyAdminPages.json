@@ -199,5 +199,6 @@
   "dashHousePersonMany": "{{n}} pessoas",
   "dashHouseTitle": "Painel",
   "dashHouseDescription": "As pessoas, os departamentos e o uso da sua organização em resumo.",
-  "dashHouseDepartments": "Departamentos"
+  "dashHouseDepartments": "Departamentos",
+  "peopleColPrism": "PRISM"
 }

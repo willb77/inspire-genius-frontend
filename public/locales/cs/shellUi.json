@@ -1,0 +1,558 @@
+{
+  "systemSwitch": {
+    "toAgentEngine": "Pro tuto konverzaci bylo přepnuto na Agent Engine",
+    "toMonolith": "Přepnuto na Monolith. Produkční WS se připojuje pouze k Agent Engine – chat/hlas může být nedostupný.",
+    "agentEngine": "Agent Engine",
+    "ariaLabel": "Přepnout systém agentů. Aktuální: {{target}}. Kliknutím přepnete na {{next}}.",
+    "monolith": "Monolith",
+    "title": "Aktuální: {{target}}. Kliknutím přepnete na {{next}}."
+  },
+  "teamForm": {
+    "active": "Aktivní",
+    "addUser": "Přidat uživatele",
+    "deactivated": "Deaktivován",
+    "editUser": "Upravit uživatele",
+    "email": "E-mail *",
+    "emailPlaceholder": "Zadejte e-mail",
+    "name": "Jméno *",
+    "namePlaceholder": "Zadejte jméno",
+    "role": "Role *",
+    "saveChanges": "Uložit změny",
+    "selectRole": "Vyberte roli",
+    "selectStatus": "Vyberte stav",
+    "status": "Stav"
+  },
+  "themeMenu": {
+    "appearance": "Vzhled",
+    "auto": "Automaticky",
+    "scopeNote": "Barevné motivy se zatím zobrazují na úvodní stránce. Noční světlo a Stupně šedi fungují na každé stránce.",
+    "theme": "Motiv",
+    "tileColour": "Barva dlaždice",
+    "tileColourLabel": "Barva dlaždice: {{label}}",
+    "triggerLabel": "Motiv: {{label}}"
+  },
+  "translationStatus": {
+    "complete": "Dokončeno",
+    "description": "Postup komunitní lokalizace v {{total}} jazycích",
+    "helpAfter": "a přispějte.",
+    "helpBefore": "Našli jste chybějící nebo nesprávný překlad? Přečtěte si",
+    "helpTitle": "Pomozte s překladem",
+    "incomplete": "Nedokončeno",
+    "languages": "Jazyky",
+    "overall": "Celkový postup",
+    "partial": "Částečně",
+    "title": "Stav překladů"
+  },
+  "userForm": {
+    "active": "Aktivní",
+    "addUser": "Přidat uživatele",
+    "deactivated": "Deaktivován",
+    "editUser": "Upravit uživatele",
+    "email": "E-mail",
+    "emailPlaceholder": "Zadejte e-mail",
+    "emailRequired": "E-mail *",
+    "expires": "Platnost vyprší",
+    "firstName": "Křestní jméno *",
+    "firstNamePlaceholder": "Zadejte křestní jméno",
+    "invitation": "Pozvánka",
+    "invitationStatus": {
+      "accepted": "Přijato",
+      "cancelled": "Zrušeno",
+      "expired": "Vypršelo",
+      "invitation_sent": "Odesláno",
+      "pending": "Čeká na vyřízení"
+    },
+    "lastName": "Příjmení *",
+    "lastNamePlaceholder": "Zadejte příjmení",
+    "loadInvitationFailed": "Nepodařilo se načíst podrobnosti pozvánky",
+    "loadingInvitation": "Načítání podrobností pozvánky…",
+    "noOrganization": "Žádná organizace",
+    "organization": "Organizace",
+    "pickFutureDate": "Vyberte budoucí datum",
+    "resendInvitation": "Znovu odeslat pozvánku",
+    "resending": "Odesílání…",
+    "role": "Role",
+    "roleRequired": "Role *",
+    "saveChanges": "Uložit změny",
+    "selectOrganization": "Vyberte organizaci",
+    "selectRole": "Vyberte roli",
+    "selectStatus": "Vyberte stav",
+    "sent": "Odesláno",
+    "setNewExpiry": "Nastavit nové datum vypršení",
+    "skipOnboarding": "Přeskočit proces úvodního nastavení",
+    "skipOnboardingHelp": "Vytvoří uživatele jako již zaškoleného a e-mailem odešle magický odkaz pro přihlášení jedním kliknutím místo pozvánky k nastavení hesla. Určeno pro demo účty na Dev/Staging – v produkci se ignoruje (zamítne).",
+    "status": "Stav",
+    "updateExpiry": "Aktualizovat datum vypršení",
+    "updating": "Aktualizace…"
+  },
+  "nav": {
+    "items": {
+      "Schedule": "Plán",
+      "Scholarships": "Stipendia",
+      "Scorecards": "Výsledkové karty",
+      "Settings": "Nastavení",
+      "Start_a_capture": "Zahájit záznam",
+      "Successor_curriculum": "Osnova pro nástupce",
+      "Surveys": "Průzkumy",
+      "Team_Development_Studio": "Studio rozvoje týmu",
+      "Team_Import": "Import týmu",
+      "Usage_reports": "Přehledy využití",
+      "User": "Uživatel",
+      "User_Home": "Domov uživatele",
+      "User_Management": "Správa uživatelů",
+      "Users": "Uživatelé",
+      "What_it_pays": "Jaké je odměňování",
+      "Who_I_am": "Kdo jsem",
+      "Why_the_AI_answered": "Proč AI odpověděla",
+      "Education_paths": "Vzdělávací cesty",
+      "Explainability": "Vysvětlitelnost",
+      "Federal_State": "Federální a státní",
+      "Financial_Profile": "Finanční profil",
+      "Fit_a_JD": "Porovnat s popisem pozice",
+      "Goals_Studio": "Studio cílů",
+      "Goals_vs_wiring": "Cíle a nastavení osobnosti",
+      "Growth_areas": "Oblasti růstu",
+      "HR": "HR",
+      "Help_Support": "Nápověda a podpora",
+      "Help_and_Support_Management": "Správa nápovědy a podpory",
+      "Help_requests": "Žádosti o pomoc",
+      "Home": "Domů",
+      "Institutions": "Instituce",
+      "Intake": "Vstupní příjem",
+      "Interview_Studio": "Studio pohovorů",
+      "Interview_prep": "Příprava na pohovor",
+      "Job_matches": "Shody s pracovními místy",
+      "Knowledge": "Znalosti",
+      "Knowledge_Base": "Znalostní báze",
+      "Live_Interview": "Živý pohovor",
+      "Loans_Debt": "Půjčky a dluhy",
+      "Manager": "Manažer",
+      "Member_Oversight": "Dohled nad členy",
+      "My_Aid_Plan": "Můj plán podpory",
+      "My_Clients": "Moji klienti",
+      "My_PRISM_Practice": "Moje praxe s PRISM",
+      "My_Self_Portrait": "Můj autoportrét",
+      "My_Students": "Moji studenti",
+      "My_development": "Můj rozvoj",
+      "My_fit": "Moje shoda",
+      "My_goals": "Moje cíle",
+      "My_journey": "Moje cesta",
+      "My_plan": "Můj plán",
+      "My_practitioners": "Moji praktici",
+      "Observability": "Observabilita",
+      "Organization": "Organizace",
+      "Organizations": "Organizace",
+      "PRISM_Accuracy_Scorer": "Hodnocení přesnosti PRISM",
+      "PRISM_CSV_Converter": "Převodník CSV pro PRISM",
+      "PRISM_Management": "Správa PRISM",
+      "PRISM_Practitioner_Exam": "Zkouška praktika PRISM",
+      "PRISM_tools": "Nástroje PRISM",
+      "Pathway": "Cesta",
+      "Pipeline": "Pipeline",
+      "Practise_answers": "Procvičit odpovědi",
+      "Practitioner": "Praktik",
+      "Practitioner_Home": "Domů praktika",
+      "Practitioner_Registry": "Registr praktiků",
+      "Practitioners": "Praktici",
+      "Prep_Me": "Připravte mě",
+      "Privacy_RTBF": "Soukromí a právo být zapomenut",
+      "Program_Health": "Stav programu",
+      "RLHF_Training": "Trénink RLHF",
+      "Recruiters": "Náboráři",
+      "Reports": "Zprávy",
+      "Research": "Výzkum",
+      "Reviewer_console": "Konzole recenzenta",
+      "Role_Play": "Hraní rolí",
+      "Résumé_Writer": "Tvůrce životopisu",
+      "AI_Observability": "AI observabilita",
+      "AI_usage_health": "Využití a stav AI",
+      "About_me": "O mně",
+      "Add_people": "Přidat lidi",
+      "Admin_home": "Domů správce",
+      "Agent_Management": "Správa agentů",
+      "Agent_Trace_Console": "Konzole trasování agentů",
+      "Agent_Trainer": "Trenér agentů",
+      "Aid_Dashboard": "Přehled pomoci",
+      "Analytics": "Analytika",
+      "Analytics_Logs": "Analytika a protokoly",
+      "Application_Concierge": "Aplikační concierge",
+      "Asset_Library": "Knihovna prostředků",
+      "Asset_library": "Knihovna prostředků",
+      "Authoring": "Tvorba obsahu",
+      "Blueprint_a_role": "Navrhnout roli",
+      "Broadcast_Alerts": "Hromadná upozornění",
+      "Bulk_Import": "Hromadný import",
+      "Bulk_User_Import": "Hromadný import uživatelů",
+      "Candidates": "Kandidáti",
+      "Career_areas": "Kariérní oblasti",
+      "Chat_with_Coaches": "Chat s kouči",
+      "Chat_with_Meridian": "Chat s Meridian",
+      "Client_PRISM_Assessments": "Hodnocení PRISM klientů",
+      "Client_Sign_Up": "Registrace klienta",
+      "Client_sign_up": "Registrace klienta",
+      "Coach_feedback_review": "Kontrola zpětné vazby koučů",
+      "Coach_setup": "Nastavení koučů",
+      "Coach_trace_console": "Konzole trasování koučů",
+      "Coach_training": "Trénink koučů",
+      "Coaches": "Kouči",
+      "Coaching": "Koučink",
+      "Cohort_Read_out": "Přehled kohorty",
+      "Cohort_read_out": "Přehled kohorty",
+      "Companies": "Společnosti",
+      "Company_Admin": "Správa společnosti",
+      "Company_admin": "Správa společnosti",
+      "Compare_Offers": "Porovnat nabídky",
+      "Cost_and_payback": "Náklady a návratnost",
+      "Credits": "Kredity",
+      "Culture_Docs": "Dokumenty o kultuře",
+      "Curriculum": "Osnovy",
+      "Dashboard": "Přehled",
+      "Data_deletion_requests": "Žádosti o smazání dat",
+      "Dev_Traffic_Report": "Report vývojářského provozu",
+      "Dev_traffic_report": "Report vývojářského provozu",
+      "Distributor": "Distributor",
+      "Document_Library": "Knihovna dokumentů",
+      "Character_Lab": "Character Lab",
+      "Job_Blueprint": "Job Blueprint"
+    },
+    "sections": {
+      "AI_coaches": "AI koučové",
+      "Administration": "Administrace",
+      "Advanced": "Pokročilé",
+      "Financial_Aid": "Finanční podpora",
+      "Knowledge_Continuity_Studio": "Knowledge Continuity Studio",
+      "People": "Lidé",
+      "Platform_Alerts": "Upozornění platformy",
+      "Reports": "Přehledy",
+      "Role_Views": "Zobrazení rolí",
+      "Support": "Podpora",
+      "PRISM": "PRISM"
+    }
+  },
+  "notificationBell": {
+    "ariaLabel": "Oznámení",
+    "ariaLabelUnread": "Oznámení (nepřečtených: {{n}})",
+    "caughtUp": "Vše máte přečteno.",
+    "fallbackTitle": "Oznámení",
+    "loading": "Načítání…",
+    "markAllRead": "Označit vše jako přečtené",
+    "title": "Oznámení"
+  },
+  "pageHeader": {
+    "backTo": "Zpět na {{label}}"
+  },
+  "pageState": {
+    "getHelp": "Získat nápovědu",
+    "loading": "Načítání",
+    "sampleData": "Ukázková data – nejde o data vaší organizace."
+  },
+  "passwordChecklist": {
+    "ariaLabel": "Pravidla pro heslo",
+    "done": " – splněno",
+    "needed": " – stále chybí"
+  },
+  "personalData": {
+    "charactersLeft": "Zbývá znaků: {{n}}",
+    "description": "Sdílejte krátký profil, aby vám Meridian mohl být užitečnější. Každý řádek se ukládá samostatně – ukládají se pouze pole, která vyplníte.",
+    "resumeNote": "Soubor uložíme a (brzy) automaticky z něj získáme roli, obor a dovednosti. Zatím jej můžete nahrát – extrakce bude doplněna později.",
+    "rowEmpty": "{{label}} je prázdné.",
+    "rowSaved": "{{label}} uloženo.",
+    "rows": {
+      "current_role": {
+        "label": "Současná role",
+        "placeholder": "např. senior produktový manažer"
+      },
+      "industry": {
+        "label": "Obor",
+        "placeholder": "např. SaaS pro zdravotnictví"
+      },
+      "primary_constraints": {
+        "label": "Omezení",
+        "placeholder": "Je něco, čemu by se Meridian měl vyhnout nebo na co dávat pozor?"
+      },
+      "primary_goals": {
+        "label": "Cíle",
+        "placeholder": "O co teď usilujete? (klidně jeden cíl na řádek)"
+      },
+      "summary": {
+        "label": "Medailonek / stručné shrnutí",
+        "placeholder": "Řekněte Meridianu něco o sobě…"
+      },
+      "years_experience": {
+        "label": "Roky zkušeností",
+        "placeholder": "např. 12"
+      }
+    },
+    "save": "Uložit",
+    "saveFailed": "Uložení se nezdařilo.",
+    "title": "Osobní údaje",
+    "upload": "Nahrát",
+    "uploadFailed": "Nahrávání se nezdařilo.",
+    "uploadResume": "Nahrát životopis (volitelné)",
+    "uploaded": "Soubor {{name}} byl nahrán."
+  },
+  "actionMenu": {
+    "activate": "Aktivovat",
+    "activity": "Aktivita",
+    "coaches": "Koučové",
+    "deactivate": "Deaktivovat",
+    "delete": "Smazat",
+    "edit": "Upravit",
+    "openMenu": "Otevřít nabídku",
+    "prismAccess": "Přístup k průzkumu PRISM",
+    "prismCsv": "Nahrát CSV PRISM",
+    "prismPdf": "Nahrát / smazat PDF PRISM",
+    "resend": "Odeslat znovu",
+    "verticalEntitlements": "Oprávnění vertikál",
+    "view": "Zobrazit"
+  },
+  "alexFloating": {
+    "close": "Zavřít Alex",
+    "open": "Otevřít asistenta Alex"
+  },
+  "appHeader": {
+    "fallbackName": "Uživatel",
+    "goHome": "Přejít na úvod",
+    "menu": "Nabídka",
+    "search": "Hledat...",
+    "settings": "Nastavení"
+  },
+  "assessments": {
+    "addBigFive": "Přidat výsledek Big Five",
+    "addDisc": "Přidat výsledek DISC",
+    "addMbti": "Přidat typ MBTI",
+    "assessedOn": "Datum hodnocení",
+    "bigFive": {
+      "A": "Přívětivost",
+      "C": "Svědomitost",
+      "E": "Extraverze",
+      "N": "Neuroticismus",
+      "O": "Otevřenost"
+    },
+    "bigFiveAdded": "Výsledek Big Five byl přidán.",
+    "bigFiveFailed": "Výsledek Big Five se nepodařilo přidat.",
+    "cancel": "Zrušit",
+    "description": "Přidejte výsledky dřívějších hodnocení, aby je Meridian mohl zohlednit. Použijte je u zpráv, které již máte k dispozici.",
+    "discAdded": "Výsledek DISC byl přidán.",
+    "discFailed": "Výsledek DISC se nepodařilo přidat.",
+    "mbtiAdded": "Typ MBTI byl přidán.",
+    "mbtiClarity": "Jednoznačnost (0–100)",
+    "mbtiFailed": "Typ MBTI se nepodařilo přidat.",
+    "mbtiType": "Typ (např. INTJ)",
+    "prismData": "Vaše data PRISM",
+    "prismDataHelp": "Nahraďte své skóre PRISM z CSV se surovými daty a volitelně i PDF zprávy. Tím se přepíše Váš stávající profil PRISM.",
+    "replacePrism": "Nahradit data PRISM",
+    "save": "Uložit",
+    "title": "Další hodnocení",
+    "scoreLabel": "{{label}} (0–100)"
+  },
+  "audioPlayer": {
+    "browseHint": "nebo kliknutím vyberte soubor • Podporuje MP3, WAV, FLAC a další",
+    "dropHere": "Přetáhněte sem svůj audiosoubor",
+    "loadFileFailed": "Audiosoubor se nepodařilo načíst",
+    "loaded": "Načteno: {{name}}",
+    "loading": "Načítání zvuku...",
+    "mute": "Ztlumit",
+    "pause": "Pozastavit",
+    "paused": "POZASTAVENO",
+    "play": "Přehrát",
+    "playing": "PŘEHRÁVÁ SE",
+    "replay": "Přehrát od začátku",
+    "seek": "Posun v nahrávce",
+    "skipBack": "Přeskočit o 10 sekund zpět",
+    "skipForward": "Přeskočit o 10 sekund vpřed",
+    "unmute": "Zapnout zvuk",
+    "uploadLabel": "Nahrát zvukový soubor",
+    "volume": "Ovládání hlasitosti"
+  },
+  "userTopHeader": {
+    "fallbackName": "Uživatel",
+    "helpSupport": "Nápověda a podpora",
+    "logout": "Odhlásit se",
+    "logoutConfirm": "Odhlásit se",
+    "logoutDescription": "Opravdu se chcete odhlásit?",
+    "logoutTitle": "Odhlásit se",
+    "openProfileMenu": "Otevřít nabídku profilu",
+    "settings": "Nastavení",
+    "subtitle": "Vaši AI kouči jsou připraveni – pojďme začít!",
+    "watchGoalsStudio": "Sledovat: Goals Studio",
+    "watchInterviewStudio": "Sledovat: Interview Studio",
+    "watchWorkspaceGuide": "Sledovat: Průvodce Mým pracovním prostorem",
+    "welcome": "Vítejte! {{name}}"
+  },
+  "voiceDesk": {
+    "agentLabel": "VoiceDesk, hlasový agent nápovědy",
+    "close": "Zavřít hlasovou nápovědu",
+    "open": "Otevřít hlasovou nápovědu",
+    "panelTitle": "Hlasová nápověda"
+  },
+  "ecosystemBanner": {
+    "unreachable": "Ekosystém agentů je nedostupný. Chat běží na záložním monolitu.",
+    "disabled": "Ekosystém agentů je dočasně vypnutý. Chat běží na záložním monolitu."
+  },
+  "emptyState": {
+    "message": "Momentálně tu není nic k zobrazení.",
+    "title": "Zatím žádná data"
+  },
+  "errorState": {
+    "message": "Tento obsah se nepodařilo načíst. Zkuste to prosím znovu.",
+    "retry": "Zkusit znovu",
+    "title": "Něco se pokazilo"
+  },
+  "loadingCard": {
+    "initializing": "Inicializace AI inteligence...",
+    "processing": "ZPRACOVÁNÍ"
+  },
+  "modalDialog": {
+    "close": "Zavřít"
+  },
+  "modalForm": {
+    "cancel": "Zrušit"
+  },
+  "multiAgent": {
+    "badge": "Více agentů · agentů: {{n}}",
+    "tooltip": "Společná odpověď od: {{agents}}"
+  },
+  "placeholderBanner": {
+    "text": "Ukázková data — Tato stránka zobrazuje zástupný obsah. Živá data se zobrazí po připojení rozhraní API."
+  },
+  "prismDataMenu": {
+    "brainMap": "Brain Map",
+    "dialogDescription": "Váš osmidimenzionální profil PRISM zobrazený na behaviorální mapě.",
+    "dialogTitle": "Vaše PRISM Brain Map",
+    "openFailed": "Váš report PRISM se nepodařilo otevřít. Zkuste to prosím znovu.",
+    "openReport": "Otevřít report",
+    "pdfNotReady": "Váš PDF soubor ještě není připraven.",
+    "popupBlocked": "Váš prohlížeč zablokoval okno s reportem.",
+    "reportPdf": "Report PRISM (PDF)",
+    "trigger": "Data PRISM"
+  },
+  "quickActions": {
+    "mode": {
+      "day": "den",
+      "month": "měsíc",
+      "range": "období"
+    },
+    "title": "Rychlé akce —"
+  },
+  "quickDirection": {
+    "completeCta": "Vraťte se ke své cestě",
+    "completeDetail": "Věci se mění — máte na mysli novou roli nebo jiný cíl. Vše tu zůstává, kdykoli se k tomu budete chtít vrátit.",
+    "completeLead": "Prošli jste celým procesem Direction Setting.",
+    "continue": "Pokračovat",
+    "nextLead": "Další: {{name}} — {{question}}",
+    "progress": "Průběh Direction Setting",
+    "start": "Začít",
+    "startDetail": "Vedená cesta od „nevím, čemu bych se měl věnovat“ k roli, o kterou stojí za to usilovat, a k plánu, jak se k ní dostat. Postupujte vlastním tempem — každý krok se ukládá.",
+    "startLead": "Nevíte, co dál? Začněte tady.",
+    "step": "Krok {{position}} z {{total}}",
+    "title": "Direction Setting"
+  },
+  "rightPanel": {
+    "ariaLabel": "Profil uživatele a nadcházející události",
+    "fallbackName": "Uživatel",
+    "prismProfile": "Profil PRISM",
+    "upcoming": "Nadcházející"
+  },
+  "searchBar": {
+    "ariaLabel": "Hledat",
+    "placeholder": "Hledat..."
+  },
+  "settings": {
+    "eyebrow": "Účet a předvolby",
+    "legal": "Právní informace",
+    "loggedOut": "Odhlášení proběhlo úspěšně!",
+    "logoutConfirm": "Opravdu se chcete odhlásit?",
+    "passwordChangeFailed": "Heslo se nepodařilo změnit",
+    "passwordChanged": "Heslo bylo úspěšně změněno",
+    "privacy": "Zásady ochrany osobních údajů",
+    "profileUpdateFailed": "Profil se nepodařilo aktualizovat",
+    "profileUpdated": "Profil byl úspěšně aktualizován",
+    "terms": "Podmínky použití",
+    "title": "Nastavení"
+  },
+  "sidebar": {
+    "collapse": "Sbalit {{label}}",
+    "expand": "Rozbalit {{label}}",
+    "goHome": "Přejít na domovskou stránku",
+    "logout": "Odhlásit se",
+    "logoutConfirm": "Odhlásit se",
+    "logoutDescription": "Opravdu se chcete odhlásit?",
+    "logoutTitle": "Odhlásit se",
+    "notInPlan": "{{label}} — není součástí Vašeho tarifu",
+    "openMenu": "Otevřít nabídku"
+  },
+  "skipToContent": {
+    "label": "Přeskočit na obsah"
+  },
+  "behavioralMap": {
+    "description": "Váš profil PRISM o 8 dimenzích a skóre.",
+    "title": "Vaše behaviorální mapa",
+    "trigger": "Behaviorální mapa"
+  },
+  "broadcastBanner": {
+    "dismiss": "Zavřít upozornění"
+  },
+  "coachForm": {
+    "active": "Aktivní",
+    "addMentor": "Přidat mentora",
+    "category": "Kategorie *",
+    "categoryPlaceholder": "Zadejte kategorii",
+    "deactivated": "Deaktivován",
+    "editMentor": "Upravit mentora",
+    "mentorName": "Jméno mentora *",
+    "namePlaceholder": "Zadejte jméno",
+    "persona": "Persona",
+    "personaPlaceholder": "Definujte osobnost mentora, styl komunikace a přístup (např. empatický posluchač, přímý oponent, podporující průvodce)",
+    "saveChanges": "Uložit změny",
+    "selectStatus": "Vyberte stav",
+    "selectVoiceStyle": "Vyberte styl hlasu",
+    "status": "Stav",
+    "systemPrompt": "Systémový prompt",
+    "systemPromptPlaceholder": "Zadejte systémový prompt, který určuje, jak se mentor chová, odpovídá a koučuje uživatele",
+    "voiceStyle": "Styl hlasu"
+  },
+  "confirmAction": {
+    "processing": "Zpracování..."
+  },
+  "confirmDialog": {
+    "cancel": "Zrušit",
+    "confirm": "Potvrdit",
+    "description": "Pro pokračování potvrďte.",
+    "title": "Opravdu chcete pokračovat?"
+  },
+  "costDashboard": {
+    "costByPeriod": "Náklady podle období",
+    "costDistribution": "Rozložení nákladů",
+    "export": "Exportovat",
+    "last30": "Posledních 30 dní",
+    "last7": "Posledních 7 dní",
+    "last90": "Posledních 90 dní",
+    "overview": {
+      "company": "Přehled nákladů společnosti",
+      "platform": "Přehled nákladů platformy",
+      "team": "Přehled nákladů týmu",
+      "user": "Přehled nákladů uživatele"
+    }
+  },
+  "dashboardFrame": {
+    "kpiStrip": "Klíčové ukazatele výkonnosti",
+    "kpis": "KPI dashboardu",
+    "primary": "Hlavní obsah dashboardu",
+    "sideRail": "Boční panel"
+  },
+  "datePicker": {
+    "placeholder": "Vyberte datum"
+  },
+  "deleteConfirm": {
+    "description": "Tuto akci nelze vrátit zpět."
+  },
+  "destructiveConfirm": {
+    "cancel": "Zrušit",
+    "confirm": "Trvale smazat",
+    "inputLabel": "Zadejte text pro potvrzení nevratné akce",
+    "type": "Pro potvrzení zadejte:",
+    "typeWithHint": "Pro potvrzení zadejte {{hint}}:",
+    "working": "Pracuji..."
+  }
+}

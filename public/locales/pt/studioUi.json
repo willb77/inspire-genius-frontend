@@ -398,5 +398,10 @@
       "yourWorkbenchCouldNotBe": "Não foi possível carregar sua área de trabalho.",
       "tryAgain": "Tentar novamente"
     }
+  },
+  "interview": {
+    "rolePageShell": {
+      "inspireGenius": "Inspire Genius"
+    }
   }
 }

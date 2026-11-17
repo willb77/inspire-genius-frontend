@@ -264,5 +264,6 @@
   "progGoalsPointElsewhere": "elas apontam para outras áreas de carreira",
   "progItsRole": "sua função",
   "progNotAvailable": "indisponível",
-  "progOnlyPublished": "Somente escolas que publicaram seu catálogo aqui são listadas."
+  "progOnlyPublished": "Somente escolas que publicaram seu catálogo aqui são listadas.",
+  "progComponentLine": "{{label}}: {{text}}"
 }

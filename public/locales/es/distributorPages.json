@@ -66,5 +66,6 @@
   "credits": "Créditos",
   "creditsAvailable": "Créditos disponibles",
   "creditsByMonth": "Créditos por mes",
-  "creditsByPractitioner": "Créditos por profesional"
+  "creditsByPractitioner": "Créditos por profesional",
+  "homeGreetingNamed": "{{greeting}}, {{name}}"
 }

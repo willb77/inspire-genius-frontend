@@ -414,7 +414,8 @@
     "staffOnly": "I set di regole sono gestiti dal personale di selezione della tua organizzazione.",
     "summaryLine": "{{rules}} regole · decisori: {{makers}}",
     "title": "Set di regole",
-    "versionLine": "{{name}} — versione {{version}} ({{status}})"
+    "versionLine": "{{name}} — versione {{version}} ({{status}})",
+    "ruleLine": "{{label}} — {{source}} ({{outcome}})"
   },
   "scorecardComparison": {
     "candidate": "Candidato {{id}}",

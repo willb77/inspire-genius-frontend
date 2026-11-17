@@ -398,5 +398,10 @@
       "saved": "Enregistré",
       "saveToMyWorkspace": "Enregistrer dans mon espace de travail"
     }
+  },
+  "interview": {
+    "rolePageShell": {
+      "inspireGenius": "Inspire Genius"
+    }
   }
 }

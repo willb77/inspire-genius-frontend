@@ -328,12 +328,12 @@
     "warningsCount": "Ostrzeżenia: {{count}}",
     "dataSources": {
       "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
-      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
-      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
-      "s3": "S3 (Documents & Training Data)",
-      "milvus": "Milvus / Zilliz (Vector Search)",
-      "eventbridge": "EventBridge (Event Bus)",
-      "cognito": "Cognito (User Pool)"
+      "dynamoRateLimit": "DynamoDB (ograniczanie liczby żądań)",
+      "dynamoRlhf": "DynamoDB (opinie RLHF)",
+      "s3": "S3 (dokumenty i dane treningowe)",
+      "milvus": "Milvus / Zilliz (wyszukiwanie wektorowe)",
+      "eventbridge": "EventBridge (magistrala zdarzeń)",
+      "cognito": "Cognito (pula użytkowników)"
     }
   }
 }

@@ -177,7 +177,8 @@
     "partialProfileOfDimensionsMeasured": "Perfil parcial: {{evaluated}} de {{total}} dimensiones medidas",
     "openDevelopmentWorkspaceFor": "Abrir el espacio de desarrollo de {{name}}",
     "ofMilestonesComplete": "{{value}}% de los hitos completados",
-    "inviteToCompletePrismTo": "Invítale a completar PRISM para crear un perfil."
+    "inviteToCompletePrismTo": "Invítale a completar PRISM para crear un perfil.",
+    "text": " · {{department}}"
   },
   "memberDevelopmentWorkspace": {
     "askedTheyDecideAndDeclining": "Solicitado. Decide la persona, y rechazar no tiene ningún coste.",
@@ -192,7 +193,8 @@
     "recentActivity": "Actividad reciente",
     "whatChangedOnThisDossier": "Qué cambió en este dossier y qué agente o acción lo hizo.",
     "dossierExportedAsPdf": "Dossier exportado como PDF.",
-    "couldnTGenerateThePdf": "No se pudo generar el PDF."
+    "couldnTGenerateThePdf": "No se pudo generar el PDF.",
+    "text": " · {{department}}"
   },
   "meridianDevelopmentPanel": {
     "tab": "Pestaña: {{tab}}",
@@ -209,7 +211,8 @@
     "apply": "Aplicar",
     "askAboutThisMember2": "Pregunta sobre este miembro…",
     "askMeridianAboutThisMember": "Pregunta a Meridian sobre este miembro",
-    "send": "Enviar"
+    "send": "Enviar",
+    "meridian": "Meridian"
   },
   "dashboard": {
     "noInterviewsScheduled": "No hay entrevistas programadas.",
@@ -313,7 +316,8 @@
     "notStarted": "Sin empezar",
     "sourcesDisagree": "Las fuentes no coinciden",
     "engagement": "Participación",
-    "noSignInEvent": "No tenemos ningún evento de inicio de sesión de este miembro. Eso no es lo mismo que no haber iniciado sesión nunca."
+    "noSignInEvent": "No tenemos ningún evento de inicio de sesión de este miembro. Eso no es lo mismo que no haber iniciado sesión nunca.",
+    "prism": "PRISM"
   },
   "team": {
     "teamRosterClient": "Lista del equipo (cliente)",
@@ -333,7 +337,8 @@
     "hDepartment": "Departamento",
     "hRole": "Rol",
     "notAssessed": "No evaluado",
-    "openProfile": "Abrir perfil"
+    "openProfile": "Abrir perfil",
+    "hPRISM": "PRISM"
   },
   "teamBuilding": {
     "teamBuilding": "Creación de equipos",
@@ -348,7 +353,8 @@
     "secondary": "Secundario",
     "score": "Puntuación",
     "conflictInsights": "Perspectivas sobre conflictos",
-    "collaborationSuggestions": "Sugerencias de colaboración"
+    "collaborationSuggestions": "Sugerencias de colaboración",
+    "text": "{{label}} ({{length}})"
   },
   "interviews": {
     "inProgress": "En curso",
@@ -434,7 +440,8 @@
     "couldnTSearchPeopleRight": "No se pudo buscar personas en este momento. Aún puedes escribir sus datos abajo.",
     "searching": "Buscando…",
     "noOneFoundYouCan": "No se encontró a nadie. Aún puedes escribir sus datos abajo.",
-    "orTypeTheirDetailsBelow": "O escribe sus datos abajo. Solo el manager de una persona, un administrador de empresa de su organización o un superadministrador puede añadir a alguien que ya tiene una cuenta."
+    "orTypeTheirDetailsBelow": "O escribe sus datos abajo. Solo el manager de una persona, un administrador de empresa de su organización o un superadministrador puede añadir a alguien que ya tiene una cuenta.",
+    "text": " ({{email}})"
   },
   "prismTeam": {
     "teamPrismAssessments": "Evaluaciones PRISM del equipo",
@@ -625,7 +632,8 @@
     "delete": "Eliminar"
   },
   "savedRunsCard": {
-    "delete": "Eliminar {{title}}"
+    "delete": "Eliminar {{title}}",
+    "text": "{{openLabel}}: {{title}}"
   },
   "schedule": {
     "startTimeIsNotAValid": "La hora de inicio no es una fecha válida.",

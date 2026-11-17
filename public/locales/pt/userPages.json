@@ -163,7 +163,8 @@
     "withNeitherOnFileADraft": "Sem nenhum dos dois cadastrados, o rascunho se baseia apenas nas suas avaliações e não consegue listar sua experiência.",
     "addYourResume": "Adicionar seu currículo",
     "addABio": "Adicionar uma bio",
-    "alsoUseTheseDocumentsOptional": "Usar também estes documentos (opcional)"
+    "alsoUseTheseDocumentsOptional": "Usar também estes documentos (opcional)",
+    "sourceChip": "{{label}}: {{state}}"
   },
   "settingsPrivacyV2": {
     "memoryPrivacy": "Memória e privacidade",
@@ -232,7 +233,8 @@
     "surveyCreated": "Pesquisa criada.",
     "couldNotSaveTheSurvey": "Não foi possível salvar a pesquisa.",
     "surveyDeleted": "Pesquisa excluída.",
-    "couldNotDeleteTheSurvey": "Não foi possível excluir a pesquisa."
+    "couldNotDeleteTheSurvey": "Não foi possível excluir a pesquisa.",
+    "createdByEmail": " · {{email}}"
   },
   "documentsV2": {
     "selectedDocumentsWereRemovedSuccessfully": "Os documentos selecionados foram removidos com sucesso.",
@@ -294,7 +296,8 @@
     "privacy": "Privacidade",
     "chooseWhichFrameworksMeridianCanSee": "Escolha quais frameworks a Meridian pode ver no chat. Desativar um o remove de todas as conversas.",
     "onceYouHaveAssessmentsLoadedTheyll": "Quando você tiver avaliações carregadas, elas aparecerão aqui.",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "sourceSuffix": " · {{source}}"
   },
   "dashboardV2": {
     "chatWithMeridian": "Conversar com a Meridian",
@@ -517,6 +520,7 @@
     "experienceBadge": "Experiência: {{years}} anos",
     "assessedOn": "Avaliado em {{date}}",
     "includeInChat": "Incluir {{field}} no chat",
-    "clarity": " · clareza {{value}}"
+    "clarity": " · clareza {{value}}",
+    "sourceSuffix": " · {{source}}"
   }
 }

@@ -101,7 +101,8 @@
       "result": "Resultado",
       "role": "Puesto",
       "stopped": "Detenida",
-      "title": "Entrevistas"
+      "title": "Entrevistas",
+      "scoreOfFive": "{{score}} / 5"
     },
     "practice": {
       "guideLabel": "Ver: guía de entrevistas",
@@ -318,7 +319,8 @@
       "sectionScores": "Puntuaciones por sección",
       "title": "Resultados de la entrevista",
       "unrated": "{{unrated}} de {{total}} respuestas nunca se valoraron y NO forman parte de esta puntuación.",
-      "unratedNote": "Siguen en la transcripción de abajo. Una puntuación que las omitiera en silencio parecería una ficha completa."
+      "unratedNote": "Siguen en la transcripción de abajo. Una puntuación que las omitiera en silencio parecería una ficha completa.",
+      "scoreOfFive": "{{score}} / 5"
     },
     "saveFailed": "No se pudo guardar esa valoración. Inténtalo de nuevo.",
     "savedToLibrary": "Guardado en tu Biblioteca de documentos.",
@@ -421,7 +423,8 @@
     "goalFailed": "No se pudo añadir el objetivo. Inténtalo de nuevo desde Goals Studio.",
     "makeGoal": "Convertir “{{name}}” en un objetivo",
     "ofFive": "de 5",
-    "title": "Resultado simulado — solo para practicar"
+    "title": "Resultado simulado — solo para practicar",
+    "scoreOfFive": "{{score}} / 5"
   },
   "studio": {
     "framedOn": "Basado en {{name}}",

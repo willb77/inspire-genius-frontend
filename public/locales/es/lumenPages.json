@@ -109,5 +109,7 @@
   "settingsProactiveBody": "Permite que Lumen añada Moments espontáneos: un seguimiento semanal y orientación antes de lo que estás preparando. Nada sale de la aplicación; aparecen en tu feed de Moments.",
   "settingsProactiveLabel": "Moments en mi feed",
   "settingsProactiveTitle": "Orientación proactiva",
-  "settingsTitle": "Configuración de Lumen"
+  "settingsTitle": "Configuración de Lumen",
+  "momentsLabelWithDate": "{{when}} — {{what}}",
+  "momentsQuoted": "“{{context}}”"
 }

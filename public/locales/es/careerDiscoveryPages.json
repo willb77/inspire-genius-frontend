@@ -264,5 +264,6 @@
   "journeyAgeQuestion": "¿En qué año naciste?",
   "journeyAgeTitle": "Descubrimiento de carrera y educación",
   "journeyBirthYearLabel": "Año de nacimiento",
-  "journeyComingNext": "Próximamente"
+  "journeyComingNext": "Próximamente",
+  "progComponentLine": "{{label}}: {{text}}"
 }

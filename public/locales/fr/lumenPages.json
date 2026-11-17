@@ -109,5 +109,7 @@
   "settingsProactiveBody": "Autorisez Lumen à ajouter des Moments spontanés : un point hebdomadaire et des conseils avant les échéances que vous préparez. Rien ne quitte l'application ; ils apparaissent dans votre fil de Moments.",
   "settingsProactiveLabel": "Des Moments dans mon fil",
   "settingsProactiveTitle": "Accompagnement proactif",
-  "settingsTitle": "Paramètres de Lumen"
+  "settingsTitle": "Paramètres de Lumen",
+  "momentsLabelWithDate": "{{when}} — {{what}}",
+  "momentsQuoted": "“{{context}}”"
 }

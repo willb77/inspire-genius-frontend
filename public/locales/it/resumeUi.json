@@ -99,7 +99,8 @@
     "recommend": "Consiglia un formato",
     "recommended": "Consigliato: {{name}}.",
     "resumeFor": "Questo curriculum è per…",
-    "youAre": "Sei…"
+    "youAre": "Sei…",
+    "styleOption": "{{name}} — {{structure}}"
   },
   "info": {
     "add": "Aggiungi",
@@ -141,7 +142,8 @@
     "stillToCome": "Ancora da fare",
     "title": "Qualche domanda per centrare meglio l'obiettivo",
     "whyAsking": "Perché lo chiediamo:",
-    "yourAnswer": "La tua risposta (con parole tue)"
+    "yourAnswer": "La tua risposta (con parole tue)",
+    "answerQuoted": "\"{{answer}}\""
   },
   "miniCard": {
     "copied": "Mini card copiata.",
@@ -204,7 +206,8 @@
     "roleGoal": "Il tuo obiettivo: {{title}}",
     "roleHeading": "Un ruolo da Career Fit",
     "title": "Per quale lavoro è?",
-    "useSaved": "Usa una descrizione del lavoro salvata"
+    "useSaved": "Usa una descrizione del lavoro salvata",
+    "styleStructure": "— {{structure}}"
   },
   "assistant": {
     "apply": "Applica alla mia bozza (usa 1 delle {{left}} rimaste su {{limit}})",
@@ -241,7 +244,8 @@
     },
     "note": "Stampato in alto nel curriculum che scarichi. Non viene inviato da nessuna parte né salvato: reinseriscilo alla prossima visita.",
     "phone": {
-      "label": "Telefono"
+      "label": "Telefono",
+      "placeholder": "(555) 555-0100"
     }
   },
   "crosswalk": {

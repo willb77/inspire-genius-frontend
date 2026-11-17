@@ -216,7 +216,8 @@
     "failed": "Échec de l'importation",
     "importing": "Importation…",
     "partial": "{{ok}} importé(s), {{failed}} en échec : voir la liste ci-dessous",
-    "someScales": "{{name}} : {{imported}} échelles sur {{expected}}"
+    "someScales": "{{name}} : {{imported}} échelles sur {{expected}}",
+    "withWarning": "{{summary}} · {{warning}}"
   },
   "initiateForm": {
     "alreadyCustomer": "Déjà client PRISM?",

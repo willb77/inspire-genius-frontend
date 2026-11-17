@@ -306,6 +306,7 @@
     "failed": "Error al importar",
     "importing": "Importando…",
     "partial": "{{ok}} importados, {{failed}} fallaron — consulta la lista de abajo",
-    "someScales": "{{name}} — {{imported}} de {{expected}} escalas"
+    "someScales": "{{name}} — {{imported}} de {{expected}} escalas",
+    "withWarning": "{{summary}} · {{warning}}"
   }
 }

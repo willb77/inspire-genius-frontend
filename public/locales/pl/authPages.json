@@ -1,0 +1,66 @@
+{
+  "login": {
+    "emailHint": "Możesz zalogować się za pomocą głównego lub dodatkowego adresu e-mail",
+    "toast": {
+      "emailRequired": "Podaj swój adres e-mail.",
+      "emailInvalid": "Podaj prawidłowy adres e-mail.",
+      "passwordRequired": "Podaj swoje hasło.",
+      "unexpected": "Wystąpił nieoczekiwany błąd. Spróbuj ponownie."
+    },
+    "hardened": {
+      "forgotPrefix": "Nie pamiętasz hasła?",
+      "useMagicLink": "Użyj zamiast tego magic linku",
+      "linkValidity": "Wyślemy Ci e-mailem jednorazowy link do logowania, ważny przez 15 minut.",
+      "notArrivingPrefix": "E-mail nie dociera? Sprawdź spam lub",
+      "signInWithPasswordInstead": "zaloguj się za pomocą hasła"
+    }
+  },
+  "invitation": {
+    "toast": {
+      "invalidToken": "Nieprawidłowy lub brakujący token zaproszenia"
+    },
+    "leftTitleOne": "Prześlij. Zapytaj.",
+    "leftTitleTwo": "Analizuj. Osiągaj cele.",
+    "leftSubtitle": "Ustaw silne hasło, aby aktywować konto.",
+    "title": "Przyjmij zaproszenie",
+    "subtitle": "Utwórz hasło, aby kontynuować",
+    "newPasswordGroup": "Nowe hasło",
+    "newPasswordPlaceholder": "Wpisz nowe hasło",
+    "confirmPasswordPlaceholder": "Potwierdź nowe hasło",
+    "passwordsDoNotMatch": "Hasła nie są zgodne",
+    "saving": "Zapisywanie...",
+    "submit": "Ustaw hasło",
+    "hasAccount": "Masz już konto?",
+    "logIn": "Zaloguj się"
+  },
+  "verify": {
+    "signedIn": "Zalogowano pomyślnie",
+    "expiredTitle": "Ten link do logowania wygasł",
+    "expiredSubtitle": "Linki do logowania działają jednorazowo i tylko przez 15 minut",
+    "expiredBody": "Jeśli już otworzyłeś(-aś) ten link, został on wykorzystany. Starsze e-maile również nie zadziałają — poproś o nowy link i użyj najnowszego e-maila.",
+    "sendNew": "Wyślij mi nowy link do logowania",
+    "verifying": "Weryfikowanie...",
+    "pleaseWait": "Poczekaj, trwa logowanie"
+  },
+  "magicLogin": {
+    "checkEmail": "Sprawdź swoją skrzynkę e-mail",
+    "sentTo": "Wysłaliśmy magic link na adres {{email}}",
+    "clickLink": "Kliknij link w e-mailu, aby się zalogować. Link wygasa po 15 minutach.",
+    "tryDifferent": "Użyj innego adresu e-mail",
+    "backToLogin": "Wróć do logowania",
+    "title": "Magic Link",
+    "subtitle": "Zaloguj się przez e-mail — bez hasła",
+    "email": "E-mail",
+    "sending": "Wysyłanie...",
+    "submit": "Wyślij Magic Link"
+  },
+  "signup": {
+    "passwordGroup": "Hasło",
+    "termsAnd": "&"
+  },
+  "social": {
+    "processing": "Kończenie logowania przez konto społecznościowe...",
+    "done": "Logowanie zweryfikowane. Jeśli przekierowanie nie nastąpi automatycznie, możesz zamknąć tę kartę.",
+    "error": "Przekierowywanie do logowania..."
+  }
+}

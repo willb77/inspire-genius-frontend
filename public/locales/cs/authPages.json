@@ -1,0 +1,66 @@
+{
+  "login": {
+    "emailHint": "Můžete se přihlásit pomocí primární nebo sekundární e-mailové adresy",
+    "toast": {
+      "emailRequired": "Zadejte prosím svou e-mailovou adresu.",
+      "emailInvalid": "Zadejte prosím platnou e-mailovou adresu.",
+      "passwordRequired": "Zadejte prosím své heslo.",
+      "unexpected": "Došlo k neočekávané chybě. Zkuste to prosím znovu."
+    },
+    "hardened": {
+      "forgotPrefix": "Zapomněli jste heslo?",
+      "useMagicLink": "Použijte raději magic link",
+      "linkValidity": "Pošleme vám e-mailem jednorázový přihlašovací odkaz platný 15 minut.",
+      "notArrivingPrefix": "E-mail nedorazil? Zkontrolujte spam nebo",
+      "signInWithPasswordInstead": "se přihlaste pomocí hesla"
+    }
+  },
+  "invitation": {
+    "toast": {
+      "invalidToken": "Neplatný nebo chybějící token pozvánky"
+    },
+    "leftTitleOne": "Nahrajte. Ptejte se.",
+    "leftTitleTwo": "Analyzujte. Dosahujte.",
+    "leftSubtitle": "Nastavte silné heslo a aktivujte svůj účet.",
+    "title": "Přijmout pozvánku",
+    "subtitle": "Pro pokračování vytvořte své heslo",
+    "newPasswordGroup": "Nové heslo",
+    "newPasswordPlaceholder": "Zadejte nové heslo",
+    "confirmPasswordPlaceholder": "Potvrďte nové heslo",
+    "passwordsDoNotMatch": "Hesla se neshodují",
+    "saving": "Ukládání...",
+    "submit": "Nastavit heslo",
+    "hasAccount": "Již máte účet?",
+    "logIn": "Přihlásit se"
+  },
+  "verify": {
+    "signedIn": "Přihlášení proběhlo úspěšně",
+    "expiredTitle": "Platnost tohoto přihlašovacího odkazu vypršela",
+    "expiredSubtitle": "Přihlašovací odkazy fungují jen jednou a pouze 15 minut",
+    "expiredBody": "Pokud jste tento odkaz již otevřeli, byl použit. Starší e-maily také nebudou fungovat – vyžádejte si nový a použijte nejnovější e-mail.",
+    "sendNew": "Poslat nový přihlašovací odkaz",
+    "verifying": "Ověřování...",
+    "pleaseWait": "Počkejte prosím, než vás přihlásíme"
+  },
+  "magicLogin": {
+    "checkEmail": "Zkontrolujte svůj e-mail",
+    "sentTo": "Poslali jsme magic link na adresu {{email}}",
+    "clickLink": "Kliknutím na odkaz v e-mailu se přihlásíte. Platnost odkazu vyprší za 15 minut.",
+    "tryDifferent": "Zkusit jiný e-mail",
+    "backToLogin": "Zpět na přihlášení",
+    "title": "Magic Link",
+    "subtitle": "Přihlaste se pomocí e-mailu – heslo není potřeba",
+    "email": "E-mail",
+    "sending": "Odesílání...",
+    "submit": "Poslat Magic Link"
+  },
+  "signup": {
+    "passwordGroup": "Heslo",
+    "termsAnd": "&"
+  },
+  "social": {
+    "processing": "Dokončování přihlášení přes sociální síť...",
+    "done": "Přihlášení bylo ověřeno. Pokud nedojde k automatickému přesměrování, můžete tuto kartu zavřít.",
+    "error": "Přesměrování na přihlášení..."
+  }
+}

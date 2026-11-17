@@ -1,0 +1,558 @@
+{
+  "nav": {
+    "sections": {
+      "Support": "Pomoc",
+      "AI_coaches": "Trenerzy AI",
+      "Administration": "Administracja",
+      "Advanced": "Zaawansowane",
+      "Financial_Aid": "Pomoc finansowa",
+      "Knowledge_Continuity_Studio": "Knowledge Continuity Studio",
+      "People": "Ludzie",
+      "Platform_Alerts": "Alerty platformy",
+      "Reports": "Raporty",
+      "Role_Views": "Widoki ról",
+      "PRISM": "PRISM"
+    },
+    "items": {
+      "My_PRISM_Practice": "Moja praktyka PRISM",
+      "My_Self_Portrait": "Mój autoportret",
+      "My_Students": "Moi uczniowie",
+      "My_development": "Mój rozwój",
+      "My_fit": "Moje dopasowanie",
+      "My_goals": "Moje cele",
+      "My_journey": "Moja droga",
+      "My_plan": "Mój plan",
+      "My_practitioners": "Moi praktycy",
+      "Observability": "Obserwowalność",
+      "Organization": "Organizacja",
+      "Organizations": "Organizacje",
+      "PRISM_Accuracy_Scorer": "Ocena trafności PRISM",
+      "PRISM_CSV_Converter": "Konwerter CSV PRISM",
+      "PRISM_Management": "Zarządzanie PRISM",
+      "PRISM_Practitioner_Exam": "Egzamin praktyka PRISM",
+      "PRISM_tools": "Narzędzia PRISM",
+      "Pathway": "Ścieżka",
+      "Pipeline": "Pipeline",
+      "Practise_answers": "Ćwiczenie odpowiedzi",
+      "Practitioner": "Praktyk",
+      "Practitioner_Home": "Strona główna praktyka",
+      "Practitioner_Registry": "Rejestr praktyków",
+      "Practitioners": "Praktycy",
+      "Prep_Me": "Przygotuj mnie",
+      "Privacy_RTBF": "Prywatność i RTBF",
+      "Program_Health": "Kondycja programu",
+      "RLHF_Training": "Trening RLHF",
+      "Recruiters": "Rekruterzy",
+      "Reports": "Raporty",
+      "Research": "Badania",
+      "Reviewer_console": "Konsola recenzenta",
+      "Role_Play": "Odgrywanie ról",
+      "Résumé_Writer": "Kreator CV",
+      "Schedule": "Harmonogram",
+      "Scholarships": "Stypendia",
+      "Scorecards": "Karty wyników",
+      "Settings": "Ustawienia",
+      "Start_a_capture": "Rozpocznij przechwytywanie",
+      "Successor_curriculum": "Program dla następcy",
+      "Surveys": "Ankiety",
+      "Team_Development_Studio": "Studio rozwoju zespołu",
+      "Team_Import": "Import zespołu",
+      "Usage_reports": "Raporty użycia",
+      "User": "Użytkownik",
+      "User_Home": "Strona główna użytkownika",
+      "User_Management": "Zarządzanie użytkownikami",
+      "Users": "Użytkownicy",
+      "What_it_pays": "Ile płaci",
+      "Who_I_am": "Kim jestem",
+      "Why_the_AI_answered": "Dlaczego AI tak odpowiedziała",
+      "Authoring": "Tworzenie treści",
+      "Blueprint_a_role": "Zaprojektuj rolę",
+      "Broadcast_Alerts": "Alerty rozgłoszeniowe",
+      "Bulk_Import": "Import zbiorczy",
+      "Bulk_User_Import": "Zbiorczy import użytkowników",
+      "Candidates": "Kandydaci",
+      "Career_areas": "Obszary kariery",
+      "Chat_with_Coaches": "Czat z coachami",
+      "Chat_with_Meridian": "Czat z Meridian",
+      "Client_PRISM_Assessments": "Oceny PRISM klientów",
+      "Client_Sign_Up": "Rejestracja klienta",
+      "Client_sign_up": "Rejestracja klienta",
+      "Coach_feedback_review": "Przegląd opinii o coachach",
+      "Coach_setup": "Konfiguracja coacha",
+      "Coach_trace_console": "Konsola śladów coacha",
+      "Coach_training": "Szkolenie coachów",
+      "Coaches": "Coache",
+      "Coaching": "Coaching",
+      "Cohort_Read_out": "Raport kohorty",
+      "Cohort_read_out": "Raport kohorty",
+      "Companies": "Firmy",
+      "Company_Admin": "Administracja firmy",
+      "Company_admin": "Administracja firmy",
+      "Compare_Offers": "Porównaj oferty",
+      "Cost_and_payback": "Koszt i zwrot",
+      "Credits": "Kredyty",
+      "Culture_Docs": "Dokumenty kultury",
+      "Curriculum": "Program nauczania",
+      "Dashboard": "Pulpit",
+      "Data_deletion_requests": "Wnioski o usunięcie danych",
+      "Dev_Traffic_Report": "Raport ruchu deweloperskiego",
+      "Dev_traffic_report": "Raport ruchu deweloperskiego",
+      "Distributor": "Dystrybutor",
+      "Document_Library": "Biblioteka dokumentów",
+      "Education_paths": "Ścieżki edukacji",
+      "Explainability": "Wyjaśnialność",
+      "Federal_State": "Federalne i stanowe",
+      "Financial_Profile": "Profil finansowy",
+      "Fit_a_JD": "Dopasuj opis stanowiska",
+      "Goals_Studio": "Studio celów",
+      "Goals_vs_wiring": "Cele a predyspozycje",
+      "Growth_areas": "Obszary rozwoju",
+      "HR": "HR",
+      "Help_Support": "Pomoc i wsparcie",
+      "Help_and_Support_Management": "Zarządzanie pomocą i wsparciem",
+      "Help_requests": "Zgłoszenia pomocy",
+      "Home": "Strona główna",
+      "Institutions": "Instytucje",
+      "Intake": "Przyjęcie",
+      "Interview_Studio": "Studio rozmów",
+      "Interview_prep": "Przygotowanie do rozmowy",
+      "Job_matches": "Dopasowane oferty pracy",
+      "Knowledge": "Wiedza",
+      "Knowledge_Base": "Baza wiedzy",
+      "Live_Interview": "Rozmowa na żywo",
+      "Loans_Debt": "Pożyczki i zadłużenie",
+      "Manager": "Menedżer",
+      "Member_Oversight": "Nadzór nad członkami",
+      "My_Aid_Plan": "Mój plan pomocy",
+      "My_Clients": "Moi klienci",
+      "AI_Observability": "Obserwowalność AI",
+      "AI_usage_health": "Użycie i kondycja AI",
+      "About_me": "O mnie",
+      "Add_people": "Dodaj osoby",
+      "Admin_home": "Strona główna administratora",
+      "Agent_Management": "Zarządzanie agentami",
+      "Agent_Trace_Console": "Konsola śladów agentów",
+      "Agent_Trainer": "Trener agentów",
+      "Aid_Dashboard": "Pulpit pomocy",
+      "Analytics": "Analityka",
+      "Analytics_Logs": "Analityka i logi",
+      "Application_Concierge": "Concierge aplikacji",
+      "Asset_Library": "Biblioteka zasobów",
+      "Asset_library": "Biblioteka zasobów",
+      "Character_Lab": "Character Lab",
+      "Job_Blueprint": "Job Blueprint"
+    }
+  },
+  "notificationBell": {
+    "ariaLabel": "Powiadomienia",
+    "ariaLabelUnread": "Powiadomienia (nieprzeczytane: {{n}})",
+    "caughtUp": "Wszystko jest na bieżąco.",
+    "fallbackTitle": "Powiadomienie",
+    "loading": "Ładowanie…",
+    "markAllRead": "Oznacz wszystkie jako przeczytane",
+    "title": "Powiadomienia"
+  },
+  "pageHeader": {
+    "backTo": "Wróć do: {{label}}"
+  },
+  "pageState": {
+    "getHelp": "Uzyskaj pomoc",
+    "loading": "Ładowanie",
+    "sampleData": "Przykładowe dane — nie pochodzą z Twojej organizacji."
+  },
+  "passwordChecklist": {
+    "ariaLabel": "Zasady dotyczące hasła",
+    "done": " — spełnione",
+    "needed": " — jeszcze wymagane"
+  },
+  "personalData": {
+    "charactersLeft": "Pozostało znaków: {{n}}",
+    "description": "Podaj krótki profil, aby Meridian mógł być bardziej pomocny. Każdy wiersz zapisuje się osobno — przechowywane są tylko wypełnione pola.",
+    "resumeNote": "Zapisujemy plik i (wkrótce) automatycznie wyodrębnimy stanowisko / branżę / umiejętności. Na razie możesz już przesłać plik — wyodrębnianie zostanie dodane w kolejnej aktualizacji.",
+    "rowEmpty": "Pole „{{label}}” jest puste.",
+    "rowSaved": "Zapisano: {{label}}.",
+    "rows": {
+      "current_role": {
+        "label": "Obecne stanowisko",
+        "placeholder": "np. Senior Product Manager"
+      },
+      "industry": {
+        "label": "Branża",
+        "placeholder": "np. SaaS dla ochrony zdrowia"
+      },
+      "primary_constraints": {
+        "label": "Ograniczenia",
+        "placeholder": "Czego Meridian powinien unikać lub na co zwracać uwagę?"
+      },
+      "primary_goals": {
+        "label": "Cele",
+        "placeholder": "Do czego obecnie dążysz? (może być jeden cel w wierszu)"
+      },
+      "summary": {
+        "label": "Bio / krótkie podsumowanie",
+        "placeholder": "Opowiedz Meridianowi coś o sobie…"
+      },
+      "years_experience": {
+        "label": "Lata doświadczenia",
+        "placeholder": "np. 12"
+      }
+    },
+    "save": "Zapisz",
+    "saveFailed": "Nie udało się zapisać.",
+    "title": "Dane osobowe",
+    "upload": "Prześlij",
+    "uploadFailed": "Przesyłanie nie powiodło się.",
+    "uploadResume": "Prześlij CV (opcjonalnie)",
+    "uploaded": "Przesłano: {{name}}."
+  },
+  "placeholderBanner": {
+    "text": "Przykładowe dane — ta strona wyświetla treść zastępczą. Dane na żywo pojawią się po połączeniu z API."
+  },
+  "prismDataMenu": {
+    "brainMap": "Brain Map",
+    "dialogDescription": "Twój 8-wymiarowy profil PRISM naniesiony na mapę zachowań.",
+    "dialogTitle": "Twoja Brain Map PRISM",
+    "openFailed": "Nie udało się otworzyć raportu PRISM. Spróbuj ponownie.",
+    "openReport": "Otwórz raport",
+    "pdfNotReady": "Twój plik PDF nie jest jeszcze gotowy.",
+    "popupBlocked": "Przeglądarka zablokowała okno raportu.",
+    "reportPdf": "Raport PRISM (PDF)",
+    "trigger": "Dane PRISM"
+  },
+  "quickActions": {
+    "mode": {
+      "day": "dzień",
+      "month": "miesiąc",
+      "range": "zakres"
+    },
+    "title": "Szybkie akcje —"
+  },
+  "quickDirection": {
+    "completeCta": "Wróć do swojej ścieżki",
+    "completeDetail": "Wszystko się zmienia — nowa rola, inny cel. Wszystko nadal tu jest, gdy zechcesz do tego wrócić.",
+    "completeLead": "Ukończono cały proces Direction Setting.",
+    "continue": "Kontynuuj",
+    "nextLead": "Dalej: {{name}} — {{question}}",
+    "progress": "Postęp Direction Setting",
+    "start": "Rozpocznij",
+    "startDetail": "Poprowadzimy Cię krok po kroku od „nie wiem, czym powinnam/powinienem się zajmować” do roli, o którą warto zabiegać, i planu, jak do niej dojść. Działaj we własnym tempie — każdy krok jest zapisywany.",
+    "startLead": "Nie wiesz, co dalej? Zacznij tutaj.",
+    "step": "Krok {{position}} z {{total}}",
+    "title": "Direction Setting"
+  },
+  "rightPanel": {
+    "ariaLabel": "Profil użytkownika i nadchodzące wydarzenia",
+    "fallbackName": "Użytkownik",
+    "prismProfile": "Profil PRISM",
+    "upcoming": "Nadchodzące"
+  },
+  "searchBar": {
+    "ariaLabel": "Szukaj",
+    "placeholder": "Szukaj..."
+  },
+  "settings": {
+    "eyebrow": "Konto i preferencje",
+    "legal": "Informacje prawne",
+    "loggedOut": "Wylogowano pomyślnie!",
+    "logoutConfirm": "Czy na pewno chcesz się wylogować?",
+    "passwordChangeFailed": "Nie udało się zmienić hasła",
+    "passwordChanged": "Hasło zostało zmienione",
+    "privacy": "Polityka prywatności",
+    "profileUpdateFailed": "Nie udało się zaktualizować profilu",
+    "profileUpdated": "Profil został zaktualizowany",
+    "terms": "Warunki korzystania",
+    "title": "Ustawienia"
+  },
+  "sidebar": {
+    "collapse": "Zwiń: {{label}}",
+    "expand": "Rozwiń: {{label}}",
+    "goHome": "Przejdź do strony głównej",
+    "logout": "Wyloguj",
+    "logoutConfirm": "Wyloguj",
+    "logoutDescription": "Czy na pewno chcesz się wylogować?",
+    "logoutTitle": "Wylogowanie",
+    "notInPlan": "{{label}} — niedostępne w Twoim planie",
+    "openMenu": "Otwórz menu"
+  },
+  "skipToContent": {
+    "label": "Przejdź do treści"
+  },
+  "systemSwitch": {
+    "agentEngine": "Agent Engine",
+    "ariaLabel": "Przełącz system agentów. Obecnie: {{target}}. Kliknij, aby przełączyć na: {{next}}.",
+    "monolith": "Monolith",
+    "title": "Obecnie: {{target}}. Kliknij, aby przełączyć na: {{next}}.",
+    "toAgentEngine": "Przełączono na Agent Engine dla tej rozmowy",
+    "toMonolith": "Przełączono na Monolith. Produkcyjny WS łączy się tylko z Agent Engine — czat i głos mogą być niedostępne."
+  },
+  "teamForm": {
+    "active": "Aktywny",
+    "addUser": "Dodaj użytkownika",
+    "deactivated": "Dezaktywowany",
+    "editUser": "Edytuj użytkownika",
+    "email": "E-mail *",
+    "emailPlaceholder": "Wpisz adres e-mail",
+    "name": "Imię i nazwisko *",
+    "namePlaceholder": "Wpisz imię i nazwisko",
+    "role": "Rola *",
+    "saveChanges": "Zapisz zmiany",
+    "selectRole": "Wybierz rolę",
+    "selectStatus": "Wybierz status",
+    "status": "Status"
+  },
+  "themeMenu": {
+    "appearance": "Wygląd",
+    "auto": "Automatycznie",
+    "scopeNote": "Motywy kolorystyczne są na razie widoczne na stronie głównej. Tryb Night Light i skala szarości działają na każdej stronie.",
+    "theme": "Motyw",
+    "tileColour": "Kolor kafelka",
+    "tileColourLabel": "Kolor kafelka: {{label}}",
+    "triggerLabel": "Motyw: {{label}}"
+  },
+  "translationStatus": {
+    "complete": "Ukończono",
+    "description": "Postęp lokalizacji tworzonej przez społeczność w {{total}} językach",
+    "helpAfter": ", aby wnieść swój wkład.",
+    "helpBefore": "Znalazłeś brakujące lub błędne tłumaczenie? Zobacz",
+    "helpTitle": "Pomóż w tłumaczeniu",
+    "incomplete": "Niekompletne",
+    "languages": "Języki",
+    "overall": "Ogólny postęp",
+    "partial": "Częściowe",
+    "title": "Status tłumaczenia"
+  },
+  "userForm": {
+    "active": "Aktywny",
+    "addUser": "Dodaj użytkownika",
+    "deactivated": "Dezaktywowany",
+    "editUser": "Edytuj użytkownika",
+    "email": "E-mail",
+    "emailPlaceholder": "Wpisz adres e-mail",
+    "emailRequired": "E-mail *",
+    "expires": "Wygasa",
+    "firstName": "Imię *",
+    "firstNamePlaceholder": "Wpisz imię",
+    "invitation": "Zaproszenie",
+    "invitationStatus": {
+      "accepted": "Przyjęte",
+      "cancelled": "Anulowane",
+      "expired": "Wygasłe",
+      "invitation_sent": "Wysłane",
+      "pending": "Oczekujące"
+    },
+    "lastName": "Nazwisko *",
+    "lastNamePlaceholder": "Wpisz nazwisko",
+    "loadInvitationFailed": "Nie udało się wczytać szczegółów zaproszenia",
+    "loadingInvitation": "Wczytywanie szczegółów zaproszenia…",
+    "noOrganization": "Brak organizacji",
+    "organization": "Organizacja",
+    "pickFutureDate": "Wybierz przyszłą datę",
+    "resendInvitation": "Wyślij zaproszenie ponownie",
+    "resending": "Wysyłanie ponowne…",
+    "role": "Rola",
+    "roleRequired": "Rola *",
+    "saveChanges": "Zapisz zmiany",
+    "selectOrganization": "Wybierz organizację",
+    "selectRole": "Wybierz rolę",
+    "selectStatus": "Wybierz status",
+    "sent": "Wysłane",
+    "setNewExpiry": "Ustaw nową datę wygaśnięcia",
+    "skipOnboarding": "Pomiń proces wdrożenia",
+    "skipOnboardingHelp": "Tworzy użytkownika z już zakończonym wdrożeniem i wysyła e-mailem link do logowania jednym kliknięciem zamiast zaproszenia do ustawienia hasła. Dla kont demo w środowiskach Dev/Staging — w produkcji ignorowane (odrzucane).",
+    "status": "Status",
+    "updateExpiry": "Zaktualizuj datę wygaśnięcia",
+    "updating": "Aktualizowanie…"
+  },
+  "userTopHeader": {
+    "fallbackName": "Użytkownik",
+    "helpSupport": "Pomoc i wsparcie",
+    "logout": "Wyloguj",
+    "logoutConfirm": "Wyloguj",
+    "logoutDescription": "Czy na pewno chcesz się wylogować?",
+    "logoutTitle": "Wylogowanie",
+    "openProfileMenu": "Otwórz menu profilu",
+    "settings": "Ustawienia",
+    "subtitle": "Twoi trenerzy AI są gotowi — zaczynajmy!",
+    "watchGoalsStudio": "Obejrzyj: Goals Studio",
+    "watchInterviewStudio": "Obejrzyj: Interview Studio",
+    "watchWorkspaceGuide": "Obejrzyj: przewodnik po Mojej przestrzeni roboczej",
+    "welcome": "Witaj! {{name}}"
+  },
+  "voiceDesk": {
+    "agentLabel": "Agent pomocy głosowej VoiceDesk",
+    "close": "Zamknij pomoc głosową",
+    "open": "Otwórz pomoc głosową",
+    "panelTitle": "Pomoc głosowa"
+  },
+  "appHeader": {
+    "goHome": "Przejdź do strony głównej",
+    "menu": "Menu",
+    "search": "Szukaj...",
+    "settings": "Ustawienia",
+    "fallbackName": "Użytkownik"
+  },
+  "assessments": {
+    "addBigFive": "Dodaj wynik Big Five",
+    "addDisc": "Dodaj wynik DISC",
+    "addMbti": "Dodaj typ MBTI",
+    "assessedOn": "Data oceny",
+    "bigFive": {
+      "A": "Ugodowość",
+      "C": "Sumienność",
+      "E": "Ekstrawersja",
+      "N": "Neurotyczność",
+      "O": "Otwartość"
+    },
+    "bigFiveAdded": "Dodano wynik Big Five.",
+    "bigFiveFailed": "Nie udało się dodać wyniku Big Five.",
+    "cancel": "Anuluj",
+    "description": "Dodaj wyniki wcześniejszych ocen, aby Meridian mógł je uwzględnić. Skorzystaj z nich w przypadku raportów, które już masz.",
+    "discAdded": "Dodano wynik DISC.",
+    "discFailed": "Nie udało się dodać wyniku DISC.",
+    "mbtiAdded": "Dodano typ MBTI.",
+    "mbtiClarity": "Wyrazistość (0–100)",
+    "mbtiFailed": "Nie udało się dodać typu MBTI.",
+    "mbtiType": "Typ (np. INTJ)",
+    "prismData": "Twoje dane PRISM",
+    "prismDataHelp": "Zastąp swoje wyniki PRISM danymi z surowego pliku CSV oraz opcjonalnie raportem w formacie PDF. Spowoduje to nadpisanie Twojego obecnego profilu PRISM.",
+    "replacePrism": "Zastąp dane PRISM",
+    "save": "Zapisz",
+    "title": "Inne oceny",
+    "scoreLabel": "{{label}} (0–100)"
+  },
+  "audioPlayer": {
+    "browseHint": "lub kliknij, aby przeglądać • Obsługuje MP3, WAV, FLAC i inne",
+    "dropHere": "Przeciągnij i upuść tutaj plik audio",
+    "loadFileFailed": "Nie udało się wczytać pliku audio",
+    "loaded": "Wczytano: {{name}}",
+    "loading": "Wczytywanie dźwięku...",
+    "mute": "Wycisz",
+    "pause": "Pauza",
+    "paused": "WSTRZYMANO",
+    "play": "Odtwórz",
+    "playing": "ODTWARZANIE",
+    "replay": "Odtwórz od początku",
+    "seek": "Przewiń",
+    "skipBack": "Cofnij o 10 sekund",
+    "skipForward": "Przewiń do przodu o 10 sekund",
+    "unmute": "Wyłącz wyciszenie",
+    "uploadLabel": "Prześlij plik audio",
+    "volume": "Regulacja głośności"
+  },
+  "behavioralMap": {
+    "description": "Twój 8-wymiarowy profil PRISM i wyniki.",
+    "title": "Twoja mapa behawioralna",
+    "trigger": "Mapa behawioralna"
+  },
+  "broadcastBanner": {
+    "dismiss": "Zamknij komunikat"
+  },
+  "coachForm": {
+    "active": "Aktywny",
+    "addMentor": "Dodaj mentora",
+    "category": "Kategoria *",
+    "categoryPlaceholder": "Wpisz kategorię",
+    "deactivated": "Dezaktywowany",
+    "editMentor": "Edytuj mentora",
+    "mentorName": "Nazwa mentora *",
+    "namePlaceholder": "Wpisz nazwę",
+    "persona": "Persona",
+    "personaPlaceholder": "Opisz osobowość mentora, styl komunikacji i podejście (np. empatyczny słuchacz, bezpośredni prowokator do wyzwań, wspierający przewodnik)",
+    "saveChanges": "Zapisz zmiany",
+    "selectStatus": "Wybierz status",
+    "selectVoiceStyle": "Wybierz styl głosu",
+    "status": "Status",
+    "systemPrompt": "Prompt systemowy",
+    "systemPromptPlaceholder": "Wpisz prompt systemowy, który określa, jak ten mentor się zachowuje, odpowiada i prowadzi coaching użytkowników",
+    "voiceStyle": "Styl głosu"
+  },
+  "confirmAction": {
+    "processing": "Przetwarzanie..."
+  },
+  "confirmDialog": {
+    "cancel": "Anuluj",
+    "confirm": "Potwierdź",
+    "description": "Potwierdź, aby kontynuować.",
+    "title": "Czy na pewno?"
+  },
+  "costDashboard": {
+    "costByPeriod": "Koszt według okresu",
+    "costDistribution": "Rozkład kosztów",
+    "export": "Eksportuj",
+    "last30": "Ostatnie 30 dni",
+    "last7": "Ostatnie 7 dni",
+    "last90": "Ostatnie 90 dni",
+    "overview": {
+      "company": "Przegląd kosztów firmy",
+      "platform": "Przegląd kosztów platformy",
+      "team": "Przegląd kosztów zespołu",
+      "user": "Przegląd kosztów użytkownika"
+    }
+  },
+  "dashboardFrame": {
+    "kpiStrip": "Kluczowe wskaźniki efektywności",
+    "kpis": "KPI pulpitu",
+    "primary": "Główna zawartość pulpitu",
+    "sideRail": "Panel boczny"
+  },
+  "datePicker": {
+    "placeholder": "Wybierz datę"
+  },
+  "deleteConfirm": {
+    "description": "Tej operacji nie można cofnąć."
+  },
+  "destructiveConfirm": {
+    "cancel": "Anuluj",
+    "confirm": "Usuń trwale",
+    "inputLabel": "Wpisz tekst, aby potwierdzić operację destrukcyjną",
+    "type": "Aby potwierdzić, wpisz:",
+    "typeWithHint": "Aby potwierdzić, wpisz {{hint}}:",
+    "working": "Trwa operacja..."
+  },
+  "ecosystemBanner": {
+    "disabled": "Ekosystem agentów jest tymczasowo wyłączony. Czat działa w trybie awaryjnym na monolicie.",
+    "unreachable": "Ekosystem agentów jest nieosiągalny. Czat działa w trybie awaryjnym na monolicie."
+  },
+  "emptyState": {
+    "message": "Na razie nie ma tu nic do wyświetlenia.",
+    "title": "Brak danych"
+  },
+  "errorState": {
+    "message": "Nie udało się wczytać tej zawartości. Spróbuj ponownie.",
+    "retry": "Spróbuj ponownie",
+    "title": "Coś poszło nie tak"
+  },
+  "loadingCard": {
+    "initializing": "Inicjowanie inteligencji AI...",
+    "processing": "PRZETWARZANIE"
+  },
+  "modalDialog": {
+    "close": "Zamknij"
+  },
+  "modalForm": {
+    "cancel": "Anuluj"
+  },
+  "multiAgent": {
+    "badge": "Wielu agentów · {{n}} agentów",
+    "tooltip": "Wspólna odpowiedź od: {{agents}}"
+  },
+  "actionMenu": {
+    "activate": "Aktywuj",
+    "activity": "Aktywność",
+    "coaches": "Coache",
+    "deactivate": "Dezaktywuj",
+    "delete": "Usuń",
+    "edit": "Edytuj",
+    "openMenu": "Otwórz menu",
+    "prismAccess": "Dostęp do ankiety PRISM",
+    "prismCsv": "Prześlij plik CSV PRISM",
+    "prismPdf": "Prześlij / usuń plik PDF PRISM",
+    "resend": "Wyślij ponownie",
+    "verticalEntitlements": "Uprawnienia branżowe",
+    "view": "Wyświetl"
+  },
+  "alexFloating": {
+    "close": "Zamknij Alex",
+    "open": "Otwórz asystenta Alex"
+  }
+}

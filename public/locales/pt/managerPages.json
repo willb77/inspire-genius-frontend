@@ -123,7 +123,8 @@
     "partialProfileOfDimensionsMeasured": "Perfil parcial: {{evaluated}} de {{total}} dimensões medidas",
     "openDevelopmentWorkspaceFor": "Abrir espaço de desenvolvimento de {{name}}",
     "ofMilestonesComplete": "{{value}}% dos marcos concluídos",
-    "inviteToCompletePrismTo": "Convide para concluir o PRISM e criar um perfil."
+    "inviteToCompletePrismTo": "Convide para concluir o PRISM e criar um perfil.",
+    "text": " · {{department}}"
   },
   "memberDevelopmentWorkspace": {
     "askedTheyDecideAndDeclining": "Pedido enviado. A pessoa decide, e recusar não tem custo nenhum.",
@@ -138,7 +139,8 @@
     "recentActivity": "Atividade recente",
     "whatChangedOnThisDossier": "O que mudou neste dossiê e qual agente ou ação o fez.",
     "dossierExportedAsPdf": "Dossiê exportado como PDF.",
-    "couldnTGenerateThePdf": "Não foi possível gerar o PDF."
+    "couldnTGenerateThePdf": "Não foi possível gerar o PDF.",
+    "text": " · {{department}}"
   },
   "meridianDevelopmentPanel": {
     "tab": "Aba: {{tab}}",
@@ -155,7 +157,8 @@
     "apply": "Aplicar",
     "askAboutThisMember2": "Pergunte sobre este membro…",
     "askMeridianAboutThisMember": "Pergunte à Meridian sobre este membro",
-    "send": "Enviar"
+    "send": "Enviar",
+    "meridian": "Meridian"
   },
   "addMemberDialog": {
     "nameIsRequired": "O nome é obrigatório",
@@ -383,7 +386,8 @@
     "couldnTSearchPeopleRight": "Não foi possível pesquisar pessoas agora. Você ainda pode digitar os dados abaixo.",
     "searching": "Pesquisando…",
     "noOneFoundYouCan": "Ninguém encontrado. Você ainda pode digitar os dados abaixo.",
-    "orTypeTheirDetailsBelow": "Ou digite os dados abaixo. Somente o gestor da pessoa, um administrador da empresa da organização dela ou um superadministrador pode adicionar alguém que já tem uma conta."
+    "orTypeTheirDetailsBelow": "Ou digite os dados abaixo. Somente o gestor da pessoa, um administrador da empresa da organização dela ou um superadministrador pode adicionar alguém que já tem uma conta.",
+    "text": " ({{email}})"
   },
   "prismTeam": {
     "teamPrismAssessments": "Avaliações PRISM da equipe",
@@ -497,7 +501,8 @@
     "notAssessed": "— não avaliado"
   },
   "savedRunsCard": {
-    "delete": "Excluir {{title}}"
+    "delete": "Excluir {{title}}",
+    "text": "{{openLabel}}: {{title}}"
   },
   "schedule": {
     "startTimeIsNotAValid": "O horário de início não é uma data válida.",
@@ -584,7 +589,8 @@
     "whyThisOrder": "Por que esta ordem?",
     "member": "Membro",
     "sharing": "Compartilhamento",
-    "nameNotOnFile": "Nome não cadastrado"
+    "nameNotOnFile": "Nome não cadastrado",
+    "prism": "PRISM"
   },
   "meridianExportMenu": {
     "couldnTExportTheConversation": "Não foi possível exportar a conversa. Tente novamente.",
@@ -650,7 +656,8 @@
     "hDepartment": "Departamento",
     "hRole": "Função",
     "notAssessed": "Não avaliado",
-    "openProfile": "Abrir perfil"
+    "openProfile": "Abrir perfil",
+    "hPRISM": "PRISM"
   },
   "teamBuilding": {
     "teamBuilding": "Formação de equipe",
@@ -665,7 +672,8 @@
     "secondary": "Secundária",
     "score": "Pontuação",
     "conflictInsights": "Insights sobre conflitos",
-    "collaborationSuggestions": "Sugestões de colaboração"
+    "collaborationSuggestions": "Sugestões de colaboração",
+    "text": "{{label}} ({{length}})"
   },
   "teamComparePanel": {
     "withoutPrismOne": "{{withoutPrism}} membro da equipe não está listado — não há PRISM registrado para essa pessoa. Convide-a pela lista.",

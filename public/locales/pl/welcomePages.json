@@ -1,0 +1,19 @@
+{
+  "messages": {
+    "notValid": "Ten link z zaproszeniem jest nieprawidłowy. Poproś swojego praktyka o przesłanie nowego linku.",
+    "tooMany": "Zbyt wiele prób w krótkim czasie. Odczekaj chwilę, a potem ponownie otwórz link od swojego praktyka.",
+    "ownInvite": "To jeden z Twoich własnych linków z zaproszeniem — nie możesz być własnym klientem.",
+    "claimError": "Nie udało się teraz Cię połączyć. Otwórz link od swojego praktyka ponownie później lub poproś o nowy.",
+    "noInvite": "W tej karcie przeglądarki nie czeka żadne zaproszenie. Jeśli praktyk przesłał Ci link, otwórz go ponownie."
+  },
+  "prism": {
+    "checking": "Sprawdzanie dostępu do ankiety PRISM…",
+    "shareNotice": "Podczas zamawiania ankiety możesz zdecydować, czy udostępnić swoje wyniki: {{name}}. Nic nie zostanie udostępnione, jeśli nie zaznaczysz tej opcji.",
+    "takeSurvey": "Wypełnij ankietę PRISM"
+  },
+  "title": "Połącz się ze swoim praktykiem",
+  "connecting": "Łączenie z Twoim praktykiem…",
+  "connected": "Połączono z: {{name}}.",
+  "nextSurvey": "Dalej: wypełnij ankietę PRISM.",
+  "goHome": "Przejdź do strony głównej"
+}

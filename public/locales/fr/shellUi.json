@@ -172,7 +172,9 @@
       "Users": "Utilisateurs",
       "What_it_pays": "Ce que cela rapporte",
       "Who_I_am": "Qui je suis",
-      "Why_the_AI_answered": "Pourquoi l'IA a répondu ainsi"
+      "Why_the_AI_answered": "Pourquoi l'IA a répondu ainsi",
+      "Character_Lab": "Character Lab",
+      "Job_Blueprint": "Job Blueprint"
     },
     "sections": {
       "AI_coaches": "Coachs IA",
@@ -184,7 +186,8 @@
       "Platform_Alerts": "Alertes de la plateforme",
       "Reports": "Rapports",
       "Role_Views": "Vues par rôle",
-      "Support": "Assistance"
+      "Support": "Assistance",
+      "PRISM": "PRISM"
     }
   },
   "sidebar": {
@@ -339,7 +342,8 @@
     "prismDataHelp": "Remplacez vos scores PRISM à partir d'un fichier CSV de données brutes et, si vous le souhaitez, de votre rapport au format PDF. Cette action écrase votre profil PRISM actuel.",
     "replacePrism": "Remplacer les données PRISM",
     "save": "Enregistrer",
-    "title": "Autres évaluations"
+    "title": "Autres évaluations",
+    "scoreLabel": "{{label}} (0–100)"
   },
   "personalData": {
     "rows": {
@@ -413,7 +417,8 @@
     "start": "Commencer",
     "startDetail": "Un parcours guidé qui va de « je ne sais pas ce que je devrais faire » à un poste qui vaut la peine d'être visé, avec un plan pour y arriver. Avancez à votre rythme : chaque étape est enregistrée.",
     "startLead": "Vous ne savez pas quelle est la suite ? Commencez ici.",
-    "step": "Étape {{position}} sur {{total}}"
+    "step": "Étape {{position}} sur {{total}}",
+    "title": "Direction Setting"
   },
   "rightPanel": {
     "ariaLabel": "Profil de l'utilisateur et événements à venir",

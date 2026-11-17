@@ -249,7 +249,8 @@
     "failed": "Falha na importação",
     "importing": "Importando…",
     "partial": "{{ok}} importado(s), {{failed}} com falha — veja a lista abaixo",
-    "someScales": "{{name}} — {{imported}} de {{expected}} escalas"
+    "someScales": "{{name}} — {{imported}} de {{expected}} escalas",
+    "withWarning": "{{summary}} · {{warning}}"
   },
   "approvalNotice": {
     "ariaLabel": "As solicitações de pesquisas PRISM precisam de aprovação prévia",
