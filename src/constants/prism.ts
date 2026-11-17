@@ -10,7 +10,9 @@ export { QUEST_TYPE, ASSESSMENT_STATUS }
 export const QUEST_TYPE_NAMES: Record<QuestTypeId, string> = {
   [QUEST_TYPE.PROFESSIONAL]: 'Professional',
   [QUEST_TYPE.PERSONAL]: 'Personal',
-  [QUEST_TYPE.FOUNDATION]: 'Foundation',
+  [QUEST_TYPE.FOUNDATION]: 'Foundational',
+  [QUEST_TYPE.FOUR_D]: '4D',
+  [QUEST_TYPE.BENCHMARK]: 'Benchmark',
   [QUEST_TYPE.SELECT_ONLINE]: 'Select Online',
   [QUEST_TYPE.CAREER_MATCH]: 'Career Match',
   [QUEST_TYPE.CAREER_EXPLORER]: 'Career Explorer',
@@ -116,9 +118,9 @@ export const PRISM_LANGUAGES = [
 
 /** Questionnaire type options for forms */
 export const QUEST_TYPE_OPTIONS = [
-  { id: QUEST_TYPE.FOUNDATION, label: 'Foundation', tier: 'Entry' },
-  { id: QUEST_TYPE.PERSONAL, label: 'Personal', tier: 'Mid' },
-  { id: QUEST_TYPE.PROFESSIONAL, label: 'Professional', tier: 'Full' },
-  { id: QUEST_TYPE.CAREER_EXPLORER, label: 'Career Explorer', tier: 'Special' },
-  { id: QUEST_TYPE.CAREER_MATCH, label: 'Career Match', tier: 'Special' },
+  { id: QUEST_TYPE.PROFESSIONAL, label: 'Professional' },
+  { id: QUEST_TYPE.FOUNDATION, label: 'Foundational' },
+  { id: QUEST_TYPE.PERSONAL, label: 'Personal' },
+  { id: QUEST_TYPE.FOUR_D, label: '4D' },
+  { id: QUEST_TYPE.BENCHMARK, label: 'Benchmark' },
 ] as const

@@ -55,7 +55,7 @@ function makeAssessment(overrides: Partial<PrismAssessment> = {}): PrismAssessme
 describe("PrismAssessmentCard", () => {
   it("renders the assessment type name and dates", () => {
     render(<PrismAssessmentCard assessment={makeAssessment()} />);
-    expect(screen.getByText("Foundation")).toBeInTheDocument();
+    expect(screen.getByText("Foundational")).toBeInTheDocument();
     // Dates are formatted in en-GB
     expect(screen.getByText(/1 Jan 2026/)).toBeInTheDocument();
   });
