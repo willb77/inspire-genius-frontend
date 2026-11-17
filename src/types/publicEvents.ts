@@ -1,7 +1,8 @@
 /**
  * The public events list, `GET /v1/intake/public/events` (monorepo CSA
  * `docs/analysis/2026-11-10-public-events-list-csa.md` §2). Exactly these four
- * fields are read; anything else the server might send is dropped.
+ * fields are read (plus the optional presentation fields below); anything else
+ * the server might send is dropped.
  */
 export type PublicEvent = {
   title: string
@@ -11,6 +12,16 @@ export type PublicEvent = {
   time_zone: string
   /** Plain text written for the public, or null. Never rendered as HTML. */
   description: string | null
+  /**
+   * Optional presentation fields. The server does not send them today (the list
+   * route returns the four fields above); they are read if it ever does, and
+   * everything that shows them renders nothing when they are missing.
+   */
+  presenter_name?: string
+  presenter_role?: string
+  duration_minutes?: number
+  /** Never sent today: the registration CSA deliberately exposes only "full". */
+  seats_left?: number | null
 }
 
 /**
