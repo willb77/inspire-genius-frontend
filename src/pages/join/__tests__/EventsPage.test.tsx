@@ -97,9 +97,11 @@ describe("/events — switch on", () => {
     const cards = within(list).getAllByRole("region")
     expect(cards).toHaveLength(2)
     expect(cards[0]).toHaveAccessibleName("Intro to Inspires Genius")
-    // 14:00 UTC is 9:00 AM in New York on that date (EST), not 2:00 PM: the small reference line
+    // The small reference line is the EVENT's zone, whatever zone the runner or viewer is in:
+    // 14:00 UTC is 9:00 AM in New York on that date (EST). The large time is the viewer's local
+    // time and so depends on the runner's zone; it is pinned in EventHeroCard.test.tsx, which
+    // picks an event zone no viewer shares.
     expect(within(cards[0]).getByText("9:00 AM EST")).toBeInTheDocument()
-    expect(within(cards[0]).queryByText(/2:00 PM/)).not.toBeInTheDocument()
     expect(within(cards[1]).getByText("9:30 AM GMT")).toBeInTheDocument()
     // a description is behind Details; none, nothing to open
     expect(within(cards[0]).getByRole("button", { name: /^Details:/ })).toHaveTextContent("Details")
