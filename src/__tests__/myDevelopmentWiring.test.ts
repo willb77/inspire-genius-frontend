@@ -79,10 +79,14 @@ describe("the Home quick action's locale key", () => {
       const json = JSON.parse(fs.readFileSync(file, "utf-8")) as {
         homeV2?: Record<string, string>
       }
-      // Same pattern as `quickGoals`, which carries the untranslated English
-      // string in all 22 files today. Inventing translations here would be
-      // worse than the English fallback.
-      expect(json.homeV2?.quickMyDevelopment).toBe("My development")
+      // English in every language the translation run has not reached. es, fr, it and pt
+      // got machine translations in wave 1; they must carry some string, not necessarily English.
+      if (["es", "fr", "it", "pt"].includes(lang)) {
+        expect(typeof json.homeV2?.quickMyDevelopment).toBe("string")
+        expect(json.homeV2?.quickMyDevelopment?.trim()).not.toBe("")
+      } else {
+        expect(json.homeV2?.quickMyDevelopment).toBe("My development")
+      }
     }
   })
 

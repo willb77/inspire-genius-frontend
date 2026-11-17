@@ -1,0 +1,806 @@
+{
+  "roster": {
+    "title": "Mes étudiants",
+    "toastAddError": "Impossible d'ajouter l'étudiant. Veuillez réessayer.",
+    "toastAdded": "{{name}} a été ajouté",
+    "toastBulkInviteError": "Impossible d'envoyer les invitations. Veuillez réessayer.",
+    "toastBulkInvitedOne": "{{converted}} étudiant invité sur {{total}}",
+    "toastBulkInvitedOther": "{{converted}} étudiants invités sur {{total}}",
+    "toastInvitationSent": "Invitation envoyée à {{name}}",
+    "toastInviteError": "Impossible d'envoyer l'invitation. Veuillez réessayer.",
+    "toastRemoveError": "Impossible de retirer cet étudiant. Veuillez réessayer.",
+    "toastRemoved": "{{name}} a été retiré de votre liste",
+    "addStudent": "Ajouter un étudiant",
+    "bulkDialogBody": "Chaque étudiant sélectionné reçoit un e-mail contenant un lien sécurisé de définition du mot de passe / lien magique afin de pouvoir se connecter et prendre en main son propre profil d'aide.",
+    "bulkDialogTitleOne": "Inviter {{count}} étudiant à Inspire Genius ?",
+    "bulkDialogTitleOther": "Inviter {{count}} étudiants à Inspire Genius ?",
+    "bulkResultsBody": "Voici comment chaque étudiant sélectionné a été traité.",
+    "bulkResultsTitle": "Résultats de l'invitation groupée",
+    "coAccessLabel": "Conserver le co-accès après la prise en charge du compte par l'étudiant",
+    "coAccessOff": "Désactivé : transfert complet. Vous ne verrez plus cet étudiant après qu'il aura récupéré son compte.",
+    "coAccessOn": "Activé : vous restez dans sa liste et pouvez toujours ouvrir son profil.",
+    "colActions": "Actions",
+    "colCompleteness": "Complétude",
+    "colReady": "Prêt",
+    "colStatus": "Statut",
+    "colStudent": "Étudiant",
+    "colUpdated": "Mis à jour",
+    "converted": "Converti",
+    "description": "Importez et gérez les étudiants pour lesquels vous créez des profils d'aide, puis convertissez-les vers leur propre compte Inspire Genius.",
+    "emailOptional": "E-mail (facultatif)",
+    "emptyBody": "Ajoutez un étudiant ou importez une liste pour commencer.",
+    "emptyTitle": "Aucun étudiant pour le moment",
+    "errors": "Erreurs",
+    "firstName": "Prénom",
+    "firstNameRequired": "Le prénom est obligatoire",
+    "gradeLevel": "Niveau scolaire",
+    "gradePlaceholder": "p. ex. 12",
+    "importCsv": "Importer un CSV",
+    "invalidEmail": "Saisissez un e-mail valide",
+    "invite": "Inviter",
+    "inviteDialogBody": "Nous enverrons à {{email}} un lien sécurisé de définition du mot de passe / lien magique afin que l'étudiant puisse se connecter et prendre en main son propre profil d'aide.",
+    "inviteDialogTitle": "Inviter {{name}} à Inspire Genius ?",
+    "inviteSelected": "Inviter la sélection à IG ({{count}})",
+    "inviteTitleNoEmail": "Chaque étudiant sélectionné doit avoir un e-mail pour être invité",
+    "inviteTitleNone": "Sélectionnez des étudiants à inviter",
+    "inviteTitleSelected": "Inviter {{count}} sélectionné(s) à Inspire Genius",
+    "lastName": "Nom de famille",
+    "loading": "Chargement de votre liste…",
+    "noMatch": "Aucun étudiant ne correspond à « {{query}} ».",
+    "notYet": "Pas encore",
+    "open": "Ouvrir",
+    "ready": "Prêt",
+    "remove": "Retirer",
+    "removeDialogBody": "Cette action retire l'étudiant de votre liste. Les données de son profil ne sont pas supprimées s'il possède déjà son propre compte lié.",
+    "removeDialogTitle": "Retirer {{name}} ?",
+    "removeStudent": "Retirer {{name}}",
+    "rowInviteAlready": "Déjà invité",
+    "rowInviteNoEmail": "Ajoutez un e-mail pour inviter cet étudiant",
+    "rowInviteTitle": "Inviter à Inspire Genius",
+    "searchAria": "Rechercher des étudiants",
+    "searchPlaceholder": "Rechercher par nom",
+    "selectAll": "Sélectionner tous les étudiants",
+    "selectStudent": "Sélectionner {{name}}",
+    "sendBulkOne": "Envoyer {{count}} invitation",
+    "sendBulkOther": "Envoyer {{count}} invitations",
+    "sendInvitation": "Envoyer l'invitation",
+    "skipped": "Ignoré",
+    "state": "État",
+    "statePlaceholder": "p. ex. CA",
+    "statusInvited": "Invité",
+    "statusLinked": "Lié",
+    "statusManaged": "Géré",
+    "addDialogBody": "Créez un profil géré. Vous pourrez ensuite l'ouvrir pour remplir le questionnaire d'aide.",
+    "addDialogTitle": "Ajouter un étudiant"
+  },
+  "scholarships": {
+    "accessible": "Accessible",
+    "advancing": "{{pct}} % progressent",
+    "competitive": "Compétitif",
+    "description": "Bourses correspondantes classées par pertinence selon votre profil d'aide financière.",
+    "enrollment": {
+      "fullTime": "à temps plein",
+      "lessThanHalf": "à moins d'un mi-temps",
+      "partTime": "à temps partiel",
+      "unknown": "inscrit"
+    },
+    "keywords": "Mots-clés",
+    "keywordsPlaceholder": "p. ex. STEM, première génération, soins infirmiers",
+    "matchPct": "{{pct}} % de correspondance",
+    "matchStrength": "Niveau de correspondance",
+    "matchesOnBase": "Correspond sur : {{base}}.",
+    "minAward": "Montant min. ($)",
+    "moderate": "Modéré",
+    "noMatches": "Aucune bourse trouvée : essayez d'élargir vos mots-clés.",
+    "pipeline": "Suivi",
+    "search": "Rechercher",
+    "stageAwarded": "Obtenue",
+    "stageIdentified": "Identifiée",
+    "stageInProgress": "En cours",
+    "stageSubmitted": "Soumise",
+    "submissionRate": "Taux de soumission",
+    "submittedOf": "{{submitted}} sur {{identified}}",
+    "title": "Bourses d'études",
+    "viewApply": "Consulter et postuler",
+    "whyFits": "Correspond sur {{base}} : vous êtes un étudiant {{enrollment}} en {{state}}.",
+    "whyFitsGpa": "Correspond sur {{base}} : vous êtes un étudiant {{enrollment}} en {{state}} avec une moyenne de {{gpa}}."
+  },
+  "federal": {
+    "fafsaNotStartedNext": "Commencez votre FAFSA sur studentaid.gov : elle donne accès aux aides fédérales, étatiques et des établissements.",
+    "fafsaReadiness": "Préparation de la FAFSA",
+    "fafsaSubmitted": "Soumise",
+    "fafsaSubmittedNext": "Votre FAFSA est enregistrée : surveillez maintenant les échéances de l'État et des établissements.",
+    "filterAll": "Tout",
+    "lowerSai": "Un SAI plus bas donne accès à davantage d'aides fondées sur les besoins.",
+    "noDeadlines": "Aucune échéance dans cette catégorie.",
+    "programs": "Programmes fédéraux",
+    "stateCalGrantA": "Cal Grant A",
+    "stateCalGrantAHint": "Frais de scolarité et frais annexes dans les établissements de quatre ans",
+    "stateCalGrantB": "Cal Grant B",
+    "stateCalGrantBHint": "Allocation pour les frais de subsistance des étudiants à faible revenu",
+    "stateChafee": "Chafee Grant",
+    "stateChafeeHint": "Pour les jeunes actuellement ou anciennement placés en famille d'accueil",
+    "stateMerit": "Bourse au mérite",
+    "stateMeritHint": "Aide de votre État fondée sur la moyenne ou les tests",
+    "stateMiddleClass": "Middle Class Scholarship",
+    "stateMiddleClassHint": "Jusqu'à 40 % du coût restant à l'UC/CSU",
+    "stateNeedGrant": "Aide d'État fondée sur les besoins",
+    "stateNeedGrantHint": "Aide fondée sur le revenu de l'agence de votre État",
+    "statePrograms": "Programmes d'État",
+    "statusDueSoon": "Échéance proche",
+    "statusOverdue": "En retard",
+    "statusSubmitted": "Soumise",
+    "statusUpcoming": "À venir",
+    "studentAidIndex": "Student Aid Index",
+    "tilePell": "Pell Grant",
+    "tilePellHint": "Fondée sur les besoins, non remboursable : votre SAI détermine le montant.",
+    "tileSubsidized": "Direct Subsidized",
+    "tileSubsidizedHint": "Prêt Stafford fondé sur les besoins : aucun intérêt pendant les études.",
+    "tileUnsubsidized": "Direct Unsubsidized",
+    "tileUnsubsidizedHint": "Prêt Stafford non fondé sur les besoins : les intérêts courent immédiatement.",
+    "tileWorkStudy": "Work-Study",
+    "tileWorkStudyHint": "Gagnez une aide grâce à un emploi à temps partiel sur le campus.",
+    "title": "Aides fédérales et d'État",
+    "typeFederal": "Fédérale",
+    "typeInstitutional": "Institutionnelle",
+    "typeScholarship": "Bourse",
+    "typeState": "État",
+    "deadlines": "Échéances",
+    "description": "FAFSA, bourses Pell et échéances d'aide étatique, classées par prochaine date limite.",
+    "fafsaInProgress": "En cours",
+    "fafsaInProgressNext": "Terminez et soumettez votre FAFSA avant la date limite fédérale pour garantir votre aide.",
+    "fafsaNotStarted": "Non commencé"
+  },
+  "format": {
+    "daysAgo_one": "il y a {{count}} jour",
+    "daysAgo_other": "il y a {{count}} jours",
+    "dueToday": "échéance aujourd'hui",
+    "dueTomorrow": "échéance demain",
+    "inDays_one": "dans {{count}} jour",
+    "inDays_other": "dans {{count}} jours"
+  },
+  "institutions": {
+    "aidCovers": "L'aide couvre",
+    "autoMerit": "Bourse au mérite automatique probable",
+    "autoMeritTitle": "Votre moyenne dépasse un seuil typique de bourse au mérite automatique : attendez-vous à une aide au mérite sans demande distincte.",
+    "bandMatch": "Adéquat",
+    "bandReach": "Ambitieux",
+    "bandSafety": "Sûr",
+    "costOfAttendance": "Coût des études",
+    "dependency": "Dépendance",
+    "dependent": "À charge",
+    "description": "Estimez votre prix net : coût des études moins l'aide non remboursable prévue.",
+    "empty": "Lancez une estimation pour voir le détail de votre prix net ici.",
+    "estGrantAid": "Aide non remb. est.",
+    "estimate": "Estimer le prix net",
+    "estimating": "Estimation en cours…",
+    "hintMatch": "Un coût réaliste : prévoyez de combler l'écart avec des bourses ou un emploi étudiant.",
+    "hintReach": "Un effort côté coût : appuyez-vous sur les recours et les bourses externes.",
+    "hintSafety": "Le prix net reste confortablement dans le budget d'une famille type.",
+    "householdIncome": "Revenu du foyer ($)",
+    "independent": "Indépendant",
+    "institution": "Établissement",
+    "institutionPlaceholder": "p. ex. Université d'État",
+    "meritByApplication": "Mérite sur candidature",
+    "meritByApplicationTitle": "Ici, l'aide au mérite est compétitive plutôt qu'automatique avec votre moyenne actuelle : faites-en explicitement la demande.",
+    "needAware": "Besoin pris en compte",
+    "needAwareTitle": "Cet établissement tient compte de la capacité de paiement et peut laisser une partie de vos besoins démontrés non couverte (un écart).",
+    "needBlind": "Indifférent aux besoins",
+    "needBlindTitle": "Les admissions ne tiennent pas compte de votre capacité de paiement, et cet établissement couvre pratiquement tous les besoins démontrés.",
+    "needMet": "% des besoins démontrés couverts",
+    "netPerYear": "net / an",
+    "notSure": "Je ne sais pas",
+    "sapRequired": "SAP requis",
+    "sapTitle": "Satisfactory Academic Progress : conserver une moyenne minimale et un rythme de crédits une fois inscrit, sinon l'aide peut être suspendue.",
+    "stateOfResidence": "État de résidence",
+    "title": "Établissements"
+  },
+  "intake": {
+    "back": "Retour",
+    "checkAnswer": "Veuillez vérifier cette réponse",
+    "earlyExit": "Ignorer les options et lancer la recherche maintenant ?",
+    "earlyExitCoach": "L'essentiel est renseigné : enregistrer maintenant ?",
+    "essentialsToUnlock": "L'essentiel pour débloquer les correspondances",
+    "readyToSearch": "Vous êtes prêt à lancer la recherche : tout complément ne fera qu'affiner vos correspondances.",
+    "review": "Enregistrez votre profil pour verrouiller vos correspondances. Vous pouvez modifier toute réponse ci-dessus.",
+    "reviewCoach": "Enregistrez le profil de cet étudiant pour verrouiller ses correspondances. Vous pouvez modifier toute réponse ci-dessus.",
+    "saveDashboard": "Enregistrer et aller au tableau de bord",
+    "saveFind": "Enregistrer et trouver des bourses",
+    "saveStudentProfile": "Enregistrer le profil de l'étudiant",
+    "searchScholarships": "Rechercher des bourses",
+    "selectOne": "Sélectionner une option",
+    "selectState": "Sélectionnez votre État",
+    "skip": "Passer",
+    "skipped": "Ignoré",
+    "steps": {
+      "citizenship_status": {
+        "helper": "C'est le facteur le plus déterminant pour les aides fédérales et étatiques auxquelles vous avez droit, et nous trouverons des bourses pour tous les statuts.",
+        "options": {
+          "daca": "DACA",
+          "eligible_noncitizen": "Non-citoyen éligible",
+          "international": "Étudiant international",
+          "permanent_resident": "Résident permanent",
+          "refugee_asylee": "Réfugié / demandeur d'asile accepté",
+          "undocumented": "Sans papiers",
+          "us_citizen": "Citoyen américain"
+        },
+        "question": "Quel est votre statut de citoyenneté ou d'immigration ?"
+      },
+      "city_or_county": {
+        "helper": "Fait apparaître des bourses très locales issues de fondations communautaires.",
+        "placeholder": "p. ex. comté d'Alameda",
+        "question": "Dans quelle ville ou quel comté êtes-vous ?"
+      },
+      "credential_sought": {
+        "options": {
+          "associate": "Diplôme de premier cycle court (Associate)",
+          "bachelor": "Licence (Bachelor)",
+          "certificate": "Certificat",
+          "doctoral": "Doctorat",
+          "license": "Licence professionnelle",
+          "master": "Master",
+          "vocational": "Formation professionnelle / métiers"
+        },
+        "question": "Quel diplôme visez-vous ?"
+      },
+      "dependency_status": {
+        "helper": "Les étudiants indépendants ont souvent droit à davantage d'aides sur critères de besoin. Vous ne savez pas ? Ce n'est pas grave.",
+        "options": {
+          "dependent": "À charge",
+          "independent": "Indépendant",
+          "unknown": "Je ne sais pas encore"
+        },
+        "question": "Pour l'aide fédérale, êtes-vous un étudiant à charge ou indépendant ?"
+      },
+      "state_of_residence": {
+        "options": {
+          "LA": "Louisiane",
+          "MA": "Massachusetts",
+          "MD": "Maryland",
+          "ME": "Maine",
+          "MI": "Michigan",
+          "MN": "Minnesota",
+          "MO": "Missouri",
+          "MS": "Mississippi",
+          "MT": "Montana",
+          "NC": "Caroline du Nord",
+          "ND": "Dakota du Nord",
+          "NE": "Nebraska",
+          "NH": "New Hampshire",
+          "NJ": "New Jersey",
+          "NM": "Nouveau-Mexique",
+          "NV": "Nevada",
+          "NY": "New York",
+          "OH": "Ohio",
+          "OK": "Oklahoma",
+          "OR": "Oregon",
+          "PA": "Pennsylvanie",
+          "RI": "Rhode Island",
+          "SC": "Caroline du Sud",
+          "SD": "Dakota du Sud",
+          "TN": "Tennessee",
+          "TX": "Texas",
+          "UT": "Utah",
+          "VA": "Virginie",
+          "VT": "Vermont",
+          "WA": "Washington",
+          "WI": "Wisconsin",
+          "WV": "Virginie-Occidentale",
+          "WY": "Wyoming",
+          "AK": "Alaska",
+          "AL": "Alabama",
+          "AR": "Arkansas",
+          "AZ": "Arizona",
+          "CA": "Californie",
+          "CO": "Colorado",
+          "CT": "Connecticut",
+          "DC": "District de Columbia",
+          "DE": "Delaware",
+          "FL": "Floride",
+          "GA": "Géorgie",
+          "HI": "Hawaï",
+          "IA": "Iowa",
+          "ID": "Idaho",
+          "IL": "Illinois",
+          "IN": "Indiana",
+          "KS": "Kansas",
+          "KY": "Kentucky"
+        },
+        "question": "Dans quel État vivez-vous?",
+        "helper": "Donne accès aux bourses et aides propres à chaque État."
+      },
+      "student_age": {
+        "helper": "L'âge détermine les aides auxquelles vous êtes admissible. Les aides pour les moins de 18 ans sont gérées pour vous.",
+        "placeholder": "p. ex. 17",
+        "question": "D'abord, quel âge avez-vous?",
+        "suffix": "ans"
+      },
+      "enrollment_status": {
+        "options": {
+          "enrolled": "Actuellement inscrit(e)",
+          "prospective": "Je prévois de m'inscrire",
+          "returning_adult": "Adulte en reprise d'études",
+          "transferring": "Changement d'établissement"
+        },
+        "question": "Où en êtes-vous dans votre parcours d'études?"
+      },
+      "fafsa_status": {
+        "helper": "Nous adapterons vos prochaines étapes à votre situation.",
+        "options": {
+          "in_progress": "En cours",
+          "not_started": "Non commencée",
+          "submitted": "Soumise"
+        },
+        "question": "Avez-vous commencé votre FAFSA?"
+      },
+      "first_generation": {
+        "helper": "De nombreuses bourses sont réservées aux étudiants de première génération.",
+        "question": "Serez-vous le premier ou la première de votre famille à faire des études supérieures?"
+      },
+      "gpa": {
+        "helper": "Facultatif — une moyenne ordinaire donne quand même droit à la grande majorité des aides.",
+        "placeholder": "p. ex. 3,4",
+        "question": "Quelle est votre moyenne (GPA)?"
+      },
+      "household_income_range": {
+        "helper": "Utilisé uniquement pour trouver les aides selon les besoins — une fourchette suffit, et elle n'est jamais partagée.",
+        "options": {
+          "over_150k": "Plus de 150 000 $",
+          "under_30k": "Moins de 30 000 $"
+        },
+        "question": "Approximativement, quel est le revenu annuel de votre foyer?"
+      },
+      "household_size": {
+        "placeholder": "p. ex. 4",
+        "question": "Combien de personnes compte votre foyer?",
+        "suffix": "personnes"
+      },
+      "institution_type": {
+        "options": {
+          "community_college": "Community college",
+          "four_year": "Collège / université (4 ans)",
+          "grad": "Études supérieures (master, doctorat)",
+          "trade_vocational": "École professionnelle ou technique"
+        },
+        "question": "Quel type d'établissement allez-vous fréquenter?"
+      },
+      "intended_field": {
+        "helper": "Donne accès à des bourses propres à un domaine.",
+        "placeholder": "p. ex. soins infirmiers, informatique",
+        "question": "Que prévoyez-vous d'étudier?"
+      },
+      "m_adl_dislocated": {
+        "helper": "Donne accès aux fonds pour travailleurs licenciés (WIOA) et à l'aide à l'ajustement commercial.",
+        "question": "Avez-vous été licencié(e), ou votre secteur est-il en déclin?"
+      },
+      "m_adl_employer_benefit": {
+        "helper": "Souvent la plus importante source d'aide pour les adultes en emploi.",
+        "question": "Votre employeur offre-t-il une aide ou un remboursement des frais de scolarité?"
+      },
+      "m_adl_wioa": {
+        "question": "Avez-vous consulté un American Job Center ou été évalué(e) pour le WIOA?"
+      },
+      "m_car_childcare": {
+        "helper": "Donne accès aux subventions de garde d'enfants sur le campus CCAMPIS.",
+        "question": "Avez-vous besoin d'un mode de garde pour étudier?"
+      },
+      "m_dis_categories": {
+        "options": {
+          "chronic_illness": "Maladie chronique",
+          "learning": "Apprentissage",
+          "mental_health": "Santé mentale",
+          "physical": "Physique",
+          "sensory": "Sensoriel (vue / ouïe)"
+        },
+        "question": "Quel type de handicap ou d'affection? (sélectionnez toutes les réponses applicables)"
+      },
+      "m_dis_vr_client": {
+        "helper": "La VR peut financer les frais de scolarité, les livres et les technologies d'assistance — une source majeure, souvent oubliée.",
+        "question": "Êtes-vous client(e) de l'agence de réadaptation professionnelle (Vocational Rehabilitation) de votre État?"
+      },
+      "m_fld_nursing": {
+        "helper": "Bourses Nurse Corps / HRSA et remboursement de prêt.",
+        "question": "S'agit-il des soins infirmiers ou de la santé?"
+      },
+      "m_fld_public_service": {
+        "helper": "Nous signalerons le PSLF dès maintenant pour orienter vos éventuels emprunts.",
+        "question": "S'agit-il du service public ou de l'administration?"
+      },
+      "m_fld_stem": {
+        "question": "S'agit-il d'un domaine STEM ou lié à la défense?"
+      },
+      "m_fld_teaching": {
+        "helper": "TEACH Grant et remise de dette pour service d'enseignement.",
+        "question": "Votre domaine est-il l'enseignement?"
+      },
+      "m_fos_chafee": {
+        "helper": "Jusqu'à environ 5 000 $/an pour les anciens jeunes placés en famille d'accueil — et de nombreux États renoncent aux frais de scolarité.",
+        "question": "Avez-vous utilisé le Chafee Education & Training Voucher (ETV)?"
+      },
+      "m_ft_access_programs": {
+        "question": "Participez-vous à TRIO, à Upward Bound ou à un programme d'accès aux études supérieures?"
+      },
+      "m_ft_hs_grad_year": {
+        "placeholder": "p. ex. 2027",
+        "question": "En quelle année terminez-vous le lycée (ou obtenez-vous votre GED)?"
+      },
+      "m_hom_emergency": {
+        "question": "Avez-vous besoin de fonds d'urgence pour l'essentiel dès maintenant?"
+      },
+      "m_jus_reentry": {
+        "question": "Participez-vous, ou pouvez-vous participer, à un programme d'éducation en prison ou de réinsertion?"
+      },
+      "m_jus_status": {
+        "helper": "L'exclusion de la FAFSA pour condamnation liée à la drogue a été supprimée et Second Chance Pell est désormais permanent.",
+        "options": {
+          "incarcerated": "Actuellement incarcéré(e)",
+          "parole_probation": "En libération conditionnelle ou en probation",
+          "released": "Libéré(e)"
+        },
+        "question": "Quelle est votre situation actuelle ?"
+      },
+      "m_mil_affiliation": {
+        "helper": "Cela détermine si vous utilisez vos propres avantages ou des avantages transférés ou pour personnes à charge.",
+        "options": {
+          "dependent_child": "Le service d'un parent (je suis son enfant)",
+          "self_active": "Le mien — service actif",
+          "self_reserve_guard": "Le mien — Réserve / Garde nationale",
+          "self_veteran": "Le mien — ancien combattant",
+          "spouse": "Le service d'un conjoint",
+          "survivor": "Avantages pour survivants / personnes à charge"
+        },
+        "question": "Quel est le lien avec l'armée ?"
+      },
+      "m_mil_gi_bill": {
+        "options": {
+          "ch1606": "Réserve sélectionnée (chap. 1606)",
+          "ch30": "Montgomery (chap. 30)",
+          "ch33": "Post-11 septembre (chap. 33)",
+          "ch35": "Personnes à charge (DEA chap. 35)"
+        },
+        "question": "De quel GI Bill bénéficiez-vous ?"
+      },
+      "m_mil_rating": {
+        "helper": "Un taux d'invalidité peut ouvrir l'accès à VR&E (chap. 31), qui dépasse parfois le GI Bill.",
+        "placeholder": "p. ex. 30",
+        "question": "Avez-vous un taux d'invalidité lié au service ?"
+      },
+      "m_mil_yellow_ribbon": {
+        "question": "Votre établissement participe-t-il au programme Yellow Ribbon ?"
+      },
+      "m_trb_tribe": {
+        "helper": "Donne accès aux bourses tribales d'enseignement supérieur, aux financements du BIE et aux bourses pour Autochtones.",
+        "placeholder": "p. ex. Nation navajo",
+        "question": "De quelle tribu êtes-vous membre inscrit(e) (ou descendant(e)) ?"
+      },
+      "m_und_has_ssn": {
+        "helper": "Dans les deux cas, nous nous concentrerons sur les aides des États et les bourses qui n'exigent pas la citoyenneté.",
+        "question": "Avez-vous un numéro de sécurité sociale et une autorisation de travail (DACA) ?"
+      },
+      "sc_caregiver": {
+        "question": "Êtes-vous parent ou aidant principal ?"
+      },
+      "sc_disability": {
+        "helper": "Peut donner accès au financement des frais de scolarité par la réadaptation professionnelle de l'État et à des bourses pour personnes handicapées.",
+        "question": "Avez-vous un handicap ou un problème de santé chronique ?"
+      },
+      "sc_field_specific": {
+        "question": "Votre domaine est-il les soins infirmiers, l'enseignement, les STEM ou le service public ?"
+      },
+      "sc_first_time": {
+        "question": "Êtes-vous au lycée ou sur le point d'entrer à l'université pour la première fois ?"
+      },
+      "sc_foster_care": {
+        "question": "Avez-vous déjà été placé(e) en famille d'accueil ou pupille de l'État ?"
+      },
+      "sc_homeless": {
+        "question": "Ces dernières années, avez-vous manqué d'un logement stable ?"
+      },
+      "sc_justice": {
+        "helper": "Des changements législatifs récents ont élargi l'accès aux aides : la plupart des gens sont surpris d'y être désormais admissibles.",
+        "question": "Avez-vous déjà eu affaire au système judiciaire ?"
+      },
+      "sc_military": {
+        "helper": "Les avantages militaires sont la source de financement des études la plus riche : cela vaut le coup d'œil.",
+        "question": "Vous, un parent ou un conjoint avez-vous servi dans l'armée ?"
+      },
+      "sc_returning_adult": {
+        "helper": "Donne accès aux financements des employeurs, de l'emploi et aux Pell de courte durée.",
+        "question": "Êtes-vous un adulte qui reprend ses études ou change de carrière ?"
+      },
+      "sc_tribal": {
+        "question": "Êtes-vous membre inscrit d'une tribu ou d'ascendance amérindienne / autochtone de l'Alaska ?"
+      },
+      "sc_undocumented_daca": {
+        "question": "Décririez-vous votre statut d'immigration comme sans papiers ou DACA ?"
+      }
+    },
+    "subtitle": "Quelques questions rapides pour trouver les subventions et les bourses auxquelles vous êtes réellement admissible.",
+    "subtitleCoach": "Quelques questions rapides pour trouver les subventions et les bourses auxquelles cet étudiant est réellement admissible.",
+    "thatsEverything": "C'est tout",
+    "title": "Créer votre profil d'aide financière",
+    "titleCoach": "Créer le profil d'aide financière de cet étudiant",
+    "toastFinishEssentials": "Vous pouvez terminer les informations essentielles à tout moment pour débloquer les correspondances.",
+    "toastRankTheirs": "Nous classerons ses correspondances à partir de ces réponses.",
+    "toastRankYours": "Nous classerons vos correspondances à partir de ces réponses.",
+    "toastSaveError": "Impossible d'enregistrer votre profil. Veuillez réessayer.",
+    "toastSaved": "Profil d'aide financière enregistré",
+    "toastStudentSaveError": "Impossible d'enregistrer le profil de cet étudiant. Veuillez réessayer.",
+    "toastStudentSaved": "Profil de l'étudiant enregistré"
+  },
+  "journey": {
+    "apply": "Postuler",
+    "compare": "Comparer",
+    "fafsa": "FAFSA",
+    "plan": "Planifier",
+    "profile": "Profil",
+    "search": "Rechercher"
+  },
+  "loans": {
+    "addOccupation": "Ajoutez une profession pour obtenir une estimation",
+    "approaching": "En approche",
+    "bandComfortable": "Confortable",
+    "bandHighBurden": "Charge élevée",
+    "bandManageable": "Gérable",
+    "calculating": "Calcul en cours…",
+    "compareGraduatedName": "Progressif",
+    "compareGraduatedSub": "Commence bas, augmente tous les 2 ans",
+    "compareGraduatedSuffix": "/mois au départ",
+    "comparePlans": "Comparer les plans de remboursement",
+    "compareRapName": "RAP",
+    "compareRapSub": "Nouveau plan fédéral · 1 à 10 % du revenu, jusqu'à 30 ans",
+    "compareRapSuffix": "/mois en début de carrière",
+    "compareStandardName": "Standard (10 ans)",
+    "compareStandardSub": "Paiement fixe · intérêts totaux les plus bas",
+    "compareStandardSuffix": "/mois",
+    "debtToIncome": "Ratio dette/revenu",
+    "description": "Projetez le remboursement mensuel et vérifiez sa cohérence avec les revenus attendus.",
+    "entryLevel": "Débutant",
+    "expectedEarnings": "Revenus attendus",
+    "expectedSalaryMultiple": "{{ratio}}× le salaire attendu",
+    "grantPick": "Choix de GRANT",
+    "healthy": "Sain",
+    "interest": "Intérêts",
+    "lookUp": "Rechercher",
+    "median": "Médiane",
+    "monthly": "Mensuel",
+    "occupation": "Profession",
+    "occupationPlaceholder": "p. ex. Développeur logiciel",
+    "ofIncome": "du revenu",
+    "overCeiling": "Plafond dépassé",
+    "overCeilingNote": "L'emprunt projeté dépasse le plafond de GRANT de 1× le salaire attendu — envisagez des aides moins coûteuses avant d'emprunter davantage.",
+    "paymentShare": "Le paiement représente {{pct}} % du revenu mensuel de début de carrière",
+    "plan": "Plan",
+    "planGraduated": "Progressif",
+    "planIncomeDriven": "Selon le revenu (RAP)",
+    "planStandard10": "Standard (10 ans)",
+    "policyCallout": "<head>Le remboursement a changé en 2026.</head> Le <save>plan SAVE est fermé aux nouvelles inscriptions</save> et est progressivement supprimé — remplacé par le nouveau <rap>Repayment Assistance Plan (RAP)</rap> (1 à 10 % du revenu, jusqu'à 30 ans). Les nouveaux emprunteurs choisissent désormais entre Standard et RAP.",
+    "principal": "Capital ($)",
+    "projectRepayment": "Projeter le remboursement",
+    "projector": "Simulateur de remboursement",
+    "rate": "Taux (%)",
+    "tenYearGrowth": "Croissance sur 10 ans",
+    "term": "Durée (mois)",
+    "title": "Prêts et dettes",
+    "totalPaid": "Total payé",
+    "withinCeilingNote": "GRANT maintient l'emprunt total sous 1× votre salaire attendu la première année. Votre profil présente un risque faible."
+  },
+  "applications": {
+    "allStaged": "Tous les champs obligatoires hors impôts sont préparés — vous êtes prêt pour le transfert vers StudentAid.gov.",
+    "autoFills": "Rempli automatiquement après consentement",
+    "completed": "{{count}} terminé(s)",
+    "description": "Nous préparons chaque champ non fiscal pour que vous confirmiez au lieu de chercher, puis nous vous guidons dans les étapes de StudentAid.gov que vous seul pouvez effectuer.",
+    "generatePacket": "Générer le dossier de préparation",
+    "generating": "Génération en cours…",
+    "handoffTitle": "Transfert guidé vers StudentAid.gov",
+    "inProgress": "En cours",
+    "loadingHandoff": "Chargement des étapes de transfert…",
+    "loadingProgress": "Chargement de votre progression…",
+    "markDone": "Marquer « {{title}} » comme terminé",
+    "markNotDone": "Marquer « {{title}} » comme non terminé",
+    "missingRequired": "{{count}} champ(s) obligatoire(s) nécessitent encore une réponse.",
+    "openOnStudentAid": "Ouvrir sur StudentAid.gov",
+    "prefilled": "{{count}} prérempli(s)",
+    "prepPacket": "Dossier de préparation",
+    "prepPacketBlurb": "Générez un dossier complet de tout ce qui a été préparé jusqu'ici, prêt à être confirmé sur StudentAid.gov.",
+    "prepPacketTitle": "Dossier de préparation – FAFSA {{year}}",
+    "privacyNote": "GRANT ne stocke jamais votre numéro de sécurité sociale ni vos données fiscales. Les données fiscales sont transférées directement depuis l'IRS avec votre consentement ; votre numéro de sécurité sociale est saisi sur StudentAid.gov. Nous ne soumettons jamais rien à votre place.",
+    "readiness": "Préparation FAFSA {{year}}",
+    "saveSection": "Enregistrer la section",
+    "saving": "Enregistrement…",
+    "schoolCodesPlaceholder": "Codes d'établissement séparés par des virgules",
+    "select": "Sélectionner…",
+    "stepsDone": "{{complete}} étapes sur {{total}} terminées",
+    "stepsLeft": "{{count}} restante(s)",
+    "stillNeeded": "{{count}} encore nécessaire(s)",
+    "submissionReady": "Prêt à soumettre",
+    "title": "Application Concierge",
+    "youEnter": "Vous saisissez sur StudentAid.gov",
+    "yourInformation": "Vos informations"
+  },
+  "coach": {
+    "aidProfileFor": "Profil d'aide de",
+    "backToRoster": "Retour à la liste",
+    "student": "Étudiant"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "continue": "Continuer",
+    "done": "Terminé",
+    "no": "Non",
+    "profileCompleteness": "Complétude du profil",
+    "yes": "Oui"
+  },
+  "compare": {
+    "appealLetter": "Madame, Monsieur,\n\nBureau de l'aide financière de {{worst}},\n\nJe vous remercie de m'avoir admis et de l'offre d'aide que vous m'avez proposée. {{worst}} reste mon premier choix, et je vous écris pour demander respectueusement un réexamen de mon aide.\n\nAprès comparaison de mes offres, mon coût net à {{worst}} s'élève à {{worstNet}} par an, contre {{bestNet}} à {{best}}, soit une différence de {{difference}}. La situation financière de ma famille n'a pas changé, et cet écart rend mes études difficiles sans aide supplémentaire sous forme de bourse ou de subvention.\n\nSeriez-vous en mesure de réexaminer mon aide institutionnelle à la lumière de cette comparaison ? Je me ferai un plaisir de fournir tout document utile. Je vous remercie du temps et de l'attention que vous y consacrerez.\n\nCordialement,\n[Votre nom]",
+    "appealNote": "Modèle uniquement : relisez-le et personnalisez-le avant l'envoi. Un recours est plus efficace avec une offre concurrente précise et un motif sincère.",
+    "appealSubtitle": "Citez le coût net de {{amount}} de {{institution}} pour demander davantage d'aide",
+    "appealTitle": "Brouillon de lettre de recours pour {{institution}}",
+    "bestBanner": "<name>{{institution}}</name> est votre coût net le plus bas, à <amount>{{amount}}</amount> par an.",
+    "bestValue": "Meilleur rapport qualité-prix",
+    "coa": "Coût des études {{amount}}",
+    "colCost": "Coût",
+    "colGrants": "Subventions",
+    "colInstitution": "Établissement",
+    "colLoans": "Prêts",
+    "colNetCost": "Coût net",
+    "colScholarships": "Bourses",
+    "colWorkStudy": "Travail-études",
+    "description": "Comparez vos lettres d'attribution pour voir quelle offre coûte le moins à votre charge.",
+    "empty": "Aucune lettre d'attribution pour l'instant : ajoutez-les depuis l'Application Concierge pour comparer les offres.",
+    "federalLoansRepaid": "Prêts fédéraux (à rembourser)",
+    "gapped": "<b>Écart de {{amount}}.</b> Même après toutes les subventions, tous les prêts et tout le travail-études, ce montant de besoin reste non couvert : vous devriez le payer de votre poche.",
+    "giftAid": "Aide non remboursable (subventions + bourses)",
+    "loanAsAid": "<b>{{amount}} présentés comme « aide » sont un prêt.</b> Il est regroupé avec l'aide non remboursable, mais vous le remboursez avec intérêts : il ne réduit pas le coût net réel.",
+    "lowestNetCost": "Coût net le plus bas",
+    "netCostNote": "Coût net = coût des études moins l'aide non remboursable (subventions + bourses). Les prêts et le travail-études sont de l'argent que vous remboursez ou gagnez, pas des réductions.",
+    "noGap": "<b>Aucun écart.</b> L'aide proposée couvre l'intégralité de vos besoins démontrés.",
+    "perYear": "/ an",
+    "pricedHonestly": "Un prix honnête",
+    "title": "Comparer les offres",
+    "trueNetCost": "Coût net réel",
+    "workStudyEarned": "Travail-études (gagné)"
+  },
+  "modules": {
+    "adult": "Adulte en reprise d'études",
+    "caregiver": "Aidant",
+    "disability": "Handicap",
+    "field": "Spécifique au domaine",
+    "first_time": "Premier cycle d'études",
+    "foster": "Placement familial",
+    "homeless": "Logement précaire",
+    "justice": "Touché par le système judiciaire",
+    "military": "Militaire / Ancien combattant",
+    "tribal": "Tribal",
+    "undocumented": "Sans papiers / DACA"
+  },
+  "plan": {
+    "actionApply": "Postuler à {{name}} ({{amount}})",
+    "actionFinishProfile": "Terminez votre profil d'aide — {{answered}}/{{total}} questions essentielles remplies",
+    "actionReviewOffer": "Examinez votre meilleure offre — {{institution}} à {{amount}}/an",
+    "actionSubmit": "Soumettre {{name}} — {{when}}",
+    "activeStage": "Votre étape actuelle dans le parcours d'aide.",
+    "addAwardLetter": "Ajoutez une lettre d'attribution pour comparer les offres.",
+    "allCaughtUp": "Vous êtes à jour — aucune action d'aide en attente pour le moment.",
+    "atAGlance": "Aperçu du plan",
+    "bestNetCost": "Meilleur coût net",
+    "completeProfileForMatches": "Complétez votre profil pour voir vos correspondances.",
+    "coveredByGiftAid": "Couvert par l'aide non remboursable",
+    "deadlines": "Échéances",
+    "description": "Votre plan d'aide financière consolidé.",
+    "descriptionNamed": "Le plan d'aide financière consolidé de {{name}}.",
+    "federalLoansInOffer": "prêts fédéraux dans votre meilleure offre",
+    "fromYourProfile": "d'après votre profil",
+    "giftAidPct": "{{pct}} % d'aide non remboursable",
+    "loans": "Prêts",
+    "matchPct": "{{pct}} % de correspondance",
+    "matched": "{{count}} correspondance(s)",
+    "modelRepayment": "Simulez le remboursement dès que vous avez une offre.",
+    "netPerYear": "{{amount}}/an net",
+    "netPrice": "Prix net",
+    "nextDeadline": "Prochaine échéance",
+    "noDeadlines": "Aucune échéance n'est encore prévue.",
+    "noOffersYet": "aucune offre pour l'instant",
+    "nothingScheduled": "rien de prévu",
+    "pctComplete": "{{pct}} % terminé",
+    "planRepayment": "Planifier le remboursement",
+    "potentialAid": "Aide potentielle",
+    "potentialAidHint": "sur l'ensemble des bourses correspondantes",
+    "scholarships": "Bourses",
+    "stepOf": "Étape {{current}} sur {{total}} : {{step}}",
+    "strongestMatch": "votre meilleure correspondance",
+    "studentAidIndex": "Student Aid Index",
+    "title": "Mon plan d'aide",
+    "tracked": "{{count}} suivie(s)",
+    "workStudySuffix": "· {{amount}} de travail-études",
+    "yourNextActions": "Vos prochaines actions"
+  },
+  "csvImport": {
+    "chooseFile": "Choisir un fichier .csv",
+    "colDetail": "Détail",
+    "colEmail": "E-mail",
+    "colFirst": "Prénom",
+    "colGrade": "Niveau",
+    "colLast": "Nom",
+    "colName": "Nom",
+    "colRow": "Ligne",
+    "colState": "État",
+    "colStatus": "Statut",
+    "columns": "Colonnes : {{columns}}",
+    "created": "Créés",
+    "description": "Téléversez une liste et nous créerons un profil géré pour chaque étudiant. Seul <code>first_name</code> est obligatoire.",
+    "downloadTemplate": "Télécharger le modèle",
+    "duplicates": "Doublons",
+    "errors": "Erreurs",
+    "fileAria": "Fichier CSV",
+    "importAnother": "Importer un autre fichier",
+    "importOne": "Importer {{count}} étudiant",
+    "importOther": "Importer {{count}} étudiants",
+    "importZero": "Importer les étudiants",
+    "missing": "manquant",
+    "noDataRows": "Aucune ligne de données trouvée. Vérifiez que le fichier contient une ligne d'en-tête et au moins un étudiant.",
+    "previewOne": "Aperçu — {{count}} étudiant",
+    "previewOther": "Aperçu — {{count}} étudiants",
+    "readError": "Impossible de lire ce fichier. Veuillez téléverser un fichier .csv simple.",
+    "showingFirst": "affichage des {{limit}} premiers",
+    "title": "Importer des étudiants depuis un CSV"
+  },
+  "dashboard": {
+    "actionApply": "Postuler à {{name}}",
+    "actionCompleteProfile": "Complétez votre profil d'aide — {{answered}}/{{total}} questions essentielles répondues",
+    "actionSubmit": "Soumettre {{name}} — {{when}}",
+    "aidJourney": "Parcours d'aide",
+    "allCaughtUp": "Vous êtes à jour — rien en attente pour le moment.",
+    "completeProfileBody": "{{answered}}/{{total}} questions essentielles répondues — terminez pour débloquer vos correspondances.",
+    "completeProfileTitle": "Complétez votre profil d'aide",
+    "firstGen": "Première génération",
+    "nextActions": "Prochaines actions",
+    "nextStep": "Prochaine étape : {{step}}",
+    "overview": "Votre aperçu de l'aide financière.",
+    "screenerPrompt": "Répondez au questionnaire de votre profil pour débloquer les aides propres à votre situation.",
+    "statDeadlines": "Échéances à venir",
+    "statDeadlinesHint": "fédérales, étatiques et institutionnelles",
+    "statSai": "Indice d'aide aux étudiants",
+    "statSaiHint": "d'après votre profil financier",
+    "statScholarships": "Bourses correspondantes",
+    "statScholarshipsHint": "classées par score de correspondance",
+    "tailoringFor": "GRANT personnalise pour",
+    "title": "Tableau de bord des aides",
+    "welcomeBack": "Bon retour, {{name}}."
+  },
+  "profile": {
+    "enrollment": {
+      "enrolled": "Inscrit",
+      "prospective": "Futur étudiant",
+      "returning_adult": "Adulte en reprise d'études",
+      "transferring": "En transfert"
+    },
+    "essentialsComplete": "Essentiels remplis — vous pouvez affiner à tout moment ci-dessous.",
+    "essentialsPending": "Répondez aux questions essentielles ci-dessous pour débloquer vos correspondances.",
+    "essentialsPill": "{{answered}}/{{total}} essentiels",
+    "field": {
+      "age": "Âge",
+      "enrollment": "Inscription",
+      "firstGeneration": "Première génération",
+      "householdIncome": "Revenu du foyer",
+      "intendedField": "Domaine visé",
+      "schoolType": "Type d'établissement",
+      "state": "État"
+    },
+    "glanceTitle": "Votre profil d'aide en un coup d'œil",
+    "income": {
+      "100k_150k": "100 k$–150 k$",
+      "30k_60k": "30 k$–60 k$",
+      "60k_100k": "60 k$–100 k$",
+      "over_150k": "Plus de 150 k$",
+      "under_30k": "Moins de 30 k$"
+    },
+    "institution": {
+      "community_college": "Community college",
+      "four_year": "Quatre ans",
+      "grad": "Cycles supérieurs",
+      "trade_vocational": "Métiers / formation professionnelle"
+    },
+    "nothingSaved": "Rien n'est encore enregistré — la conversation ci-dessous vous guide en quelques minutes."
+  }
+}

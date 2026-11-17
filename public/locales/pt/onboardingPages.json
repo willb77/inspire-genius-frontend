@@ -1,0 +1,97 @@
+{
+  "wizard": {
+    "planFailed": "Falha ao gerar o plano",
+    "forgeFailed": "Falha no Forge (OnboardingAgent): {{message}}",
+    "title": "Assistente de integração",
+    "resultTitle": "Plano de integração",
+    "intro": "Gere um plano de integração personalizado para um novo contratado com o Forge (OnboardingAgent).",
+    "inputs": "Entradas",
+    "newHireName": "Nome do novo contratado",
+    "role": "Cargo",
+    "company": "Empresa",
+    "weekNumber": "Número da semana (1-12)",
+    "cultureNotes": "Observações sobre a cultura da empresa (opcional)",
+    "run": "Executar o Forge",
+    "reset": "Redefinir",
+    "planGenerated": "Plano de integração gerado."
+  },
+  "details": {
+    "firstName": {
+      "required": "O nome é obrigatório",
+      "minLength": "O nome deve ter pelo menos 2 caracteres",
+      "placeholder": "Digite seu nome (ex.: João)"
+    },
+    "namePattern": "Somente letras, espaços, hífen e apóstrofo são permitidos",
+    "lastName": {
+      "required": "O sobrenome é obrigatório",
+      "minLength": "O sobrenome deve ter pelo menos 1 caractere",
+      "placeholder": "Digite seu sobrenome (ex.: Silva)"
+    },
+    "dob": {
+      "required": "A data de nascimento é obrigatória",
+      "invalid": "Data inválida",
+      "tooYoung": "Você deve ter pelo menos 13 anos",
+      "placeholder": "Selecione sua data de nascimento"
+    },
+    "about": {
+      "placeholder": "ex.: Sou estudante e estou me preparando para provas",
+      "label": "Escreva algumas linhas sobre seus objetivos e sua trajetória (opcional)"
+    },
+    "title": "Conte mais sobre você",
+    "subtitle": "Preencha o formulário abaixo para adicionar seus dados.",
+    "next": "Próximo"
+  },
+  "configure": {
+    "tourFallbackTitle": "Dica rápida",
+    "tourFallbackDescription": "Destacamos os elementos principais: você pode editar os coaches a qualquer momento.",
+    "audio": {
+      "pause": "Pausar áudio",
+      "resume": "Retomar áudio",
+      "loading": "Carregando áudio",
+      "play": "Reproduzir áudio",
+      "replay": "Reproduzir áudio novamente"
+    },
+    "prev": "Anterior",
+    "title": "Configure seu mentor",
+    "subtitle": "Escolha o tom de voz, o gênero e o sotaque de cada mentor para que as conversas pareçam naturais para você. Você pode alterar essas configurações depois.",
+    "help": "Ajuda",
+    "letsGo": "Vamos lá",
+    "closeTour": "Fechar tour",
+    "gotIt": "Entendi!"
+  },
+  "step": {
+    "one": {
+      "imageAlt": "Primeira etapa da integração",
+      "title": "Vamos começar!",
+      "subtitle": "Envie suas informações pessoais para começar a trabalhar com seu Coach de IA.",
+      "callout": "Insights acionáveis"
+    },
+    "two": {
+      "imageAlt": "Segunda etapa da integração",
+      "title": "Fortaleça seu negócio",
+      "subtitle": "Aproveite insights baseados em IA, sob medida para suas metas.",
+      "callout": "Insights acionáveis"
+    },
+    "three": {
+      "imageAlt": "Terceira etapa da integração",
+      "title": "Insights que importam",
+      "subtitle": "Priorizamos a clareza para que você aja com confiança.",
+      "callout": "Insights acionáveis"
+    },
+    "four": {
+      "imageAlt": "Quarta etapa da integração",
+      "title": "Colabore com seu Coach de IA",
+      "subtitle": "Mantemos tudo simples e eficaz — para você focar no impacto.",
+      "callout": "Decisões inteligentes com IA"
+    },
+    "five": {
+      "imageAlt": "Quinta etapa da integração",
+      "title": "Tudo pronto!",
+      "subtitle": "Vamos levar você ao app para começar a progredir.",
+      "callout": "Enviar documentos"
+    }
+  },
+  "screen": {
+    "letsGo": "Vamos lá"
+  }
+}

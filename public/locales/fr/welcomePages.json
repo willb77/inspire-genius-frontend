@@ -1,0 +1,19 @@
+{
+  "messages": {
+    "notValid": "Ce lien d'invitation n'est pas valide. Demandez à votre praticien de vous envoyer un nouveau lien.",
+    "tooMany": "Trop de tentatives à l'instant. Patientez un moment, puis rouvrez le lien de votre praticien.",
+    "ownInvite": "Ceci est l'un de vos propres liens d'invitation : vous ne pouvez pas être votre propre client.",
+    "claimError": "Nous n'avons pas pu vous connecter à l'instant. Rouvrez le lien de votre praticien plus tard, ou demandez-lui-en un nouveau.",
+    "noInvite": "Aucune invitation n'est en attente dans cet onglet du navigateur. Si votre praticien vous a envoyé un lien, rouvrez-le."
+  },
+  "prism": {
+    "checking": "Vérification de votre accès au questionnaire PRISM…",
+    "shareNotice": "Lorsque vous demanderez votre questionnaire, vous pourrez choisir de partager vos résultats avec {{name}}. Rien n'est partagé si vous ne cochez pas cette option.",
+    "takeSurvey": "Répondre à votre questionnaire PRISM"
+  },
+  "title": "Se connecter à votre praticien",
+  "connecting": "Connexion à votre praticien en cours…",
+  "connected": "Vous êtes maintenant connecté(e) à {{name}}.",
+  "nextSurvey": "Prochaine étape : répondre à votre questionnaire PRISM.",
+  "goHome": "Aller à votre page d'accueil"
+}

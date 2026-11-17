@@ -1,0 +1,19 @@
+{
+  "messages": {
+    "notValid": "Esse link de convite não é válido. Peça ao seu profissional que envie um novo link.",
+    "tooMany": "Muitas tentativas agora há pouco. Aguarde um pouco e abra novamente o link do seu profissional.",
+    "ownInvite": "Este é um dos seus próprios links de convite. Você não pode ser seu próprio cliente.",
+    "claimError": "Não conseguimos conectar você agora. Abra o link do seu profissional novamente mais tarde ou peça um novo.",
+    "noInvite": "Não há nenhum convite aguardando nesta aba do navegador. Se seu profissional enviou um link, abra-o novamente."
+  },
+  "prism": {
+    "checking": "Verificando seu acesso à pesquisa PRISM…",
+    "shareNotice": "Ao solicitar sua pesquisa, você pode escolher compartilhar seus resultados com {{name}}. Nada é compartilhado a menos que você marque essa opção.",
+    "takeSurvey": "Responder à sua pesquisa PRISM"
+  },
+  "title": "Conecte-se ao seu profissional",
+  "connecting": "Conectando você ao seu profissional…",
+  "connected": "Agora você está conectado a {{name}}.",
+  "nextSurvey": "Próximo passo: responder à sua pesquisa PRISM.",
+  "goHome": "Ir para sua página inicial"
+}

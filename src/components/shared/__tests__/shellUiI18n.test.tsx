@@ -64,13 +64,13 @@ describe("shellUi registration", () => {
     expect([...(m as RegExpMatchArray)[1].matchAll(/['"]([\w]+)['"]/g)].map((x) => x[1])).toContain("shellUi");
   });
 
-  it("has its pending-translation debt file, and ships English only", () => {
+  it("has its pending-translation debt file, and is translated in es, fr, it and pt only (pl and cs still owed)", () => {
     const pending = JSON.parse(fs.readFileSync(path.join(ROOT, "scripts/i18n/pending/shellUi.json"), "utf8"));
     expect(pending).toMatchObject({ namespace: "shellUi", wave: "E" });
     const others = fs
       .readdirSync(path.join(ROOT, "public/locales"))
       .filter((l) => l !== "en" && fs.existsSync(path.join(ROOT, "public/locales", l, "shellUi.json")));
-    expect(others).toEqual([]);
+    expect(others.sort()).toEqual(["es", "fr", "it", "pt"]);
   });
 });
 

@@ -1,0 +1,97 @@
+{
+  "step": {
+    "one": {
+      "imageAlt": "Primer paso de la introducción",
+      "title": "¡Comencemos!",
+      "subtitle": "Sube tu información personal para empezar a trabajar con tu coach de IA.",
+      "callout": "Información útil y accionable"
+    },
+    "two": {
+      "imageAlt": "Segundo paso de la introducción",
+      "title": "Impulsa tu negocio",
+      "subtitle": "Aprovecha información basada en IA adaptada a tus objetivos.",
+      "callout": "Información útil y accionable"
+    },
+    "three": {
+      "imageAlt": "Tercer paso de la introducción",
+      "title": "Información que importa",
+      "subtitle": "Priorizamos la claridad para que actúes con confianza.",
+      "callout": "Información útil y accionable"
+    },
+    "four": {
+      "imageAlt": "Cuarto paso de la introducción",
+      "title": "Colabora con tu coach de IA",
+      "subtitle": "Lo mantenemos simple y eficaz, para que te centres en el impacto.",
+      "callout": "Decisiones inteligentes con IA"
+    },
+    "five": {
+      "imageAlt": "Quinto paso de la introducción",
+      "title": "¡Todo listo!",
+      "subtitle": "Vamos a entrar en la aplicación para empezar a avanzar.",
+      "callout": "Subir documentos"
+    }
+  },
+  "screen": {
+    "letsGo": "Vamos"
+  },
+  "wizard": {
+    "planGenerated": "Plan de incorporación generado.",
+    "planFailed": "Error al generar el plan",
+    "forgeFailed": "Forge (OnboardingAgent) falló: {{message}}",
+    "title": "Asistente de incorporación",
+    "resultTitle": "Plan de incorporación",
+    "intro": "Genera un plan de incorporación personalizado para una nueva persona contratada con Forge (OnboardingAgent).",
+    "inputs": "Datos de entrada",
+    "newHireName": "Nombre de la persona contratada",
+    "role": "Puesto",
+    "company": "Empresa",
+    "weekNumber": "Número de semana (1-12)",
+    "cultureNotes": "Notas sobre la cultura de la empresa (opcional)",
+    "run": "Ejecutar Forge",
+    "reset": "Restablecer"
+  },
+  "details": {
+    "firstName": {
+      "required": "El nombre es obligatorio",
+      "minLength": "El nombre debe tener al menos 2 caracteres",
+      "placeholder": "Introduce tu nombre (p. ej., Juan)"
+    },
+    "namePattern": "Solo se permiten letras, espacios, guion y apóstrofo",
+    "lastName": {
+      "required": "El apellido es obligatorio",
+      "minLength": "El apellido debe tener al menos 1 carácter",
+      "placeholder": "Introduce tu apellido (p. ej., Pérez)"
+    },
+    "dob": {
+      "required": "La fecha de nacimiento es obligatoria",
+      "invalid": "Fecha no válida",
+      "tooYoung": "Debes tener al menos 13 años",
+      "placeholder": "Selecciona tu fecha de nacimiento"
+    },
+    "about": {
+      "placeholder": "p. ej., soy estudiante y me preparo para unos exámenes",
+      "label": "Cuéntanos en unas líneas tus objetivos y tu trayectoria (opcional)"
+    },
+    "title": "Cuéntanos más sobre ti",
+    "subtitle": "Completa los formularios siguientes para añadir tus datos.",
+    "next": "Siguiente"
+  },
+  "configure": {
+    "tourFallbackTitle": "Consejo rápido",
+    "tourFallbackDescription": "Hemos resaltado los elementos clave: puedes editar los coaches en cualquier momento.",
+    "audio": {
+      "pause": "Pausar audio",
+      "resume": "Reanudar audio",
+      "loading": "Cargando audio",
+      "play": "Reproducir audio",
+      "replay": "Volver a reproducir audio"
+    },
+    "prev": "Anterior",
+    "title": "Configura tu mentor",
+    "subtitle": "Elige el tono de voz, el género y el acento de cada mentor para que las conversaciones te resulten naturales. Puedes cambiar estos ajustes más adelante.",
+    "help": "Ayuda",
+    "letsGo": "¡Vamos!",
+    "closeTour": "Cerrar recorrido",
+    "gotIt": "¡Entendido!"
+  }
+}

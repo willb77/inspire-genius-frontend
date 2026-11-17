@@ -1,0 +1,65 @@
+{
+  "invitation": {
+    "logIn": "Entrar",
+    "toast": {
+      "invalidToken": "Token de convite inválido ou ausente"
+    },
+    "leftTitleOne": "Envie. Pergunte.",
+    "leftTitleTwo": "Analise. Conquiste.",
+    "leftSubtitle": "Defina uma senha forte para ativar sua conta.",
+    "title": "Aceitar convite",
+    "subtitle": "Crie sua senha para continuar",
+    "newPasswordGroup": "Nova senha",
+    "newPasswordPlaceholder": "Digite a nova senha",
+    "confirmPasswordPlaceholder": "Confirme a nova senha",
+    "passwordsDoNotMatch": "As senhas não coincidem",
+    "saving": "Salvando...",
+    "submit": "Definir senha",
+    "hasAccount": "Já tem uma conta?"
+  },
+  "verify": {
+    "signedIn": "Login realizado com sucesso",
+    "expiredTitle": "Este link de login expirou",
+    "expiredSubtitle": "Os links de login funcionam uma única vez e somente por 15 minutos",
+    "expiredBody": "Se você já abriu este link, ele foi usado. E-mails mais antigos também não funcionarão — solicite um novo e use o e-mail mais recente.",
+    "sendNew": "Enviar um novo link de login",
+    "verifying": "Verificando...",
+    "pleaseWait": "Aguarde enquanto fazemos seu login"
+  },
+  "magicLogin": {
+    "checkEmail": "Verifique seu e-mail",
+    "sentTo": "Enviamos um link mágico para {{email}}",
+    "clickLink": "Clique no link no seu e-mail para entrar. O link expira em 15 minutos.",
+    "tryDifferent": "Tentar outro e-mail",
+    "backToLogin": "Voltar ao login",
+    "title": "Link mágico",
+    "subtitle": "Entre com seu e-mail — sem precisar de senha",
+    "email": "E-mail",
+    "sending": "Enviando...",
+    "submit": "Enviar link mágico"
+  },
+  "signup": {
+    "passwordGroup": "Senha"
+  },
+  "social": {
+    "processing": "Concluindo o login social...",
+    "done": "Login verificado. Você pode fechar esta aba se não houver redirecionamento automático.",
+    "error": "Redirecionando para o login..."
+  },
+  "login": {
+    "emailHint": "Você pode entrar com seu e-mail principal ou secundário",
+    "toast": {
+      "emailRequired": "Informe seu e-mail.",
+      "emailInvalid": "Informe um e-mail válido.",
+      "passwordRequired": "Informe sua senha.",
+      "unexpected": "Ocorreu um erro inesperado. Tente novamente."
+    },
+    "hardened": {
+      "forgotPrefix": "Esqueceu sua senha?",
+      "useMagicLink": "Use um link mágico",
+      "linkValidity": "Enviaremos por e-mail um link de acesso de uso único, válido por 15 minutos.",
+      "notArrivingPrefix": "O e-mail não chegou? Verifique o spam ou",
+      "signInWithPasswordInstead": "entre com senha"
+    }
+  }
+}

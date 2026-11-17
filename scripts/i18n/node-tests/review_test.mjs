@@ -8,7 +8,7 @@ const HERE = join(fileURLToPath(import.meta.url), "..", "..");
 test("_review.json uses only the three states and gated languages", () => {
   const r = JSON.parse(readFileSync(join(HERE, "_review.json"), "utf8"));
   for (const [id, state] of Object.entries(r)) {
-    assert.match(id, /^(es|fr|pt|it|pl|cs)\/[a-z]+\/.+/, id);
+    assert.match(id, /^(es|fr|pt|it|pl|cs)\/[A-Za-z]+\/.+/, id);
     assert.ok(["machine", "reviewed", "placeholder"].includes(state), `${id}: ${state}`);
   }
 });
