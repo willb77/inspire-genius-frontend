@@ -28,8 +28,20 @@ const SETTINGS = [
 const iconBox =
   "flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg border border-teal-400/35 bg-[#127A8A]/35 text-teal-300"
 
-export function JoinBrandPanel({ nextStep = JOIN_NEXT_STEP }: { nextStep?: string } = {}) {
+/**
+ * `events` (the /events page, owner's copy 2026-11-17) words the first two points for the event it
+ * sits beside; `join` is the /join copy and is unchanged. The /events wording is plain English, not
+ * i18n keys: the repo's guards need every `t()` key translated in six languages, so it joins the
+ * translation wave later (the /join wording stays translated).
+ */
+export type JoinBrandPanelVariant = "join" | "events"
+
+export function JoinBrandPanel({
+  nextStep = JOIN_NEXT_STEP,
+  variant = "join",
+}: { nextStep?: string; variant?: JoinBrandPanelVariant } = {}) {
   const { t } = useTranslation("joinPages")
+  const events = variant === "events"
   // The two known copies are translated; any other string a caller passes is shown as given.
   const nextStepText =
     nextStep === JOIN_NEXT_STEP
@@ -56,9 +68,13 @@ export function JoinBrandPanel({ nextStep = JOIN_NEXT_STEP }: { nextStep?: strin
             <UsersRound className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-[13.5px] font-semibold text-white">{t("brand.practitioners.title", { defaultValue: "Built for practitioners" })}</p>
+            <p className="text-[13.5px] font-semibold text-white">
+              {events ? "Built for practitioners." : t("brand.practitioners.title", { defaultValue: "Built for practitioners" })}
+            </p>
             <p className="text-[12.5px] leading-snug text-white/60">
-              {t("brand.practitioners.body", { defaultValue: "Invite your clients, follow their progress, and give each one an AI mentor that is there between your sessions." })}
+              {events
+                ? "Invite clients, follow their progress between sessions."
+                : t("brand.practitioners.body", { defaultValue: "Invite your clients, follow their progress, and give each one an AI mentor that is there between your sessions." })}
             </p>
           </div>
         </li>
@@ -68,9 +84,11 @@ export function JoinBrandPanel({ nextStep = JOIN_NEXT_STEP }: { nextStep?: strin
           </span>
           <p className="text-[12.5px] leading-snug text-white/60">
             <span className="block text-[13.5px] font-semibold text-white">
-              {t("brand.assessments.title", { defaultValue: "Works with the assessments you already use" })}
+              {events ? "Grounded in PRISM." : t("brand.assessments.title", { defaultValue: "Works with the assessments you already use" })}
             </span>{" "}
-            {t("brand.assessments.body", { defaultValue: "(DISC, CliftonStrengths, MBTI, Big Five) grounded in PRISM to enhance all mentoring results." })}
+            {events
+              ? "Works with the tools your customers use."
+              : t("brand.assessments.body", { defaultValue: "(DISC, CliftonStrengths, MBTI, Big Five) grounded in PRISM to enhance all mentoring results." })}
           </p>
         </li>
         <li className="flex items-start gap-3">

@@ -159,7 +159,7 @@ export default function EventsPage() {
     <AuthLayout
       contentClassName="max-w-[1100px]"
       showTestimonial={false}
-      brandPanel={<JoinBrandPanel nextStep={EVENTS_NEXT_STEP} />}
+      brandPanel={<JoinBrandPanel nextStep={EVENTS_NEXT_STEP} variant="events" />}
     >
       <AuthHeader title={t("events.title", { defaultValue: "Upcoming events" })} />
       {body}

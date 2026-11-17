@@ -104,16 +104,21 @@
   --color-blue-10: #ecf2ff;
   --color-blue-20: #f6f9ff;
 
-  /* Public /events hero card (session picker). Named so a component never carries hex. */
-  --color-event-navy: #12224a;
-  --color-event-navy-line: #2a3f73;
-  --color-event-navy-muted: #c9d3ea;
-  --color-event-accent: #5eead4;
+  /* Public /events session tiles (gray, raised). Named so a component never carries hex. */
   --color-event-primary: #3d63d6;
-  --color-event-selected: #eef2fc;
-  --color-event-tile-border: #e1e6ef;
+  --color-event-tile-border: #cfd4de;
+  --color-event-tile-top: #f4f5f8;
+  --color-event-tile-bottom: #e2e5ec;
   --color-event-next-bg: #fff1d6;
   --color-event-next-fg: #8a4b00;
+  /* The 3D effect: a top highlight, a bottom bevel and two soft drop shadows; the selected tile
+     lifts further and picks up a blue edge glow. */
+  --shadow-event-tile:
+    inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 -2px 0 rgb(15 23 42 / 0.08), 0 1px 1px rgb(15 23 42 / 0.12),
+    0 6px 10px -2px rgb(15 23 42 / 0.18), 0 14px 24px -8px rgb(15 23 42 / 0.25);
+  --shadow-event-tile-selected:
+    inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 -2px 0 rgb(15 23 42 / 0.08), 0 0 0 1px rgb(61 99 214 / 0.35),
+    0 10px 18px -2px rgb(61 99 214 / 0.3), 0 18px 28px -10px rgb(15 23 42 / 0.3);
 
   /* ==========================================================================
      HomeV2 / new design-system palette (navy + orange editorial).

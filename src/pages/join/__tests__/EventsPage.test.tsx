@@ -206,6 +206,21 @@ describe("/events brand panel", () => {
     expect(within(wall).queryByText(JOIN_NEXT_STEP)).not.toBeInTheDocument()
     expect(wall).not.toHaveTextContent(/Tick the first box/)
   })
+
+  it("words the first two points for the event (owner's copy), and not the /join ones", async () => {
+    answer(404, { detail: "Not Found" })
+    const { container } = renderPage()
+    const wall = wallOf(container)
+    const text = (wall.textContent ?? "").replace(/\s+/g, " ")
+    // title and body are separate blocks (as before), so textContent has no space between them
+    expect(text).toMatch(/Built for practitioners\.\s*Invite clients, follow their progress between sessions\./)
+    expect(text).toMatch(/Grounded in PRISM\.\s*Works with the tools your customers use\./)
+    expect(text).not.toMatch(/DISC|CliftonStrengths|MBTI|Big Five/)
+    expect(text).not.toContain("give each one an AI mentor that is there between your sessions")
+    // the rest of the panel is untouched
+    expect(within(wall).getByText("For every setting")).toBeInTheDocument()
+    expect(within(wall).getByText("What happens next")).toBeInTheDocument()
+  })
 })
 
 describe("/events source guards", () => {

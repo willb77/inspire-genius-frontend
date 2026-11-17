@@ -2,6 +2,13 @@ import type { PublicEvent } from "@/types/publicEvents"
 
 // Plain module (not a component file) so the components stay fast-refresh friendly.
 
+/**
+ * The fixed host shown on every session tile: the owner's copy, "Hosted by Mark Tully, PRISM
+ * Practitioner" (typed 2026-11-17). The events data has no presenter fields; a session that carries
+ * its own `presenter_name` / `presenter_role` shows those instead.
+ */
+export const DEFAULT_HOST = { name: "Mark Tully", role: "PRISM Practitioner" } as const
+
 /** One listed event, seen as a session of the event with its title. */
 export type EventSession = PublicEvent
 

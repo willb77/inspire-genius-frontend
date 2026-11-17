@@ -215,28 +215,67 @@ describe("the card", () => {
     expect(tiles()[2].closest("div")).not.toHaveTextContent("NEXT UP")
   })
 
-  it("the fixed copy is there, and 'Grounded in PRISM.' is italic and the rest is not", async () => {
+  it("every tile carries the logo, LIVE DEMO at the top right and the heading text under the logo", async () => {
+    network([ev(S1), ev(S2), ev(S3)])
+    renderPage()
+    await screen.findAllByRole("radiogroup")
+    const group = screen.getByRole("radiogroup", { name: "Choose a session" })
+    for (const input of within(group).getAllByRole("radio")) {
+      const label = document.querySelector(`label[for="${input.id}"]`) as HTMLElement
+      // top row: the logo first, LIVE DEMO after it (the row puts it on the right)
+      const top = label.firstElementChild as HTMLElement
+      expect(top.firstElementChild).toHaveAttribute("src", "/Logo-Dark.png")
+      expect(top.lastElementChild).toHaveTextContent("LIVE DEMO")
+      // the heading text sits under the logo, in the owner's order
+      const text = (label.textContent ?? "").replace(/\s+/g, " ")
+      const order = [
+        "LIVE DEMO",
+        TITLE,
+        "See your AI mentoring partner in action",
+        "PRISM has never been this powerful",
+        "PRISM meets InspiresGenius — an exclusive invitation for PRISM Practitioners to see the InspiresGenius AI platform in action.",
+      ].map((t) => text.indexOf(t))
+      expect(order.every((i) => i >= 0)).toBe(true)
+      expect([...order].sort((x, y) => x - y)).toEqual(order)
+    }
+    expect(screen.getAllByText("See your AI mentoring partner in action")).toHaveLength(3)
+    expect(screen.getAllByText("LIVE DEMO")).toHaveLength(3)
+  })
+
+  it("the radio's own name is the session, not the whole marketing text", async () => {
     network([ev(S1)])
     renderPage()
     await screen.findAllByRole("radiogroup")
-    expect(screen.getByRole("heading", { level: 2, name: "See your AI mentoring partner in action" })).toBeInTheDocument()
-    expect(screen.getByText("PRISM has never been this powerful")).toBeInTheDocument()
-    expect(screen.getByText(/an exclusive invitation for PRISM Practitioners/)).toBeInTheDocument()
-    const list = screen.getByRole("list", { name: "What you will see" })
-    const items = within(list).getAllByRole("listitem")
-    expect(items.map((i) => i.textContent)).toEqual([
-      "Invite clients and follow their progress between sessions",
-      "Give each client a PRISM-grounded AI mentor",
-      "Grounded in PRISM. Works with the tools your customers use.",
-      "Free 30-day access for all attendees",
-    ])
-    const em = items[2].querySelector("em")
-    expect(em).toHaveTextContent("Grounded in PRISM.")
-    expect(items[2].textContent).not.toBe(em?.textContent)
-    expect(items[0].querySelector("em")).toBeNull()
-    expect(items[3].className).toMatch(/font-semibold/)
-    for (const li of items) expect(li.querySelector("svg")).toHaveAttribute("aria-hidden", "true")
-    expect(screen.getByRole("img", { name: "Inspires Genius" })).toHaveAttribute("src", "/Logo-Light.png")
+    expect(tiles()[0]).toHaveAccessibleName(`${local(S1).day}, ${local(S1).time}`)
+  })
+
+  it("the navy block is gone: no pills, no checklist, no free-access line, no light logo", async () => {
+    network([ev(S1)], withOptions(opt("a", S1)))
+    renderPage()
+    await screen.findByRole("button", { name: /Save my seat/ })
+    expect(screen.queryByRole("list", { name: "What you will see" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("list", { name: "Event type" })).not.toBeInTheDocument()
+    expect(document.body).not.toHaveTextContent(/Free 30-day access/)
+    expect(document.body).not.toHaveTextContent(/Invite clients and follow their progress between sessions/)
+    expect(screen.queryByText("FREE")).not.toBeInTheDocument()
+    expect(document.querySelector('img[src="/Logo-Light.png"]:not(aside img)')).not.toBeNull() // the left wall's own logo only
+    const region = screen.getByRole("region", { name: TITLE })
+    expect(region.querySelector('img[src="/Logo-Light.png"]')).toBeNull()
+  })
+
+  it("the tiles are gray and raised (3D), through theme tokens that exist", () => {
+    const card = readFileSync(join(__dirname, "..", "EventHeroCard.tsx"), "utf8")
+    const css = readFileSync(join(__dirname, "..", "..", "..", "index.css"), "utf8")
+    expect(card).toMatch(/from-event-tile-top/)
+    expect(card).toMatch(/to-event-tile-bottom/)
+    // the BASE class, not the "-selected" variant that merely contains it
+    expect(card).toMatch(/(?<![-:\w])shadow-event-tile(?![-\w])/)
+    expect(card).toMatch(/peer-checked:shadow-event-tile-selected/)
+    for (const token of ["--color-event-tile-top", "--color-event-tile-bottom", "--shadow-event-tile:", "--shadow-event-tile-selected:"]) {
+      expect(css).toContain(token)
+    }
+    // the removed navy block leaves no navy token behind in the card
+    expect(card).not.toMatch(/event-navy/)
   })
 
   it("promises nothing the service does not do: no calendar invite line", async () => {
@@ -266,29 +305,44 @@ describe("the footer and the pills", () => {
     expect(screen.queryByText("Free · 7 seats left")).not.toBeInTheDocument()
   })
 
-  it("FREE alone without a duration; FREE · n MIN with one; LIVE DEMO always", async () => {
-    network([ev(S1)])
-    const first = renderPage()
-    await screen.findAllByRole("radiogroup")
-    expect(screen.getByText("LIVE DEMO")).toBeInTheDocument()
-    expect(screen.getByText("FREE")).toBeInTheDocument()
-    expect(document.body).not.toHaveTextContent(/MIN\b/)
-    first.unmount()
+  it("shows no duration pill: the navy block that held it is gone", async () => {
     network([ev(S1, { duration_minutes: 30 })])
     renderPage()
-    expect(await screen.findByText("FREE · 30 MIN")).toBeInTheDocument()
+    await screen.findAllByRole("radiogroup")
+    expect(document.body).not.toHaveTextContent(/FREE · 30 MIN/)
+    expect(document.body).not.toHaveTextContent(/\bMIN\b/)
   })
 
-  it("the host row appears only when the data names a presenter", async () => {
-    network([ev(S1)])
-    const first = renderPage()
-    await screen.findAllByRole("radiogroup")
-    expect(document.body).not.toHaveTextContent(/Hosted by/)
-    first.unmount()
-    network([ev(S1, { presenter_name: "Ada Lovelace", presenter_role: "Founder" })])
+  it("every tile says who hosts it, bottom left, from the owner's fixed line", async () => {
+    network([ev(S1), ev(S2), ev(S3)])
     renderPage()
-    expect(await screen.findByText("Hosted by Ada Lovelace")).toBeInTheDocument()
-    expect(screen.getByText("Founder")).toBeInTheDocument()
+    await screen.findAllByRole("radiogroup")
+    const hosts = screen.getAllByText(/^Hosted by/).map((e) => e.closest("p") as HTMLElement)
+    expect(hosts).toHaveLength(3)
+    for (const p of hosts) {
+      expect(p.textContent).toBe("Hosted by Mark Tully, PRISM Practitioner")
+      // bottom left of the tile, beside (not inside) the label, so a click on it still selects the tile
+      expect(p.className).toMatch(/bottom-4/)
+      expect(p.className).toMatch(/left-5/)
+      expect(p.className).toMatch(/pointer-events-none/)
+      expect(p.closest("label")).toBeNull()
+    }
+  })
+
+  it("a session that names its own presenter shows that one, never the fixed host", async () => {
+    network([
+      ev(S1, { presenter_name: "Ada Lovelace", presenter_role: "Founder" }),
+      ev(S2, { presenter_name: "Grace Hopper" }), // no role: no stray comma
+      ev(S3),
+    ])
+    renderPage()
+    await screen.findAllByRole("radiogroup")
+    const texts = screen.getAllByText(/^Hosted by/).map((e) => e.closest("p")?.textContent)
+    expect(texts).toEqual([
+      "Hosted by Ada Lovelace, Founder",
+      "Hosted by Grace Hopper",
+      "Hosted by Mark Tully, PRISM Practitioner",
+    ])
   })
 
   it("'Can't make it? Get notified' goes to the register-your-interest page", async () => {
