@@ -726,7 +726,7 @@ export default function PrismInitiateForm({
                       <SelectContent>
                         {QUEST_TYPE_OPTIONS.map((opt) => (
                           <SelectItem key={opt.id} value={opt.id.toString()}>
-                            {opt.label} ({opt.tier})
+                            {opt.label}
                           </SelectItem>
                         ))}
                       </SelectContent>

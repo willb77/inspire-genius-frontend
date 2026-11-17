@@ -26,13 +26,13 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { useActivePrismRequests } from '@/hooks/prism/usePrismRequest'
-import { QUEST_TYPE_OPTIONS } from '@/constants/prism'
+import { QUEST_TYPE_NAMES } from '@/constants/prism'
 
 function questTypeLabel(qtypeId: number | null, t: TFunction): string {
   if (qtypeId == null) return t('activeRequest.questionnaireDefault', { defaultValue: 'PRISM questionnaire' })
-  const match = QUEST_TYPE_OPTIONS.find((o) => o.id === qtypeId)
-  return match
-    ? t('activeRequest.questionnaireNamed', { defaultValue: '{{type}} questionnaire', type: match.label })
+  const name = (QUEST_TYPE_NAMES as Record<number, string>)[qtypeId]
+  return name
+    ? t('activeRequest.questionnaireNamed', { defaultValue: '{{type}} questionnaire', type: name })
     : t('activeRequest.questionnaireTypeId', { defaultValue: 'Questionnaire type {{id}}', id: qtypeId })
 }
 

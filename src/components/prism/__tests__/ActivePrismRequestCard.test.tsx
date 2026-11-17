@@ -76,7 +76,7 @@ describe('ActivePrismRequestCard', () => {
     })
     render(<ActivePrismRequestCard />)
     expect(screen.getAllByTestId('active-prism-request')).toHaveLength(2)
-    expect(screen.getByText(/Foundation questionnaire/i)).toBeInTheDocument()
+    expect(screen.getByText(/Foundational questionnaire/i)).toBeInTheDocument()
   })
 
   it('explains itself when PRISM has issued no link yet', () => {

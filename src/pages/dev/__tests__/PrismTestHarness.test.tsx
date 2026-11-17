@@ -78,7 +78,7 @@ describe("PrismTestHarness", () => {
 
   it("renders questionnaire tier information", () => {
     render(<PrismTestHarness />);
-    expect(screen.getByText("Foundation")).toBeInTheDocument();
+    expect(screen.getByText("Foundational")).toBeInTheDocument();
     expect(screen.getByText("Personal")).toBeInTheDocument();
     expect(screen.getByText("Professional")).toBeInTheDocument();
   });
