@@ -80,7 +80,7 @@ describe("/events — switch on", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
-  it("lists events as tiles: title, date and time in the event's own zone, a brief description", async () => {
+  it("lists each event as a card with its title, and its sessions' times in the event's own zone", async () => {
     answer(200, {
       events: [
         {
@@ -94,33 +94,32 @@ describe("/events — switch on", () => {
     })
     renderPage()
     const list = await screen.findByRole("list", { name: "Upcoming events" })
-    const items = within(list).getAllByRole("listitem")
-    expect(items).toHaveLength(2)
-    expect(within(items[0]).getByRole("heading", { name: "Intro to Inspires Genius" })).toBeInTheDocument()
-    // 14:00 UTC is 9:00 AM in New York on that date (EST), not 2:00 PM.
-    expect(within(items[0]).getByTestId("event-date")).toHaveTextContent("Tuesday, March 3, 2099")
-    expect(within(items[0]).getByTestId("event-time")).toHaveTextContent(/9:00/)
-    expect(within(items[0]).getByTestId("event-time")).not.toHaveTextContent(/2:00/)
-    expect(items[0].querySelector("time")).toHaveAttribute("dateTime", "2099-03-03T14:00:00+00:00")
-    expect(within(items[0]).getByText(/Line one/)).toHaveTextContent("Line one Line two")
-    expect(within(items[0]).getByRole("button", { name: "More Info: Intro to Inspires Genius" })).toHaveTextContent("More Info")
-    expect(within(items[1]).getByTestId("event-time")).toHaveTextContent(/9:30/)
-    // no description: nothing to open, so no More Info pill
-    expect(within(items[1]).queryByRole("button", { name: /More Info/ })).not.toBeInTheDocument()
+    const cards = within(list).getAllByRole("region")
+    expect(cards).toHaveLength(2)
+    expect(cards[0]).toHaveAccessibleName("Intro to Inspires Genius")
+    // 14:00 UTC is 9:00 AM in New York on that date (EST), not 2:00 PM: the small reference line
+    expect(within(cards[0]).getByText("9:00 AM EST")).toBeInTheDocument()
+    expect(within(cards[0]).queryByText(/2:00 PM/)).not.toBeInTheDocument()
+    expect(within(cards[1]).getByText("9:30 AM GMT")).toBeInTheDocument()
+    // a description is behind Details; none, nothing to open
+    expect(within(cards[0]).getByRole("button", { name: /^Details:/ })).toHaveTextContent("Details")
+    expect(within(cards[1]).queryByRole("button", { name: /Details/ })).not.toBeInTheDocument()
     expect(screen.queryByRole("status")).not.toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /register your interest/i })).toHaveAttribute("href", "/join")
+    // the page's own link back, plus each card's no-registration-offered link: all go to /join
+    const links = screen.getAllByRole("link", { name: /register your interest/i })
+    expect(links.length).toBeGreaterThanOrEqual(3)
+    for (const l of links) expect(l).toHaveAttribute("href", "/join")
   })
 
-  it("a long description is cut on the tile, and More Info opens all of it", async () => {
+  it("the card shows no teaser of a description; Details opens all of it", async () => {
     const long = `${"word ".repeat(80)}END`
     answer(200, {
       events: [{ title: "Long", starts_at: "2099-03-03T14:00:00Z", time_zone: "UTC", description: long }],
     })
     renderPage()
     const list = await screen.findByRole("list", { name: "Upcoming events" })
-    expect(list).not.toHaveTextContent("END")
-    expect(list).toHaveTextContent("…")
-    await userEvent.click(within(list).getByRole("button", { name: "More Info: Long" }))
+    expect(list).not.toHaveTextContent("word word")
+    await userEvent.click(within(list).getByRole("button", { name: /Details/ }))
     const dialog = await screen.findByRole("dialog")
     expect(within(dialog).getByRole("heading", { name: "Long" })).toBeInTheDocument()
     expect(dialog).toHaveTextContent("END")
@@ -143,10 +142,9 @@ describe("/events — switch on", () => {
     const { container } = renderPage()
     const list = await screen.findByRole("list", { name: "Upcoming events" })
     expect(within(list).getByText("<b>Bold?</b>")).toBeInTheDocument()
-    // the tile shows the first paragraph as plain text: marks removed, nothing parsed
-    expect(list).toHaveTextContent("Bold and italic")
+    // nothing from the description is parsed on the card itself
     expect(list.querySelector("strong")).toBeNull()
-    await userEvent.click(within(list).getByRole("button", { name: /More Info/ }))
+    await userEvent.click(within(list).getByRole("button", { name: /Details/ }))
     const dialog = await screen.findByRole("dialog")
     expect(dialog.querySelector("strong")).toHaveTextContent("Bold")
     expect(dialog.querySelector("em")).toHaveTextContent("italic")
@@ -165,13 +163,13 @@ describe("/events — switch on", () => {
     expect(links.some((a) => /^javascript:/i.test(a.getAttribute("href") ?? ""))).toBe(false)
   })
 
-  it("still renders a pre-editor plain-text description, line breaks kept, in More Info", async () => {
+  it("still renders a pre-editor plain-text description, line breaks kept, in Details", async () => {
     answer(200, {
       events: [{ title: "Old", starts_at: "2099-03-03T14:00:00Z", time_zone: "UTC", description: "Line one\nLine two" }],
     })
     renderPage()
     const list = await screen.findByRole("list", { name: "Upcoming events" })
-    await userEvent.click(within(list).getByRole("button", { name: /More Info/ }))
+    await userEvent.click(within(list).getByRole("button", { name: /Details/ }))
     expect(await screen.findByRole("dialog")).toHaveTextContent(/Line one\s*Line two/)
   })
 })

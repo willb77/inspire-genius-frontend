@@ -104,6 +104,17 @@
   --color-blue-10: #ecf2ff;
   --color-blue-20: #f6f9ff;
 
+  /* Public /events hero card (session picker). Named so a component never carries hex. */
+  --color-event-navy: #12224a;
+  --color-event-navy-line: #2a3f73;
+  --color-event-navy-muted: #c9d3ea;
+  --color-event-accent: #5eead4;
+  --color-event-primary: #3d63d6;
+  --color-event-selected: #eef2fc;
+  --color-event-tile-border: #e1e6ef;
+  --color-event-next-bg: #fff1d6;
+  --color-event-next-fg: #8a4b00;
+
   /* ==========================================================================
      HomeV2 / new design-system palette (navy + orange editorial).
      Introduced in Wave 0 of the platform-wide CSS migration. These are the
