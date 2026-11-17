@@ -1,0 +1,65 @@
+{
+  "verify": {
+    "signedIn": "Connexion réussie",
+    "expiredTitle": "Ce lien de connexion a expiré",
+    "expiredSubtitle": "Les liens de connexion ne fonctionnent qu'une seule fois et pendant 15 minutes seulement",
+    "expiredBody": "Si vous avez déjà ouvert ce lien, il a été utilisé. Les anciens e-mails ne fonctionneront pas non plus : demandez-en un nouveau et utilisez l'e-mail le plus récent.",
+    "sendNew": "Envoyez-moi un nouveau lien de connexion",
+    "verifying": "Vérification...",
+    "pleaseWait": "Veuillez patienter pendant que nous vous connectons"
+  },
+  "magicLogin": {
+    "checkEmail": "Consultez vos e-mails",
+    "sentTo": "Nous avons envoyé un lien magique à {{email}}",
+    "clickLink": "Cliquez sur le lien dans votre e-mail pour vous connecter. Le lien expire dans 15 minutes.",
+    "tryDifferent": "Essayer une autre adresse e-mail",
+    "backToLogin": "Retour à la connexion",
+    "title": "Lien magique",
+    "subtitle": "Connectez-vous avec votre e-mail : aucun mot de passe requis",
+    "email": "E-mail",
+    "sending": "Envoi...",
+    "submit": "Envoyer le lien magique"
+  },
+  "signup": {
+    "passwordGroup": "Mot de passe"
+  },
+  "social": {
+    "processing": "Finalisation de la connexion sociale...",
+    "done": "Connexion vérifiée. Vous pouvez fermer cet onglet s'il ne se redirige pas automatiquement.",
+    "error": "Redirection vers la connexion..."
+  },
+  "login": {
+    "emailHint": "Vous pouvez vous connecter avec votre adresse e-mail principale ou secondaire",
+    "toast": {
+      "emailRequired": "Veuillez saisir votre adresse e-mail.",
+      "emailInvalid": "Veuillez saisir une adresse e-mail valide.",
+      "passwordRequired": "Veuillez saisir votre mot de passe.",
+      "unexpected": "Une erreur inattendue s'est produite. Veuillez réessayer."
+    },
+    "hardened": {
+      "forgotPrefix": "Mot de passe oublié ?",
+      "useMagicLink": "Utiliser plutôt un lien magique",
+      "linkValidity": "Nous vous enverrons par e-mail un lien de connexion à usage unique, valable 15 minutes.",
+      "notArrivingPrefix": "L'e-mail n'arrive pas ? Vérifiez vos courriers indésirables ou",
+      "signInWithPasswordInstead": "connectez-vous plutôt avec un mot de passe"
+    }
+  },
+  "invitation": {
+    "toast": {
+      "invalidToken": "Jeton d'invitation invalide ou manquant"
+    },
+    "leftTitleOne": "Téléversez. Demandez.",
+    "leftTitleTwo": "Analysez. Réussissez.",
+    "leftSubtitle": "Définissez un mot de passe robuste pour activer votre compte.",
+    "title": "Accepter l'invitation",
+    "subtitle": "Créez votre mot de passe pour continuer",
+    "newPasswordGroup": "Nouveau mot de passe",
+    "newPasswordPlaceholder": "Saisissez le nouveau mot de passe",
+    "confirmPasswordPlaceholder": "Confirmez le nouveau mot de passe",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "saving": "Enregistrement...",
+    "submit": "Définir le mot de passe",
+    "hasAccount": "Vous avez déjà un compte ?",
+    "logIn": "Se connecter"
+  }
+}

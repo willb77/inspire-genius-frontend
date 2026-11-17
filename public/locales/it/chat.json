@@ -330,8 +330,8 @@
       "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
       "dynamoRateLimit": "DynamoDB (Rate Limiting)",
       "dynamoRlhf": "DynamoDB (RLHF Feedback)",
-      "s3": "S3 (Documents & Training Data)",
-      "milvus": "Milvus / Zilliz (Vector Search)",
+      "s3": "S3 (Documenti e dati di addestramento)",
+      "milvus": "Milvus / Zilliz (Ricerca vettoriale)",
       "eventbridge": "EventBridge (Event Bus)",
       "cognito": "Cognito (User Pool)"
     }

@@ -1,0 +1,884 @@
+{
+  "rankRate": {
+    "rank": "Classifica",
+    "rankFor": "Classifica per {{name}}",
+    "rate": "Valutazione (1-{{max}})",
+    "rateFor": "Valutazione per {{name}}",
+    "score": "Punteggio",
+    "dimension": "Dimensione",
+    "move": "Sposta",
+    "moveDown": "Sposta {{name}} in basso",
+    "moveUp": "Sposta {{name}} in alto"
+  },
+  "record": {
+    "activatedLine": "Attivato {{when}}{{by}} · responsabili delle decisioni: {{makers}} · integrità: {{integrity}}",
+    "answers": "Risposte:",
+    "answersUpdated": "Risposte aggiornate:",
+    "by": "da {{name}}",
+    "call": "Decisione: {{call}}",
+    "candidate": "Candidato",
+    "case": "Caso",
+    "changedFrom": "modificato da {{route}}",
+    "col": {
+      "onFail": "In caso di mancato rispetto",
+      "recorded": "Registrato",
+      "required": "Richiesto",
+      "rule": "Regola",
+      "standard": "Standard scritto"
+    },
+    "confirmedRecommendation": "ha confermato la raccomandazione",
+    "decidedBy": "Da {{name}}",
+    "decidedByIntake": "deciso dalla persona che ha effettuato l'intake",
+    "decidedOn": "il {{when}}",
+    "engineVersion": "motore {{version}}",
+    "events": "Ogni evento, in ordine",
+    "finalRoute": "Percorso finale {{route}}",
+    "fit": {
+      "heading": "Profilo dei punti di forza (a solo scopo informativo, non usato per il percorso)",
+      "line": "Fit {{score}} / 100",
+      "roleVersion": "versione del ruolo {{version}}",
+      "tierWithheld": "livello non indicato (profilo parziale)"
+    },
+    "intakeAlsoDecided": "Ha deciso anche la persona che ha effettuato l'intake.",
+    "kind": {
+      "amendment": "Modifica",
+      "decision": "Decisione",
+      "exported": "Registro letto o esportato",
+      "goForward": "Decisione di proseguire",
+      "intake": "Intake",
+      "qualificationCheck": "Verifica dei requisiti minimi",
+      "recommendation": "Raccomandazione (consultiva)",
+      "withdrawn": "Ritirato"
+    },
+    "limits": "Limiti",
+    "meetsMinimum": "Soddisfa lo standard minimo.",
+    "no": "no",
+    "noAnswer": "nessuna risposta",
+    "noDecision": "Nessuna decisione ancora registrata.",
+    "noRecommendation": "Nessuna raccomandazione per ora",
+    "notMeetsMinimum": "Non soddisfa ancora lo standard minimo.",
+    "notReconstructed": "Non è ricostruibile. {{note}}",
+    "notValidated": "Il benchmark di questo ruolo non è convalidato.",
+    "opened": "Aperto",
+    "reason": "Motivo: {{reason}}",
+    "recommendedRoute": "Raccomandato {{route}}.",
+    "reconstructed": "Ricostruito: rieseguendo il motore salvato sugli input salvati si ottiene questo risultato.",
+    "role": "Ruolo",
+    "roleVersion": "{{title}} (versione {{version}})",
+    "ruleSetTitle": "Set di regole: {{name}}, versione {{version}} ({{status}})",
+    "ruleSetVersion": "set di regole v{{version}}",
+    "status": "Stato",
+    "yes": "sì"
+  },
+  "results": {
+    "behaviorPreferences": "Preferenze comportamentali",
+    "confidence": "Affidabilità:",
+    "coreTraits": "Tratti principali",
+    "title": "Risultati della valutazione",
+    "workAptitudes": "Attitudini lavorative"
+  },
+  "addCandidate": {
+    "trigger": "Aggiungi candidato",
+    "val": {
+      "code": "I codici possono contenere al massimo 32 caratteri",
+      "email": "Inserisci un indirizzo email valido",
+      "job": "Scegli un ruolo pubblicato",
+      "name": "Il nome è obbligatorio"
+    },
+    "added": "{{name}} aggiunto alla pipeline",
+    "addedAs": "{{name}} aggiunto alla pipeline come {{code}}",
+    "adding": "Aggiunta in corso…",
+    "cancel": "Annulla",
+    "code": "Codice candidato (facoltativo)",
+    "codePlaceholder": "Assegnato automaticamente se vuoto",
+    "description": "Inserisce la persona nella pipeline del ruolo con un codice anonimo. Il suo profilo PRISM viene valutato rispetto al benchmark rivisto del ruolo non appena è disponibile.",
+    "email": "Email",
+    "fullName": "Nome completo",
+    "noCandidate": "Il server ha accettato la richiesta ma non ha restituito alcun candidato. Aggiorna la pipeline per verificare.",
+    "noRoles": "Nessun ruolo pubblicato al momento. Pubblica prima un benchmark Job DNA.",
+    "role": "Ruolo (Job DNA pubblicato)",
+    "selectRole": "Seleziona un ruolo pubblicato…",
+    "submit": "Aggiungi alla pipeline",
+    "title": "Aggiungi un candidato"
+  },
+  "analytics": {
+    "description": "Funnel di selezione, distribuzione dell'idoneità prevista e tempo di copertura per i tuoi Job DNA.",
+    "emptyAccuracy": "Ancora nessun dato sull'accuratezza.",
+    "emptyActivity": "Ancora nessuna attività.",
+    "emptyFunnel": "Ancora nessun dato sul funnel.",
+    "emptyHires": "Ancora nessuna assunzione registrata.",
+    "emptyStats": "Ancora nessuna statistica disponibile.",
+    "emptyTimeToFill": "Ancora nessun dato sul tempo di copertura.",
+    "loading": "Caricamento analisi…",
+    "title": "Analisi"
+  },
+  "aptitudes": {
+    "description": "Classifica le 8 preferenze di attitudine lavorativa in ordine di importanza per questo ruolo, poi valuta ciascuna in base alla sua rilevanza.",
+    "title": "Preferenze di attitudine lavorativa"
+  },
+  "authoring": {
+    "changeMethod": "Cambia metodo",
+    "created": "Job DNA creato e confrontato con il benchmark.",
+    "description": "Crea una bozza di benchmark a partire da un ruolo, oppure costruiscine uno a mano tra comportamenti, attitudini e tratti fondamentali. In entrambi i casi una persona lo rivede prima dell'uso: non è un benchmark di ruolo validato da PRISM.",
+    "draft": {
+      "body": "Indica un titolo o carica una descrizione del ruolo e il motore Job DNA redige tutte le 22 dimensioni a partire dalle definizioni PRISM di ciascuna. È un punto di partenza da rivedere e modificare, non un benchmark validato. Il modo più rapido per ottenere una prima bozza.",
+      "title": "Bozza da un ruolo"
+    },
+    "manual": {
+      "body": "Classifica e valuta tu stesso ogni comportamento, attitudine e tratto fondamentale con la procedura guidata passo dopo passo. Controllo completo.",
+      "title": "Crea manualmente"
+    },
+    "noId": "Il Job DNA è stato creato ma non è stato restituito alcun id.",
+    "saveFailed": "Impossibile salvare il Job DNA. Riprova.",
+    "title": "Crea un Job DNA"
+  },
+  "barChart": {
+    "natural": "Natural",
+    "veryHigh": "Molto alto"
+  },
+  "behaviors": {
+    "description": "Classifica le 8 preferenze comportamentali in ordine di importanza per questo ruolo, poi valuta ciascuna in base alla sua rilevanza. Il sistema calcolerà il punteggio finale del benchmark con la metodologia Rank-then-Rate.",
+    "title": "Preferenze comportamentali"
+  },
+  "candidateComparison": {
+    "benchmark": "Benchmark",
+    "dimension": "Dimensione",
+    "title": "Confronto candidati",
+    "totalVariation": "Variazione totale"
+  },
+  "candidateDetail": {
+    "advance": "Passa alla fase successiva",
+    "advanceFailed": "Impossibile far avanzare questo candidato.",
+    "advancedTo": "Il candidato {{code}} è passato a {{status}}.",
+    "advancing": "Avanzamento…",
+    "back": "Torna ai candidati",
+    "blind": "Selezione in cieco: l'identità è conservata nella mappa anonima e non viene mai mostrata qui.",
+    "description": "Idoneità, approfondimenti e scheda di valutazione del colloquio per un candidato.",
+    "loadFailed": "Impossibile caricare questo candidato.",
+    "loading": "Caricamento candidato…",
+    "loadingInsights": "Caricamento approfondimenti…",
+    "loadingScorecard": "Caricamento scheda di valutazione…",
+    "markHiredFailed": "Impossibile segnare questo candidato come assunto.",
+    "markedHired": "Il candidato {{code}} è stato segnato come assunto.",
+    "nextStage": "la fase successiva",
+    "noInsights": "Non è ancora stato generato alcun pacchetto di approfondimenti per questo candidato.",
+    "noScorecard": "Non è ancora stata inviata alcuna scheda di valutazione del colloquio per questo candidato.",
+    "notScored": "Questo candidato non ha ancora un punteggio di idoneità: non è presente alcuna valutazione da confrontare con il benchmark del ruolo.",
+    "openScorecards": "Apri schede di valutazione",
+    "pipelineComplete": "Pipeline completata",
+    "scorecardFailed": "Impossibile caricare la scheda di valutazione.",
+    "scorecardHeading": "Scheda di valutazione del colloquio",
+    "title": "Candidato {{code}}",
+    "totalVariation": "Variazione totale {{value}}"
+  },
+  "candidates": {
+    "candidateLabel": "Candidato",
+    "description": "Seleziona e rivedi i candidati: il profilo PRISM di ciascuno è confrontato con il benchmark Job DNA rivisto del ruolo.",
+    "emptyPipeline": "Ancora nessun candidato in questa pipeline. Usa «Aggiungi candidato» qui sopra per inserirne uno; il calcolo dell'idoneità parte quando la sua valutazione PRISM è disponibile.",
+    "interview": "Intervista questo candidato",
+    "loadFailed": "Impossibile caricare i candidati.",
+    "loading": "Caricamento dei candidati…",
+    "loadingRoles": "Caricamento dei ruoli…",
+    "notScored": "Questo candidato non ha ancora un punteggio di compatibilità.",
+    "open": "Apri candidato",
+    "selectCandidate": "Seleziona un candidato per vedere la sua analisi di compatibilità.",
+    "selectRole": "Seleziona un ruolo per vedere l'elenco dei suoi candidati.",
+    "title": "Candidati"
+  },
+  "card": {
+    "code": "Codice: {{code}}",
+    "variation": "Variazione: {{value}}"
+  },
+  "coreTraits": {
+    "description": "Ordina i 6 tratti principali per importanza per questo ruolo, poi valuta ciascuno in base alla sua rilevanza.",
+    "title": "Tratti principali"
+  },
+  "dashboard": {
+    "createFirst": "Crea il tuo primo Job DNA",
+    "description": "Job Blueprint: redigi il benchmark comportamentale di un ruolo, fallo revisionare da chi conosce il ruolo, poi seleziona e classifica i profili PRISM dei candidati rispetto a esso.",
+    "empty": "Nessun Job DNA per ora.",
+    "loadError": "Impossibile caricare i Job DNA.",
+    "loading": "Caricamento dei Job DNA…",
+    "newJobDna": "Nuovo Job DNA",
+    "title": "Career Blueprint",
+    "yourJobDnas": "I tuoi Job DNA"
+  },
+  "decisionPath": {
+    "activateFirst": "Attiva un set di regole prima di aprire un caso.",
+    "case": {
+      "loadFailed": "Impossibile caricare questo caso.",
+      "loading": "Caricamento del record…",
+      "title": "Registro della decisione"
+    },
+    "cases": "Casi",
+    "casesFailed": "Impossibile caricare i casi.",
+    "col": {
+      "candidate": "Candidato",
+      "decided": "Deciso",
+      "recommended": "Consigliato (indicativo)",
+      "status": "Stato"
+    },
+    "description": "Verifica un candidato rispetto allo standard minimo scritto della tua organizzazione, consulta il percorso indicativo e registra la decisione e la sua motivazione.",
+    "entry": {
+      "body": "— verifica i candidati rispetto al tuo standard minimo scritto e registra ogni decisione con la sua motivazione.",
+      "title": "Percorso decisionale"
+    },
+    "loadingCases": "Caricamento dei casi…",
+    "loadingRuleSets": "Caricamento dei set di regole…",
+    "nameRemoved": "(nome rimosso)",
+    "newCandidate": "Nuovo candidato",
+    "noCases": "Nessun caso per ora.",
+    "notEnabled": "Il percorso decisionale non è abilitato per la tua organizzazione.",
+    "route": {
+      "apprentice": "Apprendista",
+      "hold": "In attesa",
+      "refer": "Segnala",
+      "residency": "Residenza"
+    },
+    "ruleSets": "Set di regole",
+    "title": "Percorso decisionale"
+  },
+  "dnaDetail": {
+    "aptitudes": "Attitudini",
+    "backToDashboard": "Torna alla dashboard",
+    "behaviours": "Comportamenti",
+    "benchmarkNote": "Redatto qui, elaborato dal motore Job DNA o costruito a mano, e revisionato da una persona. I profili PRISM dei candidati vengono valutati rispetto a esso. Non è un benchmark di ruolo convalidato da PRISM.",
+    "benchmarkProfile": "Profilo di riferimento",
+    "cancel": "Annulla",
+    "coreTraits": "Tratti principali",
+    "department": "Reparto",
+    "editDetails": "Modifica dettagli",
+    "editTitle": "Modifica i dettagli del ruolo",
+    "loadFailed": "Impossibile caricare questo Job DNA.",
+    "loading": "Caricamento del Job DNA…",
+    "provenance": {
+      "reviewed": "revisionato il {{date}}",
+      "reviewerNotRecorded": "revisore non registrato"
+    },
+    "roleTitle": "Titolo del ruolo",
+    "save": "Salva",
+    "saving": "Salvataggio…",
+    "shapeConforms": "La struttura dei livelli è conforme alla metodologia: 3 critici per blocco, 2 comportamenti controproducenti.",
+    "shapeDiffers": "La struttura dei livelli differisce dalla metodologia: {{violations}}.",
+    "source": {
+      "incumbentContrast": "proposto a partire dalle interviste ai titolari del ruolo",
+      "jdExtract": "estratto da una descrizione del lavoro",
+      "llmDraft": "redatto dal motore Job DNA",
+      "manual": "creato a mano",
+      "unknown": "fonte non registrata"
+    },
+    "status": "Stato:",
+    "tier": "Livello",
+    "updateFailed": "Impossibile aggiornare il Job DNA.",
+    "updated": "Job DNA aggiornato."
+  },
+  "panel": {
+    "event": {
+      "requested": "{{when}} — {{actor}} ha chiesto a {{reviewer}} di convalidare",
+      "validatedInIg": "{{when}} — convalidato da {{validator}} in IG",
+      "withdrawn": "{{when}} — {{actor}} ha ritirato la richiesta",
+      "aReviewer": "un revisore",
+      "anSme": "un esperto della materia (nome non più conservato)",
+      "changes": "{{when}} — {{actor}} ha richiesto modifiche",
+      "recorded": "{{when}} — {{actor}} ha registrato un'attestazione di {{validator}}"
+    },
+    "exportButton": "Rapporto di motivazione (.docx)",
+    "exportFailed": "Impossibile creare il Rapporto di motivazione.",
+    "history": "Cronologia",
+    "loadFailed": "Impossibile caricare la convalida di questo ruolo.",
+    "loading": "Caricamento della convalida…",
+    "nameNotHeld": "Nome non più conservato (conservazione di 90 giorni)",
+    "record": "Registra un'attestazione",
+    "recordedAttestation": "attestazione registrata",
+    "recordedBy": "registrata da {{name}}",
+    "request": "Richiedi la convalida",
+    "state": {
+      "changesRequested": "Modifiche richieste",
+      "inReview": "In revisione",
+      "none": "Non convalidato",
+      "validated": "Convalidato",
+      "withdrawn": "Richiesta ritirata"
+    },
+    "title": "Convalida del datore di lavoro / esperto di settore",
+    "withdraw": "Ritira la richiesta",
+    "withdrawFailed": "Impossibile ritirare la richiesta.",
+    "withdrawn": "Richiesta ritirata.",
+    "awaiting": "in attesa di {{name}}",
+    "awaitingYou": "Questo ruolo è in attesa della tua convalida.",
+    "building": "Creazione…",
+    "description": "Indica se un datore di lavoro o un esperto della materia ha confermato il benchmark di questa versione. La convalida è per versione e non cambia il modo in cui il ruolo viene abbinato."
+  },
+  "pipeline": {
+    "advanceFailed": "Impossibile far avanzare il candidato.",
+    "advanced": "Candidato avanzato.",
+    "description": "Monitora i candidati in ogni fase del processo di selezione per un ruolo.",
+    "emptyGated": "Ancora nessun candidato in questa pipeline. L'acquisizione e l'abbinamento dei candidati sono limitati per questo account.",
+    "loadFailed": "Impossibile caricare la pipeline.",
+    "loading": "Caricamento della pipeline…",
+    "loadingRoles": "Caricamento dei ruoli…",
+    "markHiredFailed": "Impossibile segnare questo candidato come assunto.",
+    "markedHired": "Candidato {{code}} segnato come assunto.",
+    "selectRole": "Seleziona un ruolo per vedere la sua pipeline.",
+    "title": "Pipeline"
+  },
+  "pipelineBoard": {
+    "advance": "Avanza",
+    "board": "Bacheca",
+    "col": {
+      "actions": "Azioni",
+      "email": "Email",
+      "name": "Nome",
+      "status": "Stato",
+      "tier": "Livello",
+      "variation": "Variazione"
+    },
+    "count": "{{total}} candidati",
+    "noCandidates": "Nessun candidato",
+    "table": "Tabella",
+    "title": "Pipeline"
+  },
+  "progress": {
+    "complete": "{{pct}}% completato",
+    "question": "Domanda {{current}} di {{total}}"
+  },
+  "queue": {
+    "askedLine": "· v{{version}} · richiesto da {{by}} il {{date}}",
+    "col": {
+      "dimension": "Dimensione",
+      "target": "Obiettivo",
+      "tier": "Livello"
+    },
+    "loadFailed": "Impossibile caricare il benchmark di questo ruolo.",
+    "loading": "Caricamento del benchmark…",
+    "title": "In attesa della tua convalida"
+  },
+  "radar": {
+    "benchmark": "Benchmark",
+    "candidate": "Candidato"
+  },
+  "ruleEditor": {
+    "makersCurrent": "Attualmente: {{names}} — inseriscili di nuovo per mantenerli.",
+    "makersLabel": "Email dei decisori (separate da virgole)",
+    "makersNote": "Ognuno deve avere il ruolo di manager o superiore nella tua organizzazione. Solo loro possono registrare una decisione per questa versione.",
+    "name": "Nome",
+    "onFail": {
+      "hold": "Sospendi",
+      "none": "Nessuna (usata solo per scegliere il percorso)",
+      "refer": "Segnala"
+    },
+    "removeRule": "Rimuovi regola {{n}}",
+    "residencyNote": "In caso contrario, a un candidato che soddisfa il minimo viene consigliato Apprentice.",
+    "residencyWhen": "Consiglia Residency quando tutti questi id di regola sono superati (separati da virgole)",
+    "ruleId": "Id regola",
+    "ruleN": "Regola {{n}}",
+    "saveDraft": "Salva bozza",
+    "saveFailed": "Impossibile salvare il set di regole.",
+    "saved": "Bozza salvata.",
+    "saving": "Salvataggio…",
+    "val": {
+      "id": "Lettere, cifre o '-'",
+      "label": "Assegna un'etichetta alla regola",
+      "makers": "Indica almeno un decisore tramite email",
+      "name": "Assegna un nome al set di regole",
+      "rules": "Aggiungi almeno una regola",
+      "sourceRef": "Indica la clausola dello standard scritto"
+    },
+    "acceptedValues": "Valori accettati, separati da virgola",
+    "addRule": "Aggiungi una regola",
+    "clause": "Clausola dello standard scritto",
+    "formLabel": "Insieme di regole",
+    "ifNotMet": "Se non soddisfatta",
+    "kind": {
+      "attested": "Requisito attestato (sì)",
+      "backgroundCheck": "Stato della verifica dei precedenti, come attestato (uno tra)",
+      "degree": "Titolo di studio (almeno)",
+      "label": "Tipo",
+      "licensurePath": "Percorso di abilitazione (uno tra)"
+    },
+    "label": "Etichetta",
+    "lowestDegree": "Titolo di studio minimo ({{levels}})"
+  },
+  "ruleSets": {
+    "actionFailed": "Operazione non riuscita.",
+    "activate": "Attiva",
+    "activated": "Attivato.",
+    "description": "Lo standard minimo scritto della tua organizzazione, sotto forma di regole. Ogni versione viene bloccata all'attivazione.",
+    "editDraft": "Modifica bozza",
+    "ifNotMet": "{{onFail}} se non soddisfatta",
+    "loading": "Caricamento dei set di regole…",
+    "new": "Nuovo set di regole",
+    "newVersion": "Avvia una nuova versione",
+    "newVersionStarted": "Nuova versione bozza avviata.",
+    "none": "Nessun set di regole per ora.",
+    "routeOnly": "solo percorso",
+    "staffOnly": "I set di regole sono gestiti dal personale di selezione della tua organizzazione.",
+    "summaryLine": "{{rules}} regole · decisori: {{makers}}",
+    "title": "Set di regole",
+    "versionLine": "{{name}} — versione {{version}} ({{status}})"
+  },
+  "scorecardComparison": {
+    "candidate": "Candidato {{id}}",
+    "title": "Confronto delle schede di valutazione"
+  },
+  "scorecards": {
+    "candidateLabel": "Candidato:",
+    "compare": {
+      "checkboxLabel": "Confronta {{name}}",
+      "failed": "Impossibile caricare una o più schede di valutazione.",
+      "intro": "Scegli fino a {{limit}} candidati con una scheda di valutazione inviata per vederne i totali affiancati.",
+      "loading": "Caricamento delle schede di valutazione…",
+      "missing": "{{count}} candidati selezionati non hanno una scheda di valutazione sul server e non vengono mostrati.",
+      "missing_one": "{{count}} candidato selezionato non ha una scheda di valutazione sul server e non viene mostrato.",
+      "missing_other": "{{count}} candidati selezionati non hanno una scheda di valutazione sul server e non vengono mostrati.",
+      "none": "Nessuna scheda di valutazione inviata per questo ruolo — inviane una qui sopra e apparirà qui.",
+      "noneOnServer": "Nessuno dei candidati selezionati ha una scheda di valutazione sul server.",
+      "select": "Seleziona i candidati da confrontare.",
+      "title": "Confronta le schede di valutazione"
+    },
+    "description": "Schede di valutazione e guide per colloqui strutturati, derivate dal benchmark Job DNA di un ruolo.",
+    "draftCheckFailed": "Impossibile verificare la presenza di una bozza di colloquio per questo candidato.",
+    "loadingRoles": "Caricamento dei ruoli…",
+    "noDraft": "Nessun colloquio finalizzato ha ancora scritto una bozza per questo candidato.",
+    "noGuide": "Nessuna guida al colloquio generata per questo ruolo.",
+    "pipelineGated": "La pipeline dei candidati non è abilitata per questo account — il modulo è solo in anteprima.",
+    "sections": {
+      "aptitudes": "Le 3 principali attitudini lavorative (max 15)",
+      "behaviours": "I 3 principali comportamenti (max 15)",
+      "coreTraits": "Top 3 Core Traits (max 15)",
+      "counterProductive": "Comportamenti controproducenti (max 10)"
+    },
+    "selectBeforeSubmit": "Seleziona un candidato prima di inviare una scheda di valutazione.",
+    "selectCandidate": "Seleziona un candidato…",
+    "selectRole": "Seleziona un ruolo per creare la sua scheda di valutazione e la guida al colloquio.",
+    "submitFailed": "Invio della scheda di valutazione non riuscito.",
+    "submitted": "Scheda di valutazione inviata.",
+    "title": "Schede di valutazione"
+  },
+  "accuracy": {
+    "empty": "Nessuna classificazione prevista al momento.",
+    "misalignment": "Disallineamento",
+    "moderateFit": "Adeguatezza moderata",
+    "potentialFit": "Adeguatezza potenziale",
+    "strongFit": "Forte adeguatezza",
+    "title": "Distribuzione dell'adeguatezza prevista"
+  },
+  "activity": {
+    "title": "Attività recente"
+  },
+  "forms": {
+    "commentsOptional": "Commenti (facoltativo)",
+    "decision": {
+      "amendTitle": "Modifica la decisione",
+      "amended": "Modifica registrata.",
+      "chooseRoute": "Scegli un percorso. Non c'è un'opzione predefinita.",
+      "departRecommendation": "Spiega perché ti discosti dalla raccomandazione (almeno {{min}} caratteri).",
+      "departRecorded": "Spiega perché ti discosti dalla decisione registrata (almeno {{min}} caratteri).",
+      "giveReason": "Indica un motivo (almeno {{min}} caratteri).",
+      "mustChange": "Una modifica deve cambiare il percorso.",
+      "reason": "Motivo",
+      "recordFailed": "Impossibile registrare la decisione.",
+      "recordTitle": "Registra la decisione",
+      "recorded": "Decisione registrata.",
+      "recording": "Registrazione…"
+    },
+    "intake": {
+      "answersLegend": "Risposte rispetto allo standard scritto",
+      "attest": "Queste risposte corrispondono ai registri del distretto.",
+      "candidateEmail": "Email del candidato (facoltativa)",
+      "candidateName": "Nome del candidato",
+      "chooseRole": "Scegli il ruolo",
+      "chooseRuleSet": "Scegli l'insieme di regole",
+      "confirmAnswers": "Conferma che le risposte corrispondono ai tuoi registri",
+      "formLabel": "Accettazione del candidato",
+      "giveName": "Indica il nome del candidato",
+      "missingAnswer": "Una risposta mancante blocca la pratica; non è mai un motivo per segnalare.",
+      "openFailed": "Impossibile aprire la pratica.",
+      "opened": "Pratica aperta.",
+      "opening": "Apertura…",
+      "role": "Ruolo",
+      "ruleSet": "Standard minimo (insieme di regole)",
+      "ruleSetOption": "{{name}} (versione {{version}})",
+      "selectRole": "Seleziona un ruolo…",
+      "selectRuleSet": "Seleziona un insieme di regole…",
+      "submit": "Apri la pratica e verifica",
+      "validEmail": "Inserisci un indirizzo email valido"
+    },
+    "no": "no",
+    "notAnswered": "Nessuna risposta ancora",
+    "notesSummary": "Facoltativo: perché una dimensione è importante in questo ruolo",
+    "organisation": "Organizzazione",
+    "record": {
+      "attest": "L'esperto di settore (SME) ha esaminato il benchmark di questa versione e ha attestato che riflette il ruolo.",
+      "dateSigned": "Data di firma",
+      "failed": "Impossibile registrare l'attestazione.",
+      "formLabel": "Registra un'attestazione",
+      "intro": "Per un datore di lavoro o un esperto di settore senza account IG che ha approvato al di fuori di IG. Il report indica che l'attestazione è stata registrata da te e che l'esperto non ha effettuato l'accesso a IG. Nome, organizzazione e qualifica vengono conservati per 90 giorni.",
+      "recorded": "Attestazione registrata.",
+      "recording": "Registrazione…",
+      "smeName": "Nome dell'esperto",
+      "submit": "Registra l'attestazione",
+      "val": {
+        "attest": "Conferma che l'esperto ha attestato questo benchmark",
+        "dateFormat": "Inserisci la data in cui l'esperto ha firmato",
+        "dateFuture": "La data non può essere futura",
+        "name": "Il nome dell'esperto è obbligatorio",
+        "org": "L'organizzazione dell'esperto è obbligatoria"
+      }
+    },
+    "request": {
+      "failed": "Impossibile richiedere la convalida.",
+      "formLabel": "Richiedi la convalida",
+      "intro": "Il revisore deve avere il ruolo di manager o superiore nell'organizzazione di questo ruolo e possedere un account IG. Non viene inviata alcuna email: vedrà la richiesta quando accede.",
+      "note": "Nota per il revisore (facoltativa)",
+      "requested": "Convalida richiesta.",
+      "requesting": "Richiesta in corso…",
+      "reviewerEmail": "Email del revisore",
+      "submit": "Richiedi la convalida",
+      "val": {
+        "email": "Inserisci l'indirizzo email del revisore"
+      }
+    },
+    "titleOptional": "Titolo (facoltativo)",
+    "verdict": {
+      "changesNeeded": "Servono modifiche",
+      "changesRequested": "Modifiche richieste.",
+      "failed": "Impossibile salvare il tuo giudizio.",
+      "formLabel": "Il tuo giudizio",
+      "saving": "Salvataggio…",
+      "submit": "Invia giudizio",
+      "val": {
+        "comments": "Indica cosa deve cambiare",
+        "name": "Il tuo nome come deve apparire nel report",
+        "org": "La tua organizzazione"
+      },
+      "validate": "Riflette il ruolo — convalida",
+      "validated": "Convalidato.",
+      "whatChange": "Cosa deve cambiare",
+      "yourName": "Il tuo nome"
+    },
+    "yes": "sì"
+  },
+  "funnel": {
+    "count": "Conteggio",
+    "title": "Funnel di selezione"
+  },
+  "guide": {
+    "counterProductive": "Domande sui comportamenti controproducenti",
+    "general": "Domande generali per il colloquio",
+    "roleLine": "Ruolo: {{role}} | Generato il {{date}}",
+    "scoreLine": "Benchmark: {{benchmark}}% | Candidato: {{candidate}}% | Divario: {{gap}}",
+    "title": "Guida al colloquio"
+  },
+  "hire": {
+    "cancel": "Annulla",
+    "description": "Registra il motivo. Il motivo viene conservato con questo passaggio e con chi l'ha eseguito.",
+    "reason": "Motivo",
+    "saving": "Salvataggio…",
+    "submit": "Segna come assunto",
+    "title": "Segna il candidato {{code}} come assunto",
+    "val": {
+      "max": "Al massimo {{max}} caratteri",
+      "required": "Indica perché questo candidato viene segnato come assunto"
+    }
+  },
+  "hires": {
+    "avgFit": "Fit previsto medio",
+    "hires": "Assunzioni",
+    "period": "Periodo",
+    "title": "Assunzioni per periodo"
+  },
+  "insight": {
+    "fitScore": "Punteggio di Fit",
+    "focusAreas": "Aree di focus del colloquio",
+    "gapAnalysis": "Analisi dei divari",
+    "generated": "Generato {{when}}",
+    "opportunityFactors": "Fattori di opportunità",
+    "probeQuestions": "Domande di approfondimento",
+    "riskFactors": "Fattori di rischio",
+    "title": "Pacchetto Insight"
+  },
+  "intake": {
+    "failed": "Impossibile aggiungere il candidato. Riprova.",
+    "notEnabled": "Il tuo account non è abilitato alla creazione di Job DNA, quindi non può aggiungere candidati."
+  },
+  "likert": {
+    "agree": "D'accordo",
+    "disagree": "In disaccordo",
+    "groupLabel": "Scala Likert",
+    "neutral": "Neutrale",
+    "somewhatAgree": "Abbastanza d'accordo",
+    "somewhatDisagree": "Abbastanza in disaccordo",
+    "stronglyAgree": "Completamente d'accordo",
+    "stronglyDisagree": "Completamente in disaccordo"
+  },
+  "shared": {
+    "error": {
+      "default": "Qualcosa è andato storto durante il caricamento di questi dati.",
+      "retry": "Riprova"
+    },
+    "loading": "Caricamento…",
+    "select": {
+      "label": "Job DNA",
+      "placeholder": "Seleziona un ruolo…"
+    }
+  },
+  "stats": {
+    "activeJobs": "Posizioni attive",
+    "avgTimeToFill": "Tempo medio di copertura",
+    "daysShort": "{{n}}g",
+    "hiresThisMonth": "Assunzioni di questo mese",
+    "strongFitRate": "Tasso di Strong Fit",
+    "totalCandidates": "Candidati totali",
+    "totalJobDnas": "Job DNA totali"
+  },
+  "summary": {
+    "evidence": "Cosa mostrano le evidenze",
+    "grandTotal": "Totale complessivo"
+  },
+  "survey": {
+    "goTo": "Vai alla domanda {{n}}",
+    "next": "Avanti",
+    "previous": "Indietro",
+    "submit": "Invia",
+    "submitting": "Invio in corso...",
+    "title": "Valutazione Brain Mapping Light"
+  },
+  "timeToFill": {
+    "series": "Giorni per la copertura",
+    "title": "Tempo di copertura (giorni)",
+    "tooltip": "{{value}} giorni"
+  },
+  "wizard": {
+    "back": "Indietro",
+    "create": "Crea Job DNA",
+    "next": "Avanti",
+    "steps": {
+      "aptitudes": {
+        "description": "Ordina e valuta 8 attitudini",
+        "label": "Attitudini"
+      },
+      "behaviors": {
+        "description": "Ordina e valuta 8 comportamenti",
+        "label": "Comportamenti"
+      },
+      "context": {
+        "description": "Ambiente di lavoro",
+        "label": "Contesto"
+      },
+      "coreTraits": {
+        "description": "Ordina e valuta 6 tratti",
+        "label": "Core Traits"
+      },
+      "review": {
+        "description": "Rivedi e invia",
+        "label": "Riepilogo"
+      },
+      "roleInfo": {
+        "description": "Dettagli di base del ruolo",
+        "label": "Info sul ruolo"
+      }
+    },
+    "stepsLabel": "Passaggi della procedura guidata",
+    "submitting": "Invio in corso..."
+  },
+  "draftFlow": {
+    "review": {
+      "drafted": "Blueprint redatto",
+      "percentNote": "Questa è una bozza da rivedere, non un benchmark validato. Modifica le percentuali qui sotto, poi salva.",
+      "rankRateNote": "Ogni obiettivo deriva dalla posizione in classifica della dimensione e da un valore proposto dall'AI. Controlla ogni valore, modifica quelli con cui non sei d'accordo, poi conferma e salva. Non viene salvato nulla finché non lo fai.",
+      "save": "Salva ruolo e blueprint",
+      "saving": "Salvataggio…",
+      "shape": "profilo.",
+      "startOver": "Ricomincia",
+      "changedFromAi": "{{changed}} modificati rispetto alla proposta dell'IA",
+      "confirm": "Ho rivisto tutti i {{total}} valori{{changed}} e li confermo. Salvando, questo benchmark viene pubblicato con il mio nome registrato come revisore.",
+      "dimsDrafted": "22 dimensioni in bozza ·"
+    },
+    "role": "Ruolo",
+    "roleShape": "Profilo del ruolo",
+    "roleTitle": "Titolo del ruolo",
+    "roleTitlePlaceholder": "es. Operatore senior di depurazione delle acque reflue, o CIO",
+    "row": {
+      "aiProposed": "L'AI ha proposto {{rate}} su {{max}}",
+      "benchmarkPercent": "Percentuale benchmark di {{name}}",
+      "heldBack": "ha suggerito {{ai}}; mantenuto a {{held}} affinché resti {{tier}}",
+      "rank": "Posizione {{rank}} di {{size}}",
+      "rate": "Valore",
+      "rateAria": "Valore di {{name}}",
+      "rateOption": "{{rate}} su {{max}}",
+      "rateOptionAi": "{{rate}} su {{max}} (AI)",
+      "ratesKeep": "i valori {{lo}}–{{hi}} lo mantengono {{tier}}",
+      "target": "obiettivo",
+      "targetAria": "Obiettivo di {{name}}",
+      "youSet": "hai impostato {{value}}"
+    },
+    "saved": "Job DNA salvato.",
+    "shapeNote": "Il profilo orienta quali dimensioni il sistema segna come critiche: un dirigente si basa su giudizio e relazioni, non su un elenco di attività.",
+    "sourceJobDna": "Job DNA",
+    "sourceKce": "KCE",
+    "tier": {
+      "counterProductive": "Controproducente",
+      "critical": "Critico",
+      "unimportant": "Poco importante"
+    },
+    "title": "Redigi un blueprint",
+    "upload": {
+      "ariaLabel": "Carica un documento del ruolo",
+      "label": "Carica un ruolo",
+      "note": "Trascina una descrizione del lavoro o uno statuto del ruolo: leggiamo il testo nel contesto qui sotto e ipotizziamo il titolo. Nulla viene caricato su un server.",
+      "optional": "(facoltativo — Word, PDF o testo)",
+      "reading": "Lettura…"
+    },
+    "val": {
+      "roleTitle": "Indica il ruolo da valutare"
+    },
+    "archetype": {
+      "auto": {
+        "hint": "Classifica in base al titolo",
+        "label": "Rilevamento automatico"
+      },
+      "executive": {
+        "hint": "Strategia + relazioni",
+        "label": "Dirigenziale"
+      },
+      "managerial": {
+        "hint": "Giudizio + persone",
+        "label": "Manageriale"
+      },
+      "operational": {
+        "hint": "Operativo / orientato ai compiti",
+        "label": "Operativo"
+      }
+    },
+    "blocks": {
+      "aptitudes": "Attitudini lavorative",
+      "behaviors": "Comportamenti",
+      "coreTraits": "Tratti fondamentali"
+    },
+    "context": "Contesto",
+    "contextOptional": "(facoltativo)",
+    "contextPlaceholder": "Incolla una descrizione del lavoro o poche righe su ciò che questo ruolo richiede davvero. (Un file caricato compila questo campo.)",
+    "description": "Crea la bozza di tutte le 22 dimensioni per un ruolo a partire da un titolo, da una descrizione del lavoro caricata o da un ruolo di un altro settore. La bozza è la lettura che il motore fa del ruolo rispetto alla definizione PRISM di ciascuna dimensione: un punto di partenza, non un benchmark PRISM validato. Revisioni e modifichi il profilo prima che venga salvato qualsiasi cosa.",
+    "done": {
+      "another": "Crea un'altra bozza",
+      "anotherNote": "Fai il benchmark del ruolo successivo.",
+      "body": "Il benchmark è stato salvato e il ruolo è ora disponibile in tutte le sezioni Job DNA.",
+      "saved": "“{{role}}” salvato",
+      "view": "Visualizza il blueprint",
+      "viewNote": "Apri il profilo di benchmark e i relativi grafici."
+    },
+    "draftButton": "Crea la bozza del blueprint",
+    "draftNew": "Crea la bozza di un nuovo ruolo…",
+    "drafted": "Bozza del blueprint creata — 22 dimensioni da rivedere.",
+    "drafting": "Creazione della bozza del blueprint",
+    "kceLoadFailed": "Impossibile caricare i ruoli salvati in Knowledge Continuity.",
+    "loaded": "\"{{title}}\" caricato.",
+    "loadedFile": "\"{{name}}\" caricato — {{chars}} caratteri di contesto.",
+    "loadedFromKce": "\"{{title}}\" caricato da Knowledge Continuity.",
+    "loadingRole": "Caricamento del ruolo…",
+    "pickRole": "Scegli un ruolo esistente: un ruolo Job DNA apre il suo blueprint; un ruolo di Knowledge Continuity alimenta questa bozza.",
+    "progress": {
+      "assessing": "Valutazione delle richieste comportamentali…",
+      "balancing": "Bilanciamento del profilo…",
+      "finalizing": "Finalizzazione del blueprint…",
+      "reading": "Lettura del ruolo…",
+      "setting": "Definizione dei 22 benchmark…"
+    },
+    "readFailed": "Impossibile leggere il file."
+  },
+  "entry": {
+    "counterProductive": "(Controproducente - invertito)",
+    "evidencePlaceholder": "Evidenze e osservazioni...",
+    "score0": "Non in grado di dimostrare in modo soddisfacente",
+    "score3": "Dimostrato in misura moderata",
+    "score5": "Dimostrato in larga misura",
+    "scoreFor": "Punteggio per {{name}}"
+  },
+  "fit": {
+    "aptitude": "Attitudine",
+    "behavior": "Comportamento",
+    "col": {
+      "benchmark": "Benchmark",
+      "candidate": "Candidato",
+      "category": "Categoria",
+      "dimension": "Dimensione",
+      "gap": "Divario"
+    },
+    "gapAnalysis": "Analisi dei divari",
+    "skew": "Asimmetria",
+    "stdDeviation": "Deviazione standard",
+    "title": "Analisi di Fit: {{name}}",
+    "totalVariation": "Variazione totale",
+    "trait": "Tratto"
+  },
+  "form": {
+    "notes": "Note aggiuntive",
+    "notesPlaceholder": "Impressioni generali sul colloquio, azioni di follow-up...",
+    "submit": "Invia scheda di valutazione",
+    "submitting": "Invio in corso..."
+  },
+  "draft": {
+    "open": "Apri l'intervista",
+    "session": "Sessione di intervista {{id}}…",
+    "summary": "Scritta il {{date}} · {{count}} dimensioni valutate · non ancora inviata, quindi non viene conteggiata.",
+    "summary_one": "Scritta il {{date}} · {{count}} dimensione valutata · non ancora inviata, quindi non viene conteggiata.",
+    "summary_other": "Scritta il {{date}} · {{count}} dimensioni valutate · non ancora inviata, quindi non viene conteggiata.",
+    "title": "Bozza da un'intervista finalizzata"
+  },
+  "review": {
+    "aptitudes": "Attitudini",
+    "behaviors": "Comportamenti",
+    "benchmarkRadar": "Radar del benchmark",
+    "benchmarkScores": "Punteggi del benchmark",
+    "coreTraits": "Tratti principali",
+    "culturalFactors": "Fattori culturali",
+    "departmentLabel": "Reparto:",
+    "description": "Controlla il benchmark Job DNA prima di finalizzare. Verrà creato il profilo comportamentale usato per selezionare i candidati.",
+    "environmentalFactors": "Fattori ambientali",
+    "notSet": "Non impostato",
+    "requiredWorkStyles": "Stili di lavoro richiesti",
+    "roleContext": "Contesto del ruolo",
+    "roleDetails": "Dettagli del ruolo",
+    "tier": {
+      "executive": "Dirigenziale",
+      "frontLine": "Prima linea",
+      "professional": "Professionale"
+    },
+    "tierLabel": "Livello:",
+    "title": "Rivedi e invia",
+    "titleLabel": "Titolo:",
+    "top3Aptitudes": "Le 3 attitudini principali",
+    "top3Behaviors": "I 3 comportamenti principali",
+    "top3CoreTraits": "I 3 tratti principali",
+    "topDimensions": "Dimensioni principali",
+    "workPressures": "Pressioni lavorative"
+  },
+  "roleContext": {
+    "culturalFactors": "Fattori culturali",
+    "culturalFactorsPlaceholder": "es. Cultura orientata all'innovazione\nRequisiti di conformità rigorosi\nMentalità orientata al cliente",
+    "description": "Descrivi l'ambiente di lavoro e il contesto di questo ruolo. Inserisci un elemento per riga.",
+    "environmentalFactors": "Fattori ambientali",
+    "environmentalFactorsPlaceholder": "es. Ufficio open space\nViaggi frequenti richiesti\nLavoro remoto/ibrido",
+    "requiredWorkStyles": "Stili di lavoro richiesti",
+    "requiredWorkStylesPlaceholder": "es. Ambiente di squadra collaborativo\nDecisioni autonome\nEsecuzione rapida",
+    "title": "Contesto e ambiente del ruolo",
+    "workPressures": "Pressioni lavorative",
+    "workPressuresPlaceholder": "es. Scadenze strette\nAlte aspettative dei clienti\nNecessità di gestire più attività"
+  },
+  "roleInfo": {
+    "department": "Reparto",
+    "departmentPlaceholder": "es. Vendite",
+    "description": "Definisci i dettagli di base del ruolo di cui stai creando il benchmark.",
+    "roleTier": "Livello del ruolo",
+    "roleTitle": "Titolo del ruolo",
+    "roleTitlePlaceholder": "es. Senior Account Manager",
+    "selectTier": "Seleziona il livello",
+    "tier": {
+      "executive": "Dirigenziale (150.000 $+)",
+      "frontLine": "Prima linea (<75.000 $)",
+      "professional": "Professionale (75.000-150.000 $)"
+    },
+    "tierNote": "Il livello determina i prezzi per selezione, guide al colloquio e onboarding.",
+    "title": "Informazioni sul ruolo"
+  }
+}

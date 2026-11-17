@@ -5,7 +5,7 @@
     "newSession": "Nouvelle Session"
   },
   "sessions": {
-    "title": "Sessions",
+    "title": "Séances",
     "empty": "Aucune session pour le moment"
   },
   "agents": {
@@ -49,7 +49,7 @@
     "clientName": "Nom du Client",
     "organization": "Organisation",
     "prismScore": "Score PRISM",
-    "sessions": "Sessions",
+    "sessions": "Séances",
     "lastSession": "Dernière Session",
     "followUpsDueThisWeek": "Suivis à Faire cette Semaine",
     "creditUsage": "Utilisation des Crédits",

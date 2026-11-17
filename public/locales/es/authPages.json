@@ -1,0 +1,65 @@
+{
+  "verify": {
+    "signedIn": "Has iniciado sesión correctamente",
+    "expiredTitle": "Este enlace de inicio de sesión ha caducado",
+    "expiredSubtitle": "Los enlaces de inicio de sesión solo funcionan una vez y durante 15 minutos",
+    "expiredBody": "Si ya abriste este enlace, ya se ha usado. Los correos anteriores tampoco funcionarán: solicita uno nuevo y usa el correo más reciente.",
+    "sendNew": "Envíame un nuevo enlace de inicio de sesión",
+    "verifying": "Verificando...",
+    "pleaseWait": "Espera mientras iniciamos tu sesión"
+  },
+  "magicLogin": {
+    "checkEmail": "Revisa tu correo electrónico",
+    "sentTo": "Hemos enviado un enlace mágico a {{email}}",
+    "clickLink": "Haz clic en el enlace de tu correo para iniciar sesión. El enlace caduca en 15 minutos.",
+    "tryDifferent": "Prueba con otro correo electrónico",
+    "backToLogin": "Volver al inicio de sesión",
+    "title": "Enlace mágico",
+    "subtitle": "Inicia sesión con tu correo electrónico, sin contraseña",
+    "email": "Correo electrónico",
+    "sending": "Enviando...",
+    "submit": "Enviar enlace mágico"
+  },
+  "signup": {
+    "passwordGroup": "Contraseña"
+  },
+  "social": {
+    "processing": "Completando el inicio de sesión social...",
+    "done": "Inicio de sesión verificado. Puedes cerrar esta pestaña si no se redirige automáticamente.",
+    "error": "Redirigiendo al inicio de sesión..."
+  },
+  "login": {
+    "emailHint": "Puedes iniciar sesión con tu correo electrónico principal o secundario",
+    "toast": {
+      "emailRequired": "Introduce tu correo electrónico.",
+      "emailInvalid": "Introduce un correo electrónico válido.",
+      "passwordRequired": "Introduce tu contraseña.",
+      "unexpected": "Se produjo un error inesperado. Inténtalo de nuevo."
+    },
+    "hardened": {
+      "forgotPrefix": "¿Olvidaste tu contraseña?",
+      "useMagicLink": "Usa un enlace mágico en su lugar",
+      "linkValidity": "Te enviaremos por correo un enlace de inicio de sesión de un solo uso, válido durante 15 minutos.",
+      "notArrivingPrefix": "¿No te llega el correo? Revisa el spam o",
+      "signInWithPasswordInstead": "inicia sesión con contraseña"
+    }
+  },
+  "invitation": {
+    "toast": {
+      "invalidToken": "El token de invitación no es válido o falta"
+    },
+    "leftTitleOne": "Sube. Pregunta.",
+    "leftTitleTwo": "Analiza. Logra.",
+    "leftSubtitle": "Establece una contraseña segura para activar tu cuenta.",
+    "title": "Aceptar invitación",
+    "subtitle": "Crea tu contraseña para continuar",
+    "newPasswordGroup": "Nueva contraseña",
+    "newPasswordPlaceholder": "Introduce la nueva contraseña",
+    "confirmPasswordPlaceholder": "Confirma la nueva contraseña",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "saving": "Guardando...",
+    "submit": "Establecer contraseña",
+    "hasAccount": "¿Ya tienes una cuenta?",
+    "logIn": "Iniciar sesión"
+  }
+}

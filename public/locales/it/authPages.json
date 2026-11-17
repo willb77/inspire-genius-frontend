@@ -1,0 +1,65 @@
+{
+  "login": {
+    "emailHint": "Puoi accedere con il tuo indirizzo email principale o secondario",
+    "toast": {
+      "emailRequired": "Inserisci il tuo indirizzo email.",
+      "emailInvalid": "Inserisci un indirizzo email valido.",
+      "passwordRequired": "Inserisci la tua password.",
+      "unexpected": "Si è verificato un errore imprevisto. Riprova."
+    },
+    "hardened": {
+      "forgotPrefix": "Hai dimenticato la password?",
+      "useMagicLink": "Usa invece un magic link",
+      "linkValidity": "Ti invieremo via email un link di accesso monouso, valido per 15 minuti.",
+      "notArrivingPrefix": "L'email non arriva? Controlla lo spam oppure",
+      "signInWithPasswordInstead": "accedi con la password"
+    }
+  },
+  "invitation": {
+    "toast": {
+      "invalidToken": "Token di invito non valido o mancante"
+    },
+    "leftTitleOne": "Carica. Chiedi.",
+    "leftTitleTwo": "Analizza. Raggiungi.",
+    "leftSubtitle": "Imposta una password sicura per attivare il tuo account.",
+    "title": "Accetta l'invito",
+    "subtitle": "Crea la tua password per continuare",
+    "newPasswordGroup": "Nuova password",
+    "newPasswordPlaceholder": "Inserisci la nuova password",
+    "confirmPasswordPlaceholder": "Conferma la nuova password",
+    "passwordsDoNotMatch": "Le password non corrispondono",
+    "saving": "Salvataggio...",
+    "submit": "Imposta password",
+    "hasAccount": "Hai già un account?",
+    "logIn": "Accedi"
+  },
+  "verify": {
+    "signedIn": "Accesso effettuato con successo",
+    "expiredTitle": "Questo link di accesso è scaduto",
+    "expiredSubtitle": "I link di accesso funzionano una sola volta e solo per 15 minuti",
+    "expiredBody": "Se hai già aperto questo link, è stato utilizzato. Anche le email più vecchie non funzioneranno: richiedine una nuova e usa l'email più recente.",
+    "sendNew": "Inviami un nuovo link di accesso",
+    "verifying": "Verifica in corso...",
+    "pleaseWait": "Attendi mentre effettuiamo il tuo accesso"
+  },
+  "magicLogin": {
+    "checkEmail": "Controlla la tua email",
+    "sentTo": "Abbiamo inviato un magic link a {{email}}",
+    "clickLink": "Clicca sul link nella tua email per accedere. Il link scade tra 15 minuti.",
+    "tryDifferent": "Prova con un'altra email",
+    "backToLogin": "Torna all'accesso",
+    "title": "Magic Link",
+    "subtitle": "Accedi con la tua email, nessuna password necessaria",
+    "email": "Email",
+    "sending": "Invio in corso...",
+    "submit": "Invia Magic Link"
+  },
+  "signup": {
+    "passwordGroup": "Password"
+  },
+  "social": {
+    "processing": "Completamento dell'accesso social...",
+    "done": "Accesso verificato. Puoi chiudere questa scheda se non vieni reindirizzato automaticamente.",
+    "error": "Reindirizzamento all'accesso..."
+  }
+}

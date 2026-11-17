@@ -1,0 +1,397 @@
+{
+  "ui": {
+    "sampleLead": "Esto es un ejemplo, no tus datos.",
+    "sampleTail": "Nada en este panel es una lectura sobre ti, y nada de lo que aparece aquí se ha guardado en tu cuenta."
+  },
+  "comingSoon": {
+    "prism": {
+      "title": "Enfoque PRISM",
+      "body": "Tus objetivos leídos a partir de tu propio perfil PRISM: cuáles se apoyan en una fortaleza y cuáles exigen un esfuerzo extra."
+    },
+    "progress": {
+      "title": "Progreso",
+      "body": "Hitos y seguimientos de cada objetivo, con las revisiones de tu coach al lado."
+    },
+    "documents": {
+      "title": "Documentos",
+      "body": "Un currículum, biografía o perfil redactado a partir de tu historial y tus objetivos reales, nunca de una carrera de plantilla."
+    },
+    "eyebrow": "Aún no está listo",
+    "title": "Próximamente",
+    "sub": "Estos tres paneles están previstos. Leerán tus propios datos o no se mostrarán.",
+    "back": "Volver a tus objetivos"
+  },
+  "coaches": {
+    "job_mentor": {
+      "role": "Mentor laboral",
+      "focus": "Excelencia en el puesto actual: rendimiento, dinámica de equipo, habilidades específicas del puesto, productividad diaria."
+    },
+    "career_coach": {
+      "role": "Coach de carrera",
+      "focus": "Avance estratégico: preparación del siguiente puesto, cambios de rumbo, desarrollo del liderazgo, posicionamiento, trayectoria a largo plazo."
+    },
+    "prism_coach": {
+      "role": "Coach PRISM",
+      "focus": "Efectividad conductual: estrés, adaptabilidad, estilo de comunicación, conflicto, inteligencia emocional."
+    },
+    "callout": "Siempre escuchas una sola voz. Detrás de Meridian, <strong>Echo</strong> y <strong>Forge</strong> desarrollan las habilidades de tu puesto actual, <strong>Nova</strong> y <strong>Ascend</strong> planifican tu avance y <strong>Aura</strong> trabaja las bases conductuales; cada uno ve solo los objetivos que se le asignan.",
+    "goalCount_one": "objetivo",
+    "goalCount_other": "objetivos",
+    "eyebrow": "Descubrir, estructurar, derivar",
+    "title": "Tu equipo de coaching",
+    "sub": "Goals Studio no hace coaching de los objetivos: entrega cada uno al especialista que se ocupa de ese tipo de crecimiento y después Meridian te devuelve su trabajo con una sola voz."
+  },
+  "interview": {
+    "eyebrow": "Una conversación, no un formulario",
+    "title": "Habla con Goals Studio",
+    "sub": "Cinco áreas de tu vida laboral, una categoría a la vez, con la escalera del PORQUÉ bajo cada objetivo planteado. La voz lleva la iniciativa; el texto está a un clic.",
+    "drafted_one": "{{count}} objetivo redactado a partir de esta conversación.",
+    "drafted_other": "{{count}} objetivos redactados a partir de esta conversación.",
+    "reviewLink": "Revisarlos y publicarlos"
+  },
+  "targets": {
+    "error403": "Los objetivos meta no están disponibles en tu cuenta en este momento.",
+    "error404": "No se pudo encontrar ese puesto o meta.",
+    "error413": "Este encaje es demasiado grande para guardarlo como objetivo.",
+    "errorDefault": "Eso no funcionó. Inténtalo de nuevo."
+  },
+  "labels": {
+    "category": {
+      "history": "Trayectoria profesional",
+      "job": "Puesto actual",
+      "workplace": "Lugar de trabajo",
+      "ambitions": "Ambiciones profesionales",
+      "personal": "Personal"
+    },
+    "align": {
+      "lever": "Aprovecha una fortaleza",
+      "stretch": "Requiere salir de tu zona de confort",
+      "counter": "Contrapeso"
+    },
+    "style": {
+      "gold_stepwise": "Paso a paso",
+      "blue_metrics": "Guiado por métricas",
+      "red_action": "Acción primero",
+      "green_momentum": "Basado en el impulso"
+    },
+    "coach": {
+      "job_mentor": "Mentor del puesto",
+      "career_coach": "Coach de carrera",
+      "prism_coach": "Coach de PRISM"
+    },
+    "status": {
+      "proposed": "Propuesto",
+      "confirmed": "Confirmado"
+    }
+  },
+  "wiring": {
+    "and": " y ",
+    "group": {
+      "supported": "Tu perfil respalda estas",
+      "mixed": "Mixto: una parte de ti a favor, otra en contra",
+      "atTension": "Tu perfil va en contra de estas",
+      "unmapped": "Aún sin vincular a una familia profesional"
+    },
+    "title": "Tus metas y tu perfil",
+    "error": "No pudimos leer cómo encajan tus metas con tu PRISM en este momento.",
+    "heading": "Cómo encajan tus metas publicadas con tu forma de ser",
+    "unscored": "Completa PRISM y esta tarjeta analizará cada meta según tu perfil.",
+    "pulling": "en contra: {{list}}",
+    "carried": "respaldadas por {{list}}"
+  },
+  "progress": {
+    "status": {
+      "explored": "Hecho",
+      "active": "En curso",
+      "todo": "Sin empezar"
+    },
+    "error": "No pudimos leer tu progreso en este momento. No se ha perdido nada de lo que has trabajado.",
+    "notStarted": "Aún no has empezado. La conversación de abajo comienza con {{label}}.",
+    "allExplored": "Todas las áreas están exploradas.",
+    "carryingOn": "Continuamos con {{label}}.",
+    "nextUp": "Siguiente: {{label}}.",
+    "ariaLabel": "Tu progreso",
+    "areasExplored": "{{explored}} de {{total}} áreas exploradas",
+    "goalsDrafted_one": "{{count}} meta en borrador · consulta Mis metas",
+    "goalsDrafted_other": "{{count}} metas en borrador · consulta Mis metas"
+  },
+  "discovery": {
+    "ladder": {
+      "role": {
+        "statedGoal": "Meta declarada",
+        "asks": "Goals Studio pregunta",
+        "you": "Tú",
+        "root": "Motivación real"
+      },
+      "rung1": "“Quiero mejorar en liderar a través del cambio.”",
+      "rung2": "¿Por qué te parece importante ahora?",
+      "rung3": "La reorganización no deja de cambiar y mi equipo acude a mí en busca de respuestas.",
+      "rung4": "¿Por qué tener las respuestas es tan importante para ti?",
+      "rung5": "Si dudo, pensarán que no tengo las cosas bajo control.",
+      "rung6": "¿Y por qué es difícil convivir con eso en particular?",
+      "rung7": "No es una habilidad que adquirir, sino proteger cómo te ve el equipo bajo presión. A eso se engancha la meta."
+    },
+    "status": {
+      "explored": "Explorado",
+      "active": "En curso",
+      "todo": "Sin empezar"
+    },
+    "eyebrow": "La conversación de las cinco categorías",
+    "title": "Descubrimiento, no un cuestionario",
+    "sub": "Goals Studio recopila información de forma orgánica a lo largo de las sesiones. En cada categoría explora, busca patrones, aplica la escalera del PORQUÉ hasta tu verdadera motivación y luego convierte la conversación en posibles metas.",
+    "talkIt": "Habla sobre ello",
+    "loading": "Leyendo tu progreso…",
+    "error": "No hemos podido leer tu progreso en este momento. Actualiza para intentarlo de nuevo: no has perdido nada de lo que ya trabajaste.",
+    "goalsSurfaced_one": "{{count}} objetivo identificado",
+    "goalsSurfaced_other": "{{count}} objetivos identificados",
+    "questionsAnswered_one": "{{count}} pregunta respondida",
+    "questionsAnswered_other": "{{count}} preguntas respondidas",
+    "yourWhy": "Tu porqué",
+    "underneath": "Lo que hay debajo de lo que dijiste que querías",
+    "howItWorks": "Cómo funciona · la escalera del porqué",
+    "howHeading": "Cómo \"mejor liderazgo\" se convierte en un objetivo real",
+    "howBody": "No nos quedamos en la primera respuesta. Preguntar \"por qué\" varias veces llega a la motivación a la que realmente se vincula el objetivo. Este es un ejemplo de la forma que toma; el tuyo estará en tus propias palabras."
+  },
+  "sharing": {
+    "basis": {
+      "rosterManager": {
+        "label": "Te incluye en su equipo",
+        "because": "Te añadió a una lista de equipo que mantiene aquí: su propia lista, no los registros de tu organización."
+      },
+      "practitioner": {
+        "label": "Tu coach",
+        "because": "Te añadió como cliente."
+      },
+      "requester": {
+        "label": "Solicitó acceso",
+        "because": "Te pidió que compartas con esta persona."
+      },
+      "unknown": {
+        "label": "En tu lista",
+        "because": "No sabemos cómo llegó a esta lista."
+      },
+      "managerOfRecord": {
+        "label": "Tu gerente",
+        "because": "Los registros de tu organización indican que dependes de esta persona."
+      }
+    },
+    "source": {
+      "managersOfRecord": "tu responsable registrado",
+      "rosterManagers": "responsables que te añadieron a su lista de equipo",
+      "practitioners": "tu coach",
+      "requesters": "solicitudes"
+    },
+    "cat": {
+      "goals": {
+        "label": "Objetivos",
+        "noun": "objetivos"
+      },
+      "prism": {
+        "label": "Perfil PRISM",
+        "noun": "perfil PRISM"
+      },
+      "assessments": {
+        "label": "Evaluaciones",
+        "noun": "evaluaciones"
+      },
+      "artefacts": {
+        "label": "Perfil",
+        "noun": "documentos de perfil"
+      },
+      "interviews": {
+        "label": "Entrevistas",
+        "noun": "resultados de entrevistas"
+      },
+      "development": {
+        "label": "Desarrollo",
+        "noun": "plan de desarrollo"
+      }
+    },
+    "describe": {
+      "my": "mis {{list}}",
+      "your": "tus {{list}}"
+    },
+    "and": " y ",
+    "errorSave": "No se guardó. No se cambió nada: inténtalo de nuevo.",
+    "surface": {
+      "goals": "leyó tus objetivos",
+      "goalsAdmin": "leyó tus objetivos (administrador de la plataforma)",
+      "dossier": "abrió tu dosier de desarrollo",
+      "dossierAdmin": "abrió tu dosier de desarrollo (administrador de la plataforma)",
+      "ratify": "revisó un objetivo",
+      "ratifyAdmin": "revisó un objetivo (administrador de la plataforma)",
+      "goalReviews": "leyó las revisiones de tus objetivos",
+      "goalReviewsAdmin": "leyó las revisiones de tus objetivos (administrador de la plataforma)",
+      "offered": "recibió acceso de tu parte",
+      "extended": "renovaste su acceso",
+      "looked": "consultó",
+      "lookedAt": "consultó ({{surface}})"
+    },
+    "thisPerson": "esta persona",
+    "someone": "Alguien",
+    "waitingSee": "Pendiente de ti: consulta las solicitudes más abajo",
+    "shareEverythingAria": "Compartir todo lo de esta página con {{who}}",
+    "shareAll": "Compartir todo",
+    "shareCategoryAria": "Compartir {{noun}} con {{who}}",
+    "partlyProtected": "(protegido parcialmente)",
+    "notProtectedYet": "(aún sin proteger)",
+    "sharingWhat": "Compartiendo {{what}}",
+    "notShared": "No compartido",
+    "shareAllIncludes_one": "“Compartir todo” incluye {{list}}, que aún no está totalmente protegido.",
+    "shareAllIncludes_other": "“Compartir todo” incluye {{list}}, que aún no están totalmente protegidos.",
+    "until": "Hasta el {{date}}",
+    "renew": "Renovar por un año",
+    "wantsToSee": "quiere ver {{what}}.",
+    "noReason": "No indicó ningún motivo.",
+    "asked": "· solicitado el {{date}}",
+    "shareWhat": "Compartir {{what}}",
+    "decline": "Rechazar",
+    "whoHasLooked": "Quién ha consultado",
+    "readingLog": "Leyendo el registro de accesos…",
+    "logError": "No pudimos leer el registro de accesos en este momento. No está vacío: está sin leer.",
+    "logEmpty": "Nadie ha mirado tus objetivos todavía. Cada lectura queda registrada aquí, incluidas las de los administradores de la plataforma.",
+    "accessLog": "Registro de accesos",
+    "someoneId": "Alguien ({{id}}…)",
+    "noAccount": "No hay ninguna cuenta con ese correo electrónico.",
+    "sharedWith": "Compartido con {{name}}.",
+    "addPerson": "Añadir a una persona",
+    "addPersonBody": "Alguien con una cuenta de IG que no aparece en la lista de arriba. Su dirección de correo electrónico exacta; no hay búsqueda por nombre. Tu coach no necesita una: cuando te haya añadido como cliente, aparecerá en la lista de arriba y compartirás con él o ella allí.",
+    "emailAria": "Dirección de correo electrónico",
+    "find": "Encontrar",
+    "shareMyGoals": "Compartir mis objetivos",
+    "notProtectedNote": "Aún sin protección — {{list}}: las personas de tu línea jerárquica pueden ver esto, lo compartas o no. Tu elección se guarda y se aplicará cuando se lance la protección para ello.",
+    "partlyNote": "{{label}}, parcialmente protegido: {{note}}",
+    "loading": "Leyendo con quién puedes compartir…",
+    "error": "No pudimos leer tu configuración de uso compartido en este momento. No ha cambiado nada: actualiza para intentarlo de nuevo.",
+    "unavailable": "No pudimos leer {{sources}} en este momento, así que es posible que falte parte de esta lista. No está vacía: está sin leer.",
+    "waitingHeading": "Esperando tu respuesta",
+    "emptyHeading": "Aún no hay nadie con quien compartir",
+    "emptyBody": "Cuando un gerente o coach se vincule contigo, aparecerá aquí, con un interruptor para cada parte de tu registro. También puedes añadir a alguien con su dirección de correo electrónico más abajo.",
+    "people": "Personas",
+    "basisNote": "Debajo de cada nombre se indica cómo llegó a esta lista.",
+    "eyebrow": "Tu decisión, persona por persona",
+    "title": "Quién puede ver mis objetivos y mi perfil PRISM",
+    "sub": "Nadie ve tus objetivos ni tu perfil PRISM por jerarquía. Compartes cada uno con una persona concreta durante un año, puedes renovarlo y retirarlo en cualquier momento. Activar un interruptor renueva el plazo por un año. Un objetivo que marques como privado sigue oculto incluso para esa persona.",
+    "whatTheySee": "Lo que ven",
+    "previewNote": "Una vista previa de lo que ven. Aquí no se puede hacer clic en nada.",
+    "previewAria": "Vista previa de lo que ven",
+    "previewEmpty": "Publica un objetivo y aparecerá aquí exactamente como lo ve una persona con quien compartes.",
+    "or": " o "
+  },
+  "dashboard": {
+    "brainCallout": "Cada objetivo de aquí está alineado con tu mapa cerebral: preferimos objetivos que <strong>aprovechen tus fortalezas naturales</strong> y planteamos cualquier reto como una adaptación consciente y con límite de tiempo, nunca como una reescritura permanente de quién eres.",
+    "eyebrow": "Tu camino para fijar objetivos",
+    "titleNamed": "Convirtamos la conversación en objetivos, {{name}}.",
+    "title": "Convirtamos la conversación en objetivos.",
+    "sub": "Goals Studio recorre cinco áreas de tu vida, pregunta por qué hasta llegar a algo que de verdad te importa y lo convierte en objetivos que conservan su motivo.",
+    "loading": "Leyendo hasta dónde has llegado…",
+    "error": "No hemos podido leer tu sesión de definición de objetivos en este momento. Actualiza para intentarlo de nuevo: no has perdido nada de lo que ya trabajaste.",
+    "discoveryProgress": "Progreso de exploración · {{explored}} de {{total}} categorías",
+    "pctExplored": "{{pct}}% explorado",
+    "start": "Empezar",
+    "resume": "Continuar",
+    "categoryN": "Categoría {{n}}",
+    "nextStep": "Tu siguiente paso",
+    "finishCategory": "Termina la categoría {{label}}",
+    "startCategory": "Empieza la categoría {{label}}",
+    "summaryFallback": "Goals Studio recoge esto en conversación y no con un formulario: unos minutos ahora bastan para avanzar.",
+    "talkIt": "Habla sobre ello",
+    "continueDiscovery": "Continuar la exploración",
+    "surfaced": "Objetivos identificados hasta ahora · Goals Studio",
+    "noGoals": "Aún no hay objetivos",
+    "goalsBuilt": "Objetivos basados en cómo piensas",
+    "seeAll": "Ver los {{count}}",
+    "houseEmpty": "Los objetivos se redactan a partir de la conversación en lugar de escribirse en un formulario, así que aparecen aquí a medida que hablas.",
+    "emptyDiscovery": "Los objetivos se redactan a partir de la conversación de exploración en lugar de escribirse en un formulario, así que aparecen aquí mientras hablas con Goals Studio, a la derecha de esta pantalla."
+  },
+  "roadmap": {
+    "step": "Paso {{rank}}",
+    "priority": "Prioridad",
+    "inPrism": "{{dimension}} en PRISM:",
+    "back": "Volver a mis objetivos",
+    "unavailable": "Las hojas de ruta de objetivos aún no están disponibles.",
+    "loading": "Cargando tu hoja de ruta…",
+    "notFound": "Este objetivo no apunta a un puesto. Abre un puesto en Job Fit y elige “Make this my target”.",
+    "loadError": "No hemos podido cargar esta hoja de ruta. Inténtalo de nuevo en breve.",
+    "thisRole": "este puesto",
+    "eyebrow": "Hoja de ruta",
+    "defaultTitle": "Tu hoja de ruta",
+    "sub": "Hacia {{role}}. Creada a partir del ajuste que estabas viendo cuando lo elegiste.",
+    "noRoadmap": "Aún no se ha creado una hoja de ruta para este objetivo.",
+    "start": "Inicio",
+    "noFirstStep": "Este objetivo aún no tiene un primer paso: los pasos de abajo son donde están las brechas.",
+    "noGaps": "El ajuste desde el que elegiste este puesto no mostró brechas que cerrar: nada se interpone entre tu perfil y la referencia de este puesto.",
+    "steps": "Pasos",
+    "finish": "Meta",
+    "noFinish": "Este objetivo aún no tiene una medida de éxito, así que la hoja de ruta no tiene meta.",
+    "overuse": "Cuidado con el uso excesivo de {{dimensions}} en este puesto.",
+    "rebuild": "Rehacer hoja de ruta",
+    "stopTargeting": "Dejar de apuntar a este puesto",
+    "practise": "Practicar para este puesto"
+  },
+  "layout": {
+    "nav": {
+      "myGoals": "Mis objetivos",
+      "interview": "Entrevista",
+      "sharing": "Compartir",
+      "overview": "Resumen",
+      "discovery": "Descubrimiento",
+      "coaches": "Coaches",
+      "comingSoon": "Próximamente",
+      "houseMyGoals": "Mis objetivos",
+      "houseTalk": "Hablarlo",
+      "houseWho": "Quién puede verlos"
+    },
+    "title": "Goals Studio",
+    "sub": "Tus objetivos, la conversación que los hace surgir y quién puede verlos.",
+    "navLabel": "Secciones de Goals Studio"
+  },
+  "goals": {
+    "stretchCallout": "Un objetivo marcado como <strong>Requiere esfuerzo extra</strong> no es una señal de debilidad: es un movimiento deliberado, con un plazo definido, en contra de tu tipo.",
+    "errorSave": "No se guardó. No se cambió nada; inténtalo de nuevo.",
+    "whyItMatters": "Por qué importa:",
+    "success": "Éxito:",
+    "firstStep": "Primer paso:",
+    "aCoach": "Un coach",
+    "ratified": "Ratificado",
+    "notRatified": "No ratificado",
+    "confirmed": "Confirmado",
+    "provisional": "Provisional",
+    "fromJobFit": "De Job Fit",
+    "fromInterview": "De tu entrevista",
+    "seeded": "Sugerido",
+    "targets": "Apunta a",
+    "aRole": "un puesto",
+    "viewRoadmap": "Ver hoja de ruta",
+    "coachReviews": "Revisiones del coach",
+    "noReviews": "Aún no hay revisiones.",
+    "keepPrivate": "Mantener \"{{title}}\" como privado",
+    "private": "Privado: oculto incluso para las personas con quienes compartes",
+    "shareable": "Compartible",
+    "unpublish": "Despublicar",
+    "goalTitle": "Título del objetivo",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirmPublish": "Confirmar y publicar",
+    "edit": "Editar",
+    "addGoal": "Añadir un objetivo",
+    "addGoalBody": "La entrevista escribe mejores objetivos que un formulario, pero un objetivo que ya conoces también tiene cabida aquí. Se publica en cuanto lo guardas.",
+    "placeholder": "¿Qué quieres lograr?",
+    "newGoalTitle": "Título del nuevo objetivo",
+    "goalCategory": "Categoría del objetivo",
+    "savePublish": "Guardar y publicar",
+    "published": "Publicado. Está en tus objetivos, arriba.",
+    "backJourney": "Volver a tu recorrido (paso 5)",
+    "eyebrow": "Tuyos: privados hasta que los compartas",
+    "title": "Tus objetivos",
+    "sub": "Los objetivos surgen de la entrevista junto con el motivo que hay detrás. Confirma un borrador para publicarlo y luego elige, persona por persona, quién puede verlo.",
+    "talkStudio": "Hablarlo con Goals Studio",
+    "whoCanSee": "Quién puede ver mis objetivos",
+    "loading": "Leyendo tus objetivos…",
+    "error": "No pudimos leer tus objetivos en este momento. Actualiza para intentarlo de nuevo; no se ha perdido nada de lo que has trabajado.",
+    "noGoals": "Aún no hay objetivos",
+    "noGoalsBody": "Aquí los objetivos se redactan a partir de la conversación de descubrimiento, en lugar de escribirse en un formulario. Empieza la entrevista y aparecerán, cada uno con su motivo; o añade abajo uno que ya conozcas.",
+    "sharedHeading": "Tus objetivos",
+    "draftsHeading": "Borradores de tu entrevista"
+  }
+}

@@ -141,11 +141,21 @@ describe("Locale file existence", () => {
           .filter((f) => f.endsWith(".json"))
           .map((f) => JSON.parse(fs.readFileSync(path.join(pendingDir, f), "utf-8")).namespace as string)
       : [];
+    // Wave 1 of the translation run (2026-11-16) filled es, fr, pt and it, so those four carry every
+    // namespace English does. pl and cs wait for the plural fix and the Czech register; until then the
+    // registrations stay and those two carry only the shipped six. Move a language into this set in the
+    // same PR that translates it.
+    const TRANSLATED_IN_FULL = new Set(["en", "es", "fr", "pt", "it"]);
+    const enFiles = fs
+      .readdirSync(path.join(LOCALES_DIR, "en"))
+      .filter((f) => f.endsWith(".json"))
+      .sort();
     for (const lang of SUPPORTED_LNGS) {
       const files = fs
         .readdirSync(path.join(LOCALES_DIR, lang))
         .filter((f) => f.endsWith(".json"));
-      expect(files.length).toBe(NAMESPACES.length + (lang === "en" ? pending.length : 0));
+      expect(files.length).toBe(NAMESPACES.length + (TRANSLATED_IN_FULL.has(lang) ? pending.length : 0));
+      if (TRANSLATED_IN_FULL.has(lang)) expect([...files].sort()).toEqual(enFiles);
     }
     // A registration with no English file would silently hide a missing namespace from the parity gate.
     for (const ns of pending) {

@@ -1,0 +1,19 @@
+{
+  "messages": {
+    "notValid": "Questo link di invito non è valido. Chiedi al tuo professionista di inviarti un nuovo link.",
+    "tooMany": "Troppi tentativi in questo momento. Attendi un po', poi apri di nuovo il link del tuo professionista.",
+    "ownInvite": "Questo è uno dei tuoi link di invito: non puoi essere cliente di te stesso.",
+    "claimError": "Non siamo riusciti a collegarti in questo momento. Apri di nuovo il link del tuo professionista più tardi, oppure chiedigliene uno nuovo.",
+    "noInvite": "Non c'è nessun invito in attesa in questa scheda del browser. Se il tuo professionista ti ha inviato un link, aprilo di nuovo."
+  },
+  "prism": {
+    "checking": "Verifica dell'accesso al tuo PRISM survey in corso…",
+    "shareNotice": "Quando richiedi il tuo survey puoi scegliere di condividere i risultati con {{name}}. Non viene condiviso nulla se non selezioni questa opzione.",
+    "takeSurvey": "Compila il tuo PRISM survey"
+  },
+  "title": "Collegati al tuo professionista",
+  "connecting": "Collegamento al tuo professionista in corso…",
+  "connected": "Ora sei collegato a {{name}}.",
+  "nextSurvey": "Passo successivo: compila il tuo PRISM survey.",
+  "goHome": "Vai alla tua home page"
+}
