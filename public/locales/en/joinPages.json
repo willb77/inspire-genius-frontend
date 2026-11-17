@@ -89,7 +89,12 @@
     "backToRegister": "← Register your interest",
     "error": "We could not load the events just now. Please try again in a few minutes.",
     "notOpen": "No events are scheduled yet. Register your interest and tick the webinar box to hear when the next one is announced.",
-    "empty": "No upcoming events right now"
+    "empty": "No upcoming events right now",
+    "moreInfo": "More Info",
+    "moreInfoAria": "More Info: {{title}}",
+    "register": "Register",
+    "registerAria": "Register for {{title}}",
+    "full": "This event is full."
   },
   "formError": {
     "rate_limited": "There have been too many submissions from your connection. Please try again later.",
