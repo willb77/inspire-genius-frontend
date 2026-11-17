@@ -5,6 +5,8 @@
 //   node scripts/i18n/translate.mjs --dry-run       same
 //   node scripts/i18n/translate.mjs --yes           submit the batch, wait, write results (spends money; needs ANTHROPIC_API_KEY in the environment)
 //
+//   node scripts/i18n/translate.mjs --resume        pick up the batch saved at submit time (no new batch); optional --batch <id>
+//
 //   --lang es,fr   limit languages (default: es fr pt it pl cs)    --ns common,chat   limit namespaces
 //   --limit N      cap the number of keys per language (for a small pilot)
 //
@@ -36,6 +38,8 @@ const argv = process.argv.slice(2);
 const flag = (n) => argv.includes(n);
 const opt = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : undefined; };
 const EXECUTE = flag("--yes") && !flag("--dry-run");
+// Where a submitted batch is remembered. Outside the repo on purpose; override with I18N_STATE.
+const STATE_PATH = process.env.I18N_STATE ?? join(process.env.HOME ?? ".", ".i18n_batch_state.json");
 const langs = opt("--lang")?.split(",") ?? TARGET_LANGS;
 const onlyNs = opt("--ns")?.split(",");
 const perLangLimit = opt("--limit") ? Number(opt("--limit")) : Infinity;
@@ -190,17 +194,41 @@ async function run(plan) {
     });
   }
   if (!requests.length) { console.log("Nothing to translate."); return; }
-  let batch = await client.messages.batches.create({ requests });
-  console.log(`batch ${batch.id} submitted (${requests.length} requests)`);
+  const batch = await client.messages.batches.create({ requests });
+  // Saved at once, OUTSIDE the repo (the worktree must stay clean), so a closed window or a crash
+  // loses nothing: `--resume` picks the batch up by id. Holds the batch id and the English sources only, never the key.
+  mkdirSync(dirname(STATE_PATH), { recursive: true });
+  writeFileSync(STATE_PATH, JSON.stringify({ batchId: batch.id, submittedAt: new Date().toISOString(), langs, index }, null, 1) + "\n");
+  console.log(`batch ${batch.id} submitted (${requests.length} requests). State saved to ${STATE_PATH}`);
+  console.log("If this window closes, re-run with --resume (no new batch, no new charge).");
+  await finish(client, batch.id, index);
+}
+
+export async function finish(client, batchId, index) {
+  let batch = await client.messages.batches.retrieve(batchId);
   while (batch.processing_status !== "ended") {
     await new Promise((r) => setTimeout(r, 30000));
-    batch = await client.messages.batches.retrieve(batch.id);
+    try {
+      batch = await client.messages.batches.retrieve(batchId);
+    } catch (e) {
+      console.log(`  retrieve failed (${e?.status ?? e?.message ?? e}); retrying`); // a network blip must not end the wait
+      continue;
+    }
     console.log(`  status ${batch.processing_status}`, batch.request_counts);
   }
+  console.log("batch ended", batch.request_counts);
+
+  // Raw results go to disk before anything is parsed, so a bug below can never cost a second charge.
+  const rawPath = STATE_PATH.replace(/\.json$/, `.${batchId}.results.jsonl`);
+  const raw = [];
+  for await (const entry of await client.messages.batches.results(batchId)) raw.push(JSON.stringify(entry));
+  writeFileSync(rawPath, raw.join("\n") + "\n");
+  console.log(`raw results saved to ${rawPath} (${raw.length} entries)`);
 
   const written = {}, rejected = [];
   const loaded = {};
-  for await (const entry of await client.messages.batches.results(batch.id)) {
+  for (const line of raw) {
+    const entry = JSON.parse(line);
     const meta = index[entry.custom_id];
     if (!meta) continue;
     if (entry.result.type !== "succeeded") { rejected.push(`${entry.custom_id}: ${entry.result.type}`); continue; }
@@ -230,8 +258,35 @@ async function run(plan) {
   if (rejected.length) console.log(`${rejected.length} rejected (not written):\n  ` + rejected.slice(0, 100).join("\n  "));
 }
 
+async function resume() {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("ANTHROPIC_API_KEY is not set in the environment. Nothing was sent.");
+    process.exit(2);
+  }
+  let batchId = opt("--batch"), index;
+  if (existsSync(STATE_PATH)) {
+    const state = JSON.parse(readFileSync(STATE_PATH, "utf8"));
+    batchId ??= state.batchId;
+    index = state.index;
+    console.log(`Resuming batch ${batchId} (submitted ${state.submittedAt}). No new batch is created.`);
+  } else if (batchId) {
+    // A batch submitted before this change has no saved state. The plan is deterministic for an untouched
+    // worktree, so rebuild the same chunks (custom ids lang_i) and map the results onto them. Pass the same --lang.
+    index = {};
+    for (const [lang, items] of Object.entries(planWork())) chunks(items).forEach((c, i) => { index[`${lang}_${i}`] = { lang, items: c }; });
+    console.log(`No saved state; rebuilt ${Object.keys(index).length} request ids from the plan for batch ${batchId}.`);
+  } else {
+    console.error(`No saved batch at ${STATE_PATH} and no --batch <id>. Nothing to resume.`);
+    process.exit(2);
+  }
+  const { default: Anthropic } = await import("@anthropic-ai/sdk");
+  await finish(new Anthropic(), batchId, index);
+}
+
 const isMain = import.meta.url === new URL(process.argv[1], "file://").href || process.argv[1]?.endsWith("translate.mjs");
-if (isMain) {
+if (isMain && flag("--resume")) {
+  await resume();
+} else if (isMain) {
   const plan = planWork();
   printEstimate(plan);
   if (!EXECUTE) {
