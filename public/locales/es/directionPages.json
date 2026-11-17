@@ -261,7 +261,8 @@
     "progressDone": "{{done}} de {{total}} completados",
     "journeyProgress": "Progreso del recorrido",
     "startOver": "Empezar de nuevo",
-    "clearsYourProgressThroughThese": "Borra tu progreso en estos pasos. Tus resultados de PRISM, documentos y metas no se tocan."
+    "clearsYourProgressThroughThese": "Borra tu progreso en estos pasos. Tus resultados de PRISM, documentos y metas no se tocan.",
+    "nextNameQuestion": "{{name}} — {{question}}"
   },
   "matches": {
     "methods": {
@@ -388,7 +389,8 @@
     "startWithWhoIAm": "Empezar por quién soy",
     "thereSNothingToPrice": "Aún no hay nada que valorar",
     "pickingYourCareerAreasIs": "Elegir tus áreas profesionales es el paso del que se alimenta este, así que es lo más útil que puedes hacer ahora.",
-    "lookAtCareerAreas": "Ver áreas profesionales"
+    "lookAtCareerAreas": "Ver áreas profesionales",
+    "asOfMonthYear": "{{month}} {{year}}"
   },
   "careers": {
     "pivotMeaning": {
@@ -411,7 +413,8 @@
     "roleFamiliesBestMatchFirst": "Familias de puestos, primero la mejor coincidencia",
     "dimensionsEvaluated": "{{dimensions}} dimensiones evaluadas",
     "howYouDActuallyGet": "Cómo llegarías realmente",
-    "thisRankingIsDeterministicThe": "Este ranking es determinista: el mismo perfil siempre produce el mismo orden. Aquí no hay un modelo que adivine ni aleatoriedad: cada número de arriba sale de comparar tus dimensiones con las que suele pedir una familia de puestos, y puedes verlas todas."
+    "thisRankingIsDeterministicThe": "Este ranking es determinista: el mismo perfil siempre produce el mismo orden. Aquí no hay un modelo que adivine ni aleatoriedad: cada número de arriba sale de comparar tus dimensiones con las que suele pedir una familia de puestos, y puedes verlas todas.",
+    "affinityOutOf100": "{{score}} / 100"
   },
   "establish": {
     "checkingWhatWeAlreadyHave": "Comprobando lo que ya tenemos…",

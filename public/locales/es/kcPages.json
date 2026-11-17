@@ -289,7 +289,8 @@
         "bus_factor": "Factor autobús"
       },
       "riskTitle": "Registrar un rol en riesgo",
-      "riskDescription": "Marca un rol o experto cuyo conocimiento deba priorizarse para su captura."
+      "riskDescription": "Marca un rol o experto cuyo conocimiento deba priorizarse para su captura.",
+      "factorRange": "{{label}} (0–1)"
     },
     "title": "Consola de revisión",
     "subtitle": "Valida el conocimiento capturado y señala los puestos en riesgo para su captura.",
@@ -328,7 +329,8 @@
       "notes": "Notas",
       "notesPlaceholder": "¿Qué debe cambiar?",
       "cancel": "Cancelar",
-      "submit": "Enviar"
+      "submit": "Enviar",
+      "noteTitle": "{{verdict}} — {{title}}"
     }
   }
 }

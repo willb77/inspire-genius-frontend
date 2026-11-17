@@ -22,7 +22,8 @@
     "chooseOne": "Choisissez-en un",
     "disclosureHint": "Utilisé pour ce brouillon uniquement. Non enregistré.",
     "disclosureLabel": "Comment décrire une interruption de parcours ou un programme ? (facultatif)",
-    "disclosurePlaceholder": "p. ex. Employé de cuisine, programme régional d'emploi, 2019–2023"
+    "disclosurePlaceholder": "p. ex. Employé de cuisine, programme régional d'emploi, 2019–2023",
+    "styleOption": "{{name}} — {{structure}}"
   },
   "info": {
     "add": "Ajouter",
@@ -64,7 +65,8 @@
     "stillToCome": "À venir",
     "title": "Quelques questions pour mieux cibler",
     "whyAsking": "Pourquoi nous demandons :",
-    "yourAnswer": "Votre réponse (dans vos propres mots)"
+    "yourAnswer": "Votre réponse (dans vos propres mots)",
+    "answerQuoted": "\"{{answer}}\""
   },
   "miniCard": {
     "copied": "Mini-carte copiée.",
@@ -112,7 +114,8 @@
     "roleGoal": "Votre objectif : {{title}}",
     "roleHeading": "Un poste issu de Career Fit",
     "title": "Pour quel poste?",
-    "useSaved": "Utiliser une description de poste enregistrée"
+    "useSaved": "Utiliser une description de poste enregistrée",
+    "styleStructure": "— {{structure}}"
   },
   "writer": {
     "pagesWithin_one": "Ce CV compte {{pages}} page au format PDF (USAJOBS en autorise {{limit}}).",
@@ -241,7 +244,8 @@
     },
     "note": "Imprimé en haut de votre CV téléchargé. Ces informations ne sont envoyées nulle part et ne sont pas enregistrées : saisissez-les à nouveau lors de votre prochaine visite.",
     "phone": {
-      "label": "Téléphone"
+      "label": "Téléphone",
+      "placeholder": "(555) 555-0100"
     }
   },
   "crosswalk": {

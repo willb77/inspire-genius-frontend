@@ -1,0 +1,97 @@
+{
+  "wizard": {
+    "inputs": "Vstupy",
+    "newHireName": "Jméno nového zaměstnance",
+    "role": "Role",
+    "company": "Společnost",
+    "weekNumber": "Číslo týdne (1–12)",
+    "cultureNotes": "Poznámky ke kultuře společnosti (volitelné)",
+    "run": "Spustit Forge",
+    "reset": "Obnovit",
+    "planGenerated": "Plán zapracování byl vytvořen.",
+    "planFailed": "Vytvoření plánu se nezdařilo",
+    "forgeFailed": "Forge (OnboardingAgent) selhal: {{message}}",
+    "title": "Průvodce zapracováním",
+    "resultTitle": "Plán zapracování",
+    "intro": "Vytvořte pomocí Forge (OnboardingAgent) přizpůsobený plán zapracování pro nového zaměstnance."
+  },
+  "details": {
+    "firstName": {
+      "required": "Zadejte své jméno",
+      "minLength": "Jméno musí mít alespoň 2 znaky",
+      "placeholder": "Zadejte své jméno (např. Jan)"
+    },
+    "namePattern": "Povolena jsou pouze písmena, mezery, pomlčka a apostrof",
+    "lastName": {
+      "required": "Zadejte své příjmení",
+      "minLength": "Příjmení musí mít alespoň 1 znak",
+      "placeholder": "Zadejte své příjmení (např. Novák)"
+    },
+    "dob": {
+      "required": "Datum narození je povinné",
+      "invalid": "Neplatné datum",
+      "tooYoung": "Musí Vám být alespoň 13 let",
+      "placeholder": "Vyberte své datum narození"
+    },
+    "about": {
+      "placeholder": "např. jsem student a připravuji se na zkoušky",
+      "label": "Napište několik řádků o svých cílech a zázemí (volitelné)"
+    },
+    "title": "Řekněte nám o sobě více",
+    "subtitle": "Vyplňte níže uvedený formulář a doplňte své údaje.",
+    "next": "Další"
+  },
+  "configure": {
+    "tourFallbackTitle": "Rychlý tip",
+    "tourFallbackDescription": "Zvýraznili jsme klíčové prvky: Koučy můžete kdykoli upravit.",
+    "audio": {
+      "pause": "Pozastavit zvuk",
+      "resume": "Pokračovat v přehrávání",
+      "loading": "Načítání zvuku",
+      "play": "Přehrát zvuk",
+      "replay": "Přehrát znovu"
+    },
+    "prev": "Předchozí",
+    "title": "Nastavte si svého mentora",
+    "subtitle": "Vyberte každému mentorovi tón hlasu, pohlaví a přízvuk, aby Vám konverzace připadaly přirozené. Tato nastavení můžete později změnit.",
+    "help": "Nápověda",
+    "letsGo": "Začínáme",
+    "closeTour": "Zavřít prohlídku",
+    "gotIt": "Rozumím!"
+  },
+  "step": {
+    "one": {
+      "imageAlt": "Úvodní krok jedna",
+      "title": "Začněme!",
+      "subtitle": "Nahrajte své osobní údaje a začněte pracovat se svým AI koučem.",
+      "callout": "Využitelné poznatky"
+    },
+    "two": {
+      "imageAlt": "Úvodní krok dvě",
+      "title": "Posilte své podnikání",
+      "subtitle": "Využijte poznatky z AI přizpůsobené Vašim cílům.",
+      "callout": "Využitelné poznatky"
+    },
+    "three": {
+      "imageAlt": "Úvodní krok tři",
+      "title": "Poznatky, na kterých záleží",
+      "subtitle": "Dbáme na srozumitelnost, abyste mohli jednat s jistotou.",
+      "callout": "Využitelné poznatky"
+    },
+    "four": {
+      "imageAlt": "Úvodní krok čtyři",
+      "title": "Spolupracujte se svým AI koučem",
+      "subtitle": "Držíme věci jednoduché a účinné, abyste se mohli soustředit na dopad.",
+      "callout": "Chytrá rozhodnutí s AI"
+    },
+    "five": {
+      "imageAlt": "Úvodní krok pět",
+      "title": "Vše je připraveno!",
+      "subtitle": "Pojďme do aplikace, ať můžete začít dělat pokroky.",
+      "callout": "Nahrát dokumenty"
+    }
+  },
+  "screen": {
+    "letsGo": "Jdeme na to"
+  }
+}

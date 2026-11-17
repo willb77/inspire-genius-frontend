@@ -125,7 +125,9 @@
       "Explainability": "Spiegabilità",
       "Federal_State": "Federale e statale",
       "Financial_Profile": "Profilo finanziario",
-      "Fit_a_JD": "Valuta una JD"
+      "Fit_a_JD": "Valuta una JD",
+      "Character_Lab": "Character Lab",
+      "Job_Blueprint": "Job Blueprint"
     },
     "sections": {
       "AI_coaches": "Coach IA",
@@ -137,7 +139,8 @@
       "Platform_Alerts": "Avvisi della piattaforma",
       "Reports": "Report",
       "Role_Views": "Viste per ruolo",
-      "Support": "Supporto"
+      "Support": "Supporto",
+      "PRISM": "PRISM"
     }
   },
   "notificationBell": {
@@ -336,7 +339,8 @@
     "start": "Inizia",
     "startDetail": "Un percorso guidato da “non so cosa dovrei fare” a un ruolo per cui vale la pena impegnarsi e a un piano per arrivarci. Vai con i tuoi tempi: ogni passaggio viene salvato.",
     "startLead": "Non sai quale sia il prossimo passo? Parti da qui.",
-    "step": "Passo {{position}} di {{total}}"
+    "step": "Passo {{position}} di {{total}}",
+    "title": "Direction Setting"
   },
   "rightPanel": {
     "ariaLabel": "Profilo utente e prossimi eventi",
@@ -548,6 +552,7 @@
     "prismDataHelp": "Sostituisci i tuoi punteggi PRISM con un CSV di dati grezzi e, facoltativamente, con il PDF del tuo report. Questa operazione sovrascrive il tuo profilo PRISM attuale.",
     "replacePrism": "Sostituisci i dati PRISM",
     "save": "Salva",
-    "title": "Altre valutazioni"
+    "title": "Altre valutazioni",
+    "scoreLabel": "{{label}} (0–100)"
   }
 }

@@ -398,5 +398,10 @@
       "pdf": "PDF",
       "word": "Word"
     }
+  },
+  "interview": {
+    "rolePageShell": {
+      "inspireGenius": "Inspire Genius"
+    }
   }
 }

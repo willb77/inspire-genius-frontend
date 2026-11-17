@@ -34,7 +34,8 @@
     },
     "note": "Impresso no topo do seu currículo baixado. Não é enviado a lugar nenhum nem salvo — informe novamente na próxima visita.",
     "phone": {
-      "label": "Telefone"
+      "label": "Telefone",
+      "placeholder": "(555) 555-0100"
     }
   },
   "crosswalk": {
@@ -98,7 +99,8 @@
     "recommended": "Recomendado: {{name}}.",
     "resumeFor": "Este currículo é para…",
     "youAre": "Você é…",
-    "youGet": "Você recebe:"
+    "youGet": "Você recebe:",
+    "styleOption": "{{name}} — {{structure}}"
   },
   "aim": {
     "bothUsed": "Sua descrição e {{name}} são usados juntos.",
@@ -136,7 +138,8 @@
     "roleGoal": "Seu objetivo: {{title}}",
     "roleHeading": "Um cargo do Career Fit",
     "title": "Para qual vaga é?",
-    "useSaved": "Usar uma descrição de vaga salva"
+    "useSaved": "Usar uma descrição de vaga salva",
+    "styleStructure": "— {{structure}}"
   },
   "info": {
     "add": "Adicionar",
@@ -178,7 +181,8 @@
     "stillToCome": "Ainda por vir",
     "title": "Algumas perguntas para direcionar melhor",
     "whyAsking": "Por que estamos perguntando:",
-    "yourAnswer": "Sua resposta (com suas próprias palavras)"
+    "yourAnswer": "Sua resposta (com suas próprias palavras)",
+    "answerQuoted": "\"{{answer}}\""
   },
   "miniCard": {
     "copied": "Mini cartão copiado.",

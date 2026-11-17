@@ -101,7 +101,8 @@
       "result": "Risultato",
       "role": "Ruolo",
       "stopped": "Interrotto",
-      "title": "Colloqui"
+      "title": "Colloqui",
+      "scoreOfFive": "{{score}} / 5"
     },
     "practice": {
       "guideLabel": "Guarda: guida ai colloqui",
@@ -195,7 +196,8 @@
       "sectionScores": "Punteggi per sezione",
       "title": "Risultati del colloquio",
       "unrated": "{{unrated}} risposte su {{total}} non sono state valutate e NON fanno parte di questo punteggio.",
-      "unratedNote": "Sono comunque presenti nella trascrizione qui sotto. Un punteggio che le escludesse silenziosamente sembrerebbe una scheda completa."
+      "unratedNote": "Sono comunque presenti nella trascrizione qui sotto. Un punteggio che le escludesse silenziosamente sembrerebbe una scheda completa.",
+      "scoreOfFive": "{{score}} / 5"
     },
     "saveFailed": "Impossibile salvare quella valutazione. Riprova.",
     "savedToLibrary": "Salvato nella tua Libreria documenti.",
@@ -325,7 +327,8 @@
     "goalFailed": "Non è stato possibile aggiungere l'obiettivo. Riprova da Goals Studio.",
     "makeGoal": "Trasforma “{{name}}” in un obiettivo",
     "ofFive": "su 5",
-    "title": "Risultato simulato — solo per esercitazione"
+    "title": "Risultato simulato — solo per esercitazione",
+    "scoreOfFive": "{{score}} / 5"
   },
   "studio": {
     "framedOn": "Basato su {{name}}",

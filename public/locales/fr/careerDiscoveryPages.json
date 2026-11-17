@@ -264,5 +264,6 @@
   "progItsRole": "son rôle",
   "progNotAvailable": "non disponible",
   "progOnlyPublished": "Seuls les établissements ayant publié leur catalogue ici sont répertoriés.",
-  "progOverallFit": "Adéquation globale"
+  "progOverallFit": "Adéquation globale",
+  "progComponentLine": "{{label}}: {{text}}"
 }

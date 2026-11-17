@@ -102,7 +102,8 @@
     "goalFailed": "Não foi possível adicionar a meta. Tente novamente pelo Goals Studio.",
     "makeGoal": "Transformar “{{name}}” em meta",
     "ofFive": "de 5",
-    "title": "Resultado simulado — apenas prática"
+    "title": "Resultado simulado — apenas prática",
+    "scoreOfFive": "{{score}} / 5"
   },
   "studio": {
     "framedOn": "Baseado em {{name}}",
@@ -300,7 +301,8 @@
       "sectionScores": "Pontuação por seção",
       "title": "Resultados da entrevista",
       "unrated": "{{unrated}} de {{total}} respostas nunca foram avaliadas e NÃO fazem parte desta pontuação.",
-      "unratedNote": "Elas continuam na transcrição abaixo. Uma pontuação que as descartasse silenciosamente pareceria uma avaliação completa."
+      "unratedNote": "Elas continuam na transcrição abaixo. Uma pontuação que as descartasse silenciosamente pareceria uma avaliação completa.",
+      "scoreOfFive": "{{score}} / 5"
     },
     "saveFailed": "Não foi possível salvar essa avaliação. Tente novamente.",
     "savedToLibrary": "Salvo na sua Biblioteca de Documentos."
@@ -390,7 +392,8 @@
       "result": "Resultado",
       "role": "Cargo",
       "stopped": "Interrompida",
-      "title": "Entrevistas"
+      "title": "Entrevistas",
+      "scoreOfFive": "{{score}} / 5"
     },
     "practice": {
       "guideLabel": "Assista: guia de Entrevistas",

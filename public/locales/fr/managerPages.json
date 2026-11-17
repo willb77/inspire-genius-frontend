@@ -70,7 +70,8 @@
     "partialProfileOfDimensionsMeasured": "Profil partiel : {{evaluated}} dimensions mesurées sur {{total}}",
     "openDevelopmentWorkspaceFor": "Ouvrir l'espace de développement de {{name}}",
     "ofMilestonesComplete": "{{value}} % des jalons terminés",
-    "inviteToCompletePrismTo": "Invitez la personne à réaliser PRISM pour établir un profil."
+    "inviteToCompletePrismTo": "Invitez la personne à réaliser PRISM pour établir un profil.",
+    "text": " · {{department}}"
   },
   "memberDevelopmentWorkspace": {
     "askedTheyDecideAndDeclining": "Demande envoyée. La personne décide, et un refus ne lui coûte rien.",
@@ -85,7 +86,8 @@
     "recentActivity": "Activité récente",
     "whatChangedOnThisDossier": "Ce qui a changé dans ce dossier, et quel agent ou quelle action en est à l'origine.",
     "dossierExportedAsPdf": "Dossier exporté en PDF.",
-    "couldnTGenerateThePdf": "Impossible de générer le PDF."
+    "couldnTGenerateThePdf": "Impossible de générer le PDF.",
+    "text": " · {{department}}"
   },
   "notesPanel": {
     "delete": "Supprimer",
@@ -150,7 +152,8 @@
     "couldnTSearchPeopleRight": "Impossible de rechercher des personnes pour le moment. Vous pouvez toujours saisir leurs informations ci-dessous.",
     "searching": "Recherche en cours…",
     "noOneFoundYouCan": "Personne trouvé. Vous pouvez toujours saisir leurs informations ci-dessous.",
-    "orTypeTheirDetailsBelow": "Ou saisissez leurs informations ci-dessous. Seuls le manager d'une personne, un administrateur d'entreprise de son organisation ou un super administrateur peuvent ajouter quelqu'un qui possède déjà un compte."
+    "orTypeTheirDetailsBelow": "Ou saisissez leurs informations ci-dessous. Seuls le manager d'une personne, un administrateur d'entreprise de son organisation ou un super administrateur peuvent ajouter quelqu'un qui possède déjà un compte.",
+    "text": " ({{email}})"
   },
   "prismTeam": {
     "teamPrismAssessments": "Évaluations PRISM de l'équipe",
@@ -322,7 +325,8 @@
     "whyThisOrder": "Pourquoi cet ordre?",
     "member": "Membre",
     "sharing": "Partage",
-    "nameNotOnFile": "Nom non renseigné"
+    "nameNotOnFile": "Nom non renseigné",
+    "prism": "PRISM"
   },
   "team": {
     "teamRosterClient": "Liste de l'équipe (client)",
@@ -342,7 +346,8 @@
     "hDepartment": "Département",
     "hRole": "Rôle",
     "notAssessed": "Non évalué",
-    "openProfile": "Ouvrir le profil"
+    "openProfile": "Ouvrir le profil",
+    "hPRISM": "PRISM"
   },
   "teamBuilding": {
     "teamBuilding": "Constitution d'équipe",
@@ -357,7 +362,8 @@
     "secondary": "Secondaire",
     "score": "Score",
     "conflictInsights": "Analyses des conflits",
-    "collaborationSuggestions": "Suggestions de collaboration"
+    "collaborationSuggestions": "Suggestions de collaboration",
+    "text": "{{label}} ({{length}})"
   },
   "teamComparePanel": {
     "withoutPrismOne": "{{withoutPrism}} membre de l'équipe n'est pas répertorié : aucun PRISM n'est enregistré pour cette personne. Invitez-la depuis la liste de l'équipe.",
@@ -421,7 +427,8 @@
     "apply": "Appliquer",
     "askAboutThisMember2": "Poser une question sur ce membre…",
     "askMeridianAboutThisMember": "Interroger Meridian à propos de ce membre",
-    "send": "Envoyer"
+    "send": "Envoyer",
+    "meridian": "Meridian"
   },
   "meridianExportMenu": {
     "couldnTExportTheConversation": "Impossible d'exporter la conversation. Veuillez réessayer.",
@@ -434,7 +441,8 @@
     "emailOpensYourMailApp": "E-mail (ouvre votre application de messagerie)"
   },
   "savedRunsCard": {
-    "delete": "Supprimer {{title}}"
+    "delete": "Supprimer {{title}}",
+    "text": "{{openLabel}}: {{title}}"
   },
   "schedule": {
     "startTimeIsNotAValid": "L'heure de début n'est pas une date valide.",

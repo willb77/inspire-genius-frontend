@@ -84,7 +84,8 @@
     "onFile": "au dossier",
     "notOnFile": "absent du dossier",
     "pagesWithinLimitOne": "Ce CV compte {{pages}} page au format PDF (USAJOBS en autorise {{pageLimit}}). Vérifiez que le fichier Word respecte aussi cette limite.",
-    "pagesWithinLimitOther": "Ce CV compte {{pages}} pages au format PDF (USAJOBS en autorise {{pageLimit}}). Vérifiez que le fichier Word respecte aussi cette limite."
+    "pagesWithinLimitOther": "Ce CV compte {{pages}} pages au format PDF (USAJOBS en autorise {{pageLimit}}). Vérifiez que le fichier Word respecte aussi cette limite.",
+    "sourceChip": "{{label}}: {{state}}"
   },
   "profileV2": {
     "trackHowADimensionHasMoved": "Suivez l'évolution d'une dimension au fil du temps.",
@@ -113,7 +114,8 @@
     "noAssessmentsYetAddOneUnder": "Aucune évaluation pour le moment. Ajoutez-en une sous Paramètres → Autres évaluations, ou répondez à un questionnaire PRISM.",
     "allDimensions": "Toutes les dimensions",
     "typing": "Saisie",
-    "trend": "Tendance"
+    "trend": "Tendance",
+    "sourceSuffix": " · {{source}}"
   },
   "dashboardV2": {
     "chatWithMeridian": "Discuter avec Meridian",
@@ -178,7 +180,8 @@
     "toggleAvailability": "Activer/désactiver la disponibilité de {{title}}",
     "surveyFallback": "enquête",
     "editSurvey": "Modifier {{title}}",
-    "deleteSurvey": "Supprimer {{title}}"
+    "deleteSurvey": "Supprimer {{title}}",
+    "createdByEmail": " · {{email}}"
   },
   "documentsV2": {
     "selectedDocumentsWereRemovedSuccessfully": "Les documents sélectionnés ont été supprimés.",
@@ -303,7 +306,8 @@
     "roleBadge": "Poste : {{role}}",
     "industryBadge": "Secteur : {{industry}}",
     "experienceBadge": "Expérience : {{years}} ans",
-    "assessedOn": "Évalué le {{date}}"
+    "assessedOn": "Évalué le {{date}}",
+    "sourceSuffix": " · {{source}}"
   },
   "analyticsV2": {
     "noAnalyticsYetYourChartsWill": "Aucune analyse pour le moment : vos graphiques se rempliront à mesure que vous terminerez des séances et des objectifs.",

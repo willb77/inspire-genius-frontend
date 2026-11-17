@@ -1,0 +1,407 @@
+{
+  "user": {
+    "developmentMyLearningSection": {
+      "whereIsItFromOptional": "Odkud to pochází? (nepovinné)",
+      "add": "Přidat",
+      "learning": "Učení",
+      "addSomethingYouAreWorking": "Přidejte něco, čemu se právě věnujete",
+      "whatIsIt": "O co jde?",
+      "negotiationFundamentals": "Základy vyjednávání"
+    },
+    "developmentMyMilestonesSection": {
+      "blocked": "Blokováno: {{blockedReason}}",
+      "due": "Termín: {{dueDate}}",
+      "milestones": "Milníky"
+    },
+    "developmentMyPrismReadingSection": {
+      "notScored": "nehodnoceno",
+      "myPrismReading": "Moje hodnocení PRISM",
+      "weCanTShowYour": "Vaše hodnocení nelze zobrazit.",
+      "scalesOnFile": "Počet uložených škál: {{coverage}}",
+      "fromAnOlderRecord": "Ze staršího záznamu",
+      "yourQuadrantMeans": "Co znamená Váš kvadrant"
+    },
+    "developmentMyReviewsSection": {
+      "agreedWithThisGoal": "Souhlasí s tímto cílem",
+      "wantsToTalkItThrough": "Chce to probrat",
+      "noCommentLeft": "Žádný komentář.",
+      "coachReviews": "Hodnocení od kouče"
+    },
+    "developmentSelfSection": {
+      "tryAgain": "Zkusit znovu"
+    },
+    "documentsUploadDocumentsModal": {
+      "uploadDocuments": "Nahrát dokumenty",
+      "pleaseUploadADocumentFor": "Nahrajte prosím dokument k analýze.",
+      "documentsDropZone": "Oblast pro přetažení dokumentů",
+      "dragDropYourFilesHere": "Přetáhněte soubory sem",
+      "or": "NEBO",
+      "browseFiles": "Procházet soubory",
+      "cancel": "Zrušit",
+      "upload": "Nahrát",
+      "close": "Zavřít",
+      "somethingWentWrong": "Něco se pokazilo",
+      "theUploadedDocumentMayNot": "Nahraný dokument možná není v podporovaném formátu nebo je příliš velký. Zkontrolujte soubor a zkuste to znovu.",
+      "thisMightTakeAFew": "Může to trvat několik sekund. Během nahrávání prosím nezavírejte toto okno.",
+      "documentUploaded": "Dokument nahrán",
+      "documentUploadedSuccessfully": "Dokument byl úspěšně nahrán!",
+      "back": "Zpět"
+    },
+    "bioChronicleChatPanel": {
+      "couldnTSaveThisSession": "Tuto relaci se nepodařilo uložit – zatím zde zůstává.",
+      "resumed": "Relace „{{title}}“ byla obnovena.",
+      "couldnTOpenThatSession": "Tuto relaci se nepodařilo otevřít – zkuste to prosím znovu.",
+      "chronicleInterview": "Rozhovor s Chronicle",
+      "chronicleIsThinking": "Chronicle přemýšlí…",
+      "readyWhenYouAre": "Jsme připraveni, kdykoli budete chtít",
+      "audio": "Zvuk",
+      "audioReadChronicleSQuestions": "Zvuk: nechte si otázky od Chronicle přečíst nahlas a odpovídejte mluvením",
+      "sessions": "Relace",
+      "newSession": "Nová relace",
+      "continueASession": "Pokračovat v relaci",
+      "noSavedSessionsYet": "Zatím žádné uložené relace.",
+      "saving": "Ukládání…",
+      "save": "Uložit",
+      "endRecap": "Ukončit a shrnout",
+      "chronicleHelpsYouTellYour": "Chronicle vám pomáhá vyprávět váš příběh, jednu vzpomínku po druhé. Zapněte Zvuk a nechte se vést hlasem, nebo prostě začněte psát:",
+      "stop": "Zastavit",
+      "listen": "Poslechnout",
+      "dismiss": "Zavřít",
+      "goDeeper": "Jít hlouběji",
+      "addTheSmallThingsThe": "Přidejte drobnosti – vůni místnosti, co měl někdo na sobě, co hrálo. Detail je příběh.",
+      "listeningSpeakYourAnswer": "Poslouchám. Řekněte svou odpověď.",
+      "voiceInputIsnTSupported": "Hlasový vstup tento prohlížeč nepodporuje",
+      "voiceInputIsnTSupported2": "Hlasový vstup tento prohlížeč nepodporuje – napište prosím svou odpověď.",
+      "messageChronicle": "Napsat Chronicle",
+      "send": "Odeslat",
+      "sessionInsight": "Postřeh z relace",
+      "asYouTalkWhatChronicle": "Během rozhovoru se zde zobrazí, co Chronicle zachytí – kapitoly, kterých se dotknete, shrnuté vzpomínky a to, co vyniká.",
+      "chaptersThisSession": "Kapitoly v této relaci",
+      "captured": "Zachyceno ({{length}})",
+      "whatStandsOut": "Co vyniká",
+      "nothingToSaveYetStart": "Zatím není co uložit – nejprve zahajte rozhovor.",
+      "interviewSavedYouCanContinue": "Rozhovor byl uložen – můžete v něm kdykoli pokračovat."
+    },
+    "bioMemoirExportMenu": {
+      "nothingToExportYetCapture": "Zatím není co exportovat – nejprve zachyťte vzpomínku s Chronicle.",
+      "memoirCopied": "Paměti byly zkopírovány.",
+      "couldnTExportYourMemoir": "Paměti se nepodařilo exportovat – zkuste to prosím znovu.",
+      "exportMemoir": "Exportovat paměti",
+      "copy": "Kopírovat",
+      "print": "Tisknout",
+      "wordDoc": "Word (.doc)",
+      "pdf": "PDF"
+    },
+    "bioSessionRecapCard": {
+      "sessionRecap": "Shrnutí relace",
+      "chaptersVisited": "Navštívené kapitoly",
+      "capturedThisSession": "Zachyceno v této relaci",
+      "whatStandsOut": "Co vyniká",
+      "nothingWasCapturedThisTime": "Tentokrát nebylo nic zachyceno – vyberte kapitolu a pokračujte, kdykoli budete připraveni."
+    },
+    "chatChatWindow": {
+      "copiedToClipboard": "Zkopírováno do schránky"
+    },
+    "chatDocumentsPanel": {
+      "pdf": "PDF",
+      "csv": "CSV",
+      "ppt": "PPT",
+      "doc": "DOC"
+    },
+    "developmentMyGapsSection": {
+      "markAsClosed": "Označit jako uzavřené",
+      "gaps": "Mezery",
+      "addSomethingYouWantTo": "Přidejte něco, v čem se chcete zlepšit",
+      "whatIsIt": "O co jde?",
+      "presentingToARoomI": "Prezentace před lidmi, které neznám",
+      "howMuchDoesItMatter": "Jak moc na tom záleží?",
+      "add": "Přidat"
+    },
+    "userCoachCard": {
+      "help": "Nápověda",
+      "gender": "Pohlaví",
+      "voiceAccent": "Přízvuk hlasu",
+      "voiceTone": "Tón hlasu",
+      "chat": "Chat"
+    },
+    "bioBioChaptersStrip": {
+      "continue": "Pokračovat"
+    },
+    "bioCapturedTurnCard": {
+      "capturedToYourProfile": "Zaznamenáno do Vašeho profilu"
+    }
+  },
+  "survey": {
+    "surveyUploadDialog": {
+      "buildSurvey": "Vytvořit průzkum",
+      "fileImportedReviewTheText": "Soubor byl importován – zkontrolujte text a poté vytvořte průzkum.",
+      "pasteOrUploadSomeQuestion": "Nejprve vložte nebo nahrajte text otázek.",
+      "couldNotParseThatText": "Tento text se nepodařilo zpracovat.",
+      "couldNotBuildTheSurvey": "Průzkum se nepodařilo vytvořit. Zkuste to znovu.",
+      "buildASurveyFromQuestions": "Vytvořit průzkum z otázek",
+      "dropInOrPasteYour": "Přetáhněte nebo vložte své otázky, možnosti odpovědí a případné pokyny. Připravíme koncept průzkumu, který můžete zkontrolovat a upravit – konečné typy otázek určíte v dalším kroku.",
+      "titleOptional": "Název (volitelné)",
+      "eGBaselineSurvey": "např. Výchozí průzkum",
+      "questionsInstructions": "Otázky a pokyny",
+      "uploadFile": "Nahrát soubor",
+      "dragAFileOntoThe": "Přetáhněte soubor na toto pole nebo použijte „Nahrát soubor“. Tabulky z Wordu a možnosti se zaškrtávacími poli se také převedou.",
+      "cancel": "Zrušit"
+    },
+    "surveyBuilder": {
+      "giveTheSurveyATitle": "Před uložením zadejte názvu průzkumu.",
+      "addAtLeastOneQuestion": "Před uložením přidejte alespoň jednu otázku.",
+      "choiceQuestionsNeedAtLeast": "Otázky s výběrem odpovědi potřebují alespoň dvě možnosti.",
+      "surveySaved": "Průzkum byl uložen.",
+      "surveyDetails": "Podrobnosti o průzkumu",
+      "title": "Název",
+      "eGTeamPulseCheck": "např. Rychlý průzkum nálady v týmu",
+      "descriptionOptional": "Popis (volitelné)",
+      "whatIsThisSurveyFor": "K čemu tento průzkum slouží?",
+      "exposeToOrganization": "Zpřístupnit organizaci",
+      "organizationIdLeaveBlankTo": "ID organizace (nechte prázdné pro použití vlastní)",
+      "membersOfThisOrganizationWill": "Členové této organizace uvidí průzkum v Nastavení → Můj pracovní prostor. Pokud pole nevyplníte, průzkum se zpřístupní vaší vlastní organizaci.",
+      "availableToRespondents": "Dostupné respondentům",
+      "offKeepsItHiddenUntil": "Když je vypnuto, zůstane průzkum skrytý, dokud nebudete připraveni. Zapnutím jej zpřístupníte své organizaci.",
+      "question": "Otázka {{v1}}",
+      "moveQuestionUp": "Posunout otázku nahoru",
+      "moveQuestionDown": "Posunout otázku dolů",
+      "removeQuestion": "Odebrat otázku",
+      "questionText": "Text otázky",
+      "whatDoYouWantTo": "Na co se chcete zeptat?",
+      "answerType": "Typ odpovědi",
+      "maxRating": "Maximální hodnocení",
+      "required": "Povinné",
+      "options": "Možnosti",
+      "removeOption": "Odebrat možnost",
+      "addOption": "Přidat možnost",
+      "addQuestion": "Přidat otázku",
+      "cancel": "Zrušit",
+      "saveSurvey": "Uložit průzkum"
+    },
+    "surveyResults": {
+      "noAnswersYet": "Zatím žádné odpovědi.",
+      "answered": "Odpovědělo: {{answered}}",
+      "compilation": "Souhrn",
+      "responses": "Počet odpovědí: {{responseCount}}",
+      "couldNotLoadTheCompilation": "Souhrn se nepodařilo načíst.",
+      "noResponsesYetTheCompilation": "Zatím žádné odpovědi. Souhrn se zobrazí, jakmile lidé odešlou odpovědi.",
+      "individualResponses": "Jednotlivé odpovědi",
+      "hide": "Skrýt",
+      "show": "Zobrazit",
+      "noResponsesYet": "Zatím žádné odpovědi."
+    },
+    "surveySelector": {
+      "build": "Vytvořit",
+      "chooseASurvey": "Vyberte průzkum…"
+    },
+    "surveyTaker": {
+      "pleaseAnswerTheRequiredQuestions": "Před odesláním odpovězte na povinné otázky.",
+      "responseSubmittedThankYou": "Odpověď byla odeslána. Děkujeme!",
+      "responseRecorded": "Odpověď byla zaznamenána",
+      "takeAgain": "Vyplnit znovu",
+      "chooseAnotherSurvey": "Vybrat jiný průzkum",
+      "thisSurveyHasNoQuestions": "Tento průzkum zatím neobsahuje žádné otázky.",
+      "typeYourAnswer": "Napište svou odpověď…",
+      "thisQuestionIsRequired": "Tato otázka je povinná.",
+      "submitResponse": "Odeslat odpověď"
+    }
+  },
+  "grant": {
+    "grantPreviewToggle": {
+      "financialAidPreview": "Náhled finanční pomoci",
+      "toggleTheFinancialAidGrant": "Přepnout zobrazení vertikály finanční pomoci (GRANT)"
+    }
+  },
+  "directionSetting": {
+    "goalInterviewPanel": {
+      "question": "Otázka {{questionNumber}}",
+      "goalsStudio": "Goals Studio",
+      "gettingTheNextQuestions": "Načítání dalších otázek…",
+      "question2": "Otázka {{askedCount}}",
+      "voice": "Hlas",
+      "voiceModeGoalsStudioReads": "Hlasový režim: Goals Studio čte své otázky nahlas a poslouchá Vaši odpověď",
+      "why": "proč",
+      "itWillReadItsQuestions": "Přečte své otázky nahlas a poslechne si Vaši odpověď. Chcete-li psát, vypněte Hlas.",
+      "textModeReadAndType": "Textový režim – čtěte a pište. Chcete-li vést rozhovor nahlas, zapněte Hlas.",
+      "youVeExploredOfAreas": "Prozkoumali jste {{exploredCount}} z {{length}} oblastí. Navážeme tam, kde jste skončili.",
+      "continueTheConversation": "Pokračovat v rozhovoru",
+      "startTheConversation": "Zahájit rozhovor",
+      "thinking": "Přemýšlím…",
+      "goalsStudioIsSpeaking": "Goals Studio mluví.",
+      "tryAgain": "Zkusit znovu",
+      "skipThisArea": "Přeskočit tuto oblast",
+      "draftMyGoals": "Navrhnout moje cíle",
+      "sendingYourAnswer": "Odesílání Vaší odpovědi…",
+      "holdOnLetMeEdit": "Počkejte, chci to upravit",
+      "voiceInputIsnTSupported": "Hlasový vstup tento prohlížeč nepodporuje",
+      "voiceInputIsnTSupported2": "Hlasový vstup tento prohlížeč nepodporuje – vypněte Hlas a odpovídejte psaním.",
+      "yourAnswer": "Vaše odpověď",
+      "send": "Odeslat"
+    }
+  },
+  "lumen": {
+    "portraitPortraitSections": {
+      "ofSourcesOnFileEverything": "{{present}} z {{length}} zdrojů je k dispozici. Vše níže vychází z nich – pokud zdroj chybí, obraz je spíše neúplný než chybný.",
+      "onFile": "k dispozici",
+      "notOnFile": "není k dispozici",
+      "thisIsARealRead": "Toto je skutečné vyhodnocení toho, co jste nám poskytli. PRISM je kotva, vůči které se ostatní zdroje čtou, takže jeho přidáním lze obraz potvrdit, a nejen popsat.",
+      "leads": "{{dominant_quadrant}} vede",
+      "energyDirection": "Směr energie",
+      "measuredAlongsideTheEightBut": "Měřeno vedle osmi, ale není součástí žádného kvadrantu – a žádný konec není lepší než druhý.",
+      "agrees": "shoduje se",
+      "differs": "liší se",
+      "confidence": "jistota {{v1}}",
+      "noTensionsSurfacedYourInstruments": "Nevyšla najevo žádná napětí. Vaše nástroje vyprávějí konzistentní příběh.",
+      "prismIsTheAnchorWhere": "PRISM je kotva – kde se jiný nástroj liší, vede PRISM a rozdíl se zobrazí, nikoli odstraní."
+    }
+  },
+  "onboarding": {
+    "coachCard": {
+      "help": "Nápověda",
+      "gender": "Pohlaví",
+      "selectGender": "Vyberte pohlaví",
+      "voiceAccent": "Přízvuk hlasu",
+      "selectAccent": "Vyberte přízvuk",
+      "voiceTone": "Tón hlasu",
+      "selectTones": "Vyberte tóny",
+      "ifAnyChangesAreMade": "pokud provedete jakékoli změny, uložte a přehrajte",
+      "cancel": "Zrušit",
+      "edit": "Upravit"
+    }
+  },
+  "prism": {
+    "prismInitiateForm": {
+      "janeSmithCompanyCom": "jane.smith@company.com"
+    },
+    "narrativeNarrativeExportButtons": {
+      "pdf": "PDF",
+      "word": "Word"
+    }
+  },
+  "fit": {
+    "fitCards": {
+      "thisJob": "Tato práce",
+      "you": "Vy",
+      "difference": "Rozdíl"
+    },
+    "fitMatchList": {
+      "fit": "shoda {{pct}} %",
+      "fit2": "shoda",
+      "ofMeasured": "změřeno {{evaluated}} z {{total}}",
+      "composite": "souhrnně {{v1}} %",
+      "behaviouralFitGoalsAndExperience": "Shoda v chování, cíle a zkušenosti dohromady",
+      "overallFit": "Celková shoda",
+      "prismFit": "Shoda PRISM {{pct}} %",
+      "prismFit2": "Shoda PRISM",
+      "notEnoughAboutYouTo": "O Vás není dost údajů ke sloučení – přidejte životopis"
+    },
+    "fitResult": {
+      "growthAreas": "Oblasti růstu",
+      "priorityFocus": "Prioritní zaměření",
+      "yourFitAgainstThisTarget": "Vaše shoda s tímto cílem",
+      "decisionSupportOnly": "Pouze podpora rozhodování",
+      "prismFitAsRecorded": "Shoda PRISM podle záznamu",
+      "yourFitAsRecorded": "Vaše shoda podle záznamu",
+      "worthPuttingFirst": "Stojí za to uvést jako první",
+      "worthBuildingOverTime": "Stojí za to rozvíjet v čase",
+      "matchingForThisRoleIs": "Párování pro tuto roli je stále v omezeném provozu, berte proto toto vyhodnocení jako první návrh, nikoli jako konečnou odpověď.",
+      "overallFitIsnTAvailable": "Celková shoda zatím není pro vložený popis práce k dispozici – Vaše shoda PRISM výše je Vaším vodítkem.",
+      "whatToSayOutLoud": "Co k tomuto říct nahlas",
+      "theseAreThePlacesYou": "V těchto oblastech už požadavkům role odpovídáte nebo je překonáváte. Jsou Vaše – stojí za to mít je připravené před pohovorem.",
+      "strengthsYouTurnUpHigh": "Silné stránky, které zesilujete",
+      "theseAreStrengthsNotFaults": "Jsou to silné stránky, ne chyby. Projevujete je silněji, než tato role obvykle vyžaduje – což se často ukáže pod tlakem. Nic z toho není třeba napravovat; jen je užitečné vědět, po kterém ovladači sáhnete jako po prvním."
+    },
+    "fitScoreHeadline": {
+      "overallFit": "Celková shoda {{v1}} %"
+    }
+  },
+  "workbench": {
+    "workbenchHome": {
+      "loadingYourRoster": "Načítání Vašeho seznamu…",
+      "notMeasuredThisIsNot": "Neměřeno – nejedná se o nulový počet.",
+      "nameNotOnFile": "Jméno není v evidenci",
+      "open": "Otevřít",
+      "loadingWorkbench": "Načítání pracovního stolu",
+      "yourWorkbenchCouldNotBe": "Váš pracovní stůl se nepodařilo načíst.",
+      "tryAgain": "Zkusit znovu"
+    }
+  },
+  "tasks": {
+    "costEstimateBanner": {
+      "estimatedCostUsdInputTokens": "Odhadované náklady: ~${{v1}} USD ({{v2}} vstupních tokenů × vstupní sazba Sonnet). Náklady na výstup závisí na délce odpovědi agenta."
+    },
+    "taskAgentResultCard": {
+      "savedToYourWorkspace": "Uloženo do Vašeho pracovního prostoru.",
+      "couldNotSave": "Uložení se nezdařilo: {{message}}",
+      "cannotSaveMissingTaskIdentity": "Nelze uložit: chybí identita úkolu.",
+      "confidence": "spolehlivost {{v1}} %",
+      "ms": "{{v1}} ms",
+      "suggestedNext": "Doporučený další krok:",
+      "reRunWithDifferentInputs": "Spustit znovu s jinými vstupy",
+      "saved": "Uloženo",
+      "saveToMyWorkspace": "Uložit do mého pracovního prostoru"
+    }
+  },
+  "taskAgents": {
+    "interviewPrepBody": {
+      "interviewPrepGenerated": "Příprava na pohovor byla vytvořena.",
+      "mavenInterviewagentFailed": "Maven (InterviewAgent) selhal: {{message}}",
+      "interviewPrep": "Příprava na pohovor",
+      "interviewPrep2": "Příprava na pohovor",
+      "getAStructured3Section": "Získejte od Mavena (InterviewAgent) strukturovaný plán pohovoru o 3 částech, nebo si prohlédněte sdílenou databázi otázek STAR s hodnoticími vzory.",
+      "generatePrep": "Vytvořit přípravu",
+      "questionBank": "Databáze otázek",
+      "inputs": "Vstupy",
+      "company": "Společnost",
+      "industry": "Odvětví",
+      "roleTitle": "Název role",
+      "candidateNameOptional": "Jméno kandidáta (volitelné)",
+      "interviewFocusOptional": "Zaměření pohovoru (volitelné)",
+      "runMaven": "Spustit Mavena",
+      "reset": "Obnovit"
+    },
+    "jobBlueprintBody": {
+      "matchGenerated": "Shoda byla vytvořena.",
+      "jamesAdminagentFailed": "James (AdminAgent) selhal: {{message}}",
+      "jobBlueprintMatch": "Job Blueprint Match",
+      "jobBlueprintMatch2": "Shoda s Job Blueprint",
+      "matchACandidateAgainstA": "Porovnejte kandidáta s plánem role (blueprint) pomocí Jamese (AdminAgent).",
+      "inputs": "Vstupy",
+      "roleTitle": "Název role",
+      "company": "Společnost",
+      "roleResponsibilities": "Odpovědnosti role",
+      "candidateSummary": "Shrnutí kandidáta",
+      "desiredOutcomesOptional": "Požadované výsledky (volitelné)",
+      "runJames": "Spustit Jamese",
+      "reset": "Obnovit"
+    },
+    "questionBankPanel": {
+      "whatToListenForScoring": "Na co si dát pozor (hodnoticí vzory)",
+      "strong5": "Silná (5)",
+      "baseline3": "Základní (3)",
+      "weak1": "Slabá (1)",
+      "starInterviewQuestionBank": "Databáze pohovorových otázek STAR"
+    },
+    "teamCompositionBody": {
+      "teamCompositionAnalysisReady": "Analýza složení týmu je hotová.",
+      "atlasDashboardagentFailed": "Atlas (DashboardAgent) selhal: {{message}}",
+      "atLeastOneMemberSummary": "Je vyžadováno alespoň jedno shrnutí člena",
+      "teamComposition": "Složení týmu",
+      "teamComposition2": "Složení týmu",
+      "analyseATeamSPrism": "Analyzujte pomocí Atlase (DashboardAgent) zastoupení PRISM, dovednosti a mezery v týmu.",
+      "inputs": "Vstupy",
+      "teamName": "Název týmu",
+      "teamPurpose": "Účel týmu",
+      "memberSummariesOnePerLine": "Shrnutí členů (jedno na řádek)",
+      "targetSkillsCommaSeparatedOptional": "Cílové dovednosti (oddělené čárkou, volitelné)",
+      "strategicThinkingAsyncCommsData": "strategické myšlení, asynchronní komunikace, datová gramotnost",
+      "runAtlas": "Spustit Atlase",
+      "reset": "Obnovit"
+    }
+  },
+  "interview": {
+    "rolePageShell": {
+      "inspireGenius": "Inspire Genius"
+    }
+  }
+}

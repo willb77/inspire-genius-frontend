@@ -1,0 +1,170 @@
+{
+  "validation": {
+    "firstName": {
+      "required": "Imię jest wymagane",
+      "max": "Imię może mieć maksymalnie {{max}} znaków"
+    },
+    "lastName": {
+      "required": "Nazwisko jest wymagane",
+      "max": "Nazwisko może mieć maksymalnie {{max}} znaków"
+    },
+    "region": {
+      "required": "Region jest wymagany",
+      "max": "Region może mieć maksymalnie {{max}} znaków"
+    },
+    "country": {
+      "required": "Kraj jest wymagany",
+      "max": "Kraj może mieć maksymalnie {{max}} znaków"
+    },
+    "phone": {
+      "max": "Numer telefonu może mieć maksymalnie {{max}} znaków"
+    },
+    "organisation": {
+      "max": "Nazwa organizacji może mieć maksymalnie {{max}} znaków",
+      "requiredForSetting": "Organizacja jest wymagana w przypadku firmy lub placówki edukacyjnej"
+    },
+    "roleOther": {
+      "max": "Opis roli może mieć maksymalnie {{max}} znaków",
+      "describe": "Opisz swoją rolę"
+    },
+    "siteId": {
+      "max": "Identyfikator witryny PRISM może mieć maksymalnie {{max}} znaków"
+    },
+    "contextOther": {
+      "max": "Opis środowiska może mieć maksymalnie {{max}} znaków",
+      "describe": "Opisz to środowisko"
+    },
+    "heardFrom": {
+      "max": "Ta odpowiedź może mieć maksymalnie {{max}} znaków"
+    },
+    "email": {
+      "required": "Adres e-mail jest wymagany",
+      "max": "Adres e-mail może mieć maksymalnie {{max}} znaków",
+      "invalid": "Wpisz prawidłowy adres e-mail"
+    },
+    "role": {
+      "choose": "Wybierz opcję, która najlepiej Cię opisuje"
+    },
+    "prism": {
+      "choose": "Powiedz nam, czy masz akredytację PRISM"
+    },
+    "context": {
+      "choose": "Wybierz, gdzie chcesz używać Inspires Genius"
+    }
+  },
+  "brand": {
+    "settings": {
+      "individuals": "Osoby indywidualne",
+      "teams": "Zespoły",
+      "organisations": "Organizacje",
+      "education": "Edukacja",
+      "enterprise": "Przedsiębiorstwa",
+      "title": "Na każdą okazję",
+      "body": "Jedna platforma, dopasowana do pracy.",
+      "aria": "Ustawienia"
+    },
+    "nextStep": {
+      "join": "Bez konta i bez instalowania czegokolwiek. Zaznacz pierwsze pole, aby dowiedzieć się, kiedy zaplanowano kolejny webinar.",
+      "events": "Bez konta i bez instalowania czegokolwiek. Zarejestruj zainteresowanie, aby dowiedzieć się, kiedy ogłoszone zostanie kolejne wydarzenie."
+    },
+    "eyebrow": "Zarejestruj zainteresowanie",
+    "headingLead": "Wspieraj każdego klienta",
+    "headingAccent": "między sesjami",
+    "intro": "Inspires Genius daje mentorom i praktykom partnera mentoringowego opartego na AI, który pracuje razem z nimi, dzięki czemu klienci robią postępy także po zakończeniu sesji.",
+    "offersAria": "Co oferuje Inspires Genius",
+    "practitioners": {
+      "title": "Stworzone dla praktyków",
+      "body": "Zapraszaj klientów, śledź ich postępy i daj każdemu mentora AI, który jest dostępny między Twoimi sesjami."
+    },
+    "assessments": {
+      "title": "Działa z narzędziami oceny, których już używasz",
+      "body": "(DISC, CliftonStrengths, MBTI, Big Five) oparte na PRISM, aby wzmacniać wszystkie efekty mentoringu."
+    },
+    "whatNext": "Co dalej"
+  },
+  "events": {
+    "loading": "Ładowanie wydarzeń…",
+    "listAria": "Nadchodzące wydarzenia",
+    "title": "Nadchodzące wydarzenia",
+    "backToRegister": "← Zarejestruj zainteresowanie",
+    "error": "Nie udało się teraz załadować wydarzeń. Spróbuj ponownie za kilka minut.",
+    "notOpen": "Nie zaplanowano jeszcze żadnych wydarzeń. Zarejestruj zainteresowanie i zaznacz pole webinaru, aby dowiedzieć się, kiedy ogłoszony zostanie kolejny.",
+    "empty": "Obecnie brak nadchodzących wydarzeń",
+    "moreInfo": "Więcej informacji",
+    "moreInfoAria": "Więcej informacji: {{title}}",
+    "register": "Zarejestruj się",
+    "registerAria": "Zarejestruj się na wydarzenie: {{title}}",
+    "full": "To wydarzenie jest już pełne."
+  },
+  "formError": {
+    "rate_limited": "Z Twojego połączenia wysłano zbyt wiele zgłoszeń. Spróbuj ponownie później.",
+    "too_large": "To zgłoszenie było zbyt długie, aby je wysłać. Skróć odpowiedzi i spróbuj ponownie.",
+    "network": "Nie udało się połączyć z serwerem. Sprawdź połączenie i spróbuj ponownie.",
+    "server": "Coś poszło nie tak po naszej stronie. Spróbuj ponownie za kilka minut.",
+    "invalid": "Nie udało się przyjąć tego zgłoszenia. Sprawdź odpowiedzi i spróbuj ponownie."
+  },
+  "roles": {
+    "practitioner": "Praktyk PRISM",
+    "distributor": "Dystrybutor PRISM",
+    "career_coach": "Coach kariery",
+    "education_coach": "Coach edukacyjny",
+    "mentor": "Mentor",
+    "hr": "Specjalista ds. HR",
+    "recruiter": "Rekruter",
+    "company": "Lider lub menedżer w firmie",
+    "other": "Inne"
+  },
+  "prismOptions": {
+    "yes": "Tak",
+    "no": "Nie",
+    "not_sure": "Nie wiem"
+  },
+  "contexts": {
+    "individual": "Indywidualnie",
+    "company": "W firmie",
+    "education": "W edukacji",
+    "other": "Inne"
+  },
+  "consent": {
+    "webinar_email": "Wyślij mi e-mail, gdy zostanie zaplanowany webinar Inspires Genius.",
+    "mailing_list": "Dodaj mnie do listy mailingowej Inspires Genius, aby otrzymywać okazjonalne nowości.",
+    "legend": "Pozostańmy w kontakcie (opcjonalnie)"
+  },
+  "chooseOne": "Wybierz jedną opcję",
+  "success": {
+    "title": "Dziękujemy",
+    "body": "Otrzymaliśmy Twoje dane. Dziękujemy za zainteresowanie Inspires Genius."
+  },
+  "notOpen": {
+    "title": "Rejestracja jeszcze nie jest otwarta",
+    "body": "Rejestracja jeszcze nie jest otwarta. Zajrzyj tu wkrótce.",
+    "back": "Wróć do formularza"
+  },
+  "form": {
+    "aria": "Zgłoś swoje zainteresowanie"
+  },
+  "fields": {
+    "firstName": "Imię",
+    "lastName": "Nazwisko",
+    "email": "E-mail",
+    "phone": "Telefon (opcjonalnie)",
+    "role": "Co najlepiej Cię opisuje?",
+    "roleOther": "Twoja rola",
+    "prism": "Czy masz akredytację PRISM?",
+    "siteId": "Identyfikator witryny PRISM (opcjonalnie)",
+    "context": "Gdzie chcesz używać Inspires Genius?",
+    "contextOther": "Opisz środowisko",
+    "organisation": "Organizacja",
+    "organisationOptional": "Organizacja (opcjonalnie)",
+    "region": "Stan, prowincja lub region",
+    "country": "Kraj",
+    "heardFrom": "Skąd o nas wiesz? (opcjonalnie)"
+  },
+  "honeypotLabel": "Pozostaw to pole puste",
+  "submit": "Zgłoś swoje zainteresowanie",
+  "header": {
+    "title": "Zgłoś swoje zainteresowanie",
+    "subtitle": "Inspires Genius to platforma mentoringu oparta na AI. Zostaw swoje dane poniżej, aby zgłosić zainteresowanie."
+  },
+  "seeEvents": "Zobacz nadchodzące wydarzenia →"
+}

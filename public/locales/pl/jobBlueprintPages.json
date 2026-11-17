@@ -1,0 +1,889 @@
+{
+  "panel": {
+    "building": "Tworzenie…",
+    "description": "Informacja, czy pracodawca lub ekspert merytoryczny potwierdził wzorzec tej wersji. Walidacja dotyczy poszczególnych wersji i nie zmienia sposobu dopasowania roli.",
+    "event": {
+      "aReviewer": "recenzent",
+      "anSme": "ekspert merytoryczny (nazwisko nie jest już przechowywane)",
+      "changes": "{{when}} — {{actor}} poprosił(a) o zmiany",
+      "recorded": "{{when}} — {{actor}} zarejestrował(a) potwierdzenie od: {{validator}}",
+      "requested": "{{when}} — {{actor}} poprosił(a) o walidację: {{reviewer}}",
+      "validatedInIg": "{{when}} — zwalidowano przez: {{validator}} w IG",
+      "withdrawn": "{{when}} — {{actor}} wycofał(a) prośbę"
+    },
+    "exportButton": "Raport z uzasadnieniem (.docx)",
+    "exportFailed": "Nie udało się utworzyć raportu z uzasadnieniem.",
+    "history": "Historia",
+    "loadFailed": "Nie udało się wczytać walidacji tej roli.",
+    "loading": "Wczytywanie walidacji…",
+    "nameNotHeld": "Nazwisko nie jest już przechowywane (retencja 90 dni)",
+    "record": "Zarejestruj potwierdzenie",
+    "recordedAttestation": "zarejestrowane potwierdzenie",
+    "recordedBy": "zarejestrowane przez: {{name}}",
+    "request": "Poproś o walidację",
+    "state": {
+      "changesRequested": "Poproszono o zmiany",
+      "inReview": "W trakcie przeglądu",
+      "none": "Niezwalidowano",
+      "validated": "Zwalidowano",
+      "withdrawn": "Prośba wycofana"
+    },
+    "title": "Walidacja przez pracodawcę / eksperta merytorycznego",
+    "withdraw": "Wycofaj prośbę",
+    "withdrawFailed": "Nie udało się wycofać prośby.",
+    "withdrawn": "Prośba wycofana.",
+    "awaiting": "oczekuje na: {{name}}",
+    "awaitingYou": "Ta rola oczekuje na Twoją walidację."
+  },
+  "pipeline": {
+    "advanceFailed": "Nie udało się przenieść kandydata do kolejnego etapu.",
+    "advanced": "Kandydat przeniesiony do kolejnego etapu.",
+    "description": "Śledź kandydatów na każdym etapie procesu rekrutacji na daną rolę.",
+    "emptyGated": "W tym procesie nie ma jeszcze kandydatów. Przyjmowanie i dopasowywanie kandydatów jest dla tego konta zablokowane.",
+    "loadFailed": "Nie udało się wczytać procesu rekrutacji.",
+    "loading": "Wczytywanie procesu rekrutacji…",
+    "loadingRoles": "Wczytywanie ról…",
+    "markHiredFailed": "Nie udało się oznaczyć kandydata jako zatrudnionego.",
+    "markedHired": "Kandydat {{code}} oznaczony jako zatrudniony.",
+    "selectRole": "Wybierz rolę, aby zobaczyć jej proces rekrutacji.",
+    "title": "Proces rekrutacji"
+  },
+  "pipelineBoard": {
+    "advance": "Przenieś dalej",
+    "board": "Tablica",
+    "col": {
+      "actions": "Akcje",
+      "email": "E-mail",
+      "name": "Nazwa",
+      "status": "Status",
+      "tier": "Poziom",
+      "variation": "Wariant"
+    },
+    "count": "Kandydaci: {{total}}",
+    "noCandidates": "Brak kandydatów",
+    "table": "Tabela",
+    "title": "Proces rekrutacji"
+  },
+  "progress": {
+    "complete": "Ukończono {{pct}}%",
+    "question": "Pytanie {{current}} z {{total}}"
+  },
+  "queue": {
+    "askedLine": "· v{{version}} · prośba od: {{by}}, {{date}}",
+    "col": {
+      "dimension": "Wymiar",
+      "target": "Cel",
+      "tier": "Poziom"
+    },
+    "loadFailed": "Nie udało się wczytać wzorca tej roli.",
+    "loading": "Wczytywanie wzorca…",
+    "title": "Oczekuje na Twoją walidację"
+  },
+  "scorecards": {
+    "loadingRoles": "Ładowanie ról…",
+    "noDraft": "Żadna sfinalizowana rozmowa nie utworzyła jeszcze wersji roboczej dla tego kandydata.",
+    "noGuide": "Dla tej roli nie wygenerowano jeszcze przewodnika rozmowy.",
+    "pipelineGated": "Proces rekrutacji kandydatów jest dla tego konta zablokowany — formularz działa tylko w trybie podglądu.",
+    "sections": {
+      "aptitudes": "3 najlepsze zdolności zawodowe (maks. 15)",
+      "behaviours": "3 najlepsze zachowania (maks. 15)",
+      "coreTraits": "3 najlepsze cechy podstawowe (maks. 15)",
+      "counterProductive": "Zachowania kontrproduktywne (maks. 10)"
+    },
+    "selectBeforeSubmit": "Wybierz kandydata przed przesłaniem karty oceny.",
+    "selectCandidate": "Wybierz kandydata…",
+    "selectRole": "Wybierz rolę, aby utworzyć jej kartę oceny i przewodnik rozmowy.",
+    "submitFailed": "Nie udało się przesłać karty oceny.",
+    "submitted": "Karta oceny została przesłana.",
+    "title": "Karty oceny",
+    "compare": {
+      "missing_few": "{{count}} wybranych kandydatów nie ma karty oceny na serwerze i nie są wyświetlani.",
+      "missing_many": "{{count}} wybranych kandydatów nie ma karty oceny na serwerze i nie jest wyświetlanych.",
+      "checkboxLabel": "Porównaj: {{name}}",
+      "failed": "Nie udało się wczytać jednej lub więcej kart oceny.",
+      "intro": "Wybierz maksymalnie {{limit}} kandydatów z przesłaną kartą oceny, aby zobaczyć ich wyniki obok siebie.",
+      "loading": "Ładowanie kart oceny…",
+      "missing": "Wybrani kandydaci ({{count}}) nie mają karty oceny na serwerze i nie są wyświetlani.",
+      "missing_one": "Wybrany kandydat ({{count}}) nie ma karty oceny na serwerze i nie jest wyświetlany.",
+      "missing_other": "Wybrani kandydaci ({{count}}) nie mają karty oceny na serwerze i nie są wyświetlani.",
+      "none": "Brak przesłanych kart oceny dla tej roli — prześlij kartę powyżej, a pojawi się tutaj.",
+      "noneOnServer": "Żaden z wybranych kandydatów nie ma karty oceny na serwerze.",
+      "select": "Wybierz kandydatów do porównania.",
+      "title": "Porównaj karty oceny"
+    },
+    "candidateLabel": "Kandydat:",
+    "description": "Ustrukturyzowane karty oceny i przewodniki rozmów kwalifikacyjnych oparte na wzorcu Job DNA dla danej roli.",
+    "draftCheckFailed": "Nie udało się sprawdzić, czy istnieje wersja robocza rozmowy dla tego kandydata."
+  },
+  "shared": {
+    "error": {
+      "default": "Coś poszło nie tak podczas ładowania tych danych.",
+      "retry": "Spróbuj ponownie"
+    },
+    "loading": "Ładowanie…",
+    "select": {
+      "label": "Job DNA",
+      "placeholder": "Wybierz rolę…"
+    }
+  },
+  "stats": {
+    "activeJobs": "Aktywne oferty pracy",
+    "avgTimeToFill": "Śr. czas obsadzenia",
+    "daysShort": "{{n}} d",
+    "hiresThisMonth": "Zatrudnienia w tym miesiącu",
+    "strongFitRate": "Wskaźnik silnego dopasowania",
+    "totalCandidates": "Łączna liczba kandydatów",
+    "totalJobDnas": "Łączna liczba Job DNA"
+  },
+  "summary": {
+    "evidence": "Co pokazują dowody",
+    "grandTotal": "Suma całkowita"
+  },
+  "survey": {
+    "goTo": "Przejdź do pytania {{n}}",
+    "next": "Dalej",
+    "previous": "Wstecz",
+    "submit": "Wyślij",
+    "submitting": "Wysyłanie...",
+    "title": "Skrócona ocena mapowania mózgu"
+  },
+  "timeToFill": {
+    "series": "Dni do obsadzenia",
+    "title": "Czas obsadzenia (dni)",
+    "tooltip": "{{value}} dni"
+  },
+  "wizard": {
+    "back": "Wstecz",
+    "create": "Utwórz Job DNA",
+    "next": "Dalej",
+    "steps": {
+      "aptitudes": {
+        "description": "Uszereguj i oceń 8 zdolności",
+        "label": "Zdolności"
+      },
+      "behaviors": {
+        "description": "Uszereguj i oceń 8 zachowań",
+        "label": "Zachowania"
+      },
+      "context": {
+        "description": "Środowisko pracy",
+        "label": "Kontekst"
+      },
+      "coreTraits": {
+        "description": "Uszereguj i oceń 6 cech",
+        "label": "Cechy podstawowe"
+      },
+      "review": {
+        "description": "Przejrzyj i wyślij",
+        "label": "Przegląd"
+      },
+      "roleInfo": {
+        "description": "Podstawowe informacje o roli",
+        "label": "Informacje o roli"
+      }
+    },
+    "stepsLabel": "Kroki kreatora",
+    "submitting": "Wysyłanie..."
+  },
+  "draft": {
+    "summary_few": "Utworzono {{date}} · oceniono {{count}} wymiary · jeszcze nie przesłano, więc nie jest liczona.",
+    "summary_many": "Utworzono {{date}} · oceniono {{count}} wymiarów · jeszcze nie przesłano, więc nie jest liczona.",
+    "open": "Otwórz wywiad",
+    "session": "Sesja wywiadu {{id}}…",
+    "summary": "Zapisano {{date}} · oceniono wymiarów: {{count}} · jeszcze nie przesłano, więc nie jest brany pod uwagę.",
+    "summary_one": "Zapisano {{date}} · oceniono {{count}} wymiar · jeszcze nie przesłano, więc nie jest brany pod uwagę.",
+    "summary_other": "Zapisano {{date}} · oceniono wymiarów: {{count}} · jeszcze nie przesłano, więc nie jest brany pod uwagę.",
+    "title": "Wersja robocza z sfinalizowanego wywiadu"
+  },
+  "record": {
+    "ruleSetVersion": "zestaw reguł v{{version}}",
+    "status": "Status",
+    "yes": "tak",
+    "activatedLine": "Aktywowano {{when}}{{by}} · decydenci: {{makers}} · rzetelność: {{integrity}}",
+    "answers": "Odpowiedzi:",
+    "answersUpdated": "Odpowiedzi zaktualizowano:",
+    "by": "przez {{name}}",
+    "call": "Decyzja: {{call}}",
+    "candidate": "Kandydat",
+    "case": "Sprawa",
+    "changedFrom": "zmieniono z {{route}}",
+    "col": {
+      "onFail": "Przy niespełnieniu",
+      "recorded": "Zapisano",
+      "required": "Wymagane",
+      "rule": "Reguła",
+      "standard": "Standard pisemny"
+    },
+    "confirmedRecommendation": "potwierdzono rekomendację",
+    "decidedBy": "Decyzja: {{name}}",
+    "decidedByIntake": "zdecydowała osoba, która przeprowadziła zgłoszenie",
+    "decidedOn": "dnia {{when}}",
+    "engineVersion": "silnik {{version}}",
+    "events": "Wszystkie zdarzenia w kolejności",
+    "finalRoute": "Ostateczna ścieżka: {{route}}",
+    "fit": {
+      "heading": "Profil mocnych stron (informacyjnie — nie wpływa na ścieżkę)",
+      "line": "Dopasowanie {{score}} / 100",
+      "roleVersion": "wersja roli {{version}}",
+      "tierWithheld": "poziom wstrzymany (profil częściowy)"
+    },
+    "intakeAlsoDecided": "Decyzję podjęła również osoba, która przeprowadziła zgłoszenie.",
+    "kind": {
+      "amendment": "Poprawka",
+      "decision": "Decyzja",
+      "exported": "Rekord odczytany lub wyeksportowany",
+      "goForward": "Decyzja o dalszym kroku",
+      "intake": "Zgłoszenie",
+      "qualificationCheck": "Sprawdzenie minimalnych kwalifikacji",
+      "recommendation": "Rekomendacja (doradcza)",
+      "withdrawn": "Wycofano"
+    },
+    "limits": "Ograniczenia",
+    "meetsMinimum": "Spełnia minimalny standard.",
+    "no": "nie",
+    "noAnswer": "brak odpowiedzi",
+    "noDecision": "Nie zapisano jeszcze decyzji.",
+    "noRecommendation": "Brak rekomendacji",
+    "notMeetsMinimum": "Nie spełnia jeszcze minimalnego standardu.",
+    "notReconstructed": "Nie udaje się odtworzyć. {{note}}",
+    "notValidated": "Wzorzec dla tej roli nie został zwalidowany.",
+    "opened": "Otwarto",
+    "reason": "Powód: {{reason}}",
+    "recommendedRoute": "Zalecana ścieżka: {{route}}.",
+    "reconstructed": "Odtworzono: ponowne uruchomienie zapisanego silnika na zapisanych danych daje ten wynik.",
+    "role": "Rola",
+    "roleVersion": "{{title}} (wersja {{version}})",
+    "ruleSetTitle": "Zestaw reguł: {{name}}, wersja {{version}} ({{status}})"
+  },
+  "results": {
+    "behaviorPreferences": "Preferencje behawioralne",
+    "confidence": "Pewność:",
+    "coreTraits": "Cechy podstawowe",
+    "title": "Wyniki oceny",
+    "workAptitudes": "Predyspozycje zawodowe"
+  },
+  "review": {
+    "aptitudes": "Predyspozycje",
+    "behaviors": "Zachowania",
+    "benchmarkRadar": "Radar wzorca",
+    "benchmarkScores": "Wyniki wzorca",
+    "coreTraits": "Cechy podstawowe",
+    "culturalFactors": "Czynniki kulturowe",
+    "departmentLabel": "Dział:",
+    "description": "Przejrzyj wzorzec Job DNA przed sfinalizowaniem. Na jego podstawie zostanie utworzony profil behawioralny używany do selekcji kandydatów.",
+    "environmentalFactors": "Czynniki środowiskowe",
+    "notSet": "Nie ustawiono",
+    "requiredWorkStyles": "Wymagane style pracy",
+    "roleContext": "Kontekst roli",
+    "roleDetails": "Szczegóły roli",
+    "tier": {
+      "executive": "Kadra zarządzająca",
+      "frontLine": "Pierwsza linia",
+      "professional": "Specjaliści"
+    },
+    "tierLabel": "Poziom:",
+    "title": "Przegląd i wysyłka",
+    "titleLabel": "Tytuł:",
+    "top3Aptitudes": "3 najważniejsze predyspozycje",
+    "top3Behaviors": "3 najważniejsze zachowania",
+    "top3CoreTraits": "3 najważniejsze cechy podstawowe",
+    "topDimensions": "Najważniejsze wymiary",
+    "workPressures": "Presje w pracy"
+  },
+  "roleContext": {
+    "culturalFactors": "Czynniki kulturowe",
+    "culturalFactorsPlaceholder": "np. Kultura oparta na innowacjach\nSilne wymogi zgodności\nPodejście „klient przede wszystkim”",
+    "description": "Opisz środowisko pracy i kontekst tej roli. Wpisz jedną pozycję w wierszu.",
+    "environmentalFactors": "Czynniki środowiskowe",
+    "environmentalFactorsPlaceholder": "np. Biuro typu open space\nWymagane regularne podróże\nPraca zdalna/hybrydowa",
+    "requiredWorkStyles": "Wymagane style pracy",
+    "requiredWorkStylesPlaceholder": "np. Zespołowe środowisko współpracy\nSamodzielne podejmowanie decyzji\nSzybkie tempo realizacji",
+    "title": "Kontekst i środowisko roli",
+    "workPressures": "Presje w pracy",
+    "workPressuresPlaceholder": "np. Napięte terminy\nWysokie oczekiwania klientów\nWymóg wielozadaniowości"
+  },
+  "roleInfo": {
+    "department": "Dział",
+    "departmentPlaceholder": "np. Sprzedaż",
+    "description": "Określ podstawowe informacje o roli, dla której tworzysz wzorzec.",
+    "roleTier": "Poziom roli",
+    "roleTitle": "Nazwa roli",
+    "roleTitlePlaceholder": "np. Starszy opiekun klienta",
+    "selectTier": "Wybierz poziom",
+    "tier": {
+      "executive": "Kadra zarządzająca (150 tys. USD+)",
+      "frontLine": "Pierwsza linia (<75 tys. USD)",
+      "professional": "Specjaliści (75–150 tys. USD)"
+    },
+    "tierNote": "Poziom określa cenę selekcji, przewodników do rozmów kwalifikacyjnych i wdrożenia.",
+    "title": "Informacje o roli"
+  },
+  "ruleEditor": {
+    "acceptedValues": "Akceptowane wartości, oddzielone przecinkami",
+    "addRule": "Dodaj regułę",
+    "clause": "Klauzula pisemnego standardu",
+    "formLabel": "Zestaw reguł",
+    "ifNotMet": "Jeśli niespełniona",
+    "kind": {
+      "attested": "Wymóg potwierdzany oświadczeniem (tak)",
+      "backgroundCheck": "Status weryfikacji przeszłości zawodowej, zgodnie z poświadczeniem (jeden z)",
+      "degree": "Stopień naukowy (co najmniej)",
+      "label": "Rodzaj",
+      "licensurePath": "Ścieżka uprawnień zawodowych (jedna z)"
+    },
+    "label": "Etykieta",
+    "lowestDegree": "Najniższy stopień naukowy ({{levels}})",
+    "makersCurrent": "Obecnie: {{names}} — wpisz je ponownie, aby je zachować.",
+    "makersLabel": "Adresy e-mail osób podejmujących decyzje (oddzielone przecinkami)",
+    "makersNote": "Każda z nich musi mieć w Twojej organizacji rolę menedżera lub wyższą. Tylko te osoby mogą zapisać decyzję w tej wersji.",
+    "name": "Nazwa",
+    "onFail": {
+      "hold": "Wstrzymaj",
+      "none": "Nic (używane tylko do wyboru ścieżki)",
+      "refer": "Przekaż"
+    },
+    "removeRule": "Usuń regułę {{n}}",
+    "residencyNote": "W przeciwnym razie kandydatowi spełniającemu minimum zostanie zarekomendowany Apprentice.",
+    "residencyWhen": "Rekomenduj Residency, gdy wszystkie te identyfikatory reguł zostaną spełnione (oddzielone przecinkami)",
+    "ruleId": "Identyfikator reguły",
+    "ruleN": "Reguła {{n}}",
+    "saveDraft": "Zapisz wersję roboczą",
+    "saveFailed": "Nie udało się zapisać zestawu reguł.",
+    "saved": "Wersja robocza zapisana.",
+    "saving": "Zapisywanie…",
+    "val": {
+      "id": "Litery, cyfry lub „-”",
+      "label": "Nadaj regule etykietę",
+      "makers": "Podaj e-mailem co najmniej jedną osobę podejmującą decyzje",
+      "name": "Nadaj nazwę zestawowi reguł",
+      "rules": "Dodaj co najmniej jedną regułę",
+      "sourceRef": "Podaj klauzulę pisemnego standardu"
+    }
+  },
+  "dnaDetail": {
+    "editDetails": "Edytuj szczegóły",
+    "editTitle": "Edytuj szczegóły roli",
+    "loadFailed": "Nie udało się wczytać tego Job DNA.",
+    "loading": "Wczytywanie Job DNA…",
+    "provenance": {
+      "reviewed": "zweryfikowano {{date}}",
+      "reviewerNotRecorded": "brak zapisanego recenzenta"
+    },
+    "roleTitle": "Nazwa roli",
+    "save": "Zapisz",
+    "saving": "Zapisywanie…",
+    "shapeConforms": "Struktura poziomów jest zgodna z metodologią: 3 krytyczne w każdym bloku, 2 zachowania kontrproduktywne.",
+    "shapeDiffers": "Struktura poziomów odbiega od metodologii: {{violations}}.",
+    "source": {
+      "incumbentContrast": "zaproponowano na podstawie wywiadów z obecnymi pracownikami",
+      "jdExtract": "wyodrębniono z opisu stanowiska",
+      "llmDraft": "opracowano w silniku Job DNA",
+      "manual": "utworzono ręcznie",
+      "unknown": "brak zapisanego źródła"
+    },
+    "status": "Status:",
+    "tier": "Poziom",
+    "updateFailed": "Nie udało się zaktualizować Job DNA.",
+    "updated": "Job DNA zostało zaktualizowane.",
+    "aptitudes": "Predyspozycje",
+    "backToDashboard": "Wróć do pulpitu",
+    "behaviours": "Zachowania",
+    "benchmarkNote": "Opracowany tutaj — przygotowany przez silnik Job DNA lub stworzony ręcznie — i zweryfikowany przez człowieka. Profile PRISM kandydatów są oceniane względem niego. Nie jest to wzorzec stanowiska zwalidowany przez PRISM.",
+    "benchmarkProfile": "Profil wzorcowy",
+    "cancel": "Anuluj",
+    "coreTraits": "Cechy podstawowe",
+    "department": "Dział"
+  },
+  "draftFlow": {
+    "archetype": {
+      "auto": {
+        "hint": "Klasyfikacja na podstawie nazwy stanowiska",
+        "label": "Wykryj automatycznie"
+      },
+      "executive": {
+        "hint": "Strategia + relacje",
+        "label": "Kierownictwo wyższego szczebla"
+      },
+      "managerial": {
+        "hint": "Osąd + ludzie",
+        "label": "Menedżerski"
+      },
+      "operational": {
+        "hint": "Praktyczny / oparty na zadaniach",
+        "label": "Operacyjny"
+      }
+    },
+    "blocks": {
+      "aptitudes": "Predyspozycje zawodowe",
+      "behaviors": "Zachowania",
+      "coreTraits": "Cechy podstawowe"
+    },
+    "context": "Kontekst",
+    "contextOptional": "(opcjonalnie)",
+    "contextPlaceholder": "Wklej opis stanowiska lub kilka zdań o tym, czego naprawdę wymaga ta rola. (Przesłany plik uzupełni to pole).",
+    "description": "Przygotuj wersję roboczą wszystkich 22 wymiarów roli na podstawie nazwy stanowiska, przesłanego opisu stanowiska lub roli z innej branży. Wersja robocza to odczyt roli przez silnik względem definicji każdego wymiaru w PRISM — punkt wyjścia, a nie zwalidowany wzorzec PRISM. Przed zapisaniem czegokolwiek sprawdzasz i edytujesz profil.",
+    "done": {
+      "another": "Przygotuj kolejną",
+      "anotherNote": "Przygotuj wzorzec dla następnej roli.",
+      "body": "Wzorzec został zapisany, a rola jest teraz dostępna we wszystkich miejscach Job DNA.",
+      "saved": "Zapisano „{{role}}”",
+      "view": "Zobacz blueprint",
+      "viewNote": "Otwórz profil wzorca i jego wykresy."
+    },
+    "draftButton": "Przygotuj blueprint",
+    "draftNew": "Przygotuj nową rolę…",
+    "drafted": "Blueprint gotowy — 22 wymiary do sprawdzenia.",
+    "drafting": "Przygotowywanie blueprintu",
+    "kceLoadFailed": "Nie udało się wczytać ról zapisanych w Knowledge Continuity.",
+    "loaded": "Wczytano „{{title}}”.",
+    "loadedFile": "Wczytano „{{name}}” — liczba znaków kontekstu: {{chars}}.",
+    "loadedFromKce": "Wczytano „{{title}}” z Knowledge Continuity.",
+    "loadingRole": "Wczytywanie roli…",
+    "pickRole": "Wybierz istniejącą rolę — rola Job DNA otwiera swój blueprint, a rola z Knowledge Continuity stanowi podstawę tej wersji roboczej.",
+    "progress": {
+      "assessing": "Ocenianie wymagań behawioralnych…",
+      "balancing": "Równoważenie profilu…",
+      "finalizing": "Finalizowanie blueprintu…",
+      "reading": "Analizowanie roli…",
+      "setting": "Ustawianie 22 wzorców…"
+    },
+    "readFailed": "Nie udało się odczytać tego pliku.",
+    "review": {
+      "changedFromAi": "Zmieniono: {{changed}} w stosunku do propozycji AI",
+      "confirm": "Sprawdzono wszystkie stawki ({{total}}){{changed}} i potwierdzam je. Zapisanie publikuje ten wzorzec, a ja zostaję odnotowany jako osoba weryfikująca.",
+      "dimsDrafted": "Przygotowano 22 wymiary ·",
+      "drafted": "Wersja robocza Blueprint gotowa",
+      "percentNote": "To wersja robocza do sprawdzenia, a nie zweryfikowany wzorzec. Dostosuj poniższe wartości procentowe, a następnie zapisz.",
+      "rankRateNote": "Każda wartość docelowa wynika z rangi wymiaru i stawki zaproponowanej przez AI. Sprawdź każdą stawkę, zmień te, z którymi się nie zgadzasz, a następnie potwierdź i zapisz. Nic nie zostanie zapisane, dopóki tego nie zrobisz.",
+      "save": "Zapisz rolę i Blueprint",
+      "saving": "Zapisywanie…",
+      "shape": "profil.",
+      "startOver": "Zacznij od nowa"
+    },
+    "role": "Rola",
+    "roleShape": "Profil roli",
+    "roleTitle": "Nazwa roli",
+    "roleTitlePlaceholder": "np. starszy operator oczyszczalni ścieków lub CIO",
+    "row": {
+      "aiProposed": "AI zaproponowało {{rate}} z {{max}}",
+      "benchmarkPercent": "Procent wzorca: {{name}}",
+      "heldBack": "zasugerowano {{ai}}; ustawiono {{held}}, aby pozostało: {{tier}}",
+      "rank": "Ranga {{rank}} z {{size}}",
+      "rate": "Stawka",
+      "rateAria": "Stawka: {{name}}",
+      "rateOption": "{{rate}} z {{max}}",
+      "rateOptionAi": "{{rate}} z {{max}} (AI)",
+      "ratesKeep": "stawki {{lo}}–{{hi}} utrzymują poziom: {{tier}}",
+      "target": "cel",
+      "targetAria": "Cel: {{name}}",
+      "youSet": "ustawiono {{value}}"
+    },
+    "saved": "Zapisano Job DNA.",
+    "shapeNote": "Profil wpływa na to, które wymiary autor wersji roboczej oznacza jako krytyczne — kadra zarządzająca opiera się na osądzie i relacjach, a nie na liście zadań.",
+    "sourceJobDna": "Job DNA",
+    "sourceKce": "KCE",
+    "tier": {
+      "counterProductive": "Kontrproduktywny",
+      "critical": "Krytyczny",
+      "unimportant": "Nieistotny"
+    },
+    "title": "Przygotuj wersję roboczą Blueprint",
+    "upload": {
+      "ariaLabel": "Prześlij dokument roli",
+      "label": "Prześlij rolę",
+      "note": "Wgraj opis stanowiska lub kartę roli — odczytamy tekst do pola poniżej i odgadniemy nazwę roli. Nic nie jest przesyłane na serwer.",
+      "optional": "(opcjonalnie — Word, PDF lub tekst)",
+      "reading": "Odczytywanie…"
+    },
+    "val": {
+      "roleTitle": "Nazwij rolę do porównania"
+    }
+  },
+  "ruleSets": {
+    "actionFailed": "To się nie udało.",
+    "activate": "Aktywuj",
+    "activated": "Aktywowano.",
+    "description": "Pisemny minimalny standard Twojej organizacji w postaci reguł. Każda wersja jest zamrażana po aktywacji.",
+    "editDraft": "Edytuj wersję roboczą",
+    "ifNotMet": "{{onFail}}, jeśli niespełnione",
+    "loading": "Ładowanie zestawów reguł…",
+    "new": "Nowy zestaw reguł",
+    "newVersion": "Rozpocznij nową wersję",
+    "newVersionStarted": "Rozpoczęto nową wersję roboczą.",
+    "none": "Brak zestawów reguł.",
+    "routeOnly": "tylko ścieżka",
+    "staffOnly": "Zestawami reguł zarządza zespół rekrutacyjny Twojej organizacji.",
+    "summaryLine": "Reguły: {{rules}} · osoby podejmujące decyzje: {{makers}}",
+    "title": "Zestawy reguł",
+    "versionLine": "{{name}} — wersja {{version}} ({{status}})",
+    "ruleLine": "{{label}} — {{source}} ({{outcome}})"
+  },
+  "scorecardComparison": {
+    "candidate": "Kandydat {{id}}",
+    "title": "Porównanie kart oceny"
+  },
+  "addCandidate": {
+    "noCandidate": "Serwer przyjął żądanie, ale nie zwrócił kandydata. Odśwież proces rekrutacji, aby to sprawdzić.",
+    "noRoles": "Brak opublikowanych ról. Najpierw opublikuj wzorzec Job DNA.",
+    "role": "Rola (opublikowany Job DNA)",
+    "selectRole": "Wybierz opublikowaną rolę…",
+    "submit": "Dodaj do procesu",
+    "title": "Dodaj kandydata",
+    "trigger": "Dodaj kandydata",
+    "val": {
+      "code": "Kod może mieć maksymalnie 32 znaki",
+      "email": "Wpisz prawidłowy adres e-mail",
+      "job": "Wybierz opublikowaną rolę",
+      "name": "Nazwa jest wymagana"
+    },
+    "added": "Dodano kandydata {{name}} do procesu",
+    "addedAs": "Dodano kandydata {{name}} do procesu pod kodem {{code}}",
+    "adding": "Dodawanie…",
+    "cancel": "Anuluj",
+    "code": "Kod kandydata (opcjonalnie)",
+    "codePlaceholder": "Przydzielany automatycznie, jeśli puste",
+    "description": "Umieszcza osobę w procesie rekrutacji na to stanowisko pod anonimowym kodem. Jej profil PRISM jest porównywany ze zweryfikowanym wzorcem stanowiska, gdy tylko ten zostanie zapisany.",
+    "email": "E-mail",
+    "fullName": "Imię i nazwisko"
+  },
+  "analytics": {
+    "description": "Lejek rekrutacyjny, rozkład przewidywanego dopasowania i czas obsadzenia stanowisk w Twoich Job DNA.",
+    "emptyAccuracy": "Brak danych o trafności.",
+    "emptyActivity": "Brak aktywności.",
+    "emptyFunnel": "Brak danych lejka.",
+    "emptyHires": "Brak zarejestrowanych zatrudnień.",
+    "emptyStats": "Brak dostępnych statystyk.",
+    "emptyTimeToFill": "Brak danych o czasie obsadzenia.",
+    "loading": "Ładowanie analityki…",
+    "title": "Analityka"
+  },
+  "aptitudes": {
+    "description": "Uszereguj 8 preferencji uzdolnień zawodowych według ważności dla tej roli, a następnie oceń znaczenie każdej z nich.",
+    "title": "Preferencje uzdolnień zawodowych"
+  },
+  "authoring": {
+    "changeMethod": "Zmień metodę",
+    "created": "Job DNA został utworzony i zestawiony ze wzorcem.",
+    "description": "Przygotuj wzorzec na podstawie roli lub zbuduj go ręcznie z zachowań, uzdolnień i cech podstawowych. W obu przypadkach człowiek sprawdza go przed użyciem — nie jest to wzorzec stanowiska zwalidowany przez PRISM.",
+    "draft": {
+      "body": "Podaj nazwę stanowiska lub prześlij opis stanowiska, a silnik Job DNA przygotuje wszystkie 22 wymiary na podstawie definicji PRISM każdego z nich. To punkt wyjścia do sprawdzenia i edycji, a nie zwalidowany wzorzec. Najszybszy sposób na pierwszy szkic.",
+      "title": "Szkic na podstawie roli"
+    },
+    "manual": {
+      "body": "Samodzielnie uszereguj i oceń każde zachowanie, uzdolnienie i cechę podstawową w kreatorze krok po kroku. Pełna kontrola.",
+      "title": "Zbuduj ręcznie"
+    },
+    "noId": "Job DNA został utworzony, ale nie zwrócono identyfikatora.",
+    "saveFailed": "Nie udało się zapisać Job DNA. Spróbuj ponownie.",
+    "title": "Utwórz Job DNA"
+  },
+  "barChart": {
+    "natural": "Naturalny",
+    "veryHigh": "Bardzo wysoki"
+  },
+  "behaviors": {
+    "description": "Uszereguj 8 preferencji zachowań według ważności dla tej roli, a następnie oceń znaczenie każdej z nich. System obliczy końcowy wynik wzorca metodą „uszereguj, potem oceń”.",
+    "title": "Preferencje zachowań"
+  },
+  "candidateComparison": {
+    "benchmark": "Wzorzec",
+    "dimension": "Wymiar",
+    "title": "Porównanie kandydatów",
+    "totalVariation": "Całkowite odchylenie"
+  },
+  "candidateDetail": {
+    "advance": "Przejdź do następnego etapu",
+    "advanceFailed": "Nie udało się przenieść tego kandydata dalej.",
+    "advancedTo": "Kandydat {{code}} przeszedł do etapu: {{status}}.",
+    "advancing": "Przenoszenie…",
+    "back": "Wróć do kandydatów",
+    "blind": "Selekcja anonimowa — tożsamość jest przechowywana w mapie anonimizacji i nigdy tu nie jest pokazywana.",
+    "description": "Dopasowanie, wnioski i karta oceny rozmowy dla jednego kandydata.",
+    "loadFailed": "Nie udało się wczytać tego kandydata.",
+    "loading": "Wczytywanie kandydata…",
+    "loadingInsights": "Wczytywanie wniosków…",
+    "loadingScorecard": "Wczytywanie karty oceny…",
+    "markHiredFailed": "Nie udało się oznaczyć tego kandydata jako zatrudnionego.",
+    "markedHired": "Kandydat {{code}} został oznaczony jako zatrudniony.",
+    "nextStage": "następny etap",
+    "noInsights": "Dla tego kandydata nie wygenerowano jeszcze pakietu wniosków.",
+    "noScorecard": "Dla tego kandydata nie przesłano jeszcze karty oceny rozmowy.",
+    "notScored": "Dopasowanie tego kandydata nie zostało jeszcze ocenione — brak oceny do porównania ze wzorcem roli.",
+    "openScorecards": "Otwórz karty oceny",
+    "pipelineComplete": "Proces zakończony",
+    "scorecardFailed": "Nie udało się wczytać karty oceny.",
+    "scorecardHeading": "Karta oceny rozmowy",
+    "title": "Kandydat {{code}}",
+    "totalVariation": "Całkowita wariancja {{value}}"
+  },
+  "fit": {
+    "totalVariation": "Całkowite odchylenie",
+    "trait": "Cecha",
+    "aptitude": "Predyspozycje",
+    "behavior": "Zachowanie",
+    "col": {
+      "benchmark": "Wzorzec",
+      "candidate": "Kandydat",
+      "category": "Kategoria",
+      "dimension": "Wymiar",
+      "gap": "Luka"
+    },
+    "gapAnalysis": "Analiza luk",
+    "skew": "Skośność",
+    "stdDeviation": "Odchylenie standardowe",
+    "title": "Analiza dopasowania: {{name}}"
+  },
+  "form": {
+    "notes": "Dodatkowe uwagi",
+    "notesPlaceholder": "Ogólne wrażenia z rozmowy, dalsze działania...",
+    "submit": "Prześlij kartę oceny",
+    "submitting": "Przesyłanie..."
+  },
+  "forms": {
+    "commentsOptional": "Komentarze (opcjonalnie)",
+    "decision": {
+      "amendTitle": "Zmień decyzję",
+      "amended": "Zmiana została zapisana.",
+      "chooseRoute": "Wybierz ścieżkę. Nie ma ustawienia domyślnego.",
+      "departRecommendation": "Wyjaśnij, dlaczego odchodzisz od rekomendacji (co najmniej {{min}} znaków).",
+      "departRecorded": "Wyjaśnij, dlaczego odchodzisz od zapisanej decyzji (co najmniej {{min}} znaków).",
+      "giveReason": "Podaj powód (co najmniej {{min}} znaków).",
+      "mustChange": "Zmiana musi dotyczyć ścieżki.",
+      "reason": "Powód",
+      "recordFailed": "Nie udało się zapisać decyzji.",
+      "recordTitle": "Zapisz decyzję",
+      "recorded": "Decyzja została zapisana.",
+      "recording": "Zapisywanie…"
+    },
+    "intake": {
+      "answersLegend": "Odpowiedzi względem standardu pisemnego",
+      "attest": "Te odpowiedzi są zgodne z dokumentacją okręgu.",
+      "candidateEmail": "Adres e-mail kandydata (opcjonalnie)",
+      "candidateName": "Imię i nazwisko kandydata",
+      "chooseRole": "Wybierz rolę",
+      "chooseRuleSet": "Wybierz zestaw reguł",
+      "confirmAnswers": "Potwierdź, że odpowiedzi są zgodne z Twoją dokumentacją",
+      "formLabel": "Przyjęcie kandydata",
+      "giveName": "Podaj imię i nazwisko kandydata",
+      "missingAnswer": "Brak odpowiedzi wstrzymuje sprawę; nigdy nie jest powodem skierowania.",
+      "openFailed": "Nie udało się otworzyć sprawy.",
+      "opened": "Sprawa została otwarta.",
+      "opening": "Otwieranie…",
+      "role": "Rola",
+      "ruleSet": "Standard minimalny (zestaw reguł)",
+      "ruleSetOption": "{{name}} (wersja {{version}})",
+      "selectRole": "Wybierz rolę…",
+      "selectRuleSet": "Wybierz zestaw reguł…",
+      "submit": "Otwórz sprawę i sprawdź",
+      "validEmail": "Wpisz prawidłowy adres e-mail"
+    },
+    "no": "nie",
+    "notAnswered": "Brak odpowiedzi",
+    "notesSummary": "Opcjonalnie: dlaczego dany wymiar ma znaczenie w tej roli",
+    "organisation": "Organizacja",
+    "record": {
+      "attest": "Ekspert merytoryczny (SME) przejrzał wzorzec tej wersji i potwierdził, że odzwierciedla on rolę.",
+      "dateSigned": "Data podpisania",
+      "failed": "Nie udało się zapisać potwierdzenia.",
+      "formLabel": "Zapisz potwierdzenie",
+      "intro": "Dla pracodawcy lub eksperta merytorycznego bez konta IG, który zatwierdził dokument poza IG. Raport wskazuje, że zapisałeś(-aś) to Ty oraz że ekspert nie podpisał się w IG. Jego imię i nazwisko, organizacja i stanowisko są przechowywane przez 90 dni.",
+      "recorded": "Potwierdzenie zostało zapisane.",
+      "recording": "Zapisywanie…",
+      "smeName": "Imię i nazwisko eksperta (SME)",
+      "submit": "Zapisz potwierdzenie",
+      "val": {
+        "attest": "Potwierdź, że ekspert zaświadczył o tym wzorcu",
+        "dateFormat": "Wpisz datę podpisania przez eksperta",
+        "dateFuture": "Data nie może być z przyszłości",
+        "name": "Imię i nazwisko eksperta jest wymagane",
+        "org": "Organizacja eksperta jest wymagana"
+      }
+    },
+    "request": {
+      "failed": "Nie udało się poprosić o walidację.",
+      "formLabel": "Poproś o walidację",
+      "intro": "Recenzent musi mieć rolę menedżera lub wyższą w organizacji tej roli oraz konto IG. Nic nie jest wysyłane e-mailem: recenzent zobaczy prośbę po zalogowaniu.",
+      "note": "Notatka do recenzenta (opcjonalnie)",
+      "requested": "Zlecono walidację.",
+      "requesting": "Wysyłanie prośby…",
+      "reviewerEmail": "Adres e-mail recenzenta",
+      "submit": "Poproś o walidację",
+      "val": {
+        "email": "Podaj adres e-mail recenzenta"
+      }
+    },
+    "titleOptional": "Tytuł (opcjonalnie)",
+    "verdict": {
+      "changesNeeded": "Wymagane zmiany",
+      "changesRequested": "Zgłoszono potrzebę zmian.",
+      "failed": "Nie udało się zapisać oceny.",
+      "formLabel": "Twoja ocena",
+      "saving": "Zapisywanie…",
+      "submit": "Prześlij ocenę",
+      "val": {
+        "comments": "Napisz, co trzeba zmienić",
+        "name": "Twoje imię i nazwisko w takiej postaci, w jakiej ma się pojawić w raporcie",
+        "org": "Twoja organizacja"
+      },
+      "validate": "Odzwierciedla rolę — zatwierdź",
+      "validated": "Zatwierdzono.",
+      "whatChange": "Co trzeba zmienić",
+      "yourName": "Twoje imię i nazwisko"
+    },
+    "yes": "tak"
+  },
+  "accuracy": {
+    "empty": "Brak jeszcze przewidywanych klasyfikacji.",
+    "misalignment": "Niedopasowanie",
+    "moderateFit": "Umiarkowane dopasowanie",
+    "potentialFit": "Potencjalne dopasowanie",
+    "strongFit": "Silne dopasowanie",
+    "title": "Rozkład przewidywanego dopasowania"
+  },
+  "activity": {
+    "title": "Ostatnia aktywność"
+  },
+  "radar": {
+    "benchmark": "Wzorzec",
+    "candidate": "Kandydat"
+  },
+  "rankRate": {
+    "dimension": "Wymiar",
+    "move": "Przenieś",
+    "moveDown": "Przenieś {{name}} w dół",
+    "moveUp": "Przenieś {{name}} w górę",
+    "rank": "Pozycja",
+    "rankFor": "Pozycja dla: {{name}}",
+    "rate": "Ocena (1-{{max}})",
+    "rateFor": "Ocena dla: {{name}}",
+    "score": "Wynik"
+  },
+  "entry": {
+    "counterProductive": "(Kontrproduktywny - odwrócony)",
+    "evidencePlaceholder": "Dowody i obserwacje...",
+    "score0": "Nie potrafi zadowalająco wykazać",
+    "score3": "Wykazano w umiarkowanym stopniu",
+    "score5": "Wykazano w dużym stopniu",
+    "scoreFor": "Wynik: {{name}}"
+  },
+  "candidates": {
+    "candidateLabel": "Kandydat",
+    "description": "Przeglądaj i oceniaj kandydatów: profil PRISM każdego z nich jest porównywany ze zweryfikowanym wzorcem Job DNA dla danej roli.",
+    "emptyPipeline": "W tym procesie nie ma jeszcze kandydatów. Użyj powyższego przycisku „Dodaj kandydata”, aby kogoś dodać; ocena dopasowania zostanie uruchomiona, gdy jego ocena PRISM będzie w aktach.",
+    "interview": "Przeprowadź rozmowę z tym kandydatem",
+    "loadFailed": "Nie udało się wczytać kandydatów.",
+    "loading": "Wczytywanie kandydatów…",
+    "loadingRoles": "Wczytywanie ról…",
+    "notScored": "Dopasowanie tego kandydata nie zostało jeszcze ocenione.",
+    "open": "Otwórz kandydata",
+    "selectCandidate": "Wybierz kandydata, aby zobaczyć analizę dopasowania.",
+    "selectRole": "Wybierz rolę, aby zobaczyć listę jej kandydatów.",
+    "title": "Kandydaci"
+  },
+  "card": {
+    "code": "Kod: {{code}}",
+    "variation": "Wariancja: {{value}}"
+  },
+  "coreTraits": {
+    "description": "Uszereguj 6 podstawowych cech według ważności dla tej roli, a następnie oceń znaczenie każdej z nich.",
+    "title": "Cechy podstawowe"
+  },
+  "dashboard": {
+    "createFirst": "Utwórz swój pierwszy Job DNA",
+    "description": "Job Blueprint — przygotuj wzorzec zachowań dla roli, poproś osobę znającą tę rolę o jego weryfikację, a następnie oceniaj i szereguj profile PRISM kandydatów względem niego.",
+    "empty": "Brak Job DNA.",
+    "loadError": "Nie udało się wczytać Job DNA.",
+    "loading": "Wczytywanie Job DNA…",
+    "newJobDna": "Nowy Job DNA",
+    "title": "Career Blueprint",
+    "yourJobDnas": "Twoje Job DNA"
+  },
+  "decisionPath": {
+    "activateFirst": "Aktywuj zestaw reguł przed otwarciem sprawy.",
+    "case": {
+      "loadFailed": "Nie udało się wczytać tej sprawy.",
+      "loading": "Wczytywanie rekordu…",
+      "title": "Rekord decyzji"
+    },
+    "cases": "Sprawy",
+    "casesFailed": "Nie udało się wczytać spraw.",
+    "col": {
+      "candidate": "Kandydat",
+      "decided": "Decyzja",
+      "recommended": "Rekomendowane (doradczo)",
+      "status": "Status"
+    },
+    "description": "Sprawdź kandydata pod kątem pisemnego minimalnego standardu Twojej organizacji, zobacz rekomendowaną ścieżkę i zapisz decyzję wraz z uzasadnieniem.",
+    "entry": {
+      "body": "— sprawdzaj kandydatów pod kątem pisemnego minimalnego standardu i zapisuj każdą decyzję wraz z uzasadnieniem.",
+      "title": "Ścieżka decyzji"
+    },
+    "loadingCases": "Wczytywanie spraw…",
+    "loadingRuleSets": "Wczytywanie zestawów reguł…",
+    "nameRemoved": "(nazwa usunięta)",
+    "newCandidate": "Nowy kandydat",
+    "noCases": "Brak spraw.",
+    "notEnabled": "Ścieżka decyzji nie jest włączona dla Twojej organizacji.",
+    "route": {
+      "apprentice": "Praktykant",
+      "hold": "Wstrzymaj",
+      "refer": "Skieruj",
+      "residency": "Rezydentura"
+    },
+    "ruleSets": "Zestawy reguł",
+    "title": "Ścieżka decyzji"
+  },
+  "funnel": {
+    "count": "Liczba",
+    "title": "Lejek rekrutacyjny"
+  },
+  "guide": {
+    "counterProductive": "Pytania o zachowania kontrproduktywne",
+    "general": "Ogólne pytania rekrutacyjne",
+    "roleLine": "Rola: {{role}} | Wygenerowano {{date}}",
+    "scoreLine": "Wzorzec: {{benchmark}}% | Kandydat: {{candidate}}% | Różnica: {{gap}}",
+    "title": "Przewodnik po rozmowie"
+  },
+  "hire": {
+    "cancel": "Anuluj",
+    "description": "Zapisz powód. Powód jest przechowywany przy tym kroku wraz z informacją, kto go podał.",
+    "reason": "Powód",
+    "saving": "Zapisywanie…",
+    "submit": "Oznacz jako zatrudnionego",
+    "title": "Oznacz kandydata {{code}} jako zatrudnionego",
+    "val": {
+      "max": "Maksymalnie {{max}} znaków",
+      "required": "Napisz, dlaczego ten kandydat jest oznaczany jako zatrudniony"
+    }
+  },
+  "hires": {
+    "avgFit": "Śr. przewidywane dopasowanie",
+    "hires": "Zatrudnienia",
+    "period": "Okres",
+    "title": "Zatrudnienia według okresu"
+  },
+  "insight": {
+    "fitScore": "Wynik dopasowania",
+    "focusAreas": "Obszary uwagi podczas rozmowy",
+    "gapAnalysis": "Analiza różnic",
+    "generated": "Wygenerowano {{when}}",
+    "opportunityFactors": "Czynniki szans",
+    "probeQuestions": "Pytania pogłębiające",
+    "riskFactors": "Czynniki ryzyka",
+    "title": "Pakiet wniosków"
+  },
+  "intake": {
+    "failed": "Nie udało się dodać kandydata. Spróbuj ponownie.",
+    "notEnabled": "Twoje konto nie ma włączonego tworzenia Job DNA, więc nie można dodawać kandydatów."
+  },
+  "likert": {
+    "agree": "Zgadzam się",
+    "disagree": "Nie zgadzam się",
+    "groupLabel": "Skala Likerta",
+    "neutral": "Neutralnie",
+    "somewhatAgree": "Raczej się zgadzam",
+    "somewhatDisagree": "Raczej się nie zgadzam",
+    "stronglyAgree": "Zdecydowanie się zgadzam",
+    "stronglyDisagree": "Zdecydowanie się nie zgadzam"
+  }
+}

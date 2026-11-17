@@ -199,5 +199,6 @@
   "dashHouseTitle": "Panel",
   "dashHouseDescription": "Las personas, los departamentos y el uso de tu organización de un vistazo.",
   "dashHouseDepartments": "Departamentos",
-  "dashHouseShortcuts": "Accesos directos"
+  "dashHouseShortcuts": "Accesos directos",
+  "peopleColPrism": "PRISM"
 }

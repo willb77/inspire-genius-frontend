@@ -194,7 +194,8 @@
     "bulkDescriptionAfter": ", o sube un archivo CSV.",
     "pasteRows": "Pegar filas",
     "uploadCsv": "…o sube un archivo CSV",
-    "import": "Importar"
+    "import": "Importar",
+    "colPrism": "PRISM"
   },
   "comingSoon": {
     "schedule": {

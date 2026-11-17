@@ -26,7 +26,8 @@
     "couldnTSearchPeopleRight": "Al momento non è possibile cercare le persone. Puoi comunque inserire i loro dati qui sotto.",
     "searching": "Ricerca in corso…",
     "noOneFoundYouCan": "Nessuno trovato. Puoi comunque inserire i dati qui sotto.",
-    "orTypeTheirDetailsBelow": "Oppure inserisci i dati qui sotto. Solo il manager di una persona, un amministratore aziendale della sua organizzazione o un super admin può aggiungere qualcuno che ha già un account."
+    "orTypeTheirDetailsBelow": "Oppure inserisci i dati qui sotto. Solo il manager di una persona, un amministratore aziendale della sua organizzazione o un super admin può aggiungere qualcuno che ha già un account.",
+    "text": " ({{email}})"
   },
   "prismTeam": {
     "teamPrismAssessments": "Valutazioni PRISM del team",
@@ -132,7 +133,8 @@
     "partialProfileOfDimensionsMeasured": "Profilo parziale: {{evaluated}} dimensioni su {{total}} misurate",
     "openDevelopmentWorkspaceFor": "Apri lo spazio di sviluppo di {{name}}",
     "ofMilestonesComplete": "{{value}}% degli obiettivi intermedi completato",
-    "inviteToCompletePrismTo": "Invita a completare PRISM per creare un profilo."
+    "inviteToCompletePrismTo": "Invita a completare PRISM per creare un profilo.",
+    "text": " · {{department}}"
   },
   "memberDevelopmentWorkspace": {
     "askedTheyDecideAndDeclining": "Richiesta inviata. Decide la persona e rifiutare non ha alcun costo.",
@@ -147,7 +149,8 @@
     "recentActivity": "Attività recente",
     "whatChangedOnThisDossier": "Cosa è cambiato in questo dossier e quale agente o azione l'ha causato.",
     "dossierExportedAsPdf": "Dossier esportato in PDF.",
-    "couldnTGenerateThePdf": "Impossibile generare il PDF."
+    "couldnTGenerateThePdf": "Impossibile generare il PDF.",
+    "text": " · {{department}}"
   },
   "meridianDevelopmentPanel": {
     "tab": "Scheda: {{tab}}",
@@ -164,7 +167,8 @@
     "apply": "Applica",
     "askAboutThisMember2": "Chiedi a proposito di questo membro…",
     "askMeridianAboutThisMember": "Chiedi a Meridian di questo membro",
-    "send": "Invia"
+    "send": "Invia",
+    "meridian": "Meridian"
   },
   "developmentStudio": {
     "view": "Visualizza",
@@ -321,7 +325,8 @@
     "noSignInEvent": "Non abbiamo alcun evento di accesso per questo membro. Non equivale a dire che non abbia mai effettuato l'accesso.",
     "seenToday": "Visto oggi",
     "dayAgoOne": "{{since}} giorno fa",
-    "dayAgoOther": "{{since}} giorni fa"
+    "dayAgoOther": "{{since}} giorni fa",
+    "prism": "PRISM"
   },
   "team": {
     "teamRosterClient": "Elenco del team (client)",
@@ -341,7 +346,8 @@
     "hDepartment": "Reparto",
     "hRole": "Ruolo",
     "notAssessed": "Non valutato",
-    "openProfile": "Apri profilo"
+    "openProfile": "Apri profilo",
+    "hPRISM": "PRISM"
   },
   "teamBuilding": {
     "teamBuilding": "Team Building",
@@ -356,7 +362,8 @@
     "secondary": "Secondario",
     "score": "Punteggio",
     "conflictInsights": "Approfondimenti sui conflitti",
-    "collaborationSuggestions": "Suggerimenti di collaborazione"
+    "collaborationSuggestions": "Suggerimenti di collaborazione",
+    "text": "{{label}} ({{length}})"
   },
   "teamComparePanel": {
     "withoutPrismOne": "{{withoutPrism}} membro del team non è elencato: non ha PRISM registrato. Invitalo dall'elenco.",
@@ -666,7 +673,8 @@
     "delete": "Elimina"
   },
   "savedRunsCard": {
-    "delete": "Elimina {{title}}"
+    "delete": "Elimina {{title}}",
+    "text": "{{openLabel}}: {{title}}"
   },
   "schedule": {
     "startTimeIsNotAValid": "L'ora di inizio non è una data valida.",

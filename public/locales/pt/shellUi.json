@@ -71,7 +71,8 @@
     "start": "Começar",
     "startDetail": "Um caminho guiado que vai de “não sei o que devo fazer” até um cargo que vale a pena buscar e um plano para chegar lá. Vá no seu ritmo — cada etapa é salva.",
     "startLead": "Não sabe qual é o próximo passo? Comece aqui.",
-    "step": "Etapa {{position}} de {{total}}"
+    "step": "Etapa {{position}} de {{total}}",
+    "title": "Direction Setting"
   },
   "rightPanel": {
     "ariaLabel": "Perfil do usuário e próximos eventos",
@@ -244,7 +245,9 @@
       "Users": "Usuários",
       "What_it_pays": "Quanto paga",
       "Who_I_am": "Quem eu sou",
-      "Why_the_AI_answered": "Por que a IA respondeu"
+      "Why_the_AI_answered": "Por que a IA respondeu",
+      "Character_Lab": "Character Lab",
+      "Job_Blueprint": "Job Blueprint"
     },
     "sections": {
       "AI_coaches": "Coaches de IA",
@@ -256,7 +259,8 @@
       "Platform_Alerts": "Alertas da plataforma",
       "Reports": "Relatórios",
       "Role_Views": "Visões por função",
-      "Support": "Suporte"
+      "Support": "Suporte",
+      "PRISM": "PRISM"
     }
   },
   "emptyState": {
@@ -526,7 +530,8 @@
     "prismDataHelp": "Substitua suas pontuações do PRISM a partir de um CSV de dados brutos e, opcionalmente, do PDF do seu relatório. Isso sobrescreve seu perfil PRISM atual.",
     "replacePrism": "Substituir dados do PRISM",
     "save": "Salvar",
-    "title": "Outras avaliações"
+    "title": "Outras avaliações",
+    "scoreLabel": "{{label}} (0–100)"
   },
   "notificationBell": {
     "ariaLabel": "Notificações",

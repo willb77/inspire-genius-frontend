@@ -20,7 +20,8 @@
     "weCouldnTWorkOut": "Não conseguimos definir suas áreas de carreira agora. Atualize para tentar novamente — nada do que você adicionou foi perdido.",
     "whatKindOfWorkSuits": "Que tipo de trabalho combina com você",
     "familiesOfRolesOrderedBy": "Famílias de funções, ordenadas pela proximidade com a forma como você já prefere trabalhar. É uma lista para explorar, não um teto — nada mais abaixo nesta lista está fora do seu alcance.",
-    "notEnoughToRank": "Ainda não temos informações suficientes sobre você para classificar algo com honestidade."
+    "notEnoughToRank": "Ainda não temos informações suficientes sobre você para classificar algo com honestidade.",
+    "affinityOutOf100": "{{score}} / 100"
   },
   "establish": {
     "checkingWhatWeAlreadyHave": "Verificando o que já temos…",
@@ -140,7 +141,8 @@
     "progressDone": "{{done}} de {{total}} concluídas",
     "journeyProgress": "Progresso da jornada",
     "startOver": "Recomeçar",
-    "clearsYourProgressThroughThese": "Apaga seu progresso nessas etapas. Seus resultados do PRISM, documentos e metas não são afetados."
+    "clearsYourProgressThroughThese": "Apaga seu progresso nessas etapas. Seus resultados do PRISM, documentos e metas não são afetados.",
+    "nextNameQuestion": "{{name}} — {{question}}"
   },
   "salary": {
     "wedRatherShowNothing": "Preferimos não mostrar nada a mostrar um número que você não pode conferir.",
@@ -198,7 +200,8 @@
     },
     "unusablePayData": "Temos dados salariais para este cargo, mas não em condições de mostrá-los a você —",
     "unusableNoSource": "eles chegaram sem fonte nem data.",
-    "unusableIncoherent": "os valores informados não batem."
+    "unusableIncoherent": "os valores informados não batem.",
+    "asOfMonthYear": "{{month}} {{year}}"
   },
   "matches": {
     "roleMatchingIsSwitchedOff": "A correspondência de cargos está desativada por enquanto",

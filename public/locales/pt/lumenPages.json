@@ -109,5 +109,7 @@
   "settingsEmailBody": "Receba os Moments fora do app, além de no seu feed.",
   "settingsEmailLabel": "Enviar Moments por e-mail",
   "settingsEmailNote": "Desativado por padrão e ainda indisponível: ativar esta opção não enviará nada até que a entrega por e-mail seja lançada.",
-  "settingsFooter": "Os dados da sua avaliação pertencem a você. Desativar uma permissão interrompe os próximos Moments desse tipo, mas nunca exclui o que você já salvou."
+  "settingsFooter": "Os dados da sua avaliação pertencem a você. Desativar uma permissão interrompe os próximos Moments desse tipo, mas nunca exclui o que você já salvou.",
+  "momentsLabelWithDate": "{{when}} — {{what}}",
+  "momentsQuoted": "“{{context}}”"
 }

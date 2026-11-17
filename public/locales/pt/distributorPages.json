@@ -66,5 +66,6 @@
   "tabRegions": "Regiões",
   "territoryUnavailable": "Os detalhes do território ainda não estão disponíveis.",
   "usedByPractitioners": "Usados pelos profissionais",
-  "yourPractitioners": "Seus profissionais"
+  "yourPractitioners": "Seus profissionais",
+  "homeGreetingNamed": "{{greeting}}, {{name}}"
 }

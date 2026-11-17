@@ -35,7 +35,8 @@
     "roleGoal": "Tu objetivo: {{title}}",
     "roleHeading": "Un puesto de Career Fit",
     "title": "¿Para qué puesto es?",
-    "useSaved": "Usar una descripción de puesto guardada"
+    "useSaved": "Usar una descripción de puesto guardada",
+    "styleStructure": "— {{structure}}"
   },
   "assistant": {
     "apply": "Aplicar a mi borrador (usa 1 de {{left}} restantes de {{limit}})",
@@ -76,7 +77,8 @@
     "inputHelps": "{{label}} (ayuda)",
     "notSure": "¿No estás seguro? Responde dos preguntas",
     "numbersNote": "Los números son lo más importante: una estimación vale si tu currículum indica que lo es. No se inventa nada.",
-    "recommend": "Recomendar un formato"
+    "recommend": "Recomendar un formato",
+    "styleOption": "{{name}} — {{structure}}"
   },
   "info": {
     "add": "Añadir",
@@ -118,7 +120,8 @@
     "stillToCome": "Pendientes",
     "title": "Unas preguntas para afinar mejor",
     "whyAsking": "Por qué lo preguntamos:",
-    "yourAnswer": "Tu respuesta (con tus propias palabras)"
+    "yourAnswer": "Tu respuesta (con tus propias palabras)",
+    "answerQuoted": "\"{{answer}}\""
   },
   "miniCard": {
     "copied": "Minitarjeta copiada.",
@@ -164,7 +167,8 @@
     },
     "note": "Se imprime en la parte superior de tu currículum descargado. No se envía a ningún sitio ni se guarda: vuelve a introducirlo la próxima vez.",
     "phone": {
-      "label": "Teléfono"
+      "label": "Teléfono",
+      "placeholder": "(555) 555-0100"
     }
   },
   "crosswalk": {

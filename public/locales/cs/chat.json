@@ -1,339 +1,339 @@
 {
   "common": {
-    "copiedToClipboard": "Copied to clipboard",
-    "copyMessage": "Copy message",
-    "play": "Play",
-    "pause": "Pause",
-    "close": "Close",
-    "delete": "Delete",
-    "download": "Download",
-    "cancel": "Cancel",
-    "save": "Save",
-    "clear": "Clear",
+    "copiedToClipboard": "Zkopírováno do schránky",
+    "copyMessage": "Kopírovat zprávu",
+    "play": "Přehrát",
+    "pause": "Pozastavit",
+    "close": "Zavřít",
+    "delete": "Smazat",
+    "download": "Stáhnout",
+    "cancel": "Zrušit",
+    "save": "Uložit",
+    "clear": "Vymazat",
     "you": "You",
-    "connected": "Connected",
-    "error": "Error",
-    "unknownError": "Unknown error",
-    "hide": "Hide",
-    "show": "Show",
-    "untitledConversation": "Untitled conversation",
-    "noConversations": "No conversations yet. Send a message to start one.",
-    "noDocuments": "No documents uploaded yet."
+    "connected": "Připojeno",
+    "error": "Chyba",
+    "unknownError": "Neznámá chyba",
+    "hide": "Skrýt",
+    "show": "Zobrazit",
+    "untitledConversation": "Konverzace bez názvu",
+    "noConversations": "Zatím žádné konverzace. Odešlete zprávu a nějakou zahajte.",
+    "noDocuments": "Zatím nebyly nahrány žádné dokumenty."
   },
   "meridian": {
     "title": "Meridian",
-    "thinking": "Meridian is thinking...",
-    "noResponse": "No response.",
+    "thinking": "Meridian přemýšlí...",
+    "noResponse": "Žádná odpověď.",
     "consultedAgents": "+ {{agents}}",
-    "viaAgent": "via {{agent}}",
-    "profileLabel": "Profile: {{frameworks}}",
-    "reviewingBanner": "Reviewing {{count}} additional conversation{{plural}} alongside the active chat.",
-    "reviewPending": "{{count}} conversation{{plural}} selected. Meridian will read {{them}} with your next message.",
-    "reviewLoaded": "Meridian read {{count}} selected conversation{{plural}} with your last message.",
-    "reviewMissing": "Meridian could not load {{missing}} of {{count}} selected conversation{{plural}}. It reads up to 3, and only your own.",
+    "viaAgent": "přes {{agent}}",
+    "profileLabel": "Profil: {{frameworks}}",
+    "reviewingBanner": "Kromě aktivního chatu se kontroluje dalších konverzací: {{count}}{{plural}}.",
+    "reviewPending": "Vybrané konverzace: {{count}}{{plural}}. Meridian {{them}} přečte s Vaší další zprávou.",
+    "reviewLoaded": "Meridian přečetl vybrané konverzace ({{count}}{{plural}}) s Vaší poslední zprávou.",
+    "reviewMissing": "Meridian nemohl načíst {{missing}} z {{count}} vybraných konverzací{{plural}}. Čte nejvýše 3, a to pouze Vaše vlastní.",
     "profileIndicator": {
-      "title": "Frameworks Meridian can reference in this conversation"
+      "title": "Rámce, na které může Meridian v této konverzaci odkazovat"
     },
     "newChat": {
-      "title": "Start a new chat",
-      "label": "New Chat"
+      "title": "Zahájit nový chat",
+      "label": "Nový chat"
     },
     "status": {
-      "connected": "Connected to Meridian"
+      "connected": "Připojeno k Meridian"
     },
     "error": {
-      "agent": "Agent error",
-      "unreachable": "Sorry, I couldn't reach Meridian. Please try again.",
-      "unreachableShort": "Couldn't reach Meridian",
-      "newChatFailed": "Couldn't start a new chat. Please try again."
+      "agent": "Chyba agenta",
+      "unreachable": "Omlouvám se, Meridian se nepodařilo kontaktovat. Zkuste to prosím znovu.",
+      "unreachableShort": "Meridian se nepodařilo kontaktovat",
+      "newChatFailed": "Nový chat se nepodařilo zahájit. Zkuste to prosím znovu."
     },
     "export": {
-      "aria": "Export chat",
-      "label": "Export",
-      "sessionSubject": "Meridian Chat Session",
-      "assistantDomain": "Coaching",
-      "success": "Exported Conversation Log + Structured Report PDFs.",
-      "noConversation": "Couldn't export chat — no active conversation.",
-      "noData": "Couldn't export chat — the backend returned no data.",
-      "noContent": "Couldn't export chat — no content in the selected range.",
-      "retry": "Couldn't export chat — please try again."
+      "aria": "Exportovat chat",
+      "label": "Exportovat",
+      "sessionSubject": "Chatová relace Meridian",
+      "assistantDomain": "Koučink",
+      "success": "Exportováno: protokol konverzace + strukturovaná zpráva (PDF).",
+      "noConversation": "Chat se nepodařilo exportovat – není aktivní žádná konverzace.",
+      "noData": "Chat se nepodařilo exportovat – backend nevrátil žádná data.",
+      "noContent": "Chat se nepodařilo exportovat – ve vybraném rozsahu není žádný obsah.",
+      "retry": "Chat se nepodařilo exportovat – zkuste to prosím znovu."
     },
     "voice": {
-      "mute": "Mute Meridian's voice",
-      "enable": "Enable Meridian's voice",
-      "onTitle": "Voice responses ON — click to mute",
-      "offTitle": "Voice responses OFF — click to enable",
-      "notSupported": "Voice input not supported in this browser",
-      "micDenied": "Microphone access denied"
+      "mute": "Ztlumit hlas asistenta Meridian",
+      "enable": "Zapnout hlas asistenta Meridian",
+      "onTitle": "Hlasové odpovědi zapnuty – kliknutím ztlumíte",
+      "offTitle": "Hlasové odpovědi vypnuty – kliknutím zapnete",
+      "notSupported": "Hlasový vstup není v tomto prohlížeči podporován",
+      "micDenied": "Přístup k mikrofonu byl zamítnut"
     },
     "audio": {
-      "blockedTitle": "Browser blocked audio playback — click to enable",
-      "enable": "Enable audio",
-      "rewind": "Rewind 5 seconds",
-      "resume": "Resume audio",
-      "pause": "Pause audio",
-      "fastForward": "Fast-forward 5 seconds",
-      "skip": "Skip to next sentence",
-      "cancel": "Cancel stream",
-      "queued": "{{count}} queued"
+      "blockedTitle": "Prohlížeč zablokoval přehrávání zvuku – kliknutím jej povolíte",
+      "enable": "Povolit zvuk",
+      "rewind": "Přetočit o 5 sekund zpět",
+      "resume": "Pokračovat v přehrávání",
+      "pause": "Pozastavit zvuk",
+      "fastForward": "Přetočit o 5 sekund vpřed",
+      "skip": "Přeskočit na další větu",
+      "cancel": "Zrušit stream",
+      "queued": "Ve frontě: {{count}}"
     },
     "conn": {
-      "availableTitle": "Voice streaming available",
-      "connectingTitle": "Connecting voice stream...",
-      "unavailableTitle": "Voice streaming unavailable",
-      "ready": "Voice ready",
-      "connecting": "Connecting",
-      "off": "Voice off"
+      "availableTitle": "Hlasové streamování je k dispozici",
+      "connectingTitle": "Připojování hlasového streamu...",
+      "unavailableTitle": "Hlasové streamování není k dispozici",
+      "ready": "Hlas připraven",
+      "connecting": "Připojování",
+      "off": "Hlas vypnut"
     },
     "personalRow": {
-      "aria": "Your pages",
-      "selfPortrait": "My Self-Portrait",
-      "moments": "Prep Me",
-      "coaching": "Coaching",
+      "aria": "Vaše stránky",
+      "selfPortrait": "Můj autoportrét",
+      "moments": "Připravte mě",
+      "coaching": "Koučink",
       "jobFit": "Job Fit",
-      "locked": "{{name}} isn't enabled for your account"
+      "locked": "{{name}} není pro váš účet povoleno"
     }
   },
   "header": {
     "title": "Meridian",
-    "subtitle": "Powered by Agent Eco-System",
-    "back": "Back",
-    "export": "Export",
-    "documentsButton": "Documents",
+    "subtitle": "Využívá ekosystém agentů",
+    "back": "Zpět",
+    "export": "Exportovat",
+    "documentsButton": "Dokumenty",
     "tab": {
       "chat": "Chat",
-      "documents": "Documents"
+      "documents": "Dokumenty"
     },
     "openDocsPanel": {
-      "ariaLabel": "Open documents side panel",
-      "tooltip": "Open documents panel to select files to add to chat"
+      "ariaLabel": "Otevřít boční panel dokumentů",
+      "tooltip": "Otevřete panel dokumentů a vyberte soubory, které chcete přidat do chatu"
     }
   },
   "tiles": {
     "rail": {
-      "aria": "Conversations and projects"
+      "aria": "Konverzace a projekty"
     },
     "active": {
-      "title": "Active Sessions",
-      "empty": "No active sessions yet.",
+      "title": "Aktivní relace",
+      "empty": "Zatím žádné aktivní relace.",
       "badge": {
-        "live": "live",
-        "open": "open"
+        "live": "živě",
+        "open": "otevřeno"
       }
     },
     "history": {
-      "title": "History"
+      "title": "Historie"
     },
     "last5": {
-      "title": "Last 5 Chats",
-      "empty": "Nothing here yet."
+      "title": "Posledních 5 chatů",
+      "empty": "Zatím tu nic není."
     },
     "projects": {
-      "title": "Projects",
-      "inputPlaceholder": "New project name…",
-      "inputAria": "New project name",
-      "addAria": "Add project",
-      "empty": "No projects yet. Group related chats under a project.",
+      "title": "Projekty",
+      "inputPlaceholder": "Název nového projektu…",
+      "inputAria": "Název nového projektu",
+      "addAria": "Přidat projekt",
+      "empty": "Zatím žádné projekty. Seskupte související chaty do projektu.",
       "badge": {
-        "active": "active"
+        "active": "aktivní"
       }
     },
     "knowledge": {
-      "title": "Knowledge",
+      "title": "Znalosti",
       "badge": {
-        "indexed": "indexed"
+        "indexed": "indexováno"
       }
     }
   },
   "history": {
-    "title": "History",
-    "newChat": "New Chat",
-    "newChatTooltip": "Start a new conversation",
-    "newChatTooltipExisting": "You already have a new conversation",
-    "newConversationLabel": "New Conversation",
-    "searchPlaceholder": "Search..",
-    "loadError": "Couldn't load conversation history.",
-    "loadErrorDetailed": "Couldn't load conversation history — the backend may be unavailable. Refresh to retry.",
-    "openActions": "Open conversation actions",
-    "rename": "Rename",
-    "deleteTitle": "Delete conversation",
-    "deleteDescription": "Are you sure you want to delete this conversation? This action cannot be undone.",
-    "audioWarning": "Switching conversations will stop current audio",
-    "renameDialogTitle": "Rename conversation",
-    "renamePlaceholder": "Conversation title",
-    "renameAnimationTitle": "Renaming animation",
-    "renamePending": "Shaping your conversation's identity… ✨",
-    "renameHint": "Give your conversation a name — make it easy to remember 🚀",
-    "triggerShown": "History ({{count}} shown)",
-    "triggerCount": "History ({{count}})",
-    "triggerAria": "Browse conversation history",
-    "hint": "Click a conversation to make it active, or check it to add to review.",
-    "includeAria": "Include {{title}} in review",
-    "activeBadge": "Active",
-    "reviewCount": "{{count}} additional conversation{{plural}} in review",
-    "clearReview": "Clear review"
+    "title": "Historie",
+    "newChat": "Nový chat",
+    "newChatTooltip": "Zahájit novou konverzaci",
+    "newChatTooltipExisting": "Novou konverzaci již máte",
+    "newConversationLabel": "Nová konverzace",
+    "searchPlaceholder": "Hledat..",
+    "loadError": "Historii konverzací se nepodařilo načíst.",
+    "loadErrorDetailed": "Historii konverzací se nepodařilo načíst – backend může být nedostupný. Obnovte stránku a zkuste to znovu.",
+    "openActions": "Otevřít akce konverzace",
+    "rename": "Přejmenovat",
+    "deleteTitle": "Smazat konverzaci",
+    "deleteDescription": "Opravdu chcete tuto konverzaci smazat? Tuto akci nelze vrátit zpět.",
+    "audioWarning": "Přepnutím konverzace se zastaví přehrávání aktuálního zvuku",
+    "renameDialogTitle": "Přejmenovat konverzaci",
+    "renamePlaceholder": "Název konverzace",
+    "renameAnimationTitle": "Animace přejmenování",
+    "renamePending": "Dáváme vaší konverzaci identitu… ✨",
+    "renameHint": "Pojmenujte svou konverzaci tak, aby se snadno pamatovala 🚀",
+    "triggerShown": "Historie (zobrazeno: {{count}})",
+    "triggerCount": "Historie ({{count}})",
+    "triggerAria": "Procházet historii konverzací",
+    "hint": "Kliknutím na konverzaci ji aktivujete, zaškrtnutím ji přidáte do přehledu.",
+    "includeAria": "Zahrnout konverzaci {{title}} do přehledu",
+    "activeBadge": "Aktivní",
+    "reviewCount": "Další konverzace v přehledu: {{count}}{{plural}}",
+    "clearReview": "Vymazat přehled"
   },
   "documents": {
-    "triggerLabel": "Documents",
-    "triggerSelected": "Documents ({{count}} selected)",
-    "triggerAria": "Select documents",
-    "header": "Attach documents to this chat",
-    "loadError": "Couldn't load documents.",
-    "uploadLink": "Upload documents",
-    "selectFileAria": "Select {{filename}}",
-    "autoAttached": "Auto-attached",
-    "selectedCount": "{{selected}} of {{total}} selected",
+    "triggerLabel": "Dokumenty",
+    "triggerSelected": "Dokumenty (vybráno: {{count}})",
+    "triggerAria": "Vybrat dokumenty",
+    "header": "Připojit dokumenty k tomuto chatu",
+    "loadError": "Dokumenty se nepodařilo načíst.",
+    "uploadLink": "Nahrát dokumenty",
+    "selectFileAria": "Vybrat soubor {{filename}}",
+    "autoAttached": "Připojeno automaticky",
+    "selectedCount": "Vybráno {{selected}} z {{total}}",
     "iframe": {
-      "defaultFileName": "Document",
-      "loading": "Loading document…"
+      "defaultFileName": "Dokument",
+      "loading": "Načítání dokumentu…"
     },
     "panel": {
-      "selectedCount": "Selected ({{count}})",
-      "confirmDeleteTitle": "Confirm delete",
-      "confirmDeleteBulkDescription": "Are you sure you want to delete {{count}} selected document(s)? This action cannot be undone.",
-      "confirmDeleteOneDescription": "Are you sure you want to delete this document? This action cannot be undone.",
-      "upload": "Upload",
-      "importToChat": "Import to Chat",
-      "loading": "Loading documents...",
-      "empty": "No files found",
-      "emptyAnimationTitle": "file not found",
-      "selectItem": "Select {{name}}",
-      "preview": "Preview"
+      "selectedCount": "Vybráno ({{count}})",
+      "confirmDeleteTitle": "Potvrdit smazání",
+      "confirmDeleteBulkDescription": "Opravdu chcete smazat vybrané dokumenty (počet: {{count}})? Tuto akci nelze vrátit zpět.",
+      "confirmDeleteOneDescription": "Opravdu chcete tento dokument smazat? Tuto akci nelze vrátit zpět.",
+      "upload": "Nahrát",
+      "importToChat": "Importovat do chatu",
+      "loading": "Načítání dokumentů...",
+      "empty": "Nebyly nalezeny žádné soubory",
+      "emptyAnimationTitle": "soubor nenalezen",
+      "selectItem": "Vybrat {{name}}",
+      "preview": "Náhled"
     },
     "sidePanel": {
-      "title": "Documents",
-      "close": "Close documents",
-      "closeOverlay": "Close documents panel"
+      "title": "Dokumenty",
+      "close": "Zavřít dokumenty",
+      "closeOverlay": "Zavřít panel dokumentů"
     },
-    "upload": "Upload a document"
+    "upload": "Nahrát dokument"
   },
   "export": {
-    "title": "Export Chat",
-    "subtitle": "Download a copy of your chat for future reference.",
-    "fromLabel": "Chat From",
-    "fromPlaceholder": "From date",
-    "toLabel": "Chat Till",
-    "toPlaceholder": "To date",
-    "formatLabel": "Export File",
+    "title": "Exportovat chat",
+    "subtitle": "Stáhněte si kopii chatu pro budoucí použití.",
+    "fromLabel": "Chat od",
+    "fromPlaceholder": "Od data",
+    "toLabel": "Chat do",
+    "toPlaceholder": "Do data",
+    "formatLabel": "Soubor exportu",
     "formatPdf": "PDF",
-    "exporting": "Exporting",
-    "exportButton": "Export",
-    "progressLabel": "Exporting Chat... {{progress}}%",
-    "progressSubtitle": "Sit back and relax, we're working on your export.",
-    "completeTitle": "Export Complete",
-    "completeSubtitle": "Chat exported successfully!",
-    "back": "Back"
+    "exporting": "Exportování",
+    "exportButton": "Exportovat",
+    "progressLabel": "Exportování chatu... {{progress}} %",
+    "progressSubtitle": "Lehněte si a odpočiňte si, na exportu pracujeme.",
+    "completeTitle": "Export dokončen",
+    "completeSubtitle": "Chat byl úspěšně exportován!",
+    "back": "Zpět"
   },
   "routing": {
-    "confidence": "Confidence: {{confidencePct}}%",
-    "latency": "{{latencyMs}}ms",
-    "tokens": "{{tokenCount}} tokens",
-    "observabilityDetails": "Observability details"
+    "confidence": "Jistota: {{confidencePct}} %",
+    "latency": "{{latencyMs}} ms",
+    "tokens": "Tokeny: {{tokenCount}}",
+    "observabilityDetails": "Podrobnosti o observabilitě"
   },
   "feedback": {
-    "thankYou": "Thank you",
-    "rateThisResponse": "Rate this response",
-    "correctionPlaceholder": "Optional: suggest a better response (max 2000 chars)",
-    "submitting": "Submitting...",
-    "submit": "Submit"
+    "thankYou": "Děkujeme",
+    "rateThisResponse": "Ohodnoťte tuto odpověď",
+    "correctionPlaceholder": "Volitelné: navrhněte lepší odpověď (max. 2000 znaků)",
+    "submitting": "Odesílání...",
+    "submit": "Odeslat"
   },
   "compose": {
-    "sectionLabel": "Compose Prompt"
+    "sectionLabel": "Sestavit zadání"
   },
   "conversation": {
-    "sectionLabel": "Conversation",
-    "replayVoice": "Replay voice",
+    "sectionLabel": "Konverzace",
+    "replayVoice": "Přehrát hlas znovu",
     "messageId": "ID: {{id}}",
-    "viaAgent": "via {{agent}}",
-    "observabilityUnavailable": "Observability unavailable for this message.",
-    "tableSrLabel": "Table",
+    "viaAgent": "přes {{agent}}",
+    "observabilityUnavailable": "Pro tuto zprávu není observabilita k dispozici.",
+    "tableSrLabel": "Tabulka",
     "waiting": {
-      "shortly": "{{coachName}} will be with you shortly",
-      "oneMoment": "One moment with {{coachName}}",
-      "pleaseWait": "Please wait"
+      "shortly": "{{coachName}} se Vám bude brzy věnovat",
+      "oneMoment": "Okamžik s koučem {{coachName}}",
+      "pleaseWait": "Počkejte prosím"
     },
     "source": {
-      "label": "Sources ({{count}})",
-      "openTitle": "Open {{filename}}",
+      "label": "Zdroje ({{count}})",
+      "openTitle": "Otevřít {{filename}}",
       "openError": {
-        "noUrl": "Couldn't open \"{{filename}}\" — backend returned no URL.",
-        "notFound": "Couldn't open \"{{filename}}\" — document not found or access denied.",
-        "generic": "Couldn't open \"{{filename}}\" — please try again."
+        "noUrl": "Soubor „{{filename}}“ se nepodařilo otevřít – backend nevrátil žádnou adresu URL.",
+        "notFound": "Soubor „{{filename}}“ se nepodařilo otevřít – dokument nebyl nalezen nebo je přístup odepřen.",
+        "generic": "Soubor „{{filename}}“ se nepodařilo otevřít – zkuste to prosím znovu."
       }
     },
     "collaboration": {
-      "label": "Collaborative response ({{count}} agents)",
-      "synthesizedFrom": "Synthesized from {{summary}}"
+      "label": "Společná odpověď (agentů: {{count}})",
+      "synthesizedFrom": "Shrnuto z: {{summary}}"
     }
   },
   "input": {
-    "placeholder": "Ask Anything…  (Enter to send · Shift+Enter for newline)",
-    "unmuteCoach": "Unmute Coach",
-    "muteCoach": "Mute Coach",
-    "stopRecording": "Stop recording",
-    "startRecording": "Start recording",
-    "sendMessage": "Send message",
+    "placeholder": "Zeptejte se na cokoli…  (Enter odešle · Shift+Enter nový řádek)",
+    "unmuteCoach": "Zapnout zvuk kouče",
+    "muteCoach": "Ztlumit kouče",
+    "stopRecording": "Zastavit nahrávání",
+    "startRecording": "Spustit nahrávání",
+    "sendMessage": "Odeslat zprávu",
     "muteTooltip": {
-      "mute": "Mute",
-      "unmute": "Unmute",
-      "disabledDuringPlayback": "Mute is disabled during playback"
+      "mute": "Ztlumit",
+      "unmute": "Zapnout zvuk",
+      "disabledDuringPlayback": "Během přehrávání nelze ztlumit"
     }
   },
   "banner": {
-    "selected": "Selected:",
-    "connecting": "Connecting...",
-    "successAnimationTitle": "Success animation"
+    "selected": "Vybráno:",
+    "connecting": "Připojování...",
+    "successAnimationTitle": "Animace úspěchu"
   },
   "audio": {
-    "close": "Close audio player"
+    "close": "Zavřít audio přehrávač"
   },
   "coach": {
-    "defaultName": "Coach",
-    "sectionLabel": "Coaching Session",
-    "authError": "Authentication error",
-    "untitledConversation": "No Title",
-    "previewPlaceholder": "To do",
-    "conversationsLabel": "Conversations",
-    "sessionSubject": "{{coachName}} Coaching Session",
-    "assistantDomain": "Coaching",
-    "exportSuccess": "Exported Conversation Log + Structured Report PDFs.",
-    "exportNoConversation": "Couldn't export chat — no active conversation.",
-    "audioWarning": "Switching conversations will reset audio for the new conversation."
+    "defaultName": "Kouč",
+    "sectionLabel": "Koučovací sezení",
+    "authError": "Chyba ověření",
+    "untitledConversation": "Bez názvu",
+    "previewPlaceholder": "Úkol",
+    "conversationsLabel": "Konverzace",
+    "sessionSubject": "Koučovací sezení s {{coachName}}",
+    "assistantDomain": "Koučink",
+    "exportSuccess": "Export protokolu konverzace a strukturované zprávy do PDF byl dokončen.",
+    "exportNoConversation": "Chat se nepodařilo exportovat – žádná aktivní konverzace.",
+    "audioWarning": "Přepnutím konverzace se zvuk pro novou konverzaci obnoví."
   },
   "diagnostic": {
-    "title": "Diagnostic Chat",
-    "sessionLabel": "Session: {{sessionId}}...",
-    "statusConnecting": "Connecting...",
-    "statusReconnecting": "Reconnecting...",
-    "statusDisconnected": "Disconnected",
-    "newChat": "New Chat",
-    "newChatTitle": "Start a new chat session",
-    "reconnect": "Reconnect",
-    "clearAllTitle": "Clear all",
-    "traceLog": "Trace Log",
-    "dataSourcesLabel": "Connected Data Sources",
-    "emptyTitle": "Diagnostic Chat Interface",
-    "emptySubtitle": "Send a message to trace the full request lifecycle",
-    "streaming": "streaming",
-    "processing": "Meridian processing...",
-    "stopRecording": "Stop recording",
-    "startVoiceInput": "Start voice input",
-    "inputPlaceholder": "Type a message to trace the full pipeline...",
-    "recordingHint": "Recording — speak clearly, then stop to send",
-    "latency": "Latency: {{latencyMs}}ms",
-    "ttft": "TTFT: {{ttftMs}}ms",
-    "tokens": "Tokens: {{tokenCount}}",
-    "entriesCount": "{{count}} entries",
-    "errorsCount": "{{count}} errors",
-    "warningsCount": "{{count}} warnings",
+    "title": "Diagnostický chat",
+    "sessionLabel": "Relace: {{sessionId}}...",
+    "statusConnecting": "Připojování...",
+    "statusReconnecting": "Opětovné připojování...",
+    "statusDisconnected": "Odpojeno",
+    "newChat": "Nový chat",
+    "newChatTitle": "Zahájit novou chatovou relaci",
+    "reconnect": "Připojit znovu",
+    "clearAllTitle": "Vymazat vše",
+    "traceLog": "Záznam trasování",
+    "dataSourcesLabel": "Připojené zdroje dat",
+    "emptyTitle": "Rozhraní diagnostického chatu",
+    "emptySubtitle": "Odešlete zprávu a sledujte celý životní cyklus požadavku",
+    "streaming": "streamování",
+    "processing": "Meridian zpracovává...",
+    "stopRecording": "Zastavit nahrávání",
+    "startVoiceInput": "Spustit hlasový vstup",
+    "inputPlaceholder": "Napište zprávu pro sledování celého řetězce zpracování...",
+    "recordingHint": "Nahrávání – mluvte zřetelně, poté nahrávání zastavte a odešlete",
+    "latency": "Latence: {{latencyMs}} ms",
+    "ttft": "TTFT: {{ttftMs}} ms",
+    "tokens": "Tokeny: {{tokenCount}}",
+    "entriesCount": "Záznamů: {{count}}",
+    "errorsCount": "Chyb: {{count}}",
+    "warningsCount": "Upozornění: {{count}}",
     "dataSources": {
       "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
-      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
-      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
-      "s3": "S3 (Documents & Training Data)",
-      "milvus": "Milvus / Zilliz (Vector Search)",
-      "eventbridge": "EventBridge (Event Bus)",
-      "cognito": "Cognito (User Pool)"
+      "dynamoRateLimit": "DynamoDB (omezení četnosti požadavků)",
+      "dynamoRlhf": "DynamoDB (zpětná vazba RLHF)",
+      "s3": "S3 (dokumenty a trénovací data)",
+      "milvus": "Milvus / Zilliz (vektorové vyhledávání)",
+      "eventbridge": "EventBridge (sběrnice událostí)",
+      "cognito": "Cognito (fond uživatelů)"
     }
   }
 }

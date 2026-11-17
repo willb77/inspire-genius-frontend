@@ -21,7 +21,8 @@
     "submit": "Envoyer le lien magique"
   },
   "signup": {
-    "passwordGroup": "Mot de passe"
+    "passwordGroup": "Mot de passe",
+    "termsAnd": "&"
   },
   "social": {
     "processing": "Finalisation de la connexion sociale...",

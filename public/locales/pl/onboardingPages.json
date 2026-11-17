@@ -1,0 +1,97 @@
+{
+  "step": {
+    "one": {
+      "imageAlt": "Wdrożenie, krok pierwszy",
+      "title": "Zaczynamy!",
+      "subtitle": "Prześlij swoje dane osobowe, aby rozpocząć pracę z Coachem AI.",
+      "callout": "Praktyczne wnioski"
+    },
+    "two": {
+      "imageAlt": "Wdrożenie, krok drugi",
+      "title": "Wzmocnij swój biznes",
+      "subtitle": "Korzystaj z wniosków opartych na AI, dopasowanych do Twoich celów.",
+      "callout": "Praktyczne wnioski"
+    },
+    "three": {
+      "imageAlt": "Wdrożenie, krok trzeci",
+      "title": "Wnioski, które mają znaczenie",
+      "subtitle": "Stawiamy na przejrzystość, abyś mógł działać z pewnością.",
+      "callout": "Praktyczne wnioski"
+    },
+    "four": {
+      "imageAlt": "Wdrożenie, krok czwarty",
+      "title": "Współpracuj ze swoim Coachem AI",
+      "subtitle": "Dbamy o prostotę i skuteczność, żebyś mógł skupić się na efektach.",
+      "callout": "Mądre decyzje z AI"
+    },
+    "five": {
+      "imageAlt": "Wdrożenie, krok piąty",
+      "title": "Wszystko gotowe!",
+      "subtitle": "Przejdźmy do aplikacji, aby zacząć robić postępy.",
+      "callout": "Prześlij dokumenty"
+    }
+  },
+  "screen": {
+    "letsGo": "Zaczynamy"
+  },
+  "wizard": {
+    "planGenerated": "Plan wdrożenia został wygenerowany.",
+    "planFailed": "Nie udało się wygenerować planu",
+    "forgeFailed": "Forge (OnboardingAgent) nie powiódł się: {{message}}",
+    "title": "Kreator wdrożenia",
+    "resultTitle": "Plan wdrożenia",
+    "intro": "Wygeneruj dopasowany plan wdrożenia dla nowego pracownika za pomocą Forge (OnboardingAgent).",
+    "inputs": "Dane wejściowe",
+    "newHireName": "Imię i nazwisko nowego pracownika",
+    "role": "Stanowisko",
+    "company": "Firma",
+    "weekNumber": "Numer tygodnia (1-12)",
+    "cultureNotes": "Notatki o kulturze firmy (opcjonalnie)",
+    "run": "Uruchom Forge",
+    "reset": "Resetuj"
+  },
+  "details": {
+    "firstName": {
+      "required": "Imię jest wymagane",
+      "minLength": "Imię musi mieć co najmniej 2 znaki",
+      "placeholder": "Wpisz swoje imię (np. Jan)"
+    },
+    "namePattern": "Dozwolone są tylko litery, spacje, łącznik i apostrof",
+    "lastName": {
+      "required": "Nazwisko jest wymagane",
+      "minLength": "Nazwisko musi mieć co najmniej 1 znak",
+      "placeholder": "Wpisz swoje nazwisko (np. Kowalski)"
+    },
+    "dob": {
+      "required": "Data urodzenia jest wymagana",
+      "invalid": "Nieprawidłowa data",
+      "tooYoung": "Musisz mieć co najmniej 13 lat",
+      "placeholder": "Wybierz datę urodzenia"
+    },
+    "about": {
+      "placeholder": "np. Uczę się i przygotowuję do egzaminów",
+      "label": "Napisz kilka zdań o swoich celach i doświadczeniu (opcjonalnie)"
+    },
+    "title": "Opowiedz nam więcej o sobie",
+    "subtitle": "Wypełnij poniższy formularz, aby dodać swoje dane.",
+    "next": "Dalej"
+  },
+  "configure": {
+    "tourFallbackTitle": "Szybka wskazówka",
+    "tourFallbackDescription": "Wyróżniliśmy kluczowe elementy: coachów możesz edytować w dowolnym momencie.",
+    "audio": {
+      "pause": "Wstrzymaj audio",
+      "resume": "Wznów audio",
+      "loading": "Ładowanie audio",
+      "play": "Odtwórz audio",
+      "replay": "Odtwórz audio ponownie"
+    },
+    "prev": "Wstecz",
+    "title": "Skonfiguruj swojego mentora",
+    "subtitle": "Wybierz ton głosu, płeć i akcent każdego mentora, aby rozmowy były dla Ciebie naturalne. Możesz zmienić te ustawienia później.",
+    "help": "Pomoc",
+    "letsGo": "Zaczynamy",
+    "closeTour": "Zamknij przewodnik",
+    "gotIt": "Rozumiem!"
+  }
+}

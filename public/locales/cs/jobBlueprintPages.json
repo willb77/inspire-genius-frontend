@@ -1,0 +1,887 @@
+{
+  "stats": {
+    "avgTimeToFill": "Průměrná doba obsazení",
+    "daysShort": "{{n}} d",
+    "hiresThisMonth": "Nástupy tento měsíc",
+    "strongFitRate": "Podíl silné shody",
+    "totalCandidates": "Celkem kandidátů",
+    "totalJobDnas": "Celkem Job DNA",
+    "activeJobs": "Aktivní pozice"
+  },
+  "summary": {
+    "evidence": "Co ukazují důkazy",
+    "grandTotal": "Celkový součet"
+  },
+  "survey": {
+    "goTo": "Přejít na otázku {{n}}",
+    "next": "Další",
+    "previous": "Předchozí",
+    "submit": "Odeslat",
+    "submitting": "Odesílání...",
+    "title": "Zkrácené hodnocení Brain Mapping"
+  },
+  "timeToFill": {
+    "series": "Dny do obsazení",
+    "title": "Doba obsazení (dny)",
+    "tooltip": "{{value}} dní"
+  },
+  "wizard": {
+    "back": "Zpět",
+    "create": "Vytvořit Job DNA",
+    "next": "Další",
+    "steps": {
+      "aptitudes": {
+        "description": "Seřaďte a ohodnoťte 8 předpokladů",
+        "label": "Předpoklady"
+      },
+      "behaviors": {
+        "description": "Seřaďte a ohodnoťte 8 způsobů chování",
+        "label": "Chování"
+      },
+      "context": {
+        "description": "Pracovní prostředí",
+        "label": "Kontext"
+      },
+      "coreTraits": {
+        "description": "Seřaďte a ohodnoťte 6 vlastností",
+        "label": "Klíčové vlastnosti"
+      },
+      "review": {
+        "description": "Zkontrolujte a odešlete",
+        "label": "Kontrola"
+      },
+      "roleInfo": {
+        "description": "Základní údaje o roli",
+        "label": "Informace o roli"
+      }
+    },
+    "stepsLabel": "Kroky průvodce",
+    "submitting": "Odesílání..."
+  },
+  "draft": {
+    "summary_few": "Zapsáno {{date}} · ohodnoceny {{count}} dimenze · zatím neodesláno, proto se nezapočítává.",
+    "open": "Otevřít rozhovor",
+    "session": "Relace rozhovoru {{id}}…",
+    "summary": "Napsáno {{date}} · Ohodnoceno dimenzí: {{count}} · zatím neodesláno, proto se nezapočítává.",
+    "summary_one": "Napsáno {{date}} · Ohodnocena {{count}} dimenze · zatím neodesláno, proto se nezapočítává.",
+    "summary_other": "Napsáno {{date}} · Ohodnoceno dimenzí: {{count}} · zatím neodesláno, proto se nezapočítává.",
+    "title": "Koncept z dokončeného rozhovoru"
+  },
+  "scorecards": {
+    "compare": {
+      "missing_few": "{{count}} vybraní kandidáti nemají na serveru žádný hodnoticí list a nejsou zobrazeni.",
+      "checkboxLabel": "Porovnat: {{name}}",
+      "failed": "Nepodařilo se načíst jednu nebo více hodnoticích karet.",
+      "intro": "Vyberte nejvýše {{limit}} kandidátů s odeslanou hodnoticí kartou a zobrazte jejich součty vedle sebe.",
+      "loading": "Načítání hodnoticích karet…",
+      "missing": "Vybraní kandidáti ({{count}}) nemají na serveru hodnoticí kartu a nejsou zobrazeni.",
+      "missing_one": "Vybraný kandidát ({{count}}) nemá na serveru hodnoticí kartu a není zobrazen.",
+      "missing_other": "Vybraní kandidáti ({{count}}) nemají na serveru hodnoticí kartu a nejsou zobrazeni.",
+      "none": "Pro tuto roli zatím nejsou odeslány žádné hodnoticí karty — odešlete některou výše a zobrazí se zde.",
+      "noneOnServer": "Žádný z vybraných kandidátů nemá na serveru hodnoticí kartu.",
+      "select": "Vyberte kandidáty k porovnání.",
+      "title": "Porovnat hodnoticí karty"
+    },
+    "candidateLabel": "Kandidát:",
+    "description": "Strukturované hodnoticí karty a průvodci pohovorem odvozené z benchmarku Job DNA dané role.",
+    "draftCheckFailed": "Nepodařilo se ověřit, zda existuje koncept pohovoru pro tohoto kandidáta.",
+    "loadingRoles": "Načítání rolí…",
+    "noDraft": "Žádný dokončený pohovor zatím nevytvořil koncept pro tohoto kandidáta.",
+    "noGuide": "Pro tuto roli zatím nebyl vytvořen žádný průvodce pohovorem.",
+    "pipelineGated": "Pipeline kandidátů je pro tento účet uzamčena — formulář slouží pouze k náhledu.",
+    "sections": {
+      "aptitudes": "3 nejlepší pracovní předpoklady (max. 15)",
+      "behaviours": "3 nejlepší způsoby chování (max. 15)",
+      "coreTraits": "3 nejlepší základní vlastnosti (max. 15)",
+      "counterProductive": "Kontraproduktivní chování (max. 10)"
+    },
+    "selectBeforeSubmit": "Před odesláním hodnoticí karty vyberte kandidáta.",
+    "selectCandidate": "Vyberte kandidáta…",
+    "selectRole": "Vyberte roli, pro kterou se vytvoří hodnoticí karta a průvodce pohovorem.",
+    "submitFailed": "Hodnoticí kartu se nepodařilo odeslat.",
+    "submitted": "Hodnoticí karta byla odeslána.",
+    "title": "Hodnoticí karty"
+  },
+  "forms": {
+    "yes": "ano",
+    "intake": {
+      "attest": "Tyto odpovědi odpovídají záznamům okresu.",
+      "candidateEmail": "E-mail kandidáta (volitelné)",
+      "candidateName": "Jméno kandidáta",
+      "chooseRole": "Vyberte roli",
+      "chooseRuleSet": "Vyberte sadu pravidel",
+      "confirmAnswers": "Potvrďte, že odpovědi odpovídají Vašim záznamům",
+      "formLabel": "Příjem kandidáta",
+      "giveName": "Zadejte jméno kandidáta",
+      "missingAnswer": "Chybějící odpověď případ pozdrží; nikdy není důvodem k postoupení.",
+      "openFailed": "Případ se nepodařilo otevřít.",
+      "opened": "Případ byl otevřen.",
+      "opening": "Otevírání…",
+      "role": "Role",
+      "ruleSet": "Minimální standard (sada pravidel)",
+      "ruleSetOption": "{{name}} (verze {{version}})",
+      "selectRole": "Vyberte roli…",
+      "selectRuleSet": "Vyberte sadu pravidel…",
+      "submit": "Otevřít případ a zkontrolovat",
+      "validEmail": "Zadejte platnou e-mailovou adresu",
+      "answersLegend": "Odpovědi vůči písemnému standardu"
+    },
+    "no": "ne",
+    "notAnswered": "Zatím nezodpovězeno",
+    "notesSummary": "Volitelné: proč je určitá dimenze v této roli důležitá",
+    "organisation": "Organizace",
+    "record": {
+      "attest": "Odborník na danou oblast (SME) zkontroloval srovnávací standard této verze a potvrdil, že odpovídá roli.",
+      "dateSigned": "Datum podpisu",
+      "failed": "Potvrzení se nepodařilo zaznamenat.",
+      "formLabel": "Zaznamenat potvrzení",
+      "intro": "Pro zaměstnavatele nebo odborníka na danou oblast bez účtu IG, který schválil mimo IG. Zpráva uvádí, že potvrzení zaznamenali Vy a že se odborník v IG nepřihlásil. Jeho jméno, organizace a funkce se uchovávají 90 dní.",
+      "recorded": "Potvrzení bylo zaznamenáno.",
+      "recording": "Zaznamenávání…",
+      "smeName": "Jméno odborníka (SME)",
+      "submit": "Zaznamenat potvrzení",
+      "val": {
+        "attest": "Potvrďte, že odborník tento srovnávací standard odsouhlasil",
+        "dateFormat": "Zadejte datum, kdy odborník podepsal",
+        "dateFuture": "Datum nesmí být v budoucnosti",
+        "name": "Jméno odborníka je povinné",
+        "org": "Organizace odborníka je povinná"
+      }
+    },
+    "request": {
+      "failed": "Žádost o validaci se nepodařilo odeslat.",
+      "formLabel": "Požádat o validaci",
+      "intro": "Recenzent musí mít v organizaci této role roli manažera nebo vyšší a účet IG. Nic se neposílá e-mailem: žádost uvidí po přihlášení.",
+      "note": "Poznámka pro recenzenta (volitelné)",
+      "requested": "Validace byla vyžádána.",
+      "requesting": "Odesílání žádosti…",
+      "reviewerEmail": "E-mail recenzenta",
+      "submit": "Požádat o validaci",
+      "val": {
+        "email": "Zadejte e-mailovou adresu recenzenta"
+      }
+    },
+    "titleOptional": "Funkce (volitelné)",
+    "verdict": {
+      "changesNeeded": "Nutné změny",
+      "changesRequested": "Změny byly vyžádány.",
+      "failed": "Vaše hodnocení se nepodařilo uložit.",
+      "formLabel": "Vaše hodnocení",
+      "saving": "Ukládání…",
+      "submit": "Odeslat hodnocení",
+      "val": {
+        "comments": "Napište, co je třeba změnit",
+        "name": "Vaše jméno tak, jak se má zobrazit ve zprávě",
+        "org": "Vaše organizace"
+      },
+      "validate": "Odpovídá roli — validovat",
+      "validated": "Validováno.",
+      "whatChange": "Co je třeba změnit",
+      "yourName": "Vaše jméno"
+    },
+    "commentsOptional": "Komentáře (volitelné)",
+    "decision": {
+      "amendTitle": "Změnit rozhodnutí",
+      "amended": "Změna byla zaznamenána.",
+      "chooseRoute": "Vyberte postup. Žádný výchozí není.",
+      "departRecommendation": "Uveďte, proč se odchylujete od doporučení (alespoň {{min}} znaků).",
+      "departRecorded": "Uveďte, proč se odchylujete od zaznamenaného rozhodnutí (alespoň {{min}} znaků).",
+      "giveReason": "Uveďte důvod (alespoň {{min}} znaků).",
+      "mustChange": "Změna musí změnit postup.",
+      "reason": "Důvod",
+      "recordFailed": "Rozhodnutí se nepodařilo zaznamenat.",
+      "recordTitle": "Zaznamenat rozhodnutí",
+      "recorded": "Rozhodnutí bylo zaznamenáno.",
+      "recording": "Zaznamenávání…"
+    }
+  },
+  "funnel": {
+    "count": "Počet",
+    "title": "Náborový trychtýř"
+  },
+  "guide": {
+    "counterProductive": "Otázky na kontraproduktivní chování",
+    "general": "Obecné otázky k pohovoru",
+    "roleLine": "Role: {{role}} | Vygenerováno {{date}}",
+    "scoreLine": "Benchmark: {{benchmark}} % | Kandidát: {{candidate}} % | Rozdíl: {{gap}}",
+    "title": "Průvodce pohovorem"
+  },
+  "hire": {
+    "cancel": "Zrušit",
+    "description": "Uveďte důvod. Důvod se uloží u tohoto kroku spolu s osobou, která jej provedla.",
+    "reason": "Důvod",
+    "saving": "Ukládání…",
+    "submit": "Označit jako přijatého",
+    "title": "Označit kandidáta {{code}} jako přijatého",
+    "val": {
+      "max": "Nejvýše {{max}} znaků",
+      "required": "Uveďte, proč je tento kandidát označen jako přijatý"
+    }
+  },
+  "hires": {
+    "avgFit": "Průměrná předpokládaná shoda",
+    "hires": "Přijetí",
+    "period": "Období",
+    "title": "Přijetí podle období"
+  },
+  "insight": {
+    "fitScore": "Skóre shody",
+    "focusAreas": "Oblasti zaměření pohovoru",
+    "gapAnalysis": "Analýza rozdílů",
+    "generated": "Vygenerováno {{when}}",
+    "opportunityFactors": "Faktory příležitostí",
+    "probeQuestions": "Dotazovací otázky",
+    "riskFactors": "Rizikové faktory",
+    "title": "Balíček poznatků"
+  },
+  "intake": {
+    "failed": "Kandidata se nepodařilo přidat. Zkuste to prosím znovu.",
+    "notEnabled": "Váš účet nemá povoleno vytváření Job DNA, a proto nemůže přidávat kandidáty."
+  },
+  "likert": {
+    "agree": "Souhlasím",
+    "disagree": "Nesouhlasím",
+    "groupLabel": "Likertova škála",
+    "neutral": "Neutrální",
+    "somewhatAgree": "Spíše souhlasím",
+    "somewhatDisagree": "Spíše nesouhlasím",
+    "stronglyAgree": "Rozhodně souhlasím",
+    "stronglyDisagree": "Rozhodně nesouhlasím"
+  },
+  "panel": {
+    "awaiting": "čeká na uživatele {{name}}",
+    "awaitingYou": "Tato role čeká na Vaše ověření.",
+    "building": "Vytváření…",
+    "description": "Zda zaměstnavatel nebo odborník potvrdil benchmark této verze. Ověření platí pro každou verzi zvlášť a nemění způsob přiřazování role.",
+    "event": {
+      "aReviewer": "recenzent",
+      "anSme": "odborník (jméno již není uloženo)",
+      "changes": "{{when}} — {{actor}} požádal(a) o změny",
+      "recorded": "{{when}} — {{actor}} zaznamenal(a) potvrzení od {{validator}}",
+      "requested": "{{when}} — {{actor}} požádal(a) {{reviewer}} o ověření",
+      "validatedInIg": "{{when}} — ověřil(a) {{validator}} v IG",
+      "withdrawn": "{{when}} — {{actor}} stáhl(a) žádost"
+    },
+    "exportButton": "Zpráva o odůvodnění (.docx)",
+    "exportFailed": "Zprávu o odůvodnění se nepodařilo vytvořit.",
+    "history": "Historie",
+    "loadFailed": "Ověření této role se nepodařilo načíst.",
+    "loading": "Načítání ověření…",
+    "nameNotHeld": "Jméno již není uloženo (uchovávání 90 dní)",
+    "record": "Zaznamenat potvrzení",
+    "recordedAttestation": "zaznamenal(a) potvrzení",
+    "recordedBy": "zaznamenal(a) {{name}}",
+    "request": "Požádat o ověření",
+    "state": {
+      "changesRequested": "Vyžádány změny",
+      "inReview": "V posouzení",
+      "none": "Neověřeno",
+      "validated": "Ověřeno",
+      "withdrawn": "Žádost stažena"
+    },
+    "title": "Ověření zaměstnavatelem / odborníkem",
+    "withdraw": "Stáhnout žádost",
+    "withdrawFailed": "Žádost se nepodařilo stáhnout.",
+    "withdrawn": "Žádost byla stažena."
+  },
+  "pipeline": {
+    "advanceFailed": "Kandidáta se nepodařilo posunout dál.",
+    "advanced": "Kandidát byl posunut dál.",
+    "description": "Sledujte kandidáty v jednotlivých fázích náborového procesu pro danou roli.",
+    "emptyGated": "V tomto procesu zatím nejsou žádní kandidáti. Příjem a párování kandidátů je pro tento účet omezeno.",
+    "loadFailed": "Proces se nepodařilo načíst.",
+    "loading": "Načítání procesu…",
+    "loadingRoles": "Načítání rolí…",
+    "markHiredFailed": "Kandidáta se nepodařilo označit jako přijatého.",
+    "markedHired": "Kandidát {{code}} byl označen jako přijatý.",
+    "selectRole": "Vyberte roli, aby se zobrazil její proces.",
+    "title": "Proces"
+  },
+  "pipelineBoard": {
+    "advance": "Posunout dál",
+    "board": "Nástěnka",
+    "col": {
+      "actions": "Akce",
+      "email": "E-mail",
+      "name": "Jméno",
+      "status": "Stav",
+      "tier": "Úroveň",
+      "variation": "Varianta"
+    },
+    "count": "Kandidátů: {{total}}",
+    "noCandidates": "Žádní kandidáti",
+    "table": "Tabulka",
+    "title": "Proces"
+  },
+  "progress": {
+    "complete": "Dokončeno: {{pct}} %",
+    "question": "Otázka {{current}} z {{total}}"
+  },
+  "queue": {
+    "askedLine": "· v{{version}} · zadal(a) {{by}} dne {{date}}",
+    "col": {
+      "dimension": "Dimenze",
+      "target": "Cíl",
+      "tier": "Úroveň"
+    },
+    "loadFailed": "Srovnávací hodnoty této role se nepodařilo načíst.",
+    "loading": "Načítání srovnávacích hodnot…",
+    "title": "Čeká na Vaše ověření"
+  },
+  "radar": {
+    "benchmark": "Srovnávací hodnota",
+    "candidate": "Kandidát"
+  },
+  "rankRate": {
+    "dimension": "Dimenze",
+    "move": "Přesunout",
+    "moveDown": "Přesunout {{name}} níže",
+    "moveUp": "Přesunout {{name}} výše",
+    "rank": "Pořadí",
+    "rankFor": "Pořadí pro {{name}}",
+    "rate": "Hodnocení (1–{{max}})",
+    "rateFor": "Hodnocení pro {{name}}",
+    "score": "Skóre"
+  },
+  "record": {
+    "activatedLine": "Aktivováno {{when}}{{by}} · rozhodující osoby: {{makers}} · integrita: {{integrity}}",
+    "answers": "Odpovědi:",
+    "answersUpdated": "Odpovědi aktualizovány:",
+    "by": "uživatel(ka) {{name}}",
+    "call": "Rozhodnutí: {{call}}",
+    "candidate": "Kandidát",
+    "case": "Případ",
+    "changedFrom": "změněno z {{route}}",
+    "col": {
+      "onFail": "Při nesplnění",
+      "recorded": "Zaznamenáno",
+      "required": "Požadováno",
+      "rule": "Pravidlo",
+      "standard": "Písemný standard"
+    },
+    "confirmedRecommendation": "potvrdil(a) doporučení",
+    "decidedBy": "Rozhodl(a): {{name}}",
+    "decidedByIntake": "rozhodla osoba, která provedla vstupní zpracování",
+    "decidedOn": "dne {{when}}",
+    "engineVersion": "engine {{version}}",
+    "events": "Všechny události v pořadí",
+    "finalRoute": "Konečná cesta {{route}}",
+    "fit": {
+      "heading": "Profil silných stránek (pouze pro informaci – nepoužívá se pro určení cesty)",
+      "line": "Shoda {{score}} / 100",
+      "roleVersion": "verze role {{version}}",
+      "tierWithheld": "úroveň nebyla určena (neúplný profil)"
+    },
+    "intakeAlsoDecided": "Rozhodla také osoba, která provedla vstupní zpracování.",
+    "kind": {
+      "amendment": "Dodatek",
+      "decision": "Rozhodnutí",
+      "exported": "Záznam přečten nebo exportován",
+      "goForward": "Rozhodnutí o pokračování",
+      "intake": "Vstupní zpracování",
+      "qualificationCheck": "Kontrola minimální kvalifikace",
+      "recommendation": "Doporučení (poradní)",
+      "withdrawn": "Staženo"
+    },
+    "limits": "Omezení",
+    "meetsMinimum": "Splňuje minimální standard.",
+    "no": "ne",
+    "noAnswer": "bez odpovědi",
+    "noDecision": "Zatím nebylo zaznamenáno žádné rozhodnutí.",
+    "noRecommendation": "Zatím žádné doporučení",
+    "notMeetsMinimum": "Zatím nesplňuje minimální standard.",
+    "notReconstructed": "Nelze zrekonstruovat. {{note}}",
+    "notValidated": "Srovnávací profil této role není ověřen.",
+    "opened": "Otevřeno",
+    "reason": "Důvod: {{reason}}",
+    "recommendedRoute": "Doporučeno: {{route}}.",
+    "reconstructed": "Zrekonstruováno: opětovné spuštění uloženého enginu nad uloženými vstupy dává tento výsledek.",
+    "role": "Role",
+    "roleVersion": "{{title}} (verze {{version}})",
+    "ruleSetTitle": "Sada pravidel: {{name}}, verze {{version}} ({{status}})",
+    "ruleSetVersion": "sada pravidel v{{version}}",
+    "status": "Stav",
+    "yes": "ano"
+  },
+  "ruleEditor": {
+    "saved": "Koncept byl uložen.",
+    "saving": "Ukládání…",
+    "val": {
+      "id": "Písmena, číslice nebo „-“",
+      "label": "Pojmenujte pravidlo",
+      "makers": "Uveďte e-mailem alespoň jednoho rozhodovatele",
+      "name": "Pojmenujte sadu pravidel",
+      "rules": "Přidejte alespoň jedno pravidlo",
+      "sourceRef": "Uveďte článek písemného standardu"
+    },
+    "acceptedValues": "Přijatelné hodnoty, oddělené čárkami",
+    "addRule": "Přidat pravidlo",
+    "clause": "Článek písemného standardu",
+    "formLabel": "Sada pravidel",
+    "ifNotMet": "Pokud není splněno",
+    "kind": {
+      "attested": "Potvrzený požadavek (ano)",
+      "backgroundCheck": "Stav prověrky, jak byl potvrzen (jedna z možností)",
+      "degree": "Vzdělání (alespoň)",
+      "label": "Druh",
+      "licensurePath": "Cesta k licenci (jedna z možností)"
+    },
+    "label": "Popisek",
+    "lowestDegree": "Nejnižší stupeň vzdělání ({{levels}})",
+    "makersCurrent": "Aktuálně: {{names}} – chcete-li je zachovat, zadejte je znovu.",
+    "makersLabel": "E-maily osob s rozhodovací pravomocí (oddělené čárkami)",
+    "makersNote": "Každá z nich musí mít ve Vaší organizaci roli manažera nebo vyšší. Pouze tyto osoby mohou zaznamenat rozhodnutí v rámci této verze.",
+    "name": "Jméno",
+    "onFail": {
+      "hold": "Pozdržet",
+      "none": "Nic (používá se pouze k výběru postupu)",
+      "refer": "Postoupit"
+    },
+    "removeRule": "Odebrat pravidlo {{n}}",
+    "residencyNote": "Jinak je kandidátovi, který splňuje minimum, doporučena role Apprentice.",
+    "residencyWhen": "Doporučit Residency, pokud projdou všechna tato ID pravidel (oddělená čárkami)",
+    "ruleId": "ID pravidla",
+    "ruleN": "Pravidlo {{n}}",
+    "saveDraft": "Uložit koncept",
+    "saveFailed": "Sadu pravidel se nepodařilo uložit."
+  },
+  "ruleSets": {
+    "actionFailed": "Nepodařilo se.",
+    "activate": "Aktivovat",
+    "activated": "Aktivováno.",
+    "description": "Písemný minimální standard Vaší organizace ve formě pravidel. Každá verze se při aktivaci zmrazí.",
+    "editDraft": "Upravit koncept",
+    "ifNotMet": "{{onFail}}, pokud není splněno",
+    "loading": "Načítání sad pravidel…",
+    "new": "Nová sada pravidel",
+    "newVersion": "Začít novou verzi",
+    "newVersionStarted": "Byla zahájena nová verze konceptu.",
+    "none": "Zatím žádné sady pravidel.",
+    "routeOnly": "pouze směrování",
+    "staffOnly": "Sady pravidel spravují náboroví pracovníci Vaší organizace.",
+    "summaryLine": "Pravidel: {{rules}} · rozhodovatelé: {{makers}}",
+    "title": "Sady pravidel",
+    "versionLine": "{{name}} — verze {{version}} ({{status}})",
+    "ruleLine": "{{label}} — {{source}} ({{outcome}})"
+  },
+  "scorecardComparison": {
+    "candidate": "Kandidát {{id}}",
+    "title": "Porovnání hodnoticích karet"
+  },
+  "shared": {
+    "error": {
+      "default": "Při načítání těchto dat se něco pokazilo.",
+      "retry": "Zkusit znovu"
+    },
+    "loading": "Načítání…",
+    "select": {
+      "label": "Job DNA",
+      "placeholder": "Vyberte roli…"
+    }
+  },
+  "review": {
+    "roleDetails": "Podrobnosti o roli",
+    "tier": {
+      "executive": "Vedoucí úroveň",
+      "frontLine": "Přímá obsluha",
+      "professional": "Odborná úroveň"
+    },
+    "tierLabel": "Úroveň:",
+    "title": "Kontrola a odeslání",
+    "titleLabel": "Název:",
+    "top3Aptitudes": "3 nejsilnější předpoklady",
+    "top3Behaviors": "3 nejsilnější způsoby chování",
+    "top3CoreTraits": "3 nejsilnější základní vlastnosti",
+    "topDimensions": "Nejsilnější dimenze",
+    "workPressures": "Pracovní tlaky",
+    "aptitudes": "Předpoklady",
+    "behaviors": "Chování",
+    "benchmarkRadar": "Radarový graf srovnávacího profilu",
+    "benchmarkScores": "Skóre srovnávacího profilu",
+    "coreTraits": "Základní vlastnosti",
+    "culturalFactors": "Kulturní faktory",
+    "departmentLabel": "Oddělení:",
+    "description": "Před dokončením zkontrolujte srovnávací profil Job DNA. Tím se vytvoří behaviorální profil používaný k výběru kandidátů.",
+    "environmentalFactors": "Faktory prostředí",
+    "notSet": "Nenastaveno",
+    "requiredWorkStyles": "Požadované styly práce",
+    "roleContext": "Kontext role"
+  },
+  "roleContext": {
+    "culturalFactors": "Kulturní faktory",
+    "culturalFactorsPlaceholder": "např. Kultura založená na inovacích\nPřísné požadavky na dodržování předpisů\nPřístup „zákazník na prvním místě“",
+    "description": "Popište pracovní prostředí a kontext této role. Zadejte jednu položku na řádek.",
+    "environmentalFactors": "Faktory prostředí",
+    "environmentalFactorsPlaceholder": "např. Kancelář typu open space\nPravidelné cestování\nPráce na dálku/hybridní práce",
+    "requiredWorkStyles": "Požadované styly práce",
+    "requiredWorkStylesPlaceholder": "např. Spolupracující týmové prostředí\nSamostatné rozhodování\nRychlé provádění úkolů",
+    "title": "Kontext a prostředí role",
+    "workPressures": "Pracovní tlaky",
+    "workPressuresPlaceholder": "např. Napjaté termíny\nVysoká očekávání klientů\nPožadavek na multitasking"
+  },
+  "roleInfo": {
+    "department": "Oddělení",
+    "departmentPlaceholder": "např. Obchod",
+    "description": "Definujte základní údaje o roli, kterou porovnáváte.",
+    "roleTier": "Úroveň role",
+    "roleTitle": "Název role",
+    "roleTitlePlaceholder": "např. Senior account manažer",
+    "selectTier": "Vyberte úroveň",
+    "tier": {
+      "executive": "Vedoucí úroveň (150 tis. USD+)",
+      "frontLine": "Přímá obsluha (<75 tis. USD)",
+      "professional": "Odborná úroveň (75–150 tis. USD)"
+    },
+    "tierNote": "Úroveň určuje cenu za výběr kandidátů, průvodce pohovory a zaškolení.",
+    "title": "Informace o roli"
+  },
+  "results": {
+    "behaviorPreferences": "Behaviorální preference",
+    "confidence": "Spolehlivost:",
+    "coreTraits": "Základní vlastnosti",
+    "title": "Výsledky hodnocení",
+    "workAptitudes": "Pracovní předpoklady"
+  },
+  "accuracy": {
+    "empty": "Zatím žádné predikované klasifikace.",
+    "misalignment": "Nesoulad",
+    "moderateFit": "Střední shoda",
+    "potentialFit": "Potenciální shoda",
+    "strongFit": "Silná shoda",
+    "title": "Rozložení predikované shody"
+  },
+  "activity": {
+    "title": "Nedávná aktivita"
+  },
+  "addCandidate": {
+    "added": "{{name}} byl(a) přidán(a) do pipeline",
+    "addedAs": "{{name}} byl(a) přidán(a) do pipeline pod kódem {{code}}",
+    "adding": "Přidávání…",
+    "cancel": "Zrušit",
+    "code": "Kód kandidáta (volitelné)",
+    "codePlaceholder": "Pokud zůstane prázdné, přidělí se automaticky",
+    "description": "Zařadí osobu do pipeline role pod anonymním kódem. Její profil PRISM se vyhodnotí podle zkontrolovaného benchmarku role, jakmile bude k dispozici.",
+    "email": "E-mail",
+    "fullName": "Celé jméno",
+    "noCandidate": "Server požadavek přijal, ale nevrátil žádného kandidáta. Obnovte pipeline a zkontrolujte ji.",
+    "noRoles": "Zatím nejsou žádné publikované role. Nejprve publikujte benchmark Job DNA.",
+    "role": "Role (publikovaná Job DNA)",
+    "selectRole": "Vyberte publikovanou roli…",
+    "submit": "Přidat do pipeline",
+    "title": "Přidat kandidáta",
+    "trigger": "Přidat kandidáta",
+    "val": {
+      "code": "Kódy mohou mít nejvýše 32 znaků",
+      "email": "Zadejte platnou e-mailovou adresu",
+      "job": "Vyberte publikovanou roli",
+      "name": "Jméno je povinné"
+    }
+  },
+  "analytics": {
+    "description": "Náborový trychtýř, rozložení predikované shody a doba do obsazení napříč Vašimi Job DNA.",
+    "emptyAccuracy": "Zatím žádná data o přesnosti.",
+    "emptyActivity": "Zatím žádná aktivita.",
+    "emptyFunnel": "Zatím žádná data trychtýře.",
+    "emptyHires": "Zatím nejsou zaznamenána žádná přijetí.",
+    "emptyStats": "Zatím nejsou k dispozici žádné statistiky.",
+    "emptyTimeToFill": "Zatím žádná data o době do obsazení.",
+    "loading": "Načítání analytiky…",
+    "title": "Analytika"
+  },
+  "draftFlow": {
+    "archetype": {
+      "auto": {
+        "hint": "Zařadit podle názvu",
+        "label": "Automatická detekce"
+      },
+      "executive": {
+        "hint": "Strategie a vztahy",
+        "label": "Výkonná role"
+      },
+      "managerial": {
+        "hint": "Úsudek a lidé",
+        "label": "Manažerská role"
+      },
+      "operational": {
+        "hint": "Praktická práce / řízená úkoly",
+        "label": "Provozní role"
+      }
+    },
+    "blocks": {
+      "aptitudes": "Pracovní předpoklady",
+      "behaviors": "Chování",
+      "coreTraits": "Základní rysy"
+    },
+    "context": "Kontext",
+    "contextOptional": "(volitelné)",
+    "contextPlaceholder": "Vložte popis pracovní pozice nebo několik řádků o tom, co tato role skutečně vyžaduje. (Nahraný soubor se sem doplní.)",
+    "description": "Vytvořte koncept všech 22 dimenzí role z názvu, nahraného popisu pozice nebo role z jiného oboru. Koncept je výklad role enginem podle definice každé dimenze v PRISM – výchozí bod, nikoli ověřený benchmark PRISM. Profil před uložením zkontrolujete a upravíte.",
+    "done": {
+      "another": "Vytvořit další koncept",
+      "anotherNote": "Porovnejte další roli.",
+      "body": "Benchmark je uložen a role je nyní dostupná ve všech oblastech Job DNA.",
+      "saved": "Uloženo: „{{role}}“",
+      "view": "Zobrazit blueprint",
+      "viewNote": "Otevřete profil benchmarku a jeho grafy."
+    },
+    "draftButton": "Vytvořit koncept blueprintu",
+    "draftNew": "Vytvořit koncept nové role…",
+    "drafted": "Blueprint je připraven – ke kontrole je 22 dimenzí.",
+    "drafting": "Vytváření konceptu blueprintu",
+    "kceLoadFailed": "Role uložené v Knowledge Continuity se nepodařilo načíst.",
+    "loaded": "Načteno: „{{title}}“.",
+    "loadedFile": "Načteno: „{{name}}“ – {{chars}} znaků kontextu.",
+    "loadedFromKce": "Načteno z Knowledge Continuity: „{{title}}“.",
+    "loadingRole": "Načítání role…",
+    "pickRole": "Vyberte existující roli – role z Job DNA otevře svůj blueprint; role z Knowledge Continuity poslouží jako základ tohoto konceptu.",
+    "progress": {
+      "assessing": "Posuzování behaviorálních požadavků…",
+      "balancing": "Vyvažování profilu…",
+      "finalizing": "Dokončování blueprintu…",
+      "reading": "Čtení role…",
+      "setting": "Nastavování 22 benchmarků…"
+    },
+    "readFailed": "Tento soubor se nepodařilo přečíst.",
+    "review": {
+      "changedFromAi": "změněno oproti návrhu AI: {{changed}}",
+      "confirm": "Zkontroloval(a) jsem všech {{total}} hodnot{{changed}} a potvrzuji je. Uložením se tento benchmark zveřejní a já budu zaznamenán(a) jako jeho recenzent.",
+      "dimsDrafted": "Navrženo 22 dimenzí ·",
+      "drafted": "Blueprint navržen",
+      "percentNote": "Toto je koncept ke kontrole, nikoli ověřený benchmark. Upravte procenta níže a poté uložte.",
+      "rankRateNote": "Každá cílová hodnota vychází z pořadí dimenze a z míry, kterou navrhla AI. Zkontrolujte každou míru, změňte ty, se kterými nesouhlasíte, a poté potvrďte a uložte. Dokud to neprovedete, nic se neuloží.",
+      "save": "Uložit roli a blueprint",
+      "saving": "Ukládání…",
+      "shape": "tvar.",
+      "startOver": "Začít znovu"
+    },
+    "role": "Role",
+    "roleShape": "Tvar role",
+    "roleTitle": "Název role",
+    "roleTitlePlaceholder": "např. Starší operátor čištění odpadních vod nebo CIO",
+    "row": {
+      "aiProposed": "AI navrhla {{rate}} z {{max}}",
+      "benchmarkPercent": "Procento benchmarku: {{name}}",
+      "heldBack": "navrhla {{ai}}; ponecháno na {{held}}, aby zůstalo {{tier}}",
+      "rank": "Pořadí {{rank}} z {{size}}",
+      "rate": "Hodnocení",
+      "rateAria": "Hodnocení: {{name}}",
+      "rateOption": "{{rate}} z {{max}}",
+      "rateOptionAi": "{{rate}} z {{max}} (AI)",
+      "ratesKeep": "hodnocení {{lo}}–{{hi}} ponechá úroveň {{tier}}",
+      "target": "cíl",
+      "targetAria": "Cíl: {{name}}",
+      "youSet": "nastavili jste {{value}}"
+    },
+    "saved": "Job DNA bylo uloženo.",
+    "shapeNote": "Tvar ovlivňuje, které dimenze návrh označí jako kritické – vedoucí pracovník se opírá o úsudek a vztahy, ne o seznam úkolů.",
+    "sourceJobDna": "Job DNA",
+    "sourceKce": "KCE",
+    "tier": {
+      "counterProductive": "Kontraproduktivní",
+      "critical": "Kritické",
+      "unimportant": "Nedůležité"
+    },
+    "title": "Navrhnout blueprint",
+    "upload": {
+      "ariaLabel": "Nahrát dokument k roli",
+      "label": "Nahrát roli",
+      "note": "Vložte popis pozice nebo chartu role – text načteme do kontextu níže a odhadneme název. Nic se nenahrává na server.",
+      "optional": "(volitelné – Word, PDF nebo text)",
+      "reading": "Načítání…"
+    },
+    "val": {
+      "roleTitle": "Pojmenujte roli, kterou chcete porovnat"
+    }
+  },
+  "aptitudes": {
+    "description": "Seřaďte 8 preferencí pracovních předpokladů podle důležitosti pro tuto roli a poté každou ohodnoťte podle jejího významu.",
+    "title": "Preference pracovních předpokladů"
+  },
+  "authoring": {
+    "changeMethod": "Změnit postup",
+    "created": "Job DNA bylo vytvořeno a porovnáno s referenčním profilem.",
+    "description": "Vytvořte návrh referenčního profilu z role, nebo jej sestavte ručně napříč chováním, předpoklady a základními rysy. V obou případech jej před použitím zkontroluje člověk – nejde o referenční profil práce ověřený metodou PRISM.",
+    "draft": {
+      "body": "Zadejte název nebo nahrajte popis práce a nástroj Job DNA navrhne všech 22 dimenzí podle definic PRISM pro každou z nich. Je to výchozí bod, který zkontrolujete a upravíte, nikoli ověřený referenční profil. Nejrychlejší cesta k prvnímu návrhu.",
+      "title": "Návrh z role"
+    },
+    "manual": {
+      "body": "Pomocí průvodce krok za krokem sami seřaďte a ohodnoťte každé chování, předpoklad a základní rys. Plná kontrola.",
+      "title": "Sestavit ručně"
+    },
+    "noId": "Job DNA bylo vytvořeno, ale nebylo vráceno žádné ID.",
+    "saveFailed": "Job DNA se nepodařilo uložit. Zkuste to prosím znovu.",
+    "title": "Vytvořit Job DNA"
+  },
+  "barChart": {
+    "natural": "Přirozené",
+    "veryHigh": "Velmi vysoké"
+  },
+  "behaviors": {
+    "description": "Seřaďte 8 preferencí chování podle důležitosti pro tuto roli a poté každou ohodnoťte podle jejího významu. Systém vypočítá konečné skóre referenčního profilu metodou „seřadit, poté ohodnotit“.",
+    "title": "Preference chování"
+  },
+  "candidateComparison": {
+    "benchmark": "Referenční profil",
+    "dimension": "Dimenze",
+    "title": "Porovnání kandidátů",
+    "totalVariation": "Celková odchylka"
+  },
+  "candidateDetail": {
+    "advance": "Posunout do další fáze",
+    "advanceFailed": "Kandidáta se nepodařilo posunout dál.",
+    "advancedTo": "Kandidát {{code}} byl posunut do stavu {{status}}.",
+    "advancing": "Posouvání…",
+    "back": "Zpět na kandidáty",
+    "blind": "Anonymní výběr – identita je uložena v anonymní mapě a nikdy se zde nezobrazuje.",
+    "description": "Shoda, poznatky a hodnoticí karta pohovoru pro jednoho kandidáta.",
+    "loadFailed": "Kandidáta se nepodařilo načíst.",
+    "loading": "Načítání kandidáta…",
+    "loadingInsights": "Načítání poznatků…",
+    "loadingScorecard": "Načítání hodnoticí karty…",
+    "markHiredFailed": "Kandidáta se nepodařilo označit jako přijatého.",
+    "markedHired": "Kandidát {{code}} byl označen jako přijatý.",
+    "nextStage": "další fáze",
+    "noInsights": "Pro tohoto kandidáta zatím nebyl vytvořen žádný balíček poznatků.",
+    "noScorecard": "Pro tohoto kandidáta zatím nebyla odeslána žádná hodnoticí karta pohovoru.",
+    "notScored": "Shoda tohoto kandidáta zatím nebyla vyhodnocena – k porovnání s referenčním profilem role není k dispozici žádné hodnocení.",
+    "openScorecards": "Otevřít hodnoticí karty",
+    "pipelineComplete": "Proces dokončen",
+    "scorecardFailed": "Hodnoticí kartu se nepodařilo načíst.",
+    "scorecardHeading": "Hodnoticí karta pohovoru",
+    "title": "Kandidát {{code}}",
+    "totalVariation": "Celková odchylka {{value}}"
+  },
+  "candidates": {
+    "candidateLabel": "Kandidát",
+    "description": "Vybírejte a posuzujte kandidáty: profil PRISM každého z nich je vyhodnocen oproti zkontrolovanému referenčnímu profilu Job DNA dané role.",
+    "emptyPipeline": "V tomto procesu zatím nejsou žádní kandidáti. Přidejte je pomocí tlačítka „Přidat kandidáta“ výše; hodnocení shody proběhne, jakmile bude k dispozici jejich hodnocení PRISM.",
+    "interview": "Vést pohovor s tímto kandidátem",
+    "loadFailed": "Kandidáty se nepodařilo načíst.",
+    "loading": "Načítání kandidátů…",
+    "loadingRoles": "Načítání rolí…",
+    "notScored": "Shoda tohoto kandidáta zatím nebyla vyhodnocena.",
+    "open": "Otevřít kandidáta",
+    "selectCandidate": "Vyberte kandidáta, jehož analýzu shody chcete zobrazit.",
+    "selectRole": "Vyberte roli, jejíž seznam kandidátů chcete zobrazit.",
+    "title": "Kandidáti"
+  },
+  "card": {
+    "code": "Kód: {{code}}",
+    "variation": "Odchylka: {{value}}"
+  },
+  "coreTraits": {
+    "description": "Seřaďte 6 základních rysů podle důležitosti pro tuto roli a poté každý ohodnoťte podle jeho významu.",
+    "title": "Základní rysy"
+  },
+  "dashboard": {
+    "createFirst": "Vytvořte své první Job DNA",
+    "description": "Job Blueprint — navrhněte behaviorální benchmark pro danou roli, nechte jej zkontrolovat někoho, kdo roli zná, a poté podle něj vyhodnoťte a seřaďte profily PRISM kandidátů.",
+    "empty": "Zatím nemáte žádné Job DNA.",
+    "loadError": "Job DNA se nepodařilo načíst.",
+    "loading": "Načítání Job DNA…",
+    "newJobDna": "Nové Job DNA",
+    "title": "Career Blueprint",
+    "yourJobDnas": "Vaše Job DNA"
+  },
+  "entry": {
+    "counterProductive": "(Kontraproduktivní – invertováno)",
+    "evidencePlaceholder": "Důkazy a pozorování...",
+    "score0": "Nedokázal(a) uspokojivě prokázat",
+    "score3": "Prokázáno ve střední míře",
+    "score5": "Prokázáno ve velké míře",
+    "scoreFor": "Skóre: {{name}}"
+  },
+  "fit": {
+    "aptitude": "Předpoklady",
+    "behavior": "Chování",
+    "col": {
+      "benchmark": "Srovnávací hodnota",
+      "candidate": "Kandidát",
+      "category": "Kategorie",
+      "dimension": "Dimenze",
+      "gap": "Rozdíl"
+    },
+    "gapAnalysis": "Analýza rozdílů",
+    "skew": "Šikmost",
+    "stdDeviation": "Směrodatná odchylka",
+    "title": "Analýza shody: {{name}}",
+    "totalVariation": "Celková variace",
+    "trait": "Vlastnost"
+  },
+  "form": {
+    "notes": "Další poznámky",
+    "notesPlaceholder": "Celkové dojmy z pohovoru, navazující kroky...",
+    "submit": "Odeslat hodnoticí arch",
+    "submitting": "Odesílání..."
+  },
+  "decisionPath": {
+    "activateFirst": "Před otevřením případu aktivujte sadu pravidel.",
+    "case": {
+      "loadFailed": "Tento případ se nepodařilo načíst.",
+      "loading": "Načítání záznamu…",
+      "title": "Záznam o rozhodnutí"
+    },
+    "cases": "Případy",
+    "casesFailed": "Případy se nepodařilo načíst.",
+    "col": {
+      "candidate": "Kandidát",
+      "decided": "Rozhodnuto",
+      "recommended": "Doporučeno (nezávazně)",
+      "status": "Stav"
+    },
+    "description": "Porovnejte kandidáta s písemným minimálním standardem své organizace, prohlédněte si doporučený postup a zaznamenejte rozhodnutí i jeho důvod.",
+    "entry": {
+      "body": "— porovnávejte kandidáty s písemným minimálním standardem a ke každému rozhodnutí zaznamenejte jeho důvod.",
+      "title": "Rozhodovací postup"
+    },
+    "loadingCases": "Načítání případů…",
+    "loadingRuleSets": "Načítání sad pravidel…",
+    "nameRemoved": "(jméno odstraněno)",
+    "newCandidate": "Nový kandidát",
+    "noCases": "Zatím žádné případy.",
+    "notEnabled": "Rozhodovací postup není pro vaši organizaci povolen.",
+    "route": {
+      "apprentice": "Učeň",
+      "hold": "Pozastavit",
+      "refer": "Postoupit",
+      "residency": "Rezidentura"
+    },
+    "ruleSets": "Sady pravidel",
+    "title": "Rozhodovací postup"
+  },
+  "dnaDetail": {
+    "aptitudes": "Předpoklady",
+    "backToDashboard": "Zpět na přehled",
+    "behaviours": "Chování",
+    "benchmarkNote": "Vytvořeno zde – navrženo enginem Job DNA nebo sestaveno ručně – a zkontrolováno člověkem. Profily PRISM kandidátů se podle něj hodnotí. Nejde o benchmark pracovní pozice ověřený systémem PRISM.",
+    "benchmarkProfile": "Profil benchmarku",
+    "cancel": "Zrušit",
+    "coreTraits": "Klíčové vlastnosti",
+    "department": "Oddělení",
+    "editDetails": "Upravit podrobnosti",
+    "editTitle": "Upravit podrobnosti role",
+    "loadFailed": "Toto Job DNA se nepodařilo načíst.",
+    "loading": "Načítání Job DNA…",
+    "provenance": {
+      "reviewed": "zkontrolováno {{date}}",
+      "reviewerNotRecorded": "kontrolor není uveden"
+    },
+    "roleTitle": "Název role",
+    "save": "Uložit",
+    "saving": "Ukládání…",
+    "shapeConforms": "Struktura úrovní odpovídá metodice: 3 kritická chování na blok, 2 kontraproduktivní chování.",
+    "shapeDiffers": "Struktura úrovní se liší od metodiky: {{violations}}.",
+    "source": {
+      "incumbentContrast": "navrženo na základě rozhovorů se stávajícími zaměstnanci",
+      "jdExtract": "získáno z popisu pracovní pozice",
+      "llmDraft": "navrženo enginem Job DNA",
+      "manual": "sestaveno ručně",
+      "unknown": "zdroj není uveden"
+    },
+    "status": "Stav:",
+    "tier": "Úroveň",
+    "updateFailed": "Job DNA se nepodařilo aktualizovat.",
+    "updated": "Job DNA bylo aktualizováno."
+  }
+}

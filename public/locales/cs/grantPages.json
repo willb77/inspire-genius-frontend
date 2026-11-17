@@ -1,0 +1,813 @@
+{
+  "intake": {
+    "steps": {
+      "m_adl_employer_benefit": {
+        "question": "Nabízí Váš zaměstnavatel příspěvek na studium nebo proplacení školného?",
+        "helper": "Pro pracující dospělé je to často největší jednotlivý zdroj."
+      },
+      "m_adl_wioa": {
+        "question": "Navštívili jste American Job Center nebo jste byli posouzeni v rámci WIOA?"
+      },
+      "m_car_childcare": {
+        "helper": "Otevírá granty CCAMPIS na péči o děti v kampusu.",
+        "question": "Potřebujete k účasti na studiu hlídání dětí?"
+      },
+      "m_dis_categories": {
+        "options": {
+          "chronic_illness": "Chronické onemocnění",
+          "learning": "Poruchy učení",
+          "mental_health": "Duševní zdraví",
+          "physical": "Tělesné postižení",
+          "sensory": "Smyslové (zrak / sluch)"
+        },
+        "question": "Jaký druh postižení nebo zdravotního stavu máte? (vyberte všechny možnosti, které platí)"
+      },
+      "m_dis_vr_client": {
+        "helper": "VR může financovat školné, učebnice a asistivní technologie – významný a často přehlížený zdroj.",
+        "question": "Jste klientem státní agentury Vocational Rehabilitation?"
+      },
+      "m_fld_nursing": {
+        "helper": "Stipendia Nurse Corps / HRSA a splácení půjček.",
+        "question": "Jde o ošetřovatelství nebo zdravotnictví?"
+      },
+      "m_fld_public_service": {
+        "helper": "PSLF Vám označíme včas, abyste mohli podle toho plánovat případné půjčky.",
+        "question": "Jde o veřejnou službu nebo státní správu?"
+      },
+      "m_fld_stem": {
+        "question": "Jde o obor STEM nebo obor relevantní pro obranu?"
+      },
+      "m_fld_teaching": {
+        "helper": "Grant TEACH a prominutí dluhu za službu učitele.",
+        "question": "Je Vaším oborem učitelství?"
+      },
+      "m_fos_chafee": {
+        "helper": "Až cca 5 000 USD ročně pro bývalé děti v pěstounské péči – mnoho států navíc prominuje školné.",
+        "question": "Využili jste Chafee Education & Training Voucher (ETV)?"
+      },
+      "m_ft_access_programs": {
+        "question": "Jste v programu TRIO, Upward Bound nebo jiném programu pro přístup na vysokou školu?"
+      },
+      "m_ft_hs_grad_year": {
+        "placeholder": "např. 2027",
+        "question": "Ve kterém roce dokončíte střední školu (nebo složíte zkoušku GED)?"
+      },
+      "m_hom_emergency": {
+        "question": "Potřebujete právě teď nouzové prostředky na základní potřeby?"
+      },
+      "m_jus_reentry": {
+        "question": "Jste v programu vzdělávání ve věznici či programu reintegrace, nebo se k němu můžete připojit?"
+      },
+      "m_jus_status": {
+        "helper": "Zákaz FAFSA kvůli odsouzení za drogy byl zrušen a Second Chance Pell je nyní trvalý.",
+        "options": {
+          "incarcerated": "Aktuálně ve výkonu trestu",
+          "parole_probation": "Na podmínečném propuštění nebo v probaci",
+          "released": "Propuštěn/a"
+        },
+        "question": "V jaké situaci se nyní nacházíte?"
+      },
+      "m_mil_affiliation": {
+        "helper": "Podle toho se určí, zda použijete vlastní výhody, nebo výhody převedené či pro rodinné příslušníky.",
+        "options": {
+          "dependent_child": "Služba rodiče (jsem jeho dítě)",
+          "self_active": "Moje vlastní – aktivní služba",
+          "self_reserve_guard": "Moje vlastní – Reserve / National Guard",
+          "self_veteran": "Moje vlastní – veterán",
+          "spouse": "Služba manžela/manželky",
+          "survivor": "Výhody pro pozůstalé / rodinné příslušníky"
+        },
+        "question": "Jaké je Vaše spojení s armádou?"
+      },
+      "m_mil_gi_bill": {
+        "options": {
+          "ch1606": "Selected Reserve (kap. 1606)",
+          "ch30": "Montgomery (kap. 30)",
+          "ch33": "Post-9/11 (kap. 33)",
+          "ch35": "Rodinní příslušníci (DEA, kap. 35)"
+        },
+        "question": "Který GI Bill máte?"
+      },
+      "m_mil_rating": {
+        "helper": "Hodnocení může otevřít program VR&E (kap. 31), který někdy převyšuje GI Bill.",
+        "placeholder": "např. 30",
+        "question": "Máte hodnocení invalidity související se službou?",
+        "suffix": "%"
+      },
+      "m_mil_yellow_ribbon": {
+        "question": "Je Vaše škola v programu Yellow Ribbon?"
+      },
+      "m_trb_tribe": {
+        "helper": "Odemyká granty pro vysokoškolské vzdělávání kmenů, financování BIE a stipendia pro domorodé Američany.",
+        "placeholder": "např. Navajo Nation",
+        "question": "Ke kterému kmeni patříte (nebo z něj pocházíte)?"
+      },
+      "m_und_has_ssn": {
+        "helper": "V obou případech se zaměříme na státní podporu a stipendia, která nevyžadují občanství.",
+        "question": "Máte číslo sociálního pojištění (Social Security) a povolení k práci (DACA)?"
+      },
+      "sc_caregiver": {
+        "question": "Jste rodič nebo hlavní pečující osoba?"
+      },
+      "sc_disability": {
+        "helper": "Může odemknout financování školného ze státního programu Vocational Rehab a stipendia pro osoby se zdravotním postižením.",
+        "question": "Máte zdravotní postižení nebo dlouhodobý zdravotní stav?"
+      },
+      "sc_field_specific": {
+        "question": "Je Vaším oborem ošetřovatelství, učitelství, STEM nebo veřejná služba?"
+      },
+      "sc_first_time": {
+        "question": "Chodíte na střední školu, nebo se chystáte poprvé na vysokou školu?"
+      },
+      "sc_foster_care": {
+        "question": "Byli jste někdy v pěstounské péči nebo svěřeni do péče soudu?"
+      },
+      "sc_homeless": {
+        "question": "Chyběl Vám v posledních několika letech stabilní domov?"
+      },
+      "state_of_residence": {
+        "question": "Ve kterém státě žijete?",
+        "helper": "Odemkne granty a stipendia specifické pro váš stát.",
+        "options": {
+          "AK": "Aljaška",
+          "AL": "Alabama",
+          "AR": "Arkansas",
+          "AZ": "Arizona",
+          "CA": "Kalifornie",
+          "CO": "Colorado",
+          "CT": "Connecticut",
+          "DC": "District of Columbia",
+          "DE": "Delaware",
+          "FL": "Florida",
+          "GA": "Georgie",
+          "HI": "Havaj",
+          "IA": "Iowa",
+          "ID": "Idaho",
+          "IL": "Illinois",
+          "IN": "Indiana",
+          "KS": "Kansas",
+          "KY": "Kentucky",
+          "LA": "Louisiana",
+          "MA": "Massachusetts",
+          "MD": "Maryland",
+          "ME": "Maine",
+          "MI": "Michigan",
+          "MN": "Minnesota",
+          "MO": "Missouri",
+          "MS": "Mississippi",
+          "MT": "Montana",
+          "NC": "Severní Karolína",
+          "ND": "Severní Dakota",
+          "NE": "Nebraska",
+          "NH": "New Hampshire",
+          "NJ": "New Jersey",
+          "NM": "Nové Mexiko",
+          "NV": "Nevada",
+          "NY": "New York",
+          "OH": "Ohio",
+          "OK": "Oklahoma",
+          "OR": "Oregon",
+          "PA": "Pensylvánie",
+          "RI": "Rhode Island",
+          "SC": "Jižní Karolína",
+          "SD": "Jižní Dakota",
+          "TN": "Tennessee",
+          "TX": "Texas",
+          "UT": "Utah",
+          "VA": "Virginie",
+          "VT": "Vermont",
+          "WA": "Washington",
+          "WI": "Wisconsin",
+          "WV": "Západní Virginie",
+          "WY": "Wyoming"
+        }
+      },
+      "student_age": {
+        "helper": "Podle věku se určuje, na která ocenění máte nárok. Ocenění pro osoby do 18 let za Vás vyřídíme.",
+        "placeholder": "např. 17",
+        "question": "Nejprve – kolik Vám je let?",
+        "suffix": "let"
+      },
+      "sc_justice": {
+        "helper": "Nedávné změny zákonů obnovily široký přístup k finanční pomoci – většina lidí je překvapena, že na ni nyní mají nárok.",
+        "question": "Měli jste někdy co do činění s justičním systémem?"
+      },
+      "sc_military": {
+        "helper": "Vojenské výhody jsou nejbohatším zdrojem financování vzdělávání – stojí za to se na ně podívat.",
+        "question": "Sloužili jste vy, některý z vašich rodičů nebo manžel/manželka v armádě?"
+      },
+      "sc_returning_adult": {
+        "helper": "Otevírá možnosti financování od zaměstnavatelů, z programů pro pracovní sílu a krátkodobých grantů Pell.",
+        "question": "Jste dospělý člověk, který se vrací do školy nebo mění profesi?"
+      },
+      "sc_tribal": {
+        "question": "Jste registrovaným členem kmene nebo původem z amerických indiánů či původních obyvatel Aljašky?"
+      },
+      "sc_undocumented_daca": {
+        "question": "Popsali byste svůj imigrační status jako bez dokladů nebo DACA?"
+      },
+      "citizenship_status": {
+        "helper": "Je to nejdůležitější faktor pro to, jakou federální a státní podporu můžete získat – a my najdeme granty pro každý status.",
+        "options": {
+          "daca": "DACA",
+          "eligible_noncitizen": "Oprávněný nepřísluštník USA",
+          "international": "Zahraniční student",
+          "permanent_resident": "Osoba s trvalým pobytem",
+          "refugee_asylee": "Uprchlík / azylant",
+          "undocumented": "Bez dokladů",
+          "us_citizen": "Občan USA"
+        },
+        "question": "Jaké je Vaše občanství nebo imigrační status?"
+      },
+      "city_or_county": {
+        "helper": "Zobrazí velmi místní granty od komunitních nadací.",
+        "placeholder": "např. Alameda County",
+        "question": "V jakém městě nebo okrese žijete?"
+      },
+      "credential_sought": {
+        "options": {
+          "associate": "Associate degree (nižší vysokoškolský titul)",
+          "bachelor": "Bakalářský titul",
+          "certificate": "Certifikát",
+          "doctoral": "Doktorský titul",
+          "license": "Licence",
+          "master": "Magisterský titul",
+          "vocational": "Odborné / řemeslné vzdělání"
+        },
+        "question": "Jakou kvalifikaci chcete získat?"
+      },
+      "dependency_status": {
+        "helper": "Nezávislí studenti mají často nárok na více podpory podle finanční potřebnosti. Nejste si jisti? To nevadí.",
+        "options": {
+          "dependent": "Závislý",
+          "independent": "Nezávislý",
+          "unknown": "Zatím si nejsem jistý"
+        },
+        "question": "Jste z hlediska federální podpory závislý, nebo nezávislý student?"
+      },
+      "enrollment_status": {
+        "options": {
+          "enrolled": "Aktuálně studuji",
+          "prospective": "Plánuji se zapsat",
+          "returning_adult": "Dospělý vracející se ke studiu",
+          "transferring": "Přecházím na jinou školu"
+        },
+        "question": "Kde se nacházíte na své vzdělávací cestě?"
+      },
+      "fafsa_status": {
+        "helper": "Další kroky přizpůsobíme tomu, kde se nacházíte.",
+        "options": {
+          "in_progress": "Rozpracováno",
+          "not_started": "Nezačato",
+          "submitted": "Odesláno"
+        },
+        "question": "Začali jste již vyplňovat FAFSA?"
+      },
+      "first_generation": {
+        "helper": "Mnoho grantů je vyhrazeno pro studenty první generace.",
+        "question": "Budete první ve své rodině, kdo půjde na vysokou školu?"
+      },
+      "gpa": {
+        "helper": "Nepovinné – i s průměrnými známkami máte nárok na naprostou většinu podpory.",
+        "placeholder": "např. 3,4",
+        "question": "Jaký je Váš GPA?"
+      },
+      "household_income_range": {
+        "helper": "Použije se pouze k nalezení podpory podle finanční potřebnosti – stačí nám rozmezí a nikdy se nesdílí.",
+        "options": {
+          "over_150k": "Přes 150 000 USD",
+          "under_30k": "Pod 30 000 USD",
+          "100k_150k": "$100,000 – $150,000",
+          "30k_60k": "$30,000 – $60,000",
+          "60k_100k": "$60,000 – $100,000"
+        },
+        "question": "Jaký je přibližně roční příjem Vaší domácnosti?"
+      },
+      "household_size": {
+        "placeholder": "např. 4",
+        "question": "Kolik osob žije ve Vaší domácnosti?",
+        "suffix": "osob"
+      },
+      "institution_type": {
+        "options": {
+          "community_college": "Komunitní vysoká škola",
+          "four_year": "Čtyřletá vysoká škola / univerzita",
+          "grad": "Postgraduální škola",
+          "trade_vocational": "Odborná nebo učňovská škola"
+        },
+        "question": "Na jaký typ školy se chystáte?"
+      },
+      "intended_field": {
+        "helper": "Otevře stipendia zaměřená na konkrétní obor.",
+        "placeholder": "např. ošetřovatelství, informatika",
+        "question": "Co plánujete studovat?"
+      },
+      "m_adl_dislocated": {
+        "helper": "Otevře fondy pro propuštěné pracovníky (WIOA) a fondy trade adjustment.",
+        "question": "Přišli jste o práci, nebo Váš obor upadá?"
+      }
+    },
+    "subtitle": "Několik rychlých otázek, abychom našli granty a stipendia, na která skutečně máte nárok.",
+    "subtitleCoach": "Několik rychlých otázek, abychom našli granty a stipendia, na která student skutečně má nárok.",
+    "thatsEverything": "To je vše",
+    "title": "Vytvořte svůj profil podpory",
+    "titleCoach": "Vytvořte profil podpory tohoto studenta",
+    "toastFinishEssentials": "Základní údaje můžete dokončit kdykoli a odemknout tak shody.",
+    "toastRankTheirs": "Na základě těchto odpovědí seřadíme jejich shody.",
+    "toastRankYours": "Na základě těchto odpovědí seřadíme Vaše shody.",
+    "toastSaveError": "Profil se nepodařilo uložit. Zkuste to prosím znovu.",
+    "toastSaved": "Profil podpory byl uložen",
+    "toastStudentSaveError": "Profil tohoto studenta se nepodařilo uložit. Zkuste to prosím znovu.",
+    "toastStudentSaved": "Profil studenta byl uložen",
+    "back": "Zpět",
+    "checkAnswer": "Zkontrolujte prosím tuto odpověď",
+    "earlyExit": "Přeskočit doplňující údaje a hledat hned?",
+    "earlyExitCoach": "Základní údaje jsou vyplněny – uložit nyní?",
+    "essentialsToUnlock": "Základní údaje pro odemčení shod",
+    "readyToSearch": "Můžete začít hledat – další údaje už jen zpřesní vaše shody.",
+    "review": "Uložte svůj profil, aby se vaše shody zachovaly. Kteroukoli odpověď výše můžete upravit.",
+    "reviewCoach": "Uložte profil tohoto studenta, aby se jeho shody zachovaly. Kteroukoli odpověď výše můžete upravit.",
+    "saveDashboard": "Uložit a přejít na přehled",
+    "saveFind": "Uložit a najít stipendia",
+    "saveStudentProfile": "Uložit profil studenta",
+    "searchScholarships": "Hledat stipendia",
+    "selectOne": "Vyberte jednu možnost",
+    "selectState": "Vyberte svůj stát",
+    "skip": "Přeskočit",
+    "skipped": "Přeskočeno"
+  },
+  "scholarships": {
+    "submittedOf": "{{submitted}} z {{identified}}",
+    "title": "Stipendia",
+    "viewApply": "Zobrazit a podat žádost",
+    "whyFits": "Shoda podle: {{base}} – jste student ({{enrollment}}) ve státě {{state}}.",
+    "whyFitsGpa": "Shoda podle: {{base}} – jste student ({{enrollment}}) ve státě {{state}} s průměrem GPA {{gpa}}.",
+    "accessible": "Dostupné",
+    "advancing": "{{pct}} % postupuje",
+    "competitive": "Konkurenční",
+    "description": "Odpovídající stipendia seřazená podle shody s vaším profilem podpory.",
+    "enrollment": {
+      "fullTime": "na plný úvazek",
+      "lessThanHalf": "na méně než poloviční úvazek",
+      "partTime": "na částečný úvazek",
+      "unknown": "zapsaný"
+    },
+    "keywords": "Klíčová slova",
+    "keywordsPlaceholder": "např. STEM, první generace, ošetřovatelství",
+    "matchPct": "shoda {{pct}} %",
+    "matchStrength": "Síla shody",
+    "matchesOnBase": "Shoda v: {{base}}.",
+    "minAward": "Min. částka ($)",
+    "moderate": "Střední",
+    "noMatches": "Žádná stipendia neodpovídala – zkuste rozšířit klíčová slova.",
+    "pipeline": "Průběh",
+    "search": "Hledat",
+    "stageAwarded": "Uděleno",
+    "stageIdentified": "Nalezeno",
+    "stageInProgress": "Rozpracováno",
+    "stageSubmitted": "Odesláno",
+    "submissionRate": "Míra odeslání"
+  },
+  "format": {
+    "daysAgo_few": "před {{count}} dny",
+    "inDays_few": "za {{count}} dny",
+    "daysAgo_one": "před {{count}} dnem",
+    "daysAgo_other": "před {{count}} dny",
+    "dueToday": "termín je dnes",
+    "dueTomorrow": "termín je zítra",
+    "inDays_one": "za {{count}} den",
+    "inDays_other": "za {{count}} dní"
+  },
+  "csvImport": {
+    "title": "Import studentů z CSV",
+    "chooseFile": "Vybrat soubor .csv",
+    "colDetail": "Podrobnosti",
+    "colEmail": "E-mail",
+    "colFirst": "Jméno",
+    "colGrade": "Ročník",
+    "colLast": "Příjmení",
+    "colName": "Název",
+    "colRow": "Řádek",
+    "colState": "Stát",
+    "colStatus": "Stav",
+    "columns": "Sloupce: {{columns}}",
+    "created": "Vytvořeno",
+    "description": "Nahrajte seznam studentů a my pro každého vytvoříme spravovaný profil. Povinné je pouze <code>first_name</code>.",
+    "downloadTemplate": "Stáhnout šablonu",
+    "duplicates": "Duplicity",
+    "errors": "Chyby",
+    "fileAria": "Soubor CSV",
+    "importAnother": "Importovat další soubor",
+    "importOne": "Importovat {{count}} studenta",
+    "importOther": "Importovat {{count}} studentů",
+    "importZero": "Importovat studenty",
+    "missing": "chybí",
+    "noDataRows": "Nenalezeny žádné datové řádky. Ujistěte se, že soubor obsahuje záhlaví a alespoň jednoho studenta.",
+    "previewOne": "Náhled – {{count}} student",
+    "previewOther": "Náhled – {{count}} studentů",
+    "readError": "Soubor se nepodařilo přečíst. Nahrajte prosím běžný soubor .csv.",
+    "showingFirst": "zobrazeno prvních {{limit}}"
+  },
+  "dashboard": {
+    "actionApply": "Podejte žádost: {{name}}",
+    "actionCompleteProfile": "Dokončete svůj profil finanční pomoci — zodpovězeno {{answered}}/{{total}} základních otázek",
+    "actionSubmit": "Odešlete {{name}} — {{when}}",
+    "aidJourney": "Cesta k finanční pomoci",
+    "allCaughtUp": "Vše máte hotovo — momentálně nic nezbývá.",
+    "completeProfileBody": "Zodpovězeno {{answered}}/{{total}} základních otázek — dokončete je a odemkněte své shody.",
+    "completeProfileTitle": "Dokončete svůj profil finanční pomoci",
+    "firstGen": "První generace",
+    "nextActions": "Další kroky",
+    "nextStep": "Další: {{step}}",
+    "overview": "Váš přehled finanční pomoci.",
+    "screenerPrompt": "Zodpovězte úvodní dotazník ve svém profilu a odemkněte pomoc pro konkrétní skupiny.",
+    "statDeadlines": "Nadcházející termíny",
+    "statDeadlinesHint": "federální, státní a institucionální",
+    "statSai": "Student Aid Index",
+    "statSaiHint": "podle vašeho finančního profilu",
+    "statScholarships": "Shody se stipendii",
+    "statScholarshipsHint": "seřazeno podle skóre shody",
+    "tailoringFor": "GRANT přizpůsobuje pro",
+    "title": "Přehled finanční pomoci",
+    "welcomeBack": "Vítejte zpět, {{name}}."
+  },
+  "federal": {
+    "deadlines": "Termíny",
+    "description": "Termíny pro FAFSA, Pell Grants a státní pomoc seřazené podle nejbližšího data.",
+    "fafsaInProgress": "Probíhá",
+    "fafsaInProgressNext": "Dokončete a odešlete FAFSA před federálním termínem, abyste si pomoc zajistili.",
+    "fafsaNotStarted": "Nezahájeno",
+    "fafsaNotStartedNext": "Zahajte FAFSA na studentaid.gov — odemkne federální, státní i školní pomoc.",
+    "fafsaReadiness": "Připravenost FAFSA",
+    "fafsaSubmitted": "Odesláno",
+    "fafsaSubmittedNext": "Vaše FAFSA je podána — nyní sledujte státní a institucionální termíny.",
+    "filterAll": "Vše",
+    "lowerSai": "Nižší SAI odemyká více pomoci založené na potřebnosti.",
+    "noDeadlines": "V této kategorii nejsou žádné termíny.",
+    "programs": "Federální programy",
+    "stateCalGrantA": "Cal Grant A",
+    "stateCalGrantAHint": "Školné a poplatky na čtyřletých školách",
+    "stateCalGrantB": "Cal Grant B",
+    "stateCalGrantBHint": "Příspěvek na životní náklady pro studenty s nízkými příjmy",
+    "stateChafee": "Chafee Grant",
+    "stateChafeeHint": "Pro současné i bývalé děti v pěstounské péči",
+    "stateMerit": "Prospěchové stipendium",
+    "stateMeritHint": "Ocenění z vašeho státu podle průměru/testů",
+    "stateMiddleClass": "Middle Class Scholarship",
+    "stateMiddleClassHint": "Až 40 % zbývajících nákladů na UC/CSU",
+    "stateNeedGrant": "Státní grant podle potřebnosti",
+    "stateNeedGrantHint": "Pomoc podle příjmu od vaší státní agentury",
+    "statePrograms": "Státní programy",
+    "statusDueSoon": "Brzy vyprší",
+    "statusOverdue": "Po termínu",
+    "statusSubmitted": "Odesláno",
+    "statusUpcoming": "Nadcházející",
+    "studentAidIndex": "Student Aid Index",
+    "tilePell": "Pell Grant",
+    "tilePellHint": "Podle potřebnosti, nesplácí se — výši určuje vaše SAI.",
+    "tileSubsidized": "Direct Subsidized",
+    "tileSubsidizedHint": "Stafford, podle potřebnosti — během studia bez úroku.",
+    "tileUnsubsidized": "Direct Unsubsidized",
+    "tileUnsubsidizedHint": "Stafford, nezávisí na potřebnosti — úrok se připisuje okamžitě.",
+    "tileWorkStudy": "Work-Study",
+    "tileWorkStudyHint": "Získejte podporu díky brigádě na částečný úvazek v kampusu.",
+    "title": "Federální a státní podpora",
+    "typeFederal": "Federální",
+    "typeInstitutional": "Institucionální",
+    "typeScholarship": "Stipendium",
+    "typeState": "Státní"
+  },
+  "journey": {
+    "apply": "Podat žádost",
+    "compare": "Porovnat",
+    "fafsa": "FAFSA",
+    "plan": "Plán",
+    "profile": "Profil",
+    "search": "Hledat"
+  },
+  "loans": {
+    "addOccupation": "Přidejte povolání pro odhad",
+    "approaching": "Blíží se limitu",
+    "bandComfortable": "Komfortní",
+    "bandHighBurden": "Vysoká zátěž",
+    "bandManageable": "Zvladatelné",
+    "calculating": "Počítám…",
+    "compareGraduatedName": "Stupňovité",
+    "compareGraduatedSub": "Začíná nízko, každé 2 roky roste",
+    "compareGraduatedSuffix": "/měs. na začátku",
+    "comparePlans": "Porovnat splátkové plány",
+    "compareRapName": "RAP",
+    "compareRapSub": "Nový federální plán · 1–10 % příjmu, až 30 let",
+    "compareRapSuffix": "/měs. na začátku kariéry",
+    "compareStandardName": "Standardní (10 let)",
+    "compareStandardSub": "Pevná splátka · nejnižší celkový úrok",
+    "compareStandardSuffix": "/měs.",
+    "debtToIncome": "Poměr dluhu k příjmu",
+    "description": "Odhadněte měsíční splátku a porovnejte ji s očekávaným výdělkem.",
+    "entryLevel": "Nástupní úroveň",
+    "expectedEarnings": "Očekávaný výdělek",
+    "expectedSalaryMultiple": "{{ratio}}× očekávaný plat",
+    "grantPick": "Volba GRANT",
+    "healthy": "Zdravé",
+    "interest": "Úrok",
+    "lookUp": "Vyhledat",
+    "median": "Medián",
+    "monthly": "Měsíčně",
+    "occupation": "Povolání",
+    "occupationPlaceholder": "např. vývojář softwaru",
+    "ofIncome": "příjmu",
+    "overCeiling": "Nad limitem",
+    "overCeilingNote": "Předpokládané půjčky překračují limit GRANT ve výši 1× očekávaného platu – zvažte před dalším půjčováním levnější formy podpory.",
+    "paymentShare": "Splátka tvoří {{pct}} % nástupního měsíčního příjmu",
+    "plan": "Plán",
+    "planGraduated": "Stupňovitý",
+    "planIncomeDriven": "Podle příjmu (RAP)",
+    "planStandard10": "Standardní (10letý)",
+    "policyCallout": "<head>Splácení se v roce 2026 změnilo.</head> <save>Plán SAVE je uzavřen pro nové přihlášky</save> a postupně se ruší – nahrazuje jej nový <rap>plán Repayment Assistance Plan (RAP)</rap> (1–10 % příjmu, až 30 let). Noví dlužníci si nyní vybírají mezi plánem Standard a RAP.",
+    "principal": "Jistina ($)",
+    "projectRepayment": "Předpovědět splácení",
+    "projector": "Kalkulačka splácení",
+    "rate": "Sazba (%)",
+    "tenYearGrowth": "Růst za 10 let",
+    "term": "Doba splácení (měsíce)",
+    "title": "Půjčky a dluhy",
+    "totalPaid": "Celkem zaplaceno",
+    "withinCeilingNote": "GRANT udržuje celkové zadlužení pod 1násobkem Vašeho očekávaného platu v prvním roce. Jste v nízkorizikovém profilu.",
+    "rapRange": "1–10%"
+  },
+  "modules": {
+    "adult": "Dospělí vracející se ke studiu",
+    "caregiver": "Pečující osoba",
+    "disability": "Zdravotní postižení",
+    "field": "Podle oboru",
+    "first_time": "Studenti prvního ročníku",
+    "foster": "Pěstounská péče",
+    "homeless": "Nejisté bydlení",
+    "justice": "Zkušenost se soudním systémem",
+    "military": "Armáda / veterán",
+    "tribal": "Kmenové komunity",
+    "undocumented": "Bez dokladů / DACA"
+  },
+  "plan": {
+    "actionApply": "Podejte přihlášku: {{name}} ({{amount}})",
+    "actionFinishProfile": "Dokončete svůj profil podpory – zodpovězeno {{answered}}/{{total}} základních otázek",
+    "actionReviewOffer": "Prohlédněte si svou nejlepší nabídku – {{institution}}, {{amount}}/rok",
+    "actionSubmit": "Odešlete {{name}} – {{when}}",
+    "activeStage": "Vaše aktuální fáze na cestě za podporou.",
+    "addAwardLetter": "Přidejte potvrzení o přidělení podpory a porovnejte nabídky.",
+    "allCaughtUp": "Vše máte hotovo – momentálně nemáte žádné nevyřízené kroky.",
+    "atAGlance": "Plán na první pohled",
+    "bestNetCost": "Nejnižší čistá cena",
+    "completeProfileForMatches": "Vyplňte profil, aby se zobrazily shody.",
+    "coveredByGiftAid": "Pokryto nevratnou podporou",
+    "deadlines": "Termíny",
+    "description": "Váš souhrnný plán finanční podpory.",
+    "descriptionNamed": "Souhrnný plán finanční podpory: {{name}}.",
+    "federalLoansInOffer": "federální půjčky ve Vaší nejlepší nabídce",
+    "fromYourProfile": "z Vašeho profilu",
+    "giftAidPct": "{{pct}} % nevratné podpory",
+    "loans": "Půjčky",
+    "matchPct": "shoda {{pct}} %",
+    "matched": "Shod: {{count}}",
+    "modelRepayment": "Namodelujte splácení, jakmile budete mít nabídku.",
+    "netPerYear": "{{amount}}/rok čistě",
+    "netPrice": "Čistá cena",
+    "nextDeadline": "Nejbližší termín",
+    "noDeadlines": "Zatím nejsou naplánovány žádné termíny.",
+    "noOffersYet": "zatím žádné nabídky",
+    "nothingScheduled": "nic není naplánováno",
+    "pctComplete": "dokončeno {{pct}} %",
+    "planRepayment": "Naplánovat splácení",
+    "potentialAid": "Potenciální podpora",
+    "potentialAidHint": "napříč odpovídajícími stipendii",
+    "scholarships": "Stipendia",
+    "stepOf": "Krok {{current}} z {{total}}: {{step}}",
+    "strongestMatch": "Vaše nejlepší shoda",
+    "studentAidIndex": "Student Aid Index",
+    "title": "Můj plán podpory",
+    "tracked": "Sledováno: {{count}}",
+    "workStudySuffix": "· {{amount}} work-study",
+    "yourNextActions": "Vaše další kroky"
+  },
+  "common": {
+    "continue": "Pokračovat",
+    "done": "Hotovo",
+    "no": "Ne",
+    "profileCompleteness": "Úplnost profilu",
+    "yes": "Ano",
+    "cancel": "Zrušit"
+  },
+  "compare": {
+    "appealLetter": "Vážená finanční podpora školy {{worst}},\n\nděkuji, že jste mě přijali, i za nabídnutý balíček finanční pomoci. Škola {{worst}} zůstává mou první volbou a píši, abych Vás s úctou požádal(a) o přezkoumání mého ocenění.\n\nPo porovnání nabídek činí moje čisté náklady na škole {{worst}} {{worstNet}} ročně, oproti {{bestNet}} na škole {{best}} – rozdíl je {{difference}}. Finanční situace mé rodiny se nezměnila a tento rozdíl mi bez další dotace nebo stipendia studium ztěžuje.\n\nMohli byste s ohledem na toto srovnání znovu zvážit mou institucionální dotaci? Rád(a) poskytnu jakékoli podklady, které pomohou. Děkuji za Váš čas a ohled.\n\nS pozdravem\n[Vaše jméno]",
+    "appealNote": "Pouze šablona – před odesláním ji zkontrolujte a upravte. Odvolání fungují nejlépe s konkrétní konkurenční nabídkou a skutečným důvodem.",
+    "appealSubtitle": "Uveďte čisté náklady {{amount}} u instituce {{institution}} a požádejte o vyšší podporu",
+    "appealTitle": "Návrh odvolacího dopisu pro instituci {{institution}}",
+    "bestBanner": "<name>{{institution}}</name> má vaše nejnižší čisté náklady: <amount>{{amount}}</amount> ročně.",
+    "bestValue": "Nejlepší hodnota",
+    "coa": "COA {{amount}}",
+    "colCost": "Náklady",
+    "colGrants": "Granty",
+    "colInstitution": "Instituce",
+    "colLoans": "Půjčky",
+    "colNetCost": "Čisté náklady",
+    "colScholarships": "Stipendia",
+    "colWorkStudy": "Studijní práce",
+    "description": "Porovnejte své nabídky podpory a zjistěte, která vás vyjde nejlevněji.",
+    "empty": "Zatím žádné nabídky podpory – přidejte je z Application Concierge a porovnejte nabídky.",
+    "federalLoansRepaid": "Federální půjčky (splácené)",
+    "gapped": "<b>Schodek {{amount}}.</b> I po všech grantech, půjčkách a studijní práci zůstává tato část potřeby nepokrytá – hradili byste ji z vlastních prostředků.",
+    "giftAid": "Nevratná pomoc (granty + stipendia)",
+    "loanAsAid": "<b>Částka {{amount}} označená jako „pomoc“ je půjčka.</b> Je uvedena vedle nevratné pomoci, ale splácíte ji s úrokem – skutečné čisté náklady nesnižuje.",
+    "lowestNetCost": "Nejnižší čisté náklady",
+    "netCostNote": "Čisté náklady = náklady na studium minus nevratná pomoc (granty + stipendia). Půjčky a studijní práce jsou peníze, které splácíte nebo vyděláte, nikoli slevy.",
+    "noGap": "<b>Žádný schodek.</b> Nabídnutá pomoc pokrývá vaši celou prokázanou potřebu.",
+    "perYear": "/ rok",
+    "pricedHonestly": "Poctivě vyčísleno",
+    "title": "Porovnat nabídky",
+    "trueNetCost": "Skutečné čisté náklady",
+    "workStudyEarned": "Studijní práce (vydělané)"
+  },
+  "applications": {
+    "allStaged": "Každé povinné nedaňové pole je připraveno – můžete přejít na StudentAid.gov.",
+    "autoFills": "Vyplní se po udělení souhlasu",
+    "completed": "Dokončeno: {{count}}",
+    "description": "Připravíme všechna nedaňová pole, takže je jen potvrdíte, a poté vás provedeme kroky na StudentAid.gov, které můžete udělat jen vy.",
+    "generatePacket": "Vytvořit přípravný balíček",
+    "generating": "Vytváření…",
+    "handoffTitle": "Řízené předání na StudentAid.gov",
+    "inProgress": "Probíhá",
+    "loadingHandoff": "Načítání kroků předání…",
+    "loadingProgress": "Načítání vašeho postupu…",
+    "markDone": "Označit „{{title}}“ jako hotové",
+    "markNotDone": "Označit „{{title}}“ jako nehotové",
+    "missingRequired": "Povinná pole, která ještě vyžadují odpověď: {{count}}.",
+    "openOnStudentAid": "Otevřít na StudentAid.gov",
+    "prefilled": "Předvyplněno: {{count}}",
+    "prepPacket": "Přípravný balíček",
+    "prepPacketBlurb": "Vytvořte kompletní balíček všeho dosud připraveného – připravený k potvrzení na StudentAid.gov.",
+    "prepPacketTitle": "Přípravný balíček – FAFSA {{year}}",
+    "privacyNote": "GRANT nikdy neukládá vaše SSN ani daňové údaje. Daňové údaje se po udělení souhlasu přenášejí přímo z IRS; své SSN zadáváte na StudentAid.gov. Nikdy za vás nic neodesíláme.",
+    "readiness": "Připravenost FAFSA {{year}}",
+    "saveSection": "Uložit sekci",
+    "saving": "Ukládání…",
+    "schoolCodesPlaceholder": "Kódy škol oddělené čárkou",
+    "select": "Vyberte…",
+    "stepsDone": "Hotovo {{complete}} z {{total}} kroků",
+    "stepsLeft": "Zbývá: {{count}}",
+    "stillNeeded": "Stále chybí: {{count}}",
+    "submissionReady": "Připraveno k odeslání",
+    "title": "Application Concierge",
+    "youEnter": "Zadáte na StudentAid.gov",
+    "yourInformation": "Vaše údaje"
+  },
+  "coach": {
+    "aidProfileFor": "Profil podpory pro",
+    "backToRoster": "Zpět na seznam",
+    "student": "Student"
+  },
+  "institutions": {
+    "aidCovers": "Podpora pokrývá",
+    "autoMerit": "Pravděpodobné automatické prospěchové stipendium",
+    "autoMeritTitle": "Váš průměr (GPA) splňuje typický práh pro automatické prospěchové stipendium – očekávejte podporu bez samostatné přihlášky.",
+    "bandMatch": "Odpovídající",
+    "bandReach": "Náročná",
+    "bandSafety": "Jistá",
+    "costOfAttendance": "Náklady na studium",
+    "dependency": "Závislost",
+    "dependent": "Závislý student",
+    "description": "Odhadněte svou čistou cenu – náklady na studium minus očekávaná grantová podpora.",
+    "empty": "Spusťte odhad a zde se zobrazí rozpis vaší čisté ceny.",
+    "estGrantAid": "Odhad. grantová podpora",
+    "estimate": "Odhadnout čistou cenu",
+    "estimating": "Odhaduji…",
+    "hintMatch": "Reálná cena – rozdíl plánujte pokrýt stipendii nebo prací při studiu.",
+    "hintReach": "Cena je náročná – spolehněte se na odvolání a externí stipendia.",
+    "hintSafety": "Čistá cena se pohodlně vejde do typického rodinného rozpočtu.",
+    "householdIncome": "Příjem domácnosti ($)",
+    "independent": "Nezávislý student",
+    "institution": "Instituce",
+    "institutionPlaceholder": "např. Státní univerzita",
+    "meritByApplication": "Prospěchové stipendium na žádost",
+    "meritByApplicationTitle": "Prospěchová podpora je zde při vašem současném průměru (GPA) spíše soutěžní než automatická – požádejte o ni výslovně.",
+    "needAware": "Zohledňuje finanční potřebu",
+    "needAwareTitle": "Tato škola zohledňuje schopnost platit a část vaší prokázané finanční potřeby může zůstat nepokryta (mezera).",
+    "needBlind": "Nezohledňuje finanční potřebu",
+    "needBlindTitle": "Přijímací řízení nezohledňuje vaši schopnost platit a tato škola pokrývá v podstatě veškerou prokázanou finanční potřebu.",
+    "needMet": "% pokryté prokázané finanční potřeby",
+    "netPerYear": "čistá cena / rok",
+    "notSure": "Nejsem si jistý/á",
+    "sapRequired": "Vyžadován SAP",
+    "sapTitle": "Satisfactory Academic Progress (uspokojivý studijní pokrok): po zápisu je nutné udržet minimální průměr (GPA) a tempo získávání kreditů, jinak může být podpora pozastavena.",
+    "stateOfResidence": "Stát bydliště",
+    "title": "Instituce"
+  },
+  "roster": {
+    "inviteTitleSelected": "Pozvat vybrané ({{count}}) do Inspire Genius",
+    "lastName": "Příjmení",
+    "loading": "Načítání vaší soupisky…",
+    "noMatch": "Hledanému výrazu „{{query}}“ neodpovídají žádní studenti.",
+    "notYet": "Zatím ne",
+    "open": "Otevřít",
+    "ready": "Připraveno",
+    "remove": "Odebrat",
+    "removeDialogBody": "Student bude odebrán z vaší soupisky. Údaje v jeho profilu se nesmažou, pokud již má vlastní propojené přihlášení.",
+    "removeDialogTitle": "Odebrat {{name}}?",
+    "removeStudent": "Odebrat {{name}}",
+    "rowInviteAlready": "Již pozván",
+    "rowInviteNoEmail": "Pro pozvání studenta přidejte e-mail",
+    "rowInviteTitle": "Pozvat do Inspire Genius",
+    "searchAria": "Hledat studenty",
+    "searchPlaceholder": "Hledat podle jména",
+    "selectAll": "Vybrat všechny studenty",
+    "selectStudent": "Vybrat {{name}}",
+    "sendBulkOne": "Odeslat {{count}} pozvánku",
+    "sendBulkOther": "Odeslat pozvánky ({{count}})",
+    "sendInvitation": "Odeslat pozvánku",
+    "skipped": "Přeskočeno",
+    "state": "Stát",
+    "statePlaceholder": "např. CA",
+    "statusInvited": "Pozván",
+    "statusLinked": "Propojen",
+    "statusManaged": "Spravován",
+    "title": "Moji studenti",
+    "toastAddError": "Studenta se nepodařilo přidat. Zkuste to prosím znovu.",
+    "toastAdded": "Přidán student: {{name}}",
+    "toastBulkInviteError": "Pozvánky se nepodařilo odeslat. Zkuste to prosím znovu.",
+    "toastBulkInvitedOne": "Pozván {{converted}} z {{total}} studenta",
+    "toastBulkInvitedOther": "Pozváno {{converted}} z {{total}} studentů",
+    "toastInvitationSent": "Pozvánka odeslána: {{name}}",
+    "toastInviteError": "Pozvánku se nepodařilo odeslat. Zkuste to prosím znovu.",
+    "toastRemoveError": "Tohoto studenta se nepodařilo odebrat. Zkuste to prosím znovu.",
+    "toastRemoved": "{{name}} byl(a) odebrán(a) z vaší soupisky",
+    "addDialogBody": "Vytvořte spravovaný profil. Poté jej můžete otevřít a vyplnit dotazník o podpoře.",
+    "addDialogTitle": "Přidat studenta",
+    "addStudent": "Přidat studenta",
+    "bulkDialogBody": "Každý vybraný student obdrží e-mail s bezpečným odkazem pro nastavení hesla / magic linkem, aby se mohl přihlásit a převzít svůj vlastní profil podpory.",
+    "bulkDialogTitleOne": "Pozvat {{count}} studenta do Inspire Genius?",
+    "bulkDialogTitleOther": "Pozvat {{count}} studentů do Inspire Genius?",
+    "bulkResultsBody": "Takto bylo naloženo s jednotlivými vybranými studenty.",
+    "bulkResultsTitle": "Výsledky hromadného pozvání",
+    "coAccessLabel": "Ponechat společný přístup po převzetí účtu",
+    "coAccessOff": "Vypnuto – úplné předání. Po převzetí účtu tohoto studenta již neuvidíte.",
+    "coAccessOn": "Zapnuto – zůstanete v seznamu a stále můžete otevřít jeho profil.",
+    "colActions": "Akce",
+    "colCompleteness": "Úplnost",
+    "colReady": "Připraveno",
+    "colStatus": "Stav",
+    "colStudent": "Student",
+    "colUpdated": "Aktualizováno",
+    "converted": "Převedeno",
+    "description": "Importujte a spravujte studenty, kterým vytváříte profily podpory, a poté jim vytvořte vlastní přihlášení do Inspire Genius.",
+    "emailOptional": "E-mail (volitelné)",
+    "emptyBody": "Začněte přidáním studenta nebo importem seznamu.",
+    "emptyTitle": "Zatím žádní studenti",
+    "errors": "Chyby",
+    "firstName": "Jméno",
+    "firstNameRequired": "Jméno je povinné",
+    "gradeLevel": "Ročník",
+    "gradePlaceholder": "např. 12",
+    "importCsv": "Importovat CSV",
+    "invalidEmail": "Zadejte platný e-mail",
+    "invite": "Pozvat",
+    "inviteDialogBody": "Na adresu {{email}} pošleme bezpečný odkaz pro nastavení hesla / magic link, aby se mohl přihlásit a převzít svůj vlastní profil podpory.",
+    "inviteDialogTitle": "Pozvat {{name}} do Inspire Genius?",
+    "inviteSelected": "Pozvat vybrané do IG ({{count}})",
+    "inviteTitleNoEmail": "K pozvání potřebuje každý vybraný student e-mail",
+    "inviteTitleNone": "Vyberte studenty, které chcete pozvat"
+  },
+  "profile": {
+    "enrollment": {
+      "enrolled": "Zapsaný/á",
+      "prospective": "Uchazeč",
+      "returning_adult": "Dospělý navrátilec",
+      "transferring": "Přestupující"
+    },
+    "essentialsComplete": "Základní údaje jsou vyplněny – můžete je kdykoli upřesnit níže.",
+    "essentialsPending": "Odpovězte na základní otázky níže a odemkněte své shody.",
+    "essentialsPill": "{{answered}}/{{total}} základních údajů",
+    "field": {
+      "age": "Věk",
+      "enrollment": "Zápis",
+      "firstGeneration": "První generace",
+      "householdIncome": "Příjem domácnosti",
+      "intendedField": "Zamýšlený obor",
+      "schoolType": "Typ školy",
+      "state": "Stát"
+    },
+    "glanceTitle": "Váš profil podpory na první pohled",
+    "income": {
+      "100k_150k": "100 tis.–150 tis. USD",
+      "30k_60k": "30 tis.–60 tis. USD",
+      "60k_100k": "60 tis.–100 tis. USD",
+      "over_150k": "Nad 150 tis. USD",
+      "under_30k": "Pod 30 tis. USD"
+    },
+    "institution": {
+      "community_college": "Komunitní vysoká škola",
+      "four_year": "Čtyřletá",
+      "grad": "Postgraduální",
+      "trade_vocational": "Odborná / učňovská"
+    },
+    "nothingSaved": "Zatím nic není uloženo – konverzace níže Vás tím provede během několika minut."
+  }
+}

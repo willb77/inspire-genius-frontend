@@ -79,9 +79,9 @@ describe("the Home quick action's locale key", () => {
       const json = JSON.parse(fs.readFileSync(file, "utf-8")) as {
         homeV2?: Record<string, string>
       }
-      // English in every language the translation run has not reached. es, fr, it and pt
-      // got machine translations in wave 1; they must carry some string, not necessarily English.
-      if (["es", "fr", "it", "pt"].includes(lang)) {
+      // English in every language the translation run has not reached. es, fr, it, pt, pl and cs
+      // got machine translations in waves 1 and 2; they must carry some string, not necessarily English.
+      if (["es", "fr", "it", "pt", "pl", "cs"].includes(lang)) {
         expect(typeof json.homeV2?.quickMyDevelopment).toBe("string")
         expect(json.homeV2?.quickMyDevelopment?.trim()).not.toBe("")
       } else {

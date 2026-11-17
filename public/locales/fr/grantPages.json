@@ -346,7 +346,10 @@
         "helper": "Utilisé uniquement pour trouver les aides selon les besoins — une fourchette suffit, et elle n'est jamais partagée.",
         "options": {
           "over_150k": "Plus de 150 000 $",
-          "under_30k": "Moins de 30 000 $"
+          "under_30k": "Moins de 30 000 $",
+          "100k_150k": "$100,000 – $150,000",
+          "30k_60k": "$30,000 – $60,000",
+          "60k_100k": "$60,000 – $100,000"
         },
         "question": "Approximativement, quel est le revenu annuel de votre foyer?"
       },
@@ -463,7 +466,8 @@
       "m_mil_rating": {
         "helper": "Un taux d'invalidité peut ouvrir l'accès à VR&E (chap. 31), qui dépasse parfois le GI Bill.",
         "placeholder": "p. ex. 30",
-        "question": "Avez-vous un taux d'invalidité lié au service ?"
+        "question": "Avez-vous un taux d'invalidité lié au service ?",
+        "suffix": "%"
       },
       "m_mil_yellow_ribbon": {
         "question": "Votre établissement participe-t-il au programme Yellow Ribbon ?"
@@ -583,7 +587,8 @@
     "term": "Durée (mois)",
     "title": "Prêts et dettes",
     "totalPaid": "Total payé",
-    "withinCeilingNote": "GRANT maintient l'emprunt total sous 1× votre salaire attendu la première année. Votre profil présente un risque faible."
+    "withinCeilingNote": "GRANT maintient l'emprunt total sous 1× votre salaire attendu la première année. Votre profil présente un risque faible.",
+    "rapRange": "1–10%"
   },
   "applications": {
     "allStaged": "Tous les champs obligatoires hors impôts sont préparés — vous êtes prêt pour le transfert vers StudentAid.gov.",

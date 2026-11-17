@@ -811,7 +811,8 @@
     "staffOnly": "Los conjuntos de reglas los gestiona el personal de selección de tu organización.",
     "summaryLine": "{{rules}} reglas · quienes deciden: {{makers}}",
     "title": "Conjuntos de reglas",
-    "versionLine": "{{name}} — versión {{version}} ({{status}})"
+    "versionLine": "{{name}} — versión {{version}} ({{status}})",
+    "ruleLine": "{{label}} — {{source}} ({{outcome}})"
   },
   "scorecardComparison": {
     "candidate": "Candidato {{id}}",

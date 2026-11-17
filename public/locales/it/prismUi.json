@@ -239,7 +239,8 @@
     "failed": "Importazione non riuscita",
     "importing": "Importazione in corso…",
     "partial": "{{ok}} importati, {{failed}} non riusciti — vedi l'elenco qui sotto",
-    "someScales": "{{name}} — {{imported}} di {{expected}} scale"
+    "someScales": "{{name}} — {{imported}} di {{expected}} scale",
+    "withWarning": "{{summary}} · {{warning}}"
   },
   "selfMap": {
     "error": "Impossibile caricare la tua mappa comportamentale. Riprova.",

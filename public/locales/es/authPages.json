@@ -21,7 +21,8 @@
     "submit": "Enviar enlace mágico"
   },
   "signup": {
-    "passwordGroup": "Contraseña"
+    "passwordGroup": "Contraseña",
+    "termsAnd": "&"
   },
   "social": {
     "processing": "Completando el inicio de sesión social...",

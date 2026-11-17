@@ -39,7 +39,8 @@
     "submit": "Enviar link mágico"
   },
   "signup": {
-    "passwordGroup": "Senha"
+    "passwordGroup": "Senha",
+    "termsAnd": "&"
   },
   "social": {
     "processing": "Concluindo o login social...",

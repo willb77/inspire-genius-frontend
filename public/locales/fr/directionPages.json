@@ -233,7 +233,8 @@
     "progressDone": "{{done}} sur {{total}} terminées",
     "journeyProgress": "Progression du parcours",
     "startOver": "Recommencer",
-    "clearsYourProgressThroughThese": "Efface votre progression dans ces étapes. Vos résultats PRISM, vos documents et vos objectifs ne sont pas modifiés."
+    "clearsYourProgressThroughThese": "Efface votre progression dans ces étapes. Vos résultats PRISM, vos documents et vos objectifs ne sont pas modifiés.",
+    "nextNameQuestion": "{{name}} — {{question}}"
   },
   "portrait": {
     "whatYouReActuallyLike": "Comment vous êtes réellement",
@@ -368,7 +369,8 @@
     "startWithWhoIAm": "Commencer par qui je suis",
     "thereSNothingToPrice": "Il n'y a encore rien à chiffrer",
     "pickingYourCareerAreasIs": "Le choix de vos domaines de carrière est l'étape sur laquelle s'appuie celle-ci : c'est donc la prochaine chose utile à faire.",
-    "lookAtCareerAreas": "Voir les domaines de carrière"
+    "lookAtCareerAreas": "Voir les domaines de carrière",
+    "asOfMonthYear": "{{month}} {{year}}"
   },
   "rehearse": {
     "questionXofY": "Question {{index}} sur {{total}}",
@@ -440,7 +442,8 @@
     "roleFamiliesBestMatchFirst": "Familles de rôles, de la meilleure correspondance à la moins bonne",
     "dimensionsEvaluated": "{{dimensions}} dimensions évaluées",
     "howYouDActuallyGet": "Comment y arriver concrètement",
-    "thisRankingIsDeterministicThe": "Ce classement est déterministe : un même profil produit toujours le même ordre. Aucun modèle ne devine ici et il n'y a aucun hasard : chaque chiffre ci-dessus provient de la comparaison de vos dimensions avec celles qu'une famille de rôles demande généralement, et vous pouvez toutes les consulter."
+    "thisRankingIsDeterministicThe": "Ce classement est déterministe : un même profil produit toujours le même ordre. Aucun modèle ne devine ici et il n'y a aucun hasard : chaque chiffre ci-dessus provient de la comparaison de vos dimensions avec celles qu'une famille de rôles demande généralement, et vous pouvez toutes les consulter.",
+    "affinityOutOf100": "{{score}} / 100"
   },
   "establish": {
     "checkingWhatWeAlreadyHave": "Vérification de ce que nous avons déjà…",

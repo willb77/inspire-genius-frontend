@@ -69,7 +69,8 @@
     "bulkDescriptionAfter": ", oppure carica un file CSV.",
     "pasteRows": "Incolla le righe",
     "uploadCsv": "…oppure carica un file CSV",
-    "import": "Importa"
+    "import": "Importa",
+    "colPrism": "PRISM"
   },
   "comingSoon": {
     "schedule": {

@@ -237,7 +237,8 @@
       "riskDescription": "Segnala un ruolo o un esperto la cui conoscenza dovrebbe essere acquisita con priorità.",
       "expertId": "ID utente dell'esperto",
       "roleTitle": "Titolo del ruolo",
-      "horizon": "Orizzonte di pensionamento (mesi, facoltativo)"
+      "horizon": "Orizzonte di pensionamento (mesi, facoltativo)",
+      "factorRange": "{{label}} (0–1)"
     },
     "title": "Console del revisore",
     "subtitle": "Convalida le conoscenze acquisite e segnala i ruoli a rischio da acquisire.",
@@ -276,7 +277,8 @@
       "notes": "Note",
       "notesPlaceholder": "Cosa deve cambiare?",
       "cancel": "Annulla",
-      "submit": "Invia"
+      "submit": "Invia",
+      "noteTitle": "{{verdict}} — {{title}}"
     }
   },
   "dashboard": {

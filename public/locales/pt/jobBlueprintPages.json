@@ -814,7 +814,8 @@
     "staffOnly": "Os conjuntos de regras são gerenciados pela equipe de recrutamento da sua organização.",
     "summaryLine": "{{rules}} regras · responsáveis pela decisão: {{makers}}",
     "title": "Conjuntos de regras",
-    "versionLine": "{{name}} — versão {{version}} ({{status}})"
+    "versionLine": "{{name}} — versão {{version}} ({{status}})",
+    "ruleLine": "{{label}} — {{source}} ({{outcome}})"
   },
   "scorecardComparison": {
     "candidate": "Candidato {{id}}",

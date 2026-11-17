@@ -109,5 +109,7 @@
   "settingsLead": "Sei tu a decidere quando Lumen interviene senza essere interpellato e cosa può consultare.",
   "settingsLoadErrorBody": "Riprova tra un momento. Le tue scelte attuali non sono cambiate.",
   "settingsLoadErrorTitle": "Non siamo riusciti a caricare le tue impostazioni",
-  "settingsProactiveBody": "Permetti a Lumen di aggiungere Moments non richiesti: un check-in settimanale e indicazioni prima di ciò che stai preparando. Nulla esce dall'app; appaiono nel tuo feed dei Moments."
+  "settingsProactiveBody": "Permetti a Lumen di aggiungere Moments non richiesti: un check-in settimanale e indicazioni prima di ciò che stai preparando. Nulla esce dall'app; appaiono nel tuo feed dei Moments.",
+  "momentsLabelWithDate": "{{when}} — {{what}}",
+  "momentsQuoted": "“{{context}}”"
 }

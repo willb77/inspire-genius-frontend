@@ -148,7 +148,9 @@
       "Role_Play": "Juego de roles",
       "Résumé_Writer": "Redactor de currículum",
       "Schedule": "Calendario",
-      "Scholarships": "Becas"
+      "Scholarships": "Becas",
+      "Character_Lab": "Character Lab",
+      "Job_Blueprint": "Job Blueprint"
     },
     "sections": {
       "AI_coaches": "Coaches de IA",
@@ -160,7 +162,8 @@
       "Platform_Alerts": "Alertas de la plataforma",
       "Reports": "Informes",
       "Role_Views": "Vistas por rol",
-      "Support": "Soporte"
+      "Support": "Soporte",
+      "PRISM": "PRISM"
     }
   },
   "personalData": {
@@ -235,7 +238,8 @@
     "start": "Empezar",
     "startDetail": "Un camino guiado desde «no sé qué debería hacer» hasta un puesto por el que vale la pena apostar y un plan para lograrlo. Avanza a tu ritmo: cada paso se guarda.",
     "startLead": "¿No sabes qué sigue? Empieza aquí.",
-    "step": "Paso {{position}} de {{total}}"
+    "step": "Paso {{position}} de {{total}}",
+    "title": "Direction Setting"
   },
   "rightPanel": {
     "ariaLabel": "Perfil de usuario y próximos eventos",
@@ -397,7 +401,8 @@
     "prismDataHelp": "Reemplaza tus puntuaciones de PRISM a partir de un CSV de datos sin procesar y, opcionalmente, del PDF de tu informe. Esto sobrescribe tu perfil de PRISM actual.",
     "replacePrism": "Reemplazar datos de PRISM",
     "save": "Guardar",
-    "title": "Otras evaluaciones"
+    "title": "Otras evaluaciones",
+    "scoreLabel": "{{label}} (0–100)"
   },
   "audioPlayer": {
     "browseHint": "o haz clic para explorar • Compatible con MP3, WAV, FLAC y más",

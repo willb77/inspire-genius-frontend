@@ -264,5 +264,6 @@
   "planInterests": "Interessi: {{interests}}",
   "planLead": "Ciò che hai scoperto finora e cosa fare dopo.",
   "planLearningPath": "Percorso di apprendimento e istruzione",
-  "planLoading": "Stiamo preparando il tuo piano"
+  "planLoading": "Stiamo preparando il tuo piano",
+  "progComponentLine": "{{label}}: {{text}}"
 }

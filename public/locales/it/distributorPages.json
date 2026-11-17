@@ -66,5 +66,6 @@
   "tabRegions": "Regioni",
   "territoryUnavailable": "I dettagli del territorio non sono ancora disponibili.",
   "usedByPractitioners": "Utilizzati dai professionisti",
-  "yourPractitioners": "I tuoi professionisti"
+  "yourPractitioners": "I tuoi professionisti",
+  "homeGreetingNamed": "{{greeting}}, {{name}}"
 }

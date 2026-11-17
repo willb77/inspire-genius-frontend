@@ -107,7 +107,8 @@
     "toggleAvailability": "Cambiar disponibilidad de {{title}}",
     "surveyFallback": "encuesta",
     "editSurvey": "Editar {{title}}",
-    "deleteSurvey": "Eliminar {{title}}"
+    "deleteSurvey": "Eliminar {{title}}",
+    "createdByEmail": " · {{email}}"
   },
   "myResumePage": {
     "howTheResumeIsLaidOut": "Cómo se organiza el currículum. Elige el formato que mejor se adapte a su finalidad.",
@@ -194,7 +195,8 @@
     "addYourResume": "Añadir tu currículum",
     "addABio": "Añadir una biografía",
     "alsoUseTheseDocumentsOptional": "Usar también estos documentos (opcional)",
-    "format": "Formato"
+    "format": "Formato",
+    "sourceChip": "{{label}}: {{state}}"
   },
   "documentsV2": {
     "selectedDocumentsWereRemovedSuccessfully": "Los documentos seleccionados se eliminaron correctamente.",
@@ -431,7 +433,8 @@
     "experienceBadge": "Experiencia: {{years}} años",
     "assessedOn": "Evaluado el {{date}}",
     "includeInChat": "Incluir {{field}} en el chat",
-    "clarity": " · claridad {{value}}"
+    "clarity": " · claridad {{value}}",
+    "sourceSuffix": " · {{source}}"
   },
   "prismAssessment": {
     "couldNotOpenYourPrismReport": "No se pudo abrir tu informe de PRISM. Inténtalo de nuevo.",
@@ -500,7 +503,8 @@
     "experienceBadge": "Experiencia: {{years}} años",
     "assessedOn": "Evaluado el {{date}}",
     "includeInChat": "Incluir {{field}} en el chat",
-    "clarity": " · claridad {{value}}"
+    "clarity": " · claridad {{value}}",
+    "sourceSuffix": " · {{source}}"
   },
   "dashboardV2": {
     "chatWithMeridian": "Chatea con Meridian",

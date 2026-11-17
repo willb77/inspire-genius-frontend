@@ -59,12 +59,9 @@ describe("managerPages English bundle matches the page defaults", () => {
     expect(used.filter((k) => !keySet.has(k))).toEqual([])
   })
 
-  it("the namespace is registered with i18n and awaiting translation", () => {
+  it("the namespace is registered with i18n and its pending registration is gone (translated)", () => {
     const init = fs.readFileSync(path.join(srcRoot, "lib/i18n.ts"), "utf8")
     expect(init).toMatch(/ns:\s*\[[^\]]*'managerPages'/)
-    const pending = JSON.parse(
-      fs.readFileSync(path.join(root, "scripts/i18n/pending/managerPages.json"), "utf8"),
-    ) as { namespace: string }
-    expect(pending.namespace).toBe("managerPages")
+    expect(fs.existsSync(path.join(root, "scripts/i18n/pending/managerPages.json"))).toBe(false)
   })
 })

@@ -1,0 +1,409 @@
+{
+  "sharing": {
+    "sub": "Nikt nie widzi Twoich celów ani Twojego profilu PRISM z racji stanowiska. Każdy z nich udostępniasz konkretnej osobie na rok, możesz przedłużyć udostępnienie i w każdej chwili je cofnąć. Włączenie przełącznika odnawia okres udostępnienia na rok. Cel oznaczony jako prywatny pozostaje ukryty nawet przed tą osobą.",
+    "whatTheySee": "Co widzą",
+    "previewNote": "Podgląd ich widoku. Nie można tu niczego kliknąć.",
+    "previewAria": "Podgląd tego, co widzą",
+    "previewEmpty": "Opublikuj cel, a pojawi się tutaj dokładnie tak, jak widzi go osoba, której udostępniasz.",
+    "or": " lub ",
+    "shareAllIncludes_few": "„Udostępnij wszystko” obejmuje {{list}}, które nie są jeszcze w pełni chronione.",
+    "shareAllIncludes_many": "„Udostępnij wszystko” obejmuje {{list}}, które nie są jeszcze w pełni chronione.",
+    "basis": {
+      "managerOfRecord": {
+        "label": "Twój przełożony",
+        "because": "Z rejestrów Twojej organizacji wynika, że podlegasz tej osobie."
+      },
+      "rosterManager": {
+        "label": "Umieszcza Cię w swoim zespole",
+        "because": "Ta osoba dodała Cię do listy zespołu, którą prowadzi tutaj — to jej własna lista, a nie rejestry Twojej organizacji."
+      },
+      "practitioner": {
+        "label": "Twój coach",
+        "because": "Ta osoba dodała Cię jako klienta."
+      },
+      "requester": {
+        "label": "Prosi o dostęp",
+        "because": "Ta osoba poprosiła, abyś jej udostępnił(a) swoje dane."
+      },
+      "unknown": {
+        "label": "Na Twojej liście",
+        "because": "Nie wiemy, w jaki sposób ta osoba trafiła na tę listę."
+      }
+    },
+    "source": {
+      "managersOfRecord": "Twój przełożony z rejestrów",
+      "rosterManagers": "przełożeni, którzy dodali Cię do swojej listy zespołu",
+      "practitioners": "Twój coach",
+      "requesters": "prośby"
+    },
+    "cat": {
+      "goals": {
+        "label": "Cele",
+        "noun": "cele"
+      },
+      "prism": {
+        "label": "Profil PRISM",
+        "noun": "profil PRISM"
+      },
+      "assessments": {
+        "label": "Oceny",
+        "noun": "oceny"
+      },
+      "artefacts": {
+        "label": "Profil",
+        "noun": "dokumenty profilu"
+      },
+      "interviews": {
+        "label": "Rozmowy",
+        "noun": "wyniki rozmów"
+      },
+      "development": {
+        "label": "Rozwój",
+        "noun": "plan rozwoju"
+      }
+    },
+    "describe": {
+      "my": "moje {{list}}",
+      "your": "Twoje {{list}}"
+    },
+    "and": " i ",
+    "errorSave": "Nie udało się zapisać. Nic nie zostało zmienione — spróbuj ponownie.",
+    "surface": {
+      "goals": "przeczytano Twoje cele",
+      "goalsAdmin": "przeczytano Twoje cele (administrator platformy)",
+      "dossier": "otwarto Twoją teczkę rozwoju",
+      "dossierAdmin": "otwarto Twoją teczkę rozwoju (administrator platformy)",
+      "ratify": "przejrzano cel",
+      "ratifyAdmin": "przejrzano cel (administrator platformy)",
+      "goalReviews": "przeczytano oceny Twoich celów",
+      "goalReviewsAdmin": "przeczytano oceny Twoich celów (administrator platformy)",
+      "offered": "otrzymano od Ciebie dostęp",
+      "extended": "dostęp został przez Ciebie odnowiony",
+      "looked": "zajrzano",
+      "lookedAt": "zajrzano ({{surface}})"
+    },
+    "thisPerson": "ta osoba",
+    "someone": "Ktoś",
+    "waitingSee": "Czeka na Twoją decyzję — zobacz prośby poniżej",
+    "shareEverythingAria": "Udostępnij wszystko na tej stronie: {{who}}",
+    "shareAll": "Udostępnij wszystko",
+    "shareCategoryAria": "Udostępnij {{noun}}: {{who}}",
+    "partlyProtected": "(częściowo chronione)",
+    "notProtectedYet": "(jeszcze niechronione)",
+    "sharingWhat": "Udostępnianie: {{what}}",
+    "notShared": "Nieudostępnione",
+    "shareAllIncludes_one": "„Udostępnij wszystko” obejmuje {{list}}, co nie jest jeszcze w pełni chronione.",
+    "shareAllIncludes_other": "„Udostępnij wszystko” obejmuje {{list}}, które nie są jeszcze w pełni chronione.",
+    "until": "Do {{date}}",
+    "renew": "Odnów na rok",
+    "wantsToSee": "chce zobaczyć: {{what}}.",
+    "noReason": "Nie podano powodu.",
+    "asked": "· prośba z {{date}}",
+    "shareWhat": "Udostępnij: {{what}}",
+    "decline": "Odrzuć",
+    "whoHasLooked": "Kto zaglądał",
+    "readingLog": "Wczytywanie dziennika dostępu…",
+    "logError": "Nie udało się teraz wczytać dziennika dostępu. Nie jest pusty — jest nieodczytany.",
+    "logEmpty": "Nikt jeszcze nie zaglądał do Twoich celów. Każdy odczyt jest tu rejestrowany, także odczyty administratorów platformy.",
+    "accessLog": "Dziennik dostępu",
+    "someoneId": "Ktoś ({{id}}…)",
+    "noAccount": "Brak konta z tym adresem e-mail.",
+    "sharedWith": "Udostępniono: {{name}}.",
+    "addPerson": "Dodaj osobę",
+    "addPersonBody": "Ktoś, kto ma konto IG i nie ma go na liście powyżej. Podaj jego dokładny adres e-mail; nie szukamy po imieniu i nazwisku. Twój coach nie potrzebuje tego kroku: gdy doda Cię jako klienta, pojawi się na liście powyżej i tam z nim udostępniasz.",
+    "emailAria": "Adres e-mail",
+    "find": "Znajdź",
+    "shareMyGoals": "Udostępnij moje cele",
+    "notProtectedNote": "Jeszcze niechronione — {{list}}: osoby w Twojej linii raportowania widzą je niezależnie od tego, czy je udostępnisz. Twój wybór jest zapisany i zadziała, gdy ochrona zostanie uruchomiona.",
+    "partlyNote": "{{label}}, częściowo chronione: {{note}}",
+    "loading": "Sprawdzanie, komu możesz udostępniać…",
+    "error": "Nie udało się teraz wczytać ustawień udostępniania. Nic się nie zmieniło — odśwież, aby spróbować ponownie.",
+    "unavailable": "Nie udało się teraz wczytać: {{sources}}, więc część tej listy może brakować. Lista nie jest pusta — jest nieodczytana.",
+    "waitingHeading": "Czeka na Twoją decyzję",
+    "emptyHeading": "Nie ma jeszcze nikogo, komu można udostępniać",
+    "emptyBody": "Gdy menedżer lub coach zostanie z Tobą powiązany, pojawi się tutaj z przełącznikiem dla każdej części Twojego profilu. Możesz też dodać kogoś po adresie e-mail poniżej.",
+    "people": "Osoby",
+    "basisNote": "Pod każdym nazwiskiem widać, dlaczego ta osoba jest na liście.",
+    "eyebrow": "Twój wybór, osoba po osobie",
+    "title": "Kto może widzieć moje cele i profil PRISM"
+  },
+  "coaches": {
+    "goalCount_few": "cele",
+    "goalCount_many": "celów",
+    "job_mentor": {
+      "role": "Mentor zawodowy",
+      "focus": "Doskonałość na obecnym stanowisku: wyniki, dynamika zespołu, umiejętności specyficzne dla pracy, codzienna produktywność."
+    },
+    "career_coach": {
+      "role": "Coach kariery",
+      "focus": "Strategiczny rozwój: przygotowanie do kolejnej roli, zmiany kierunku, rozwój przywództwa, pozycjonowanie, długoterminowa ścieżka."
+    },
+    "prism_coach": {
+      "role": "Coach PRISM",
+      "focus": "Skuteczność behawioralna: stres, zdolność adaptacji, styl komunikacji, konflikty, inteligencja emocjonalna."
+    },
+    "callout": "Zawsze słyszysz jeden głos. Za Meridian stoją: <strong>Echo</strong> i <strong>Forge</strong>, które budują umiejętności w obecnej roli, <strong>Nova</strong> i <strong>Ascend</strong>, które planują rozwój, oraz <strong>Aura</strong>, która pracuje nad fundamentami behawioralnymi. Każde z nich widzi tylko cele, które do niego trafiły.",
+    "goalCount_one": "cel",
+    "goalCount_other": "celu",
+    "eyebrow": "Odkryj, uporządkuj, przekaż",
+    "title": "Twój zespół coachów",
+    "sub": "Goals Studio samo nie prowadzi coachingu celów. Przekazuje każdy z nich specjaliście odpowiedzialnemu za dany rodzaj rozwoju, a potem Meridian przekazuje Ci efekty ich pracy jednym głosem."
+  },
+  "interview": {
+    "drafted_few": "{{count}} cele przygotowane na podstawie tej rozmowy.",
+    "drafted_many": "{{count}} celów przygotowanych na podstawie tej rozmowy.",
+    "eyebrow": "Rozmowa, nie formularz",
+    "title": "Omów to z Goals Studio",
+    "sub": "Pięć obszarów Twojego życia zawodowego, kategoria po kategorii, z drabiną „DLACZEGO” pod każdym wskazanym celem. Prym wiedzie głos, a tryb tekstowy włączysz jednym przełącznikiem.",
+    "drafted_one": "{{count}} cel przygotowany na podstawie tej rozmowy.",
+    "drafted_other": "{{count}} celu przygotowanego na podstawie tej rozmowy.",
+    "reviewLink": "Przejrzyj i opublikuj"
+  },
+  "progress": {
+    "goalsDrafted_few": "{{count}} cele w wersji roboczej · zobacz Moje cele",
+    "goalsDrafted_many": "{{count}} celów w wersji roboczej · zobacz Moje cele",
+    "status": {
+      "explored": "Gotowe",
+      "active": "W trakcie",
+      "todo": "Nierozpoczęte"
+    },
+    "error": "Nie udało się teraz odczytać Twojego postępu. Nic z tego, nad czym pracujesz, nie zostało utracone.",
+    "notStarted": "Jeszcze nie zaczynasz. Rozmowa poniżej rozpoczyna się od: {{label}}.",
+    "allExplored": "Wszystkie obszary zostały omówione.",
+    "carryingOn": "Kontynuujemy: {{label}}.",
+    "nextUp": "Następne: {{label}}.",
+    "ariaLabel": "Twój postęp",
+    "areasExplored": "Omówione obszary: {{explored}} z {{total}}",
+    "goalsDrafted_one": "{{count}} cel w szkicu · zobacz Moje cele",
+    "goalsDrafted_other": "{{count}} celu w szkicu · zobacz Moje cele"
+  },
+  "discovery": {
+    "goalsSurfaced_few": "Wyłoniono {{count}} cele",
+    "goalsSurfaced_many": "Wyłoniono {{count}} celów",
+    "questionsAnswered_few": "Udzielono odpowiedzi na {{count}} pytania",
+    "questionsAnswered_many": "Udzielono odpowiedzi na {{count}} pytań",
+    "ladder": {
+      "role": {
+        "statedGoal": "Deklarowany cel",
+        "asks": "Goals Studio pyta",
+        "you": "Ty",
+        "root": "Prawdziwa motywacja"
+      },
+      "rung1": "„Chcę lepiej przewodzić w czasie zmian.”",
+      "rung2": "Dlaczego wydaje się to teraz ważne?",
+      "rung3": "Reorganizacja ciągle się zmienia, a mój zespół oczekuje ode mnie odpowiedzi.",
+      "rung4": "Dlaczego tak bardzo zależy Ci na tym, żeby mieć odpowiedzi?",
+      "rung5": "Jeśli się zawaham, pomyślą, że nie panuję nad sytuacją.",
+      "rung6": "A dlaczego akurat z tym trudno się zmierzyć?",
+      "rung7": "To nie umiejętność do zdobycia, lecz ochrona tego, jak zespół postrzega Cię pod presją. Do tego przyczepia się ten cel."
+    },
+    "status": {
+      "explored": "Omówione",
+      "active": "W trakcie",
+      "todo": "Nierozpoczęte"
+    },
+    "eyebrow": "Rozmowa o pięciu kategoriach",
+    "title": "Odkrywanie, a nie ankieta",
+    "sub": "Goals Studio zbiera informacje stopniowo, w trakcie kolejnych sesji. W każdej kategorii analizuje wzorce, prowadzi drabinę DLACZEGO aż do Twojej prawdziwej motywacji, a następnie zamienia rozmowę w propozycje celów.",
+    "talkIt": "Omów to w rozmowie",
+    "loading": "Odczytywanie postępu…",
+    "error": "Nie udało się teraz odczytać Twojego postępu. Odśwież stronę, aby spróbować ponownie. Nic z tego, nad czym pracujesz, nie zostało utracone.",
+    "goalsSurfaced_one": "Wyłoniono {{count}} cel",
+    "goalsSurfaced_other": "Wyłoniono {{count}} celu",
+    "questionsAnswered_one": "{{count}} odpowiedź na pytanie",
+    "questionsAnswered_other": "{{count}} odpowiedzi na pytania",
+    "yourWhy": "Twoje dlaczego",
+    "underneath": "Co kryje się pod tym, czego chcesz",
+    "howItWorks": "Jak to działa · drabina DLACZEGO",
+    "howHeading": "Jak „lepsze przywództwo” staje się prawdziwym celem",
+    "howBody": "Nie poprzestajemy na pierwszej odpowiedzi. Kilkukrotne zapytanie „dlaczego” prowadzi do motywacji, do której cel naprawdę się odnosi. To przykład tego, jak to wygląda. Twoja wersja będzie w Twoich własnych słowach."
+  },
+  "wiring": {
+    "group": {
+      "unmapped": "Jeszcze nie powiązano z rodziną zawodową",
+      "supported": "Twoje wzorce to wspierają",
+      "mixed": "Mieszane: część Ciebie za, część przeciw",
+      "atTension": "Twoje wzorce działają przeciwko temu"
+    },
+    "title": "Twoje cele i Twoje predyspozycje",
+    "error": "Nie udało się teraz odczytać, jak Twoje cele pasują do Twojego PRISM.",
+    "heading": "Jak Twoje opublikowane cele pasują do Twoich predyspozycji",
+    "unscored": "Ukończ PRISM, a ta karta zestawi każdy cel z Twoim profilem.",
+    "pulling": "działa przeciw: {{list}}",
+    "carried": "wspiera: {{list}}",
+    "and": " i "
+  },
+  "dashboard": {
+    "brainCallout": "Każdy cel tutaj jest dopasowany do Twojej mapy mózgu: preferujemy cele, które <strong>wykorzystują Twoje naturalne mocne strony</strong>, a każde wyzwanie ujmujemy jako świadomą, ograniczoną w czasie adaptację, nigdy jako trwałe przepisanie tego, kim jesteś.",
+    "eyebrow": "Twoja droga wyznaczania celów",
+    "titleNamed": "Zamieńmy rozmowę w cele, {{name}}.",
+    "title": "Zamieńmy rozmowę w cele.",
+    "sub": "Goals Studio przechodzi przez pięć obszarów Twojego życia, pyta dlaczego, aż dotrze do czegoś, na czym naprawdę Ci zależy, i zamienia to w cele wraz z ich uzasadnieniem.",
+    "loading": "Sprawdzanie, dokąd doszedłeś…",
+    "error": "Nie udało się teraz odczytać Twojej sesji wyznaczania celów. Odśwież stronę, aby spróbować ponownie. Nic z tego, nad czym pracujesz, nie zostało utracone.",
+    "discoveryProgress": "Postęp odkrywania · {{explored}} z {{total}} kategorii",
+    "pctExplored": "Omówiono: {{pct}}%",
+    "start": "Start",
+    "resume": "Wznów",
+    "categoryN": "Kategoria {{n}}",
+    "nextStep": "Twój następny krok",
+    "finishCategory": "Dokończ kategorię {{label}}",
+    "startCategory": "Zacznij kategorię {{label}}",
+    "summaryFallback": "Goals Studio zbiera to w rozmowie, a nie w formularzu — kilka minut teraz wystarczy, by posunąć to do przodu.",
+    "talkIt": "Omów to w rozmowie",
+    "continueDiscovery": "Kontynuuj odkrywanie",
+    "surfaced": "Dotychczas wyłonione cele · Goals Studio",
+    "noGoals": "Brak celów",
+    "goalsBuilt": "Cele oparte na tym, jak myślisz",
+    "seeAll": "Zobacz wszystkie ({{count}})",
+    "houseEmpty": "Cele powstają z rozmowy, a nie są wpisywane w formularzu, więc pojawią się tutaj, gdy je omówisz.",
+    "emptyDiscovery": "Cele powstają z rozmowy odkrywającej, a nie są wpisywane w formularzu, więc pojawią się tutaj, gdy porozmawiasz z Goals Studio — po prawej stronie tego ekranu."
+  },
+  "roadmap": {
+    "step": "Krok {{rank}}",
+    "priority": "Priorytet",
+    "inPrism": "{{dimension}} w PRISM:",
+    "back": "Wróć do moich celów",
+    "unavailable": "Mapy drogowe celów nie są jeszcze dostępne.",
+    "loading": "Ładowanie Twojej mapy drogowej…",
+    "notFound": "Ten cel nie dotyczy żadnej roli. Otwórz rolę w Job Fit i wybierz „Make this my target”.",
+    "loadError": "Nie udało się wczytać tej mapy drogowej. Spróbuj ponownie za chwilę.",
+    "thisRole": "ta rola",
+    "eyebrow": "Mapa drogowa",
+    "defaultTitle": "Twoja mapa drogowa",
+    "sub": "W kierunku: {{role}}. Zbudowana na podstawie dopasowania, które oglądasz, wybierając tę rolę.",
+    "noRoadmap": "Dla tego celu nie zbudowano jeszcze mapy drogowej.",
+    "start": "Start",
+    "noFirstStep": "Ten cel nie ma jeszcze pierwszego kroku — poniższe kroki wskazują luki.",
+    "noGaps": "Dopasowanie, na podstawie którego wybrano tę rolę, nie wykazało luk do uzupełnienia — nic nie dzieli Twojego profilu od wzorca tej roli.",
+    "steps": "Kroki",
+    "finish": "Meta",
+    "noFinish": "Ten cel nie ma jeszcze miary sukcesu, więc mapa drogowa nie ma mety.",
+    "overuse": "Uważaj na nadmierne używanie: {{dimensions}} w tej roli.",
+    "rebuild": "Zbuduj mapę drogową od nowa",
+    "stopTargeting": "Przestań obierać tę rolę za cel",
+    "practise": "Przećwicz tę rolę"
+  },
+  "layout": {
+    "nav": {
+      "myGoals": "Moje cele",
+      "interview": "Rozmowa kwalifikacyjna",
+      "sharing": "Udostępnianie",
+      "overview": "Przegląd",
+      "discovery": "Odkrywanie",
+      "coaches": "Coache",
+      "comingSoon": "Wkrótce",
+      "houseMyGoals": "Moje cele",
+      "houseTalk": "Omów to w rozmowie",
+      "houseWho": "Kto może je zobaczyć"
+    },
+    "title": "Goals Studio",
+    "sub": "Twoje cele, rozmowa, która je wyłania, i osoby, które mogą je zobaczyć.",
+    "navLabel": "Sekcje Goals Studio"
+  },
+  "goals": {
+    "stretchCallout": "Cel oznaczony jako <strong>Wymaga wyjścia poza strefę komfortu</strong> nie jest oceną słabości — to świadomy, ograniczony w czasie ruch wbrew własnemu typowi.",
+    "errorSave": "Nie zapisano. Nic się nie zmieniło — spróbuj ponownie.",
+    "whyItMatters": "Dlaczego to ważne:",
+    "success": "Sukces:",
+    "firstStep": "Pierwszy krok:",
+    "aCoach": "Coach",
+    "ratified": "Zatwierdzony",
+    "notRatified": "Niezatwierdzony",
+    "confirmed": "Potwierdzony",
+    "provisional": "Wstępny",
+    "fromJobFit": "Z Job Fit",
+    "fromInterview": "Z Twojej rozmowy kwalifikacyjnej",
+    "seeded": "Zainicjowane",
+    "targets": "Cele docelowe",
+    "aRole": "rola",
+    "viewRoadmap": "Zobacz plan działania",
+    "coachReviews": "Oceny coacha",
+    "noReviews": "Brak ocen.",
+    "keepPrivate": "Zachowaj „{{title}}” jako prywatny",
+    "private": "Prywatny — ukryty nawet przed osobami, którym udostępniasz",
+    "shareable": "Do udostępniania",
+    "unpublish": "Cofnij publikację",
+    "goalTitle": "Tytuł celu",
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "confirmPublish": "Potwierdź i opublikuj",
+    "edit": "Edytuj",
+    "addGoal": "Dodaj cel",
+    "addGoalBody": "Rozmowa pomaga formułować lepsze cele niż formularz, ale cel, który już znasz, też możesz dodać tutaj. Zostanie opublikowany zaraz po zapisaniu.",
+    "placeholder": "Co chcesz osiągnąć?",
+    "newGoalTitle": "Tytuł nowego celu",
+    "goalCategory": "Kategoria celu",
+    "savePublish": "Zapisz i opublikuj",
+    "published": "Opublikowano. Znajdziesz go wśród swoich celów powyżej.",
+    "backJourney": "Wróć do swojej ścieżki (krok 5)",
+    "eyebrow": "Twoje — prywatne, dopóki ich nie udostępnisz",
+    "title": "Twoje cele",
+    "sub": "Cele powstają w rozmowie wraz z powodem, który za nimi stoi. Potwierdź szkic, aby go opublikować, a potem wybierz osobno dla każdej osoby, kto może go zobaczyć.",
+    "talkStudio": "Omów to w Goals Studio",
+    "whoCanSee": "Kto widzi moje cele",
+    "loading": "Wczytywanie Twoich celów…",
+    "error": "Nie udało się teraz wczytać Twoich celów. Odśwież stronę, aby spróbować ponownie — nic z tego, nad czym pracowałeś(-aś), nie zostało utracone.",
+    "noGoals": "Brak celów",
+    "noGoalsBody": "Cele powstają tu na podstawie rozmowy odkrywającej, a nie są wpisywane w formularzu. Rozpocznij rozmowę, a pojawią się razem z powodem, który za nimi stoi — albo dodaj poniżej cel, który już znasz.",
+    "sharedHeading": "Twoje cele",
+    "draftsHeading": "Szkice z Twojej rozmowy"
+  },
+  "ui": {
+    "sampleLead": "To jest przykład, a nie Twoje dane.",
+    "sampleTail": "Nic na tym panelu nie jest odczytem Twojego profilu i nic z tego nie zostało zapisane na Twoim koncie."
+  },
+  "comingSoon": {
+    "prism": {
+      "title": "Perspektywa PRISM",
+      "body": "Twoje cele odczytane na tle Twojego profilu PRISM: które opierają się na mocnej stronie, a które wymagają wyjścia poza strefę komfortu."
+    },
+    "progress": {
+      "title": "Postępy",
+      "body": "Kamienie milowe i spotkania kontrolne dla każdego celu, a obok nich oceny Twojego coacha."
+    },
+    "documents": {
+      "title": "Dokumenty",
+      "body": "CV, biogram lub profil przygotowane na podstawie Twojej prawdziwej historii i celów, nigdy na podstawie szablonowej kariery."
+    },
+    "eyebrow": "Jeszcze niedostępne",
+    "title": "Wkrótce",
+    "sub": "Te trzy panele są w planach. Będą korzystać wyłącznie z Twoich danych albo w ogóle się nie pojawią.",
+    "back": "Wróć do swoich celów"
+  },
+  "targets": {
+    "error403": "Cele docelowe nie są teraz dostępne na Twoim koncie.",
+    "error404": "Nie znaleziono tej roli ani tego celu.",
+    "error413": "To dopasowanie jest zbyt duże, aby zapisać je jako cel docelowy.",
+    "errorDefault": "Coś poszło nie tak. Spróbuj ponownie."
+  },
+  "labels": {
+    "category": {
+      "history": "Historia kariery",
+      "job": "Obecna praca",
+      "workplace": "Miejsce pracy",
+      "ambitions": "Ambicje zawodowe",
+      "personal": "Osobiste"
+    },
+    "align": {
+      "lever": "Wykorzystuje mocną stronę",
+      "stretch": "Wymaga wyjścia poza komfort",
+      "counter": "Przeciwwaga"
+    },
+    "style": {
+      "gold_stepwise": "Krok po kroku",
+      "blue_metrics": "Oparty na wskaźnikach",
+      "red_action": "Najpierw działanie",
+      "green_momentum": "Oparty na rozpędzie"
+    },
+    "coach": {
+      "job_mentor": "Mentor zawodowy",
+      "career_coach": "Coach kariery",
+      "prism_coach": "Coach PRISM"
+    },
+    "status": {
+      "proposed": "Zaproponowany",
+      "confirmed": "Potwierdzony"
+    }
+  }
+}

@@ -155,7 +155,8 @@
     "goalFailed": "Impossible d'ajouter l'objectif. Réessayez depuis Goals Studio.",
     "makeGoal": "Faire de « {{name}} » un objectif",
     "ofFive": "sur 5",
-    "title": "Résultat simulé : entraînement uniquement"
+    "title": "Résultat simulé : entraînement uniquement",
+    "scoreOfFive": "{{score}} / 5"
   },
   "studio": {
     "framedOn": "Basé sur {{name}}",
@@ -292,7 +293,8 @@
       "result": "Résultat",
       "role": "Poste",
       "stopped": "Arrêté",
-      "title": "Entretiens"
+      "title": "Entretiens",
+      "scoreOfFive": "{{score}} / 5"
     },
     "practice": {
       "guideLabel": "Regarder : guide des entretiens",
@@ -356,7 +358,8 @@
       "notDecided": "Non tranché — cette réponse n'a pas été prise en compte dans le score.",
       "notes": "Notes : {{notes}}",
       "nothingLost": "Rien n'a été perdu — les réponses et les évaluations sont enregistrées. Réessayez.",
-      "overall": "Score global : {{score}} / 5 · Moyenne : {{mean}}"
+      "overall": "Score global : {{score}} / 5 · Moyenne : {{mean}}",
+      "scoreOfFive": "{{score}} / 5"
     },
     "saveFailed": "Impossible d'enregistrer cette évaluation. Veuillez réessayer.",
     "savedToLibrary": "Enregistré dans votre bibliothèque de documents.",

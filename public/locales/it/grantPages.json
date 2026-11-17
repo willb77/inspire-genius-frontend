@@ -182,7 +182,8 @@
       "m_mil_rating": {
         "helper": "Una valutazione può aprire l'accesso al VR&E (Cap. 31), che a volte supera il GI Bill.",
         "placeholder": "es. 30",
-        "question": "Hai una valutazione di disabilità legata al servizio militare?"
+        "question": "Hai una valutazione di disabilità legata al servizio militare?",
+        "suffix": "%"
       },
       "m_mil_yellow_ribbon": {
         "question": "La tua scuola fa parte del programma Yellow Ribbon?"
@@ -237,7 +238,10 @@
         "helper": "Usato solo per abbinarti agli aiuti basati sul bisogno: ci basta una fascia e non viene mai condivisa.",
         "options": {
           "over_150k": "Oltre $150,000",
-          "under_30k": "Meno di $30,000"
+          "under_30k": "Meno di $30,000",
+          "100k_150k": "$100,000 – $150,000",
+          "30k_60k": "$30,000 – $60,000",
+          "60k_100k": "$60,000 – $100,000"
         },
         "question": "Indicativamente, qual è il reddito annuo del tuo nucleo familiare?"
       },
@@ -493,7 +497,8 @@
     "term": "Durata (mesi)",
     "title": "Prestiti e debiti",
     "totalPaid": "Totale pagato",
-    "withinCeilingNote": "GRANT mantiene il totale dei prestiti sotto 1× il tuo stipendio previsto del primo anno. Sei in un profilo a basso rischio."
+    "withinCeilingNote": "GRANT mantiene il totale dei prestiti sotto 1× il tuo stipendio previsto del primo anno. Sei in un profilo a basso rischio.",
+    "rapRange": "1–10%"
   },
   "csvImport": {
     "colStatus": "Stato",

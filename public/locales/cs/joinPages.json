@@ -1,0 +1,170 @@
+{
+  "validation": {
+    "firstName": {
+      "required": "Jméno je povinné",
+      "max": "Jméno může mít nejvýše {{max}} znaků"
+    },
+    "lastName": {
+      "required": "Příjmení je povinné",
+      "max": "Příjmení může mít nejvýše {{max}} znaků"
+    },
+    "region": {
+      "required": "Region je povinný",
+      "max": "Region může mít nejvýše {{max}} znaků"
+    },
+    "country": {
+      "required": "Země je povinná",
+      "max": "Země může mít nejvýše {{max}} znaků"
+    },
+    "phone": {
+      "max": "Telefon může mít nejvýše {{max}} znaků"
+    },
+    "organisation": {
+      "max": "Organizace může mít nejvýše {{max}} znaků",
+      "requiredForSetting": "Organizace je povinná pro firemní nebo vzdělávací prostředí"
+    },
+    "roleOther": {
+      "max": "Role může mít nejvýše {{max}} znaků",
+      "describe": "Popište prosím svou roli"
+    },
+    "siteId": {
+      "max": "ID webu PRISM může mít nejvýše {{max}} znaků"
+    },
+    "contextOther": {
+      "max": "Prostředí může mít nejvýše {{max}} znaků",
+      "describe": "Popište prosím prostředí"
+    },
+    "heardFrom": {
+      "max": "Tato odpověď může mít nejvýše {{max}} znaků"
+    },
+    "email": {
+      "required": "E-mail je povinný",
+      "max": "E-mail může mít nejvýše {{max}} znaků",
+      "invalid": "Zadejte platnou e-mailovou adresu"
+    },
+    "role": {
+      "choose": "Vyberte možnost, která vás nejlépe popisuje"
+    },
+    "prism": {
+      "choose": "Sdělte nám, zda jste akreditováni v PRISM"
+    },
+    "context": {
+      "choose": "Vyberte, kde byste Inspires Genius používali"
+    }
+  },
+  "brand": {
+    "settings": {
+      "individuals": "Jednotlivci",
+      "teams": "Týmy",
+      "organisations": "Organizace",
+      "education": "Vzdělávání",
+      "enterprise": "Velké podniky",
+      "title": "Pro každé prostředí",
+      "body": "Jedna platforma, přizpůsobená práci.",
+      "aria": "Nastavení"
+    },
+    "nextStep": {
+      "join": "Bez účtu a bez instalace. Zaškrtněte první políčko, abyste se dozvěděli, kdy bude naplánován další webinář.",
+      "events": "Bez účtu a bez instalace. Zaregistrujte svůj zájem a dozvíte se, kdy bude oznámena další událost."
+    },
+    "eyebrow": "Zaregistrujte svůj zájem",
+    "headingLead": "Podporujte každého klienta",
+    "headingAccent": "mezi sezeními",
+    "intro": "Inspires Genius poskytuje mentorům a praktikům AI mentorského partnera, který s nimi spolupracuje, aby klienti dělali pokroky i po skončení sezení.",
+    "offersAria": "Co Inspires Genius nabízí",
+    "practitioners": {
+      "title": "Vytvořeno pro praktiky",
+      "body": "Pozvěte své klienty, sledujte jejich pokrok a dejte každému z nich AI mentora, který je tu mezi vašimi sezeními."
+    },
+    "assessments": {
+      "title": "Funguje s hodnoceními, která už používáte",
+      "body": "(DISC, CliftonStrengths, MBTI, Big Five) založenými na PRISM pro zlepšení všech výsledků mentoringu."
+    },
+    "whatNext": "Co bude dál"
+  },
+  "events": {
+    "loading": "Načítání událostí…",
+    "listAria": "Nadcházející události",
+    "title": "Nadcházející události",
+    "backToRegister": "← Zaregistrujte svůj zájem",
+    "error": "Události se nyní nepodařilo načíst. Zkuste to prosím znovu za několik minut.",
+    "notOpen": "Zatím nejsou naplánovány žádné události. Zaregistrujte svůj zájem a zaškrtněte políčko webináře, abyste se dozvěděli, kdy bude oznámen další.",
+    "empty": "Momentálně nejsou žádné nadcházející události",
+    "moreInfo": "Více informací",
+    "moreInfoAria": "Více informací: {{title}}",
+    "register": "Registrovat se",
+    "registerAria": "Registrovat se na {{title}}",
+    "full": "Tato událost je již plná."
+  },
+  "formError": {
+    "rate_limited": "Z vašeho připojení bylo odesláno příliš mnoho formulářů. Zkuste to prosím později.",
+    "too_large": "Odeslaný formulář byl příliš dlouhý. Zkraťte prosím své odpovědi a zkuste to znovu.",
+    "network": "Nepodařilo se spojit se serverem. Zkontrolujte připojení a zkuste to znovu.",
+    "server": "Na naší straně došlo k chybě. Zkuste to prosím znovu za několik minut.",
+    "invalid": "Odeslaný formulář nelze přijmout. Zkontrolujte prosím své odpovědi a zkuste to znovu."
+  },
+  "roles": {
+    "practitioner": "Praktik PRISM",
+    "distributor": "Distributor PRISM",
+    "career_coach": "Kariérní kouč",
+    "education_coach": "Vzdělávací kouč",
+    "mentor": "Mentor",
+    "hr": "HR profesionál",
+    "recruiter": "Recruiter",
+    "company": "Vedoucí pracovník nebo manažer společnosti",
+    "other": "Jiné"
+  },
+  "prismOptions": {
+    "yes": "Ano",
+    "no": "Ne",
+    "not_sure": "Nejsem si jistý/á"
+  },
+  "contexts": {
+    "individual": "Jako jednotlivec",
+    "company": "Ve firmě",
+    "education": "Ve vzdělávání",
+    "other": "Jiné"
+  },
+  "consent": {
+    "webinar_email": "Pošlete mi e-mail, když bude naplánován webinář Inspires Genius.",
+    "mailing_list": "Přidejte mě do e-mailové skupiny Inspires Genius pro občasné novinky.",
+    "legend": "Zůstaňme v kontaktu (nepovinné)"
+  },
+  "chooseOne": "Vyberte jednu možnost",
+  "success": {
+    "title": "Děkujeme",
+    "body": "Obdrželi jsme Vaše údaje. Děkujeme za Váš zájem o Inspires Genius."
+  },
+  "notOpen": {
+    "title": "Registrace ještě není otevřena",
+    "body": "Registrace ještě není otevřena. Zkuste to prosím brzy znovu.",
+    "back": "Zpět na formulář"
+  },
+  "form": {
+    "aria": "Zaregistrujte svůj zájem"
+  },
+  "fields": {
+    "firstName": "Jméno",
+    "lastName": "Příjmení",
+    "email": "E-mail",
+    "phone": "Telefon (nepovinné)",
+    "role": "Co vás nejlépe vystihuje?",
+    "roleOther": "Vaše role",
+    "prism": "Jste akreditovaný/á v PRISM?",
+    "siteId": "ID pracoviště PRISM (nepovinné)",
+    "context": "Kde byste Inspires Genius používali?",
+    "contextOther": "Popište prostředí",
+    "organisation": "Organizace",
+    "organisationOptional": "Organizace (nepovinné)",
+    "region": "Stát, provincie nebo region",
+    "country": "Země",
+    "heardFrom": "Jak jste se o nás dozvěděli? (nepovinné)"
+  },
+  "honeypotLabel": "Toto pole nechte prázdné",
+  "submit": "Zaregistrujte svůj zájem",
+  "header": {
+    "title": "Zaregistrujte svůj zájem",
+    "subtitle": "Inspires Genius je platforma AI mentoringu. Zanechte níže své údaje a zaregistrujte svůj zájem."
+  },
+  "seeEvents": "Zobrazit připravované akce →"
+}
