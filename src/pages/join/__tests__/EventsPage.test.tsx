@@ -7,6 +7,7 @@
  * and a network/server failure (role="alert").
  */
 import { render, screen, waitFor, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from "axios"
 import { readFileSync } from "fs"
@@ -79,7 +80,7 @@ describe("/events — switch on", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
-  it("lists events: title, time in the event's own zone, description", async () => {
+  it("lists events as tiles: title, date and time in the event's own zone, a brief description", async () => {
     answer(200, {
       events: [
         {
@@ -97,17 +98,35 @@ describe("/events — switch on", () => {
     expect(items).toHaveLength(2)
     expect(within(items[0]).getByRole("heading", { name: "Intro to Inspires Genius" })).toBeInTheDocument()
     // 14:00 UTC is 9:00 AM in New York on that date (EST), not 2:00 PM.
-    const t0 = within(items[0]).getByText(/2099/)
-    expect(t0).toHaveTextContent(/9:00/)
-    expect(t0).not.toHaveTextContent(/2:00/)
-    expect(t0).toHaveAttribute("dateTime", "2099-03-03T14:00:00+00:00")
+    expect(within(items[0]).getByTestId("event-date")).toHaveTextContent("Tuesday, March 3, 2099")
+    expect(within(items[0]).getByTestId("event-time")).toHaveTextContent(/9:00/)
+    expect(within(items[0]).getByTestId("event-time")).not.toHaveTextContent(/2:00/)
+    expect(items[0].querySelector("time")).toHaveAttribute("dateTime", "2099-03-03T14:00:00+00:00")
     expect(within(items[0]).getByText(/Line one/)).toHaveTextContent("Line one Line two")
-    expect(within(items[1]).getByText(/2099/)).toHaveTextContent(/9:30/)
+    expect(within(items[0]).getByRole("button", { name: "More Info: Intro to Inspires Genius" })).toHaveTextContent("More Info")
+    expect(within(items[1]).getByTestId("event-time")).toHaveTextContent(/9:30/)
+    // no description: nothing to open, so no More Info pill
+    expect(within(items[1]).queryByRole("button", { name: /More Info/ })).not.toBeInTheDocument()
     expect(screen.queryByRole("status")).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: /register your interest/i })).toHaveAttribute("href", "/join")
   })
 
-  it("renders a description as Markdown: formatting yes, raw HTML no, unsafe links no", async () => {
+  it("a long description is cut on the tile, and More Info opens all of it", async () => {
+    const long = `${"word ".repeat(80)}END`
+    answer(200, {
+      events: [{ title: "Long", starts_at: "2099-03-03T14:00:00Z", time_zone: "UTC", description: long }],
+    })
+    renderPage()
+    const list = await screen.findByRole("list", { name: "Upcoming events" })
+    expect(list).not.toHaveTextContent("END")
+    expect(list).toHaveTextContent("…")
+    await userEvent.click(within(list).getByRole("button", { name: "More Info: Long" }))
+    const dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByRole("heading", { name: "Long" })).toBeInTheDocument()
+    expect(dialog).toHaveTextContent("END")
+  })
+
+  it("the full description is Markdown: formatting yes, raw HTML no, unsafe links no", async () => {
     const md = [
       "**Bold** and *italic*",
       "",
@@ -124,16 +143,21 @@ describe("/events — switch on", () => {
     const { container } = renderPage()
     const list = await screen.findByRole("list", { name: "Upcoming events" })
     expect(within(list).getByText("<b>Bold?</b>")).toBeInTheDocument()
-    expect(list.querySelector("strong")).toHaveTextContent("Bold")
-    expect(list.querySelector("em")).toHaveTextContent("italic")
-    expect(list.querySelectorAll("li li")).toHaveLength(2)
-    expect(list.querySelector("img")).toBeNull()
-    expect(list.querySelector("script")).toBeNull()
-    expect(list.querySelector("b")).toBeNull()
-    // raw HTML in the source is shown as literal text, never parsed
-    expect(list).toHaveTextContent('<img src=x onerror="alert(1)"><script>window.x=1</script>')
+    // the tile shows the first paragraph as plain text: marks removed, nothing parsed
+    expect(list).toHaveTextContent("Bold and italic")
+    expect(list.querySelector("strong")).toBeNull()
+    await userEvent.click(within(list).getByRole("button", { name: /More Info/ }))
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog.querySelector("strong")).toHaveTextContent("Bold")
+    expect(dialog.querySelector("em")).toHaveTextContent("italic")
+    expect(dialog.querySelectorAll("li")).toHaveLength(2)
+    expect(dialog.querySelector("img")).toBeNull()
+    expect(dialog.querySelector("script")).toBeNull()
+    expect(dialog.querySelector("b")).toBeNull()
+    expect(dialog).toHaveTextContent('<img src=x onerror="alert(1)"><script>window.x=1</script>')
     expect(container.querySelector("img[src=x]")).toBeNull()
-    const links = Array.from(list.querySelectorAll("a"))
+    expect(document.body.querySelector("img[src=x]")).toBeNull()
+    const links = Array.from(dialog.querySelectorAll("a"))
     expect(links.find((a) => a.getAttribute("href") === "https://ok.example")).toHaveAttribute(
       "rel",
       expect.stringContaining("noopener"),
@@ -141,13 +165,14 @@ describe("/events — switch on", () => {
     expect(links.some((a) => /^javascript:/i.test(a.getAttribute("href") ?? ""))).toBe(false)
   })
 
-  it("still renders a pre-editor plain-text description, line breaks kept", async () => {
+  it("still renders a pre-editor plain-text description, line breaks kept, in More Info", async () => {
     answer(200, {
       events: [{ title: "Old", starts_at: "2099-03-03T14:00:00Z", time_zone: "UTC", description: "Line one\nLine two" }],
     })
     renderPage()
     const list = await screen.findByRole("list", { name: "Upcoming events" })
-    expect(list).toHaveTextContent(/Line one\s*Line two/)
+    await userEvent.click(within(list).getByRole("button", { name: /More Info/ }))
+    expect(await screen.findByRole("dialog")).toHaveTextContent(/Line one\s*Line two/)
   })
 })
 

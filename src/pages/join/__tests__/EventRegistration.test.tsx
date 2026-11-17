@@ -108,14 +108,14 @@ describe("the Register button", () => {
   it("appears on a listed event that has an option, and a full one says so instead", async () => {
     network({ options: { status: 200, data: { events: [OPTION] } } })
     renderPage()
-    expect(await screen.findByRole("button", { name: "Register for this event" })).toBeInTheDocument()
+    expect(await screen.findByRole("button", { name: "Register for Intro to PRISM" })).toBeInTheDocument()
   })
 
   it("says the event is full and offers no button", async () => {
     network({ options: { status: 200, data: { events: [{ ...OPTION, full: true }] } } })
     renderPage()
     expect(await screen.findByText("This event is full.")).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "Register for this event" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Register for Intro to PRISM" })).not.toBeInTheDocument()
   })
 
   it.each([
@@ -129,7 +129,7 @@ describe("the Register button", () => {
     renderPage()
     expect(await screen.findByRole("heading", { name: "Intro to PRISM" })).toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole("list", { name: "Upcoming events" })).toBeInTheDocument())
-    expect(screen.queryByRole("button", { name: "Register for this event" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Register for Intro to PRISM" })).not.toBeInTheDocument()
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
@@ -144,7 +144,7 @@ describe("the registration dialog", () => {
   async function open(user: Parameters<typeof renderPage>[0] = null) {
     network({ options: { status: 200, data: { events: [OPTION] } }, ...overrides })
     renderPage(user)
-    await userEvent.click(await screen.findByRole("button", { name: "Register for this event" }))
+    await userEvent.click(await screen.findByRole("button", { name: "Register for Intro to PRISM" }))
     return screen.getByRole("dialog")
   }
   let overrides: Parameters<typeof network>[0] = {}
