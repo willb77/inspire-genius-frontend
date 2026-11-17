@@ -436,7 +436,13 @@ describe("the call to action", () => {
     network([ev(S1)], options)
     renderPage()
     await screen.findAllByRole("radiogroup")
-    await waitFor(() => expect(screen.getByRole("link", { name: "Register your interest" })).toHaveAttribute("href", "/join"))
+    // the card's own call to action (the left panel and the page's link back are links to /join as well)
+    await waitFor(() =>
+      expect(within(screen.getByRole("region", { name: TITLE })).getByRole("link", { name: "Register your interest" })).toHaveAttribute(
+        "href",
+        "/join",
+      ),
+    )
     expect(screen.queryByRole("button", { name: /Save my seat/ })).not.toBeInTheDocument()
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })

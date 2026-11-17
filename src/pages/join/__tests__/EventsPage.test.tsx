@@ -59,7 +59,8 @@ describe("/events — switch off (404, today's state on every tier)", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     expect(screen.queryByRole("list", { name: "Upcoming events" })).not.toBeInTheDocument()
     expect(screen.queryByText(EVENTS_EMPTY_COPY)).not.toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /register your interest/i })).toHaveAttribute("href", "/join")
+    // the page's own link back (the left panel has its own "Register your interest" link too)
+    expect(screen.getByRole("link", { name: /^← register your interest/i })).toHaveAttribute("href", "/join")
   })
 
   it("does not retry a 404", async () => {
@@ -207,7 +208,7 @@ describe("/events brand panel", () => {
     expect(wall).not.toHaveTextContent(/Tick the first box/)
   })
 
-  it("words the first two points for the event (owner's copy), and not the /join ones", async () => {
+  it("words the first two points as the owner asked (and /join now reads the same), not the old ones", async () => {
     answer(404, { detail: "Not Found" })
     const { container } = renderPage()
     const wall = wallOf(container)
@@ -220,6 +221,39 @@ describe("/events brand panel", () => {
     // the rest of the panel is untouched
     expect(within(wall).getByText("For every setting")).toBeInTheDocument()
     expect(within(wall).getByText("What happens next")).toBeInTheDocument()
+  })
+
+  it("has a link to /join directly beneath the 'What happens next' box", async () => {
+    answer(404, { detail: "Not Found" })
+    const { container } = renderPage()
+    const wall = wallOf(container)
+    const link = within(wall).getByRole("link", { name: "Register your interest" })
+    expect(link).toHaveAttribute("href", "/join")
+    // directly beneath the box: the box's element is the link's previous sibling
+    const box = within(wall).getByText("What happens next").parentElement as HTMLElement
+    expect(box).toHaveTextContent(EVENTS_NEXT_STEP)
+    expect(link.previousElementSibling).toBe(box)
+    // the only link in the panel
+    expect(within(wall).getAllByRole("link")).toHaveLength(1)
+  })
+
+  it("shows that link with events listed too, not only in the stub state", async () => {
+    answer(200, { events: [{ title: "T", starts_at: "2099-03-03T14:00:00Z", time_zone: "UTC", description: null }] })
+    const { container } = renderPage()
+    await screen.findByRole("list", { name: "Upcoming events" })
+    expect(within(wallOf(container)).getByRole("link", { name: "Register your interest" })).toHaveAttribute("href", "/join")
+  })
+
+  it("the link takes keyboard focus first (the wall precedes the page) and shows a focus ring", async () => {
+    answer(404, { detail: "Not Found" })
+    const { container } = renderPage()
+    const link = within(wallOf(container)).getByRole("link", { name: "Register your interest" })
+    await userEvent.tab()
+    expect(link).toHaveFocus()
+    expect(link.className).toMatch(/focus-visible:ring-2/)
+    expect(link.className).toMatch(/focus-visible:ring-white/)
+    // the arrow is decoration: it is not part of the link's name
+    expect(link.querySelector("span")).toHaveAttribute("aria-hidden", "true")
   })
 })
 

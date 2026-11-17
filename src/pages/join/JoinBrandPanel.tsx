@@ -1,5 +1,6 @@
 import { ClipboardList, Layers, UsersRound } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { ROUTES } from "@/constants/routes"
 
 /**
  * The /join brand wall (IN-2c follow-up). Passed to `AuthLayout` as
@@ -29,19 +30,23 @@ const iconBox =
   "flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg border border-teal-400/35 bg-[#127A8A]/35 text-teal-300"
 
 /**
- * `events` (the /events page, owner's copy 2026-11-17) words the first two points for the event it
- * sits beside; `join` is the /join copy and is unchanged. The /events wording is plain English, not
- * i18n keys: the repo's guards need every `t()` key translated in six languages, so it joins the
- * translation wave later (the /join wording stays translated).
+ * The two points "Built for practitioners." and "Grounded in PRISM." read the same on /join and
+ * /events (owner's copy, 2026-11-17: "make the left side of /join match the left side of /events").
+ * They are plain English, not i18n keys: the repo's guards need every `t()` key translated in six
+ * languages, so they join the translation wave later (until then every language shows English for
+ * these two points). The only thing that differs by page is the "What happens next" box, passed as
+ * `nextStep`: /join's refers to the form's first tick box, /events has no form.
+ *
+ * `linkToJoin` (the owner, 2026-11-17: "add a link to the join page under What happens next on the
+ * events page") adds a "Register your interest" link to /join directly beneath that box. /events
+ * passes it; /join must not (a panel that links to its own page), so it defaults to off. A plain
+ * anchor, not a router Link: the page renders with no router.
  */
-export type JoinBrandPanelVariant = "join" | "events"
-
 export function JoinBrandPanel({
   nextStep = JOIN_NEXT_STEP,
-  variant = "join",
-}: { nextStep?: string; variant?: JoinBrandPanelVariant } = {}) {
+  linkToJoin = false,
+}: { nextStep?: string; linkToJoin?: boolean } = {}) {
   const { t } = useTranslation("joinPages")
-  const events = variant === "events"
   // The two known copies are translated; any other string a caller passes is shown as given.
   const nextStepText =
     nextStep === JOIN_NEXT_STEP
@@ -68,14 +73,8 @@ export function JoinBrandPanel({
             <UsersRound className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-[13.5px] font-semibold text-white">
-              {events ? "Built for practitioners." : t("brand.practitioners.title", { defaultValue: "Built for practitioners" })}
-            </p>
-            <p className="text-[12.5px] leading-snug text-white/60">
-              {events
-                ? "Invite clients, follow their progress between sessions."
-                : t("brand.practitioners.body", { defaultValue: "Invite your clients, follow their progress, and give each one an AI mentor that is there between your sessions." })}
-            </p>
+            <p className="text-[13.5px] font-semibold text-white">Built for practitioners.</p>
+            <p className="text-[12.5px] leading-snug text-white/60">Invite clients, follow their progress between sessions.</p>
           </div>
         </li>
         <li className="flex items-start gap-3">
@@ -83,12 +82,7 @@ export function JoinBrandPanel({
             <ClipboardList className="h-4 w-4" />
           </span>
           <p className="text-[12.5px] leading-snug text-white/60">
-            <span className="block text-[13.5px] font-semibold text-white">
-              {events ? "Grounded in PRISM." : t("brand.assessments.title", { defaultValue: "Works with the assessments you already use" })}
-            </span>{" "}
-            {events
-              ? "Works with the tools your customers use."
-              : t("brand.assessments.body", { defaultValue: "(DISC, CliftonStrengths, MBTI, Big Five) grounded in PRISM to enhance all mentoring results." })}
+            <span className="block text-[13.5px] font-semibold text-white">Grounded in PRISM.</span> Works with the tools your customers use.
           </p>
         </li>
         <li className="flex items-start gap-3">
@@ -118,6 +112,14 @@ export function JoinBrandPanel({
           {nextStepText}
         </p>
       </div>
+      {linkToJoin && (
+        <a
+          href={ROUTES.JOIN}
+          className="w-fit rounded-sm text-sm font-semibold text-white underline underline-offset-4 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          Register your interest<span aria-hidden="true"> →</span>
+        </a>
+      )}
     </div>
   )
 }

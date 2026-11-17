@@ -7,6 +7,7 @@
 import { render, screen, within } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import JoinPage from "../JoinPage"
+import { EVENTS_NEXT_STEP, JOIN_NEXT_STEP, JoinBrandPanel } from "../JoinBrandPanel"
 
 function renderPage() {
   return render(
@@ -27,7 +28,7 @@ describe("/join brand panel", () => {
     expect(
       within(wall).getByText(/gives mentors and practitioners an AI mentoring partner that works alongside them/),
     ).toBeInTheDocument()
-    expect(within(wall).getByText("Built for practitioners")).toBeInTheDocument()
+    expect(within(wall).getByText("Built for practitioners.")).toBeInTheDocument()
     expect(within(wall).getByText("For every setting")).toBeInTheDocument()
     for (const s of ["Individuals", "Teams", "Organisations", "Education", "Enterprise"]) {
       expect(within(wall).getByText(s)).toBeInTheDocument()
@@ -35,13 +36,42 @@ describe("/join brand panel", () => {
     expect(within(wall).getByText("What happens next")).toBeInTheDocument()
   })
 
-  it("carries bullet 2 verbatim", () => {
+  it("carries the two points as the owner worded them (the same as /events), not the old ones", () => {
     const { container } = renderPage()
     const wall = (container.firstChild as HTMLElement).firstChild as HTMLElement
     const text = (wall.textContent ?? "").replace(/\s+/g, " ")
-    expect(text).toContain(
-      "Works with the assessments you already use (DISC, CliftonStrengths, MBTI, Big Five) grounded in PRISM to enhance all mentoring results.",
-    )
+    // title and body are separate blocks, so textContent has no space between them
+    expect(text).toMatch(/Built for practitioners\.\s*Invite clients, follow their progress between sessions\./)
+    expect(text).toMatch(/Grounded in PRISM\.\s*Works with the tools your customers use\./)
+    expect(text).not.toMatch(/DISC|CliftonStrengths|MBTI|Big Five/)
+    expect(text).not.toContain("Works with the assessments you already use")
+    expect(text).not.toContain("give each one an AI mentor that is there between your sessions")
+  })
+
+  it("reads the same two points as /events and keeps its own 'What happens next' box", () => {
+    const join = render(<JoinBrandPanel />).container
+    const events = render(<JoinBrandPanel nextStep={EVENTS_NEXT_STEP} />).container
+    const points = (c: HTMLElement) =>
+      Array.from(c.querySelectorAll('ul[aria-label="What Inspires Genius offers"] > li'))
+        .slice(0, 2)
+        .map((li) => (li.textContent ?? "").replace(/\s+/g, " ").trim())
+    expect(points(join)).toHaveLength(2)
+    expect(points(join)).toEqual(points(events))
+    // the box is the one thing that differs: /join's refers to the form's first tick box
+    expect(join).toHaveTextContent(JOIN_NEXT_STEP)
+    expect(join).not.toHaveTextContent(EVENTS_NEXT_STEP)
+    expect(events).toHaveTextContent(EVENTS_NEXT_STEP)
+    expect(events).not.toHaveTextContent(JOIN_NEXT_STEP)
+  })
+
+  it("has no link in its panel: it must not link to itself", () => {
+    const { container } = renderPage()
+    const wall = (container.firstChild as HTMLElement).firstChild as HTMLElement
+    expect(within(wall).queryByRole("link")).not.toBeInTheDocument()
+    expect(wall.querySelector('a[href="/join"]')).toBeNull()
+    // the panel on its own: off by default, on only when asked
+    expect(render(<JoinBrandPanel />).container.querySelector("a")).toBeNull()
+    expect(render(<JoinBrandPanel linkToJoin />).container.querySelector('a[href="/join"]')).not.toBeNull()
   })
 
   it("says mentoring, not coaching, makes no contact promise and names no one", () => {
