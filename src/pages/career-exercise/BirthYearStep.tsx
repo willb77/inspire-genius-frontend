@@ -46,7 +46,7 @@ export function BirthYearStep({ onDone }: { onDone: (answer: AgeStep | null) => 
     record.isError && status !== 409
       ? status === 422
         ? t("birthYearInvalid", { defaultValue: "Enter the year you were born, for example 2001." })
-        : exerciseErrorMessage(record.error, t("birthYearSaveFailed", { defaultValue: "Your answer could not be saved. Try again shortly." }))
+        : exerciseErrorMessage(record.error, t("birthYearSaveFailed", { defaultValue: "Your answer could not be saved. Try again shortly." }), t)
       : null
 
   return (
