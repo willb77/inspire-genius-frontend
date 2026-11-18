@@ -22,7 +22,7 @@ import {
   type ExerciseSession,
   type ExerciseStage,
 } from "@/types/career-exercise/counselor"
-import { counselorNoteSchema } from "./counselorNote.schema"
+import { MAX_NOTE_CHARS, counselorNoteSchema, noteMessageKey } from "./counselorNote.schema"
 import { counselorErrorMessage } from "./counselorErrors"
 
 /**
@@ -227,7 +227,11 @@ function NoteForm({ studentId, sessionId, stage }: { studentId: string; sessionI
       { onSuccess: () => form.reset({ text: "" }) },
     )
   })
-  const fieldError = form.formState.errors.text?.message
+  const rawFieldError = form.formState.errors.text?.message
+  const noteMsg = rawFieldError ? noteMessageKey(rawFieldError) : null
+  const fieldError = noteMsg
+    ? t(`careerExerciseUi:${noteMsg.key}`, { max: MAX_NOTE_CHARS, defaultValue: noteMsg.en })
+    : rawFieldError
   return (
     <form onSubmit={onSubmit} className="space-y-2" noValidate>
       <Label htmlFor={fieldId} className="text-xs text-muted-foreground">
@@ -237,7 +241,7 @@ function NoteForm({ studentId, sessionId, stage }: { studentId: string; sessionI
       {fieldError && <p className="text-xs text-destructive">{fieldError}</p>}
       {add.isError && (
         <p role="alert" className="text-xs text-destructive">
-          {counselorErrorMessage(add.error, t("careerExercise.noteSaveFailed", { defaultValue: "The note could not be saved." }))}
+          {counselorErrorMessage(add.error, t("careerExercise.noteSaveFailed", { defaultValue: "The note could not be saved." }), t)}
         </p>
       )}
       <Button type="submit" size="sm" variant="outline" disabled={add.isPending}>
@@ -286,7 +290,7 @@ function ConfirmPaths({ studentId, session }: { studentId: string; session: Exer
       )}
       {confirm.isError && (
         <p role="alert" className="text-sm text-destructive">
-          {counselorErrorMessage(confirm.error, t("careerExercise.confirmFailed", { defaultValue: "The paths could not be confirmed." }))}
+          {counselorErrorMessage(confirm.error, t("careerExercise.confirmFailed", { defaultValue: "The paths could not be confirmed." }), t)}
         </p>
       )}
       {!(c && c.current) && (
@@ -345,7 +349,7 @@ export function CounselorExerciseView({ studentId }: { studentId: string | undef
       <div role="alert" className="flex items-start gap-2 rounded-md border border-destructive/40 p-3 text-sm">
         <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" aria-hidden />
         <div>
-          <p>{counselorErrorMessage(q.error, t("careerExercise.loadFailed", { defaultValue: "We couldn't load this student's career exercise." }))}</p>
+          <p>{counselorErrorMessage(q.error, t("careerExercise.loadFailed", { defaultValue: "We couldn't load this student's career exercise." }), t)}</p>
           {(q.error as { response?: { status?: number } } | null)?.response?.status === 403 && (
             <p className="text-muted-foreground">
               {t("careerExercise.onlyShared", { defaultValue: "Only a counselor the student has shared their development with can see it." })}

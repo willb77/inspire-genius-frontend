@@ -1,4 +1,5 @@
 import type { ExerciseSession, RoleFactCells } from "@/types/career-exercise/student"
+import type { TFunction } from "i18next"
 import type { CounselorNote, ExerciseStage } from "@/types/career-exercise/counselor"
 import { cellLine } from "./factCells"
 
@@ -12,16 +13,19 @@ export type WorksheetSection = {
   id: string
   /** The stage whose output fills this section. */
   stage: ExerciseStage
+  /** English. The downloadable worksheet (PDF) is held in English and reads this. */
   title: string
+  /** `careerExerciseUi` key the page resolves at render; the registry never calls t() at import. */
+  titleKey: string
 }
 
 export const WORKSHEET_SECTIONS: WorksheetSection[] = [
-  { id: "self-portrait", stage: "discover", title: "My self-portrait" },
-  { id: "pillars", stage: "pillars", title: "My four pillars" },
-  { id: "explorer", stage: "explore", title: "Career explorer" },
-  { id: "buckets", stage: "narrow", title: "Sorting the roles" },
-  { id: "experiments", stage: "test", title: "Three real-world experiments" },
-  { id: "paths", stage: "commit", title: "Primary and Backup Paths" },
+  { id: "self-portrait", stage: "discover", title: "My self-portrait", titleKey: "section.self-portrait" },
+  { id: "pillars", stage: "pillars", title: "My four pillars", titleKey: "section.pillars" },
+  { id: "explorer", stage: "explore", title: "Career explorer", titleKey: "section.explorer" },
+  { id: "buckets", stage: "narrow", title: "Sorting the roles", titleKey: "section.buckets" },
+  { id: "experiments", stage: "test", title: "Three real-world experiments", titleKey: "section.experiments" },
+  { id: "paths", stage: "commit", title: "Primary and Backup Paths", titleKey: "section.paths" },
 ]
 
 export const STAGE_LABELS: Record<ExerciseStage, string> = {
@@ -50,9 +54,9 @@ export const PILLAR_LABELS: Record<string, string> = {
 }
 
 export const BUCKETS = [
-  { key: "curious", label: "Curious" },
-  { key: "maybe", label: "Maybe" },
-  { key: "not_for_me", label: "Not for me" },
+  { key: "curious", label: "Curious", labelKey: "bucket.curious" },
+  { key: "maybe", label: "Maybe", labelKey: "bucket.maybe" },
+  { key: "not_for_me", label: "Not for me", labelKey: "bucket.not_for_me" },
 ] as const
 
 export const REACTION_LABELS: Record<string, string> = {
@@ -62,6 +66,39 @@ export const REACTION_LABELS: Record<string, string> = {
 
 export function pillarLabel(key: string): string {
   return PILLAR_LABELS[key] ?? key.replace(/_/g, " ")
+}
+
+/**
+ * Page-side labels: resolved at render through the caller's `t` from the English-only
+ * `careerExerciseUi` namespace. The English registries above stay the source for the PDF (held)
+ * and are each key's defaultValue, so English is byte-identical.
+ */
+const NS = "careerExerciseUi:"
+
+export function sectionTitle(t: TFunction, s: WorksheetSection): string {
+  return t(NS + s.titleKey, { defaultValue: s.title })
+}
+
+export function stageLabel(t: TFunction, stage: ExerciseStage): string {
+  return t(`${NS}stage.${stage}`, { defaultValue: STAGE_LABELS[stage] })
+}
+
+export function statusLabel(t: TFunction, status: ExerciseSession["status"]): string {
+  return t(`${NS}status.${status}`, { defaultValue: STATUS_LABELS[status] })
+}
+
+export function pillarLabelT(t: TFunction, key: string): string {
+  const known = PILLAR_LABELS[key]
+  return known ? t(`${NS}pillar.${key}`, { defaultValue: known }) : pillarLabel(key)
+}
+
+export function reactionLabelT(t: TFunction, key: string): string {
+  const known = REACTION_LABELS[key]
+  return known ? t(`${NS}reaction.${key}`, { defaultValue: known }) : key
+}
+
+export function bucketLabelT(t: TFunction, b: (typeof BUCKETS)[number]): string {
+  return t(NS + b.labelKey, { defaultValue: b.label })
 }
 
 export function roleTitle(session: ExerciseSession, code: string): string {

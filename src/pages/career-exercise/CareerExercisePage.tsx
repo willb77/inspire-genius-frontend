@@ -26,7 +26,7 @@ import { ExerciseChat } from "./ExerciseChat"
 import { exerciseErrorMessage } from "./exerciseErrors"
 import { roleCells } from "./factCells"
 import { Worksheet } from "./Worksheet"
-import { STAGE_LABELS, STATUS_LABELS, buildWorksheetHtml, worksheetFileBase } from "./worksheetModel"
+import { buildWorksheetHtml, stageLabel, statusLabel, worksheetFileBase } from "./worksheetModel"
 
 /**
  * CX-5 — the Career Exploration exercise, for the student: the worksheet on one
@@ -111,7 +111,7 @@ function ExerciseHome() {
     return (
       <div className="space-y-6 p-6">
         {header}
-        <Alert message={exerciseErrorMessage(sessions.error, t("loadExerciseFailed", { defaultValue: "Your exercise could not be loaded. Try again shortly." }))} />
+        <Alert message={exerciseErrorMessage(sessions.error, t("loadExerciseFailed", { defaultValue: "Your exercise could not be loaded. Try again shortly." }), t)} />
       </div>
     )
   }
@@ -134,7 +134,7 @@ function ExerciseHome() {
         {label}
       </Button>
       {start.isError && (
-        <Alert message={exerciseErrorMessage(start.error, t("startExerciseFailed", { defaultValue: "The exercise could not be started. Try again shortly." }))} />
+        <Alert message={exerciseErrorMessage(start.error, t("startExerciseFailed", { defaultValue: "The exercise could not be started. Try again shortly." }), t)} />
       )}
     </div>
   )
@@ -211,8 +211,8 @@ function SessionView({ session }: { session: ExerciseSession }) {
     <>
       <div className="flex flex-wrap items-center gap-3">
         <p className="text-sm">
-          <span className="font-medium">{STATUS_LABELS[session.status]}</span>
-          <span className="text-muted-foreground"> · {t("exerciseStep", { defaultValue: "step: {{stage}}", stage: STAGE_LABELS[session.stage] })}</span>
+          <span className="font-medium">{statusLabel(t, session.status)}</span>
+          <span className="text-muted-foreground"> · {t("exerciseStep", { defaultValue: "step: {{stage}}", stage: stageLabel(t, session.stage) })}</span>
         </p>
         <div className="ml-auto flex flex-wrap gap-2">
           {session.status === "active" && (
@@ -232,7 +232,7 @@ function SessionView({ session }: { session: ExerciseSession }) {
         </div>
       </div>
       {actionError && (
-        <Alert message={exerciseErrorMessage(actionError, t("actionFailed", { defaultValue: "That didn't work. Try again shortly." }))} />
+        <Alert message={exerciseErrorMessage(actionError, t("actionFailed", { defaultValue: "That didn't work. Try again shortly." }), t)} />
       )}
       <div className="grid gap-6 lg:grid-cols-2">
         <Worksheet session={session} cells={cells} />

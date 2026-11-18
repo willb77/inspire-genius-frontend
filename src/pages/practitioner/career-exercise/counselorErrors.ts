@@ -1,4 +1,5 @@
 import type { AxiosError } from "axios"
+import type { TFunction } from "i18next"
 
 /** CX-6 — the sentence a counselor sees for a refused or failed call. A 409
  * carries a code; anything else prefers the server's own sentence. */
@@ -17,13 +18,18 @@ const CONFLICT_COPY: Record<string, string> = {
   too_many_annotations: "This session has reached its limit of notes.",
 }
 
-export function counselorErrorMessage(err: unknown, fallback: string): string {
+const FORBIDDEN_COPY = "You cannot see this student's career exercise."
+
+/** `t` optional: absent, the English is returned unchanged. Server text and `fallback` pass through. */
+export function counselorErrorMessage(err: unknown, fallback: string, t?: TFunction): string {
+  const own = (key: string, en: string): string =>
+    t ? t(`careerExerciseUi:counselorError.${key}`, { defaultValue: en }) : en
   const { status, detail } = detailOf(err)
   if (status === 409 && detail && typeof detail === "object") {
-    return (detail.code && CONFLICT_COPY[detail.code]) || detail.message || fallback
+    return (detail.code && CONFLICT_COPY[detail.code] && own(detail.code, CONFLICT_COPY[detail.code])) || detail.message || fallback
   }
   if (typeof detail === "string" && detail.trim()) return detail
-  if (status === 403) return "You cannot see this student's career exercise."
+  if (status === 403) return own("forbidden", FORBIDDEN_COPY)
   return fallback
 }
 
