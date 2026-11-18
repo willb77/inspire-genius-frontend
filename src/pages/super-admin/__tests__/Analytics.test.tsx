@@ -87,8 +87,14 @@ jest.mock("lucide-react", () => ({
   Users: () => <svg />,
   FileText: () => <svg />,
   Map: () => <svg />,
+  Building2: () => <svg />,
   Search: () => <svg />,
   ArrowUpDown: () => <svg />,
+}))
+
+jest.mock("@/components/super-admin/org-activity/OrgActivityReport", () => ({
+  __esModule: true,
+  default: () => <div data-testid="org-activity-report" />,
 }))
 
 jest.mock("@/hooks/super-admin/user-management/useUserManagement", () => ({
@@ -166,6 +172,18 @@ describe("SuperAdminAnalytics", () => {
     expect(screen.getByTestId("tab-project")).toBeInTheDocument()
   })
 
+  it("adds an Organization activity tab without changing the default tab", () => {
+    renderWithProviders(<SuperAdminAnalytics />)
+    expect(screen.getByTestId("tab-organization")).toHaveTextContent("Organization activity")
+    expect(screen.getByTestId("tab-content-organization")).toContainElement(screen.getByTestId("org-activity-report"))
+    expect(screen.getAllByTestId("tabs")[0]).toHaveAttribute("value", "analytics")
+  })
+
+  it("?tab=organization opens the Organization activity tab", () => {
+    renderWithProviders(<SuperAdminAnalytics />, ["/super-admin/analytics?tab=organization"])
+    expect(screen.getAllByTestId("tabs")[0]).toHaveAttribute("value", "organization")
+  })
+
   it("renders stat cards in analytics tab", () => {
     renderWithProviders(<SuperAdminAnalytics />)
     expect(screen.getByText("Total Users")).toBeInTheDocument()
@@ -227,6 +245,13 @@ describe("SuperAdminAnalytics — house style switch", () => {
     localStorage.setItem("house_style_admin", "true")
     renderWithProviders(<SuperAdminAnalytics />, ["/super-admin/analytics?tab=project"])
     expect(screen.getByTestId("tabs")).toHaveAttribute("value", "analytics")
+  })
+
+  it("switch ON: the Organization activity tab is present and ?tab=organization opens it", () => {
+    localStorage.setItem("house_style_admin", "true")
+    renderWithProviders(<SuperAdminAnalytics />, ["/super-admin/analytics?tab=organization"])
+    expect(screen.getByTestId("tab-organization")).toBeInTheDocument()
+    expect(screen.getByTestId("tabs")).toHaveAttribute("value", "organization")
   })
 
   it("switch ON: ?tab=audit opens the audit log", () => {
