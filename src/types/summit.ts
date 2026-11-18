@@ -72,6 +72,8 @@ export type SummitGoal = {
   first_step?: string
   owning_coach?: string
   status: SummitGoalStatus
+  /** ISO-8601 UTC, stamped by the backend at creation. Absent on drafts older than the stamp. */
+  created_at?: string
 }
 
 export type SummitWhyRoot = { stated_goal: string; root: string }

@@ -245,6 +245,7 @@ describe("Goals Studio list", () => {
     mockGetMyGoals.mockResolvedValue({ ...MINE, goals: [goal({ publishedFrom: "job-fit:job-analyst" })] })
     mockMine.mockResolvedValue([TARGET])
     renderAt(<SummitGoals />)
+    fireEvent.click(await screen.findByRole("button", { name: /your goal list/i }))
     const link = await screen.findByRole("link", { name: /view roadmap/i })
     expect(link).toHaveAttribute("href", "/my/goals/b1/roadmap")
     expect(screen.getByText("From Job Fit")).toBeInTheDocument()

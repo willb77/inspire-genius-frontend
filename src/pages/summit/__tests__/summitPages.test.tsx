@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { MyGoalsResponse, SummitSession } from "@/types/summit";
@@ -157,7 +157,10 @@ describe("My Goals — two stores, kept apart", () => {
     expect(
       await screen.findByText(/Automate the top 3 manual reporting workflows/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Drafts from your interview/i)).toBeInTheDocument();
+    // Collapsed until the pill is clicked: the draft is not visible yet.
+    expect(screen.getByText(/Automate the top 3 manual reporting workflows/i)).not.toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /drafts from your interview/i }));
+    expect(screen.getByText(/Automate the top 3 manual reporting workflows/i)).toBeVisible();
     // leverages_strength → "Leverages strength"; job → "Current Job".
     expect(screen.getByText(/Leverages strength/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Current Job/i).length).toBeGreaterThan(0);
@@ -169,12 +172,64 @@ describe("My Goals — two stores, kept apart", () => {
   it("lists a published goal once — under your goals, not also as a draft", async () => {
     mockGetMyGoals.mockResolvedValue(PUBLISHED);
     renderWithRouter(<SummitGoals />);
+    fireEvent.click(await screen.findByRole("button", { name: /your goal list/i }));
     expect(await screen.findByText(/No reviews yet/i)).toBeInTheDocument();
     // The session goal g1 IS publishedFrom of b1, so it is not a draft any more.
-    expect(screen.queryByText(/Drafts from your interview/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /drafts from your interview/i })).toBeNull();
     expect(screen.getAllByText(/Automate the top 3 manual reporting workflows/i)).toHaveLength(1);
     expect(screen.getByRole("switch", { name: /keep .* private/i })).not.toBeChecked();
     expect(screen.getByRole("button", { name: /unpublish/i })).toBeInTheDocument();
+  });
+
+  it("keeps both lists collapsed by default and the pills are real toggle buttons with counts", async () => {
+    mockGetMyGoals.mockResolvedValue(PUBLISHED);
+    mockGetGoalSession.mockResolvedValue({
+      ...SESSION,
+      goals: [
+        ...SESSION.goals,
+        { goal_id: "g2", title: "Second draft goal", status: "proposed" },
+      ],
+    });
+    renderWithRouter(<SummitGoals />);
+    const list = await screen.findByRole("button", { name: /your goal list/i });
+    const drafts = screen.getByRole("button", { name: /drafts from your interview/i });
+    expect(within(list).getByText("1")).toBeInTheDocument();
+    expect(within(drafts).getByText("1")).toBeInTheDocument();
+    for (const b of [list, drafts]) expect(b).toHaveAttribute("aria-expanded", "false");
+    expect(list.getAttribute("aria-controls")).toBeTruthy();
+    expect(document.getElementById(list.getAttribute("aria-controls") as string)).not.toBeVisible();
+    expect(screen.getByText("Second draft goal")).not.toBeVisible();
+
+    fireEvent.click(drafts);
+    expect(drafts).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Second draft goal")).toBeVisible();
+    expect(list).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(drafts);
+    expect(screen.getByText("Second draft goal")).not.toBeVisible();
+  });
+
+  it("shows when each goal was created, and says so honestly when a draft has no stamp", async () => {
+    const stamp = "2026-11-17T15:30:00Z";
+    mockGetMyGoals.mockResolvedValue({
+      ...PUBLISHED,
+      goals: [{ ...PUBLISHED.goals[0], publishedFrom: "gX", createdAt: stamp }],
+    });
+    mockGetGoalSession.mockResolvedValue({
+      ...SESSION,
+      goals: [
+        { goal_id: "g1", title: "Stamped draft", status: "proposed", created_at: stamp },
+        { goal_id: "g2", title: "Old draft", status: "proposed" },
+      ],
+    });
+    renderWithRouter(<SummitGoals />);
+    fireEvent.click(await screen.findByRole("button", { name: /your goal list/i }));
+    fireEvent.click(screen.getByRole("button", { name: /drafts from your interview/i }));
+    const expected = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(stamp));
+    // published card + stamped draft both show the viewer-local date and time
+    expect(screen.getAllByText(`Created: ${expected}`)).toHaveLength(2);
+    // the unstamped draft shows no invented date
+    expect(screen.getAllByText("Created: not recorded")).toHaveLength(1);
   });
 
   it("says there are no goals rather than showing someone else's", async () => {

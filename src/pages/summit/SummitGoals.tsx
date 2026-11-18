@@ -13,13 +13,13 @@
  * Nothing on this page reports success it has not had: every button waits for
  * its mutation to settle and shows the error inline when it does not.
  */
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
   Heart, Brain, Gauge, Users, Target, Info, Loader2, Lock, Mic, Share2,
-  ArrowLeft, Check, Pencil, Upload, X,
+  ArrowLeft, Check, ChevronDown, Clock, Pencil, Upload, X,
 } from "lucide-react";
 import { PageHead, Card, Callout, StatusPill } from "@/pages/summit/components/ui";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,35 @@ function errorText(err: unknown, t: TFunction): string {
   const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
   if (typeof detail === "string") return detail;
   return t("goals.errorSave", { defaultValue: "That didn't save. Nothing was changed — try again." });
+}
+
+/**
+ * "Created" stamp for a goal card: the viewer's locale and local timezone,
+ * date + time. A goal with no usable timestamp (drafts written before the
+ * backend began stamping them) says so rather than showing a guessed date.
+ */
+function formatCreated(iso: string | null | undefined, locale?: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat(locale || undefined, { dateStyle: "medium", timeStyle: "short" }).format(d);
+  } catch {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(d);
+  }
+}
+
+function CreatedStamp({ iso }: { iso: string | null | undefined }) {
+  const { t, i18n } = useTranslation("summitPages");
+  const when = formatCreated(iso, i18n.language);
+  return (
+    <p className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[#7C93B5]">
+      <Clock className="h-3 w-3" aria-hidden />
+      {when
+        ? t("goals.created", { defaultValue: "Created: {{when}}", when })
+        : t("goals.createdNotRecorded", { defaultValue: "Created: not recorded" })}
+    </p>
+  );
 }
 
 /**
@@ -219,6 +248,7 @@ function SharedGoalCard({
           </Link>
         </div>
       )}
+      <CreatedStamp iso={goal.createdAt} />
       {reviews.length > 0 ? (
         <ul className="mt-3 space-y-1.5" aria-label={t("goals.coachReviews", { defaultValue: "Coach reviews" })}>
           {reviews.map((r) => (
@@ -308,6 +338,7 @@ function DraftCard({ goal }: { goal: SummitGoal }) {
 
   return (
     <GoalCard g={goal}>
+      <CreatedStamp iso={goal.created_at} />
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#F1ECE2] pt-3">
         {editing ? (
           <form onSubmit={saveTitle} className="flex flex-1 items-center gap-2">
@@ -422,6 +453,42 @@ function QuickAdd() {
   );
 }
 
+/** A collapsed-by-default list behind a pill: a real button, count shown. */
+function GoalPill({
+  label,
+  count,
+  headingId,
+  children,
+}: {
+  label: string;
+  count: number;
+  headingId: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 id={headingId} className="text-[13px] font-bold">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((o) => !o)}
+          className="inline-flex items-center gap-2 rounded-full border border-[#127A8A]/40 bg-white px-4 py-2 text-[13px] font-bold text-[#0B1B33] hover:bg-[#FBF7F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#127A8A] focus-visible:ring-offset-2"
+        >
+          {label}
+          <span className="rounded-full bg-[#127A8A]/15 px-2 py-0.5 text-[11.5px] text-[#0E5F6B]">{count}</span>
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} aria-hidden />
+        </button>
+      </h2>
+      <section id={panelId} aria-labelledby={headingId} hidden={!open} className="flex flex-col gap-3">
+        {children}
+      </section>
+    </div>
+  );
+}
+
 export default function SummitGoals() {
   const { t } = useTranslation("summitPages");
   const [params] = useSearchParams();
@@ -506,10 +573,11 @@ export default function SummitGoals() {
       )}
 
       {!loading && !mine.isError && shared.length > 0 && (
-        <section aria-labelledby="shared-goals-heading" className="flex flex-col gap-3">
-          <h2 id="shared-goals-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">
-            {t("goals.sharedHeading", { defaultValue: "Your goals" })}
-          </h2>
+        <GoalPill
+          label={t("goals.pillGoalList", { defaultValue: "Your Goal list" })}
+          count={shared.length}
+          headingId="shared-goals-heading"
+        >
           {shared.map((g) => (
             <SharedGoalCard
               key={g.goalId}
@@ -518,18 +586,19 @@ export default function SummitGoals() {
               target={targetsOn ? targetByGoal.get(g.goalId) : undefined}
             />
           ))}
-        </section>
+        </GoalPill>
       )}
 
       {!loading && !session.isError && drafts.length > 0 && (
-        <section aria-labelledby="draft-goals-heading" className="flex flex-col gap-3">
-          <h2 id="draft-goals-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">
-            {t("goals.draftsHeading", { defaultValue: "Drafts from your interview" })}
-          </h2>
+        <GoalPill
+          label={t("goals.draftsHeading", { defaultValue: "Drafts from your interview" })}
+          count={drafts.length}
+          headingId="draft-goals-heading"
+        >
           {drafts.map((g) => (
             <DraftCard key={g.goal_id} goal={g} />
           ))}
-        </section>
+        </GoalPill>
       )}
 
       {!loading && <QuickAdd />}
