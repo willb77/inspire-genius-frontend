@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/form";
 import {
   User_FORM_DEFAULTS,
-  User_FORM_RULES,
   NO_ORG_VALUE,
   type UserFormValues,
 } from "./userForm.constants";
@@ -35,6 +34,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FORMS_UI_NS } from "./formsUiCopy";
+import { getUserFormRules } from "./formRules";
 import { ROLES } from "@/constants/routes";
 import { ROLE_LABELS } from "@/types/roles";
 import {
@@ -266,6 +267,8 @@ export default function UserFormModal({
   organizations,
 }: UserFormModalProps) {
   const { t } = useTranslation("shellUi");
+  const { t: tf } = useTranslation(FORMS_UI_NS);
+  const formRules = getUserFormRules(tf);
   const defaultValuesMerged: UserFormValues = {
     ...User_FORM_DEFAULTS,
     ...defaultValues,
@@ -299,7 +302,7 @@ export default function UserFormModal({
           <FormField
             control={control}
             name="first_name"
-            rules={User_FORM_RULES.first_name}
+            rules={formRules.first_name}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="block text-xs">{t("userForm.firstName", { defaultValue: "First Name *" })}</FormLabel>
@@ -314,7 +317,7 @@ export default function UserFormModal({
           <FormField
             control={control}
             name="last_name"
-            rules={User_FORM_RULES.last_name}
+            rules={formRules.last_name}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="block text-xs">{t("userForm.lastName", { defaultValue: "Last Name *" })}</FormLabel>
@@ -328,7 +331,7 @@ export default function UserFormModal({
           <FormField
               control={control}
               name="email"
-              rules={User_FORM_RULES.email}
+              rules={formRules.email}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="block text-xs">{t("userForm.emailRequired", { defaultValue: "Email *" })}</FormLabel>
@@ -350,7 +353,7 @@ export default function UserFormModal({
           <FormField
             control={control}
             name="role"
-            rules={User_FORM_RULES.role}
+            rules={formRules.role}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="block text-xs">{t("userForm.roleRequired", { defaultValue: "Role *" })}</FormLabel>
@@ -377,7 +380,7 @@ export default function UserFormModal({
             <FormField
               control={control}
               name="organization_id"
-              rules={User_FORM_RULES.organization_id}
+              rules={formRules.organization_id}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="block text-xs">{t("userForm.organization", { defaultValue: "Organization" })}</FormLabel>
@@ -411,7 +414,7 @@ export default function UserFormModal({
             <FormField
               control={control}
               name="skip_onboarding"
-              rules={User_FORM_RULES.skip_onboarding}
+              rules={formRules.skip_onboarding}
               render={({ field }) => (
                 <FormItem className="md:col-span-2 rounded-md border border-border bg-muted/30 p-3">
                   <div className="flex items-start gap-3">
@@ -441,7 +444,7 @@ export default function UserFormModal({
             <FormField
               control={control}
               name="status"
-              rules={User_FORM_RULES.status}
+              rules={formRules.status}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="block text-xs">{t("userForm.status", { defaultValue: "Status" })}</FormLabel>

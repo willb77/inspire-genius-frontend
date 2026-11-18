@@ -5,7 +5,9 @@ import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TEAM_FORM_DEFAULTS, TEAM_FORM_RULES, TEAM_ROLES, type TeamFormValues } from "./teamForm.constants";
+import { FORMS_UI_NS, teamRoleLabel } from "./formsUiCopy";
+import { getTeamFormRules } from "./formRules";
+import { TEAM_FORM_DEFAULTS, TEAM_ROLES, type TeamFormValues } from "./teamForm.constants";
 
 export type TeamFormModalProps = {
   open: boolean;
@@ -27,6 +29,8 @@ export default function TeamFormModal({
   submitLabel,
 }: TeamFormModalProps) {
   const { t } = useTranslation("shellUi");
+  const { t: tf } = useTranslation(FORMS_UI_NS);
+  const formRules = getTeamFormRules(tf);
   const dv: TeamFormValues = { ...TEAM_FORM_DEFAULTS, ...(defaultValues ?? {}) } as TeamFormValues;
 
   return (
@@ -44,7 +48,7 @@ export default function TeamFormModal({
           <FormField
             control={form.control}
             name="name"
-            rules={TEAM_FORM_RULES.name}
+            rules={formRules.name}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="block text-xs">{t("teamForm.name", { defaultValue: "Name *" })}</FormLabel>
@@ -59,7 +63,7 @@ export default function TeamFormModal({
           <FormField
             control={form.control}
             name="email"
-            rules={TEAM_FORM_RULES.email}
+            rules={formRules.email}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="block text-xs">{t("teamForm.email", { defaultValue: "Email *" })}</FormLabel>
@@ -74,7 +78,7 @@ export default function TeamFormModal({
           <FormField
             control={form.control}
             name="role"
-            rules={TEAM_FORM_RULES.role}
+            rules={formRules.role}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="block text-xs">{t("teamForm.role", { defaultValue: "Role *" })}</FormLabel>
@@ -85,7 +89,7 @@ export default function TeamFormModal({
                     </SelectTrigger>
                     <SelectContent>
                       {TEAM_ROLES.map((r) => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                        <SelectItem key={r} value={r}>{teamRoleLabel(r, tf)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -99,7 +103,7 @@ export default function TeamFormModal({
             <FormField
               control={form.control}
               name="status"
-              rules={TEAM_FORM_RULES.status}
+              rules={formRules.status}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="block text-xs">{t("teamForm.status", { defaultValue: "Status" })}</FormLabel>

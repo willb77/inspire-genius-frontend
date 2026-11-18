@@ -1,4 +1,4 @@
-import { validateEmail } from "./validateEmail";
+import { getTeamFormRules } from "./formRules";
 
 export type TeamFormValues = {
   name: string;
@@ -22,14 +22,5 @@ export const TEAM_FORM_DEFAULTS: TeamFormValues = {
   status: "Active",
 };
 
-export const TEAM_FORM_RULES = {
-  name: { required: "Name is required" },
-  email: {
-    required: "Email is required",
-    // Bounded, simple email pattern to avoid catastrophic backtracking
-    // local-part up to 64, domain up to 253, simple TLD 2+
-    validate: (value: string) => validateEmail(value, "Enter a valid email"),
-  },
-  role: { required: "Role is required" },
-  status: {},
-} as const;
+/** English-identity. Components use getTeamFormRules(t). */
+export const TEAM_FORM_RULES = getTeamFormRules();
