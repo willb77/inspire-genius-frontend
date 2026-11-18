@@ -1,0 +1,57 @@
+{
+  "section": {
+    "self-portrait": "My self-portrait",
+    "pillars": "My four pillars",
+    "explorer": "Career explorer",
+    "buckets": "Sorting the roles",
+    "experiments": "Three real-world experiments",
+    "paths": "Primary and Backup Paths"
+  },
+  "stage": {
+    "welcome": "Getting started",
+    "discover": "Self-portrait",
+    "pillars": "Four pillars",
+    "explore": "Career explorer",
+    "narrow": "Sorting the roles",
+    "test": "Experiments",
+    "commit": "Paths",
+    "close": "Wrap-up"
+  },
+  "status": {
+    "active": "In progress",
+    "paused": "Paused",
+    "closed": "Finished"
+  },
+  "pillar": {
+    "wiring": "How I'm wired",
+    "interests": "Interests",
+    "aptitudes": "Aptitudes",
+    "context": "My situation"
+  },
+  "bucket": {
+    "curious": "Curious",
+    "maybe": "Maybe",
+    "not_for_me": "Not for me"
+  },
+  "reaction": {
+    "look_forward": "Looks forward to",
+    "dread": "Would dread"
+  },
+  "studentError": {
+    "version_conflict": "Your exercise changed since this page loaded (perhaps in another tab). It has been reloaded — try again.",
+    "invalid_transition": "That can't be done right now; your exercise has been reloaded.",
+    "forbidden": "The career exploration exercise isn't open on your account.",
+    "notFound": "That exercise could not be found. It has been reloaded."
+  },
+  "counselorError": {
+    "version_conflict": "The student's exercise moved on since you opened it. It has been reloaded — check the paths again before confirming.",
+    "no_paths": "The student has not chosen a Primary and Backup Path yet.",
+    "stage_not_reached": "The student has not reached this step yet.",
+    "too_many_annotations": "This session has reached its limit of notes.",
+    "forbidden": "You cannot see this student's career exercise."
+  },
+  "note": {
+    "required": "Write a note first.",
+    "tooLong": "A note is at most {{max}} characters."
+  }
+}

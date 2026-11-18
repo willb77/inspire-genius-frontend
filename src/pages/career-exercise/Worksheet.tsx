@@ -6,10 +6,12 @@ import { EXERCISE_STAGES } from "@/types/career-exercise/counselor"
 import type { ExerciseSession, FactCell, RoleFactCells } from "@/types/career-exercise/student"
 import {
   BUCKETS,
-  REACTION_LABELS,
   WORKSHEET_SECTIONS,
+  bucketLabelT,
   notesFor,
-  pillarLabel,
+  pillarLabelT,
+  reactionLabelT,
+  sectionTitle,
   roleTitle,
   type WorksheetSection,
 } from "./worksheetModel"
@@ -97,7 +99,7 @@ function SectionBody({
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           {entries.map(([k, v]) => (
             <div key={k}>
-              <dt className="font-medium">{pillarLabel(k)}</dt>
+              <dt className="font-medium">{pillarLabelT(t, k)}</dt>
               <dd>{v.length ? v.join(", ") : "—"}</dd>
             </div>
           ))}
@@ -139,7 +141,7 @@ function SectionBody({
           )}
           {reactions.map(([k, v]) => (
             <p key={k}>
-              <span className="font-medium">{REACTION_LABELS[k] ?? k}:</span> {v.join(", ")}
+              <span className="font-medium">{reactionLabelT(t, k)}:</span> {v.join(", ")}
             </p>
           ))}
         </div>
@@ -150,12 +152,12 @@ function SectionBody({
       if (!sorted.length) return <Empty />
       return (
         <div className="grid gap-3 text-sm sm:grid-cols-3">
-          {BUCKETS.map(({ key, label }) => (
-            <div key={key}>
-              <h4 className="font-medium">{label}</h4>
+          {BUCKETS.map((b) => (
+            <div key={b.key}>
+              <h4 className="font-medium">{bucketLabelT(t, b)}</h4>
               <ul className="space-y-1">
                 {sorted
-                  .filter((r) => r.bucket === key)
+                  .filter((r) => r.bucket === b.key)
                   .map((r) => (
                     <li key={r.onet_soc}>
                       {r.title}
@@ -246,7 +248,7 @@ export function Worksheet({
             className={cn("rounded-xl border bg-card p-4", current && "border-primary ring-1 ring-primary/30")}
           >
             <h3 id={`ws-${s.id}`} className="mb-2 flex items-center justify-between text-sm font-semibold">
-              {s.title}
+              {sectionTitle(t, s)}
               {current && <span className="text-xs font-normal text-primary">{t("youAreHere", { defaultValue: "You are here" })}</span>}
             </h3>
             <SectionBody session={session} section={s} cells={cells} />
