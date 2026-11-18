@@ -34,6 +34,7 @@ jest.mock("@/lib/agentApi", () => ({
 }));
 
 import { act, renderHook, waitFor } from "@testing-library/react";
+import i18nForTest from "i18next";
 
 import { useMeridianJob } from "../useMeridianJob";
 import type { MeridianResponse } from "../useMeridianWebSocket";
@@ -572,5 +573,60 @@ describe("useMeridianJob — startJob retry-with-backoff", () => {
 
     expect(mockAgentApi.post).toHaveBeenCalledTimes(3);
     expect(caught).toBeTruthy();
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────
+// A9 / I18N-6c — context.ui_language
+// ───────────────────────────────────────────────────────────────────
+
+describe("useMeridianJob — context.ui_language (A9 / I18N-6c)", () => {
+  const i18nSingleton = i18nForTest as { resolvedLanguage?: string };
+  const original = i18nSingleton.resolvedLanguage;
+
+  afterEach(() => {
+    Object.defineProperty(i18nSingleton, "resolvedLanguage", {
+      value: original, configurable: true, writable: true,
+    });
+  });
+
+  async function postedContext(
+    lang: string | undefined,
+    context?: Record<string, unknown>,
+  ): Promise<unknown> {
+    Object.defineProperty(i18nSingleton, "resolvedLanguage", {
+      value: lang, configurable: true, writable: true,
+    });
+    mockAgentApi.post.mockResolvedValueOnce({
+      data: { job_id: "job-l", session_id: "s", status: "queued" },
+    });
+    mockAgentApi.get.mockResolvedValue({
+      data: { job_id: "job-l", session_id: "s", status: "queued", message: "hi" },
+    });
+    const { result } = renderHook(() => useMeridianJob({ pollIntervalMs: 60_000 }));
+    await act(async () => {
+      await result.current.startJob({ message: "hi", sessionId: "s", context });
+    });
+    return (mockAgentApi.post.mock.calls[0][1] as { context?: unknown }).context;
+  }
+
+  it("sends the resolved UI language on top of the caller's context", async () => {
+    expect(await postedContext("es", { surface: "chat" })).toEqual({
+      ui_language: "es", surface: "chat",
+    });
+  });
+
+  it("sends it even when the caller passed no context", async () => {
+    expect(await postedContext("pt")).toEqual({ ui_language: "pt" });
+  });
+
+  it("an explicit caller value wins", async () => {
+    expect(await postedContext("es", { ui_language: "fr" })).toEqual({ ui_language: "fr" });
+  });
+
+  it("adds nothing (payload unchanged) when i18n has no resolved language", async () => {
+    expect(await postedContext(undefined, { surface: "chat" })).toEqual({ surface: "chat" });
+    mockAgentApi.post.mockReset();
+    expect(await postedContext(undefined)).toBeUndefined();
   });
 });

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import i18n from "i18next";
 
 import { getApi } from "@/lib/agentApi";
 import type { MeridianResponse } from "@/hooks/agents/useMeridianWebSocket";
@@ -330,7 +331,20 @@ export function useMeridianJob(
         message: input.message,
         session_id: input.sessionId,
       };
-      if (input.context) payload.context = input.context;
+      // A9 / I18N-6c: tell the server which language the UI is RENDERING
+      // (resolvedLanguage, not the raw localStorage tag, which can be an
+      // unsupported "es-MX"). Just a language code, nothing private. The
+      // backend ignores it unless its reply-language flag is on, and then
+      // validates it against an allowlist; an explicit caller value wins.
+      // Imported from "i18next" (the singleton) rather than "@/lib/i18n", whose
+      // import runs init() as a side effect inside every test that loads this hook.
+      const uiLanguage = i18n.resolvedLanguage;
+      if (input.context || uiLanguage) {
+        payload.context = {
+          ...(uiLanguage ? { ui_language: uiLanguage } : {}),
+          ...(input.context ?? {}),
+        };
+      }
       if (input.fileIds && input.fileIds.length > 0) payload.file_ids = input.fileIds;
       if (input.systemPromptOverride) {
         payload.system_prompt_override = input.systemPromptOverride;
