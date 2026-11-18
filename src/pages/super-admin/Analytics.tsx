@@ -37,9 +37,10 @@ import { useAuditLogs, useAuditStats } from "@/hooks/audit/useAudit"
 import { useFeedbackStats } from "@/hooks/feedback/useFeedback"
 import { useOrganizationManagement } from "@/hooks/super-admin/organization-management/useOrganizationManagement"
 import {
-  BarChart3, Shield, Activity, Users, FileText, Map,
+  BarChart3, Shield, Activity, Users, FileText, Map, Building2,
 } from "lucide-react"
 import ProjectLogMoved from "@/components/super-admin/ProjectLogMoved"
+import OrgActivityReport from "@/components/super-admin/org-activity/OrgActivityReport"
 import type { AuditLogEntry } from "@/types/audit"
 import {
   IdentityCell,
@@ -523,7 +524,7 @@ function ProjectLogTab() {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────
-const VALID_TABS = ["analytics", "audit", "project"] as const
+const VALID_TABS = ["analytics", "audit", "project", "organization"] as const
 type AnalyticsTab = (typeof VALID_TABS)[number]
 
 function isAnalyticsTab(value: string | null): value is AnalyticsTab {
@@ -532,7 +533,7 @@ function isAnalyticsTab(value: string | null): value is AnalyticsTab {
 
 // House style drops the "Project Log" tab: it only says the log has moved
 // (the usability review marks it for removal). ?tab=project then opens Analytics.
-const HOUSE_TABS: readonly AnalyticsTab[] = ["analytics", "audit"]
+const HOUSE_TABS: readonly AnalyticsTab[] = ["analytics", "audit", "organization"]
 
 function isShownTab(value: string | null, house: boolean): value is AnalyticsTab {
   return isAnalyticsTab(value) && (!house || HOUSE_TABS.includes(value))
@@ -601,6 +602,10 @@ function AnalyticsContent({ house = false }: { house?: boolean }) {
               <Shield className="h-3.5 w-3.5" />
               {house ? "Audit log" : "Audit Log"}
             </TabsTrigger>
+            <TabsTrigger value="organization" className="gap-2">
+              <Building2 className="h-3.5 w-3.5" />
+              Organization activity
+            </TabsTrigger>
             {!house && (
             <TabsTrigger value="project" className="gap-2">
               <FileText className="h-3.5 w-3.5" />
@@ -615,6 +620,10 @@ function AnalyticsContent({ house = false }: { house?: boolean }) {
 
           <TabsContent value="audit" className="flex-1 mt-4 overflow-y-auto">
             <AuditLogTab />
+          </TabsContent>
+
+          <TabsContent value="organization" className="flex-1 mt-4 overflow-y-auto">
+            <OrgActivityReport />
           </TabsContent>
 
           {!house && (
