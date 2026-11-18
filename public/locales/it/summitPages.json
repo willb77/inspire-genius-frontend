@@ -62,7 +62,10 @@
     "noGoals": "Ancora nessun obiettivo",
     "noGoalsBody": "Qui gli obiettivi nascono dalla conversazione di discovery, non da un modulo. Avvia l'intervista e compariranno, ciascuno con il motivo che lo sostiene, oppure aggiungine uno che già conosci qui sotto.",
     "sharedHeading": "I tuoi obiettivi",
-    "draftsHeading": "Bozze dalla tua intervista"
+    "draftsHeading": "Bozze dalla tua intervista",
+    "pillGoalList": "La tua lista di obiettivi",
+    "created": "Creato il: {{when}}",
+    "createdNotRecorded": "Creato il: non registrato"
   },
   "sharing": {
     "basis": {

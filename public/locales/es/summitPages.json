@@ -392,6 +392,9 @@
     "noGoals": "Aún no hay objetivos",
     "noGoalsBody": "Aquí los objetivos se redactan a partir de la conversación de descubrimiento, en lugar de escribirse en un formulario. Empieza la entrevista y aparecerán, cada uno con su motivo; o añade abajo uno que ya conozcas.",
     "sharedHeading": "Tus objetivos",
-    "draftsHeading": "Borradores de tu entrevista"
+    "draftsHeading": "Borradores de tu entrevista",
+    "pillGoalList": "Tu lista de metas",
+    "created": "Creada: {{when}}",
+    "createdNotRecorded": "Creada: sin registro"
   }
 }

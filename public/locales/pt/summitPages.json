@@ -392,6 +392,9 @@
     "noGoals": "Ainda não há metas",
     "noGoalsBody": "As metas aqui são escritas a partir da conversa de descoberta, e não digitadas em um formulário. Comece a entrevista e elas aparecerão, cada uma com o motivo por trás dela, ou adicione abaixo uma que você já conhece.",
     "sharedHeading": "Suas metas",
-    "draftsHeading": "Rascunhos da sua entrevista"
+    "draftsHeading": "Rascunhos da sua entrevista",
+    "pillGoalList": "Sua lista de metas",
+    "created": "Criada em: {{when}}",
+    "createdNotRecorded": "Criada em: não registrado"
   }
 }

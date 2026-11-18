@@ -348,7 +348,10 @@
     "noGoals": "Zatím žádné cíle",
     "noGoalsBody": "Cíle zde vznikají z objevovacího rozhovoru, nikoli vyplněním formuláře. Zahajte rozhovor a cíle se objeví, každý s důvodem, který za ním stojí – nebo níže přidejte cíl, který už znáte.",
     "sharedHeading": "Vaše cíle",
-    "draftsHeading": "Návrhy z vašeho rozhovoru"
+    "draftsHeading": "Návrhy z vašeho rozhovoru",
+    "pillGoalList": "Váš seznam cílů",
+    "created": "Vytvořeno: {{when}}",
+    "createdNotRecorded": "Vytvořeno: nezaznamenáno"
   },
   "targets": {
     "error403": "Cíle nejsou pro Váš účet momentálně dostupné.",

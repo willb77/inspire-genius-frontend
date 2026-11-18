@@ -347,7 +347,10 @@
     "noGoals": "Brak celów",
     "noGoalsBody": "Cele powstają tu na podstawie rozmowy odkrywającej, a nie są wpisywane w formularzu. Rozpocznij rozmowę, a pojawią się razem z powodem, który za nimi stoi — albo dodaj poniżej cel, który już znasz.",
     "sharedHeading": "Twoje cele",
-    "draftsHeading": "Szkice z Twojej rozmowy"
+    "draftsHeading": "Szkice z Twojej rozmowy",
+    "pillGoalList": "Twoja lista celów",
+    "created": "Utworzono: {{when}}",
+    "createdNotRecorded": "Utworzono: brak zapisu"
   },
   "ui": {
     "sampleLead": "To jest przykład, a nie Twoje dane.",

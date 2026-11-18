@@ -266,7 +266,10 @@
     "noGoals": "No goals yet",
     "noGoalsBody": "Goals here are written out of the discovery conversation rather than typed into a form. Start the interview and they'll appear, each with the reason underneath it — or add one you already know below.",
     "sharedHeading": "Your goals",
-    "draftsHeading": "Drafts from your interview"
+    "draftsHeading": "Drafts from your interview",
+    "pillGoalList": "Your Goal list",
+    "created": "Created: {{when}}",
+    "createdNotRecorded": "Created: not recorded"
   },
   "sharing": {
     "basis": {
