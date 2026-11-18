@@ -1,0 +1,23 @@
+{
+  "category": {
+    "technical": "Technical problem",
+    "account": "Account or login",
+    "billing": "Billing or credits",
+    "assessment": "PRISM assessment",
+    "coaching": "Coaching or content",
+    "feedback": "Feedback or suggestion",
+    "other": "Something else"
+  },
+  "priority": {
+    "low": "Low — a question, no rush",
+    "normal": "Normal — I need help soon",
+    "high": "High — blocking my work",
+    "critical": "Critical — nobody can work"
+  },
+  "prompt": {
+    "tryingToDo": "What were you trying to do?",
+    "expected": "What did you expect to happen?",
+    "actuallyHappened": "What actually happened — any error message?",
+    "whenStarted": "When did it start, and does it happen every time?"
+  }
+}

@@ -16,15 +16,17 @@
  */
 import { useContext, useState } from "react"
 import { Loader2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { AuthContext } from "@/context/auth-context"
 import { ROLES } from "@/constants/routes"
 import { useDecideLinkRequest, useIncomingLinkRequests } from "@/hooks/summit/useLinkRequests"
 import type { IncomingLinkRequest } from "@/services/manager/development/growthService"
 import {
-  ADMIN_COPY,
   adminCancelErrorText,
+  adminCopy,
   adminRequestLine,
+  SHARING_UI_NS,
   shortDate,
   statusOf,
 } from "@/components/sharing/linkRequestCopy"
@@ -40,12 +42,13 @@ function AdminRow({
   busy: boolean
   onCancel: (row: IncomingLinkRequest) => void
 }) {
+  const { t } = useTranslation(SHARING_UI_NS)
   const [confirming, setConfirming] = useState(false)
   const asked = shortDate(row.createdAt)
   return (
     <li className="flex flex-wrap items-center gap-2 border-t border-[#f3f4f6] py-2.5 first:border-t-0" data-testid={`admin-request-${row.id}`}>
       <span className="min-w-0 flex-1 text-[13px] text-[#1f2937]">
-        {adminRequestLine(row.memberName, row.managerName)}
+        {adminRequestLine(row.memberName, row.managerName, t)}
         {asked && <span className="ml-2 text-xs text-[#6b7280]">asked {asked}</span>}
       </span>
       {confirming ? (
@@ -56,7 +59,7 @@ function AdminRow({
             onClick={() => onCancel(row)}
             className="rounded-lg border border-[#EF4444] px-3 py-1 text-[12px] font-semibold text-[#EF4444] disabled:opacity-50"
           >
-            {ADMIN_COPY.confirm}
+            {adminCopy("confirm", t)}
           </button>
           <button
             type="button"
@@ -64,7 +67,7 @@ function AdminRow({
             onClick={() => setConfirming(false)}
             className="px-2 py-1 text-[12px] text-[#6b7280] disabled:opacity-50"
           >
-            {ADMIN_COPY.keep}
+            {adminCopy("keep", t)}
           </button>
         </span>
       ) : (
@@ -74,7 +77,7 @@ function AdminRow({
           onClick={() => setConfirming(true)}
           className="rounded-lg border border-[#e5e7eb] px-3 py-1 text-[12px] font-semibold text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50"
         >
-          {ADMIN_COPY.cancel}
+          {adminCopy("cancel", t)}
         </button>
       )}
     </li>
@@ -82,6 +85,7 @@ function AdminRow({
 }
 
 function SectionBody() {
+  const { t } = useTranslation(SHARING_UI_NS)
   const incoming = useIncomingLinkRequests(true)
   const decide = useDecideLinkRequest()
   const [notice, setNotice] = useState<Notice | null>(null)
@@ -91,8 +95,8 @@ function SectionBody() {
     decide.mutate(
       { id: row.id, action: "cancel" },
       {
-        onSuccess: () => setNotice({ tone: "ok", text: ADMIN_COPY.cancelled }),
-        onError: (err) => setNotice({ tone: "error", text: adminCancelErrorText(err) }),
+        onSuccess: () => setNotice({ tone: "ok", text: adminCopy("cancelled", t) }),
+        onError: (err) => setNotice({ tone: "error", text: adminCancelErrorText(err, t) }),
       },
     )
   }
@@ -105,17 +109,17 @@ function SectionBody() {
   return (
     <section
       className="mb-5 rounded-lg border border-[#e5e7eb] bg-white p-4"
-      aria-label={ADMIN_COPY.title}
+      aria-label={adminCopy("title", t)}
       data-testid="admin-link-requests"
     >
       <div className="flex items-center gap-2">
-        <h2 className="text-[15px] font-bold text-[#111827]">{ADMIN_COPY.title}</h2>
+        <h2 className="text-[15px] font-bold text-[#111827]">{adminCopy("title", t)}</h2>
         {decide.isPending && <Loader2 className="h-4 w-4 animate-spin text-[#6b7280]" aria-hidden />}
       </div>
-      {rows.length > 0 && <p className="mt-1 text-[13px] text-[#6b7280]">{ADMIN_COPY.intro}</p>}
+      {rows.length > 0 && <p className="mt-1 text-[13px] text-[#6b7280]">{adminCopy("intro", t)}</p>}
       {refreshFailed && (
         <p className="mt-2 text-[12.5px] text-amber-700" data-testid="admin-link-requests-refresh-failed">
-          {ADMIN_COPY.refreshFailed}
+          {adminCopy("refreshFailed", t)}
         </p>
       )}
       {rows.length > 0 && (

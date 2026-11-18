@@ -28,6 +28,8 @@ import {
 import { ImagePlus, Send, X } from "lucide-react";
 import {
   DESCRIPTION_PROMPTS,
+  DESCRIPTION_PROMPT_KEYS,
+  SUPPORT_UI_NS,
   MAX_DESCRIPTION_CHARS,
   MIN_DESCRIPTION_CHARS,
   SUPPORT_CATEGORIES,
@@ -49,6 +51,8 @@ export default function SupportRequestForm({
   onScreenshotsChange,
 }: SupportRequestFormProps) {
   const { t } = useTranslation("accountUi")
+  const { t: ts } = useTranslation(SUPPORT_UI_NS)
+  const prompts = DESCRIPTION_PROMPTS.map((p, i) => ts(DESCRIPTION_PROMPT_KEYS[i], { defaultValue: p }))
   const description = form.watch("description") ?? "";
   const used = description.length;
   const remainingToMinimum = Math.max(0, MIN_DESCRIPTION_CHARS - used);
@@ -175,7 +179,7 @@ export default function SupportRequestForm({
                         <SelectContent>
                           {SUPPORT_CATEGORIES.map((c) => (
                             <SelectItem key={c.value} value={c.value}>
-                              {c.label}
+                              {ts(c.labelKey, { defaultValue: c.label })}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -207,7 +211,7 @@ export default function SupportRequestForm({
                         <SelectContent>
                           {SUPPORT_PRIORITIES.map((p) => (
                             <SelectItem key={p.value} value={p.value}>
-                              {p.label}
+                              {ts(p.labelKey, { defaultValue: p.label })}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -265,7 +269,7 @@ export default function SupportRequestForm({
                         rows={8}
                         placeholder={
                           t("supportRequestForm.describeIssuePlaceholderIntro", { defaultValue: "Please describe the issue in detail. For example:" }) + "\n" +
-                          DESCRIPTION_PROMPTS.map((p) => `• ${p}`).join("\n")
+                          prompts.map((p) => `• ${p}`).join("\n")
                         }
                         {...field}
                         onChange={(e) =>
@@ -277,7 +281,7 @@ export default function SupportRequestForm({
                     </FormControl>
                     <FormDescription className="pt-1">
                       {t("supportRequestForm.helpfulThingsToInclude", { defaultValue: "Helpful things to include:" })}{" "}
-                      {DESCRIPTION_PROMPTS.join(" ")}
+                      {prompts.join(" ")}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

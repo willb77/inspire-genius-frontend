@@ -38,12 +38,12 @@ import {
 } from "@/hooks/summit/useLinkRequests"
 import type { MemberLinkRequest } from "@/services/manager/development/growthService"
 import {
+  categoryLabel,
   codeOf,
+  fixedCopy,
   LINK_REQUEST_CATEGORIES as OFFER_CATEGORIES,
   memberStatusLabel,
-  NO_SHARE_FOUND,
-  REFRESH_FAILED,
-  SENT_MESSAGE,
+  SHARING_UI_NS,
   shortDate as formatDate,
   statusOf,
 } from "./linkRequestCopy"
@@ -84,6 +84,7 @@ function NoticeLine({ notice }: { notice: Notice | null }) {
 
 function AskForm() {
   const { t } = useTranslation("accountUi")
+  const { t: tsh } = useTranslation(SHARING_UI_NS)
   const create = useCreateLinkRequest()
   const [notice, setNotice] = useState<Notice | null>(null)
   const form = useForm<AskInput, unknown, AskOutput>({
@@ -95,7 +96,7 @@ function AskForm() {
     setNotice(null)
     create.mutate(values, {
       onSuccess: () => {
-        setNotice({ tone: "ok", text: SENT_MESSAGE })
+        setNotice({ tone: "ok", text: fixedCopy("sentMessage", tsh) })
         form.reset({ managerEmail: "", categories: [] })
       },
       onError: (err) => setNotice({ tone: "error", text: askErrorText(err, t) }),
@@ -125,17 +126,18 @@ function AskForm() {
             <div className="flex flex-wrap gap-x-4 gap-y-1.5">
               {OFFER_CATEGORIES.map((c) => {
                 const checked = (field.value ?? []).includes(c.key)
+                const catLabel = categoryLabel(c, tsh)
                 return (
                   <label key={c.key} className="flex items-center gap-2 text-[12.5px] text-[#13294B]">
                     <Checkbox
                       checked={checked}
-                      aria-label={t("askForm.shareLabelIfTheyAccept", { defaultValue: "Share {{label}} if they accept", label: c.label })}
+                      aria-label={t("askForm.shareLabelIfTheyAccept", { defaultValue: "Share {{label}} if they accept", label: catLabel })}
                       onCheckedChange={(on) => {
                         const rest = (field.value ?? []).filter((k) => k !== c.key)
                         field.onChange(on === true ? [...rest, c.key] : rest)
                       }}
                     />
-                    {c.label}
+                    {catLabel}
                   </label>
                 )
               })}
@@ -157,6 +159,7 @@ function AskForm() {
 
 function RequestRow({ row }: { row: MemberLinkRequest }) {
   const { t } = useTranslation("accountUi")
+  const { t: tsh } = useTranslation(SHARING_UI_NS)
   const act = useLinkRequestAction()
   const leave = useLeaveTeam()
   const revoke = useRevokeGrant()
@@ -166,7 +169,7 @@ function RequestRow({ row }: { row: MemberLinkRequest }) {
   const [notice, setNotice] = useState<Notice | null>(null)
 
   const busy = act.isPending || leave.isPending || revoke.isPending
-  const label = memberStatusLabel(row.status)
+  const label = memberStatusLabel(row.status, tsh)
   const approved = row.status === "approved"
   const shareNotApplied =
     approved && row.categories.length > 0 && (row.grantOutcome === null || row.grantOutcome === "failed")
@@ -212,7 +215,7 @@ function RequestRow({ row }: { row: MemberLinkRequest }) {
       return
     }
     if (!grantId) {
-      setNotice({ tone: "error", text: `${t("requestRow.youveLeftTheTeam", { defaultValue: "You've left the team." })} ${NO_SHARE_FOUND}` })
+      setNotice({ tone: "error", text: `${t("requestRow.youveLeftTheTeam", { defaultValue: "You've left the team." })} ${fixedCopy("noShareFound", tsh)}` })
       return
     }
     try {
@@ -274,6 +277,7 @@ function RequestRow({ row }: { row: MemberLinkRequest }) {
 
 function LinkRequestCardBody() {
   const { t } = useTranslation("accountUi")
+  const { t: tsh } = useTranslation(SHARING_UI_NS)
   const auth = useContext(AuthContext)
   const isMember = auth?.hasRole(ROLES.USER) === true
   const mine = useMyLinkRequests(isMember)
@@ -298,7 +302,7 @@ function LinkRequestCardBody() {
       <AskForm />
       {refreshFailed && (
         <p className="mt-3 text-[12.5px] text-[#A9720F]" data-testid="link-request-refresh-failed">
-          {REFRESH_FAILED}
+          {fixedCopy("refreshFailed", tsh)}
         </p>
       )}
       {rows.length > 0 && (

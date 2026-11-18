@@ -1,0 +1,37 @@
+{
+  "sentMessage": "Sent. If that person can accept requests, they'll see it.",
+  "noShareFound": "We couldn't find a share to stop — check the list above.",
+  "refreshFailed": "We couldn't refresh your requests just now.",
+  "categories": {
+    "goals": "Goals",
+    "prism": "PRISM profile",
+    "assessments": "Assessments",
+    "artefacts": "Profile",
+    "interviews": "Interviews",
+    "development": "Development"
+  },
+  "status": {
+    "pending": "Waiting for a reply",
+    "approved": "Added",
+    "withdrawn": "Withdrawn",
+    "left": "Left the team",
+    "closed": "Closed"
+  },
+  "admin": {
+    "title": "Requests to join a team",
+    "intro": "Members in your organisation who have asked a manager to add them to a team. You can cancel a request; the manager decides the rest.",
+    "refreshFailed": "We couldn't refresh requests just now.",
+    "cancel": "Cancel request",
+    "confirm": "Yes, cancel it",
+    "keep": "Keep",
+    "cancelled": "Request cancelled.",
+    "companyAdminOnly": "Only a company admin can cancel requests.",
+    "gone": "This request is no longer available.",
+    "notPending": "This request has already closed.",
+    "failed": "That didn't work. Nothing changed — try again.",
+    "requestLine": "{{member}} asked to join {{manager}}",
+    "aMember": "A member",
+    "theirTeam": "{{name}}'s team",
+    "aManagersTeam": "a manager's team"
+  }
+}
