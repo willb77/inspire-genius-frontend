@@ -25,7 +25,12 @@ jest.mock("@/layouts/CompanyAdminLayout", () => ({
   default: ({ children }: { children: React.ReactNode }) => <div data-testid="company-admin-layout">{children}</div>,
 }))
 jest.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en", changeLanguage: jest.fn() } }),
+  useTranslation: () => ({
+    // Resolves like i18next does with no bundle loaded: the call's defaultValue, with {{vars}} filled in.
+    t: (key: string, o?: Record<string, string>) =>
+      typeof o?.defaultValue === "string" ? o.defaultValue.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => o[k] ?? "") : key,
+    i18n: { language: "en", changeLanguage: jest.fn() },
+  }),
 }))
 jest.mock("sonner", () => ({ toast: { info: jest.fn(), success: jest.fn(), error: jest.fn() } }))
 jest.mock("@/hooks/company-admin/useCompanyAdmin", () => ({

@@ -54,20 +54,20 @@ export type SupportRequestFormProps = {
 };
 
 export const SUPPORT_CATEGORIES = [
-  { value: "technical", label: "Technical problem" },
-  { value: "account", label: "Account or login" },
-  { value: "billing", label: "Billing or credits" },
-  { value: "assessment", label: "PRISM assessment" },
-  { value: "coaching", label: "Coaching or content" },
-  { value: "feedback", label: "Feedback or suggestion" },
-  { value: "other", label: "Something else" },
+  { value: "technical", label: "Technical problem", labelKey: "category.technical" },
+  { value: "account", label: "Account or login", labelKey: "category.account" },
+  { value: "billing", label: "Billing or credits", labelKey: "category.billing" },
+  { value: "assessment", label: "PRISM assessment", labelKey: "category.assessment" },
+  { value: "coaching", label: "Coaching or content", labelKey: "category.coaching" },
+  { value: "feedback", label: "Feedback or suggestion", labelKey: "category.feedback" },
+  { value: "other", label: "Something else", labelKey: "category.other" },
 ] as const;
 
 export const SUPPORT_PRIORITIES = [
-  { value: "low", label: "Low — a question, no rush" },
-  { value: "normal", label: "Normal — I need help soon" },
-  { value: "high", label: "High — blocking my work" },
-  { value: "critical", label: "Critical — nobody can work" },
+  { value: "low", label: "Low — a question, no rush", labelKey: "priority.low" },
+  { value: "normal", label: "Normal — I need help soon", labelKey: "priority.normal" },
+  { value: "high", label: "High — blocking my work", labelKey: "priority.high" },
+  { value: "critical", label: "Critical — nobody can work", labelKey: "priority.critical" },
 ] as const;
 
 /** Prompts shown under the description box so people know what detail to give. */
@@ -76,4 +76,19 @@ export const DESCRIPTION_PROMPTS = [
   "What did you expect to happen?",
   "What actually happened — any error message?",
   "When did it start, and does it happen every time?",
+] as const;
+
+/**
+ * Namespace for the wording above. These registries are module-level, so they
+ * cannot call t() at import: each entry keeps its English text (the default)
+ * and a key, and the form resolves it at render time.
+ */
+export const SUPPORT_UI_NS = "supportUi";
+
+/** Keys for DESCRIPTION_PROMPTS, same order. */
+export const DESCRIPTION_PROMPT_KEYS = [
+  "prompt.tryingToDo",
+  "prompt.expected",
+  "prompt.actuallyHappened",
+  "prompt.whenStarted",
 ] as const;
