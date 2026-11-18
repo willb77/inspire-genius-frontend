@@ -153,8 +153,11 @@ describe("Locale file existence", () => {
       const files = fs
         .readdirSync(path.join(LOCALES_DIR, lang))
         .filter((f) => f.endsWith(".json"));
-      expect(files.length).toBe(TRANSLATED_IN_FULL.has(lang) ? enFiles.length : NAMESPACES.length);
-      if (TRANSLATED_IN_FULL.has(lang)) expect([...files].sort()).toEqual(enFiles);
+      // A namespace registered as pending is English-only by design (the parity gate tolerates it), so a
+      // translated language other than English is owed every English file EXCEPT the pending ones.
+      const owed = lang === "en" ? enFiles : enFiles.filter((f) => !pending.includes(f.replace(/\.json$/, "")));
+      expect(files.length).toBe(TRANSLATED_IN_FULL.has(lang) ? owed.length : NAMESPACES.length);
+      if (TRANSLATED_IN_FULL.has(lang)) expect([...files].sort()).toEqual(owed);
     }
     // A registration with no English file would silently hide a missing namespace from the parity gate.
     for (const ns of pending) {
