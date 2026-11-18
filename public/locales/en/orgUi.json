@@ -1,0 +1,24 @@
+{
+  "checking": "Checking your organisation…",
+  "pending": {
+    "title": "Waiting for approval",
+    "body": "You asked to join this organisation. A manager has to approve it before you can see your team's data — until then, those pages will be empty."
+  },
+  "approved": {
+    "title": "You're in",
+    "body": "Your membership was approved. Sign out and back in if your pages still look empty — your access is refreshed when you next sign in."
+  },
+  "rejected": {
+    "title": "That request wasn't approved",
+    "askAgain": "You can ask again below."
+  },
+  "form": {
+    "label": "Which organisation are you with?",
+    "help": "Your manager will confirm this before it takes effect.",
+    "orgIdPlaceholder": "Organisation ID from your invitation",
+    "notePlaceholder": "Anything that helps them recognise you — your team, your start date (optional)",
+    "sending": "Sending…",
+    "send": "Send request",
+    "skip": "Skip for now"
+  }
+}
