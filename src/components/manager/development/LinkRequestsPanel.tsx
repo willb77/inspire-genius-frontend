@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils"
 import { useDevelopmentText } from "@/hooks/manager/development/useDevelopmentText"
 import { useDecideLinkRequest, useIncomingLinkRequests } from "@/hooks/summit/useLinkRequests"
 import type { IncomingLinkRequest } from "@/services/manager/development/growthService"
-import { categoryLabels, codeOf, shortDate, statusOf } from "@/components/sharing/linkRequestCopy"
+import { categoryLabels, codeOf, SHARING_UI_NS, shortDate, statusOf } from "@/components/sharing/linkRequestCopy"
 import { useDevSkin } from "./skin"
 import { useTranslation } from "react-i18next"
 
@@ -54,10 +54,11 @@ function RequestRow({
   onDecide: (row: IncomingLinkRequest, action: "approve" | "decline") => void
 }) {
   const { t: tm } = useTranslation("managerPages")
+  const { t: tsh } = useTranslation(SHARING_UI_NS)
   const { t } = useDevelopmentText()
   const sk = useDevSkin()
   const [confirming, setConfirming] = useState(false)
-  const shares = categoryLabels(row.categories)
+  const shares = categoryLabels(row.categories, tsh)
   const asked = shortDate(row.createdAt)
 
   return (
