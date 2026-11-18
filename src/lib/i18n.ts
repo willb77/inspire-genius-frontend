@@ -10,11 +10,7 @@ i18n
   .init({
     fallbackLng: 'en',
     defaultNS: 'common',
-<<<<<<< HEAD
-    ns: ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat', 'userPages', 'prismUi', 'careerDiscoveryPages', 'lumenPages', 'directionPages', 'interviewPages', 'jobFitPages', 'summitPages', 'grantPages', 'kcPages', 'jobBlueprintPages', 'resumeUi', 'authPages', 'joinPages', 'onboardingPages', 'welcomePages', 'distributorPages', 'careerToolsPages', 'companyAdminPages', 'practitionerPages', 'managerPages', 'studioUi', 'shellUi', 'accountUi', 'sharingUi', 'supportUi'],
-=======
-    ns: ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat', 'userPages', 'prismUi', 'careerDiscoveryPages', 'lumenPages', 'directionPages', 'interviewPages', 'jobFitPages', 'summitPages', 'grantPages', 'kcPages', 'jobBlueprintPages', 'resumeUi', 'authPages', 'joinPages', 'onboardingPages', 'welcomePages', 'distributorPages', 'careerToolsPages', 'companyAdminPages', 'practitionerPages', 'managerPages', 'studioUi', 'shellUi', 'accountUi', 'orgUi'],
->>>>>>> origin/development
+    ns: ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat', 'userPages', 'prismUi', 'careerDiscoveryPages', 'lumenPages', 'directionPages', 'interviewPages', 'jobFitPages', 'summitPages', 'grantPages', 'kcPages', 'jobBlueprintPages', 'resumeUi', 'authPages', 'joinPages', 'onboardingPages', 'welcomePages', 'distributorPages', 'careerToolsPages', 'companyAdminPages', 'practitionerPages', 'managerPages', 'studioUi', 'shellUi', 'accountUi', 'orgUi', 'sharingUi', 'supportUi'],
     supportedLngs: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'zh-CN', 'ar', 'hi', 'it', 'nl', 'ru', 'pl', 'tr', 'th', 'vi', 'id', 'sv', 'nb', 'sq', 'cs'],
     load: 'currentOnly',
 
