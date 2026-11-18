@@ -5,7 +5,9 @@ import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { COACH_FORM_DEFAULTS, COACH_FORM_RULES, type CoachFormValues } from "./coachForm.constants";
+import { FORMS_UI_NS } from "./formsUiCopy";
+import { getCoachFormRules } from "./formRules";
+import { COACH_FORM_DEFAULTS, type CoachFormValues } from "./coachForm.constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { MultiSelectOption } from "@/components/ui/multi-select";
 
@@ -31,6 +33,8 @@ export default function CoachFormModal({
   toneOptions = [],
 }: CoachFormModalProps) {
   const { t: tr } = useTranslation("shellUi");
+  const { t: tf } = useTranslation(FORMS_UI_NS);
+  const formRules = getCoachFormRules(tf);
   const dv: CoachFormValues = { ...COACH_FORM_DEFAULTS, ...(defaultValues ?? {}) } as CoachFormValues;
 
   return (
@@ -49,7 +53,7 @@ export default function CoachFormModal({
           <FormField
             control={form.control}
             name="name"
-            rules={COACH_FORM_RULES.name}
+            rules={formRules.name}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="block text-xs">{tr("coachForm.mentorName", { defaultValue: "Mentor Name *" })}</FormLabel>
@@ -64,7 +68,7 @@ export default function CoachFormModal({
           <FormField
             control={form.control}
             name="category"
-            rules={COACH_FORM_RULES.category}
+            rules={formRules.category}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="block text-xs">{tr("coachForm.category", { defaultValue: "Category *" })}</FormLabel>
@@ -80,7 +84,7 @@ export default function CoachFormModal({
             <FormField
               control={form.control}
               name="status"
-              rules={COACH_FORM_RULES.status}
+              rules={formRules.status}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="block text-xs">{tr("coachForm.status", { defaultValue: "Status" })}</FormLabel>
@@ -104,7 +108,7 @@ export default function CoachFormModal({
           <FormField
             control={form.control}
             name="persona"
-            rules={COACH_FORM_RULES.persona}
+            rules={formRules.persona}
             render={({ field }) => (
               <FormItem className="md:col-span-2">
                 <FormLabel className="block text-xs">{tr("coachForm.persona", { defaultValue: "Persona" })}</FormLabel>
@@ -124,7 +128,7 @@ export default function CoachFormModal({
             <FormField
               control={form.control}
               name="voice_style"
-              rules={COACH_FORM_RULES.voice_style}
+              rules={formRules.voice_style}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="block text-xs">{tr("coachForm.voiceStyle", { defaultValue: "Voice Style" })}</FormLabel>
@@ -154,7 +158,7 @@ export default function CoachFormModal({
           <FormField
             control={form.control}
             name="voice_description"
-            rules={COACH_FORM_RULES.voice_description}
+            rules={formRules.voice_description}
             render={({ field }) => (
               <FormItem className="md:col-span-2">
                 <FormLabel className="block text-xs">{tr("coachForm.systemPrompt", { defaultValue: "System Prompt" })}</FormLabel>

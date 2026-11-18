@@ -16,13 +16,18 @@ import {
 import DatePickerButton from "@/components/shared/DatePickerButton";
 import type { UseFormReturn } from "react-hook-form";
 import type { OrganizationFormData } from "@/types/super-admin/organization";
-import { LICENSE_TYPES, ORGANIZATION_FORM_RULES } from "@/components/shared/forms/organizationForm.constants";
+import { LICENSE_TYPES } from "@/components/shared/forms/organizationForm.constants";
+import { getOrganizationFormRules } from "@/components/shared/forms/formRules";
+import { FORMS_UI_NS } from "@/components/shared/forms/formsUiCopy";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   form: UseFormReturn<OrganizationFormData>;
 };
 
 export default function LicenseInfoStep({ form }: Props) {
+  const { t: tf } = useTranslation(FORMS_UI_NS);
+  const formRules = getOrganizationFormRules(tf);
   const [licenseStartDate, setLicenseStartDate] = useState<Date | undefined>(
     undefined
   );
@@ -37,7 +42,7 @@ export default function LicenseInfoStep({ form }: Props) {
         <FormField
           control={form.control}
           name="license_type"
-          rules={ORGANIZATION_FORM_RULES.license_type}
+          rules={formRules.license_type}
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel className="mb-2 block text-xs">
@@ -69,7 +74,7 @@ export default function LicenseInfoStep({ form }: Props) {
         <FormField
           control={form.control}
           name="license_start_date"
-          rules={ORGANIZATION_FORM_RULES.license_start_date}
+          rules={formRules.license_start_date}
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel className="mb-2 block text-xs">
@@ -106,7 +111,7 @@ export default function LicenseInfoStep({ form }: Props) {
         <FormField
           control={form.control}
           name="license_end_date"
-          rules={ORGANIZATION_FORM_RULES.license_end_date}
+          rules={formRules.license_end_date}
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel className="mb-2 block text-xs">

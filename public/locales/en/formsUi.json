@@ -1,0 +1,53 @@
+{
+  "org": {
+    "nameRequired": "Organization name is required",
+    "typeRequired": "Organization type is required",
+    "emailRequired": "Organization email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "contactRequired": "Contact number is required",
+    "contactInvalid": "Please enter a valid contact number",
+    "urlInvalid": "Please enter a valid URL",
+    "addressRequired": "Address is required",
+    "licenseTypeRequired": "License type is required",
+    "licenseKeyRequired": "License key is required",
+    "startDateRequired": "Start date is required",
+    "endDateRequired": "End date is required"
+  },
+  "issue": {
+    "commentRequired": "Comment is required",
+    "commentMin": "Comment must be at least 5 characters long",
+    "commentMax": "Comment cannot exceed 300 characters",
+    "commentChars": "Comment contains invalid characters",
+    "statusInvalid": "Invalid status selected"
+  },
+  "issueStatus": {
+    "open": "Open",
+    "inProgress": "In progress",
+    "resolved": "Resolved",
+    "closed": "Closed"
+  },
+  "team": {
+    "nameRequired": "Name is required",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Enter a valid email",
+    "roleRequired": "Role is required"
+  },
+  "teamRole": {
+    "admin": "Admin",
+    "manager": "Manager",
+    "employee": "Employee",
+    "humanResource": "Human Resource",
+    "lead": "Lead"
+  },
+  "user": {
+    "firstNameRequired": "First name is required",
+    "lastNameRequired": "Last name is required",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Enter a valid email",
+    "roleRequired": "Role is required"
+  },
+  "coach": {
+    "nameRequired": "Coach name is required",
+    "categoryRequired": "Category is required"
+  }
+}

@@ -1,3 +1,5 @@
+import { getCoachFormRules } from "./formRules";
+
 export type CoachFormValues = {
   name: string;
   category: string;
@@ -16,11 +18,5 @@ export const COACH_FORM_DEFAULTS: CoachFormValues = {
   status: "active",
 };
 
-export const COACH_FORM_RULES = {
-  name: { required: "Coach name is required" },
-  category: { required: "Category is required" },
-  voice_style: {},
-  voice_description: {},
-  persona: {},
-  status: {},
-} as const;
+/** English-identity. Components use getCoachFormRules(t). */
+export const COACH_FORM_RULES = getCoachFormRules();

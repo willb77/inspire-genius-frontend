@@ -1,3 +1,5 @@
+import { getUserFormRules } from "./formRules";
+
 export type UserFormValues = {
   first_name: string;
   last_name: string;
@@ -24,31 +26,7 @@ export const User_FORM_DEFAULTS: UserFormValues = {
   organization_id: "",
 };
 
-export const User_FORM_RULES = {
-  first_name: { required: "First name is required" },
-  last_name: { required: "Last name is required" },
-  email: {
-    required: "Email is required",
-    validate: (value: string) => {
-      if (!value) return true;
-      if (/\s/.test(value)) return "Enter a valid email";
-
-      const atIndex = value.indexOf("@");
-      if (atIndex <= 0) return "Enter a valid email";
-      if (value.indexOf("@", atIndex + 1) !== -1) return "Enter a valid email";
-
-      const domain = value.slice(atIndex + 1);
-      const lastDot = domain.lastIndexOf(".");
-      if (lastDot <= 0) return "Enter a valid email";
-      if (lastDot >= domain.length - 1) return "Enter a valid email";
-
-      return true;
-    },
-  },
-  role: { required: "Role is required" },
-  status: {},
-  skip_onboarding: {},
-  organization_id: {},
-} as const;
+/** English-identity. Components use getUserFormRules(t). */
+export const User_FORM_RULES = getUserFormRules();
 /** Radix Select cannot use "" as an item value; this stands for "no organisation". */
 export const NO_ORG_VALUE = "__no_org__";

@@ -20,7 +20,9 @@ import {
 import { Button } from "@/components/ui/button";
 import type { UseFormReturn } from "react-hook-form";
 import type { OrganizationFormData } from "@/types/super-admin/organization/form-types";
-import { ORGANIZATION_FORM_RULES } from "@/components/shared/forms/organizationForm.constants";
+import { getOrganizationFormRules } from "@/components/shared/forms/formRules";
+import { FORMS_UI_NS } from "@/components/shared/forms/formsUiCopy";
+import { useTranslation } from "react-i18next";
 import { Textarea } from "@/components/ui/textarea";
 
 type Props = {
@@ -28,6 +30,8 @@ type Props = {
 };
 
 export default function OrganizationInfoStep({ form }: Props) {
+  const { t: tf } = useTranslation(FORMS_UI_NS);
+  const formRules = getOrganizationFormRules(tf);
   const { watch, setValue } = form;
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -76,7 +80,7 @@ export default function OrganizationInfoStep({ form }: Props) {
         <FormField
           control={form.control}
           name="organization_name"
-          rules={ORGANIZATION_FORM_RULES.organization_name}
+          rules={formRules.organization_name}
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs font-medium">
@@ -96,7 +100,7 @@ export default function OrganizationInfoStep({ form }: Props) {
         <FormField
           control={form.control}
           name="contact"
-          rules={ORGANIZATION_FORM_RULES.contact}
+          rules={formRules.contact}
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs font-medium">Contact *</FormLabel>
@@ -116,7 +120,7 @@ export default function OrganizationInfoStep({ form }: Props) {
         <FormField
           control={form.control}
           name="type"
-          rules={ORGANIZATION_FORM_RULES.type as any}
+          rules={formRules.type as any}
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs font-medium">
@@ -160,7 +164,7 @@ export default function OrganizationInfoStep({ form }: Props) {
           <FormField
             control={form.control}
             name="address"
-            rules={ORGANIZATION_FORM_RULES.address}
+            rules={formRules.address}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs font-medium">Address *</FormLabel>
