@@ -262,7 +262,9 @@
       "resumed": "Ripresa di \"{{title}}\".",
       "couldnTOpenThatSession": "Impossibile aprire quella sessione: riprova.",
       "chronicleInterview": "Intervista Chronicle",
-      "chronicleIsThinking": "Chronicle sta pensando…"
+      "chronicleIsThinking": "Chronicle sta pensando…",
+      "finishForNow": "Concludi per ora",
+      "savedYouCanContinueAnyTime": "Salvato. Puoi continuare in qualsiasi momento da Sessioni."
     },
     "bioMemoirExportMenu": {
       "nothingToExportYetCapture": "Ancora niente da esportare: prima raccogli un ricordo con Chronicle.",
@@ -323,7 +325,8 @@
       "continue": "Continua"
     },
     "bioCapturedTurnCard": {
-      "capturedToYourProfile": "Salvato nel tuo profilo"
+      "capturedToYourProfile": "Salvato nel tuo profilo",
+      "addedToYourStory": "Aggiunto alla tua storia"
     },
     "developmentMyPrismReadingSection": {
       "notScored": "non valutato",
@@ -358,6 +361,17 @@
       "documentUploaded": "Documento caricato",
       "documentUploadedSuccessfully": "Documento caricato con successo!",
       "back": "Indietro"
+    },
+    "bioFirstRun": {
+      "heading": "Racconta la tua storia una volta sola. Usala ovunque.",
+      "intro": "Una conversazione guidata con Chronicle, un ricordo alla volta.",
+      "timeTitle": "Pochi minuti alla volta",
+      "timeBody": "Sei capitoli, nell'ordine che preferisci. Fermati quando vuoi: si salva man mano.",
+      "privateTitle": "Privato, solo per te",
+      "privateBody": "Solo tu puoi leggere la tua storia.",
+      "coachesTitle": "I tuoi coach la usano",
+      "coachesBody": "Così non devi raccontare due volte la stessa storia.",
+      "start": "Inizia con {{chapter}}"
     }
   },
   "lumen": {

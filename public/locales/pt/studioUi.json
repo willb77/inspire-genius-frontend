@@ -80,7 +80,9 @@
       "whatStandsOut": "O que se destaca",
       "nothingToSaveYetStart": "Nada para salvar ainda. Inicie a entrevista primeiro.",
       "interviewSavedYouCanContinue": "Entrevista salva. Você pode continuar a qualquer momento.",
-      "couldnTSaveThisSession": "Não foi possível salvar esta sessão. Ela continua aqui por enquanto."
+      "couldnTSaveThisSession": "Não foi possível salvar esta sessão. Ela continua aqui por enquanto.",
+      "finishForNow": "Concluir por enquanto",
+      "savedYouCanContinueAnyTime": "Salvo. Você pode continuar a qualquer momento em Sessões."
     },
     "bioMemoirExportMenu": {
       "nothingToExportYetCapture": "Nada para exportar ainda. Primeiro, capture uma memória com o Chronicle.",
@@ -128,7 +130,19 @@
       "continue": "Continuar"
     },
     "bioCapturedTurnCard": {
-      "capturedToYourProfile": "Registrado no seu perfil"
+      "capturedToYourProfile": "Registrado no seu perfil",
+      "addedToYourStory": "Adicionado à sua história"
+    },
+    "bioFirstRun": {
+      "heading": "Conte sua história uma vez. Use-a em todo lugar.",
+      "intro": "Uma conversa guiada com o Chronicle, uma memória de cada vez.",
+      "timeTitle": "Alguns minutos de cada vez",
+      "timeBody": "Seis capítulos, na ordem que você preferir. Pare quando quiser: tudo é salvo ao longo do caminho.",
+      "privateTitle": "Privado, só para você",
+      "privateBody": "Só você pode ler a sua história.",
+      "coachesTitle": "Seus coaches a usam",
+      "coachesBody": "Assim você não precisa contar a mesma história duas vezes.",
+      "start": "Começar por {{chapter}}"
     }
   },
   "survey": {

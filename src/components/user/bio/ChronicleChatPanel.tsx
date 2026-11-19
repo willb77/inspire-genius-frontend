@@ -31,7 +31,7 @@
  * profile" card and drives the content-specific "Go deeper" chips and the live
  * insight rail. On **End & recap** the whole session is summarised in place.
  *
- * Sessions: **Save** upserts the transcript to `/v1/agents/bio/{id}/sessions`
+ * Sessions: every settled turn autosaves (and **Finish for now** saves and recaps), upserting the transcript to `/v1/agents/bio/{id}/sessions`
  * and the **Sessions** dropdown reloads a past one to continue it. A missing
  * session backend degrades to an unsaved-but-working interview.
  */
@@ -43,7 +43,6 @@ import {
   History,
   Mic,
   MicOff,
-  Save,
   Send,
   Square,
   User,
@@ -152,6 +151,12 @@ export function ChronicleChatPanel({
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   // Set when the member ends the interview — drives the in-tile recap.
   const [recap, setRecap] = useState<SessionRecap | null>(null)
+  // Autosave bookkeeping. The ref is the id the NEXT save upserts into, kept
+  // in step with `currentSessionId` so two saves in quick succession cannot both
+  // create a row. `lastSavedCount` is the transcript length last persisted.
+  const sessionIdRef = useRef<string | null>(null)
+  const lastSavedCount = useRef(0)
+  const autosaveInFlight = useRef(false)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const onTurnSettledRef = useRef(onTurnSettled)
   onTurnSettledRef.current = onTurnSettled
@@ -298,24 +303,33 @@ export function ChronicleChatPanel({
     return ""
   }, [insight])
 
-  const handleSave = useCallback(async () => {
-    if (turns.length === 0) {
-      toast.info(tr("user.bioChronicleChatPanel.nothingToSaveYetStart", { defaultValue: "Nothing to save yet — start the interview first." }))
-      return
-    }
-    try {
-      const saved = await saveSession({
-        memberId,
-        sessionId: currentSessionId,
-        transcript: transcriptForSave(),
-        summary: buildSummary(),
+  // Every settled Chronicle turn saves the interview, so nothing depends on the
+  // member remembering a button. Best-effort and silent: a missing session
+  // backend leaves an unsaved-but-working interview, as before. A save already
+  // in flight skips; the next turn (or Finish for now) saves the whole
+  // transcript again, so nothing is lost by skipping.
+  useEffect(() => {
+    const last = turns[turns.length - 1]
+    if (!last || last.role !== "assistant") return
+    if (autosaveInFlight.current || turns.length === lastSavedCount.current) return
+    autosaveInFlight.current = true
+    const count = turns.length
+    void saveSession({
+      memberId,
+      sessionId: sessionIdRef.current,
+      transcript: transcriptForSave(),
+      summary: buildSummary(),
+    })
+      .then((saved) => {
+        sessionIdRef.current = saved.sessionId
+        lastSavedCount.current = count
+        setCurrentSessionId(saved.sessionId)
       })
-      setCurrentSessionId(saved.sessionId)
-      toast.success(tr("user.bioChronicleChatPanel.interviewSavedYouCanContinue", { defaultValue: "Interview saved — you can continue it any time." }))
-    } catch {
-      toast.error(tr("user.bioChronicleChatPanel.couldnTSaveThisSession", { defaultValue: "Couldn't save this session — it's still here in the meantime." }))
-    }
-  }, [turns.length, saveSession, memberId, currentSessionId, transcriptForSave, buildSummary, tr])
+      .catch(() => {})
+      .finally(() => {
+        autosaveInFlight.current = false
+      })
+  }, [turns, saveSession, memberId, transcriptForSave, buildSummary])
 
   const handleEndAndRecap = useCallback(() => {
     dictation.stop()
@@ -332,12 +346,19 @@ export function ChronicleChatPanel({
     if (turns.length > 0) {
       void saveSession({
         memberId,
-        sessionId: currentSessionId,
+        sessionId: sessionIdRef.current,
         transcript: transcriptForSave(),
         summary: built.summary,
       })
-        .then((saved) => setCurrentSessionId(saved.sessionId))
-        .catch(() => {})
+        .then((saved) => {
+          sessionIdRef.current = saved.sessionId
+          lastSavedCount.current = turns.length
+          setCurrentSessionId(saved.sessionId)
+          toast.success(tr("user.bioChronicleChatPanel.savedYouCanContinueAnyTime", { defaultValue: "Saved. You can continue any time from Sessions." }))
+        })
+        .catch(() => {
+          toast.error(tr("user.bioChronicleChatPanel.couldnTSaveThisSession", { defaultValue: "Couldn't save this session — it's still here in the meantime." }))
+        })
     }
   }, [
     dictation,
@@ -347,8 +368,8 @@ export function ChronicleChatPanel({
     insight,
     saveSession,
     memberId,
-    currentSessionId,
     transcriptForSave,
+    tr,
   ])
 
   const resetInterview = useCallback(() => {
@@ -359,6 +380,8 @@ export function ChronicleChatPanel({
     setFollowups([])
     setRecap(null)
     setCurrentSessionId(null)
+    sessionIdRef.current = null
+    lastSavedCount.current = 0
     setInput("")
     spokenRef.current = null
   }, [dictation, stopSpeaking])
@@ -381,6 +404,9 @@ export function ChronicleChatPanel({
         setRecap(null)
         setInput("")
         setCurrentSessionId(detail.sessionId)
+        sessionIdRef.current = detail.sessionId
+        // The loaded transcript is already saved; do not autosave it straight back.
+        lastSavedCount.current = detail.transcript.length
         spokenRef.current = null
         toast.success(tr("user.bioChronicleChatPanel.resumed", { defaultValue: "Resumed \"{{title}}\".", title: detail.title }))
       } catch {
@@ -474,28 +500,16 @@ export function ChronicleChatPanel({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Save */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5"
-            onClick={() => void handleSave()}
-            disabled={saving || turns.length === 0}
-          >
-            <Save className="h-3.5 w-3.5" aria-hidden />
-            {saving ? tr("user.bioChronicleChatPanel.saving", { defaultValue: "Saving…" }) : tr("user.bioChronicleChatPanel.save", { defaultValue: "Save" })}
-          </Button>
-
-          {/* End & recap */}
+          {/* One exit: every turn autosaves, so this just wraps up with a recap. */}
           <Button
             variant="secondary"
             size="sm"
             className="h-8 gap-1.5"
             onClick={handleEndAndRecap}
-            disabled={turns.length === 0}
+            disabled={turns.length === 0 || saving}
           >
             <Square className="h-3.5 w-3.5" aria-hidden />
-            {tr("user.bioChronicleChatPanel.endRecap", { defaultValue: "End & recap" })}
+            {tr("user.bioChronicleChatPanel.finishForNow", { defaultValue: "Finish for now" })}
           </Button>
         </div>
       </div>
