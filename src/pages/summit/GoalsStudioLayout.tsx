@@ -5,7 +5,8 @@
  * a "Goal Setting" pill and a "Back to Home" button) on 2026-09-04 (request:
  * "renamed to Goals Studio … the look and feel as the rest of the IG
  * platform"). The pages render inside the same shell every other studio uses,
- * under a studio header and a pill row for the seven sections. The Summit
+ * under a studio header and a pill row for the six sections (Coaches was removed
+ * 2026-11-19; its route redirects to My Goals). The Summit
  * agent and its routes are unchanged — only the surface is renamed and
  * re-chromed.
  *
@@ -17,7 +18,7 @@
 import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { Compass, Layers, Flag, Mic, Share2, Users, Clock, Target, MessageCircle, Eye } from "lucide-react";
+import { Compass, Layers, Flag, Mic, Share2, Clock, Target, MessageCircle, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/context/useAuth";
@@ -56,7 +57,6 @@ function sections(explored: number, total: number, goals: number, t: TFunction):
       icon: Layers,
       badge: total ? `${explored}/${total}` : undefined,
     },
-    { to: ROUTES.MY_GOALS.COACHES, label: t("layout.nav.coaches", { defaultValue: "Coaches" }), icon: Users },
     // PRISM lens, Progress and Documents used to be three pages of sample
     // data. They are one honest page now (Goals offering, Phase 3).
     { to: ROUTES.MY_GOALS.COMING_SOON, label: t("layout.nav.comingSoon", { defaultValue: "Coming soon" }), icon: Clock },

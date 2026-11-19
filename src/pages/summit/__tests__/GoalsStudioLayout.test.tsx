@@ -58,12 +58,12 @@ beforeEach(() => {
 });
 
 describe("GoalsStudioLayout", () => {
-  it("is called Goals Studio and lists the seven sections as pills, with the page beneath", () => {
+  it("is called Goals Studio and lists the six sections as pills, with the page beneath", () => {
     renderAt();
     expect(screen.getByRole("heading", { name: "Goals Studio" })).toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Goals Studio sections" });
     expect(within(nav).getAllByRole("link").map((a) => a.textContent?.trim())).toEqual([
-      "My Goals", "Interview", "Sharing", "Overview", "Discovery", "Coaches", "Coming soon",
+      "My Goals", "Interview", "Sharing", "Overview", "Discovery", "Coming soon",
     ]);
     expect(screen.getByTestId("page")).toHaveTextContent("index");
     // The standalone Summit chrome is gone: no wordmark, no "Back to Home".

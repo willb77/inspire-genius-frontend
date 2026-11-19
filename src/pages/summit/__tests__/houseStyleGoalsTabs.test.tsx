@@ -133,14 +133,14 @@ describe("houseGoalsRedirectFor", () => {
 });
 
 describe("Goals Studio layout — switch OFF (today)", () => {
-  it("shows the seven pills", async () => {
+  it("shows the six pills", async () => {
     renderLayoutAt("/my/goals");
     expect(pillLabels()).toEqual([
-      "My Goals", "Interview", "Sharing", "Overview", "Discovery", "Coaches", "Coming soon",
+      "My Goals", "Interview", "Sharing", "Overview", "Discovery", "Coming soon",
     ]);
   });
 
-  it.each(["overview", "discovery", "coaches", "coming-soon"])("leaves /my/goals/%s where it is", (p) => {
+  it.each(["overview", "discovery", "coming-soon"])("leaves /my/goals/%s where it is", (p) => {
     setSwitch(false);
     renderLayoutAt(`/my/goals/${p}`);
     expect(screen.getByTestId("page")).toHaveTextContent(p);
