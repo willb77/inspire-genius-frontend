@@ -383,7 +383,7 @@ function DraftCard({ goal }: { goal: SummitGoal }) {
 }
 
 /** Title + category → a session goal, then published in the same action. */
-function QuickAdd() {
+function QuickAdd({ onPublished }: { onPublished: () => void }) {
   const { t } = useTranslation("summitPages");
   const create = useCreateGoal();
   const publish = usePublishGoal();
@@ -404,6 +404,9 @@ function QuickAdd() {
       await publish.mutateAsync(created.goal_id);
       setTitle("");
       setDone(true);
+      // The goal now lives in "Your Goal list", which is collapsed by default:
+      // open it so the confirmation below is true when the person reads it.
+      onPublished();
     } catch (err) {
       setError(errorText(err, t));
     }
@@ -447,7 +450,7 @@ function QuickAdd() {
         </p>
       )}
       {done && !error && (
-        <p className="mt-2 text-[12.5px] text-[#5B8A72]">{t("goals.published", { defaultValue: "Published. It is in your goals above." })}</p>
+        <p className="mt-2 text-[12.5px] text-[#5B8A72]">{t("goals.published", { defaultValue: "Published. It is now in “Your Goal list” above." })}</p>
       )}
     </Card>
   );
@@ -458,14 +461,17 @@ function GoalPill({
   label,
   count,
   headingId,
+  open,
+  onOpenChange,
   children,
 }: {
   label: string;
   count: number;
   headingId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   const panelId = useId();
   return (
     <div className="flex flex-col gap-3">
@@ -474,7 +480,7 @@ function GoalPill({
           type="button"
           aria-expanded={open}
           aria-controls={panelId}
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => onOpenChange(!open)}
           className="inline-flex items-center gap-2 rounded-full border border-[#127A8A]/40 bg-white px-4 py-2 text-[13px] font-bold text-[#0B1B33] hover:bg-[#FBF7F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#127A8A] focus-visible:ring-offset-2"
         >
           {label}
@@ -493,6 +499,8 @@ export default function SummitGoals() {
   const { t } = useTranslation("summitPages");
   const [params] = useSearchParams();
   const fromJourney = params.get("journey") === "direction-setting";
+  const [listOpen, setListOpen] = useState(false);
+  const [draftsOpen, setDraftsOpen] = useState(false);
   const session = useGoalSession();
   const mine = useMyGoals();
   const myReviews = useMyGoalReviews();
@@ -577,6 +585,8 @@ export default function SummitGoals() {
           label={t("goals.pillGoalList", { defaultValue: "Your Goal list" })}
           count={shared.length}
           headingId="shared-goals-heading"
+          open={listOpen}
+          onOpenChange={setListOpen}
         >
           {shared.map((g) => (
             <SharedGoalCard
@@ -594,6 +604,8 @@ export default function SummitGoals() {
           label={t("goals.draftsHeading", { defaultValue: "Drafts from your interview" })}
           count={drafts.length}
           headingId="draft-goals-heading"
+          open={draftsOpen}
+          onOpenChange={setDraftsOpen}
         >
           {drafts.map((g) => (
             <DraftCard key={g.goal_id} goal={g} />
@@ -601,7 +613,7 @@ export default function SummitGoals() {
         </GoalPill>
       )}
 
-      {!loading && <QuickAdd />}
+      {!loading && <QuickAdd onPublished={() => setListOpen(true)} />}
     </div>
   );
 }

@@ -380,7 +380,7 @@
     "newGoalTitle": "Título da nova meta",
     "goalCategory": "Categoria da meta",
     "savePublish": "Salvar e publicar",
-    "published": "Publicada. Ela está nas suas metas acima.",
+    "published": "Publicada. Ela agora está em “Sua lista de metas”, acima.",
     "backJourney": "Voltar à sua jornada (passo 5)",
     "eyebrow": "Suas: privadas até você compartilhar",
     "title": "Suas metas",
@@ -395,6 +395,6 @@
     "draftsHeading": "Rascunhos da sua entrevista",
     "pillGoalList": "Sua lista de metas",
     "created": "Criada em: {{when}}",
-    "createdNotRecorded": "Criada em: não registrado"
+    "createdNotRecorded": "Criada em: sem registro"
   }
 }

@@ -232,6 +232,26 @@ describe("My Goals — two stores, kept apart", () => {
     expect(screen.getAllByText("Created: not recorded")).toHaveLength(1);
   });
 
+  it("opens “Your Goal list” when a quick-added goal is published, so the confirmation is true", async () => {
+    const svc = jest.requireMock("@/services/summit/goals.service") as {
+      createGoal: jest.Mock;
+      publishGoal: jest.Mock;
+    };
+    svc.createGoal.mockResolvedValue({ goal_id: "gNew", title: "Run a 10k", status: "proposed" });
+    svc.publishGoal.mockResolvedValue({});
+    mockGetMyGoals.mockResolvedValue(PUBLISHED);
+    renderWithRouter(<SummitGoals />);
+    const list = await screen.findByRole("button", { name: /your goal list/i });
+    expect(list).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.change(screen.getByLabelText(/new goal title/i), { target: { value: "Run a 10k" } });
+    fireEvent.click(screen.getByRole("button", { name: /save & publish/i }));
+
+    expect(await screen.findByText(/now in “Your Goal list” above/i)).toBeInTheDocument();
+    expect(list).toHaveAttribute("aria-expanded", "true");
+    expect(svc.publishGoal).toHaveBeenCalledWith("gNew");
+  });
+
   it("says there are no goals rather than showing someone else's", async () => {
     mockGetGoalSession.mockResolvedValue(EMPTY);
     renderWithRouter(<SummitGoals />);
