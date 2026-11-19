@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { AlertTriangle, Download, Loader2, Play } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import {
@@ -35,6 +36,11 @@ function saveBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
+/** Lower-case and strip accents so "Societe" finds "Société". */
+function fold(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+}
+
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-lg border border-[#e5e7eb] bg-white p-3">
@@ -50,7 +56,27 @@ export default function OrgActivityReport() {
   const run = useRunOrgActivityReport()
   const docx = useDownloadOrgActivityDocx()
   const [orgId, setOrgId] = useState("")
+  const [orgSearch, setOrgSearch] = useState("")
   const [includeInternal, setIncludeInternal] = useState(false)
+
+  // Every word typed must appear in the name. The selected organization always
+  // stays in the list, so typing a new search never silently drops the choice
+  // the Run button is about to use.
+  const allOrgs = orgs.data
+  const matched = useMemo(() => {
+    if (!allOrgs) return []
+    const words = fold(orgSearch).split(/\s+/).filter(Boolean)
+    if (words.length === 0) return allOrgs
+    return allOrgs.filter((o) => {
+      const name = fold(o.name)
+      return words.every((w) => name.includes(w))
+    })
+  }, [allOrgs, orgSearch])
+  const visibleOrgs = useMemo(() => {
+    const kept = allOrgs?.find((o) => o.id === orgId)
+    return kept && !matched.some((o) => o.id === orgId) ? [kept, ...matched] : matched
+  }, [allOrgs, matched, orgId])
+  const searching = orgSearch.trim() !== ""
   // The options the shown report was run with, so the Word button can never
   // download something different from what is on screen.
   const [ran, setRan] = useState<{ orgId: string; includeInternal: boolean } | null>(null)
@@ -130,6 +156,27 @@ export default function OrgActivityReport() {
           {orgs.data && (
             <div className="flex flex-wrap items-end gap-4">
               <div className="min-w-[280px] space-y-1.5">
+                <Label htmlFor="org-activity-search">{t("orgSearchLabel", { defaultValue: "Search organizations" })}</Label>
+                <Input
+                  id="org-activity-search"
+                  type="search"
+                  value={orgSearch}
+                  onChange={(e) => setOrgSearch(e.target.value)}
+                  placeholder={t("orgSearchPlaceholder", { defaultValue: "Type part of a name…" })}
+                  autoComplete="off"
+                  className="h-9"
+                />
+                <p className="text-[12px] text-[#6b7280]" aria-live="polite">
+                  {searching
+                    ? matched.length === 0
+                      ? t("orgNoMatch", { defaultValue: "No organization matches “{{q}}”.", q: orgSearch.trim() })
+                      : t("orgMatchCount", {
+                          defaultValue: "{{shown}} of {{total}} organizations match.",
+                          shown: matched.length,
+                          total: allOrgs?.length ?? 0,
+                        })
+                    : t("orgTotal", { defaultValue: "{{total}} organizations.", total: allOrgs?.length ?? 0 })}
+                </p>
                 <Label htmlFor="org-activity-org">{t("orgLabel", { defaultValue: "Organization" })}</Label>
                 <select
                   id="org-activity-org"
@@ -138,7 +185,7 @@ export default function OrgActivityReport() {
                   className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
                 >
                   <option value="">{t("orgPlaceholder", { defaultValue: "Choose an organization…" })}</option>
-                  {orgs.data.map((o) => (
+                  {visibleOrgs.map((o) => (
                     <option key={o.id} value={o.id}>
                       {t("orgOption", {
                         defaultValue: "{{name}} ({{count}} members)",
