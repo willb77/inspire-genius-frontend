@@ -211,6 +211,64 @@ describe("OrgActivityReport", () => {
     expect(screen.getByText(/capped at the most recent 200000 events/)).toBeInTheDocument()
   })
 
+  describe("organization search", () => {
+    beforeEach(() => {
+      svc.getOrgActivityOrgs.mockResolvedValue([
+        { id: "o1", name: "Grace Chapel", memberCount: 29 },
+        { id: "o2", name: "Société Générale Demo", memberCount: 5 },
+        { id: "o3", name: "Grace Community Church", memberCount: 3 },
+        { id: "o4", name: "Hope Church", memberCount: 0 },
+      ])
+    })
+
+    const optionNames = () => screen.getAllByRole("option").map((o) => o.textContent)
+
+    it("narrows the list as the user types and reports how many match", async () => {
+      setup()
+      const search = await screen.findByLabelText("Search organizations")
+      expect(screen.getByText("4 organizations.")).toBeInTheDocument()
+      fireEvent.change(search, { target: { value: "grace" } })
+      expect(optionNames()).toEqual([
+        "Choose an organization…",
+        "Grace Chapel (29 members)",
+        "Grace Community Church (3 members)",
+      ])
+      expect(screen.getByText("2 of 4 organizations match.")).toBeInTheDocument()
+    })
+
+    it("needs every word to match, in any order, ignoring case and accents", async () => {
+      setup()
+      const search = await screen.findByLabelText("Search organizations")
+      fireEvent.change(search, { target: { value: "church  GRACE" } })
+      expect(optionNames()).toEqual(["Choose an organization…", "Grace Community Church (3 members)"])
+      fireEvent.change(search, { target: { value: "societe" } })
+      expect(optionNames()).toEqual(["Choose an organization…", "Société Générale Demo (5 members)"])
+    })
+
+    it("says so when nothing matches, and restores the full list when cleared", async () => {
+      setup()
+      const search = await screen.findByLabelText("Search organizations")
+      fireEvent.change(search, { target: { value: "zzz" } })
+      expect(screen.getByText("No organization matches “zzz”.")).toBeInTheDocument()
+      expect(optionNames()).toEqual(["Choose an organization…"])
+      fireEvent.change(search, { target: { value: "" } })
+      expect(optionNames()).toHaveLength(5)
+    })
+
+    it("keeps the chosen organization selectable and runnable while the search excludes it", async () => {
+      setup()
+      await chooseOrg("o4")
+      fireEvent.change(screen.getByLabelText("Search organizations"), { target: { value: "grace" } })
+      const select = screen.getByLabelText("Organization") as HTMLSelectElement
+      expect(select.value).toBe("o4")
+      expect(optionNames()).toContain("Hope Church (0 members)")
+      expect(screen.getByText("2 of 4 organizations match.")).toBeInTheDocument()
+      fireEvent.click(screen.getByRole("button", { name: /Run/ }))
+      await screen.findByTestId("org-activity-preview")
+      expect(svc.getOrgActivityReport).toHaveBeenCalledWith("o4", false)
+    })
+  })
+
   it("every t() key in the component exists in the English bundle", () => {
     const src = readFileSync(join(__dirname, "..", "OrgActivityReport.tsx"), "utf8")
     const bundle = JSON.parse(readFileSync(join(__dirname, "../../../../../public/locales/en/orgActivityUi.json"), "utf8"))
