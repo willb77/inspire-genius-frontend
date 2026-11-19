@@ -205,6 +205,9 @@ describe("JF-8 menus — job_fit_v2 on", () => {
         if (v === "job-fit" && section.items.some((l) => l.startsWith("My fit"))) {
           return {
             ...section,
+            // Phase A (Careers/Education merge CSA): the section the menu entry opens
+            // carries the entry's name, not the manifest's "Career Fit".
+            label: CAREERS_AND_JOBS_LABEL,
             items: [
               `${CAREERS_AND_JOBS_LABEL} -> ${CAREERS_AND_JOBS_PATH}`,
               ...section.items.filter((l) => !l.startsWith("My fit") && !l.startsWith("Growth areas")),

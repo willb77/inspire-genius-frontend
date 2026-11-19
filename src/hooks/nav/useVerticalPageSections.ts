@@ -9,7 +9,7 @@ import {
   isPlatformOwner,
 } from "@/constants/navigation"
 import { withCompanyAdminHouseMenu } from "@/constants/house/companyAdminNav"
-import { jobFitToolsFor, verticalSubNavItems } from "@/constants/vertical-subnav"
+import { CAREERS_AND_JOBS_LABEL, jobFitToolsFor, verticalSubNavItems } from "@/constants/vertical-subnav"
 import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs"
 import { useAgentEngine } from "@/lib/agentApi"
 import { useAuth } from "@/context/useAuth"
@@ -96,7 +96,14 @@ export function useVerticalPageSections(
     // The point of the whole hook: the vertical you clicked into opens.
     if (subNav?.items.length) {
       sections.push({
-        label: subNav.label ?? definition?.title ?? "This vertical",
+        // Phase A (Careers/Education merge CSA): with `job_fit_v2` on, the menu entry
+        // is already "Careers and Jobs" (useVerticalLauncher); the section it opens
+        // must carry the same name, not the manifest's "Career Fit". Off (loading,
+        // error, false) this is `definition.title`, exactly as before.
+        label:
+          subNav.label ??
+          (vertical === "job-fit" && jobFitV2 ? CAREERS_AND_JOBS_LABEL : definition?.title) ??
+          "This vertical",
         items: subNav.items,
         collapsible: true,
       })
