@@ -380,7 +380,7 @@
     "newGoalTitle": "Título del nuevo objetivo",
     "goalCategory": "Categoría del objetivo",
     "savePublish": "Guardar y publicar",
-    "published": "Publicado. Está en tus objetivos, arriba.",
+    "published": "Publicado. Ahora está en «Tu lista de objetivos», arriba.",
     "backJourney": "Volver a tu recorrido (paso 5)",
     "eyebrow": "Tuyos: privados hasta que los compartas",
     "title": "Tus objetivos",
@@ -393,8 +393,8 @@
     "noGoalsBody": "Aquí los objetivos se redactan a partir de la conversación de descubrimiento, en lugar de escribirse en un formulario. Empieza la entrevista y aparecerán, cada uno con su motivo; o añade abajo uno que ya conozcas.",
     "sharedHeading": "Tus objetivos",
     "draftsHeading": "Borradores de tu entrevista",
-    "pillGoalList": "Tu lista de metas",
-    "created": "Creada: {{when}}",
-    "createdNotRecorded": "Creada: sin registro"
+    "pillGoalList": "Tu lista de objetivos",
+    "created": "Creado: {{when}}",
+    "createdNotRecorded": "Creado: sin registro"
   }
 }
