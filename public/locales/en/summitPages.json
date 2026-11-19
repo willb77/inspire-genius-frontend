@@ -218,7 +218,8 @@
     },
     "title": "Goals Studio",
     "sub": "Your goals, the conversation that surfaces them, and who gets to see them.",
-    "navLabel": "Goals Studio sections"
+    "navLabel": "Goals Studio sections",
+    "journey": "My journey"
   },
   "goals": {
     "stretchCallout": "A goal marked <strong>Requires stretch</strong> isn't a weakness call — it's a deliberate, time-boxed move against type.",

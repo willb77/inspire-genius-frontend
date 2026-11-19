@@ -299,7 +299,8 @@
     },
     "title": "Goals Studio",
     "sub": "Twoje cele, rozmowa, która je wyłania, i osoby, które mogą je zobaczyć.",
-    "navLabel": "Sekcje Goals Studio"
+    "navLabel": "Sekcje Goals Studio",
+    "journey": "Moja droga"
   },
   "goals": {
     "stretchCallout": "Cel oznaczony jako <strong>Wymaga wyjścia poza strefę komfortu</strong> nie jest oceną słabości — to świadomy, ograniczony w czasie ruch wbrew własnemu typowi.",

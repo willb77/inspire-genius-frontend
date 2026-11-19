@@ -36,6 +36,14 @@ jest.mock("@/hooks/summit/useGoalSession", () => ({
   useSummitCategories: () => mockCategories,
 }));
 
+// The header's "My journey" door reads the entitlement through React Query. These
+// tests are about the pills and the chrome, so they run as a person without the
+// journey (the link renders nothing); goalsJourneyLink.test.tsx covers the link.
+jest.mock("@/verticals/core", () => ({
+  ...jest.requireActual("@/verticals/core"),
+  useVerticalAccess: () => ({ hasAccess: false, isLoading: false, enabledVerticals: [] }),
+}));
+
 import GoalsStudioLayout from "@/pages/summit/GoalsStudioLayout";
 
 function renderAt(path = "/my/goals") {

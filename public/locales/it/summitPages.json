@@ -14,7 +14,8 @@
     },
     "title": "Goals Studio",
     "sub": "I tuoi obiettivi, la conversazione che li fa emergere e chi può vederli.",
-    "navLabel": "Sezioni di Goals Studio"
+    "navLabel": "Sezioni di Goals Studio",
+    "journey": "Il mio percorso"
   },
   "goals": {
     "stretchCallout": "Un obiettivo contrassegnato come <strong>Richiede uno sforzo extra</strong> non è un giudizio su una tua debolezza: è una scelta deliberata, a tempo, in direzione opposta al tuo tipo.",

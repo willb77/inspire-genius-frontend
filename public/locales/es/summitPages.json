@@ -344,7 +344,8 @@
     },
     "title": "Goals Studio",
     "sub": "Tus objetivos, la conversación que los hace surgir y quién puede verlos.",
-    "navLabel": "Secciones de Goals Studio"
+    "navLabel": "Secciones de Goals Studio",
+    "journey": "Mi trayectoria"
   },
   "goals": {
     "stretchCallout": "Un objetivo marcado como <strong>Requiere esfuerzo extra</strong> no es una señal de debilidad: es un movimiento deliberado, con un plazo definido, en contra de tu tipo.",

@@ -300,7 +300,8 @@
     },
     "title": "Goals Studio",
     "sub": "Vaše cíle, rozhovor, ze kterého vzejdou, a to, kdo je smí vidět.",
-    "navLabel": "Sekce Goals Studio"
+    "navLabel": "Sekce Goals Studio",
+    "journey": "Moje cesta"
   },
   "goals": {
     "stretchCallout": "Cíl označený jako <strong>Vyžaduje překročení komfortní zóny</strong> neznamená slabinu – je to záměrný, časově omezený krok proti vašemu typu.",
