@@ -327,8 +327,10 @@
     "fitBody": "Seu perfil PRISM comparado a esse blueprint, dimensão por dimensão: onde você se alinha, onde não e em que medida.",
     "fitTitle": "Veja a compatibilidade",
     "heading": "Para que serve o Job Fit",
+    "headingCareersJobs": "Para que serve o Careers and Jobs",
     "introEmphasis": "Uma pontuação de compatibilidade é uma comparação, não um veredito",
     "introLead": "O Job Fit compara como você é com o que um cargo realmente exige, para que você veja a diferença e aja sobre ela.",
+    "introLeadCareersJobs": "O Careers and Jobs compara como você é com o que um cargo realmente exige, para que você veja a diferença e aja sobre ela.",
     "introTail": "— uma pontuação baixa normalmente indica uma área de crescimento específica e identificável, e identificá-la é o objetivo."
   },
   "fitSummaryCard": {

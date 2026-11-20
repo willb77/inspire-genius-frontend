@@ -60,19 +60,32 @@ function stepText(id: (typeof STEPS)[number]["id"], t: TFunction): { title: stri
   }
 }
 
-export default function FitPurpose() {
+/**
+ * `careersAndJobs` (Phase A of the Careers/Education merge CSA, 2026-11-19): the
+ * page named "Careers and Jobs" — rendered only under `job_fit_v2` — says so,
+ * instead of "Job Fit". Absent, the panel is byte-for-byte what it was, so every
+ * existing Job-Fit page and golden is unchanged.
+ */
+export default function FitPurpose({ careersAndJobs = false }: { careersAndJobs?: boolean } = {}) {
   const { t } = useTranslation("jobFitPages")
   return (
     <section className="mb-6 rounded-xl border border-[#e5e7eb] bg-white p-5">
       <h2 className="mb-1 flex items-center gap-2 text-base font-semibold text-[#1f2937]">
         <Sparkles className="h-4 w-4 text-[#0D9488]" aria-hidden />
-        {t("fitPurpose.heading", "What Job Fit is for")}
+        {careersAndJobs
+          ? t("fitPurpose.headingCareersJobs", "What Careers and Jobs is for")
+          : t("fitPurpose.heading", "What Job Fit is for")}
       </h2>
       <p className="mb-4 max-w-3xl text-sm text-[#6b7280]">
-        {t(
-          "fitPurpose.introLead",
-          "Job Fit compares how you're wired against what a role actually demands, so you can see the difference and act on it.",
-        )}{" "}
+        {careersAndJobs
+          ? t(
+              "fitPurpose.introLeadCareersJobs",
+              "Careers and Jobs compares how you're wired against what a role actually demands, so you can see the difference and act on it.",
+            )
+          : t(
+              "fitPurpose.introLead",
+              "Job Fit compares how you're wired against what a role actually demands, so you can see the difference and act on it.",
+            )}{" "}
         <span className="font-medium text-[#1f2937]">
           {t("fitPurpose.introEmphasis", "A fit score is a comparison, not a verdict")}
         </span>{" "}

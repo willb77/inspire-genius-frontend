@@ -474,8 +474,10 @@
     "fitBody": "Il tuo profilo PRISM a confronto con quel blueprint, dimensione per dimensione: dove coincidi, dove no e di quanto.",
     "fitTitle": "Scopri la compatibilità",
     "heading": "A cosa serve Job Fit",
+    "headingCareersJobs": "A cosa serve Careers and Jobs",
     "introEmphasis": "Un punteggio di compatibilità è un confronto, non un verdetto",
     "introLead": "Job Fit confronta come sei fatto con ciò che un ruolo richiede davvero, così puoi vedere la differenza e agire.",
+    "introLeadCareersJobs": "Careers and Jobs confronta come sei fatto con ciò che un ruolo richiede davvero, così puoi vedere la differenza e agire.",
     "introTail": "— un punteggio basso di solito indica un'area di crescita specifica e definibile, e definirla è proprio lo scopo."
   },
   "fitSummaryCard": {

@@ -315,8 +315,10 @@
     "fitBody": "Your PRISM profile against that blueprint, dimension by dimension — where you line up, where you don't, and by how much.",
     "fitTitle": "See the fit",
     "heading": "What Job Fit is for",
+    "headingCareersJobs": "What Careers and Jobs is for",
     "introEmphasis": "A fit score is a comparison, not a verdict",
     "introLead": "Job Fit compares how you're wired against what a role actually demands, so you can see the difference and act on it.",
+    "introLeadCareersJobs": "Careers and Jobs compares how you're wired against what a role actually demands, so you can see the difference and act on it.",
     "introTail": "— a low one usually means a specific, nameable growth area, and naming it is the point."
   },
   "fitSummaryCard": {
