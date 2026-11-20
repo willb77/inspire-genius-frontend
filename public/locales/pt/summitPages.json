@@ -344,7 +344,8 @@
     },
     "title": "Goals Studio",
     "sub": "Suas metas, a conversa que as faz surgir e quem pode vê-las.",
-    "navLabel": "Seções do Goals Studio"
+    "navLabel": "Seções do Goals Studio",
+    "journey": "Minha jornada"
   },
   "goals": {
     "stretchCallout": "Uma meta marcada como <strong>Exige superação</strong> não é um julgamento de fraqueza: é um movimento deliberado, com prazo definido, contra o seu tipo.",

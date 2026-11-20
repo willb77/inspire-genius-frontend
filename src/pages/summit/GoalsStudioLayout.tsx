@@ -28,6 +28,7 @@ import type { UserRole } from "@/types/roles";
 import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 import { houseGoalsRedirectFor } from "@/pages/summit/house/goalsHouseRoutes";
+import JourneyLink from "@/pages/summit/components/JourneyLink";
 
 type Section = { to: string; label: string; icon: typeof Compass; badge?: string; end?: boolean };
 
@@ -135,6 +136,8 @@ export default function GoalsStudioLayout() {
               {t("layout.sub", { defaultValue: "Your goals, the conversation that surfaces them, and who gets to see them." })}
             </p>
           </div>
+          {/* Direction Setting merge (B1): shown only to people who hold the journey. */}
+          <JourneyLink />
         </header>
 
         <nav aria-label={t("layout.navLabel", { defaultValue: "Goals Studio sections" })} className="mb-6 flex flex-wrap gap-1.5">

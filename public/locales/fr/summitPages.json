@@ -395,6 +395,7 @@
     },
     "title": "Studio des objectifs",
     "sub": "Vos objectifs, la conversation qui les fait émerger et les personnes autorisées à les voir.",
-    "navLabel": "Sections du Studio des objectifs"
+    "navLabel": "Sections du Studio des objectifs",
+    "journey": "Mon parcours"
   }
 }
