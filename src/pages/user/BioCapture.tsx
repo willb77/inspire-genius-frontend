@@ -10,7 +10,8 @@
  *
  * Talking to Chronicle distils new episodes; when a turn settles the tile tells
  * this page, which refetches the narrative so the chapters strip stays in step.
- * "Export memoir" prefers the backend memoir endpoint and falls back to a
+ * The memoir card (Copy / Print / Word / PDF) lives in the interview tile's
+ * insight rail. "Export memoir" prefers the backend memoir endpoint and falls back to a
  * client-side assembly when it is absent — see `useGenerateMemoir`.
  */
 import { useCallback, useRef } from "react"
@@ -22,7 +23,7 @@ import { useAuth } from "@/context/useAuth"
 import { useBioNarrative } from "@/hooks/useBioNarrative"
 import BioChaptersStrip from "@/components/user/bio/BioChaptersStrip"
 import ChronicleChatPanel from "@/components/user/bio/ChronicleChatPanel"
-import MemoirExportMenu from "@/components/user/bio/MemoirExportMenu"
+import BioMemoirCard from "@/components/user/bio/BioMemoirCard"
 import { useTranslation } from "react-i18next"
 
 export default function BioCapture() {
@@ -64,9 +65,6 @@ export default function BioCapture() {
               </p>
             </div>
           </div>
-          {narrative && (
-            <MemoirExportMenu memberId={memberId} narrative={narrative} />
-          )}
         </div>
 
         {isLoading && (
@@ -103,6 +101,9 @@ export default function BioCapture() {
                 suggestedModule={narrative.nextSuggestedModule}
                 onTurnSettled={handleTurnSettled}
                 registerSeed={registerSeed}
+                railFooter={
+                  <BioMemoirCard memberId={memberId} narrative={narrative} />
+                }
               />
             ) : (
               <Card>

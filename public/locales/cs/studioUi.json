@@ -129,6 +129,10 @@
     },
     "bioCapturedTurnCard": {
       "capturedToYourProfile": "Zaznamenáno do Vašeho profilu"
+    },
+    "bioMemoirCard": {
+      "title": "Vaše paměti",
+      "body": "Přeměňte to, co jste zachytili, v dokument, který si můžete uchovat nebo sdílet."
     }
   },
   "survey": {

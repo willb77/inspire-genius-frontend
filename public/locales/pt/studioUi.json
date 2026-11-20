@@ -129,6 +129,10 @@
     },
     "bioCapturedTurnCard": {
       "capturedToYourProfile": "Registrado no seu perfil"
+    },
+    "bioMemoirCard": {
+      "title": "Suas memórias",
+      "body": "Transforme o que você registrou em um documento para guardar ou compartilhar."
     }
   },
   "survey": {

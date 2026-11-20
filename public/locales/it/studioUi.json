@@ -358,6 +358,10 @@
       "documentUploaded": "Documento caricato",
       "documentUploadedSuccessfully": "Documento caricato con successo!",
       "back": "Indietro"
+    },
+    "bioMemoirCard": {
+      "title": "Le tue memorie",
+      "body": "Trasforma ciò che hai raccolto in un documento da conservare o condividere."
     }
   },
   "lumen": {

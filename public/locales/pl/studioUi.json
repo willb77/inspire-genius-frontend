@@ -333,6 +333,10 @@
     },
     "developmentSelfSection": {
       "tryAgain": "Spróbuj ponownie"
+    },
+    "bioMemoirCard": {
+      "title": "Twoje wspomnienia",
+      "body": "Zamień to, co zebrano, w dokument, który możesz zachować lub udostępnić."
     }
   },
   "fit": {

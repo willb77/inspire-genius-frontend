@@ -129,6 +129,10 @@
       "csv": "CSV",
       "ppt": "PPT",
       "doc": "DOC"
+    },
+    "bioMemoirCard": {
+      "title": "Vos mémoires",
+      "body": "Transformez ce que vous avez recueilli en un document à conserver ou à partager."
     }
   },
   "taskAgents": {

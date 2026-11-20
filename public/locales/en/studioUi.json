@@ -402,6 +402,10 @@
       "documentUploaded": "Document Uploaded",
       "documentUploadedSuccessfully": "Document Uploaded successfully!",
       "back": "Back"
+    },
+    "bioMemoirCard": {
+      "title": "Your memoir",
+      "body": "Turn what you have captured into a document you can keep or share."
     }
   }
 }
