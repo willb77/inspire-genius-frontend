@@ -341,6 +341,11 @@
       "you": "Vous",
       "difference": "Écart"
     },
+    "fitRadar": {
+      "chartLabel": "Carte comportementale : ce poste et vous, sur les dimensions qu'il privilégie",
+      "intro": "Les dimensions que ce poste privilégie. La forme ombrée correspond à ce que le poste demande ; la forme en pointillés, c'est vous. Les numéros correspondent à la légende.",
+      "notMeasuredNote": "Une dimension sur laquelle vous n'avez pas été mesuré ne figure pas sur votre forme au lieu d'être tracée à zéro."
+    },
     "fitMatchList": {
       "fit": "{{pct}}% d'adéquation",
       "fit2": "adéquation",

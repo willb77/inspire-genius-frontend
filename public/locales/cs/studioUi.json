@@ -284,6 +284,11 @@
       "you": "Vy",
       "difference": "Rozdíl"
     },
+    "fitRadar": {
+      "chartLabel": "Mapa chování: tato práce a vy v dimenzích, které upřednostňuje",
+      "intro": "Dimenze, které tato role upřednostňuje. Stínovaný tvar je to, co práce vyžaduje; přerušovaný tvar jste vy. Čísla odpovídají legendě.",
+      "notMeasuredNote": "Dimenze, ve které jste nebyli měřeni, není ve vašem tvaru zahrnuta, místo aby se kreslila jako nula."
+    },
     "fitMatchList": {
       "fit": "shoda {{pct}} %",
       "fit2": "shoda",

@@ -7,8 +7,7 @@
  * read draws today's radar. Cards are built from rating differences, carry a
  * text-and-icon status marker, and every definition is reachable by keyboard.
  */
-import { render, screen, within, fireEvent } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
+import { render, screen, within } from "@testing-library/react"
 import type { FitDetail, PerDimensionFit } from "@/types/job-fit"
 
 const radarProps = jest.fn()
@@ -81,30 +80,25 @@ const PRIORITY_ROWS: Row[] = [
 
 beforeEach(() => radarProps.mockClear())
 
-/** The card for one dimension — scoped to the graphic, since the table below repeats names. */
-function cardFor(name: string): HTMLElement {
-  return within(screen.getByTestId("fit-cards")).getByText(name).closest("li") as HTMLElement
-}
-
 describe("switch off — today's radar, unchanged", () => {
   test("no `scoring` field (switch off, missing row or failed read server-side): radar, no cards", () => {
     render(<FitBreakdown data={detail(PRIORITY_ROWS)} />)
     expect(screen.getByTestId("radar")).toBeInTheDocument()
-    expect(screen.queryByTestId("fit-cards")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("fit-radar-overlay")).not.toBeInTheDocument()
     expect(radarProps).toHaveBeenCalledTimes(1)
   })
 
   test("any other `scoring` value: radar", () => {
     render(<FitBreakdown data={detail(PRIORITY_ROWS, "full-22")} />)
     expect(screen.getByTestId("radar")).toBeInTheDocument()
-    expect(screen.queryByTestId("fit-cards")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("fit-radar-overlay")).not.toBeInTheDocument()
   })
 
   test("priority-scored but no row flagged priority: radar, never an empty card section", () => {
     const rows = PRIORITY_ROWS.map((r) => ({ ...r, priority: false }))
     render(<FitBreakdown data={detail(rows, PRIORITY_SCORING)} />)
     expect(screen.getByTestId("radar")).toBeInTheDocument()
-    expect(screen.queryByTestId("fit-cards")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("fit-radar-overlay")).not.toBeInTheDocument()
   })
 
   test("the model agrees: null for every off case", () => {
@@ -116,38 +110,70 @@ describe("switch off — today's radar, unchanged", () => {
   })
 })
 
-describe("switch on — the card graphic", () => {
-  test("replaces the radar; one card per priority dimension, grouped in order", () => {
+/** The legend row for one dimension — scoped to the legend, since the table below repeats names. */
+function legendRow(name: string): HTMLElement {
+  return within(screen.getByTestId("fit-radar-legend")).getByText(name, { exact: false }).closest("li") as HTMLElement
+}
+
+describe("switch on — behaviour map overlay and legend", () => {
+  test("replaces the 22-dimension radar; one axis and one legend row per priority dimension, grouped in order", () => {
     render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
     expect(screen.queryByTestId("radar")).not.toBeInTheDocument()
     expect(radarProps).not.toHaveBeenCalled()
+    expect(screen.getByTestId("fit-radar")).toBeInTheDocument()
 
-    const cards = screen.getByTestId("fit-cards")
-    expect(within(cards).getAllByTestId("fit-card")).toHaveLength(4)
-    const groups = within(cards).getAllByRole("region")
+    const legend = screen.getByTestId("fit-radar-legend")
+    expect(within(legend).getAllByTestId("fit-radar-legend-item")).toHaveLength(4)
+    const groups = within(legend).getAllByRole("region")
     expect(groups.map((g) => g.getAttribute("aria-label"))).toEqual([
       "Behavior preferences",
       "Work aptitudes",
       "Core traits",
     ])
-    // The non-priority rows are not cards.
-    expect(within(cards).queryByText("Supporting")).not.toBeInTheDocument()
-    expect(within(cards).queryByText("Practical & Mechanical")).not.toBeInTheDocument()
+    expect(within(legend).queryByText("Supporting")).not.toBeInTheDocument()
+    expect(within(legend).queryByText("Practical & Mechanical")).not.toBeInTheDocument()
   })
 
-  test("each card shows the job's rating, the person's and the difference — not a %", () => {
+  test("the job polygon has every axis; the person polygon only the measured ones (never a 0)", () => {
     render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
-    const card = cardFor("Emotional Stability")
+    const pts = (id: string) => (screen.getByTestId(id).getAttribute("points") ?? "").trim().split(" ")
+    expect(pts("fit-radar-job")).toHaveLength(4)
+    expect(pts("fit-radar-you")).toHaveLength(3)
+    expect(screen.getAllByTestId("fit-radar-you-dot")).toHaveLength(3)
+  })
+
+  test("plotted radius equals the legend number (job 70 on a 100 scale)", () => {
+    render(<FitBreakdown data={detail([
+      row("behavior", 7, "Finishing", 100, 100, true),
+      row("behavior", 1, "Innovating", 50, 50, true),
+      row("aptitude", 2, "Investigative & Analytical", 0, 0, true),
+    ], PRIORITY_SCORING)} />)
+    // First axis points straight up: value 100 → centre 180, radius 118 → y = 62.
+    const first = (screen.getByTestId("fit-radar-job").getAttribute("points") as string).split(" ")[0]
+    expect(first).toBe("180.0,62.0")
+  })
+
+  test("each legend row shows the job's rating, the person's and the difference — not a %", () => {
+    render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
+    const card = legendRow("Emotional Stability")
     expect(within(card).getByText("This job").nextSibling).toHaveTextContent("70")
     expect(within(card).getByText("You").nextSibling).toHaveTextContent("50")
     expect(within(card).getByText("Difference").nextSibling).toHaveTextContent("-20")
     expect(card).not.toHaveTextContent("%")
   })
 
+  test("the tile text is visible in the legend: definitions, group lines and status key", () => {
+    render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
+    expect(legendRow("Finishing")).toHaveTextContent(dimensionDefinition("behavior", 7, "Finishing") as string)
+    const legend = screen.getByTestId("fit-radar-legend")
+    expect(legend).toHaveTextContent(/handle work over time/)
+    const key = screen.getByTestId("fit-radar-status-key")
+    for (const def of Object.values(FIT_CARD_STATUS_DEFINITIONS)) expect(key).toHaveTextContent(def)
+  })
+
   test("status is text and icon, never colour alone", () => {
     render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
-    const status = (name: string) =>
-      within(cardFor(name)).getByTestId("fit-card-status")
+    const status = (name: string) => within(legendRow(name)).getByTestId("fit-radar-status")
     expect(status("Finishing")).toHaveTextContent("Match")
     expect(status("Investigative & Analytical")).toHaveTextContent("Close")
     expect(status("Emotional Stability")).toHaveTextContent("Growth area")
@@ -156,12 +182,19 @@ describe("switch on — the card graphic", () => {
     }
   })
 
-  test("a priority dimension never measured: no difference and no status", () => {
+  test("a priority dimension never measured: no difference, no status, a note, and left off the person shape", () => {
     render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
-    const card = cardFor("Innovating")
+    const card = legendRow("Innovating")
     expect(card).toHaveTextContent("Not measured")
     expect(within(card).queryByText("Difference")).not.toBeInTheDocument()
-    expect(within(card).queryByTestId("fit-card-status")).not.toBeInTheDocument()
+    expect(within(card).queryByTestId("fit-radar-status")).not.toBeInTheDocument()
+    expect(screen.getByText(/left off your shape rather than drawn as zero/)).toBeInTheDocument()
+  })
+
+  test("fewer than three priority dimensions: legend only, no degenerate chart", () => {
+    render(<FitBreakdown data={detail([row("behavior", 7, "Finishing", 72, 70, true), row("aptitude", 2, "Investigative & Analytical", 61, 66, true)], PRIORITY_SCORING)} />)
+    expect(screen.queryByTestId("fit-radar")).not.toBeInTheDocument()
+    expect(screen.getAllByTestId("fit-radar-legend-item")).toHaveLength(2)
   })
 })
 
@@ -189,62 +222,6 @@ describe("status from the rating difference", () => {
   })
 })
 
-describe("definitions — hover, focus and tap", () => {
-  test("keyboard: Tab reaches the dimension name, its definition opens and is its description", async () => {
-    const user = userEvent.setup()
-    render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
-    const term = screen.getByRole("button", { name: "Finishing" })
-    const def = dimensionDefinition("behavior", 7, "Finishing") as string
-
-    // Tab until the term is focused — proves it is in the tab order.
-    for (let i = 0; i < 20 && document.activeElement !== term; i++) await user.tab()
-    expect(term).toHaveFocus()
-    expect(term).toHaveAccessibleDescription(def)
-    expect(screen.getByRole("tooltip")).toHaveTextContent(def)
-    expect(term).toHaveAttribute("aria-expanded", "true")
-
-    await user.keyboard("{Escape}")
-    expect(term).toHaveAttribute("aria-expanded", "false")
-    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument()
-
-    await user.tab()
-    expect(term).not.toHaveFocus()
-  })
-
-  test("every status marker and group heading is a keyboard-reachable definition", async () => {
-    const user = userEvent.setup()
-    render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
-    const marker = screen.getByRole("button", { name: "Growth area" })
-    for (let i = 0; i < 30 && document.activeElement !== marker; i++) await user.tab()
-    expect(marker).toHaveFocus()
-    expect(marker).toHaveAccessibleDescription(FIT_CARD_STATUS_DEFINITIONS.growth)
-    expect(screen.getByRole("button", { name: "Core traits" })).toHaveAccessibleDescription(
-      /handle work over time/,
-    )
-  })
-
-  test("hover opens and leaving closes", () => {
-    render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
-    const term = screen.getByRole("button", { name: "Finishing" })
-    fireEvent.mouseEnter(term)
-    expect(term).toHaveAttribute("aria-expanded", "true")
-    fireEvent.mouseLeave(term)
-    expect(term).toHaveAttribute("aria-expanded", "false")
-  })
-
-  test("tap opens, a second tap closes, blur closes", () => {
-    render(<FitBreakdown data={detail(PRIORITY_ROWS, PRIORITY_SCORING)} />)
-    const term = screen.getByRole("button", { name: "Finishing" })
-    fireEvent.click(term)
-    expect(term).toHaveAttribute("aria-expanded", "true")
-    fireEvent.click(term)
-    expect(term).toHaveAttribute("aria-expanded", "false")
-    fireEvent.click(term)
-    fireEvent.blur(term)
-    expect(term).toHaveAttribute("aria-expanded", "false")
-  })
-})
-
 describe("definition lookup", () => {
   test("by name within the category, case-insensitive", () => {
     expect(dimensionDefinition("behavior", 99, "finishing")).toMatch(/Attention to detail/)
@@ -255,13 +232,14 @@ describe("definition lookup", () => {
   test("the id is used only when no name was sent", () => {
     expect(dimensionDefinition("behavior", 7, "")).toMatch(/Attention to detail/)
   })
-  test("a card whose name the catalogue does not know shows the name without a definition", () => {
+  test("a legend row whose name the catalogue does not know shows the name without a definition", () => {
     render(
       <FitBreakdown
-        data={detail([row("behavior", 9, "Unlisted", 50, 50, true)], PRIORITY_SCORING)}
+        data={detail([row("behavior", 9, "Unlisted", 50, 50, true), row("behavior", 7, "Finishing", 72, 70, true), row("aptitude", 2, "Investigative & Analytical", 61, 66, true)], PRIORITY_SCORING)}
       />,
     )
-    expect(cardFor("Unlisted")).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "Unlisted" })).not.toBeInTheDocument()
+    const row_ = legendRow("Unlisted")
+    expect(row_).toBeInTheDocument()
+    expect(row_.querySelector("p")).toBeNull()
   })
 })

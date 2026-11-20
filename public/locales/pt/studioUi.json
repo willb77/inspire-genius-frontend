@@ -357,6 +357,11 @@
       "you": "Você",
       "difference": "Diferença"
     },
+    "fitRadar": {
+      "chartLabel": "Mapa comportamental: esta vaga e você, nas dimensões que ela prioriza",
+      "intro": "As dimensões que esta vaga prioriza. A forma sombreada é o que a vaga pede; a forma tracejada é você. Os números correspondem à legenda.",
+      "notMeasuredNote": "Uma dimensão em que você não foi medido fica fora da sua forma em vez de ser desenhada como zero."
+    },
     "fitMatchList": {
       "fit": "{{pct}}% de aderência",
       "fit2": "aderência",

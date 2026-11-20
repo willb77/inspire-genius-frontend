@@ -444,7 +444,6 @@
     "overUseIntro": "Silné stránky, které projevujete výrazně, mohou vytlačit jiné chování, jež tato role také oceňuje – stojí za to hledat rovnováhu.",
     "overUseTitle": "Dejte pozor na nadužívání",
     "perDimensionTitle": "Kde se nacházíte, dimenzi po dimenzi",
-    "priorityIntro": "Dimenze, které tato role staví na první místo: co práce vyžaduje, Vaše hodnocení a rozdíl. Najeďte myší, zaměřte nebo klepněte na název pro zobrazení definice.",
     "profileVsRole": "Váš profil vs. tato role",
     "roleBlueprint": "Blueprint role",
     "you": "Vy"
@@ -467,7 +466,6 @@
   },
   "fitDetailPage": {
     "backToMatches": "Zpět na shody",
-    "cardsIntro": "Dimenze, které tato role staví na první místo: co práce vyžaduje, Vaše hodnocení a rozdíl. Najeďte myší, zaměřte nebo klepněte na název pro zobrazení definice.",
     "careerPathway": "Kariérní cesta",
     "description": "Jak se Váš behaviorální profil srovnává s touto rolí, dimenzi po dimenzi.",
     "educationHeading": "Vzdělání – {{area}}",

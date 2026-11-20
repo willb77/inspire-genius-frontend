@@ -27,7 +27,7 @@ import { FitSummaryCard } from "./FitSummaryCard"
 import { FitFollowUpCard } from "./FitFollowUpCard"
 import { FitActionsBar } from "./FitActionsBar"
 import { FitScoreHeadline } from "@/components/fit/FitScoreHeadline"
-import { FitCards } from "@/components/fit/FitCards"
+import { FitRadarOverlay } from "@/components/fit/FitRadarOverlay"
 import { fitCardGroups } from "@/components/fit/FitCardsModel"
 import { useJobDnaDetail } from "@/hooks/job-blueprint/useJobDna"
 import { useOccupation, useOccupationPay } from "@/hooks/job-fit/useOccupation"
@@ -147,13 +147,7 @@ function JobPageV2({
       <div data-jf6-section="cards">
         <FitCard className="mb-6">
           <FitSectionTitle>{T_CARDS}</FitSectionTitle>
-          <p className="mb-4 text-sm text-[#6b7280]">
-            {t(
-              "fitDetailPage.cardsIntro",
-              "The dimensions this role puts first: what the job asks for, your rating, and the difference. Hover, focus or tap a name for its definition.",
-            )}
-          </p>
-          <FitCards groups={report.groups} />
+          <FitRadarOverlay groups={report.groups} />
         </FitCard>
       </div>
 
