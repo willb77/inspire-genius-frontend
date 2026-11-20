@@ -80,7 +80,9 @@
       "captured": "Zachyceno ({{length}})",
       "whatStandsOut": "Co vyniká",
       "nothingToSaveYetStart": "Zatím není co uložit – nejprve zahajte rozhovor.",
-      "interviewSavedYouCanContinue": "Rozhovor byl uložen – můžete v něm kdykoli pokračovat."
+      "interviewSavedYouCanContinue": "Rozhovor byl uložen – můžete v něm kdykoli pokračovat.",
+      "finishForNow": "Prozatím dokončit",
+      "savedYouCanContinueAnyTime": "Uloženo. Můžete pokračovat kdykoli v části Relace."
     },
     "bioMemoirExportMenu": {
       "nothingToExportYetCapture": "Zatím není co exportovat – nejprve zachyťte vzpomínku s Chronicle.",
@@ -128,7 +130,19 @@
       "continue": "Pokračovat"
     },
     "bioCapturedTurnCard": {
-      "capturedToYourProfile": "Zaznamenáno do Vašeho profilu"
+      "capturedToYourProfile": "Zaznamenáno do Vašeho profilu",
+      "addedToYourStory": "Přidáno do vašeho příběhu"
+    },
+    "bioFirstRun": {
+      "heading": "Vyprávějte svůj příběh jednou. Využijte ho všude.",
+      "intro": "Řízený rozhovor s Chronicle, jedna vzpomínka po druhé.",
+      "timeTitle": "Několik minut najednou",
+      "timeBody": "Šest kapitol v libovolném pořadí. Přestaňte, kdy chcete — ukládá se průběžně.",
+      "privateTitle": "Soukromé, jen pro vás",
+      "privateBody": "Svůj příběh můžete číst jen vy.",
+      "coachesTitle": "Vaši koučové ho využívají",
+      "coachesBody": "Nemusíte tak vyprávět stejný příběh dvakrát.",
+      "start": "Začít kapitolou {{chapter}}"
     }
   },
   "survey": {

@@ -215,7 +215,8 @@
       "continue": "Kontynuuj"
     },
     "bioCapturedTurnCard": {
-      "capturedToYourProfile": "Zapisano w Twoim profilu"
+      "capturedToYourProfile": "Zapisano w Twoim profilu",
+      "addedToYourStory": "Dodano do Twojej historii"
     },
     "bioChronicleChatPanel": {
       "nothingToSaveYetStart": "Nie ma jeszcze nic do zapisania — najpierw rozpocznij wywiad.",
@@ -250,7 +251,9 @@
       "asYouTalkWhatChronicle": "Podczas rozmowy tutaj pojawia się to, co zapisuje Chronicle — poruszane rozdziały, wydobyte wspomnienia i to, co się wyróżnia.",
       "chaptersThisSession": "Rozdziały w tej sesji",
       "captured": "Zapisane ({{length}})",
-      "whatStandsOut": "Co się wyróżnia"
+      "whatStandsOut": "Co się wyróżnia",
+      "finishForNow": "Zakończ na razie",
+      "savedYouCanContinueAnyTime": "Zapisano. Możesz kontynuować w dowolnej chwili z poziomu Sesji."
     },
     "documentsUploadDocumentsModal": {
       "theUploadedDocumentMayNot": "Przesłany dokument może mieć nieobsługiwany format lub jest zbyt duży. Sprawdź plik i spróbuj ponownie.",
@@ -333,6 +336,17 @@
     },
     "developmentSelfSection": {
       "tryAgain": "Spróbuj ponownie"
+    },
+    "bioFirstRun": {
+      "heading": "Opowiedz swoją historię raz. Korzystaj z niej wszędzie.",
+      "intro": "Poprowadzona rozmowa z Chronicle, jedno wspomnienie na raz.",
+      "timeTitle": "Kilka minut naraz",
+      "timeBody": "Sześć rozdziałów, w dowolnej kolejności. Przerwij, kiedy chcesz — zapisuje się na bieżąco.",
+      "privateTitle": "Prywatne, tylko dla Ciebie",
+      "privateBody": "Tylko Ty możesz przeczytać swoją historię.",
+      "coachesTitle": "Twoi coachowie z niej korzystają",
+      "coachesBody": "Dzięki temu nie musisz opowiadać tej samej historii dwa razy.",
+      "start": "Zacznij od: {{chapter}}"
     }
   },
   "fit": {

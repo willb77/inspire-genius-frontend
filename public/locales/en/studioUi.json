@@ -284,7 +284,8 @@
       "continue": "Continue"
     },
     "bioCapturedTurnCard": {
-      "capturedToYourProfile": "Captured to your profile"
+      "capturedToYourProfile": "Captured to your profile",
+      "addedToYourStory": "Added to your story"
     },
     "bioChronicleChatPanel": {
       "nothingToSaveYetStart": "Nothing to save yet — start the interview first.",
@@ -319,7 +320,9 @@
       "asYouTalkWhatChronicle": "As you talk, what Chronicle captures — the chapters you touch, the memories distilled, and what stands out — appears here.",
       "chaptersThisSession": "Chapters this session",
       "captured": "Captured ({{length}})",
-      "whatStandsOut": "What stands out"
+      "whatStandsOut": "What stands out",
+      "finishForNow": "Finish for now",
+      "savedYouCanContinueAnyTime": "Saved. You can continue any time from Sessions."
     },
     "bioMemoirExportMenu": {
       "nothingToExportYetCapture": "Nothing to export yet — capture a memory with Chronicle first.",
@@ -402,6 +405,17 @@
       "documentUploaded": "Document Uploaded",
       "documentUploadedSuccessfully": "Document Uploaded successfully!",
       "back": "Back"
+    },
+    "bioFirstRun": {
+      "heading": "Tell your story once. Use it everywhere.",
+      "intro": "A guided conversation with Chronicle, one memory at a time.",
+      "timeTitle": "A few minutes at a time",
+      "timeBody": "Six chapters, in any order. Stop whenever you like — it saves as you go.",
+      "privateTitle": "Private to you",
+      "privateBody": "Only you can read your story.",
+      "coachesTitle": "Your coaches use it",
+      "coachesBody": "So you don't have to tell the same story twice.",
+      "start": "Start with {{chapter}}"
     }
   }
 }

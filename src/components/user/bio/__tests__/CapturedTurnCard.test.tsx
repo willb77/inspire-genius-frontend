@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  *
- * Cover for the "Captured to your profile" reflection card:
+ * Cover for the "Added to your story" reflection card:
  *  - renders module label, each episode's title + facts, people/places/era, and
  *    the "what stands out" line,
  *  - renders nothing (defensive null) when there is nothing to reflect back.
@@ -42,7 +42,7 @@ describe("CapturedTurnCard", () => {
         }}
       />,
     )
-    expect(screen.getByText(/captured to your profile/i)).toBeInTheDocument()
+    expect(screen.getByText(/added to your story/i)).toBeInTheDocument()
     expect(screen.getByText("Label:culture")).toBeInTheDocument()
     expect(screen.getByText("Born in Lagos")).toBeInTheDocument()
     expect(screen.getByText("Youngest of six.")).toBeInTheDocument()

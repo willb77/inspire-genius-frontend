@@ -67,7 +67,8 @@
       "continue": "Continuer"
     },
     "bioCapturedTurnCard": {
-      "capturedToYourProfile": "Ajouté à votre profil"
+      "capturedToYourProfile": "Ajouté à votre profil",
+      "addedToYourStory": "Ajouté à votre histoire"
     },
     "bioChronicleChatPanel": {
       "nothingToSaveYetStart": "Rien à enregistrer pour l'instant : commencez d'abord l'entretien.",
@@ -102,7 +103,9 @@
       "asYouTalkWhatChronicle": "Au fil de la conversation, ce que Chronicle retient (les chapitres abordés, les souvenirs distillés et les points marquants) apparaît ici.",
       "chaptersThisSession": "Chapitres de cette session",
       "captured": "Enregistré ({{length}})",
-      "whatStandsOut": "Points marquants"
+      "whatStandsOut": "Points marquants",
+      "finishForNow": "Terminer pour l'instant",
+      "savedYouCanContinueAnyTime": "Enregistré. Vous pouvez reprendre à tout moment depuis Sessions."
     },
     "bioMemoirExportMenu": {
       "nothingToExportYetCapture": "Rien à exporter pour l'instant : commencez par enregistrer un souvenir avec Chronicle.",
@@ -129,6 +132,17 @@
       "csv": "CSV",
       "ppt": "PPT",
       "doc": "DOC"
+    },
+    "bioFirstRun": {
+      "heading": "Racontez votre histoire une fois. Servez-vous-en partout.",
+      "intro": "Une conversation guidée avec Chronicle, un souvenir à la fois.",
+      "timeTitle": "Quelques minutes à la fois",
+      "timeBody": "Six chapitres, dans l'ordre de votre choix. Arrêtez-vous quand vous voulez : tout est enregistré au fur et à mesure.",
+      "privateTitle": "Privé, rien que pour vous",
+      "privateBody": "Vous seul pouvez lire votre histoire.",
+      "coachesTitle": "Vos coachs l'utilisent",
+      "coachesBody": "Vous n'avez ainsi pas à raconter deux fois la même histoire.",
+      "start": "Commencer par {{chapter}}"
     }
   },
   "taskAgents": {

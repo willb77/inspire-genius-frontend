@@ -1,5 +1,5 @@
 /**
- * "Captured to your profile" — the structured reflection shown inline in the
+ * "Added to your story" — the structured reflection shown inline in the
  * Chronicle transcript after a member's turn.
  *
  * Its whole job is to reflect back what the person just said, structured: the
@@ -43,7 +43,7 @@ export function CapturedTurnCard({ capture, className }: CapturedTurnCardProps) 
       <div className="mb-2 flex items-center gap-1.5">
         <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
         <span className="text-[11px] font-semibold text-primary">
-          {t("user.bioCapturedTurnCard.capturedToYourProfile", { defaultValue: "Captured to your profile" })}
+          {t("user.bioCapturedTurnCard.addedToYourStory", { defaultValue: "Added to your story" })}
         </span>
         <Badge variant="secondary" className="ml-auto text-[10px]">
           {moduleLabel(moduleType)}

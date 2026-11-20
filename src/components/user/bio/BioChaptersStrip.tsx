@@ -43,11 +43,14 @@ export type BioChaptersStripProps = {
   narrative: MemberNarrative
   /** Steer the interview into a chapter (wired to the Chronicle tile). */
   onStartSuggested?: (moduleType: string) => void
+  /** The first-run card already offers the suggested chapter; avoid a second prompt. */
+  hideSuggestedBar?: boolean
 }
 
 export function BioChaptersStrip({
   narrative,
   onStartSuggested,
+  hideSuggestedBar = false,
 }: BioChaptersStripProps) {
   const { t } = useTranslation("studioUi")
   // Modules in canonical order, synthesising placeholders so all six always show.
@@ -70,7 +73,7 @@ export function BioChaptersStrip({
   return (
     <div className="space-y-3">
       {/* Thin "suggested next" bar — label + Continue link only. */}
-      {next && (
+      {next && !hideSuggestedBar && (
         <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs">
           <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
           <span className="truncate">

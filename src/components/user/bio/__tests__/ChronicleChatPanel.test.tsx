@@ -5,7 +5,7 @@
  *  - intro + suggested prompts stay present,
  *  - before any turn, the starter "Go deeper" probes render and send as a steer,
  *  - a user send fires the capture call alongside the chat send,
- *  - on a captured turn a "Captured to your profile" card renders inline AND
+ *  - on a captured turn a "Added to your story" card renders inline AND
  *    the "Go deeper" chips become the content-specific followups,
  *  - voice toggle reveals the mic when speech recognition is supported,
  *  - the mic is disabled when unsupported (graceful fallback).
@@ -26,15 +26,19 @@ jest.mock("@/context/useAuth", () => ({
 const mockSendMessage = jest.fn()
 let chatState = { isProcessing: false, partial: "", error: null as string | null }
 const mockClearError = jest.fn()
+let emitAssistant: (content: string) => void = () => {}
 jest.mock("@/hooks/agents/useMeridianChat", () => ({
-  useMeridianChat: () => ({
+  useMeridianChat: (opts: { onAssistant: (c: string) => void }) => {
+    emitAssistant = opts.onAssistant
+    return {
     send: mockSendMessage,
     isProcessing: chatState.isProcessing,
     partial: chatState.partial,
     error: chatState.error,
     clearError: mockClearError,
     isPushConnected: true,
-  }),
+    }
+  },
 }))
 
 // Capture mutation: `mutate(vars, { onSuccess })` — the panel fires it alongside
@@ -55,7 +59,7 @@ jest.mock("@/hooks/useCaptureBioTurn", () => ({
 // Session hooks (save / list / resume). The list drives the Sessions dropdown;
 // save/load are exercised via the toolbar. Mocked so the panel needn't a
 // QueryClientProvider in this light render test.
-const mockSaveSession = jest.fn(async () => ({
+const mockSaveSession = jest.fn(async (_req: unknown) => ({
   sessionId: "s-1",
   title: "t",
   turnCount: 1,
@@ -106,7 +110,7 @@ jest.mock("@/lib/bio/clientMemoir", () => ({
   moduleLabel: (m: string) => m,
 }))
 
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react"
 import ChronicleChatPanel from "@/components/user/bio/ChronicleChatPanel"
 
 // jsdom doesn't implement Element.scrollTo — the panel autoscrolls on new turns.
@@ -167,7 +171,7 @@ describe("ChronicleChatPanel capture + go-deeper + voice", () => {
     )
   })
 
-  it("renders a 'Captured to your profile' card and swaps in content-derived chips on a captured turn", () => {
+  it("renders a 'Added to your story' card and swaps in content-derived chips on a captured turn", () => {
     captureResult = {
       memberId: "member-1",
       moduleType: "culture",
@@ -196,7 +200,7 @@ describe("ChronicleChatPanel capture + go-deeper + voice", () => {
 
     // The structured reflection renders inline. The captured title also appears
     // in the session insight rail, so it's present in at least one place.
-    expect(screen.getByText(/captured to your profile/i)).toBeInTheDocument()
+    expect(screen.getByText(/added to your story/i)).toBeInTheDocument()
     expect(screen.getAllByText("Born in Lagos").length).toBeGreaterThanOrEqual(1)
     expect(
       screen.getAllByText(/family and heritage anchor your sense of self/i).length,
@@ -218,7 +222,7 @@ describe("ChronicleChatPanel capture + go-deeper + voice", () => {
       target: { value: "hmm" },
     })
     fireEvent.click(screen.getByRole("button", { name: /^send$/i }))
-    expect(screen.queryByText(/captured to your profile/i)).toBeNull()
+    expect(screen.queryByText(/added to your story/i)).toBeNull()
     // Starter chips remain since no followups came back.
     expect(
       screen.getByRole("button", { name: /tell me about where i grew up/i }),
@@ -242,5 +246,51 @@ describe("ChronicleChatPanel capture + go-deeper + voice", () => {
       name: /voice input isn't supported/i,
     })
     expect(mic).toBeDisabled()
+  })
+
+  describe("autosave and Finish for now", () => {
+    const sendOne = (text: string) => {
+      fireEvent.change(screen.getByRole("textbox", { name: /message chronicle/i }), {
+        target: { value: text },
+      })
+      fireEvent.click(screen.getByRole("button", { name: /^send$/i }))
+    }
+
+    it("has one exit, 'Finish for now', and no separate Save button", () => {
+      render(<ChronicleChatPanel memberId="member-1" />)
+      expect(screen.getByRole("button", { name: /finish for now/i })).toBeDisabled()
+      expect(screen.queryByRole("button", { name: /^save$/i })).toBeNull()
+      expect(screen.queryByRole("button", { name: /end & recap/i })).toBeNull()
+    })
+
+    it("autosaves when Chronicle's reply settles, then updates the same session", async () => {
+      render(<ChronicleChatPanel memberId="member-1" />)
+      sendOne("I grew up by the sea.")
+      expect(mockSaveSession).not.toHaveBeenCalled() // nothing until a reply settles
+      act(() => emitAssistant("What do you remember most?"))
+      await waitFor(() => expect(mockSaveSession).toHaveBeenCalledTimes(1))
+      expect(mockSaveSession.mock.calls[0][0]).toMatchObject({
+        memberId: "member-1",
+        sessionId: null,
+      })
+      await waitFor(() =>
+        expect(screen.queryByRole("button", { name: /finish for now/i })).toBeEnabled(),
+      )
+      sendOne("The smell of salt.")
+      act(() => emitAssistant("Tell me more."))
+      await waitFor(() => expect(mockSaveSession).toHaveBeenCalledTimes(2))
+      // The second save upserts into the row the first created, not a new one.
+      expect(mockSaveSession.mock.calls[1][0]).toMatchObject({ sessionId: "s-1" })
+    })
+
+    it("Finish for now saves and shows the recap", async () => {
+      render(<ChronicleChatPanel memberId="member-1" />)
+      sendOne("I grew up by the sea.")
+      act(() => emitAssistant("What do you remember most?"))
+      await waitFor(() => expect(mockSaveSession).toHaveBeenCalledTimes(1))
+      fireEvent.click(screen.getByRole("button", { name: /finish for now/i }))
+      expect(screen.getByText(/session recap/i)).toBeInTheDocument()
+      await waitFor(() => expect(mockSaveSession).toHaveBeenCalledTimes(2))
+    })
   })
 })

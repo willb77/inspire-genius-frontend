@@ -21,6 +21,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/context/useAuth"
 import { useBioNarrative } from "@/hooks/useBioNarrative"
 import BioChaptersStrip from "@/components/user/bio/BioChaptersStrip"
+import BioFirstRunCard from "@/components/user/bio/BioFirstRunCard"
 import ChronicleChatPanel from "@/components/user/bio/ChronicleChatPanel"
 import MemoirExportMenu from "@/components/user/bio/MemoirExportMenu"
 import { useTranslation } from "react-i18next"
@@ -48,6 +49,11 @@ export default function BioCapture() {
   const handleTurnSettled = useCallback(() => {
     void refetch()
   }, [refetch])
+
+  // Nothing captured yet: lead with the introduction and one action, instead of
+  // a suggested-next bar, a chapters grid and starter prompts all at once.
+  const isFirstRun =
+    !!narrative && !narrative.bioStarted && narrative.episodes.length === 0
 
   return (
     <UserLayout>
@@ -92,9 +98,16 @@ export default function BioCapture() {
 
         {narrative && (
           <div className="space-y-5">
+            {isFirstRun && (
+              <BioFirstRunCard
+                suggestedModule={narrative.nextSuggestedModule}
+                onStart={startSuggested}
+              />
+            )}
             <BioChaptersStrip
               narrative={narrative}
               onStartSuggested={startSuggested}
+              hideSuggestedBar={isFirstRun}
             />
 
             {memberId ? (
