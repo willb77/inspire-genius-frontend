@@ -84,7 +84,6 @@ const SummitDiscovery = React.lazy(() => import("@/pages/summit/SummitDiscovery"
 const SummitGoals = React.lazy(() => import("@/pages/summit/SummitGoals"));
 const SummitInterview = React.lazy(() => import("@/pages/summit/SummitInterview"));
 const SummitSharing = React.lazy(() => import("@/pages/summit/SummitSharing"));
-const SummitCoaches = React.lazy(() => import("@/pages/summit/SummitCoaches"));
 const SummitComingSoon = React.lazy(() => import("@/pages/summit/SummitComingSoon"));
 const GoalRoadmapPage = React.lazy(() => import("@/pages/summit/GoalRoadmapPage"));
 // My development — the member's own view of their Team Development Studio rows
@@ -533,7 +532,9 @@ export const routes: RouteObject[] = [
           { path: "discovery", element: withSuspense(<SummitDiscovery />) },
           { path: "interview", element: withSuspense(<SummitInterview />) },
           { path: "sharing", element: withSuspense(<SummitSharing />) },
-          { path: "coaches", element: withSuspense(<SummitCoaches />) },
+          // Coaches page removed 2026-11-19. Kept as a redirect so an old bookmark
+          // lands on My Goals rather than the catch-all.
+          { path: "coaches", element: <Navigate to="/my/goals" replace /> },
           { path: "coming-soon", element: withSuspense(<SummitComingSoon />) },
           // Feeds Phase 3 — dark unless the goal_targets switch is on (the page checks).
           { path: ":goalId/roadmap", element: withSuspense(<GoalRoadmapPage />) },

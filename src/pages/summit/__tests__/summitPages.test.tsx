@@ -28,7 +28,6 @@ jest.mock("@/context/useAuth", () => ({
 import SummitDashboard from "@/pages/summit/SummitDashboard";
 import SummitDiscovery from "@/pages/summit/SummitDiscovery";
 import SummitGoals from "@/pages/summit/SummitGoals";
-import SummitCoaches from "@/pages/summit/SummitCoaches";
 import SummitComingSoon from "@/pages/summit/SummitComingSoon";
 
 const SESSION: SummitSession = {
@@ -143,12 +142,6 @@ describe("Summit surface pages", () => {
     expect(screen.queryByText(/Daniel/)).toBeNull();
   });
 
-  it("renders Coaches with the three coaching roles", () => {
-    renderWithRouter(<SummitCoaches />);
-    expect(screen.getByText("Job Mentor")).toBeInTheDocument();
-    expect(screen.getByText("Career Coach")).toBeInTheDocument();
-    expect(screen.getByText("PRISM Coach")).toBeInTheDocument();
-  });
 });
 
 describe("My Goals — two stores, kept apart", () => {
