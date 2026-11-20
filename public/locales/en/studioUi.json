@@ -334,6 +334,10 @@
       "wordDoc": "Word (.doc)",
       "pdf": "PDF"
     },
+    "bioMemoirCard": {
+      "title": "Your memoir",
+      "body": "Turn what you have captured into a document you can keep or share."
+    },
     "bioSessionRecapCard": {
       "sessionRecap": "Session recap",
       "chaptersVisited": "Chapters visited",

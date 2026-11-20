@@ -35,7 +35,7 @@
  * and the **Sessions** dropdown reloads a past one to continue it. A missing
  * session backend degrades to an unsaved-but-working interview.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import {
   AlertTriangle,
   Bot,
@@ -125,6 +125,8 @@ export type ChronicleChatPanelProps = {
    */
   registerSeed?: (seed: ((moduleType: string) => void) | null) => void
   className?: string
+  /** Rendered at the foot of the insight rail (e.g. the memoir card). */
+  railFooter?: ReactNode
 }
 
 export function ChronicleChatPanel({
@@ -133,6 +135,7 @@ export function ChronicleChatPanel({
   suggestedModule,
   registerSeed,
   className,
+  railFooter,
 }: ChronicleChatPanelProps) {
   const { t: tr } = useTranslation("studioUi")
   const { user } = useAuth()
@@ -419,7 +422,7 @@ export function ChronicleChatPanel({
   return (
     <div
       className={cn(
-        "flex h-[34rem] flex-col overflow-hidden rounded-lg border bg-card",
+        "flex h-[40rem] max-h-[88dvh] flex-col overflow-hidden rounded-lg border bg-card sm:h-[34rem] sm:max-h-none",
         className,
       )}
     >
@@ -514,12 +517,13 @@ export function ChronicleChatPanel({
         </div>
       </div>
 
-      {/* Body — scrolls horizontally on narrow viewports; each pane scrolls
-          vertically. Together this makes the tile scroll up-down and right-left. */}
-      <div className="flex-1 overflow-x-auto">
-        <div className="flex h-full min-w-[46rem]">
+      {/* Body — two panes side by side from the sm breakpoint up; stacked on a
+          phone (conversation, then the insight rail), with the tile scrolling
+          vertically. No sideways scroll at any width. */}
+      <div className="min-h-0 flex-1 overflow-y-auto sm:overflow-hidden">
+        <div className="flex flex-col sm:h-full sm:flex-row">
           {/* Conversation column */}
-          <div className="flex min-w-[26rem] flex-1 flex-col">
+          <div className="flex h-[28rem] shrink-0 flex-col sm:h-auto sm:min-w-0 sm:flex-1 sm:shrink">
             <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-3">
               {recap && <SessionRecapCard recap={recap} />}
 
@@ -737,7 +741,7 @@ export function ChronicleChatPanel({
           </div>
 
           {/* Insight rail — the results & insight, live, inside the scroll tile. */}
-          <aside className="hidden w-[16rem] shrink-0 flex-col overflow-y-auto border-l bg-muted/20 p-3 sm:flex">
+          <aside className="flex w-full shrink-0 flex-col border-t bg-muted/20 p-3 sm:w-[16rem] sm:overflow-y-auto sm:border-l sm:border-t-0">
             <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               {tr("user.bioChronicleChatPanel.sessionInsight", { defaultValue: "Session insight" })}
             </div>
@@ -795,6 +799,10 @@ export function ChronicleChatPanel({
                   </div>
                 )}
               </div>
+            )}
+
+            {railFooter && (
+              <div className="mt-auto border-t pt-3">{railFooter}</div>
             )}
           </aside>
         </div>

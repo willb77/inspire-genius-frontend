@@ -86,6 +86,10 @@
       "wordDoc": "Word (.doc)",
       "pdf": "PDF"
     },
+    "bioMemoirCard": {
+      "title": "Tus memorias",
+      "body": "Convierte lo que has recogido en un documento que puedes guardar o compartir."
+    },
     "bioSessionRecapCard": {
       "sessionRecap": "Resumen de la sesión",
       "chaptersVisited": "Capítulos visitados",

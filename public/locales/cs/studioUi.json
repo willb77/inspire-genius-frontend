@@ -94,6 +94,10 @@
       "wordDoc": "Word (.doc)",
       "pdf": "PDF"
     },
+    "bioMemoirCard": {
+      "title": "Vaše paměti",
+      "body": "Přeměňte to, co jste zachytili, v dokument, který si můžete uchovat nebo sdílet."
+    },
     "bioSessionRecapCard": {
       "sessionRecap": "Shrnutí relace",
       "chaptersVisited": "Navštívené kapitoly",
