@@ -279,6 +279,10 @@
       "wordDoc": "Word (.doc)",
       "pdf": "PDF"
     },
+    "bioMemoirCard": {
+      "title": "Twoje wspomnienia",
+      "body": "Zamień to, co zebrano, w dokument, który możesz zachować lub udostępnić."
+    },
     "bioSessionRecapCard": {
       "sessionRecap": "Podsumowanie sesji",
       "chaptersVisited": "Odwiedzone rozdziały",
@@ -333,10 +337,6 @@
     },
     "developmentSelfSection": {
       "tryAgain": "Spróbuj ponownie"
-    },
-    "bioMemoirCard": {
-      "title": "Twoje wspomnienia",
-      "body": "Zamień to, co zebrano, w dokument, który możesz zachować lub udostępnić."
     }
   },
   "fit": {

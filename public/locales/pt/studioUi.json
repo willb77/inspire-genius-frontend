@@ -92,6 +92,10 @@
       "wordDoc": "Word (.doc)",
       "pdf": "PDF"
     },
+    "bioMemoirCard": {
+      "title": "Suas memórias",
+      "body": "Transforme o que você registrou em um documento para guardar ou compartilhar."
+    },
     "bioSessionRecapCard": {
       "sessionRecap": "Resumo da sessão",
       "chaptersVisited": "Capítulos visitados",
@@ -129,10 +133,6 @@
     },
     "bioCapturedTurnCard": {
       "capturedToYourProfile": "Registrado no seu perfil"
-    },
-    "bioMemoirCard": {
-      "title": "Suas memórias",
-      "body": "Transforme o que você registrou em um documento para guardar ou compartilhar."
     }
   },
   "survey": {

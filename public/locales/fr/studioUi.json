@@ -114,6 +114,10 @@
       "wordDoc": "Word (.doc)",
       "pdf": "PDF"
     },
+    "bioMemoirCard": {
+      "title": "Vos mémoires",
+      "body": "Transformez ce que vous avez recueilli en un document à conserver ou à partager."
+    },
     "bioSessionRecapCard": {
       "sessionRecap": "Résumé de la session",
       "chaptersVisited": "Chapitres abordés",
@@ -129,10 +133,6 @@
       "csv": "CSV",
       "ppt": "PPT",
       "doc": "DOC"
-    },
-    "bioMemoirCard": {
-      "title": "Vos mémoires",
-      "body": "Transformez ce que vous avez recueilli en un document à conserver ou à partager."
     }
   },
   "taskAgents": {
