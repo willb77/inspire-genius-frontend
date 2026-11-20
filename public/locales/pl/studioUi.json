@@ -359,6 +359,11 @@
       "you": "Ty",
       "difference": "Różnica"
     },
+    "fitRadar": {
+      "chartLabel": "Mapa zachowań: to stanowisko i Ty, w wymiarach, które stawia na pierwszym miejscu",
+      "intro": "Wymiary, które to stanowisko stawia na pierwszym miejscu. Zacieniowany kształt to wymagania stanowiska; kształt przerywany to Ty. Numery odpowiadają legendzie.",
+      "notMeasuredNote": "Wymiar, w którym nie zostałeś zmierzony, nie jest uwzględniony w Twoim kształcie, zamiast być rysowany jako zero."
+    },
     "fitMatchList": {
       "fit": "dopasowanie {{pct}}%",
       "fit2": "dopasowanie",

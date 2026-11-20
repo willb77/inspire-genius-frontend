@@ -395,7 +395,6 @@
     "overUseIntro": "Pontos fortes expressos com muita intensidade podem ofuscar outros comportamentos que este cargo também valoriza — vale buscar equilíbrio.",
     "overUseTitle": "Atenção ao uso excessivo",
     "perDimensionTitle": "Onde você está, dimensão por dimensão",
-    "priorityIntro": "As dimensões que este cargo coloca em primeiro lugar: o que a função exige, sua avaliação e a diferença. Passe o mouse, foque ou toque em um nome para ver a definição.",
     "profileVsRole": "Seu perfil vs. este cargo",
     "roleBlueprint": "Blueprint do cargo",
     "you": "Você"
@@ -418,7 +417,6 @@
   },
   "fitDetailPage": {
     "backToMatches": "Voltar para as correspondências",
-    "cardsIntro": "As dimensões que este cargo coloca em primeiro lugar: o que a função exige, sua avaliação e a diferença. Passe o mouse, foque ou toque em um nome para ver a definição.",
     "careerPathway": "Trajetória de carreira",
     "description": "Como seu perfil comportamental se compara a este cargo, dimensão por dimensão.",
     "educationHeading": "Formação — {{area}}",

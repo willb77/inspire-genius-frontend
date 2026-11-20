@@ -519,7 +519,6 @@
     "overUseIntro": "Las fortalezas que expresas con mucha intensidad pueden desplazar otros comportamientos que este puesto también valora: conviene equilibrarlas.",
     "overUseTitle": "Cuidado con el uso excesivo",
     "perDimensionTitle": "Dónde estás, dimensión por dimensión",
-    "priorityIntro": "Las dimensiones que este puesto prioriza: lo que pide el trabajo, tu valoración y la diferencia. Pasa el cursor, enfoca o toca un nombre para ver su definición.",
     "profileVsRole": "Tu perfil frente a este puesto",
     "roleBlueprint": "Blueprint del puesto",
     "you": "Tú"
@@ -542,7 +541,6 @@
   },
   "fitDetailPage": {
     "backToMatches": "Volver a las coincidencias",
-    "cardsIntro": "Las dimensiones que este puesto prioriza: lo que pide el trabajo, tu valoración y la diferencia. Pasa el cursor, enfoca o toca un nombre para ver su definición.",
     "careerPathway": "Trayectoria profesional",
     "description": "Cómo se compara tu perfil de comportamiento con este puesto, dimensión por dimensión.",
     "educationHeading": "Educación — {{area}}",

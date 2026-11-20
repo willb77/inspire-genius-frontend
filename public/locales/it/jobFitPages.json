@@ -394,7 +394,6 @@
     "overUseIntro": "I punti di forza espressi con troppa intensità possono mettere in ombra altri comportamenti che questo ruolo valorizza: vale la pena bilanciarli.",
     "overUseTitle": "Attenzione all'uso eccessivo",
     "perDimensionTitle": "Dove ti trovi, dimensione per dimensione",
-    "priorityIntro": "Le dimensioni che questo ruolo mette al primo posto: cosa richiede il lavoro, la tua valutazione e la differenza. Passa il cursore, seleziona o tocca un nome per vederne la definizione.",
     "profileVsRole": "Il tuo profilo e questo ruolo",
     "roleBlueprint": "Blueprint del ruolo",
     "you": "Tu"
@@ -417,7 +416,6 @@
   },
   "fitDetailPage": {
     "backToMatches": "Torna alle corrispondenze",
-    "cardsIntro": "Le dimensioni che questo ruolo mette al primo posto: cosa richiede il lavoro, la tua valutazione e la differenza. Passa il cursore, seleziona o tocca un nome per vederne la definizione.",
     "careerPathway": "Percorso di carriera",
     "description": "Come si confronta il tuo profilo comportamentale con questo ruolo, dimensione per dimensione.",
     "educationHeading": "Istruzione — {{area}}",
