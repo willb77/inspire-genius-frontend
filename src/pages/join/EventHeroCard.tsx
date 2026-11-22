@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/constants/routes"
 import { cn } from "@/lib/utils"
 import type { EventOption } from "@/types/eventRegistration"
-import { formatEventClock } from "./eventTime"
+import { formatEventClockEastern } from "./eventTime"
 import {
   DEFAULT_HOST,
   sessionDay,
@@ -20,7 +20,7 @@ import {
  *
  * - Every session of the event is a gray, raised radio tile (native inputs, so
  *   arrow keys move between them); exactly one is selected, the earliest by default.
- *   Each tile carries the logo, a LIVE DEMO tag, the event's heading text, its day
+ *   Each tile carries a "30-day Free Access" pill at its top (owner's request, 2026-11-22), the logo, a LIVE DEMO tag, the event's heading text, its day
  *   and time, and "Hosted by".
  * - "Details" is a separate button beside its tile, never inside the label, so it
  *   cannot change the selection and nothing interactive is nested.
@@ -108,6 +108,10 @@ export function EventHeroCard({
                     "peer-focus-visible:ring-[3px] peer-focus-visible:ring-event-primary/40",
                   )}
                 >
+                  <span className="self-start rounded-full bg-teal-800 px-3 py-1 text-xs font-bold tracking-wide text-white">
+                    30-day Free Access
+                  </span>
+
                   <span className="flex items-start justify-between gap-3">
                     <img src="/Logo-Dark.png" alt="" className="h-7 w-auto" />
                     <span className="rounded-full bg-teal-100 px-2.5 py-1 text-[11px] font-bold tracking-wider text-teal-900">
@@ -137,7 +141,7 @@ export function EventHeroCard({
                       )}
                     </span>
                     <span className="mt-1 text-2xl font-bold leading-tight text-slate-900">{sessionLocalTime(s.starts_at)}</span>
-                    <span className="mt-0.5 text-xs text-slate-600">{formatEventClock(s.starts_at, s.time_zone)}</span>
+                    <span className="mt-0.5 text-xs text-slate-600">{formatEventClockEastern(s.starts_at)}</span>
                     {option?.full && <span className="mt-1 text-xs font-semibold text-slate-700">Full</span>}
                   </span>
                 </label>
