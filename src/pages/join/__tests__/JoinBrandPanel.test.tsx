@@ -26,8 +26,9 @@ describe("/join brand panel", () => {
     expect(wall).toHaveClass("lg:sticky")
 
     expect(
-      within(wall).getByText(/gives mentors and practitioners an AI mentoring partner that works alongside them/),
+      within(wall).getByText(/gives practitioners an AI mentoring partner that works alongside them, so clients keep making progress even after the session ends\./),
     ).toBeInTheDocument()
+    expect(within(wall).getByText("One platform, many applications.")).toBeInTheDocument()
     expect(within(wall).getByText("Built for practitioners.")).toBeInTheDocument()
     expect(within(wall).getByText("For every setting")).toBeInTheDocument()
     for (const s of ["Individuals", "Teams", "Organisations", "Education", "Enterprise"]) {
@@ -41,8 +42,8 @@ describe("/join brand panel", () => {
     const wall = (container.firstChild as HTMLElement).firstChild as HTMLElement
     const text = (wall.textContent ?? "").replace(/\s+/g, " ")
     // title and body are separate blocks, so textContent has no space between them
-    expect(text).toMatch(/Built for practitioners\.\s*Invite clients, follow their progress between sessions\./)
-    expect(text).toMatch(/Grounded in PRISM\.\s*Works with the tools your customers use\./)
+    expect(text).toMatch(/Built for practitioners\.\s*Follow your clients' progress between sessions, keeping them engaged\./)
+    expect(text).toMatch(/Grounded in PRISM\.\s*Works with the tool your customers understand\./)
     expect(text).not.toMatch(/DISC|CliftonStrengths|MBTI|Big Five/)
     expect(text).not.toContain("Works with the assessments you already use")
     expect(text).not.toContain("give each one an AI mentor that is there between your sessions")

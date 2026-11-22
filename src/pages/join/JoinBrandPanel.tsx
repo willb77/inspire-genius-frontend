@@ -64,7 +64,7 @@ export function JoinBrandPanel({
         </span>
       </h2>
       <p className="text-[14px] leading-relaxed text-white/65">
-        {t("brand.intro", { defaultValue: "Inspires Genius gives mentors and practitioners an AI mentoring partner that works alongside them, so clients keep making progress after the session ends." })}
+        {t("brand.intro", { defaultValue: "Inspires Genius gives practitioners an AI mentoring partner that works alongside them, so clients keep making progress even after the session ends." })}
       </p>
 
       <ul className="flex flex-col gap-3" aria-label={t("brand.offersAria", { defaultValue: "What Inspires Genius offers" })}>
@@ -74,7 +74,7 @@ export function JoinBrandPanel({
           </span>
           <div>
             <p className="text-[13.5px] font-semibold text-white">Built for practitioners.</p>
-            <p className="text-[12.5px] leading-snug text-white/60">Invite clients, follow their progress between sessions.</p>
+            <p className="text-[12.5px] leading-snug text-white/60">Follow your clients' progress between sessions, keeping them engaged.</p>
           </div>
         </li>
         <li className="flex items-start gap-3">
@@ -82,7 +82,7 @@ export function JoinBrandPanel({
             <ClipboardList className="h-4 w-4" />
           </span>
           <p className="text-[12.5px] leading-snug text-white/60">
-            <span className="block text-[13.5px] font-semibold text-white">Grounded in PRISM.</span> Works with the tools your customers use.
+            <span className="block text-[13.5px] font-semibold text-white">Grounded in PRISM.</span> Works with the tool your customers understand.
           </p>
         </li>
         <li className="flex items-start gap-3">
@@ -91,7 +91,7 @@ export function JoinBrandPanel({
           </span>
           <div>
             <p className="text-[13.5px] font-semibold text-white">{t("brand.settings.title", { defaultValue: "For every setting" })}</p>
-            <p className="text-[12.5px] leading-snug text-white/60">{t("brand.settings.body", { defaultValue: "One platform, sized to the work." })}</p>
+            <p className="text-[12.5px] leading-snug text-white/60">{t("brand.settings.body", { defaultValue: "One platform, many applications." })}</p>
             <ul className="mt-2 flex flex-wrap gap-1.5" aria-label={t("brand.settings.aria", { defaultValue: "Settings" })}>
               {SETTINGS.map(([key, label]) => (
                 <li
