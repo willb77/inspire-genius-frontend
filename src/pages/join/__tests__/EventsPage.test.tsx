@@ -214,8 +214,8 @@ describe("/events brand panel", () => {
     const wall = wallOf(container)
     const text = (wall.textContent ?? "").replace(/\s+/g, " ")
     // title and body are separate blocks (as before), so textContent has no space between them
-    expect(text).toMatch(/Built for practitioners\.\s*Invite clients, follow their progress between sessions\./)
-    expect(text).toMatch(/Grounded in PRISM\.\s*Works with the tools your customers use\./)
+    expect(text).toMatch(/Built for practitioners\.\s*Follow your clients' progress between sessions, keeping them engaged\./)
+    expect(text).toMatch(/Grounded in PRISM\.\s*Works with the tool your customers understand\./)
     expect(text).not.toMatch(/DISC|CliftonStrengths|MBTI|Big Five/)
     expect(text).not.toContain("give each one an AI mentor that is there between your sessions")
     // the rest of the panel is untouched

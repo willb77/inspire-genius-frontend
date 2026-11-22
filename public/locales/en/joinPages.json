@@ -60,7 +60,7 @@
       "education": "Education",
       "enterprise": "Enterprise",
       "title": "For every setting",
-      "body": "One platform, sized to the work.",
+      "body": "One platform, many applications.",
       "aria": "Settings"
     },
     "nextStep": {
@@ -70,7 +70,7 @@
     "eyebrow": "Register your interest",
     "headingLead": "Support every client",
     "headingAccent": "between sessions",
-    "intro": "Inspires Genius gives mentors and practitioners an AI mentoring partner that works alongside them, so clients keep making progress after the session ends.",
+    "intro": "Inspires Genius gives practitioners an AI mentoring partner that works alongside them, so clients keep making progress even after the session ends.",
     "offersAria": "What Inspires Genius offers",
     "practitioners": {
       "title": "Built for practitioners",
