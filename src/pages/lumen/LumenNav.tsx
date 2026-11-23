@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { LUMEN_TOOLS } from "@/constants/vertical-subnav"
+import { ROUTES } from "@/constants/routes"
 
 /**
  * In-vertical navigation for Lumen, plus a signposted way back out.
@@ -27,14 +28,18 @@ import { LUMEN_TOOLS } from "@/constants/vertical-subnav"
 // The same list the sidebar renders inside Lumen — see
 // `@/constants/vertical-subnav`. Shared rather than duplicated so the pill row
 // and the left-rail menu can never disagree about what Lumen contains.
-const TOOLS = LUMEN_TOOLS
+//
+// 2026-11-23 (request): the in-page row no longer shows the "Dashboard" pill.
+// Lumen only, and only this row — LUMEN_TOOLS itself is unchanged, so the left
+// rail's Lumen section still lists Dashboard and the route is untouched.
+const TOOLS = LUMEN_TOOLS.filter(({ to }) => to !== ROUTES.LUMEN.DASHBOARD)
 
 export function LumenNav() {
   const { t } = useTranslation("lumenPages")
   const navigate = useNavigate()
 
   return (
-    <div className="mb-6">
+    <div>
       <nav aria-label="Lumen" className="flex flex-wrap items-center gap-1.5">
         {TOOLS.map(({ to, icon: Icon, label }) => (
           <NavLink
@@ -67,7 +72,7 @@ export function LumenNav() {
           className="ms-auto"
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden />
-          {t("navBackToIg", "Back to Inspire Genius")}
+          {t("navBackToHome", "Back to Home")}
         </Button>
       </nav>
     </div>
@@ -83,7 +88,7 @@ export function LumenNav() {
 export default function LumenShell() {
   return (
     <>
-      <div className="px-6 pt-6">
+      <div className="px-6 pt-4">
         <LumenNav />
       </div>
       <Outlet />

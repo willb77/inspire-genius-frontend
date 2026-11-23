@@ -44,11 +44,33 @@ describe("PrismRadialMap", () => {
     expect(screen.getByText("73")).toBeInTheDocument()
   })
 
-  it("compact keeps the score table for assistive tech only; default leaves it visible", () => {
-    const { unmount } = render(<PrismRadialMap underlying={UNDERLYING} compact />)
-    expect(screen.getByRole("table").closest(".sr-only")).not.toBeNull()
-    unmount()
-    render(<PrismRadialMap underlying={UNDERLYING} />)
+  it("compact shows the score table beside the wheel, in a tight scale, with a cropped viewBox", () => {
+    const { container } = render(<PrismRadialMap underlying={UNDERLYING} compact />)
+    const table = screen.getByRole("table")
+    // Visible: not hidden from sighted users.
+    expect(table.closest(".sr-only")).toBeNull()
+    expect(screen.getByRole("columnheader", { name: "Dimension" })).toBeInTheDocument()
+    expect(screen.getByRole("columnheader", { name: "Quadrant" })).toBeInTheDocument()
+    expect(screen.getByRole("columnheader", { name: "Underlying" })).toBeInTheDocument()
+    expect(screen.getByText("96").closest("td")).toHaveClass("py-1")
+    // Wheel is capped at half size and the viewBox has no empty bands.
+    expect(screen.getByTestId("prism-radial-map").getAttribute("style")).toContain("264px")
+    const svg = container.querySelector("svg")!
+    expect(svg.getAttribute("viewBox")).toBe("0 40 560 524")
+    // Wheel precedes the table in reading order (wheel left / above).
+    expect(
+      screen.getByTestId("prism-radial-map").compareDocumentPosition(table) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it("default mode keeps the original layout, viewBox, key position and plain table", () => {
+    const { container } = render(<PrismRadialMap underlying={UNDERLYING} />)
+    expect((container.firstChild as HTMLElement).className).toBe("grid gap-6 lg:grid-cols-2")
+    expect(screen.getByTestId("prism-radial-map").getAttribute("style")).toBeNull()
+    expect(container.querySelector("svg")!.getAttribute("viewBox")).toBe("0 0 560 600")
+    expect(container.querySelector('g[transform="translate(20, 588)"]')).not.toBeNull()
     expect(screen.getByRole("table").closest(".sr-only")).toBeNull()
+    expect(screen.getByText("96").closest("td")).not.toHaveClass("py-1")
   })
 })

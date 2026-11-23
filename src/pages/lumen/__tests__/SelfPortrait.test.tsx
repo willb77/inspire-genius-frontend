@@ -90,7 +90,19 @@ describe("SelfPortrait", () => {
     ).toBeTruthy()
   })
 
-  test("the map is fed the same scores the bars showed, and keeps them accessible", () => {
+  test("the score table is visible beside the map and sits before the narrative", () => {
+    mockPortrait(FULL)
+    render(<SelfPortrait />)
+    const table = screen.getByRole("table")
+    expect(table.closest(".sr-only")).toBeNull()
+    expect(screen.getByRole("columnheader", { name: "Underlying" })).toBeInTheDocument()
+    expect(
+      table.compareDocumentPosition(screen.getByTestId("assistant-markdown")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  test("the map is fed the same scores the bars showed, and shows them", () => {
     mockPortrait(FULL)
     render(<SelfPortrait />)
     const table = screen.getByRole("table")

@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  *
- * LumenNav — one row: the Lumen tools, then "Back to Inspire Genius".
+ * LumenNav — one row: the Lumen tools, then "Back to Home" (was "Back to Inspire Genius" until 2026-11-23).
  *
  * New on 2026-08-06, with the change it covers. The nav had no tests, which is
  * why removing a whole cross-vertical switcher broke nothing — the absence of a
@@ -32,6 +32,7 @@ jest.mock("@/verticals/core", () => ({
 }));
 
 import { LumenNav } from "../LumenNav";
+import { LUMEN_TOOLS } from "@/constants/vertical-subnav";
 
 function renderNav() {
   return render(
@@ -46,9 +47,17 @@ beforeEach(() => jest.clearAllMocks());
 describe("LumenNav", () => {
   it("renders the Lumen tools", () => {
     renderNav();
-    for (const label of ["Dashboard", "My Self-Portrait", "Prep Me"]) {
+    for (const label of ["My Self-Portrait", "Prep Me"]) {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     }
+  });
+
+  // 2026-11-23 (request): the in-page row drops the Dashboard pill. The route
+  // and the sidebar entry (LUMEN_TOOLS) are untouched.
+  it("has no Dashboard pill, but the sidebar list still has Dashboard", () => {
+    renderNav();
+    expect(screen.queryByRole("link", { name: "Dashboard" })).toBeNull();
+    expect(LUMEN_TOOLS.map((t) => t.label)).toContain("Dashboard");
   });
 
   // Removed 2026-08-06 (request). The page and route are untouched and the
@@ -69,17 +78,19 @@ describe("LumenNav", () => {
     }
   });
 
-  it("keeps Back to Inspire Genius, in the same row as the tools", () => {
+  it("keeps the back link, labelled Back to Home, in the same row as the tools", () => {
     renderNav();
     const back = screen.getByTestId("lumen-back-to-ig");
     expect(back).toBeInTheDocument();
     // Same <nav> as the tools — the point of the change was one row, not two.
     expect(back.closest("nav")).toBe(
-      screen.getByRole("link", { name: "Dashboard" }).closest("nav"),
+      screen.getByRole("link", { name: "My Self-Portrait" }).closest("nav"),
     );
+    expect(back).toHaveTextContent("Back to Home");
+    expect(back).not.toHaveTextContent("Inspire Genius");
   });
 
-  it("Back to Inspire Genius goes home", () => {
+  it("Back to Home goes to /home, where Back to Inspire Genius went", () => {
     renderNav();
     fireEvent.click(screen.getByTestId("lumen-back-to-ig"));
     expect(mockNavigate).toHaveBeenCalledWith("/home");
