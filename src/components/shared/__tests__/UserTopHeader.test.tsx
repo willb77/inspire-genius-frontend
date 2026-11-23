@@ -8,7 +8,7 @@
    `@/lib/axios`, whose module-level `attachInterceptors` runs on import. */
 
 const mockNavigate = jest.fn();
-let mockPathname = "/home";
+let mockPathname = "/dashboard";
 jest.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
   useLocation: () => ({ pathname: mockPathname }),
@@ -44,7 +44,8 @@ const GUIDE_URL =
   "https://ig-demo-public-videos.s3.amazonaws.com/IG_My_Workspace.mp4";
 
 beforeEach(() => {
-  mockPathname = "/home";
+  localStorage.clear();
+  mockPathname = "/dashboard";
   mockUser = {
     id: "u1",
     role: "user",
@@ -90,7 +91,6 @@ describe("UserTopHeader — My Workspace guide pill", () => {
   });
 
   it.each([
-    "/home",
     "/dashboard",
     "/coaches",
     "/documents",
@@ -119,8 +119,8 @@ describe("UserTopHeader — My Workspace guide pill", () => {
   });
 
   it("renders for a super-admin browsing the user surface", () => {
-    // The person who asked for this pill is a super-admin sitting on /home.
-    mockPathname = "/home";
+    // A super-admin browsing the user surface still gets the pill.
+    mockPathname = "/dashboard";
     mockUser = { id: "u1", role: "super-admin", email: "root@example.com" };
     render(<UserTopHeader />);
     expect(screen.getByTestId("workspace-guide-video")).toBeInTheDocument();
@@ -133,6 +133,31 @@ describe("UserTopHeader — My Workspace guide pill", () => {
     render(<UserTopHeader />);
     expect(screen.getByTestId("workspace-guide-video")).toBeInTheDocument();
     expect(screen.getByText(/Welcome! User/)).toBeInTheDocument();
+  });
+});
+
+describe("UserTopHeader — My Workspace guide pill on Home", () => {
+  // The film moved into Home's own Videos dropdown (request, 2026-11-23), so
+  // the header pill is dropped on the new Home — and only there.
+  it.each(["/home", "/home/"])("is not shown on the new Home (%s)", (path) => {
+    mockPathname = path;
+    render(<UserTopHeader />);
+    expect(screen.queryByTestId("workspace-guide-video")).not.toBeInTheDocument();
+    // The rest of the header is untouched.
+    expect(screen.getByText(/Welcome! Will Brown/)).toBeInTheDocument();
+  });
+
+  it("stays on classic Home, which has no Videos dropdown to carry it", () => {
+    mockPathname = "/home/classic";
+    render(<UserTopHeader />);
+    expect(screen.getByTestId("workspace-guide-video")).toBeInTheDocument();
+  });
+
+  it("stays on /home when the new surfaces are switched off (classic renders there)", () => {
+    localStorage.setItem("new_user_surfaces", "false");
+    mockPathname = "/home";
+    render(<UserTopHeader />);
+    expect(screen.getByTestId("workspace-guide-video")).toBeInTheDocument();
   });
 });
 
@@ -177,7 +202,7 @@ describe("UserTopHeader — Interview Studio guide pill", () => {
   });
 
   it("leaves the My Workspace pill on the other user pages", () => {
-    mockPathname = "/home";
+    mockPathname = "/dashboard";
     render(<UserTopHeader />);
     expect(screen.getByTestId("workspace-guide-video")).toHaveTextContent(
       "Watch: My Workspace guide",
@@ -250,7 +275,7 @@ describe("UserTopHeader — interview guide film title (house style, interview a
 
   it("ON: leaves the other films' titles alone", () => {
     localStorage.setItem("house_style_interview", "true");
-    mockPathname = "/home";
+    mockPathname = "/dashboard";
     render(<UserTopHeader />);
     expect(screen.getByTestId("workspace-guide-video")).toHaveTextContent("Watch: My Workspace guide");
   });

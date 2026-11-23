@@ -10,6 +10,11 @@ import {
 } from "@/components/dashboard/v2/WelcomeBackTile";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
+// The map itself fetches; the pill/dialog wiring is what is under test here.
+jest.mock("@/components/prism/PrismSelfMapContent", () => ({
+  PrismSelfMapContent: () => <div data-testid="map-content" />,
+}));
+
 const VIDEOS: DashboardVideo[] = [
   { id: "a", title: "PRISM Survey — Introduction", src: "https://x/a.mp4" },
   { id: "b", title: "Brain-Map Quiz", src: "https://x/b.mp4" },
@@ -27,11 +32,13 @@ function renderTile(overrides?: {
   videos?: DashboardVideo[];
   lastActions?: WelcomeBackLastAction[];
   lastActionsLoading?: boolean;
+  hasReport?: boolean;
+  personalInfo?: WelcomeBackPersonalInfo[];
 }) {
   const onResumeConversation = overrides?.onResumeConversation ?? jest.fn();
   const onAddPersonalInfo = overrides?.onAddPersonalInfo ?? jest.fn();
 
-  const personalInfo: WelcomeBackPersonalInfo[] = [
+  const personalInfo: WelcomeBackPersonalInfo[] = overrides?.personalInfo ?? [
     { name: "Prism Rpt .csv", done: true },
     { name: "Resume", done: false },
     { name: "Bio", done: false },
@@ -40,11 +47,11 @@ function renderTile(overrides?: {
   render(
     <MemoryRouter>
       <WelcomeBackTile
+        heading="Here's your last visit work"
         lastActions={overrides?.lastActions ?? LAST_ACTIONS}
         lastActionsLoading={overrides?.lastActionsLoading}
         onResumeConversation={onResumeConversation}
-        hasReport
-        reportFileName="X.csv"
+        hasReport={overrides?.hasReport ?? true}
         personalInfo={personalInfo}
         onAddPersonalInfo={onAddPersonalInfo}
         quickActions={overrides?.quickActions}
@@ -74,8 +81,10 @@ describe("WelcomeBackTile", () => {
   it("leads with what the user worked on last visit, not a greeting", () => {
     renderTile();
     expect(
-      screen.getByText(/Here's what you worked on last visit/i),
+      screen.getByRole("heading", { name: "Here's your last visit work" }),
     ).toBeInTheDocument();
+    // The old wording is gone, not merely joined by the new one.
+    expect(screen.queryByText(/what you worked on last visit/i)).toBeNull();
     expect(screen.queryByText(/Welcome back,/)).not.toBeInTheDocument();
   });
 
@@ -175,10 +184,46 @@ describe("WelcomeBackTile", () => {
     expect(screen.queryByText(/Your material/i)).not.toBeInTheDocument();
   });
 
-  it("renders the latest report file name", () => {
-    renderTile();
-    expect(screen.getByText(/Latest report:/)).toBeInTheDocument();
-    expect(screen.getByText(/X\.csv/)).toBeInTheDocument();
+  describe("Behavioral Scores pill", () => {
+    it("is the only trace of the old Behavioral assessment block", () => {
+      renderTile();
+      expect(
+        screen.getByRole("button", { name: "Behavioral Scores" }),
+      ).toBeInTheDocument();
+      for (const gone of [
+        /Behavioral assessment/i,
+        /Powered by PRISM/i,
+        /Latest report:/i,
+        /Behavioral map/i,
+      ]) {
+        expect(screen.queryByText(gone)).toBeNull();
+      }
+    });
+
+    it("sits to the LEFT of the 'last visit work' heading, on its row", () => {
+      renderTile();
+      const pill = screen.getByTestId("homev2-behavioral-scores");
+      const heading = screen.getByRole("heading", { name: "Here's your last visit work" });
+      expect(pill.parentElement).toBe(heading.parentElement);
+      expect(
+        pill.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+
+    it("opens the brain map", () => {
+      renderTile();
+      expect(screen.queryByTestId("map-content")).toBeNull();
+      fireEvent.click(screen.getByTestId("homev2-behavioral-scores"));
+      expect(screen.getByTestId("map-content")).toBeInTheDocument();
+    });
+
+    it("is absent when there are no scores — never a pill with nothing behind it", () => {
+      renderTile({ hasReport: false });
+      expect(screen.queryByTestId("homev2-behavioral-scores")).toBeNull();
+      expect(
+        screen.getByRole("heading", { name: "Here's your last visit work" }),
+      ).toBeInTheDocument();
+    });
   });
 
   // Request PRISM Survey / View PRISM Report / Chat with Meridian moved OUT of
@@ -333,10 +378,17 @@ describe("WelcomeBackTile", () => {
       expect(screen.getByTestId(PERSONAL)).toBeInTheDocument();
     });
 
+    it("shows no Personal Info dropdown when the host passes none (About-you panel on)", () => {
+      renderTile({ personalInfo: [], videos: VIDEOS });
+      expect(screen.queryByTestId(PERSONAL)).toBeNull();
+      expect(screen.getByTestId("homev2-quick-videos")).toBeInTheDocument();
+    });
+
     it("omits the row entirely when there is nothing at all to put in it", () => {
       render(
         <MemoryRouter>
           <WelcomeBackTile
+            heading="Here's your last visit work"
             lastActions={LAST_ACTIONS}
             onResumeConversation={jest.fn()}
             hasReport={false}

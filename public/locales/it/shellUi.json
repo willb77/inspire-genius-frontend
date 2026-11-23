@@ -227,7 +227,7 @@
   "behavioralMap": {
     "description": "Il tuo profilo PRISM a 8 dimensioni e i relativi punteggi.",
     "title": "La tua mappa comportamentale",
-    "trigger": "Mappa comportamentale"
+    "scoresPill": "Punteggi comportamentali"
   },
   "broadcastBanner": {
     "dismiss": "Chiudi avviso"

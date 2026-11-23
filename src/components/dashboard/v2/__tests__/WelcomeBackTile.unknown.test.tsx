@@ -25,6 +25,7 @@ function renderTile(
   render(
     <MemoryRouter>
       <WelcomeBackTile
+        heading="Here's your last visit work"
         lastActions={[]}
         onResumeConversation={jest.fn()}
         hasReport={false}

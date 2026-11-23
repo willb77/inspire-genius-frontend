@@ -19,26 +19,8 @@ import { useThemesAllowed } from "@/hooks/useIgTheme";
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 import { INTERVIEW_GUIDE_LABEL } from "@/components/interview/house/practiceWords";
 import type { TFunction } from "i18next";
-
-/**
- * The My Workspace tour (4:13), narrated: Home and the seven sidebar pages.
- *
- * A durable object URL on the public demo bucket the Home videos already play
- * from: no auth, no expiry. A presigned link would lapse and leave a dead pill
- * in the header of every page, which is worse than the one it replaced.
- *
- * Re-recorded 2026-08-26. Pointed at a NEW key rather than overwriting
- * `My_Workspace_userguide.mp4` in place: that bucket is served straight from
- * S3 with `max-age=86400` and no CloudFront in front, so an overwrite has no
- * invalidation path — anyone who had already played the old film would keep
- * getting it for up to a day, with nothing anyone could do about it. A new key
- * is correct for every viewer the moment this deploys.
- *
- * Replaced again 2026-10-02 by `IG_My_Workspace.mp4`, a new key for the same
- * reason. `My_Workspace_Orientation.mp4` stays in the bucket untouched.
- */
-const WORKSPACE_GUIDE_VIDEO_URL =
-  "https://ig-demo-public-videos.s3.amazonaws.com/IG_My_Workspace.mp4";
+import { WORKSPACE_GUIDE_VIDEO_URL } from "@/constants/guideVideos";
+import { isNewHomeEnabled } from "@/lib/surfaceFlags";
 
 /**
  * The Interview Studio tour (2:52), narrated: Interview Studio, Recording &
@@ -122,6 +104,16 @@ function guidePillFor(pathname: string, t: TFunction): GuidePill | null {
     };
   }
   if (matchesPrefix(pathname, ROLE_CONSOLE_PREFIXES)) return null;
+  // Home (the new surface) carries this film in its own Videos dropdown instead
+  // (request), so the header pill is dropped THERE only. Every other user page
+  // keeps it, and so does classic Home (/home/classic, or /home with the new
+  // surfaces switched off), which has no Videos dropdown to move it into.
+  if (
+    (pathname === ROUTES.HOME || pathname === `${ROUTES.HOME}/`) &&
+    isNewHomeEnabled()
+  ) {
+    return null;
+  }
   return {
     label: t("userTopHeader.watchWorkspaceGuide", { defaultValue: "Watch: My Workspace guide" }),
     url: WORKSPACE_GUIDE_VIDEO_URL,

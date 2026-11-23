@@ -30,6 +30,8 @@ const KIND_LABEL: Record<string, string> = {
 
 export interface ProfileMaterialDoc {
   id: string;
+  /** Lower-cased `doc_kind` ("resume", "cv", "bio", "personal"). */
+  kind: string;
   /** Group label ("Resume"), not the raw filename. */
   label: string;
   fileName: string;
@@ -41,6 +43,7 @@ function toMaterial(d: DocumentOut): ProfileMaterialDoc {
   const kind = (d.doc_kind ?? "").toLowerCase();
   return {
     id: d.id,
+    kind,
     label: KIND_LABEL[kind] ?? d.filename,
     fileName: d.filename,
     contentType: d.content_type,
@@ -53,12 +56,13 @@ function toMaterial(d: DocumentOut): ProfileMaterialDoc {
  * the documents API is unavailable — a failure here must not take out Home,
  * which is why the caller renders nothing instead of an error state.
  */
-export function useProfileMaterial(): {
+export function useProfileMaterial(enabled = true): {
   data: ProfileMaterialDoc[];
   isLoading: boolean;
 } {
   const { data, isLoading } = useQuery({
     queryKey: ["profile-material"],
+    enabled,
     queryFn: async (): Promise<ProfileMaterialDoc[]> => {
       const results = await Promise.all(
         PROFILE_DOC_KINDS.map(async (kind) => {

@@ -488,7 +488,7 @@
   "behavioralMap": {
     "description": "Váš profil PRISM o 8 dimenzích a skóre.",
     "title": "Vaše behaviorální mapa",
-    "trigger": "Behaviorální mapa"
+    "scoresPill": "Behaviorální skóre"
   },
   "broadcastBanner": {
     "dismiss": "Zavřít upozornění"

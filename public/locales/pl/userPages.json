@@ -216,7 +216,9 @@
     "yesterday": "Wczoraj",
     "fallbackName": "cześć",
     "videoPrismSurvey": "Ankieta PRISM — wprowadzenie",
-    "videoGoalsStudio": "Goals Studio"
+    "videoGoalsStudio": "Goals Studio",
+    "videoWorkspaceGuide": "Przewodnik po My Workspace",
+    "lastVisitWorkHeading": "Twoja praca z ostatniej wizyty"
   },
   "documents": {
     "unableToGetDownloadLink": "Nie udało się pobrać linku do pobrania",

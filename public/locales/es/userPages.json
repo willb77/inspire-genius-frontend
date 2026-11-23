@@ -521,6 +521,8 @@
     "videoKnowledgeCaptureStudio": "Knowledge Capture Studio",
     "today": "Hoy",
     "yesterday": "Ayer",
-    "fallbackName": "tú"
+    "fallbackName": "tú",
+    "videoWorkspaceGuide": "Guía de My Workspace",
+    "lastVisitWorkHeading": "Tu trabajo de la última visita"
   }
 }

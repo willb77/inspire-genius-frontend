@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   ChevronDown,
   Circle,
-  FileText,
   Lock,
   Play,
   Plus,
@@ -116,14 +115,24 @@ interface WelcomeBackTileProps {
    * the empty-state "start a conversation" link.
    */
   onResumeConversation: (conversationId?: string) => void;
+  /**
+   * The tile's heading ("Here's your last visit work"). Passed in by the page,
+   * which owns its translation (userPages), rather than re-resolved here.
+   */
+  heading: string;
+  /**
+   * The member's PRISM scores are on file. Gates the "Behavioral Scores" pill
+   * beside the heading — it never shows with nothing behind it. (The
+   * "Behavioral assessment" block with its "Latest report" line was replaced by
+   * that pill, so the file name and loading flag are no longer passed.)
+   */
   hasReport: boolean;
-  reportFileName?: string;
-  prismLoading?: boolean;
-  // `onRequestAssessment` and `onViewReportPdf` were dropped on 2026-08-06:
-  // both buttons moved to the page header, and the host owns them there. The
-  // tile still receives `hasReport`/`reportFileName` because it renders the
-  // "Latest report" line beside "Powered by PRISM".
-  personalInfo: WelcomeBackPersonalInfo[];
+  /**
+   * The Personal Info dropdown. Home passes this ONLY while the About-you panel
+   * is off (it is the only upload route then); with the panel on it is empty
+   * and the row is exactly the quick actions plus Videos.
+   */
+  personalInfo?: WelcomeBackPersonalInfo[];
   /** Re-run the queries behind the checklist after a failed check. */
   onRetryPersonalInfo?: () => void;
   onAddPersonalInfo?: (name: string) => void;
@@ -470,13 +479,12 @@ function QuickActions({
 }
 
 export function WelcomeBackTile({
+  heading,
   lastActions = [],
   lastActionsLoading = false,
   onResumeConversation,
   hasReport,
-  reportFileName,
-  prismLoading = false,
-  personalInfo,
+  personalInfo = [],
   onRetryPersonalInfo,
   onAddPersonalInfo,
   quickActions = [],
@@ -493,11 +501,15 @@ export function WelcomeBackTile({
       {/* `text-left` is explicit rather than relying on the default: the
           heading is the tile's first line and nothing downstream should be
           able to centre it by inheriting alignment from a future wrapper. */}
-      <h2 className="text-left font-serif text-[22px] leading-tight text-ig-ink">
-        {t("homeV2.lastVisitHeading", {
-          defaultValue: "Here's what you worked on last visit.",
-        })}
-      </h2>
+      {/* "Behavioral Scores" sits to the LEFT of the heading (request, replacing
+          the old "Behavioral assessment" block). Scores only: no pill when
+          there is nothing for it to open. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        {hasReport ? <BehavioralMapDialog /> : null}
+        <h2 className="text-left font-serif text-[22px] leading-tight text-ig-ink">
+          {heading}
+        </h2>
+      </div>
 
       {lastActionsLoading ? (
         <p className="mt-1.5 text-[13px] text-ig-body">
@@ -558,51 +570,7 @@ export function WelcomeBackTile({
       )}
 
       {/* 3. Divider */}
-      <div className="my-5 h-px w-full bg-ig-line" />
-
-      {/* 4. Behavioral row.
-          The three buttons that used to sit on the right — Chat with Meridian,
-          Request PRISM Survey, View PRISM Report — moved to the page header
-          above the tile on 2026-08-06 (request), so this row is now the label
-          plus the report status only.
-          "Latest report: …" moved up beside "Powered by PRISM" in the same
-          move: it is a property of the assessment, and it was previously a
-          detached line below the row. */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-serif text-base text-ig-ink">
-            {t("homeV2.behavioralAssessment", {
-              defaultValue: "Behavioral assessment",
-            })}
-          </h3>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-ig-faint">
-              {t("homeV2.poweredByPrism", { defaultValue: "Powered by PRISM" })}
-            </p>
-            {prismLoading ? (
-              <span className="text-[13px] text-ig-body">
-                {t("homeV2.checkingReport", {
-                  defaultValue: "Checking your latest report…",
-                })}
-              </span>
-            ) : hasReport ? (
-              <span
-                className="flex min-w-0 items-center gap-2 text-[13px] text-ig-body"
-                data-testid="homev2-latest-report"
-              >
-                <FileText className="size-3.5 shrink-0 text-ig-faint" />
-                <span className="min-w-0 truncate">
-                  {t("homeV2.latestReportPrefix", {
-                    defaultValue: "Latest report:",
-                  })}{" "}
-                  {reportFileName}
-                </span>
-                <BehavioralMapDialog />
-              </span>
-            ) : null}
-          </div>
-        </div>
-      </div>
+      <div className="my-4 h-px w-full bg-ig-line" />
 
       {/* 5. Quick actions.
           The "Your material" list that used to sit here — every uploaded

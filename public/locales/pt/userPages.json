@@ -314,7 +314,9 @@
     "videoKnowledgeCaptureStudio": "Knowledge Capture Studio",
     "today": "Hoje",
     "yesterday": "Ontem",
-    "fallbackName": "você"
+    "fallbackName": "você",
+    "videoWorkspaceGuide": "Guia do My Workspace",
+    "lastVisitWorkHeading": "Seu trabalho da última visita"
   },
   "interviewPracticePage": {
     "somethingWentWrongPleaseTryAgain": "Algo deu errado — tente novamente.",

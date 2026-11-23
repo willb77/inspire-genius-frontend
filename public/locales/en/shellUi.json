@@ -76,7 +76,7 @@
   "behavioralMap": {
     "description": "Your PRISM 8-dimension profile and scores.",
     "title": "Your behavioral map",
-    "trigger": "Behavioral map"
+    "scoresPill": "Behavioral Scores"
   },
   "broadcastBanner": {
     "dismiss": "Dismiss alert"

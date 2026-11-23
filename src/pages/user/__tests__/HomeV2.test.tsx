@@ -2,6 +2,15 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+// The About-you panel switch is OFF here, so this file is the "panel off = the
+// controls Home always had are still there" check. The panel-ON behaviour
+// (header buttons and Personal Info dropped, profile tiles, View pills) lives
+// in HomeV2.aboutYou.test.tsx and HomeV2.profileTiles.test.tsx.
+jest.mock("@/hooks/switches/useHomeAboutYouPanelEnabled", () => ({
+  useHomeAboutYouPanelStatus: () => "off",
+  useHomeAboutYouPanelEnabled: () => false,
+}));
+
 // Mock the layout + data hooks so HomeV2 renders in isolation.
 jest.mock("@/layouts/UserLayout", () => ({
   __esModule: true,
@@ -147,7 +156,7 @@ describe("HomeV2", () => {
   it("renders", () => {
     wrap();
     expect(
-      screen.getByText(/Here's what you worked on last visit/i),
+      screen.getByText("Here's your last visit work"),
     ).toBeInTheDocument();
   });
 
@@ -266,7 +275,7 @@ describe("HomeV2", () => {
       const { container } = wrap();
       const html = container.innerHTML;
       const header = html.indexOf('data-testid="homev2-header"');
-      const lastVisit = html.indexOf("worked on last visit");
+      const lastVisit = html.indexOf("last visit work");
       expect(header).toBeGreaterThan(-1);
       expect(lastVisit).toBeGreaterThan(header);
     });
@@ -291,12 +300,26 @@ describe("HomeV2", () => {
       expect(videoMenu().getByText("Goals Studio")).toBeInTheDocument();
     });
 
-    it("lists the PRISM intro and the six studio tours, in order", () => {
+    it("carries the My Workspace guide as the first video, with the guide's URL", () => {
+      // Moved from the app header's pill (request, 2026-11-23).
+      wrap();
+      fireEvent.click(screen.getByTestId("homev2-quick-videos"));
+      const first = videoMenu().getAllByRole("button")[0];
+      expect(first).toHaveTextContent("My Workspace guide");
+      fireEvent.click(first);
+      expect(document.querySelector("video")).toHaveAttribute(
+        "src",
+        "https://ig-demo-public-videos.s3.amazonaws.com/IG_My_Workspace.mp4",
+      );
+    });
+
+    it("lists the workspace guide, the PRISM intro and the six studio tours, in order", () => {
       wrap();
       fireEvent.click(screen.getByTestId("homev2-quick-videos"));
       // Scoped to the dropdown: Home also has a "Goals Studio" quick action.
       const menu = videoMenu();
       const titles = [
+        "My Workspace guide",
         "PRISM Survey — Introduction",
         "Goals Studio",
         "Interview Studio",
@@ -348,28 +371,15 @@ describe("HomeV2", () => {
       );
     });
 
-    // 2026-08-11: Goals UN-locked. LOCKED_QUICK_ACTIONS is now empty, so every
-    // pill in the row is decided by entitlement alone.
-    // 2026-09-04 (Goals offering, Phase 3 — decision D8): Goals is base
-    // product. The pill points at /my/goals and is gated on NOTHING — a user
-    // without the Direction Setting vertical used to have no way to their own
-    // goals from Home.
-    it("links Goals at /my/goals whatever the entitlements", () => {
+    // Goals Studio and My development were REMOVED from this row (request,
+    // 2026-11-23). They stay in the sidebar, ungated; see navigation.test.ts.
+    it("no longer carries Goals Studio or My development pills", () => {
       mockEnabledVerticals.mockReturnValue({
         data: ["lumen", "direction-setting"],
       });
       wrap();
-      const goals = screen.getByTestId("homev2-quick-goals");
-      expect(goals).toHaveAttribute("href", "/my/goals");
-      expect(goals).not.toHaveAttribute("aria-disabled", "true");
-    });
-
-    it("does NOT lock Goals for a user without Direction Setting", () => {
-      mockEnabledVerticals.mockReturnValue({ data: ["lumen"] });
-      wrap();
-      const goals = screen.getByTestId("homev2-quick-goals");
-      expect(goals).toHaveAttribute("href", "/my/goals");
-      expect(goals).not.toHaveAttribute("aria-disabled", "true");
+      expect(screen.queryByTestId("homev2-quick-goals")).toBeNull();
+      expect(screen.queryByTestId("homev2-quick-my-development")).toBeNull();
     });
 
     it("drops My Journey and Job Fit from the row entirely", () => {
@@ -404,8 +414,6 @@ describe("HomeV2", () => {
           "true",
         );
       }
-      // Goals needs no entitlement, so there is nothing to wait for.
-      expect(screen.getByTestId("homev2-quick-goals")).toHaveAttribute("href", "/my/goals");
     });
   });
 });
@@ -428,7 +436,7 @@ describe("HomeV2 — 2026-08-03 changes", () => {
     expect(screen.queryByTestId("quick-direction-card")).not.toBeInTheDocument();
   });
 
-  it("orders the row Self-Portrait → Prep Me → Goals", () => {
+  it("orders the row Self-Portrait → Prep Me and holds nothing else but Videos", () => {
     mockEnabledVerticals.mockReturnValue({
       data: ["lumen", "job-fit", "direction-setting"],
     });
@@ -440,9 +448,11 @@ describe("HomeV2 — 2026-08-03 changes", () => {
     expect(keys.indexOf("homev2-quick-self-portrait")).toBeLessThan(
       keys.indexOf("homev2-quick-moments"),
     );
-    expect(keys.indexOf("homev2-quick-moments")).toBeLessThan(
-      keys.indexOf("homev2-quick-goals"),
-    );
+    expect(keys.filter((k) => k !== "homev2-quick-actions")).toEqual([
+      "homev2-quick-self-portrait",
+      "homev2-quick-moments",
+      "homev2-quick-videos",
+    ]);
   });
   it("no longer carries the guide pill — it lives in UserTopHeader now", () => {
     // Moved 2026-08-25 (request) to sit beside "Welcome! {name}" in the app

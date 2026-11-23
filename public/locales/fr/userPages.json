@@ -132,7 +132,9 @@
     "videoKnowledgeCaptureStudio": "Knowledge Capture Studio",
     "today": "Aujourd'hui",
     "yesterday": "Hier",
-    "fallbackName": "à vous"
+    "fallbackName": "à vous",
+    "videoWorkspaceGuide": "Guide de My Workspace",
+    "lastVisitWorkHeading": "Votre travail de la dernière visite"
   },
   "home": {
     "notStarted": "Non commencé",
