@@ -71,31 +71,33 @@ const FULL: Portrait = {
 describe("SelfPortrait", () => {
   afterEach(() => jest.resetAllMocks())
 
-  test("leads with the headline and the behavioural dimensions", () => {
+  test("leads with the headline and the Brain Map, not the bar chart", () => {
     mockPortrait(FULL)
     render(<SelfPortrait />)
     expect(screen.getByRole("heading", { level: 1, name: "My Self-Portrait" })).toBeInTheDocument()
-    expect(screen.getByText("The eight behavioural dimensions")).toBeInTheDocument()
-    expect(screen.getByText("Innovating")).toBeInTheDocument()
+    expect(screen.getByTestId("prism-radial-map")).toBeInTheDocument()
+    // The bar chart (PortraitDimensions) is no longer rendered on this page.
+    expect(screen.queryByText("The eight behavioural dimensions")).not.toBeInTheDocument()
   })
 
-  test("keeps the quadrant read even though the quadrant card is gone", () => {
-    // The whole justification for removing `PortraitQuadrants` from this page:
-    // the dimensions card groups each pair under its quadrant colour, so
-    // Green/Blue/Red/Gold survive — with their constituent scores, not just the
-    // mean. If that grouping ever disappears, this removal starts losing data.
+  test("the Brain Map renders above the plain-language narrative", () => {
     mockPortrait(FULL)
     render(<SelfPortrait />)
-    // Scoped to the dimensions card: "Green" and "Blue" also appear in the
-    // corroborating list as `maps_to`, and an unscoped query would pass on
-    // those alone — i.e. it would pass even if the grouping were gone.
-    const card = screen
-      .getByText("The eight behavioural dimensions")
-      .closest("[data-slot='card']") as HTMLElement
-    expect(within(card).getByText("Green")).toBeInTheDocument()
-    expect(within(card).getByText("Blue")).toBeInTheDocument()
-    expect(within(card).getByText("Innovating")).toBeInTheDocument()
-    expect(screen.queryByText("Green leads")).not.toBeInTheDocument()
+    const map = screen.getByTestId("prism-radial-map")
+    const narrative = screen.getByTestId("assistant-markdown")
+    expect(
+      map.compareDocumentPosition(narrative) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  test("the map is fed the same scores the bars showed, and keeps them accessible", () => {
+    mockPortrait(FULL)
+    render(<SelfPortrait />)
+    const table = screen.getByRole("table")
+    expect(within(table).getByText("Innovating").closest("tr")).toHaveTextContent("90")
+    expect(within(table).getByText("Coordinating").closest("tr")).toHaveTextContent("10")
+    // Only measured dimensions are plotted, none invented.
+    expect(within(table).getByText("Focusing").closest("tr")).toHaveTextContent("—")
   })
 
   test("lists corroborating instruments with their confidence", () => {
@@ -182,6 +184,8 @@ describe("SelfPortrait", () => {
     expect(screen.getByTestId("provenance-note")).toHaveTextContent(/your résumé/)
     expect(screen.getByTestId("provenance-note")).not.toHaveTextContent(/measured from/i)
     expect(screen.queryByText(/leads$/)).not.toBeInTheDocument()
+    // No PRISM => no Brain Map; PortraitNoPrism stays.
+    expect(screen.queryByTestId("prism-radial-map")).not.toBeInTheDocument()
     // The coverage line moved off this page with "What this is built from".
     expect(screen.queryByText(/rests on your résumé alone/)).not.toBeInTheDocument()
   })
@@ -197,6 +201,7 @@ describe("SelfPortrait", () => {
     })
     render(<SelfPortrait />)
     expect(screen.queryByText("The eight behavioural dimensions")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("prism-radial-map")).not.toBeInTheDocument()
     expect(screen.queryByText("Green leads")).not.toBeInTheDocument()
     // The rest of the page still stands.
     expect(screen.getByText("confidence 0.92")).toBeInTheDocument()

@@ -5,17 +5,47 @@ import { ProvenanceNote } from "@/components/shared/ProvenanceNote"
 import {
   PortraitAnchorNote,
   PortraitCorroborating,
-  PortraitDimensions,
   PortraitNoPrism,
   PortraitSkeleton,
 } from "@/components/lumen/portrait"
+import { PrismRadialMap } from "@/components/prism/PrismRadialMap"
+import { BEHAVIOUR_CONFIG } from "@/constants/prism"
+import type { PrismDimension, PrismDimensionId, PrismQuadrantId } from "@/types/development"
+import type { PrismAnchor, PrismDimensionKey } from "@/types/lumen"
 import { SelfPortraitNarrative } from "./SelfPortraitNarrative"
+
+const DIMENSION_IDS: Record<PrismDimensionKey, PrismDimensionId> = {
+  innovating: 1,
+  initiating: 2,
+  supporting: 3,
+  coordinating: 4,
+  focusing: 5,
+  delivering: 6,
+  finishing: 7,
+  evaluating: 8,
+}
+
+/** Anchor dimensions -> the wheel's layer shape, labels/quadrants from BEHAVIOUR_CONFIG. */
+function toWheelLayer(prism: PrismAnchor): PrismDimension[] {
+  const out: PrismDimension[] = []
+  for (const [key, id] of Object.entries(DIMENSION_IDS) as [PrismDimensionKey, PrismDimensionId][]) {
+    const score = prism.dimensions?.[key]
+    if (score === undefined) continue
+    out.push({
+      id,
+      label: BEHAVIOUR_CONFIG[id].label,
+      score,
+      quadrant: BEHAVIOUR_CONFIG[id].quadrant as PrismQuadrantId,
+    })
+  }
+  return out
+}
 
 /**
  * "My Self-Portrait" — one coherent behavioral read across every instrument.
  *
- * Deliberately narrow (2026-08-08): the plain-language read, the eight
- * behavioural dimensions, and the instruments that corroborate them. The
+ * Deliberately narrow (2026-08-08): the plain-language read, the PRISM Brain
+ * Map, and the instruments that corroborate them. The
  * question box, the source-coverage panel, the quadrant summary, the
  * own-words evidence block and the agree/pull-apart grid were all removed from
  * *this* page by request.
@@ -26,9 +56,15 @@ import { SelfPortraitNarrative } from "./SelfPortraitNarrative"
  * and is unchanged. The two pages now differ in composition as well as in voice
  * and navigation; edit one and you have not edited the other.
  *
- * The quadrant read survives the loss of `PortraitQuadrants`: `PortraitDimensions`
- * groups all eight dimensions under their quadrant colour, so Green/Blue/Red/Gold
- * are still on the page — with the constituent scores rather than just the mean.
+ * Composition: header, then the Brain Map (`PrismRadialMap`, compact, capped
+ * by viewport height so the map and the start of "In plain language" share one
+ * screen), then the narrative. The map is fed from `portrait.prism.dimensions`,
+ * the same data the bar chart used, so map and text cannot disagree. The four
+ * quadrant colours are the wheel's own wedges; the eight scores stay available
+ * to assistive tech through the wheel's sr-only table. `PortraitDimensions`
+ * (the bar chart) is no longer rendered here, but is unchanged and still used
+ * by Establish and Career Discovery. The Introversion/Extroversion spectrum it
+ * showed is not on this page.
  *
  * The backend is untouched and still returns `sources`, `evidence`,
  * `convergences`, `tensions` and the `/ask` route; the PDF/Word export continues
@@ -65,6 +101,8 @@ export default function SelfPortrait() {
     )
   }
 
+  const wheel = portrait.prism ? toWheelLayer(portrait.prism) : []
+
   return (
     <div className="space-y-6 p-6">
       <header className="space-y-2">
@@ -75,6 +113,12 @@ export default function SelfPortrait() {
         <ProvenanceNote sources={portrait.sources ?? {}} className="max-w-3xl" />
       </header>
 
+      {wheel.length > 0 && (
+        <div>
+          <PrismRadialMap underlying={wheel} compact />
+        </div>
+      )}
+
       {/* Plain-language description + PDF/Word export. `showAsk={false}` drops
           the question box here only — Establish still carries it. */}
       <SelfPortraitNarrative portrait={portrait} showAsk={false} />
@@ -84,9 +128,7 @@ export default function SelfPortrait() {
           title={t("portraitBuiltOn", "What this is built on so far")}
           headline={portrait.headline}
         />
-      ) : (
-        <PortraitDimensions prism={portrait.prism} />
-      )}
+      ) : null}
 
       <PortraitCorroborating
         instruments={portrait.corroborating}
