@@ -28,8 +28,6 @@ const S3 = "2099-03-05T18:30:00Z"
 // An event zone the viewer is very unlikely to share (Bill is in New York, CI is UTC), so a
 // time shown in the wrong zone cannot pass by coincidence.
 const REF_ZONE = "Pacific/Auckland"
-const ref = (iso: string) =>
-  new Date(iso).toLocaleTimeString("en-US", { timeZone: REF_ZONE, hour: "numeric", minute: "2-digit", timeZoneName: "short" })
 const ev = (starts_at: string, extra: Record<string, unknown> = {}, title = TITLE) => ({
   title,
   starts_at,
@@ -160,7 +158,7 @@ describe("the card", () => {
     expect(radios).toHaveLength(3)
     expect(radios[0].closest("div")).toHaveTextContent(local(S1).day)
     expect(radios[0].closest("div")).toHaveTextContent(local(S1).time) // the viewer's time, large
-    expect(radios[0].closest("div")).toHaveTextContent(ref(S1)) // the event's own zone, small
+    expect(radios[0].closest("div")).toHaveTextContent("9:00 AM ET") // US Eastern, small (14:00 UTC in March, EST)
     expect(screen.getAllByText(`Times shown in your time zone (${local(S1).zone})`).length).toBeGreaterThan(0)
   })
 
@@ -223,7 +221,8 @@ describe("the card", () => {
     for (const input of within(group).getAllByRole("radio")) {
       const label = document.querySelector(`label[for="${input.id}"]`) as HTMLElement
       // top row: the logo first, LIVE DEMO after it (the row puts it on the right)
-      const top = label.firstElementChild as HTMLElement
+      // (the "30-day Free Access" pill is the label's first child, above this row)
+      const top = label.querySelector("img")?.parentElement as HTMLElement
       expect(top.firstElementChild).toHaveAttribute("src", "/Logo-Dark.png")
       expect(top.lastElementChild).toHaveTextContent("LIVE DEMO")
       // the heading text sits under the logo, in the owner's order
@@ -240,6 +239,44 @@ describe("the card", () => {
     }
     expect(screen.getAllByText("See your AI mentoring partner in action")).toHaveLength(3)
     expect(screen.getAllByText("LIVE DEMO")).toHaveLength(3)
+  })
+
+  it("every tile carries a '30-day Free Access' pill at its top, once, and nowhere else", async () => {
+    network([ev(S1, { description: "x" }), ev(S2, { description: "y" }), ev(S3, { description: "z" })], withOptions(opt("a", S1), opt("b", S2), opt("c", S3)))
+    renderPage()
+    await screen.findByRole("button", { name: /Save my seat/ })
+    const pills = screen.getAllByText("30-day Free Access")
+    expect(pills).toHaveLength(tiles().length)
+    expect(pills).toHaveLength(3)
+    for (const input of tiles()) {
+      const label = document.querySelector(`label[for="${input.id}"]`) as HTMLElement
+      // exactly one per tile, and it is the first thing in the tile (above the logo row)
+      expect(within(label).getAllByText("30-day Free Access")).toHaveLength(1)
+      expect(label.firstElementChild).toHaveTextContent(/^30-day Free Access$/)
+      // plain text, not a control
+      expect(label.firstElementChild?.closest("button, a, input")).toBeNull()
+      // the radio's name is still the session (aria-label), not polluted by the pill
+      expect(input).not.toHaveAccessibleName(/Free Access/)
+    }
+    for (const b of screen.getAllByRole("button", { name: /Details/ })) expect(b).not.toHaveTextContent(/Free Access/)
+    expect(screen.getByRole("button", { name: /Save my seat/ })).not.toHaveTextContent(/Free Access/)
+  })
+
+  it.each([
+    ["winter (EST period), event in New York", "2099-01-13T15:00:00Z", "America/New_York", "10:00 AM ET"],
+    ["winter (EST period), event in London", "2099-01-13T15:00:00Z", "Europe/London", "10:00 AM ET"],
+    ["summer (EDT period), event in New York", "2099-07-14T15:00:00Z", "America/New_York", "11:00 AM ET"],
+    ["summer (EDT period), event in London", "2099-07-14T15:00:00Z", "Europe/London", "11:00 AM ET"],
+  ])("the small line under the large time is New York's wall clock labelled ET: %s", async (_n, iso, zone, expected) => {
+    network([ev(iso, { time_zone: zone })])
+    renderPage()
+    await screen.findAllByRole("radiogroup")
+    const label = document.querySelector(`label[for="${tiles()[0].id}"]`) as HTMLElement
+    const large = within(label).getByText(local(iso).time)
+    expect(large.className).toMatch(/text-2xl/) // the large time is still the viewer's, unchanged
+    const small = large.nextElementSibling as HTMLElement
+    expect(small.textContent).toBe(expected)
+    expect(label).not.toHaveTextContent(/\bE[SD]T\b/)
   })
 
   it("the radio's own name is the session, not the whole marketing text", async () => {
