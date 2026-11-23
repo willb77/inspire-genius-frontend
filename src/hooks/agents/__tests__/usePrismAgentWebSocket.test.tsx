@@ -91,7 +91,6 @@ class MockMediaRecorder {
   public onstart: (() => void) | null = null;
   public onstop: (() => void) | null = null;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   start() {
     this.state = "recording";
     if (this.onstart) this.onstart();

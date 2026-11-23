@@ -225,7 +225,6 @@ export default function AlexChatPanel({
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, historyMutation.isPending]);
 
   const onResponse = useCallback((response: AlexResponse) => {

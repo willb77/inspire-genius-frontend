@@ -38,10 +38,8 @@ test.describe("caching and performance", () => {
     if (
       await coachesLink.isVisible({ timeout: 3000 }).catch(() => false)
     ) {
-      const coldStart = Date.now();
       await coachesLink.click();
       await page.waitForLoadState("networkidle");
-      const coldTime = Date.now() - coldStart;
 
       // Navigate away
       const homeLink = page.getByRole("link", { name: /home|dashboard/i });

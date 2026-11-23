@@ -177,7 +177,9 @@ describe("useUserManagement Hooks", () => {
           first_name: "X",
           last_name: "Y",
         });
-      } catch {}
+      } catch {
+        // rejection is expected; the outcome is asserted below
+      }
     });
 
     expect(toast.error).toHaveBeenCalledWith("Invite failed");
@@ -199,7 +201,9 @@ describe("useUserManagement Hooks", () => {
           first_name: "X",
           last_name: "Y",
         });
-      } catch {}
+      } catch {
+        // rejection is expected; the outcome is asserted below
+      }
     });
 
     expect(toast.error).toHaveBeenCalledWith("Network error");
@@ -219,7 +223,9 @@ describe("useUserManagement Hooks", () => {
           first_name: "X",
           last_name: "Y",
         });
-      } catch {}
+      } catch {
+        // rejection is expected; the outcome is asserted below
+      }
     });
 
     expect(toast.error).toHaveBeenCalledWith("Failed to invite user");
@@ -266,7 +272,9 @@ describe("useUserManagement Hooks", () => {
           email: "test@example.com",
           payload: { first_name: "A", last_name: "B" },
         });
-      } catch {}
+      } catch {
+        // rejection is expected; the outcome is asserted below
+      }
     });
 
     expect(toast.error).toHaveBeenCalledWith("Failed to update user");
@@ -302,7 +310,9 @@ describe("useUserManagement Hooks", () => {
     await act(async () => {
       try {
         await result.current.mutateAsync({ email: "test@example.com" });
-      } catch {}
+      } catch {
+        // rejection is expected; the outcome is asserted below
+      }
     });
 
     expect(toast.error).toHaveBeenCalledWith("Failed to delete user");
@@ -338,7 +348,9 @@ describe("useUserManagement Hooks", () => {
     await act(async () => {
       try {
         await result.current.mutateAsync("inv-id");
-      } catch {}
+      } catch {
+        // rejection is expected; the outcome is asserted below
+      }
     });
 
     expect(toast.error).toHaveBeenCalledWith("Failed to resend invitation");
@@ -429,7 +441,9 @@ describe("useUserManagement Hooks", () => {
           userId: "user-1",
           expires_at: "2020-01-01T00:00:00.000Z",
         });
-      } catch {}
+      } catch {
+        // rejection is expected; the outcome is asserted below
+      }
     });
 
     expect(toast.error).toHaveBeenCalledWith(
@@ -450,7 +464,9 @@ describe("useUserManagement Hooks", () => {
           userId: "user-1",
           expires_at: "2026-07-01T00:00:00.000Z",
         });
-      } catch {}
+      } catch {
+        // rejection is expected; the outcome is asserted below
+      }
     });
 
     expect(toast.error).toHaveBeenCalledWith(

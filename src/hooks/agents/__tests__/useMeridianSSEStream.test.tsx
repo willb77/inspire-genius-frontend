@@ -95,7 +95,7 @@ describe("useMeridianSSEStream", () => {
 
   it("cancel() aborts the in-flight stream without surfacing an error", async () => {
     ;(svc.streamMeridianChat as jest.Mock).mockImplementation(
-      async (_req, _cbs) => {
+      async () => {
         await new Promise(() => {
           /* never resolves; cancel() should abort it */
         })

@@ -232,7 +232,7 @@ export function VoiceChat({
 
       // Start waveform visualization
       drawWaveform();
-    } catch (err) {
+    } catch {
       setError("Microphone access denied");
       setState("idle");
     }

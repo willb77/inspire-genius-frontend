@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAs, ROLE_CREDENTIALS } from "./helpers";
+import { loginAs } from "./helpers";
 
 // ─── 5.T6.2: Analytics Verification E2E ─────────────────────────────
 

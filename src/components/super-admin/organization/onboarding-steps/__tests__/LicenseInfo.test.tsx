@@ -41,8 +41,6 @@ jest.mock("@/components/ui/form", () => ({
 /* ---------------------------------- */
 /* MOCK DATE PICKER (CORRECT)         */
 /* ---------------------------------- */
-let startCallCount = 0;
-let endCallCount = 0;
 
 let startDisabledFn: ((date: Date) => boolean) | null = null;
 let endDisabledFn: ((date: Date) => boolean) | null = null;
@@ -62,13 +60,11 @@ jest.mock("@/components/shared/DatePickerButton", () => ({
         data-testid={placeholder}
         onClick={() => {
           if (placeholder === "Select end date") {
-            endCallCount += 1;
             // END DATE → always EARLIER
             onSelect(new Date("2024-01-01"));
           }
 
           if (placeholder === "Select start date") {
-            startCallCount += 1;
             // START DATE → always LATER
             onSelect(new Date("2025-01-01"));
           }
@@ -95,8 +91,6 @@ const mockForm = {
 /* ---------------------------------- */
 describe("LicenseInfoStep", () => {
   beforeEach(() => {
-    startCallCount = 0;
-    endCallCount = 0;
     startDisabledFn = null;
     endDisabledFn = null;
     jest.clearAllMocks();

@@ -14,7 +14,6 @@ jest.mock("@inspiresgenius/dag-builder", () => ({
   // methods are not exercised in these tests, but the constructor must
   // exist as a callable so `new TemplateApiClient(...)` does not throw.
   TemplateApiClient: class {
-    constructor(_baseUrl: string, _adapter: unknown, _httpClient?: unknown) {}
     async list() { return [] }
     async get() { return null }
     async create(t: unknown) { return t }
