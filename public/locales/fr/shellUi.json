@@ -486,7 +486,7 @@
   "behavioralMap": {
     "description": "Votre profil PRISM à 8 dimensions et vos scores.",
     "title": "Votre carte comportementale",
-    "trigger": "Carte comportementale"
+    "scoresPill": "Scores comportementaux"
   },
   "broadcastBanner": {
     "dismiss": "Fermer l'alerte"

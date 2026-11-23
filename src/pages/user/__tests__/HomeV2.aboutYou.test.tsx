@@ -14,6 +14,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const mockSwitch = jest.fn(() => false);
 jest.mock("@/hooks/switches/useHomeAboutYouPanelEnabled", () => ({
   useHomeAboutYouPanelEnabled: () => mockSwitch(),
+  useHomeAboutYouPanelStatus: () => (mockSwitch() ? "on" : "off"),
+}));
+// The View pills' data sources are covered in HomeV2.profileTiles.test.tsx.
+jest.mock("@/hooks/prism/usePrismReportDownload", () => ({
+  useMyPrismReport: () => ({ data: undefined }),
+  useMyPrismReportDownloadUrl: () => ({ mutateAsync: jest.fn() }),
+}));
+jest.mock("@/hooks/documents/useProfileMaterial", () => ({
+  useProfileMaterial: () => ({ data: [], isLoading: false }),
 }));
 
 jest.mock("@/layouts/UserLayout", () => ({
@@ -137,7 +146,7 @@ describe("HomeV2 — HOME-1 switch", () => {
     wrap();
     const panel = screen.getByTestId(PANEL);
     expect(within(panel).getAllByTestId("about-you-tile")).toHaveLength(4);
-    for (const label of ["Request it", "Upload report", "Upload résumé", "Add bio"]) {
+    for (const label of ["Request the Survey", "Upload report", "Upload résumé", "Add bio"]) {
       expect(within(panel).getByRole("button", { name: label })).toBeEnabled();
     }
     expect(within(panel).getByText("Nothing on file yet — that's a fine place to start.")).toBeInTheDocument();
@@ -146,9 +155,20 @@ describe("HomeV2 — HOME-1 switch", () => {
     const quick = screen.getByTestId("homev2-quick-actions");
     expect(header.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(panel.compareDocumentPosition(quick) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    // The header button and the Personal Info menu are unchanged (option 1).
-    expect(screen.getByTestId("homev2-request-prism-survey")).toBeInTheDocument();
-    expect(screen.getByTestId("homev2-personal-info-dropdown")).toBeInTheDocument();
+    // With the panel on, the controls it replaces are gone (request, 2026-11-23).
+    expect(screen.queryByTestId("homev2-chat-with-meridian")).toBeNull();
+    expect(screen.queryByTestId("homev2-request-prism-survey")).toBeNull();
+    expect(screen.queryByTestId("homev2-prism-data")).toBeNull();
+    expect(screen.queryByTestId("homev2-personal-info-dropdown")).toBeNull();
+  });
+
+  it("on: the heading reads 'Here's what's in your profile'", () => {
+    mockSwitch.mockReturnValue(true);
+    wrap();
+    expect(
+      within(screen.getByTestId(PANEL)).getByRole("heading", { name: "Here's what's in your profile" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("What we know about you")).toBeNull();
   });
 
   it("on, PRISM + résumé + bio on file: one collapsed line, with a Show toggle", () => {
@@ -191,6 +211,10 @@ describe("HomeV2 — HOME-1 switch", () => {
     const panel = screen.getByTestId(PANEL);
     expect(within(panel).getByText("Scores on file")).toBeInTheDocument();
     expect(within(panel).getByText("Results are in")).toBeInTheDocument();
+    // Scores loaded: the survey tile becomes "Your Scores" with View Scores.
+    expect(within(panel).getByText("Your Scores")).toBeInTheDocument();
+    expect(within(panel).getByRole("button", { name: "View Scores" })).toBeInTheDocument();
+    expect(within(panel).queryByText("Request your PRISM survey")).toBeNull();
   });
 
   it("a failed PRISM read is not a 'no': the box says it could not check", () => {

@@ -90,14 +90,14 @@ describe("the Home quick action's locale key", () => {
     }
   })
 
-  it("is the key HomeV2 actually asks for", () => {
+  it("is no longer a Home quick action; the sidebar entry is the way in", () => {
+    // Removed from Home's pill row on request (2026-11-23). The page must stay
+    // reachable: the user menu still lists it, ungated.
     const home = read(path.join("pages", "user", "HomeV2.tsx"))
-    expect(home).toContain('labelKey: "homeV2.quickMyDevelopment"')
-    // `vertical: null` is what makes the pill base product: `entitled` is then
-    // true for everybody, so it never renders greyed with a lock reason that
-    // would be a lie.
-    const block = home.slice(home.indexOf('key: "my-development"'))
-    expect(block.slice(0, 400)).toContain("vertical: null")
+    expect(home).not.toContain('labelKey: "homeV2.quickMyDevelopment"')
+    expect(home).not.toContain('key: "my-development"')
+    const nav = read(path.join("constants", "navigation.ts"))
+    expect(nav).toContain('{ to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" }')
   })
 })
 

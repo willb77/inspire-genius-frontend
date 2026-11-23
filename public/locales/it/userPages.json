@@ -481,7 +481,9 @@
     "videoKnowledgeCaptureStudio": "Knowledge Capture Studio",
     "today": "Oggi",
     "yesterday": "Ieri",
-    "fallbackName": "ciao"
+    "fallbackName": "ciao",
+    "videoWorkspaceGuide": "Guida a My Workspace",
+    "lastVisitWorkHeading": "Il tuo lavoro dell'ultima visita"
   },
   "prismAssessment": {
     "couldNotOpenYourPrismReport": "Impossibile aprire il tuo report PRISM. Riprova.",

@@ -16,22 +16,44 @@ import {
 } from "@/components/ui/dialog"
 import { PrismSelfMapContent } from "@/components/prism/PrismSelfMapContent"
 
-export function BehavioralMapDialog() {
+/**
+ * Uncontrolled by default (its own "Behavioral Scores" pill). Pass `open` +
+ * `onOpenChange` to drive it from elsewhere, and `hideTrigger` when the host
+ * supplies the opening control itself (Home's "View Scores").
+ */
+export function BehavioralMapDialog({
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+}: {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  hideTrigger?: boolean
+} = {}) {
   const { t } = useTranslation("shellUi")
-  const [open, setOpen] = useState(false)
+  const [innerOpen, setInnerOpen] = useState(false)
+  const controlled = controlledOpen !== undefined
+  const open = controlled ? controlledOpen : innerOpen
+  const setOpen = (next: boolean): void => {
+    if (!controlled) setInnerOpen(next)
+    onOpenChange?.(next)
+  }
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-ig-accent-hover/40 bg-ig-accent-hover/10 px-2 py-0.5 text-[11px] font-medium text-ig-accent transition-colors hover:bg-ig-accent-hover/20"
-      >
-        <Sparkles className="size-3" aria-hidden="true" />
-        {t("behavioralMap.trigger", { defaultValue: "Behavioral map" })}
-      </button>
+      {hideTrigger ? null : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          data-testid="homev2-behavioral-scores"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-ig-accent-hover/40 bg-ig-accent-hover/10 px-3 py-1 text-[12px] font-medium text-ig-accent transition-colors hover:bg-ig-accent-hover/20"
+        >
+          <Sparkles className="size-3.5" aria-hidden="true" />
+          {t("behavioralMap.scoresPill", { defaultValue: "Behavioral Scores" })}
+        </button>
+      )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => setOpen(v)}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{t("behavioralMap.title", { defaultValue: "Your behavioral map" })}</DialogTitle>

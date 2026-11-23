@@ -19,6 +19,13 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+// Panel switch OFF: this file is about the Personal Info menu, which Home keeps
+// whenever the About-you panel is not on.
+jest.mock("@/hooks/switches/useHomeAboutYouPanelEnabled", () => ({
+  useHomeAboutYouPanelStatus: () => "off",
+  useHomeAboutYouPanelEnabled: () => false,
+}));
+
 const mockLatestPrism = jest.fn();
 const mockMyProfile = jest.fn();
 

@@ -11,12 +11,11 @@ import {
 } from "date-fns";
 import {
   CalendarDays,
-  HeartPulse,
   MessageSquare,
   Sparkles,
-  Target,
   UserRoundSearch,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import UserLayout from "@/layouts/UserLayout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/useAuth";
@@ -26,7 +25,6 @@ import { isVerticalForceDisabled } from "@/components/layout/useVerticalLauncher
 import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation";
 import type { AxiosError } from "axios";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
-import { latestPrismDisplayName } from "@/lib/prism/latestPrismDisplayName";
 import { useMyProfile } from "@/hooks/profile/useProfile";
 import {
   WelcomeBackTile,
@@ -42,8 +40,23 @@ import { PrismDataMenu } from "@/components/dashboard/v2/PrismDataMenu";
 import { ReplacePrismDataDialog } from "@/components/prism/ReplacePrismDataButton";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
 import { AboutYouPanel } from "@/components/profile/AboutYouPanel";
-import { useHomeAboutYouPanelEnabled } from "@/hooks/switches/useHomeAboutYouPanelEnabled";
+import { useHomeAboutYouPanelStatus } from "@/hooks/switches/useHomeAboutYouPanelEnabled";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
+import { BehavioralMapDialog } from "@/components/dashboard/v2/BehavioralMapDialog";
+import {
+  ProfileDocViewerDialog,
+  type ViewableDoc,
+} from "@/components/dashboard/v2/ProfileDocViewerDialog";
+import {
+  ProfileMaterialDialog,
+  type MaterialListItem,
+} from "@/components/dashboard/v2/ProfileMaterialDialog";
+import { useProfileMaterial } from "@/hooks/documents/useProfileMaterial";
+import {
+  useMyPrismReport,
+  useMyPrismReportDownloadUrl,
+} from "@/hooks/prism/usePrismReportDownload";
+import { WORKSPACE_GUIDE_VIDEO_URL } from "@/constants/guideVideos";
 
 /**
  * HomeV2 — the user dashboard (ig-surfaces/user-dashboard), and since
@@ -95,6 +108,7 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
 // Video titles are resolved at render (hooks cannot run at module level): id -> translation key.
 const VIDEO_TITLE_KEYS: Record<string, string> = {
+  "workspace-guide": "homeV2.videoWorkspaceGuide",
   "prism-survey": "homeV2.videoPrismSurvey",
   "goals-studio": "homeV2.videoGoalsStudio",
   "interview-studio": "homeV2.videoInterviewStudio",
@@ -112,6 +126,13 @@ const VIDEO_TITLE_KEYS: Record<string, string> = {
  * same day (request).
  */
 const VIDEOS: DashboardVideo[] = [
+  {
+    // Moved here from the app header's "Watch: My Workspace guide" pill
+    // (request); the header no longer shows it on Home.
+    id: "workspace-guide",
+    title: "My Workspace guide",
+    src: WORKSPACE_GUIDE_VIDEO_URL,
+  },
   {
     id: "prism-survey",
     title: "PRISM Survey — Introduction",
@@ -178,34 +199,9 @@ const QUICK_ACTIONS: {
     vertical: "lumen",
     icon: Sparkles,
   },
-  // Goals — added to the row on 2026-08-06 switched off, live from 2026-08-11.
-  // Renders only for a user entitled to `direction-setting`, like every other
-  // pill here.
-  {
-    key: "goals",
-    labelKey: "homeV2.quickGoals",
-    defaultLabel: "Goals Studio",
-    // Goals offering, Phase 3 (D8): the pill points at the person's own goals
-    // surface and is gated on nothing. It used to point at the Direction
-    // Setting stage page behind that vertical's entitlement, so a user without
-    // it had no way to their goals from Home.
-    to: ROUTES.MY_GOALS.BASE,
-    vertical: null,
-    icon: Target,
-  },
-  // My development (TDS-4c) — the person's own view of the rows a coach sees
-  // about them. `vertical: null` for the same reason Goals Studio is: every
-  // read behind the page is a `/v1/growth/me/*` route resolved from the
-  // caller's own token, so there is nothing to entitle and nothing to lock.
-  // Gating it would grey out a pill that works for everybody.
-  {
-    key: "my-development",
-    labelKey: "homeV2.quickMyDevelopment",
-    defaultLabel: "My development",
-    to: ROUTES.MY_DEVELOPMENT,
-    vertical: null,
-    icon: HeartPulse,
-  },
+  // Goals Studio and My development were removed from this row (request,
+  // 2026-11-23). Both stay one click away in the sidebar ("Goals Studio",
+  // "My development"), which is where `getUserNavItems` already lists them.
 ];
 
 /**
@@ -320,10 +316,20 @@ export default function HomeV2() {
     useState<AddPersonalDocTarget | null>(null);
   // PRISM has its own dialog — it imports scores rather than filing a document.
   const [prismReplaceOpen, setPrismReplaceOpen] = useState(false);
-  // HOME-1: the shared "What we know about you" panel, dark until the
-  // `home_about_you_panel` switch row exists. Off (and loading, and any
-  // error) renders nothing, so Home is unchanged.
-  const aboutYouOn = useHomeAboutYouPanelEnabled();
+  const { t: ta } = useTranslation("accountUi");
+  const queryClient = useQueryClient();
+  // HOME-1: the shared "Here's what's in your profile" panel, dark until the
+  // `home_about_you_panel` switch row exists. The controls it replaces — the
+  // three header buttons and the Personal Info menu — are dropped ONLY when the
+  // panel is on. Off (or an error) keeps them, because on such a tier they are
+  // the only way to request a survey or upload anything; while the answer is
+  // still loading neither set shows, so nothing flashes in and out.
+  const panelStatus = useHomeAboutYouPanelStatus();
+  const aboutYouOn = panelStatus === "on";
+  const legacyControls = panelStatus === "off";
+  const [mapOpen, setMapOpen] = useState(false);
+  const [viewDoc, setViewDoc] = useState<ViewableDoc | null>(null);
+  const [bioListOpen, setBioListOpen] = useState(false);
   // First name for the page greeting (restored 2026-08-06). Falls back through
   // fullName → name → "there" so the heading never renders "Welcome ,".
   const firstName =
@@ -433,6 +439,73 @@ export default function HomeV2() {
     () => new Set((profileMe?.personal_docs ?? []).map((k) => k.toLowerCase())),
     [profileMe],
   );
+
+  // ── "View …" pills on the profile tiles ────────────────────────────────
+  // Each is offered only when there is a real artefact behind it.
+  //  * Scores / report: the latest-prism fact (`hasReport`) and, for the PDF,
+  //    the report resolver's own `pdf_available`.
+  //  * Résumé / bio / additional info: the member's own documents, listed by
+  //    doc_kind. The list is only fetched when /me says such a kind exists.
+  const { data: myReport } = useMyPrismReport(aboutYouOn && hasReport);
+  const reportDownload = useMyPrismReportDownloadUrl();
+  const { data: material } = useProfileMaterial(
+    aboutYouOn &&
+      ["resume", "cv", "bio", "personal"].some((k) => personalSet.has(k)),
+  );
+  const resumeDoc = material.find((m) => m.kind === "resume" || m.kind === "cv");
+  const bioDocs = material.filter(
+    (m) => m.kind === "bio" || m.kind === "personal",
+  );
+
+  const openReportPdf = useCallback((): void => {
+    const base: ViewableDoc = {
+      id: "prism-report",
+      label: ta("aboutYouPanel.prismReport", { defaultValue: "PRISM Report" }),
+      contentType: "application/pdf",
+    };
+    setViewDoc({ ...base, pending: true });
+    reportDownload
+      .mutateAsync({ kind: "pdf" })
+      .then(({ url }) =>
+        // A closed dialog stays closed: only fill in a viewer still on this doc.
+        setViewDoc((cur) => (cur?.id === base.id ? { ...base, url } : cur)),
+      )
+      .catch(() =>
+        setViewDoc((cur) => (cur?.id === base.id ? { ...base, failed: true } : cur)),
+      );
+  }, [reportDownload, ta]);
+
+  const materialLabel = (kind: string): string =>
+    kind === "personal"
+      ? ta("aboutYouPanel.additionalInfo", { defaultValue: "Additional info" })
+      : kind === "bio"
+        ? ta("aboutYouPanel.bio", { defaultValue: "Bio" })
+        : ta("aboutYouPanel.resume", { defaultValue: "Résumé" });
+  const toViewable = (m: { id: string; kind: string; fileName: string; contentType: string }): ViewableDoc => ({
+    id: m.id,
+    label: materialLabel(m.kind),
+    fileName: m.fileName,
+    contentType: m.contentType,
+  });
+  const bioItems: MaterialListItem[] = bioDocs.map((m) => ({
+    id: m.id,
+    label: materialLabel(m.kind),
+    fileName: m.fileName,
+  }));
+  const homeActions = {
+    ...(hasReport ? { onViewScores: () => setMapOpen(true) } : {}),
+    ...(myReport?.pdf_available ? { onViewReport: openReportPdf } : {}),
+    ...(resumeDoc ? { onViewResume: () => setViewDoc(toViewable(resumeDoc)) } : {}),
+    ...(bioDocs.length > 0
+      ? {
+          // One document opens straight away; several are listed first.
+          onViewBio: () =>
+            bioDocs.length === 1
+              ? setViewDoc(toViewable(bioDocs[0]))
+              : setBioListOpen(true),
+        }
+      : {}),
+  };
 
   /**
    * A failed check is NOT an empty checklist item.
@@ -566,55 +639,65 @@ export default function HomeV2() {
               </span>
             </h1>
 
-            {/* Three columns rather than a flex row with spacers, so the middle
-                button is centred against the PAGE, not against whatever width
-                its neighbours happen to be. On narrow screens the grid
-                collapses to a stack and the justification classes stop
-                applying. */}
-            <div
-              data-testid="homev2-header-actions"
-              className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:items-center"
-            >
-              <div className="sm:justify-self-start">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => goToChat()}
-                  data-testid="homev2-chat-with-meridian"
-                  className="w-full border-ig-line text-ig-ink sm:w-auto"
-                >
-                  <MessageSquare className="size-4" />
-                  {t("homeV2.chatWithMeridian", {
-                    defaultValue: "Chat with Meridian",
-                  })}
-                </Button>
+            {/* The three header buttons (Chat with Meridian, Prism Data, Request
+                PRISM Survey) were removed when the About-you panel is on
+                (request, 2026-11-23): chat is in the sidebar, and the survey
+                request / PDF / brain map are on the profile tiles. With the
+                panel off they are kept — see `legacyControls`. */}
+            {legacyControls ? (
+              <>
+              {/* Three columns rather than a flex row with spacers, so the middle
+                  button is centred against the PAGE, not against whatever width
+                  its neighbours happen to be. On narrow screens the grid
+                  collapses to a stack and the justification classes stop
+                  applying. */}
+              <div
+                data-testid="homev2-header-actions"
+                className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:items-center"
+              >
+                <div className="sm:justify-self-start">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => goToChat()}
+                    data-testid="homev2-chat-with-meridian"
+                    className="w-full border-ig-line text-ig-ink sm:w-auto"
+                  >
+                    <MessageSquare className="size-4" />
+                    {t("homeV2.chatWithMeridian", {
+                      defaultValue: "Chat with Meridian",
+                    })}
+                  </Button>
+                </div>
+
+                <div className="sm:justify-self-center">
+                  {/* "View PRISM Report" became the "Prism Data" dropdown on
+                      2026-08-07 (request): the real PRISM PDF fetched from S3 plus
+                      the Brain Map, instead of a single button that generated the
+                      Self-Portrait. Still gated on `hasReport` — the same
+                      condition the button used — so it never appears with nothing
+                      behind it. The Self-Portrait itself stays reachable from the
+                      tile's Self-Portrait quick action. */}
+                  {hasReport ? <PrismDataMenu /> : null}
+                </div>
+
+                <div className="sm:justify-self-end">
+                  <Button
+                    type="button"
+                    onClick={goToAssessment}
+                    data-testid="homev2-request-prism-survey"
+                    className="w-full bg-ig-ink text-ig-on-ink hover:bg-ig-ink/90 sm:w-auto"
+                  >
+                    <CalendarDays className="size-4" />
+                    {t("homeV2.requestPrismInventory", {
+                      defaultValue: "Request PRISM Survey",
+                    })}
+                  </Button>
+                </div>
               </div>
 
-              <div className="sm:justify-self-center">
-                {/* "View PRISM Report" became the "Prism Data" dropdown on
-                    2026-08-07 (request): the real PRISM PDF fetched from S3 plus
-                    the Brain Map, instead of a single button that generated the
-                    Self-Portrait. Still gated on `hasReport` — the same
-                    condition the button used — so it never appears with nothing
-                    behind it. The Self-Portrait itself stays reachable from the
-                    tile's Self-Portrait quick action. */}
-                {hasReport ? <PrismDataMenu /> : null}
-              </div>
-
-              <div className="sm:justify-self-end">
-                <Button
-                  type="button"
-                  onClick={goToAssessment}
-                  data-testid="homev2-request-prism-survey"
-                  className="w-full bg-ig-ink text-ig-on-ink hover:bg-ig-ink/90 sm:w-auto"
-                >
-                  <CalendarDays className="size-4" />
-                  {t("homeV2.requestPrismInventory", {
-                    defaultValue: "Request PRISM Survey",
-                  })}
-                </Button>
-              </div>
-            </div>
+              </>
+            ) : null}
           </header>
 
           {/* HOME-1 (CSA 2026-10-22-home-1, option 1). The same component as
@@ -630,19 +713,26 @@ export default function HomeV2() {
               prismUnknown={prismUnknown}
               prismLoading={prismLoading}
               onUploadPrism={() => setPrismReplaceOpen(true)}
+              onUploaded={() => {
+                // A fresh résumé / bio must show its "View" pill without
+                // waiting out the list's cache window.
+                void queryClient.invalidateQueries({ queryKey: ["profile-material"] });
+              }}
+              homeActions={homeActions}
             />
           ) : null}
 
           {/* Leads the page since the Chat-with-Meridian card was removed
               (2026-08-05). */}
           <WelcomeBackTile
+            heading={tu("homeV2.lastVisitWorkHeading", {
+              defaultValue: "Here's your last visit work",
+            })}
             lastActions={lastActions}
             lastActionsLoading={convLoading}
             onResumeConversation={goToChat}
             hasReport={hasReport}
-            reportFileName={latestPrismDisplayName(latestPrism)}
-            prismLoading={prismLoading}
-            personalInfo={personalInfo}
+            personalInfo={legacyControls ? personalInfo : []}
             onAddPersonalInfo={openAddPersonalInfo}
             onRetryPersonalInfo={retryPersonalInfo}
             quickActions={quickActions}
@@ -657,6 +747,27 @@ export default function HomeV2() {
               destination had two names depending on the surface you came from).
               The `embedded` variant added for that tile stays on the component —
               it costs nothing and is the thing to reuse if it ever comes back. */}
+
+          {/* One brain-map dialog for the "View Scores" pill on the survey tile.
+              The Behavioral Scores pill beside the heading carries its own. */}
+          <BehavioralMapDialog open={mapOpen} onOpenChange={setMapOpen} hideTrigger />
+
+          <ProfileMaterialDialog
+            open={bioListOpen}
+            items={bioItems}
+            onOpenChange={setBioListOpen}
+            onPick={(item) => {
+              const m = bioDocs.find((d) => d.id === item.id);
+              setBioListOpen(false);
+              if (m) setViewDoc(toViewable(m));
+            }}
+          />
+          <ProfileDocViewerDialog
+            doc={viewDoc}
+            onOpenChange={(open) => {
+              if (!open) setViewDoc(null);
+            }}
+          />
 
           <AddPersonalDocModal
             target={personalTarget}

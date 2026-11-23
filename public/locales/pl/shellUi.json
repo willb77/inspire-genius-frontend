@@ -442,7 +442,7 @@
   "behavioralMap": {
     "description": "Twój 8-wymiarowy profil PRISM i wyniki.",
     "title": "Twoja mapa behawioralna",
-    "trigger": "Mapa behawioralna"
+    "scoresPill": "Wyniki behawioralne"
   },
   "broadcastBanner": {
     "dismiss": "Zamknij komunikat"

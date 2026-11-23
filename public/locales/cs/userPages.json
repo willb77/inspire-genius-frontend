@@ -477,7 +477,9 @@
     "videoKnowledgeCaptureStudio": "Studio zachycení znalostí",
     "today": "Dnes",
     "yesterday": "Včera",
-    "fallbackName": "dobrý den"
+    "fallbackName": "dobrý den",
+    "videoWorkspaceGuide": "Průvodce My Workspace",
+    "lastVisitWorkHeading": "Vaše práce z poslední návštěvy"
   },
   "bioCapture": {
     "bioCapture": "Zachycení životopisu",
