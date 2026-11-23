@@ -136,6 +136,13 @@ export type PrismRadialMapProps = {
   adapted?: PrismDimension[]
   consistent?: PrismDimension[]
   blueprint?: PrismDimension[]
+  /**
+   * Hero placement (additive, default false = unchanged layout). The wheel is
+   * centred and capped by viewport height so it can sit above other content
+   * without pushing it off-screen, and the score table is kept for assistive
+   * tech only (`sr-only`) instead of beside/below the wheel.
+   */
+  compact?: boolean
 }
 
 /**
@@ -149,6 +156,7 @@ export function PrismRadialMap({
   adapted,
   consistent,
   blueprint,
+  compact = false,
 }: PrismRadialMapProps): JSX.Element {
   const { t } = useTranslation("prismUi")
   const layers: Record<LayerKey, PrismDimension[] | undefined> = {
@@ -160,8 +168,13 @@ export function PrismRadialMap({
   const present = DRAW_ORDER.filter((k) => (layers[k]?.length ?? 0) > 0)
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="w-full" data-testid="prism-radial-map">
+    <div className={compact ? "space-y-0" : "grid gap-6 lg:grid-cols-2"}>
+      <div
+        className={compact ? "mx-auto" : "w-full"}
+        // 560x600 viewBox: width = height * 560/600. Capped by viewport height.
+        style={compact ? { width: "min(100%, 560px, calc(44vh * 0.9333))" } : undefined}
+        data-testid="prism-radial-map"
+      >
         <svg
           viewBox="0 0 560 600"
           width="100%"
@@ -273,6 +286,7 @@ export function PrismRadialMap({
 
       {/* Accessible score table — the text equivalent of the wheel. Columns
           expand to whatever layers were supplied (today: Underlying only). */}
+      <div className={compact ? "sr-only" : undefined}>
       <Table>
         <caption className="sr-only">
           {t("radialMap.tableCaption", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radial map)." })}
@@ -318,6 +332,7 @@ export function PrismRadialMap({
           })}
         </TableBody>
       </Table>
+      </div>
     </div>
   )
 }

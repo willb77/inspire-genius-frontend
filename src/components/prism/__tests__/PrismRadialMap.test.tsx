@@ -43,4 +43,12 @@ describe("PrismRadialMap", () => {
     // Adapted Innovating = 88 - 15 = 73.
     expect(screen.getByText("73")).toBeInTheDocument()
   })
+
+  it("compact keeps the score table for assistive tech only; default leaves it visible", () => {
+    const { unmount } = render(<PrismRadialMap underlying={UNDERLYING} compact />)
+    expect(screen.getByRole("table").closest(".sr-only")).not.toBeNull()
+    unmount()
+    render(<PrismRadialMap underlying={UNDERLYING} />)
+    expect(screen.getByRole("table").closest(".sr-only")).toBeNull()
+  })
 })
