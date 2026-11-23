@@ -11,7 +11,6 @@ type MeridianChatHeaderProps = {
 
 export default function MeridianChatHeader({
   isConnected,
-  currentAgent: _currentAgent,
   currentDomain,
   onBack,
 }: MeridianChatHeaderProps) {

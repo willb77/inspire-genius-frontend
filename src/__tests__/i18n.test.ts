@@ -268,7 +268,7 @@ describe("Translation values are non-empty", () => {
   it("all common.json values are non-empty strings", () => {
     for (const lang of SUPPORTED_LNGS) {
       const data = readJson(lang, "common") as Record<string, unknown>;
-      for (const [_key, value] of Object.entries(data)) {
+      for (const [, value] of Object.entries(data)) {
         expect(typeof value).toBe("string");
         expect((value as string).length).toBeGreaterThan(0);
       }

@@ -367,7 +367,7 @@ class NoAutoOpenMockWebSocket {
     this.url = url;
     NoAutoOpenMockWebSocket.instances.push(this);
   }
-  send(_data: unknown) {}
+  send() {}
   close() {
     this.readyState = NoAutoOpenMockWebSocket.CLOSED;
     this.onclose?.();

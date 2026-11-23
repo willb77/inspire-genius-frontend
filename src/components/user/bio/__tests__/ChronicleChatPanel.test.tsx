@@ -24,7 +24,7 @@ jest.mock("@/context/useAuth", () => ({
 // actually uses — a test that mocked the WebSocket would have gone on passing
 // through the whole outage, which is exactly what happened.
 const mockSendMessage = jest.fn()
-let chatState = { isProcessing: false, partial: "", error: null as string | null }
+const chatState = { isProcessing: false, partial: "", error: null as string | null }
 const mockClearError = jest.fn()
 let emitAssistant: (content: string) => void = () => {}
 jest.mock("@/hooks/agents/useMeridianChat", () => ({

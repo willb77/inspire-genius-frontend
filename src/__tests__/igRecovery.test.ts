@@ -68,7 +68,6 @@ function load(opts: { storageThrows?: boolean } = {}): Harness {
   }
   const caches = { keys: jest.fn().mockResolvedValue(["precache-v1"]), delete: cachesDelete }
 
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const run = new Function(
     "window", "navigator", "caches", "sessionStorage", "console", SCRIPT,
   )

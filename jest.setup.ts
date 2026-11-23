@@ -42,7 +42,6 @@ if (typeof globalThis.ResizeObserver === "undefined") {
 }
 
 // Mock react-i18next with real English translations so tests can match rendered text.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const _i18nBundles: Record<string, Record<string, unknown>> = {};
 function _loadNs(ns: string): Record<string, unknown> {
   if (!_i18nBundles[ns]) {

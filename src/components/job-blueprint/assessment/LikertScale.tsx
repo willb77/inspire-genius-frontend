@@ -34,7 +34,6 @@ function scaleLabel(t: TFunction, n: number): string | undefined {
 }
 
 export function LikertScale({
-  questionId: _questionId,
   value,
   onChange,
   min = 1,

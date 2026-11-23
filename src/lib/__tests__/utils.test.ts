@@ -19,8 +19,9 @@ describe("cn() — class merging utility", () => {
 
   test("handles boolean conditionals", () => {
     const isActive = true;
+    const isInactive = false;
     expect(cn("base", isActive && "active")).toBe("base active");
-    expect(cn("base", false && "active")).toBe("base");
+    expect(cn("base", isInactive && "active")).toBe("base");
   });
 
   test("deduplicates Tailwind classes via twMerge", () => {
