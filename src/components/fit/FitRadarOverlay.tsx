@@ -212,6 +212,7 @@ function LegendRow({ item, number }: { item: FitCardItem; number: number }) {
 export function FitRadarOverlay({ groups }: { groups: FitCardGroup[] }) {
   const { t } = useTranslation("studioUi")
   const items = groups.flatMap((g) => g.items)
+  const hasChart = items.length >= 3
   const numberOf = new Map(items.map((it, i) => [it.key, i + 1]))
   const statuses: FitCardStatus[] = ["match", "close", "growth"]
   const jobLabel = t("fit.fitCards.thisJob", { defaultValue: "This job" })
@@ -228,9 +229,11 @@ export function FitRadarOverlay({ groups }: { groups: FitCardGroup[] }) {
             "The dimensions this role puts first. The shaded shape is what the job asks for; the dashed shape is you. The numbers match the legend.",
         })}
       </p>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-        <div>
-          {items.length >= 3 ? <Radar items={items} label={chartLabel} /> : null}
+      {/* Fewer than three axes is no chart: drop the whole chart column (series key and note too) and its grid track. */}
+      <div className={cn("grid grid-cols-1 gap-6", hasChart && "lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]")}>
+        {hasChart && (
+        <div data-testid="fit-radar-chart-column">
+          <Radar items={items} label={chartLabel} />
           <ul
             data-testid="fit-radar-series-key"
             className="mt-2 flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-[#374151]"
@@ -256,6 +259,7 @@ export function FitRadarOverlay({ groups }: { groups: FitCardGroup[] }) {
             </p>
           )}
         </div>
+        )}
 
         <div data-testid="fit-radar-legend" className="space-y-5">
           {groups.map((g) => (

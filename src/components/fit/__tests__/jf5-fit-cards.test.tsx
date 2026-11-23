@@ -194,6 +194,10 @@ describe("switch on — behaviour map overlay and legend", () => {
   test("fewer than three priority dimensions: legend only, no degenerate chart", () => {
     render(<FitBreakdown data={detail([row("behavior", 7, "Finishing", 72, 70, true), row("aptitude", 2, "Investigative & Analytical", 61, 66, true)], PRIORITY_SCORING)} />)
     expect(screen.queryByTestId("fit-radar")).not.toBeInTheDocument()
+    // No orphaned chart column: series key and note go with the chart, and the grid keeps one track.
+    expect(screen.queryByTestId("fit-radar-chart-column")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("fit-radar-series-key")).not.toBeInTheDocument()
+    expect(screen.getByTestId("fit-radar-legend").parentElement?.className).not.toMatch(/360px/)
     expect(screen.getAllByTestId("fit-radar-legend-item")).toHaveLength(2)
   })
 })
