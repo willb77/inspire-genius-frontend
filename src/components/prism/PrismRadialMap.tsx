@@ -73,6 +73,12 @@ const QUAD_SPAN: Record<PrismQuadrantId, [number, number]> = {
 const IDS: PrismDimensionId[] = [1, 2, 3, 4, 5, 6, 7, 8]
 const RINGS = [35, 65, 75, 100] as const
 
+/** Widest the wheel may be in compact mode (half of the 560px full-size map). */
+const COMPACT_WHEEL_PX = 264
+/** Compact crop: x 0..560, y 40..564 — labels span ~y48..512, key sits at y552. */
+const COMPACT_VIEWBOX = "0 40 560 524"
+const COMPACT_KEY_Y = 552
+
 const CX = 280
 const CY = 280
 const R = 210
@@ -137,10 +143,11 @@ export type PrismRadialMapProps = {
   consistent?: PrismDimension[]
   blueprint?: PrismDimension[]
   /**
-   * Hero placement (additive, default false = unchanged layout). The wheel is
-   * centred and capped by viewport height so it can sit above other content
-   * without pushing it off-screen, and the score table is kept for assistive
-   * tech only (`sr-only`) instead of beside/below the wheel.
+   * Half-size placement (additive, default false = unchanged layout). The
+   * wheel is capped at COMPACT_WHEEL_PX and by viewport height, with the
+   * viewBox cropped to the drawn area (no empty bands above/below, key moved up
+   * under the wheel), and the score table is shown BESIDE it (stacked below
+   * `lg`) in a compact type/padding scale. Used by the Lumen Self-Portrait.
    */
   compact?: boolean
 }
@@ -168,15 +175,26 @@ export function PrismRadialMap({
   const present = DRAW_ORDER.filter((k) => (layers[k]?.length ?? 0) > 0)
 
   return (
-    <div className={compact ? "space-y-0" : "grid gap-6 lg:grid-cols-2"}>
+    <div
+      className={
+        compact
+          ? "grid items-center gap-3 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-6"
+          : "grid gap-6 lg:grid-cols-2"
+      }
+    >
       <div
-        className={compact ? "mx-auto" : "w-full"}
-        // 560x600 viewBox: width = height * 560/600. Capped by viewport height.
-        style={compact ? { width: "min(100%, 560px, calc(44vh * 0.9333))" } : undefined}
+        className={compact ? "mx-auto lg:mx-0" : "w-full"}
+        // Compact viewBox is 560x524: width = height * 560/524. Capped by
+        // COMPACT_WHEEL_PX and by viewport height.
+        style={
+          compact
+            ? { width: `min(100%, ${COMPACT_WHEEL_PX}px, calc(40vh * 1.0687))` }
+            : undefined
+        }
         data-testid="prism-radial-map"
       >
         <svg
-          viewBox="0 0 560 600"
+          viewBox={compact ? COMPACT_VIEWBOX : "0 0 560 600"}
           width="100%"
           role="img"
           aria-label={t("radialMap.ariaLabel", {
@@ -265,7 +283,7 @@ export function PrismRadialMap({
             .map((k, i) => {
               const s = LAYER_STYLE[k]
               return (
-                <g key={`key-${k}`} transform={`translate(${20 + i * 135}, 588)`}>
+                <g key={`key-${k}`} transform={`translate(${20 + i * 135}, ${compact ? COMPACT_KEY_Y : 588})`}>
                   <line
                     x1={0}
                     y1={-4}
@@ -286,17 +304,17 @@ export function PrismRadialMap({
 
       {/* Accessible score table — the text equivalent of the wheel. Columns
           expand to whatever layers were supplied (today: Underlying only). */}
-      <div className={compact ? "sr-only" : undefined}>
+      <div className={compact ? "w-full max-w-md justify-self-center text-xs lg:justify-self-start" : undefined}>
       <Table>
         <caption className="sr-only">
           {t("radialMap.tableCaption", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radial map)." })}
         </caption>
         <TableHeader>
           <TableRow>
-            <TableHead>{t("radialMap.colDimension", { defaultValue: "Dimension" })}</TableHead>
-            <TableHead>{t("radialMap.colQuadrant", { defaultValue: "Quadrant" })}</TableHead>
+            <TableHead className={compact ? "h-8 px-2" : undefined}>{t("radialMap.colDimension", { defaultValue: "Dimension" })}</TableHead>
+            <TableHead className={compact ? "h-8 px-2" : undefined}>{t("radialMap.colQuadrant", { defaultValue: "Quadrant" })}</TableHead>
             {present.map((k) => (
-              <TableHead key={`h-${k}`} className="text-right">
+              <TableHead key={`h-${k}`} className={compact ? "h-8 px-2 text-right" : "text-right"}>
                 {LAYER_STYLE[k].label}
               </TableHead>
             ))}
@@ -308,8 +326,8 @@ export function PrismRadialMap({
             const scoreMaps = present.map((k) => byId(layers[k]))
             return (
               <TableRow key={id}>
-                <TableCell className="font-medium">{BEHAVIOUR_CONFIG[id].label}</TableCell>
-                <TableCell>
+                <TableCell className={compact ? "px-2 py-1 font-medium" : "font-medium"}>{BEHAVIOUR_CONFIG[id].label}</TableCell>
+                <TableCell className={compact ? "px-2 py-1" : undefined}>
                   <span className="inline-flex items-center gap-1.5">
                     <span
                       className="h-2.5 w-2.5 rounded-full"
@@ -322,7 +340,7 @@ export function PrismRadialMap({
                 {present.map((k, ci) => {
                   const v = scoreMaps[ci].get(id)
                   return (
-                    <TableCell key={`c-${k}-${id}`} className="text-right tabular-nums">
+                    <TableCell key={`c-${k}-${id}`} className={compact ? "px-2 py-1 text-right tabular-nums" : "text-right tabular-nums"}>
                       {v ?? "—"}
                     </TableCell>
                   )

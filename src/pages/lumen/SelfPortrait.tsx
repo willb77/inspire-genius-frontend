@@ -57,11 +57,11 @@ function toWheelLayer(prism: PrismAnchor): PrismDimension[] {
  * and navigation; edit one and you have not edited the other.
  *
  * Composition: header, then the Brain Map (`PrismRadialMap`, compact, capped
- * by viewport height so the map and the start of "In plain language" share one
- * screen), then the narrative. The map is fed from `portrait.prism.dimensions`,
+ * by viewport height, with its score table beside it, so the map and the start of
+ * "In plain language" share one screen), then the narrative. The map is fed from `portrait.prism.dimensions`,
  * the same data the bar chart used, so map and text cannot disagree. The four
- * quadrant colours are the wheel's own wedges; the eight scores stay available
- * to assistive tech through the wheel's sr-only table. `PortraitDimensions`
+ * quadrant colours are the wheel's own wedges; the eight scores are the
+ * wheel's own visible table. `PortraitDimensions`
  * (the bar chart) is no longer rendered here, but is unchanged and still used
  * by Establish and Career Discovery. The Introversion/Extroversion spectrum it
  * showed is not on this page.
@@ -104,7 +104,7 @@ export default function SelfPortrait() {
   const wheel = portrait.prism ? toWheelLayer(portrait.prism) : []
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-6 pt-4">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">{t("portraitTitle", "My Self-Portrait")}</h1>
         <p className="max-w-3xl text-muted-foreground">{portrait.headline}</p>
