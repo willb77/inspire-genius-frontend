@@ -47,7 +47,8 @@
     "surveyBlurbShort": "Krótka ankieta o tym, jak wolisz pracować — punkt odniesienia dla wszystkiego innego.",
     "uploadReportBlurbShort": "Robiłeś PRISM gdzie indziej? Prześlij raport, a odczytamy wyniki.",
     "resumeBlurbShort": "To, co faktycznie robiłeś — prawdziwe role i daty.",
-    "bioBlurbShort": "Kilka zdań własnymi słowami — najszybszy z czterech kroków."
+    "bioBlurbShort": "Kilka zdań własnymi słowami — najszybszy z czterech kroków.",
+    "uploadAdditionalInfo": "Prześlij dodatkowe informacje"
   },
   "accountSettings": {
     "accountSettings": "Ustawienia konta",

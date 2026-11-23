@@ -115,7 +115,8 @@
     "surveyBlurbShort": "A short questionnaire on how you prefer to work — the anchor for everything else.",
     "uploadReportBlurbShort": "Done PRISM elsewhere? Upload the report and we'll read the scores off it.",
     "resumeBlurbShort": "What you've actually done — real roles and dates to work from.",
-    "bioBlurbShort": "A few lines in your own words — the quickest of the four."
+    "bioBlurbShort": "A few lines in your own words — the quickest of the four.",
+    "uploadAdditionalInfo": "Upload additional info"
   },
   "accountSettings": {
     "accountSettings": "Account Settings",

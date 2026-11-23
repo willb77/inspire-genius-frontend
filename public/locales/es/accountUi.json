@@ -148,7 +148,8 @@
     "surveyBlurbShort": "Un breve cuestionario sobre cómo prefieres trabajar: el ancla de todo lo demás.",
     "uploadReportBlurbShort": "¿Ya hiciste PRISM en otro lugar? Sube el informe y leeremos las puntuaciones.",
     "resumeBlurbShort": "Lo que has hecho realmente: puestos y fechas reales con los que trabajar.",
-    "bioBlurbShort": "Unas líneas con tus propias palabras: lo más rápido de los cuatro."
+    "bioBlurbShort": "Unas líneas con tus propias palabras: lo más rápido de los cuatro.",
+    "uploadAdditionalInfo": "Subir información adicional"
   },
   "accountSettings": {
     "accountSettings": "Configuración de la cuenta",

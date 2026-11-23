@@ -53,8 +53,8 @@ jest.mock("@/components/prism/ReplacePrismDataButton", () => ({
     open ? <div>replace dialog open</div> : null,
 }));
 jest.mock("@/components/dashboard/v2/AddPersonalDocModal", () => ({
-  AddPersonalDocModal: ({ target }: { target: { name: string } | null }) =>
-    target ? <div>personal modal open: {target.name}</div> : null,
+  AddPersonalDocModal: ({ target }: { target: { name: string; docKind: string } | null }) =>
+    target ? <div>personal modal open: {target.name} ({target.docKind})</div> : null,
 }));
 
 const mockMyReport = jest.fn();
@@ -269,5 +269,22 @@ describe("Home profile tiles — bio and personal data", () => {
     wrap();
     fireEvent.click(within(panel()).getByRole("button", { name: "Update bio" }));
     expect(screen.getByText(/personal modal open: Bio/)).toBeInTheDocument();
+  });
+});
+
+describe("Home profile tiles — Upload additional info", () => {
+  it("shows with nothing on file and opens the upload for the 'personal' kind", () => {
+    wrap();
+    fireEvent.click(within(panel()).getByRole("button", { name: "Upload additional info" }));
+    expect(screen.getByText(/personal modal open: Additional Info \(personal\)/)).toBeInTheDocument();
+  });
+
+  it("leaves Add bio and View Bio and Data as they were", () => {
+    mockMyProfile.mockReturnValue({ data: { personal_docs: ["bio"] }, isError: false, refetch: jest.fn() });
+    mockMaterial.mockReturnValue({ data: [BIO], isLoading: false });
+    wrap();
+    expect(within(panel()).getByRole("button", { name: "Update bio" })).toBeInTheDocument();
+    expect(within(panel()).getByRole("button", { name: "View Bio and Data" })).toBeInTheDocument();
+    expect(within(panel()).getByRole("button", { name: "Upload additional info" })).toBeInTheDocument();
   });
 });

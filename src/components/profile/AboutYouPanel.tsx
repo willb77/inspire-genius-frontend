@@ -98,6 +98,8 @@ type TileProps = {
   variant: AboutYouPanelVariant
   /** Home only: an extra pill beside the primary action (a "View …"). */
   extra?: TileAction
+  /** Home only: a further pill after `extra` (an upload). */
+  extra2?: TileAction
   /** Home only: stable hook for the primary action. */
   actionTestId?: string
 }
@@ -112,6 +114,7 @@ function Tile({
   onAction,
   variant,
   extra,
+  extra2,
   actionTestId,
 }: TileProps) {
   const done = state === "done"
@@ -162,6 +165,20 @@ function Tile({
                 )}
               >
                 {extra.label}
+              </button>
+            ) : null}
+            {extra2 ? (
+              <button
+                type="button"
+                onClick={extra2.onClick}
+                data-testid={extra2.testId}
+                className={cn(
+                  "inline-flex h-7 items-center rounded-full px-2.5 text-xs font-medium",
+                  "border border-ig-line bg-ig-surface text-ig-ink hover:bg-ig-page",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ig-accent"
+                )}
+              >
+                {extra2.label}
               </button>
             ) : null}
             <button
@@ -404,6 +421,18 @@ export function AboutYouPanel({
         onAction={() => setPersonalTarget({ name: t("aboutYouPanel.bio", { defaultValue: "Bio" }), docKind: "bio" })}
         actionTestId="about-you-bio-action"
         extra={viewExtra(ha?.onViewBio, hx("viewBioAndData", "View Bio and Data"), "about-you-view-bio")}
+        // Home only. Same target the removed Personal Info menu's "Additional
+        // Info" row used (name "Additional Info", docKind "personal"); shown
+        // whether or not anything is on file.
+        extra2={
+          isHome
+            ? {
+                label: hx("uploadAdditionalInfo", "Upload additional info"),
+                testId: "about-you-upload-additional",
+                onClick: () => setPersonalTarget({ name: "Additional Info", docKind: "personal" }),
+              }
+            : undefined
+        }
       />
     </section>
   )

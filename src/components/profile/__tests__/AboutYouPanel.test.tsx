@@ -93,6 +93,12 @@ describe("AboutYouPanel (HOME-1)", () => {
     expect(screen.queryByText("Upload résumé")).toBeNull()
   })
 
+  it("Upload additional info is Home-only: the page variant has no such pill", () => {
+    setup()
+    renderPanel({ variant: "page" })
+    expect(screen.queryByRole("button", { name: "Upload additional info" })).toBeNull()
+  })
+
   it("the page variant never collapses, even with everything on file", () => {
     setup({ docs: ["resume", "bio"] })
     renderPanel({ variant: "page", hasPrism: true })
