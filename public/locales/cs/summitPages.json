@@ -101,7 +101,7 @@
     "someoneId": "Někdo ({{id}}…)",
     "noAccount": "S tímto e-mailem neexistuje žádný účet.",
     "sharedWith": "Sdíleno s osobou {{name}}.",
-    "addPerson": "Přidat osobu",
+    "addPerson": "Udělit přístup osobě",
     "addPersonBody": "Někoho, kdo má účet IG a není uveden výše. Zadejte přesnou e-mailovou adresu; vyhledávání podle jména není možné. Váš kouč ji nepotřebuje: jakmile si Vás přidá jako klienta, objeví se v seznamu výše a tam s ním můžete sdílet.",
     "emailAria": "E-mailová adresa",
     "find": "Najít",
@@ -124,7 +124,14 @@
     "previewAria": "Náhled toho, co vidí",
     "previewEmpty": "Zveřejněte cíl a zobrazí se zde přesně tak, jak ho vidí osoba, se kterou sdílíte.",
     "or": " nebo ",
-    "shareAllIncludes_few": "„Sdílet vše“ zahrnuje {{list}}, které zatím nejsou plně chráněny."
+    "shareAllIncludes_few": "„Sdílet vše“ zahrnuje {{list}}, které zatím nejsou plně chráněny.",
+    "seeAccess": "Zobrazit přístup",
+    "previewActivity": "Náhled aktivity",
+    "seeAccessAria": "Zobrazit přístup: {{who}}",
+    "tileBody": "Vyberte, co tato osoba může vidět, na jak dlouho a kdo se díval.",
+    "personLogEmpty": "Tato osoba se na vaše cíle zatím nedívala. Každé čtení se zaznamenává, včetně čtení správci platformy.",
+    "otherReaders": "Čtení osobami, které nejsou uvedeny výše",
+    "otherReadersBody": "Správci platformy nebo osoby, kterým byl přístup odebrán."
   },
   "coaches": {
     "goalCount_few": "cíle",

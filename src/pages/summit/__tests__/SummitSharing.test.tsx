@@ -56,6 +56,18 @@ jest.mock("@/components/manager/development/tabs/GoalsPanel", () => ({
   ),
 }));
 
+// The "See Access" tile is a Radix dialog, which renders nothing until opened.
+// These suites exercise the controls INSIDE the tile, so the dialog is replaced
+// by a passthrough that always renders its content; that a click on "See Access"
+// really opens the real dialog is asserted in sharingTiles.test.tsx.
+jest.mock("@/components/ui/dialog", () => ({
+  Dialog: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  DialogContent: ({ children, ...p }: { children: React.ReactNode } & Record<string, unknown>) => <div {...p}>{children}</div>,
+  DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
+  DialogDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
+}));
+
 import SummitSharing from "@/pages/summit/SummitSharing";
 
 const IN_A_YEAR = new Date(Date.now() + 300 * 86400000).toISOString();
@@ -151,8 +163,8 @@ describe("the four states", () => {
     svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
     svc.offerAccess.mockResolvedValue({ id: "g1", status: "granted", mode: "offered" });
     renderPage();
-    expect(await screen.findByText("Morgan Manager")).toBeInTheDocument();
-    expect(screen.getByText("Not shared")).toBeInTheDocument();
+    expect((await screen.findAllByText("Morgan Manager")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Not shared").length).toBeGreaterThan(0);
     const sw = screen.getByRole("switch", { name: /share goals with morgan manager/i });
     expect(sw).not.toBeChecked();
     fireEvent.click(sw);
@@ -170,7 +182,7 @@ it("a live grant shows Sharing, the expiry and Renew; switching off revokes", as
   svc.extendGrant.mockResolvedValue({ id: "g1", status: "granted", expires_at: IN_A_YEAR });
   svc.revokeGrant.mockResolvedValue({ id: "g1", status: "revoked" });
   renderPage();
-  expect(await screen.findByText("Sharing goals")).toBeInTheDocument();
+  expect((await screen.findAllByText("Sharing goals"))[0]).toBeInTheDocument();
   expect(screen.getByText(/^Until /)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: /renew for a year/i }));
   await waitFor(() => expect(svc.extendGrant).toHaveBeenCalledWith("g1", 365));
@@ -185,7 +197,7 @@ it("an expired grant reads as not shared even though its status says granted", a
     sources: PEOPLE_OK,
   });
   renderPage();
-  expect(await screen.findByText("Not shared")).toBeInTheDocument();
+  expect((await screen.findAllByText("Not shared"))[0]).toBeInTheDocument();
 });
 
 it("a pending request shows the requester's reason with Share / Decline", async () => {
@@ -260,7 +272,7 @@ describe("PRISM profile (TDS-1c)", () => {
     svc.getPeople.mockResolvedValue({ people: [grantWith({ goals: true })], sources: PEOPLE_OK });
     svc.offerAccess.mockResolvedValue({ id: "g1", status: "granted", mode: "refreshed" });
     renderPage();
-    expect(await screen.findByText("Sharing goals")).toBeInTheDocument();
+    expect((await screen.findAllByText("Sharing goals"))[0]).toBeInTheDocument();
     const prism = screen.getByRole("switch", { name: /share PRISM profile with morgan manager/i });
     expect(prism).not.toBeChecked();
     fireEvent.click(prism);
@@ -274,7 +286,7 @@ describe("PRISM profile (TDS-1c)", () => {
     svc.getPeople.mockResolvedValue({ people: [grantWith({ goals: true, prism: true })], sources: PEOPLE_OK });
     svc.offerAccess.mockResolvedValue({ id: "g1", status: "granted", mode: "refreshed" });
     renderPage();
-    expect(await screen.findByText("Sharing goals and PRISM profile")).toBeInTheDocument();
+    expect((await screen.findAllByText("Sharing goals and PRISM profile"))[0]).toBeInTheDocument();
     const prism = screen.getByRole("switch", { name: /share PRISM profile with/i });
     expect(prism).toBeChecked();
     fireEvent.click(prism);
@@ -288,7 +300,7 @@ describe("PRISM profile (TDS-1c)", () => {
     svc.getPeople.mockResolvedValue({ people: [grantWith({ prism: true })], sources: PEOPLE_OK });
     svc.revokeGrant.mockResolvedValue({ id: "g1", status: "revoked" });
     renderPage();
-    expect(await screen.findByText("Sharing PRISM profile")).toBeInTheDocument();
+    expect((await screen.findAllByText("Sharing PRISM profile"))[0]).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: /share goals with/i })).not.toBeChecked();
     fireEvent.click(screen.getByRole("switch", { name: /share PRISM profile with/i }));
     await waitFor(() => expect(svc.revokeGrant).toHaveBeenCalledWith("g1"));
@@ -299,7 +311,7 @@ describe("PRISM profile (TDS-1c)", () => {
     svc.getPeople.mockResolvedValue({ people: [person()], sources: PEOPLE_OK });
     svc.offerAccess.mockResolvedValue({ id: "g2", status: "granted", mode: "offered" });
     renderPage();
-    expect(await screen.findByText("Not shared")).toBeInTheDocument();
+    expect((await screen.findAllByText("Not shared"))[0]).toBeInTheDocument();
     fireEvent.click(screen.getByRole("switch", { name: /share PRISM profile with/i }));
     await waitFor(() =>
       expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u-mgr", categories: { prism: true } }),
@@ -413,7 +425,7 @@ describe("six switches, each honest about enforcement (S-2)", () => {
   it("names a live interviews grant in the row's summary", async () => {
     svc.getPeople.mockResolvedValue({ people: [withGrant({ interviews: true })], sources: PEOPLE_OK });
     renderPage();
-    expect(await screen.findByText("Sharing interview results")).toBeInTheDocument();
+    expect((await screen.findAllByText("Sharing interview results")).length).toBeGreaterThan(0);
   });
 });
 
@@ -431,12 +443,12 @@ describe("add a person", () => {
       sources: PEOPLE_OK,
     });
     renderPage();
-    expect(await screen.findByText("Casey Coach")).toBeInTheDocument();
+    expect((await screen.findAllByText("Casey Coach")).length).toBeGreaterThan(0);
     // Relation and email both shown. TDS-D3 split them onto their own lines so
     // each kind could carry its basis, so this asserts the two facts rather
     // than the single string they used to share.
     expect(screen.getByTestId("basis-u-coach")).toHaveTextContent("Your coach");
-    expect(screen.getByText("morgan@example.com")).toBeInTheDocument();
+    expect(screen.getAllByText("morgan@example.com")[0]).toBeInTheDocument();
     expect(svc.lookupPerson).not.toHaveBeenCalled();
   });
 
@@ -460,22 +472,38 @@ describe("add a person", () => {
   });
 });
 
-describe("Who has looked (Phase 5)", () => {
-  it("lists reads by name where known and by id where not, newest first as given", async () => {
-    svc.getPeople.mockResolvedValue({
-      people: [{ userId: "m1", displayName: "Mo Manager", email: "mo@example.com", kinds: ["manager_of_record"], grant: null }],
-      sources: {},
-    });
+describe("Preview Activity (was Who has looked, Phase 5) — per person", () => {
+  const MO = { userId: "m1", displayName: "Mo Manager", email: "mo@example.com", kinds: ["manager_of_record"], grant: null };
+
+  it("shows a person's own reads in their tile, by name, newest first as given", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
     svc.getAccessLog.mockResolvedValue([
       { viewer_user_id: "m1", categories_viewed: ["goals"], surface: "growth:goals", viewed_at: "2026-09-04T14:00:00Z" },
-      { viewer_user_id: "abcdef12-0000-4000-8000-000000000000", categories_viewed: ["goals"], surface: "growth:goals:super-admin", viewed_at: "2026-09-04T13:00:00Z" },
     ]);
     renderPage();
+    const tile = await screen.findByTestId("person-activity-m1");
+    const pill = await screen.findByRole("button", { name: "Preview Activity" });
+    expect(pill).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(pill);
+    expect(pill).toHaveAttribute("aria-expanded", "true");
     const list = await screen.findByRole("list", { name: "Access log" });
+    expect(tile).toContainElement(list);
     expect(list).toHaveTextContent("Mo Manager");
     expect(list).toHaveTextContent("read your goals");
-    expect(list).toHaveTextContent("Someone (abcdef12…)");
-    expect(list).toHaveTextContent("platform admin");
+  });
+
+  it("does not show someone else's reads in this person's tile", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO, { ...MO, userId: "m2", displayName: "Nia Other", email: "nia@example.com" }], sources: {} });
+    svc.getAccessLog.mockResolvedValue([
+      { viewer_user_id: "m2", categories_viewed: ["goals"], surface: "growth:goals", viewed_at: "2026-09-04T14:00:00Z" },
+    ]);
+    renderPage();
+    const mo = await screen.findByTestId("person-activity-m1");
+    await screen.findByTestId("person-activity-m2");
+    await waitFor(() => expect(svc.getAccessLog).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByTestId("person-activity-m2").querySelector("ul")).not.toBeNull());
+    expect(mo.querySelector("ul")).toBeNull();
+    expect(screen.getByTestId("person-activity-empty")).toBeInTheDocument();
   });
 
   it("names the grant-side events in the member's words — share and renew are not 'looked (surface)'", async () => {
@@ -491,22 +519,53 @@ describe("Who has looked (Phase 5)", () => {
       { viewer_user_id: "c1", categories_viewed: ["goals"], surface: "offered", viewed_at: "2026-09-05T01:41:24Z" },
     ]);
     renderPage();
-    const list = await screen.findByRole("list", { name: "Access log" });
+    const list = await screen.findByRole("list", { name: "Access log", hidden: true });
     expect(list).toHaveTextContent("had access renewed by you");
     expect(list).toHaveTextContent("was given access by you");
     expect(list).not.toHaveTextContent("looked (");
   });
 
   it("says the log is unread, not empty, when it cannot be read", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
     svc.getAccessLog.mockRejectedValue(new Error("down"));
     renderPage();
-    expect(await screen.findByTestId("who-has-looked-error")).toBeInTheDocument();
-    expect(screen.queryByTestId("who-has-looked-empty")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("person-activity-error")).toBeInTheDocument();
+    expect(screen.queryByTestId("person-activity-empty")).not.toBeInTheDocument();
   });
 
-  it("says nobody has looked when the log is empty", async () => {
+  it("says this person has not looked when the log is empty", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
     renderPage();
-    expect(await screen.findByTestId("who-has-looked-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("person-activity-empty")).toBeInTheDocument();
+  });
+});
+
+describe("reads by people not on the list are never dropped", () => {
+  const MO = { userId: "m1", displayName: "Mo Manager", email: "mo@example.com", kinds: ["manager_of_record"], grant: null };
+
+  it("shows an unlisted reader (a platform admin) by id, outside every tile", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
+    svc.getAccessLog.mockResolvedValue([
+      { viewer_user_id: "m1", categories_viewed: ["goals"], surface: "growth:goals", viewed_at: "2026-09-04T14:00:00Z" },
+      { viewer_user_id: "abcdef12-0000-4000-8000-000000000000", categories_viewed: ["goals"], surface: "growth:goals:super-admin", viewed_at: "2026-09-04T13:00:00Z" },
+    ]);
+    renderPage();
+    const other = await screen.findByTestId("other-readers");
+    expect(other).toHaveTextContent("Someone (abcdef12…)");
+    expect(other).toHaveTextContent("platform admin");
+    expect(other).not.toHaveTextContent("Mo Manager");
+  });
+
+  // Control for the absence below: the section does render when it has a row.
+  it("renders nothing when every reader is on the list", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
+    svc.getAccessLog.mockResolvedValue([
+      { viewer_user_id: "m1", categories_viewed: ["goals"], surface: "growth:goals", viewed_at: "2026-09-04T14:00:00Z" },
+    ]);
+    renderPage();
+    await screen.findByTestId("person-activity-m1");
+    await waitFor(() => expect(svc.getAccessLog).toHaveBeenCalled());
+    expect(screen.queryByTestId("other-readers")).toBeNull();
   });
 });
 

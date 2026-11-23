@@ -254,7 +254,7 @@
     "someoneId": "Alguien ({{id}}…)",
     "noAccount": "No hay ninguna cuenta con ese correo electrónico.",
     "sharedWith": "Compartido con {{name}}.",
-    "addPerson": "Añadir a una persona",
+    "addPerson": "Dar acceso a una persona",
     "addPersonBody": "Alguien con una cuenta de IG que no aparece en la lista de arriba. Su dirección de correo electrónico exacta; no hay búsqueda por nombre. Tu coach no necesita una: cuando te haya añadido como cliente, aparecerá en la lista de arriba y compartirás con él o ella allí.",
     "emailAria": "Dirección de correo electrónico",
     "find": "Encontrar",
@@ -276,7 +276,14 @@
     "previewNote": "Una vista previa de lo que ven. Aquí no se puede hacer clic en nada.",
     "previewAria": "Vista previa de lo que ven",
     "previewEmpty": "Publica un objetivo y aparecerá aquí exactamente como lo ve una persona con quien compartes.",
-    "or": " o "
+    "or": " o ",
+    "seeAccess": "Ver acceso",
+    "previewActivity": "Vista previa de actividad",
+    "seeAccessAria": "Ver el acceso de {{who}}",
+    "tileBody": "Elige qué puede ver esta persona, durante cuánto tiempo y quién ha mirado.",
+    "personLogEmpty": "Esta persona aún no ha mirado tus metas. Cada lectura queda registrada, incluidas las de los administradores de la plataforma.",
+    "otherReaders": "Lecturas de personas que no aparecen arriba",
+    "otherReadersBody": "Administradores de la plataforma o personas cuyo acceso se ha retirado."
   },
   "dashboard": {
     "brainCallout": "Cada objetivo de aquí está alineado con tu mapa cerebral: preferimos objetivos que <strong>aprovechen tus fortalezas naturales</strong> y planteamos cualquier reto como una adaptación consciente y con límite de tiempo, nunca como una reescritura permanente de quién eres.",

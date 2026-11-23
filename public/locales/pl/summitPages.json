@@ -109,7 +109,7 @@
     "someoneId": "Ktoś ({{id}}…)",
     "noAccount": "Brak konta z tym adresem e-mail.",
     "sharedWith": "Udostępniono: {{name}}.",
-    "addPerson": "Dodaj osobę",
+    "addPerson": "Daj dostęp osobie",
     "addPersonBody": "Ktoś, kto ma konto IG i nie ma go na liście powyżej. Podaj jego dokładny adres e-mail; nie szukamy po imieniu i nazwisku. Twój coach nie potrzebuje tego kroku: gdy doda Cię jako klienta, pojawi się na liście powyżej i tam z nim udostępniasz.",
     "emailAria": "Adres e-mail",
     "find": "Znajdź",
@@ -125,7 +125,14 @@
     "people": "Osoby",
     "basisNote": "Pod każdym nazwiskiem widać, dlaczego ta osoba jest na liście.",
     "eyebrow": "Twój wybór, osoba po osobie",
-    "title": "Kto może widzieć moje cele i profil PRISM"
+    "title": "Kto może widzieć moje cele i profil PRISM",
+    "seeAccess": "Zobacz dostęp",
+    "previewActivity": "Podgląd aktywności",
+    "seeAccessAria": "Zobacz dostęp: {{who}}",
+    "tileBody": "Wybierz, co ta osoba może zobaczyć, na jak długo i kto zaglądał.",
+    "personLogEmpty": "Ta osoba jeszcze nie przeglądała Twoich celów. Każde odczytanie jest rejestrowane, także przez administratorów platformy.",
+    "otherReaders": "Odczyty przez osoby niewymienione powyżej",
+    "otherReadersBody": "Administratorzy platformy lub osoby, którym odebrano dostęp."
   },
   "coaches": {
     "goalCount_few": "cele",

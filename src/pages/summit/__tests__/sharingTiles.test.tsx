@@ -1,0 +1,139 @@
+/**
+ * The "See Access" tile on the sharing page (Bill, 2026-11-23). The other
+ * sharing suites replace the Radix dialog with an always-open passthrough so
+ * they can reach the controls inside; THIS suite uses the real dialog, because
+ * the one thing it must prove is that a person's controls are behind the pill
+ * and that clicking it really opens them.
+ */
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { VisibilityPerson } from "@/types/consent";
+
+const svc = {
+  getPeople: jest.fn(),
+  getMyGrants: jest.fn(),
+  getAccessLog: jest.fn(),
+  getCategories: jest.fn(),
+  getMyLinkRequests: jest.fn(),
+};
+jest.mock("@/services/consent/visibility.service", () => ({
+  getPeople: () => svc.getPeople(),
+  getMyGrants: () => svc.getMyGrants(),
+  getAccessLog: () => svc.getAccessLog(),
+  getCategories: () => svc.getCategories(),
+  lookupPerson: jest.fn(),
+  offerAccess: jest.fn(),
+  extendGrant: jest.fn(),
+  revokeGrant: jest.fn(),
+  respondToRequest: jest.fn(),
+}));
+jest.mock("@/services/summit/goals.service", () => ({
+  getMyGoals: () => Promise.resolve({ memberId: "m1", goals: [], coverage: [] }),
+}));
+jest.mock("@/components/manager/development/tabs/GoalsPanel", () => ({ CoachGoalCard: () => null }));
+jest.mock("@/components/sharing/MemberLinkRequestCard", () => ({ MemberLinkRequestCard: () => null }));
+
+import { SharingCore } from "@/pages/summit/SummitSharing";
+
+const DETAILS = [
+  { key: "goals", label: "Goals", enforced: "yes", note: "" },
+  { key: "prism", label: "PRISM profile", enforced: "partial", note: "n" },
+  { key: "assessments", label: "Assessments", enforced: "no", note: "" },
+  { key: "artefacts", label: "Profile", enforced: "no", note: "" },
+  { key: "interviews", label: "Interviews", enforced: "partial", note: "n" },
+  { key: "development", label: "Development", enforced: "partial", note: "n" },
+];
+
+function p(i: number, over: Partial<VisibilityPerson> = {}): VisibilityPerson {
+  return { userId: `u${i}`, displayName: `Person ${i}`, email: `p${i}@example.com`, kinds: ["added"], grant: null, ...over };
+}
+
+function renderCore() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>
+        <SharingCore />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  svc.getCategories.mockResolvedValue({ categories: [], details: DETAILS, notGrantable: ["safety"] });
+  svc.getMyGrants.mockResolvedValue([]);
+  svc.getAccessLog.mockResolvedValue([]);
+});
+
+describe("people as cards, three across", () => {
+  it("lays the cards out in a three-column grid on wide screens, one pill each", async () => {
+    svc.getPeople.mockResolvedValue({ people: [p(1), p(2), p(3), p(4)], sources: {} });
+    renderCore();
+    const grid = await screen.findByTestId("people-grid");
+    expect(grid.className).toContain("lg:grid-cols-3");
+    expect(within(grid).getAllByRole("button", { name: /^See access for/i })).toHaveLength(4);
+  });
+
+  it("shows no switches until See Access is clicked, then the controls and the status", async () => {
+    svc.getPeople.mockResolvedValue({
+      people: [p(1, { grant: { id: "g1", status: "granted", categories: { goals: true }, expiresAt: new Date(Date.now() + 9e8).toISOString() } as VisibilityPerson["grant"] })],
+      sources: {},
+    });
+    renderCore();
+    const pill = await screen.findByRole("button", { name: "See access for Person 1" });
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.getByTestId("card-status-u1")).toHaveTextContent("Sharing goals");
+    fireEvent.click(pill);
+    const tile = await screen.findByRole("dialog");
+    expect(within(tile).getByRole("switch", { name: /share goals with person 1/i })).toBeChecked();
+    expect(within(tile).getByRole("button", { name: "Preview Activity" })).toBeInTheDocument();
+    expect(within(tile).getByRole("button", { name: /renew for a year/i })).toBeInTheDocument();
+  });
+
+  it("opens the tile of the person clicked, not another's", async () => {
+    svc.getPeople.mockResolvedValue({ people: [p(1), p(2)], sources: {} });
+    renderCore();
+    fireEvent.click(await screen.findByRole("button", { name: "See access for Person 2" }));
+    const tile = await screen.findByRole("dialog");
+    expect(within(tile).getByRole("switch", { name: /share goals with person 2/i })).toBeInTheDocument();
+    expect(within(tile).queryByRole("switch", { name: /share goals with person 1/i })).toBeNull();
+  });
+});
+
+describe("Preview Activity lives in the tile", () => {
+  it("is not a page section any more", async () => {
+    svc.getPeople.mockResolvedValue({ people: [p(1)], sources: {} });
+    renderCore();
+    await screen.findByTestId("people-grid");
+    expect(screen.queryByTestId("who-has-looked")).toBeNull();
+    expect(screen.queryByText("Who has looked")).toBeNull();
+  });
+
+  it("shows only that person's reads once the pill is clicked", async () => {
+    svc.getPeople.mockResolvedValue({ people: [p(1), p(2)], sources: {} });
+    svc.getAccessLog.mockResolvedValue([
+      { viewer_user_id: "u1", categories_viewed: ["goals"], surface: "growth:goals", viewed_at: "2026-09-04T14:00:00Z" },
+      { viewer_user_id: "u2", categories_viewed: ["goals"], surface: "growth:goals", viewed_at: "2026-09-04T13:00:00Z" },
+    ]);
+    renderCore();
+    fireEvent.click(await screen.findByRole("button", { name: "See access for Person 1" }));
+    const tile = await screen.findByRole("dialog");
+    fireEvent.click(within(tile).getByRole("button", { name: "Preview Activity" }));
+    await waitFor(() => expect(within(tile).getByRole("list", { name: "Access log" })).toBeInTheDocument());
+    const list = within(tile).getByRole("list", { name: "Access log" });
+    expect(list).toHaveTextContent("Person 1");
+    expect(list).not.toHaveTextContent("Person 2");
+  });
+});
+
+describe("Add Access to a Person", () => {
+  it("is titled that way and still takes an exact email only", async () => {
+    svc.getPeople.mockResolvedValue({ people: [], sources: {} });
+    renderCore();
+    expect(await screen.findByText("Add Access to a Person")).toBeInTheDocument();
+    expect(screen.queryByText("Add a person")).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Email address" })).toHaveAttribute("type", "email");
+  });
+});

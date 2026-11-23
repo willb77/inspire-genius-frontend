@@ -170,7 +170,7 @@
     "someoneId": "Qualcuno ({{id}}…)",
     "noAccount": "Nessun account con questa email.",
     "sharedWith": "Condiviso con {{name}}.",
-    "addPerson": "Aggiungi una persona",
+    "addPerson": "Dai accesso a una persona",
     "addPersonBody": "Una persona con un account IG che non è nell'elenco qui sopra. Serve il suo indirizzo email esatto; non è possibile cercare per nome. Il tuo coach non ne ha bisogno: dopo che ti ha aggiunto come cliente compare nell'elenco qui sopra, e lì condividi con lui.",
     "emailAria": "Indirizzo email",
     "find": "Trova",
@@ -192,7 +192,14 @@
     "previewNote": "Un'anteprima della loro vista. Qui non è possibile cliccare nulla.",
     "previewAria": "Anteprima di ciò che vedono",
     "previewEmpty": "Pubblica un obiettivo e comparirà qui esattamente come lo vede una persona con cui condividi.",
-    "or": " o "
+    "or": " o ",
+    "seeAccess": "Vedi accesso",
+    "previewActivity": "Anteprima attività",
+    "seeAccessAria": "Vedi l'accesso di {{who}}",
+    "tileBody": "Scegli cosa può vedere questa persona, per quanto tempo e chi ha guardato.",
+    "personLogEmpty": "Questa persona non ha ancora guardato i tuoi obiettivi. Ogni lettura viene registrata, comprese quelle degli amministratori della piattaforma.",
+    "otherReaders": "Letture da persone non elencate sopra",
+    "otherReadersBody": "Amministratori della piattaforma o persone il cui accesso è stato rimosso."
   },
   "discovery": {
     "goalsSurfaced_one": "{{count}} obiettivo emerso",

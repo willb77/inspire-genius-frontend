@@ -456,42 +456,55 @@ function QuickAdd({ onPublished }: { onPublished: () => void }) {
   );
 }
 
-/** A collapsed-by-default list behind a pill: a real button, count shown. */
-function GoalPill({
+/** The pill itself: a real button, count shown. The panel it opens is `GoalPanel`. */
+function GoalPillButton({
   label,
   count,
   headingId,
+  panelId,
   open,
   onOpenChange,
-  children,
 }: {
   label: string;
   count: number;
   headingId: string;
+  panelId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <h2 id={headingId} className="text-[13px] font-bold">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => onOpenChange(!open)}
+        className="inline-flex items-center gap-2 rounded-full border border-[#127A8A]/40 bg-white px-4 py-2 text-[13px] font-bold text-[#0B1B33] hover:bg-[#FBF7F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#127A8A] focus-visible:ring-offset-2"
+      >
+        {label}
+        <span className="rounded-full bg-[#127A8A]/15 px-2 py-0.5 text-[11.5px] text-[#0E5F6B]">{count}</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} aria-hidden />
+      </button>
+    </h2>
+  );
+}
+
+/** The collapsed-by-default list a `GoalPillButton` opens. */
+function GoalPanel({
+  headingId,
+  panelId,
+  open,
+  children,
+}: {
+  headingId: string;
+  panelId: string;
+  open: boolean;
   children: React.ReactNode;
 }) {
-  const panelId = useId();
   return (
-    <div className="flex flex-col gap-3">
-      <h2 id={headingId} className="text-[13px] font-bold">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => onOpenChange(!open)}
-          className="inline-flex items-center gap-2 rounded-full border border-[#127A8A]/40 bg-white px-4 py-2 text-[13px] font-bold text-[#0B1B33] hover:bg-[#FBF7F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#127A8A] focus-visible:ring-offset-2"
-        >
-          {label}
-          <span className="rounded-full bg-[#127A8A]/15 px-2 py-0.5 text-[11.5px] text-[#0E5F6B]">{count}</span>
-          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} aria-hidden />
-        </button>
-      </h2>
-      <section id={panelId} aria-labelledby={headingId} hidden={!open} className="flex flex-col gap-3">
-        {children}
-      </section>
-    </div>
+    <section id={panelId} aria-labelledby={headingId} hidden={!open} className="flex flex-col gap-3">
+      {children}
+    </section>
   );
 }
 
@@ -500,6 +513,8 @@ export default function SummitGoals() {
   const [params] = useSearchParams();
   const fromJourney = params.get("journey") === "direction-setting";
   const [listOpen, setListOpen] = useState(false);
+  const sharedPanelId = useId();
+  const draftsPanelId = useId();
   const [draftsOpen, setDraftsOpen] = useState(false);
   const session = useGoalSession();
   const mine = useMyGoals();
@@ -518,6 +533,8 @@ export default function SummitGoals() {
   const showStretchCallout = isHouseStyleOn("goals")
     ? !loading && !session.isError && drafts.some((g) => alignKind(g.prism_alignment) === "stretch")
     : true;
+  const showShared = !loading && !mine.isError && shared.length > 0;
+  const showDrafts = !loading && !session.isError && drafts.length > 0;
   const nothingAnywhere =
     !loading && !session.isError && !mine.isError && shared.length === 0 && drafts.length === 0;
 
@@ -580,14 +597,34 @@ export default function SummitGoals() {
         </Card>
       )}
 
-      {!loading && !mine.isError && shared.length > 0 && (
-        <GoalPill
-          label={t("goals.pillGoalList", { defaultValue: "Your Goal list" })}
-          count={shared.length}
-          headingId="shared-goals-heading"
-          open={listOpen}
-          onOpenChange={setListOpen}
-        >
+      {(showShared || showDrafts) && (
+        // The two list pills sit side by side; each opens its list below the row.
+        <div className="flex flex-wrap items-center gap-3" data-testid="goal-pill-row">
+          {showShared && (
+            <GoalPillButton
+              label={t("goals.pillGoalList", { defaultValue: "Your Goal list" })}
+              count={shared.length}
+              headingId="shared-goals-heading"
+              panelId={sharedPanelId}
+              open={listOpen}
+              onOpenChange={setListOpen}
+            />
+          )}
+          {showDrafts && (
+            <GoalPillButton
+              label={t("goals.draftsHeading", { defaultValue: "Drafts from your interview" })}
+              count={drafts.length}
+              headingId="draft-goals-heading"
+              panelId={draftsPanelId}
+              open={draftsOpen}
+              onOpenChange={setDraftsOpen}
+            />
+          )}
+        </div>
+      )}
+
+      {showShared && (
+        <GoalPanel headingId="shared-goals-heading" panelId={sharedPanelId} open={listOpen}>
           {shared.map((g) => (
             <SharedGoalCard
               key={g.goalId}
@@ -596,21 +633,15 @@ export default function SummitGoals() {
               target={targetsOn ? targetByGoal.get(g.goalId) : undefined}
             />
           ))}
-        </GoalPill>
+        </GoalPanel>
       )}
 
-      {!loading && !session.isError && drafts.length > 0 && (
-        <GoalPill
-          label={t("goals.draftsHeading", { defaultValue: "Drafts from your interview" })}
-          count={drafts.length}
-          headingId="draft-goals-heading"
-          open={draftsOpen}
-          onOpenChange={setDraftsOpen}
-        >
+      {showDrafts && (
+        <GoalPanel headingId="draft-goals-heading" panelId={draftsPanelId} open={draftsOpen}>
           {drafts.map((g) => (
             <DraftCard key={g.goal_id} goal={g} />
           ))}
-        </GoalPill>
+        </GoalPanel>
       )}
 
       {!loading && <QuickAdd onPublished={() => setListOpen(true)} />}

@@ -58,7 +58,7 @@
     "someoneId": "Alguém ({{id}}…)",
     "noAccount": "Nenhuma conta com esse e-mail.",
     "sharedWith": "Compartilhado com {{name}}.",
-    "addPerson": "Adicionar uma pessoa",
+    "addPerson": "Dar acesso a uma pessoa",
     "addPersonBody": "Alguém com uma conta IG que não está na lista acima. Informe o endereço de e-mail exato; não há busca por nome. Seu coach não precisa disso: depois que ele adicionar você como cliente, ele aparece na lista acima e você compartilha com ele por lá.",
     "emailAria": "Endereço de e-mail",
     "find": "Buscar",
@@ -173,7 +173,14 @@
     "noReason": "Nenhum motivo informado.",
     "asked": "· pediu em {{date}}",
     "shareWhat": "Compartilhar {{what}}",
-    "decline": "Recusar"
+    "decline": "Recusar",
+    "seeAccess": "Ver acesso",
+    "previewActivity": "Pré-visualizar atividade",
+    "seeAccessAria": "Ver o acesso de {{who}}",
+    "tileBody": "Escolha o que esta pessoa pode ver, por quanto tempo e quem consultou.",
+    "personLogEmpty": "Esta pessoa ainda não consultou as suas metas. Cada leitura fica registada, incluindo as dos administradores da plataforma.",
+    "otherReaders": "Leituras de pessoas não listadas acima",
+    "otherReadersBody": "Administradores da plataforma ou pessoas cujo acesso foi removido."
   },
   "targets": {
     "error403": "As metas-alvo não estão disponíveis na sua conta no momento.",

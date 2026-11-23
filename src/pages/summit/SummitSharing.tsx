@@ -37,6 +37,7 @@ import { PageHead, Card, Callout } from "@/pages/summit/components/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CoachGoalCard } from "@/components/manager/development/tabs/GoalsPanel";
 import { useMyGoals } from "@/hooks/summit/useMyGoals";
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
@@ -244,8 +245,8 @@ function liveCategories(p: VisibilityPerson): VisibilityCategories {
   return parseCategories(g.categories);
 }
 
-/** One person: name, relation, "Share all", one switch per category, the term, Renew. */
-function PersonRow({ person, details }: { person: VisibilityPerson; details: CategoryDetail[] | undefined }) {
+/** One person's access: name, relation, "Share all", one switch per category, the term, Renew. Lives in the "See Access" tile. */
+function PersonAccess({ person, details }: { person: VisibilityPerson; details: CategoryDetail[] | undefined }) {
   const { t } = useTranslation("summitPages");
   const offer = useOfferAccess();
   const revoke = useRevokeGrant();
@@ -292,7 +293,7 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
   const unprotected = SHARE_CATEGORIES.filter((c) => enforcementOf(details, c.key).enforced !== "yes");
 
   return (
-    <li className="flex flex-col gap-2 border-b border-[#F1ECE2] py-3 last:border-b-0">
+    <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-bold text-[#0B1B33]">
@@ -385,7 +386,7 @@ function PersonRow({ person, details }: { person: VisibilityPerson; details: Cat
           {errorText(error, t)}
         </p>
       )}
-    </li>
+    </div>
   );
 }
 
@@ -461,48 +462,135 @@ function formatWhen(iso: string | null): string {
 }
 
 /**
- * Who has looked (Goals offering, Phase 5). Every read behind the goals grant
- * writes an access-log row; this is that log, newest first, in the subject's
- * own words. A reader we cannot name is shown by id, never hidden — a log
- * that omits the reads it cannot label is not a log.
+ * Preview Activity (was "Who has looked", Goals offering Phase 5). Every read
+ * behind the goals grant writes an access-log row; this renders rows of that
+ * log, newest first, in the subject's own words. A reader we cannot name is
+ * shown by id, never hidden — a log that omits the reads it cannot label is
+ * not a log.
  */
-function WhoHasLooked({ nameById }: { nameById: Map<string, string> }) {
+function ActivityList({ rows, nameById }: { rows: AccessLogRow[]; nameById: Map<string, string> }) {
+  const { t } = useTranslation("summitPages");
+  return (
+    <ul className="flex flex-col divide-y divide-[#F1ECE2]" aria-label={t("sharing.accessLog", { defaultValue: "Access log" })}>
+      {rows.map((r, i) => (
+        <li key={`${r.viewer_user_id}-${r.viewed_at ?? i}`} className="flex flex-wrap items-center gap-2 py-2 text-[13px] text-[#13294B]">
+          <Eye className="h-3.5 w-3.5 text-[#7C93B5]" aria-hidden />
+          <b className="text-[#0B1B33]">{nameById.get(r.viewer_user_id) ?? t("sharing.someoneId", { defaultValue: "Someone ({{id}}…)", id: r.viewer_user_id.slice(0, 8) })}</b>
+          <span>{describeSurface(r.surface, t)}</span>
+          <span className="ml-auto text-[11.5px] text-[#7C93B5]">{formatWhen(r.viewed_at)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The "Preview Activity" pill inside a person's tile: what THIS person has looked at. */
+function PersonActivity({ person, nameById }: { person: VisibilityPerson; nameById: Map<string, string> }) {
   const { t } = useTranslation("summitPages");
   const log = useAccessLog();
-  const rows = (log.data ?? []).slice(0, 50);
+  const [open, setOpen] = useState(false);
+  const panelId = `activity-${person.userId}`;
+  const rows = (log.data ?? []).filter((r) => r.viewer_user_id === person.userId).slice(0, 50);
   return (
-    <section aria-labelledby="looked-heading" className="flex flex-col gap-2" data-testid="who-has-looked">
-      <h2 id="looked-heading" className="text-[13px] font-bold uppercase tracking-wide text-[#7C93B5]">
-        {t("sharing.whoHasLooked", { defaultValue: "Who has looked" })}
-      </h2>
-      <Card className="!p-5">
+    <div className="flex flex-col gap-2" data-testid={`person-activity-${person.userId}`}>
+      <div>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((v) => !v)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#127A8A]/40 bg-white px-3 py-1.5 text-[12.5px] font-bold text-[#0B1B33] hover:bg-[#FBF7F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#127A8A]"
+        >
+          <Eye className="h-3.5 w-3.5 text-[#127A8A]" aria-hidden />
+          {t("sharing.previewActivity", { defaultValue: "Preview Activity" })}
+        </button>
+      </div>
+      <div id={panelId} hidden={!open}>
         {log.isLoading && (
-          <p className="text-[13.5px] text-[#13294B]/70">{t("sharing.readingLog", { defaultValue: "Reading the access log…" })}</p>
+          <p className="text-[13px] text-[#13294B]/70">{t("sharing.readingLog", { defaultValue: "Reading the access log…" })}</p>
         )}
         {log.isError && (
-          <p className="text-[13.5px] text-[#13294B]/80" data-testid="who-has-looked-error">
+          <p className="text-[13px] text-[#13294B]/80" data-testid="person-activity-error">
             {t("sharing.logError", { defaultValue: "We couldn't read the access log just now. It is not empty — it is unread." })}
           </p>
         )}
         {!log.isLoading && !log.isError && rows.length === 0 && (
-          <p className="text-[13.5px] text-[#13294B]/70" data-testid="who-has-looked-empty">
-            {t("sharing.logEmpty", { defaultValue: "Nobody has looked at your goals yet. Every read is recorded here, including reads by platform administrators." })}
+          <p className="text-[13px] text-[#13294B]/70" data-testid="person-activity-empty">
+            {t("sharing.personLogEmpty", { defaultValue: "This person hasn't looked at your goals yet. Every read is recorded, including reads by platform administrators." })}
           </p>
         )}
-        {rows.length > 0 && (
-          <ul className="flex flex-col divide-y divide-[#F1ECE2]" aria-label={t("sharing.accessLog", { defaultValue: "Access log" })}>
-            {rows.map((r: AccessLogRow, i) => (
-              <li key={`${r.viewer_user_id}-${r.viewed_at ?? i}`} className="flex flex-wrap items-center gap-2 py-2 text-[13px] text-[#13294B]">
-                <Eye className="h-3.5 w-3.5 text-[#7C93B5]" aria-hidden />
-                <b className="text-[#0B1B33]">{nameById.get(r.viewer_user_id) ?? t("sharing.someoneId", { defaultValue: "Someone ({{id}}…)", id: r.viewer_user_id.slice(0, 8) })}</b>
-                <span>{describeSurface(r.surface, t)}</span>
-                <span className="ml-auto text-[11.5px] text-[#7C93B5]">{formatWhen(r.viewed_at)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-    </section>
+        {rows.length > 0 && <ActivityList rows={rows} nameById={nameById} />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Reads by someone who is NOT on the list above (a platform administrator, or a
+ * person whose access has since been removed). The per-person Preview Activity
+ * cannot show these, and the log's promise is that every read is recorded, so
+ * they appear here. Renders nothing when there are none.
+ */
+function OtherReaders({ listedIds, nameById }: { listedIds: Set<string>; nameById: Map<string, string> }) {
+  const { t } = useTranslation("summitPages");
+  const log = useAccessLog();
+  const rows = (log.data ?? []).filter((r) => !listedIds.has(r.viewer_user_id)).slice(0, 50);
+  if (log.isLoading || log.isError || rows.length === 0) return null;
+  return (
+    <Card className="!p-5" testId="other-readers">
+      <div className="text-[15px] font-bold text-[#0B1B33]">{t("sharing.otherReaders", { defaultValue: "Reads by people not listed above" })}</div>
+      <p className="mb-2 mt-1 text-[12.5px] text-[#13294B]/75">
+        {t("sharing.otherReadersBody", { defaultValue: "Platform administrators, or people whose access has been removed." })}
+      </p>
+      <ActivityList rows={rows} nameById={nameById} />
+    </Card>
+  );
+}
+
+/** One person as a card: who, how much is shared, and the "See Access" pill that opens their tile. */
+function PersonCard({ person, details, nameById }: { person: VisibilityPerson; details: CategoryDetail[] | undefined; nameById: Map<string, string> }) {
+  const { t } = useTranslation("summitPages");
+  const [open, setOpen] = useState(false);
+  const live = liveCategories(person);
+  const sharedAny = SHARE_CATEGORIES.some((c) => live[c.key] === true);
+  const name = person.displayName || person.email || t("sharing.someone", { defaultValue: "Someone" });
+  const status = person.grant?.status === "pending"
+    ? t("sharing.waitingSee", { defaultValue: "Waiting on you — see requests below" })
+    : sharedAny
+      ? t("sharing.sharingWhat", { defaultValue: "Sharing {{what}}", what: describeCategories(live, t, "") })
+      : t("sharing.notShared", { defaultValue: "Not shared" });
+  return (
+    <li className="flex flex-col gap-2 rounded-xl border border-[#F1ECE2] bg-white p-3.5" data-testid={`person-card-${person.userId}`}>
+      <div className="min-w-0">
+        <div className="truncate text-[14px] font-bold text-[#0B1B33]">{name}</div>
+        {person.email && <div className="truncate text-[12px] text-[#13294B]/70">{person.email}</div>}
+      </div>
+      <div className="text-[12px] text-[#13294B]/75" data-testid={`card-status-${person.userId}`}>{status}</div>
+      <div className="mt-auto">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8 rounded-full"
+          aria-label={t("sharing.seeAccessAria", { defaultValue: "See access for {{who}}", who: name })}
+          onClick={() => setOpen(true)}
+        >
+          {t("sharing.seeAccess", { defaultValue: "See Access" })}
+        </Button>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl" data-testid={`access-tile-${person.userId}`}>
+          <DialogHeader>
+            <DialogTitle>{name}</DialogTitle>
+            <DialogDescription>
+              {t("sharing.tileBody", { defaultValue: "Choose what this person can see, how long, and who has looked." })}
+            </DialogDescription>
+          </DialogHeader>
+          <PersonAccess person={person} details={details} />
+          <PersonActivity person={person} nameById={nameById} />
+        </DialogContent>
+      </Dialog>
+    </li>
   );
 }
 
@@ -548,7 +636,7 @@ function AddPerson() {
   return (
     <Card className="!p-[19px]">
       <div className="flex items-center gap-2 text-[15px] font-bold text-[#0B1B33]">
-        <UserPlus className="h-4 w-4 text-[#127A8A]" aria-hidden /> {t("sharing.addPerson", { defaultValue: "Add a person" })}
+        <UserPlus className="h-4 w-4 text-[#127A8A]" aria-hidden /> {t("sharing.addPerson", { defaultValue: "Add Access to a Person" })}
       </div>
       <p className="mt-1 text-[13px] text-[#13294B]/75">
         {t("sharing.addPersonBody", { defaultValue: "Someone with an IG account who isn't listed above. Their exact email address; no lookup by name. Your coach doesn't need one: once they've added you as a client they appear in the list above, and you share with them there." })}
@@ -680,9 +768,9 @@ export function SharingCore() {
             {t("sharing.basisNote", { defaultValue: "Under each name is how they came to be on this list." })}
           </p>
           <EnforcementNote details={details} />
-          <ul className="mt-1">
+          <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="people-grid">
             {list.map((p) => (
-              <PersonRow key={p.userId} person={p} details={details} />
+              <PersonCard key={p.userId} person={p} details={details} nameById={nameById} />
             ))}
           </ul>
         </Card>
@@ -692,7 +780,7 @@ export function SharingCore() {
 
       {!loading && !failed && <MemberLinkRequestCard />}
 
-      {!loading && !failed && <WhoHasLooked nameById={nameById} />}
+      {!loading && !failed && <OtherReaders listedIds={new Set(list.map((p) => p.userId))} nameById={nameById} />}
     </div>
   );
 }

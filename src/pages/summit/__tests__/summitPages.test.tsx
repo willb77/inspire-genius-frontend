@@ -225,6 +225,36 @@ describe("My Goals — two stores, kept apart", () => {
     expect(screen.getAllByText("Created: not recorded")).toHaveLength(1);
   });
 
+  it("puts “Your Goal list” and “Drafts from your interview” side by side on one row (Bill, 2026-11-23)", async () => {
+    mockGetMyGoals.mockResolvedValue(PUBLISHED);
+    mockGetGoalSession.mockResolvedValue({
+      ...SESSION,
+      goals: [{ goal_id: "g9", title: "A draft", status: "proposed" }],
+    });
+    renderWithRouter(<SummitGoals />);
+    const list = await screen.findByRole("button", { name: /your goal list/i });
+    const drafts = screen.getByRole("button", { name: /drafts from your interview/i });
+    const row = screen.getByTestId("goal-pill-row");
+    expect(row).toContainElement(list);
+    expect(row).toContainElement(drafts);
+    // Both stay collapsed, and opening one still shows its own list below.
+    expect(list).toHaveAttribute("aria-expanded", "false");
+    expect(drafts).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(drafts);
+    expect(drafts).toHaveAttribute("aria-expanded", "true");
+    expect(list).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("A draft")).toBeVisible();
+  });
+
+  it("shows a lone pill in the row when only one list has anything in it", async () => {
+    mockGetMyGoals.mockResolvedValue(PUBLISHED);
+    mockGetGoalSession.mockResolvedValue({ ...SESSION, goals: [] });
+    renderWithRouter(<SummitGoals />);
+    const list = await screen.findByRole("button", { name: /your goal list/i });
+    expect(screen.getByTestId("goal-pill-row")).toContainElement(list);
+    expect(screen.queryByRole("button", { name: /drafts from your interview/i })).toBeNull();
+  });
+
   it("opens “Your Goal list” when a quick-added goal is published, so the confirmation is true", async () => {
     const svc = jest.requireMock("@/services/summit/goals.service") as {
       createGoal: jest.Mock;

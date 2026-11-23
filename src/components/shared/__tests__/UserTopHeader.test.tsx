@@ -188,10 +188,8 @@ describe("UserTopHeader — Interview Studio guide pill", () => {
   });
 });
 
-describe("UserTopHeader — Goals Studio guide pill", () => {
-  const GOALS_URL =
-    "https://ig-demo-public-videos.s3.amazonaws.com/Goals_studio.mp4";
-
+describe("UserTopHeader — Goals Studio shows no guide pill", () => {
+  // The pill was removed on 2026-11-23; the film lives in Home's Videos dropdown.
   it.each([
     "/my/goals",
     "/my/goals/overview",
@@ -200,29 +198,20 @@ describe("UserTopHeader — Goals Studio guide pill", () => {
     "/my/goals/sharing",
     "/my/goals/coaches",
     "/my/goals/g-123/roadmap",
-  ])("replaces the My Workspace pill on %s", (path) => {
+  ])("shows neither the Goals Studio pill nor the workspace pill on %s", (path) => {
     mockPathname = path;
     render(<UserTopHeader />);
-    const pill = screen.getByTestId("goals-studio-guide-video");
-    expect(pill).toHaveTextContent("Watch: Goals Studio");
-    expect(pill).toHaveAttribute("href", GOALS_URL);
-    expect(pill).toHaveAttribute("target", "_blank");
-    expect(pill.getAttribute("rel")).toContain("noopener");
-    expect(
-      screen.queryByTestId("workspace-guide-video"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("goals-studio-guide-video")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("workspace-guide-video")).not.toBeInTheDocument();
   });
 
-  it.each(["/vertical/direction-setting/goals", "/my/goalsx", "/my/development"])(
-    "does not show on %s",
-    (path) => {
-      mockPathname = path;
-      render(<UserTopHeader />);
-      expect(
-        screen.queryByTestId("goals-studio-guide-video"),
-      ).not.toBeInTheDocument();
-    },
-  );
+  // Controls: a neighbouring path must still get its pill, or "absent" above
+  // proves nothing.
+  it.each(["/my/goalsx", "/my/development"])("still shows the workspace pill on %s", (path) => {
+    mockPathname = path;
+    render(<UserTopHeader />);
+    expect(screen.getByTestId("workspace-guide-video")).toBeInTheDocument();
+  });
 });
 
 describe("UserTopHeader — interview guide film title (house style, interview area)", () => {

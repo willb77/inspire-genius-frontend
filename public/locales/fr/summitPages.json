@@ -61,7 +61,7 @@
     "someoneId": "Quelqu'un ({{id}}…)",
     "noAccount": "Aucun compte avec cet e-mail.",
     "sharedWith": "Partagé avec {{name}}.",
-    "addPerson": "Ajouter une personne",
+    "addPerson": "Donner accès à une personne",
     "addPersonBody": "Une personne ayant un compte IG qui ne figure pas dans la liste ci-dessus. Saisissez son adresse e-mail exacte ; aucune recherche par nom. Votre coach n'en a pas besoin : dès qu'il vous a ajouté comme client, il apparaît dans la liste ci-dessus et vous partagez avec lui à cet endroit.",
     "emailAria": "Adresse e-mail",
     "find": "Trouver",
@@ -165,7 +165,14 @@
     "shareAll": "Tout partager",
     "shareCategoryAria": "Partager {{noun}} avec {{who}}",
     "partlyProtected": "(partiellement protégé)",
-    "notProtectedYet": "(pas encore protégé)"
+    "notProtectedYet": "(pas encore protégé)",
+    "seeAccess": "Voir l'accès",
+    "previewActivity": "Aperçu de l'activité",
+    "seeAccessAria": "Voir l'accès de {{who}}",
+    "tileBody": "Choisissez ce que cette personne peut voir, pendant combien de temps, et qui a consulté.",
+    "personLogEmpty": "Cette personne n'a pas encore consulté vos objectifs. Chaque lecture est enregistrée, y compris celles des administrateurs de la plateforme.",
+    "otherReaders": "Consultations par des personnes non listées ci-dessus",
+    "otherReadersBody": "Administrateurs de la plateforme, ou personnes dont l'accès a été retiré."
   },
   "goals": {
     "title": "Vos objectifs",
