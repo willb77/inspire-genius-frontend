@@ -1,12 +1,14 @@
 /**
  * Member Development Workspace (route: /manager/development/:memberId).
  *
- * Persistent header (identity, reconciled headline, confidence, coverage strip
- * with inline invite, actions), six tabs synced to the `?tab=` query param and
- * lazy-loaded, plus the member-scoped Meridian assistant panel. Loading /
- * degraded / error handled at the shell.
+ * Persistent header (identity, reconciled headline, confidence, coverage strip,
+ * actions), then five GROUPS of sections (seven with the Studio flag on, until
+ * U5 moves Compare and Scenarios), plus the member-scoped Meridian assistant
+ * panel. `?tab=` still carries one of the eleven SECTION values it always did;
+ * the group shown is derived from it (see SECTIONS). Panels are lazy-loaded.
+ * Loading / degraded / error handled at the shell.
  */
-import { Suspense, lazy, useMemo, useState, type ReactNode } from "react"
+import { Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Download, MessageSquare, RefreshCw, Share2 } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
@@ -31,6 +33,7 @@ import { ROUTES } from "@/constants/routes"
 import {
   CONFIDENCE_BADGE_VARIANT,
   CONFIDENCE_LABEL,
+  DEV_TEXT,
   FIT_ENGINE_MATCHES_ENABLED,
   TDS_STUDIO_ENABLED,
 } from "@/constants/development"
@@ -99,55 +102,127 @@ const TeamScenarioPanel = lazy(() =>
   import("@/components/manager/development/tabs/TeamScenarioPanel").then((m) => ({ default: m.TeamScenarioPanel })),
 )
 
-const BASE_TABS = [
-  { value: "profile", labelKey: "dev.tab.profile" },
-  { value: "goals", labelKey: "dev.tab.goals" },
-  { value: "gaps", labelKey: "dev.tab.gaps" },
-  { value: "learning", labelKey: "dev.tab.learning" },
-  { value: "careers", labelKey: "dev.tab.careers" },
-  { value: "roadmap", labelKey: "dev.tab.roadmap" },
-  { value: "interviews", labelKey: "dev.tab.interviews" },
-  // TDS-2. Its store (growth-service `/members/{id}/notes`, GET/POST/PATCH/
-  // DELETE) is built and merged, so the tab is a BASE tab: putting it behind
-  // TDS_STUDIO_ENABLED — which is off by default — would ship it hidden.
-  { value: "notes", labelKey: "dev.tab.notes" },
-] as const
+/**
+ * The eleven values `?tab=` can carry. Each names one SECTION of the page.
+ *
+ * Spelled out rather than derived from the table below, because this is also
+ * the union the Meridian rail accepts as `tab`: its prompt table is indexed by
+ * these eleven and is not defaulted, so any other value throws on render.
+ * Group ids (`DevGroup`) share no member with it, which is what lets the
+ * compiler refuse a group id handed to the rail.
+ */
+type DevSection =
+  | "profile"
+  | "profile-studio"
+  | "goals"
+  | "roadmap"
+  | "gaps"
+  | "learning"
+  | "careers"
+  | "notes"
+  | "interviews"
+  | "compare"
+  | "scenarios"
+
+/** What the tab bar shows. Never written to `?tab=`, never sent to the rail. */
+type DevGroup =
+  | "group-profile"
+  | "group-goals-roadmap"
+  | "group-gaps-learning"
+  | "group-careers"
+  | "group-conversations"
+  | "group-compare"
+  | "group-scenarios"
+
+type SectionDef = {
+  value: DevSection
+  group: DevGroup
+  /** The section heading: the `dev.tab.*` label this section had as a tab. */
+  labelKey: string
+  /** Behind `VITE_FEATURE_TDS_STUDIO` (default OFF). */
+  studioOnly?: true
+  /** Makes its own call and needs only the member's id and name. */
+  worksWhileComputing?: true
+}
 
 /**
- * The three TDS Studio tabs, behind `VITE_FEATURE_TDS_STUDIO` (default OFF).
+ * U4 — section → group. THE table: the tab bar, the order of sections inside
+ * a group, what a group's tab writes to `?tab=`, the `?tab=` fallback and the
+ * computing view are all derived from it. Nothing else lists the sections.
  *
- * The flag only decides which tab buttons render, and `?tab=` falls back to
- * "profile" for a value not in this list. That is a UI gate, NOT a security
- * boundary: `ProtectedRoute` admits anyone with the manager role to
- * `/manager/development/:memberId` by path prefix regardless of this constant,
- * and `/v1/agents/team-studio/*` answers any request with a valid token no
- * matter what the browser was built with. The server-side authorization on
- * those routes is the real gate. See TDS_STUDIO_ENABLED.
- */
-const STUDIO_TABS = [
-  { value: "profile-studio", labelKey: "dev.tab.profileStudio" },
-  { value: "compare", labelKey: "dev.tab.compare" },
-  { value: "scenarios", labelKey: "dev.tab.scenarios" },
-] as const
-
-const TABS = TDS_STUDIO_ENABLED ? [...BASE_TABS, ...STUDIO_TABS] : BASE_TABS
-
-type DevTab =
-  | (typeof BASE_TABS)[number]["value"]
-  | (typeof STUDIO_TABS)[number]["value"]
-
-/**
- * TDS-P1 (c): the tabs that work while the dossier is still computing (~60s).
+ * Row order is render order inside a group, and a group's first row is what
+ * its tab opens. Profile's first row is the Behavioral Profile — the PRISM
+ * radar and its score table — so the Profile group opens with them, above the
+ * write-up. The first row of the whole table is the fallback section.
  *
- * Each makes its own call and needs only the member's id and name — Goals
- * (`/members/{id}/goals`), Notes (`/members/{id}/notes`; its "link to" pickers
- * are empty until the dossier arrives) and the two Studio runs. Every other
- * tab, and the Meridian rail, reads dossier fields and waits, as before.
+ * `studioOnly` rows are the three TDS Studio surfaces. The flag only decides
+ * what the browser offers, and a `?tab=` value not on offer falls back to the
+ * profile. That is a UI gate, NOT a security boundary: `ProtectedRoute` admits
+ * anyone with the manager role to `/manager/development/:memberId` by path
+ * prefix regardless of this constant, and `/v1/agents/team-studio/*` answers
+ * any request with a valid token no matter what the browser was built with.
+ * The server-side authorization on those routes is the real gate. See
+ * TDS_STUDIO_ENABLED.
+ *
+ * `worksWhileComputing` (TDS-P1 c): Goals (`/members/{id}/goals`), Notes
+ * (`/members/{id}/notes`; its "link to" pickers are empty until the dossier
+ * arrives) and the two Studio runs. Every other section, and the Meridian
+ * rail, reads dossier fields and waits.
  */
-const COMPUTING_TAB_VALUES: readonly DevTab[] = TDS_STUDIO_ENABLED
-  ? ["goals", "notes", "compare", "scenarios"]
-  : ["goals", "notes"]
-const COMPUTING_TABS = TABS.filter((x) => COMPUTING_TAB_VALUES.includes(x.value))
+const SECTIONS: readonly SectionDef[] = [
+  { value: "profile", group: "group-profile", labelKey: "dev.tab.profile" },
+  { value: "profile-studio", group: "group-profile", labelKey: "dev.tab.profileStudio", studioOnly: true },
+  { value: "goals", group: "group-goals-roadmap", labelKey: "dev.tab.goals", worksWhileComputing: true },
+  { value: "roadmap", group: "group-goals-roadmap", labelKey: "dev.tab.roadmap" },
+  { value: "gaps", group: "group-gaps-learning", labelKey: "dev.tab.gaps" },
+  { value: "learning", group: "group-gaps-learning", labelKey: "dev.tab.learning" },
+  { value: "careers", group: "group-careers", labelKey: "dev.tab.careers" },
+  // TDS-2. Its store (growth-service `/members/{id}/notes`) is built and
+  // merged, so Notes is not behind TDS_STUDIO_ENABLED — which is off by
+  // default and would ship it hidden.
+  { value: "notes", group: "group-conversations", labelKey: "dev.tab.notes", worksWhileComputing: true },
+  { value: "interviews", group: "group-conversations", labelKey: "dev.tab.interviews" },
+  // Their own tabs until U5 moves them to the Team view.
+  { value: "compare", group: "group-compare", labelKey: "dev.tab.compare", studioOnly: true, worksWhileComputing: true },
+  { value: "scenarios", group: "group-scenarios", labelKey: "dev.tab.scenarios", studioOnly: true, worksWhileComputing: true },
+]
+
+type GroupDef = {
+  value: DevGroup
+  /** `dev.group.*` for the five groups; the section's own label for the two
+   *  that are still a single Studio tab. */
+  labelKey: string
+  /** One section and no heading: the tab's label already names it. */
+  standalone?: true
+}
+
+/** Tab-bar order. A group with no section on offer is not shown. */
+const GROUPS: readonly GroupDef[] = [
+  { value: "group-profile", labelKey: "dev.group.profile" },
+  { value: "group-goals-roadmap", labelKey: "dev.group.goalsRoadmap" },
+  { value: "group-gaps-learning", labelKey: "dev.group.gapsLearning" },
+  { value: "group-careers", labelKey: "dev.group.careers" },
+  { value: "group-conversations", labelKey: "dev.group.conversations" },
+  { value: "group-compare", labelKey: "dev.tab.compare", standalone: true },
+  { value: "group-scenarios", labelKey: "dev.tab.scenarios", standalone: true },
+]
+
+const OFFERED_SECTIONS = SECTIONS.filter((s) => !s.studioOnly || TDS_STUDIO_ENABLED)
+const OFFERED_GROUPS = GROUPS.filter((g) => OFFERED_SECTIONS.some((s) => s.group === g.value))
+/** While the dossier computes: the groups with at least one section that works now. */
+const COMPUTING_GROUPS = OFFERED_GROUPS.filter((g) =>
+  OFFERED_SECTIONS.some((s) => s.group === g.value && s.worksWhileComputing),
+)
+const FALLBACK_SECTION = SECTIONS[0]
+
+function sectionsOf(group: DevGroup): readonly SectionDef[] {
+  return OFFERED_SECTIONS.filter((s) => s.group === group)
+}
+
+/** Stable element id for a section: what a legacy `?tab=` value scrolls to. */
+function sectionDomId(value: DevSection): string {
+  return `dev-section-${value}`
+}
 
 function initials(name: string): string {
   return name.trim().split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase()
@@ -194,11 +269,16 @@ export default function MemberDevelopmentWorkspace({
     </Layout>
   )
 
-  const tabParam = (searchParams.get("tab") as DevTab | null) ?? "profile"
-  // A `?tab=` value that is not on offer — including a Studio tab while the
-  // flag is off — falls back to the profile rather than rendering an empty
-  // panel that reads like a tab with nothing in it.
-  const activeTab: DevTab = TABS.some((x) => x.value === tabParam) ? tabParam : "profile"
+  const tabParam = searchParams.get("tab")
+  // `?tab=` names a SECTION. A value that is not on offer — including a Studio
+  // section while the flag is off — falls back to the profile rather than
+  // rendering an empty panel that reads like a tab with nothing in it.
+  const activeDef = OFFERED_SECTIONS.find((x) => x.value === tabParam) ?? FALLBACK_SECTION
+  const activeSection: DevSection = activeDef.value
+  const activeGroup: DevGroup = activeDef.group
+  // A group's first section sits at the top of the group, so opening it needs
+  // no scroll; any other section is scrolled to (below).
+  const opensAtTop = sectionsOf(activeGroup)[0]?.value === activeSection
 
   const { data: dossier, isLoading, isError, error: dossierError, refetch: refetchDossier } = useMemberDossier(memberId)
   // TDS-P1 (c): the name for the computing header, from the roster the manager
@@ -255,10 +335,18 @@ export default function MemberDevelopmentWorkspace({
     }
   }, [dossier?.matches])
 
-  const setTab = (value: string) => {
+  const setTab = (value: DevSection) => {
     const next = new URLSearchParams(searchParams)
     next.set("tab", value)
     setSearchParams(next, { replace: true })
+  }
+
+  // The tab bar shows groups, but the URL keeps naming a section: clicking a
+  // group writes that group's FIRST section, so every link the page produces
+  // is still one of the eleven values an older build reads.
+  const openGroup = (group: string) => {
+    const first = OFFERED_SECTIONS.find((x) => x.group === group)
+    if (first) setTab(first.value)
   }
 
   const goToGapsFor = (match: CareerMatch) => {
@@ -275,6 +363,84 @@ export default function MemberDevelopmentWorkspace({
   // second conversation in the same session, and a boolean already true cannot
   // say "again".
   const [conversationSeed, setConversationSeed] = useState(0)
+
+  // A legacy link (`?tab=roadmap`, `?tab=interviews`, …) opens its group and
+  // lands on its section. Keyed on the view as well as the section, so a link
+  // followed while the dossier computes is honoured again when it lands. No
+  // scroll tracking the other way: `?tab=` is the section last opened or
+  // clicked, and the rail's prompts must not change under a reader who scrolls.
+  const view = isLoading ? "loading" : dossier === null ? "computing" : dossier ? "ready" : "none"
+  useEffect(() => {
+    if (opensAtTop || (view !== "ready" && view !== "computing")) return
+    const el = document.getElementById(sectionDomId(activeSection))
+    if (el && typeof el.scrollIntoView === "function") el.scrollIntoView({ block: "start" })
+  }, [activeSection, opensAtTop, view])
+
+  // Group labels. A server `/v1/frontend-text` override of the `dev.group.*`
+  // key wins, as for every `dev.*` string; otherwise the locale file; the
+  // DEV_TEXT English is what both fall back to. Static keys on purpose.
+  const groupLocal: Partial<Record<DevGroup, string>> = {
+    "group-profile": tm("memberDevelopmentWorkspace.groupProfile", { defaultValue: "Profile" }),
+    "group-goals-roadmap": tm("memberDevelopmentWorkspace.groupGoalsRoadmap", { defaultValue: "Goals & Roadmap" }),
+    "group-gaps-learning": tm("memberDevelopmentWorkspace.groupGapsLearning", { defaultValue: "Gaps & Learning" }),
+    "group-careers": tm("memberDevelopmentWorkspace.groupCareers", { defaultValue: "Career matches" }),
+    "group-conversations": tm("memberDevelopmentWorkspace.groupConversations", { defaultValue: "Conversations" }),
+  }
+  const groupLabel = (group: GroupDef): string => {
+    const resolved = t(group.labelKey)
+    const local = groupLocal[group.value]
+    return local !== undefined && resolved === DEV_TEXT[group.labelKey] ? local : resolved
+  }
+
+  const groupTabs = (groups: readonly GroupDef[]) => (
+    <TabsList className="flex w-full flex-wrap justify-start">
+      {groups.map((group) => (
+        <TabsTrigger key={group.value} value={group.value}>
+          {groupLabel(group)}
+        </TabsTrigger>
+      ))}
+    </TabsList>
+  )
+
+  // One group's content: its sections in table order, each under its old tab
+  // name with a stable element id. `panelFor` returning nothing means the
+  // section cannot render yet (the computing view) and says so in place.
+  const groupContent = (group: GroupDef, panelFor: (def: SectionDef) => ReactNode) => (
+    <TabsContent key={group.value} value={group.value} className="space-y-8">
+      {sectionsOf(group.value).map((def) => {
+        const panel = panelFor(def)
+        const body = panel ? (
+          <Suspense fallback={<TabFallback />}>{panel}</Suspense>
+        ) : (
+          <p data-testid={`${sectionDomId(def.value)}-waiting`} className={cn("text-sm", sk.text500)}>
+            {tm("memberDevelopmentWorkspace.thisTabNeedsTheDossier", { defaultValue: "This tab needs the dossier. Open Goals or Notes while it's generated." })}
+          </p>
+        )
+        if (group.standalone) {
+          return (
+            <div key={def.value} id={sectionDomId(def.value)} data-testid={sectionDomId(def.value)}>
+              {body}
+            </div>
+          )
+        }
+        const headingId = `${sectionDomId(def.value)}-heading`
+        return (
+          <section
+            key={def.value}
+            id={sectionDomId(def.value)}
+            data-testid={sectionDomId(def.value)}
+            aria-labelledby={headingId}
+            className="scroll-mt-[calc(var(--spacing-header-h)+1rem)]"
+          >
+            <h2 id={headingId} className={cn("mb-3 text-base font-semibold", sk.heading)}>
+              {t(def.labelKey)}
+            </h2>
+            {body}
+          </section>
+        )
+      })}
+    </TabsContent>
+  )
 
   // --- Shell states ---
   if (isLoading) {
@@ -309,7 +475,9 @@ export default function MemberDevelopmentWorkspace({
   if (dossier === null) {
     // TDS-P1 (c). This was the spinner and nothing else for the whole compute.
     // The tabs that need no dossier work now; the rest appear when it lands.
-    const computingTab = COMPUTING_TAB_VALUES.includes(activeTab) ? activeTab : undefined
+    // U4: the bar offers the groups that hold one; inside a group the section
+    // that needs the dossier says so under its own heading.
+    const computingGroup = COMPUTING_GROUPS.some((g) => g.value === activeGroup) ? activeGroup : undefined
     const name = cachedName || tm("memberDevelopmentWorkspace.thisMember", { defaultValue: "This member" })
     return frame(
       <div className="space-y-4">
@@ -325,34 +493,27 @@ export default function MemberDevelopmentWorkspace({
             <RefreshCw className={cn("h-4 w-4 animate-spin", sk.text400)} aria-hidden="true" />{tm("memberDevelopmentWorkspace.generatingTheDevelopmentDossierThis", { defaultValue: "Generating the development dossier — this can take up to a minute…" })}</p>
           <p className={cn("mt-1 text-xs", sk.text400)}>{tm("memberDevelopmentWorkspace.goalsAndNotesWorkNow", { defaultValue: "Goals and Notes work now; the other tabs appear when it's ready." })}</p>
         </header>
-        <Tabs value={computingTab ?? ""} onValueChange={setTab}>
-          <TabsList className="flex w-full flex-wrap justify-start">
-            {COMPUTING_TABS.map((tabDef) => (
-              <TabsTrigger key={tabDef.value} value={tabDef.value}>
-                {t(tabDef.labelKey)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        <Tabs value={computingGroup ?? ""} onValueChange={openGroup}>
+          {groupTabs(COMPUTING_GROUPS)}
           <div className="mt-4">
-            {computingTab && memberId ? (
-              <Suspense fallback={<TabFallback />}>
-                <TabsContent value="goals">
-                  <GoalsPanel memberId={memberId} memberName={name} />
-                </TabsContent>
-                <TabsContent value="notes">
-                  <NotesPanel memberId={memberId} memberName={name} />
-                </TabsContent>
-                {TDS_STUDIO_ENABLED ? (
-                  <>
-                    <TabsContent value="compare">
-                      <TeamComparePanel memberId={memberId} memberName={name} />
-                    </TabsContent>
-                    <TabsContent value="scenarios">
-                      <TeamScenarioPanel memberId={memberId} />
-                    </TabsContent>
-                  </>
-                ) : null}
-              </Suspense>
+            {computingGroup && memberId ? (
+              COMPUTING_GROUPS.map((group) =>
+                groupContent(group, (def) => {
+                  if (!def.worksWhileComputing) return null
+                  switch (def.value) {
+                    case "goals":
+                      return <GoalsPanel memberId={memberId} memberName={name} />
+                    case "notes":
+                      return <NotesPanel memberId={memberId} memberName={name} />
+                    case "compare":
+                      return <TeamComparePanel memberId={memberId} memberName={name} />
+                    case "scenarios":
+                      return <TeamScenarioPanel memberId={memberId} />
+                    default:
+                      return null
+                  }
+                }),
+              )
             ) : (
               <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
                 <RefreshCw className={cn("h-6 w-6 animate-spin", sk.text400)} aria-hidden="true" />
@@ -379,6 +540,102 @@ export default function MemberDevelopmentWorkspace({
     reconciledHeadline: dossier.reconciledHeadline,
     overallConfidence: dossier.overallConfidence,
     coverage: dossier.profile.coverage,
+  }
+
+  // One panel per section, with the props each had as a tab. Exhaustive over
+  // DevSection, so a section added to the union cannot ship without a panel.
+  // Which of them mount, and in what order, is the SECTIONS table's business:
+  // only the open group's sections render, and a section not on offer never does.
+  const panels: Record<DevSection, ReactNode> = {
+    profile: (
+      <BehavioralProfilePanel
+        profile={dossier.profile}
+        notShared={dossier.prismNotShared}
+        noAccount={dossier.prismNoAccount}
+        memberName={member.name}
+        onRequestAccess={() => requestPrism.mutate()}
+        requestPending={requestPrism.isPending}
+        requestSent={requestPrism.isSuccess}
+      />
+    ),
+    // Shares the Profile group with the radar, below it. It reads the member's
+    // full PRISM as it mounts (flag-on builds only).
+    "profile-studio": (
+      <ProfileStudioPanel
+        memberId={dossier.memberId}
+        memberName={member.name}
+        profile={dossier.profile}
+        notShared={dossier.prismNotShared}
+      />
+    ),
+    goals: <GoalsPanel memberId={dossier.memberId} memberName={member.name} />,
+    roadmap: (
+      <RoadmapTimeline
+        memberId={dossier.memberId}
+        memberName={member.name}
+        milestones={dossier.milestones}
+        goals={dossier.goals}
+        trajectory={dossier.trajectory}
+        notShared={dossier.developmentNotShared}
+      />
+    ),
+    gaps: (
+      <GapAnalysisPanel
+        memberId={dossier.memberId}
+        matches={dossier.matches}
+        initialTargetId={targetFromQuery}
+        notShared={dossier.developmentNotShared}
+        gapsState={dossier.gapsState}
+        gapsTargetRole={dossier.gapsTargetRole}
+      />
+    ),
+    learning: (
+      <LearningPlanPanel
+        memberId={dossier.memberId}
+        learning={dossier.learning}
+        gaps={dossier.gaps}
+        goals={dossier.goals}
+        notShared={dossier.developmentNotShared}
+        audience={audience}
+      />
+    ),
+    careers: FIT_ENGINE_MATCHES_ENABLED ? (
+      <FitEngineMatchPanel
+        memberName={member.name}
+        result={fitMatches.data}
+        loading={fitMatches.isLoading}
+        error={fitMatches.isError}
+      />
+    ) : (
+      <CareerMatchPanel
+        internal={internal}
+        external={external}
+        onSetTarget={goToGapsFor}
+        onViewGaps={goToGapsFor}
+        notShared={dossier.developmentNotShared}
+      />
+    ),
+    notes: (
+      <NotesPanel
+        memberId={dossier.memberId}
+        memberName={member.name}
+        goals={dossier.goals}
+        milestones={dossier.milestones}
+      />
+    ),
+    interviews: <InterviewsPanel interviews={dossier.interviews} memberName={member.name} />,
+    // TDS-3 — both panels keep their runs, and a kept run belongs to the
+    // workspace it was taken in (D-TDS3, "analyses follow the member"). So the
+    // member is passed explicitly rather than inferred inside the panel: a
+    // comparison naming three colleagues is stored under THIS member, and the
+    // store's URL is what makes that true.
+    compare: (
+      <TeamComparePanel
+        memberId={dossier.memberId}
+        memberName={member.name}
+      />
+    ),
+    scenarios: <TeamScenarioPanel memberId={dossier.memberId} />,
   }
 
   return frame(
@@ -519,118 +776,11 @@ export default function MemberDevelopmentWorkspace({
 
       {/* Main + assistant */}
       <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
-        <Tabs value={activeTab} onValueChange={setTab}>
-          <TabsList className="flex w-full flex-wrap justify-start">
-            {TABS.map((tabDef) => (
-              <TabsTrigger key={tabDef.value} value={tabDef.value}>
-                {t(tabDef.labelKey)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        <Tabs value={activeGroup} onValueChange={openGroup}>
+          {groupTabs(OFFERED_GROUPS)}
 
           <div className="mt-4">
-            <Suspense fallback={<TabFallback />}>
-              <TabsContent value="profile">
-                <BehavioralProfilePanel
-                  profile={dossier.profile}
-                  notShared={dossier.prismNotShared}
-                  noAccount={dossier.prismNoAccount}
-                  memberName={member.name}
-                  onRequestAccess={() => requestPrism.mutate()}
-                  requestPending={requestPrism.isPending}
-                  requestSent={requestPrism.isSuccess}
-                />
-              </TabsContent>
-              <TabsContent value="goals">
-                <GoalsPanel memberId={dossier.memberId} memberName={member.name} />
-              </TabsContent>
-              <TabsContent value="gaps">
-                <GapAnalysisPanel
-                  memberId={dossier.memberId}
-                  matches={dossier.matches}
-                  initialTargetId={targetFromQuery}
-                  notShared={dossier.developmentNotShared}
-                  gapsState={dossier.gapsState}
-                  gapsTargetRole={dossier.gapsTargetRole}
-                />
-              </TabsContent>
-              <TabsContent value="learning">
-                <LearningPlanPanel
-                  memberId={dossier.memberId}
-                  learning={dossier.learning}
-                  gaps={dossier.gaps}
-                  goals={dossier.goals}
-                  notShared={dossier.developmentNotShared}
-                  audience={audience}
-                />
-              </TabsContent>
-              <TabsContent value="careers">
-                {FIT_ENGINE_MATCHES_ENABLED ? (
-                  <FitEngineMatchPanel
-                    memberName={member.name}
-                    result={fitMatches.data}
-                    loading={fitMatches.isLoading}
-                    error={fitMatches.isError}
-                  />
-                ) : (
-                  <CareerMatchPanel
-                    internal={internal}
-                    external={external}
-                    onSetTarget={goToGapsFor}
-                    onViewGaps={goToGapsFor}
-                    notShared={dossier.developmentNotShared}
-                  />
-                )}
-              </TabsContent>
-              <TabsContent value="roadmap">
-                <RoadmapTimeline
-                  memberId={dossier.memberId}
-                  memberName={member.name}
-                  milestones={dossier.milestones}
-                  goals={dossier.goals}
-                  trajectory={dossier.trajectory}
-                  notShared={dossier.developmentNotShared}
-                />
-              </TabsContent>
-              <TabsContent value="notes">
-                <NotesPanel
-                  memberId={dossier.memberId}
-                  memberName={member.name}
-                  goals={dossier.goals}
-                  milestones={dossier.milestones}
-                />
-              </TabsContent>
-              <TabsContent value="interviews">
-                <InterviewsPanel interviews={dossier.interviews} memberName={member.name} />
-              </TabsContent>
-              {TDS_STUDIO_ENABLED ? (
-                <>
-                  <TabsContent value="profile-studio">
-                    <ProfileStudioPanel
-                      memberId={dossier.memberId}
-                      memberName={member.name}
-                      profile={dossier.profile}
-                      notShared={dossier.prismNotShared}
-                    />
-                  </TabsContent>
-                  {/* TDS-3 — both panels now keep their runs, and a kept run
-                      belongs to the workspace it was taken in (D-TDS3,
-                      "analyses follow the member"). So the member is passed
-                      explicitly rather than inferred inside the panel: a
-                      comparison naming three colleagues is stored under THIS
-                      member, and the store's URL is what makes that true. */}
-                  <TabsContent value="compare">
-                    <TeamComparePanel
-                      memberId={dossier.memberId}
-                      memberName={member.name}
-                    />
-                  </TabsContent>
-                  <TabsContent value="scenarios">
-                    <TeamScenarioPanel memberId={dossier.memberId} />
-                  </TabsContent>
-                </>
-              ) : null}
-            </Suspense>
+            {OFFERED_GROUPS.map((group) => groupContent(group, (def) => panels[def.value]))}
           </div>
         </Tabs>
 
@@ -644,7 +794,7 @@ export default function MemberDevelopmentWorkspace({
             <MeridianDevelopmentPanel
               memberId={dossier.memberId}
               memberName={member.name}
-              tab={activeTab}
+              tab={activeSection}
               goals={dossier.goals}
               gaps={dossier.gaps}
               goalsNotShared={dossier.goalsNotShared}

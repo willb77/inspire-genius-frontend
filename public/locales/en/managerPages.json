@@ -391,7 +391,12 @@
     "recentActivity": "Recent activity",
     "whatChangedOnThisDossier": "What changed on this dossier, and which agent or action did it.",
     "dossierExportedAsPdf": "Dossier exported as PDF.",
-    "couldnTGenerateThePdf": "Couldn't generate the PDF."
+    "couldnTGenerateThePdf": "Couldn't generate the PDF.",
+    "groupProfile": "Profile",
+    "groupGoalsRoadmap": "Goals & Roadmap",
+    "groupGapsLearning": "Gaps & Learning",
+    "groupCareers": "Career matches",
+    "groupConversations": "Conversations"
   },
   "meridianDevelopmentPanel": {
     "tab": "Tab: {{tab}}",

@@ -720,6 +720,11 @@
     "whatChangedOnThisDossier": "Co se v tomto dosje změnilo a který agent nebo jaká akce to provedla.",
     "dossierExportedAsPdf": "Dosje bylo exportováno do PDF.",
     "couldnTGenerateThePdf": "PDF se nepodařilo vytvořit.",
-    "text": " · {{department}}"
+    "text": " · {{department}}",
+    "groupProfile": "Profil",
+    "groupGoalsRoadmap": "Cíle a plán",
+    "groupGapsLearning": "Rozdíly a učení",
+    "groupCareers": "Kariérní možnosti",
+    "groupConversations": "Rozhovory"
   }
 }

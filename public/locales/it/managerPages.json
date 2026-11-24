@@ -150,7 +150,12 @@
     "whatChangedOnThisDossier": "Cosa è cambiato in questo dossier e quale agente o azione l'ha causato.",
     "dossierExportedAsPdf": "Dossier esportato in PDF.",
     "couldnTGenerateThePdf": "Impossibile generare il PDF.",
-    "text": " · {{department}}"
+    "text": " · {{department}}",
+    "groupProfile": "Profilo",
+    "groupGoalsRoadmap": "Obiettivi e roadmap",
+    "groupGapsLearning": "Divari e apprendimento",
+    "groupCareers": "Opzioni di carriera",
+    "groupConversations": "Conversazioni"
   },
   "meridianDevelopmentPanel": {
     "tab": "Scheda: {{tab}}",
