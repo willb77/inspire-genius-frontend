@@ -52,6 +52,8 @@ export const GLOSSARY: Readonly<Record<string, string>> = {
   "job dna": "Job profile",
   "job blueprint": "Job profile",
   "career blueprint": "Job profile",
+  "role blueprints": "Job profile",
+  "role blueprint": "Job profile",
   "blueprint a role": "Job profile",
   "career fit": "Jobs that fit me",
   "job fit": "Jobs that fit me",

@@ -111,9 +111,9 @@
     "jobBlueprintBody": {
       "matchGenerated": "Dopasowanie wygenerowane.",
       "jamesAdminagentFailed": "James (AdminAgent) nie powiódł się: {{message}}",
-      "jobBlueprintMatch": "Job Blueprint Match",
-      "jobBlueprintMatch2": "Job Blueprint match",
-      "matchACandidateAgainstA": "Dopasuj kandydata do Job Blueprint dla danej roli za pomocą Jamesa (AdminAgent).",
+      "jobBlueprintMatch": "Role Blueprint Match",
+      "jobBlueprintMatch2": "Role Blueprint match",
+      "matchACandidateAgainstA": "Dopasuj kandydata do Role Blueprint dla danej roli za pomocą Jamesa (AdminAgent).",
       "inputs": "Dane wejściowe",
       "roleTitle": "Nazwa stanowiska",
       "company": "Firma",

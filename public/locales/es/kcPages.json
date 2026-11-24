@@ -124,11 +124,11 @@
       "reading": "Leyendo…",
       "uploadButton": "Subir un rol",
       "uploadHint": "Suelta una descripción de puesto o un acta del rol: leemos el texto en el contexto de abajo y deducimos el título. No se sube nada a ningún servidor.",
-      "seedLabel": "Partir de un Job Blueprint",
+      "seedLabel": "Partir de un Role Blueprint",
       "optional": "(opcional)",
       "seedNone": "Empezar con un título de rol",
       "loadingSeed": "Cargando la semilla de conocimiento del blueprint…",
-      "seedHint": "Elige un Job Blueprint para sembrar el mapa con el conocimiento del rol; después Maven lo enriquece.",
+      "seedHint": "Elige un Role Blueprint para sembrar el mapa con el conocimiento del rol; después Maven lo enriquece.",
       "roleTitle": "Título del rol",
       "roleTitlePlaceholder": "p. ej., Operador sénior de tratamiento de aguas residuales, o CIO",
       "context": "Contexto",
@@ -204,10 +204,10 @@
     },
     "choose": {
       "title": "Elige un puesto para capturar",
-      "description": "La captura se realiza sobre un puesto que ya has definido con Job Blueprint. Elige uno a continuación o crea primero el Job Blueprint de un puesto nuevo.",
+      "description": "La captura se realiza sobre un puesto que ya has definido con Role Blueprints. Elige uno a continuación o crea primero el Role Blueprint de un puesto nuevo.",
       "loading": "Cargando tus puestos guardados…",
-      "empty": "Aún no hay puestos guardados. Crea primero el Job Blueprint de un puesto: define las áreas de conocimiento que recorrerá esta captura.",
-      "blueprintRole": "Crear Job Blueprint de un puesto",
+      "empty": "Aún no hay puestos guardados. Crea primero el Role Blueprint de un puesto: define las áreas de conocimiento que recorrerá esta captura.",
+      "blueprintRole": "Crear Role Blueprint de un puesto",
       "areaCount": "{{areas}} áreas de conocimiento"
     },
     "plan": {

@@ -109,7 +109,7 @@ describe("constants/navigation", () => {
       // The PAGES still route; this is a shortcut list, not the route table.
       for (const gone of [
         "PRISM Team",
-        "Job Blueprint",
+        "Role Blueprint Match",
         "Interview Prep",
         "Team Composition",
         "Analytics",
@@ -501,7 +501,7 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
   // not in the top-level label set. Practice Interview was too, until it became
   // "Role Play" in the main menu on 2026-10-18.
   // Character Lab joined both roles on 2026-10-07 (request).
-  const UNGATED = ["Interview Studio", "Goals Studio", "Job Blueprint", "Character Lab"].sort()
+  const UNGATED = ["Interview Studio", "Goals Studio", "Role Blueprint Match", "Character Lab"].sort()
 
   it("gives the practitioner every requested tool, ungated", () => {
     expect(labelsFor("practitioner")).toEqual(

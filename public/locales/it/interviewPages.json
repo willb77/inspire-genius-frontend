@@ -146,11 +146,11 @@
     },
     "confirmEnd": "La domanda corrente non è ancora stata inviata e valutata: la risposta e le note non verranno salvate. Terminare comunque il colloquio?",
     "deepLink": {
-      "error": "Impossibile caricare il candidato da Career Blueprint. Puoi comunque sceglierne uno nel passaggio successivo; altrimenti questo colloquio non sarà collegato.",
-      "loading": "Caricamento del candidato da Career Blueprint…",
+      "error": "Impossibile caricare il candidato da Role Blueprints. Puoi comunque sceglierne uno nel passaggio successivo; altrimenti questo colloquio non sarà collegato.",
+      "loading": "Caricamento del candidato da Role Blueprints…",
       "missing": "Il candidato indicato in questo link non è nella pipeline di quel Job DNA. Puoi comunque sceglierne uno nel passaggio successivo; altrimenti questo colloquio non sarà collegato.",
-      "ready": "Colloquio con {{slot}} da Career Blueprint: il candidato verrà collegato dopo la conferma del consenso.",
-      "readyWithId": "Colloquio con {{slot}} ({{externalId}}) da Career Blueprint: il candidato verrà collegato dopo la conferma del consenso."
+      "ready": "Colloquio con {{slot}} da Role Blueprints: il candidato verrà collegato dopo la conferma del consenso.",
+      "readyWithId": "Colloquio con {{slot}} ({{externalId}}) da Role Blueprints: il candidato verrà collegato dopo la conferma del consenso."
     },
     "endInterview": "Termina colloquio",
     "export": {
@@ -205,7 +205,7 @@
       "noDraft": "Non è stata scritta alcuna bozza di scheda di valutazione per il candidato collegato (il backend non ne ha segnalata una).",
       "noDraftReason": "Non è stata scritta alcuna bozza di scheda di valutazione per il candidato collegato ({{reason}}).",
       "review": "{{slot}} prima che venga conteggiata.",
-      "reviewLink": "Revisionala in Career Blueprint → Schede di valutazione",
+      "reviewLink": "Revisionala in Role Blueprints → Schede di valutazione",
       "written": "Bozza di scheda di valutazione scritta per il candidato collegato.",
       "writtenDims": "Bozza di scheda di valutazione scritta per il candidato collegato ({{dimensions}} dimensioni)."
     },

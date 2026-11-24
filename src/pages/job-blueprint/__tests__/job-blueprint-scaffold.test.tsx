@@ -114,7 +114,7 @@ describe("Job DNA vertical scaffold", () => {
 
       const shell = screen.getByTestId("sidebar-scaffold")
       expect(shell).toBeInTheDocument()
-      const heading = await screen.findByRole("heading", { name: "Career Blueprint" })
+      const heading = await screen.findByRole("heading", { name: "Role Blueprints" })
       expect(shell).toContainElement(heading)
       // Empty backend → the empty-state CTA is offered.
       await waitFor(() =>

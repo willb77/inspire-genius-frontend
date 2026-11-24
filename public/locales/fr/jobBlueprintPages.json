@@ -329,13 +329,13 @@
       "anotherNote": "Établir le référentiel du poste suivant.",
       "body": "Le référentiel est enregistré et le poste est désormais disponible dans toutes vos interfaces Job DNA.",
       "saved": "« {{role}} » enregistré",
-      "view": "Voir le Job Blueprint",
+      "view": "Voir le Role Blueprint",
       "viewNote": "Ouvrir le profil de référence et ses graphiques."
     },
-    "draftButton": "Ébaucher le Job Blueprint",
+    "draftButton": "Ébaucher le Role Blueprint",
     "draftNew": "Ébaucher un nouveau poste…",
-    "drafted": "Job Blueprint ébauché : 22 dimensions à réviser.",
-    "drafting": "Ébauche du Job Blueprint",
+    "drafted": "Role Blueprint ébauché : 22 dimensions à réviser.",
+    "drafting": "Ébauche du Role Blueprint",
     "kceLoadFailed": "Impossible de charger les rôles enregistrés dans Knowledge Continuity.",
     "loaded": "« {{title}} » chargé.",
     "loadedFile": "« {{name}} » chargé — {{chars}} caractères de contexte.",
@@ -866,12 +866,12 @@
   },
   "dashboard": {
     "createFirst": "Créer votre premier Job DNA",
-    "description": "Job Blueprint : rédigez le référentiel comportemental d'un poste, faites-le valider par une personne qui connaît le poste, puis présélectionnez et classez les profils PRISM des candidats par rapport à celui-ci.",
+    "description": "Role Blueprints : rédigez le référentiel comportemental d'un poste, faites-le valider par une personne qui connaît le poste, puis présélectionnez et classez les profils PRISM des candidats par rapport à celui-ci.",
     "empty": "Aucun Job DNA pour le moment.",
     "loadError": "Impossible de charger les Job DNA.",
     "loading": "Chargement des Job DNA…",
     "newJobDna": "Nouveau Job DNA",
-    "title": "Career Blueprint",
+    "title": "Role Blueprints",
     "yourJobDnas": "Vos Job DNA"
   },
   "entry": {

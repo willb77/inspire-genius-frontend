@@ -415,8 +415,8 @@
     "jobBlueprintBody": {
       "matchGenerated": "Shoda byla vytvořena.",
       "jamesAdminagentFailed": "James (AdminAgent) selhal: {{message}}",
-      "jobBlueprintMatch": "Job Blueprint Match",
-      "jobBlueprintMatch2": "Shoda s Job Blueprint",
+      "jobBlueprintMatch": "Role Blueprint Match",
+      "jobBlueprintMatch2": "Shoda s Role Blueprint",
       "matchACandidateAgainstA": "Porovnejte kandidáta s plánem role (blueprint) pomocí Jamese (AdminAgent).",
       "inputs": "Vstupy",
       "roleTitle": "Název role",

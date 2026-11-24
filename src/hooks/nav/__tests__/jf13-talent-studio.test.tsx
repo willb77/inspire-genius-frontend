@@ -216,7 +216,7 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
 })
 
 describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () => {
-  const TOP_LEVEL_GONE = ["Career Studio", "Interview Studio", "Job Blueprint", "Knowledge Continuity Studio"]
+  const TOP_LEVEL_GONE = ["Career Studio", "Interview Studio", "Role Blueprint Match", "Knowledge Continuity Studio"]
 
   it.each(TOOL_ROLES)("%s: one Talent Studio group, nothing nested below one level", async (role) => {
     const section = await tools(role, "true")
@@ -228,7 +228,7 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     const children = groups[0].children ?? []
     // Two sections then Knowledge Continuity: blueprint first, interview next.
     const labels = children.map((c) => c.label)
-    expect(labels.indexOf("Career Blueprint")).toBeLessThan(labels.indexOf("Interview Studio"))
+    expect(labels.indexOf("Role Blueprints")).toBeLessThan(labels.indexOf("Interview Studio"))
     expect(labels.indexOf("Interview Studio")).toBeLessThan(labels.indexOf("Live Interview"))
     expect(labels[labels.length - 1]).toBe("Knowledge Continuity Studio")
     // SidebarScaffold renders one level of children; anything deeper is unreachable.
@@ -250,8 +250,8 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     const group = (await tools("manager", "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
     const byLabel = Object.fromEntries((group?.children ?? []).map((c) => [c.label, !!c.disabled]))
     expect(byLabel).toEqual({
-      "Job Blueprint": false,
-      "Career Blueprint": true,
+      "Role Blueprint Match": false,
+      "Role Blueprints": true,
       "Interview Studio": false,
       "Live Interview": false,
       "Knowledge Continuity Studio": true,

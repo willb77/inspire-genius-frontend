@@ -378,7 +378,7 @@ function FormStep({
         <CardDescription>
           {t(
             "blueprintStudio.formDescription",
-            "Define the role you want to be measured against. Start from a saved role, a Job Blueprint someone has already authored, an uploaded job posting, or a plain description — then review the draft before anything is saved.",
+            "Define the role you want to be measured against. Start from a saved role, a role blueprint someone has already authored, an uploaded job posting, or a plain description — then review the draft before anything is saved.",
           )}
         </CardDescription>
       </CardHeader>
@@ -420,7 +420,7 @@ function FormStep({
           {/* Existing Job DNA / Job Blueprints authored elsewhere */}
           <div className="space-y-2">
             <Label htmlFor="job_dna_seed">
-              {t("blueprintStudio.useExisting", "Use an existing Job Blueprint")}{" "}
+              {t("blueprintStudio.useExisting", "Use an existing role blueprint")}{" "}
               <span className="text-muted-foreground">{t("blueprintStudio.optional", "(optional)")}</span>
             </Label>
             <select
@@ -897,7 +897,7 @@ export default function BlueprintStudioPage() {
         title={t("blueprintStudio.formTitle", "Blueprint a role")}
         description={t(
           "blueprintStudio.pageDescription",
-          "Define the role you're aiming at — from a saved role, an existing Job Blueprint, an uploaded posting, or a description. Job Fit measures you against it.",
+          "Define the role you're aiming at — from a saved role, an existing role blueprint, an uploaded posting, or a description. Job Fit measures you against it.",
         )}
       />
 

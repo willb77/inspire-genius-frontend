@@ -186,9 +186,9 @@
     "jobBlueprintBody": {
       "matchGenerated": "Correspondance générée.",
       "jamesAdminagentFailed": "Échec de James (AdminAgent) : {{message}}",
-      "jobBlueprintMatch": "Correspondance Job Blueprint",
-      "jobBlueprintMatch2": "Correspondance Job Blueprint",
-      "matchACandidateAgainstA": "Comparez un candidat au Job Blueprint d'un poste avec James (AdminAgent).",
+      "jobBlueprintMatch": "Correspondance Role Blueprint",
+      "jobBlueprintMatch2": "Correspondance Role Blueprint",
+      "matchACandidateAgainstA": "Comparez un candidat au Role Blueprint d'un poste avec James (AdminAgent).",
       "inputs": "Données d'entrée",
       "roleTitle": "Intitulé du poste",
       "company": "Entreprise",

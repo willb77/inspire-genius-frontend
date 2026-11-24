@@ -776,12 +776,12 @@
   },
   "dashboard": {
     "createFirst": "Vytvořte své první Job DNA",
-    "description": "Job Blueprint — navrhněte behaviorální benchmark pro danou roli, nechte jej zkontrolovat někoho, kdo roli zná, a poté podle něj vyhodnoťte a seřaďte profily PRISM kandidátů.",
+    "description": "Role Blueprints — navrhněte behaviorální benchmark pro danou roli, nechte jej zkontrolovat někoho, kdo roli zná, a poté podle něj vyhodnoťte a seřaďte profily PRISM kandidátů.",
     "empty": "Zatím nemáte žádné Job DNA.",
     "loadError": "Job DNA se nepodařilo načíst.",
     "loading": "Načítání Job DNA…",
     "newJobDna": "Nové Job DNA",
-    "title": "Career Blueprint",
+    "title": "Role Blueprints",
     "yourJobDnas": "Vaše Job DNA"
   },
   "entry": {

@@ -31,11 +31,11 @@
     },
     "confirmEnd": "Bieżące pytanie nie zostało jeszcze zatwierdzone i ocenione — jego odpowiedź i notatki nie zostaną zapisane. Czy mimo to zakończyć rozmowę?",
     "deepLink": {
-      "error": "Nie udało się wczytać kandydata z Career Blueprint. Nadal możesz wybrać go w następnym kroku; w przeciwnym razie ta rozmowa nie zostanie powiązana.",
-      "loading": "Wczytywanie kandydata z Career Blueprint…",
+      "error": "Nie udało się wczytać kandydata z Role Blueprints. Nadal możesz wybrać go w następnym kroku; w przeciwnym razie ta rozmowa nie zostanie powiązana.",
+      "loading": "Wczytywanie kandydata z Role Blueprints…",
       "missing": "Kandydata z tego linku nie ma w procesie rekrutacji tego Job DNA. Nadal możesz wybrać go w następnym kroku; w przeciwnym razie ta rozmowa nie zostanie powiązana.",
-      "ready": "Rozmowa z kandydatem {{slot}} z Career Blueprint — kandydat zostanie powiązany po potwierdzeniu zgody.",
-      "readyWithId": "Rozmowa z kandydatem {{slot}} ({{externalId}}) z Career Blueprint — kandydat zostanie powiązany po potwierdzeniu zgody."
+      "ready": "Rozmowa z kandydatem {{slot}} z Role Blueprints — kandydat zostanie powiązany po potwierdzeniu zgody.",
+      "readyWithId": "Rozmowa z kandydatem {{slot}} ({{externalId}}) z Role Blueprints — kandydat zostanie powiązany po potwierdzeniu zgody."
     },
     "endInterview": "Zakończ rozmowę",
     "export": {
@@ -90,7 +90,7 @@
       "noDraft": "Nie utworzono wersji roboczej karty ocen dla powiązanego kandydata (backend nie zgłosił żadnej).",
       "noDraftReason": "Nie utworzono wersji roboczej karty ocen dla powiązanego kandydata ({{reason}}).",
       "review": "{{slot}}, zanim zostanie uwzględniona.",
-      "reviewLink": "Przejrzyj ją w Career Blueprint → Karty ocen",
+      "reviewLink": "Przejrzyj ją w Role Blueprints → Karty ocen",
       "written": "Utworzono wersję roboczą karty ocen dla powiązanego kandydata.",
       "writtenDims": "Szkic karty oceny został zapisany dla powiązanego kandydata (liczba wymiarów: {{dimensions}})."
     },

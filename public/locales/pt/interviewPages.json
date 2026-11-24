@@ -215,7 +215,7 @@
   },
   "live": {
     "scorecard": {
-      "reviewLink": "Revise em Career Blueprint → Scorecards",
+      "reviewLink": "Revise em Role Blueprints → Scorecards",
       "written": "Rascunho do scorecard escrito para o candidato vinculado.",
       "writtenDims": "Rascunho do scorecard escrito para o candidato vinculado ({{dimensions}} dimensões).",
       "noDraft": "Nenhum rascunho de avaliação foi gerado para o candidato vinculado (o backend não informou nenhum).",
@@ -251,11 +251,11 @@
     },
     "confirmEnd": "A pergunta atual ainda não foi enviada e avaliada — a resposta e as anotações não serão salvas. Encerrar a entrevista mesmo assim?",
     "deepLink": {
-      "error": "Não foi possível carregar o candidato do Career Blueprint. Você ainda pode escolher um na próxima etapa; caso contrário, esta entrevista não será vinculada.",
-      "loading": "Carregando o candidato do Career Blueprint…",
+      "error": "Não foi possível carregar o candidato do Role Blueprints. Você ainda pode escolher um na próxima etapa; caso contrário, esta entrevista não será vinculada.",
+      "loading": "Carregando o candidato do Role Blueprints…",
       "missing": "O candidato deste link não está no pipeline desse Job DNA. Você ainda pode escolher um na próxima etapa; caso contrário, esta entrevista não será vinculada.",
-      "ready": "Entrevistando {{slot}} do Career Blueprint — o candidato será vinculado quando você confirmar o consentimento.",
-      "readyWithId": "Entrevistando {{slot}} ({{externalId}}) do Career Blueprint — o candidato será vinculado quando você confirmar o consentimento."
+      "ready": "Entrevistando {{slot}} do Role Blueprints — o candidato será vinculado quando você confirmar o consentimento.",
+      "readyWithId": "Entrevistando {{slot}} ({{externalId}}) do Role Blueprints — o candidato será vinculado quando você confirmar o consentimento."
     },
     "endInterview": "Encerrar entrevista",
     "export": {

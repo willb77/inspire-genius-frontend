@@ -118,8 +118,8 @@
     "jobBlueprintBody": {
       "matchGenerated": "Match generated.",
       "jamesAdminagentFailed": "James (AdminAgent) failed: {{message}}",
-      "jobBlueprintMatch": "Job Blueprint Match",
-      "jobBlueprintMatch2": "Job blueprint match",
+      "jobBlueprintMatch": "Role Blueprint Match",
+      "jobBlueprintMatch2": "Role blueprint match",
       "matchACandidateAgainstA": "Match a candidate against a role's blueprint via James (AdminAgent).",
       "inputs": "Inputs",
       "roleTitle": "Role title",

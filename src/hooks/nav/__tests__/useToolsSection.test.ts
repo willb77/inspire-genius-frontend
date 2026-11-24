@@ -200,7 +200,7 @@ describe("useToolsSection — Career Studio (2026-09-23)", () => {
   const CATALOGUE = [
     { to: "/vertical/grant/dashboard", icon: () => null, label: "Financial Aid", disabled: false },
     { to: "/vertical/job-fit/matches", icon: () => null, label: "Career Fit", disabled: true },
-    { to: "/vertical/job-blueprint/dashboard", icon: () => null, label: "Career Blueprint", disabled: false },
+    { to: "/vertical/job-blueprint/dashboard", icon: () => null, label: "Role Blueprints", disabled: false },
   ]
 
   it("lifts the two career verticals out of the catalogue into one group, Blueprint before Fit, flags intact", () => {
@@ -210,11 +210,11 @@ describe("useToolsSection — Career Studio (2026-09-23)", () => {
     const group = items.find((i) => i.label === "Career Studio")
     expect(group?.to).toBe("")
     expect(group?.children?.map((c) => [c.label, c.disabled])).toEqual([
-      ["Career Blueprint", false],
+      ["Role Blueprints", false],
       ["Career Fit", true],
     ])
     // Not listed twice: the flat catalogue keeps only what was not lifted.
-    expect(items.map((i) => i.label)).not.toContain("Career Blueprint")
+    expect(items.map((i) => i.label)).not.toContain("Role Blueprints")
     expect(items.map((i) => i.label)).not.toContain("Career Fit")
     expect(items.map((i) => i.label)).toContain("Financial Aid")
   })

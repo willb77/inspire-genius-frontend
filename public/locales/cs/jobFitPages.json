@@ -78,7 +78,7 @@
     "draftedTitle": "Blueprint navržen",
     "draftedToast": "Blueprint navržen — {{areas}} oblastí znalostí v {{sections}} sekcích.",
     "draftingLabel": "Navrhování blueprintu",
-    "formDescription": "Definujte roli, se kterou se chcete porovnat. Začněte uloženou rolí, Job Blueprint, který už někdo vytvořil, nahraným pracovním inzerátem nebo prostým popisem — poté návrh zkontrolujte, než se cokoli uloží.",
+    "formDescription": "Definujte roli, se kterou se chcete porovnat. Začněte uloženou rolí, Role Blueprint, který už někdo vytvořil, nahraným pracovním inzerátem nebo prostým popisem — poté návrh zkontrolujte, než se cokoli uloží.",
     "formTitle": "Vytvořit blueprint role",
     "loadedToast": "Načteno „{{name}}“ — {{chars}} znaků kontextu.",
     "loadingSaved": "Načítání uloženého blueprintu…",
@@ -88,7 +88,7 @@
     "nodeNameLabel": "Název uzlu {{ref}}",
     "nothingToSave": "Není co ukládat – přidejte nebo ponechte alespoň jeden uzel.",
     "optional": "(volitelné)",
-    "pageDescription": "Definujte roli, o kterou usilujete – z uložené role, existujícího Job Blueprint, nahraného inzerátu nebo popisu. Job Fit Vás s ní porovná.",
+    "pageDescription": "Definujte roli, o kterou usilujete – z uložené role, existujícího Role Blueprint, nahraného inzerátu nebo popisu. Job Fit Vás s ní porovná.",
     "pickSavedHint": "Vyberte roli, pro kterou jste už blueprint vytvořili, a uvidíte, jak jí odpovídáte, nebo nechte prázdné a navrhněte novou.",
     "planPathway": "Naplánovat cestu",
     "planPathwayHint": "Proměňte oblasti růstu v cestu k této roli.",
@@ -124,7 +124,7 @@
     "uploadHint": "Vložte inzerát nebo popis pozice – text přečteme do popisu níže a odhadneme název. Nic se nenahrává na server.",
     "uploadLabel": "Nahrát inzerát na pozici",
     "uploadOptional": "(volitelné – Word, PDF nebo text)",
-    "useExisting": "Použít existující Job Blueprint"
+    "useExisting": "Použít existující Role Blueprint"
   },
   "matchesPage": {
     "methodClosenessHint": "Vážená podobnost s rolí",

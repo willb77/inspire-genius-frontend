@@ -21,7 +21,7 @@
     "draftedTitle": "Blueprint drafted",
     "draftedToast": "Blueprint drafted — {{areas}} knowledge areas across {{sections}} sections.",
     "draftingLabel": "Drafting the blueprint",
-    "formDescription": "Define the role you want to be measured against. Start from a saved role, a Job Blueprint someone has already authored, an uploaded job posting, or a plain description — then review the draft before anything is saved.",
+    "formDescription": "Define the role you want to be measured against. Start from a saved role, a role blueprint someone has already authored, an uploaded job posting, or a plain description — then review the draft before anything is saved.",
     "formTitle": "Blueprint a role",
     "loadedToast": "Loaded \"{{name}}\" — {{chars}} characters of context.",
     "loadingSaved": "Loading the saved blueprint…",
@@ -31,7 +31,7 @@
     "nodeNameLabel": "Node {{ref}} name",
     "nothingToSave": "Nothing to save — add or keep at least one node.",
     "optional": "(optional)",
-    "pageDescription": "Define the role you're aiming at — from a saved role, an existing Job Blueprint, an uploaded posting, or a description. Job Fit measures you against it.",
+    "pageDescription": "Define the role you're aiming at — from a saved role, an existing role blueprint, an uploaded posting, or a description. Job Fit measures you against it.",
     "pickSavedHint": "Pick a role you've already blueprinted to see your fit against it, or leave it to draft a new one.",
     "planPathway": "Plan the pathway",
     "planPathwayHint": "Turn the growth areas into a route to the role.",
@@ -67,7 +67,7 @@
     "uploadHint": "Drop in the posting or job description — we read the text into the description below and guess the title. Nothing is uploaded to a server.",
     "uploadLabel": "Upload a job posting",
     "uploadOptional": "(optional — Word, PDF, or text)",
-    "useExisting": "Use an existing Job Blueprint"
+    "useExisting": "Use an existing role blueprint"
   },
   "careerProfile": {
     "aRecipient": "A recipient",

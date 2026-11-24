@@ -269,11 +269,11 @@
     },
     "confirmEnd": "The current question hasn't been submitted and rated yet — its answer and notes won't be saved. End the interview anyway?",
     "deepLink": {
-      "error": "Could not load the candidate from Career Blueprint. You can still pick one on the next step; otherwise this interview will not be linked.",
-      "loading": "Loading the candidate from Career Blueprint…",
+      "error": "Could not load the candidate from Role Blueprints. You can still pick one on the next step; otherwise this interview will not be linked.",
+      "loading": "Loading the candidate from Role Blueprints…",
       "missing": "The candidate in this link is not in that Job DNA's pipeline. You can still pick one on the next step; otherwise this interview will not be linked.",
-      "ready": "Interviewing {{slot}} from Career Blueprint — the candidate will be linked once you confirm consent.",
-      "readyWithId": "Interviewing {{slot}} ({{externalId}}) from Career Blueprint — the candidate will be linked once you confirm consent."
+      "ready": "Interviewing {{slot}} from Role Blueprints — the candidate will be linked once you confirm consent.",
+      "readyWithId": "Interviewing {{slot}} ({{externalId}}) from Role Blueprints — the candidate will be linked once you confirm consent."
     },
     "endInterview": "End interview",
     "export": {
@@ -328,7 +328,7 @@
       "noDraft": "No scorecard draft was written for the linked candidate (the backend did not report one).",
       "noDraftReason": "No scorecard draft was written for the linked candidate ({{reason}}).",
       "review": "{{slot}} before it counts.",
-      "reviewLink": "Review it under Career Blueprint → Scorecards",
+      "reviewLink": "Review it under Role Blueprints → Scorecards",
       "written": "Scorecard draft written for the linked candidate.",
       "writtenDims": "Scorecard draft written for the linked candidate ({{dimensions}} dimensions)."
     },
