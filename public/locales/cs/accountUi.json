@@ -181,7 +181,8 @@
     "uploadReportBlurbShort": "Absolvovali jste PRISM jinde? Nahrajte report a my z něj přečteme skóre.",
     "resumeBlurbShort": "Co jste skutečně dělali – skutečné role a data.",
     "bioBlurbShort": "Několik vět vlastními slovy – nejrychlejší ze čtyř kroků.",
-    "uploadAdditionalInfo": "Nahrát další informace"
+    "uploadAdditionalInfo": "Nahrát další informace",
+    "requestPrismSurvey": "Požádat o dotazník PRISM"
   },
   "retentionSettings": {
     "yourRoleCannotWriteAtScope": "Vaše role nemůže zapisovat v rozsahu scope={{scope}}.",

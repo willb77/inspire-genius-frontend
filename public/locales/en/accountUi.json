@@ -116,7 +116,8 @@
     "uploadReportBlurbShort": "Done PRISM elsewhere? Upload the report and we'll read the scores off it.",
     "resumeBlurbShort": "What you've actually done — real roles and dates to work from.",
     "bioBlurbShort": "A few lines in your own words — the quickest of the four.",
-    "uploadAdditionalInfo": "Upload additional info"
+    "uploadAdditionalInfo": "Upload additional info",
+    "requestPrismSurvey": "Request PRISM Survey"
   },
   "accountSettings": {
     "accountSettings": "Account Settings",

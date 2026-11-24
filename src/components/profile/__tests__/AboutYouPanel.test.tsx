@@ -93,6 +93,12 @@ describe("AboutYouPanel (HOME-1)", () => {
     expect(screen.queryByText("Upload résumé")).toBeNull()
   })
 
+  it("Request PRISM Survey pill is Home-only: absent in the page variant even with scores", () => {
+    setup()
+    renderPanel({ variant: "page", hasPrism: true })
+    expect(screen.queryByRole("button", { name: "Request PRISM Survey" })).toBeNull()
+  })
+
   it("Upload additional info is Home-only: the page variant has no such pill", () => {
     setup()
     renderPanel({ variant: "page" })
