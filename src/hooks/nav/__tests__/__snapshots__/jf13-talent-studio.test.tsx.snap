@@ -397,6 +397,7 @@ exports[`JF-13 — job_fit_v2 on: Talent Studio for the three role views the thr
       "Talent Studio -> (group)",
       "  Overview -> /manager/talent-studio",
       "  Role Blueprints -> /vertical/job-blueprint/dashboard",
+      "  Job DNA -> /manager/job-dna",
       "  Role Blueprint Match -> /manager/job-blueprint",
       "  Candidates -> /vertical/job-blueprint/candidates",
       "  Hiring interview -> /manager/interview-live",
