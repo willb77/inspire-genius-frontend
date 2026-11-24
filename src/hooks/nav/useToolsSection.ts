@@ -5,6 +5,7 @@ import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/Sideb
 import type { UserRole } from "@/types/roles"
 import {
   TALENT_STUDIO_BLUEPRINT_TOOLS,
+  TALENT_STUDIO_INTERVIEW_ROWS,
   TALENT_STUDIO_INTERVIEW_TOOLS,
   TOOL_ITEMS_BY_ROLE,
 } from "@/constants/navigation"
@@ -160,8 +161,12 @@ function withTalentStudio(
   const children: NavItemDef[] = [
     ...blueprintRole,
     ...blueprintVerticals,
-    // Interview Studio stays a page; its own children sit beside it.
-    ...interviewRole.flatMap(({ children: nested, ...studio }) => [studio, ...(nested ?? [])]),
+    // TS-3: the interview rows named by purpose. A group with no such rows
+    // keeps the earlier shape: the page row, its own children beside it.
+    ...interviewRole.flatMap((group) => {
+      const { children: nested, ...studio } = group
+      return TALENT_STUDIO_INTERVIEW_ROWS.find(([g]) => g === group)?.[1] ?? [studio, ...(nested ?? [])]
+    }),
     ...(knowledge ? [knowledge] : []),
   ]
   if (children.length === 0) return { roleTools, catalogue }
