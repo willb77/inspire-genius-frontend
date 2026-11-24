@@ -128,6 +128,54 @@ describe("Preview Activity lives in the tile", () => {
   });
 });
 
+describe("reads by people not listed: a tile like the others", () => {
+  const ADMIN = "abcdef12-0000-4000-8000-000000000000";
+  const LOG = [
+    { viewer_user_id: "u1", categories_viewed: ["goals"], surface: "growth:goals", viewed_at: "2026-09-04T14:00:00Z" },
+    { viewer_user_id: ADMIN, categories_viewed: ["goals"], surface: "growth:goals:super-admin", viewed_at: "2026-09-04T13:00:00Z" },
+  ];
+
+  it("is a card in the people grid with a Preview Activity pill, not a page section", async () => {
+    svc.getPeople.mockResolvedValue({ people: [p(1)], sources: {} });
+    svc.getAccessLog.mockResolvedValue(LOG);
+    renderCore();
+    const card = await screen.findByTestId("other-readers");
+    expect(screen.getByTestId("people-grid")).toContainElement(card);
+    expect(within(card).getByRole("button", { name: "Preview Activity" })).toBeInTheDocument();
+    // The reads stay behind the pill until it is clicked.
+    expect(screen.queryByRole("list", { name: "Access log" })).toBeNull();
+  });
+
+  it("opens a tile listing the unlisted readers and not the listed person's reads", async () => {
+    svc.getPeople.mockResolvedValue({ people: [p(1)], sources: {} });
+    svc.getAccessLog.mockResolvedValue(LOG);
+    renderCore();
+    const card = await screen.findByTestId("other-readers");
+    fireEvent.click(within(card).getByRole("button", { name: "Preview Activity" }));
+    const tile = await screen.findByTestId("other-readers-tile");
+    const list = within(tile).getByRole("list", { name: "Access log" });
+    expect(list).toHaveTextContent("Someone (abcdef12…)");
+    expect(list).toHaveTextContent("platform admin");
+    expect(list).not.toHaveTextContent("Person 1");
+  });
+
+  it("still shows when nobody is on the list", async () => {
+    svc.getPeople.mockResolvedValue({ people: [], sources: {} });
+    svc.getAccessLog.mockResolvedValue(LOG);
+    renderCore();
+    expect(await screen.findByTestId("other-readers")).toBeInTheDocument();
+  });
+
+  it("shows nothing when every reader is on the list", async () => {
+    svc.getPeople.mockResolvedValue({ people: [p(1)], sources: {} });
+    svc.getAccessLog.mockResolvedValue([LOG[0]]);
+    renderCore();
+    await screen.findByTestId("people-grid");
+    await waitFor(() => expect(svc.getAccessLog).toHaveBeenCalled());
+    expect(screen.queryByTestId("other-readers")).toBeNull();
+  });
+});
+
 describe("Add Access to a Person", () => {
   it("is titled that way and still takes an exact email only", async () => {
     svc.getPeople.mockResolvedValue({ people: [], sources: {} });

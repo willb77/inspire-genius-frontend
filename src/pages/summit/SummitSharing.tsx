@@ -526,24 +526,49 @@ function PersonActivity({ person, nameById }: { person: VisibilityPerson; nameBy
 }
 
 /**
- * Reads by someone who is NOT on the list above (a platform administrator, or a
+ * Reads by someone who is NOT on the list (a platform administrator, or a
  * person whose access has since been removed). The per-person Preview Activity
  * cannot show these, and the log's promise is that every read is recorded, so
- * they appear here. Renders nothing when there are none.
+ * they get a tile of their own: a card in the people grid, with the same
+ * Preview Activity pill, opening the same kind of tile. Renders nothing when
+ * there are none.
  */
 function OtherReaders({ listedIds, nameById }: { listedIds: Set<string>; nameById: Map<string, string> }) {
   const { t } = useTranslation("summitPages");
   const log = useAccessLog();
+  const [open, setOpen] = useState(false);
   const rows = (log.data ?? []).filter((r) => !listedIds.has(r.viewer_user_id)).slice(0, 50);
   if (log.isLoading || log.isError || rows.length === 0) return null;
+  const title = t("sharing.otherReaders", { defaultValue: "Reads by people not listed above" });
+  const body = t("sharing.otherReadersBody", { defaultValue: "Platform administrators, or people whose access has been removed." });
   return (
-    <Card className="!p-5" testId="other-readers">
-      <div className="text-[15px] font-bold text-[#0B1B33]">{t("sharing.otherReaders", { defaultValue: "Reads by people not listed above" })}</div>
-      <p className="mb-2 mt-1 text-[12.5px] text-[#13294B]/75">
-        {t("sharing.otherReadersBody", { defaultValue: "Platform administrators, or people whose access has been removed." })}
-      </p>
-      <ActivityList rows={rows} nameById={nameById} />
-    </Card>
+    <li className="flex flex-col gap-2 rounded-xl border border-[#F1ECE2] bg-white p-3.5" data-testid="other-readers">
+      <div className="min-w-0">
+        <div className="text-[14px] font-bold text-[#0B1B33]">{title}</div>
+        <div className="text-[12px] text-[#13294B]/70">{body}</div>
+      </div>
+      <div className="mt-auto">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8 gap-1.5 rounded-full"
+          onClick={() => setOpen(true)}
+        >
+          <Eye className="h-3.5 w-3.5 text-[#127A8A]" aria-hidden />
+          {t("sharing.previewActivity", { defaultValue: "Preview Activity" })}
+        </Button>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl" data-testid="other-readers-tile">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{body}</DialogDescription>
+          </DialogHeader>
+          <ActivityList rows={rows} nameById={nameById} />
+        </DialogContent>
+      </Dialog>
+    </li>
   );
 }
 
@@ -712,6 +737,7 @@ export function SharingCore() {
   const loading = people.isLoading || grants.isLoading;
   const failed = people.isError || grants.isError;
   const list = people.data?.people ?? [];
+  const listedIds = new Set(list.map((p) => p.userId));
   const nameById = new Map(list.map((p) => [p.userId, p.displayName || p.email || t("sharing.someone", { defaultValue: "Someone" })]));
   const requests = (grants.data ?? []).filter((r) => r.status === "pending");
   const unavailable = Object.entries(people.data?.sources ?? {})
@@ -772,6 +798,7 @@ export function SharingCore() {
             {list.map((p) => (
               <PersonCard key={p.userId} person={p} details={details} nameById={nameById} />
             ))}
+            <OtherReaders listedIds={listedIds} nameById={nameById} />
           </ul>
         </Card>
       )}
@@ -780,7 +807,11 @@ export function SharingCore() {
 
       {!loading && !failed && <MemberLinkRequestCard />}
 
-      {!loading && !failed && <OtherReaders listedIds={new Set(list.map((p) => p.userId))} nameById={nameById} />}
+      {!loading && !failed && list.length === 0 && (
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="other-readers-grid">
+          <OtherReaders listedIds={listedIds} nameById={nameById} />
+        </ul>
+      )}
     </div>
   );
 }
