@@ -54,6 +54,7 @@ import { formatDate } from "@/lib/house/formatDate";
 import { PageState } from "@/components/shared/house/PageState";
 import { AdminHub } from "@/pages/super-admin/house/AdminHub"
 import { PRISM_HUB } from "@/pages/super-admin/house/hubs";
+import { Prism } from "@/components/shared/Prism"
 
 const SCORE_FIELDS = ["gold", "green", "blue", "orange"] as const;
 type ScoreField = (typeof SCORE_FIELDS)[number];
@@ -107,15 +108,15 @@ function PrismManagementInner({ house = false }: { house?: boolean }) {
         ) : (
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">PRISM Management</h1>
+            <h1 className="text-2xl font-semibold"><Prism /> Management</h1>
             <p className="text-sm text-muted-foreground">
-              View, edit, create, and delete PRISM assessment scores.
+              View, edit, create, and delete <Prism /> assessment scores.
               Re-vectorization fires automatically on create + update.
             </p>
           </div>
           <Button onClick={() => setCreating(true)}>
             <Plus className="size-4 mr-2" />
-            New PRISM Row
+            New <Prism /> Row
           </Button>
         </div>
         )}
@@ -204,7 +205,7 @@ function PrismManagementInner({ house = false }: { house?: boolean }) {
                         colSpan={8}
                         className="text-center text-muted-foreground py-6"
                       >
-                        No PRISM rows match this filter.
+                        No <Prism /> rows match this filter.
                       </TableCell>
                     </TableRow>
                   )}
@@ -252,9 +253,9 @@ function PrismManagementInner({ house = false }: { house?: boolean }) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete PRISM row?</AlertDialogTitle>
+            <AlertDialogTitle>Delete <Prism /> row?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes the PRISM scores for user{" "}
+              This permanently deletes the <Prism /> scores for user{" "}
               <span className="font-mono">{deletingRow?.user_id}</span> and
               removes the related document chunks from pgvector. This cannot be
               undone.
@@ -362,7 +363,7 @@ function PrismCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create PRISM Row</DialogTitle>
+          <DialogTitle>Create <Prism /> Row</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -449,7 +450,7 @@ function PrismEditDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            Edit PRISM for{" "}
+            Edit <Prism /> for{" "}
             <span className="font-mono text-base">{row?.user_id}</span>
           </DialogTitle>
         </DialogHeader>

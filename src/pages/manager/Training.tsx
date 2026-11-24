@@ -6,6 +6,7 @@ import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerTraining } from "@/hooks/manager/useManagerTeam"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 type TrainingProgram = {
   name: string
@@ -76,7 +77,7 @@ export default function ManagerTraining() {
                   <th className="pb-2 font-medium">{t("training.program", { defaultValue: "Program" })}</th>
                   <th className="pb-2 font-medium">{t("training.enrolled", { defaultValue: "Enrolled" })}</th>
                   <th className="pb-2 font-medium w-[200px]">{t("training.completion", { defaultValue: "Completion" })}</th>
-                  <th className="pb-2 font-medium">{t("training.prismRecommendation", { defaultValue: "PRISM Recommendation" })}</th>
+                  <th className="pb-2 font-medium">{withPrism(t("training.prismRecommendation", { defaultValue: "PRISM Recommendation" }))}</th>
                   <th className="pb-2 font-medium">{t("training.status", { defaultValue: "Status" })}</th>
                 </tr>
               </thead>

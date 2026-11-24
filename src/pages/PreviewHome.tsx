@@ -18,6 +18,7 @@ import {
   MessageSquare,
   ArrowRight,
 } from "lucide-react";
+import { Prism } from "@/components/shared/Prism"
 
 const MOCK_COACHES = [
   "Meridian", "Aura", "Sage", "Alex", "Atlas", "Bridge",
@@ -48,7 +49,7 @@ export default function PreviewHome() {
           Welcome back, James
         </h1>
         <p className="text-sm text-white/75 mt-1 max-w-xl">
-          PRISM Inspire helps you unlock your potential through neuroscience, workforce development, and AI — empowering you to live your best life.
+          <Prism /> Inspire helps you unlock your potential through neuroscience, workforce development, and AI — empowering you to live your best life.
         </p>
         <div className="flex flex-wrap gap-2 mt-5">
           {quickLinks.map((link) => (
@@ -92,7 +93,7 @@ export default function PreviewHome() {
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <BookOpen className="w-4 h-4 text-blue-500" />
-              <h2 className="text-base font-semibold">About PRISM</h2>
+              <h2 className="text-base font-semibold">About <Prism /></h2>
             </div>
             <div className="rounded-xl overflow-hidden bg-muted/30 flex items-center justify-center">
               <div className="relative w-full h-64 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
@@ -100,12 +101,12 @@ export default function PreviewHome() {
                   <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg mx-auto mb-3">
                     <Play className="w-5 h-5 text-blue-600 ml-0.5" />
                   </div>
-                  <p className="text-sm text-blue-600 font-medium">PRISM Overview Video</p>
+                  <p className="text-sm text-blue-600 font-medium"><Prism /> Overview Video</p>
                 </div>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              PRISM uses neuroscience-based behavioral insights to help you understand yourself, improve communication, and grow professionally.
+              <Prism /> uses neuroscience-based behavioral insights to help you understand yourself, improve communication, and grow professionally.
             </p>
             <div className="grid grid-cols-2 gap-3 mt-4">
               <Button variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/5">

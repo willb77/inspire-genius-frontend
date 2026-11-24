@@ -25,6 +25,7 @@ import type {
   ReportFormat,
   StageState,
 } from "@/types/direction-setting"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * The journey map — the home surface of Direction Setting.
@@ -495,7 +496,7 @@ export default function JourneyPage() {
             {t("journey.startOver", "Start over")}
           </Button>
           <p className="mt-1 text-xs text-muted-foreground">
-            {t("journey.clearsYourProgressThroughThese", "Clears your progress through these steps. Your PRISM results, documents and goals are untouched.")}
+            {withPrism(t("journey.clearsYourProgressThroughThese", "Clears your progress through these steps. Your PRISM results, documents and goals are untouched."))}
           </p>
         </footer>
       )}

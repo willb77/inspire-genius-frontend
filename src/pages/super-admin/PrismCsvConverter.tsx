@@ -13,6 +13,7 @@ import {
   toCsv,
   type ConversionReport,
 } from "@/lib/prism/longToWide"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * Converts a long-format PRISM export into the standard wide report layout.
@@ -79,9 +80,9 @@ function PrismCsvConverterContent({ house = false }: { house?: boolean }) {
       <div className="mx-auto w-full max-w-3xl space-y-6 p-4 md:p-6">
         {!house && (
         <div>
-          <h1 className="text-2xl font-semibold">PRISM CSV Converter</h1>
+          <h1 className="text-2xl font-semibold"><Prism /> CSV Converter</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Turns a long-format PRISM export into the standard 97-column report layout.
+            Turns a long-format <Prism /> export into the standard 97-column report layout.
             Runs entirely in your browser — the file is never uploaded.
           </p>
         </div>

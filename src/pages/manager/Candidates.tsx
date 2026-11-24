@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerCandidates, useManagerHiringStats } from "@/hooks/manager/useManagerTeam"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 type Candidate = {
   name: string
@@ -112,7 +113,7 @@ export default function ManagerCandidates() {
                   <th className="pb-2 font-medium">{t("candidates.name", { defaultValue: "Name" })}</th>
                   <th className="pb-2 font-medium">{t("candidates.position", { defaultValue: "Position" })}</th>
                   <th className="pb-2 font-medium">{t("candidates.stage", { defaultValue: "Stage" })}</th>
-                  <th className="pb-2 font-medium">{t("candidates.prismMatch", { defaultValue: "PRISM Match" })}</th>
+                  <th className="pb-2 font-medium">{withPrism(t("candidates.prismMatch", { defaultValue: "PRISM Match" }))}</th>
                   <th className="pb-2 font-medium">{t("candidates.applied", { defaultValue: "Applied" })}</th>
                   <th className="pb-2 font-medium">{t("candidates.status", { defaultValue: "Status" })}</th>
                 </tr>

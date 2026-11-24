@@ -4,6 +4,7 @@ import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerCareerPaths } from "@/hooks/manager/useManagerTeam"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 type Skill = { name: string; current: number; target: number }
 type CareerPath = {
@@ -36,7 +37,7 @@ export default function ManagerCareerManagement() {
     <ManagerLayout>
       <PlaceholderBanner />
       <h1 className="text-xl font-bold text-[#111827] mb-1">{t("careerManagement.careerManagement", { defaultValue: "Career Management" })}</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">{t("careerManagement.trackCareerPathsSkillGaps", { defaultValue: "Track career paths, skill gaps, and PRISM alignment for your team." })}</p>
+      <p className="text-[13px] text-[#6b7280] mb-5">{withPrism(t("careerManagement.trackCareerPathsSkillGaps", { defaultValue: "Track career paths, skill gaps, and PRISM alignment for your team." }))}</p>
 
       {error && (
         <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4">{t("careerManagement.failedToLoadCareerPaths", { defaultValue: "Failed to load career paths." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("careerManagement.retry", { defaultValue: "Retry" })}</button>
@@ -59,7 +60,7 @@ export default function ManagerCareerManagement() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] font-semibold text-[#6b7280]">{t("careerManagement.prismAlignment", { defaultValue: "PRISM Alignment" })}</div>
+                  <div className="text-[10px] font-semibold text-[#6b7280]">{withPrism(t("careerManagement.prismAlignment", { defaultValue: "PRISM Alignment" }))}</div>
                   <div className="text-[14px] font-bold" style={{ color: alignmentColor(path.prismAlignment) }}>
                     {path.prismAlignment}%
                   </div>

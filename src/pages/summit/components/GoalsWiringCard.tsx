@@ -3,6 +3,7 @@ import { Card, CardH, MiniLabel } from "@/pages/summit/components/ui";
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled";
 import { useGoalsWiring } from "@/hooks/job-fit/useFitComponents";
 import type { WiringGoal } from "@/types/job-fit/components";
+import { withPrism } from "@/lib/withPrism"
 
 
 /**
@@ -22,7 +23,7 @@ export function GoalsWiringCard() {
       <Card>
         <MiniLabel>{t("wiring.title", { defaultValue: "Your goals and your wiring" })}</MiniLabel>
         <p role="alert" className="text-[14px] text-[#13294B]/80">
-          {t("wiring.error", { defaultValue: "We couldn't read how your goals sit with your PRISM just now." })}
+          {withPrism(t("wiring.error", { defaultValue: "We couldn't read how your goals sit with your PRISM just now." }))}
         </p>
       </Card>
     );
@@ -42,7 +43,7 @@ export function GoalsWiringCard() {
       <CardH>{t("wiring.heading", { defaultValue: "How your published goals sit with how you're wired" })}</CardH>
       {!data.scored ? (
         <p className="text-[14px] text-[#13294B]/80">
-          {t("wiring.unscored", { defaultValue: "Complete PRISM and this card reads each goal against your profile." })}
+          {withPrism(t("wiring.unscored", { defaultValue: "Complete PRISM and this card reads each goal against your profile." }))}
         </p>
       ) : (
         <div className="flex flex-col gap-3">

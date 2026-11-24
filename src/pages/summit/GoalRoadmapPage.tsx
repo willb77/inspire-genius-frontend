@@ -21,6 +21,7 @@ import type { PracticeRoleSeed } from "@/types/interviewRolePage"
 import { useRebuildRoadmap, useRemoveTarget, useRoadmap } from "@/hooks/goals/useGoalTargets"
 import { targetErrorText } from "@/pages/summit/_targets"
 import type { RoadmapMilestone } from "@/types/goals/targets"
+import { withPrism } from "@/lib/withPrism"
 
 function Milestone({ m }: { m: RoadmapMilestone }) {
   const { t } = useTranslation("summitPages")
@@ -35,7 +36,7 @@ function Milestone({ m }: { m: RoadmapMilestone }) {
       {m.why && <p className="mt-1.5 text-[13.5px] leading-snug text-[#13294B]">{m.why}</p>}
       {m.canon && (
         <p className="mt-2 border-l-[3px] border-[#127A8A] pl-2.5 text-[12.5px] leading-snug text-[#13294B]/80">
-          <b>{t("roadmap.inPrism", { defaultValue: "{{dimension}} in PRISM:", dimension: m.canon.dimension })}</b> {m.canon.definition}
+          <b>{withPrism(t("roadmap.inPrism", { defaultValue: "{{dimension}} in PRISM:", dimension: m.canon.dimension }))}</b> {m.canon.definition}
         </p>
       )}
     </li>

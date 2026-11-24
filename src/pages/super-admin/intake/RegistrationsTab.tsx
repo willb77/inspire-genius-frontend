@@ -26,6 +26,7 @@ import {
   viewFromSearch,
   type ListView,
 } from "./intakeView"
+import { Prism } from "@/components/shared/Prism"
 
 const SELECT_CLASS = "border-input bg-background h-9 rounded-md border px-2 text-sm"
 const COACHES = "career_coach,education_coach"
@@ -82,7 +83,7 @@ function RegistrationDetail({ id, onClose }: { id: string; onClose: () => void }
                   </Badge>
                 )}
               </dd>
-              <dt className="text-muted-foreground">PRISM accredited</dt>
+              <dt className="text-muted-foreground"><Prism /> accredited</dt>
               <dd>
                 {ACCREDITED_LABELS[r.prism_accredited]}
                 {r.site_id ? ` · SiteID ${r.site_id}` : ""}

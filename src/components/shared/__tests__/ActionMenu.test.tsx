@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import ActionMenu from "../ActionMenu";
+import { byText } from "@/test/byText"
 
 /* Mock Radix DropdownMenu — its portal-based content doesn't render in jsdom */
 jest.mock("@/components/ui/dropdown-menu", () => {
@@ -26,7 +27,7 @@ describe("ActionMenu", () => {
     const { rerender } = render(<ActionMenu row={{ id: "r" }} onPrismAccess={onPrismAccess} />);
     expect(screen.queryByText("PRISM survey access")).not.toBeInTheDocument();
     rerender(<ActionMenu row={{ id: "r" }} showPrismAccess onPrismAccess={onPrismAccess} />);
-    fireEvent.click(screen.getByText("PRISM survey access"));
+    fireEvent.click(screen.getByText(byText("PRISM survey access")));
     expect(onPrismAccess).toHaveBeenCalledWith({ id: "r" });
   });
 

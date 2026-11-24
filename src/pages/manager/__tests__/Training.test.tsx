@@ -4,6 +4,7 @@
 
 import { render, screen } from "@testing-library/react";
 import ManagerTraining from "../Training";
+import { byText } from "@/test/byText"
 
 jest.mock("@/layouts/ManagerLayout", () => ({
   __esModule: true,
@@ -90,7 +91,7 @@ describe("ManagerTraining", () => {
     expect(screen.getByText("Program")).toBeInTheDocument();
     expect(screen.getByText("Enrolled")).toBeInTheDocument();
     expect(screen.getByText("Completion")).toBeInTheDocument();
-    expect(screen.getByText("PRISM Recommendation")).toBeInTheDocument();
+    expect(screen.getByText(byText("PRISM Recommendation"))).toBeInTheDocument();
     expect(screen.getByText("Status")).toBeInTheDocument();
   });
 

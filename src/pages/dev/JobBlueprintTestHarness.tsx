@@ -46,6 +46,7 @@ import type {
   FunnelStage, AccuracyReport, TimeToFillDataPoint,
   ClassificationTier, PipelineStep,
 } from '@/types/job-blueprint'
+import { Prism } from "@/components/shared/Prism"
 
 // ── Mock Data ────────────────────────────────────────────────────────
 
@@ -303,7 +304,7 @@ export default function JobBlueprintTestHarness() {
             <img src="/images/logo-dark.png" alt="InspiresGenius" className="h-8" />
             <div className="border-l pl-3 ml-1">
               <h1 className="text-lg font-bold text-slate-800">Role Blueprints</h1>
-              <p className="text-[10px] text-slate-400 -mt-0.5">Powered by PRISM Brain Mapping</p>
+              <p className="text-[10px] text-slate-400 -mt-0.5">Powered by <Prism /> Brain Mapping</p>
             </div>
           </div>
           <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">

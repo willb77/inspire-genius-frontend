@@ -10,6 +10,7 @@ import { useClientInvites } from "@/hooks/practitioner/useClientInvites"
 import { ROUTES } from "@/constants/routes"
 import { copyText } from "@/lib/copyText"
 import type { MyPracticeRegistration } from "@/types/practitioner-practice"
+import { withPrism } from "@/lib/withPrism"
 
 export const NOT_REGISTERED_BANNER =
   "Surveys you invite will be raised on InspiresGenius's PRISM site until your account is registered."
@@ -50,7 +51,7 @@ function Registered({ registration }: { registration: MyPracticeRegistration }) 
   const code = registration.practitionerCode
   return (
     <>
-      {!registration.active && <Banner>{t("myPractice.deactivatedBanner", { defaultValue: DEACTIVATED_BANNER })}</Banner>}
+      {!registration.active && <Banner>{withPrism(t("myPractice.deactivatedBanner", { defaultValue: DEACTIVATED_BANNER }))}</Banner>}
 
       <Card>
         <CardHeader>
@@ -104,7 +105,7 @@ function Registered({ registration }: { registration: MyPracticeRegistration }) 
 
       <Card>
         <CardHeader>
-          <CardTitle>{t("myPractice.prismAccount", { defaultValue: "Your PRISM account" })}</CardTitle>
+          <CardTitle>{withPrism(t("myPractice.prismAccount", { defaultValue: "Your PRISM account" }))}</CardTitle>
           <CardDescription>
             {t("myPractice.prismAccountHelp", { defaultValue: "Your clients' surveys are raised under these identifiers. Something wrong? Contact support." })}
           </CardDescription>
@@ -135,9 +136,9 @@ export default function MyPractice() {
       <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">{t("myPractice.title", { defaultValue: "My PRISM practice" })}</h1>
+            <h1 className="text-2xl font-semibold">{withPrism(t("myPractice.title", { defaultValue: "My PRISM practice" }))}</h1>
             <p className="text-sm text-muted-foreground">
-              {t("myPractice.subtitle", { defaultValue: "Your client code and the PRISM account your clients' surveys are raised under." })}
+              {withPrism(t("myPractice.subtitle", { defaultValue: "Your client code and the PRISM account your clients' surveys are raised under." }))}
             </p>
           </div>
           <Button
@@ -158,9 +159,9 @@ export default function MyPractice() {
             {t("myPractice.loading", { defaultValue: "Loading your registration…" })}
           </p>
         )}
-        {!isLoading && error && <Banner>{t("myPractice.loadError", { defaultValue: LOAD_ERROR })}</Banner>}
+        {!isLoading && error && <Banner>{withPrism(t("myPractice.loadError", { defaultValue: LOAD_ERROR }))}</Banner>}
         {data?.state === "dark" && <Banner>{t("myPractice.dark", { defaultValue: DARK_MESSAGE })}</Banner>}
-        {data?.state === "missing" && <Banner>{t("myPractice.notRegistered", { defaultValue: NOT_REGISTERED_BANNER })}</Banner>}
+        {data?.state === "missing" && <Banner>{withPrism(t("myPractice.notRegistered", { defaultValue: NOT_REGISTERED_BANNER }))}</Banner>}
         {data?.state === "registered" && <Registered registration={data.registration} />}
       </div>
     </PractitionerLayout>

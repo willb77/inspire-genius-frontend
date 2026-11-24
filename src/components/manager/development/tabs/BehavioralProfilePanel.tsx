@@ -41,6 +41,7 @@ import type {
 } from "@/types/development"
 import { useDevSkin } from "../skin"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 type CliftonDomain = CliftonTheme["domain"]
 
@@ -120,9 +121,9 @@ export function BehavioralProfilePanel({
             </div>
             <p className={cn("max-w-md text-sm", sk.text600)}>
               {onFile ? (
-                <>{t("behavioralProfilePanel.hasAPrismProfileOn", { defaultValue: "{{who}} has a PRISM profile on file but has not shared it with you. Nobody sees a behavioural profile by rank — they choose, person by person, from their own workspace. You can ask; asking grants nothing.", who })}</>
+                <>{withPrism(t("behavioralProfilePanel.hasAPrismProfileOn", { defaultValue: "{{who}} has a PRISM profile on file but has not shared it with you. Nobody sees a behavioural profile by rank — they choose, person by person, from their own workspace. You can ask; asking grants nothing.", who }))}</>
               ) : (
-                <>{t("behavioralProfilePanel.hasNoPrismProfileOn", { defaultValue: "{{who}} has no PRISM profile on file, so there is nothing to share yet. Nobody sees a behavioural profile by rank; this stays empty until they complete PRISM and choose to share it.", who })}</>
+                <>{withPrism(t("behavioralProfilePanel.hasNoPrismProfileOn", { defaultValue: "{{who}} has no PRISM profile on file, so there is nothing to share yet. Nobody sees a behavioural profile by rank; this stays empty until they complete PRISM and choose to share it.", who }))}</>
               )}
             </p>
             {!onFile ? (
@@ -162,7 +163,7 @@ export function BehavioralProfilePanel({
       {/* PRISM radar + text table */}
       <Card>
         <CardHeader>
-          <CardTitle className={cn("text-base", sk.heading)}>{t("behavioralProfilePanel.prismBehavioralMap", { defaultValue: "PRISM behavioral map" })}</CardTitle>
+          <CardTitle className={cn("text-base", sk.heading)}>{withPrism(t("behavioralProfilePanel.prismBehavioralMap", { defaultValue: "PRISM behavioral map" }))}</CardTitle>
         </CardHeader>
         <CardContent>
           {coverage.prism && prism.length > 0 ? (
@@ -202,7 +203,7 @@ export function BehavioralProfilePanel({
               </div>
               {/* Text-equivalent table for accessibility */}
               <Table>
-                <caption className="sr-only">{t("behavioralProfilePanel.prism8DimensionScoresText", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radar chart)." })}</caption>
+                <caption className="sr-only">{withPrism(t("behavioralProfilePanel.prism8DimensionScoresText", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radar chart)." }))}</caption>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("behavioralProfilePanel.dimension", { defaultValue: "Dimension" })}</TableHead>
@@ -323,7 +324,7 @@ export function BehavioralProfilePanel({
                     )
                   })}
                 </div>
-                <p className={cn("text-[11px]", sk.text400)}>{t("behavioralProfilePanel.legendDRedIGreen", { defaultValue: "Legend: D→Red · I→Green · S→Green · C→Blue (PRISM quadrant mapping)" })}</p>
+                <p className={cn("text-[11px]", sk.text400)}>{withPrism(t("behavioralProfilePanel.legendDRedIGreen", { defaultValue: "Legend: D→Red · I→Green · S→Green · C→Blue (PRISM quadrant mapping)" }))}</p>
               </div>
             ) : (
               <InviteToAddCard framework="DISC" onInvite={onInvite ? () => onInvite("disc") : undefined} />

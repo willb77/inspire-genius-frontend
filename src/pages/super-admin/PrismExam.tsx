@@ -62,6 +62,7 @@ import type {
   QuestionSet,
   QuestionSetSummary,
 } from "@/types/prism-exam"
+import { Prism } from "@/components/shared/Prism"
 
 type TabKey = "run" | "results" | "history" | "questions" | "access"
 
@@ -127,10 +128,10 @@ export function PrismExamContent({
         {!hideTitle && (
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
-            <ClipboardCheck className="h-6 w-6" /> PRISM Practitioner Exam
+            <ClipboardCheck className="h-6 w-6" /> <Prism /> Practitioner Exam
           </h1>
           <p className="text-muted-foreground mt-1 max-w-3xl text-sm">
-            Sits a PRISM exam against this tier: every question is asked of Meridian as the exam user
+            Sits a <Prism /> exam against this tier: every question is asked of Meridian as the exam user
             and marked against the set&apos;s expected answers. Start a run, watch it score, read the
             misses, and compare runs over time.
           </p>
@@ -1296,7 +1297,7 @@ function AccessPanel() {
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Who else can run exams</CardTitle>
         <CardDescription>
-          A granted account (manager or above) reaches this page at /prism-exam. It sees its own sets and the
+          A granted account (manager or above) reaches this page at /<Prism />-exam. It sees its own sets and the
           ones you share, and only its own runs, up to five runs in 24 hours. Shared sets show their questions
           and expected answers to every granted account.
         </CardDescription>

@@ -8,6 +8,7 @@ import { useCreateJobDna, useFinalizeBenchmark } from "@/hooks/job-blueprint/use
 import type { DimensionBenchmark, JobTier } from "@/types/job-blueprint"
 import { ROUTES } from "@/constants/routes"
 import { JobDnaPageHeader, JobDnaCardSurface } from "./_shared"
+import { withPrism } from "@/lib/withPrism"
 
 type WizardData = {
   roleTitle: string
@@ -119,7 +120,7 @@ export default function JobBlueprintAuthoringPage() {
             </span>
             <span className="text-base font-semibold text-[#1f2937]">{t("authoring.draft.title", { defaultValue: "Draft from a role" })}</span>
             <span className="text-sm text-[#6b7280]">
-              {t("authoring.draft.body", { defaultValue: "Give a title or upload a job description and the Job DNA engine drafts all 22 dimensions from the PRISM definitions of each one. A starting point for you to review and edit, not a validated benchmark. Fastest way to a first draft." })}
+              {withPrism(t("authoring.draft.body", { defaultValue: "Give a title or upload a job description and the Job DNA engine drafts all 22 dimensions from the PRISM definitions of each one. A starting point for you to review and edit, not a validated benchmark. Fastest way to a first draft." }))}
             </span>
           </button>
 

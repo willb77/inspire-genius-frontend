@@ -22,6 +22,7 @@ import TaskAgentResultCard from "@/components/tasks/TaskAgentResultCard"
 import CostEstimateBanner from "@/components/tasks/CostEstimateBanner"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 const schema = z.object({
   team_name: z.string().min(1, "Team name is required").max(255),
@@ -102,7 +103,7 @@ export default function TeamCompositionBody() {
       <header>
         <h1 className="text-2xl font-semibold">{t("taskAgents.teamCompositionBody.teamComposition", { defaultValue: "Team Composition" })}</h1>
         <p className="text-sm text-slate-600">
-          {t("taskAgents.teamCompositionBody.analyseATeamSPrism", { defaultValue: "Analyse a team's PRISM mix, skills, and gaps with Atlas (DashboardAgent)." })}
+          {withPrism(t("taskAgents.teamCompositionBody.analyseATeamSPrism", { defaultValue: "Analyse a team's PRISM mix, skills, and gaps with Atlas (DashboardAgent)." }))}
         </p>
       </header>
 

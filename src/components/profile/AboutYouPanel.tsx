@@ -12,6 +12,7 @@ import {
 import { useMyProfile } from "@/hooks/profile/useProfile"
 import { useLatestPrismStatus } from "@/hooks/prism/usePrismRequest"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * "What we know about you": four ways to tell IG who you are (request the
@@ -484,7 +485,7 @@ export function AboutYouPanel({
       </div>
       {collapsed ? (
         <p data-testid="about-you-collapsed" className="mt-1 text-sm text-ig-body">
-          {t("aboutYouPanel.prismReSumeAndBioAre", { defaultValue: "PRISM, résumé and bio are on file." })}
+          {withPrism(t("aboutYouPanel.prismReSumeAndBioAre", { defaultValue: "PRISM, résumé and bio are on file." }))}
         </p>
       ) : (
         <div className="mt-2 space-y-3">

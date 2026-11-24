@@ -47,7 +47,7 @@ async function openPanel() {
 describe("checklist unknown state", () => {
   it('renders an unknown item distinctly from a missing one', async () => {
     renderTile([
-      { name: "Prism Rpt .csv", done: false, status: "unknown" },
+      { name: "PRISM Rpt .csv", done: false, status: "unknown" },
       { name: "Resume", done: false, status: "missing" },
     ]);
     const panel = await openPanel();
@@ -66,7 +66,7 @@ describe("checklist unknown state", () => {
 
   it("does not count an unknown item as done", async () => {
     renderTile([
-      { name: "Prism Rpt .csv", done: false, status: "unknown" },
+      { name: "PRISM Rpt .csv", done: false, status: "unknown" },
       { name: "Resume", done: true, status: "done" },
     ]);
     expect(screen.getByTestId("homev2-personal-info-dropdown")).toHaveTextContent(
@@ -75,7 +75,7 @@ describe("checklist unknown state", () => {
   });
 
   it("marks the trigger when any item could not be checked", async () => {
-    renderTile([{ name: "Prism Rpt .csv", done: false, status: "unknown" }]);
+    renderTile([{ name: "PRISM Rpt .csv", done: false, status: "unknown" }]);
     expect(
       screen.getByTestId("homev2-personal-info-dropdown-unknown-marker"),
     ).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe("checklist unknown state", () => {
 
   it("shows no warning marker when every item is known", async () => {
     renderTile([
-      { name: "Prism Rpt .csv", done: true },
+      { name: "PRISM Rpt .csv", done: true },
       { name: "Resume", done: false },
     ]);
     expect(
@@ -93,7 +93,7 @@ describe("checklist unknown state", () => {
 
   it("retries the underlying queries rather than offering an upload", async () => {
     const onRetry = jest.fn();
-    renderTile([{ name: "Prism Rpt .csv", done: false, status: "unknown" }], onRetry);
+    renderTile([{ name: "PRISM Rpt .csv", done: false, status: "unknown" }], onRetry);
     const panel = await openPanel();
     await userEvent.click(
       within(panel).getByRole("button", { name: /retry checking prism/i }),
@@ -103,7 +103,7 @@ describe("checklist unknown state", () => {
 
   it("keeps working for callers that pass only the legacy boolean", async () => {
     renderTile([
-      { name: "Prism Rpt .csv", done: true },
+      { name: "PRISM Rpt .csv", done: true },
       { name: "Resume", done: false },
     ]);
     const panel = await openPanel();

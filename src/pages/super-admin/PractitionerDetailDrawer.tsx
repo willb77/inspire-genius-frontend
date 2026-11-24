@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { usePractitionerDetail } from "@/hooks/super-admin/usePractitionerDetail"
 import { registryErrorSummary } from "@/services/super-admin/practitioner-registry/registryErrors"
 import type { RegistryRow } from "@/types/practitioner-registry"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * S2 — super-admin practitioner detail drawer (PI-6, partial).
@@ -34,7 +35,7 @@ export function PractitionerDetailDrawer({ row, onClose }: { row: RegistryRow; o
 
         <div className="space-y-6 px-4 pb-6">
           <section aria-label="PRISM identifiers" className="space-y-1 text-sm">
-            <h3 className="font-medium">PRISM identifiers</h3>
+            <h3 className="font-medium"><Prism /> identifiers</h3>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
               <dt className="text-muted-foreground">Site ID</dt>
               <dd className="font-mono text-xs break-all">{row.siteId}</dd>
@@ -77,7 +78,7 @@ export function PractitionerDetailDrawer({ row, onClose }: { row: RegistryRow; o
             ) : null}
             <p className="text-xs text-muted-foreground">
               Linked clients are client accounts connected to this practitioner. Surveys are counted by Site ID, so
-              they include every survey raised on this PRISM site. Open client invites will appear here once client
+              they include every survey raised on this <Prism /> site. Open client invites will appear here once client
               invite links are built.
             </p>
           </section>

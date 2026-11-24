@@ -10,6 +10,7 @@ import PrismWorkEnvironment from './PrismWorkEnvironment'
 import PrismBigFiveChart from './PrismBigFiveChart'
 import PrismEQChart from './PrismEQChart'
 import PrismMentalToughness from './PrismMentalToughness'
+import { withPrism } from "@/lib/withPrism"
 
 type PrismReportViewerProps = {
   assessmentId: string
@@ -49,7 +50,7 @@ export default function PrismReportViewer({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('reportViewer.title', { defaultValue: 'PRISM Report' })}</CardTitle>
+        <CardTitle>{withPrism(t('reportViewer.title', { defaultValue: 'PRISM Report' }))}</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="overview">

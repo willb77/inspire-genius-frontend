@@ -4,6 +4,7 @@
 
 import { render, screen } from "@testing-library/react";
 import PreviewHome from "../PreviewHome";
+import { byText } from "@/test/byText"
 
 describe("PreviewHome", () => {
   it("renders without crashing", () => {
@@ -30,8 +31,8 @@ describe("PreviewHome", () => {
 
   it("renders About PRISM section", () => {
     render(<PreviewHome />);
-    expect(screen.getByText("About PRISM")).toBeInTheDocument();
-    expect(screen.getByText("PRISM Overview Video")).toBeInTheDocument();
+    expect(screen.getByText(byText("About PRISM"))).toBeInTheDocument();
+    expect(screen.getByText(byText("PRISM Overview Video"))).toBeInTheDocument();
   });
 
   it("renders Ask Meridian section", () => {

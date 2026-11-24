@@ -30,6 +30,7 @@ import {
 import { confidenceTone, type Tone } from "@/components/fit/fit"
 import { FitResult } from "@/components/fit/FitResult"
 import { FitBreakdown } from "./FitBreakdown"
+import { withPrism } from "@/lib/withPrism"
 
 /** Group definitions in a stable, human order. */
 const GROUPS: { key: keyof Pick<TargetDraft, "behaviors" | "aptitudes" | "coreTraits"> }[] = [
@@ -293,10 +294,10 @@ export default function TargetPreviewPage() {
               {t("targetPreview.scoreTitle", "Score my fit")}
             </FitSectionTitle>
             <p className="text-sm text-[#6b7280]">
-              {t(
+              {withPrism(t(
                 "targetPreview.scoreIntro",
                 "Compare your own PRISM profile with this drafted target, dimension by dimension — the same read as a published role, so a role that isn't on the platform yet can still be sized up.",
-              )}
+              ))}
             </p>
           </FitCard>
 
@@ -306,10 +307,10 @@ export default function TargetPreviewPage() {
 
           {score.isError && isNoPrismError(score.error) && (
             <FitEmptyState>
-              {t(
+              {withPrism(t(
                 "targetPreview.noPrism",
                 "We can't score your fit yet — there's no PRISM assessment on file for your account. Once your PRISM report is uploaded, come back and score this target.",
-              )}
+              ))}
             </FitEmptyState>
           )}
 

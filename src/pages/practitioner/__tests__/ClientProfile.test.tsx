@@ -4,6 +4,7 @@
 import { render, screen } from "@testing-library/react"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
 import PractitionerClientProfile from "../ClientProfile"
+import { byText } from "@/test/byText"
 
 jest.mock("@/layouts/PractitionerLayout", () => ({
   __esModule: true,
@@ -106,7 +107,7 @@ describe("PractitionerClientProfile", () => {
       isError: false,
     })
     renderPage()
-    expect(screen.getByText(/Marcus Chen hasn.t shared their PRISM with you/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/Marcus Chen hasn.t shared their PRISM with you/i))).toBeInTheDocument()
     expect(screen.queryByText("34")).not.toBeInTheDocument()
     expect(screen.queryByText(/No PRISM scores on file/i)).not.toBeInTheDocument()
   })

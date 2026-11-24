@@ -4,6 +4,7 @@
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PrismClients from "../PrismClients";
+import { byText } from "@/test/byText"
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -98,7 +99,7 @@ describe("PrismClients", () => {
 
   it("renders page title and description", () => {
     render(<PrismClients />, { wrapper });
-    expect(screen.getByText("Client PRISM Assessments")).toBeInTheDocument();
+    expect(screen.getByText(byText("Client PRISM Assessments"))).toBeInTheDocument();
     expect(screen.getByText(/View and manage your clients/)).toBeInTheDocument();
   });
 

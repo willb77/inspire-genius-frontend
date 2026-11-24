@@ -18,6 +18,7 @@ import {
   useUserPrismAccess,
 } from "@/hooks/super-admin/prism-access/usePrismAccessAdmin";
 import type { PrismAccessScope, UserPrismAccess } from "@/types/super-admin/prism-access";
+import { Prism } from "@/components/shared/Prism"
 
 export type PrismAccessTarget = { id: string; email: string; name?: string };
 
@@ -123,9 +124,9 @@ export default function PrismAccessDialog({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>PRISM survey access — {who}</DialogTitle>
+          <DialogTitle><Prism /> survey access — {who}</DialogTitle>
           <DialogDescription>
-            Who may request a PRISM survey. Changes take effect on their next request.
+            Who may request a <Prism /> survey. Changes take effect on their next request.
           </DialogDescription>
         </DialogHeader>
 

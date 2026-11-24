@@ -4,6 +4,7 @@ import "@testing-library/jest-dom"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import PrismManagement from "../PrismManagement"
+import { byText } from "@/test/byText"
 
 // ── Layout & UI mocks ────────────────────────────────────────────────
 type Children = { children?: React.ReactNode }
@@ -244,15 +245,15 @@ describe("PrismManagement", () => {
 
   it("clicking 'New PRISM Row' opens the create dialog", () => {
     renderPage()
-    fireEvent.click(screen.getByText("New PRISM Row"))
+    fireEvent.click(screen.getByText(byText("New PRISM Row")))
     const dialog = screen.getByTestId("dialog")
-    expect(within(dialog).getByText("Create PRISM Row")).toBeInTheDocument()
+    expect(within(dialog).getByText(byText("Create PRISM Row"))).toBeInTheDocument()
     expect(within(dialog).getAllByTestId(/^slider-prism-/)).toHaveLength(4)
   })
 
   it("Create with a user_id calls the create mutation", () => {
     renderPage()
-    fireEvent.click(screen.getByText("New PRISM Row"))
+    fireEvent.click(screen.getByText(byText("New PRISM Row")))
     const dialog = screen.getByTestId("dialog")
     fireEvent.change(within(dialog).getByLabelText("User ID"), {
       target: { value: "new-user@test.com" },
@@ -291,7 +292,7 @@ describe("PrismManagement — house style switch", () => {
   it("switch OFF (default): today's page, title and wording unchanged", () => {
     renderPage()
     expect(screen.getByRole("heading", { name: "PRISM Management" })).toBeInTheDocument()
-    expect(screen.getByText("New PRISM Row")).toBeInTheDocument()
+    expect(screen.getByText(byText("New PRISM Row"))).toBeInTheDocument()
     expect(screen.getByText(/Re-vectorization fires automatically/)).toBeInTheDocument()
     expect(screen.getByLabelText("Search PRISM rows by user_id")).toBeInTheDocument()
     expect(screen.queryByRole("navigation", { name: "PRISM sections" })).not.toBeInTheDocument()

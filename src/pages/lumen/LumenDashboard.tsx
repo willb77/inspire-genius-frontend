@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ROUTES } from "@/constants/routes"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Lumen's landing page — and the place the product explains itself.
@@ -75,10 +76,10 @@ export default function LumenDashboard() {
           {t("dashLead", "Lumen is your own behavioral profile, put to work.")}
         </p>
         <p className="max-w-3xl text-muted-foreground">
-          {t(
+          {withPrism(t(
             "dashIntro",
             "It reads what's already on file about you — your PRISM assessment, anything else you've taken, your résumé, your bio — and turns it into one honest picture. Then it uses that picture: it comes to you before the moments that are hard to get right. It's for you, not your employer: nothing here is shared with anyone, and nothing is graded."
-          )}
+          ))}
         </p>
       </header>
 

@@ -39,6 +39,7 @@ jest.mock("@/hooks/job-blueprint/useJobDna", () => ({
 }));
 
 import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna";
+import { byText } from "@/test/byText"
 
 const bench = (id: number, name: string): DimensionBenchmark => ({
   dimensionId: id,
@@ -97,7 +98,7 @@ describe("ManagerJobDna", () => {
     render(<ManagerJobDna />);
     expect(screen.getByText("Job DNA")).toBeInTheDocument();
     expect(
-      screen.getByText("PRISM-based job profiles and candidate matching criteria.")
+      screen.getByText(byText("PRISM-based job profiles and candidate matching criteria."))
     ).toBeInTheDocument();
   });
 

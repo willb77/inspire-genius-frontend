@@ -38,6 +38,7 @@ import type {
   PrismDimensionId,
   PrismQuadrantId,
 } from "@/types/development"
+import { withPrism } from "@/lib/withPrism"
 
 /** One of the four profile layers PRISM overlays on the map. */
 type LayerKey = "underlying" | "adapted" | "consistent" | "blueprint"
@@ -307,7 +308,7 @@ export function PrismRadialMap({
       <div className={compact ? "w-full max-w-md justify-self-center text-xs lg:justify-self-start" : undefined}>
       <Table>
         <caption className="sr-only">
-          {t("radialMap.tableCaption", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radial map)." })}
+          {withPrism(t("radialMap.tableCaption", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radial map)." }))}
         </caption>
         <TableHeader>
           <TableRow>

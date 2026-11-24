@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerTeamComposition } from "@/hooks/manager/useManagerTeam"
 import { AlertTriangle, CheckCircle } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 type TeamMember = { name: string; role: string; primaryPrism: string; secondaryPrism: string; score: number }
 
@@ -48,7 +49,7 @@ export default function ManagerTeamBuilding() {
     <ManagerLayout>
       <PlaceholderBanner />
       <h1 className="text-xl font-bold text-[#111827] mb-1">{t("teamBuilding.teamBuilding", { defaultValue: "Team Building" })}</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">{t("teamBuilding.prismTeamCompositionConflictInsights", { defaultValue: "PRISM team composition, conflict insights, and collaboration suggestions." })}</p>
+      <p className="text-[13px] text-[#6b7280] mb-5">{withPrism(t("teamBuilding.prismTeamCompositionConflictInsights", { defaultValue: "PRISM team composition, conflict insights, and collaboration suggestions." }))}</p>
 
       {error && (
         <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444] mb-4">{t("teamBuilding.failedToLoadTeamData", { defaultValue: "Failed to load team data." })}<button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">{t("teamBuilding.retry", { defaultValue: "Retry" })}</button>

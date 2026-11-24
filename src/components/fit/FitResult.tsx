@@ -16,6 +16,7 @@ import {
 } from "./primitives"
 import { FitScoreHeadline } from "./FitScoreHeadline"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * The three closeness tiles — total variation, growth areas, priority focus —
@@ -200,7 +201,7 @@ function ReservedOverallSlot() {
     >
       <Layers className="h-4 w-4 shrink-0 text-[#9ca3af]" aria-hidden />
       <span>
-        {t("fit.fitResult.overallFitIsnTAvailable", { defaultValue: "Overall fit isn't available for a pasted job description yet — your PRISM fit above is your read." })}
+        {withPrism(t("fit.fitResult.overallFitIsnTAvailable", { defaultValue: "Overall fit isn't available for a pasted job description yet — your PRISM fit above is your read." }))}
       </span>
     </div>
   )

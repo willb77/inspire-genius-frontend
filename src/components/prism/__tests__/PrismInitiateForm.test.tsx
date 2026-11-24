@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import PrismInitiateForm from "../PrismInitiateForm";
+import { byText } from "@/test/byText"
 
 /* Mock the check-existing-customer hook so the form renders without a
    QueryClientProvider (it wraps useMutation under the hood). */
@@ -96,7 +97,7 @@ beforeEach(() => {
 describe("PrismInitiateForm", () => {
   it("renders the form title and description", () => {
     render(<PrismInitiateForm />);
-    expect(screen.getByText("Request PRISM Assessment")).toBeInTheDocument();
+    expect(screen.getByText(byText("Request PRISM Assessment"))).toBeInTheDocument();
     expect(screen.getByText(/register a user and request/i)).toBeInTheDocument();
   });
 
@@ -148,7 +149,7 @@ describe("PrismInitiateForm", () => {
     render(<PrismInitiateForm />);
     expect(screen.getByText("Candidate Details")).toBeInTheDocument();
     expect(screen.getByText("Questionnaire Configuration")).toBeInTheDocument();
-    expect(screen.getByText("PRISM Options")).toBeInTheDocument();
+    expect(screen.getByText(byText("PRISM Options"))).toBeInTheDocument();
   });
 
   /* ── Submit wiring ──────────────────────────────────────────────

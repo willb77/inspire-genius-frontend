@@ -15,6 +15,7 @@ import {
   useAdminDeletePrismPdf,
   useAdminUploadPrismPdf,
 } from "@/hooks/prism/usePrismReportDownload"
+import { Prism } from "@/components/shared/Prism"
 
 export type PrismPdfTarget = { id: string; email: string; name?: string }
 
@@ -68,9 +69,9 @@ export default function PrismPdfAdminDialog({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>PRISM report PDF — {who}</DialogTitle>
+          <DialogTitle><Prism /> report PDF — {who}</DialogTitle>
           <DialogDescription>
-            Upload a PRISM report PDF for this user, or delete their current one.
+            Upload a <Prism /> report PDF for this user, or delete their current one.
             After a delete, their report is regenerated from their scores.
           </DialogDescription>
         </DialogHeader>
@@ -108,7 +109,7 @@ export default function PrismPdfAdminDialog({
             {confirmDelete ? (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
-                  Delete this user's PRISM PDF?
+                  Delete this user's <Prism /> PDF?
                 </span>
                 <Button
                   type="button"
@@ -143,7 +144,7 @@ export default function PrismPdfAdminDialog({
                 onClick={() => setConfirmDelete(true)}
                 disabled={busy}
               >
-                <Trash2 className="mr-1.5 h-4 w-4" /> Delete PRISM PDF
+                <Trash2 className="mr-1.5 h-4 w-4" /> Delete <Prism /> PDF
               </Button>
             )}
           </div>

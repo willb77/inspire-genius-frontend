@@ -8,6 +8,7 @@ import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { useExamAccess } from "@/hooks/super-admin/usePrismExam"
 import { PrismExamContent } from "@/pages/super-admin/PrismExam"
 import type { UserRole } from "@/types/roles"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * PRISM exam for a granted user (2026-10-27): manager or above, with a grant a
@@ -39,7 +40,7 @@ export default function PrismExamPage() {
         <div className="mx-auto w-full max-w-3xl px-4 py-6">
           <Card>
             <CardHeader>
-              <CardTitle>PRISM exam</CardTitle>
+              <CardTitle><Prism /> exam</CardTitle>
               <CardDescription>
                 {access.isError
                   ? `Could not check access: ${apiErrorMessage(access.error, "unknown error")}`

@@ -31,6 +31,7 @@ import {
   apiErrorMessage,
   type PrismRequestAccessState,
 } from '@/services/prism/prism'
+import { withPrism } from "@/lib/withPrism"
 
 function makeAccessSchema(t: TFunction) {
   return z.object({
@@ -165,7 +166,7 @@ export function PrismRequestApprovalNotice({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('approvalNotice.dialogTitle', { defaultValue: 'Request access to PRISM surveys' })}</DialogTitle>
+            <DialogTitle>{withPrism(t('approvalNotice.dialogTitle', { defaultValue: 'Request access to PRISM surveys' }))}</DialogTitle>
             <DialogDescription>{PRISM_REQUEST_APPROVAL_MESSAGE}</DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -210,7 +211,7 @@ export function PrismRequestApprovalNotice({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {t('approvalNotice.practitionerLabel', { defaultValue: 'PRISM Practitioner who provided your access *' })}
+                      {withPrism(t('approvalNotice.practitionerLabel', { defaultValue: 'PRISM Practitioner who provided your access *' }))}
                     </FormLabel>
                     <FormControl>
                       <Input placeholder={t('approvalNotice.practitionerPlaceholder', { defaultValue: "Practitioner's name" })} {...field} />

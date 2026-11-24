@@ -18,6 +18,7 @@ import { ROUTES } from "@/constants/routes"
 import { JobDnaPageHeader, JobDnaLoading, JobDnaError } from "./_shared"
 import { BlueprintValidationPanel } from "@/components/job-blueprint/validation/BlueprintValidationPanel"
 import { noteDimensions } from "@/components/job-blueprint/validation/noteDimensions"
+import { withPrism } from "@/lib/withPrism"
 
 const TIERS: JobTier[] = ["front-line", "professional", "executive"]
 
@@ -181,7 +182,7 @@ export default function JobBlueprintDnaDetailPage() {
         <CardHeader>
           <CardTitle className="text-base">{t("dnaDetail.benchmarkProfile", { defaultValue: "Benchmark profile" })}</CardTitle>
           <CardDescription>
-            {t("dnaDetail.benchmarkNote", { defaultValue: "Authored here — drafted by the Job DNA engine or built by hand — and reviewed by a person. Candidates' PRISM profiles are scored against it. It is not a PRISM-validated job benchmark." })}
+            {withPrism(t("dnaDetail.benchmarkNote", { defaultValue: "Authored here — drafted by the Job DNA engine or built by hand — and reviewed by a person. Candidates' PRISM profiles are scored against it. It is not a PRISM-validated job benchmark." }))}
           </CardDescription>
           {jobDna.shape ? (
             jobDna.shape.conforms ? (

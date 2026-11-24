@@ -16,6 +16,7 @@ import { useAuth } from "@/context/useAuth"
 import { useCoachHome } from "@/hooks/honor/useCoachData"
 import { HonorCard, HonorStat, HonorSectionTitle } from "./_shared"
 import VideoLibrary from "./VideoLibrary"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * Honor Coach Workbench — Dashboard ("transition-mentoring cockpit").
@@ -66,7 +67,7 @@ export default function HonorDashboard() {
       <HonorSectionTitle>Videos</HonorSectionTitle>
       <HonorCard className="mb-6">
         <p className="mb-3 text-sm text-[#5b6678]">
-          Short overviews of PRISM Brain Mapping and the program. Pick a title to play it.
+          Short overviews of <Prism /> Brain Mapping and the program. Pick a title to play it.
         </p>
         <VideoLibrary />
       </HonorCard>

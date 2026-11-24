@@ -26,6 +26,7 @@ import {
 import type { BehavioralProfile } from "@/types/development"
 import { NOT_A_JUDGEMENT } from "./studioCopy"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * The narrative write-up for one team member.
@@ -195,7 +196,7 @@ export function ProfileStudioPanel({
   // has nothing — which is the dishonest empty state this surface keeps having
   // to defend against.
   if (full.isLoading) {
-    return <p className="text-sm text-slate-500">{t("profileStudioPanel.loadingSPrismScores", { defaultValue: "Loading {{memberName}}'s PRISM scores…", memberName })}</p>
+    return <p className="text-sm text-slate-500">{withPrism(t("profileStudioPanel.loadingSPrismScores", { defaultValue: "Loading {{memberName}}'s PRISM scores…", memberName }))}</p>
   }
 
   // No scores means no write-up worth having. Saying so beats generating
@@ -209,13 +210,13 @@ export function ProfileStudioPanel({
   // tab and reaches people who never saw the caveat.
   if (notShared) {
     return (
-      <p className="text-sm text-slate-500" data-testid="studio-state-not-shared">{t("profileStudioPanel.hasNotSharedTheirPrism", { defaultValue: "{{memberName}} has not shared their PRISM profile with you, so there is nothing to write up. You can ask from the Behavioral Profile tab — asking grants nothing, and declining carries no consequence for them.", memberName })}</p>
+      <p className="text-sm text-slate-500" data-testid="studio-state-not-shared">{withPrism(t("profileStudioPanel.hasNotSharedTheirPrism", { defaultValue: "{{memberName}} has not shared their PRISM profile with you, so there is nothing to write up. You can ask from the Behavioral Profile tab — asking grants nothing, and declining carries no consequence for them.", memberName }))}</p>
     )
   }
 
   if (!scored) {
     return (
-      <p className="text-sm text-slate-500">{t("profileStudioPanel.hasNoPrismScoresOn", { defaultValue: "{{memberName}} has no PRISM scores on file, so there is nothing to write up yet. Invite them to complete PRISM from the header above.", memberName })}</p>
+      <p className="text-sm text-slate-500">{withPrism(t("profileStudioPanel.hasNoPrismScoresOn", { defaultValue: "{{memberName}} has no PRISM scores on file, so there is nothing to write up yet. Invite them to complete PRISM from the header above.", memberName }))}</p>
     )
   }
 
@@ -226,7 +227,7 @@ export function ProfileStudioPanel({
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <Sparkles className="h-4 w-4" aria-hidden />{" "}{t("profileStudioPanel.behaviouralWriteUp", { defaultValue: "Behavioural write-up" })}</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">{t("profileStudioPanel.readBackFromSOwn", { defaultValue: "Read back from {{memberName}}'s own PRISM scores. {{NOT_A_JUDGEMENT}}", memberName, NOT_A_JUDGEMENT })}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{withPrism(t("profileStudioPanel.readBackFromSOwn", { defaultValue: "Read back from {{memberName}}'s own PRISM scores. {{NOT_A_JUDGEMENT}}", memberName, NOT_A_JUDGEMENT }))}</p>
           </div>
           {text && (
             <div className="flex flex-wrap items-center gap-2">

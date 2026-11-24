@@ -37,6 +37,7 @@ import {
   orderedCategories,
 } from "./prismGlossary"
 import type { HonorPrismScore } from "@/types/honor"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * Honor Coach Workbench — Fellow Profile / Workspace (`/coach/member/{id}`).
@@ -208,18 +209,18 @@ export default function HonorMemberProfile() {
                 className="inline-flex items-center gap-1 text-xs font-medium text-[#E8792B] hover:underline"
                 onClick={() => setOverviewOpen(true)}
               >
-                <PlayCircle className="h-3.5 w-3.5" /> PRISM Overview
+                <PlayCircle className="h-3.5 w-3.5" /> <Prism /> Overview
               </button>
             }
           >
-            PRISM Report — {name}
+            <Prism /> Report — {name}
           </HonorSectionTitle>
           {prismQuery.isLoading ? (
-            <p className="text-sm text-[#9299a6]">Loading PRISM report…</p>
+            <p className="text-sm text-[#9299a6]">Loading <Prism /> report…</p>
           ) : prismQuery.data?.managed ? (
             <p className="text-sm text-[#9299a6]">
               Invite {name.split(" ")[0]} first — a managed fellow has no profile yet to attach a
-              PRISM report to.
+              <Prism /> report to.
             </p>
           ) : prismQuery.data?.hasReport ? (
             <div>
@@ -247,7 +248,7 @@ export default function HonorMemberProfile() {
           ) : (
             <div>
               <p className="mb-3 text-sm text-[#5b6678]">
-                No PRISM report on file for {name.split(" ")[0]} yet. Request one below — once it’s
+                No <Prism /> report on file for {name.split(" ")[0]} yet. Request one below — once it’s
                 added (during onboarding or via an assessment import), the scores appear here.
               </p>
               <button
@@ -256,7 +257,7 @@ export default function HonorMemberProfile() {
                 disabled={requestPrism.isPending || !fellow}
                 onClick={() => fellow && requestPrism.mutate(fellow.id)}
               >
-                <ClipboardList className="h-4 w-4" /> Request a PRISM Report
+                <ClipboardList className="h-4 w-4" /> Request a <Prism /> Report
               </button>
             </div>
           )}

@@ -108,6 +108,7 @@ jest.mock("@/components/ui/select", () => {
 
 import DevelopmentStudio from "../DevelopmentStudio"
 import { ROUTES } from "@/constants/routes"
+import { byText } from "@/test/byText"
 
 /** Invented people — this repo is public. */
 function member(over: Partial<RosterMember> = {}): RosterMember {
@@ -240,7 +241,7 @@ describe("DevelopmentStudio — a card carries the response, not the page's inve
     expect(within(card).queryByText(/%/)).not.toBeInTheDocument()
     expect(within(card).queryByText(/Methodical collaborator/)).not.toBeInTheDocument()
     // What a row with no PRISM gets instead is the invitation, not a headline.
-    expect(within(card).getByText("Invite to complete PRISM to build a profile.")).toBeInTheDocument()
+    expect(within(card).getByText(byText("Invite to complete PRISM to build a profile."))).toBeInTheDocument()
   })
 
   it("searching matches on title and department, not only the name", () => {

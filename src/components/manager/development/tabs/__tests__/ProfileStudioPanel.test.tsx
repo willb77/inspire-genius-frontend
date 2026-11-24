@@ -50,6 +50,7 @@ jest.mock("sonner", () => ({
   toast: { success: jest.fn(), error: jest.fn(), warning: jest.fn() },
 }))
 import { toast } from "sonner"
+import { byText } from "@/test/byText"
 
 const prism: PrismDimension[] = [
   { id: 1, label: "Innovating", score: 80, quadrant: 1 },
@@ -192,14 +193,14 @@ describe("ProfileStudioPanel — the other refusals, in order", () => {
   it("says it is loading rather than 'no PRISM on file' while the full profile is in flight", () => {
     fullState = { data: undefined, isLoading: true }
     renderPanel(scored)
-    expect(screen.getByText(/Loading Gary Burnette's PRISM scores/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/Loading Gary Burnette's PRISM scores/i))).toBeInTheDocument()
     expect(screen.queryByText(/no PRISM scores on file/i)).not.toBeInTheDocument()
   })
 
   it("with no PRISM at all, says so and points at the invite", () => {
     renderPanel(none)
-    expect(screen.getByText(/has no PRISM scores on file/i)).toBeInTheDocument()
-    expect(screen.getByText(/Invite them to complete PRISM/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/has no PRISM scores on file/i))).toBeInTheDocument()
+    expect(screen.getByText(byText(/Invite them to complete PRISM/i))).toBeInTheDocument()
     expect(screen.queryByTestId("studio-state-not-shared")).not.toBeInTheDocument()
   })
 })

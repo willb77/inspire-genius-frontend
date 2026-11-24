@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Copy, Check } from "lucide-react"
 import { useState } from "react"
+import { Prism } from "@/components/shared/Prism"
 
 type PromptPreviewPanelProps = {
   persona: string
@@ -55,7 +56,7 @@ export default function PromptPreviewPanel(props: PromptPreviewPanelProps) {
                 <li><code className="bg-white px-1 rounded text-blue-700">{'{user_name}'}</code> — Current user's display name</li>
                 <li><code className="bg-white px-1 rounded text-blue-700">{'{knowledge_base}'}</code> — Injected knowledge from uploaded documents (~500-2000 tokens)</li>
                 <li><code className="bg-white px-1 rounded text-blue-700">{'{conversation_history}'}</code> — Recent chat context (~200-1000 tokens)</li>
-                <li><code className="bg-white px-1 rounded text-blue-700">{'{prism_profile}'}</code> — User's PRISM behavioral assessment data (~100-300 tokens)</li>
+                <li><code className="bg-white px-1 rounded text-blue-700">{'{prism_profile}'}</code> — User's <Prism /> behavioral assessment data (~100-300 tokens)</li>
                 <li><code className="bg-white px-1 rounded text-blue-700">{'{current_date}'}</code> — Today's date</li>
               </ul>
             </div>

@@ -1,6 +1,7 @@
 import { type AuthLayoutProps } from "@/types/auth";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { cn } from "@/lib/utils";
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * AuthLayout — Design B: Immersive Brand Wall
@@ -67,7 +68,7 @@ export default function AuthLayout({
             </span>
           </h2>
           <p className="text-base text-white/55 leading-relaxed max-w-[420px]">
-            AI-powered coaching grounded in the PRISM behavioral framework.
+            AI-powered coaching grounded in the <Prism /> behavioral framework.
             Personalized guidance for every role in your organization.
           </p>
 

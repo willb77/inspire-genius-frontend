@@ -40,6 +40,7 @@ import {
 import type { RegistryError, RegistryRow } from "@/types/practitioner-registry"
 import { addSchema, assignSchema, CSV_TEMPLATE, fieldsSchema } from "./practitionerRegistry.schemas"
 import { PractitionerDetailDrawer } from "./PractitionerDetailDrawer"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * Super-admin → Practitioner Registry (Practitioner Programme PC-1a).
@@ -403,7 +404,7 @@ function EditDialog({ row, onClose }: { row: RegistryRow; onClose: () => void })
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit {row.displayName}</DialogTitle>
-          <DialogDescription>Changes apply to PRISM requests raised after they are saved.</DialogDescription>
+          <DialogDescription>Changes apply to <Prism /> requests raised after they are saved.</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-2" noValidate>
           <FieldInputs register={(name) => form.register(name)} errors={form.formState.errors} idPrefix="edit" />
@@ -618,7 +619,7 @@ export default function PractitionerRegistry() {
         <div>
           <h1 className="text-2xl font-semibold">Practitioner Registry</h1>
           <p className="text-sm text-muted-foreground">
-            Each practitioner's PRISM Site ID, Client ID, IG Reference and ExternalIdent, and which clients they hold.
+            Each practitioner's <Prism /> Site ID, Client ID, IG Reference and ExternalIdent, and which clients they hold.
           </p>
         </div>
         <RegistryTable />

@@ -3,6 +3,7 @@ import { ClipboardList, Loader2, X } from "lucide-react"
 import { toast } from "sonner"
 import { useRequestPrismReport } from "@/hooks/honor/useHonorEvaluate"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY } from "./_format"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * "Request a PRISM report" modal — collects a person's first name, last name,
@@ -60,7 +61,7 @@ export default function RequestPrismModal({
       <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="flex items-center gap-2 text-base font-semibold text-[#18202f]">
-            <ClipboardList className="h-4 w-4 text-[#1B2A4A]" /> Request a PRISM report
+            <ClipboardList className="h-4 w-4 text-[#1B2A4A]" /> Request a <Prism /> report
           </h3>
           <button
             type="button"
@@ -72,7 +73,7 @@ export default function RequestPrismModal({
           </button>
         </div>
         <p className="mb-3 text-sm text-[#5b6678]">
-          Provisions the person as a platform user and sends them a PRISM survey.
+          Provisions the person as a platform user and sends them a <Prism /> survey.
         </p>
         <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm">

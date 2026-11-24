@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next"
 import type { ClientPrism } from "@/types/practitioner/coachClient"
+import { withPrism } from "@/lib/withPrism"
 
 /** Canon order and names — PRISM has four colours, and Orange is not one. */
 const COLOURS = ["Gold", "Green", "Blue", "Red"] as const
@@ -56,7 +57,7 @@ export function ClientPrismPanel({ prism, clientName }: ClientPrismPanelProps) {
   if (prism.state === "not_shared") {
     return (
       <p className="text-sm text-[#6b7280]">
-        {t("prismPanel.notShared", { name: clientName, defaultValue: "{{name}} hasn’t shared their PRISM with you. They can share it from their Sharing page." })}
+        {withPrism(t("prismPanel.notShared", { name: clientName, defaultValue: "{{name}} hasn’t shared their PRISM with you. They can share it from their Sharing page." }))}
       </p>
     )
   }
@@ -72,14 +73,14 @@ export function ClientPrismPanel({ prism, clientName }: ClientPrismPanelProps) {
   if (prism.state === "no_prism") {
     return (
       <p className="text-sm text-[#6b7280]">
-        {t("prismPanel.noPrism", { name: clientName, defaultValue: "{{name}} has shared their PRISM with you, but no report is on file yet." })}
+        {withPrism(t("prismPanel.noPrism", { name: clientName, defaultValue: "{{name}} has shared their PRISM with you, but no report is on file yet." }))}
       </p>
     )
   }
 
   return (
     <p role="alert" className="text-sm text-[#B91C1C]">
-      {t("prismPanel.loadFailed", { defaultValue: "PRISM couldn’t be loaded just now. This is a failure, not an empty profile — try again shortly." })}
+      {withPrism(t("prismPanel.loadFailed", { defaultValue: "PRISM couldn’t be loaded just now. This is a failure, not an empty profile — try again shortly." }))}
     </p>
   )
 }

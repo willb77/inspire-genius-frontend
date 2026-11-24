@@ -28,6 +28,7 @@ import {
   searchFromReportView,
   type ReportView,
 } from "./reportView"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * Super-admin → Intake → Reports (IN-7).
@@ -225,7 +226,7 @@ export function ReportsTab() {
             </select>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="report-accredited">PRISM accredited</Label>
+            <Label htmlFor="report-accredited"><Prism /> accredited</Label>
             <select
               id="report-accredited"
               className={SELECT_CLASS}

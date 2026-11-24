@@ -18,6 +18,7 @@ import PractitionerWelcome, {
   TOO_MANY_MESSAGE,
 } from "../PractitionerWelcome"
 import { INVITE_STORAGE_KEY } from "@/lib/practitionerInvite"
+import { byText } from "@/test/byText"
 
 jest.mock("@/layouts/UserLayout", () => ({
   __esModule: true,
@@ -103,7 +104,7 @@ describe("PractitionerWelcome (S7)", () => {
     sessionStorage.setItem(INVITE_STORAGE_KEY, TOKEN)
     mockClaim.mockResolvedValue({ outcome: "claimed", practitionerName: "Dr P" })
     renderPage()
-    expect(await screen.findByText(/Checking your PRISM survey access/)).toBeInTheDocument()
+    expect(await screen.findByText(byText(/Checking your PRISM survey access/))).toBeInTheDocument()
   })
 
   it("shows the neutral message on a 404, clears the token, and does not redirect to /login", async () => {

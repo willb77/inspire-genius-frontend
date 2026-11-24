@@ -20,6 +20,7 @@ import {
   handleTourAudioButtonClick,
   isTourOverlayInteractiveTarget,
 } from "@/context/tour/utils";
+import { withPrism } from "@/lib/withPrism"
 
 // Central default tour steps
 const DEFAULT_STEPS: TourStep[] = [
@@ -36,7 +37,7 @@ const DEFAULT_STEPS: TourStep[] = [
   },
   {
     selector: '[data-tour="about"]',
-    title: "About Prism",
+    title: "About PRISM",
     description:
       "Learn about PRISM Inspire and how it unlocks potential through neuroscience and AI.",
     image: "/images/tour/left-alex.svg",
@@ -671,7 +672,7 @@ function Overlay({
       >
         <div className="flex items-start gap-3">
           <div>
-            <div className="text-sm font-semibold mb-1">{step.title}</div>
+            <div className="text-sm font-semibold mb-1">{withPrism(step.title)}</div>
             <div className="text-xs text-muted-foreground leading-relaxed">
               {step.description}
             </div>

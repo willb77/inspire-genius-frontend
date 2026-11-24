@@ -20,6 +20,7 @@ import {
 } from "@/hooks/prism/usePrismReportDownload"
 import { usePrismPdfReplaceEnabled } from "@/hooks/switches/usePrismPdfReplaceEnabled"
 import { oversizeMessage } from "@/lib/prism/prismUpload"
+import { withPrism } from "@/lib/withPrism"
 
 interface ReplacePrismDataButtonProps {
   /** Button label. Defaults to "Replace PRISM Data". */
@@ -98,7 +99,7 @@ export function ReplacePrismDataDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("replaceData.dialogTitle", { defaultValue: "Replace your PRISM data" })}</DialogTitle>
+          <DialogTitle>{withPrism(t("replaceData.dialogTitle", { defaultValue: "Replace your PRISM data" }))}</DialogTitle>
           <DialogDescription>
             {pdfOn
               ? t("replaceData.descPdfOn", {
@@ -118,7 +119,7 @@ export function ReplacePrismDataDialog({
               t("replaceData.labelPdfOn", { defaultValue: "PRISM report PDF and/or scores CSV" })
             ) : (
               <>
-                {t("replaceData.labelCsv", { defaultValue: "PRISM scores CSV" })}{" "}
+                {withPrism(t("replaceData.labelCsv", { defaultValue: "PRISM scores CSV" }))}{" "}
                 <span className="text-destructive">*</span>
                 {t("replaceData.labelPdfOptional", { defaultValue: ", report PDF optional" })}
               </>
@@ -138,7 +139,7 @@ export function ReplacePrismDataDialog({
 
           {!pdfOn && pdf && !csv && (
             <p className="text-xs text-muted-foreground" data-testid="prism-replace-needs-csv">
-              {t("replaceData.needsCsv", { defaultValue: "Add the PRISM scores CSV to replace your scores. The PDF is stored alongside it." })}
+              {withPrism(t("replaceData.needsCsv", { defaultValue: "Add the PRISM scores CSV to replace your scores. The PDF is stored alongside it." }))}
             </p>
           )}
           {!pdfOn && csv && !pdf && (
@@ -162,7 +163,7 @@ export function ReplacePrismDataDialog({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="space-y-1">
                   <p className="font-medium">
-                    {t("replaceData.lossHeading", { defaultValue: "This report has less than your current PRISM data." })}
+                    {withPrism(t("replaceData.lossHeading", { defaultValue: "This report has less than your current PRISM data." }))}
                   </p>
                   <p>
                     {t("replaceData.lossBody", {

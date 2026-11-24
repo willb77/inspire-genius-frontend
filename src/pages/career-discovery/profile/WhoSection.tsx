@@ -17,6 +17,7 @@ import {
 } from "@/hooks/career-discovery/useCareerDiscovery"
 import { DiscoveryError, DiscoveryLoading, StageHeader } from "../DiscoveryParts"
 import { useDiscoveryContext } from "../discoveryContext"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Who I am — Lumen's Self-Portrait, the same engine and the same sections,
@@ -80,7 +81,7 @@ export function WhoSection({ embedded = false }: { embedded?: boolean }) {
       {!portrait.prism ? (
         <PortraitNoPrism title={t("whoBuiltOn", "What this is built on so far")} headline={portrait.headline}>
           <Button asChild variant="outline" size="sm">
-            <Link to={ROUTES.PRISM_ASSESSMENT}>{t("aboutPrismLink", "Take or check PRISM")}</Link>
+            <Link to={ROUTES.PRISM_ASSESSMENT}>{withPrism(t("aboutPrismLink", "Take or check PRISM"))}</Link>
           </Button>
         </PortraitNoPrism>
       ) : (

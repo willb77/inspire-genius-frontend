@@ -46,6 +46,7 @@ import { confidenceTone } from "@/components/fit/fit"
 import type { TargetDraft } from "@/types/targets"
 import { targetDraftToBenchmarks } from "@/types/targets"
 import type { FitDetail } from "@/types/job-fit"
+import { byText } from "@/test/byText"
 
 const DRAFT: TargetDraft = {
   behaviors: [
@@ -233,7 +234,7 @@ describe("TargetPreviewPage — score my fit (JS-5)", () => {
   it("no PRISM on file → the honest state, not a score", () => {
     mockScore = { ...idleScore(), isError: true, error: { response: { status: 404 } } }
     renderDrafted()
-    expect(screen.getByText(/no prism assessment on file/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/no prism assessment on file/i))).toBeInTheDocument()
     expect(screen.queryByText("Your fit against this target")).not.toBeInTheDocument()
   })
 

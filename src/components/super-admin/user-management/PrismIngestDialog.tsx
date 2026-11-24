@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { importPrismFile } from "@/services/prism/prism.service";
 import { useAdminDeletePrismScores } from "@/hooks/prism/usePrismReportDownload";
+import { Prism } from "@/components/shared/Prism"
 
 /** A user the dialog can ingest a PRISM report for. */
 export type PrismIngestTarget = {
@@ -202,7 +203,7 @@ export default function PrismIngestDialog({ open, onOpenChange, targets }: Props
             {bulk ? `Bulk ingest PRISM reports (${targets.length})` : "Upload PRISM report"}
           </DialogTitle>
           <DialogDescription>
-            Uploads a legacy PRISM CSV export, parses it server-side, and inserts the assessment
+            Uploads a legacy <Prism /> CSV export, parses it server-side, and inserts the assessment
             plus scores for the user. Re-uploading the same file is a no-op (idempotent per SHA-256).
           </DialogDescription>
         </DialogHeader>
@@ -355,7 +356,7 @@ export function DeletePrismScoresSection({
     return (
       <div className="flex items-center justify-between gap-3 rounded-md border border-red-200 p-2.5">
         <div className="text-xs text-muted-foreground">
-          Remove this user&apos;s PRISM scores and PRISM CSV documents. The report PDF is kept.
+          Remove this user&apos;s <Prism /> scores and <Prism /> CSV documents. The report PDF is kept.
         </div>
         <Button
           type="button"
@@ -366,7 +367,7 @@ export function DeletePrismScoresSection({
           data-testid="prism-scores-delete-open"
           onClick={() => setConfirming(true)}
         >
-          <Trash2 className="size-4" /> Delete PRISM scores…
+          <Trash2 className="size-4" /> Delete <Prism /> scores…
         </Button>
       </div>
     );
@@ -378,11 +379,11 @@ export function DeletePrismScoresSection({
       data-testid="prism-scores-delete-confirm"
     >
       <p className="text-sm font-medium text-red-800">
-        Delete {target.name || target.email}&apos;s PRISM scores?
+        Delete {target.name || target.email}&apos;s <Prism /> scores?
       </p>
       <p className="text-xs text-red-800">
-        This permanently removes their PRISM assessments, scores and PRISM CSV documents. Their
-        report PDF is kept. It cannot be undone except by importing their PRISM data again.
+        This permanently removes their <Prism /> assessments, scores and <Prism /> CSV documents. Their
+        report PDF is kept. It cannot be undone except by importing their <Prism /> data again.
       </p>
       <label className="block text-xs text-red-800" htmlFor="prism-scores-delete-email">
         Type <span className="font-mono">{target.email}</span> to confirm

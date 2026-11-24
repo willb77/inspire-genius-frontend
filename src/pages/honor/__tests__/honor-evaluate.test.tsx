@@ -480,7 +480,7 @@ test("Evaluate: source selection panel + confidence meter render the degradation
 
   // Per-fellow submitted sources become selectable evidence.
   expect(await screen.findByText(/Evidence for Marcus Reyes/i)).toBeInTheDocument()
-  await screen.findByText("PRISM")
+  await screen.findByRole("checkbox", { name: /PRISM/i })
 
   fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
   await screen.findByText("Operations Program Management")
@@ -494,7 +494,7 @@ test("Evaluate: source selection panel + confidence meter render the degradation
 test("Evaluate: unchecking PRISM sends the narrowed source selection", async () => {
   renderPage()
   fireEvent.click(screen.getByText("Marcus Reyes"))
-  await screen.findByText("PRISM")
+  await screen.findByRole("checkbox", { name: /PRISM/i })
 
   // Uncheck the PRISM evidence chip, then run.
   fireEvent.click(screen.getByRole("checkbox", { name: /PRISM/i }))

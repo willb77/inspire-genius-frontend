@@ -58,6 +58,7 @@ import GoalRoadmapPage from "@/pages/summit/GoalRoadmapPage"
 import SummitGoals from "@/pages/summit/SummitGoals"
 import { targetErrorText } from "@/pages/summit/_targets"
 import { ROUTES } from "@/constants/routes"
+import { byText } from "@/test/byText"
 
 const goal = (over: Partial<SharedGoal> = {}): SharedGoal =>
   ({
@@ -188,7 +189,7 @@ describe("GoalRoadmapPage", () => {
     at()
     expect(await screen.findByText("Evaluating")).toBeInTheDocument()
     expect(mockRoadmap).toHaveBeenCalledWith("b1")
-    expect(screen.getByText(/Evaluating in PRISM:/)).toBeInTheDocument()
+    expect(screen.getByText(byText(/Evaluating in PRISM:/))).toBeInTheDocument()
     expect(screen.getByText(/has no first step yet/)).toBeInTheDocument()
     expect(screen.getByText("An offer by June")).toBeInTheDocument()
     expect(screen.getByText("Priority")).toBeInTheDocument()

@@ -20,6 +20,7 @@ import type { DegreePlanReady, PlanLoad, PlanSeason, PlanTerm } from "@/types/ca
 import ComingNextPage from "./ComingNextPage"
 import { DiscoveryError, DiscoveryLoading, NoticeCard, StageHeader } from "./DiscoveryParts"
 import { useDiscoveryContext } from "./discoveryContext"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * DISC-5: the degree plan. The server builds every term, credit and refusal;
@@ -470,7 +471,7 @@ function Careers({ data }: { data: DegreePlanReady }) {
               </span> : null}
             {c.prismFit !== null ? <span>
                 {" "}
-                · {t("dpPrismFit", { defaultValue: "PRISM fit {{percent}}%", percent: Math.round(c.prismFit) })}
+                · {withPrism(t("dpPrismFit", { defaultValue: "PRISM fit {{percent}}%", percent: Math.round(c.prismFit) }))}
               </span> : null}
           </li>
         ))}

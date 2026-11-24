@@ -18,6 +18,7 @@ import { splitInterests } from "./splitInterests"
 import { isProfileMerged, PROFILE_LABEL } from "@/lib/career-discovery/profileSection"
 import { SkillsSection } from "./profile/SkillsSection"
 import { WhoSection } from "./profile/WhoSection"
+import { withPrism } from "@/lib/withPrism"
 
 const makeAboutSchema = (t: TFunction) =>
   z.object({
@@ -100,12 +101,12 @@ export default function AboutPage() {
       <div className="grid gap-3 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("aboutPrismTitle", "Your PRISM")}</CardTitle>
+            <CardTitle className="text-base">{withPrism(t("aboutPrismTitle", "Your PRISM"))}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>{t("aboutPrismBody", "Career areas are ranked from your PRISM. If you haven't taken it yet, start here.")}</p>
+            <p>{withPrism(t("aboutPrismBody", "Career areas are ranked from your PRISM. If you haven't taken it yet, start here."))}</p>
             <Button asChild variant="outline" size="sm">
-              <Link to={ROUTES.PRISM_ASSESSMENT}>{t("aboutPrismLink", "Take or check PRISM")}</Link>
+              <Link to={ROUTES.PRISM_ASSESSMENT}>{withPrism(t("aboutPrismLink", "Take or check PRISM"))}</Link>
             </Button>
           </CardContent>
         </Card>

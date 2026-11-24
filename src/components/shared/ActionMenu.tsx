@@ -24,6 +24,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { withPrism } from "@/lib/withPrism"
 
 export type MenuOption = { label: string; value: string };
 
@@ -184,17 +185,17 @@ export default function ActionMenu<Row = unknown>({
 
         {showPrismPdf && (
           <DropdownMenuItem onClick={() => onPrismPdf?.(row)}>
-            <FileUp className="w-4 h-4 mr-2 text-teal-600" /> {t("actionMenu.prismPdf", { defaultValue: "Upload / Delete PRISM PDF" })}
+            <FileUp className="w-4 h-4 mr-2 text-teal-600" /> {withPrism(t("actionMenu.prismPdf", { defaultValue: "Upload / Delete PRISM PDF" }))}
           </DropdownMenuItem>
         )}
         {showImportPrism && (
           <DropdownMenuItem onClick={() => onImportPrism?.(row)}>
-            <FileUp className="w-4 h-4 mr-2 text-indigo-500" /> {t("actionMenu.prismCsv", { defaultValue: "Upload PRISM CSV" })}
+            <FileUp className="w-4 h-4 mr-2 text-indigo-500" /> {withPrism(t("actionMenu.prismCsv", { defaultValue: "Upload PRISM CSV" }))}
           </DropdownMenuItem>
         )}
         {showPrismAccess && (
           <DropdownMenuItem onClick={() => onPrismAccess?.(row)}>
-            <ShieldCheck className="w-4 h-4 mr-2 text-emerald-600" /> {t("actionMenu.prismAccess", { defaultValue: "PRISM survey access" })}
+            <ShieldCheck className="w-4 h-4 mr-2 text-emerald-600" /> {withPrism(t("actionMenu.prismAccess", { defaultValue: "PRISM survey access" }))}
           </DropdownMenuItem>
         )}
         {showVerticalEntitlements && (

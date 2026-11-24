@@ -11,6 +11,7 @@ import { useRedeemPractitionerCode } from "@/hooks/user/useRedeemPractitionerCod
 import { registryErrorSummary } from "@/services/super-admin/practitioner-registry/registryErrors"
 import { codeSchema } from "./practitionerCode.schema"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * "Have a practitioner code?" — Settings card for a client who signed up on
@@ -56,7 +57,7 @@ export default function PractitionerCodeCard() {
           {t("practitionerCodeCard.haveAPractitionerCode", { defaultValue: "Have a practitioner code?" })}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          {t("practitionerCodeCard.ifYouAreWorkingWithA", { defaultValue: "If you are working with a PRISM practitioner, enter the code they gave you to connect your account to theirs." })}
+          {withPrism(t("practitionerCodeCard.ifYouAreWorkingWithA", { defaultValue: "If you are working with a PRISM practitioner, enter the code they gave you to connect your account to theirs." }))}
         </p>
       </CardHeader>
       <CardContent className="text-left">

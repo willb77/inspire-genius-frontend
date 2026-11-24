@@ -14,6 +14,7 @@ import { HOME_ROUTE_BY_ROLE } from "@/constants/navigation"
 import { ROUTES } from "@/constants/routes"
 import { isUserRole } from "@/types/roles"
 import type { ClaimOutcome } from "@/types/practitioner-invites"
+import { withPrism } from "@/lib/withPrism"
 
 export const NOT_VALID_MESSAGE =
   "That invitation link is not valid. Ask your practitioner to send you a new link."
@@ -50,7 +51,7 @@ function PrismNextStep({ practitionerName }: { practitionerName: string }) {
     return (
       <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-        {t("prism.checking", { defaultValue: "Checking your PRISM survey access…" })}
+        {withPrism(t("prism.checking", { defaultValue: "Checking your PRISM survey access…" }))}
       </p>
     )
   }
@@ -73,7 +74,7 @@ function PrismNextStep({ practitionerName }: { practitionerName: string }) {
       </p>
       <Button type="button" className="min-h-11" onClick={() => navigate(ROUTES.PRISM_ASSESSMENT)}>
         <ClipboardList className="mr-2 h-4 w-4" aria-hidden="true" />
-        {t("prism.takeSurvey", { defaultValue: "Take your PRISM survey" })}
+        {withPrism(t("prism.takeSurvey", { defaultValue: "Take your PRISM survey" }))}
       </Button>
     </div>
   )
@@ -144,7 +145,7 @@ export default function PractitionerWelcome() {
                 <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden="true" />
                 {t("connected", { defaultValue: "You're now connected to {{name}}.", name: result.practitionerName })}
               </CardTitle>
-              <CardDescription>{t("nextSurvey", { defaultValue: "Next: take your PRISM survey." })}</CardDescription>
+              <CardDescription>{withPrism(t("nextSurvey", { defaultValue: "Next: take your PRISM survey." }))}</CardDescription>
             </CardHeader>
             <CardContent>
               <PrismNextStep practitionerName={result.practitionerName} />

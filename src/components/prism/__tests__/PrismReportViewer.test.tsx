@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import PrismReportViewer from "../PrismReportViewer";
+import { byText } from "@/test/byText"
 
 /* ── Mocks ── */
 jest.mock("@/lib/axios", () => ({
@@ -84,7 +85,7 @@ describe("PrismReportViewer", () => {
       isLoading: false,
     });
     render(<PrismReportViewer assessmentId="a-1" />);
-    expect(screen.getByText("PRISM Report")).toBeInTheDocument();
+    expect(screen.getByText(byText("PRISM Report"))).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /overview/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /behaviours/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /work/i })).toBeInTheDocument();
