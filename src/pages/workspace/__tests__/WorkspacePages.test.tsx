@@ -7,6 +7,7 @@ import WorkspaceInterviewPrepPage from "../InterviewPrepPage"
 import WorkspaceInterviewStudioPage from "../InterviewStudioPage"
 import WorkspaceJobBlueprintPage from "../JobBlueprintPage"
 import WorkspaceTeamCompositionPage from "../TeamCompositionPage"
+import WorkspaceTalentStudioOverviewPage from "../TalentStudioOverviewPage"
 import type { WorkspaceAudience } from "@/layouts/WorkspaceLayout"
 
 // ROLE-C: each screen managers and practitioners share is one component. What
@@ -51,6 +52,11 @@ jest.mock("@/components/task-agents/TeamCompositionBody", () => ({
   __esModule: true,
   default: () => <div data-testid="body">team-composition</div>,
 }))
+jest.mock("@/components/talent-studio/TalentStudioOverviewBody", () => ({
+  __esModule: true,
+  // The body's links follow the route's audience, so the mock shows which one it was given.
+  default: ({ role }: { role: string }) => <div data-testid="body">talent-studio for {role}</div>,
+}))
 
 const PAGES: Array<[string, (p: { audience: WorkspaceAudience }) => React.ReactElement, string]> = [
   ["Settings", WorkspaceSettingsPage, "settings"],
@@ -60,6 +66,7 @@ const PAGES: Array<[string, (p: { audience: WorkspaceAudience }) => React.ReactE
   ["Interview Studio", WorkspaceInterviewStudioPage, "interview-studio"],
   ["Job Blueprint", WorkspaceJobBlueprintPage, "job-blueprint"],
   ["Team Composition", WorkspaceTeamCompositionPage, "team-composition"],
+  ["Talent Studio Overview", WorkspaceTalentStudioOverviewPage, "talent-studio"],
 ]
 
 const CASES = PAGES.flatMap(([name, Page, body]) => [
@@ -80,6 +87,13 @@ describe("ROLE-C shared workspace pages", () => {
   it.each(["manager", "practitioner"] as const)("Character Lab stays restricted for a %s", (audience) => {
     render(<WorkspaceCharacterLabPage audience={audience} />)
     expect(screen.getByTestId("body")).toHaveTextContent("character-lab restricted")
+  })
+
+  // TS-2: the Overview's links sit under the prefix the page was opened on, so
+  // the route's audience, not the signed-in role, is what the body is given.
+  it.each(["manager", "practitioner"] as const)("Talent Studio Overview gives its body the %s links", (audience) => {
+    render(<WorkspaceTalentStudioOverviewPage audience={audience} />)
+    expect(screen.getByTestId("body")).toHaveTextContent(`talent-studio for ${audience}`)
   })
 })
 

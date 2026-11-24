@@ -29,6 +29,14 @@
  * off is still reached, and the ONLY extra destinations are the ones named in
  * TS3_ADDED". The off snapshot is untouched. The TS-3 block at the end pins the
  * rows, and that the house-style interview switch does not move the menu.
+ *
+ * TS-2 (2026-11-24) puts the group in the order the work runs, again with the
+ * switch ON only: Overview, Roles, Candidates, Interviews, Insights, then
+ * Knowledge Continuity as "Retain". Three destinations are added per role (the
+ * role's Overview page, and the Candidates and Insights pages of the Role
+ * Blueprints vertical, which copy that vertical's lock); they are named in
+ * TS2_OVERVIEW and TS2_BLUEPRINT_PAGES and nothing else may appear. The off
+ * snapshot is untouched. The TS-2 block at the end pins the exact order per role.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -79,7 +87,8 @@ jest.mock("@/hooks/super-admin/useBroadcast", () => ({
   useBroadcastAccess: () => ({ data: { authorized: mockBroadcastAuthorized } }),
 }))
 
-import { useToolsSection, TALENT_STUDIO_LABEL } from "../useToolsSection"
+import { useToolsSection, TALENT_STUDIO_LABEL, TALENT_STUDIO_STAGE_ORDER } from "../useToolsSection"
+import { hasAccess } from "@/types/roles"
 import { navLabelKey } from "@/components/shared/layout/navLabels"
 import { setHouseStyle } from "@/lib/house/areaSwitch"
 import { useGatedNavItems } from "../useGatedNavItems"
@@ -174,6 +183,20 @@ const TS3_ADDED: Partial<Record<UserRole, string[]>> = {
   practitioner: ["/practitioner/interview-prep"],
 }
 
+/**
+ * TS-2: the destinations the menu gains with the switch on. The role's own
+ * Overview page is live. The two vertical pages are live exactly when the Role
+ * Blueprints row is (greyed with it otherwise), so they are checked against
+ * that row's state, not against a constant.
+ */
+const TS2_OVERVIEW: Partial<Record<UserRole, string>> = {
+  manager: "/manager/talent-studio",
+  practitioner: "/practitioner/talent-studio",
+  "super-admin": "/super-admin/talent-studio",
+}
+const BLUEPRINT_HOME = "/vertical/job-blueprint/dashboard"
+const TS2_BLUEPRINT_PAGES = ["/vertical/job-blueprint/candidates", "/vertical/job-blueprint/analytics"]
+
 beforeEach(() => {
   localStorage.clear()
   mockEntitled = ALL_VERTICALS
@@ -217,7 +240,23 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
               const after = reach([...rest, ...((await tools(role, mode))?.items ?? [])])
               // TS-3: with the switch on, exactly the named additions, each
               // live and none of them reached before; then the strict diff.
-              const added = mode === "true" ? (TS3_ADDED[role] ?? []) : []
+              const overview = TS2_OVERVIEW[role]
+              const added = mode === "true" ? [...(TS3_ADDED[role] ?? []), ...(overview ? [overview] : [])] : []
+              // TS-2: the two vertical pages, present only beside the Role
+              // Blueprints row and in the same state as it.
+              if (mode === "true" && overview) {
+                expect({ role, ent, home: after.has(BLUEPRINT_HOME) }).toEqual({ role, ent, home: true })
+                for (const route of TS2_BLUEPRINT_PAGES) {
+                  expect({ role, ent, route, before: before.has(route), after: after.get(route) }).toEqual({
+                    role,
+                    ent,
+                    route,
+                    before: false,
+                    after: after.get(BLUEPRINT_HOME),
+                  })
+                  after.delete(route)
+                }
+              }
               for (const route of added) {
                 expect({ role, route, before: before.has(route), after: after.get(route) }).toEqual({
                   role,
@@ -264,12 +303,12 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     expect(groups[0].to).toBe("")
     for (const label of TOP_LEVEL_GONE) expect(items.map((i) => i.label)).not.toContain(label)
     const children = groups[0].children ?? []
-    // Two sections then Knowledge Continuity: blueprint first, interview next.
+    // Blueprint first, interview next, Knowledge Continuity last (as "Retain" since TS-2).
     const labels = children.map((c) => c.label)
     expect(labels.indexOf("Role Blueprints")).toBeGreaterThanOrEqual(0)
     expect(labels.indexOf("Role Blueprints")).toBeLessThan(labels.indexOf("Hiring interview"))
     expect(labels.indexOf("Hiring interview")).toBeLessThan(labels.indexOf("Own-questions interview"))
-    expect(labels[labels.length - 1]).toBe("Knowledge Continuity Studio")
+    expect(labels[labels.length - 1]).toBe("Retain: Knowledge Continuity")
     // SidebarScaffold renders one level of children; anything deeper is unreachable.
     expect(children.every((c) => !c.children?.length)).toBe(true)
     // Keys are `to || label`: unique across the whole section, children included.
@@ -289,13 +328,16 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     const group = (await tools("manager", "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
     const byLabel = Object.fromEntries((group?.children ?? []).map((c) => [c.label, !!c.disabled]))
     expect(byLabel).toEqual({
-      "Role Blueprint Match": false,
+      Overview: false,
       "Role Blueprints": true,
+      "Role Blueprint Match": false,
+      Candidates: true,
       "Hiring interview": false,
       "Own-questions interview": false,
       "Prepare questions": false,
       "Past interviews": false,
-      "Knowledge Continuity Studio": true,
+      Insights: true,
+      "Retain: Knowledge Continuity": true,
     })
   })
 
@@ -421,6 +463,139 @@ describe("TS-3 — the interview rows in Talent Studio, named by purpose", () =>
         expect({ lang, key, present: typeof value === "string" && value.length > 0 }).toEqual({ lang, key, present: true })
         expect({ lang, key, sameAsEnglish: value === label }).toEqual({ lang, key, sameAsEnglish: false })
       }
+    }
+  })
+})
+
+describe("TS-2 — Talent Studio in the order the work runs", () => {
+  const KC = "/vertical/knowledge-continuity/dashboard"
+  /** [label, destination] per role, in order. This IS the menu with the switch on. */
+  const ORDER: Record<string, [string, string][]> = {
+    manager: [
+      ["Overview", "/manager/talent-studio"],
+      ["Role Blueprints", BLUEPRINT_HOME],
+      ["Role Blueprint Match", "/manager/job-blueprint"],
+      ["Candidates", "/vertical/job-blueprint/candidates"],
+      ["Hiring interview", "/manager/interview-live"],
+      ["Own-questions interview", "/manager/interview-studio"],
+      ["Prepare questions", "/manager/interview-prep"],
+      ["Past interviews", "/manager/interviews"],
+      ["Insights", "/vertical/job-blueprint/analytics"],
+      ["Retain: Knowledge Continuity", KC],
+    ],
+    practitioner: [
+      ["Overview", "/practitioner/talent-studio"],
+      ["Role Blueprints", BLUEPRINT_HOME],
+      ["Role Blueprint Match", "/practitioner/job-blueprint"],
+      ["Candidates", "/vertical/job-blueprint/candidates"],
+      ["Hiring interview", "/practitioner/interview-live"],
+      ["Own-questions interview", "/practitioner/interview-studio"],
+      ["Prepare questions", "/practitioner/interview-prep"],
+      ["Insights", "/vertical/job-blueprint/analytics"],
+      ["Retain: Knowledge Continuity", KC],
+    ],
+    "super-admin": [
+      ["Overview", "/super-admin/talent-studio"],
+      ["Role Blueprints", BLUEPRINT_HOME],
+      ["Candidates", "/vertical/job-blueprint/candidates"],
+      ["Hiring interview", "/super-admin/interview-live"],
+      ["Own-questions interview", "/super-admin/interview-studio"],
+      ["Insights", "/vertical/job-blueprint/analytics"],
+      ["Retain: Knowledge Continuity", KC],
+    ],
+  }
+  const talentChildren = async (role: UserRole, mode: Mode = "true") =>
+    (await tools(role, mode))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
+
+  it("the stage order is the lifecycle, with Retain last", () => {
+    // TS-4a ("Team fit", not built) goes between insights and retain.
+    expect([...TALENT_STUDIO_STAGE_ORDER]).toEqual(["overview", "roles", "candidates", "interviews", "insights", "retain"])
+  })
+
+  it.each(TOOL_ROLES)("%s: the rows are exactly the lifecycle order, whatever the entitlements", async (role) => {
+    for (const list of Object.values(ENTITLEMENTS)) {
+      mockEntitled = list
+      const children = await talentChildren(role)
+      expect(children.map((c) => [c.label, c.to])).toEqual(ORDER[role])
+    }
+  })
+
+  it.each(TOOL_ROLES)("%s: there is no Team fit row (TS-4a is not built)", async (role) => {
+    const labels = (await talentChildren(role)).map((c) => c.label.toLowerCase())
+    expect(labels.length).toBeGreaterThan(0)
+    expect(labels.filter((l) => l.includes("team fit"))).toEqual([])
+  })
+
+  it.each(TOOL_ROLES)("%s: Candidates and Insights carry the Role Blueprints lock and reason", async (role) => {
+    for (const [ent, list] of Object.entries(ENTITLEMENTS)) {
+      mockEntitled = list
+      const children = await talentChildren(role)
+      const home = children.find((c) => c.to === BLUEPRINT_HOME)
+      expect(home).toBeDefined()
+      for (const to of TS2_BLUEPRINT_PAGES) {
+        const row = children.find((c) => c.to === to)
+        expect({ ent, to, disabled: !!row?.disabled, reason: row?.disabledReason }).toEqual({
+          ent,
+          to,
+          disabled: !!home?.disabled,
+          reason: home?.disabledReason,
+        })
+      }
+      // The control: with every vertical entitled the rows are live, with none they are not.
+      if (ent === "all") expect(home?.disabled).toBeFalsy()
+      if (ent === "none") expect(home?.disabled).toBe(true)
+    }
+  })
+
+  it.each(TOOL_ROLES)("%s: every row the role can open is a route that exists", async (role) => {
+    const routesSource = readFileSync(join(process.cwd(), "src/routes.tsx"), "utf8")
+    let checked = 0
+    for (const [, to] of ORDER[role]) {
+      if (to.startsWith("/vertical/job-blueprint/")) {
+        const child = to.replace("/vertical/job-blueprint/", "")
+        expect({ to, routed: routesSource.includes(`{ path: "${child}", element`) }).toEqual({ to, routed: true })
+      } else if (to.startsWith("/vertical/")) {
+        expect(to).toBe(KC)
+      } else {
+        // Role-prefixed: ProtectedRoute must let this role in, and the path must be routed.
+        expect({ to, opens: hasAccess(role, to) }).toEqual({ to, opens: true })
+        expect(to.startsWith(`/${role}/`)).toBe(true)
+        expect({ to, routed: routesSource.includes(`path: "${to}"`) }).toEqual({ to, routed: true })
+      }
+      checked++
+    }
+    expect(checked).toBe(ORDER[role].length)
+  })
+
+  it.each(ROLES)("%s: with the switch off there is no Talent Studio group and no Overview row", async (role) => {
+    for (const mode of OFF_MODES) {
+      const section = await tools(role, mode)
+      const everyRow = (section?.items ?? []).flatMap((i) => [i, ...(i.children ?? [])])
+      expect(everyRow.filter((i) => i.label === TALENT_STUDIO_LABEL)).toEqual([])
+      expect(everyRow.filter((i) => i.to.endsWith("/talent-studio"))).toEqual([])
+      expect(everyRow.filter((i) => i.label.startsWith("Retain"))).toEqual([])
+    }
+  })
+
+  it("each new label has a menu translation in en, es, fr, pt, it, pl and cs", () => {
+    const labels = ["Overview", "Insights", "Retain: Knowledge Continuity"]
+    const read = (lang: string) =>
+      JSON.parse(readFileSync(join(process.cwd(), `public/locales/${lang}/shellUi.json`), "utf8")) as {
+        nav: { items: Record<string, string> }
+      }
+    const en = read("en").nav.items
+    for (const label of labels) {
+      const key = navLabelKey("items", label).replace("nav.items.", "")
+      expect({ key, en: en[key] }).toEqual({ key, en: label })
+      for (const lang of ["es", "fr", "pt", "it", "pl", "cs"]) {
+        const value = read(lang).nav.items[key]
+        expect({ lang, key, present: typeof value === "string" && value.length > 0 }).toEqual({ lang, key, present: true })
+        expect({ lang, key, sameAsEnglish: value === label }).toEqual({ lang, key, sameAsEnglish: false })
+      }
+    }
+    // The product name inside the Retain label stays as it is in every language.
+    for (const lang of ["es", "fr", "pt", "it", "pl", "cs"]) {
+      expect(read(lang).nav.items.Retain_Knowledge_Continuity).toContain("Knowledge Continuity")
     }
   })
 })

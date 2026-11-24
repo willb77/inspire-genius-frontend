@@ -154,7 +154,10 @@
       "Schedule": "Calendario",
       "Scholarships": "Becas",
       "Character_Lab": "Character Lab",
-      "Role_Blueprint_Match": "Role Blueprint Match"
+      "Role_Blueprint_Match": "Role Blueprint Match",
+      "Overview": "Resumen",
+      "Insights": "Análisis",
+      "Retain_Knowledge_Continuity": "Retener: Knowledge Continuity"
     },
     "sections": {
       "AI_coaches": "Coaches de IA",
@@ -558,5 +561,30 @@
   "ecosystemBanner": {
     "disabled": "El ecosistema de agentes está desactivado temporalmente. El chat funciona con el respaldo monolítico.",
     "unreachable": "No se puede acceder al ecosistema de agentes. El chat funciona con el respaldo monolítico."
+  },
+  "talentStudio": {
+    "intro": "Encuentra, entrevista y conserva a las personas de las que depende tu equipo. Cada paso abre una página que ya tienes.",
+    "stages": {
+      "roles": {
+        "title": "Puestos",
+        "hint": "Describe el puesto y lo que requiere."
+      },
+      "candidates": {
+        "title": "Candidatos",
+        "hint": "Añade candidatos y mira cómo encajan con el puesto."
+      },
+      "interviews": {
+        "title": "Entrevistas",
+        "hint": "Prepara, realiza y revisa entrevistas."
+      },
+      "insights": {
+        "title": "Análisis",
+        "hint": "Mira cómo va la contratación en tus puestos."
+      },
+      "retain": {
+        "title": "Retener",
+        "hint": "Conserva lo que saben tus personas con más experiencia."
+      }
+    }
   }
 }

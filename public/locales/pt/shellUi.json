@@ -251,7 +251,10 @@
       "Who_I_am": "Quem eu sou",
       "Why_the_AI_answered": "Por que a IA respondeu",
       "Character_Lab": "Character Lab",
-      "Role_Blueprint_Match": "Role Blueprint Match"
+      "Role_Blueprint_Match": "Role Blueprint Match",
+      "Overview": "Visão geral",
+      "Insights": "Análises",
+      "Retain_Knowledge_Continuity": "Reter: Knowledge Continuity"
     },
     "sections": {
       "AI_coaches": "Coaches de IA",
@@ -558,5 +561,30 @@
     "ariaLabel": "Regras da senha",
     "done": " — concluído",
     "needed": " — ainda necessário"
+  },
+  "talentStudio": {
+    "intro": "Encontre, entreviste e mantenha as pessoas de quem sua equipe depende. Cada etapa abre uma página que você já tem.",
+    "stages": {
+      "roles": {
+        "title": "Cargos",
+        "hint": "Descreva o cargo e o que ele exige."
+      },
+      "candidates": {
+        "title": "Candidatos",
+        "hint": "Adicione candidatos e veja como eles combinam com o cargo."
+      },
+      "interviews": {
+        "title": "Entrevistas",
+        "hint": "Prepare, conduza e revise entrevistas."
+      },
+      "insights": {
+        "title": "Análises",
+        "hint": "Veja como vai a contratação nos seus cargos."
+      },
+      "retain": {
+        "title": "Reter",
+        "hint": "Mantenha o que suas pessoas mais experientes sabem."
+      }
+    }
   }
 }

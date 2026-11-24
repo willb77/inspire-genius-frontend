@@ -302,7 +302,10 @@
       "Users": "Users",
       "What_it_pays": "What it pays",
       "Who_I_am": "Who I am",
-      "Why_the_AI_answered": "Why the AI answered"
+      "Why_the_AI_answered": "Why the AI answered",
+      "Overview": "Overview",
+      "Insights": "Insights",
+      "Retain_Knowledge_Continuity": "Retain: Knowledge Continuity"
     },
     "sections": {
       "AI_coaches": "AI coaches",
@@ -558,5 +561,30 @@
     "close": "Close voice help",
     "open": "Open voice help",
     "panelTitle": "Voice Help"
+  },
+  "talentStudio": {
+    "intro": "Find, interview and keep the people your team depends on. Each step opens a page you already have.",
+    "stages": {
+      "roles": {
+        "title": "Roles",
+        "hint": "Describe the role and what it asks for."
+      },
+      "candidates": {
+        "title": "Candidates",
+        "hint": "Add candidates and see how they match the role."
+      },
+      "interviews": {
+        "title": "Interviews",
+        "hint": "Prepare, run and review interviews."
+      },
+      "insights": {
+        "title": "Insights",
+        "hint": "See how hiring is going across your roles."
+      },
+      "retain": {
+        "title": "Retain",
+        "hint": "Keep what your experienced people know."
+      }
+    }
   }
 }

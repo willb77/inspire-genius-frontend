@@ -162,6 +162,8 @@ const WorkspaceInterviewLive = React.lazy(() => import("@/pages/workspace/Interv
 // Interview Studio — custom / topic-generated scored interview.
 const WorkspaceInterviewStudio = React.lazy(() => import("@/pages/workspace/InterviewStudioPage"));
 const SuperAdminInterviewStudio = React.lazy(() => import("@/pages/super-admin/InterviewStudioPage"));
+const WorkspaceTalentStudioOverview = React.lazy(() => import("@/pages/workspace/TalentStudioOverviewPage"));
+const SuperAdminTalentStudioOverview = React.lazy(() => import("@/pages/super-admin/TalentStudioOverviewPage"));
 const SuperAdminInterviewLive = React.lazy(() => import("@/pages/super-admin/InterviewLivePage"));
 // Character Lab for the coach roles — same body as the super-admin page, minus CSV.
 const WorkspaceCharacterLab = React.lazy(() => import("@/pages/workspace/CharacterLabPage"));
@@ -634,6 +636,8 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/broadcast-alert", element: withSuspense(<BroadcastAlert />) },
       { path: "/super-admin/interview-studio", element: withSuspense(<SuperAdminInterviewStudio />) },
       { path: "/super-admin/interview-live", element: withSuspense(<SuperAdminInterviewLive />) },
+      // TS-2 — Talent Studio Overview: links to the stages of the group, no data.
+      { path: "/super-admin/talent-studio", element: withSuspense(<SuperAdminTalentStudioOverview />) },
       // Combined Plan §A.E3.4 — document research (Sage)
       { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
       // Saved-research workspace browser — Q + A pairs from POST /v1/tasks/results
@@ -721,6 +725,8 @@ export const routes: RouteObject[] = [
       // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
       { path: "/manager/interview-live", element: withSuspense(<WorkspaceInterviewLive audience="manager" />) },
       { path: "/manager/interview-studio", element: withSuspense(<WorkspaceInterviewStudio audience="manager" />) },
+      // TS-2 — Talent Studio Overview: links to the stages of the group, no data.
+      { path: "/manager/talent-studio", element: withSuspense(<WorkspaceTalentStudioOverview audience="manager" />) },
       { path: "/manager/character-lab", element: withSuspense(<WorkspaceCharacterLab audience="manager" />) },
       { path: "/manager/team-composition", element: withSuspense(<WorkspaceTeamComposition audience="manager" />) },
       // Team Development Studio (roster + per-member workspace)
@@ -791,6 +797,7 @@ export const routes: RouteObject[] = [
       // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
       { path: "/practitioner/interview-live", element: withSuspense(<WorkspaceInterviewLive audience="practitioner" />) },
       { path: "/practitioner/interview-studio", element: withSuspense(<WorkspaceInterviewStudio audience="practitioner" />) },
+      { path: "/practitioner/talent-studio", element: withSuspense(<WorkspaceTalentStudioOverview audience="practitioner" />) },
       { path: "/practitioner/character-lab", element: withSuspense(<WorkspaceCharacterLab audience="practitioner" />) },
       { path: "/practitioner/team-composition", element: withSuspense(<WorkspaceTeamComposition audience="practitioner" />) },
 

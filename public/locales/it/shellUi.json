@@ -131,7 +131,10 @@
       "Financial_Profile": "Profilo finanziario",
       "Fit_a_JD": "Valuta una JD",
       "Character_Lab": "Character Lab",
-      "Role_Blueprint_Match": "Role Blueprint Match"
+      "Role_Blueprint_Match": "Role Blueprint Match",
+      "Overview": "Panoramica",
+      "Insights": "Analisi",
+      "Retain_Knowledge_Continuity": "Trattenere: Knowledge Continuity"
     },
     "sections": {
       "AI_coaches": "Coach IA",
@@ -558,5 +561,30 @@
     "save": "Salva",
     "title": "Altre valutazioni",
     "scoreLabel": "{{label}} (0–100)"
+  },
+  "talentStudio": {
+    "intro": "Trova, incontra e trattieni le persone da cui dipende il tuo team. Ogni passaggio apre una pagina che hai già.",
+    "stages": {
+      "roles": {
+        "title": "Ruoli",
+        "hint": "Descrivi il ruolo e ciò che richiede."
+      },
+      "candidates": {
+        "title": "Candidati",
+        "hint": "Aggiungi candidati e guarda come corrispondono al ruolo."
+      },
+      "interviews": {
+        "title": "Colloqui",
+        "hint": "Prepara, conduci e rivedi i colloqui."
+      },
+      "insights": {
+        "title": "Analisi",
+        "hint": "Guarda come procede la selezione per i tuoi ruoli."
+      },
+      "retain": {
+        "title": "Trattenere",
+        "hint": "Conserva ciò che sanno le tue persone più esperte."
+      }
+    }
   }
 }

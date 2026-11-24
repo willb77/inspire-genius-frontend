@@ -178,7 +178,10 @@
       "Who_I_am": "Qui je suis",
       "Why_the_AI_answered": "Pourquoi l'IA a répondu ainsi",
       "Character_Lab": "Character Lab",
-      "Role_Blueprint_Match": "Correspondance Role Blueprint"
+      "Role_Blueprint_Match": "Correspondance Role Blueprint",
+      "Overview": "Vue d'ensemble",
+      "Insights": "Analyses",
+      "Retain_Knowledge_Continuity": "Fidéliser : Knowledge Continuity"
     },
     "sections": {
       "AI_coaches": "Coachs IA",
@@ -558,5 +561,30 @@
     "ariaLabel": "Règles du mot de passe",
     "done": " — fait",
     "needed": " — encore requis"
+  },
+  "talentStudio": {
+    "intro": "Trouvez, rencontrez et gardez les personnes dont votre équipe dépend. Chaque étape ouvre une page que vous avez déjà.",
+    "stages": {
+      "roles": {
+        "title": "Postes",
+        "hint": "Décrivez le poste et ce qu’il demande."
+      },
+      "candidates": {
+        "title": "Candidats",
+        "hint": "Ajoutez des candidats et voyez comment ils correspondent au poste."
+      },
+      "interviews": {
+        "title": "Entretiens",
+        "hint": "Préparez, menez et relisez les entretiens."
+      },
+      "insights": {
+        "title": "Analyses",
+        "hint": "Voyez comment avance le recrutement pour vos postes."
+      },
+      "retain": {
+        "title": "Fidéliser",
+        "hint": "Gardez ce que savent vos personnes les plus expérimentées."
+      }
+    }
   }
 }
