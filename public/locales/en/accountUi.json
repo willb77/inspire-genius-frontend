@@ -53,7 +53,7 @@
     "back": "Back"
   },
   "minorGate": {
-    "fallbackMessage": "This part of Inspires Genius isn't available on your account yet. Nothing is wrong with your account. If you have questions, ask your school contact."
+    "fallbackMessage": "This part of InspiresGenius isn't available on your account yet. Nothing is wrong with your account. If you have questions, ask your school contact."
   },
   "minorGateNotice": {
     "notAvailableYet": "Not available yet",
@@ -240,7 +240,7 @@
     "permanentlyDeleteAllYourPersonalData": "Permanently delete all your personal data from our platform. This includes PRISM results, conversations, documents, and coaching insights. This action cannot be undone.",
     "delete": "Delete",
     "areYouAbsolutelySure": "Are you absolutely sure?",
-    "thisWillPermanentlyDeleteAllYour": "This will permanently delete all your data from Inspire Genius, including:",
+    "thisWillPermanentlyDeleteAllYour": "This will permanently delete all your data from InspiresGenius, including:",
     "prismPersonalityAssessmentResults": "PRISM personality assessment results",
     "allConversationHistoryAndSessionSummaries": "All conversation history and session summaries",
     "personalInsightsAndCoachingMilestones": "Personal insights and coaching milestones",
@@ -348,7 +348,7 @@
     "stopDictating": "Stop dictating",
     "dictateAMessage": "Dictate a message",
     "listening": "Listening…",
-    "askAboutInspireGenius": "Ask about Inspire Genius…",
+    "askAboutInspireGenius": "Ask about InspiresGenius…",
     "message": "Message",
     "sendMessage": "Send message"
   },

@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 /**
- * Push delivery for the Inspire Genius service worker.
+ * Push delivery for the InspiresGenius service worker.
  *
  * This file is pulled into the Workbox-generated worker via
  * `workbox.importScripts` in vite.config.ts. It is a SEPARATE file rather
@@ -30,7 +30,7 @@ self.addEventListener("push", (event) => {
     }
   }
 
-  const title = payload.title || "Inspire Genius";
+  const title = payload.title || "InspiresGenius";
   const options = {
     body: payload.body || "You have a new notification.",
     icon: payload.icon || "/icons/icon-192x192.png",

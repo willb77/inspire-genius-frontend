@@ -65,7 +65,7 @@ function waitForRender(iframe: HTMLIFrameElement): Promise<void> {
 }
 
 /** Per-page footer stamping. Defaults reproduce the original transcript footer
- * (a right-aligned "Inspires Genius · Executive Assessment · {page}" from page 2,
+ * (a right-aligned "InspiresGenius · Executive Assessment · {page}" from page 2,
  * cover excluded). Honor reports pass `footerLeft` for the §4 confidentiality
  * notice, which is stamped bottom-left on EVERY page including the cover. */
 export type PdfFooterOptions = {
@@ -80,7 +80,7 @@ export type PdfFooterOptions = {
 };
 
 const DEFAULT_FOOTER: Required<Pick<PdfFooterOptions, "footerRight" | "footerRightFromPage">> = {
-  footerRight: "Inspires Genius  ·  Executive Assessment  ·  {page}",
+  footerRight: "InspiresGenius  ·  Executive Assessment  ·  {page}",
   footerRightFromPage: 2,
 };
 

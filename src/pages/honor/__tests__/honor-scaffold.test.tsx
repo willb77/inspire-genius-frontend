@@ -99,7 +99,7 @@ describe("Honor Foundation vertical scaffold (Phase 0)", () => {
 
       // THF co-brand wordmark in the shell topbar.
       expect(screen.getByText("The Honor Foundation")).toBeInTheDocument()
-      expect(screen.getByText("Inspires Genius")).toBeInTheDocument()
+      expect(screen.getByText("InspiresGenius")).toBeInTheDocument()
       // The reskin wrapper class scopes the navy/orange tokens.
       expect(container.querySelector(".vertical-honor")).not.toBeNull()
       // Dashboard greeting renders inside the shell.

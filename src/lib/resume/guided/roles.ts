@@ -52,7 +52,7 @@ export function rolesForRequest(roles: RoleDraft[]): AddedRole[] {
     .slice(0, ROLES_MAX)
 }
 
-/** One line for the list: "Founder, Inspires Genius · 2019 – Present". */
+/** One line for the list: "Founder, InspiresGenius · 2019 – Present". */
 export function roleLine(r: RoleDraft): string {
   const dates = [r.start.trim(), r.present ? "Present" : r.end.trim()].filter(Boolean).join(" – ")
   return `${r.title.trim()}, ${r.organization.trim()}${dates ? ` · ${dates}` : ""}`

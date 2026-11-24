@@ -46,8 +46,8 @@ export const CONTEXT_LABELS: Record<IntakeContext, string> = {
 }
 
 export const CONSENT_WORDING: Record<IntakeConsentPurpose, string> = {
-  webinar_email: "Email me when an Inspires Genius webinar session is scheduled.",
-  mailing_list: "Add me to the Inspires Genius mailing list for occasional news.",
+  webinar_email: "Email me when an InspiresGenius webinar session is scheduled.",
+  mailing_list: "Add me to the InspiresGenius mailing list for occasional news.",
 }
 
 const ORG_REQUIRED: ReadonlySet<IntakeContext> = new Set<IntakeContext>(["company", "education"])
@@ -98,7 +98,7 @@ export function makeJoinSchema(t: JoinT) {
       role_other: optional("roleOther", "Role", 200),
       prism_accredited: choice(INTAKE_PRISM_ACCREDITED, msg("prism.choose", "Tell us whether you are PRISM accredited")),
       site_id: optional("siteId", "PRISM site ID", 100),
-      context: choice(INTAKE_CONTEXTS, msg("context.choose", "Choose where you would use Inspires Genius")),
+      context: choice(INTAKE_CONTEXTS, msg("context.choose", "Choose where you would use InspiresGenius")),
       context_other: optional("contextOther", "Setting", 200),
       region: required("region", "Region", 100),
       country: required("country", "Country", 100),

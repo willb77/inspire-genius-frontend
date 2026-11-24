@@ -70,7 +70,7 @@ describe("the three share states", () => {
     goalsState.data = { goals: [], coverage: [], goalsNotShared: true, goalsNoAccount: true }
     renderAt("/manager/development/m1")
     expect(screen.getByTestId("goals-state-no-account")).toBeInTheDocument()
-    expect(screen.getByText(/has no Inspires Genius account/)).toBeInTheDocument()
+    expect(screen.getByText(/has no InspiresGenius account/)).toBeInTheDocument()
     expect(screen.queryByTestId("goals-state-not-shared")).not.toBeInTheDocument()
     expect(screen.queryByRole("button")).not.toBeInTheDocument()
   })

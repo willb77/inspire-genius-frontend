@@ -45,7 +45,7 @@ const grants = (t: TFunction): Grant[] => [
     ),
     note: t(
       "settingsCalendarNote",
-      "Off by default. Lumen can't see your work calendar — only bookings made in Inspire Genius."
+      "Off by default. Lumen can't see your work calendar — only bookings made in InspiresGenius."
     ),
   },
   {

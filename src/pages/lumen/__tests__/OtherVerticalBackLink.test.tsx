@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  *
  * Scope guard for the 2026-11-23 Lumen change: "Back to Home" is Lumen-only.
- * Honor's shell keeps its own "Back to Inspire Genius" control, unchanged.
+ * Honor's shell keeps its own "Back to InspiresGenius" control, unchanged.
  */
 import { render, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
@@ -19,12 +19,12 @@ jest.mock("@/assets/honor/thf-flag.jpeg", () => "flag.jpeg", { virtual: true })
 
 import HonorShell from "../../honor/HonorShell"
 
-test("Honor still says Back to Inspire Genius", () => {
+test("Honor still says Back to InspiresGenius", () => {
   render(
     <MemoryRouter>
       <HonorShell />
     </MemoryRouter>,
   )
-  expect(screen.getByRole("button", { name: /Back to Inspire Genius/ })).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: /Back to InspiresGenius/ })).toBeInTheDocument()
   expect(screen.queryByRole("button", { name: /Back to Home/ })).toBeNull()
 })

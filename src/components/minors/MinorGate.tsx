@@ -23,7 +23,7 @@ type MinorGateProps = {
 export default function MinorGate({ surface, children }: MinorGateProps) {
   const { t } = useTranslation("accountUi")
   /** Shown only if the server refused without a message of its own. */
-  const fallbackMessage = t("minorGate.fallbackMessage", { defaultValue: "This part of Inspires Genius isn't available on your account yet. Nothing is wrong with your account. If you have questions, ask your school contact." })
+  const fallbackMessage = t("minorGate.fallbackMessage", { defaultValue: "This part of InspiresGenius isn't available on your account yet. Nothing is wrong with your account. If you have questions, ask your school contact." })
   const { data } = useMinorConsentStatus()
   const decision = data?.enabled === true ? data.surfaces?.[surface] : undefined
   if (!decision || decision.allowed !== false) return <>{children}</>

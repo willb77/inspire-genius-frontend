@@ -64,7 +64,7 @@ function InviteToAddCard({ framework, onInvite }: { framework: string; onInvite?
         <div className={cn("text-sm font-medium", sk.text700)}>
           {onInvite ? t("behavioralProfilePanel.inviteToAdd", { defaultValue: "Invite to add {{framework}}", framework }) : t("behavioralProfilePanel.notOnFile", { defaultValue: "{{framework}} not on file", framework })}
         </div>
-        <p className={cn("text-xs", sk.text500)}>{t("behavioralProfilePanel.notYetAssessedThisOverlay", { defaultValue: "Not yet assessed. This overlay is missing, which lowers reconciliation confidence." })}{onInvite ? null : t("behavioralProfilePanel.inspireGeniusCanTSend", { defaultValue: " Inspire Genius can't send an invite for this assessment yet." })}
+        <p className={cn("text-xs", sk.text500)}>{t("behavioralProfilePanel.notYetAssessedThisOverlay", { defaultValue: "Not yet assessed. This overlay is missing, which lowers reconciliation confidence." })}{onInvite ? null : t("behavioralProfilePanel.inspireGeniusCanTSend", { defaultValue: " InspiresGenius can't send an invite for this assessment yet." })}
         </p>
         {onInvite ? (
           <Button size="sm" variant="outline" onClick={onInvite}>{t("behavioralProfilePanel.sendInvite", { defaultValue: "Send invite" })}</Button>
@@ -137,7 +137,7 @@ export function BehavioralProfilePanel({
               // :caller` — a synthetic id never equals a real sub. Offering
               // the ask here would report "Asked. They decide" for a request
               // no human can ever see.
-              <p className={cn("text-sm", sk.text500)} data-testid="prism-state-no-account">{t("behavioralProfilePanel.hasNoInspiresGeniusAccount", { defaultValue: "{{who}} has no Inspires Genius account, so there is nobody to ask. A profile is shared by the person it describes.", who })}</p>
+              <p className={cn("text-sm", sk.text500)} data-testid="prism-state-no-account">{t("behavioralProfilePanel.hasNoInspiresGeniusAccount", { defaultValue: "{{who}} has no InspiresGenius account, so there is nobody to ask. A profile is shared by the person it describes.", who })}</p>
             ) : requestSent ? (
               <p className={cn("text-sm", sk.text500)} data-testid="prism-request-sent">{t("behavioralProfilePanel.askedDecidesAndDecliningCarries", { defaultValue: "Asked. {{who}} decides, and declining carries no consequence for them.", who })}</p>
             ) : onRequestAccess ? (

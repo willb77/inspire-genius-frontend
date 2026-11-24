@@ -32,7 +32,7 @@ const mockAgents = [
 jest.mock("@/hooks/trainer/useTrainer", () => ({
   useTrainerAgents: () => ({ data: { data: mockAgents } }),
   useEcosystems: () => ({
-    data: { data: [{ ecosystem_id: "inspire-genius", ecosystem_name: "Inspire Genius" }] },
+    data: { data: [{ ecosystem_id: "inspire-genius", ecosystem_name: "InspiresGenius" }] },
   }),
 }));
 

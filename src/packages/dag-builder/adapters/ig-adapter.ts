@@ -1,5 +1,5 @@
 /**
- * Inspire Genius ecosystem adapter.
+ * InspiresGenius ecosystem adapter.
  *
  * Serializes to/from the IG backend's TemplateCreateIn/TemplateOut format
  * at services/agent-engine/app/routes/templates.py.
@@ -16,7 +16,7 @@ export const IG_AGENTS: AgentDefinition[] = [
   {
     id: "Meridian", name: "Meridian", displayName: "Meridian",
     description: "Unified persona — synthesizes all agent outputs",
-    fullDescription: "Meridian is the primary AI coaching persona and the unified entry point for the Inspire Genius platform. When multiple specialist agents contribute to a response, Meridian weaves their outputs into a single, coherent, warm, and natural reply. Users experience Meridian as their personal coach — they never see the individual agents behind the scenes. Meridian speaks in an encouraging, conversational US English voice and organizes information logically, leading with the most important insights.",
+    fullDescription: "Meridian is the primary AI coaching persona and the unified entry point for the InspiresGenius platform. When multiple specialist agents contribute to a response, Meridian weaves their outputs into a single, coherent, warm, and natural reply. Users experience Meridian as their personal coach — they never see the individual agents behind the scenes. Meridian speaks in an encouraging, conversational US English voice and organizes information logically, leading with the most important insights.",
     capabilities: ["Multi-agent output synthesis", "Conversational coaching dialogue", "Goal setting and progress tracking", "Reflective questioning", "Session continuity across interactions", "Personality-aware communication style"],
     modelTier: "claude-sonnet", domain: "Personal Development", color: "#6366f1",
   },

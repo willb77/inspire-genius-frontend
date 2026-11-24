@@ -87,7 +87,7 @@ export default function OrganizationHouse() {
 
   return (
     <CompanyAdminLayout>
-      <PageHeader title={t("orgHouseTitle", { defaultValue: "Organization" })} description={t("orgHouseDescription", { defaultValue: "Your organization's departments, as recorded in Inspire Genius." })} />
+      <PageHeader title={t("orgHouseTitle", { defaultValue: "Organization" })} description={t("orgHouseDescription", { defaultValue: "Your organization's departments, as recorded in InspiresGenius." })} />
       {body}
     </CompanyAdminLayout>
   )

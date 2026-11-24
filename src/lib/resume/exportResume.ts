@@ -21,7 +21,7 @@ export async function renderResumePdf(
   name: string,
 ): Promise<{ fileName: string; blob: Blob }> {
   const blob = await renderHtmlToPdf(buildResumeHtml(resume, name), {
-    footerRight: "Inspires Genius  ·  Résumé  ·  {page}",
+    footerRight: "InspiresGenius  ·  Résumé  ·  {page}",
     footerRightFromPage: 1,
   })
   return { fileName: `${resumeFileSlug(name)}.pdf`, blob }

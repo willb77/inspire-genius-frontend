@@ -6,7 +6,7 @@ import { Fragment, type ReactNode } from "react"
  * Deliberately NOT a general Markdown library. It builds React elements for
  * exactly what the admin editor can produce — paragraphs, **bold**, *italic*,
  * bullet and numbered lists, and links — and shows everything else as escaped
- * text. There is no HTML path at all: raw HTML in the source (`<img onerror>`,
+ * text. No asterisk is ever displayed. There is no HTML path at all: raw HTML in the source (`<img onerror>`,
  * `<script>`) is just characters on the page. Links are limited to http(s) and
  * mailto. A description written before the editor existed is plain text, which
  * is valid Markdown here, and renders as it did (line breaks kept).
@@ -20,6 +20,9 @@ const NUMBERED = /^\d+[.)]\s+/
 const INLINE =
   /\\([\\`*_{}[\]()#+\-.!>|~])|\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+?)\*\*|__([^_]+?)__|\*([^*\s][^*]*?)\*|_([^_\s][^_]*?)_/
 
+/** No asterisk is ever shown on the public page, whether a stray mark, an unmatched pair or an escaped one. */
+const noStars = (text: string): string => text.replace(/\*/g, "")
+
 function inline(text: string, key = "i"): ReactNode[] {
   const out: ReactNode[] = []
   let rest = text
@@ -27,12 +30,12 @@ function inline(text: string, key = "i"): ReactNode[] {
   while (rest.length > 0) {
     const m = INLINE.exec(rest)
     if (!m) {
-      out.push(rest)
+      out.push(noStars(rest))
       break
     }
-    if (m.index > 0) out.push(rest.slice(0, m.index))
+    if (m.index > 0) out.push(noStars(rest.slice(0, m.index)))
     const k = `${key}-${n++}`
-    if (m[1] !== undefined) out.push(m[1])
+    if (m[1] !== undefined) out.push(noStars(m[1]))
     else if (m[2] !== undefined) {
       out.push(
         SAFE_HREF.test(m[3]) ? (

@@ -78,7 +78,7 @@ describe("AuthLayout with a brandPanel (/join)", () => {
     expect(wall).toHaveClass("lg:sticky", "lg:top-0", "lg:h-screen", "overflow-y-auto", "justify-start")
     expect(wall).toHaveClass("hidden", "lg:flex")
     expect(wall).not.toHaveClass("justify-end")
-    expect(screen.getAllByAltText("Inspire Genius").length).toBeGreaterThan(0)
+    expect(screen.getAllByAltText("InspiresGenius").length).toBeGreaterThan(0)
   })
 })
 

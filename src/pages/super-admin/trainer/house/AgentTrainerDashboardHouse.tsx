@@ -120,7 +120,7 @@ export default function AgentTrainerDashboardHouse() {
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="inspire-genius">Inspire Genius</SelectItem>
+                  <SelectItem value="inspire-genius">InspiresGenius</SelectItem>
                 )}
               </SelectContent>
             </Select>

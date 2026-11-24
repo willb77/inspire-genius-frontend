@@ -13,11 +13,11 @@ import type { BulkUserRecord, RawUserRecord } from "@/types/bulk-import"
 /**
  * The plain-words notice every Add people panel carries. People recorded from
  * a company-admin import do not get a sign-in account yet: that needs the
- * organization's Inspire Genius contact. Never present the import as access.
+ * organization's InspiresGenius contact. Never present the import as access.
  */
 export const ADD_PEOPLE_NOTICE =
   "People you add here are recorded in your organization, but they cannot sign in yet. " +
-  "Your organization's Inspire Genius contact has to activate their accounts first. " +
+  "Your organization's InspiresGenius contact has to activate their accounts first. " +
   "No email is sent to them from here."
 
 type Step = "upload" | "check" | "result"
@@ -113,7 +113,7 @@ export function AddPeople({ onClose }: AddPeopleProps) {
             Recorded {data.succeeded} of {data.total} {data.total === 1 ? "person" : "people"}.
           </p>
           <p className="text-sm text-muted-foreground">
-            They cannot sign in yet. Ask your organization&apos;s Inspire Genius contact to activate them.
+            They cannot sign in yet. Ask your organization&apos;s InspiresGenius contact to activate them.
           </p>
           {notRecorded.length > 0 && (
             <div>

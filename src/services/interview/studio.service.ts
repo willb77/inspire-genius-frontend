@@ -85,7 +85,7 @@ const PACK_QUESTIONS = "/v1/agents/interview/live/employer-packs"
 /**
  * A curated employer or sector pack, as the catalogue lists it.
  *
- * These questions are written by Inspires Genius in the STYLE of an employer's
+ * These questions are written by InspiresGenius in the STYLE of an employer's
  * OWN publicly published hiring framework. They are not that company's actual
  * questions — `provenance` carries the notice that must travel with them.
  */

@@ -15,9 +15,9 @@ import { ROUTES } from "@/constants/routes"
  * mistake broke every Job-Fit page test when it was tried there.
  *
  * 2026-08-06 (request): collapsed to ONE row. The second row held "Back to
- * Inspire Genius" plus an "or switch to …" list of every other entitled
+ * InspiresGenius" plus an "or switch to …" list of every other entitled
  * vertical — a registry-driven cross-vertical switcher. Both the switcher and
- * the row are gone; "Back to Inspire Genius" moved up beside the Lumen tools,
+ * the row are gone; "Back to InspiresGenius" moved up beside the Lumen tools,
  * where the one navigation people actually use out of here now lives.
  *
  * Nothing became unreachable: the other verticals are in the left sidebar's

@@ -42,7 +42,7 @@ function EmailPreview({
       {/* Header */}
       <div className="rounded-t-lg bg-blue-600 px-6 py-5 text-center">
         <h2 className="text-xl font-bold tracking-wide text-white">
-          Inspire Genius
+          InspiresGenius
         </h2>
         <p className="mt-1 text-xs text-blue-100">AI Coaching Platform</p>
       </div>
@@ -57,7 +57,7 @@ function EmailPreview({
         {/* Platform description */}
         <p className="leading-relaxed text-slate-600">
           You have been invited to join{" "}
-          <span className="font-semibold text-slate-800">Inspire Genius</span>,
+          <span className="font-semibold text-slate-800">InspiresGenius</span>,
           an AI-powered coaching platform designed to help you unlock your
           potential, build self-awareness, and accelerate your personal and
           professional growth.
@@ -78,7 +78,7 @@ function EmailPreview({
         {/* CTA Button */}
         <div className="py-2 text-center">
           <span className="inline-block cursor-default rounded-lg bg-blue-600 px-8 py-3 text-sm font-semibold text-white shadow-md">
-            Join Inspire Genius
+            Join InspiresGenius
           </span>
         </div>
 
@@ -103,7 +103,7 @@ function EmailPreview({
 
       {/* Footer */}
       <div className="rounded-b-lg border-t border-slate-100 bg-slate-50 px-6 py-4 text-center text-xs text-slate-400">
-        <p>Inspire Genius &mdash; AI Coaching Platform</p>
+        <p>InspiresGenius &mdash; AI Coaching Platform</p>
         <p className="mt-1">
           This is an automated invitation. Please do not reply directly to this
           email.

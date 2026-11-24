@@ -247,7 +247,7 @@ ${careerRows(report.career_fit_ranked)}`
     : ""
 
   const disclaimer = `
-<div class="disclaimer"><b>Decision ownership.</b> This report provides structured, deterministic input from Inspires Genius for The Honor Foundation. It is designed to inform, not replace, coach judgment. ${esc(report.notes)}</div>`
+<div class="disclaimer"><b>Decision ownership.</b> This report provides structured, deterministic input from InspiresGenius for The Honor Foundation. It is designed to inform, not replace, coach judgment. ${esc(report.notes)}</div>`
 
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">

@@ -7,7 +7,7 @@ import {
 
 const GROUPS: StarterQuestionGroup[] = [
   {
-    category: "New to Inspires Genius",
+    category: "New to InspiresGenius",
     questions: [
       "What's the first thing I should do?",
       "What is a brain map?",
@@ -72,7 +72,7 @@ describe("MeridianEngageCard", () => {
 
     // Dropdown is open by default: category headers + questions are visible.
     expect(screen.getByText("Starter Questions")).toBeInTheDocument()
-    expect(screen.getByText("New to Inspires Genius")).toBeInTheDocument()
+    expect(screen.getByText("New to InspiresGenius")).toBeInTheDocument()
     expect(screen.getByText("Personal & career goals")).toBeInTheDocument()
 
     fireEvent.click(
@@ -93,10 +93,10 @@ describe("MeridianEngageCard", () => {
     )
 
     // Open by default → the toggle collapses it.
-    expect(screen.getByText("New to Inspires Genius")).toBeInTheDocument()
+    expect(screen.getByText("New to InspiresGenius")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: /Starter Questions/ }))
     expect(
-      screen.queryByText("New to Inspires Genius"),
+      screen.queryByText("New to InspiresGenius"),
     ).not.toBeInTheDocument()
   })
 

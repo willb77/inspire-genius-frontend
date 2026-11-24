@@ -15,10 +15,10 @@ function escAttr(s: string): string {
 function coverBlock(meta: TranscriptMeta): string {
   return `
 <div class="cover">
-  <div class="brand">Inspires Genius &nbsp;|&nbsp; Executive Assessment</div>
+  <div class="brand">InspiresGenius &nbsp;|&nbsp; Executive Assessment</div>
   <div class="variant">Conversation Log</div>
   <h1>${escAttr(meta.sessionSubject)}</h1>
-  <div class="sub">Full transcript, in original order, in the Inspires Genius house style.</div>
+  <div class="sub">Full transcript, in original order, in the InspiresGenius house style.</div>
   <div class="meta">
     <div>Participant<b>${escAttr(meta.userLabel)}</b></div>
     <div>From<b>${escAttr(meta.fromLabel)}</b></div>
@@ -57,7 +57,7 @@ ${coverBlock(meta)}
 <div class="body-page">
   <div class="part-label">Conversation Log</div>
   <h2 class="part">${escAttr(meta.sessionSubject)}</h2>
-  <p class="lead">Full transcript, in original order, in the Inspires Genius house style.</p>
+  <p class="lead">Full transcript, in original order, in the InspiresGenius house style.</p>
   ${sessionMeta}
   ${turnsHtml}
 </div>

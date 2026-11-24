@@ -49,7 +49,7 @@
       "choose": "Tell us whether you are PRISM accredited"
     },
     "context": {
-      "choose": "Choose where you would use Inspires Genius"
+      "choose": "Choose where you would use InspiresGenius"
     }
   },
   "brand": {
@@ -65,13 +65,13 @@
     },
     "nextStep": {
       "join": "No account and nothing to install. Tick the first box to hear when the next webinar is scheduled.",
-      "events": "No account and nothing to install. Register your interest to hear when the next event is announced."
+      "events": "Register your interest. Join the community to contribute your thoughts and stay current on developments, news and events."
     },
     "eyebrow": "Register your interest",
     "headingLead": "Support every client",
     "headingAccent": "between sessions",
-    "intro": "Inspires Genius gives practitioners an AI mentoring partner that works alongside them, so clients keep making progress even after the session ends.",
-    "offersAria": "What Inspires Genius offers",
+    "intro": "InspiresGenius gives practitioners an AI mentoring partner that works alongside them, so clients keep making progress even after the session ends.",
+    "offersAria": "What InspiresGenius offers",
     "practitioners": {
       "title": "Built for practitioners",
       "body": "Invite your clients, follow their progress, and give each one an AI mentor that is there between your sessions."
@@ -126,14 +126,14 @@
     "other": "Other"
   },
   "consent": {
-    "webinar_email": "Email me when an Inspires Genius webinar session is scheduled.",
-    "mailing_list": "Add me to the Inspires Genius mailing list for occasional news.",
+    "webinar_email": "Email me when an InspiresGenius webinar session is scheduled.",
+    "mailing_list": "Add me to the InspiresGenius mailing list for occasional news.",
     "legend": "Keeping in touch (optional)"
   },
   "chooseOne": "Choose one",
   "success": {
     "title": "Thank you",
-    "body": "We've received your details. Thank you for your interest in Inspires Genius."
+    "body": "We've received your details. Thank you for your interest in InspiresGenius."
   },
   "notOpen": {
     "title": "Registration isn't open yet",
@@ -152,7 +152,7 @@
     "roleOther": "Your role",
     "prism": "Are you PRISM accredited?",
     "siteId": "PRISM site ID (optional)",
-    "context": "Where would you use Inspires Genius?",
+    "context": "Where would you use InspiresGenius?",
     "contextOther": "Describe the setting",
     "organisation": "Organisation",
     "organisationOptional": "Organisation (optional)",
@@ -164,7 +164,7 @@
   "submit": "Register your interest",
   "header": {
     "title": "Register your interest",
-    "subtitle": "Inspires Genius is an AI mentoring platform. Leave your details below to register your interest."
+    "subtitle": "InspiresGenius is an AI mentoring platform. Leave your details below to register your interest."
   },
   "seeEvents": "See upcoming events →"
 }

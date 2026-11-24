@@ -172,7 +172,7 @@
   },
   "settingsPrivacyV2": {
     "memoryPrivacy": "Paměť a soukromí",
-    "viewExportOrDeleteTheData": "Zobrazte, exportujte nebo smažte data, která o Vás Inspire Genius uložil. Smazání je trvalé a vztahuje se na všechny čtyři úrovně paměti (pracovní, krátkodobou, dlouhodobou, sémantickou).",
+    "viewExportOrDeleteTheData": "Zobrazte, exportujte nebo smažte data, která o Vás InspiresGenius uložil. Smazání je trvalé a vztahuje se na všechny čtyři úrovně paměti (pracovní, krátkodobou, dlouhodobou, sémantickou).",
     "whatWeveLearnedAboutYou": "Co jsme se o Vás dozvěděli",
     "longTermInsightsExtractedFromYour": "Dlouhodobé poznatky získané z Vašich koučinkových sezení. Odstraňte libovolnou položku, aby byl zapomenut konkrétní údaj, zatímco zbytek paměti zůstane zachován.",
     "couldNotLoadYourMemorySnapshot": "Snímek Vaší paměti se nepodařilo načíst. Zkuste stránku obnovit.",
@@ -207,7 +207,7 @@
   },
   "support": {
     "helpAndSupport": "Nápověda a podpora",
-    "everyRequestYouPostHereIs": "Každý požadavek, který zde odešlete, putuje e-mailem přímo týmu podpory Inspire Genius spolu s Vašimi kontaktními údaji, aby se Vám mohl někdo ozvat přímo.",
+    "everyRequestYouPostHereIs": "Každý požadavek, který zde odešlete, putuje e-mailem přímo týmu podpory InspiresGenius spolu s Vašimi kontaktními údaji, aby se Vám mohl někdo ozvat přímo.",
     "voiceHelp": "Hlasová pomoc",
     "preferToTalkConnectWithOur": "Raději si povídáte? Spojte se s naším hlasovým AI agentem podpory a získejte pomoc v reálném čase.",
     "speakWithSupport": "Promluvit si s podporou",
@@ -337,7 +337,7 @@
   },
   "settingsPrivacy": {
     "memoryPrivacy": "Paměť a soukromí",
-    "viewExportOrDeleteTheData": "Zobrazte, exportujte nebo smažte data, která o Vás Inspire Genius uložil. Smazání je trvalé a týká se všech čtyř úrovní paměti (pracovní, krátkodobé, dlouhodobé, sémantické).",
+    "viewExportOrDeleteTheData": "Zobrazte, exportujte nebo smažte data, která o Vás InspiresGenius uložil. Smazání je trvalé a týká se všech čtyř úrovní paměti (pracovní, krátkodobé, dlouhodobé, sémantické).",
     "whatWeveLearnedAboutYou": "Co jsme se o Vás dozvěděli",
     "longTermInsightsExtractedFromYour": "Dlouhodobé poznatky získané z Vašich koučovacích sezení. Odstraňte kteroukoli položku, aby byla zapomenuta jen tato informace a zbytek paměti zůstal zachován.",
     "couldNotLoadYourMemorySnapshot": "Snímek Vaší paměti se nepodařilo načíst. Zkuste stránku obnovit.",

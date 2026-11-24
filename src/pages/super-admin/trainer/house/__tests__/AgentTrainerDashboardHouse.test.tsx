@@ -14,7 +14,7 @@ const mockCoachesRefetch = jest.fn()
 
 jest.mock("@/hooks/trainer/useTrainer", () => ({
   useTrainerAgents: () => mockState.agents,
-  useEcosystems: () => ({ data: { data: [{ ecosystem_id: "inspire-genius", ecosystem_name: "Inspire Genius" }] } }),
+  useEcosystems: () => ({ data: { data: [{ ecosystem_id: "inspire-genius", ecosystem_name: "InspiresGenius" }] } }),
 }))
 jest.mock("@/hooks/super-admin/coach-management/useCoaches", () => ({
   useCoachesList: () => mockState.coaches,

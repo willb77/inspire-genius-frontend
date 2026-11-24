@@ -48,7 +48,7 @@ export default function PractitionerMeeting() {
               {t("meeting.liveHeadline", { defaultValue: "Live video meeting with screen sharing, powered by LiveKit." })}
             </p>
             <p className="text-[13px] text-[#6b7280] mt-1">
-              {t("meeting.liveBody", { defaultValue: "Meet one-on-one with a client, share your screen, and keep the session on the record — all inside Inspire Genius." })}
+              {t("meeting.liveBody", { defaultValue: "Meet one-on-one with a client, share your screen, and keep the session on the record — all inside InspiresGenius." })}
             </p>
           </div>
         </div>

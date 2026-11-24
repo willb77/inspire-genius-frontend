@@ -123,7 +123,7 @@ const NEVER = [
   "AI-drafted",
   "Target —",
   "Target -",
-  "Inspires Genius",
+  "InspiresGenius",
   "Globex",
   "vendor contracts",
   "forklift training",

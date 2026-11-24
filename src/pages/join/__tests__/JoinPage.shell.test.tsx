@@ -77,7 +77,7 @@ describe.each([
     const value = renderAt(signedIn)
     expect(await screen.findByRole("form", { name: "Register your interest" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 1, name: "Register your interest" })).toBeInTheDocument()
-    expect(screen.getAllByAltText("Inspire Genius").length).toBeGreaterThan(0)
+    expect(screen.getAllByAltText("InspiresGenius").length).toBeGreaterThan(0)
     expect(screen.queryByText("navigated away")).not.toBeInTheDocument()
     expect(lastPath).toBe("/join")
     // Nothing from auth was invoked, and neither shared client was touched.
@@ -124,7 +124,7 @@ describe("brand-wall testimonial", () => {
     expect(screen.queryByText(ROLE)).not.toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 2, name: /support every client between sessions/i })).toBeInTheDocument()
     expect(screen.queryByRole("heading", { level: 2, name: /unlock your/i })).not.toBeInTheDocument()
-    expect(screen.getAllByAltText("Inspire Genius").length).toBeGreaterThan(0)
+    expect(screen.getAllByAltText("InspiresGenius").length).toBeGreaterThan(0)
   })
 
   it("the default AuthLayout (every sign-in page) still renders it", () => {

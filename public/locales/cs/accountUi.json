@@ -120,7 +120,7 @@
     "permanentlyDeleteAllYourPersonalData": "Trvale smažte všechna svá osobní data z naší platformy. Zahrnuje to výsledky PRISM, konverzace, dokumenty a poznatky z koučinku. Tuto akci nelze vrátit zpět.",
     "delete": "Smazat",
     "areYouAbsolutelySure": "Opravdu si jste naprosto jisti?",
-    "thisWillPermanentlyDeleteAllYour": "Tím trvale smažete všechna svá data z Inspire Genius, včetně:",
+    "thisWillPermanentlyDeleteAllYour": "Tím trvale smažete všechna svá data z InspiresGenius, včetně:",
     "prismPersonalityAssessmentResults": "výsledků osobnostního hodnocení PRISM",
     "allConversationHistoryAndSessionSummaries": "celé historie konverzací a shrnutí sezení",
     "personalInsightsAndCoachingMilestones": "osobních poznatků a milníků koučinku",
@@ -278,7 +278,7 @@
     "back": "Zpět"
   },
   "minorGate": {
-    "fallbackMessage": "Tato část Inspires Genius zatím pro váš účet není dostupná. S vaším účtem není nic v nepořádku. Máte-li dotazy, obraťte se na kontaktní osobu ve své škole."
+    "fallbackMessage": "Tato část InspiresGenius zatím pro váš účet není dostupná. S vaším účtem není nic v nepořádku. Máte-li dotazy, obraťte se na kontaktní osobu ve své škole."
   },
   "minorGateNotice": {
     "notAvailableYet": "Zatím není dostupné",
@@ -395,7 +395,7 @@
     "stopDictating": "Ukončit diktování",
     "dictateAMessage": "Nadiktovat zprávu",
     "listening": "Poslouchám…",
-    "askAboutInspireGenius": "Zeptejte se na Inspire Genius…",
+    "askAboutInspireGenius": "Zeptejte se na InspiresGenius…",
     "message": "Zpráva",
     "sendMessage": "Odeslat zprávu"
   }

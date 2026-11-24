@@ -16,7 +16,7 @@ export const JOIN_NEXT_STEP =
   "No account and nothing to install. Tick the first box to hear when the next webinar is scheduled."
 /** The same box on /events, which has no form and so no box to tick. */
 export const EVENTS_NEXT_STEP =
-  "No account and nothing to install. Register your interest to hear when the next event is announced."
+  "Register your interest. Join the community to contribute your thoughts and stay current on developments, news and events."
 
 const SETTINGS = [
   ["individuals", "Individuals"],
@@ -38,7 +38,7 @@ const iconBox =
  * `nextStep`: /join's refers to the form's first tick box, /events has no form.
  *
  * `linkToJoin` (the owner, 2026-11-17: "add a link to the join page under What happens next on the
- * events page") adds a "Register your interest" link to /join directly beneath that box. /events
+ * events page") adds a "Sign Up & Opt In" link to /join directly beneath that box. /events
  * passes it; /join must not (a panel that links to its own page), so it defaults to off. A plain
  * anchor, not a router Link: the page renders with no router.
  */
@@ -52,7 +52,7 @@ export function JoinBrandPanel({
     nextStep === JOIN_NEXT_STEP
       ? t("brand.nextStep.join", { defaultValue: "No account and nothing to install. Tick the first box to hear when the next webinar is scheduled." })
       : nextStep === EVENTS_NEXT_STEP
-        ? t("brand.nextStep.events", { defaultValue: "No account and nothing to install. Register your interest to hear when the next event is announced." })
+        ? t("brand.nextStep.events", { defaultValue: "Register your interest. Join the community to contribute your thoughts and stay current on developments, news and events." })
         : nextStep
   return (
     <div className="flex max-w-[460px] flex-col gap-5">
@@ -64,10 +64,10 @@ export function JoinBrandPanel({
         </span>
       </h2>
       <p className="text-[14px] leading-relaxed text-white/65">
-        {t("brand.intro", { defaultValue: "Inspires Genius gives practitioners an AI mentoring partner that works alongside them, so clients keep making progress even after the session ends." })}
+        {t("brand.intro", { defaultValue: "InspiresGenius gives practitioners an AI mentoring partner that works alongside them, so clients keep making progress even after the session ends." })}
       </p>
 
-      <ul className="flex flex-col gap-3" aria-label={t("brand.offersAria", { defaultValue: "What Inspires Genius offers" })}>
+      <ul className="flex flex-col gap-3" aria-label={t("brand.offersAria", { defaultValue: "What InspiresGenius offers" })}>
         <li className="flex items-start gap-3">
           <span className={iconBox} aria-hidden="true">
             <UsersRound className="h-4 w-4" />
@@ -117,7 +117,7 @@ export function JoinBrandPanel({
           href={ROUTES.JOIN}
           className="w-fit rounded-sm text-sm font-semibold text-white underline underline-offset-4 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
-          Register your interest<span aria-hidden="true"> →</span>
+          Sign Up &amp; Opt In<span aria-hidden="true"> →</span>
         </a>
       )}
     </div>

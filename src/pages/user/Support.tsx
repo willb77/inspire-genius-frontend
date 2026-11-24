@@ -143,7 +143,7 @@ export default function Support() {
             <Mail className="size-5" />
           </div>
           <p className="text-sm text-muted-foreground">
-            {t("support.everyRequestYouPostHereIs", "Every request you post here is emailed straight to the Inspire Genius support team along with your contact details, so someone can get back to you directly.")}
+            {t("support.everyRequestYouPostHereIs", "Every request you post here is emailed straight to the InspiresGenius support team along with your contact details, so someone can get back to you directly.")}
           </p>
         </div>
 

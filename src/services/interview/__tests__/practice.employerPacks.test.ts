@@ -45,7 +45,7 @@ function packedBank(): PracticeQuestions {
       name: "Amazon / AWS",
       coachingNote: "Unquantified results and 'we' language are the failure modes.",
       questionCount: 6,
-      provenance: "Written by Inspire Genius in the style of the employer's published framework.",
+      provenance: "Written by InspiresGenius in the style of the employer's published framework.",
       sector: "Technology",
       sectorSlug: "technology",
       framework: "The 16 Leadership Principles (published by Amazon)",

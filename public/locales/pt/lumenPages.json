@@ -1,5 +1,5 @@
 {
-  "accessGranted": "O acesso é habilitado pelo seu administrador ou pela equipe da Inspire Genius. Não há nada para comprar aqui.",
+  "accessGranted": "O acesso é habilitado pelo seu administrador ou pela equipe da InspiresGenius. Não há nada para comprar aqui.",
   "accessIntro": "A Lumen transforma o seu perfil comportamental em orientações que você pode usar na hora — antes da conversa difícil, não depois dela.",
   "accessRequest": "Solicitar acesso",
   "accessTitle": "A Lumen ainda não está ativada na sua conta",
@@ -104,7 +104,7 @@
   "portraitTitle": "Meu Autorretrato",
   "settingsCalendarBody": "Permita que o Lumen leia suas reservas de coaching para que um Moment chegue antes de uma sessão para a qual você está se preparando, e não em um horário aleatório.",
   "settingsCalendarLabel": "Usar minhas reservas para definir o momento",
-  "settingsCalendarNote": "Desativado por padrão. O Lumen não enxerga sua agenda de trabalho, apenas as reservas feitas no Inspire Genius.",
+  "settingsCalendarNote": "Desativado por padrão. O Lumen não enxerga sua agenda de trabalho, apenas as reservas feitas no InspiresGenius.",
   "settingsDefaultsBadge": "Exibindo os padrões: você ainda não alterou estas opções",
   "settingsEmailBody": "Receba os Moments fora do app, além de no seu feed.",
   "settingsEmailLabel": "Enviar Moments por e-mail",

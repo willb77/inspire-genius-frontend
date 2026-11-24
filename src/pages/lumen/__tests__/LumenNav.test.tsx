@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  *
- * LumenNav — one row: the Lumen tools, then "Back to Home" (was "Back to Inspire Genius" until 2026-11-23).
+ * LumenNav — one row: the Lumen tools, then "Back to Home" (was "Back to InspiresGenius" until 2026-11-23).
  *
  * New on 2026-08-06, with the change it covers. The nav had no tests, which is
  * why removing a whole cross-vertical switcher broke nothing — the absence of a
@@ -67,7 +67,7 @@ describe("LumenNav", () => {
     expect(screen.queryByRole("link", { name: "Coaching" })).toBeNull();
   });
 
-  // The whole second row went: "Back to Inspire Genius" plus an "or switch to …"
+  // The whole second row went: "Back to InspiresGenius" plus an "or switch to …"
   // list of every other entitled vertical. The mocks above ARE entitled to
   // three of them, so a reinstated switcher would render and fail here.
   it("has no cross-vertical switcher", () => {
@@ -87,10 +87,10 @@ describe("LumenNav", () => {
       screen.getByRole("link", { name: "My Self-Portrait" }).closest("nav"),
     );
     expect(back).toHaveTextContent("Back to Home");
-    expect(back).not.toHaveTextContent("Inspire Genius");
+    expect(back).not.toHaveTextContent("InspiresGenius");
   });
 
-  it("Back to Home goes to /home, where Back to Inspire Genius went", () => {
+  it("Back to Home goes to /home, where Back to InspiresGenius went", () => {
     renderNav();
     fireEvent.click(screen.getByTestId("lumen-back-to-ig"));
     expect(mockNavigate).toHaveBeenCalledWith("/home");

@@ -3,7 +3,7 @@
  *
  * The super-admin authors the message body in the rich-text editor; this wraps
  * that (already-sanitized) body in a branded shell — a severity-colored header
- * bar with the Inspire Genius logo, the alert title, and a footer — using the
+ * bar with the InspiresGenius logo, the alert title, and a footer — using the
  * in-app brand tokens from `index.css`. The result is what recipients see in
  * the notification center / banner and what is stored as `html_body`.
  */
@@ -49,7 +49,7 @@ export function buildBrandedHtml(
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
         <tr><td style="background-color:${meta.color};padding:18px 28px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-            <td style="vertical-align:middle;"><img src="${logoUrl}" alt="Inspire Genius" height="26" style="display:block;height:26px;filter:brightness(0) invert(1);" /></td>
+            <td style="vertical-align:middle;"><img src="${logoUrl}" alt="InspiresGenius" height="26" style="display:block;height:26px;filter:brightness(0) invert(1);" /></td>
             <td align="right" style="vertical-align:middle;"><span style="display:inline-block;background:rgba(255,255,255,0.22);color:#ffffff;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 12px;border-radius:999px;">${meta.emoji}&nbsp;${meta.label}</span></td>
           </tr></table>
         </td></tr>
@@ -61,7 +61,7 @@ export function buildBrandedHtml(
           ${bodyHtml}
         </td></tr>
         <tr><td style="background-color:#f8fafc;padding:18px 28px;border-top:1px solid #e5e7eb;">
-          <p style="color:#94a3b8;font-size:12px;text-align:center;margin:0;">Sent via the Inspire Genius platform alert system.</p>
+          <p style="color:#94a3b8;font-size:12px;text-align:center;margin:0;">Sent via the InspiresGenius platform alert system.</p>
         </td></tr>
       </table>
     </td></tr>

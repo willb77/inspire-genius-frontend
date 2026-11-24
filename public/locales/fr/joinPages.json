@@ -43,14 +43,14 @@
     "other": "Autre"
   },
   "consent": {
-    "webinar_email": "Envoyez-moi un e-mail lorsqu'une session de webinaire Inspires Genius est programmée.",
-    "mailing_list": "Ajoutez-moi à la liste de diffusion Inspires Genius pour recevoir des nouvelles occasionnelles.",
+    "webinar_email": "Envoyez-moi un e-mail lorsqu'une session de webinaire InspiresGenius est programmée.",
+    "mailing_list": "Ajoutez-moi à la liste de diffusion InspiresGenius pour recevoir des nouvelles occasionnelles.",
     "legend": "Rester en contact (facultatif)"
   },
   "chooseOne": "Choisissez une option",
   "success": {
     "title": "Merci",
-    "body": "Nous avons bien reçu vos informations. Merci de l'intérêt que vous portez à Inspires Genius."
+    "body": "Nous avons bien reçu vos informations. Merci de l'intérêt que vous portez à InspiresGenius."
   },
   "notOpen": {
     "title": "Les inscriptions ne sont pas encore ouvertes",
@@ -69,7 +69,7 @@
     "roleOther": "Votre rôle",
     "prism": "Êtes-vous accrédité(e) PRISM ?",
     "siteId": "Identifiant de site PRISM (facultatif)",
-    "context": "Où utiliseriez-vous Inspires Genius ?",
+    "context": "Où utiliseriez-vous InspiresGenius ?",
     "contextOther": "Décrivez le contexte",
     "organisation": "Organisation",
     "organisationOptional": "Organisation (facultatif)",
@@ -81,7 +81,7 @@
   "submit": "Manifester votre intérêt",
   "header": {
     "title": "Manifestez votre intérêt",
-    "subtitle": "Inspires Genius est une plateforme de mentorat par IA. Laissez vos coordonnées ci-dessous pour manifester votre intérêt."
+    "subtitle": "InspiresGenius est une plateforme de mentorat par IA. Laissez vos coordonnées ci-dessous pour manifester votre intérêt."
   },
   "seeEvents": "Voir les événements à venir →",
   "validation": {
@@ -134,7 +134,7 @@
       "choose": "Indiquez si vous êtes accrédité(e) PRISM"
     },
     "context": {
-      "choose": "Choisissez où vous utiliseriez Inspires Genius"
+      "choose": "Choisissez où vous utiliseriez InspiresGenius"
     }
   },
   "brand": {
@@ -150,13 +150,13 @@
     },
     "nextStep": {
       "join": "Aucun compte et rien à installer. Cochez la première case pour savoir quand le prochain webinaire sera programmé.",
-      "events": "Aucun compte et rien à installer. Manifestez votre intérêt pour savoir quand le prochain événement sera annoncé."
+      "events": "Manifestez votre intérêt. Rejoignez la communauté pour partager vos idées et rester informé des évolutions, des actualités et des événements."
     },
     "eyebrow": "Manifestez votre intérêt",
     "headingLead": "Accompagnez chaque client",
     "headingAccent": "entre les séances",
-    "intro": "Inspires Genius offre aux praticiens un partenaire de mentorat IA qui travaille à leurs côtés, afin que les clients continuent de progresser même après la fin de la séance.",
-    "offersAria": "Ce que propose Inspires Genius",
+    "intro": "InspiresGenius offre aux praticiens un partenaire de mentorat IA qui travaille à leurs côtés, afin que les clients continuent de progresser même après la fin de la séance.",
+    "offersAria": "Ce que propose InspiresGenius",
     "practitioners": {
       "title": "Conçu pour les praticiens",
       "body": "Invitez vos clients, suivez leurs progrès et donnez à chacun un mentor IA présent entre vos séances."

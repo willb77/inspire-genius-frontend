@@ -133,7 +133,7 @@ export default function JoinPage() {
         <CheckCircle2 className="h-10 w-10 text-emerald-600" aria-hidden="true" />
         <h2 className="text-lg font-semibold">{t("success.title", { defaultValue: "Thank you" })}</h2>
         <p className="max-w-md text-sm text-muted-foreground">
-          {t("success.body", { defaultValue: "We've received your details. Thank you for your interest in Inspires Genius." })}
+          {t("success.body", { defaultValue: "We've received your details. Thank you for your interest in InspiresGenius." })}
         </p>
       </div>
     )
@@ -222,7 +222,7 @@ export default function JoinPage() {
           </Field>
         )}
 
-        <Field name="context" label={t("fields.context", { defaultValue: "Where would you use Inspires Genius?" })} error={errors.context?.message}>
+        <Field name="context" label={t("fields.context", { defaultValue: "Where would you use InspiresGenius?" })} error={errors.context?.message}>
           <select {...register("context")} {...ariaFor("context")} className={selectClass}>
             <option value="">{t("chooseOne", { defaultValue: "Choose one" })}</option>
             {INTAKE_CONTEXTS.map((c) => (
@@ -310,7 +310,7 @@ export default function JoinPage() {
     <AuthLayout contentClassName="max-w-[760px]" showTestimonial={false} brandPanel={<JoinBrandPanel />}>
       <AuthHeader
         title={t("header.title", { defaultValue: "Register your interest" })}
-        subtitle={t("header.subtitle", { defaultValue: "Inspires Genius is an AI mentoring platform. Leave your details below to register your interest." })}
+        subtitle={t("header.subtitle", { defaultValue: "InspiresGenius is an AI mentoring platform. Leave your details below to register your interest." })}
       />
       {/* A plain anchor, not a router Link: the page renders with no router. */}
       <p className="-mt-3 mb-6 text-sm">
