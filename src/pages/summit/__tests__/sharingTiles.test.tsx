@@ -46,7 +46,7 @@ const DETAILS = [
 ];
 
 function p(i: number, over: Partial<VisibilityPerson> = {}): VisibilityPerson {
-  return { userId: `u${i}`, displayName: `Person ${i}`, email: `p${i}@example.com`, kinds: ["added"], grant: null, ...over };
+  return { userId: `u${i}`, displayName: `Person ${i}`, email: `p${i}@example.com`, kinds: ["manager_of_record"], grant: null, ...over };
 }
 
 function renderCore() {
