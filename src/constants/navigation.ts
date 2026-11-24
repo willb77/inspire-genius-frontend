@@ -897,10 +897,22 @@ export const NAV_ITEMS_BY_ROLE: Record<UserRole, NavItemDef[]> = {
   "super-admin": SUPER_ADMIN_NAV_ITEMS,
 }
 
+/**
+ * Where a manager lands: the Studio when it is in their menu, the Dashboard
+ * when it is not. It MUST match the first entry of {@link MANAGER_NAV_ITEMS},
+ * which makes the same choice on the same build flag — otherwise login puts a
+ * manager on a page their menu does not list. One constant, used by both
+ * {@link HOME_ROUTE_BY_ROLE} and {@link DEFAULT_ROLE_CONFIGS}, so the two
+ * cannot drift apart. `/manager/dashboard` still routes either way.
+ */
+const MANAGER_HOME_ROUTE: string = TEAM_DEVELOPMENT_ENABLED
+  ? ROUTES.MANAGER.DEVELOPMENT
+  : ROUTES.MANAGER.DASHBOARD
+
 /** Home route each role should land on after login */
 export const HOME_ROUTE_BY_ROLE: Record<UserRole, string> = {
   user: ROUTES.HOME,
-  manager: ROUTES.MANAGER.DASHBOARD,
+  manager: MANAGER_HOME_ROUTE,
   "company-admin": ROUTES.COMPANY_ADMIN.DASHBOARD,
   practitioner: ROUTES.PRACTITIONER.HOME,
   distributor: ROUTES.DISTRIBUTOR.DASHBOARD,
@@ -922,7 +934,7 @@ export const DEFAULT_ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     role: "manager",
     label: "Manager",
     description: "Supervisory role with direct-report visibility",
-    homeRoute: ROUTES.MANAGER.DASHBOARD,
+    homeRoute: MANAGER_HOME_ROUTE,
     navItems: MANAGER_NAV_ITEMS,
   },
   "company-admin": {
