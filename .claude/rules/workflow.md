@@ -1,4 +1,4 @@
-# Workflow Rules — Inspire Genius Frontend
+# Workflow Rules — InspiresGenius Frontend
 
 ## Development
 - Dev server: `npm run dev` from `inspire-genius-frontend/`

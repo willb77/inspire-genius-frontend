@@ -1,6 +1,6 @@
 # PRISM Integration Plugin — Implementation Prompt
 
-> **Goal:** Build a standalone, testable PRISM integration module that plugs into the Inspire Genius frontend. It covers the full lifecycle: requesting a PRISM questionnaire, tracking completion, unlocking reports, persisting to S3, ingesting data, and notifying stakeholders.
+> **Goal:** Build a standalone, testable PRISM integration module that plugs into the InspiresGenius frontend. It covers the full lifecycle: requesting a PRISM questionnaire, tracking completion, unlocking reports, persisting to S3, ingesting data, and notifying stakeholders.
 
 ---
 

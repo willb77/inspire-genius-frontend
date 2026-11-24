@@ -1,4 +1,4 @@
-# Code Style Rules — Inspire Genius Frontend
+# Code Style Rules — InspiresGenius Frontend
 
 ## TypeScript
 - Strict TypeScript; avoid `any` — use proper types from `src/types/`

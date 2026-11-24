@@ -1,4 +1,4 @@
-"""Generate the Inspire Genius Architecture Plan Word document."""
+"""Generate the InspiresGenius Architecture Plan Word document."""
 
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor

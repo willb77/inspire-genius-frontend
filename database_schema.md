@@ -1,4 +1,4 @@
-# Database Schema — Inspire Genius
+# Database Schema — InspiresGenius
 
 This document describes the data entities as understood from the frontend TypeScript types and API service layer. The backend database may have additional fields; this reflects what the frontend consumes.
 
