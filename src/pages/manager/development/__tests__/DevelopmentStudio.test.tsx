@@ -364,13 +364,17 @@ describe("DevelopmentStudio — where the page sends you", () => {
     expect(screen.getByTestId("practitioner-layout")).toBeInTheDocument()
     expect(screen.queryByTestId("manager-layout")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: /Open development workspace for Dana Whitfield/i })).toBeInTheDocument()
-    // Where a practitioner's CARD leads is not asserted here: MemberCard builds
-    // its own target from ROUTES.MANAGER.DEVELOPMENT_MEMBER regardless of
-    // audience, and /manager/* is not in the practitioner's ROLE_PERMISSIONS —
-    // so today that link bounces them home. Asserting either the current
-    // behaviour or the intended one would be pinning a bug, so the audience
-    // contract is asserted where the page actually owns it: the member path it
-    // hands the org chart, below.
+  })
+
+  // The card body is the main way into a workspace. It used to build its target
+  // from the MANAGER route whatever the audience, and /manager/* is not in the
+  // practitioner's ROLE_PERMISSIONS, so the click bounced them home. This suite
+  // previously declined to assert either behaviour rather than pin the bug.
+  it("a practitioner's card opens the practitioner workspace", () => {
+    rosterState = { data: [member()], isLoading: false, isError: false }
+    renderPractitionerStudio()
+    fireEvent.click(screen.getByRole("button", { name: /Open development workspace for Dana Whitfield/i }))
+    expect(screen.getByText("practitioner workspace for m-1")).toBeInTheDocument()
   })
 })
 

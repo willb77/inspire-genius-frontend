@@ -80,17 +80,32 @@ export type MemberCardProps = {
   member: RosterMember
   /** Invite this member to complete a missing framework. */
   onInvite?: (memberId: string, framework: "prism" | "clifton" | "disc") => void
+  /**
+   * The workspace route this card opens, with a `:memberId` segment.
+   *
+   * Defaults to the manager route. A practitioner mount MUST pass its own:
+   * ProtectedRoute gates by path prefix and `practitioner` has no `/manager`
+   * prefix, so the default sends a practitioner back to their home page — a
+   * card that looks live and opens nothing. The page already computed the
+   * right route for the invite chip and the org chart; the card body, which is
+   * the main way in, was the one link that did not take it.
+   */
+  memberRoute?: string
 }
 
 /**
  * Roster tile — keyboard-focusable, click/Enter navigates to the member's
  * development workspace. Coverage/severity conveyed with icon + label.
  */
-export function MemberCard({ member, onInvite }: MemberCardProps) {
+export function MemberCard({
+  member,
+  onInvite,
+  memberRoute = ROUTES.MANAGER.DEVELOPMENT_MEMBER,
+}: MemberCardProps) {
   const { t } = useTranslation("managerPages")
   const navigate = useNavigate()
   const sk = useDevSkin()
-  const target = ROUTES.MANAGER.DEVELOPMENT_MEMBER.replace(":memberId", member.memberId)
+  const target = memberRoute.replace(":memberId", member.memberId)
   const go = () => navigate(target)
 
   const headline = member.reconciledHeadline

@@ -1,10 +1,11 @@
 /** @jest-environment jsdom */
 import { render, screen, fireEvent } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
+import { MemoryRouter, Route, Routes } from "react-router-dom"
 import "@testing-library/jest-dom"
 
 import { MemberCard } from "../MemberCard"
 import type { RosterMember } from "@/types/development"
+import { ROUTES } from "@/constants/routes"
 
 const baseMember: RosterMember = {
   memberId: "m-1",
@@ -67,5 +68,34 @@ describe("MemberCard", () => {
     }
     renderCard(noPrism)
     expect(screen.getByText(/Invite to complete PRISM/i)).toBeInTheDocument()
+  })
+
+  // The card body is the main way into a member's workspace. It was hardcoded
+  // to the manager route, which a practitioner cannot open (no `/manager`
+  // prefix in ROLE_PERMISSIONS) — so each test lands on a real route element
+  // and would fail if the click went to the other one.
+  function renderRouted(memberRoute?: string) {
+    return render(
+      <MemoryRouter initialEntries={["/roster"]}>
+        <Routes>
+          <Route path="/roster" element={<MemberCard member={baseMember} memberRoute={memberRoute} />} />
+          <Route path={ROUTES.MANAGER.DEVELOPMENT_MEMBER} element={<div>manager workspace</div>} />
+          <Route path={ROUTES.PRACTITIONER.DEVELOPMENT_MEMBER} element={<div>practitioner workspace</div>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+  }
+
+  it("opens the manager workspace by default", () => {
+    renderRouted()
+    fireEvent.click(screen.getByRole("button", { name: /Open development workspace for Jordan Rivera/i }))
+    expect(screen.getByText("manager workspace")).toBeInTheDocument()
+  })
+
+  it("opens the route it is given, so a practitioner stays on a path they can reach", () => {
+    renderRouted(ROUTES.PRACTITIONER.DEVELOPMENT_MEMBER)
+    fireEvent.click(screen.getByRole("button", { name: /Open development workspace for Jordan Rivera/i }))
+    expect(screen.getByText("practitioner workspace")).toBeInTheDocument()
+    expect(screen.queryByText("manager workspace")).not.toBeInTheDocument()
   })
 })
