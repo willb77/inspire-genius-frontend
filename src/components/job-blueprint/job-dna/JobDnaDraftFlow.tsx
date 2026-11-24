@@ -39,6 +39,7 @@ import type {
   DraftDimension,
   JobTier,
 } from "@/types/job-blueprint"
+import { withPrism } from "@/lib/withPrism"
 
 function archetypeChoices(t: TFunction): { value: DraftArchetype; label: string; hint: string }[] {
   return [
@@ -270,7 +271,7 @@ function FormStep({ onDrafted }: { onDrafted: (draft: DraftBenchmarkResponse) =>
           {t("draftFlow.title", { defaultValue: "Draft a blueprint" })}
         </CardTitle>
         <CardDescription>
-          {t("draftFlow.description", { defaultValue: "Draft all 22 dimensions for a role from a title, an uploaded job description, or a role from another vertical. The draft is the engine's reading of the role against the PRISM definition of each dimension — a starting point, not a validated PRISM benchmark. You review and edit the profile before anything is saved." })}
+          {withPrism(t("draftFlow.description", { defaultValue: "Draft all 22 dimensions for a role from a title, an uploaded job description, or a role from another vertical. The draft is the engine's reading of the role against the PRISM definition of each dimension — a starting point, not a validated PRISM benchmark. You review and edit the profile before anything is saved." }))}
         </CardDescription>
       </CardHeader>
       <CardContent>

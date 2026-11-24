@@ -76,6 +76,7 @@ import VerticalEntitlementsDialog, {
 } from "@/components/super-admin/vertical-entitlements/VerticalEntitlementsDialog";
 import { useVerticalEntitlementsPermission } from "@/hooks/super-admin/vertical-entitlements/useVerticalEntitlementsAdmin";
 import { VERTICAL_ENTITLEMENTS_CAPABILITY } from "@/types/super-admin/vertical-entitlements";
+import { Prism } from "@/components/shared/Prism"
 
 export default function UserManagement() {
   const pageSize = 10;
@@ -722,7 +723,7 @@ export default function UserManagement() {
               {isOwner && (
                 <Button variant="outline" onClick={() => setApproversOpen(true)}>
                   <ShieldCheck className="size-4" />
-                  PRISM approvers
+                  <Prism /> approvers
                 </Button>
               )}
               {isOwner && (
@@ -753,7 +754,7 @@ export default function UserManagement() {
                     }
                   >
                     <FileUp className="size-4" />
-                    Ingest PRISM CSV ({rows.filter((r) => selectedEmails.has(r.email)).length})
+                    Ingest <Prism /> CSV ({rows.filter((r) => selectedEmails.has(r.email)).length})
                   </Button>
                   <Button
                     variant="outline"
@@ -910,9 +911,9 @@ export default function UserManagement() {
         <Dialog open={approversOpen} onOpenChange={setApproversOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>PRISM survey access approvers</DialogTitle>
+              <DialogTitle><Prism /> survey access approvers</DialogTitle>
               <DialogDescription className="sr-only">
-                Add or remove the super-admins who may change PRISM survey access.
+                Add or remove the super-admins who may change <Prism /> survey access.
               </DialogDescription>
             </DialogHeader>
             {approversOpen && <PrismApproversPanel />}
@@ -1053,7 +1054,7 @@ export default function UserManagement() {
               {selected?.email ?? ""}
             </code>{" "}
             from the database and Cognito, along with everything they own &mdash;
-            PRISM assessments and results, conversations, files and feedback.
+            <Prism /> assessments and results, conversations, files and feedback.
             This action <strong>cannot be undone</strong>, and it is the only way
             to free the email address for re-registration.
             <br />
@@ -1078,7 +1079,7 @@ export default function UserManagement() {
           <>
             This will <strong>permanently</strong> delete{" "}
             <strong>{selectedEmails.size}</strong> selected user(s) from the
-            database and Cognito, along with everything they own &mdash; PRISM
+            database and Cognito, along with everything they own &mdash; <Prism />
             assessments and results, conversations, files and feedback.
             <strong> No status is spared and none of it can be undone.</strong>
           </>

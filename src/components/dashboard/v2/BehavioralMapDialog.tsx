@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { PrismSelfMapContent } from "@/components/prism/PrismSelfMapContent"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Uncontrolled by default (its own "Behavioral Scores" pill). Pass `open` +
@@ -58,7 +59,7 @@ export function BehavioralMapDialog({
           <DialogHeader>
             <DialogTitle>{t("behavioralMap.title", { defaultValue: "Your behavioral map" })}</DialogTitle>
             <DialogDescription>
-              {t("behavioralMap.description", { defaultValue: "Your PRISM 8-dimension profile and scores." })}
+              {withPrism(t("behavioralMap.description", { defaultValue: "Your PRISM 8-dimension profile and scores." }))}
             </DialogDescription>
           </DialogHeader>
           {/* Mount (and fetch) only while open — keeps the query out of the

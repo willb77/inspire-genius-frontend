@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog"
 import { useClientPrism, useCoachClient } from "@/hooks/practitioner/useCoachClient"
 import { usePrismImport } from "@/hooks/prism/usePrismImport"
+import { withPrism } from "@/lib/withPrism"
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
@@ -172,7 +173,7 @@ export default function PractitionerClientProfile() {
           <div className="space-y-3">
             {prismQuery.isError ? (
               <p role="alert" className="text-sm text-[#B91C1C]">
-                {t("clientProfile.prismLoadFailed", { defaultValue: "PRISM couldn’t be loaded just now. This is a failure, not an empty profile — try again shortly." })}
+                {withPrism(t("clientProfile.prismLoadFailed", { defaultValue: "PRISM couldn’t be loaded just now. This is a failure, not an empty profile — try again shortly." }))}
               </p>
             ) : prismQuery.isLoading ? (
               <Skeleton className="h-16 w-full" />
@@ -194,7 +195,7 @@ export default function PractitionerClientProfile() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[#6b7280]">{t("clientProfile.noPrism", { defaultValue: "No PRISM scores on file for this client yet." })}</p>
+              <p className="text-sm text-[#6b7280]">{withPrism(t("clientProfile.noPrism", { defaultValue: "No PRISM scores on file for this client yet." }))}</p>
             )}
             <Button
               variant="outline"
@@ -203,7 +204,7 @@ export default function PractitionerClientProfile() {
               onClick={() => setPrismOpen(true)}
             >
               <Upload className="mr-1.5 h-4 w-4" />
-              {t("clientProfile.uploadPrism", { defaultValue: "Upload PRISM .csv" })}
+              {withPrism(t("clientProfile.uploadPrism", { defaultValue: "Upload PRISM .csv" }))}
             </Button>
           </div>
         </DataCard>
@@ -290,13 +291,13 @@ export default function PractitionerClientProfile() {
       <Dialog open={prismOpen} onOpenChange={setPrismOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("clientProfile.uploadPrism", { defaultValue: "Upload PRISM .csv" })}</DialogTitle>
+            <DialogTitle>{withPrism(t("clientProfile.uploadPrism", { defaultValue: "Upload PRISM .csv" }))}</DialogTitle>
             <DialogDescription>
-              {t("clientProfile.uploadDescription", { name: data.name, defaultValue: "Import a PRISM score export for {{name}}. The parsed scores attach to this client." })}
+              {withPrism(t("clientProfile.uploadDescription", { name: data.name, defaultValue: "Import a PRISM score export for {{name}}. The parsed scores attach to this client." }))}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 pt-1">
-            <Label htmlFor="prism-csv-file">{t("clientProfile.csvFile", { defaultValue: "PRISM CSV file" })}</Label>
+            <Label htmlFor="prism-csv-file">{withPrism(t("clientProfile.csvFile", { defaultValue: "PRISM CSV file" }))}</Label>
             <input
               ref={prismFileRef}
               id="prism-csv-file"

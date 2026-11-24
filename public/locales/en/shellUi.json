@@ -395,7 +395,7 @@
     "pdfNotReady": "Your PDF isn't ready yet.",
     "popupBlocked": "Your browser blocked the report window.",
     "reportPdf": "PRISM Report (PDF)",
-    "trigger": "Prism Data"
+    "trigger": "PRISM Data"
   },
   "quickActions": {
     "mode": {

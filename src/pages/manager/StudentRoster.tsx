@@ -12,6 +12,7 @@ import type {
   StudentRosterRow,
 } from "@/types/manager/studentRoster"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Student Oversight — the manager's roster, gated by student consent.
@@ -284,7 +285,7 @@ export default function StudentRoster() {
                   <tr>
                     <th scope="col" className="px-4 py-3">{t("studentRoster.member", { defaultValue: "Member" })}</th>
                     <th scope="col" className="px-4 py-3">{t("studentRoster.sharing", { defaultValue: "Sharing" })}</th>
-                    <th scope="col" className="px-4 py-3">{t("studentRoster.prism", { defaultValue: "PRISM" })}</th>
+                    <th scope="col" className="px-4 py-3">{withPrism(t("studentRoster.prism", { defaultValue: "PRISM" }))}</th>
                     <th scope="col" className="px-4 py-3">{t("studentRoster.engagement", { defaultValue: "Engagement" })}</th>
                   </tr>
                 </thead>

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table"
 import { BEHAVIOUR_CONFIG, QUADRANT_CONFIG } from "@/constants/prism"
 import type { PrismDimension, PrismQuadrantId } from "@/types/development"
+import { withPrism } from "@/lib/withPrism"
 
 function quadrantColor(q: PrismQuadrantId): string {
   return QUADRANT_CONFIG[q]?.color ?? "#64748b"
@@ -78,7 +79,7 @@ export function PrismBehavioralMap({ prism, brandHex = "#E8932B" }: PrismBehavio
       </div>
       <Table>
         <caption className="sr-only">
-          {t("behavioralMap.tableCaption", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radar chart)." })}
+          {withPrism(t("behavioralMap.tableCaption", { defaultValue: "PRISM 8-dimension scores (text equivalent of the radar chart)." }))}
         </caption>
         <TableHeader>
           <TableRow>

@@ -10,6 +10,7 @@ import { FitMeter } from "./primitives"
 import { FitScoreFigure } from "./FitScoreFigure"
 import type { JobOverall } from "@/types/job-fit/components"
 import { useTranslation } from "react-i18next"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * Where the headline sits:
@@ -89,8 +90,8 @@ export function FitScoreHeadline({
               {overall.score != null ? (
                 <>
                   <span className="font-medium text-foreground">{t("fit.fitScoreHeadline.overallFit", { defaultValue: "Overall fit {{v1}}%", v1: Math.round(overall.score) })}</span>
-                  {" "}— your PRISM fit combined with your field, level, experience and goals. The
-                  PRISM fit above is unchanged.
+                  {" "}— your <Prism /> fit combined with your field, level, experience and goals. The
+                  <Prism /> fit above is unchanged.
                 </>
               ) : overall.status === "not_set_up" ? (
                 "Overall fit isn't set up on this service yet — your PRISM fit above is your read."

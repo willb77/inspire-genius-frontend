@@ -13,6 +13,7 @@ import {
   type EventGroup,
   type EventSession,
 } from "./eventSessions"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * One event on `/events`: a session picker whose tiles are self-contained cards
@@ -124,9 +125,9 @@ export function EventHeroCard({
                     <span className="text-xl font-bold leading-snug tracking-tight text-slate-900">
                       See your AI mentoring partner in action
                     </span>
-                    <span className="text-base font-semibold text-teal-800">PRISM has never been this powerful</span>
+                    <span className="text-base font-semibold text-teal-800"><Prism /> has never been this powerful</span>
                     <span className="mt-1 text-sm leading-relaxed text-slate-700">
-                      PRISM meets InspiresGenius — an exclusive invitation for PRISM Practitioners to see the InspiresGenius
+                      <Prism /> meets InspiresGenius — an exclusive invitation for <Prism /> Practitioners to see the InspiresGenius
                       AI platform in action.
                     </span>
                   </span>

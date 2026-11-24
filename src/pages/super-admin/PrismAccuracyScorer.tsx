@@ -45,6 +45,7 @@ import type {
   SubjectSummary,
   Verdict,
 } from "@/types/prism-accuracy"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * PRISM Accuracy Scorer — how faithfully an IG response describes a real
@@ -78,10 +79,10 @@ function PrismAccuracyScorerContent({ house = false }: { house?: boolean }) {
         {!house && (
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
-            <Target className="h-6 w-6" /> PRISM Accuracy Scorer
+            <Target className="h-6 w-6" /> <Prism /> Accuracy Scorer
           </h1>
           <p className="text-muted-foreground mt-1 max-w-3xl text-sm">
-            Checks what IG told someone about their PRISM profile against the scores actually on
+            Checks what IG told someone about their <Prism /> profile against the scores actually on
             file for that person. Find the person, pick a conversation, and read the verdict on
             each claim.
           </p>
@@ -160,7 +161,7 @@ function PersonFinder({
         </div>
         {profile.isLoading && <p className="text-muted-foreground text-xs">Reading their profile…</p>}
         {profile.isError && (
-          <p className="text-xs text-red-600">Could not read this person's PRISM profile.</p>
+          <p className="text-xs text-red-600">Could not read this person's <Prism /> profile.</p>
         )}
         {profile.data && <SubjectCard subject={profile.data} />}
       </div>
@@ -232,7 +233,7 @@ function SubjectCard({ subject }: { subject: SubjectSummary }) {
       )}
       <div className="flex flex-wrap gap-x-6 gap-y-1">
         <span>
-          <span className="text-muted-foreground">PRISM scales on file</span>{" "}
+          <span className="text-muted-foreground"><Prism /> scales on file</span>{" "}
           <strong>{subject.scales_on_file ?? subject.coverage}</strong> / 88
         </span>
         {subject.colours && (
@@ -325,7 +326,7 @@ function ScoreConversationPanel() {
         <CardHeader>
           <CardTitle className="text-base">Score a conversation</CardTitle>
           <CardDescription>
-            Every reply IG gave in the conversation is checked against the person's PRISM scores.
+            Every reply IG gave in the conversation is checked against the person's <Prism /> scores.
             You get one score per reply, a summary, and a claim-by-claim table for any reply you
             click.
           </CardDescription>
@@ -367,7 +368,7 @@ function ScoreConversationPanel() {
             {!conversations.isLoading && list.length === 0 && (
               <p className="text-muted-foreground flex items-center gap-2 text-sm">
                 <MessageSquare className="h-4 w-4" /> No conversations found. Only people with a
-                PRISM assessment are listed.
+                <Prism /> assessment are listed.
               </p>
             )}
           </div>
@@ -608,7 +609,7 @@ function ReportHeadline({ report }: { report: AccuracyReport }) {
     <Card>
       <CardContent className="flex flex-wrap items-center gap-6 p-4">
         <div>
-          <p className="text-muted-foreground text-xs uppercase tracking-wide">PRISM Accuracy Score</p>
+          <p className="text-muted-foreground text-xs uppercase tracking-wide"><Prism /> Accuracy Score</p>
           <p className="text-4xl font-semibold" data-testid="pas">
             {report.pas}
             <span className={cn("ml-3 text-2xl", gradeColour(report.grade))}>{report.grade}</span>
@@ -984,7 +985,7 @@ function RubricPanel() {
           <CardHeader>
             <CardTitle className="text-sm">Bands (0–100)</CardTitle>
             <CardDescription>
-              Two scales, by design: the PRISM guide's intensity scale for the eight behaviours and
+              Two scales, by design: the <Prism /> guide's intensity scale for the eight behaviours and
               the four colours, and IG's six-band rubric for the other 80 scales.
             </CardDescription>
           </CardHeader>

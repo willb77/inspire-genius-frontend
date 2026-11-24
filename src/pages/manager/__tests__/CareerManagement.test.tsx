@@ -4,6 +4,7 @@
 
 import { render, screen } from "@testing-library/react";
 import ManagerCareerManagement from "../CareerManagement";
+import { byText } from "@/test/byText"
 
 jest.mock("@/layouts/ManagerLayout", () => ({
   __esModule: true,
@@ -52,7 +53,7 @@ describe("ManagerCareerManagement", () => {
     expect(screen.getByText("Career Management")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Track career paths, skill gaps, and PRISM alignment for your team."
+        byText("Track career paths, skill gaps, and PRISM alignment for your team.")
       )
     ).toBeInTheDocument();
   });

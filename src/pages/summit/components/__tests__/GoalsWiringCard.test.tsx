@@ -19,6 +19,7 @@ jest.mock("@/services/job-fit/components.service", () => ({
 }))
 
 import { GoalsWiringCard } from "../GoalsWiringCard"
+import { byText } from "@/test/byText"
 
 const WIRING: GoalsWiring = {
   scored: true, prismNeeded: false, engineVersion: "v1",
@@ -56,7 +57,7 @@ test("no PRISM: says so instead of verdicts", async () => {
   mockSwitch.mockResolvedValue(true)
   mockWiring.mockResolvedValue({ ...WIRING, scored: false })
   wrap(<GoalsWiringCard />)
-  expect(await screen.findByText(/complete prism/i)).toBeInTheDocument()
+  expect(await screen.findByText(byText(/complete prism/i))).toBeInTheDocument()
   expect(screen.queryByText(/pulls against these/i)).not.toBeInTheDocument()
 })
 

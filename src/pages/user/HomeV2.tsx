@@ -57,6 +57,7 @@ import {
   useMyPrismReportDownloadUrl,
 } from "@/hooks/prism/usePrismReportDownload";
 import { WORKSPACE_GUIDE_VIDEO_URL } from "@/constants/guideVideos";
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * HomeV2 — the user dashboard (ig-surfaces/user-dashboard), and since
@@ -298,7 +299,7 @@ const PERSONAL_INFO_CATALOG: {
     // `openAddPersonalInfo`. It opens the PRISM import dialog, which parses the
     // CSV into scores. `docKind` is retained because it is what identifies this
     // row as the PRISM one; `accept`/`promptOverride` are unused for it.
-    name: "Prism Rpt .csv",
+    name: "PRISM Rpt .csv",
     docKind: PRISM_DOC_KIND,
     accept: ".csv,text/csv",
   },
@@ -689,9 +690,9 @@ export default function HomeV2() {
                     className="w-full bg-ig-ink text-ig-on-ink hover:bg-ig-ink/90 sm:w-auto"
                   >
                     <CalendarDays className="size-4" />
-                    {t("homeV2.requestPrismInventory", {
+                    {withPrism(t("homeV2.requestPrismInventory", {
                       defaultValue: "Request PRISM Survey",
-                    })}
+                    }))}
                   </Button>
                 </div>
               </div>

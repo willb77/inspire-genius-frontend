@@ -12,6 +12,7 @@ import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import { PrismRadialMap } from "@/components/prism/PrismRadialMap"
 import { useMyPrism } from "@/hooks/prism/useMyPrism"
+import { withPrism } from "@/lib/withPrism"
 
 export function PrismSelfMapContent(): JSX.Element {
   const { t } = useTranslation("prismUi")
@@ -36,10 +37,10 @@ export function PrismSelfMapContent(): JSX.Element {
   }
   return (
     <p className="py-10 text-center text-sm text-muted-foreground">
-      {t("selfMap.noData", {
+      {withPrism(t("selfMap.noData", {
         defaultValue:
           "No PRISM assessment found yet. Complete a PRISM assessment to see your behavioral map here.",
-      })}
+      }))}
     </p>
   )
 }

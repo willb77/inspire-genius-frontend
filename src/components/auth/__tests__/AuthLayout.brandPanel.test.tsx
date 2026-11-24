@@ -8,6 +8,7 @@
 import { render, screen } from "@testing-library/react"
 import "@testing-library/jest-dom"
 import AuthLayout from "../AuthLayout"
+import { byText } from "@/test/byText"
 
 const DEFAULT_WALL_CLASS = "relative hidden lg:flex flex-col justify-end overflow-hidden p-14 pt-[104px]"
 const DEFAULT_GRID_CLASS = "min-h-screen grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]"
@@ -25,7 +26,7 @@ describe("AuthLayout default wall (no brandPanel: every sign-in page)", () => {
       </AuthLayout>,
     )
     expect(screen.getByRole("heading", { level: 2, name: /unlock your full potential/i })).toBeInTheDocument()
-    expect(screen.getByText(/AI-powered coaching grounded in the PRISM/)).toBeInTheDocument()
+    expect(screen.getByText(byText(/AI-powered coaching grounded in the PRISM/))).toBeInTheDocument()
     expect(screen.getByText("Sarah Reynolds")).toBeInTheDocument()
   })
 

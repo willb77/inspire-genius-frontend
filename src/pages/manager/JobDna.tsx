@@ -8,6 +8,7 @@ import { useState } from "react"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { ValidationReviewQueue } from "@/components/job-blueprint/validation/ValidationReviewQueue"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /** Top-N benchmark dimensions by rank, used for the collapsed "key traits" line. */
 function topDimensions(dims: DimensionBenchmark[], n: number): DimensionBenchmark[] {
@@ -29,7 +30,7 @@ export default function ManagerJobDna() {
   return (
     <ManagerLayout>
       <h1 className="text-xl font-bold text-[#111827] mb-1">{t("jobDna.jobDna", { defaultValue: "Job DNA" })}</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">{t("jobDna.prismBasedJobProfilesAnd", { defaultValue: "PRISM-based job profiles and candidate matching criteria." })}</p>
+      <p className="text-[13px] text-[#6b7280] mb-5">{withPrism(t("jobDna.prismBasedJobProfilesAnd", { defaultValue: "PRISM-based job profiles and candidate matching criteria." }))}</p>
 
       {/* N-4: the reviewer's queue; renders nothing unless blueprint_validation is on and a request names this manager */}
       <ValidationReviewQueue />

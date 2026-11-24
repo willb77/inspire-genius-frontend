@@ -68,6 +68,7 @@ import {
   type InterviewSession,
 } from "@/services/interview/interviewExport"
 import { Trans, useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 type Phase = "setup" | "interview" | "findings"
 
@@ -390,7 +391,7 @@ export default function InterviewPracticePage() {
                   <div>
                     <Label htmlFor="personalize" className="text-sm font-medium">{t("interviewPracticePage.personalizeCoachingToMyProfile", "Personalize coaching to my profile")}</Label>
                     <p className="text-xs text-slate-500">
-                      {t("interviewPracticePage.usesYourOwnPrismSummaryAnd", "Uses your own PRISM summary and résumé to ground tips in your real experience — your data, never a score. Turn off to practise without it.")}
+                      {withPrism(t("interviewPracticePage.usesYourOwnPrismSummaryAnd", "Uses your own PRISM summary and résumé to ground tips in your real experience — your data, never a score. Turn off to practise without it."))}
                     </p>
                   </div>
                 </div>

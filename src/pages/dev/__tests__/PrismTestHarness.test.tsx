@@ -4,6 +4,7 @@
 
 import { render, screen } from "@testing-library/react";
 import PrismTestHarness from "../PrismTestHarness";
+import { byText } from "@/test/byText"
 
 // Mock PRISM components
 jest.mock("@/components/prism/PrismStatusBadge", () => ({
@@ -51,7 +52,7 @@ describe("PrismTestHarness", () => {
   it("renders without crashing", () => {
     render(<PrismTestHarness />);
     expect(
-      screen.getByText("PRISM Integration — Test Harness")
+      screen.getByText(byText("PRISM Integration — Test Harness"))
     ).toBeInTheDocument();
   });
 

@@ -8,6 +8,7 @@ import { useHonorOnboard, type OptionalFrameworkKey } from "@/hooks/honor/useHon
 import { HONOR_FRAMEWORK_LABELS } from "@/services/honor/assessment.service"
 import { useCohorts } from "@/hooks/honor/useHonorAdmin"
 import { HONOR_CAREER_AREAS } from "./_careerAreas"
+import { Prism } from "@/components/shared/Prism"
 
 /** File types accepted for the résumé / Bio / Additional-Information uploads. */
 const DOC_ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx"
@@ -366,7 +367,7 @@ export default function HonorOnboard() {
               <p className="text-sm font-semibold text-[#18202f]">Bulk cohort import (CSV)</p>
               <p className="text-sm text-[#5b6678]">
                 Upload a roster; columns are auto-mapped and deduplicated. Each fellow is created and
-                queued for PRISM intake — invite + per-member assessment import happen from the roster.
+                queued for <Prism /> intake — invite + per-member assessment import happen from the roster.
               </p>
             </div>
           </div>

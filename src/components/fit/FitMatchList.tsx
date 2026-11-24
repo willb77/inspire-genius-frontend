@@ -16,6 +16,7 @@ import { FitCard, FitPill } from "./primitives"
 import { VERDICT_LABEL, VERDICT_TONE, asOverall, asV1 } from "./components"
 import { FitScoreFigure } from "./FitScoreFigure"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * The three kinds of list that rank roles by fit:
@@ -225,12 +226,12 @@ function OverallFitFigure({
         <>
           <FitScoreFigure value={Math.round(score)} variant="row" />
           <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">{t("fit.fitMatchList.overallFit", { defaultValue: "Overall fit" })}</div>
-          <div className="mt-1 text-[11px] text-[#6b7280]">{t("fit.fitMatchList.prismFit", { defaultValue: "PRISM fit {{pct}}%", pct })}</div>
+          <div className="mt-1 text-[11px] text-[#6b7280]">{withPrism(t("fit.fitMatchList.prismFit", { defaultValue: "PRISM fit {{pct}}%", pct }))}</div>
         </>
       ) : (
         <>
           <FitScoreFigure value={pct} variant="row" />
-          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">{t("fit.fitMatchList.prismFit2", { defaultValue: "PRISM fit" })}</div>
+          <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">{withPrism(t("fit.fitMatchList.prismFit2", { defaultValue: "PRISM fit" }))}</div>
           {overall.status !== "not_set_up" && (
             <div className="mt-1 max-w-[11rem] text-[11px] text-[#6b7280]">
               {t("fit.fitMatchList.notEnoughAboutYouTo", { defaultValue: "Not enough about you to combine — add a résumé" })}
@@ -273,13 +274,13 @@ function DsOverallFitFigure({
           <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
             {t("fit.fitMatchList.overallFit", { defaultValue: "Overall fit" })}
           </span>
-          <span className="mt-1 block text-[11px] text-muted-foreground">{t("fit.fitMatchList.prismFit", { defaultValue: "PRISM fit {{pct}}%", pct })}</span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">{withPrism(t("fit.fitMatchList.prismFit", { defaultValue: "PRISM fit {{pct}}%", pct }))}</span>
         </>
       ) : (
         <>
           <FitScoreFigure value={pct} variant="row-ds" />
           <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
-            {t("fit.fitMatchList.prismFit2", { defaultValue: "PRISM fit" })}
+            {withPrism(t("fit.fitMatchList.prismFit2", { defaultValue: "PRISM fit" }))}
           </span>
           {overall.status !== "not_set_up" && (
             <span className="mt-1 block max-w-[11rem] text-[11px] text-muted-foreground">

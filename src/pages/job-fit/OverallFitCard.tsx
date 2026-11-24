@@ -4,6 +4,7 @@ import type { TFunction } from "i18next"
 import type { JobOverall, OverallPerson, OverallSignal, OverallSignalKey } from "@/types/job-fit/components"
 import { FitCard, FitSectionTitle } from "@/components/fit/primitives"
 import { LEVEL_NAME, OVERALL_LABEL, OVERALL_SIGNALS, overallAbsentReason } from "@/components/fit/components"
+import { withPrism } from "@/lib/withPrism"
 
 type Props = {
   job: JobOverall
@@ -116,17 +117,17 @@ export function OverallFitCard({ job, weights, person, benchmarksValidated }: Pr
           </span>
         ) : overall.status === "not_set_up" ? (
           <span>
-            {t(
+            {withPrism(t(
               "overallFitCard.notSetUp",
               "Overall fit isn't set up on this service yet — your PRISM fit above is your read.",
-            )}
+            ))}
           </span>
         ) : (
           <span>
-            {t(
+            {withPrism(t(
               "overallFitCard.notEnough",
               "Not enough about you to combine yet — add a résumé. Your PRISM fit above is your read.",
-            )}
+            ))}
           </span>
         )}
       </div>

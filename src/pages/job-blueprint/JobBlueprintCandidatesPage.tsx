@@ -20,6 +20,7 @@ import {
   JobDnaError,
   JobDnaLinkButton,
 } from "./_shared"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Candidate roster + per-candidate fit analysis, reading the live triage
@@ -98,7 +99,7 @@ export default function JobBlueprintCandidatesPage() {
         <JobDnaError message={t("candidates.loadFailed", { defaultValue: "Failed to load candidates." })} onRetry={() => void refetch()} />
       ) : !candidates || candidates.length === 0 ? (
         <JobDnaEmptyState>
-          {t("candidates.emptyPipeline", { defaultValue: "No candidates in this pipeline yet. Use “Add candidate” above to put one in; fit scoring runs once their PRISM assessment is on file." })}
+          {withPrism(t("candidates.emptyPipeline", { defaultValue: "No candidates in this pipeline yet. Use “Add candidate” above to put one in; fit scoring runs once their PRISM assessment is on file." }))}
         </JobDnaEmptyState>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">

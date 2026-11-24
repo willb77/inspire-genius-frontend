@@ -4,6 +4,7 @@
 import { render, screen } from "@testing-library/react"
 import { PrismSelfMapContent } from "../PrismSelfMapContent"
 import type { PrismDimension } from "@/types/development"
+import { byText } from "@/test/byText"
 
 const useMyPrism = jest.fn()
 jest.mock("@/hooks/prism/useMyPrism", () => ({
@@ -33,7 +34,7 @@ describe("PrismSelfMapContent", () => {
   it("prompts to complete an assessment when there is no data", () => {
     useMyPrism.mockReturnValue({ data: { hasData: false, dimensions: [] } })
     render(<PrismSelfMapContent />)
-    expect(screen.getByText(/no prism assessment found yet/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/no prism assessment found yet/i))).toBeInTheDocument()
   })
 
   it("shows an error state on failure", () => {

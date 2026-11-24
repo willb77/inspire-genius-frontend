@@ -41,6 +41,7 @@ import type {
   EQItem,
   MentalToughnessItem,
 } from '@/types/prism/api-types'
+import { Prism } from "@/components/shared/Prism"
 
 // ── Mock Data ──────────────────────────────────────────────────────
 
@@ -186,14 +187,14 @@ export default function PrismTestHarness() {
                   className="h-10 dark:invert"
                 />
                 <span className="mt-0.5 text-[10px] tracking-wide text-muted-foreground">
-                  Powered by PRISM Brain Mapping
+                  Powered by <Prism /> Brain Mapping
                 </span>
               </div>
               <div className="hidden sm:block h-10 w-px bg-border" />
               <div className="hidden sm:block">
-                <h1 className="text-lg font-bold">PRISM Integration — Test Harness</h1>
+                <h1 className="text-lg font-bold"><Prism /> Integration — Test Harness</h1>
                 <p className="text-xs text-muted-foreground">
-                  Visual testing of all PRISM components with mock data
+                  Visual testing of all <Prism /> components with mock data
                 </p>
               </div>
             </div>
@@ -235,7 +236,7 @@ export default function PrismTestHarness() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-muted-foreground">
                     <p>
-                      This form collects all fields needed to call the PRISM{' '}
+                      This form collects all fields needed to call the <Prism />{' '}
                       <code className="rounded bg-muted px-1 text-xs">
                         CreateCandidate
                       </code>{' '}
@@ -248,12 +249,12 @@ export default function PrismTestHarness() {
                       <ol className="list-inside list-decimal space-y-1 text-xs">
                         <li>User fills in this form</li>
                         <li>
-                          IG backend calls PRISM{' '}
+                          IG backend calls <Prism />{' '}
                           <code className="rounded bg-muted px-1">
                             CreateCandidate
                           </code>
                         </li>
-                        <li>PRISM returns a questionnaire URL</li>
+                        <li><Prism /> returns a questionnaire URL</li>
                         <li>User opens the URL to complete the questionnaire</li>
                         <li>
                           IG backend polls{' '}
@@ -274,7 +275,7 @@ export default function PrismTestHarness() {
                     </div>
                     <div className="space-y-2">
                       <p className="font-medium text-foreground">
-                        PRISM API Fields:
+                        <Prism /> API Fields:
                       </p>
                       <ul className="list-inside list-disc space-y-1 text-xs">
                         <li>
@@ -290,7 +291,7 @@ export default function PrismTestHarness() {
                           organisation ID
                         </li>
                         <li>
-                          <strong>CreateUser</strong> — creates a PRISM login
+                          <strong>CreateUser</strong> — creates a <Prism /> login
                           (first time only)
                         </li>
                         <li>
@@ -569,7 +570,7 @@ export default function PrismTestHarness() {
           <TabsContent value="report" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>PRISM Report — Mock Preview</CardTitle>
+                <CardTitle><Prism /> Report — Mock Preview</CardTitle>
                 <CardDescription>
                   Simulates the full report viewer with all tabs populated
                 </CardDescription>

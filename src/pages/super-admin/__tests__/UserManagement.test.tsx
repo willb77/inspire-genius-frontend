@@ -2,6 +2,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import UserManagement from "../UserManagement";
 import { toast } from "sonner";
+import { byText } from "@/test/byText"
 
 /* -------------------------------------------------
  MOCK ROUTER
@@ -1366,7 +1367,7 @@ describe("UserManagement — PRISM survey access (approvers only)", () => {
   it("only the owner gets the approvers control", () => {
     mockPrismPerms = { canManagePrismAccess: true, isOwner: true };
     renderPage();
-    fireEvent.click(screen.getByText("PRISM approvers"));
+    fireEvent.click(screen.getByText(byText("PRISM approvers")));
     expect(screen.getByTestId("prism-approvers-panel")).toBeInTheDocument();
   });
 });

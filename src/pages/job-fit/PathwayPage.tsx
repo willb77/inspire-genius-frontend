@@ -19,6 +19,7 @@ import {
   FitLoading,
   FitMethodologyNote,
 } from "@/components/fit/primitives"
+import { withPrism } from "@/lib/withPrism"
 
 function SuggestionCard({
   s,
@@ -345,10 +346,10 @@ export default function PathwayPage() {
               <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-[#0D9488]" />
               <span>
                 <span className="font-medium text-[#374151]">{sectionTitles.newJobs}</span>{" "}
-                {t(
+                {withPrism(t(
                   "pathwayPage.v2ExplainNewJobs",
                   "— other jobs your PRISM profile is growing toward.",
-                )}
+                ))}
               </span>
             </li>
           </ul>
@@ -433,10 +434,10 @@ export default function PathwayPage() {
           </li>
         </ul>
         <p className="mt-3 text-xs text-[#9ca3af]">
-          {t(
+          {withPrism(t(
             "pathwayPage.footnote",
             "Pathways are personalized to your PRISM profile and the roles published to you. As more roles are published — or as you complete your assessment — more pathways appear here.",
-          )}
+          ))}
         </p>
       </FitCard>
 

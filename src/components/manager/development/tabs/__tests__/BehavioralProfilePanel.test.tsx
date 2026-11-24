@@ -4,6 +4,7 @@ import "@testing-library/jest-dom"
 
 import { BehavioralProfilePanel } from "../BehavioralProfilePanel"
 import type { BehavioralProfile, PrismDimension } from "@/types/development"
+import { byText } from "@/test/byText"
 
 const prism: PrismDimension[] = [
   { id: 1, label: "Innovating", score: 80, quadrant: 1 },
@@ -107,7 +108,7 @@ describe("BehavioralProfilePanel — not shared (TDS-1b)", () => {
   it("says the profile is withheld, not that there is none", () => {
     render(<BehavioralProfilePanel profile={redacted} notShared memberName="Gary Burnette" />)
     expect(screen.getByTestId("prism-state-not-shared")).toBeInTheDocument()
-    expect(screen.getByText(/has a PRISM profile on file but has not shared it/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/has a PRISM profile on file but has not shared it/i))).toBeInTheDocument()
   })
 
   it("never offers to invite a member who already completed PRISM", () => {
@@ -193,7 +194,7 @@ describe("BehavioralProfilePanel — withheld vs none on file", () => {
   it("does not claim a profile exists when none does", () => {
     render(<BehavioralProfilePanel profile={noneOnFile} notShared memberName="Paula Averico" />)
     expect(screen.queryByText(/has a PRISM profile on file/i)).not.toBeInTheDocument()
-    expect(screen.getByText(/has no PRISM profile on file/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/has no PRISM profile on file/i))).toBeInTheDocument()
   })
 
   it("offers no ask when there is nothing to ask for", () => {
@@ -217,7 +218,7 @@ describe("BehavioralProfilePanel — withheld vs none on file", () => {
     const { unmount } = render(
       <BehavioralProfilePanel profile={withheld} notShared memberName="Gary Burnette" onRequestAccess={jest.fn()} />,
     )
-    expect(screen.getByText(/has a PRISM profile on file/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/has a PRISM profile on file/i))).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /ask to see this profile/i })).toBeInTheDocument()
     expect(screen.queryByTestId("prism-state-none-on-file")).not.toBeInTheDocument()
     unmount()

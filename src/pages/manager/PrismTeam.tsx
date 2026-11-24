@@ -23,6 +23,7 @@ import { Eye, Users } from 'lucide-react'
 import { QUEST_TYPE_NAMES } from '@/constants/prism'
 import { useManagerTeamPrism } from '@/hooks/manager/useManagerTeamPrism'
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 export default function PrismTeam() {
   const { t } = useTranslation("managerPages")
@@ -52,8 +53,8 @@ export default function PrismTeam() {
     <ManagerLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("prismTeam.teamPrismAssessments", { defaultValue: "Team PRISM Assessments" })}</h1>
-          <p className="text-muted-foreground">{t("prismTeam.trackYourTeamMembersPrism", { defaultValue: "Track your team members' PRISM assessment progress" })}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{withPrism(t("prismTeam.teamPrismAssessments", { defaultValue: "Team PRISM Assessments" }))}</h1>
+          <p className="text-muted-foreground">{withPrism(t("prismTeam.trackYourTeamMembersPrism", { defaultValue: "Track your team members' PRISM assessment progress" }))}</p>
         </div>
 
         {/* Stats */}

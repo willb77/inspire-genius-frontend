@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useLatestPrismStatus } from '@/hooks/prism/usePrismRequest'
+import { Prism } from "@/components/shared/Prism"
 
 function formatCompletionDate(iso: string | null): string | null {
   if (!iso) return null
@@ -54,7 +55,7 @@ export default function PrismBadge() {
               className="border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
             >
               <CheckCircle2 className="h-3 w-3" />
-              <span>PRISM ready</span>
+              <span><Prism /> ready</span>
             </Badge>
           </button>
         </TooltipTrigger>
@@ -68,7 +69,7 @@ export default function PrismBadge() {
               browser. The date is what people actually want, and it is
               already in the payload. */}
           <div>
-            <div className="font-medium">PRISM result available</div>
+            <div className="font-medium"><Prism /> result available</div>
             {completionDate && (
               <div className="text-muted-foreground">
                 Completed: {completionDate}

@@ -39,7 +39,7 @@ function renderTile(overrides?: {
   const onAddPersonalInfo = overrides?.onAddPersonalInfo ?? jest.fn();
 
   const personalInfo: WelcomeBackPersonalInfo[] = overrides?.personalInfo ?? [
-    { name: "Prism Rpt .csv", done: true },
+    { name: "PRISM Rpt .csv", done: true },
     { name: "Resume", done: false },
     { name: "Bio", done: false },
   ];
@@ -279,7 +279,7 @@ describe("WelcomeBackTile", () => {
     it("greys out (disables) the Add button for a done item", () => {
       const { onAddPersonalInfo } = renderTile();
       openDropdown(PERSONAL);
-      const doneAdd = screen.getByRole("button", { name: "Prism Rpt .csv added" });
+      const doneAdd = screen.getByRole("button", { name: "PRISM Rpt .csv added" });
       expect(doneAdd).toBeDisabled();
       fireEvent.click(doneAdd);
       expect(onAddPersonalInfo).not.toHaveBeenCalled();
@@ -306,7 +306,7 @@ describe("WelcomeBackTile", () => {
       renderTile();
       openDropdown(PERSONAL);
       expect(
-        screen.getByRole("button", { name: "Prism Rpt .csv added" }),
+        screen.getByRole("button", { name: "PRISM Rpt .csv added" }),
       ).toBeInTheDocument();
     });
   });

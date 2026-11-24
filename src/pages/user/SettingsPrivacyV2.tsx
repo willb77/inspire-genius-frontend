@@ -17,6 +17,7 @@ import {
 } from "@/hooks/privacy/useMemoryPrivacy"
 import type { MemoryInsight, MemoryConversation } from "@/types/memory"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * SettingsPrivacyV2 — the new-design ("HomeV2" system) variant of
@@ -171,7 +172,7 @@ export default function SettingsPrivacyV2() {
           <CardHeader>
             <CardTitle className="font-serif text-destructive">{t("settingsPrivacyV2.forgetEverything", "Forget everything")}</CardTitle>
             <CardDescription className="text-body-slate">
-              {t("settingsPrivacyV2.permanentlyDeleteEveryMemoryTierWe", "Permanently delete every memory tier we maintain about you: working state, recent messages, summaries, long-term insights, milestones, PRISM results, and semantic embeddings. This cannot be undone.")}
+              {withPrism(t("settingsPrivacyV2.permanentlyDeleteEveryMemoryTierWe", "Permanently delete every memory tier we maintain about you: working state, recent messages, summaries, long-term insights, milestones, PRISM results, and semantic embeddings. This cannot be undone."))}
             </CardDescription>
           </CardHeader>
           <CardContent>

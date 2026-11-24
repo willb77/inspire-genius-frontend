@@ -42,6 +42,7 @@ import { QUEST_TYPE_NAMES, STATUS_CONFIG } from '@/constants/prism'
 import type { PrismAssessment, AssessmentStatus } from '@/types/prism/assessment-types'
 import { usePractitionerClients } from '@/hooks/practitioner/usePractitioner'
 import { usePrismImport } from '@/hooks/prism/usePrismImport'
+import { withPrism } from "@/lib/withPrism"
 
 export default function PrismClients() {
   const { t } = useTranslation("practitionerPages")
@@ -90,10 +91,10 @@ export default function PrismClients() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              {t("prismClients.title", { defaultValue: "Client PRISM Assessments" })}
+              {withPrism(t("prismClients.title", { defaultValue: "Client PRISM Assessments" }))}
             </h1>
             <p className="text-muted-foreground">
-              {t("prismClients.subtitle", { defaultValue: "View and manage your clients' PRISM assessments" })}
+              {withPrism(t("prismClients.subtitle", { defaultValue: "View and manage your clients' PRISM assessments" }))}
             </p>
           </div>
           <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
@@ -105,9 +106,9 @@ export default function PrismClients() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{t("prismClients.importTitle", { defaultValue: "Import Client PRISM Report" })}</DialogTitle>
+                <DialogTitle>{withPrism(t("prismClients.importTitle", { defaultValue: "Import Client PRISM Report" }))}</DialogTitle>
                 <DialogDescription>
-                  {t("prismClients.importDescription", { defaultValue: "Upload an existing PRISM report file for a client. Supported formats: PDF, DOCX, CSV, XLS, XLSX." })}
+                  {withPrism(t("prismClients.importDescription", { defaultValue: "Upload an existing PRISM report file for a client. Supported formats: PDF, DOCX, CSV, XLS, XLSX." }))}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">

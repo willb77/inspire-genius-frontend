@@ -4,6 +4,7 @@
 import { render, screen } from "@testing-library/react"
 import { ClientPrismPanel } from "../ClientPrismPanel"
 import type { ClientPrism } from "@/types/practitioner/coachClient"
+import { byText } from "@/test/byText"
 
 const none = (state: ClientPrism["state"]): ClientPrism => ({ state, colours: null, assessedAt: null })
 
@@ -27,7 +28,7 @@ describe("ClientPrismPanel", () => {
 
   it("says the client has not shared — not that there is no PRISM", () => {
     render(<ClientPrismPanel clientName="Casey" prism={none("not_shared")} />)
-    expect(screen.getByText(/hasn.t shared their PRISM with you/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/hasn.t shared their PRISM with you/i))).toBeInTheDocument()
     expect(screen.queryByText(/no report is on file/i)).not.toBeInTheDocument()
   })
 
@@ -38,7 +39,7 @@ describe("ClientPrismPanel", () => {
 
   it("says shared-but-nothing-on-file", () => {
     render(<ClientPrismPanel clientName="Casey" prism={none("no_prism")} />)
-    expect(screen.getByText(/shared their PRISM with you, but no report is on file/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/shared their PRISM with you, but no report is on file/i))).toBeInTheDocument()
   })
 
   it("renders a failure as an alert", () => {

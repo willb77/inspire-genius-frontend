@@ -42,6 +42,7 @@ import type {
   PrismAnchor,
 } from "@/types/lumen"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 export function PortraitSkeleton({ testId = "portrait-loading" }: { testId?: string }) {
   return (
@@ -149,7 +150,7 @@ export function PortraitNoPrism({
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         {headline && <p>{headline}</p>}
         <p>
-          {t("lumen.portraitPortraitSections.thisIsARealRead", { defaultValue: "This is a real read of what you have given us. PRISM is the anchor the other sources get read against, so adding it lets the picture be corroborated rather than only described." })}
+          {withPrism(t("lumen.portraitPortraitSections.thisIsARealRead", { defaultValue: "This is a real read of what you have given us. PRISM is the anchor the other sources get read against, so adding it lets the picture be corroborated rather than only described." }))}
         </p>
         {children}
       </CardContent>
@@ -478,7 +479,7 @@ export function PortraitAnchorNote() {
   return (
     <p className="flex items-start gap-2 text-xs text-muted-foreground">
       <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-      {t("lumen.portraitPortraitSections.prismIsTheAnchorWhere", { defaultValue: "PRISM is the anchor — where another instrument disagrees, PRISM leads and the difference is shown rather than resolved away." })}
+      {withPrism(t("lumen.portraitPortraitSections.prismIsTheAnchorWhere", { defaultValue: "PRISM is the anchor — where another instrument disagrees, PRISM leads and the difference is shown rather than resolved away." }))}
     </p>
   )
 }

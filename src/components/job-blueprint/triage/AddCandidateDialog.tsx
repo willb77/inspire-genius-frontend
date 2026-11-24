@@ -21,6 +21,7 @@ import {
 import { useSubmitIntake } from "@/hooks/job-blueprint/useTriage"
 import { describeIntakeError } from "./intakeError"
 import type { Candidate, JobDNA } from "@/types/job-blueprint"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * "Add candidate" — the one form the triage pipeline never had.
@@ -115,7 +116,7 @@ export function AddCandidateDialog({
           <DialogHeader>
             <DialogTitle>{t("addCandidate.title", { defaultValue: "Add a candidate" })}</DialogTitle>
             <DialogDescription>
-              {t("addCandidate.description", { defaultValue: "Puts the person into the role's pipeline under a blind code. Their PRISM profile is scored against the role's reviewed benchmark once it is on file." })}
+              {withPrism(t("addCandidate.description", { defaultValue: "Puts the person into the role's pipeline under a blind code. Their PRISM profile is scored against the role's reviewed benchmark once it is on file." }))}
             </DialogDescription>
           </DialogHeader>
 

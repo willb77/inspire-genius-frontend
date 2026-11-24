@@ -73,6 +73,7 @@ import {
 import { ArtifactStatusMatrix } from "./_ArtifactUploader"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
 import { checkingNotice, scanErrorMessage } from "@/lib/documents/checkingNotice"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * Honor Coach Workbench — Evaluate Fellow (Phase 3).
@@ -1003,7 +1004,7 @@ export default function HonorEvaluate() {
               Evidence for {primaryName}
             </div>
             <p className="mb-3 text-xs text-[#5b6678]">
-              Choose which submitted sources to evaluate on. You can evaluate with a PRISM
+              Choose which submitted sources to evaluate on. You can evaluate with a <Prism />
               report and without, or on just a résumé, bio, or another assessment — the
               confidence meter shows how the fit score degrades as sources are excluded.
             </p>
@@ -1231,7 +1232,7 @@ export default function HonorEvaluate() {
               {!result.confidence.behavioralBasis && (
                 <p className="mt-3 text-xs text-[#a2543f]">
                   No behavioral assessment in this selection — the fit score is imputed-neutral
-                  (not measured). Include PRISM or another assessment for a scored fit.
+                  (not measured). Include <Prism /> or another assessment for a scored fit.
                 </p>
               )}
               <p className="mt-2 text-xs text-[#9299a6]">{result.confidence.note}</p>
@@ -1485,7 +1486,7 @@ function ReportView({
       {noScores && (
         <div className="rounded-lg border border-[#f0d9b8] bg-[#fdf6ec] px-4 py-3 text-sm text-[#8a5a12]">
           No scored assessment on file — this evaluation is composed from the
-          fellow&rsquo;s résumé and other sources. Import a PRISM report to add a
+          fellow&rsquo;s résumé and other sources. Import a <Prism /> report to add a
           scored behavioral fit.
         </div>
       )}

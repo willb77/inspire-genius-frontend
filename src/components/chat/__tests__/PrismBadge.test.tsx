@@ -27,6 +27,7 @@ jest.mock('@/components/ui/tooltip', () => ({
 }))
 
 import PrismBadge from '@/components/chat/PrismBadge'
+import { byText } from "@/test/byText"
 
 beforeEach(() => {
   mockUseLatestPrismStatus.mockReset()
@@ -47,11 +48,11 @@ describe('PrismBadge (G9 Agent C)', () => {
     render(<PrismBadge />)
 
     expect(screen.getByTestId('prism-ready-badge')).toBeInTheDocument()
-    expect(screen.getByText('PRISM ready')).toBeInTheDocument()
+    expect(screen.getByText(byText('PRISM ready'))).toBeInTheDocument()
     // Tooltip shows the completion date. It used to be nested inside a
     // filename branch fed by csv_s3_key — an internal S3 key the endpoint
     // never returns — so this line could never render.
-    expect(screen.getByText('PRISM result available')).toBeInTheDocument()
+    expect(screen.getByText(byText('PRISM result available'))).toBeInTheDocument()
     expect(screen.getByText(/^Completed: /)).toBeInTheDocument()
   })
 
@@ -87,7 +88,7 @@ describe('PrismBadge (G9 Agent C)', () => {
 
     render(<PrismBadge />)
 
-    expect(screen.getByText('PRISM result available')).toBeInTheDocument()
+    expect(screen.getByText(byText('PRISM result available'))).toBeInTheDocument()
     expect(screen.queryByText(/^Completed: /)).not.toBeInTheDocument()
   })
 })

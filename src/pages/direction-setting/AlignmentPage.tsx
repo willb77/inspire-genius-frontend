@@ -20,6 +20,7 @@ import type {
   AlignmentGoal,
   AlignmentResultPayload,
 } from "@/types/direction-setting"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Stage 6 — "Do my goals and my wiring agree?"
@@ -499,7 +500,7 @@ export function UnscoredNotice({
         />
         <div className="min-w-0 space-y-2">
           <h2 id="alignment-unscored" className="text-sm font-medium">
-            {t("alignment.notScoredYetWeNeed", "Not scored yet — we need your PRISM first")}
+            {withPrism(t("alignment.notScoredYetWeNeed", "Not scored yet — we need your PRISM first"))}
           </h2>
           <p className="text-sm text-muted-foreground">
             {t("alignment.unscoredExplanation", {
@@ -522,7 +523,7 @@ export function UnscoredNotice({
               size="sm"
               onClick={onEstablish}
             >
-              {t("alignment.takeThePrismAssessment", "Take the PRISM assessment")}
+              {withPrism(t("alignment.takeThePrismAssessment", "Take the PRISM assessment"))}
               <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
             </Button>
           )}

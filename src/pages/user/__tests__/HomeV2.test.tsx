@@ -184,7 +184,7 @@ describe("HomeV2", () => {
     fireEvent.click(screen.getByTestId(PERSONAL));
     // No latest-prism and no 'prism' personal_doc → still addable.
     expect(
-      screen.getByRole("button", { name: "Add Prism Rpt .csv" }),
+      screen.getByRole("button", { name: "Add PRISM Rpt .csv" }),
     ).toBeInTheDocument();
   });
 
@@ -200,14 +200,14 @@ describe("HomeV2", () => {
     it("opens the PRISM replace dialog, not the tagged-upload modal", () => {
       wrap();
       fireEvent.click(screen.getByTestId(PERSONAL));
-      fireEvent.click(screen.getByRole("button", { name: "Add Prism Rpt .csv" }));
+      fireEvent.click(screen.getByRole("button", { name: "Add PRISM Rpt .csv" }));
 
       // The replace dialog — it posts to /v1/prism/report/me/replace.
       expect(screen.getByTestId("prism-drop-zone")).toBeInTheDocument();
       expect(screen.getByTestId("prism-replace-submit")).toBeInTheDocument();
       // ...and NOT the generic tagged-upload modal, whose heading is "Add <name>".
       expect(
-        screen.queryByRole("heading", { name: "Add Prism Rpt .csv" }),
+        screen.queryByRole("heading", { name: "Add PRISM Rpt .csv" }),
       ).toBeNull();
     });
 

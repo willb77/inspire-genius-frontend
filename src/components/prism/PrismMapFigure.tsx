@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { PrismMap } from "@/types/chat/data-types";
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Renders the PRISM Brain Map that accompanies a turn reporting the user's
@@ -39,7 +40,7 @@ export default function PrismMapFigure({ map }: { map: PrismMap }) {
         loading="lazy"
       />
       <figcaption className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-        <span>{t("mapFigure.caption", { defaultValue: "PRISM Brain Map" })}</span>
+        <span>{withPrism(t("mapFigure.caption", { defaultValue: "PRISM Brain Map" }))}</span>
         {map.assessed_at ? (
           <span>{t("mapFigure.assessedOn", { defaultValue: "· assessed {{date}}", date: String(map.assessed_at).slice(0, 10) })}</span>
         ) : null}

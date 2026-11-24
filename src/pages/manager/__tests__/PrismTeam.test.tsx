@@ -5,6 +5,7 @@
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PrismTeam from "../PrismTeam";
+import { byText } from "@/test/byText"
 
 function renderWithQuery(ui: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -73,9 +74,9 @@ describe("PrismTeam", () => {
 
   it("renders page heading", () => {
     renderWithQuery(<PrismTeam />);
-    expect(screen.getByText("Team PRISM Assessments")).toBeInTheDocument();
+    expect(screen.getByText(byText("Team PRISM Assessments"))).toBeInTheDocument();
     expect(
-      screen.getByText("Track your team members' PRISM assessment progress")
+      screen.getByText(byText("Track your team members' PRISM assessment progress"))
     ).toBeInTheDocument();
   });
 

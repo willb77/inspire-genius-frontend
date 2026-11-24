@@ -14,6 +14,7 @@ import {
 } from "@/components/lumen/portrait"
 import { SelfPortraitNarrative } from "@/pages/lumen/SelfPortraitNarrative"
 import { ProvenanceNote } from "@/components/shared/ProvenanceNote"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Stage 2 — "what am I actually like?"
@@ -132,7 +133,7 @@ export default function PortraitPage() {
         <PortraitNoPrism title={t("portrait.whatThisIsBuiltOn", "What this is built on so far")} headline={portrait.headline}>
           <Button asChild variant="outline" size="sm">
             <Link to={ROUTES.DIRECTION_SETTING.ESTABLISH}>
-              {t("portrait.requestOrUploadPrism", "Request or upload PRISM")}
+              {withPrism(t("portrait.requestOrUploadPrism", "Request or upload PRISM"))}
             </Link>
           </Button>
         </PortraitNoPrism>

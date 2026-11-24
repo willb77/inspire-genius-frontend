@@ -9,6 +9,7 @@ import { HonorCard, HonorEmptyState, HonorPageHeader, HonorPill, PrismDots } fro
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, fellowStatusLabel } from "./_format"
 import InviteComposer from "./InviteComposer"
 import RequestPrismModal from "./RequestPrismModal"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * Honor Coach Workbench — My Fellows (Caseload).
@@ -143,7 +144,7 @@ export default function HonorCaseload() {
         action={
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => setPrismOpen(true)} className={HONOR_BTN_OUTLINE}>
-              <ClipboardList className="h-4 w-4" /> Request a PRISM report
+              <ClipboardList className="h-4 w-4" /> Request a <Prism /> report
             </button>
             <Link to={ROUTES.HONOR.ONBOARD} className={HONOR_BTN_OUTLINE}>
               <Upload className="h-4 w-4" /> Import CSV

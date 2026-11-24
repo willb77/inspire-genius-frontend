@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/card'
 import { useActivePrismRequests } from '@/hooks/prism/usePrismRequest'
 import { QUEST_TYPE_NAMES } from '@/constants/prism'
+import { withPrism } from "@/lib/withPrism"
 
 function questTypeLabel(qtypeId: number | null, t: TFunction): string {
   if (qtypeId == null) return t('activeRequest.questionnaireDefault', { defaultValue: 'PRISM questionnaire' })
@@ -60,7 +61,7 @@ export default function ActivePrismRequestCard() {
 
   return (
     <div className="space-y-3" data-testid="active-prism-requests">
-      <h2 className="text-lg font-semibold">{t('activeRequest.heading', { defaultValue: 'Your open PRISM surveys' })}</h2>
+      <h2 className="text-lg font-semibold">{withPrism(t('activeRequest.heading', { defaultValue: 'Your open PRISM surveys' }))}</h2>
       {active.map(({ row, questionnaireUrl }) => {
         const requested = formatRequested(row.requested_at ?? row.created_at)
         return (
@@ -115,10 +116,10 @@ export default function ActivePrismRequestCard() {
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  {t('activeRequest.noLinkYet', {
+                  {withPrism(t('activeRequest.noLinkYet', {
                     defaultValue:
                       'PRISM has not issued a questionnaire link for this request yet. It will appear here once they do.',
-                  })}
+                  }))}
                 </p>
               )}
             </CardContent>

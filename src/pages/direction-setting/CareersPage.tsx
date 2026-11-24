@@ -12,6 +12,7 @@ import {
   useRecordStageComplete,
 } from "@/hooks/direction-setting/useJourney"
 import type { RoleFamilyAffinity } from "@/types/direction-setting"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Stage 3 — "what kind of work suits me?"
@@ -134,7 +135,7 @@ function NoDataYet({ note }: { note: string }) {
         </p>
         <Button asChild>
           <Link to={ROUTES.DIRECTION_SETTING.ESTABLISH}>
-            {t("careers.addYourPrism", "Add your PRISM")}
+            {withPrism(t("careers.addYourPrism", "Add your PRISM"))}
             <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
           </Link>
         </Button>

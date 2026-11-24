@@ -6,6 +6,7 @@ import "@testing-library/jest-dom"
 import { MemberCard } from "../MemberCard"
 import type { RosterMember } from "@/types/development"
 import { ROUTES } from "@/constants/routes"
+import { byText } from "@/test/byText"
 
 const baseMember: RosterMember = {
   memberId: "m-1",
@@ -67,7 +68,7 @@ describe("MemberCard", () => {
       headlineConfidence: undefined,
     }
     renderCard(noPrism)
-    expect(screen.getByText(/Invite to complete PRISM/i)).toBeInTheDocument()
+    expect(screen.getByText(byText(/Invite to complete PRISM/i))).toBeInTheDocument()
   })
 
   // The card body is the main way into a member's workspace. It was hardcoded

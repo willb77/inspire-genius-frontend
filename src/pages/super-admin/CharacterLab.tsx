@@ -49,6 +49,7 @@ import type {
   ScoreByType,
   ScoreType,
 } from "@/types/character-lab"
+import { Prism } from "@/components/shared/Prism"
 
 const BEHAVIOUR_GROUP = "Behavior Preferences"
 
@@ -415,7 +416,7 @@ export function CharacterLabBody({ fullAccess }: CharacterLabBodyProps) {
               Character Lab
             </h1>
             <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              Place a fictional character on the PRISM dimensions and read the profile back.
+              Place a fictional character on the <Prism /> dimensions and read the profile back.
               Every scale is scored against a written definition — what it measures and what
               both ends look like — so the result can be argued with rather than admired.
             </p>
@@ -428,9 +429,9 @@ export function CharacterLabBody({ fullAccess }: CharacterLabBodyProps) {
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
-            <strong>Synthetic profiles.</strong> Nothing here is a PRISM assessment or is stored
+            <strong>Synthetic profiles.</strong> Nothing here is a <Prism /> assessment or is stored
             against a person. Profiles live in this browser tab and in whatever you export —
-            they are never written to the PRISM tables, and must not be pooled with real
+            they are never written to the <Prism /> tables, and must not be pooled with real
             candidates for benchmarking or training.
           </span>
         </div>

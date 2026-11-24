@@ -21,6 +21,7 @@ import {
   Brain,
   ChevronRight,
 } from "lucide-react"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Practitioner Home — same format as the standard My Workspace Home (HomeV2):
@@ -60,12 +61,12 @@ export default function PractitionerHome() {
 
   const prismBadge = (c: (typeof roster)[number]) => {
     if (c.prismStatus === "ready" && c.prismScore !== null) {
-      return <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-[#D1FAE5] text-[#065F46]">{t("home.prismScore", { score: c.prismScore, defaultValue: "PRISM {{score}}" })}</span>
+      return <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-[#D1FAE5] text-[#065F46]">{withPrism(t("home.prismScore", { score: c.prismScore, defaultValue: "PRISM {{score}}" }))}</span>
     }
     if (c.prismStatus === "in_progress") {
       return <span className="text-[11px] font-medium px-2 py-0.5 rounded-lg bg-[#FEF3C7] text-[#92400E]">{t("home.inProgress", { defaultValue: "In progress" })}</span>
     }
-    return <span className="text-[11px] font-medium px-2 py-0.5 rounded-lg bg-[#F3F4F6] text-[#6B7280]">{t("home.noPrism", { defaultValue: "No PRISM" })}</span>
+    return <span className="text-[11px] font-medium px-2 py-0.5 rounded-lg bg-[#F3F4F6] text-[#6B7280]">{withPrism(t("home.noPrism", { defaultValue: "No PRISM" }))}</span>
   }
 
   return (

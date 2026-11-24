@@ -9,6 +9,7 @@ import {
   usePrismAccessPermissions,
   useSetOrgPrismAccess,
 } from "@/hooks/super-admin/prism-access/usePrismAccessAdmin";
+import { Prism } from "@/components/shared/Prism"
 
 interface OrgPrismAccessSwitchProps {
   orgId: string;
@@ -36,9 +37,9 @@ export default function OrgPrismAccessSwitch({ orgId }: OrgPrismAccessSwitchProp
     <div className="space-y-2 rounded-md border p-4" data-testid="org-prism-access">
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-1">
-          <Label htmlFor="org-prism-access-switch">Members may request PRISM surveys</Label>
+          <Label htmlFor="org-prism-access-switch">Members may request <Prism /> surveys</Label>
           <p className="text-sm text-muted-foreground">
-            When on, every member of this organisation may request a PRISM survey without an
+            When on, every member of this organisation may request a <Prism /> survey without an
             individual approval.
           </p>
         </div>

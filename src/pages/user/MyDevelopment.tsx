@@ -58,6 +58,7 @@ import MyMilestonesSection from "@/components/user/development/MyMilestonesSecti
 import MyPrismReadingSection from "@/components/user/development/MyPrismReadingSection"
 import MyReviewsSection from "@/components/user/development/MyReviewsSection"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /** The signed-in role's own chrome — same resolution as Goals Studio. */
 function RoleChrome({ role, children }: { role: UserRole | undefined; children: React.ReactNode }) {
@@ -82,7 +83,7 @@ export default function MyDevelopment() {
           <div className="min-w-0">
             <h1 className="text-xl font-semibold tracking-tight">{t("myDevelopment.myDevelopment", "My development")}</h1>
             <p className="text-sm text-muted-foreground">
-              {t("myDevelopment.whatYourCoachSeesAboutYou", "What your coach sees about you, as you. Your gaps, your learning, your roadmap, what a coach wrote back, and your own PRISM reading.")}
+              {withPrism(t("myDevelopment.whatYourCoachSeesAboutYou", "What your coach sees about you, as you. Your gaps, your learning, your roadmap, what a coach wrote back, and your own PRISM reading."))}
             </p>
           </div>
         </header>

@@ -1,6 +1,7 @@
 import { ClipboardList, Layers, UsersRound } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ROUTES } from "@/constants/routes"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * The /join brand wall (IN-2c follow-up). Passed to `AuthLayout` as
@@ -82,7 +83,7 @@ export function JoinBrandPanel({
             <ClipboardList className="h-4 w-4" />
           </span>
           <p className="text-[12.5px] leading-snug text-white/60">
-            <span className="block text-[13.5px] font-semibold text-white">Grounded in PRISM.</span> Works with the tool your customers understand.
+            <span className="block text-[13.5px] font-semibold text-white">Grounded in <Prism />.</span> Works with the tool your customers understand.
           </p>
         </li>
         <li className="flex items-start gap-3">

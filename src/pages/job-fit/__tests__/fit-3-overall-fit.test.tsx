@@ -42,6 +42,7 @@ jest.mock("@/hooks/job-fit/useFitHistory", () => ({
 import MatchesPage from "../MatchesPage"
 import { FitComponentsCard } from "../FitComponentsCard"
 import { orderRows } from "@/components/fit/components"
+import { byText } from "@/test/byText"
 
 const base: FitMatch = {
   jobId: "j", roleTitle: "Role", department: null, tier: "strong-fit", baseTier: "strong-fit",
@@ -126,7 +127,7 @@ describe("My fit with Overall fit on", () => {
     ])
     const cio = screen.getByText("Chief Information Officer").closest("a")!
     expect(within(cio).getByText("90")).toBeInTheDocument()
-    expect(within(cio).getByText("PRISM fit 76%")).toBeInTheDocument()
+    expect(within(cio).getByText(byText("PRISM fit 76%"))).toBeInTheDocument()
     expect(screen.queryByText(/composite/i)).not.toBeInTheDocument()
     expect(screen.getByRole("radio", { name: "Overall fit" })).toHaveAttribute("aria-checked", "true")
   })
@@ -137,7 +138,7 @@ describe("My fit with Overall fit on", () => {
     await screen.findAllByText("Overall fit")
     const row = screen.getByText("Warehouse Coordinator").closest("a")!
     expect(within(row).getByText("81")).toBeInTheDocument()
-    expect(within(row).getByText("PRISM fit")).toBeInTheDocument()
+    expect(within(row).getByText(byText("PRISM fit"))).toBeInTheDocument()
     expect(within(row).getByText(/not enough about you to combine — add a résumé/i)).toBeInTheDocument()
   })
 

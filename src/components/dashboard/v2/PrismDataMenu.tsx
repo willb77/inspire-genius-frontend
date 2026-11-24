@@ -43,6 +43,7 @@ import {
   useMyPrismReport,
   useMyPrismReportDownloadUrl,
 } from "@/hooks/prism/usePrismReportDownload"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * The "PRISM Report (PDF)" menu item + its data. Mounted only inside an open
@@ -113,7 +114,7 @@ function PrismReportPdfItem(): JSX.Element {
         ) : (
           <FileText className="size-4" aria-hidden="true" />
         )}
-        <span>{t("prismDataMenu.reportPdf", { defaultValue: "PRISM Report (PDF)" })}</span>
+        <span>{withPrism(t("prismDataMenu.reportPdf", { defaultValue: "PRISM Report (PDF)" }))}</span>
       </DropdownMenuItem>
       {!isLoading && !pdfReady ? (
         <p className="px-2 pb-1.5 pt-0.5 text-[11px] text-muted-foreground">
@@ -139,7 +140,7 @@ export function PrismDataMenu(): JSX.Element {
             className="w-full border-ig-line text-ig-ink sm:w-auto"
           >
             <FileText className="size-4" />
-            {t("prismDataMenu.trigger", { defaultValue: "Prism Data" })}
+            {withPrism(t("prismDataMenu.trigger", { defaultValue: "PRISM Data" }))}
             <ChevronDown className="size-4 opacity-70" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
@@ -158,9 +159,9 @@ export function PrismDataMenu(): JSX.Element {
       <Dialog open={mapOpen} onOpenChange={setMapOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{t("prismDataMenu.dialogTitle", { defaultValue: "Your PRISM Brain Map" })}</DialogTitle>
+            <DialogTitle>{withPrism(t("prismDataMenu.dialogTitle", { defaultValue: "Your PRISM Brain Map" }))}</DialogTitle>
             <DialogDescription>
-              {t("prismDataMenu.dialogDescription", { defaultValue: "Your PRISM 8-dimension profile plotted on the behavioral map." })}
+              {withPrism(t("prismDataMenu.dialogDescription", { defaultValue: "Your PRISM 8-dimension profile plotted on the behavioral map." }))}
             </DialogDescription>
           </DialogHeader>
           {mapOpen ? <PrismSelfMapContent /> : null}

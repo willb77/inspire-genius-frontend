@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next"
 import { useAuth } from "@/context/useAuth"
 import PRISMPills from "@/components/dashboard/PRISMPills"
 import type { PRISMDimension, UpcomingEvent } from "@/types/dashboard/data-types"
+import { withPrism } from "@/lib/withPrism"
 
 function getInitials(name: string | null | undefined, email: string | undefined): string {
   if (name) {
@@ -51,7 +52,7 @@ export default function RightPanel({ prism = DEFAULT_PRISM, upcoming = DEFAULT_U
 
       {/* PRISM Profile */}
       <div>
-        <div className="text-xs font-semibold text-[#374151] mb-2">{t("rightPanel.prismProfile", { defaultValue: "PRISM Profile" })}</div>
+        <div className="text-xs font-semibold text-[#374151] mb-2">{withPrism(t("rightPanel.prismProfile", { defaultValue: "PRISM Profile" }))}</div>
         <PRISMPills dimensions={prism} />
       </div>
 

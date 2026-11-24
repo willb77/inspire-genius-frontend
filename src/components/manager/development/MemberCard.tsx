@@ -15,6 +15,7 @@ import { ProgressRing } from "./ProgressRing"
 import { ConfidenceDot } from "./ConfidenceDot"
 import { useDevSkin } from "./skin"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 function initials(name: string): string {
   return name
@@ -164,7 +165,7 @@ export function MemberCard({
           <p className={cn("line-clamp-2 text-xs", sk.text600)}>{headline}</p>
         </div>
       ) : needsPrism ? (
-        <p className={cn("text-xs italic", sk.text400)}>{t("memberCard.inviteToCompletePrismTo", { defaultValue: "Invite to complete PRISM to build a profile." })}</p>
+        <p className={cn("text-xs italic", sk.text400)}>{withPrism(t("memberCard.inviteToCompletePrismTo", { defaultValue: "Invite to complete PRISM to build a profile." }))}</p>
       ) : null}
 
       {FIT_ENGINE_MATCHES_ENABLED ? (

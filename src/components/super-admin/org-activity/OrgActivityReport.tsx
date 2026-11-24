@@ -22,6 +22,7 @@ import {
   useRunOrgActivityReport,
 } from "@/hooks/super-admin/useOrgActivity"
 import type { OrgActivityReport as Report } from "@/types/super-admin/orgActivity"
+import { withPrism } from "@/lib/withPrism"
 
 export const ORG_ACTIVITY_NS = "orgActivityUi"
 
@@ -392,11 +393,11 @@ function ReportPreview({ report: r, emptyText }: { report: Report; emptyText: st
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">{t("secPrism", { defaultValue: "PRISM requests and goals" })}</CardTitle>
+            <CardTitle className="text-sm">{withPrism(t("secPrism", { defaultValue: "PRISM requests and goals" }))}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {r.prism.length === 0 ? (
-              <p className="text-[#6b7280]">{t("noPrism", { defaultValue: "No PRISM survey requests recorded." })}</p>
+              <p className="text-[#6b7280]">{withPrism(t("noPrism", { defaultValue: "No PRISM survey requests recorded." }))}</p>
             ) : (
               <ul className="space-y-1">
                 {r.prism.map((p, i) => (
@@ -506,9 +507,9 @@ function ReportPreview({ report: r, emptyText }: { report: Report; emptyText: st
             </li>
             <li>{t("cavTime", { defaultValue: "Time-in-app and page views are not tracked, so they are not reported." })}</li>
             <li>
-              {t("cavFlags", {
+              {withPrism(t("cavFlags", {
                 defaultValue: "Profile flags 'profile complete' and 'survey submitted' are unreliable; the PRISM request list is the better source.",
-              })}
+              }))}
             </li>
             <li>
               {t("cavLumen", {
@@ -528,7 +529,7 @@ function ReportPreview({ report: r, emptyText }: { report: Report; emptyText: st
               </li>
             )}
             {r.truncated.prism && (
-              <li>{t("cavPrism", { defaultValue: "PRISM requests are capped at the most recent {{cap}}.", cap: r.caps.prism })}</li>
+              <li>{withPrism(t("cavPrism", { defaultValue: "PRISM requests are capped at the most recent {{cap}}.", cap: r.caps.prism }))}</li>
             )}
             {r.truncated.goals && (
               <li>{t("cavGoals", { defaultValue: "Goals are capped at {{cap}} rows.", cap: r.caps.goals })}</li>

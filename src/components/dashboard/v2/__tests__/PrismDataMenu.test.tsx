@@ -62,7 +62,7 @@ describe("PrismDataMenu", () => {
   it("renders the 'Prism Data' trigger and both items", () => {
     useMyPrismReport.mockReturnValue({ data: { available: false } })
     render(<PrismDataMenu />)
-    expect(screen.getByTestId("homev2-prism-data")).toHaveTextContent("Prism Data")
+    expect(screen.getByTestId("homev2-prism-data")).toHaveTextContent("PRISM Data")
     expect(screen.getByTestId("homev2-prism-data-pdf")).toBeInTheDocument()
     expect(screen.getByTestId("homev2-prism-data-map")).toBeInTheDocument()
   })

@@ -16,6 +16,7 @@ import type {
   DiscoveryJourney,
   DiscoveryProgramsCatalog,
 } from "@/types/career-discovery"
+import { byText } from "@/test/byText"
 
 jest.mock("@/services/career-discovery/careerDiscovery.service")
 jest.mock("@/lib/exportDegreePlan", () => ({
@@ -170,7 +171,7 @@ describe("the page", () => {
     expect(within(terms).getByText(/Required: DAT100 — Core\. Now, because you've done MAT 110\./)).toBeInTheDocument()
     expect(within(terms).getByText(/what is left waits for another season/)).toBeInTheDocument()
     expect(screen.getByText(/Overall fit 81%/)).toBeInTheDocument()
-    expect(screen.getByText(/PRISM fit 77%/)).toBeInTheDocument()
+    expect(screen.getByText(byText(/PRISM fit 77%/))).toBeInTheDocument()
     expect(screen.getByText("$2,000 to $6,000 after grants, over 1 term.")).toBeInTheDocument()
     expect(screen.getByText("No behaviour or skill gaps are on file yet.")).toBeInTheDocument()
   })

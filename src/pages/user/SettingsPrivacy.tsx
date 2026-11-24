@@ -16,6 +16,7 @@ import {
 } from "@/hooks/privacy/useMemoryPrivacy"
 import type { MemoryInsight, MemoryConversation } from "@/types/memory"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * `/settings/privacy` — user-facing memory privacy & RTBF.
@@ -166,7 +167,7 @@ export default function SettingsPrivacy() {
           <CardHeader>
             <CardTitle className="text-destructive">{t("settingsPrivacy.forgetEverything", "Forget everything")}</CardTitle>
             <CardDescription>
-              {t("settingsPrivacy.permanentlyDeleteEveryMemoryTierWe", "Permanently delete every memory tier we maintain about you: working state, recent messages, summaries, long-term insights, milestones, PRISM results, and semantic embeddings. This cannot be undone.")}
+              {withPrism(t("settingsPrivacy.permanentlyDeleteEveryMemoryTierWe", "Permanently delete every memory tier we maintain about you: working state, recent messages, summaries, long-term insights, milestones, PRISM results, and semantic embeddings. This cannot be undone."))}
             </CardDescription>
           </CardHeader>
           <CardContent>

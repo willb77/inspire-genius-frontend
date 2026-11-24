@@ -11,6 +11,7 @@ import { targetErrorText } from "@/pages/summit/_targets"
 import type { FitDetail } from "@/types/job-fit"
 import type { GoalTargetWithRoadmap, RoadmapMilestone } from "@/types/goals/targets"
 import { FitCard, FitSectionTitle } from "@/components/fit/primitives"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * JS-7 (D-JS2): the Pathway page reads the roadmap engine. Everything here is
@@ -153,10 +154,10 @@ function Milestone({ m }: { m: RoadmapMilestone }) {
       {m.canon && (
         <span className="mt-1 block border-l-[3px] border-[#0D9488] pl-2 text-xs text-[#6b7280]">
           <b>
-            {t("pathwayTargets.dimensionInPrism", {
+            {withPrism(t("pathwayTargets.dimensionInPrism", {
               defaultValue: "{{dimension}} in PRISM:",
               dimension: m.canon.dimension,
-            })}
+            }))}
           </b> {m.canon.definition}
         </span>
       )}

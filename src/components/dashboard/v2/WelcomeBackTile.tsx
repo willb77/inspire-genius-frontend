@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 import { BehavioralMapDialog } from "@/components/dashboard/v2/BehavioralMapDialog";
+import { withPrism } from "@/lib/withPrism"
 
 export interface WelcomeBackAssessment {
   name: string;
@@ -188,7 +189,7 @@ function CompletionRow({
             isDone ? "text-ig-ok" : isUnknown ? "text-ig-accent" : "text-ig-ink",
           )}
         >
-          {name}
+          {withPrism(name)}
           {isUnknown ? (
             <span className="ms-1 text-[12px] font-medium">
               {t("homeV2.checkFailed", { defaultValue: "— couldn't check" })}

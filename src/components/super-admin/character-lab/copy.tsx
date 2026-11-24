@@ -5,6 +5,7 @@ import type {
   ScenarioCopy,
 } from "@/components/prism/studio/ports"
 import { SYNTHETIC_NARRATIVE_PREFIX, syntheticFooter } from "@/lib/prismExportLabels"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * The export identity these documents have always carried.
@@ -109,7 +110,7 @@ export const CHARACTER_LAB_LIBRARY_COPY: LibraryCopy = {
 export const CHARACTER_LAB_IMPORT_COPY: ImportCopy = {
   blurb: (
     <>
-      Wide-format PRISM exports — the layout <strong>Wide CSV</strong> writes. Scores are taken
+      Wide-format <Prism /> exports — the layout <strong>Wide CSV</strong> writes. Scores are taken
       exactly as authored; the brain map is derived from the eight behaviour preferences.
       Re-importing a corrected file updates that character.
     </>

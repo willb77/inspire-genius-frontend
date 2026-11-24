@@ -39,6 +39,7 @@ import {
   ClientInvitesLoadError,
   ClientInvitesPanel,
 } from "@/components/practitioner/invites/ClientInvitesPanel"
+import { withPrism } from "@/lib/withPrism"
 
 const TOTAL_RESOURCES = 10
 
@@ -249,7 +250,7 @@ export default function PractitionerClients() {
                   <TableHead>{t("clients.colOrganization", { defaultValue: "Organization" })}</TableHead>
                   <TableHead className="text-center">{t("clients.colSessions", { defaultValue: "# Sessions" })}</TableHead>
                   <TableHead>{t("clients.colTopGoals", { defaultValue: "Top Goals" })}</TableHead>
-                  <TableHead>{t("clients.colPrism", { defaultValue: "PRISM" })}</TableHead>
+                  <TableHead>{withPrism(t("clients.colPrism", { defaultValue: "PRISM" }))}</TableHead>
                   <TableHead>{t("clients.colResources", { defaultValue: "Resources" })}</TableHead>
                   {invitesLive && <TableHead className="text-right">{t("clients.colInvite", { defaultValue: "Invite" })}</TableHead>}
                 </TableRow>
@@ -321,7 +322,7 @@ export default function PractitionerClients() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[#111827]">{t("clients.title", { defaultValue: "My Clients" })}</h1>
             <p className="text-sm text-[#6b7280]">
-              {t("clients.subtitle", { defaultValue: "Your coaching roster — resources, PRISM, and session history at a glance." })}
+              {withPrism(t("clients.subtitle", { defaultValue: "Your coaching roster — resources, PRISM, and session history at a glance." }))}
             </p>
           </div>
           <div className="flex gap-2">

@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { createPortal } from "react-dom"
 import { X, PlayCircle } from "lucide-react"
 import { PRISM_OVERVIEW_VIDEO_URL } from "./_media"
+import { Prism } from "@/components/shared/Prism"
 
 /**
  * PRISM Overview — a lightweight modal that will host short explainer videos
@@ -53,9 +54,9 @@ export default function PrismOverviewModal({
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-[#18202f]">PRISM Overview</h2>
+            <h2 className="text-lg font-semibold text-[#18202f]"><Prism /> Overview</h2>
             <p className="mt-0.5 text-sm text-[#5b6678]">
-              Short explainers on how to read a PRISM report. More coming soon.
+              Short explainers on how to read a <Prism /> report. More coming soon.
             </p>
           </div>
           <button

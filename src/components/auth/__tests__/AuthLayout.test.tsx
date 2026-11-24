@@ -8,6 +8,7 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AuthLayout from "../AuthLayout";
+import { byText } from "@/test/byText"
 
 describe("AuthLayout Component (Design B)", () => {
   describe("Rendering", () => {
@@ -70,7 +71,7 @@ describe("AuthLayout Component (Design B)", () => {
         </AuthLayout>
       );
       expect(
-        screen.getByText(/AI-powered coaching grounded in the PRISM/)
+        screen.getByText(byText(/AI-powered coaching grounded in the PRISM/))
       ).toBeInTheDocument();
     });
 

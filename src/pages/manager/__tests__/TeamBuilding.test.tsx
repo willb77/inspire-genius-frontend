@@ -4,6 +4,7 @@
 
 import { render, screen } from "@testing-library/react";
 import ManagerTeamBuilding from "../TeamBuilding";
+import { byText } from "@/test/byText"
 
 jest.mock("@/layouts/ManagerLayout", () => ({
   __esModule: true,
@@ -59,7 +60,7 @@ describe("ManagerTeamBuilding", () => {
     expect(screen.getByText("Team Building")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "PRISM team composition, conflict insights, and collaboration suggestions."
+        byText("PRISM team composition, conflict insights, and collaboration suggestions.")
       )
     ).toBeInTheDocument();
   });

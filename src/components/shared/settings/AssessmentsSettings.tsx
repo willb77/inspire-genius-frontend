@@ -37,6 +37,7 @@ import type {
   AssessmentTyping,
   CreateAssessmentRequest,
 } from "@/types/profile/profile-types";
+import { withPrism } from "@/lib/withPrism"
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -448,9 +449,9 @@ export default function AssessmentsSettings() {
           data-testid="prism-data-settings"
         >
           <div>
-            <p className="text-sm font-medium">{t("assessments.prismData", { defaultValue: "Your PRISM data" })}</p>
+            <p className="text-sm font-medium">{withPrism(t("assessments.prismData", { defaultValue: "Your PRISM data" }))}</p>
             <p className="text-xs text-muted-foreground">
-              {t("assessments.prismDataHelp", { defaultValue: "Replace your PRISM scores from a raw-data CSV, and optionally your report PDF. This overwrites your current PRISM profile." })}
+              {withPrism(t("assessments.prismDataHelp", { defaultValue: "Replace your PRISM scores from a raw-data CSV, and optionally your report PDF. This overwrites your current PRISM profile." }))}
             </p>
           </div>
           <ReplacePrismDataButton label={t("assessments.replacePrism", { defaultValue: "Replace PRISM data" })} variant="outline" size="sm" />
