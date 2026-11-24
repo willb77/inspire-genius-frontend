@@ -149,7 +149,8 @@
     "uploadReportBlurbShort": "Hai fatto PRISM altrove? Carica il report e leggeremo i punteggi.",
     "resumeBlurbShort": "Ciò che hai davvero fatto: ruoli e date reali su cui lavorare.",
     "bioBlurbShort": "Qualche riga con parole tue: il più rapido dei quattro.",
-    "uploadAdditionalInfo": "Carica informazioni aggiuntive"
+    "uploadAdditionalInfo": "Carica informazioni aggiuntive",
+    "requestPrismSurvey": "Richiedi il sondaggio PRISM"
   },
   "accountSettings": {
     "accountSettings": "Impostazioni account",

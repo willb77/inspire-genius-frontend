@@ -149,7 +149,8 @@
     "uploadReportBlurbShort": "Vous avez fait PRISM ailleurs ? Importez le rapport et nous lirons les scores.",
     "resumeBlurbShort": "Ce que vous avez réellement fait : de vrais postes et de vraies dates.",
     "bioBlurbShort": "Quelques lignes dans vos propres mots : le plus rapide des quatre.",
-    "uploadAdditionalInfo": "Importer des informations complémentaires"
+    "uploadAdditionalInfo": "Importer des informations complémentaires",
+    "requestPrismSurvey": "Demander l'enquête PRISM"
   },
   "accountSettings": {
     "accountSettings": "Paramètres du compte",

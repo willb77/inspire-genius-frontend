@@ -359,6 +359,18 @@ export function AboutYouPanel({
               : t("aboutYouPanel.viewStatus", { defaultValue: "View status" })
         }
         actionTestId="about-you-survey-action"
+        // Home, scores loaded: the tile leads with View Scores, so the request
+        // action lives in a neutral pill (the other states already offer it as
+        // their primary action).
+        extra2={
+          scoresReady
+            ? {
+                label: hx("requestPrismSurvey", "Request PRISM Survey"),
+                testId: "about-you-request-survey",
+                onClick: () => navigate(ROUTES.PRISM_ASSESSMENT),
+              }
+            : undefined
+        }
         onAction={() => (scoresReady ? ha?.onViewScores?.() : navigate(ROUTES.PRISM_ASSESSMENT))}
       />
 

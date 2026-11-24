@@ -116,7 +116,8 @@
     "uploadReportBlurbShort": "Fez o PRISM em outro lugar? Envie o relatório e leremos as pontuações.",
     "resumeBlurbShort": "O que você realmente fez: cargos e datas reais para trabalhar.",
     "bioBlurbShort": "Algumas linhas com suas próprias palavras: o mais rápido dos quatro.",
-    "uploadAdditionalInfo": "Enviar informações adicionais"
+    "uploadAdditionalInfo": "Enviar informações adicionais",
+    "requestPrismSurvey": "Solicitar a pesquisa PRISM"
   },
   "accountSettings": {
     "culturalAffinity": "Afinidade cultural",

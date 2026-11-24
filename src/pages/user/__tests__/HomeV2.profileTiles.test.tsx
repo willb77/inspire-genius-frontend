@@ -132,6 +132,12 @@ describe("Home profile tiles — empty profile", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/prism-assessment");
   });
 
+  it("has no Request PRISM Survey pill when scores are not ready (the primary action already requests)", () => {
+    wrap();
+    expect(within(panel()).queryByRole("button", { name: "Request PRISM Survey" })).toBeNull();
+    expect(within(panel()).getAllByRole("button", { name: /request the survey/i })).toHaveLength(1);
+  });
+
   it("titles: PRISM Report, and 'Add a bio and personal data'", () => {
     wrap();
     expect(within(panel()).getByText("PRISM Report")).toBeInTheDocument();
@@ -151,6 +157,17 @@ describe("Home profile tiles — scores on file", () => {
     expect(screen.queryByTestId("map-content")).toBeNull();
     fireEvent.click(within(panel()).getByRole("button", { name: "View Scores" }));
     expect(screen.getByTestId("map-content")).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("adds a Request PRISM Survey pill that goes to the assessment, View Scores staying primary", () => {
+    wrap();
+    const pill = within(panel()).getByRole("button", { name: "Request PRISM Survey" });
+    fireEvent.click(pill);
+    expect(mockNavigate).toHaveBeenCalledWith("/prism-assessment");
+    // View Scores is still there and still opens the map, not the assessment.
+    mockNavigate.mockClear();
+    fireEvent.click(within(panel()).getByRole("button", { name: "View Scores" }));
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
