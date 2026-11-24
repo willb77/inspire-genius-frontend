@@ -80,7 +80,16 @@
       "offered": "otrzymano od Ciebie dostęp",
       "extended": "dostęp został przez Ciebie odnowiony",
       "looked": "zajrzano",
-      "lookedAt": "zajrzano ({{surface}})"
+      "lookedAt": "zajrzano ({{surface}})",
+      "fitMatches": "przeczytano Twoje dopasowania Job Fit",
+      "gaps": "przeczytano Twoją analizę luk",
+      "learningItems": "przeczytano Twoje elementy nauki",
+      "milestones": "przeczytano Twoje kamienie milowe",
+      "matches": "przeczytano Twoje dopasowania rozwojowe",
+      "memberPrism": "przeczytano Twój profil PRISM",
+      "memberProfile": "przeczytano Twój profil",
+      "share": "przeczytano Twoje udostępnione cele",
+      "adminOf": "{{what}} (administrator platformy)"
     },
     "thisPerson": "ta osoba",
     "someone": "Ktoś",
