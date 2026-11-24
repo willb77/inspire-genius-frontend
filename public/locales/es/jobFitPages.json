@@ -352,8 +352,10 @@
     "fitBody": "Tu perfil PRISM frente a ese blueprint, dimensión por dimensión: dónde coincides, dónde no y en qué medida.",
     "fitTitle": "Mira el ajuste",
     "heading": "Para qué sirve Job Fit",
+    "headingCareersJobs": "Para qué sirve Careers and Jobs",
     "introEmphasis": "Una puntuación de ajuste es una comparación, no un veredicto",
     "introLead": "Job Fit compara cómo eres con lo que un rol realmente exige, para que veas la diferencia y puedas actuar.",
+    "introLeadCareersJobs": "Careers and Jobs compara cómo eres con lo que un rol realmente exige, para que veas la diferencia y puedas actuar.",
     "introTail": "— una puntuación baja suele indicar un área de crecimiento concreta y identificable, y identificarla es precisamente el objetivo."
   },
   "fitSummaryCard": {

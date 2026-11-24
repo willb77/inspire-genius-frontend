@@ -450,8 +450,10 @@
     "fitBody": "Votre profil PRISM face à ce blueprint, dimension par dimension : où vous êtes aligné, où vous ne l'êtes pas, et dans quelle mesure.",
     "fitTitle": "Voir l'adéquation",
     "heading": "À quoi sert Job Fit",
+    "headingCareersJobs": "À quoi sert Careers and Jobs",
     "introEmphasis": "Un score d'adéquation est une comparaison, pas un verdict",
     "introLead": "Job Fit compare votre fonctionnement à ce qu'un poste exige réellement, afin que vous voyiez l'écart et puissiez agir.",
+    "introLeadCareersJobs": "Careers and Jobs compare votre fonctionnement à ce qu'un poste exige réellement, afin que vous voyiez l'écart et puissiez agir.",
     "introTail": "— un score faible révèle généralement un axe de progression précis et identifiable, et c'est justement l'objectif de l'identifier."
   },
   "fitSummaryCard": {

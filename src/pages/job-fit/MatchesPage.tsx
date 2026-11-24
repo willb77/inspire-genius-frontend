@@ -126,7 +126,8 @@ function MethodToggle({
   )
 }
 
-export default function MatchesPage() {
+/** `careersAndJobs`: rendered inside the Careers and Jobs page, so name it that (FitPurpose). */
+export default function MatchesPage({ careersAndJobs = false }: { careersAndJobs?: boolean } = {}) {
   const { t } = useTranslation("jobFitPages")
   const [method, setMethod] = useState<FitMethod>("gap")
   const { data, isLoading, isError, gated } = useFitMatches(method)
@@ -174,7 +175,7 @@ export default function MatchesPage() {
         )}
       />
 
-      <FitPurpose />
+      <FitPurpose careersAndJobs={careersAndJobs} />
 
       <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
         {componentsOn && (

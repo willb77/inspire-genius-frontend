@@ -50,7 +50,7 @@ export default function JobFitHome() {
       <FavoritesList />
 
       <section aria-label={t("jobFitHome.jobsLabel", "Jobs")}>
-        <MatchesPage />
+        <MatchesPage careersAndJobs />
       </section>
 
       <NextSteps learning={discovery.hasAccess} />
