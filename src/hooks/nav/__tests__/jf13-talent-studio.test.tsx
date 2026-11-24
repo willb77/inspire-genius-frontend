@@ -21,7 +21,17 @@
  *      The walker models SidebarScaffold, which renders ONE level of children:
  *      a destination nested deeper is unreachable and counted as missing.
  *   3. On — the shape of Talent Studio for the three role views.
+ *
+ * TS-3 (2026-11-23) changes two things here, both with the switch ON only:
+ * the interview rows are named by purpose, and two existing pages the menu did
+ * not list are added (question preparation; the manager's list of interviews
+ * run). So the reachability diff is now "everything reached with the switch
+ * off is still reached, and the ONLY extra destinations are the ones named in
+ * TS3_ADDED". The off snapshot is untouched. The TS-3 block at the end pins the
+ * rows, and that the house-style interview switch does not move the menu.
  */
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { act, renderHook } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { MemoryRouter } from "react-router-dom"
@@ -70,9 +80,16 @@ jest.mock("@/hooks/super-admin/useBroadcast", () => ({
 }))
 
 import { useToolsSection, TALENT_STUDIO_LABEL } from "../useToolsSection"
+import { navLabelKey } from "@/components/shared/layout/navLabels"
+import { setHouseStyle } from "@/lib/house/areaSwitch"
 import { useGatedNavItems } from "../useGatedNavItems"
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
-import { getUserNavItems, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation"
+import {
+  getUserNavItems,
+  SUPER_ADMIN_NAV_SECTIONS,
+  TALENT_STUDIO_INTERVIEW_ROWS,
+  TALENT_STUDIO_INTERVIEW_TOOLS,
+} from "@/constants/navigation"
 
 const ROLES: UserRole[] = ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"]
 const TOOL_ROLES: UserRole[] = ["super-admin", "manager", "practitioner"]
@@ -148,6 +165,15 @@ function reach(items: NavItemDef[], into = new Map<string, boolean>()): Map<stri
 
 const sorted = (m: Map<string, boolean>) => [...m.entries()].sort(([a], [b]) => a.localeCompare(b))
 
+/**
+ * TS-3: the destinations the menu gains with the switch on, per role. Existing
+ * routes under the role's own prefix; nothing else may appear.
+ */
+const TS3_ADDED: Partial<Record<UserRole, string[]>> = {
+  manager: ["/manager/interview-prep", "/manager/interviews"],
+  practitioner: ["/practitioner/interview-prep"],
+}
+
 beforeEach(() => {
   localStorage.clear()
   mockEntitled = ALL_VERTICALS
@@ -189,6 +215,18 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
             const before = reach([...rest, ...today])
             for (const mode of ["loading", "error", "true"] as Mode[]) {
               const after = reach([...rest, ...((await tools(role, mode))?.items ?? [])])
+              // TS-3: with the switch on, exactly the named additions, each
+              // live and none of them reached before; then the strict diff.
+              const added = mode === "true" ? (TS3_ADDED[role] ?? []) : []
+              for (const route of added) {
+                expect({ role, route, before: before.has(route), after: after.get(route) }).toEqual({
+                  role,
+                  route,
+                  before: false,
+                  after: true,
+                })
+                after.delete(route)
+              }
               expect({ role, ent, restMode, broadcast, mode, routes: sorted(after) }).toEqual({
                 role,
                 ent,
@@ -228,8 +266,9 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     const children = groups[0].children ?? []
     // Two sections then Knowledge Continuity: blueprint first, interview next.
     const labels = children.map((c) => c.label)
-    expect(labels.indexOf("Role Blueprints")).toBeLessThan(labels.indexOf("Interview Studio"))
-    expect(labels.indexOf("Interview Studio")).toBeLessThan(labels.indexOf("Live Interview"))
+    expect(labels.indexOf("Role Blueprints")).toBeGreaterThanOrEqual(0)
+    expect(labels.indexOf("Role Blueprints")).toBeLessThan(labels.indexOf("Hiring interview"))
+    expect(labels.indexOf("Hiring interview")).toBeLessThan(labels.indexOf("Own-questions interview"))
     expect(labels[labels.length - 1]).toBe("Knowledge Continuity Studio")
     // SidebarScaffold renders one level of children; anything deeper is unreachable.
     expect(children.every((c) => !c.children?.length)).toBe(true)
@@ -252,8 +291,10 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     expect(byLabel).toEqual({
       "Role Blueprint Match": false,
       "Role Blueprints": true,
-      "Interview Studio": false,
-      "Live Interview": false,
+      "Hiring interview": false,
+      "Own-questions interview": false,
+      "Prepare questions": false,
+      "Past interviews": false,
       "Knowledge Continuity Studio": true,
     })
   })
@@ -262,5 +303,124 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     const views: Record<string, unknown> = {}
     for (const role of TOOL_ROLES) views[role] = dumpSection(await tools(role, "true"))
     expect(views).toMatchSnapshot()
+  })
+})
+
+describe("TS-3 — the interview rows in Talent Studio, named by purpose", () => {
+  const EXPECTED: Record<string, [string, string][]> = {
+    manager: [
+      ["Hiring interview", "/manager/interview-live"],
+      ["Own-questions interview", "/manager/interview-studio"],
+      ["Prepare questions", "/manager/interview-prep"],
+      ["Past interviews", "/manager/interviews"],
+    ],
+    practitioner: [
+      ["Hiring interview", "/practitioner/interview-live"],
+      ["Own-questions interview", "/practitioner/interview-studio"],
+      ["Prepare questions", "/practitioner/interview-prep"],
+    ],
+    "super-admin": [
+      ["Hiring interview", "/super-admin/interview-live"],
+      ["Own-questions interview", "/super-admin/interview-studio"],
+    ],
+  }
+  const OLD_LABELS = ["Interview Studio", "Live Interview"]
+  const talentChildren = async (role: UserRole) =>
+    (await tools(role, "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
+  const isInterviewRoute = (to: string) => /\/interview(s$|-)/.test(to)
+
+  it.each(TOOL_ROLES)("%s: one run of rows, in order, each to the role's own page", async (role) => {
+    const children = await talentChildren(role)
+    const at = children.findIndex((c) => isInterviewRoute(c.to))
+    expect(at).toBeGreaterThan(-1)
+    const want = EXPECTED[role]
+    // Next to each other: the run starting at the first interview row IS the list.
+    expect(children.slice(at, at + want.length).map((c) => [c.label, c.to])).toEqual(want)
+    // And there is no interview row outside that run.
+    expect(children.filter((c) => isInterviewRoute(c.to))).toHaveLength(want.length)
+    for (const c of children.slice(at, at + want.length)) expect(c.disabled).toBeFalsy()
+  })
+
+  it.each(TOOL_ROLES)("%s: no destination and no label is listed twice, and the old names are gone", async (role) => {
+    const section = await tools(role, "true")
+    const children = await talentChildren(role)
+    const tos = children.map((c) => c.to)
+    const labels = children.map((c) => c.label)
+    expect(new Set(tos).size).toBe(tos.length)
+    expect(new Set(labels).size).toBe(labels.length)
+    const everyLabel = (section?.items ?? []).flatMap((i) => [i.label, ...(i.children ?? []).map((c) => c.label)])
+    for (const old of OLD_LABELS) expect(everyLabel).not.toContain(old)
+  })
+
+  it.each(TOOL_ROLES)("%s: both pages the group linked with the switch off are still linked, live", async (role) => {
+    const off = (await tools(role, "false"))?.items.find((i) => i.label === "Interview Studio")
+    const before = [off?.to, ...(off?.children ?? []).map((c) => c.to)]
+    expect(before).toHaveLength(2)
+    const after = new Map((await talentChildren(role)).map((c) => [c.to, !c.disabled]))
+    for (const to of before) expect({ to, live: after.get(to as string) }).toEqual({ to, live: true })
+  })
+
+  it("every row is a route that exists, under the role's own prefix", () => {
+    const routesSource = readFileSync(join(process.cwd(), "src/routes.tsx"), "utf8")
+    let checked = 0
+    for (const [role, rows] of Object.entries(EXPECTED)) {
+      for (const [, to] of rows) {
+        expect(to.startsWith(`/${role}/`)).toBe(true)
+        expect({ to, routed: routesSource.includes(`path: "${to}"`) }).toEqual({ to, routed: true })
+        checked++
+      }
+    }
+    expect(checked).toBe(9)
+  })
+
+  it("every interview group that folds into Talent Studio has purpose rows", () => {
+    expect(TALENT_STUDIO_INTERVIEW_TOOLS.size).toBe(3)
+    expect(TALENT_STUDIO_INTERVIEW_ROWS).toHaveLength(3)
+    for (const group of TALENT_STUDIO_INTERVIEW_TOOLS) {
+      const rows = TALENT_STUDIO_INTERVIEW_ROWS.find(([g]) => g === group)?.[1] ?? []
+      // At least the two pages the group already linked: itself and its child.
+      const tos = rows.map((r) => r.to)
+      expect(tos).toContain(group.to)
+      for (const child of group.children ?? []) expect(tos).toContain(child.to)
+      expect(rows.every((r) => !r.children?.length)).toBe(true)
+    }
+  })
+
+  it.each(TOOL_ROLES)(
+    "%s: the house-style interview switch does not move the menu, on or off, in any job_fit_v2 state",
+    async (role) => {
+      for (const mode of ["loading", "error", "false", "true"] as Mode[]) {
+        localStorage.clear()
+        const unset = dumpSection(await tools(role, mode))
+        setHouseStyle("interview", true)
+        expect(localStorage.getItem("house_style_interview")).toBe("true")
+        const on = dumpSection(await tools(role, mode))
+        setHouseStyle("interview", false)
+        const offView = dumpSection(await tools(role, mode))
+        expect(unset?.items.length).toBeGreaterThan(0)
+        expect(on).toEqual(unset)
+        expect(offView).toEqual(unset)
+      }
+    },
+    30_000,
+  )
+
+  it("each new label has a menu translation in en, es, fr, pt, it, pl and cs", () => {
+    const labels = [...new Set(Object.values(EXPECTED).flatMap((rows) => rows.map(([label]) => label)))]
+    expect(labels).toHaveLength(4)
+    const read = (lang: string) =>
+      JSON.parse(readFileSync(join(process.cwd(), `public/locales/${lang}/shellUi.json`), "utf8")) as {
+        nav: { items: Record<string, string> }
+      }
+    const en = read("en").nav.items
+    for (const label of labels) {
+      const key = navLabelKey("items", label).replace("nav.items.", "")
+      expect({ key, en: en[key] }).toEqual({ key, en: label })
+      for (const lang of ["es", "fr", "pt", "it", "pl", "cs"]) {
+        const value = read(lang).nav.items[key]
+        expect({ lang, key, present: typeof value === "string" && value.length > 0 }).toEqual({ lang, key, present: true })
+        expect({ lang, key, sameAsEnglish: value === label }).toEqual({ lang, key, sameAsEnglish: false })
+      }
+    }
   })
 })
