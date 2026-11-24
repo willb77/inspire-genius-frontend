@@ -220,7 +220,8 @@
       "Role_Blueprint_Match": "Role Blueprint Match",
       "Overview": "Přehled",
       "Insights": "Analýzy",
-      "Retain_Knowledge_Continuity": "Udržet: Knowledge Continuity"
+      "Retain_Knowledge_Continuity": "Udržet: Knowledge Continuity",
+      "Team_fit": "Shoda týmu"
     },
     "sections": {
       "AI_coaches": "AI koučové",
@@ -581,10 +582,55 @@
         "title": "Analýzy",
         "hint": "Podívejte se, jak jde nábor na vašich pozicích."
       },
+      "teamFit": {
+        "title": "Shoda týmu",
+        "hint": "Podívejte se na shody s rolemi, které s vámi členové týmu sdíleli."
+      },
       "retain": {
         "title": "Udržet",
         "hint": "Zachovejte, co vědí vaši nejzkušenější lidé."
       }
+    },
+    "teamFit": {
+      "intro": "Shody s rolemi, které členové vašeho týmu získali sami, zobrazené jen tehdy, když je s vámi sdíleli. Zde se nic nehodnotí.",
+      "advisory": "Skóre shody je jedním z podkladů pro rozvojový rozhovor. Není to rozhodnutí o přijetí, odměně ani výkonu.",
+      "notOn": "Shoda týmu není pro vaši organizaci zapnutá.",
+      "search": "Hledat členy týmu",
+      "noSearchResults": "Tomuto hledání neodpovídá žádný člen týmu.",
+      "showMore": "Zobrazit další (zbývá {{remaining}})",
+      "rosterLoading": "Načítání vašeho týmu…",
+      "rosterError": "Váš tým se nepodařilo načíst. Jde o problém s načítáním, ne o prázdný tým.",
+      "rosterEmpty": "Ve Studiu rozvoje týmu zatím nemáte žádné členy týmu. Nejprve je přidejte tam.",
+      "openStudio": "Otevřít Studio rozvoje týmu",
+      "retry": "Zkusit znovu",
+      "showMatches": "Zobrazit shody",
+      "hideMatches": "Skrýt shody",
+      "showMatchesFor": "Zobrazit shody: {{name}}",
+      "hideMatchesFor": "Skrýt shody: {{name}}",
+      "openMember": "Otevřít ve Studiu rozvoje týmu",
+      "openMemberFor": "Otevřít ve Studiu rozvoje týmu: {{name}}",
+      "matchesLoading": "Načítání shod…",
+      "matchesError": "Shody uživatele {{name}} se teď nepodařilo načíst. To není totéž jako žádné shody.",
+      "notShared": {
+        "title": "Nesdíleno",
+        "both": "{{name}} s vámi nesdílí profil PRISM ani oblast Rozvoj. Shody s rolemi vyžadují obojí, proto zůstávají soukromé, dokud je {{name}} nenasdílí.",
+        "development": "{{name}} s vámi nesdílí oblast Rozvoj. Shody s rolemi spadají pod Rozvoj, proto zůstávají soukromé, dokud ji {{name}} nenasdílí.",
+        "prism": "{{name}} s vámi nesdílí profil PRISM. Shody s rolemi z něj vycházejí, proto zůstávají soukromé, dokud jej {{name}} nenasdílí.",
+        "unspecified": "{{name}} s vámi nesdílí shody s rolemi. Zůstávají soukromé, dokud je {{name}} nenasdílí."
+      },
+      "noAccount": "{{name}} zatím nemá účet Inspire Genius, takže nejsou žádné shody k zobrazení.",
+      "noPrism": "{{name}} zatím nemá uložený profil PRISM. Shody s rolemi se měří právě z něj.",
+      "notEntitled": "Career Fit není pro uživatele {{name}} zapnutý, takže nejsou žádné shody k zobrazení.",
+      "noMatches": {
+        "title": "Zatím žádné shody",
+        "notRun": "{{name}} zatím neotevřel(a) vlastní shody v Career Fit. Objeví se zde, až to {{name}} udělá. Z této stránky se nic nehodnotí.",
+        "noRoles": "Career Fit uživatele {{name}} neobsahoval žádné zveřejněné role k porovnání."
+      },
+      "unknownState": "Shody uživatele {{name}} teď nelze zobrazit.",
+      "asOf": "Z vlastního Career Fit uživatele {{name}}, stav k {{date}}.",
+      "asOfUnknown": "Z vlastního Career Fit uživatele {{name}}.",
+      "score": "Skóre shody: {{score}} %",
+      "coverage": "Změřené dimenze: {{evaluated}} z {{total}}"
     }
   }
 }

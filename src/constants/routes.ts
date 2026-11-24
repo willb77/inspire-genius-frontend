@@ -187,6 +187,8 @@ export const ROUTES = {
     INTERVIEW_STUDIO: "/manager/interview-studio",
     /** Talent Studio Overview (TS-2): the stages of the group on one page. Links only, no data. */
     TALENT_STUDIO: "/manager/talent-studio",
+    /** Team fit (TS-4a): the matches team members have shared, read-only. Scores nobody. */
+    TEAM_FIT: "/manager/team-fit",
     /** Character Lab — fictional PRISM profiles; no CSV export or import for this role. */
     CHARACTER_LAB: "/manager/character-lab",
     TEAM_COMPOSITION: "/manager/team-composition",
@@ -247,6 +249,8 @@ export const ROUTES = {
     INTERVIEW_STUDIO: "/practitioner/interview-studio",
     /** Talent Studio Overview (TS-2): the stages of the group on one page. Links only, no data. */
     TALENT_STUDIO: "/practitioner/talent-studio",
+    /** Team fit (TS-4a): the matches team members have shared, read-only. Scores nobody. */
+    TEAM_FIT: "/practitioner/team-fit",
     /** Character Lab — fictional PRISM profiles; no CSV export or import for this role. */
     CHARACTER_LAB: "/practitioner/character-lab",
     TEAM_COMPOSITION: "/practitioner/team-composition",

@@ -3,6 +3,8 @@
  * page, each with links to the pages this role already has.
  *
  * Links only. It calls no API, shows no figures and nothing about any person.
+ * (The Team fit stage, TS-4a, is a link like the others; what it opens is a
+ * separate page with its own gate.)
  *
  * The rows come from `useTalentStudioStages`, the same list the sidebar group
  * is flattened from, so the page cannot offer a page the menu does not: a row
@@ -27,6 +29,7 @@ const STAGE_COPY: Record<Exclude<TalentStudioStageKey, "overview">, { title: str
   candidates: { title: "Candidates", hint: "Add candidates and see how they match the role." },
   interviews: { title: "Interviews", hint: "Prepare, run and review interviews." },
   insights: { title: "Insights", hint: "See how hiring is going across your roles." },
+  teamFit: { title: "Team fit", hint: "See the role matches your team members have shared with you." },
   retain: { title: "Retain", hint: "Keep what your experienced people know." },
 }
 

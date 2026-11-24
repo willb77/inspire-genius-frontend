@@ -167,6 +167,8 @@ describe("TS-2 — Talent Studio Overview offers only links the role can open", 
     expect(headings).toEqual(["1.Roles", "2.Candidates", "3.Interviews", "4.Insights", "5.Retain"])
   })
 
+  // Team fit (TS-4a) is the one stage that DOES follow the switch; it is off in
+  // this file's build and pinned in TalentStudioOverviewTeamFit.test.tsx.
   it("the page does not depend on job_fit_v2: same links with the switch off", async () => {
     for (const role of TOOL_ROLES) {
       expect((await page(role, false)).links).toEqual((await page(role, true)).links)

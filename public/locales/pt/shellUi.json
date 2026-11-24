@@ -254,7 +254,8 @@
       "Role_Blueprint_Match": "Role Blueprint Match",
       "Overview": "Visão geral",
       "Insights": "Análises",
-      "Retain_Knowledge_Continuity": "Reter: Knowledge Continuity"
+      "Retain_Knowledge_Continuity": "Reter: Knowledge Continuity",
+      "Team_fit": "Aderência da equipe"
     },
     "sections": {
       "AI_coaches": "Coaches de IA",
@@ -581,10 +582,55 @@
         "title": "Análises",
         "hint": "Veja como vai a contratação nos seus cargos."
       },
+      "teamFit": {
+        "title": "Aderência da equipe",
+        "hint": "Veja as correspondências com cargos que os membros da sua equipe compartilharam com você."
+      },
       "retain": {
         "title": "Reter",
         "hint": "Mantenha o que suas pessoas mais experientes sabem."
       }
+    },
+    "teamFit": {
+      "intro": "As correspondências com cargos que os membros da sua equipe obtiveram por conta própria, exibidas somente quando eles as compartilharam com você. Nada é pontuado aqui.",
+      "advisory": "Uma pontuação de correspondência é um dos insumos para uma conversa de desenvolvimento. Não é uma decisão de contratação, remuneração ou desempenho.",
+      "notOn": "Aderência da equipe não está ativada para a sua organização.",
+      "search": "Buscar membros da equipe",
+      "noSearchResults": "Nenhum membro da equipe corresponde a essa busca.",
+      "showMore": "Mostrar mais (restam {{remaining}})",
+      "rosterLoading": "Carregando sua equipe…",
+      "rosterError": "Não foi possível carregar sua equipe. É um problema de carregamento, não uma equipe vazia.",
+      "rosterEmpty": "Você ainda não tem membros da equipe no Team Development Studio. Adicione-os lá primeiro.",
+      "openStudio": "Abrir o Team Development Studio",
+      "retry": "Tentar novamente",
+      "showMatches": "Mostrar correspondências",
+      "hideMatches": "Ocultar correspondências",
+      "showMatchesFor": "Mostrar correspondências de {{name}}",
+      "hideMatchesFor": "Ocultar correspondências de {{name}}",
+      "openMember": "Abrir no Team Development Studio",
+      "openMemberFor": "Abrir {{name}} no Team Development Studio",
+      "matchesLoading": "Carregando correspondências…",
+      "matchesError": "Não foi possível carregar as correspondências de {{name}} agora. Isso não é o mesmo que não ter nenhuma.",
+      "notShared": {
+        "title": "Não compartilhado",
+        "both": "{{name}} não compartilhou com você o perfil PRISM nem Desenvolvimento. As correspondências com cargos precisam de ambos; por isso, continuam privadas até que {{name}} os compartilhe.",
+        "development": "{{name}} não compartilhou Desenvolvimento com você. As correspondências com cargos fazem parte de Desenvolvimento; por isso, continuam privadas até que {{name}} o compartilhe.",
+        "prism": "{{name}} não compartilhou o perfil PRISM com você. As correspondências com cargos vêm dele; por isso, continuam privadas até que {{name}} o compartilhe.",
+        "unspecified": "{{name}} não compartilhou as correspondências com cargos com você. Elas continuam privadas até que {{name}} as compartilhe."
+      },
+      "noAccount": "{{name}} ainda não tem uma conta Inspire Genius; por isso, não há correspondências para mostrar.",
+      "noPrism": "{{name}} ainda não tem um perfil PRISM registrado. As correspondências com cargos são medidas a partir dele.",
+      "notEntitled": "O Career Fit não está ativado para {{name}}; por isso, não há correspondências para mostrar.",
+      "noMatches": {
+        "title": "Ainda não há correspondências",
+        "notRun": "{{name}} ainda não abriu as próprias correspondências no Career Fit. Elas aparecerão aqui depois que {{name}} fizer isso. Nada é pontuado a partir desta página.",
+        "noRoles": "O Career Fit de {{name}} não tinha cargos publicados para comparar."
+      },
+      "unknownState": "As correspondências de {{name}} não podem ser exibidas no momento.",
+      "asOf": "Do Career Fit de {{name}}, em {{date}}.",
+      "asOfUnknown": "Do Career Fit de {{name}}.",
+      "score": "Pontuação de correspondência: {{score}}%",
+      "coverage": "{{evaluated}} de {{total}} dimensões medidas"
     }
   }
 }
