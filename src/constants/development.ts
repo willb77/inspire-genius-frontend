@@ -76,7 +76,7 @@ export const FIT_ENGINE_MATCHES_ENABLED =
 export const DEV_TEXT: Record<string, string> = {
   "dev.studio.title": "Team Development Studio",
   "dev.studio.subtitle":
-    "Per-member PRISM, CliftonStrengths & DISC — reconciled into goals, gaps, learning and career matches.",
+    "Each person's PRISM, with their goals, gaps, learning and career matches.",
   "dev.studio.search.placeholder": "Search team members…",
   "dev.studio.empty.title": "No team members yet",
   "dev.studio.empty.body":
@@ -102,6 +102,14 @@ export const DEV_TEXT: Record<string, string> = {
    */
   "dev.studio.scope.team":
     "This roster is everyone on file for your organisation, plus anyone added here — it is not your reporting line.",
+  /**
+   * U1 — the same lens for a caller whose role is exactly `manager`. The
+   * server sends that caller their direct reports, plus the people they added
+   * here and anyone they hold a dossier for, not the organisation; the line
+   * above would be false for them.
+   */
+  "dev.studio.scope.myTeam":
+    "This list is your direct reports, plus anyone you added here or hold a dossier for. It is not the whole organisation.",
   "dev.studio.scope.reports":
     "Your reporting line inside your own organisation, drawn from the organisation chart. Anyone you manage who sits in a different organisation is not here.",
   "dev.studio.scope.org":
@@ -130,10 +138,10 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.linkRequests.refused.gone": "This request is no longer available.",
   "dev.linkRequests.refused.other": "That didn't work. Nothing changed — try again.",
 
-  "dev.workspace.refresh": "Refresh dossier",
+  "dev.workspace.refresh": "Update",
   "dev.workspace.share": "Share with member",
   "dev.workspace.export": "Export PDF",
-  "dev.workspace.startConversation": "Start growth conversation",
+  "dev.workspace.startConversation": "Open Goals and ask Meridian about this person",
   "dev.workspace.error": "Couldn't load this member's dossier.",
   "dev.workspace.notFound": "Member not found.",
 

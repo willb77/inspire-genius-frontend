@@ -358,7 +358,7 @@ export default function MemberDevelopmentWorkspace({
 
   const targetFromQuery = searchParams.get("target") ?? undefined
 
-  // TDS-4b. Bumped by "Start growth conversation"; the Meridian rail sends ONE
+  // TDS-4b. Bumped by the "ask Meridian" header button; the Meridian rail sends ONE
   // opening turn per new value. A counter, not a boolean: a manager may start a
   // second conversation in the same session, and a boolean already true cannot
   // say "again".
@@ -685,7 +685,7 @@ export default function MemberDevelopmentWorkspace({
             {dossier.events && dossier.events.length > 0 ? (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm">{tm("memberDevelopmentWorkspace.provenance", { defaultValue: "Provenance" })}</Button>
+                  <Button variant="ghost" size="sm">{tm("memberDevelopmentWorkspace.provenance", { defaultValue: "Recent activity" })}</Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-80">
                   {/* The rows are this dossier's recent activity (shares, invites,
@@ -754,7 +754,7 @@ export default function MemberDevelopmentWorkspace({
               {t("dev.workspace.export")}
             </Button>
             {/* TDS-4b. This was `setTab("goals")` and nothing else: a button
-                called "Start growth conversation" that started no conversation.
+                that promised a growth conversation and started none.
                 It now also seeds the Meridian rail with an opening turn about
                 this member, through the rail's existing `useMeridianChat` — the
                 one send path (`.claude/rules/agents.md` §6). The tab change
@@ -787,7 +787,7 @@ export default function MemberDevelopmentWorkspace({
         {/* Member-scoped Meridian assistant (in-page right rail; AppShell's own
             RightPanel is fixed and not prop-injectable). */}
         {/* Shown at every width: below xl it stacks under the tabs. It used to be
-            `hidden xl:block`, so "Start growth conversation" sent and saved a
+            `hidden xl:block`, so the "ask Meridian" header button sent and saved a
             turn the manager could not see on a laptop-width window. */}
         <aside data-testid="meridian-rail">
           <div className="h-[560px] xl:sticky xl:top-[calc(var(--spacing-header-h)+1rem)] xl:h-[calc(100vh-var(--spacing-header-h)-2rem)]">

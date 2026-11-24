@@ -95,7 +95,8 @@
   },
   "developmentStudio": {
     "view": "Zobrazit",
-    "team": "Tým",
+    "team": "Celá organizace",
+    "myTeam": "Můj tým",
     "myReports": "Moji podřízení",
     "orgChart": "Organizační schéma",
     "allCoverage": "Veškeré pokrytí",
@@ -715,7 +716,7 @@
     "generatingTheDevelopmentDossierThis": "Vytváří se rozvojové dosje – může to trvat až minutu…",
     "goalsAndNotesWorkNow": "Cíle a Poznámky fungují už nyní, ostatní karty se zobrazí, až bude dosje připraveno.",
     "thisTabNeedsTheDossier": "Tato karta vyžaduje dosje. Během jeho vytváření otevřete Cíle nebo Poznámky.",
-    "provenance": "Původ",
+    "provenance": "Nedávná aktivita",
     "recentActivity": "Nedávná aktivita",
     "whatChangedOnThisDossier": "Co se v tomto dosje změnilo a který agent nebo jaká akce to provedla.",
     "dossierExportedAsPdf": "Dosje bylo exportováno do PDF.",

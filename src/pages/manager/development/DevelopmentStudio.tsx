@@ -41,6 +41,7 @@ import {
   type DevVariant,
 } from "@/components/manager/development/skin"
 import { useTranslation } from "react-i18next"
+import { useAuth } from "@/context/useAuth"
 
 type CoverageFilter = "all" | "complete" | "partial" | "none"
 type SortKey = "readiness" | "activity"
@@ -96,6 +97,25 @@ export default function DevelopmentStudio({
   const navigate = useNavigate()
   const { t } = useDevelopmentText()
   const { data: roster, isLoading, isError, refetch } = useTeamDevelopmentRoster()
+
+  /**
+   * U1 — the first lens is named for what the server sends this caller.
+   *
+   * `/v1/growth/roster` scopes by role. A caller whose role is exactly
+   * `manager` is sent their direct reports, plus people they added here and
+   * anyone they hold a dossier for. Every other role that reaches this page
+   * (practitioner, super-admin) is sent the organisation's people plus the same
+   * additions. So "Whole organisation" would be false for a manager, and they
+   * read "My team" instead. Wording only: the view state, the request and the
+   * list are the same for both.
+   *
+   * The server decides on its own reading of the role; this is the browser's.
+   * They agree for a person with one role. Someone who signed in as a manager
+   * while also holding a higher role is sent the wider list under the narrower
+   * name.
+   */
+  const { hasRole } = useAuth()
+  const listIsOwnTeam = hasRole("manager")
 
   /**
    * Which view the first page is showing.
@@ -207,8 +227,10 @@ export default function DevelopmentStudio({
                 "rounded-full px-3 py-1 text-xs font-medium transition",
                 view === "grid" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
               )}
-            >{tm("developmentStudio.team", { defaultValue: "Team" })}</button>
-            {/* TDS-10. "My reports" is a narrower set than "Team", not a
+            >{listIsOwnTeam
+              ? tm("developmentStudio.myTeam", { defaultValue: "My team" })
+              : tm("developmentStudio.team", { defaultValue: "Whole organisation" })}</button>
+            {/* TDS-10. "My reports" is a narrower set than the first lens, not a
                 filter on it: the ids come from the org chart's surviving edges
                 and the roster only supplies each card. See MyReportsPanel. */}
             <button
@@ -293,7 +315,7 @@ export default function DevelopmentStudio({
         is the organisation's people plus anyone added here, "My reports" is the
         reporting line INSIDE the caller's own organisation, and the chart is
         the lines themselves. A manager on staging-b has four reports on file
-        and zero of them in their own organisation, so "Team" and "My reports"
+        and zero of them in their own organisation, so the first lens and "My reports"
         legitimately disagree for them — which is unreadable unless the page
         says what each one counts.
       */}
@@ -303,7 +325,9 @@ export default function DevelopmentStudio({
             ? "dev.studio.scope.reports"
             : view === "org"
               ? "dev.studio.scope.org"
-              : "dev.studio.scope.team",
+              : listIsOwnTeam
+                ? "dev.studio.scope.myTeam"
+                : "dev.studio.scope.team",
         )}
       </p>
 
