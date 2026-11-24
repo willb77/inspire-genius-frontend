@@ -21,6 +21,7 @@ export function briefDescription(markdown: string | null | undefined, max = BRIE
     .replace(/\\([\\`*_{}[\]()#+\-.!>|~])/g, "$1") // escapes
     .replace(/(\*\*|__)(.+?)\1/g, "$2") // bold
     .replace(/(\*|_)([^*_\s][^*_]*?)\1/g, "$2") // italic
+    .replace(/\*/g, "") // no asterisk is ever shown, matched or not
     .replace(/\s+/g, " ")
     .trim()
   if (plain.length <= max) return plain

@@ -1,7 +1,7 @@
 /**
  * Core DAG types — ecosystem-agnostic data model for the DAG Process Builder.
  *
- * These types know nothing about Inspire Genius, VoiceDeskAI, or any specific
+ * These types know nothing about InspiresGenius, VoiceDeskAI, or any specific
  * agent platform. Ecosystem adapters translate to/from these types.
  */
 

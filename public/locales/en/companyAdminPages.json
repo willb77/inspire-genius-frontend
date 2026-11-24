@@ -175,7 +175,7 @@
   "orgHouseColPeople": "People",
   "orgHouseColTraining": "Training completed",
   "orgHouseTitle": "Organization",
-  "orgHouseDescription": "Your organization's departments, as recorded in Inspire Genius.",
+  "orgHouseDescription": "Your organization's departments, as recorded in InspiresGenius.",
   "peopleLoadFailed": "We couldn't load your people.",
   "peopleEmptyTitle": "No people yet",
   "peopleEmptyBody": "Use Add people to add your team from a spreadsheet.",
@@ -199,6 +199,6 @@
   "peopleStatusActive": "Active",
   "peopleStatusInactive": "Inactive",
   "peopleTitle": "People",
-  "peopleDescription": "Everyone in your organization who uses Inspire Genius.",
+  "peopleDescription": "Everyone in your organization who uses InspiresGenius.",
   "peopleAddPeople": "Add people"
 }

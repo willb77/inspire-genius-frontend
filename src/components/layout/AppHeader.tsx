@@ -33,8 +33,8 @@ export default function AppHeader({ onMenuToggle }: AppHeaderProps) {
           <Menu className="w-5 h-5 text-[#4b5563]" />
         </button>
         <button onClick={handleLogoClick} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity" aria-label={t("appHeader.goHome", { defaultValue: "Go to home" })}>
-          <img src="/images/logo-dark.png" alt="Inspire Genius" className="h-8 w-auto shrink-0" />
-          <span className="font-bold text-[15px] text-[#111827] hidden sm:inline">Inspire Genius</span>
+          <img src="/images/logo-dark.png" alt="InspiresGenius" className="h-8 w-auto shrink-0" />
+          <span className="font-bold text-[15px] text-[#111827] hidden sm:inline">InspiresGenius</span>
         </button>
       </div>
 
@@ -57,7 +57,7 @@ export default function AppHeader({ onMenuToggle }: AppHeaderProps) {
           <SettingsIcon className="w-[18px] h-[18px] text-[#4b5563]" />
         </button>
         <button onClick={handleLogoClick} className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded-lg hover:bg-[#f3f4f6]" aria-label={t("appHeader.goHome", { defaultValue: "Go to home" })}>
-          <img src="/images/logo-dark.png" alt="Inspire Genius" className="w-9 h-9 rounded-full object-contain shrink-0" />
+          <img src="/images/logo-dark.png" alt="InspiresGenius" className="w-9 h-9 rounded-full object-contain shrink-0" />
           <div className="leading-tight hidden lg:block text-left">
             <div className="text-[13px] font-semibold text-[#1f2937]">{displayName}</div>
             <div className="text-[11px] text-[#6b7280] capitalize">{displayRole}</div>

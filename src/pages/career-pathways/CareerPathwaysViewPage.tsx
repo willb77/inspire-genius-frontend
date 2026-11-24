@@ -54,7 +54,7 @@ export default function CareerPathwaysViewPage() {
   return (
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="mb-1 text-xl font-semibold text-[#1f2937]">{t("pathwaysTitle", { defaultValue: "Career Pathways Profile" })}</h1>
-      <p className="mb-4 text-sm text-[#6b7280]">{t("pathwaysSharedBy", { defaultValue: "Shared with you through Inspires Genius by the candidate." })}</p>
+      <p className="mb-4 text-sm text-[#6b7280]">{t("pathwaysSharedBy", { defaultValue: "Shared with you through InspiresGenius by the candidate." })}</p>
 
       {!token ? (
         <p role="alert" className="text-sm text-red-700">

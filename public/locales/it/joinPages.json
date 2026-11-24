@@ -22,14 +22,14 @@
     "other": "Altro"
   },
   "consent": {
-    "webinar_email": "Inviami un'email quando viene programmata una sessione webinar di Inspires Genius.",
-    "mailing_list": "Aggiungimi alla mailing list di Inspires Genius per novità occasionali.",
+    "webinar_email": "Inviami un'email quando viene programmata una sessione webinar di InspiresGenius.",
+    "mailing_list": "Aggiungimi alla mailing list di InspiresGenius per novità occasionali.",
     "legend": "Restiamo in contatto (facoltativo)"
   },
   "chooseOne": "Scegli un'opzione",
   "success": {
     "title": "Grazie",
-    "body": "Abbiamo ricevuto i tuoi dati. Grazie per l'interesse verso Inspires Genius."
+    "body": "Abbiamo ricevuto i tuoi dati. Grazie per l'interesse verso InspiresGenius."
   },
   "notOpen": {
     "title": "La registrazione non è ancora aperta",
@@ -48,7 +48,7 @@
     "roleOther": "Il tuo ruolo",
     "prism": "Sei accreditato PRISM?",
     "siteId": "ID sito PRISM (facoltativo)",
-    "context": "Dove useresti Inspires Genius?",
+    "context": "Dove useresti InspiresGenius?",
     "contextOther": "Descrivi il contesto",
     "organisation": "Organizzazione",
     "organisationOptional": "Organizzazione (facoltativo)",
@@ -60,7 +60,7 @@
   "submit": "Registra il tuo interesse",
   "header": {
     "title": "Registra il tuo interesse",
-    "subtitle": "Inspires Genius è una piattaforma di mentoring basata sull'IA. Lascia i tuoi dati qui sotto per registrare il tuo interesse."
+    "subtitle": "InspiresGenius è una piattaforma di mentoring basata sull'IA. Lascia i tuoi dati qui sotto per registrare il tuo interesse."
   },
   "seeEvents": "Vedi i prossimi eventi →",
   "validation": {
@@ -113,7 +113,7 @@
       "choose": "Indicaci se sei accreditato PRISM"
     },
     "context": {
-      "choose": "Scegli dove utilizzeresti Inspires Genius"
+      "choose": "Scegli dove utilizzeresti InspiresGenius"
     }
   },
   "brand": {
@@ -129,13 +129,13 @@
     },
     "nextStep": {
       "join": "Nessun account e nulla da installare. Seleziona la prima casella per sapere quando verrà programmato il prossimo webinar.",
-      "events": "Nessun account e nulla da installare. Registra il tuo interesse per sapere quando verrà annunciato il prossimo evento."
+      "events": "Registra il tuo interesse. Unisciti alla community per condividere le tue idee e restare aggiornato su novità, notizie ed eventi."
     },
     "eyebrow": "Registra il tuo interesse",
     "headingLead": "Supporta ogni cliente",
     "headingAccent": "tra una sessione e l'altra",
-    "intro": "Inspires Genius offre ai professionisti un partner di mentoring basato sull'AI che lavora al loro fianco, così i clienti continuano a progredire anche dopo la fine della sessione.",
-    "offersAria": "Cosa offre Inspires Genius",
+    "intro": "InspiresGenius offre ai professionisti un partner di mentoring basato sull'AI che lavora al loro fianco, così i clienti continuano a progredire anche dopo la fine della sessione.",
+    "offersAria": "Cosa offre InspiresGenius",
     "practitioners": {
       "title": "Pensato per i professionisti",
       "body": "Invita i tuoi clienti, segui i loro progressi e offri a ciascuno un mentor AI che c'è tra una sessione e l'altra."

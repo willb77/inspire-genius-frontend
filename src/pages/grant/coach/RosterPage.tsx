@@ -253,7 +253,7 @@ export default function RosterPage() {
         title={t("roster.title", "My Students")}
         description={t(
           "roster.description",
-          "Import and manage the students you're building aid profiles for, then convert them into their own Inspire Genius login."
+          "Import and manage the students you're building aid profiles for, then convert them into their own InspiresGenius login."
         )}
       />
 
@@ -280,7 +280,7 @@ export default function RosterPage() {
                 ? t("roster.inviteTitleNoEmail", "Every selected student needs an email to invite")
                 : t("roster.inviteTitleSelected", {
                     count: selectedStudents.length,
-                    defaultValue: "Invite {{count}} selected to Inspire Genius",
+                    defaultValue: "Invite {{count}} selected to InspiresGenius",
                   })
           }
           onClick={openBulkInvite}
@@ -402,7 +402,7 @@ export default function RosterPage() {
                               ? t("roster.rowInviteNoEmail", "Add an email to invite this student")
                               : s.status !== "managed"
                                 ? t("roster.rowInviteAlready", "Already invited")
-                                : t("roster.rowInviteTitle", "Invite to Inspire Genius")
+                                : t("roster.rowInviteTitle", "Invite to InspiresGenius")
                           }
                           onClick={() => openInvite(s)}
                         >
@@ -440,7 +440,7 @@ export default function RosterPage() {
             <AlertDialogTitle>
               {t("roster.inviteDialogTitle", {
                 name: inviteTarget?.fullName,
-                defaultValue: "Invite {{name}} to Inspire Genius?",
+                defaultValue: "Invite {{name}} to InspiresGenius?",
               })}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -476,11 +476,11 @@ export default function RosterPage() {
               {selectedStudents.length === 1
                 ? t("roster.bulkDialogTitleOne", {
                     count: selectedStudents.length,
-                    defaultValue: "Invite {{count}} student to Inspire Genius?",
+                    defaultValue: "Invite {{count}} student to InspiresGenius?",
                   })
                 : t("roster.bulkDialogTitleOther", {
                     count: selectedStudents.length,
-                    defaultValue: "Invite {{count}} students to Inspire Genius?",
+                    defaultValue: "Invite {{count}} students to InspiresGenius?",
                   })}
             </AlertDialogTitle>
             <AlertDialogDescription>

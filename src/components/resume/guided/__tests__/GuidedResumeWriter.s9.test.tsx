@@ -144,14 +144,14 @@ const fillRole = (title: string, org: string, extra: { start?: string; present?:
 test("a complete role is listed, counted, and sent without empty fields", () => {
   sources = { ...BASE, rolesEnabled: true }
   toInfo()
-  fillRole("Founder", "Inspires Genius", { start: "2019", present: true, bullet: "  Built the platform  " })
+  fillRole("Founder", "InspiresGenius", { start: "2019", present: true, bullet: "  Built the platform  " })
   click("Save role")
-  expect(screen.getByText("Founder, Inspires Genius · 2019 – Present")).toBeInTheDocument()
+  expect(screen.getByText("Founder, InspiresGenius · 2019 – Present")).toBeInTheDocument()
   expect(screen.getByTestId("guided-roles-count")).toHaveTextContent("1 — on file for this draft")
   click("Next")
   writeNow()
   expect(lastBody().roles).toEqual([
-    { title: "Founder", organization: "Inspires Genius", start: "2019", end: "Present", bullets: ["Built the platform"] },
+    { title: "Founder", organization: "InspiresGenius", start: "2019", end: "Present", bullets: ["Built the platform"] },
   ])
 })
 
@@ -191,7 +191,7 @@ test("at most five roles", () => {
 test("added roles let a person with nothing else on file write", () => {
   sources = { ...BASE, rolesEnabled: true, sources: { resume: false, bio: false, assessments: [] } }
   toInfo()
-  fillRole("Founder", "Inspires Genius")
+  fillRole("Founder", "InspiresGenius")
   click("Save role")
   click("Next")
   expect(screen.getByRole("button", { name: "Skip questions, write now" })).toBeEnabled()

@@ -52,7 +52,7 @@ export default function SettingsPrivacy() {
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">{t("settingsPrivacy.memoryPrivacy", "Memory & Privacy")}</h1>
           <p className="text-sm text-muted-foreground">
-            {t("settingsPrivacy.viewExportOrDeleteTheData", "View, export, or delete the data Inspire Genius has stored about you. Deletion is permanent and applies across all four memory tiers (working, short-term, long-term, semantic).")}
+            {t("settingsPrivacy.viewExportOrDeleteTheData", "View, export, or delete the data InspiresGenius has stored about you. Deletion is permanent and applies across all four memory tiers (working, short-term, long-term, semantic).")}
           </p>
         </header>
 

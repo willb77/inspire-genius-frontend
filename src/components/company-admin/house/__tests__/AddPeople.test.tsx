@@ -71,7 +71,7 @@ describe("AddPeople", () => {
     setup()
     expect(screen.getByRole("note")).toHaveTextContent(ADD_PEOPLE_NOTICE)
     expect(ADD_PEOPLE_NOTICE).toMatch(/cannot sign in yet/)
-    expect(ADD_PEOPLE_NOTICE).toMatch(/Inspire Genius contact has to activate/)
+    expect(ADD_PEOPLE_NOTICE).toMatch(/InspiresGenius contact has to activate/)
   })
 
   it("offers no skip-onboarding option and no invitation step", () => {

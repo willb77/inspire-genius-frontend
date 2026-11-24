@@ -232,7 +232,7 @@
     "subtitle": "Sesje coachingowe wideo na żywo z Twoimi klientami.",
     "liveMeeting": "Spotkanie na żywo",
     "liveHeadline": "Spotkanie wideo na żywo z udostępnianiem ekranu, oparte na LiveKit.",
-    "liveBody": "Spotykaj się z klientem indywidualnie, udostępniaj ekran i miej sesję w dokumentacji – wszystko w Inspire Genius.",
+    "liveBody": "Spotykaj się z klientem indywidualnie, udostępniaj ekran i miej sesję w dokumentacji – wszystko w InspiresGenius.",
     "start": "Rozpocznij spotkanie",
     "activates": "Spotkania zostaną aktywowane po uruchomieniu usługi IG Live Meetings.",
     "comingSoon": "Wkrótce"
@@ -289,13 +289,13 @@
     "everyClientBooked": "Każdy klient ma zaplanowaną następną sesję."
   },
   "myPractice": {
-    "deactivatedBanner": "Twoja rejestracja PRISM jest dezaktywowana. Ankiety, które rozsyłasz, będą zakładane w serwisie PRISM Inspire Genius, dopóki rejestracja nie zostanie ponownie aktywowana.",
+    "deactivatedBanner": "Twoja rejestracja PRISM jest dezaktywowana. Ankiety, które rozsyłasz, będą zakładane w serwisie PRISM InspiresGenius, dopóki rejestracja nie zostanie ponownie aktywowana.",
     "clientCode": "Twój kod klienta",
     "clientCodeHelp": "Klient, który zarejestrował się samodzielnie, wpisuje go raz w Ustawieniach, aby zostać Twoim klientem.",
     "codeCopied": "Kod skopiowany",
     "codeCopyFailed": "Nie udało się skopiować kodu — zaznacz go i skopiuj ręcznie.",
     "copyCode": "Kopiuj kod",
-    "clientMessage": "Chciałbym/Chciałabym współpracować z Tobą w Inspire Genius. Po zalogowaniu otwórz Ustawienia, wybierz „Masz kod praktyka?” i wpisz mój kod: {{code}}",
+    "clientMessage": "Chciałbym/Chciałabym współpracować z Tobą w InspiresGenius. Po zalogowaniu otwórz Ustawienia, wybierz „Masz kod praktyka?” i wpisz mój kod: {{code}}",
     "messageCopied": "Wiadomość skopiowana",
     "messageCopyFailed": "Nie udało się skopiować wiadomości — zaznacz ją i skopiuj ręcznie.",
     "copyMessage": "Kopiuj wiadomość dla klienta",
@@ -312,7 +312,7 @@
     "loading": "Ładowanie Twojej rejestracji…",
     "loadError": "Nie udało się teraz wczytać Twojej rejestracji PRISM. Spróbuj ponownie później.",
     "dark": "Program dla praktyków nie jest jeszcze włączony.",
-    "notRegistered": "Ankiety, które rozsyłasz, będą zakładane w serwisie PRISM Inspire Genius, dopóki Twoje konto nie zostanie zarejestrowane."
+    "notRegistered": "Ankiety, które rozsyłasz, będą zakładane w serwisie PRISM InspiresGenius, dopóki Twoje konto nie zostanie zarejestrowane."
   },
   "prismClients": {
     "title": "Oceny PRISM klientów",

@@ -168,7 +168,7 @@
     "permanentlyDeleteAllYourPersonalData": "Trwale usuń wszystkie swoje dane osobowe z naszej platformy. Obejmuje to wyniki PRISM, rozmowy, dokumenty i wnioski z coachingu. Tej operacji nie można cofnąć.",
     "delete": "Usuń",
     "areYouAbsolutelySure": "Czy na pewno?",
-    "thisWillPermanentlyDeleteAllYour": "Spowoduje to trwałe usunięcie wszystkich Twoich danych z Inspire Genius, w tym:",
+    "thisWillPermanentlyDeleteAllYour": "Spowoduje to trwałe usunięcie wszystkich Twoich danych z InspiresGenius, w tym:",
     "prismPersonalityAssessmentResults": "Wyniki oceny osobowości PRISM",
     "allConversationHistoryAndSessionSummaries": "Cała historia rozmów i podsumowania sesji",
     "personalInsightsAndCoachingMilestones": "Osobiste wnioski i kamienie milowe coachingu",
@@ -284,7 +284,7 @@
     "stopDictating": "Zakończ dyktowanie",
     "dictateAMessage": "Podyktuj wiadomość",
     "listening": "Słucham…",
-    "askAboutInspireGenius": "Zapytaj o Inspire Genius…",
+    "askAboutInspireGenius": "Zapytaj o InspiresGenius…",
     "message": "Wiadomość",
     "sendMessage": "Wyślij wiadomość"
   },
@@ -342,7 +342,7 @@
     "back": "Wstecz"
   },
   "minorGate": {
-    "fallbackMessage": "Ta część Inspires Genius nie jest jeszcze dostępna na Twoim koncie. Z Twoim kontem wszystko jest w porządku. Jeśli masz pytania, skontaktuj się z osobą kontaktową w swojej szkole."
+    "fallbackMessage": "Ta część InspiresGenius nie jest jeszcze dostępna na Twoim koncie. Z Twoim kontem wszystko jest w porządku. Jeśli masz pytania, skontaktuj się z osobą kontaktową w swojej szkole."
   },
   "minorGateNotice": {
     "notAvailableYet": "Jeszcze niedostępne",

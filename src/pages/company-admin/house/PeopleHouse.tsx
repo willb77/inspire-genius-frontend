@@ -141,7 +141,7 @@ export default function PeopleHouse() {
     <CompanyAdminLayout>
       <PageHeader
         title={t("peopleTitle", { defaultValue: "People" })}
-        description={t("peopleDescription", { defaultValue: "Everyone in your organization who uses Inspire Genius." })}
+        description={t("peopleDescription", { defaultValue: "Everyone in your organization who uses InspiresGenius." })}
         action={
           !adding && (
             <Button size="sm" onClick={() => setAdding(true)}>

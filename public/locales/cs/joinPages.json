@@ -49,7 +49,7 @@
       "choose": "Sdělte nám, zda jste akreditováni v PRISM"
     },
     "context": {
-      "choose": "Vyberte, kde byste Inspires Genius používali"
+      "choose": "Vyberte, kde byste InspiresGenius používali"
     }
   },
   "brand": {
@@ -65,13 +65,13 @@
     },
     "nextStep": {
       "join": "Bez účtu a bez instalace. Zaškrtněte první políčko, abyste se dozvěděli, kdy bude naplánován další webinář.",
-      "events": "Bez účtu a bez instalace. Zaregistrujte svůj zájem a dozvíte se, kdy bude oznámena další událost."
+      "events": "Zaregistrujte svůj zájem. Připojte se ke komunitě, podělte se o své myšlenky a buďte v obraze o novinkách, zprávách a událostech."
     },
     "eyebrow": "Zaregistrujte svůj zájem",
     "headingLead": "Podporujte každého klienta",
     "headingAccent": "mezi sezeními",
-    "intro": "Inspires Genius poskytuje praktikům AI mentorského partnera, který s nimi spolupracuje, aby klienti dělali pokroky i po skončení sezení.",
-    "offersAria": "Co Inspires Genius nabízí",
+    "intro": "InspiresGenius poskytuje praktikům AI mentorského partnera, který s nimi spolupracuje, aby klienti dělali pokroky i po skončení sezení.",
+    "offersAria": "Co InspiresGenius nabízí",
     "practitioners": {
       "title": "Vytvořeno pro praktiky",
       "body": "Pozvěte své klienty, sledujte jejich pokrok a dejte každému z nich AI mentora, který je tu mezi vašimi sezeními."
@@ -126,14 +126,14 @@
     "other": "Jiné"
   },
   "consent": {
-    "webinar_email": "Pošlete mi e-mail, když bude naplánován webinář Inspires Genius.",
-    "mailing_list": "Přidejte mě do e-mailové skupiny Inspires Genius pro občasné novinky.",
+    "webinar_email": "Pošlete mi e-mail, když bude naplánován webinář InspiresGenius.",
+    "mailing_list": "Přidejte mě do e-mailové skupiny InspiresGenius pro občasné novinky.",
     "legend": "Zůstaňme v kontaktu (nepovinné)"
   },
   "chooseOne": "Vyberte jednu možnost",
   "success": {
     "title": "Děkujeme",
-    "body": "Obdrželi jsme Vaše údaje. Děkujeme za Váš zájem o Inspires Genius."
+    "body": "Obdrželi jsme Vaše údaje. Děkujeme za Váš zájem o InspiresGenius."
   },
   "notOpen": {
     "title": "Registrace ještě není otevřena",
@@ -152,7 +152,7 @@
     "roleOther": "Vaše role",
     "prism": "Jste akreditovaný/á v PRISM?",
     "siteId": "ID pracoviště PRISM (nepovinné)",
-    "context": "Kde byste Inspires Genius používali?",
+    "context": "Kde byste InspiresGenius používali?",
     "contextOther": "Popište prostředí",
     "organisation": "Organizace",
     "organisationOptional": "Organizace (nepovinné)",
@@ -164,7 +164,7 @@
   "submit": "Zaregistrujte svůj zájem",
   "header": {
     "title": "Zaregistrujte svůj zájem",
-    "subtitle": "Inspires Genius je platforma AI mentoringu. Zanechte níže své údaje a zaregistrujte svůj zájem."
+    "subtitle": "InspiresGenius je platforma AI mentoringu. Zanechte níže své údaje a zaregistrujte svůj zájem."
   },
   "seeEvents": "Zobrazit připravované akce →"
 }

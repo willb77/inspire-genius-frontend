@@ -1,5 +1,5 @@
 {
-  "accessGranted": "Access is enabled by your administrator or the Inspire Genius team. There's nothing to buy here.",
+  "accessGranted": "Access is enabled by your administrator or the InspiresGenius team. There's nothing to buy here.",
   "accessIntro": "Lumen turns your behavioural profile into guidance you can use in the moment — before the difficult conversation, not after it.",
   "accessRequest": "Request access",
   "accessTitle": "Lumen isn't switched on for your account yet",
@@ -99,7 +99,7 @@
   "portraitTitle": "My Self-Portrait",
   "settingsCalendarBody": "Let Lumen read your coaching bookings so a Moment can arrive before a session you're preparing for, rather than at a random time.",
   "settingsCalendarLabel": "Use my bookings for timing",
-  "settingsCalendarNote": "Off by default. Lumen can't see your work calendar — only bookings made in Inspire Genius.",
+  "settingsCalendarNote": "Off by default. Lumen can't see your work calendar — only bookings made in InspiresGenius.",
   "settingsDefaultsBadge": "Showing defaults — you haven't changed these yet",
   "settingsEmailBody": "Deliver Moments outside the app as well as in your feed.",
   "settingsEmailLabel": "Email me Moments",

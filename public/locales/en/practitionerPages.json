@@ -208,19 +208,19 @@
     "subtitle": "Live video coaching sessions with your clients.",
     "liveMeeting": "Live meeting",
     "liveHeadline": "Live video meeting with screen sharing, powered by LiveKit.",
-    "liveBody": "Meet one-on-one with a client, share your screen, and keep the session on the record — all inside Inspire Genius.",
+    "liveBody": "Meet one-on-one with a client, share your screen, and keep the session on the record — all inside InspiresGenius.",
     "start": "Start meeting",
     "activates": "Meetings activate once the IG Live Meetings service is provisioned.",
     "comingSoon": "Coming soon"
   },
   "myPractice": {
-    "deactivatedBanner": "Your PRISM registration is deactivated. Surveys you invite will be raised on Inspire Genius's PRISM site until it is reactivated.",
+    "deactivatedBanner": "Your PRISM registration is deactivated. Surveys you invite will be raised on InspiresGenius's PRISM site until it is reactivated.",
     "clientCode": "Your client code",
     "clientCodeHelp": "A client who signed up on their own enters this once, in Settings, to become your client.",
     "codeCopied": "Code copied",
     "codeCopyFailed": "Could not copy the code — select it and copy it by hand.",
     "copyCode": "Copy code",
-    "clientMessage": "I'd like to work with you on Inspire Genius. After you sign in, open Settings, choose \"Have a practitioner code?\" and enter my code: {{code}}",
+    "clientMessage": "I'd like to work with you on InspiresGenius. After you sign in, open Settings, choose \"Have a practitioner code?\" and enter my code: {{code}}",
     "messageCopied": "Message copied",
     "messageCopyFailed": "Could not copy the message — select it and copy it by hand.",
     "copyMessage": "Copy a message for your client",
@@ -237,7 +237,7 @@
     "loading": "Loading your registration…",
     "loadError": "Your PRISM registration could not be loaded just now. Please try again later.",
     "dark": "The Practitioner Programme is not switched on yet.",
-    "notRegistered": "Surveys you invite will be raised on Inspire Genius's PRISM site until your account is registered."
+    "notRegistered": "Surveys you invite will be raised on InspiresGenius's PRISM site until your account is registered."
   },
   "prismClients": {
     "title": "Client PRISM Assessments",

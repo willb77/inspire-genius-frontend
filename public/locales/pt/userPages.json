@@ -168,7 +168,7 @@
   },
   "settingsPrivacyV2": {
     "memoryPrivacy": "Memória e privacidade",
-    "viewExportOrDeleteTheData": "Veja, exporte ou exclua os dados que o Inspire Genius armazenou sobre você. A exclusão é permanente e vale para todos os quatro níveis de memória (de trabalho, de curto prazo, de longo prazo e semântica).",
+    "viewExportOrDeleteTheData": "Veja, exporte ou exclua os dados que o InspiresGenius armazenou sobre você. A exclusão é permanente e vale para todos os quatro níveis de memória (de trabalho, de curto prazo, de longo prazo e semântica).",
     "whatWeveLearnedAboutYou": "O que aprendemos sobre você",
     "longTermInsightsExtractedFromYour": "Insights de longo prazo extraídos das suas sessões de coaching. Remova qualquer item para esquecer aquele fato específico e manter o restante da sua memória.",
     "couldNotLoadYourMemorySnapshot": "Não foi possível carregar o resumo da sua memória. Tente atualizar a página.",
@@ -406,7 +406,7 @@
   },
   "settingsPrivacy": {
     "memoryPrivacy": "Memória e privacidade",
-    "viewExportOrDeleteTheData": "Veja, exporte ou exclua os dados que a Inspire Genius armazenou sobre você. A exclusão é permanente e se aplica a todos os quatro níveis de memória (de trabalho, de curto prazo, de longo prazo e semântica).",
+    "viewExportOrDeleteTheData": "Veja, exporte ou exclua os dados que a InspiresGenius armazenou sobre você. A exclusão é permanente e se aplica a todos os quatro níveis de memória (de trabalho, de curto prazo, de longo prazo e semântica).",
     "whatWeveLearnedAboutYou": "O que aprendemos sobre você",
     "longTermInsightsExtractedFromYour": "Insights de longo prazo extraídos das suas sessões de coaching. Remova qualquer item para esquecer aquele fato específico e manter o restante da sua memória.",
     "couldNotLoadYourMemorySnapshot": "Não foi possível carregar o resumo da sua memória. Tente atualizar a página.",
@@ -441,7 +441,7 @@
   },
   "support": {
     "helpAndSupport": "Ajuda e suporte",
-    "everyRequestYouPostHereIs": "Cada solicitação que você publicar aqui é enviada por e-mail diretamente à equipe de suporte da Inspire Genius, junto com seus dados de contato, para que alguém possa responder a você diretamente.",
+    "everyRequestYouPostHereIs": "Cada solicitação que você publicar aqui é enviada por e-mail diretamente à equipe de suporte da InspiresGenius, junto com seus dados de contato, para que alguém possa responder a você diretamente.",
     "voiceHelp": "Ajuda por voz",
     "preferToTalkConnectWithOur": "Prefere conversar? Conecte-se com nosso agente de suporte de voz com IA para receber ajuda em tempo real.",
     "speakWithSupport": "Falar com o suporte",

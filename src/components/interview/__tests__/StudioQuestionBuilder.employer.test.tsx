@@ -38,7 +38,7 @@ jest.mock("@/services/interview/studio.service", () => {
 })
 
 const CATALOGUE: EmployerPackCatalogue = {
-  provenance: "Written by Inspires Genius in the style of published frameworks.",
+  provenance: "Written by InspiresGenius in the style of published frameworks.",
   employers: [
     {
       slug: "amazon-aws",

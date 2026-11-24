@@ -53,7 +53,7 @@
     "back": "Voltar"
   },
   "minorGate": {
-    "fallbackMessage": "Esta parte do Inspires Genius ainda não está disponível na sua conta. Não há nada de errado com a sua conta. Se tiver dúvidas, fale com seu contato na escola."
+    "fallbackMessage": "Esta parte do InspiresGenius ainda não está disponível na sua conta. Não há nada de errado com a sua conta. Se tiver dúvidas, fale com seu contato na escola."
   },
   "minorGateNotice": {
     "notAvailableYet": "Ainda não disponível",
@@ -240,7 +240,7 @@
     "permanentlyDeleteAllYourPersonalData": "Exclua permanentemente todos os seus dados pessoais da nossa plataforma. Isso inclui resultados PRISM, conversas, documentos e insights de coaching. Esta ação não pode ser desfeita.",
     "delete": "Excluir",
     "areYouAbsolutelySure": "Você tem certeza absoluta?",
-    "thisWillPermanentlyDeleteAllYour": "Isso excluirá permanentemente todos os seus dados do Inspire Genius, incluindo:",
+    "thisWillPermanentlyDeleteAllYour": "Isso excluirá permanentemente todos os seus dados do InspiresGenius, incluindo:",
     "prismPersonalityAssessmentResults": "Resultados da avaliação de personalidade PRISM",
     "allConversationHistoryAndSessionSummaries": "Todo o histórico de conversas e resumos de sessões",
     "personalInsightsAndCoachingMilestones": "Insights pessoais e marcos de coaching",
@@ -318,7 +318,7 @@
     "stopDictating": "Parar de ditar",
     "dictateAMessage": "Ditar uma mensagem",
     "listening": "Ouvindo…",
-    "askAboutInspireGenius": "Pergunte sobre o Inspire Genius…",
+    "askAboutInspireGenius": "Pergunte sobre o InspiresGenius…",
     "message": "Mensagem",
     "sendMessage": "Enviar mensagem"
   },

@@ -12,7 +12,8 @@ describe("briefDescription", () => {
   })
   it("drops list markers and keeps escaped characters", () => {
     expect(briefDescription("- first\n- second")).toBe("first second")
-    expect(briefDescription("Cost: 5 \\* 3")).toBe("Cost: 5 * 3")
+    expect(briefDescription("Cost: 5 \\* 3")).toBe("Cost: 5 3")
+    expect(briefDescription("Free * entry ** today")).not.toContain("*")
   })
   it("cuts at a word boundary with an ellipsis, never past the limit", () => {
     const out = briefDescription("alpha ".repeat(60))

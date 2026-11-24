@@ -50,7 +50,7 @@ export default function LoadingPage() {
         >
           <h1 className="text-5xl md:text-6xl font-bold text-pretty tracking-tight">
             <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent">
-              INSPIRES GENIUS
+              INSPIRESGENIUS
             </span>
           </h1>
           <p className="text-cyan-200/60 mt-4 text-lg font-light">{t("loadingCard.initializing", { defaultValue: "Initializing AI Intelligence..." })}</p>

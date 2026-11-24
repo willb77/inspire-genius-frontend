@@ -18,7 +18,7 @@ export interface StarterQuestionGroup {
 
 export const MERIDIAN_STARTER_GROUPS: StarterQuestionGroup[] = [
   {
-    category: "New to Inspires Genius",
+    category: "New to InspiresGenius",
     questions: [
       "I just signed up — what's the first thing I should do?",
       "What is a brain map, and what will mine tell me about myself?",

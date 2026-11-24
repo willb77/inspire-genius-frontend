@@ -56,7 +56,7 @@ export default function HonorLanding() {
           </div>
           <h1 className="text-xl font-semibold text-white">The Honor Foundation</h1>
           <p className="mt-1 text-sm text-[#aeb8cc]">Coach Workbench</p>
-          <p className="mt-0.5 text-xs text-[#7d879c]">Powered by Inspires Genius</p>
+          <p className="mt-0.5 text-xs text-[#7d879c]">Powered by InspiresGenius</p>
         </div>
 
         <div className="w-full rounded-2xl bg-white p-6 shadow-xl">

@@ -106,7 +106,7 @@
     ].join(";");
 
     var h = document.createElement("h1");
-    h.textContent = "We couldn't finish loading Inspire Genius";
+    h.textContent = "We couldn't finish loading InspiresGenius";
     h.style.cssText = "margin:0 0 10px;font-size:20px;font-weight:700;line-height:1.3";
 
     var p1 = document.createElement("p");

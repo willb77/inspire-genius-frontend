@@ -44,7 +44,7 @@ const GREETING: ChatMessage = {
   kind: "text",
   sender: "assistant",
   text:
-    "Hi — I'm Meridian. Ask me anything about using Inspire Genius and I'll help " +
+    "Hi — I'm Meridian. Ask me anything about using InspiresGenius and I'll help " +
     "right here. If you need a person, use “Submit a request” and a human will pick it up.",
   time: "",
 };

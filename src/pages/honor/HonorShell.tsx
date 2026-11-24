@@ -2,7 +2,7 @@
  * The Honor Foundation — Coach Workbench shell (reskin chrome).
  *
  * A self-contained, co-branded navy surface mirroring the delivered THF
- * wireframe: navy topbar (THF wordmark + "Powered by Inspires Genius" + coach
+ * wireframe: navy topbar (THF wordmark + "Powered by InspiresGenius" + coach
  * chip) and a grouped navy sidebar (Overview · Work with Fellows · Member
  * workspace · Account), wrapping the routed page in `<Outlet/>`. Modeled on the
  * Summit vertical's self-contained layout, but reskinned to the THF identity.
@@ -112,7 +112,7 @@ export default function HonorShell() {
 
         <div className="ml-3 hidden items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 sm:flex">
           <span className="text-[10px] uppercase tracking-wide text-white/50">Powered by</span>
-          <span className="text-xs font-semibold text-[#7Fb0d6]">Inspires Genius</span>
+          <span className="text-xs font-semibold text-[#7Fb0d6]">InspiresGenius</span>
           <span className="text-[10px] text-white/40">· a Secure Agentic AI Platform</span>
         </div>
 
@@ -170,7 +170,7 @@ export default function HonorShell() {
                 onClick={() => navigate(ROUTES.HOME)}
                 className="flex w-full items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-[12.5px] text-slate-200 transition-colors hover:bg-white/10"
               >
-                <ChevronLeft className="h-3.5 w-3.5" /> Back to Inspire Genius
+                <ChevronLeft className="h-3.5 w-3.5" /> Back to InspiresGenius
               </button>
             </div>
           </div>

@@ -52,7 +52,7 @@ export default function AuthLayout({
 
         {/* Logo */}
         <div className={brandPanel ? PANEL_LOGO_CLASS : DEFAULT_LOGO_CLASS}>
-          <img src="/Logo-Light.png" alt="Inspire Genius" className="h-8" />
+          <img src="/Logo-Light.png" alt="InspiresGenius" className="h-8" />
         </div>
 
         {/* Content */}
@@ -75,7 +75,7 @@ export default function AuthLayout({
           {showTestimonial && (
           <div className="mt-12 bg-white/[0.06] border border-white/[0.08] rounded-2xl p-6 px-7 max-w-[420px] backdrop-blur-xl">
             <p className="text-sm text-white/75 leading-relaxed italic">
-              "Inspire Genius completely changed how our team approaches
+              "InspiresGenius completely changed how our team approaches
               professional development. The AI coaching feels genuinely
               personal."
             </p>
@@ -103,7 +103,7 @@ export default function AuthLayout({
         <div className={cn("w-full max-w-[360px]", contentClassName)}>
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 flex justify-center">
-            <img src="/Logo-Dark.png" alt="Inspire Genius" className="h-8" />
+            <img src="/Logo-Dark.png" alt="InspiresGenius" className="h-8" />
           </div>
           {children}
         </div>

@@ -10,7 +10,7 @@ import { DIRECTION_SETTING_TOOLS } from "@/constants/vertical-subnav"
  * it in a presentational header couples pure components to data-fetching — that
  * mistake broke every Job-Fit page test when it was tried there.
  *
- * 2026-08-04 — the "Back to Inspire Genius / or switch to …" vertical-switcher
+ * 2026-08-04 — the "Back to InspiresGenius / or switch to …" vertical-switcher
  * row was removed at the user's request; the pages below now sit higher on the
  * screen. Leaving a vertical is done from the left sidebar (My Workspace + the
  * Tools rollup), so the on-page switcher was redundant with it.

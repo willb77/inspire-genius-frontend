@@ -81,7 +81,7 @@ export function buildTurnHtml(input: TurnExportInput): string {
       xmlns="http://www.w3.org/TR/REC-html40">
 <head>
 <meta charset="utf-8">
-<title>${esc(speaker)} — Inspires Genius</title>
+<title>${esc(speaker)} — InspiresGenius</title>
 <style>
 ${BRAND_CSS}
 /* Single-turn overrides: no cover page, tighter top margin. */
@@ -96,7 +96,7 @@ body { padding: 24px 28px; }
 </head>
 <body>
 <div class="turn-head">
-  <div class="brand">Inspires Genius &nbsp;|&nbsp; Conversation Extract</div>
+  <div class="brand">InspiresGenius &nbsp;|&nbsp; Conversation Extract</div>
   <h1>${esc(speaker)}</h1>
   <div class="meta">
 ${metaBits}

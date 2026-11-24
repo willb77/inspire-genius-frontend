@@ -223,19 +223,19 @@
     "subtitle": "Séances de coaching vidéo en direct avec vos clients.",
     "liveMeeting": "Réunion en direct",
     "liveHeadline": "Réunion vidéo en direct avec partage d'écran, propulsée par LiveKit.",
-    "liveBody": "Rencontrez un client en tête-à-tête, partagez votre écran et gardez une trace de la séance, le tout dans Inspire Genius.",
+    "liveBody": "Rencontrez un client en tête-à-tête, partagez votre écran et gardez une trace de la séance, le tout dans InspiresGenius.",
     "start": "Démarrer la réunion",
     "activates": "Les réunions seront activées une fois le service IG Live Meetings déployé.",
     "comingSoon": "Bientôt disponible"
   },
   "myPractice": {
-    "deactivatedBanner": "Votre inscription PRISM est désactivée. Les enquêtes que vous envoyez seront lancées sur le site PRISM d'Inspire Genius jusqu'à sa réactivation.",
+    "deactivatedBanner": "Votre inscription PRISM est désactivée. Les enquêtes que vous envoyez seront lancées sur le site PRISM d'InspiresGenius jusqu'à sa réactivation.",
     "clientCode": "Votre code client",
     "clientCodeHelp": "Un client inscrit de lui-même le saisit une seule fois, dans Paramètres, pour devenir votre client.",
     "codeCopied": "Code copié",
     "codeCopyFailed": "Impossible de copier le code : sélectionnez-le et copiez-le manuellement.",
     "copyCode": "Copier le code",
-    "clientMessage": "J'aimerais travailler avec vous sur Inspire Genius. Après vous être connecté, ouvrez Paramètres, choisissez « Vous avez un code de praticien ? » et saisissez mon code : {{code}}",
+    "clientMessage": "J'aimerais travailler avec vous sur InspiresGenius. Après vous être connecté, ouvrez Paramètres, choisissez « Vous avez un code de praticien ? » et saisissez mon code : {{code}}",
     "messageCopied": "Message copié",
     "messageCopyFailed": "Impossible de copier le message : sélectionnez-le et copiez-le manuellement.",
     "copyMessage": "Copier un message pour votre client",
@@ -252,7 +252,7 @@
     "loading": "Chargement de votre inscription…",
     "loadError": "Votre inscription PRISM n'a pas pu être chargée pour le moment. Veuillez réessayer plus tard.",
     "dark": "Le programme Praticien n'est pas encore activé.",
-    "notRegistered": "Les enquêtes que vous envoyez seront émises sur le site PRISM d'Inspire Genius tant que votre compte n'est pas enregistré."
+    "notRegistered": "Les enquêtes que vous envoyez seront émises sur le site PRISM d'InspiresGenius tant que votre compte n'est pas enregistré."
   },
   "prismClients": {
     "title": "Évaluations PRISM des clients",

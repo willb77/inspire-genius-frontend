@@ -27,7 +27,7 @@ export type PracticeCompetency = {
 /**
  * The curated pack the backend matched from the frame's company/industry.
  *
- * Provenance matters here: these questions are written by Inspire Genius in the
+ * Provenance matters here: these questions are written by InspiresGenius in the
  * style of each employer's OWN publicly published values or hiring framework —
  * they are not that company's actual questions, and no affiliation is implied.
  * `provenance` carries that statement with the payload so the disclaimer
