@@ -303,6 +303,11 @@
       "you": "Tú",
       "difference": "Diferencia"
     },
+    "fitRadar": {
+      "chartLabel": "Mapa de comportamiento: este puesto y tú, en las dimensiones que prioriza",
+      "intro": "Las dimensiones que este puesto prioriza. La forma sombreada es lo que pide el puesto; la forma discontinua eres tú. Los números coinciden con la leyenda.",
+      "notMeasuredNote": "Una dimensión en la que no te han medido no aparece en tu forma, en lugar de dibujarse como cero."
+    },
     "fitMatchList": {
       "fit": "{{pct}}% de ajuste",
       "fit2": "ajuste",

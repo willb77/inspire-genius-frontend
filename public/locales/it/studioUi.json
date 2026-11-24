@@ -186,6 +186,11 @@
       "you": "Tu",
       "difference": "Differenza"
     },
+    "fitRadar": {
+      "chartLabel": "Mappa comportamentale: questo lavoro e te, sulle dimensioni che privilegia",
+      "intro": "Le dimensioni che questo ruolo privilegia. La forma ombreggiata è ciò che il lavoro richiede; la forma tratteggiata sei tu. I numeri corrispondono alla legenda.",
+      "notMeasuredNote": "Una dimensione su cui non sei stato misurato resta fuori dalla tua forma invece di essere disegnata come zero."
+    },
     "fitMatchList": {
       "fit": "{{pct}}% di compatibilità",
       "fit2": "compatibilità",

@@ -5,6 +5,11 @@
       "you": "You",
       "difference": "Difference"
     },
+    "fitRadar": {
+      "chartLabel": "Behavior map: this job and you across the dimensions it puts first",
+      "intro": "The dimensions this role puts first. The shaded shape is what the job asks for; the dashed shape is you. The numbers match the legend.",
+      "notMeasuredNote": "A dimension you have not been measured on is left off your shape rather than drawn as zero."
+    },
     "fitMatchList": {
       "fit": "{{pct}}% fit",
       "fit2": "fit",

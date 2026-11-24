@@ -21,7 +21,7 @@
  */
 import fs from "fs"
 import path from "path"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type { FitDetail } from "@/types/job-fit"
@@ -195,6 +195,17 @@ describe("switch on — the Careers and Jobs order", () => {
     await screen.findByRole("button", { name: /save to favorites/i })
     await screen.findByRole("heading", { name: /make this my target/i })
     expect(sections(container)).toEqual([...JF6_SECTION_ORDER])
+  })
+
+  test("the cards section draws the behaviour map overlay with its legend, not tiles", async () => {
+    const { container } = renderPage()
+    await screen.findByRole("button", { name: /save to favorites/i })
+    const section = container.querySelector('[data-jf6-section="cards"]') as HTMLElement
+    expect(within(section).getByTestId("fit-radar")).toBeInTheDocument()
+    expect(within(section).getByTestId("fit-radar-job")).toBeInTheDocument()
+    expect(within(section).getByTestId("fit-radar-legend")).toBeInTheDocument()
+    expect(within(section).queryByTestId("fit-cards")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("radar")).not.toBeInTheDocument() // the 22-dimension chart stays off
   })
 
   test("goals off: the rest keep their order", async () => {

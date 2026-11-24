@@ -165,7 +165,6 @@
     "overUseIntro": "Les points forts que vous exprimez fortement peuvent éclipser d'autres comportements que ce poste valorise aussi : mieux vaut trouver l'équilibre.",
     "overUseTitle": "Attention à la surutilisation",
     "perDimensionTitle": "Où vous en êtes, dimension par dimension",
-    "priorityIntro": "Les dimensions que ce poste place en priorité : ce que le poste exige, votre évaluation et l'écart. Survolez un nom, sélectionnez-le ou touchez-le pour afficher sa définition.",
     "profileVsRole": "Votre profil et ce poste",
     "roleBlueprint": "Blueprint du poste",
     "you": "Vous"
@@ -188,7 +187,6 @@
   },
   "fitDetailPage": {
     "backToMatches": "Retour aux correspondances",
-    "cardsIntro": "Les dimensions que ce poste place en priorité : ce que le poste exige, votre évaluation et l'écart. Survolez un nom, sélectionnez-le ou touchez-le pour afficher sa définition.",
     "careerPathway": "Parcours de carrière",
     "description": "Comparaison de votre profil comportemental avec ce poste, dimension par dimension.",
     "educationHeading": "Formation — {{area}}",

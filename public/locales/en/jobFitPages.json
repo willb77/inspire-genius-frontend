@@ -235,7 +235,6 @@
     "overUseIntro": "Strengths you express strongly can crowd out other behaviors this role also values — worth balancing.",
     "overUseTitle": "Watch for over-use",
     "perDimensionTitle": "Where you stand, dimension by dimension",
-    "priorityIntro": "The dimensions this role puts first: what the job asks for, your rating, and the difference. Hover, focus or tap a name for its definition.",
     "profileVsRole": "Your profile vs. this role",
     "roleBlueprint": "Role blueprint",
     "you": "You"
@@ -258,7 +257,6 @@
   },
   "fitDetailPage": {
     "backToMatches": "Back to matches",
-    "cardsIntro": "The dimensions this role puts first: what the job asks for, your rating, and the difference. Hover, focus or tap a name for its definition.",
     "careerPathway": "Career Pathway",
     "description": "How your behavioral profile compares with this role, dimension by dimension.",
     "educationHeading": "Education — {{area}}",
