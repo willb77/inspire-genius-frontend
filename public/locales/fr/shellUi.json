@@ -181,7 +181,8 @@
       "Role_Blueprint_Match": "Correspondance Role Blueprint",
       "Overview": "Vue d'ensemble",
       "Insights": "Analyses",
-      "Retain_Knowledge_Continuity": "Fidéliser : Knowledge Continuity"
+      "Retain_Knowledge_Continuity": "Fidéliser : Knowledge Continuity",
+      "Team_fit": "Adéquation de l'équipe"
     },
     "sections": {
       "AI_coaches": "Coachs IA",
@@ -581,10 +582,55 @@
         "title": "Analyses",
         "hint": "Voyez comment avance le recrutement pour vos postes."
       },
+      "teamFit": {
+        "title": "Adéquation de l'équipe",
+        "hint": "Consultez les correspondances de postes que les membres de votre équipe ont partagées avec vous."
+      },
       "retain": {
         "title": "Fidéliser",
         "hint": "Gardez ce que savent vos personnes les plus expérimentées."
       }
+    },
+    "teamFit": {
+      "intro": "Les correspondances de postes que les membres de votre équipe ont obtenues eux-mêmes, visibles uniquement lorsqu'ils les ont partagées avec vous. Rien n'est évalué ici.",
+      "advisory": "Un score de correspondance est un élément parmi d'autres pour un échange sur le développement. Ce n'est pas une décision de recrutement, de rémunération ou de performance.",
+      "notOn": "Adéquation de l'équipe n'est pas activée pour votre organisation.",
+      "search": "Rechercher des membres de l'équipe",
+      "noSearchResults": "Aucun membre de l'équipe ne correspond à cette recherche.",
+      "showMore": "Afficher plus ({{remaining}} restants)",
+      "rosterLoading": "Chargement de votre équipe…",
+      "rosterError": "Votre équipe n'a pas pu être chargée. Il s'agit d'un problème de chargement, pas d'une équipe vide.",
+      "rosterEmpty": "Vous n'avez pas encore de membres d'équipe dans Team Development Studio. Ajoutez-les d'abord là-bas.",
+      "openStudio": "Ouvrir Team Development Studio",
+      "retry": "Réessayer",
+      "showMatches": "Afficher les correspondances",
+      "hideMatches": "Masquer les correspondances",
+      "showMatchesFor": "Afficher les correspondances de {{name}}",
+      "hideMatchesFor": "Masquer les correspondances de {{name}}",
+      "openMember": "Ouvrir dans Team Development Studio",
+      "openMemberFor": "Ouvrir {{name}} dans Team Development Studio",
+      "matchesLoading": "Chargement des correspondances…",
+      "matchesError": "Les correspondances de {{name}} n'ont pas pu être chargées pour le moment. Ce n'est pas la même chose que de n'en avoir aucune.",
+      "notShared": {
+        "title": "Non partagé",
+        "both": "{{name}} n'a partagé avec vous ni son profil PRISM ni Développement. Les correspondances de postes nécessitent les deux ; elles restent donc privées jusqu'à ce que {{name}} les partage.",
+        "development": "{{name}} n'a pas partagé Développement avec vous. Les correspondances de postes relèvent de Développement ; elles restent donc privées jusqu'à ce que {{name}} le partage.",
+        "prism": "{{name}} n'a pas partagé son profil PRISM avec vous. Les correspondances de postes en sont issues ; elles restent donc privées jusqu'à ce que {{name}} le partage.",
+        "unspecified": "{{name}} n'a pas partagé ses correspondances de postes avec vous. Elles restent privées jusqu'à ce que {{name}} les partage."
+      },
+      "noAccount": "{{name}} n'a pas encore de compte Inspire Genius ; il n'y a donc aucune correspondance à afficher.",
+      "noPrism": "{{name}} n'a pas encore de profil PRISM enregistré. Les correspondances de postes sont mesurées à partir de celui-ci.",
+      "notEntitled": "Career Fit n'est pas activé pour {{name}} ; il n'y a donc aucune correspondance à afficher.",
+      "noMatches": {
+        "title": "Pas encore de correspondances",
+        "notRun": "{{name}} n'a pas encore ouvert ses propres correspondances dans Career Fit. Elles apparaîtront ici une fois que {{name}} l'aura fait. Rien n'est évalué depuis cette page.",
+        "noRoles": "Le Career Fit de {{name}} ne comportait aucun poste publié auquel se comparer."
+      },
+      "unknownState": "Les correspondances de {{name}} ne peuvent pas être affichées pour le moment.",
+      "asOf": "Issu du Career Fit de {{name}}, au {{date}}.",
+      "asOfUnknown": "Issu du Career Fit de {{name}}.",
+      "score": "Score de correspondance : {{score}} %",
+      "coverage": "{{evaluated}} dimensions mesurées sur {{total}}"
     }
   }
 }

@@ -10,12 +10,14 @@ import {
   TALENT_STUDIO_INTERVIEW_TOOLS,
   TALENT_STUDIO_OVERVIEW_ROWS,
   TALENT_STUDIO_RETAIN_ROW,
+  TALENT_STUDIO_TEAM_FIT_ROWS,
   TOOL_ITEMS_BY_ROLE,
 } from "@/constants/navigation"
 import { BROADCAST_SIDEBAR_SECTION } from "@/constants/sidebar-sections"
 import { useVerticalLauncherSection } from "@/components/layout/useVerticalLauncher"
 import { useBroadcastAccess } from "@/hooks/super-admin/useBroadcast"
 import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs"
+import { TEAM_FIT_BUILD_ENABLED } from "@/constants/teamFit"
 
 /**
  * The ONE "Tools" section — super-admin only (2026-08-12, request).
@@ -150,6 +152,7 @@ function splitCareerStudio(items: NavItemDef[]): { group: NavItemDef | null; res
  *   candidates  Candidates (a page of the Role Blueprints vertical)
  *   interviews  the TS-3 rows, unchanged
  *   insights    Insights (the vertical's analytics page)
+ *   teamFit     Team fit (TS-4a; manager and practitioner, see below)
  *   retain      Retain: Knowledge Continuity
  *
  * SidebarScaffold renders one flat level of children and has no heading row,
@@ -158,15 +161,29 @@ function splitCareerStudio(items: NavItemDef[]): { group: NavItemDef | null; res
  * stages through {@link useTalentStudioStages}. The menu and the page cannot
  * disagree about what a role reaches, because there is one list.
  *
- * A "Team fit" stage (TS-4a, not built) belongs between `insights` and
- * `retain`: add its key to the order there and its rows in
- * `talentStudioStages`.
+ * ## TS-4a — Team fit
+ *
+ * The one stage that is NOT just a regrouping of pages the role already had:
+ * its page shows other people's data (the matches a team member has shared).
+ * So it has a gate of its own, `teamFit`, which the callers set to
+ * "`job_fit_v2` is on AND {@link TEAM_FIT_BUILD_ENABLED}". With either off the
+ * stage is absent from the menu and from the Overview page. This is what the
+ * browser offers, not a security boundary: the server decides per member what
+ * the caller may read (growth-service, relationship and the member's grants).
  */
 export const TALENT_STUDIO_LABEL = "Talent Studio"
 const TALENT_STUDIO_BLUEPRINT_PREFIXES = CAREER_STUDIO_PREFIXES
 const TALENT_STUDIO_BLUEPRINT_VERTICAL_PREFIX = TALENT_STUDIO_BLUEPRINT_PREFIXES[0]
 
-export const TALENT_STUDIO_STAGE_ORDER = ["overview", "roles", "candidates", "interviews", "insights", "retain"] as const
+export const TALENT_STUDIO_STAGE_ORDER = [
+  "overview",
+  "roles",
+  "candidates",
+  "interviews",
+  "insights",
+  "teamFit",
+  "retain",
+] as const
 export type TalentStudioStageKey = (typeof TALENT_STUDIO_STAGE_ORDER)[number]
 export type TalentStudioStage = { key: TalentStudioStageKey; rows: NavItemDef[] }
 
@@ -198,6 +215,7 @@ function talentStudioStages(
   role: UserRole,
   roleTools: NavItemDef[],
   catalogue: NavItemDef[],
+  teamFit: boolean,
 ): { stages: TalentStudioStage[]; folded: Set<NavItemDef> } {
   const blueprintRole = roleTools.filter((i) => TALENT_STUDIO_BLUEPRINT_TOOLS.has(i))
   const interviewRole = roleTools.filter((i) => TALENT_STUDIO_INTERVIEW_TOOLS.has(i))
@@ -209,6 +227,7 @@ function talentStudioStages(
   // Talent Studio constant at all, as before TS-2.
   const knowledge = liftVertical(catalogue, TALENT_STUDIO_RETAIN_ROW.to)
   const overview = TALENT_STUDIO_OVERVIEW_ROWS.find(([r]) => r === role)?.[1]
+  const teamFitRow = teamFit ? TALENT_STUDIO_TEAM_FIT_ROWS.find(([r]) => r === role)?.[1] : undefined
 
   const rows: Record<TalentStudioStageKey, NavItemDef[]> = {
     overview: overview ? [overview] : [],
@@ -226,6 +245,7 @@ function talentStudioStages(
     insights: blueprintVertical
       ? [blueprintPageRow(blueprintVertical, TALENT_STUDIO_BLUEPRINT_PAGE_ROWS.insights)]
       : [],
+    teamFit: teamFitRow ? [teamFitRow] : [],
     retain: knowledge ? [{ ...knowledge, label: TALENT_STUDIO_RETAIN_ROW.label }] : [],
   }
   return {
@@ -239,10 +259,12 @@ function withTalentStudio(
   roleTools: NavItemDef[],
   catalogue: NavItemDef[],
 ): { roleTools: NavItemDef[]; catalogue: NavItemDef[] } {
-  const { stages, folded } = talentStudioStages(role, roleTools, catalogue)
+  // Only reached with `job_fit_v2` on, so the build flags are all that is left.
+  const { stages, folded } = talentStudioStages(role, roleTools, catalogue, TEAM_FIT_BUILD_ENABLED)
   // Overview alone is not a group: with nothing to give an overview of, the
-  // section stays as it is (the rule before TS-2, kept).
-  if (!stages.some((s) => s.key !== "overview")) return { roleTools, catalogue }
+  // section stays as it is (the rule before TS-2, kept). Team fit does not
+  // make a group by itself either: it is a stage of one, not a reason for one.
+  if (!stages.some((s) => s.key !== "overview" && s.key !== "teamFit")) return { roleTools, catalogue }
   const children = stages.flatMap((s) => s.rows)
 
   const lifted = new Set(children.map((c) => c.to))
@@ -259,16 +281,25 @@ function withTalentStudio(
 /**
  * TS-2 — the Talent Studio stages for this role: what the Overview page draws.
  * The same list the sidebar group is flattened from, so a stage or row the
- * role does not have in the menu is not on the page either. It does not read
- * `job_fit_v2`: the switch decides whether the menu LINKS to the page, and the
- * page lists only pages the role already reaches.
+ * role does not have in the menu is not on the page either.
+ *
+ * The stages that only regroup pages the role already reaches do not read
+ * `job_fit_v2`: the switch decides whether the menu LINKS to this page. Team
+ * fit (TS-4a) is the exception and does read it, exactly as the menu does,
+ * because its page exists for the switched-on menu only.
  */
 export function useTalentStudioStages(role: UserRole): TalentStudioStage[] {
   const launcherSection = useVerticalLauncherSection()
+  const jobFitV2 = useSavedJobsEnabled()
   return useMemo(() => {
     if (!canSeeToolsSection(role)) return []
-    return talentStudioStages(role, TOOL_ITEMS_BY_ROLE[role] ?? [], launcherSection?.items ?? []).stages
-  }, [role, launcherSection])
+    return talentStudioStages(
+      role,
+      TOOL_ITEMS_BY_ROLE[role] ?? [],
+      launcherSection?.items ?? [],
+      jobFitV2 && TEAM_FIT_BUILD_ENABLED,
+    ).stages
+  }, [role, launcherSection, jobFitV2])
 }
 
 /**

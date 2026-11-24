@@ -598,6 +598,21 @@ export const TALENT_STUDIO_BLUEPRINT_PAGE_ROWS: { candidates: NavItemDef; insigh
 }
 
 /**
+ * TS-4a — "Team fit": the role matches team members already have and have
+ * shared, on one page. Manager and practitioner only: they are the two roles
+ * with a Team Development Studio roster under their own prefix, and the page
+ * opens a member there. Super-admin has no such page and gets no row.
+ *
+ * Shown only with `job_fit_v2` on AND the build's Team fit flags on
+ * (`TEAM_FIT_BUILD_ENABLED`); `useToolsSection` applies both. Pairs of
+ * [role, row]; an array, not a Map, so the label registry test sees it.
+ */
+export const TALENT_STUDIO_TEAM_FIT_ROWS: ReadonlyArray<readonly [UserRole, NavItemDef]> = [
+  ["manager", { to: ROUTES.MANAGER.TEAM_FIT, icon: UserCheck, label: "Team fit" }],
+  ["practitioner", { to: ROUTES.PRACTITIONER.TEAM_FIT, icon: UserCheck, label: "Team fit" }],
+]
+
+/**
  * "Retain": the sidebar has no heading row inside a group, so Knowledge
  * Continuity carries the stage in its label, inside Talent Studio only. `to`
  * here is the vertical's route prefix (used to find the launcher's row); the
