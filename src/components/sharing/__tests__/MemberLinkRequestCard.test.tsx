@@ -62,6 +62,18 @@ import {
   REFRESH_FAILED,
   SENT_MESSAGE,
 } from "@/components/sharing/linkRequestCopy"
+// The "See Access" tile is a Radix dialog, which renders nothing until opened.
+// These suites exercise the controls INSIDE the tile, so the dialog is replaced
+// by a passthrough that always renders its content; that a click on "See Access"
+// really opens the real dialog is asserted in sharingTiles.test.tsx.
+jest.mock("@/components/ui/dialog", () => ({
+  Dialog: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  DialogContent: ({ children, ...p }: { children: React.ReactNode } & Record<string, unknown>) => <div {...p}>{children}</div>,
+  DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
+  DialogDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
+}));
+
 import { SharingCore } from "@/pages/summit/SummitSharing"
 import { linkRequestKeys } from "@/hooks/summit/useLinkRequests"
 
@@ -423,10 +435,10 @@ describe("leaving", () => {
 })
 
 describe("inside the sharing panel (both mounts render SharingCore)", () => {
-  it("renders after Add a person", async () => {
+  it("renders after Add Access to a Person", async () => {
     renderWith(<SharingCore />)
     const card = await screen.findByTestId("link-request-card")
-    const add = screen.getByText("Add a person")
+    const add = screen.getByText("Add Access to a Person")
     expect(add.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
@@ -437,7 +449,7 @@ describe("inside the sharing panel (both mounts render SharingCore)", () => {
     renderWith(<SharingCore />)
     await waitFor(() => expect(growth.getMyLinkRequests).toHaveBeenCalled())
     await act(async () => undefined)
-    expect(screen.getByText("Add a person")).toBeInTheDocument()
+    expect(screen.getByText("Add Access to a Person")).toBeInTheDocument()
     expect(screen.getByTestId("sharing-people")).toBeInTheDocument()
     expect(screen.queryByTestId("link-request-card")).toBeNull()
     spy.mockRestore()

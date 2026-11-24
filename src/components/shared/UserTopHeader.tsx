@@ -51,13 +51,6 @@ const INTERVIEW_STUDIO_PREFIXES = [
 ];
 
 /**
- * The Goals Studio tour, narrated. The person's goal titles are blurred in the
- * published copy (the original local file is not).
- */
-const GOALS_STUDIO_GUIDE_VIDEO_URL =
-  "https://ig-demo-public-videos.s3.amazonaws.com/Goals_studio.mp4";
-
-/**
  * Goals Studio and its sub-pages (overview, discovery, interview, sharing,
  * coaches, a goal's roadmap) — one tree for every role. Direction Setting's
  * `/vertical/direction-setting/goals` is a different surface and is excluded.
@@ -96,13 +89,9 @@ function guidePillFor(pathname: string, t: TFunction): GuidePill | null {
       testId: "interview-studio-guide-video",
     };
   }
-  if (matchesPrefix(pathname, GOALS_STUDIO_PREFIXES)) {
-    return {
-      label: t("userTopHeader.watchGoalsStudio", { defaultValue: "Watch: Goals Studio" }),
-      url: GOALS_STUDIO_GUIDE_VIDEO_URL,
-      testId: "goals-studio-guide-video",
-    };
-  }
+  // Goals Studio shows no guide pill (Bill, 2026-11-23). The film is still
+  // reachable from the Videos dropdown on Home.
+  if (matchesPrefix(pathname, GOALS_STUDIO_PREFIXES)) return null;
   if (matchesPrefix(pathname, ROLE_CONSOLE_PREFIXES)) return null;
   // Home (the new surface) carries this film in its own Videos dropdown instead
   // (request), so the header pill is dropped THERE only. Every other user page

@@ -374,7 +374,7 @@
     "someoneId": "Someone ({{id}}…)",
     "noAccount": "No account with that email.",
     "sharedWith": "Shared with {{name}}.",
-    "addPerson": "Add a person",
+    "addPerson": "Add Access to a Person",
     "addPersonBody": "Someone with an IG account who isn't listed above. Their exact email address; no lookup by name. Your coach doesn't need one: once they've added you as a client they appear in the list above, and you share with them there.",
     "emailAria": "Email address",
     "find": "Find",
@@ -396,6 +396,13 @@
     "previewNote": "A preview of their view. Nothing on it can be clicked here.",
     "previewAria": "Preview of what they see",
     "previewEmpty": "Publish a goal and it will show here exactly as a person you share with sees it.",
-    "or": " or "
+    "or": " or ",
+    "seeAccess": "See Access",
+    "previewActivity": "Preview Activity",
+    "seeAccessAria": "See access for {{who}}",
+    "tileBody": "Choose what this person can see, how long, and who has looked.",
+    "personLogEmpty": "This person hasn't looked at your goals yet. Every read is recorded, including reads by platform administrators.",
+    "otherReaders": "Reads by people not listed above",
+    "otherReadersBody": "Platform administrators, or people whose access has been removed."
   }
 }
