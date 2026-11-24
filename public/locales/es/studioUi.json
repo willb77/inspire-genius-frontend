@@ -306,7 +306,36 @@
     "fitRadar": {
       "chartLabel": "Mapa de comportamiento: este puesto y tú, en las dimensiones que prioriza",
       "intro": "Las dimensiones que este puesto prioriza. La forma sombreada es lo que pide el puesto; la forma discontinua eres tú. Los números coinciden con la leyenda.",
-      "notMeasuredNote": "Una dimensión en la que no te han medido no aparece en tu forma, en lugar de dibujarse como cero."
+      "notMeasuredNote": "Una dimensión en la que no te han medido no aparece en tu forma, en lugar de dibujarse como cero.",
+      "group": {
+        "behavior": {
+          "label": "Preferencias de comportamiento",
+          "definition": "Cómo prefieres abordar el trabajo y a otras personas."
+        },
+        "aptitude": {
+          "label": "Aptitudes laborales",
+          "definition": "Los tipos de trabajo que te atraen y disfrutas."
+        },
+        "core-trait": {
+          "label": "Rasgos esenciales",
+          "definition": "Cualidades personales que influyen en cómo afrontas el trabajo con el tiempo."
+        }
+      },
+      "status": {
+        "match": {
+          "label": "Coincide",
+          "definition": "Tu valoración es igual o superior a lo que pide este puesto."
+        },
+        "close": {
+          "label": "Cerca",
+          "definition": "Tu valoración está hasta 10 puntos por debajo de lo que pide este puesto."
+        },
+        "growth": {
+          "label": "Área de crecimiento",
+          "definition": "Tu valoración está más de 10 puntos por debajo de lo que pide este puesto: un área en la que conviene crecer."
+        }
+      },
+      "notMeasured": "No medido"
     },
     "fitMatchList": {
       "fit": "{{pct}}% de ajuste",

@@ -362,7 +362,36 @@
     "fitRadar": {
       "chartLabel": "Mapa zachowań: to stanowisko i Ty, w wymiarach, które stawia na pierwszym miejscu",
       "intro": "Wymiary, które to stanowisko stawia na pierwszym miejscu. Zacieniowany kształt to wymagania stanowiska; kształt przerywany to Ty. Numery odpowiadają legendzie.",
-      "notMeasuredNote": "Wymiar, w którym nie zostałeś zmierzony, nie jest uwzględniony w Twoim kształcie, zamiast być rysowany jako zero."
+      "notMeasuredNote": "Wymiar, w którym nie zostałeś zmierzony, nie jest uwzględniony w Twoim kształcie, zamiast być rysowany jako zero.",
+      "group": {
+        "behavior": {
+          "label": "Preferencje behawioralne",
+          "definition": "Jak wolisz podchodzić do pracy i do innych ludzi."
+        },
+        "aptitude": {
+          "label": "Zdolności zawodowe",
+          "definition": "Rodzaje pracy, które Cię przyciągają i sprawiają Ci przyjemność."
+        },
+        "core-trait": {
+          "label": "Cechy podstawowe",
+          "definition": "Cechy osobiste, które kształtują to, jak radzisz sobie z pracą w dłuższym czasie."
+        }
+      },
+      "status": {
+        "match": {
+          "label": "Zgodność",
+          "definition": "Twoja ocena jest równa lub wyższa niż wymaga to stanowisko."
+        },
+        "close": {
+          "label": "Blisko",
+          "definition": "Twoja ocena jest do 10 punktów poniżej tego, czego wymaga to stanowisko."
+        },
+        "growth": {
+          "label": "Obszar rozwoju",
+          "definition": "Twoja ocena jest o ponad 10 punktów poniżej tego, czego wymaga to stanowisko — dobry obszar do rozwoju."
+        }
+      },
+      "notMeasured": "Nie zmierzono"
     },
     "fitMatchList": {
       "fit": "dopasowanie {{pct}}%",

@@ -57,12 +57,18 @@ function point(index: number, count: number, value: number, radius = RADIUS) {
 const toPoints = (pts: { x: number; y: number }[]) =>
   pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")
 
+// The English constants in fit-definitions.ts stay the source and the default:
+// the downloadable report (fitReport.ts) reads them directly and is unchanged.
+// Only this on-screen legend translates them, through `fit.fitRadar.*` keys.
 function StatusMarker({ status }: { status: FitCardStatus }) {
+  const { t } = useTranslation("studioUi")
   const Icon = STATUS_ICON[status]
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-[#d1d5db] bg-[#f9fafb] px-2 py-0.5 text-xs font-medium text-[#374151]">
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-      <span data-testid="fit-radar-status">{FIT_CARD_STATUS_LABELS[status]}</span>
+      <span data-testid="fit-radar-status">
+        {t(`fit.fitRadar.status.${status}.label`, { defaultValue: FIT_CARD_STATUS_LABELS[status] })}
+      </span>
     </span>
   )
 }
@@ -200,7 +206,11 @@ function LegendRow({ item, number }: { item: FitCardItem; number: number }) {
         ) : (
           <Rating
             label={t("fit.fitCards.you", { defaultValue: "You" })}
-            value={<span className="text-sm font-medium text-[#6b7280]">{NOT_MEASURED}</span>}
+            value={
+              <span className="text-sm font-medium text-[#6b7280]">
+                {t("fit.fitRadar.notMeasured", { defaultValue: NOT_MEASURED })}
+              </span>
+            }
           />
         )}
       </dl>
@@ -262,24 +272,34 @@ export function FitRadarOverlay({ groups }: { groups: FitCardGroup[] }) {
         )}
 
         <div data-testid="fit-radar-legend" className="space-y-5">
-          {groups.map((g) => (
-            <section key={g.category} aria-label={FIT_CARD_GROUP_LABELS[g.category]}>
-              <h3 className="text-sm font-semibold text-[#1f2937]">{FIT_CARD_GROUP_LABELS[g.category]}</h3>
-              <p className="mb-2 text-xs text-[#6b7280]">{FIT_CARD_GROUP_DEFINITIONS[g.category]}</p>
+          {groups.map((g) => {
+            const groupLabel = t(`fit.fitRadar.group.${g.category}.label`, {
+              defaultValue: FIT_CARD_GROUP_LABELS[g.category],
+            })
+            const groupDefinition = t(`fit.fitRadar.group.${g.category}.definition`, {
+              defaultValue: FIT_CARD_GROUP_DEFINITIONS[g.category],
+            })
+            return (
+            <section key={g.category} aria-label={groupLabel}>
+              <h3 className="text-sm font-semibold text-[#1f2937]">{groupLabel}</h3>
+              <p className="mb-2 text-xs text-[#6b7280]">{groupDefinition}</p>
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {g.items.map((item) => (
                   <LegendRow key={item.key} item={item} number={numberOf.get(item.key) ?? 0} />
                 ))}
               </ul>
             </section>
-          ))}
+            )
+          })}
           <dl data-testid="fit-radar-status-key" className="grid grid-cols-1 gap-2 border-t border-[#e5e7eb] pt-3 sm:grid-cols-3">
             {statuses.map((s) => (
               <div key={s} className="text-xs text-[#374151]">
                 <dt className="mb-1">
                   <StatusMarker status={s} />
                 </dt>
-                <dd className="text-[#6b7280]">{FIT_CARD_STATUS_DEFINITIONS[s]}</dd>
+                <dd className="text-[#6b7280]">
+                  {t(`fit.fitRadar.status.${s}.definition`, { defaultValue: FIT_CARD_STATUS_DEFINITIONS[s] })}
+                </dd>
               </div>
             ))}
           </dl>

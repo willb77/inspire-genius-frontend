@@ -378,7 +378,36 @@
     "fitRadar": {
       "chartLabel": "Mapa comportamental: esta vaga e você, nas dimensões que ela prioriza",
       "intro": "As dimensões que esta vaga prioriza. A forma sombreada é o que a vaga pede; a forma tracejada é você. Os números correspondem à legenda.",
-      "notMeasuredNote": "Uma dimensão em que você não foi medido fica fora da sua forma em vez de ser desenhada como zero."
+      "notMeasuredNote": "Uma dimensão em que você não foi medido fica fora da sua forma em vez de ser desenhada como zero.",
+      "group": {
+        "behavior": {
+          "label": "Preferências de comportamento",
+          "definition": "Como você prefere abordar o trabalho e as outras pessoas."
+        },
+        "aptitude": {
+          "label": "Aptidões de trabalho",
+          "definition": "Os tipos de trabalho que atraem você e de que você gosta."
+        },
+        "core-trait": {
+          "label": "Traços essenciais",
+          "definition": "Qualidades pessoais que moldam como você lida com o trabalho ao longo do tempo."
+        }
+      },
+      "status": {
+        "match": {
+          "label": "Compatível",
+          "definition": "Sua avaliação está igual ou acima do que esta vaga pede."
+        },
+        "close": {
+          "label": "Próximo",
+          "definition": "Sua avaliação está até 10 pontos abaixo do que esta vaga pede."
+        },
+        "growth": {
+          "label": "Área de crescimento",
+          "definition": "Sua avaliação está mais de 10 pontos abaixo do que esta vaga pede — uma boa área para desenvolver."
+        }
+      },
+      "notMeasured": "Não medido"
     },
     "fitMatchList": {
       "fit": "{{pct}}% de aderência",

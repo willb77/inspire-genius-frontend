@@ -189,7 +189,36 @@
     "fitRadar": {
       "chartLabel": "Mappa comportamentale: questo lavoro e te, sulle dimensioni che privilegia",
       "intro": "Le dimensioni che questo ruolo privilegia. La forma ombreggiata è ciò che il lavoro richiede; la forma tratteggiata sei tu. I numeri corrispondono alla legenda.",
-      "notMeasuredNote": "Una dimensione su cui non sei stato misurato resta fuori dalla tua forma invece di essere disegnata come zero."
+      "notMeasuredNote": "Una dimensione su cui non sei stato misurato resta fuori dalla tua forma invece di essere disegnata come zero.",
+      "group": {
+        "behavior": {
+          "label": "Preferenze comportamentali",
+          "definition": "Come preferisci affrontare il lavoro e le altre persone."
+        },
+        "aptitude": {
+          "label": "Attitudini lavorative",
+          "definition": "I tipi di lavoro che ti attraggono e ti piacciono."
+        },
+        "core-trait": {
+          "label": "Tratti di fondo",
+          "definition": "Qualità personali che influenzano come affronti il lavoro nel tempo."
+        }
+      },
+      "status": {
+        "match": {
+          "label": "Corrisponde",
+          "definition": "Il tuo punteggio è pari o superiore a quello che richiede questo lavoro."
+        },
+        "close": {
+          "label": "Vicino",
+          "definition": "Il tuo punteggio è fino a 10 punti sotto quello che richiede questo lavoro."
+        },
+        "growth": {
+          "label": "Area di crescita",
+          "definition": "Il tuo punteggio è più di 10 punti sotto quello che richiede questo lavoro — una buona area su cui lavorare."
+        }
+      },
+      "notMeasured": "Non misurato"
     },
     "fitMatchList": {
       "fit": "{{pct}}% di compatibilità",
