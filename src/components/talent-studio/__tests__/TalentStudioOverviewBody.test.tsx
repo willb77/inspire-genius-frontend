@@ -132,8 +132,9 @@ describe("TS-2 — Talent Studio Overview offers only links the role can open", 
   })
 
   it("checked a real number of links (a walker over nothing proves nothing)", () => {
-    // 3 roles; entitled: 9 + 8 + 6 links; unentitled and loading: 5 + 4 + 2 each.
-    expect(checked).toBe(23 + 11 + 11)
+    // 3 roles; entitled: 6 + 10 + 8 links (TS-5: the manager's Job DNA link);
+    // unentitled and loading: 2 + 5 + 4 each (Job DNA is locked text there).
+    expect(checked).toBe(24 + 11 + 11)
   })
 
   it("the check can fail: another role's page and an unentitled vertical page do not open", () => {
@@ -155,11 +156,49 @@ describe("TS-2 — Talent Studio Overview offers only links the role can open", 
     mockEntitled = []
     const { links, locked } = await page(role)
     expect(links.filter((to) => to.startsWith("/vertical/"))).toEqual([])
-    // Role Blueprints, Candidates, Insights and Knowledge Continuity, each with the plan reason.
-    expect(locked).toHaveLength(4)
+    // Role Blueprints, Candidates, Insights and Knowledge Continuity, each with the plan reason;
+    // for the manager also Job DNA (TS-5), which copies the Role Blueprints lock.
+    expect(locked).toHaveLength(role === "manager" ? 5 : 4)
     for (const text of locked) expect(text).toMatch(/not included in your plan/)
     mockEntitled = ALL_VERTICALS
     expect((await page(role)).locked).toEqual([])
+  })
+
+  // ── TS-5 ──────────────────────────────────────────────────────────────────
+  const rolesStage = () => screen.getByRole("heading", { level: 2, name: /Roles/ }).closest("section") as HTMLElement
+
+  it("manager: the Roles stage lists Job DNA, after Role Blueprints, as a link to the manager's page", async () => {
+    const { unmount } = render(<TalentStudioOverviewBody role="manager" />, { wrapper: await wrapperFor(true) })
+    await act(async () => {})
+    const links = within(rolesStage()).getAllByRole("link")
+    expect(links.map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
+      ["Role Blueprints", "/vertical/job-blueprint/dashboard"],
+      ["Job DNA", "/manager/job-dna"],
+      ["Role Blueprint Match", "/manager/job-blueprint"],
+    ])
+    unmount()
+  })
+
+  it("manager: without the Role Blueprints vertical, Job DNA is locked text with the reason, not a link", async () => {
+    mockEntitled = []
+    const { unmount } = render(<TalentStudioOverviewBody role="manager" />, { wrapper: await wrapperFor(true) })
+    await act(async () => {})
+    const stage = rolesStage()
+    expect(within(stage).queryByRole("link", { name: "Job DNA" })).toBeNull()
+    const locked = [...stage.querySelectorAll("span[title]")].map((el) => el.textContent ?? "")
+    expect(locked.filter((text) => text.startsWith("Job DNA"))).toHaveLength(1)
+    expect(locked.find((text) => text.startsWith("Job DNA"))).toMatch(/not included in your plan/)
+    unmount()
+  })
+
+  it.each(["practitioner", "super-admin"] as UserRole[])("%s: the page does not mention Job DNA", async (role) => {
+    for (const list of Object.values(ENTITLEMENTS)) {
+      mockEntitled = list
+      const { links, locked } = await page(role)
+      expect(links.length).toBeGreaterThan(0)
+      expect(links.filter((to) => to.endsWith("/job-dna"))).toEqual([])
+      expect(locked.filter((text) => text.includes("Job DNA"))).toEqual([])
+    }
   })
 
   it("the stages are headed in the order the work runs, and Retain is its own heading", async () => {

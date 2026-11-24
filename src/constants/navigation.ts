@@ -46,6 +46,7 @@ import {
   Filter,
   CreditCard,
   PieChart,
+  Dna,
 } from "lucide-react"
 
 /**
@@ -596,6 +597,25 @@ export const TALENT_STUDIO_BLUEPRINT_PAGE_ROWS: { candidates: NavItemDef; insigh
   candidates: { to: ROUTES.JOB_DNA.CANDIDATES, icon: Users, label: "Candidates" },
   insights: { to: ROUTES.JOB_DNA.ANALYTICS, icon: BarChart3, label: "Insights" },
 }
+
+/**
+ * TS-5 — "Job DNA": the manager's own list of role benchmarks, with the
+ * validation reviewer queue on it. The page has existed at this route for
+ * some time and no menu linked to it. Manager only: the route sits under the
+ * manager prefix and no other role has a counterpart page, so no other role
+ * gets a row.
+ *
+ * The page reads the Role Blueprints data, so the row is shown in the `roles`
+ * stage, only when the launcher lists that vertical, and it copies the
+ * vertical's lock and reason (`blueprintPageRow` in `useToolsSection`). The
+ * label is the page's own heading, which every language keeps as "Job DNA",
+ * so it has no menu translation key and paints as declared.
+ *
+ * Pairs of [role, row]; an array, not a Map, so the label registry test sees it.
+ */
+export const TALENT_STUDIO_JOB_DNA_ROWS: ReadonlyArray<readonly [UserRole, NavItemDef]> = [
+  ["manager", { to: ROUTES.MANAGER.JOB_DNA, icon: Dna, label: "Job DNA" }],
+]
 
 /**
  * TS-4a — "Team fit": the role matches team members already have and have

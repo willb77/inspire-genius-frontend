@@ -8,6 +8,7 @@ import {
   TALENT_STUDIO_BLUEPRINT_TOOLS,
   TALENT_STUDIO_INTERVIEW_ROWS,
   TALENT_STUDIO_INTERVIEW_TOOLS,
+  TALENT_STUDIO_JOB_DNA_ROWS,
   TALENT_STUDIO_OVERVIEW_ROWS,
   TALENT_STUDIO_RETAIN_ROW,
   TALENT_STUDIO_TEAM_FIT_ROWS,
@@ -148,7 +149,7 @@ function splitCareerStudio(items: NavItemDef[]): { group: NavItemDef | null; res
  * The group is assembled as STAGES, in {@link TALENT_STUDIO_STAGE_ORDER}:
  *
  *   overview    Overview (the role's own Talent Studio page)
- *   roles       Role Blueprints · Role Blueprint Match
+ *   roles       Role Blueprints · Job DNA (TS-5; manager only) · Role Blueprint Match
  *   candidates  Candidates (a page of the Role Blueprints vertical)
  *   interviews  the TS-3 rows, unchanged
  *   insights    Insights (the vertical's analytics page)
@@ -228,11 +229,16 @@ function talentStudioStages(
   const knowledge = liftVertical(catalogue, TALENT_STUDIO_RETAIN_ROW.to)
   const overview = TALENT_STUDIO_OVERVIEW_ROWS.find(([r]) => r === role)?.[1]
   const teamFitRow = teamFit ? TALENT_STUDIO_TEAM_FIT_ROWS.find(([r]) => r === role)?.[1] : undefined
+  // TS-5: the manager's Job DNA page. Keyed to the role, and shown only beside
+  // the Role Blueprints row, whose lock and reason it copies.
+  const jobDnaPage = TALENT_STUDIO_JOB_DNA_ROWS.find(([r]) => r === role)?.[1]
+  const jobDnaRow = blueprintVertical && jobDnaPage ? blueprintPageRow(blueprintVertical, jobDnaPage) : undefined
 
   const rows: Record<TalentStudioStageKey, NavItemDef[]> = {
     overview: overview ? [overview] : [],
-    // Define the role first (the vertical), then match people to it.
-    roles: [...blueprintVerticals, ...blueprintRole],
+    // Define the role first (the vertical, then the manager's list of role
+    // benchmarks), then match people to it.
+    roles: [...blueprintVerticals, ...(jobDnaRow ? [jobDnaRow] : []), ...blueprintRole],
     candidates: blueprintVertical
       ? [blueprintPageRow(blueprintVertical, TALENT_STUDIO_BLUEPRINT_PAGE_ROWS.candidates)]
       : [],

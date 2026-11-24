@@ -44,6 +44,12 @@
  * so the walker covers the row; the TS-4a block turns it off to prove the
  * other half). The destination is named in TS4A_ADDED and nothing else may
  * appear. The off snapshot is untouched.
+ *
+ * TS-5 (2026-11-24) adds ONE row, "Job DNA", for the manager only, straight
+ * after Role Blueprints. It is an existing manager page that no menu linked
+ * to. The row is present only beside the Role Blueprints row and copies its
+ * lock, so it is checked against that row's state (TS5_ADDED). Practitioner
+ * and super-admin gain nothing. The off snapshot is untouched.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -113,6 +119,7 @@ import {
   SUPER_ADMIN_NAV_SECTIONS,
   TALENT_STUDIO_INTERVIEW_ROWS,
   TALENT_STUDIO_INTERVIEW_TOOLS,
+  TALENT_STUDIO_JOB_DNA_ROWS,
 } from "@/constants/navigation"
 
 const ROLES: UserRole[] = ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"]
@@ -222,6 +229,15 @@ const TS4A_ADDED: Partial<Record<UserRole, string>> = {
   practitioner: "/practitioner/team-fit",
 }
 
+/**
+ * TS-5: the one destination the manager's menu gains with the switch on. Like
+ * the TS-2 vertical pages it is live exactly when the Role Blueprints row is.
+ * No other role has an entry, so for them the strict diff below must hold.
+ */
+const TS5_ADDED: Partial<Record<UserRole, string>> = {
+  manager: "/manager/job-dna",
+}
+
 beforeEach(() => {
   localStorage.clear()
   mockEntitled = ALL_VERTICALS
@@ -276,7 +292,8 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
               // Blueprints row and in the same state as it.
               if (mode === "true" && overview) {
                 expect({ role, ent, home: after.has(BLUEPRINT_HOME) }).toEqual({ role, ent, home: true })
-                for (const route of TS2_BLUEPRINT_PAGES) {
+                const jobDna = TS5_ADDED[role]
+                for (const route of [...TS2_BLUEPRINT_PAGES, ...(jobDna ? [jobDna] : [])]) {
                   expect({ role, ent, route, before: before.has(route), after: after.get(route) }).toEqual({
                     role,
                     ent,
@@ -360,6 +377,7 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     expect(byLabel).toEqual({
       Overview: false,
       "Role Blueprints": true,
+      "Job DNA": true,
       "Role Blueprint Match": false,
       Candidates: true,
       "Hiring interview": false,
@@ -505,6 +523,7 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
     manager: [
       ["Overview", "/manager/talent-studio"],
       ["Role Blueprints", BLUEPRINT_HOME],
+      ["Job DNA", "/manager/job-dna"],
       ["Role Blueprint Match", "/manager/job-blueprint"],
       ["Candidates", "/vertical/job-blueprint/candidates"],
       ["Hiring interview", "/manager/interview-live"],
@@ -700,6 +719,105 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
     // The product name inside the Retain label stays as it is in every language.
     for (const lang of ["es", "fr", "pt", "it", "pl", "cs"]) {
       expect(read(lang).nav.items.Retain_Knowledge_Continuity).toContain("Knowledge Continuity")
+    }
+  })
+})
+
+describe("TS-5 — Job DNA in Talent Studio, for the manager only", () => {
+  const JOB_DNA = "/manager/job-dna"
+  const isJobDna = (c: NavItemDef) => c.label === "Job DNA" || c.to.endsWith("/job-dna")
+  const talentChildren = async (role: UserRole) =>
+    (await tools(role, "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
+  /** Every row the role's sidebar paints: the main menu, the Tools section, and one level of children. */
+  const everyRow = async (role: UserRole, mode: Mode) =>
+    [...(await restOfSidebar(role, mode)), ...((await tools(role, mode))?.items ?? [])].flatMap((i) => [
+      i,
+      ...(i.children ?? []),
+    ])
+
+  it("the row is declared for the manager and for no other role", () => {
+    expect(TALENT_STUDIO_JOB_DNA_ROWS.map(([role, row]) => [role, row.label, row.to])).toEqual([
+      ["manager", "Job DNA", JOB_DNA],
+    ])
+  })
+
+  it("manager: one row, straight after Role Blueprints, with that row's lock and reason", async () => {
+    for (const [ent, list] of Object.entries(ENTITLEMENTS)) {
+      mockEntitled = list
+      const children = await talentChildren("manager")
+      const rows = children.filter(isJobDna)
+      expect(rows.map((c) => [c.label, c.to])).toEqual([["Job DNA", JOB_DNA]])
+      const at = children.indexOf(rows[0])
+      const home = children[at - 1]
+      expect(home.to).toBe(BLUEPRINT_HOME)
+      expect({ ent, disabled: !!rows[0].disabled, reason: rows[0].disabledReason }).toEqual({
+        ent,
+        disabled: !!home.disabled,
+        reason: home.disabledReason,
+      })
+      // Lit on its own page only, not on the vertical's pages.
+      expect(rows[0].activePrefix).toBe(JOB_DNA)
+      // The control: entitled it is a live link, unentitled it is not.
+      if (ent === "all") expect(rows[0].disabled).toBeFalsy()
+      if (ent === "none") expect(rows[0].disabled).toBe(true)
+    }
+  })
+
+  it("manager: the page is routed and the manager may open it", () => {
+    const routesSource = readFileSync(join(process.cwd(), "src/routes.tsx"), "utf8")
+    expect(routesSource.includes(`path: "${JOB_DNA}"`)).toBe(true)
+    expect(hasAccess("manager", JOB_DNA)).toBe(true)
+    expect(hasAccess("practitioner", JOB_DNA)).toBe(false)
+  })
+
+  it.each(ROLES.filter((r) => r !== "manager"))(
+    "%s: no Job DNA row anywhere in the sidebar, with every flag on, whatever the entitlements",
+    async (role) => {
+      let rowsSeen = 0
+      for (const list of Object.values(ENTITLEMENTS)) {
+        mockEntitled = list
+        const rows = await everyRow(role, "true")
+        rowsSeen += rows.length
+        expect(rows.filter(isJobDna)).toEqual([])
+      }
+      expect(rowsSeen).toBeGreaterThan(0)
+    },
+  )
+
+  it.each(ROLES)("%s: with job_fit_v2 off there is no Job DNA row anywhere in the sidebar", async (role) => {
+    let rowsSeen = 0
+    for (const mode of OFF_MODES) {
+      const rows = await everyRow(role, mode)
+      rowsSeen += rows.length
+      expect(rows.filter(isJobDna)).toEqual([])
+    }
+    expect(rowsSeen).toBeGreaterThan(0)
+  })
+
+  it("manager: the label and the destination are each used once in the whole sidebar", async () => {
+    for (const list of Object.values(ENTITLEMENTS)) {
+      mockEntitled = list
+      const rows = await everyRow("manager", "true")
+      expect(rows.filter((r) => r.label === "Job DNA")).toHaveLength(1)
+      expect(rows.filter((r) => r.to === JOB_DNA)).toHaveLength(1)
+      // SidebarScaffold keys a row by `to || label`: no other row may share this one's key.
+      const keys = rows.map((r) => r.to || r.label)
+      expect(keys.filter((k) => k === JOB_DNA || k === "Job DNA")).toHaveLength(1)
+    }
+  })
+
+  it("the label is the page's own heading, which every language keeps, so the menu has no key for it", () => {
+    const read = (lang: string, ns: string) =>
+      JSON.parse(readFileSync(join(process.cwd(), `public/locales/${lang}/${ns}.json`), "utf8")) as Record<
+        string,
+        Record<string, unknown>
+      >
+    const key = navLabelKey("items", "Job DNA").replace("nav.items.", "")
+    expect(key).toBe("Job_DNA")
+    for (const lang of ["en", "es", "fr", "pt", "it", "pl", "cs"]) {
+      expect({ lang, heading: read(lang, "managerPages").jobDna.jobDna }).toEqual({ lang, heading: "Job DNA" })
+      const items = (read(lang, "shellUi").nav as { items: Record<string, string> }).items
+      expect({ lang, hasMenuKey: key in items }).toEqual({ lang, hasMenuKey: false })
     }
   })
 })
