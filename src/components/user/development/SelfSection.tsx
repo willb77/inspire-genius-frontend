@@ -32,10 +32,10 @@ import { useTranslation } from "react-i18next"
 export type SelfSectionProps = {
   /** Anchors the heading for the in-page section links. */
   id: string
-  title: string
+  title: ReactNode
   icon: LucideIcon
   /** One second-person sentence: what this section is. */
-  lead: string
+  lead: ReactNode
   isLoading: boolean
   /** A failed READ. Never conflated with an empty result — see the note above. */
   isError: boolean
@@ -45,9 +45,9 @@ export type SelfSectionProps = {
   /** True only when the read SUCCEEDED and returned nothing. */
   isEmpty: boolean
   /** What would put something here. */
-  emptyHeadline: string
+  emptyHeadline: ReactNode
   /** Who can do it, in second person. */
-  emptyBody: string
+  emptyBody: ReactNode
   /** Rendered beside the title (a count, an "Add" control). */
   actions?: ReactNode
   /** Always rendered, whatever the state — the self-declare forms live here so

@@ -94,7 +94,7 @@ export default function JobBlueprintAuthoringPage() {
       <JobDnaPageHeader
         icon={PencilRuler}
         title={t("authoring.title", { defaultValue: "Create a Job DNA" })}
-        description={t("authoring.description", { defaultValue: "Draft a benchmark from a role, or build one by hand across behaviours, aptitudes and core traits. Either way a person reviews it before it is used — this is not a PRISM-validated job benchmark." })}
+        description={withPrism(t("authoring.description", { defaultValue: "Draft a benchmark from a role, or build one by hand across behaviours, aptitudes and core traits. Either way a person reviews it before it is used — this is not a PRISM-validated job benchmark." }))}
         action={
           mode !== "chooser" ? (
             <button

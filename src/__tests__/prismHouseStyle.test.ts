@@ -23,6 +23,15 @@ const WORD = /\bprism\b/i
 /** Elements whose children must stay plain text (a `<title>` or `<option>` cannot hold an `<em>`). */
 const PLAIN_TEXT_TAGS = new Set(["option", "title", "textarea", "code", "pre", "script", "style", "SelectValue"])
 const SELF = ["components/shared/Prism.tsx", "lib/withPrism.tsx"]
+/** Props that components print as visible text, so a PRISM in one can be italic. */
+const DISPLAY_PROPS = new Set(["label", "title", "description", "subtitle", "sub", "message", "lead", "hint", "body", "what", "emptyHeadline", "emptyBody"])
+/**
+ * Components whose such prop must stay a plain string, because the component also puts it in a
+ * tooltip, a chart legend or an accessible name. PRISM there is capitals only.
+ * - Radar `name`/`PrismDots label`: chart series and dot-strip names (legend, aria).
+ * - NotShared `what`: interpolated into a `title` tooltip.
+ */
+const PLAIN_STRING_COMPONENTS = new Set(["Radar", "PrismDots", "NotShared"])
 
 function walkFiles(dir: string, keep: (f: string) => boolean, out: string[] = []): string[] {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -104,6 +113,34 @@ describe("PRISM house style", () => {
                 if (has) bad.push(`${at(c)} t("${key}") names PRISM: wrap it in withPrism()`)
               }
             }
+          }
+        }
+        // A display-text prop on one of our own components (`<Field label="Are you PRISM accredited?" />`):
+        // the component prints it, so it can be italic. Real HTML attributes (aria-label, placeholder, alt,
+        // a lowercase tag's title) cannot, and are not checked.
+        if (ts.isJsxAttribute(n) && n.initializer && DISPLAY_PROPS.has(n.name.getText(sf))) {
+          const el = n.parent.parent
+          const tag = ts.isJsxOpeningElement(el) || ts.isJsxSelfClosingElement(el) ? el.tagName.getText(sf) : ""
+          if (/^[A-Z]/.test(tag) && !PLAIN_STRING_COMPONENTS.has(tag)) {
+            const i = n.initializer
+            const e = ts.isJsxExpression(i) ? i.expression : i
+            let text: string | null = null
+            let wrapped = false
+            if (e && ts.isStringLiteralLike(e)) text = e.text
+            else if (e && ts.isCallExpression(e) && ts.isIdentifier(e.expression)) {
+              if (e.expression.text === "withPrism") wrapped = true
+              else if (e.expression.text === "t" && e.arguments[0] && ts.isStringLiteralLike(e.arguments[0])) {
+                const key = e.arguments[0].text
+                text = namespaces.map((ns) => en[ns]?.[key]).find(Boolean) ?? null
+                for (const a of e.arguments.slice(1)) {
+                  if (ts.isStringLiteralLike(a)) text = text ?? a.text
+                  if (ts.isObjectLiteralExpression(a))
+                    for (const p of a.properties)
+                      if (ts.isPropertyAssignment(p) && p.name.getText(sf) === "defaultValue" && ts.isStringLiteralLike(p.initializer)) text = text ?? p.initializer.text
+                }
+              }
+            }
+            if (!wrapped && text !== null && WORD.test(text)) bad.push(`${at(n)} <${tag} ${n.name.getText(sf)}> names PRISM: wrap it in withPrism()`)
           }
         }
         ts.forEachChild(n, visit)

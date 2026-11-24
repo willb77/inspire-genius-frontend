@@ -84,7 +84,7 @@ describe("PractitionerClientProfile", () => {
   it("renders the main section cards from the detail", () => {
     renderPage()
     expect(screen.getByText("Quarterly review")).toBeInTheDocument()
-    expect(screen.getByText("PRISM Scores")).toBeInTheDocument()
+    expect(screen.getByText(byText("PRISM Scores"))).toBeInTheDocument()
     expect(screen.getByText("Resources")).toBeInTheDocument()
   })
 

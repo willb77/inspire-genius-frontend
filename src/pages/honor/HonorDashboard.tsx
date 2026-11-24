@@ -17,6 +17,7 @@ import { useCoachHome } from "@/hooks/honor/useCoachData"
 import { HonorCard, HonorStat, HonorSectionTitle } from "./_shared"
 import VideoLibrary from "./VideoLibrary"
 import { Prism } from "@/components/shared/Prism"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Honor Coach Workbench — Dashboard ("transition-mentoring cockpit").
@@ -60,7 +61,7 @@ export default function HonorDashboard() {
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <HonorStat icon={Users} label="Assigned" value={counts.assigned} hint="fellows on your caseload" tone="navy" />
         <HonorStat icon={CheckCircle2} label="Assessed" value={counts.assessed} hint="behavioral profile complete" tone="green" />
-        <HonorStat icon={Clock} label="Intake pending" value={counts.intakePending} hint="awaiting PRISM intake" tone="orange" />
+        <HonorStat icon={Clock} label="Intake pending" value={counts.intakePending} hint={withPrism("awaiting PRISM intake")} tone="orange" />
       </div>
 
       {/* Videos */}

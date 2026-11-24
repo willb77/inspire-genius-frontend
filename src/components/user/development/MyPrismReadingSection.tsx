@@ -42,6 +42,7 @@ import { useMyFullPrism } from "@/hooks/me/useMyDevelopment"
 import type { FullPrismScale } from "@/types/development"
 import SelfSection from "./SelfSection"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 /** How many of the missing scale names to name before summarising the rest. */
 const MISSING_SHOWN = 6
@@ -95,9 +96,9 @@ export default function MyPrismReadingSection() {
   return (
     <SelfSection
       id="my-prism"
-      title={t("user.developmentMyPrismReadingSection.myPrismReading", { defaultValue: "My PRISM reading" })}
+      title={withPrism(t("user.developmentMyPrismReadingSection.myPrismReading", { defaultValue: "My PRISM reading" }))}
       icon={Brain}
-      lead="Every PRISM scale on file for you — not the eight behaviours, the full rubric."
+      lead={withPrism("Every PRISM scale on file for you — not the eight behaviours, the full rubric.")}
       isLoading={profile.isLoading}
       isError={profile.isError}
       errorMessage={
@@ -107,8 +108,8 @@ export default function MyPrismReadingSection() {
       }
       onRetry={() => void profile.refetch()}
       isEmpty={isEmpty}
-      emptyHeadline="No PRISM assessment on file for you yet."
-      emptyBody="Completing a PRISM assessment fills this in — you can request one from your PRISM page, or your coach or practitioner can send you one. Nothing here is estimated in the meantime."
+      emptyHeadline={withPrism("No PRISM assessment on file for you yet.")}
+      emptyBody={withPrism("Completing a PRISM assessment fills this in — you can request one from your PRISM page, or your coach or practitioner can send you one. Nothing here is estimated in the meantime.")}
     >
       {data?.isConflicted ? (
         /* The refusal branch. Nothing below it renders: no scales, no colours,

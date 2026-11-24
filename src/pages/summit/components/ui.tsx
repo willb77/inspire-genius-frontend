@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-export function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
+export function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: ReactNode; sub?: ReactNode }) {
   return (
     <div className="mb-1">
       <div className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[#0E5F6B]">{eyebrow}</div>

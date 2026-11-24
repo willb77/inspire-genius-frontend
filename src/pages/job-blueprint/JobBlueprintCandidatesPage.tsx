@@ -66,7 +66,7 @@ export default function JobBlueprintCandidatesPage() {
       <JobDnaPageHeader
         icon={Users}
         title={t("candidates.title", { defaultValue: "Candidates" })}
-        description={t("candidates.description", { defaultValue: "Screen and review candidates: each one's PRISM profile scored against the role's reviewed Job DNA benchmark." })}
+        description={withPrism(t("candidates.description", { defaultValue: "Screen and review candidates: each one's PRISM profile scored against the role's reviewed Job DNA benchmark." }))}
         action={
           <div className="flex flex-wrap items-center gap-3">
             <JobDnaSelect

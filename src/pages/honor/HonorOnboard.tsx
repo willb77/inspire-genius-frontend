@@ -9,6 +9,7 @@ import { HONOR_FRAMEWORK_LABELS } from "@/services/honor/assessment.service"
 import { useCohorts } from "@/hooks/honor/useHonorAdmin"
 import { HONOR_CAREER_AREAS } from "./_careerAreas"
 import { Prism } from "@/components/shared/Prism"
+import { withPrism } from "@/lib/withPrism"
 
 /** File types accepted for the résumé / Bio / Additional-Information uploads. */
 const DOC_ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx"
@@ -149,7 +150,7 @@ export default function HonorOnboard() {
       <HonorPageHeader
         icon={UserPlus}
         title="Onboard a Fellow"
-        description="Add a single Honor fellow. Their PRISM export and any behavioral reports feed the same personalization platform the whole app reads; résumé & bio ride the document RAG. New fellows are invited via a secure magic link."
+        description={withPrism("Add a single Honor fellow. Their PRISM export and any behavioral reports feed the same personalization platform the whole app reads; résumé & bio ride the document RAG. New fellows are invited via a secure magic link.")}
       />
 
       {/* Add a member */}
@@ -205,7 +206,7 @@ export default function HonorOnboard() {
           </Field>
 
           {/* Optional PRISM */}
-          <Field label="PRISM assessment (CSV) — optional" full hint="If provided, it's parsed into the member's structured scores. A fellow can be onboarded without one.">
+          <Field label={withPrism("PRISM assessment (CSV) — optional")} full hint="If provided, it's parsed into the member's structured scores. A fellow can be onboarded without one.">
             <FileDrop
               accept=".csv,.xlsx,.pdf"
               file={prismFile}
@@ -394,7 +395,7 @@ function Field({
   full,
   children,
 }: {
-  label: string
+  label: React.ReactNode
   hint?: string
   required?: boolean
   full?: boolean

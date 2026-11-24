@@ -26,6 +26,7 @@ import {
   toPayload,
   type JoinFormValues,
 } from "./join.schema"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Register for one event from `/events` (monorepo CSA 2026-11-16, R4).
@@ -206,7 +207,7 @@ export function EventRegistrationDialog({ event, onClose }: { event: EventOption
           </Field>
         )}
 
-        <Field name="prism_accredited" label="Are you PRISM accredited?" error={errors.prism_accredited?.message}>
+        <Field name="prism_accredited" label={withPrism("Are you PRISM accredited?")} error={errors.prism_accredited?.message}>
           <select {...register("prism_accredited")} {...ariaFor("prism_accredited")} className={selectClass}>
             <option value="">Choose one</option>
             {INTAKE_PRISM_ACCREDITED.map((p) => (
@@ -217,7 +218,7 @@ export function EventRegistrationDialog({ event, onClose }: { event: EventOption
           </select>
         </Field>
         {prism === "yes" && (
-          <Field name="site_id" label="PRISM site ID (optional)" error={errors.site_id?.message}>
+          <Field name="site_id" label={withPrism("PRISM site ID (optional)")} error={errors.site_id?.message}>
             <Input {...register("site_id")} {...ariaFor("site_id")} />
           </Field>
         )}

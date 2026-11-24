@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import type { ReactNode } from "react"
 
 /** One field in a credit-action form. `amount` is validated as a positive number. */
 export type CreditField = {
@@ -44,7 +45,7 @@ export function CreditActionDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
-  description?: string
+  description?: ReactNode
   submitLabel: string
   fields: CreditField[]
   isPending: boolean

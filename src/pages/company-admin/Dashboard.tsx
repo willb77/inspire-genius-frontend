@@ -11,6 +11,7 @@ import { ROUTES } from "@/constants/routes"
 import { ValidationReviewQueue } from "@/components/job-blueprint/validation/ValidationReviewQueue"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import DashboardHouse from "./house/DashboardHouse"
+import { withPrism } from "@/lib/withPrism"
 
 type Dept = { name: string; count: number; color: string }
 
@@ -189,7 +190,7 @@ function CompanyAdminDashboardClassic() {
     <CompanyAdminLayout>
       <DashboardFrame
         title={`${orgName} ${t("admin:companyAdmin.dashboard")}`}
-        subtitle={t("dashboardSubtitle", { defaultValue: "Manage your organization's teams, training, and PRISM assessments across all departments." })}
+        subtitle={withPrism(t("dashboardSubtitle", { defaultValue: "Manage your organization's teams, training, and PRISM assessments across all departments." }))}
         kpis={statsKpi}
         primary={primary}
       />

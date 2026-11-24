@@ -21,10 +21,11 @@ import {
 import { usePrismPdfReplaceEnabled } from "@/hooks/switches/usePrismPdfReplaceEnabled"
 import { oversizeMessage } from "@/lib/prism/prismUpload"
 import { withPrism } from "@/lib/withPrism"
+import type { ReactNode } from "react"
 
 interface ReplacePrismDataButtonProps {
   /** Button label. Defaults to "Replace PRISM Data". */
-  label?: string
+  label?: ReactNode
   variant?: "default" | "outline" | "secondary" | "ghost"
   size?: "default" | "sm" | "lg"
   className?: string

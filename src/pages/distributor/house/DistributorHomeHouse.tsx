@@ -23,6 +23,7 @@ import {
   transactionLabel,
 } from "./distributorData"
 import { Section, StatTile } from "./parts"
+import { withPrism } from "@/lib/withPrism"
 
 const PREVIEW_ROWS = 5
 
@@ -50,7 +51,7 @@ export default function DistributorHomeHouse() {
 
   return (
     <DistributorLayout>
-      <PageHeader title={title} description={t("homeDescription", { defaultValue: "Your practitioners and PRISM credits at a glance." })} />
+      <PageHeader title={title} description={withPrism(t("homeDescription", { defaultValue: "Your practitioners and PRISM credits at a glance." }))} />
 
       {/* The reviewer's queue; renders nothing unless a validation request names this distributor. */}
       <ValidationReviewQueue />

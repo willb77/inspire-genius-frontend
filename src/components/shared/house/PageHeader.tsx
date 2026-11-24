@@ -8,7 +8,7 @@ export interface PageHeaderProps {
   /** Must match the page's menu label. */
   title: string
   /** One plain-English line saying what the page is for. */
-  description?: string
+  description?: React.ReactNode
   /** Optional "← Back to …" text link. */
   back?: { to: string; label: string }
   /** At most one main button, shown on the right. */

@@ -54,6 +54,7 @@ jest.mock("@/hooks/summit/useMyGoals", () => ({
 }))
 
 import MyDevelopment from "@/pages/user/MyDevelopment"
+import { byText } from "@/test/byText"
 
 beforeEach(() => {
   mockUser.role = "user"
@@ -68,7 +69,7 @@ it("is called My development and is addressed to the person", () => {
 it("renders the five sections that have a live backend", () => {
   render(<MyDevelopment />)
   for (const title of ["Gaps", "Learning", "Milestones", "Coach reviews", "My PRISM reading"]) {
-    expect(screen.getByText(title)).toBeInTheDocument()
+    expect(screen.getByText(byText(title))).toBeInTheDocument()
   }
 })
 
@@ -121,5 +122,5 @@ it("needs no manager: every section renders its own state with no member id in s
   expect(screen.getByText("Nothing in your learning plan yet.")).toBeInTheDocument()
   expect(screen.getByText("No milestones on your roadmap yet.")).toBeInTheDocument()
   expect(screen.getByText("No coach has reviewed your goals yet.")).toBeInTheDocument()
-  expect(screen.getByText(/No PRISM assessment on file for you yet/i)).toBeInTheDocument()
+  expect(screen.getByText(byText(/No PRISM assessment on file for you yet/i))).toBeInTheDocument()
 })

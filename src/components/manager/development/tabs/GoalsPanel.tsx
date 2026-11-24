@@ -63,6 +63,7 @@ import {
 } from "@/hooks/manager/development"
 import { useDevSkin } from "../skin"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 const CATEGORY_ORDER: GoalCategory[] = [
   "career_history",
@@ -446,8 +447,8 @@ function StateCard({
   testId,
 }: {
   icon: React.ReactNode
-  title: string
-  body: string
+  title: React.ReactNode
+  body: React.ReactNode
   children?: React.ReactNode
   testId: string
 }) {
@@ -519,8 +520,8 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
       <StateCard
         testId="goals-state-prism-needed"
         icon={<Sparkles className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />}
-        title={t("goalsPanel.prismNeeded", { defaultValue: "PRISM needed" })}
-        body={t("goalsPanel.setThisMemberUpWith", { defaultValue: "Set this member up with Aura to map their PRISM profile before goal discovery can begin." })}
+        title={withPrism(t("goalsPanel.prismNeeded", { defaultValue: "PRISM needed" }))}
+        body={withPrism(t("goalsPanel.setThisMemberUpWith", { defaultValue: "Set this member up with Aura to map their PRISM profile before goal discovery can begin." }))}
       >
         {/* TDS-GI-1: a PRISM set-up, not a Goals invite. The server records it and notifies nobody. */}
         <Button
