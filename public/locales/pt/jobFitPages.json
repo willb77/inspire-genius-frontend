@@ -559,5 +559,12 @@
   "fieldsSection": {
     "heading": "Áreas que combinam com você",
     "intro": "Tipos de trabalho classificados de acordo com o seu perfil. Mais perto significa uma adequação natural melhor — não é a única coisa que você pode fazer."
+  },
+  "managerFitViews": {
+    "title": "Quem consultou a sua compatibilidade",
+    "intro": "Um gestor ou coach com quem você compartilha seu perfil PRISM e Desenvolvimento pode pontuar a sua compatibilidade com um cargo. Ele vê apenas a pontuação de correspondência. Ela não é adicionada aos seus relatórios de compatibilidade.",
+    "line": "Seu gestor ou coach consultou a sua compatibilidade com {{role}} em {{date}}.",
+    "lineNoDate": "Seu gestor ou coach consultou a sua compatibilidade com {{role}}.",
+    "error": "Não foi possível verificar se um gestor ou coach consultou a sua compatibilidade com um cargo. Tente novamente em instantes."
   }
 }

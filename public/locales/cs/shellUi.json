@@ -624,13 +624,31 @@
       "noMatches": {
         "title": "Zatím žádné shody",
         "notRun": "{{name}} zatím neotevřel(a) vlastní shody v Career Fit. Objeví se zde, až to {{name}} udělá. Z této stránky se nic nehodnotí.",
-        "noRoles": "Career Fit uživatele {{name}} neobsahoval žádné zveřejněné role k porovnání."
+        "noRoles": "Career Fit uživatele {{name}} neobsahoval žádné zveřejněné role k porovnání.",
+        "notRunOnDemand": "{{name}} zatím neotevřel(a) vlastní shody v Career Fit. Objeví se zde, až to {{name}} udělá."
       },
       "unknownState": "Shody uživatele {{name}} teď nelze zobrazit.",
       "asOf": "Z vlastního Career Fit uživatele {{name}}, stav k {{date}}.",
       "asOfUnknown": "Z vlastního Career Fit uživatele {{name}}.",
       "score": "Skóre shody: {{score}} %",
-      "coverage": "Změřené dimenze: {{evaluated}} z {{total}}"
+      "coverage": "Změřené dimenze: {{evaluated}} z {{total}}",
+      "introOnDemand": "Shody s rolemi, které členové vašeho týmu získali sami, zobrazené jen tehdy, když je s vámi sdíleli. Tam, kde je to zapnuté, můžete člena týmu také ohodnotit vůči roli, kterou si vyberete. Uloží se záznam a člen týmu se o tom dozví.",
+      "onDemand": {
+        "title": "Ohodnotit vůči roli",
+        "intro": "Ohodnotí uživatele {{name}} vůči roli, kterou si vyberete, na základě jeho profilu PRISM. Uloží se záznam a {{name}} na své stránce Career Fit uvidí, že jste si zobrazili jeho shodu s touto rolí.",
+        "roleLabel": "Role, vůči které ohodnotit uživatele {{name}}",
+        "choose": "Vyberte roli…",
+        "score": "Ohodnotit uživatele {{name}} pro tuto roli",
+        "scoring": "Probíhá hodnocení…",
+        "noRoles": "Neexistuje žádná zveřejněná role, kterou vidíte vy i {{name}}, takže není s čím porovnávat.",
+        "rolesError": "Nepodařilo se ověřit, zda můžete uživatele {{name}} ohodnotit vůči roli. Jde o problém s načítáním.",
+        "scoreError": "Uživatele {{name}} se teď nepodařilo ohodnotit. Neznamená to nulové skóre. Zkuste to znovu.",
+        "resultNote": "Ohodnoceno právě teď na vaši žádost. Výsledek se nepřidává do reportů shody uživatele {{name}} a {{name}} vidí, že jste si jej zobrazili.",
+        "notShared": "Abyste mohli uživatele {{name}} ohodnotit vůči roli, musí s vámi {{name}} sdílet profil PRISM i oblast Rozvoj.",
+        "roleNotAvailable": "Tuto roli už pro uživatele {{name}} nelze ohodnotit. Vyberte jinou.",
+        "off": "Hodnocení vůči roli není pro organizaci uživatele {{name}} zapnuté.",
+        "unknownState": "Hodnocení uživatele {{name}} vůči roli teď není k dispozici."
+      }
     }
   }
 }

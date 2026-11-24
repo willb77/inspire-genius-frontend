@@ -624,13 +624,31 @@
       "noMatches": {
         "title": "Pas encore de correspondances",
         "notRun": "{{name}} n'a pas encore ouvert ses propres correspondances dans Career Fit. Elles apparaîtront ici une fois que {{name}} l'aura fait. Rien n'est évalué depuis cette page.",
-        "noRoles": "Le Career Fit de {{name}} ne comportait aucun poste publié auquel se comparer."
+        "noRoles": "Le Career Fit de {{name}} ne comportait aucun poste publié auquel se comparer.",
+        "notRunOnDemand": "{{name}} n'a pas encore ouvert ses propres correspondances dans Career Fit. Elles apparaîtront ici une fois que {{name}} l'aura fait."
       },
       "unknownState": "Les correspondances de {{name}} ne peuvent pas être affichées pour le moment.",
       "asOf": "Issu du Career Fit de {{name}}, au {{date}}.",
       "asOfUnknown": "Issu du Career Fit de {{name}}.",
       "score": "Score de correspondance : {{score}} %",
-      "coverage": "{{evaluated}} dimensions mesurées sur {{total}}"
+      "coverage": "{{evaluated}} dimensions mesurées sur {{total}}",
+      "introOnDemand": "Les correspondances de postes que les membres de votre équipe ont obtenues eux-mêmes, visibles uniquement lorsqu'ils les ont partagées avec vous. Là où cette option est activée, vous pouvez aussi évaluer un membre par rapport à un poste de votre choix. Une trace est conservée et le membre en est informé.",
+      "onDemand": {
+        "title": "Évaluer par rapport à un poste",
+        "intro": "Évalue {{name}} par rapport à un poste de votre choix, à partir de son profil PRISM. Une trace est conservée et {{name}} verra, sur sa propre page Career Fit, que vous avez consulté son adéquation à ce poste.",
+        "roleLabel": "Poste par rapport auquel évaluer {{name}}",
+        "choose": "Choisissez un poste…",
+        "score": "Évaluer {{name}} pour ce poste",
+        "scoring": "Évaluation en cours…",
+        "noRoles": "Aucun poste publié n'est visible à la fois par vous et par {{name}} ; il n'y a donc rien à quoi comparer.",
+        "rolesError": "Nous n'avons pas pu vérifier si vous pouvez évaluer {{name}} par rapport à un poste. Il s'agit d'un problème de chargement.",
+        "scoreError": "{{name}} n'a pas pu être évalué(e) pour le moment. Ce n'est pas un score de zéro. Réessayez.",
+        "resultNote": "Évalué à l'instant à votre demande. Ce résultat n'est pas ajouté aux rapports d'adéquation de {{name}}, et {{name}} peut voir que vous l'avez consulté.",
+        "notShared": "Pour évaluer {{name}} par rapport à un poste, {{name}} doit avoir partagé avec vous à la fois son profil PRISM et Développement.",
+        "roleNotAvailable": "Ce poste ne peut plus être évalué pour {{name}}. Choisissez-en un autre.",
+        "off": "L'évaluation par rapport à un poste n'est pas activée pour l'organisation de {{name}}.",
+        "unknownState": "L'évaluation de {{name}} par rapport à un poste n'est pas disponible pour le moment."
+      }
     }
   }
 }

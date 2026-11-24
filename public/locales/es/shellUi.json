@@ -624,13 +624,31 @@
       "noMatches": {
         "title": "Aún no hay compatibilidades",
         "notRun": "{{name}} aún no ha abierto sus propias compatibilidades en Career Fit. Aparecerán aquí cuando {{name}} lo haga. Desde esta página no se puntúa nada.",
-        "noRoles": "En el Career Fit de {{name}} no había puestos publicados con los que comparar."
+        "noRoles": "En el Career Fit de {{name}} no había puestos publicados con los que comparar.",
+        "notRunOnDemand": "{{name}} aún no ha abierto sus propias compatibilidades en Career Fit. Aparecerán aquí cuando {{name}} lo haga."
       },
       "unknownState": "Las compatibilidades de {{name}} no se pueden mostrar en este momento.",
       "asOf": "Del propio Career Fit de {{name}}, a fecha de {{date}}.",
       "asOfUnknown": "Del propio Career Fit de {{name}}.",
       "score": "Puntuación de compatibilidad: {{score}} %",
-      "coverage": "{{evaluated}} de {{total}} dimensiones medidas"
+      "coverage": "{{evaluated}} de {{total}} dimensiones medidas",
+      "introOnDemand": "Las compatibilidades con puestos que los miembros de tu equipo han obtenido por sí mismos, visibles solo cuando las han compartido contigo. Donde esté activado, también puedes puntuar a un miembro frente a un puesto que elijas. Se guarda un registro y se informa al miembro.",
+      "onDemand": {
+        "title": "Puntuar frente a un puesto",
+        "intro": "Puntúa a {{name}} frente a un puesto que elijas, a partir de su perfil PRISM. Se guarda un registro y {{name}} verá en su propia página de Career Fit que consultaste su compatibilidad con ese puesto.",
+        "roleLabel": "Puesto frente al que puntuar a {{name}}",
+        "choose": "Elige un puesto…",
+        "score": "Puntuar a {{name}} para este puesto",
+        "scoring": "Puntuando…",
+        "noRoles": "No hay ningún puesto publicado que {{name}} y tú podáis ver a la vez, así que no hay nada con qué comparar.",
+        "rolesError": "No pudimos comprobar si puedes puntuar a {{name}} frente a un puesto. Es un problema de carga.",
+        "scoreError": "No se pudo puntuar a {{name}} en este momento. Eso no es una puntuación de cero. Inténtalo de nuevo.",
+        "resultNote": "Puntuado ahora mismo a petición tuya. No se añade a los informes de ajuste de {{name}}, y {{name}} puede ver que lo consultaste.",
+        "notShared": "Para puntuar a {{name}} frente a un puesto, {{name}} tiene que haber compartido contigo tanto su perfil PRISM como Desarrollo.",
+        "roleNotAvailable": "Ese puesto ya no se puede puntuar para {{name}}. Elige otro.",
+        "off": "La puntuación frente a un puesto no está activada para la organización de {{name}}.",
+        "unknownState": "Ahora mismo no es posible puntuar a {{name}} frente a un puesto."
+      }
     }
   }
 }

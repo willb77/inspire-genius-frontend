@@ -624,13 +624,31 @@
       "noMatches": {
         "title": "Ancora nessuna corrispondenza",
         "notRun": "{{name}} non ha ancora aperto le proprie corrispondenze in Career Fit. Compariranno qui dopo che {{name}} lo avrà fatto. Da questa pagina non viene assegnato alcun punteggio.",
-        "noRoles": "Il Career Fit di {{name}} non aveva ruoli pubblicati con cui confrontarsi."
+        "noRoles": "Il Career Fit di {{name}} non aveva ruoli pubblicati con cui confrontarsi.",
+        "notRunOnDemand": "{{name}} non ha ancora aperto le proprie corrispondenze in Career Fit. Compariranno qui dopo che {{name}} lo avrà fatto."
       },
       "unknownState": "Le corrispondenze di {{name}} non possono essere mostrate in questo momento.",
       "asOf": "Dal Career Fit di {{name}}, al {{date}}.",
       "asOfUnknown": "Dal Career Fit di {{name}}.",
       "score": "Punteggio di corrispondenza: {{score}}%",
-      "coverage": "{{evaluated}} dimensioni misurate su {{total}}"
+      "coverage": "{{evaluated}} dimensioni misurate su {{total}}",
+      "introOnDemand": "Le corrispondenze con i ruoli che i membri del tuo team hanno ottenuto per conto proprio, visibili solo se le hanno condivise con te. Dove è attivo, puoi anche assegnare un punteggio a un membro rispetto a un ruolo a tua scelta. Viene conservata una registrazione e il membro viene informato.",
+      "onDemand": {
+        "title": "Assegna un punteggio rispetto a un ruolo",
+        "intro": "Assegna a {{name}} un punteggio rispetto a un ruolo a tua scelta, a partire dal suo profilo PRISM. Viene conservata una registrazione e {{name}} vedrà, nella propria pagina Career Fit, che hai consultato la sua compatibilità con quel ruolo.",
+        "roleLabel": "Ruolo rispetto al quale valutare {{name}}",
+        "choose": "Scegli un ruolo…",
+        "score": "Valuta {{name}} per questo ruolo",
+        "scoring": "Calcolo del punteggio…",
+        "noRoles": "Non c'è alcun ruolo pubblicato visibile sia a te sia a {{name}}, quindi non c'è nulla con cui fare il confronto.",
+        "rolesError": "Non è stato possibile verificare se puoi valutare {{name}} rispetto a un ruolo. È un problema di caricamento.",
+        "scoreError": "Non è stato possibile valutare {{name}} in questo momento. Non è un punteggio pari a zero. Riprova.",
+        "resultNote": "Calcolato adesso su tua richiesta. Non viene aggiunto ai report di compatibilità di {{name}}, e {{name}} può vedere che lo hai consultato.",
+        "notShared": "Per valutare {{name}} rispetto a un ruolo, {{name}} deve aver condiviso con te sia il profilo PRISM sia Sviluppo.",
+        "roleNotAvailable": "Quel ruolo non può più essere valutato per {{name}}. Scegline un altro.",
+        "off": "La valutazione rispetto a un ruolo non è attiva per l'organizzazione di {{name}}.",
+        "unknownState": "Al momento non è possibile valutare {{name}} rispetto a un ruolo."
+      }
     }
   }
 }

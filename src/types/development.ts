@@ -378,6 +378,50 @@ export type MemberFitMatches = {
   missingCategories?: FitMissingCategory[]
 }
 
+/**
+ * TS-4b — a manager scores a member against ONE chosen role, on demand
+ * (growth `/members/{id}/fit-on-demand`). `off` is the default everywhere: the
+ * server switch `manager_fit_on_demand` is per organisation and starts off, and
+ * with it off the page offers no role picker. Never collapsed into an empty list.
+ */
+export type FitOnDemandState =
+  | "ok"
+  | "off"
+  | "no_account"
+  | "not_shared"
+  | "no_prism"
+  | "not_entitled"
+  | "role_not_available"
+  | "unavailable"
+
+export type FitOnDemandRole = {
+  jobId: string
+  roleTitle: string
+}
+
+export type MemberFitOnDemandRoles = {
+  state: FitOnDemandState
+  roles: FitOnDemandRole[]
+  missingCategories?: FitMissingCategory[]
+}
+
+/** Score only: no tier, base tier or band, by design (as `FitEngineMatch`). */
+export type FitOnDemandResult = {
+  jobId: string
+  roleTitle: string
+  /** 1–100, higher = closer to the role's benchmark. */
+  fitScore: number
+  dimensionsEvaluated?: number | null
+  dimensionsTotal?: number | null
+  computedAt?: string | null
+}
+
+export type MemberFitOnDemand = {
+  state: FitOnDemandState
+  result: FitOnDemandResult | null
+  missingCategories?: FitMissingCategory[]
+}
+
 /** The two sharing categories career matches need (item 2 / A2). */
 export type FitMissingCategory = "prism" | "development"
 

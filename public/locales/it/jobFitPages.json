@@ -559,5 +559,12 @@
     "v2Footnote": "I livelli dei lavori e i codici delle professioni provengono da O*NET così come sono caricati per ogni lavoro. Dove non sono ancora disponibili, la sezione lo indica invece di tirare a indovinare.",
     "v2Intro": "Percorsi di carriera parte da un lavoro, quello che svolgi ora o quello da cui l'hai aperto, e mostra dove può portare. Ogni lavoro indica la formazione o le qualifiche richieste e dove ottenerle; apri un lavoro per vedere quanto il tuo profilo si adatta.",
     "whatThisIs": "Di cosa si tratta"
+  },
+  "managerFitViews": {
+    "title": "Chi ha consultato la tua compatibilità",
+    "intro": "Un responsabile o un coach con cui condividi il profilo PRISM e Sviluppo può calcolare la tua compatibilità con un ruolo. Vede solo il punteggio di corrispondenza. Non viene aggiunto ai tuoi report di compatibilità.",
+    "line": "Il tuo responsabile o coach ha consultato la tua compatibilità con {{role}} il {{date}}.",
+    "lineNoDate": "Il tuo responsabile o coach ha consultato la tua compatibilità con {{role}}.",
+    "error": "Non è stato possibile verificare se un responsabile o un coach ha consultato la tua compatibilità con un ruolo. Riprova tra poco."
   }
 }

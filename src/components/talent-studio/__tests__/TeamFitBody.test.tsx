@@ -47,6 +47,11 @@ const mockFitMatches = jest.fn()
 jest.mock("@/services/manager/development/growthService", () => ({
   getTeamDevelopmentRoster: () => mockRoster(),
   getMemberFitMatches: (memberId: string) => mockFitMatches(memberId),
+  // TS-4b: on-demand scoring is OFF (the default everywhere), so every test in
+  // this file is the page exactly as TS-4a built it. Its own behaviour is
+  // pinned in TeamFitOnDemand.test.tsx.
+  getMemberFitOnDemandRoles: () => Promise.resolve({ data: { data: { state: "off", roles: [] } } }),
+  scoreMemberFitOnDemand: () => Promise.reject(new Error("TS-4a tests never score")),
 }))
 
 import TeamFitBody from "../TeamFitBody"

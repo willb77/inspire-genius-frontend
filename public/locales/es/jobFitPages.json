@@ -559,5 +559,12 @@
     "intro": "Pregunta lo que quieras sobre este puesto y tu desarrollo: la respuesta aparece aquí mismo.",
     "placeholder": "p. ej., ¿En qué área de crecimiento debería centrarme primero y cómo?",
     "title": "Pregunta sobre tu ajuste"
+  },
+  "managerFitViews": {
+    "title": "Quién consultó tu compatibilidad",
+    "intro": "Un responsable o coach con quien compartes tu perfil PRISM y Desarrollo puede puntuar tu compatibilidad con un puesto. Solo ve la puntuación de compatibilidad. No se añade a tus informes de ajuste.",
+    "line": "Tu responsable o coach consultó tu compatibilidad con {{role}} el {{date}}.",
+    "lineNoDate": "Tu responsable o coach consultó tu compatibilidad con {{role}}.",
+    "error": "No pudimos comprobar si un responsable o coach ha consultado tu compatibilidad con un puesto. Inténtalo de nuevo en unos instantes."
   }
 }

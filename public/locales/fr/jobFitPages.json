@@ -559,5 +559,12 @@
     "programsHeading": "Programmes scolaires",
     "source": "Source : CareerOneStop, parrainé par le département du Travail des États-Unis.",
     "toggle": "Formation et titres"
+  },
+  "managerFitViews": {
+    "title": "Qui a consulté votre adéquation",
+    "intro": "Un responsable ou un coach avec qui vous partagez votre profil PRISM et Développement peut évaluer votre adéquation à un poste. Il ne voit que le score de correspondance. Ce résultat n'est pas ajouté à vos rapports d'adéquation.",
+    "line": "Votre responsable ou coach a consulté votre adéquation au poste {{role}} le {{date}}.",
+    "lineNoDate": "Votre responsable ou coach a consulté votre adéquation au poste {{role}}.",
+    "error": "Nous n'avons pas pu vérifier si un responsable ou un coach a consulté votre adéquation à un poste. Veuillez réessayer dans un instant."
   }
 }

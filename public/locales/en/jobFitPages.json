@@ -559,5 +559,12 @@
     "scoringLoading": "Scoring your fit against this target…",
     "title": "Fit a job description",
     "uploadFile": "Upload a file"
+  },
+  "managerFitViews": {
+    "title": "Who viewed your fit",
+    "intro": "A manager or coach you share your PRISM profile and Development with can score your fit for a role. They see the match score only. It is not added to your fit reports.",
+    "line": "Your manager or coach viewed your fit for {{role}} on {{date}}.",
+    "lineNoDate": "Your manager or coach viewed your fit for {{role}}.",
+    "error": "We could not check whether a manager or coach has viewed your fit for a role. Please try again in a moment."
   }
 }
