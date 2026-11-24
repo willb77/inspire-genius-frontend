@@ -33,8 +33,8 @@ export default function JobBlueprintDashboardPage() {
     <div className="max-w-6xl">
       <JobDnaPageHeader
         icon={Dna}
-        title={t("dashboard.title", { defaultValue: "Career Blueprint" })}
-        description={t("dashboard.description", { defaultValue: "Job blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it." })}
+        title={t("dashboard.title", { defaultValue: "Role Blueprints" })}
+        description={t("dashboard.description", { defaultValue: "Role blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it." })}
         action={
           <JobDnaLinkButton to={ROUTES.JOB_DNA.AUTHORING}>
             <Plus className="h-4 w-4" />

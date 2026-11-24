@@ -269,11 +269,11 @@
     },
     "confirmEnd": "La pregunta actual aún no se ha enviado ni valorado: su respuesta y sus notas no se guardarán. ¿Quieres terminar la entrevista de todos modos?",
     "deepLink": {
-      "error": "No se pudo cargar el candidato desde Career Blueprint. Aún puedes elegir uno en el siguiente paso; de lo contrario, esta entrevista no quedará vinculada.",
-      "loading": "Cargando el candidato desde Career Blueprint…",
+      "error": "No se pudo cargar el candidato desde Role Blueprints. Aún puedes elegir uno en el siguiente paso; de lo contrario, esta entrevista no quedará vinculada.",
+      "loading": "Cargando el candidato desde Role Blueprints…",
       "missing": "El candidato de este enlace no está en el proceso de ese Job DNA. Aún puedes elegir uno en el siguiente paso; de lo contrario, esta entrevista no quedará vinculada.",
-      "ready": "Entrevistando a {{slot}} desde Career Blueprint: el candidato se vinculará cuando confirmes el consentimiento.",
-      "readyWithId": "Entrevistando a {{slot}} ({{externalId}}) desde Career Blueprint: el candidato se vinculará cuando confirmes el consentimiento."
+      "ready": "Entrevistando a {{slot}} desde Role Blueprints: el candidato se vinculará cuando confirmes el consentimiento.",
+      "readyWithId": "Entrevistando a {{slot}} ({{externalId}}) desde Role Blueprints: el candidato se vinculará cuando confirmes el consentimiento."
     },
     "endInterview": "Terminar entrevista",
     "export": {
@@ -328,7 +328,7 @@
       "noDraft": "No se escribió ningún borrador de ficha de puntuación para el candidato vinculado (el backend no informó de ninguno).",
       "noDraftReason": "No se escribió ningún borrador de ficha de puntuación para el candidato vinculado ({{reason}}).",
       "review": "{{slot}} antes de que cuente.",
-      "reviewLink": "Revísalo en Career Blueprint → Scorecards",
+      "reviewLink": "Revísalo en Role Blueprints → Scorecards",
       "written": "Borrador de la scorecard escrito para el candidato vinculado.",
       "writtenDims": "Borrador de la scorecard escrito para el candidato vinculado ({{dimensions}} dimensiones)."
     },

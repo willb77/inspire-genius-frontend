@@ -321,13 +321,13 @@ const TEAM_DEVELOPMENT_ITEM_PRACTITIONER: NavItemDef = {
 const JOB_BLUEPRINT_ITEM_MANAGER: NavItemDef = {
   to: ROUTES.MANAGER.JOB_BLUEPRINT,
   icon: ClipboardList,
-  label: "Job Blueprint",
+  label: "Role Blueprint Match",
 }
 
 const JOB_BLUEPRINT_ITEM_PRACTITIONER: NavItemDef = {
   to: ROUTES.PRACTITIONER.JOB_BLUEPRINT,
   icon: ClipboardList,
-  label: "Job Blueprint",
+  label: "Role Blueprint Match",
 }
 
 // The candidate-side interview rehearsal sat UNDER the Interview Studio entry

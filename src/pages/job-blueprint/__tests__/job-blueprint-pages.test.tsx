@@ -212,7 +212,7 @@ beforeEach(() => {
 describe("Dashboard", () => {
   test("lists Job DNAs and shows stats", () => {
     renderPage(<JobBlueprintDashboardPage />)
-    expect(screen.getByRole("heading", { name: "Career Blueprint" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Role Blueprints" })).toBeInTheDocument()
     expect(screen.getByText("Senior Engineer")).toBeInTheDocument()
     expect(screen.getByText("Total Job DNAs")).toBeInTheDocument()
   })

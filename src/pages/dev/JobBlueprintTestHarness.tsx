@@ -302,7 +302,7 @@ export default function JobBlueprintTestHarness() {
           <div className="flex items-center gap-3">
             <img src="/images/logo-dark.png" alt="Inspire Genius" className="h-8" />
             <div className="border-l pl-3 ml-1">
-              <h1 className="text-lg font-bold text-slate-800">Job Blueprint</h1>
+              <h1 className="text-lg font-bold text-slate-800">Role Blueprints</h1>
               <p className="text-[10px] text-slate-400 -mt-0.5">Powered by PRISM Brain Mapping</p>
             </div>
           </div>

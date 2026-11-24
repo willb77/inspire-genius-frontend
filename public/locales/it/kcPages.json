@@ -15,11 +15,11 @@
       "reading": "Lettura in corso…",
       "uploadButton": "Carica un ruolo",
       "uploadHint": "Trascina una job description o una carta del ruolo — leggiamo il testo nel contesto qui sotto e ipotizziamo il titolo. Nulla viene caricato su un server.",
-      "seedLabel": "Parti da un Job Blueprint",
+      "seedLabel": "Parti da un Role Blueprint",
       "optional": "(facoltativo)",
       "seedNone": "Parti invece da un titolo di ruolo",
       "loadingSeed": "Caricamento della base di conoscenza del blueprint…",
-      "seedHint": "Scegli un Job Blueprint per impostare la mappa a partire dalle conoscenze del ruolo — Maven poi la arricchisce.",
+      "seedHint": "Scegli un Role Blueprint per impostare la mappa a partire dalle conoscenze del ruolo — Maven poi la arricchisce.",
       "roleTitle": "Titolo del ruolo",
       "roleTitlePlaceholder": "es. Senior Wastewater Treatment Operator, oppure CIO",
       "context": "Contesto",
@@ -98,10 +98,10 @@
     },
     "choose": {
       "title": "Scegli un ruolo da acquisire",
-      "description": "L'acquisizione parte da un ruolo di cui hai già creato il Job Blueprint. Scegline uno qui sotto, oppure crea prima il Job Blueprint di un nuovo ruolo.",
+      "description": "L'acquisizione parte da un ruolo di cui hai già creato il Role Blueprint. Scegline uno qui sotto, oppure crea prima il Role Blueprint di un nuovo ruolo.",
       "loading": "Caricamento dei tuoi ruoli salvati…",
-      "empty": "Nessun ruolo salvato per ora. Crea prima il Job Blueprint di un ruolo: mappa le aree di conoscenza che questa acquisizione percorrerà.",
-      "blueprintRole": "Crea il Job Blueprint di un ruolo",
+      "empty": "Nessun ruolo salvato per ora. Crea prima il Role Blueprint di un ruolo: mappa le aree di conoscenza che questa acquisizione percorrerà.",
+      "blueprintRole": "Crea il Role Blueprint di un ruolo",
       "areaCount": "{{areas}} aree di conoscenza"
     },
     "plan": {

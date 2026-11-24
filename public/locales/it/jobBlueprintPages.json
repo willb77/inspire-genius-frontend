@@ -195,12 +195,12 @@
   },
   "dashboard": {
     "createFirst": "Crea il tuo primo Job DNA",
-    "description": "Job Blueprint: redigi il benchmark comportamentale di un ruolo, fallo revisionare da chi conosce il ruolo, poi seleziona e classifica i profili PRISM dei candidati rispetto a esso.",
+    "description": "Role Blueprints: redigi il benchmark comportamentale di un ruolo, fallo revisionare da chi conosce il ruolo, poi seleziona e classifica i profili PRISM dei candidati rispetto a esso.",
     "empty": "Nessun Job DNA per ora.",
     "loadError": "Impossibile caricare i Job DNA.",
     "loading": "Caricamento dei Job DNA…",
     "newJobDna": "Nuovo Job DNA",
-    "title": "Career Blueprint",
+    "title": "Role Blueprints",
     "yourJobDnas": "I tuoi Job DNA"
   },
   "decisionPath": {

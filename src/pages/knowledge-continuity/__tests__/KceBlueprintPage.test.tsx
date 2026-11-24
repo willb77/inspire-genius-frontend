@@ -171,7 +171,7 @@ describe("KceBlueprintPage", () => {
     const user = userEvent.setup()
     render(<KceBlueprintPage />)
 
-    await user.selectOptions(screen.getByLabelText(/seed from a job blueprint/i), "jd-1")
+    await user.selectOptions(screen.getByLabelText(/seed from a role blueprint/i), "jd-1")
     expect(seedMutate).toHaveBeenCalledWith("jd-1", expect.any(Object))
     expect(screen.getByLabelText(/role title/i)).toHaveValue("Field Service Technician")
 

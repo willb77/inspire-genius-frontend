@@ -52,7 +52,7 @@
       "noDraft": "Pro propojeného kandidáta nebyl vytvořen návrh hodnoticího listu (backend žádný nenahlásil).",
       "noDraftReason": "Pro propojeného kandidáta nebyl vytvořen návrh hodnoticího listu ({{reason}}).",
       "review": "{{slot}}, než se započítá.",
-      "reviewLink": "Zkontrolujte jej v Career Blueprint → Hodnoticí listy",
+      "reviewLink": "Zkontrolujte jej v Role Blueprints → Hodnoticí listy",
       "written": "Návrh hodnoticího listu byl pro propojeného kandidáta vytvořen.",
       "writtenDims": "Návrh hodnoticího listu byl pro propojeného kandidáta vytvořen (počet dimenzí: {{dimensions}})."
     },
@@ -85,11 +85,11 @@
     },
     "confirmEnd": "Aktuální otázka ještě nebyla odeslána a ohodnocena – její odpověď a poznámky se neuloží. Přesto pohovor ukončit?",
     "deepLink": {
-      "error": "Kandidáta se nepodařilo načíst z Career Blueprint. Na dalším kroku můžete některého vybrat, jinak nebude tento pohovor propojen.",
-      "loading": "Načítání kandidáta z Career Blueprint…",
+      "error": "Kandidáta se nepodařilo načíst z Role Blueprints. Na dalším kroku můžete některého vybrat, jinak nebude tento pohovor propojen.",
+      "loading": "Načítání kandidáta z Role Blueprints…",
       "missing": "Kandidát z tohoto odkazu není v procesu dané Job DNA. Na dalším kroku můžete některého vybrat, jinak nebude tento pohovor propojen.",
-      "ready": "Pohovor s kandidátem {{slot}} z Career Blueprint – kandidát bude propojen po potvrzení souhlasu.",
-      "readyWithId": "Pohovor s kandidátem {{slot}} ({{externalId}}) z Career Blueprint – kandidát bude propojen po potvrzení souhlasu."
+      "ready": "Pohovor s kandidátem {{slot}} z Role Blueprints – kandidát bude propojen po potvrzení souhlasu.",
+      "readyWithId": "Pohovor s kandidátem {{slot}} ({{externalId}}) z Role Blueprints – kandidát bude propojen po potvrzení souhlasu."
     },
     "endInterview": "Ukončit pohovor"
   },

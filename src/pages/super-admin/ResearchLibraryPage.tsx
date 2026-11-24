@@ -36,7 +36,7 @@ import { ROUTES } from "@/constants/routes"
 
 const TASK_SLUG_OPTIONS = [
   { value: "document-research", label: "Document Research" },
-  { value: "job-blueprint",     label: "Job Blueprint" },
+  { value: "job-blueprint",     label: "Role Blueprint Match" },
   { value: "interview-prep",    label: "Interview Prep" },
   { value: "team-composition",  label: "Team Composition" },
   { value: "onboarding",        label: "Onboarding Flow" },

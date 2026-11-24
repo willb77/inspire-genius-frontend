@@ -128,12 +128,12 @@
   },
   "dashboard": {
     "createFirst": "Create your first Job DNA",
-    "description": "Job blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it.",
+    "description": "Role blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it.",
     "empty": "No Job DNAs yet.",
     "loadError": "Failed to load Job DNAs.",
     "loading": "Loading Job DNAs…",
     "newJobDna": "New Job DNA",
-    "title": "Career Blueprint",
+    "title": "Role Blueprints",
     "yourJobDnas": "Your Job DNAs"
   },
   "decisionPath": {

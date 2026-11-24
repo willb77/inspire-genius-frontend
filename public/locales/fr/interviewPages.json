@@ -367,7 +367,7 @@
       "noDraft": "Aucun brouillon de fiche d'évaluation n'a été rédigé pour le candidat associé (le serveur n'en a signalé aucun).",
       "noDraftReason": "Aucun brouillon de fiche d'évaluation n'a été rédigé pour le candidat associé ({{reason}}).",
       "review": "{{slot}} avant qu'elle ne soit prise en compte.",
-      "reviewLink": "Relisez-la dans Career Blueprint → Fiches d'évaluation",
+      "reviewLink": "Relisez-la dans Role Blueprints → Fiches d'évaluation",
       "written": "Brouillon de fiche d'évaluation rédigé pour le candidat associé.",
       "writtenDims": "Brouillon de fiche d'évaluation rédigé pour le candidat associé ({{dimensions}} dimensions)."
     },
@@ -400,11 +400,11 @@
     },
     "confirmEnd": "La question en cours n'a pas encore été soumise et évaluée — sa réponse et ses notes ne seront pas enregistrées. Terminer quand même l'entretien ?",
     "deepLink": {
-      "error": "Impossible de charger le candidat depuis Career Blueprint. Vous pouvez quand même en choisir un à l'étape suivante ; sinon, cet entretien ne sera pas lié.",
-      "loading": "Chargement du candidat depuis Career Blueprint…",
+      "error": "Impossible de charger le candidat depuis Role Blueprints. Vous pouvez quand même en choisir un à l'étape suivante ; sinon, cet entretien ne sera pas lié.",
+      "loading": "Chargement du candidat depuis Role Blueprints…",
       "missing": "Le candidat de ce lien ne figure pas dans le pipeline de ce Job DNA. Vous pouvez quand même en choisir un à l'étape suivante ; sinon, cet entretien ne sera pas lié.",
-      "ready": "Entretien avec {{slot}} depuis Career Blueprint — le candidat sera lié dès que vous aurez confirmé le consentement.",
-      "readyWithId": "Entretien avec {{slot}} ({{externalId}}) depuis Career Blueprint — le candidat sera lié dès que vous aurez confirmé le consentement."
+      "ready": "Entretien avec {{slot}} depuis Role Blueprints — le candidat sera lié dès que vous aurez confirmé le consentement.",
+      "readyWithId": "Entretien avec {{slot}} ({{externalId}}) depuis Role Blueprints — le candidat sera lié dès que vous aurez confirmé le consentement."
     },
     "endInterview": "Terminer l'entretien",
     "export": {

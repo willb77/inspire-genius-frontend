@@ -39,7 +39,7 @@
       "Asset_Library": "Biblioteca de recursos",
       "Asset_library": "Biblioteca de recursos",
       "Authoring": "Creación de contenido",
-      "Blueprint_a_role": "Definir un puesto con Job Blueprint",
+      "Blueprint_a_role": "Definir un puesto con Role Blueprints",
       "Broadcast_Alerts": "Alertas masivas",
       "Bulk_Import": "Importación masiva",
       "Bulk_User_Import": "Importación masiva de usuarios",
@@ -154,7 +154,7 @@
       "Schedule": "Calendario",
       "Scholarships": "Becas",
       "Character_Lab": "Character Lab",
-      "Job_Blueprint": "Job Blueprint"
+      "Role_Blueprint_Match": "Role Blueprint Match"
     },
     "sections": {
       "AI_coaches": "Coaches de IA",

@@ -107,11 +107,11 @@
       "reading": "Lecture…",
       "uploadButton": "Importer un poste",
       "uploadHint": "Déposez une description de poste ou une charte de rôle : nous lisons le texte dans le contexte ci-dessous et devinons l'intitulé. Rien n'est envoyé à un serveur.",
-      "seedLabel": "Partir d'un Job Blueprint",
+      "seedLabel": "Partir d'un Role Blueprint",
       "optional": "(facultatif)",
       "seedNone": "Partir plutôt d'un intitulé de poste",
       "loadingSeed": "Chargement de la base de connaissances du blueprint…",
-      "seedHint": "Choisissez un Job Blueprint pour初期ser la carte à partir des connaissances du poste ; Maven l'enrichit ensuite.",
+      "seedHint": "Choisissez un Role Blueprint pour initialiser la carte à partir des connaissances du poste ; Maven l'enrichit ensuite.",
       "roleTitle": "Intitulé du poste",
       "roleTitlePlaceholder": "p. ex. Opérateur principal de traitement des eaux usées, ou DSI",
       "context": "Contexte",
@@ -328,7 +328,7 @@
       "role": "Poste",
       "loadingRoles": "Chargement des postes…",
       "selectRole": "Sélectionner un poste",
-      "noRoles": "Aucun poste pour le moment : élaborez d'abord le Job Blueprint d'un poste et capturez-le, puis validez ses connaissances."
+      "noRoles": "Aucun poste pour le moment : élaborez d'abord le Role Blueprint d'un poste et capturez-le, puis validez ses connaissances."
     },
     "title": "Parcours du successeur",
     "subtitle": "Apprenez le poste à partir de l'expertise capturée, et signalez tout ce qui n'est plus exact."

@@ -71,14 +71,14 @@ export default function JobBlueprintBody() {
   if (result) {
     return (
       <div className="mx-auto max-w-3xl py-8 space-y-4">
-        <h1 className="text-2xl font-semibold">{t("taskAgents.jobBlueprintBody.jobBlueprintMatch", { defaultValue: "Job Blueprint Match" })}</h1>
+        <h1 className="text-2xl font-semibold">{t("taskAgents.jobBlueprintBody.jobBlueprintMatch", { defaultValue: "Role Blueprint Match" })}</h1>
         <TaskAgentResultCard
           result={result}
           onRerun={() => setResult(null)}
           taskSlug="job-blueprint"
           agentId="james"
           requestPayload={lastRequest}
-          title={t("taskAgents.jobBlueprintBody.jobBlueprintMatch2", { defaultValue: "Job blueprint match" })}
+          title={t("taskAgents.jobBlueprintBody.jobBlueprintMatch2", { defaultValue: "Role blueprint match" })}
         />
       </div>
     )
@@ -87,7 +87,7 @@ export default function JobBlueprintBody() {
   return (
     <div className="mx-auto max-w-3xl py-8 space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold">{t("taskAgents.jobBlueprintBody.jobBlueprintMatch", { defaultValue: "Job Blueprint Match" })}</h1>
+        <h1 className="text-2xl font-semibold">{t("taskAgents.jobBlueprintBody.jobBlueprintMatch", { defaultValue: "Role Blueprint Match" })}</h1>
         <p className="text-sm text-slate-600">
           {t("taskAgents.jobBlueprintBody.matchACandidateAgainstA", { defaultValue: "Match a candidate against a role's blueprint via James (AdminAgent)." })}
         </p>

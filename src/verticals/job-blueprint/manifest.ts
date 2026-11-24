@@ -15,9 +15,9 @@ import { registerVertical } from "@/verticals/core"
  */
 export const JOB_BLUEPRINT = registerVertical({
   key: "job-blueprint",
-  title: "Career Blueprint",
+  title: "Role Blueprints",
   description:
-    "Behavioral job blueprints: benchmark a role, screen + rank candidates by fit.",
+    "Behavioral role blueprints: benchmark a role, screen + rank candidates by fit.",
   routePrefix: "/vertical/job-blueprint",
   homePath: "/vertical/job-blueprint/dashboard",
   accent: "#7C3AED",

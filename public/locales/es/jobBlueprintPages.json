@@ -359,12 +359,12 @@
   },
   "dashboard": {
     "createFirst": "Crea tu primer Job DNA",
-    "description": "Job Blueprint: redacta el referente de comportamiento de un puesto, pide que lo revise alguien que conozca el puesto y luego filtra y clasifica los perfiles PRISM de los candidatos frente a él.",
+    "description": "Role Blueprints: redacta el referente de comportamiento de un puesto, pide que lo revise alguien que conozca el puesto y luego filtra y clasifica los perfiles PRISM de los candidatos frente a él.",
     "empty": "Aún no hay Job DNAs.",
     "loadError": "No se pudieron cargar los Job DNAs.",
     "loading": "Cargando Job DNAs…",
     "newJobDna": "Nuevo Job DNA",
-    "title": "Career Blueprint",
+    "title": "Role Blueprints",
     "yourJobDnas": "Tus Job DNAs"
   },
   "decisionPath": {

@@ -417,7 +417,7 @@ function FormStep({
           {/* Seed from a Job Blueprint */}
           <div className="space-y-2">
             <Label htmlFor="job_dna_seed">
-              {t("blueprint.form.seedLabel", "Seed from a Job Blueprint")}{" "}
+              {t("blueprint.form.seedLabel", "Seed from a role blueprint")}{" "}
               <span className="text-muted-foreground">{t("blueprint.form.optional", "(optional)")}</span>
             </Label>
             <select
@@ -437,7 +437,7 @@ function FormStep({
                 ? t("blueprint.form.loadingSeed", "Loading the blueprint's knowledge seed…")
                 : t(
                     "blueprint.form.seedHint",
-                    "Pick a Job Blueprint to seed the map from its role knowledge — Maven then enriches it."
+                    "Pick a role blueprint to seed the map from its role knowledge — Maven then enriches it."
                   )}
             </p>
           </div>

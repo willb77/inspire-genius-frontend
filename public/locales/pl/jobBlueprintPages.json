@@ -790,12 +790,12 @@
   },
   "dashboard": {
     "createFirst": "Utwórz swój pierwszy Job DNA",
-    "description": "Job Blueprint — przygotuj wzorzec zachowań dla roli, poproś osobę znającą tę rolę o jego weryfikację, a następnie oceniaj i szereguj profile PRISM kandydatów względem niego.",
+    "description": "Role Blueprints — przygotuj wzorzec zachowań dla roli, poproś osobę znającą tę rolę o jego weryfikację, a następnie oceniaj i szereguj profile PRISM kandydatów względem niego.",
     "empty": "Brak Job DNA.",
     "loadError": "Nie udało się wczytać Job DNA.",
     "loading": "Wczytywanie Job DNA…",
     "newJobDna": "Nowy Job DNA",
-    "title": "Career Blueprint",
+    "title": "Role Blueprints",
     "yourJobDnas": "Twoje Job DNA"
   },
   "decisionPath": {

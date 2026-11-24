@@ -104,7 +104,7 @@ function ScorecardDraftLine({ linked, report }: { linked: boolean; report?: Scor
           : t("live.scorecard.written", "Scorecard draft written for the linked candidate.")}
         {reviewBefore}
         <Link to={ROUTES.JOB_DNA.SCORECARDS} className="underline underline-offset-2">
-          {t("live.scorecard.reviewLink", "Review it under Career Blueprint → Scorecards")}
+          {t("live.scorecard.reviewLink", "Review it under Role Blueprints → Scorecards")}
         </Link>
         {reviewAfter}
       </p>
@@ -172,13 +172,13 @@ function stepFailureReason(e: unknown, t: TFn): string {
 function DeepLinkNotice({ deepLink }: { deepLink: ReturnType<typeof useDeepLinkedCandidate> }) {
   const { t } = useTranslation("interviewPages")
   if (deepLink.state === "loading") {
-    return <p className="text-sm text-slate-600" data-testid="deep-link-notice">{t("live.deepLink.loading", "Loading the candidate from Career Blueprint…")}</p>
+    return <p className="text-sm text-slate-600" data-testid="deep-link-notice">{t("live.deepLink.loading", "Loading the candidate from Role Blueprints…")}</p>
   }
   if (deepLink.state === "ready" && deepLink.link) {
     const [before, after] = slotParts(
       deepLink.link.external_id
-        ? t("live.deepLink.readyWithId", { defaultValue: "Interviewing {{slot}} ({{externalId}}) from Career Blueprint — the candidate will be linked once you confirm consent.", slot: SLOT, externalId: deepLink.link.external_id })
-        : t("live.deepLink.ready", { defaultValue: "Interviewing {{slot}} from Career Blueprint — the candidate will be linked once you confirm consent.", slot: SLOT }),
+        ? t("live.deepLink.readyWithId", { defaultValue: "Interviewing {{slot}} ({{externalId}}) from Role Blueprints — the candidate will be linked once you confirm consent.", slot: SLOT, externalId: deepLink.link.external_id })
+        : t("live.deepLink.ready", { defaultValue: "Interviewing {{slot}} from Role Blueprints — the candidate will be linked once you confirm consent.", slot: SLOT }),
     )
     return (
       <p className="text-sm text-indigo-900" data-testid="deep-link-notice">
@@ -198,7 +198,7 @@ function DeepLinkNotice({ deepLink }: { deepLink: ReturnType<typeof useDeepLinke
   if (deepLink.state === "error") {
     return (
       <p className="text-sm text-amber-700" role="alert" data-testid="deep-link-notice">
-        {t("live.deepLink.error", "Could not load the candidate from Career Blueprint. You can still pick one on the next step; otherwise this interview will not be linked.")}
+        {t("live.deepLink.error", "Could not load the candidate from Role Blueprints. You can still pick one on the next step; otherwise this interview will not be linked.")}
       </p>
     )
   }

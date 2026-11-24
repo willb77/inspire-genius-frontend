@@ -79,7 +79,7 @@ jest.mock("@/constants/job-blueprint/bml-questions", () => ({
 describe("JobBlueprintTestHarness", () => {
   it("renders without crashing", () => {
     render(<JobBlueprintTestHarness />);
-    expect(screen.getByText("Job Blueprint")).toBeInTheDocument();
+    expect(screen.getByText("Role Blueprints")).toBeInTheDocument();
   });
 
   it("renders Test Harness badge", () => {

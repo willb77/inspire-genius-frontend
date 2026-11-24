@@ -15,11 +15,11 @@ export function useJobDnaSeed() {
   return useMutation<JobDnaTaxonomySeed, AxiosError, string>({
     mutationFn: async (blueprintId) => {
       const res = await getJobDnaKnowledgeTaxonomy(blueprintId)
-      if (!res.data) throw new Error("No knowledge taxonomy returned for this Job Blueprint")
+      if (!res.data) throw new Error("No knowledge taxonomy returned for this role blueprint")
       return res.data
     },
     onError: () => {
-      toast.error("Couldn't load that Job Blueprint's knowledge seed. Please try again.")
+      toast.error("Couldn't load that role blueprint's knowledge seed. Please try again.")
     },
   })
 }

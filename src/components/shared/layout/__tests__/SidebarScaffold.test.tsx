@@ -225,7 +225,7 @@ describe("SidebarScaffold — nested items (2026-09-23 studio groups)", () => {
       icon: Wallet,
       label: "Career Studio",
       children: [
-        { to: "/vertical/job-blueprint/dashboard", icon: Wallet, label: "Career Blueprint", activePrefix: "/vertical/job-blueprint" },
+        { to: "/vertical/job-blueprint/dashboard", icon: Wallet, label: "Role Blueprints", activePrefix: "/vertical/job-blueprint" },
         { to: "/vertical/job-fit/matches", icon: Wallet, label: "Career Fit", disabled: true },
       ],
     },
@@ -251,10 +251,10 @@ describe("SidebarScaffold — nested items (2026-09-23 studio groups)", () => {
 
   it("starts a group closed and opens it when its row is clicked (pure group, no page)", () => {
     renderScaffold({ navItems: GROUPED });
-    expect(screen.queryByRole("button", { name: "Career Blueprint" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Role Blueprints" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Career Studio" }));
     expect(mockNavigate).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Career Blueprint" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Role Blueprints" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Career Fit" })).toHaveAttribute("aria-disabled", "true");
   });
 
@@ -271,7 +271,7 @@ describe("SidebarScaffold — nested items (2026-09-23 studio groups)", () => {
   it("a child navigates to its own route; a locked child does not", () => {
     renderScaffold({ navItems: GROUPED });
     fireEvent.click(screen.getByRole("button", { name: "Career Studio" }));
-    fireEvent.click(screen.getByRole("button", { name: "Career Blueprint" }));
+    fireEvent.click(screen.getByRole("button", { name: "Role Blueprints" }));
     expect(mockNavigate).toHaveBeenCalledWith("/vertical/job-blueprint/dashboard", undefined);
     fireEvent.click(screen.getByRole("button", { name: "Career Fit" }));
     expect(mockNavigate).toHaveBeenCalledTimes(1);
@@ -280,7 +280,7 @@ describe("SidebarScaffold — nested items (2026-09-23 studio groups)", () => {
   it("opens by itself when a child is the active route, and marks that child active", () => {
     mockPathname = "/vertical/job-blueprint/authoring";
     renderScaffold({ navItems: GROUPED });
-    expect(screen.getByRole("button", { name: "Career Blueprint" })).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("button", { name: "Role Blueprints" })).toHaveAttribute("data-active", "true");
     expect(screen.getByRole("button", { name: "Career Studio" })).toHaveAttribute("aria-expanded", "true");
   });
 });
