@@ -82,7 +82,7 @@
     "generatingTheDevelopmentDossierThis": "Génération du dossier de développement : cela peut prendre jusqu'à une minute…",
     "goalsAndNotesWorkNow": "Les onglets Objectifs et Notes fonctionnent dès maintenant ; les autres apparaîtront lorsque le dossier sera prêt.",
     "thisTabNeedsTheDossier": "Cet onglet nécessite le dossier. Ouvrez Objectifs ou Notes pendant sa génération.",
-    "provenance": "Provenance",
+    "provenance": "Activité récente",
     "recentActivity": "Activité récente",
     "whatChangedOnThisDossier": "Ce qui a changé dans ce dossier, et quel agent ou quelle action en est à l'origine.",
     "dossierExportedAsPdf": "Dossier exporté en PDF.",
@@ -524,7 +524,8 @@
   },
   "developmentStudio": {
     "view": "Vue",
-    "team": "Équipe",
+    "team": "Toute l'organisation",
+    "myTeam": "Mon équipe",
     "myReports": "Mes collaborateurs directs",
     "orgChart": "Organigramme",
     "allCoverage": "Toute la couverture",

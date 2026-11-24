@@ -383,7 +383,7 @@ describe("DevelopmentStudio — the org chart is a view, not a filter", () => {
   it("replaces the grid, and takes the controls that do not apply with it", () => {
     rosterState = { data: [member()], isLoading: false, isError: false }
     renderStudio()
-    expect(screen.getByRole("button", { name: "Team" })).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByRole("button", { name: "Whole organisation" })).toHaveAttribute("aria-pressed", "true")
     expect(screen.queryByTestId("org-chart-panel")).not.toBeInTheDocument()
     expect(screen.getByRole("combobox", { name: "Coverage" })).toBeInTheDocument()
 
@@ -396,7 +396,7 @@ describe("DevelopmentStudio — the org chart is a view, not a filter", () => {
     expect(screen.queryByRole("combobox", { name: "Plan status" })).not.toBeInTheDocument()
     expect(screen.queryByRole("combobox", { name: "Sort by" })).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Team" }))
+    fireEvent.click(screen.getByRole("button", { name: "Whole organisation" }))
     expect(screen.queryByTestId("org-chart-panel")).not.toBeInTheDocument()
     expect(screen.getByText("Dana Whitfield")).toBeInTheDocument()
   })

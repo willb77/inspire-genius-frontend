@@ -145,7 +145,7 @@
     "generatingTheDevelopmentDossierThis": "Generazione del dossier di sviluppo — può richiedere fino a un minuto…",
     "goalsAndNotesWorkNow": "Obiettivi e Note funzionano già; le altre schede compariranno quando il dossier sarà pronto.",
     "thisTabNeedsTheDossier": "Questa scheda richiede il dossier. Apri Obiettivi o Note mentre viene generato.",
-    "provenance": "Provenienza",
+    "provenance": "Attività recente",
     "recentActivity": "Attività recente",
     "whatChangedOnThisDossier": "Cosa è cambiato in questo dossier e quale agente o azione l'ha causato.",
     "dossierExportedAsPdf": "Dossier esportato in PDF.",
@@ -177,7 +177,8 @@
   },
   "developmentStudio": {
     "view": "Visualizza",
-    "team": "Team",
+    "team": "Tutta l'organizzazione",
+    "myTeam": "Il mio team",
     "myReports": "I miei report diretti",
     "orgChart": "Organigramma",
     "allCoverage": "Tutta la copertura",

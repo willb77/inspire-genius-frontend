@@ -135,7 +135,7 @@
     "generatingTheDevelopmentDossierThis": "Gerando o dossiê de desenvolvimento — isso pode levar até um minuto…",
     "goalsAndNotesWorkNow": "Metas e Notas já funcionam; as outras abas aparecem quando estiver pronto.",
     "thisTabNeedsTheDossier": "Esta aba precisa do dossiê. Abra Metas ou Notas enquanto ele é gerado.",
-    "provenance": "Origem",
+    "provenance": "Atividade recente",
     "recentActivity": "Atividade recente",
     "whatChangedOnThisDossier": "O que mudou neste dossiê e qual agente ou ação o fez.",
     "dossierExportedAsPdf": "Dossiê exportado como PDF.",
@@ -250,7 +250,8 @@
   },
   "developmentStudio": {
     "view": "Visualizar",
-    "team": "Equipe",
+    "team": "Toda a organização",
+    "myTeam": "Minha equipe",
     "myReports": "Meus subordinados",
     "orgChart": "Organograma",
     "allCoverage": "Toda a cobertura",

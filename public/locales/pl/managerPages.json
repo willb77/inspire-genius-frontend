@@ -518,7 +518,7 @@
     "generatingTheDevelopmentDossierThis": "Generowanie dossier rozwojowego — może to potrwać do minuty…",
     "goalsAndNotesWorkNow": "Cele i Notatki działają już teraz; pozostałe karty pojawią się, gdy dossier będzie gotowe.",
     "thisTabNeedsTheDossier": "Ta karta wymaga dossier. Otwórz Cele lub Notatki, póki trwa generowanie.",
-    "provenance": "Pochodzenie",
+    "provenance": "Ostatnia aktywność",
     "recentActivity": "Ostatnia aktywność",
     "whatChangedOnThisDossier": "Co zmieniło się w tym dossier oraz który agent lub jakie działanie za to odpowiada.",
     "dossierExportedAsPdf": "Dossier wyeksportowano do PDF.",
@@ -642,7 +642,8 @@
   },
   "developmentStudio": {
     "view": "Widok",
-    "team": "Zespół",
+    "team": "Cała organizacja",
+    "myTeam": "Mój zespół",
     "myReports": "Moi podwładni",
     "orgChart": "Schemat organizacyjny",
     "allCoverage": "Cały zakres",

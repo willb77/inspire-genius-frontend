@@ -136,7 +136,8 @@
   },
   "developmentStudio": {
     "view": "View",
-    "team": "Team",
+    "team": "Whole organisation",
+    "myTeam": "My team",
     "myReports": "My reports",
     "orgChart": "Org Chart",
     "allCoverage": "All coverage",
@@ -387,7 +388,7 @@
     "goalsAndNotesWorkNow": "Goals and Notes work now; the other tabs appear when it's ready.",
     "thisTabNeedsTheDossier": "This tab needs the dossier. Open Goals or Notes while it's generated.",
     "text": " · {{department}}",
-    "provenance": "Provenance",
+    "provenance": "Recent activity",
     "recentActivity": "Recent activity",
     "whatChangedOnThisDossier": "What changed on this dossier, and which agent or action did it.",
     "dossierExportedAsPdf": "Dossier exported as PDF.",

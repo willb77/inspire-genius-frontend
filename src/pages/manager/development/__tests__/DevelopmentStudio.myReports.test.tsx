@@ -52,6 +52,13 @@ jest.mock("@/components/manager/development/MyReportsPanel", () => ({
   MyReportsPanel: () => <div data-testid="my-reports-panel">my reports</div>,
 }))
 
+/* U1: the page reads the caller's role to name the first lens. This suite is
+ * about the organisation-wide list, so the caller here is not a manager; the
+ * manager's wording has its own suite (DevelopmentStudio.plainWording). */
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({ hasRole: (role: string) => role === "super-admin" }),
+}))
+
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 
 /* Radix Select needs PointerEvent / hasPointerCapture, which jsdom lacks. */
@@ -157,19 +164,19 @@ describe("DevelopmentStudio — My reports is a view, not a filter", () => {
   it("the three views are mutually exclusive and each is reachable from the others", () => {
     renderStudio()
     const pressed = () =>
-      ["Team", "My reports", "Org Chart"].filter(
+      ["Whole organisation", "My reports", "Org Chart"].filter(
         (name) =>
           screen.getByRole("button", { name: new RegExp(`^${name}$`) }).getAttribute("aria-pressed") ===
           "true",
       )
 
-    expect(pressed()).toEqual(["Team"])
+    expect(pressed()).toEqual(["Whole organisation"])
     fireEvent.click(screen.getByRole("button", { name: /My reports/i }))
     expect(pressed()).toEqual(["My reports"])
     fireEvent.click(screen.getByRole("button", { name: /Org Chart/i }))
     expect(pressed()).toEqual(["Org Chart"])
-    fireEvent.click(screen.getByRole("button", { name: "Team" }))
-    expect(pressed()).toEqual(["Team"])
+    fireEvent.click(screen.getByRole("button", { name: "Whole organisation" }))
+    expect(pressed()).toEqual(["Whole organisation"])
   })
 
   /**

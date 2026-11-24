@@ -415,7 +415,7 @@ describe("MemberDevelopmentWorkspace — tabs and header", () => {
     shareMutate.mockImplementation((_v: unknown, opts: { onSuccess: () => void }) => opts.onSuccess())
     renderAt("/manager/development/m-1")
     await screen.findByRole("heading", { name: "Gary Burnette" })
-    fireEvent.click(screen.getByRole("button", { name: "Refresh dossier" }))
+    fireEvent.click(screen.getByRole("button", { name: "Update" }))
     expect(refreshMutate).toHaveBeenCalledTimes(1)
     fireEvent.click(screen.getByRole("button", { name: "Share with member" }))
     expect(toast.success).toHaveBeenCalledWith("Development plan shared with Gary Burnette.")
@@ -572,7 +572,7 @@ describe("MemberDevelopmentWorkspace — the 409 contract, and what it does NOT 
   })
 })
 
-describe('MemberDevelopmentWorkspace — "Start growth conversation" (TDS-4b)', () => {
+describe('MemberDevelopmentWorkspace — the "ask Meridian" header button (TDS-4b)', () => {
   // It was `setTab("goals")` and nothing else, so the one thing the label
   // promised was the one thing it did not do. The shell's job is to ask the rail
   // for an opening turn; the rail owns the send, and the grounding lives in one
@@ -582,7 +582,7 @@ describe('MemberDevelopmentWorkspace — "Start growth conversation" (TDS-4b)', 
     renderAt("/manager/development/m-1")
     await screen.findByRole("heading", { name: "Gary Burnette" })
     expect(received.meridian?.seedRequest).toBe(0)
-    fireEvent.click(screen.getByRole("button", { name: "Start growth conversation" }))
+    fireEvent.click(screen.getByRole("button", { name: "Open Goals and ask Meridian about this person" }))
     await waitFor(() => expect(received.meridian?.seedRequest).toBe(1))
     expect(received.meridian?.tab).toBe("goals")
   })
@@ -591,7 +591,7 @@ describe('MemberDevelopmentWorkspace — "Start growth conversation" (TDS-4b)', 
     dossierState = { data: dossier(), isLoading: false, isError: false }
     renderAt("/manager/development/m-1")
     await screen.findByRole("heading", { name: "Gary Burnette" })
-    const button = screen.getByRole("button", { name: "Start growth conversation" })
+    const button = screen.getByRole("button", { name: "Open Goals and ask Meridian about this person" })
     fireEvent.click(button)
     await waitFor(() => expect(received.meridian?.seedRequest).toBe(1))
     fireEvent.click(button)
@@ -602,9 +602,55 @@ describe('MemberDevelopmentWorkspace — "Start growth conversation" (TDS-4b)', 
     dossierState = { data: dossier(), isLoading: false, isError: false }
     renderAt("/manager/development/m-1")
     await screen.findByRole("heading", { name: "Gary Burnette" })
-    fireEvent.click(screen.getByRole("button", { name: "Start growth conversation" }))
+    fireEvent.click(screen.getByRole("button", { name: "Open Goals and ask Meridian about this person" }))
     await waitFor(() => expect(received.meridian?.seedRequest).toBe(1))
     expect(received.meridian).toMatchObject({ memberId: "m-1", memberName: "Gary Burnette" })
+  })
+})
+
+describe("MemberDevelopmentWorkspace — plain wording in the header (U1)", () => {
+  // Each test pins one renamed label on the page that shows it, and that the
+  // old wording is gone. Wording only: what each button does is covered above.
+  // An invented person — this repo is public.
+  const invented = { member: { name: "Dana Whitfield", title: "Service Designer", department: "Experience" } }
+  const withEvents = () =>
+    dossier({ ...invented, events: [{ agent: "Example agent", eventType: "plan shared" }] })
+
+  it('the recompute button reads "Update", not "Refresh dossier"', async () => {
+    dossierState = { data: dossier(invented), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1")
+    await screen.findByRole("heading", { name: "Dana Whitfield" })
+    expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /refresh dossier/i })).not.toBeInTheDocument()
+  })
+
+  it('the activity popover opens from "Recent activity", not "Provenance"', async () => {
+    dossierState = { data: withEvents(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1")
+    await screen.findByRole("heading", { name: "Dana Whitfield" })
+    expect(screen.getByRole("button", { name: "Recent activity" })).toBeInTheDocument()
+    expect(screen.queryByText(/provenance/i)).not.toBeInTheDocument()
+  })
+
+  it("the conversation button says it opens Goals and asks Meridian about this person", async () => {
+    dossierState = { data: dossier(invented), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1")
+    await screen.findByRole("heading", { name: "Dana Whitfield" })
+    const button = screen.getByRole("button", { name: "Open Goals and ask Meridian about this person" })
+    expect(button.textContent).toMatch(/Goals/)
+    expect(button.textContent).toMatch(/Meridian/)
+    expect(screen.queryByRole("button", { name: /start growth conversation/i })).not.toBeInTheDocument()
+  })
+
+  it("reads the same on the practitioner mount", async () => {
+    dossierState = { data: withEvents(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1", { audience: "practitioner" })
+    await screen.findByRole("heading", { name: "Dana Whitfield" })
+    expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Recent activity" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Open Goals and ask Meridian about this person" }),
+    ).toBeInTheDocument()
   })
 })
 
@@ -827,11 +873,11 @@ describe("MemberDevelopmentWorkspace — eleven sections in five groups (U4), St
     }
   })
 
-  it('"Start growth conversation" still writes ?tab=goals', async () => {
+  it('the "ask Meridian" header button still writes ?tab=goals', async () => {
     dossierState = { data: dossier(), isLoading: false, isError: false }
     renderAt("/manager/development/m-1?tab=interviews")
     await screen.findByTestId("interviews-panel")
-    fireEvent.click(screen.getByRole("button", { name: "Start growth conversation" }))
+    fireEvent.click(screen.getByRole("button", { name: "Open Goals and ask Meridian about this person" }))
     await screen.findByTestId("goals-panel")
     expect(screen.getByTestId("location-search")).toHaveTextContent("?tab=goals")
     expect(screen.getByRole("tab", { name: "Goals & Roadmap" })).toHaveAttribute("aria-selected", "true")
