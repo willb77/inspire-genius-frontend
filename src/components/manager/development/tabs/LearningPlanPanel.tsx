@@ -68,7 +68,8 @@ function LearningItemRow({
   saving,
 }: {
   item: LearningItem
-  onAssign: () => void
+  /** Absent when this audience has no training surface to go to. */
+  onAssign?: () => void
   onSave: (itemId: string, input: UpdateLearningItemInput) => void
   saving: boolean
 }) {
@@ -105,7 +106,9 @@ function LearningItemRow({
         ) : (
           <span />
         )}
-        <Button size="sm" variant="outline" onClick={onAssign}>{t("learningPlanPanel.assignInTraining", { defaultValue: "Assign in Training" })}</Button>
+        {onAssign ? (
+          <Button size="sm" variant="outline" onClick={onAssign}>{t("learningPlanPanel.assignInTraining", { defaultValue: "Assign in Training" })}</Button>
+        ) : null}
       </div>
       {/* The write. Progress is saved on its own so it does not blank anything
           else; the server writes only the fields it receives. */}
@@ -170,9 +173,23 @@ export type LearningPlanPanelProps = {
   goals: SummitGoal[]
   /** S-7: the dossier says the member has not shared `development` with you. */
   notShared?: boolean
+  /**
+   * Who is looking. "Assign in Training" goes to the MANAGER training surface,
+   * and there is no practitioner one: `practitioner` has no `/manager` prefix
+   * in ROLE_PERMISSIONS, so the button sent a practitioner back to their home
+   * page. It is not offered to them rather than left in place and dead.
+   */
+  audience?: "manager" | "practitioner"
 }
 
-export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }: LearningPlanPanelProps) {
+export function LearningPlanPanel({
+  memberId,
+  learning,
+  gaps,
+  goals,
+  notShared,
+  audience = "manager",
+}: LearningPlanPanelProps) {
   const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const navigate = useNavigate()
@@ -240,7 +257,8 @@ export function LearningPlanPanel({ memberId, learning, gaps, goals, notShared }
     groups.set(key, arr)
   }
 
-  const assign = () => navigate(ROUTES.MANAGER.TRAINING)
+  const assign =
+    audience === "manager" ? () => navigate(ROUTES.MANAGER.TRAINING) : undefined
 
   return (
     <div className="space-y-5">

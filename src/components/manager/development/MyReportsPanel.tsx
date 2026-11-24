@@ -32,8 +32,11 @@ import { useDevSkin } from "./skin"
  */
 export function MyReportsPanel({
   onInvite,
+  memberRoute,
 }: {
   onInvite?: (memberId: string, framework: "prism" | "clifton" | "disc") => void
+  /** Passed straight to each card; see MemberCard's `memberRoute`. */
+  memberRoute?: string
 }) {
   const sk = useDevSkin()
   const chart = useOrgChart()
@@ -101,7 +104,7 @@ export function MyReportsPanel({
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {state.members.map((m) => (
-          <MemberCard key={m.memberId} member={m} onInvite={onInvite} />
+          <MemberCard key={m.memberId} member={m} onInvite={onInvite} memberRoute={memberRoute} />
         ))}
       </div>
     </div>

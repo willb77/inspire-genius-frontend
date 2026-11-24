@@ -319,7 +319,7 @@ export default function DevelopmentStudio({
            members yet" over a manager whose reports are all cross-org would be
            false, and a load failure shown as an empty team is the failure mode
            this whole surface keeps having to defend against. */
-        <MyReportsPanel onInvite={handleInvite} />
+        <MyReportsPanel onInvite={handleInvite} memberRoute={memberRoute} />
       ) : isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -345,7 +345,7 @@ export default function DevelopmentStudio({
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((m) => (
-            <MemberCard key={m.memberId} member={m} onInvite={handleInvite} />
+            <MemberCard key={m.memberId} member={m} onInvite={handleInvite} memberRoute={memberRoute} />
           ))}
         </div>
       )}

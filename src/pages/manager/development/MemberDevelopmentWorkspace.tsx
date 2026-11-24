@@ -561,6 +561,7 @@ export default function MemberDevelopmentWorkspace({
                   gaps={dossier.gaps}
                   goals={dossier.goals}
                   notShared={dossier.developmentNotShared}
+                  audience={audience}
                 />
               </TabsContent>
               <TabsContent value="careers">

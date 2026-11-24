@@ -153,4 +153,14 @@ describe("LearningPlanPanel", () => {
     fireEvent.click(within(row).getByRole("button", { name: "Assign in Training" }))
     expect(screen.getByText("training surface")).toBeInTheDocument()
   })
+
+  // There is no practitioner training surface, and /manager/training bounces a
+  // practitioner to their home page. The rest of the row must still be there.
+  it("does not offer Assign in Training to a practitioner", () => {
+    renderWith(
+      <LearningPlanPanel memberId="m-1" learning={[items[0]]} gaps={gaps} goals={goals} audience="practitioner" />,
+    )
+    expect(screen.getByText("Delegation for new managers")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Assign in Training" })).not.toBeInTheDocument()
+  })
 })
