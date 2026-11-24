@@ -446,8 +446,32 @@ function surfaceLabel(surface: string, t: TFunction): string | undefined {
     case "growth:goal-reviews:super-admin": return t("sharing.surface.goalReviewsAdmin", { defaultValue: "read the reviews on your goals (platform admin)" });
     case "offered": return t("sharing.surface.offered", { defaultValue: "was given access by you" });
     case "extended": return t("sharing.surface.extended", { defaultValue: "had access renewed by you" });
+    default: return otherSurfaceLabel(surface, t);
+  }
+}
+
+/**
+ * The other read paths that write the log: Job Fit, development and profile
+ * reads in growth-service. A platform administrator's read is the same code
+ * with ":super-admin" on the end, so one label covers both.
+ */
+const ADMIN_SUFFIX = ":super-admin";
+function otherSurfaceLabel(surface: string, t: TFunction): string | undefined {
+  const admin = surface.endsWith(ADMIN_SUFFIX);
+  const base = admin ? surface.slice(0, -ADMIN_SUFFIX.length) : surface;
+  let label: string | undefined;
+  switch (base) {
+    case "growth:fit-matches": label = t("sharing.surface.fitMatches", { defaultValue: "read your Job Fit matches" }); break;
+    case "growth:gaps": label = t("sharing.surface.gaps", { defaultValue: "read your gap analysis" }); break;
+    case "growth:learning-items": label = t("sharing.surface.learningItems", { defaultValue: "read your learning items" }); break;
+    case "growth:milestones": label = t("sharing.surface.milestones", { defaultValue: "read your milestones" }); break;
+    case "growth:matches": label = t("sharing.surface.matches", { defaultValue: "read your development matches" }); break;
+    case "growth:member-prism": label = t("sharing.surface.memberPrism", { defaultValue: "read your PRISM profile" }); break;
+    case "growth:member-profile": label = t("sharing.surface.memberProfile", { defaultValue: "read your profile" }); break;
+    case "growth:share": label = t("sharing.surface.share", { defaultValue: "read your shared goals" }); break;
     default: return undefined;
   }
+  return admin ? t("sharing.surface.adminOf", { defaultValue: "{{what}} (platform admin)", what: label }) : label;
 }
 
 function describeSurface(surface: string | null, t: TFunction): string {

@@ -72,7 +72,16 @@
       "offered": "získal(a) přístup od vás",
       "extended": "mu (jí) byl přístup obnoven vámi",
       "looked": "nahlédl(a)",
-      "lookedAt": "nahlédl(a) ({{surface}})"
+      "lookedAt": "nahlédl(a) ({{surface}})",
+      "fitMatches": "si přečetl(a) vaše shody Job Fit",
+      "gaps": "si přečetl(a) vaši analýzu mezer",
+      "learningItems": "si přečetl(a) vaše položky učení",
+      "milestones": "si přečetl(a) vaše milníky",
+      "matches": "si přečetl(a) vaše shody v rozvoji",
+      "memberPrism": "si přečetl(a) váš profil PRISM",
+      "memberProfile": "si přečetl(a) váš profil",
+      "share": "si přečetl(a) vaše sdílené cíle",
+      "adminOf": "{{what}} (správce platformy)"
     },
     "thisPerson": "tato osoba",
     "someone": "Někdo",

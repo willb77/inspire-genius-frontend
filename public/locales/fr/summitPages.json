@@ -156,7 +156,16 @@
       "offered": "a reçu l'accès de votre part",
       "extended": "a vu son accès renouvelé par vous",
       "looked": "a consulté",
-      "lookedAt": "a consulté ({{surface}})"
+      "lookedAt": "a consulté ({{surface}})",
+      "fitMatches": "a lu vos correspondances Job Fit",
+      "gaps": "a lu votre analyse des écarts",
+      "learningItems": "a lu vos éléments d'apprentissage",
+      "milestones": "a lu vos jalons",
+      "matches": "a lu vos correspondances de développement",
+      "memberPrism": "a lu votre profil PRISM",
+      "memberProfile": "a lu votre profil",
+      "share": "a lu vos objectifs partagés",
+      "adminOf": "{{what}} (administrateur de la plateforme)"
     },
     "thisPerson": "cette personne",
     "someone": "Quelqu'un",
