@@ -59,7 +59,7 @@ describe("/events — switch off (404, today's state on every tier)", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     expect(screen.queryByRole("list", { name: "Upcoming events" })).not.toBeInTheDocument()
     expect(screen.queryByText(EVENTS_EMPTY_COPY)).not.toBeInTheDocument()
-    // the page's own link back (the left panel has its own "Register your interest" link too)
+    // the page's own link back (the left panel has its own "Sign Up & Opt In" link too)
     expect(screen.getByRole("link", { name: /^← register your interest/i })).toHaveAttribute("href", "/join")
   })
 
@@ -85,7 +85,7 @@ describe("/events — switch on", () => {
     answer(200, {
       events: [
         {
-          title: "Intro to Inspires Genius",
+          title: "Intro to InspiresGenius",
           starts_at: "2099-03-03T14:00:00+00:00",
           time_zone: "America/New_York",
           description: "Line one\nLine two",
@@ -97,7 +97,7 @@ describe("/events — switch on", () => {
     const list = await screen.findByRole("list", { name: "Upcoming events" })
     const cards = within(list).getAllByRole("region")
     expect(cards).toHaveLength(2)
-    expect(cards[0]).toHaveAccessibleName("Intro to Inspires Genius")
+    expect(cards[0]).toHaveAccessibleName("Intro to InspiresGenius")
     // The small reference line is US Eastern labelled ET, whatever the event's stored zone, the
     // runner or the viewer: 14:00 UTC is 9:00 AM in New York on that date, 09:30 UTC (a London
     // event) is 4:30 AM there. The large time is the viewer's local
@@ -203,7 +203,7 @@ describe("/events brand panel", () => {
     expect(within(wall).getByText("What happens next")).toBeInTheDocument()
     expect(within(wall).getByText(EVENTS_NEXT_STEP)).toBeInTheDocument()
     expect(EVENTS_NEXT_STEP).toBe(
-      "No account and nothing to install. Register your interest to hear when the next event is announced.",
+      "Register your interest. Join the community to contribute your thoughts and stay current on developments, news and events.",
     )
     expect(within(wall).queryByText(JOIN_NEXT_STEP)).not.toBeInTheDocument()
     expect(wall).not.toHaveTextContent(/Tick the first box/)
@@ -228,7 +228,7 @@ describe("/events brand panel", () => {
     answer(404, { detail: "Not Found" })
     const { container } = renderPage()
     const wall = wallOf(container)
-    const link = within(wall).getByRole("link", { name: "Register your interest" })
+    const link = within(wall).getByRole("link", { name: "Sign Up & Opt In" })
     expect(link).toHaveAttribute("href", "/join")
     // directly beneath the box: the box's element is the link's previous sibling
     const box = within(wall).getByText("What happens next").parentElement as HTMLElement
@@ -242,13 +242,13 @@ describe("/events brand panel", () => {
     answer(200, { events: [{ title: "T", starts_at: "2099-03-03T14:00:00Z", time_zone: "UTC", description: null }] })
     const { container } = renderPage()
     await screen.findByRole("list", { name: "Upcoming events" })
-    expect(within(wallOf(container)).getByRole("link", { name: "Register your interest" })).toHaveAttribute("href", "/join")
+    expect(within(wallOf(container)).getByRole("link", { name: "Sign Up & Opt In" })).toHaveAttribute("href", "/join")
   })
 
   it("the link takes keyboard focus first (the wall precedes the page) and shows a focus ring", async () => {
     answer(404, { detail: "Not Found" })
     const { container } = renderPage()
-    const link = within(wallOf(container)).getByRole("link", { name: "Register your interest" })
+    const link = within(wallOf(container)).getByRole("link", { name: "Sign Up & Opt In" })
     await userEvent.tab()
     expect(link).toHaveFocus()
     expect(link.className).toMatch(/focus-visible:ring-2/)

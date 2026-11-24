@@ -13,9 +13,9 @@ import type { MyPracticeRegistration } from "@/types/practitioner-practice"
 import { withPrism } from "@/lib/withPrism"
 
 export const NOT_REGISTERED_BANNER =
-  "Surveys you invite will be raised on Inspire Genius's PRISM site until your account is registered."
+  "Surveys you invite will be raised on InspiresGenius's PRISM site until your account is registered."
 export const DEACTIVATED_BANNER =
-  "Your PRISM registration is deactivated. Surveys you invite will be raised on Inspire Genius's PRISM site until it is reactivated."
+  "Your PRISM registration is deactivated. Surveys you invite will be raised on InspiresGenius's PRISM site until it is reactivated."
 export const DARK_MESSAGE = "The Practitioner Programme is not switched on yet."
 export const LOAD_ERROR = "Your PRISM registration could not be loaded just now. Please try again later."
 export const INVITES_OFF_TITLE = "Client invite links are not switched on for your practice yet."
@@ -82,7 +82,7 @@ function Registered({ registration }: { registration: MyPracticeRegistration }) 
                   variant="outline"
                   onClick={() =>
                     copyWithToast(
-                      t("myPractice.clientMessage", { code: code, defaultValue: "I'd like to work with you on Inspire Genius. After you sign in, open Settings, choose \"Have a practitioner code?\" and enter my code: {{code}}" }),
+                      t("myPractice.clientMessage", { code: code, defaultValue: "I'd like to work with you on InspiresGenius. After you sign in, open Settings, choose \"Have a practitioner code?\" and enter my code: {{code}}" }),
                       {
                         done: t("myPractice.messageCopied", { defaultValue: "Message copied" }),
                         failed: t("myPractice.messageCopyFailed", { defaultValue: "Could not copy the message — select it and copy it by hand." }),

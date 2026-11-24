@@ -50,7 +50,7 @@ const mockAgents = [
 ];
 
 const mockEcosystems = [
-  { ecosystem_id: "inspire-genius", ecosystem_name: "Inspire Genius" },
+  { ecosystem_id: "inspire-genius", ecosystem_name: "InspiresGenius" },
 ];
 
 // Swappable so a test can supply the shape the API actually returns. The

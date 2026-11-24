@@ -99,7 +99,7 @@ async function fillManually(u: ReturnType<typeof userEvent.setup>) {
   await u.type(screen.getByLabelText("Email"), "ada@example.org")
   await u.selectOptions(screen.getByLabelText("Which best describes you?"), "practitioner")
   await u.selectOptions(screen.getByLabelText("Are you PRISM accredited?"), "yes")
-  await u.selectOptions(screen.getByLabelText("Where would you use Inspires Genius?"), "individual")
+  await u.selectOptions(screen.getByLabelText("Where would you use InspiresGenius?"), "individual")
   await u.type(screen.getByLabelText("State, province or region"), "England")
   await u.type(screen.getByLabelText("Country"), "UK")
 }

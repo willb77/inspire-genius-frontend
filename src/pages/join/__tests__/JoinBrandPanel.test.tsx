@@ -53,7 +53,7 @@ describe("/join brand panel", () => {
     const join = render(<JoinBrandPanel />).container
     const events = render(<JoinBrandPanel nextStep={EVENTS_NEXT_STEP} />).container
     const points = (c: HTMLElement) =>
-      Array.from(c.querySelectorAll('ul[aria-label="What Inspires Genius offers"] > li'))
+      Array.from(c.querySelectorAll('ul[aria-label="What InspiresGenius offers"] > li'))
         .slice(0, 2)
         .map((li) => (li.textContent ?? "").replace(/\s+/g, " ").trim())
     expect(points(join)).toHaveLength(2)
@@ -92,14 +92,14 @@ describe("/join brand panel", () => {
         "No account and nothing to install. Tick the first box to hear when the next webinar is scheduled.",
       ),
     ).toBeInTheDocument()
-    expect(within(wall).queryByText(/Register your interest to hear when the next event/)).not.toBeInTheDocument()
+    expect(within(wall).queryByText(/Join the community to contribute your thoughts/)).not.toBeInTheDocument()
   })
 
   it("uses the mentoring subtitle on the form", () => {
     renderPage()
     expect(
       screen.getByText(
-        "Inspires Genius is an AI mentoring platform. Leave your details below to register your interest.",
+        "InspiresGenius is an AI mentoring platform. Leave your details below to register your interest.",
       ),
     ).toBeInTheDocument()
     expect(screen.queryByText(/AI coaching platform/)).not.toBeInTheDocument()

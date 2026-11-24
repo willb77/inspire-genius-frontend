@@ -31,7 +31,7 @@ import {
  * Register for one event from `/events` (monorepo CSA 2026-11-16, R4).
  *
  * The same fields as `/join`, so the segment can be recorded; a signed-in
- * Inspire Genius account fills name and email, and the visitor can overwrite them.
+ * InspiresGenius account fills name and email, and the visitor can overwrite them.
  * Nothing is looked up by email and nothing is trusted from the prefill: the
  * server validates every value like any manual entry. A Turnstile check is
  * required; its token is single-use, so the widget is re-rendered after any
@@ -222,7 +222,7 @@ export function EventRegistrationDialog({ event, onClose }: { event: EventOption
           </Field>
         )}
 
-        <Field name="context" label="Where would you use Inspires Genius?" error={errors.context?.message}>
+        <Field name="context" label="Where would you use InspiresGenius?" error={errors.context?.message}>
           <select {...register("context")} {...ariaFor("context")} className={selectClass}>
             <option value="">Choose one</option>
             {INTAKE_CONTEXTS.map((c) => (

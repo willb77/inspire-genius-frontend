@@ -22,7 +22,7 @@ function escAttr(s: string): string {
 function coverBlock(meta: TranscriptMeta): string {
   return `
 <div class="cover">
-  <div class="brand">Inspires Genius &nbsp;|&nbsp; Executive Assessment</div>
+  <div class="brand">InspiresGenius &nbsp;|&nbsp; Executive Assessment</div>
   <div class="variant">Structured Report</div>
   <h1>${escAttr(meta.sessionSubject)}</h1>
   <div class="sub">${escAttr(meta.assistantDomain ?? "Coaching session")} — reformatted for an executive reader.</div>
@@ -131,7 +131,7 @@ export function buildReportHtml(turns: TranscriptTurn[], meta: TranscriptMeta): 
 ${pairsHtml}`;
 
   const disclaimer = `
-<div class="disclaimer"><b>Decision ownership.</b> This report provides structured input from the Inspires Genius platform. It is designed to inform, not replace, your judgment.</div>`;
+<div class="disclaimer"><b>Decision ownership.</b> This report provides structured input from the InspiresGenius platform. It is designed to inform, not replace, your judgment.</div>`;
 
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">

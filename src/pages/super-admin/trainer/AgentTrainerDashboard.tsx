@@ -118,7 +118,7 @@ function AgentTrainerDashboardClassic() {
               {ecosystems.length > 0 ? (
                 ecosystems.map((e: any) => <SelectItem key={e.ecosystem_id} value={e.ecosystem_id}>{e.ecosystem_name}</SelectItem>)
               ) : (
-                <SelectItem value="inspire-genius">Inspire Genius</SelectItem>
+                <SelectItem value="inspire-genius">InspiresGenius</SelectItem>
               )}
             </SelectContent>
           </Select>

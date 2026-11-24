@@ -284,7 +284,7 @@ export default function SupportAgentPopup({
               }}
               rows={1}
               placeholder={
-                speech.isRecording ? t("supportAgentPopup.listening", { defaultValue: "Listening…" }) : t("supportAgentPopup.askAboutInspireGenius", { defaultValue: "Ask about Inspire Genius…" })
+                speech.isRecording ? t("supportAgentPopup.listening", { defaultValue: "Listening…" }) : t("supportAgentPopup.askAboutInspireGenius", { defaultValue: "Ask about InspiresGenius…" })
               }
               aria-label={t("supportAgentPopup.message", { defaultValue: "Message" })}
               className="min-h-9 max-h-28 resize-none py-2"

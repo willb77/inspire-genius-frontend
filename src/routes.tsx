@@ -163,6 +163,7 @@ const WorkspaceInterviewLive = React.lazy(() => import("@/pages/workspace/Interv
 const WorkspaceInterviewStudio = React.lazy(() => import("@/pages/workspace/InterviewStudioPage"));
 const SuperAdminInterviewStudio = React.lazy(() => import("@/pages/super-admin/InterviewStudioPage"));
 const WorkspaceTalentStudioOverview = React.lazy(() => import("@/pages/workspace/TalentStudioOverviewPage"));
+const WorkspaceTeamFit = React.lazy(() => import("@/pages/workspace/TeamFitPage"));
 const SuperAdminTalentStudioOverview = React.lazy(() => import("@/pages/super-admin/TalentStudioOverviewPage"));
 const SuperAdminInterviewLive = React.lazy(() => import("@/pages/super-admin/InterviewLivePage"));
 // Character Lab for the coach roles — same body as the super-admin page, minus CSV.
@@ -727,6 +728,8 @@ export const routes: RouteObject[] = [
       { path: "/manager/interview-studio", element: withSuspense(<WorkspaceInterviewStudio audience="manager" />) },
       // TS-2 — Talent Studio Overview: links to the stages of the group, no data.
       { path: "/manager/talent-studio", element: withSuspense(<WorkspaceTalentStudioOverview audience="manager" />) },
+      // TS-4a — Team fit: the matches team members have shared, read-only. Scores nobody.
+      { path: "/manager/team-fit", element: withSuspense(<WorkspaceTeamFit audience="manager" />) },
       { path: "/manager/character-lab", element: withSuspense(<WorkspaceCharacterLab audience="manager" />) },
       { path: "/manager/team-composition", element: withSuspense(<WorkspaceTeamComposition audience="manager" />) },
       // Team Development Studio (roster + per-member workspace)
@@ -798,6 +801,7 @@ export const routes: RouteObject[] = [
       { path: "/practitioner/interview-live", element: withSuspense(<WorkspaceInterviewLive audience="practitioner" />) },
       { path: "/practitioner/interview-studio", element: withSuspense(<WorkspaceInterviewStudio audience="practitioner" />) },
       { path: "/practitioner/talent-studio", element: withSuspense(<WorkspaceTalentStudioOverview audience="practitioner" />) },
+      { path: "/practitioner/team-fit", element: withSuspense(<WorkspaceTeamFit audience="practitioner" />) },
       { path: "/practitioner/character-lab", element: withSuspense(<WorkspaceCharacterLab audience="practitioner" />) },
       { path: "/practitioner/team-composition", element: withSuspense(<WorkspaceTeamComposition audience="practitioner" />) },
 

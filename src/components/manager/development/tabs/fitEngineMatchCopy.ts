@@ -32,7 +32,7 @@ export function fitStateMessage(
 ): string {
   switch (state) {
     case "no_account":
-      return `${name} doesn't have an Inspire Genius account yet, so there is no My fit to read.`
+      return `${name} doesn't have an InspiresGenius account yet, so there is no My fit to read.`
     case "not_shared":
       return notSharedMessage(name, missing)
     case "no_prism":

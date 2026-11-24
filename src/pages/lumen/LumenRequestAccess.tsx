@@ -35,7 +35,7 @@ export default function LumenRequestAccess() {
           <p>
             {t(
               "accessGranted",
-              "Access is enabled by your administrator or the Inspire Genius team. There's nothing to buy here."
+              "Access is enabled by your administrator or the InspiresGenius team. There's nothing to buy here."
             )}
           </p>
           <Button asChild variant="outline">

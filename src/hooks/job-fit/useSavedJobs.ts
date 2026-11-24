@@ -25,6 +25,23 @@ export function useSavedJobsEnabled(): boolean {
   return q.data === true
 }
 
+/**
+ * The same `job_fit_v2` read, for a page that must not say "off" while the
+ * answer is still on its way (TS-4a, Team fit). Same query key and options as
+ * {@link useSavedJobsEnabled}, so it costs no second request. An error reads
+ * as "off", as it does there.
+ */
+export function useSavedJobsEnabledStatus(): "loading" | "on" | "off" {
+  const q = useQuery({
+    queryKey: savedJobKeys.enabled,
+    queryFn: getSavedJobsEnabled,
+    staleTime: 5 * 60_000,
+    retry: false,
+  })
+  if (q.isLoading) return "loading"
+  return q.data === true ? "on" : "off"
+}
+
 /** My favorites, newest first. Idle while `enabled` is false. */
 export function useSavedJobs(enabled: boolean) {
   return useQuery({

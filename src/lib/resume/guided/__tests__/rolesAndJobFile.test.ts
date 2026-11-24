@@ -36,8 +36,8 @@ it("rolesForRequest drops incomplete roles and keeps at most five", () => {
 })
 
 it("roleLine", () => {
-  expect(roleLine(role({ title: "Founder", organization: "Inspires Genius", start: "2019", present: true }))).toBe(
-    "Founder, Inspires Genius · 2019 – Present",
+  expect(roleLine(role({ title: "Founder", organization: "InspiresGenius", start: "2019", present: true }))).toBe(
+    "Founder, InspiresGenius · 2019 – Present",
   )
   expect(roleLine(role({ title: "CTO", organization: "IBM" }))).toBe("CTO, IBM")
 })

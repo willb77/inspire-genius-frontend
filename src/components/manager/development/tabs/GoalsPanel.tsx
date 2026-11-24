@@ -496,7 +496,7 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
         testId="goals-state-no-account"
         icon={<UserX className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />}
         title={t("goalsPanel.noIgAccountYet", { defaultValue: "No IG account yet" })}
-        body={`${who} was added to the roster by hand and has no Inspires Genius account. Goals are shared by the person who owns them, so there is nothing to ask for until they have one.`}
+        body={`${who} was added to the roster by hand and has no InspiresGenius account. Goals are shared by the person who owns them, so there is nothing to ask for until they have one.`}
       />
     )
   }

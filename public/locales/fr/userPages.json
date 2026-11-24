@@ -253,7 +253,7 @@
   },
   "settingsPrivacy": {
     "memoryPrivacy": "Mémoire et confidentialité",
-    "viewExportOrDeleteTheData": "Consultez, exportez ou supprimez les données qu'Inspire Genius a enregistrées à votre sujet. La suppression est définitive et s'applique aux quatre niveaux de mémoire (de travail, court terme, long terme, sémantique).",
+    "viewExportOrDeleteTheData": "Consultez, exportez ou supprimez les données qu'InspiresGenius a enregistrées à votre sujet. La suppression est définitive et s'applique aux quatre niveaux de mémoire (de travail, court terme, long terme, sémantique).",
     "whatWeveLearnedAboutYou": "Ce que nous avons appris sur vous",
     "longTermInsightsExtractedFromYour": "Enseignements à long terme tirés de vos sessions de coaching. Supprimez un élément pour oublier ce fait précis tout en conservant le reste de votre mémoire.",
     "couldNotLoadYourMemorySnapshot": "Impossible de charger l'aperçu de votre mémoire. Essayez d'actualiser la page.",
@@ -445,7 +445,7 @@
   },
   "settingsPrivacyV2": {
     "memoryPrivacy": "Mémoire et confidentialité",
-    "viewExportOrDeleteTheData": "Consultez, exportez ou supprimez les données que Inspire Genius a enregistrées à votre sujet. La suppression est définitive et s'applique aux quatre niveaux de mémoire (de travail, à court terme, à long terme, sémantique).",
+    "viewExportOrDeleteTheData": "Consultez, exportez ou supprimez les données que InspiresGenius a enregistrées à votre sujet. La suppression est définitive et s'applique aux quatre niveaux de mémoire (de travail, à court terme, à long terme, sémantique).",
     "whatWeveLearnedAboutYou": "Ce que nous avons appris sur vous",
     "longTermInsightsExtractedFromYour": "Enseignements à long terme tirés de vos séances de coaching. Supprimez un élément pour oublier cette information précise tout en conservant le reste de votre mémoire.",
     "couldNotLoadYourMemorySnapshot": "Impossible de charger l'aperçu de votre mémoire. Essayez d'actualiser la page.",
@@ -480,7 +480,7 @@
   },
   "support": {
     "helpAndSupport": "Aide et assistance",
-    "everyRequestYouPostHereIs": "Chaque demande que vous publiez ici est envoyée par e-mail directement à l'équipe d'assistance d'Inspire Genius avec vos coordonnées, afin que quelqu'un puisse vous répondre directement.",
+    "everyRequestYouPostHereIs": "Chaque demande que vous publiez ici est envoyée par e-mail directement à l'équipe d'assistance d'InspiresGenius avec vos coordonnées, afin que quelqu'un puisse vous répondre directement.",
     "voiceHelp": "Aide vocale",
     "preferToTalkConnectWithOur": "Vous préférez parler ? Connectez-vous à notre agent d'assistance vocale IA pour une aide en temps réel.",
     "speakWithSupport": "Parler à l'assistance",

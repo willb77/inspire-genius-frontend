@@ -157,7 +157,8 @@
       "Role_Blueprint_Match": "Role Blueprint Match",
       "Overview": "Resumen",
       "Insights": "Análisis",
-      "Retain_Knowledge_Continuity": "Retener: Knowledge Continuity"
+      "Retain_Knowledge_Continuity": "Retener: Knowledge Continuity",
+      "Team_fit": "Compatibilidad del equipo"
     },
     "sections": {
       "AI_coaches": "Coaches de IA",
@@ -581,10 +582,55 @@
         "title": "Análisis",
         "hint": "Mira cómo va la contratación en tus puestos."
       },
+      "teamFit": {
+        "title": "Compatibilidad del equipo",
+        "hint": "Consulta las compatibilidades con puestos que tu equipo ha compartido contigo."
+      },
       "retain": {
         "title": "Retener",
         "hint": "Conserva lo que saben tus personas con más experiencia."
       }
+    },
+    "teamFit": {
+      "intro": "Las compatibilidades con puestos que los miembros de tu equipo han obtenido por sí mismos, visibles solo cuando las han compartido contigo. Aquí no se puntúa nada.",
+      "advisory": "Una puntuación de compatibilidad es un dato más para una conversación de desarrollo. No es una decisión de contratación, salario ni desempeño.",
+      "notOn": "Compatibilidad del equipo no está activada para tu organización.",
+      "search": "Buscar miembros del equipo",
+      "noSearchResults": "Ningún miembro del equipo coincide con esa búsqueda.",
+      "showMore": "Mostrar más (quedan {{remaining}})",
+      "rosterLoading": "Cargando tu equipo…",
+      "rosterError": "No se pudo cargar tu equipo. Es un problema de carga, no un equipo vacío.",
+      "rosterEmpty": "Aún no tienes miembros del equipo en Team Development Studio. Añádelos allí primero.",
+      "openStudio": "Abrir Team Development Studio",
+      "retry": "Reintentar",
+      "showMatches": "Mostrar compatibilidades",
+      "hideMatches": "Ocultar compatibilidades",
+      "showMatchesFor": "Mostrar compatibilidades de {{name}}",
+      "hideMatchesFor": "Ocultar compatibilidades de {{name}}",
+      "openMember": "Abrir en Team Development Studio",
+      "openMemberFor": "Abrir a {{name}} en Team Development Studio",
+      "matchesLoading": "Cargando compatibilidades…",
+      "matchesError": "No se pudieron cargar las compatibilidades de {{name}} en este momento. Eso no es lo mismo que no tener ninguna.",
+      "notShared": {
+        "title": "No compartido",
+        "both": "{{name}} no ha compartido contigo su perfil PRISM ni Desarrollo. Las compatibilidades con puestos necesitan ambos, así que siguen siendo privadas hasta que {{name}} los comparta.",
+        "development": "{{name}} no ha compartido Desarrollo contigo. Las compatibilidades con puestos forman parte de Desarrollo, así que siguen siendo privadas hasta que {{name}} lo comparta.",
+        "prism": "{{name}} no ha compartido contigo su perfil PRISM. Las compatibilidades con puestos se obtienen de él, así que siguen siendo privadas hasta que {{name}} lo comparta.",
+        "unspecified": "{{name}} no ha compartido contigo sus compatibilidades con puestos. Siguen siendo privadas hasta que {{name}} las comparta."
+      },
+      "noAccount": "{{name}} aún no tiene una cuenta de Inspire Genius, así que no hay compatibilidades que mostrar.",
+      "noPrism": "{{name}} aún no tiene un perfil PRISM registrado. Las compatibilidades con puestos se miden a partir de él.",
+      "notEntitled": "Career Fit no está activado para {{name}}, así que no hay compatibilidades que mostrar.",
+      "noMatches": {
+        "title": "Aún no hay compatibilidades",
+        "notRun": "{{name}} aún no ha abierto sus propias compatibilidades en Career Fit. Aparecerán aquí cuando {{name}} lo haga. Desde esta página no se puntúa nada.",
+        "noRoles": "En el Career Fit de {{name}} no había puestos publicados con los que comparar."
+      },
+      "unknownState": "Las compatibilidades de {{name}} no se pueden mostrar en este momento.",
+      "asOf": "Del propio Career Fit de {{name}}, a fecha de {{date}}.",
+      "asOfUnknown": "Del propio Career Fit de {{name}}.",
+      "score": "Puntuación de compatibilidad: {{score}} %",
+      "coverage": "{{evaluated}} de {{total}} dimensiones medidas"
     }
   }
 }

@@ -183,7 +183,7 @@ export default function PrismTestHarness() {
               <div className="flex flex-col items-start">
                 <img
                   src="/images/logo-dark.png"
-                  alt="Inspire Genius"
+                  alt="InspiresGenius"
                   className="h-10 dark:invert"
                 />
                 <span className="mt-0.5 text-[10px] tracking-wide text-muted-foreground">

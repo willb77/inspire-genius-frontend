@@ -14,7 +14,7 @@ import { GUIDE_LINKS } from "@/components/shared/layout/helpSupportLinks"
  *
  * HonorShell is a self-contained navy chrome with its own Tailwind styling and
  * NO shadcn SidebarProvider. This is Honor's Help / Support control: a footer
- * button matching "Back to Inspire Genius" that opens a small menu linking to
+ * button matching "Back to InspiresGenius" that opens a small menu linking to
  * the Coach Workbench guide (clickable web version), the slide deck, and the
  * Word document. It is the only Help / Support surface in the app — the shared
  * app sidebar no longer carries one. URLs come from the `GUIDE_LINKS` constant.

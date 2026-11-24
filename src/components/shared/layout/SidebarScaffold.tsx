@@ -364,7 +364,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
             aria-label={t("sidebar.goHome", { defaultValue: "Go to home" })}
             className="flex items-center gap-2 min-w-0 mr-auto hover:opacity-80 transition-opacity"
           >
-            <img src="/Icon-Dark.svg" alt="Inspire Genius" className="ig-rail-logo size-8" />
+            <img src="/Icon-Dark.svg" alt="InspiresGenius" className="ig-rail-logo size-8" />
             <span className="font-semibold tracking-tight truncate group-data-[collapsible=icon]:hidden">inspiresgenius</span>
           </button>
           <SidebarTrigger className="shrink-0" />

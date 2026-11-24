@@ -142,7 +142,7 @@ describe("SignUp Component", () => {
 
   test("renders correctly", () => {
     renderSignUp();
-    expect(screen.getByText("Welcome to Inspires Genius")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to InspiresGenius")).toBeInTheDocument();
   });
 
   test("renders Terms of Use and Privacy Policy links", () => {

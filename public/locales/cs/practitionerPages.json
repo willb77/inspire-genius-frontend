@@ -338,19 +338,19 @@
     "subtitle": "Živá koučovací videosezení s vašimi klienty.",
     "liveMeeting": "Živá schůzka",
     "liveHeadline": "Živá videoschůzka se sdílením obrazovky, poháněná LiveKit.",
-    "liveBody": "Setkejte se s klientem jeden na jednoho, sdílejte obrazovku a mějte sezení zaznamenané – to vše v rámci Inspire Genius.",
+    "liveBody": "Setkejte se s klientem jeden na jednoho, sdílejte obrazovku a mějte sezení zaznamenané – to vše v rámci InspiresGenius.",
     "start": "Zahájit schůzku",
     "activates": "Schůzky se aktivují, jakmile bude zprovozněna služba IG Live Meetings.",
     "comingSoon": "Již brzy"
   },
   "myPractice": {
-    "deactivatedBanner": "Vaše registrace PRISM je deaktivována. Průzkumy, které rozešlete, budou vytvořeny na webu PRISM společnosti Inspire Genius, dokud registraci znovu neaktivujete.",
+    "deactivatedBanner": "Vaše registrace PRISM je deaktivována. Průzkumy, které rozešlete, budou vytvořeny na webu PRISM společnosti InspiresGenius, dokud registraci znovu neaktivujete.",
     "clientCode": "Váš kód klienta",
     "clientCodeHelp": "Klient, který se zaregistroval sám, zadá tento kód jednou v Nastavení a stane se vaším klientem.",
     "codeCopied": "Kód zkopírován",
     "codeCopyFailed": "Kód se nepodařilo zkopírovat – označte jej a zkopírujte ručně.",
     "copyCode": "Kopírovat kód",
-    "clientMessage": "Rád bych s Vámi spolupracoval na Inspire Genius. Po přihlášení otevřete Nastavení, zvolte „Máte kód praktika?“ a zadejte můj kód: {{code}}",
+    "clientMessage": "Rád bych s Vámi spolupracoval na InspiresGenius. Po přihlášení otevřete Nastavení, zvolte „Máte kód praktika?“ a zadejte můj kód: {{code}}",
     "messageCopied": "Zpráva zkopírována",
     "messageCopyFailed": "Zprávu se nepodařilo zkopírovat – označte ji a zkopírujte ručně.",
     "copyMessage": "Zkopírovat zprávu pro klienta",
@@ -367,6 +367,6 @@
     "loading": "Načítání vaší registrace…",
     "loadError": "Vaši registraci PRISM se teď nepodařilo načíst. Zkuste to prosím později.",
     "dark": "Program pro praktiky zatím není zapnut.",
-    "notRegistered": "Průzkumy, které rozešlete, budou vytvořeny na webu PRISM společnosti Inspire Genius, dokud nebude váš účet registrován."
+    "notRegistered": "Průzkumy, které rozešlete, budou vytvořeny na webu PRISM společnosti InspiresGenius, dokud nebude váš účet registrován."
   }
 }

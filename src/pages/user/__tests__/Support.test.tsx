@@ -147,7 +147,7 @@ describe("Help & Support page", () => {
   it("tells the user their request is emailed to the support team", async () => {
     renderPage();
     expect(
-      await screen.findByText(/emailed straight to the Inspire\s+Genius support team/i),
+      await screen.findByText(/emailed straight to the InspiresGenius support team/i),
     ).toBeInTheDocument();
   });
 

@@ -37,6 +37,13 @@
  * Blueprints vertical, which copy that vertical's lock); they are named in
  * TS2_OVERVIEW and TS2_BLUEPRINT_PAGES and nothing else may appear. The off
  * snapshot is untouched. The TS-2 block at the end pins the exact order per role.
+ *
+ * TS-4a (2026-11-24) adds ONE row, "Team fit", between Insights and Retain,
+ * for manager and practitioner only, and only when BOTH `job_fit_v2` is on and
+ * the build's Team fit flags are on (`TEAM_FIT_BUILD_ENABLED`, mocked on here
+ * so the walker covers the row; the TS-4a block turns it off to prove the
+ * other half). The destination is named in TS4A_ADDED and nothing else may
+ * appear. The off snapshot is untouched.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -85,6 +92,14 @@ jest.mock("@/hooks/company-admin/useCohortReadout", () => ({
 let mockBroadcastAuthorized = false
 jest.mock("@/hooks/super-admin/useBroadcast", () => ({
   useBroadcastAccess: () => ({ data: { authorized: mockBroadcastAuthorized } }),
+}))
+// TS-4a: the build half of the Team fit gate. A getter, so a test can turn it off.
+let mockTeamFitBuild = true
+jest.mock("@/constants/teamFit", () => ({
+  get TEAM_FIT_BUILD_ENABLED() {
+    return mockTeamFitBuild
+  },
+  TEAM_FIT_PAGE_SIZE: 25,
 }))
 
 import { useToolsSection, TALENT_STUDIO_LABEL, TALENT_STUDIO_STAGE_ORDER } from "../useToolsSection"
@@ -197,10 +212,21 @@ const TS2_OVERVIEW: Partial<Record<UserRole, string>> = {
 const BLUEPRINT_HOME = "/vertical/job-blueprint/dashboard"
 const TS2_BLUEPRINT_PAGES = ["/vertical/job-blueprint/candidates", "/vertical/job-blueprint/analytics"]
 
+/**
+ * TS-4a: the one destination the menu gains with the switch on AND the build
+ * flags on. Manager and practitioner only, each under its own prefix;
+ * super-admin gains nothing.
+ */
+const TS4A_ADDED: Partial<Record<UserRole, string>> = {
+  manager: "/manager/team-fit",
+  practitioner: "/practitioner/team-fit",
+}
+
 beforeEach(() => {
   localStorage.clear()
   mockEntitled = ALL_VERTICALS
   mockBroadcastAuthorized = false
+  mockTeamFitBuild = true
 })
 
 describe("JF-13 — job_fit_v2 off: the Tools section is today's", () => {
@@ -241,7 +267,11 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
               // TS-3: with the switch on, exactly the named additions, each
               // live and none of them reached before; then the strict diff.
               const overview = TS2_OVERVIEW[role]
-              const added = mode === "true" ? [...(TS3_ADDED[role] ?? []), ...(overview ? [overview] : [])] : []
+              const teamFit = TS4A_ADDED[role]
+              const added =
+                mode === "true"
+                  ? [...(TS3_ADDED[role] ?? []), ...(overview ? [overview] : []), ...(teamFit ? [teamFit] : [])]
+                  : []
               // TS-2: the two vertical pages, present only beside the Role
               // Blueprints row and in the same state as it.
               if (mode === "true" && overview) {
@@ -337,6 +367,7 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
       "Prepare questions": false,
       "Past interviews": false,
       Insights: true,
+      "Team fit": false,
       "Retain: Knowledge Continuity": true,
     })
   })
@@ -481,6 +512,7 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
       ["Prepare questions", "/manager/interview-prep"],
       ["Past interviews", "/manager/interviews"],
       ["Insights", "/vertical/job-blueprint/analytics"],
+      ["Team fit", "/manager/team-fit"],
       ["Retain: Knowledge Continuity", KC],
     ],
     practitioner: [
@@ -492,6 +524,7 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
       ["Own-questions interview", "/practitioner/interview-studio"],
       ["Prepare questions", "/practitioner/interview-prep"],
       ["Insights", "/vertical/job-blueprint/analytics"],
+      ["Team fit", "/practitioner/team-fit"],
       ["Retain: Knowledge Continuity", KC],
     ],
     "super-admin": [
@@ -508,8 +541,16 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
     (await tools(role, mode))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
 
   it("the stage order is the lifecycle, with Retain last", () => {
-    // TS-4a ("Team fit", not built) goes between insights and retain.
-    expect([...TALENT_STUDIO_STAGE_ORDER]).toEqual(["overview", "roles", "candidates", "interviews", "insights", "retain"])
+    // TS-4a: Team fit sits between insights and retain.
+    expect([...TALENT_STUDIO_STAGE_ORDER]).toEqual([
+      "overview",
+      "roles",
+      "candidates",
+      "interviews",
+      "insights",
+      "teamFit",
+      "retain",
+    ])
   })
 
   it.each(TOOL_ROLES)("%s: the rows are exactly the lifecycle order, whatever the entitlements", async (role) => {
@@ -520,10 +561,73 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
     }
   })
 
-  it.each(TOOL_ROLES)("%s: there is no Team fit row (TS-4a is not built)", async (role) => {
-    const labels = (await talentChildren(role)).map((c) => c.label.toLowerCase())
-    expect(labels.length).toBeGreaterThan(0)
-    expect(labels.filter((l) => l.includes("team fit"))).toEqual([])
+  // ── TS-4a ─────────────────────────────────────────────────────────────────
+  const isTeamFit = (c: NavItemDef) => c.label.toLowerCase().includes("team fit") || c.to.endsWith("/team-fit")
+
+  it.each(["manager", "practitioner"] as UserRole[])(
+    "%s: one Team fit row, live, under the role's own prefix, between Insights and Retain",
+    async (role) => {
+      for (const list of Object.values(ENTITLEMENTS)) {
+        mockEntitled = list
+        const children = await talentChildren(role)
+        const rows = children.filter(isTeamFit)
+        expect(rows.map((c) => [c.label, c.to, !!c.disabled])).toEqual([["Team fit", `/${role}/team-fit`, false]])
+        const at = children.indexOf(rows[0])
+        expect(children[at - 1].label).toBe("Insights")
+        expect(children[at + 1].label).toBe("Retain: Knowledge Continuity")
+        expect(hasAccess(role, rows[0].to)).toBe(true)
+      }
+    },
+  )
+
+  it("super-admin: no Team fit row, with every flag on", async () => {
+    const children = await talentChildren("super-admin")
+    expect(children.length).toBeGreaterThan(0)
+    expect(children.filter(isTeamFit)).toEqual([])
+  })
+
+  it.each(TOOL_ROLES)("%s: with the build flags off there is no Team fit row and the rest is unchanged", async (role) => {
+    mockTeamFitBuild = false
+    const children = await talentChildren(role)
+    expect(children.filter(isTeamFit)).toEqual([])
+    expect(children.map((c) => [c.label, c.to])).toEqual(ORDER[role].filter(([label]) => label !== "Team fit"))
+  })
+
+  it.each(ROLES)("%s: with job_fit_v2 off there is no Team fit row anywhere in the sidebar", async (role) => {
+    let rowsSeen = 0
+    for (const mode of OFF_MODES) {
+      const rest = await restOfSidebar(role, mode)
+      const section = await tools(role, mode)
+      const everyRow = [...rest, ...(section?.items ?? [])].flatMap((i) => [i, ...(i.children ?? [])])
+      rowsSeen += everyRow.length
+      expect(everyRow.filter(isTeamFit)).toEqual([])
+    }
+    expect(rowsSeen).toBeGreaterThan(0)
+  })
+
+  it.each(["user", "company-admin", "distributor", "super-admin"] as UserRole[])(
+    "%s: no Team fit row anywhere in the sidebar with every flag on",
+    async (role) => {
+      const rest = await restOfSidebar(role, "true")
+      const section = await tools(role, "true")
+      const everyRow = [...rest, ...(section?.items ?? [])].flatMap((i) => [i, ...(i.children ?? [])])
+      expect(everyRow.length).toBeGreaterThan(0)
+      expect(everyRow.filter(isTeamFit)).toEqual([])
+    },
+  )
+
+  it("the Team fit label has a menu translation in en, es, fr, pt, it, pl and cs", () => {
+    const read = (lang: string) =>
+      JSON.parse(readFileSync(join(process.cwd(), `public/locales/${lang}/shellUi.json`), "utf8")) as {
+        nav: { items: Record<string, string> }
+      }
+    const key = navLabelKey("items", "Team fit").replace("nav.items.", "")
+    expect({ key, en: read("en").nav.items[key] }).toEqual({ key, en: "Team fit" })
+    for (const lang of ["es", "fr", "pt", "it", "pl", "cs"]) {
+      const value = read(lang).nav.items[key]
+      expect({ lang, present: typeof value === "string" && value.length > 0 }).toEqual({ lang, present: true })
+      expect({ lang, sameAsEnglish: value === "Team fit" }).toEqual({ lang, sameAsEnglish: false })
+    }
   })
 
   it.each(TOOL_ROLES)("%s: Candidates and Insights carry the Role Blueprints lock and reason", async (role) => {

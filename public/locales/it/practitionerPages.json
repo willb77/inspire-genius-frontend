@@ -187,19 +187,19 @@
     "subtitle": "Sessioni di coaching in videochiamata dal vivo con i tuoi clienti.",
     "liveMeeting": "Riunione dal vivo",
     "liveHeadline": "Videoriunione dal vivo con condivisione dello schermo, basata su LiveKit.",
-    "liveBody": "Incontra un cliente one-to-one, condividi il tuo schermo e mantieni la sessione a registro, il tutto all'interno di Inspire Genius.",
+    "liveBody": "Incontra un cliente one-to-one, condividi il tuo schermo e mantieni la sessione a registro, il tutto all'interno di InspiresGenius.",
     "start": "Avvia riunione",
     "activates": "Le riunioni si attivano una volta predisposto il servizio IG Live Meetings.",
     "comingSoon": "Prossimamente"
   },
   "myPractice": {
-    "deactivatedBanner": "La tua registrazione PRISM è disattivata. I sondaggi che inviti verranno creati sul sito PRISM di Inspire Genius finché non sarà riattivata.",
+    "deactivatedBanner": "La tua registrazione PRISM è disattivata. I sondaggi che inviti verranno creati sul sito PRISM di InspiresGenius finché non sarà riattivata.",
     "clientCode": "Il tuo codice cliente",
     "clientCodeHelp": "Un cliente che si è registrato da solo lo inserisce una volta, in Impostazioni, per diventare tuo cliente.",
     "codeCopied": "Codice copiato",
     "codeCopyFailed": "Impossibile copiare il codice: selezionalo e copialo a mano.",
     "copyCode": "Copia codice",
-    "clientMessage": "Vorrei lavorare con te su Inspire Genius. Dopo aver effettuato l'accesso, apri Impostazioni, scegli \"Hai un codice professionista?\" e inserisci il mio codice: {{code}}",
+    "clientMessage": "Vorrei lavorare con te su InspiresGenius. Dopo aver effettuato l'accesso, apri Impostazioni, scegli \"Hai un codice professionista?\" e inserisci il mio codice: {{code}}",
     "messageCopied": "Messaggio copiato",
     "messageCopyFailed": "Impossibile copiare il messaggio: selezionalo e copialo a mano.",
     "copyMessage": "Copia un messaggio per il tuo cliente",
@@ -216,7 +216,7 @@
     "loading": "Caricamento della tua registrazione…",
     "loadError": "Non è stato possibile caricare la tua registrazione PRISM. Riprova più tardi.",
     "dark": "Il Programma Professionisti non è ancora attivo.",
-    "notRegistered": "I sondaggi che inviti verranno creati sul sito PRISM di Inspire Genius finché il tuo account non sarà registrato."
+    "notRegistered": "I sondaggi che inviti verranno creati sul sito PRISM di InspiresGenius finché il tuo account non sarà registrato."
   },
   "prismClients": {
     "title": "Valutazioni PRISM dei clienti",

@@ -1,5 +1,5 @@
 {
-  "accessGranted": "Přístup povoluje váš administrátor nebo tým Inspire Genius. Nic se tu nekupuje.",
+  "accessGranted": "Přístup povoluje váš administrátor nebo tým InspiresGenius. Nic se tu nekupuje.",
   "accessIntro": "Lumen promění váš behaviorální profil v rady použitelné přímo v daný okamžik – před náročným rozhovorem, ne po něm.",
   "accessRequest": "Požádat o přístup",
   "accessTitle": "Lumen zatím není pro váš účet zapnutý",
@@ -97,7 +97,7 @@
   "portraitTitle": "Můj autoportrét",
   "settingsCalendarBody": "Nechte Lumen číst vaše koučinkové rezervace, aby Moment mohl přijít před sezením, na které se připravujete, a ne v náhodnou dobu.",
   "settingsCalendarLabel": "Použít mé rezervace pro načasování",
-  "settingsCalendarNote": "Ve výchozím stavu vypnuto. Lumen nevidí váš pracovní kalendář – jen rezervace vytvořené v Inspire Genius.",
+  "settingsCalendarNote": "Ve výchozím stavu vypnuto. Lumen nevidí váš pracovní kalendář – jen rezervace vytvořené v InspiresGenius.",
   "settingsDefaultsBadge": "Zobrazeny výchozí hodnoty – zatím jste je nezměnili",
   "settingsEmailBody": "Doručovat Moments i mimo aplikaci, nejen do vašeho feedu.",
   "settingsEmailLabel": "Posílat Moments e-mailem",

@@ -38,8 +38,15 @@ describe("EventDescription", () => {
   })
 
   it("shows escaped characters literally and keeps plain text with line breaks", () => {
-    expect(html("2 \\* 3").textContent).toBe("2 * 3")
+    expect(html("2 \\* 3").textContent).toBe("2  3")
     expect(html("Line one\nLine two").textContent).toBe("Line one\nLine two")
+  })
+
+  it("never displays an asterisk: stray, unmatched, spaced or escaped", () => {
+    for (const md of ["Price *", "* * *", "**unclosed bold", "a * b * c", "** spaced **", "2 \\* 3", "*a*b* c", "- * item"]) {
+      expect(html(md).textContent).not.toContain("*")
+    }
+    expect(html("*Great* event **today**").textContent).toBe("Great event today")
   })
 
   it("renders nothing for an empty string", () => {

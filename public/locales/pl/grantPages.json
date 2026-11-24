@@ -716,11 +716,11 @@
     "invalidEmail": "Podaj prawidłowy adres e-mail",
     "invite": "Zaproś",
     "inviteDialogBody": "Wyślemy na adres {{email}} bezpieczny link do ustawienia hasła / logowania, aby ta osoba mogła się zalogować i przejąć własny profil pomocy finansowej.",
-    "inviteDialogTitle": "Zaprosić {{name}} do Inspire Genius?",
+    "inviteDialogTitle": "Zaprosić {{name}} do InspiresGenius?",
     "inviteSelected": "Zaproś wybranych do IG ({{count}})",
     "inviteTitleNoEmail": "Każdy wybrany uczeń musi mieć adres e-mail, aby go zaprosić",
     "inviteTitleNone": "Wybierz uczniów do zaproszenia",
-    "inviteTitleSelected": "Zaproś wybrane osoby ({{count}}) do Inspire Genius",
+    "inviteTitleSelected": "Zaproś wybrane osoby ({{count}}) do InspiresGenius",
     "lastName": "Nazwisko",
     "loading": "Wczytywanie listy uczniów…",
     "noMatch": "Brak uczniów pasujących do „{{query}}”.",
@@ -733,7 +733,7 @@
     "removeStudent": "Usuń {{name}}",
     "rowInviteAlready": "Już zaproszono",
     "rowInviteNoEmail": "Dodaj adres e-mail, aby zaprosić tego ucznia",
-    "rowInviteTitle": "Zaproś do Inspire Genius",
+    "rowInviteTitle": "Zaproś do InspiresGenius",
     "searchAria": "Szukaj uczniów",
     "searchPlaceholder": "Szukaj według nazwiska",
     "selectAll": "Zaznacz wszystkich uczniów",
@@ -761,8 +761,8 @@
     "addDialogTitle": "Dodaj studenta",
     "addStudent": "Dodaj studenta",
     "bulkDialogBody": "Każdy wybrany student otrzyma e-mail z bezpiecznym linkiem do ustawienia hasła / magic linkiem, aby mógł się zalogować i przejąć własny profil pomocy.",
-    "bulkDialogTitleOne": "Zaprosić {{count}} studenta do Inspire Genius?",
-    "bulkDialogTitleOther": "Zaprosić {{count}} studentów do Inspire Genius?",
+    "bulkDialogTitleOne": "Zaprosić {{count}} studenta do InspiresGenius?",
+    "bulkDialogTitleOther": "Zaprosić {{count}} studentów do InspiresGenius?",
     "bulkResultsBody": "Oto, jak potraktowano każdego wybranego studenta.",
     "bulkResultsTitle": "Wyniki zaproszeń zbiorczych",
     "coAccessLabel": "Zachowaj współdostęp po przejęciu konta przez studenta",
@@ -775,7 +775,7 @@
     "colStudent": "Student",
     "colUpdated": "Zaktualizowano",
     "converted": "Przekonwertowano",
-    "description": "Importuj studentów, dla których tworzysz profile pomocy, i zarządzaj nimi, a następnie przekształć ich w własne loginy do Inspire Genius."
+    "description": "Importuj studentów, dla których tworzysz profile pomocy, i zarządzaj nimi, a następnie przekształć ich w własne loginy do InspiresGenius."
   },
   "profile": {
     "enrollment": {

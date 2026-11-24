@@ -220,7 +220,7 @@ describe("FitNav", () => {
       { key: "lumen", title: "Lumen", routePrefix: "/vertical/lumen", homePath: "/vertical/lumen/dashboard" },
     ] as unknown as ReturnType<typeof listEntitledVerticals>)
     renderNav()
-    expect(screen.queryByRole("button", { name: /Back to Inspire Genius/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Back to InspiresGenius/ })).not.toBeInTheDocument()
     expect(screen.queryByText(/or switch to/i)).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Lumen" })).not.toBeInTheDocument()
   })

@@ -175,7 +175,7 @@
   "orgHouseColPeople": "Osoby",
   "orgHouseColTraining": "Ukończone szkolenia",
   "orgHouseTitle": "Organizacja",
-  "orgHouseDescription": "Działy Twojej organizacji zapisane w Inspire Genius.",
+  "orgHouseDescription": "Działy Twojej organizacji zapisane w InspiresGenius.",
   "peopleLoadFailed": "Nie udało się wczytać osób.",
   "peopleEmptyTitle": "Brak osób",
   "peopleEmptyBody": "Użyj opcji Dodaj osoby, aby dodać zespół z arkusza kalkulacyjnego.",
@@ -198,7 +198,7 @@
   "peopleStatusActive": "Aktywny",
   "peopleStatusInactive": "Nieaktywny",
   "peopleTitle": "Osoby",
-  "peopleDescription": "Wszyscy w Twojej organizacji, którzy korzystają z Inspire Genius.",
+  "peopleDescription": "Wszyscy w Twojej organizacji, którzy korzystają z InspiresGenius.",
   "peopleAddPeople": "Dodaj osoby",
   "peopleColPrism": "PRISM"
 }

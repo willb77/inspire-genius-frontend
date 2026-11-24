@@ -81,7 +81,7 @@ describe("AuthLayout Component (Design B)", () => {
           <div>Content</div>
         </AuthLayout>
       );
-      expect(screen.getByText(/Inspire Genius completely changed/)).toBeInTheDocument();
+      expect(screen.getByText(/InspiresGenius completely changed/)).toBeInTheDocument();
       expect(screen.getByText("Sarah Reynolds")).toBeInTheDocument();
       expect(screen.getByText("VP People Operations")).toBeInTheDocument();
     });
@@ -92,7 +92,7 @@ describe("AuthLayout Component (Design B)", () => {
           <div>Content</div>
         </AuthLayout>
       );
-      const logos = screen.getAllByAltText("Inspire Genius");
+      const logos = screen.getAllByAltText("InspiresGenius");
       expect(logos.length).toBeGreaterThanOrEqual(1);
     });
   });

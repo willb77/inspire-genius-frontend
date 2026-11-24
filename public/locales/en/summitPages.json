@@ -345,7 +345,16 @@
       "offered": "was given access by you",
       "extended": "had access renewed by you",
       "looked": "looked",
-      "lookedAt": "looked ({{surface}})"
+      "lookedAt": "looked ({{surface}})",
+      "fitMatches": "read your Job Fit matches",
+      "gaps": "read your gap analysis",
+      "learningItems": "read your learning items",
+      "milestones": "read your milestones",
+      "matches": "read your development matches",
+      "memberPrism": "read your PRISM profile",
+      "memberProfile": "read your profile",
+      "share": "read your shared goals",
+      "adminOf": "{{what}} (platform admin)"
     },
     "thisPerson": "this person",
     "someone": "Someone",

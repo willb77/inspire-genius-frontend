@@ -89,7 +89,7 @@
   },
   "settingsPrivacyV2": {
     "memoryPrivacy": "Memory & Privacy",
-    "viewExportOrDeleteTheData": "View, export, or delete the data Inspire Genius has stored about you. Deletion is permanent and applies across all four memory tiers (working, short-term, long-term, semantic).",
+    "viewExportOrDeleteTheData": "View, export, or delete the data InspiresGenius has stored about you. Deletion is permanent and applies across all four memory tiers (working, short-term, long-term, semantic).",
     "whatWeveLearnedAboutYou": "What we've learned about you",
     "longTermInsightsExtractedFromYour": "Long-term insights extracted from your coaching sessions. Remove any item to forget that specific fact while keeping the rest of your memory.",
     "couldNotLoadYourMemorySnapshot": "Could not load your memory snapshot. Try refreshing the page.",
@@ -124,7 +124,7 @@
   },
   "support": {
     "helpAndSupport": "Help and Support",
-    "everyRequestYouPostHereIs": "Every request you post here is emailed straight to the Inspire Genius support team along with your contact details, so someone can get back to you directly.",
+    "everyRequestYouPostHereIs": "Every request you post here is emailed straight to the InspiresGenius support team along with your contact details, so someone can get back to you directly.",
     "voiceHelp": "Voice Help",
     "preferToTalkConnectWithOur": "Prefer to talk? Connect with our AI voice support agent for real-time assistance.",
     "speakWithSupport": "Speak with Support",
@@ -448,7 +448,7 @@
   },
   "settingsPrivacy": {
     "memoryPrivacy": "Memory & Privacy",
-    "viewExportOrDeleteTheData": "View, export, or delete the data Inspire Genius has stored about you. Deletion is permanent and applies across all four memory tiers (working, short-term, long-term, semantic).",
+    "viewExportOrDeleteTheData": "View, export, or delete the data InspiresGenius has stored about you. Deletion is permanent and applies across all four memory tiers (working, short-term, long-term, semantic).",
     "whatWeveLearnedAboutYou": "What we've learned about you",
     "longTermInsightsExtractedFromYour": "Long-term insights extracted from your coaching sessions. Remove any item to forget that specific fact while keeping the rest of your memory.",
     "couldNotLoadYourMemorySnapshot": "Could not load your memory snapshot. Try refreshing the page.",

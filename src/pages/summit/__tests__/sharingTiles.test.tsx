@@ -176,6 +176,48 @@ describe("reads by people not listed: a tile like the others", () => {
   });
 });
 
+describe("the log says what was read, in words", () => {
+  async function openOther(surfaces: string[]) {
+    svc.getPeople.mockResolvedValue({ people: [p(1)], sources: {} });
+    svc.getAccessLog.mockResolvedValue(
+      surfaces.map((surface, i) => ({ viewer_user_id: "abcdef12-0000-4000-8000-000000000000", categories_viewed: ["goals"], surface, viewed_at: `2026-09-04T1${i}:00:00Z` })),
+    );
+    renderCore();
+    const card = await screen.findByTestId("other-readers");
+    fireEvent.click(within(card).getByRole("button", { name: "Preview Activity" }));
+    const tile = await screen.findByTestId("other-readers-tile");
+    return within(tile).getByRole("list", { name: "Access log" });
+  }
+
+  it("labels every growth read, a platform administrator's with the suffix, and shows no raw code", async () => {
+    const list = await openOther([
+      "growth:fit-matches:super-admin",
+      "growth:gaps",
+      "growth:learning-items",
+      "growth:milestones",
+      "growth:matches",
+      "growth:member-prism",
+      "growth:member-profile",
+      "growth:share:super-admin",
+    ]);
+    expect(list).toHaveTextContent("read your Job Fit matches (platform admin)");
+    expect(list).toHaveTextContent("read your gap analysis");
+    expect(list).toHaveTextContent("read your learning items");
+    expect(list).toHaveTextContent("read your milestones");
+    expect(list).toHaveTextContent("read your development matches");
+    expect(list).toHaveTextContent("read your PRISM profile");
+    expect(list).toHaveTextContent("read your profile");
+    expect(list).toHaveTextContent("read your shared goals (platform admin)");
+    expect(list.textContent).not.toContain("growth:");
+  });
+
+  // Control: a code nobody has labelled is still shown, never hidden.
+  it("still shows a code it has no label for", async () => {
+    const list = await openOther(["growth:something-new"]);
+    expect(list).toHaveTextContent("looked (growth:something-new)");
+  });
+});
+
 describe("Add Access to a Person", () => {
   it("is titled that way and still takes an exact email only", async () => {
     svc.getPeople.mockResolvedValue({ people: [], sources: {} });

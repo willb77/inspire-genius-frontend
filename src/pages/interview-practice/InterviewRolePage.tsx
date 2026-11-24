@@ -86,7 +86,7 @@ export default function InterviewRolePage() {
   const page = getRolePageBySlug(slug)
 
   useSeo({
-    title: page ? page.meta.title : t("rolePage.seoFallbackTitle", "Interview Practice | Inspire Genius"),
+    title: page ? page.meta.title : t("rolePage.seoFallbackTitle", "Interview Practice | InspiresGenius"),
     description: page?.meta.description,
     canonical: page ? `${window.location.origin}${page.meta.path}` : undefined,
     jsonLd: page ? page.jsonLd : null,

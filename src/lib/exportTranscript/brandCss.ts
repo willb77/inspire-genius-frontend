@@ -1,4 +1,4 @@
-// Locked Inspires Genius brand CSS — verbatim port of §7 in the
+// Locked InspiresGenius brand CSS — verbatim port of §7 in the
 // `format_transcript_to_pdf.md` spec, adapted for in-browser DOM rendering
 // (the `@page` block is supplied by jsPDF page sizing, page numbers are
 // stamped per page by the renderer, and the cover background is painted

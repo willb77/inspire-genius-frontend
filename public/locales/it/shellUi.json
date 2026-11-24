@@ -134,7 +134,8 @@
       "Role_Blueprint_Match": "Role Blueprint Match",
       "Overview": "Panoramica",
       "Insights": "Analisi",
-      "Retain_Knowledge_Continuity": "Trattenere: Knowledge Continuity"
+      "Retain_Knowledge_Continuity": "Trattenere: Knowledge Continuity",
+      "Team_fit": "Compatibilità del team"
     },
     "sections": {
       "AI_coaches": "Coach IA",
@@ -581,10 +582,55 @@
         "title": "Analisi",
         "hint": "Guarda come procede la selezione per i tuoi ruoli."
       },
+      "teamFit": {
+        "title": "Compatibilità del team",
+        "hint": "Consulta le corrispondenze con i ruoli che i membri del tuo team hanno condiviso con te."
+      },
       "retain": {
         "title": "Trattenere",
         "hint": "Conserva ciò che sanno le tue persone più esperte."
       }
+    },
+    "teamFit": {
+      "intro": "Le corrispondenze con i ruoli che i membri del tuo team hanno ottenuto per conto proprio, visibili solo se le hanno condivise con te. Qui non viene assegnato alcun punteggio.",
+      "advisory": "Un punteggio di corrispondenza è uno degli elementi per un colloquio di sviluppo. Non è una decisione di assunzione, retribuzione o prestazione.",
+      "notOn": "Compatibilità del team non è attiva per la tua organizzazione.",
+      "search": "Cerca membri del team",
+      "noSearchResults": "Nessun membro del team corrisponde a questa ricerca.",
+      "showMore": "Mostra altri (ne restano {{remaining}})",
+      "rosterLoading": "Caricamento del tuo team…",
+      "rosterError": "Non è stato possibile caricare il tuo team. È un problema di caricamento, non un team vuoto.",
+      "rosterEmpty": "Non hai ancora membri del team in Team Development Studio. Aggiungili prima lì.",
+      "openStudio": "Apri Team Development Studio",
+      "retry": "Riprova",
+      "showMatches": "Mostra corrispondenze",
+      "hideMatches": "Nascondi corrispondenze",
+      "showMatchesFor": "Mostra le corrispondenze di {{name}}",
+      "hideMatchesFor": "Nascondi le corrispondenze di {{name}}",
+      "openMember": "Apri in Team Development Studio",
+      "openMemberFor": "Apri {{name}} in Team Development Studio",
+      "matchesLoading": "Caricamento delle corrispondenze…",
+      "matchesError": "Non è stato possibile caricare le corrispondenze di {{name}} in questo momento. Non è la stessa cosa che non averne.",
+      "notShared": {
+        "title": "Non condiviso",
+        "both": "{{name}} non ha condiviso con te né il profilo PRISM né Sviluppo. Le corrispondenze con i ruoli richiedono entrambi, quindi restano private finché {{name}} non li condivide.",
+        "development": "{{name}} non ha condiviso Sviluppo con te. Le corrispondenze con i ruoli rientrano in Sviluppo, quindi restano private finché {{name}} non lo condivide.",
+        "prism": "{{name}} non ha condiviso con te il profilo PRISM. Le corrispondenze con i ruoli derivano da esso, quindi restano private finché {{name}} non lo condivide.",
+        "unspecified": "{{name}} non ha condiviso con te le corrispondenze con i ruoli. Restano private finché {{name}} non le condivide."
+      },
+      "noAccount": "{{name}} non ha ancora un account Inspire Genius, quindi non ci sono corrispondenze da mostrare.",
+      "noPrism": "{{name}} non ha ancora un profilo PRISM registrato. Le corrispondenze con i ruoli si misurano a partire da esso.",
+      "notEntitled": "Career Fit non è attivo per {{name}}, quindi non ci sono corrispondenze da mostrare.",
+      "noMatches": {
+        "title": "Ancora nessuna corrispondenza",
+        "notRun": "{{name}} non ha ancora aperto le proprie corrispondenze in Career Fit. Compariranno qui dopo che {{name}} lo avrà fatto. Da questa pagina non viene assegnato alcun punteggio.",
+        "noRoles": "Il Career Fit di {{name}} non aveva ruoli pubblicati con cui confrontarsi."
+      },
+      "unknownState": "Le corrispondenze di {{name}} non possono essere mostrate in questo momento.",
+      "asOf": "Dal Career Fit di {{name}}, al {{date}}.",
+      "asOfUnknown": "Dal Career Fit di {{name}}.",
+      "score": "Punteggio di corrispondenza: {{score}}%",
+      "coverage": "{{evaluated}} dimensioni misurate su {{total}}"
     }
   }
 }

@@ -16,7 +16,7 @@ import { ROLE_PAGE_INDEX } from "@/types/interviewRolePage"
 export default function InterviewRolesIndex() {
   const { t } = useTranslation("interviewPages")
   useSeo({
-    title: t("rolesIndex.seoTitle", "Interview Practice by Role — Questions & Prep Guides | Inspire Genius"),
+    title: t("rolesIndex.seoTitle", "Interview Practice by Role — Questions & Prep Guides | InspiresGenius"),
     description: t("rolesIndex.seoDescription", "Free AI interview practice for dozens of roles. Pick your occupation for role-specific questions, STAR-method feedback, and a scored write-up."),
     canonical: `${window.location.origin}${ROUTES.INTERVIEW_PRACTICE_ROLES}`,
   })

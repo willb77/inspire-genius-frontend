@@ -183,7 +183,7 @@ export default function PrivacySettings() {
                 <AlertDialogTitle>{t("privacySettings.areYouAbsolutelySure", { defaultValue: "Are you absolutely sure?" })}</AlertDialogTitle>
                 <AlertDialogDescription className="space-y-2">
                   <span className="block">
-                    {t("privacySettings.thisWillPermanentlyDeleteAllYour", { defaultValue: "This will permanently delete all your data from Inspire Genius, including:" })}
+                    {t("privacySettings.thisWillPermanentlyDeleteAllYour", { defaultValue: "This will permanently delete all your data from InspiresGenius, including:" })}
                   </span>
                   <ul className="list-disc pl-5 space-y-1">
                     <li>{withPrism(t("privacySettings.prismPersonalityAssessmentResults", { defaultValue: "PRISM personality assessment results" }))}</li>

@@ -2,6 +2,7 @@
   "_note": "Values or keys that are legitimately identical to English. values: exact English strings. keys: \"lang/ns/key\" or \"*/ns/key\". Exact do_not_translate names and strings with no letters are allowed automatically. A native reviewer should confirm entries.",
   "values": [],
   "keys": [
+    "*/studioUi/interview.rolePageShell.inspireGenius",
     "cs/accountUi/agentEngineToggle.agentEngineEcsFargate",
     "cs/accountUi/askForm.managerExampleCom",
     "cs/accountUi/practitionerCodeCard.abcDefGhj",

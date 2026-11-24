@@ -22,7 +22,7 @@
     "storedMessages": "{{messages}} mensajes almacenados en {{sessions}} sesiones",
     "semanticEntries": "{{count}} entradas semánticas",
     "memoryPrivacy": "Memoria y privacidad",
-    "viewExportOrDeleteTheData": "Consulta, exporta o elimina los datos que Inspire Genius ha guardado sobre ti. La eliminación es permanente y se aplica a los cuatro niveles de memoria (de trabajo, a corto plazo, a largo plazo y semántica).",
+    "viewExportOrDeleteTheData": "Consulta, exporta o elimina los datos que InspiresGenius ha guardado sobre ti. La eliminación es permanente y se aplica a los cuatro niveles de memoria (de trabajo, a corto plazo, a largo plazo y semántica).",
     "whatWeveLearnedAboutYou": "Lo que hemos aprendido sobre ti",
     "longTermInsightsExtractedFromYour": "Conclusiones a largo plazo extraídas de tus sesiones de coaching. Elimina cualquier elemento para olvidar ese dato concreto y conservar el resto de tu memoria.",
     "couldNotLoadYourMemorySnapshot": "No se pudo cargar el resumen de tu memoria. Intenta actualizar la página.",
@@ -36,7 +36,7 @@
   },
   "support": {
     "helpAndSupport": "Ayuda y soporte",
-    "everyRequestYouPostHereIs": "Cada solicitud que publiques aquí se envía por correo electrónico directamente al equipo de soporte de Inspire Genius junto con tus datos de contacto, para que alguien pueda responderte directamente.",
+    "everyRequestYouPostHereIs": "Cada solicitud que publiques aquí se envía por correo electrónico directamente al equipo de soporte de InspiresGenius junto con tus datos de contacto, para que alguien pueda responderte directamente.",
     "voiceHelp": "Ayuda por voz",
     "preferToTalkConnectWithOur": "¿Prefieres hablar? Conéctate con nuestro agente de soporte de voz con IA para recibir asistencia en tiempo real.",
     "speakWithSupport": "Hablar con soporte",
@@ -448,7 +448,7 @@
   },
   "settingsPrivacy": {
     "memoryPrivacy": "Memoria y privacidad",
-    "viewExportOrDeleteTheData": "Consulta, exporta o elimina los datos que Inspire Genius ha guardado sobre ti. La eliminación es permanente y se aplica a los cuatro niveles de memoria (de trabajo, a corto plazo, a largo plazo y semántica).",
+    "viewExportOrDeleteTheData": "Consulta, exporta o elimina los datos que InspiresGenius ha guardado sobre ti. La eliminación es permanente y se aplica a los cuatro niveles de memoria (de trabajo, a corto plazo, a largo plazo y semántica).",
     "whatWeveLearnedAboutYou": "Lo que hemos aprendido sobre ti",
     "longTermInsightsExtractedFromYour": "Conclusiones a largo plazo extraídas de tus sesiones de coaching. Elimina cualquier elemento para olvidar ese dato concreto y conservar el resto de tu memoria.",
     "couldNotLoadYourMemorySnapshot": "No se pudo cargar la instantánea de tu memoria. Intenta actualizar la página.",

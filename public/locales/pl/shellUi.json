@@ -147,7 +147,8 @@
       "Role_Blueprint_Match": "Role Blueprint Match",
       "Overview": "Przegląd",
       "Insights": "Analizy",
-      "Retain_Knowledge_Continuity": "Zatrzymaj: Knowledge Continuity"
+      "Retain_Knowledge_Continuity": "Zatrzymaj: Knowledge Continuity",
+      "Team_fit": "Dopasowanie zespołu"
     }
   },
   "notificationBell": {
@@ -581,10 +582,55 @@
         "title": "Analizy",
         "hint": "Zobacz, jak idzie rekrutacja na Twoje stanowiska."
       },
+      "teamFit": {
+        "title": "Dopasowanie zespołu",
+        "hint": "Zobacz dopasowania do ról, które członkowie zespołu Ci udostępnili."
+      },
       "retain": {
         "title": "Zatrzymaj",
         "hint": "Zachowaj wiedzę najbardziej doświadczonych osób."
       }
+    },
+    "teamFit": {
+      "intro": "Dopasowania do ról, które członkowie zespołu uzyskali samodzielnie, widoczne tylko wtedy, gdy Ci je udostępnili. Tutaj nic nie jest oceniane.",
+      "advisory": "Wynik dopasowania to jeden z elementów rozmowy rozwojowej. Nie jest decyzją o zatrudnieniu, wynagrodzeniu ani ocenie pracy.",
+      "notOn": "Dopasowanie zespołu nie jest włączone dla Twojej organizacji.",
+      "search": "Szukaj członków zespołu",
+      "noSearchResults": "Żaden członek zespołu nie pasuje do tego wyszukiwania.",
+      "showMore": "Pokaż więcej (pozostało: {{remaining}})",
+      "rosterLoading": "Wczytywanie zespołu…",
+      "rosterError": "Nie udało się wczytać zespołu. To problem z wczytywaniem, a nie pusty zespół.",
+      "rosterEmpty": "Nie masz jeszcze członków zespołu w Studiu rozwoju zespołu. Najpierw dodaj ich tam.",
+      "openStudio": "Otwórz Studio rozwoju zespołu",
+      "retry": "Spróbuj ponownie",
+      "showMatches": "Pokaż dopasowania",
+      "hideMatches": "Ukryj dopasowania",
+      "showMatchesFor": "Pokaż dopasowania: {{name}}",
+      "hideMatchesFor": "Ukryj dopasowania: {{name}}",
+      "openMember": "Otwórz w Studiu rozwoju zespołu",
+      "openMemberFor": "Otwórz w Studiu rozwoju zespołu: {{name}}",
+      "matchesLoading": "Wczytywanie dopasowań…",
+      "matchesError": "Nie udało się teraz wczytać dopasowań osoby {{name}}. To nie to samo, co brak dopasowań.",
+      "notShared": {
+        "title": "Nie udostępniono",
+        "both": "{{name}} nie udostępnia Ci profilu PRISM ani obszaru Rozwój. Dopasowania do ról wymagają obu, więc pozostają prywatne, dopóki {{name}} ich nie udostępni.",
+        "development": "{{name}} nie udostępnia Ci obszaru Rozwój. Dopasowania do ról należą do obszaru Rozwój, więc pozostają prywatne, dopóki {{name}} go nie udostępni.",
+        "prism": "{{name}} nie udostępnia Ci profilu PRISM. Dopasowania do ról powstają na jego podstawie, więc pozostają prywatne, dopóki {{name}} go nie udostępni.",
+        "unspecified": "{{name}} nie udostępnia Ci dopasowań do ról. Pozostają prywatne, dopóki {{name}} ich nie udostępni."
+      },
+      "noAccount": "{{name}} nie ma jeszcze konta Inspire Genius, więc nie ma dopasowań do pokazania.",
+      "noPrism": "{{name}} nie ma jeszcze zapisanego profilu PRISM. Dopasowania do ról są mierzone na jego podstawie.",
+      "notEntitled": "Career Fit nie jest włączony dla osoby {{name}}, więc nie ma dopasowań do pokazania.",
+      "noMatches": {
+        "title": "Brak dopasowań",
+        "notRun": "{{name}} nie otwiera jeszcze własnych dopasowań w Career Fit. Pojawią się tutaj, gdy {{name}} to zrobi. Z tej strony nic nie jest oceniane.",
+        "noRoles": "W Career Fit osoby {{name}} nie było opublikowanych ról do porównania."
+      },
+      "unknownState": "Dopasowań osoby {{name}} nie można teraz pokazać.",
+      "asOf": "Z własnego Career Fit osoby {{name}}, stan na {{date}}.",
+      "asOfUnknown": "Z własnego Career Fit osoby {{name}}.",
+      "score": "Wynik dopasowania: {{score}}%",
+      "coverage": "Zmierzone wymiary: {{evaluated}} z {{total}}"
     }
   }
 }

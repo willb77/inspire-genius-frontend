@@ -367,7 +367,7 @@
   },
   "settingsPrivacyV2": {
     "memoryPrivacy": "Memoria e privacy",
-    "viewExportOrDeleteTheData": "Visualizza, esporta o elimina i dati che Inspire Genius ha memorizzato su di te. L'eliminazione è permanente e si applica a tutti e quattro i livelli di memoria (di lavoro, a breve termine, a lungo termine, semantica).",
+    "viewExportOrDeleteTheData": "Visualizza, esporta o elimina i dati che InspiresGenius ha memorizzato su di te. L'eliminazione è permanente e si applica a tutti e quattro i livelli di memoria (di lavoro, a breve termine, a lungo termine, semantica).",
     "whatWeveLearnedAboutYou": "Cosa abbiamo imparato su di te",
     "longTermInsightsExtractedFromYour": "Approfondimenti a lungo termine ricavati dalle tue sessioni di coaching. Rimuovi un elemento per dimenticare quel dato specifico mantenendo il resto della tua memoria.",
     "couldNotLoadYourMemorySnapshot": "Impossibile caricare lo snapshot della tua memoria. Prova ad aggiornare la pagina.",
@@ -402,7 +402,7 @@
   },
   "support": {
     "helpAndSupport": "Aiuto e assistenza",
-    "everyRequestYouPostHereIs": "Ogni richiesta che invii qui viene inoltrata via email direttamente al team di assistenza di Inspire Genius insieme ai tuoi dati di contatto, così qualcuno potrà risponderti direttamente.",
+    "everyRequestYouPostHereIs": "Ogni richiesta che invii qui viene inoltrata via email direttamente al team di assistenza di InspiresGenius insieme ai tuoi dati di contatto, così qualcuno potrà risponderti direttamente.",
     "voiceHelp": "Assistenza vocale",
     "preferToTalkConnectWithOur": "Preferisci parlare? Collegati al nostro agente di assistenza vocale AI per ricevere aiuto in tempo reale.",
     "speakWithSupport": "Parla con l'assistenza",
@@ -497,7 +497,7 @@
   },
   "settingsPrivacy": {
     "memoryPrivacy": "Memoria e privacy",
-    "viewExportOrDeleteTheData": "Visualizza, esporta o elimina i dati che Inspire Genius ha memorizzato su di te. L'eliminazione è permanente e si applica a tutti e quattro i livelli di memoria (di lavoro, a breve termine, a lungo termine, semantica).",
+    "viewExportOrDeleteTheData": "Visualizza, esporta o elimina i dati che InspiresGenius ha memorizzato su di te. L'eliminazione è permanente e si applica a tutti e quattro i livelli di memoria (di lavoro, a breve termine, a lungo termine, semantica).",
     "whatWeveLearnedAboutYou": "Che cosa abbiamo imparato su di te",
     "longTermInsightsExtractedFromYour": "Insight a lungo termine estratti dalle tue sessioni di coaching. Rimuovi un elemento per dimenticare quello specifico fatto mantenendo il resto della tua memoria.",
     "couldNotLoadYourMemorySnapshot": "Impossibile caricare lo snapshot della tua memoria. Prova ad aggiornare la pagina.",

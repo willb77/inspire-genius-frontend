@@ -49,7 +49,7 @@
       "choose": "Diga se você é credenciado em PRISM"
     },
     "context": {
-      "choose": "Escolha onde você usaria o Inspires Genius"
+      "choose": "Escolha onde você usaria o InspiresGenius"
     }
   },
   "brand": {
@@ -65,13 +65,13 @@
     },
     "nextStep": {
       "join": "Sem conta e sem nada para instalar. Marque a primeira caixa para saber quando o próximo webinar for agendado.",
-      "events": "Sem conta e sem nada para instalar. Registre seu interesse para saber quando o próximo evento for anunciado."
+      "events": "Registre seu interesse. Junte-se à comunidade para compartilhar suas ideias e ficar por dentro das novidades, notícias e eventos."
     },
     "eyebrow": "Registre seu interesse",
     "headingLead": "Apoie cada cliente",
     "headingAccent": "entre as sessões",
-    "intro": "O Inspires Genius oferece aos profissionais um parceiro de mentoria com IA que trabalha ao lado deles, para que os clientes continuem progredindo mesmo depois do fim da sessão.",
-    "offersAria": "O que o Inspires Genius oferece",
+    "intro": "O InspiresGenius oferece aos profissionais um parceiro de mentoria com IA que trabalha ao lado deles, para que os clientes continuem progredindo mesmo depois do fim da sessão.",
+    "offersAria": "O que o InspiresGenius oferece",
     "practitioners": {
       "title": "Feito para profissionais",
       "body": "Convide seus clientes, acompanhe o progresso deles e dê a cada um um mentor com IA que está presente entre as suas sessões."
@@ -126,14 +126,14 @@
     "other": "Outro"
   },
   "consent": {
-    "webinar_email": "Enviem um e-mail quando uma sessão de webinar da Inspires Genius for agendada.",
-    "mailing_list": "Adicionem-me à lista de e-mails da Inspires Genius para receber novidades ocasionais.",
+    "webinar_email": "Enviem um e-mail quando uma sessão de webinar da InspiresGenius for agendada.",
+    "mailing_list": "Adicionem-me à lista de e-mails da InspiresGenius para receber novidades ocasionais.",
     "legend": "Mantendo contato (opcional)"
   },
   "chooseOne": "Escolha uma opção",
   "success": {
     "title": "Obrigado",
-    "body": "Recebemos seus dados. Obrigado pelo seu interesse na Inspires Genius."
+    "body": "Recebemos seus dados. Obrigado pelo seu interesse na InspiresGenius."
   },
   "notOpen": {
     "title": "As inscrições ainda não foram abertas",
@@ -152,7 +152,7 @@
     "roleOther": "Sua função",
     "prism": "Você é certificado PRISM?",
     "siteId": "ID do site PRISM (opcional)",
-    "context": "Onde você usaria a Inspires Genius?",
+    "context": "Onde você usaria a InspiresGenius?",
     "contextOther": "Descreva o ambiente",
     "organisation": "Organização",
     "organisationOptional": "Organização (opcional)",
@@ -164,7 +164,7 @@
   "submit": "Registrar interesse",
   "header": {
     "title": "Registre seu interesse",
-    "subtitle": "A Inspires Genius é uma plataforma de mentoria com IA. Deixe seus dados abaixo para registrar seu interesse."
+    "subtitle": "A InspiresGenius é uma plataforma de mentoria com IA. Deixe seus dados abaixo para registrar seu interesse."
   },
   "seeEvents": "Ver próximos eventos →"
 }

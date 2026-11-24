@@ -305,7 +305,8 @@
       "Why_the_AI_answered": "Why the AI answered",
       "Overview": "Overview",
       "Insights": "Insights",
-      "Retain_Knowledge_Continuity": "Retain: Knowledge Continuity"
+      "Retain_Knowledge_Continuity": "Retain: Knowledge Continuity",
+      "Team_fit": "Team fit"
     },
     "sections": {
       "AI_coaches": "AI coaches",
@@ -581,10 +582,55 @@
         "title": "Insights",
         "hint": "See how hiring is going across your roles."
       },
+      "teamFit": {
+        "title": "Team fit",
+        "hint": "See the role matches your team members have shared with you."
+      },
       "retain": {
         "title": "Retain",
         "hint": "Keep what your experienced people know."
       }
+    },
+    "teamFit": {
+      "intro": "The role matches your team members found for themselves, shown only where they have shared them with you. Nothing is scored here.",
+      "advisory": "A match score is one input for a development conversation. It is not a hiring, pay or performance decision.",
+      "notOn": "Team fit is not switched on for your organization.",
+      "search": "Search team members",
+      "noSearchResults": "No team member matches that search.",
+      "showMore": "Show more ({{remaining}} left)",
+      "rosterLoading": "Loading your team…",
+      "rosterError": "Your team could not be loaded. This is a loading problem, not an empty team.",
+      "rosterEmpty": "You have no team members in Team Development Studio yet. Add them there first.",
+      "openStudio": "Open Team Development Studio",
+      "retry": "Try again",
+      "showMatches": "Show matches",
+      "hideMatches": "Hide matches",
+      "showMatchesFor": "Show matches for {{name}}",
+      "hideMatchesFor": "Hide matches for {{name}}",
+      "openMember": "Open in Team Development Studio",
+      "openMemberFor": "Open {{name}} in Team Development Studio",
+      "matchesLoading": "Loading matches…",
+      "matchesError": "{{name}}'s matches could not be loaded just now. That is not the same as having none.",
+      "notShared": {
+        "title": "Not shared",
+        "both": "{{name}} has not shared their PRISM profile or Development with you. Role matches need both, so they stay private until {{name}} shares them.",
+        "development": "{{name}} has not shared Development with you. Role matches sit under Development, so they stay private until {{name}} shares it.",
+        "prism": "{{name}} has not shared their PRISM profile with you. Role matches come from it, so they stay private until {{name}} shares it.",
+        "unspecified": "{{name}} has not shared their role matches with you. They stay private until {{name}} shares them."
+      },
+      "noAccount": "{{name}} does not have an Inspire Genius account yet, so there are no matches to show.",
+      "noPrism": "{{name}} has no PRISM profile on file yet. Role matches are measured from it.",
+      "notEntitled": "Career Fit is not switched on for {{name}}, so there are no matches to show.",
+      "noMatches": {
+        "title": "No matches yet",
+        "notRun": "{{name}} has not opened their own Career Fit matches yet. They appear here after {{name}} does. Nothing is scored from this page.",
+        "noRoles": "{{name}}'s own Career Fit had no published roles to compare against."
+      },
+      "unknownState": "{{name}}'s matches cannot be shown right now.",
+      "asOf": "From {{name}}'s own Career Fit, as of {{date}}.",
+      "asOfUnknown": "From {{name}}'s own Career Fit.",
+      "score": "Match score {{score}}%",
+      "coverage": "{{evaluated}} of {{total}} dimensions measured"
     }
   }
 }

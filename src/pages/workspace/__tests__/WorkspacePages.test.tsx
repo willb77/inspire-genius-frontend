@@ -8,6 +8,7 @@ import WorkspaceInterviewStudioPage from "../InterviewStudioPage"
 import WorkspaceJobBlueprintPage from "../JobBlueprintPage"
 import WorkspaceTeamCompositionPage from "../TeamCompositionPage"
 import WorkspaceTalentStudioOverviewPage from "../TalentStudioOverviewPage"
+import WorkspaceTeamFitPage from "../TeamFitPage"
 import type { WorkspaceAudience } from "@/layouts/WorkspaceLayout"
 
 // ROLE-C: each screen managers and practitioners share is one component. What
@@ -57,6 +58,11 @@ jest.mock("@/components/talent-studio/TalentStudioOverviewBody", () => ({
   // The body's links follow the route's audience, so the mock shows which one it was given.
   default: ({ role }: { role: string }) => <div data-testid="body">talent-studio for {role}</div>,
 }))
+jest.mock("@/components/talent-studio/TeamFitBody", () => ({
+  __esModule: true,
+  // The member links follow the route's audience, so the mock shows which one it was given.
+  default: ({ audience }: { audience: string }) => <div data-testid="body">team-fit for {audience}</div>,
+}))
 
 const PAGES: Array<[string, (p: { audience: WorkspaceAudience }) => React.ReactElement, string]> = [
   ["Settings", WorkspaceSettingsPage, "settings"],
@@ -67,6 +73,7 @@ const PAGES: Array<[string, (p: { audience: WorkspaceAudience }) => React.ReactE
   ["Job Blueprint", WorkspaceJobBlueprintPage, "job-blueprint"],
   ["Team Composition", WorkspaceTeamCompositionPage, "team-composition"],
   ["Talent Studio Overview", WorkspaceTalentStudioOverviewPage, "talent-studio"],
+  ["Team fit", WorkspaceTeamFitPage, "team-fit"],
 ]
 
 const CASES = PAGES.flatMap(([name, Page, body]) => [
@@ -94,6 +101,12 @@ describe("ROLE-C shared workspace pages", () => {
   it.each(["manager", "practitioner"] as const)("Talent Studio Overview gives its body the %s links", (audience) => {
     render(<WorkspaceTalentStudioOverviewPage audience={audience} />)
     expect(screen.getByTestId("body")).toHaveTextContent(`talent-studio for ${audience}`)
+  })
+
+  // TS-4a: the member links on Team fit sit under the prefix the page was opened on.
+  it.each(["manager", "practitioner"] as const)("Team fit gives its body the %s audience", (audience) => {
+    render(<WorkspaceTeamFitPage audience={audience} />)
+    expect(screen.getByTestId("body")).toHaveTextContent(`team-fit for ${audience}`)
   })
 })
 
