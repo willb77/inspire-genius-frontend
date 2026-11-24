@@ -4,9 +4,12 @@ import { ROUTES } from "@/constants/routes"
 import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole } from "@/types/roles"
 import {
+  TALENT_STUDIO_BLUEPRINT_PAGE_ROWS,
   TALENT_STUDIO_BLUEPRINT_TOOLS,
   TALENT_STUDIO_INTERVIEW_ROWS,
   TALENT_STUDIO_INTERVIEW_TOOLS,
+  TALENT_STUDIO_OVERVIEW_ROWS,
+  TALENT_STUDIO_RETAIN_ROW,
   TOOL_ITEMS_BY_ROLE,
 } from "@/constants/navigation"
 import { BROADCAST_SIDEBAR_SECTION } from "@/constants/sidebar-sections"
@@ -137,41 +140,111 @@ function splitCareerStudio(items: NavItemDef[]): { group: NavItemDef | null; res
  *
  * Off — the status read loading, failing or answering false — none of this
  * runs and the section is exactly today's.
+ *
+ * ## TS-2 — the rows in the order the work runs
+ *
+ * The group is assembled as STAGES, in {@link TALENT_STUDIO_STAGE_ORDER}:
+ *
+ *   overview    Overview (the role's own Talent Studio page)
+ *   roles       Role Blueprints · Role Blueprint Match
+ *   candidates  Candidates (a page of the Role Blueprints vertical)
+ *   interviews  the TS-3 rows, unchanged
+ *   insights    Insights (the vertical's analytics page)
+ *   retain      Retain: Knowledge Continuity
+ *
+ * SidebarScaffold renders one flat level of children and has no heading row,
+ * so a stage is expressed by position and by the row's own label; the stage
+ * headings themselves are drawn on the Overview page, which reads the same
+ * stages through {@link useTalentStudioStages}. The menu and the page cannot
+ * disagree about what a role reaches, because there is one list.
+ *
+ * A "Team fit" stage (TS-4a, not built) belongs between `insights` and
+ * `retain`: add its key to the order there and its rows in
+ * `talentStudioStages`.
  */
 export const TALENT_STUDIO_LABEL = "Talent Studio"
 const TALENT_STUDIO_BLUEPRINT_PREFIXES = CAREER_STUDIO_PREFIXES
-const TALENT_STUDIO_KNOWLEDGE_PREFIX = "/vertical/knowledge-continuity"
+const TALENT_STUDIO_BLUEPRINT_VERTICAL_PREFIX = TALENT_STUDIO_BLUEPRINT_PREFIXES[0]
+
+export const TALENT_STUDIO_STAGE_ORDER = ["overview", "roles", "candidates", "interviews", "insights", "retain"] as const
+export type TalentStudioStageKey = (typeof TALENT_STUDIO_STAGE_ORDER)[number]
+export type TalentStudioStage = { key: TalentStudioStageKey; rows: NavItemDef[] }
 
 function liftVertical(items: NavItemDef[], prefix: string): NavItemDef | null {
   const hit = items.find((i) => i.to.startsWith(prefix))
   return hit ? { ...hit, activePrefix: prefix } : null
 }
 
-function withTalentStudio(
+/**
+ * A page inside the Role Blueprints vertical, as a row. It takes the vertical
+ * row's lock and reason, so it is greyed exactly when the vertical is, and it
+ * is active on its own page (and the pages under it) only.
+ */
+function blueprintPageRow(vertical: NavItemDef, page: NavItemDef): NavItemDef {
+  return {
+    ...page,
+    activePrefix: page.to,
+    ...(vertical.disabled ? { disabled: true } : {}),
+    ...(vertical.disabledReason ? { disabledReason: vertical.disabledReason } : {}),
+  }
+}
+
+/**
+ * The stages of Talent Studio for one role, in order, each with the rows the
+ * role has. A stage with no rows is left out. `folded` is the role tools that
+ * moved into the group (so they leave the top level).
+ */
+function talentStudioStages(
+  role: UserRole,
   roleTools: NavItemDef[],
   catalogue: NavItemDef[],
-): { roleTools: NavItemDef[]; catalogue: NavItemDef[] } {
+): { stages: TalentStudioStage[]; folded: Set<NavItemDef> } {
   const blueprintRole = roleTools.filter((i) => TALENT_STUDIO_BLUEPRINT_TOOLS.has(i))
   const interviewRole = roleTools.filter((i) => TALENT_STUDIO_INTERVIEW_TOOLS.has(i))
   const blueprintVerticals = TALENT_STUDIO_BLUEPRINT_PREFIXES.map((p) => liftVertical(catalogue, p)).filter(
     (i): i is NavItemDef => i !== null,
   )
-  const knowledge = liftVertical(catalogue, TALENT_STUDIO_KNOWLEDGE_PREFIX)
+  const blueprintVertical = blueprintVerticals.find((i) => i.to.startsWith(TALENT_STUDIO_BLUEPRINT_VERTICAL_PREFIX))
+  // Read here, not at module load: with the switch off this module reads no
+  // Talent Studio constant at all, as before TS-2.
+  const knowledge = liftVertical(catalogue, TALENT_STUDIO_RETAIN_ROW.to)
+  const overview = TALENT_STUDIO_OVERVIEW_ROWS.find(([r]) => r === role)?.[1]
 
-  const children: NavItemDef[] = [
-    ...blueprintRole,
-    ...blueprintVerticals,
+  const rows: Record<TalentStudioStageKey, NavItemDef[]> = {
+    overview: overview ? [overview] : [],
+    // Define the role first (the vertical), then match people to it.
+    roles: [...blueprintVerticals, ...blueprintRole],
+    candidates: blueprintVertical
+      ? [blueprintPageRow(blueprintVertical, TALENT_STUDIO_BLUEPRINT_PAGE_ROWS.candidates)]
+      : [],
     // TS-3: the interview rows named by purpose. A group with no such rows
     // keeps the earlier shape: the page row, its own children beside it.
-    ...interviewRole.flatMap((group) => {
+    interviews: interviewRole.flatMap((group) => {
       const { children: nested, ...studio } = group
       return TALENT_STUDIO_INTERVIEW_ROWS.find(([g]) => g === group)?.[1] ?? [studio, ...(nested ?? [])]
     }),
-    ...(knowledge ? [knowledge] : []),
-  ]
-  if (children.length === 0) return { roleTools, catalogue }
+    insights: blueprintVertical
+      ? [blueprintPageRow(blueprintVertical, TALENT_STUDIO_BLUEPRINT_PAGE_ROWS.insights)]
+      : [],
+    retain: knowledge ? [{ ...knowledge, label: TALENT_STUDIO_RETAIN_ROW.label }] : [],
+  }
+  return {
+    stages: TALENT_STUDIO_STAGE_ORDER.map((key) => ({ key, rows: rows[key] })).filter((s) => s.rows.length > 0),
+    folded: new Set<NavItemDef>([...blueprintRole, ...interviewRole]),
+  }
+}
 
-  const folded = new Set<NavItemDef>([...blueprintRole, ...interviewRole])
+function withTalentStudio(
+  role: UserRole,
+  roleTools: NavItemDef[],
+  catalogue: NavItemDef[],
+): { roleTools: NavItemDef[]; catalogue: NavItemDef[] } {
+  const { stages, folded } = talentStudioStages(role, roleTools, catalogue)
+  // Overview alone is not a group: with nothing to give an overview of, the
+  // section stays as it is (the rule before TS-2, kept).
+  if (!stages.some((s) => s.key !== "overview")) return { roleTools, catalogue }
+  const children = stages.flatMap((s) => s.rows)
+
   const lifted = new Set(children.map((c) => c.to))
   const at = roleTools.findIndex((i) => folded.has(i))
   const keptTools = roleTools.filter((i) => !folded.has(i))
@@ -181,6 +254,21 @@ function withTalentStudio(
     roleTools: [...keptTools.slice(0, insertAt), group, ...keptTools.slice(insertAt)],
     catalogue: catalogue.filter((i) => !lifted.has(i.to)),
   }
+}
+
+/**
+ * TS-2 — the Talent Studio stages for this role: what the Overview page draws.
+ * The same list the sidebar group is flattened from, so a stage or row the
+ * role does not have in the menu is not on the page either. It does not read
+ * `job_fit_v2`: the switch decides whether the menu LINKS to the page, and the
+ * page lists only pages the role already reaches.
+ */
+export function useTalentStudioStages(role: UserRole): TalentStudioStage[] {
+  const launcherSection = useVerticalLauncherSection()
+  return useMemo(() => {
+    if (!canSeeToolsSection(role)) return []
+    return talentStudioStages(role, TOOL_ITEMS_BY_ROLE[role] ?? [], launcherSection?.items ?? []).stages
+  }, [role, launcherSection])
 }
 
 /**
@@ -207,7 +295,7 @@ export function useToolsSection(role: UserRole): NavSectionDef | null {
     const baseTools = TOOL_ITEMS_BY_ROLE[role] ?? []
     const launcherItems = launcherSection?.items ?? []
     const { roleTools, catalogue } = jobFitV2
-      ? withTalentStudio(baseTools, launcherItems)
+      ? withTalentStudio(role, baseTools, launcherItems)
       : withCareerStudio(baseTools, launcherItems)
 
     const candidates: NavItemDef[] = [

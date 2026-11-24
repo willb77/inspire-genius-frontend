@@ -567,6 +567,47 @@ export const TALENT_STUDIO_INTERVIEW_ROWS: ReadonlyArray<readonly [NavItemDef, r
   ],
 ]
 
+/**
+ * TS-2 — the rows Talent Studio gains so the group reads in the order the work
+ * runs: Overview, Roles, Candidates, Interviews, Insights, then Knowledge
+ * Continuity as "Retain". Read only with `job_fit_v2` on (`useToolsSection`).
+ *
+ * Declared here, not built inside the hook, for the same reason the TS-3 rows
+ * are: the label registry test walks this module's arrays and objects to find
+ * every label the menus declare.
+ *
+ * Overview is one page mounted under each role's own prefix, because
+ * ProtectedRoute gates by path prefix (a practitioner has no `/manager`).
+ * Pairs of [role, row]; an array, not a Map, so the registry test sees it.
+ */
+export const TALENT_STUDIO_OVERVIEW_ROWS: ReadonlyArray<readonly [UserRole, NavItemDef]> = [
+  ["manager", { to: ROUTES.MANAGER.TALENT_STUDIO, icon: LayoutDashboard, label: "Overview" }],
+  ["practitioner", { to: ROUTES.PRACTITIONER.TALENT_STUDIO, icon: LayoutDashboard, label: "Overview" }],
+  ["super-admin", { to: ROUTES.SUPER_ADMIN.TALENT_STUDIO, icon: LayoutDashboard, label: "Overview" }],
+]
+
+/**
+ * Candidates and Insights are two pages INSIDE the `job-blueprint` vertical
+ * (its Candidates and Analytics tabs). They are shown only when the launcher
+ * lists that vertical, and they copy its lock: greyed with the same reason
+ * when the person is not entitled, so neither is a live link that bounces.
+ */
+export const TALENT_STUDIO_BLUEPRINT_PAGE_ROWS: { candidates: NavItemDef; insights: NavItemDef } = {
+  candidates: { to: ROUTES.JOB_DNA.CANDIDATES, icon: Users, label: "Candidates" },
+  insights: { to: ROUTES.JOB_DNA.ANALYTICS, icon: BarChart3, label: "Insights" },
+}
+
+/**
+ * "Retain": the sidebar has no heading row inside a group, so Knowledge
+ * Continuity carries the stage in its label, inside Talent Studio only. `to`
+ * here is the vertical's route prefix (used to find the launcher's row); the
+ * row itself keeps the launcher's destination, icon and lock.
+ */
+export const TALENT_STUDIO_RETAIN_ROW: Pick<NavItemDef, "to" | "label"> = {
+  to: "/vertical/knowledge-continuity",
+  label: "Retain: Knowledge Continuity",
+}
+
 // SUPER_ADMIN_TOOLS_SECTION was removed 2026-08-12. It wrapped
 // TOOL_ITEMS_BY_ROLE["super-admin"] in a section labelled "Tools", which is now
 // assembled — together with the vertical catalogue, Bio Capture and Platform

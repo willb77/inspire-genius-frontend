@@ -147,6 +147,8 @@ export const ROUTES = {
      * did not, so the Tools menu had no super-admin target to link to.
      */
     INTERVIEW_LIVE: "/super-admin/interview-live",
+    /** Talent Studio Overview (TS-2): the stages of the group on one page. Links only, no data. */
+    TALENT_STUDIO: "/super-admin/talent-studio",
   },
   MANAGER: {
     BASE: "/manager",
@@ -183,6 +185,8 @@ export const ROUTES = {
     INTERVIEW_LIVE: "/manager/interview-live",
     /** Interview Studio — custom / topic-generated scored interview (career discovery, values, etc.). */
     INTERVIEW_STUDIO: "/manager/interview-studio",
+    /** Talent Studio Overview (TS-2): the stages of the group on one page. Links only, no data. */
+    TALENT_STUDIO: "/manager/talent-studio",
     /** Character Lab — fictional PRISM profiles; no CSV export or import for this role. */
     CHARACTER_LAB: "/manager/character-lab",
     TEAM_COMPOSITION: "/manager/team-composition",
@@ -241,6 +245,8 @@ export const ROUTES = {
     INTERVIEW_LIVE: "/practitioner/interview-live",
     /** Interview Studio — custom / topic-generated scored interview. */
     INTERVIEW_STUDIO: "/practitioner/interview-studio",
+    /** Talent Studio Overview (TS-2): the stages of the group on one page. Links only, no data. */
+    TALENT_STUDIO: "/practitioner/talent-studio",
     /** Character Lab — fictional PRISM profiles; no CSV export or import for this role. */
     CHARACTER_LAB: "/practitioner/character-lab",
     TEAM_COMPOSITION: "/practitioner/team-composition",

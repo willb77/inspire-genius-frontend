@@ -217,7 +217,10 @@
       "Distributor": "Distributor",
       "Document_Library": "Knihovna dokumentů",
       "Character_Lab": "Character Lab",
-      "Role_Blueprint_Match": "Role Blueprint Match"
+      "Role_Blueprint_Match": "Role Blueprint Match",
+      "Overview": "Přehled",
+      "Insights": "Analýzy",
+      "Retain_Knowledge_Continuity": "Udržet: Knowledge Continuity"
     },
     "sections": {
       "AI_coaches": "AI koučové",
@@ -558,5 +561,30 @@
     "type": "Pro potvrzení zadejte:",
     "typeWithHint": "Pro potvrzení zadejte {{hint}}:",
     "working": "Pracuji..."
+  },
+  "talentStudio": {
+    "intro": "Najděte, poznejte a udržte lidi, na kterých váš tým stojí. Každý krok otevře stránku, kterou už máte.",
+    "stages": {
+      "roles": {
+        "title": "Pozice",
+        "hint": "Popište pozici a co vyžaduje."
+      },
+      "candidates": {
+        "title": "Kandidáti",
+        "hint": "Přidejte kandidáty a podívejte se, jak se k pozici hodí."
+      },
+      "interviews": {
+        "title": "Pohovory",
+        "hint": "Připravte, veďte a projděte pohovory."
+      },
+      "insights": {
+        "title": "Analýzy",
+        "hint": "Podívejte se, jak jde nábor na vašich pozicích."
+      },
+      "retain": {
+        "title": "Udržet",
+        "hint": "Zachovejte, co vědí vaši nejzkušenější lidé."
+      }
+    }
   }
 }

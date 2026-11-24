@@ -144,7 +144,10 @@
       "Asset_Library": "Biblioteka zasobów",
       "Asset_library": "Biblioteka zasobów",
       "Character_Lab": "Character Lab",
-      "Role_Blueprint_Match": "Role Blueprint Match"
+      "Role_Blueprint_Match": "Role Blueprint Match",
+      "Overview": "Przegląd",
+      "Insights": "Analizy",
+      "Retain_Knowledge_Continuity": "Zatrzymaj: Knowledge Continuity"
     }
   },
   "notificationBell": {
@@ -558,5 +561,30 @@
   "alexFloating": {
     "close": "Zamknij Alex",
     "open": "Otwórz asystenta Alex"
+  },
+  "talentStudio": {
+    "intro": "Znajdź, poznaj i zatrzymaj ludzi, na których polega Twój zespół. Każdy krok otwiera stronę, którą już masz.",
+    "stages": {
+      "roles": {
+        "title": "Stanowiska",
+        "hint": "Opisz stanowisko i jego wymagania."
+      },
+      "candidates": {
+        "title": "Kandydaci",
+        "hint": "Dodaj kandydatów i zobacz, jak pasują do stanowiska."
+      },
+      "interviews": {
+        "title": "Rozmowy",
+        "hint": "Przygotuj, przeprowadź i przejrzyj rozmowy."
+      },
+      "insights": {
+        "title": "Analizy",
+        "hint": "Zobacz, jak idzie rekrutacja na Twoje stanowiska."
+      },
+      "retain": {
+        "title": "Zatrzymaj",
+        "hint": "Zachowaj wiedzę najbardziej doświadczonych osób."
+      }
+    }
   }
 }
