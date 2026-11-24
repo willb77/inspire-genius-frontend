@@ -362,7 +362,36 @@
     "fitRadar": {
       "chartLabel": "Carte comportementale : ce poste et vous, sur les dimensions qu'il privilégie",
       "intro": "Les dimensions que ce poste privilégie. La forme ombrée correspond à ce que le poste demande ; la forme en pointillés, c'est vous. Les numéros correspondent à la légende.",
-      "notMeasuredNote": "Une dimension sur laquelle vous n'avez pas été mesuré ne figure pas sur votre forme au lieu d'être tracée à zéro."
+      "notMeasuredNote": "Une dimension sur laquelle vous n'avez pas été mesuré ne figure pas sur votre forme au lieu d'être tracée à zéro.",
+      "group": {
+        "behavior": {
+          "label": "Préférences de comportement",
+          "definition": "La façon dont vous préférez aborder le travail et les autres."
+        },
+        "aptitude": {
+          "label": "Aptitudes professionnelles",
+          "definition": "Les types de travail qui vous attirent et que vous aimez."
+        },
+        "core-trait": {
+          "label": "Traits fondamentaux",
+          "definition": "Des qualités personnelles qui déterminent la façon dont vous gérez le travail dans la durée."
+        }
+      },
+      "status": {
+        "match": {
+          "label": "Concordance",
+          "definition": "Votre note est égale ou supérieure à ce que demande ce poste."
+        },
+        "close": {
+          "label": "Proche",
+          "definition": "Votre note est jusqu'à 10 points en dessous de ce que demande ce poste."
+        },
+        "growth": {
+          "label": "Axe de progression",
+          "definition": "Votre note est de plus de 10 points en dessous de ce que demande ce poste : un bon axe de développement."
+        }
+      },
+      "notMeasured": "Non mesuré"
     },
     "fitMatchList": {
       "fit": "{{pct}}% d'adéquation",

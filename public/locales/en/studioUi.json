@@ -8,7 +8,36 @@
     "fitRadar": {
       "chartLabel": "Behavior map: this job and you across the dimensions it puts first",
       "intro": "The dimensions this role puts first. The shaded shape is what the job asks for; the dashed shape is you. The numbers match the legend.",
-      "notMeasuredNote": "A dimension you have not been measured on is left off your shape rather than drawn as zero."
+      "notMeasuredNote": "A dimension you have not been measured on is left off your shape rather than drawn as zero.",
+      "group": {
+        "behavior": {
+          "label": "Behavior preferences",
+          "definition": "How you prefer to approach work and other people."
+        },
+        "aptitude": {
+          "label": "Work aptitudes",
+          "definition": "The kinds of work you are drawn to and enjoy."
+        },
+        "core-trait": {
+          "label": "Core traits",
+          "definition": "Personal qualities that shape how you handle work over time."
+        }
+      },
+      "status": {
+        "match": {
+          "label": "Match",
+          "definition": "Your rating is at or above what this job asks for."
+        },
+        "close": {
+          "label": "Close",
+          "definition": "Your rating is within 10 points below what this job asks for."
+        },
+        "growth": {
+          "label": "Growth area",
+          "definition": "Your rating is more than 10 points below what this job asks for — a good area to build on."
+        }
+      },
+      "notMeasured": "Not measured"
     },
     "fitMatchList": {
       "fit": "{{pct}}% fit",

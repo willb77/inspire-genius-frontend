@@ -305,7 +305,36 @@
     "fitRadar": {
       "chartLabel": "Mapa chování: tato práce a vy v dimenzích, které upřednostňuje",
       "intro": "Dimenze, které tato role upřednostňuje. Stínovaný tvar je to, co práce vyžaduje; přerušovaný tvar jste vy. Čísla odpovídají legendě.",
-      "notMeasuredNote": "Dimenze, ve které jste nebyli měřeni, není ve vašem tvaru zahrnuta, místo aby se kreslila jako nula."
+      "notMeasuredNote": "Dimenze, ve které jste nebyli měřeni, není ve vašem tvaru zahrnuta, místo aby se kreslila jako nula.",
+      "group": {
+        "behavior": {
+          "label": "Behaviorální preference",
+          "definition": "Jak dáváte přednost přístupu k práci a k ostatním lidem."
+        },
+        "aptitude": {
+          "label": "Pracovní předpoklady",
+          "definition": "Druhy práce, které vás přitahují a baví."
+        },
+        "core-trait": {
+          "label": "Základní rysy",
+          "definition": "Osobní vlastnosti, které určují, jak zvládáte práci v čase."
+        }
+      },
+      "status": {
+        "match": {
+          "label": "Shoda",
+          "definition": "Vaše hodnocení je stejné nebo vyšší, než tato práce vyžaduje."
+        },
+        "close": {
+          "label": "Blízko",
+          "definition": "Vaše hodnocení je nejvýše o 10 bodů pod tím, co tato práce vyžaduje."
+        },
+        "growth": {
+          "label": "Oblast růstu",
+          "definition": "Vaše hodnocení je o více než 10 bodů pod tím, co tato práce vyžaduje — dobrá oblast, na které můžete pracovat."
+        }
+      },
+      "notMeasured": "Neměřeno"
     },
     "fitMatchList": {
       "fit": "shoda {{pct}} %",
