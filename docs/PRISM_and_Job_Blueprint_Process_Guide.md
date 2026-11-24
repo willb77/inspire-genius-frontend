@@ -1,4 +1,4 @@
-# Inspire Genius — Process Guide
+# InspiresGenius — Process Guide
 ## PRISM Report Retrieval & Job Blueprint Creation
 
 **Version:** 1.0
@@ -15,7 +15,7 @@ This section documents the complete lifecycle of requesting a PRISM Brain Mappin
 
 ## Step 1: User Requests a PRISM Assessment
 
-**Who:** A user (employee), practitioner, or manager initiates the request from the Inspire Genius frontend.
+**Who:** A user (employee), practitioner, or manager initiates the request from the InspiresGenius frontend.
 
 **What happens:**
 1. The user opens the **PRISM Assessment** page (`/prism-assessment`).

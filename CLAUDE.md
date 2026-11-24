@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Inspire Genius is an AI coaching platform frontend. The app code lives entirely in `inspire-genius-frontend/`. There is a Python `venv/` at the repo root (not related to the frontend).
+InspiresGenius is an AI coaching platform frontend. The app code lives entirely in `inspire-genius-frontend/`. There is a Python `venv/` at the repo root (not related to the frontend).
 
 ## Commands
 

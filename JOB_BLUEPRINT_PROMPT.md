@@ -1,6 +1,6 @@
 # Job Blueprint Microservice — Implementation Prompt
 
-> **Goal:** Build a standalone, testable Job Blueprint microservice (React + TypeScript frontend) that can later plug into the Inspire Genius platform. Covers the full Job DNA lifecycle: creating role profiles with PRISM benchmarks, screening candidates via Brain Mapping Light, running the 6-step hiring triage pipeline, generating interview guides and scorecards, and delivering onboarding plans.
+> **Goal:** Build a standalone, testable Job Blueprint microservice (React + TypeScript frontend) that can later plug into the InspiresGenius platform. Covers the full Job DNA lifecycle: creating role profiles with PRISM benchmarks, screening candidates via Brain Mapping Light, running the 6-step hiring triage pipeline, generating interview guides and scorecards, and delivering onboarding plans.
 >
 > **Exclusions:** VoiceDeskAI integration and DAMS (Document Archive Management System) are out of scope for this build. Use local/S3 storage instead.
 

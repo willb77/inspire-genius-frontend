@@ -1,4 +1,4 @@
-# Architecture Rules — Inspire Genius Frontend
+# Architecture Rules — InspiresGenius Frontend
 
 ## Data Flow
 - Pattern: Service → Hook → Component

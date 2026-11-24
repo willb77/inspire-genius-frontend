@@ -1,4 +1,4 @@
-"""Generate New UI Adoption Plan Word document for Inspire Genius."""
+"""Generate New UI Adoption Plan Word document for InspiresGenius."""
 
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
