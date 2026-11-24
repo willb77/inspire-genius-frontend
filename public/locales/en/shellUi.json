@@ -618,7 +618,7 @@
         "prism": "{{name}} has not shared their PRISM profile with you. Role matches come from it, so they stay private until {{name}} shares it.",
         "unspecified": "{{name}} has not shared their role matches with you. They stay private until {{name}} shares them."
       },
-      "noAccount": "{{name}} does not have an Inspire Genius account yet, so there are no matches to show.",
+      "noAccount": "{{name}} does not have an InspiresGenius account yet, so there are no matches to show.",
       "noPrism": "{{name}} has no PRISM profile on file yet. Role matches are measured from it.",
       "notEntitled": "Career Fit is not switched on for {{name}}, so there are no matches to show.",
       "noMatches": {

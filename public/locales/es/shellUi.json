@@ -618,7 +618,7 @@
         "prism": "{{name}} no ha compartido contigo su perfil PRISM. Las compatibilidades con puestos se obtienen de él, así que siguen siendo privadas hasta que {{name}} lo comparta.",
         "unspecified": "{{name}} no ha compartido contigo sus compatibilidades con puestos. Siguen siendo privadas hasta que {{name}} las comparta."
       },
-      "noAccount": "{{name}} aún no tiene una cuenta de Inspire Genius, así que no hay compatibilidades que mostrar.",
+      "noAccount": "{{name}} aún no tiene una cuenta de InspiresGenius, así que no hay compatibilidades que mostrar.",
       "noPrism": "{{name}} aún no tiene un perfil PRISM registrado. Las compatibilidades con puestos se miden a partir de él.",
       "notEntitled": "Career Fit no está activado para {{name}}, así que no hay compatibilidades que mostrar.",
       "noMatches": {

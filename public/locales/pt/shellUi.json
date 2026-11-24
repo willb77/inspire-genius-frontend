@@ -618,7 +618,7 @@
         "prism": "{{name}} não compartilhou o perfil PRISM com você. As correspondências com cargos vêm dele; por isso, continuam privadas até que {{name}} o compartilhe.",
         "unspecified": "{{name}} não compartilhou as correspondências com cargos com você. Elas continuam privadas até que {{name}} as compartilhe."
       },
-      "noAccount": "{{name}} ainda não tem uma conta Inspire Genius; por isso, não há correspondências para mostrar.",
+      "noAccount": "{{name}} ainda não tem uma conta InspiresGenius; por isso, não há correspondências para mostrar.",
       "noPrism": "{{name}} ainda não tem um perfil PRISM registrado. As correspondências com cargos são medidas a partir dele.",
       "notEntitled": "O Career Fit não está ativado para {{name}}; por isso, não há correspondências para mostrar.",
       "noMatches": {

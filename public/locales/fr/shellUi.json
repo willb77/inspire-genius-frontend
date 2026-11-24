@@ -618,7 +618,7 @@
         "prism": "{{name}} n'a pas partagé son profil PRISM avec vous. Les correspondances de postes en sont issues ; elles restent donc privées jusqu'à ce que {{name}} le partage.",
         "unspecified": "{{name}} n'a pas partagé ses correspondances de postes avec vous. Elles restent privées jusqu'à ce que {{name}} les partage."
       },
-      "noAccount": "{{name}} n'a pas encore de compte Inspire Genius ; il n'y a donc aucune correspondance à afficher.",
+      "noAccount": "{{name}} n'a pas encore de compte InspiresGenius ; il n'y a donc aucune correspondance à afficher.",
       "noPrism": "{{name}} n'a pas encore de profil PRISM enregistré. Les correspondances de postes sont mesurées à partir de celui-ci.",
       "notEntitled": "Career Fit n'est pas activé pour {{name}} ; il n'y a donc aucune correspondance à afficher.",
       "noMatches": {

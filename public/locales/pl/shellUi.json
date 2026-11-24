@@ -618,7 +618,7 @@
         "prism": "{{name}} nie udostępnia Ci profilu PRISM. Dopasowania do ról powstają na jego podstawie, więc pozostają prywatne, dopóki {{name}} go nie udostępni.",
         "unspecified": "{{name}} nie udostępnia Ci dopasowań do ról. Pozostają prywatne, dopóki {{name}} ich nie udostępni."
       },
-      "noAccount": "{{name}} nie ma jeszcze konta Inspire Genius, więc nie ma dopasowań do pokazania.",
+      "noAccount": "{{name}} nie ma jeszcze konta InspiresGenius, więc nie ma dopasowań do pokazania.",
       "noPrism": "{{name}} nie ma jeszcze zapisanego profilu PRISM. Dopasowania do ról są mierzone na jego podstawie.",
       "notEntitled": "Career Fit nie jest włączony dla osoby {{name}}, więc nie ma dopasowań do pokazania.",
       "noMatches": {
