@@ -618,7 +618,7 @@
         "prism": "{{name}} s vámi nesdílí profil PRISM. Shody s rolemi z něj vycházejí, proto zůstávají soukromé, dokud jej {{name}} nenasdílí.",
         "unspecified": "{{name}} s vámi nesdílí shody s rolemi. Zůstávají soukromé, dokud je {{name}} nenasdílí."
       },
-      "noAccount": "{{name}} zatím nemá účet Inspire Genius, takže nejsou žádné shody k zobrazení.",
+      "noAccount": "{{name}} zatím nemá účet InspiresGenius, takže nejsou žádné shody k zobrazení.",
       "noPrism": "{{name}} zatím nemá uložený profil PRISM. Shody s rolemi se měří právě z něj.",
       "notEntitled": "Career Fit není pro uživatele {{name}} zapnutý, takže nejsou žádné shody k zobrazení.",
       "noMatches": {

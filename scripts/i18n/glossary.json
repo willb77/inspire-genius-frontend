@@ -1,7 +1,7 @@
 {
   "_note": "Seed glossary for the localisation programme (I18N-0). Names were checked for use in src/ and public/locales/en. A native reviewer must confirm every entry before it is relied on.",
   "do_not_translate": [
-    "Inspire Genius",
+    "InspiresGenius",
     "Meridian",
     "Aura",
     "Alex",

@@ -212,7 +212,7 @@ describe("TS-4a — each state says what it is", () => {
   })
 
   it.each([
-    ["no_account", /does not have an Inspire Genius account yet/],
+    ["no_account", /does not have an InspiresGenius account yet/],
     ["no_prism", /has no PRISM profile on file yet/],
     ["not_entitled", /Career Fit is not switched on for Ada Example/],
     ["a_state_added_later", /matches cannot be shown right now/],

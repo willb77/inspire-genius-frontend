@@ -141,7 +141,7 @@ export default function TeamFitMemberMatches({ memberId, memberName }: TeamFitMe
     return (
       <Notice state="no_account">
         {t(`${K}.noAccount`, {
-          defaultValue: "{{name}} does not have an Inspire Genius account yet, so there are no matches to show.",
+          defaultValue: "{{name}} does not have an InspiresGenius account yet, so there are no matches to show.",
           name,
         })}
       </Notice>

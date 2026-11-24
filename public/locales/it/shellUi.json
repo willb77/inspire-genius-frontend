@@ -618,7 +618,7 @@
         "prism": "{{name}} non ha condiviso con te il profilo PRISM. Le corrispondenze con i ruoli derivano da esso, quindi restano private finché {{name}} non lo condivide.",
         "unspecified": "{{name}} non ha condiviso con te le corrispondenze con i ruoli. Restano private finché {{name}} non le condivide."
       },
-      "noAccount": "{{name}} non ha ancora un account Inspire Genius, quindi non ci sono corrispondenze da mostrare.",
+      "noAccount": "{{name}} non ha ancora un account InspiresGenius, quindi non ci sono corrispondenze da mostrare.",
       "noPrism": "{{name}} non ha ancora un profilo PRISM registrato. Le corrispondenze con i ruoli si misurano a partire da esso.",
       "notEntitled": "Career Fit non è attivo per {{name}}, quindi non ci sono corrispondenze da mostrare.",
       "noMatches": {
