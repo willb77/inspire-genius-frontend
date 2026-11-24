@@ -523,7 +523,12 @@
     "whatChangedOnThisDossier": "Co zmieniło się w tym dossier oraz który agent lub jakie działanie za to odpowiada.",
     "dossierExportedAsPdf": "Dossier wyeksportowano do PDF.",
     "couldnTGenerateThePdf": "Nie udało się wygenerować pliku PDF.",
-    "text": " · {{department}}"
+    "text": " · {{department}}",
+    "groupProfile": "Profil",
+    "groupGoalsRoadmap": "Cele i mapa drogowa",
+    "groupGapsLearning": "Luki i nauka",
+    "groupCareers": "Ścieżki kariery",
+    "groupConversations": "Rozmowy"
   },
   "meridianDevelopmentPanel": {
     "tab": "Karta: {{tab}}",

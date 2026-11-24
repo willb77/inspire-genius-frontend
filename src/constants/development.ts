@@ -149,6 +149,16 @@ export const DEV_TEXT: Record<string, string> = {
   "dev.tab.compare": "Compare",
   "dev.tab.scenarios": "Scenarios",
 
+  // U4: the person page's tab bar shows five GROUPS; the `dev.tab.*` strings
+  // above are now the section headings inside them. New keys on purpose: a
+  // server `/v1/frontend-text` override written for a `dev.tab.*` label keeps
+  // meaning what it meant, and cannot mislabel a group.
+  "dev.group.profile": "Profile",
+  "dev.group.goalsRoadmap": "Goals & Roadmap",
+  "dev.group.gapsLearning": "Gaps & Learning",
+  "dev.group.careers": "Career matches",
+  "dev.group.conversations": "Conversations",
+
   "dev.profile.radarTitle": "PRISM behavioral map",
   "dev.profile.radarTableCaption": "PRISM 8-dimension scores (text equivalent of the radar).",
   "dev.profile.clifton": "CliftonStrengths",

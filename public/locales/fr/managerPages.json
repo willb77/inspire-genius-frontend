@@ -87,7 +87,12 @@
     "whatChangedOnThisDossier": "Ce qui a changé dans ce dossier, et quel agent ou quelle action en est à l'origine.",
     "dossierExportedAsPdf": "Dossier exporté en PDF.",
     "couldnTGenerateThePdf": "Impossible de générer le PDF.",
-    "text": " · {{department}}"
+    "text": " · {{department}}",
+    "groupProfile": "Profil",
+    "groupGoalsRoadmap": "Objectifs et feuille de route",
+    "groupGapsLearning": "Écarts et apprentissage",
+    "groupCareers": "Pistes de carrière",
+    "groupConversations": "Échanges"
   },
   "notesPanel": {
     "delete": "Supprimer",
