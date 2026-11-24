@@ -510,6 +510,63 @@ export const TALENT_STUDIO_INTERVIEW_TOOLS: ReadonlySet<NavItemDef> = new Set<Na
   INTERVIEW_STUDIO_GROUP_SUPER_ADMIN,
 ])
 
+/**
+ * TS-3 — the interview rows inside Talent Studio, named by purpose.
+ *
+ * With `job_fit_v2` on, each role's Interview Studio group is shown as these
+ * rows, next to each other, instead of "Interview Studio" with "Live
+ * Interview" lifted beside it. The destinations are today's pages; only the
+ * labels and the list change. Two existing pages that the menu did not list
+ * are added for the roles that have the route: question preparation (manager,
+ * practitioner) and the list of interviews already run (manager only).
+ *
+ * The rows do NOT read the house-style switch (`house_style_interview`,
+ * `src/lib/house/areaSwitch.ts`). That switch decides which screen the two run
+ * pages show: with it on, both show the one interview screen, which opens on
+ * "hiring" at the live route and on "your own questions" at the studio route;
+ * with it off, they are two different screens. A label that says what the row
+ * is FOR is right in both cases, so the menu is the same in both.
+ *
+ * Every row says "interview" or sits between two that do. SidebarScaffold
+ * renders one level of children and Talent Studio is already that level, so
+ * the rows cannot be nested under an "Interviews" heading of their own.
+ *
+ * Pairs of [group object in {@link TALENT_STUDIO_INTERVIEW_TOOLS}, its rows].
+ * An array, not a Map, on purpose: the label registry test
+ * (`navLabels.test.ts`) walks arrays and Sets to find every label the menus
+ * declare, and labels held in a Map would be invisible to it. Off (switch
+ * loading, unreadable or false) this list is never read.
+ */
+const purposeRows = (routes: { live: string; studio: string; prep?: string; past?: string }): NavItemDef[] => [
+  { to: routes.live, icon: ClipboardCheck, label: "Hiring interview" },
+  { to: routes.studio, icon: Sparkles, label: "Own-questions interview" },
+  ...(routes.prep ? [{ to: routes.prep, icon: ClipboardList, label: "Prepare questions" }] : []),
+  ...(routes.past ? [{ to: routes.past, icon: ScrollText, label: "Past interviews" }] : []),
+]
+export const TALENT_STUDIO_INTERVIEW_ROWS: ReadonlyArray<readonly [NavItemDef, readonly NavItemDef[]]> = [
+  [
+    INTERVIEW_STUDIO_GROUP_MANAGER,
+    purposeRows({
+      live: ROUTES.MANAGER.INTERVIEW_LIVE,
+      studio: ROUTES.MANAGER.INTERVIEW_STUDIO,
+      prep: ROUTES.MANAGER.INTERVIEW_PREP,
+      past: ROUTES.MANAGER.INTERVIEWS,
+    }),
+  ],
+  [
+    INTERVIEW_STUDIO_GROUP_PRACTITIONER,
+    purposeRows({
+      live: ROUTES.PRACTITIONER.INTERVIEW_LIVE,
+      studio: ROUTES.PRACTITIONER.INTERVIEW_STUDIO,
+      prep: ROUTES.PRACTITIONER.INTERVIEW_PREP,
+    }),
+  ],
+  [
+    INTERVIEW_STUDIO_GROUP_SUPER_ADMIN,
+    purposeRows({ live: ROUTES.SUPER_ADMIN.INTERVIEW_LIVE, studio: ROUTES.SUPER_ADMIN.INTERVIEW_STUDIO }),
+  ],
+]
+
 // SUPER_ADMIN_TOOLS_SECTION was removed 2026-08-12. It wrapped
 // TOOL_ITEMS_BY_ROLE["super-admin"] in a section labelled "Tools", which is now
 // assembled — together with the vertical catalogue, Bio Capture and Platform
