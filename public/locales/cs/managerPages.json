@@ -609,10 +609,7 @@
     "onlyTheirManagerACompanyAdmin": "může to udělat pouze jejich manažer, firemní administrátor jejich organizace nebo superadministrátor.",
     "bulkAddFailedPleaseTry": "Hromadné přidání se nezdařilo. Zkuste to prosím znovu.",
     "addMember": "Přidat člena",
-    "addTeamMembers": "Přidat členy týmu",
     "addADirectReportTo": "Přidejte přímého podřízeného do svého rozvojového seznamu. Pro každého nového člena se vytvoří karta.",
-    "single": "Jednotlivě",
-    "bulkUpload": "Hromadné nahrání",
     "name": "Jméno",
     "jordanLee": "Jordan Lee",
     "title": "Pozice",
@@ -627,7 +624,16 @@
     "jordanLeeJordanCoCom": "Jordan Lee, jordan@co.com, Engineer, Platform\nSam Rivera, sam@co.com, Designer, Product",
     "uploadCsvFile": "Nahrát soubor CSV",
     "memberSDetected": "Zjištěno členů: {{length}}",
-    "addMembers": "Přidat členy"
+    "addMembers": "Přidat členy",
+    "addPeople": "Přidat lidi",
+    "tabAddPerson": "Přidat osobu",
+    "tabImportFile": "Importovat soubor",
+    "tabRequests": "Žádosti",
+    "csvQuoteHint": "Pokud hodnota obsahuje čárku, dejte ji do dvojitých uvozovek.",
+    "noRequestsWaiting": "Žádné žádosti nečekají.",
+    "orgJoinRequestsLink": "Žádosti o připojení k vaší organizaci",
+    "requestsWaiting": "Lidé čekající na připojení k vašemu týmu: {{n}}",
+    "review": "Zkontrolovat"
   },
   "analytics": {
     "failedToLoadAnalyticsData": "Analytická data se nepodařilo načíst.",

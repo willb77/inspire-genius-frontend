@@ -194,7 +194,7 @@ describe("DevelopmentStudio — the three states the roster can be in", () => {
     expect(screen.queryByText(ERROR_COPY)).not.toBeInTheDocument()
     // Two ways to add: the header action and one inside the empty state itself.
     // An empty state that only describes the emptiness is a dead end.
-    expect(screen.getAllByRole("button", { name: /Add member/i })).toHaveLength(2)
+    expect(screen.getAllByRole("button", { name: /Add people/i })).toHaveLength(2)
   })
 
   it("a filter that matches nobody is distinguished from having nobody", () => {
@@ -530,13 +530,13 @@ describe("DevelopmentStudio — adding people", () => {
   it("offers both the single form and the bulk CSV import", () => {
     rosterState = { data: [member()], isLoading: false, isError: false }
     renderStudio()
-    fireEvent.click(screen.getByRole("button", { name: /Add member/i }))
+    fireEvent.click(screen.getByRole("button", { name: /Add people/i }))
     const dialog = screen.getByRole("dialog")
-    expect(within(dialog).getByRole("heading", { name: "Add team members" })).toBeInTheDocument()
+    expect(within(dialog).getByRole("heading", { name: "Add people" })).toBeInTheDocument()
     expect(within(dialog).getByLabelText("Name")).toBeInTheDocument()
 
     // Radix TabsTrigger activates on mousedown, not click.
-    fireEvent.mouseDown(within(dialog).getByRole("tab", { name: "Bulk upload" }))
+    fireEvent.mouseDown(within(dialog).getByRole("tab", { name: "Import a file" }))
     expect(within(dialog).getByRole("button", { name: "Upload CSV file" })).toBeInTheDocument()
     expect(within(dialog).getByText("0 member(s) detected")).toBeInTheDocument()
   })

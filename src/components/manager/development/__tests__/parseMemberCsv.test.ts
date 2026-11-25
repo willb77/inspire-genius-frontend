@@ -1,4 +1,4 @@
-import { parseMemberCsv } from "../AddMemberDialog"
+import { parseMemberCsv } from "../memberCsv"
 
 describe("parseMemberCsv", () => {
   it("parses rows without a header", () => {

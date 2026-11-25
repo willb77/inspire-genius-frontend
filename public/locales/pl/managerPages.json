@@ -209,10 +209,7 @@
     "onlyTheirManagerACompanyAdmin": "może to zrobić tylko ich przełożony, administrator firmy ich organizacji lub super administrator.",
     "bulkAddFailedPleaseTry": "Zbiorcze dodawanie nie powiodło się. Spróbuj ponownie.",
     "addMember": "Dodaj członka zespołu",
-    "addTeamMembers": "Dodaj członków zespołu",
     "addADirectReportTo": "Dodaj podwładnego do swojej listy rozwojowej. Dla każdego nowego członka zespołu zostanie utworzona karta.",
-    "single": "Pojedynczo",
-    "bulkUpload": "Import zbiorczy",
     "name": "Imię i nazwisko",
     "jordanLee": "Jordan Lee",
     "title": "Stanowisko",
@@ -227,7 +224,16 @@
     "jordanLeeJordanCoCom": "Jordan Lee, jordan@co.com, Inżynier, Platforma\nSam Rivera, sam@co.com, Projektant, Produkt",
     "uploadCsvFile": "Prześlij plik CSV",
     "memberSDetected": "Wykryto członków: {{length}}",
-    "addMembers": "Dodaj członków"
+    "addMembers": "Dodaj członków",
+    "addPeople": "Dodaj osoby",
+    "tabAddPerson": "Dodaj osobę",
+    "tabImportFile": "Importuj plik",
+    "tabRequests": "Prośby",
+    "csvQuoteHint": "Ujmij wartość w cudzysłów, jeśli zawiera przecinek.",
+    "noRequestsWaiting": "Brak oczekujących próśb.",
+    "orgJoinRequestsLink": "Prośby o dołączenie do Twojej organizacji",
+    "requestsWaiting": "Osoby czekające na dołączenie do Twojego zespołu: {{n}}",
+    "review": "Przejrzyj"
   },
   "progressRing": {
     "complete": "Ukończono {{clamped}}%"
