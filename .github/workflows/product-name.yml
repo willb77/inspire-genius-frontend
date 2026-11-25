@@ -1,0 +1,62 @@
+# Product-name guard. Separate file so no existing job is touched (same shape as i18n-parity.yml).
+#
+# The product name is written InspiresGenius, one word. scripts/product-name/check_product_name.mjs
+# runs two checks on every pull request into development:
+#   1. no older spelling on a line the pull request adds;
+#   2. per-file counts across the tree may not rise above scripts/product-name/baseline.json, and
+#      that file may only shrink (a RATCHET, like the i18n parity baseline).
+# See the header of the script for the forms, the identifier allowlist and the exit codes.
+#
+# No path filter: an older spelling can land in any file, so the check runs on every pull request.
+# Dependency-free (plain node), so no npm install is needed. Makes no API call and needs no secret.
+#
+# REPORT-ONLY until ONE switch is flipped: PRODUCT_NAME_GUARD_REQUIRED below. While it is 'false'
+# each step prints its findings, raises a warning annotation and ends green, so this workflow cannot
+# block a merge. Set it to 'true' and the same steps fail the job.
+name: product name
+
+on:
+  pull_request:
+    branches: [development]
+
+permissions:
+  contents: read
+
+jobs:
+  product-name:
+    name: product-name
+    runs-on: ubuntu-latest
+    env:
+      PRODUCT_NAME_GUARD_REQUIRED: 'false'   # THE SWITCH: 'true' makes this job required
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the script diffs against the merge base with the base branch and reads the
+          # baseline as it is there. A shallow clone has neither, and the script exits 2 rather than guess.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: No new older spelling, and no file above its baseline
+        env:
+          PRODUCT_NAME_BASE: origin/${{ github.base_ref }}
+        run: |
+          rc=0
+          node scripts/product-name/check_product_name.mjs --check || rc=$?
+          if [ "$rc" -ne 0 ] && [ "$PRODUCT_NAME_GUARD_REQUIRED" != "true" ]; then
+            echo "::warning title=product-name (report-only)::check exited $rc (1 = findings, 2 = the check could not run). This fails the pull request once PRODUCT_NAME_GUARD_REQUIRED is 'true'."
+            exit 0
+          fi
+          exit "$rc"
+
+      - name: The guard can still fail (mutation tests, incl. one on a copy of this tree)
+        run: |
+          rc=0
+          node --test scripts/product-name/node-tests/*_test.mjs || rc=$?
+          if [ "$rc" -ne 0 ] && [ "$PRODUCT_NAME_GUARD_REQUIRED" != "true" ]; then
+            echo "::warning title=product-name (report-only)::guard self-test exited $rc. This fails the pull request once PRODUCT_NAME_GUARD_REQUIRED is 'true'."
+            exit 0
+          fi
+          exit "$rc"
