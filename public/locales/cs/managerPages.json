@@ -726,6 +726,8 @@
     "filter": "Sdílení",
     "filterAll": "Veškeré sdílení",
     "filterShared": "Sdílí s vámi",
+    "planWithheld": "Plán nedostupný",
+    "profileWithheld": "Profil PRISM je pro vás nedostupný.",
     "category": {
       "prism": "PRISM",
       "engagement": "Zapojení",

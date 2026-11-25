@@ -112,9 +112,12 @@ export function isKnownCategory(key: string): key is SharingCategoryKey {
  * categories each needs. The server sends these whether or not the person
  * shares them until U6d (behind a server switch, off by default) stops it.
  */
-export type GatedField = "prismTick" | "cliftonTick" | "discTick" | "headline" | "topMatch"
+export type GatedField = "prismTick" | "cliftonTick" | "discTick" | "headline" | "plan" | "topMatch"
 
 const NEEDS: Record<GatedField, readonly SharingCategoryKey[]> = {
+  // Plan status and milestone progress come from milestones, which the person
+  // page blanks under `development` (U6d CSA, P3).
+  plan: ["development"],
   prismTick: ["prism"],
   // CliftonStrengths and DISC are not PRISM; the nearest grantable category is
   // `assessments`. Counting them can only hide a chip, never show one.
@@ -137,6 +140,41 @@ export function gatedFieldsShown(
   if (coverage.clifton) out.push("cliftonTick")
   if (coverage.disc) out.push("discTick")
   if (headline) out.push("headline")
+  if (topMatchShown) out.push("topMatch")
+  return out
+}
+
+/**
+ * U6d: the categories the server withheld on this card, or `null` when it
+ * sent no `withheld` list (older backend, or `tds_roster_consent_gate` off for
+ * this org). Only the server's list says a field was withheld; nothing here
+ * infers it from `sharing`, because a live grant does not prove the page rule
+ * lets this caller see it (a whole-organisation caller with no relationship is
+ * withheld despite the grant).
+ */
+export function withheldCategories(member: RosterMember): ReadonlySet<string> | null {
+  return Array.isArray(member.withheld) ? new Set(member.withheld) : null
+}
+
+/**
+ * The gated fields this card will render, in either mode.
+ *
+ * - `withheld` absent/null (gate not applied): the U6c fallback. The server
+ *   sent everything, so the PRISM / Clifton / DISC ticks, headline and top
+ *   match are counted as before. The plan is not counted: the server always
+ *   sends it in this mode, and it was never part of the task-4 list.
+ * - `withheld` present (gate applied): exactly what the server still sent:
+ *   headline, plan (status or milestone progress) and top match. The ticks
+ *   are not gated here: the server keeps `coverage` on purpose (D12a, as the
+ *   person page does) because whether a PRISM exists is not the secret.
+ */
+export function cardGatedFields(member: RosterMember, topMatchShown: boolean): GatedField[] {
+  if (withheldCategories(member) === null) {
+    return gatedFieldsShown(member.coverage, member.reconciledHeadline, topMatchShown)
+  }
+  const out: GatedField[] = []
+  if (member.reconciledHeadline) out.push("headline")
+  if (member.planStatus != null || typeof member.milestoneProgress === "number") out.push("plan")
   if (topMatchShown) out.push("topMatch")
   return out
 }

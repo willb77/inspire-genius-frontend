@@ -397,6 +397,8 @@
     "filter": "Sharing",
     "filterAll": "All sharing",
     "filterShared": "Shared with you",
+    "planWithheld": "Plan withheld",
+    "profileWithheld": "PRISM profile withheld from you.",
     "category": {
       "prism": "PRISM",
       "engagement": "Engagement",

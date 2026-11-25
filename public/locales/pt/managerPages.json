@@ -146,6 +146,8 @@
     "filter": "Compartilhamento",
     "filterAll": "Todo compartilhamento",
     "filterShared": "Compartilha com você",
+    "planWithheld": "Plano retido",
+    "profileWithheld": "Perfil PRISM não disponível para você.",
     "category": {
       "prism": "PRISM",
       "engagement": "Engajamento",

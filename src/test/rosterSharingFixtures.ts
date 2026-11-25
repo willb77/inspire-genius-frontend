@@ -81,3 +81,37 @@ export const NOT_KNOWN_SHAPES: Array<{ why: string; json: string; readWorked: bo
 export function parse(json: string): RosterMember {
   return JSON.parse(json) as RosterMember
 }
+
+/**
+ * U6d shape (growth-service, `tds_roster_consent_gate` on for the caller's org):
+ * `withheld` lists the categories withheld from this caller; `prism` nulls the
+ * headline and its confidence, `development` nulls plan status and milestone
+ * progress, either nulls the top match. The PRISM tick is kept (D12a), and
+ * identity fields and `sharing` are never withheld. Stored values the server
+ * WOULD have sent are below, so a test can assert none of them renders.
+ */
+export const U6D_STORED = {
+  headline: "Measured organiser who checks the brief twice.",
+  topMatch: "Logistics Coordinator",
+}
+
+export function u6dRow(withheld: string[], sharing: string): string {
+  const prism = withheld.includes("prism")
+  const dev = withheld.includes("development")
+  return JSON.stringify({
+    memberId: "mbr-0101",
+    name: "Ines Varga",
+    title: "Coordinator",
+    department: "Operations",
+    avatarUrl: null,
+    coverage: { prism: true, clifton: false, disc: false, prismAssessedAt: "2026-06-01T00:00:00+00:00" },
+    reconciledHeadline: prism ? null : U6D_STORED.headline,
+    headlineConfidence: prism ? null : "moderate",
+    planStatus: dev ? null : "active",
+    milestoneProgress: dev ? null : 40,
+    topMatch: prism || dev ? null : { title: U6D_STORED.topMatch, fitScore: 71 },
+    identityResolved: true,
+    sharing: JSON.parse(sharing),
+    withheld,
+  })
+}

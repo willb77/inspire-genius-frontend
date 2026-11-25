@@ -200,6 +200,8 @@
     "filter": "Compartido",
     "filterAll": "Todo lo compartido",
     "filterShared": "Comparte contigo",
+    "planWithheld": "Plan retenido",
+    "profileWithheld": "Perfil PRISM no disponible para ti.",
     "category": {
       "prism": "PRISM",
       "engagement": "Participación",

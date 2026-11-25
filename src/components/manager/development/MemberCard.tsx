@@ -17,8 +17,9 @@ import { useDevSkin } from "./skin"
 import { useTranslation } from "react-i18next"
 import { withPrism } from "@/lib/withPrism"
 import {
+  cardGatedFields,
   chipContradictsCard,
-  gatedFieldsShown,
+  withheldCategories,
   isKnownCategory,
   sharingDisplay,
   type SharingDisplay,
@@ -220,13 +221,19 @@ export function MemberCard({
   // those fields. When it would, the card is shown as today with no chip. The
   // fit-engine line (flag on) is not counted: the server renders it only for
   // `state: "ok"`, which it refuses unless PRISM and development are shared.
+  //
+  // U6d. When the server sends `withheld`, that list alone says what was
+  // withheld: the card puts "withheld" in that field's place, keeps the PRISM
+  // tick (D12a), and the same rule then runs over what the server still sent.
   const sharing = sharingDisplay(member, sharingReadWorked)
   const granted = member.sharing?.grantedCategories ?? []
-  const shownGated = gatedFieldsShown(
-    member.coverage,
-    headline,
-    !FIT_ENGINE_MATCHES_ENABLED && Boolean(member.topMatch),
-  )
+  const withheld = withheldCategories(member)
+  const prismWithheld = withheld?.has("prism") ?? false
+  const developmentWithheld = withheld?.has("development") ?? false
+  // The fit-engine line has its own server gate; on a card where the roster
+  // withheld either category it would be the one field still showing.
+  const fitLineAllowed = !prismWithheld && !developmentWithheld
+  const shownGated = cardGatedFields(member, !FIT_ENGINE_MATCHES_ENABLED && Boolean(member.topMatch))
   const showSharingChip = !chipContradictsCard(sharing, granted, shownGated)
 
   return (
@@ -263,7 +270,16 @@ export function MemberCard({
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <PlanStatusBadge status={member.planStatus} />
+          {developmentWithheld ? (
+            <span
+              className={cn("rounded-full border px-2 py-0.5 text-[11px] font-medium", sk.border200, sk.text500)}
+              data-testid="member-card-plan-withheld"
+            >
+              {t("memberSharing.planWithheld", { defaultValue: "Plan withheld" })}
+            </span>
+          ) : (
+            <PlanStatusBadge status={member.planStatus} />
+          )}
           {typeof member.milestoneProgress === "number" ? (
             <ProgressRing value={member.milestoneProgress} label={t("memberCard.ofMilestonesComplete", { defaultValue: "{{value}}% of milestones complete", value: Math.round(member.milestoneProgress) })} />
           ) : null}
@@ -287,10 +303,14 @@ export function MemberCard({
         </div>
       ) : needsPrism ? (
         <p className={cn("text-xs italic", sk.text400)}>{withPrism(t("memberCard.inviteToCompletePrismTo", { defaultValue: "Invite to complete PRISM to build a profile." }))}</p>
+      ) : prismWithheld ? (
+        <p className={cn("text-xs italic", sk.text400)} data-testid="member-card-profile-withheld">
+          {withPrism(t("memberSharing.profileWithheld", { defaultValue: "PRISM profile withheld from you." }))}
+        </p>
       ) : null}
 
       {FIT_ENGINE_MATCHES_ENABLED ? (
-        <FitTopMatchLine memberId={member.memberId} />
+        fitLineAllowed ? <FitTopMatchLine memberId={member.memberId} /> : null
       ) : member.topMatch ? (
         <TopMatchLine title={member.topMatch.title} fitScore={member.topMatch.fitScore} />
       ) : null}

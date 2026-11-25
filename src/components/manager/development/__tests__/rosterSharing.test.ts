@@ -91,3 +91,45 @@ it("names every category the server can grant, including interviews and developm
     ["artefacts", "assessments", "development", "engagement", "goals", "interviews", "prism", "topics"],
   )
 })
+
+describe("U6d: cardGatedFields reads `withheld`, never `sharing`", () => {
+  // Imported here to keep the U6c blocks above unchanged.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- same module as above, read lazily for this block
+  const { cardGatedFields, withheldCategories } = require("../rosterSharing") as typeof import("../rosterSharing")
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- fixtures module, as above
+  const { u6dRow } = require("@/test/rosterSharingFixtures") as typeof import("@/test/rosterSharingFixtures")
+  const NONE = `{"state":"none","grantedCategories":[],"canRequest":true}`
+  const BOTH = `{"state":"granted","grantedCategories":["prism","development"],"canRequest":false}`
+
+  it("absent or null `withheld` is the fallback (ticks count)", () => {
+    const m = parse(u6dRow([], NONE))
+    expect(withheldCategories({ ...m, withheld: undefined })).toBeNull()
+    expect(withheldCategories({ ...m, withheld: null })).toBeNull()
+    expect(cardGatedFields({ ...m, withheld: null }, true)).toEqual(["prismTick", "headline", "topMatch"])
+  })
+
+  it.each([
+    [["prism", "development"], []],
+    [["prism"], ["plan"]],
+    [["development"], ["headline"]],
+    [[], ["headline", "plan", "topMatch"]],
+  ] as const)("withheld %j: the card still carries %j; the kept tick never counts", (w, still) => {
+    const m = parse(u6dRow([...w], NONE))
+    expect(cardGatedFields(m, Boolean(m.topMatch))).toEqual(still)
+  })
+
+  it("the same `withheld` gives the same fields whatever `sharing` says", () => {
+    for (const w of [["prism"], ["development"], []]) {
+      const a = parse(u6dRow(w, NONE))
+      const b = parse(u6dRow(w, BOTH))
+      expect(cardGatedFields(a, Boolean(a.topMatch))).toEqual(cardGatedFields(b, Boolean(b.topMatch)))
+    }
+  })
+
+  it("a fully withheld card with a not-shared chip does not contradict; plan needs development", () => {
+    const m = parse(u6dRow(["prism", "development"], NONE))
+    expect(chipContradictsCard("not_asked", [], cardGatedFields(m, false))).toBe(false)
+    expect(chipContradictsCard("shared", ["prism"], ["plan"])).toBe(true)
+    expect(chipContradictsCard("shared", ["development"], ["plan"])).toBe(false)
+  })
+})

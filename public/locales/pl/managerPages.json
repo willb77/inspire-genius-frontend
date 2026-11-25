@@ -529,6 +529,8 @@
     "filter": "Udostępnianie",
     "filterAll": "Wszystkie udostępnienia",
     "filterShared": "Udostępnione Tobie",
+    "planWithheld": "Plan niedostępny",
+    "profileWithheld": "Profil PRISM jest dla Ciebie niedostępny.",
     "category": {
       "prism": "PRISM",
       "engagement": "Zaangażowanie",

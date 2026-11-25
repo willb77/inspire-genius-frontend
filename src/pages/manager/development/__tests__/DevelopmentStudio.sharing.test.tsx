@@ -172,3 +172,31 @@ describe("Engagement — D13: Member Oversight is opened from the Studio", () =>
     expect(screen.queryByRole("link", { name: "Engagement" })).not.toBeInTheDocument()
   })
 })
+
+describe("U6d: a withheld plan (planStatus null) in the filter and sort", () => {
+  function u6d(id: string, name: string, planStatus: RosterMember["planStatus"], withheld: string[]): RosterMember {
+    return {
+      memberId: id,
+      name,
+      coverage: { prism: true, clifton: false, disc: false },
+      planStatus,
+      milestoneProgress: null,
+      topMatch: null,
+      identityResolved: true,
+      sharing: { state: "none", grantedCategories: [], canRequest: true },
+      withheld,
+    }
+  }
+
+  it("renders, sorts a withheld plan after every known one, and matches no plan option", () => {
+    rosterData = [
+      u6d("w-1", "Ivo Brandt", null, ["development"]),
+      u6d("w-2", "Jo Perrault", "no_plan", []),
+      u6d("w-3", "Kit Osei", "at_risk", []),
+    ]
+    renderAt("manager")
+    expect(cardNames()).toEqual(["Kit Osei", "Jo Perrault", "Ivo Brandt"])
+    fireEvent.click(filterOption("no_plan"))
+    expect(cardNames()).toEqual(["Jo Perrault"])
+  })
+})

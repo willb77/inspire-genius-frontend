@@ -435,11 +435,24 @@ export type RosterMember = {
   department?: string
   avatarUrl?: string
   coverage: FrameworkCoverage
-  reconciledHeadline?: string
-  headlineConfidence?: ConfidenceLevel
-  planStatus: PlanStatus
-  milestoneProgress?: number
-  topMatch?: Pick<CareerMatch, "title" | "fitScore">
+  reconciledHeadline?: string | null
+  headlineConfidence?: ConfidenceLevel | null
+  /**
+   * `null` when the server withheld it (U6d: `development` is in `withheld`).
+   * Never read it as "no plan": that would be a claim the server did not make.
+   */
+  planStatus: PlanStatus | null
+  milestoneProgress?: number | null
+  topMatch?: Pick<CareerMatch, "title" | "fitScore"> | null
+  /**
+   * U6d: the categories the server withheld from THIS caller on this card
+   * (`prism` → headline, its confidence and top match are null; `development`
+   * → plan status, milestone progress and top match are null). `null` or
+   * absent when the gate did not apply (older backend, or the per-org switch
+   * `tds_roster_consent_gate` off): every field was then sent as before. The
+   * PRISM tick (`coverage`) is never withheld (D12a).
+   */
+  withheld?: string[] | null
   /**
    * TDS-11: true when the id names an account in the caller's organisation,
    * false for a minted roster-local id, null when the server could not tell.

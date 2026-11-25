@@ -77,6 +77,16 @@ const PLAN_ORDER: Record<PlanStatus, number> = {
   no_plan: 4,
 }
 
+/**
+ * U6d: `planStatus` is null when the server withheld it. A withheld plan sorts
+ * after every known one (it is not "no plan", and it is not "at risk"), and an
+ * unknown value sorts with it rather than yielding NaN and an arbitrary order.
+ */
+function planOrder(m: RosterMember): number {
+  const s = m.planStatus
+  return s != null && Object.prototype.hasOwnProperty.call(PLAN_ORDER, s) ? PLAN_ORDER[s] : 5
+}
+
 function hasPrism(m: RosterMember): boolean {
   return Boolean(m.coverage.prism)
 }
@@ -190,13 +200,14 @@ export default function DevelopmentStudio({
     if (coverage !== "all") {
       rows = rows.filter((m) => (coverage === "has_prism" ? hasPrism(m) : !hasPrism(m)))
     }
-    if (plan !== "all") rows = rows.filter((m) => m.planStatus === plan)
+    // A withheld plan (null, U6d) matches no plan option: it is not "No plan".
+    if (plan !== "all") rows = rows.filter((m) => m.planStatus != null && m.planStatus === plan)
     if (department !== "all") rows = rows.filter((m) => m.department === department)
     if (sharingFilter !== "all") rows = rows.filter((m) => sharingDisplay(m, readWorked) === sharingFilter)
 
     const sorted = [...rows]
     if (sort === "readiness") {
-      sorted.sort((a, b) => readinessScore(b) - readinessScore(a) || PLAN_ORDER[a.planStatus] - PLAN_ORDER[b.planStatus])
+      sorted.sort((a, b) => readinessScore(b) - readinessScore(a) || planOrder(a) - planOrder(b))
     } else {
       sorted.sort((a, b) => lastActivity(b) - lastActivity(a))
     }

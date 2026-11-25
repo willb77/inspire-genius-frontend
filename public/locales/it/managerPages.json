@@ -156,6 +156,8 @@
     "filter": "Condivisione",
     "filterAll": "Tutte le condivisioni",
     "filterShared": "Condiviso con te",
+    "planWithheld": "Piano non disponibile",
+    "profileWithheld": "Profilo PRISM non disponibile per te.",
     "category": {
       "prism": "PRISM",
       "engagement": "Coinvolgimento",

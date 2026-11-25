@@ -93,6 +93,8 @@
     "filter": "Partage",
     "filterAll": "Tous les partages",
     "filterShared": "Partagé avec vous",
+    "planWithheld": "Plan non communiqué",
+    "profileWithheld": "Profil PRISM non communiqué pour vous.",
     "category": {
       "prism": "PRISM",
       "engagement": "Engagement",
