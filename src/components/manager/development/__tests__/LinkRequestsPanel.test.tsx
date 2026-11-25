@@ -289,3 +289,18 @@ describe("its own error boundary", () => {
     spy.mockRestore()
   })
 })
+
+describe("U7: inside the Add people dialog's Requests tab", () => {
+  it("says so in a line when nothing waits, instead of rendering nothing", async () => {
+    renderWith(<LinkRequestsPanel audience="manager" emptyText="No requests are waiting." />)
+    expect(await screen.findByTestId("link-requests-empty")).toHaveTextContent("No requests are waiting.")
+    expect(screen.queryByTestId("link-requests-panel")).toBeNull()
+  })
+
+  it("still makes no call and shows nothing for a practitioner", async () => {
+    renderWith(<LinkRequestsPanel audience="practitioner" emptyText="No requests are waiting." />)
+    await act(async () => undefined)
+    expect(growth.getIncomingLinkRequests).not.toHaveBeenCalled()
+    expect(screen.queryByTestId("link-requests-empty")).toBeNull()
+  })
+})

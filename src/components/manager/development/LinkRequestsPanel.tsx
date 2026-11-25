@@ -18,14 +18,13 @@
  * Its own error boundary: a fault in this panel blanks the panel, never the
  * roster under it.
  */
-import { useContext, useState } from "react"
+import { useState } from "react"
 import { Loader2, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
-import { AuthContext } from "@/context/auth-context"
-import { ROLES } from "@/constants/routes"
 import { cn } from "@/lib/utils"
 import { useDevelopmentText } from "@/hooks/manager/development/useDevelopmentText"
+import { useCanSeeLinkRequests } from "@/hooks/manager/development/useWaitingLinkRequests"
 import { useDecideLinkRequest, useIncomingLinkRequests } from "@/hooks/summit/useLinkRequests"
 import type { IncomingLinkRequest } from "@/services/manager/development/growthService"
 import { categoryLabels, codeOf, SHARING_UI_NS, shortDate, statusOf } from "@/components/sharing/linkRequestCopy"
@@ -100,7 +99,7 @@ function RequestRow({
   )
 }
 
-function PanelBody() {
+function PanelBody({ emptyText }: { emptyText?: string }) {
   const { t } = useDevelopmentText()
   const sk = useDevSkin()
   const incoming = useIncomingLinkRequests(true)
@@ -123,7 +122,15 @@ function PanelBody() {
   const refusedOutright = incoming.isError && [403, 404].includes(statusOf(incoming.error) ?? 0)
   const rows = refusedOutright ? [] : (incoming.data ?? [])
   // Nothing to act on and nothing just done: no panel (see the header comment).
-  if (rows.length === 0 && !notice) return null
+  // Inside the "Add people" dialog's Requests tab the caller asks for a line
+  // instead, so an open tab never reads as blank.
+  if (rows.length === 0 && !notice) {
+    return emptyText ? (
+      <p className={cn("text-sm", sk.text500)} data-testid="link-requests-empty">
+        {emptyText}
+      </p>
+    ) : null
+  }
 
   const refreshFailed = incoming.isError && !refusedOutright && rows.length > 0
 
@@ -163,18 +170,24 @@ function PanelBody() {
   )
 }
 
-function PanelGate({ audience }: { audience: "manager" | "practitioner" }) {
-  const auth = useContext(AuthContext)
+function PanelGate({ audience, emptyText }: { audience: "manager" | "practitioner"; emptyText?: string }) {
   // The server answers this list for `manager` only; a practitioner (or anyone
   // else) would be refused, so they make no call at all.
-  if (audience !== "manager" || auth?.hasRole(ROLES.MANAGER) !== true) return null
-  return <PanelBody />
+  if (!useCanSeeLinkRequests(audience)) return null
+  return <PanelBody emptyText={emptyText} />
 }
 
-export function LinkRequestsPanel({ audience }: { audience: "manager" | "practitioner" }) {
+export function LinkRequestsPanel({
+  audience,
+  emptyText,
+}: {
+  audience: "manager" | "practitioner"
+  /** Shown instead of nothing when no request waits (the dialog tab uses it). */
+  emptyText?: string
+}) {
   return (
     <ErrorBoundary fallback={() => null}>
-      <PanelGate audience={audience} />
+      <PanelGate audience={audience} emptyText={emptyText} />
     </ErrorBoundary>
   )
 }

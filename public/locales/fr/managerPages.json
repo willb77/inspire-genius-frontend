@@ -270,10 +270,7 @@
     "onlyTheirManagerACompanyAdmin": "seul leur responsable, un administrateur d'entreprise de leur organisation ou un super administrateur peut le faire.",
     "bulkAddFailedPleaseTry": "Échec de l'ajout en masse. Veuillez réessayer.",
     "addMember": "Ajouter un membre",
-    "addTeamMembers": "Ajouter des membres à l'équipe",
     "addADirectReportTo": "Ajoutez un collaborateur direct à votre plan de développement. Une fiche est créée pour chaque nouveau membre.",
-    "single": "Individuel",
-    "bulkUpload": "Import en masse",
     "name": "Nom",
     "jordanLee": "Jordan Lee",
     "title": "Titre",
@@ -288,7 +285,16 @@
     "jordanLeeJordanCoCom": "Jordan Lee, jordan@co.com, Ingénieur, Plateforme\nSam Rivera, sam@co.com, Designer, Produit",
     "uploadCsvFile": "Importer un fichier CSV",
     "memberSDetected": "{{length}} membre(s) détecté(s)",
-    "addMembers": "Ajouter les membres"
+    "addMembers": "Ajouter les membres",
+    "addPeople": "Ajouter des personnes",
+    "tabAddPerson": "Ajouter une personne",
+    "tabImportFile": "Importer un fichier",
+    "tabRequests": "Demandes",
+    "csvQuoteHint": "Mettez une valeur entre guillemets doubles si elle contient une virgule.",
+    "noRequestsWaiting": "Aucune demande en attente.",
+    "orgJoinRequestsLink": "Demandes pour rejoindre votre organisation",
+    "requestsWaiting": "Personnes en attente de rejoindre votre équipe : {{n}}",
+    "review": "Examiner"
   },
   "analytics": {
     "failedToLoadAnalyticsData": "Échec du chargement des données d'analyse.",

@@ -616,10 +616,7 @@
     "onlyTheirManagerACompanyAdmin": "solo il loro manager, un amministratore aziendale della loro organizzazione o un super admin può farlo.",
     "bulkAddFailedPleaseTry": "Aggiunta in blocco non riuscita. Riprova.",
     "addMember": "Aggiungi membro",
-    "addTeamMembers": "Aggiungi membri del team",
     "addADirectReportTo": "Aggiungi un collaboratore diretto al tuo elenco di sviluppo. Viene creata una scheda per ogni nuovo membro.",
-    "single": "Singolo",
-    "bulkUpload": "Caricamento in blocco",
     "name": "Nome",
     "jordanLee": "Jordan Lee",
     "title": "Titolo",
@@ -634,7 +631,16 @@
     "jordanLeeJordanCoCom": "Jordan Lee, jordan@co.com, Engineer, Platform\nSam Rivera, sam@co.com, Designer, Product",
     "uploadCsvFile": "Carica file CSV",
     "memberSDetected": "{{length}} membro/i rilevato/i",
-    "addMembers": "Aggiungi membri"
+    "addMembers": "Aggiungi membri",
+    "addPeople": "Aggiungi persone",
+    "tabAddPerson": "Aggiungi una persona",
+    "tabImportFile": "Importa un file",
+    "tabRequests": "Richieste",
+    "csvQuoteHint": "Metti un valore tra virgolette doppie se contiene una virgola.",
+    "noRequestsWaiting": "Nessuna richiesta in attesa.",
+    "orgJoinRequestsLink": "Richieste di adesione alla tua organizzazione",
+    "requestsWaiting": "Persone in attesa di entrare nel tuo team: {{n}}",
+    "review": "Esamina"
   },
   "analytics": {
     "failedToLoadAnalyticsData": "Impossibile caricare i dati analitici.",

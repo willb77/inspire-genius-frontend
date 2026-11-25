@@ -13,10 +13,7 @@
     "onlyTheirManagerACompanyAdmin": "only their manager, a company admin of their organisation or a super admin can.",
     "bulkAddFailedPleaseTry": "Bulk add failed. Please try again.",
     "addMember": "Add member",
-    "addTeamMembers": "Add team members",
     "addADirectReportTo": "Add a direct report to your development roster. A card is created for each new member.",
-    "single": "Single",
-    "bulkUpload": "Bulk upload",
     "name": "Name",
     "jordanLee": "Jordan Lee",
     "title": "Title",
@@ -31,7 +28,16 @@
     "jordanLeeJordanCoCom": "Jordan Lee, jordan@co.com, Engineer, Platform\nSam Rivera, sam@co.com, Designer, Product",
     "uploadCsvFile": "Upload CSV file",
     "memberSDetected": "{{length}} member(s) detected",
-    "addMembers": "Add members"
+    "addMembers": "Add members",
+    "addPeople": "Add people",
+    "tabAddPerson": "Add a person",
+    "tabImportFile": "Import a file",
+    "tabRequests": "Requests",
+    "csvQuoteHint": "Put a value in double quotes if it contains a comma.",
+    "noRequestsWaiting": "No requests are waiting.",
+    "orgJoinRequestsLink": "Requests to join your organisation",
+    "requestsWaiting": "People waiting to join your team: {{n}}",
+    "review": "Review"
   },
   "analytics": {
     "failedToLoadAnalyticsData": "Failed to load analytics data.",

@@ -52,7 +52,7 @@ const ADA: PersonOption = {
 
 function openDialog() {
   render(<AddMemberDialog />)
-  fireEvent.click(screen.getByRole("button", { name: /Add member/i }))
+  fireEvent.click(screen.getByRole("button", { name: /Add people/i }))
   return screen.getByRole("dialog")
 }
 
@@ -148,8 +148,8 @@ describe("the server's refusal", () => {
   it("says how many bulk rows were refused", async () => {
     addBulkMutateAsync.mockResolvedValue({ created: 1, failed: 1, refused: 1, rows: [] })
     const dialog = openDialog()
-    fireEvent.mouseDown(within(dialog).getByRole("tab", { name: "Bulk upload" }))
-    fireEvent.click(within(dialog).getByRole("tab", { name: "Bulk upload" }))
+    fireEvent.mouseDown(within(dialog).getByRole("tab", { name: "Import a file" }))
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Import a file" }))
     const box = await within(dialog).findByRole("textbox")
     fireEvent.change(box, { target: { value: "Ada, ada@x.com\nNobody, no@x.com" } })
     fireEvent.click(within(dialog).getByRole("button", { name: "Add members" }))
@@ -189,5 +189,39 @@ describe("filterOrgChart", () => {
   })
   it("returns nothing below two characters", () => {
     expect(filterOrgChart(nodes, "a")).toEqual([])
+  })
+})
+
+describe("U7: the add and import payloads are unchanged", () => {
+  it("single add sends exactly the fields it sent before", async () => {
+    addOneMutateAsync.mockResolvedValue({ memberId: "x", name: "Jo", prismWritten: false })
+    const dialog = openDialog()
+    expect(within(dialog).getAllByRole("tab")).toHaveLength(2)
+    fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: " Jo Park " } })
+    fireEvent.change(within(dialog).getByLabelText("Title"), { target: { value: "Lead" } })
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Add member$/ }))
+    await waitFor(() => expect(addOneMutateAsync).toHaveBeenCalled())
+    expect(addOneMutateAsync.mock.calls[0][0]).toStrictEqual({
+      name: "Jo Park",
+      email: undefined,
+      title: "Lead",
+      department: undefined,
+      memberSub: undefined,
+    })
+  })
+
+  it("import sends one object per row, a quoted comma kept in its cell", async () => {
+    addBulkMutateAsync.mockResolvedValue({ created: 2, failed: 0, refused: 0, rows: [] })
+    const dialog = openDialog()
+    fireEvent.mouseDown(within(dialog).getByRole("tab", { name: "Import a file" }))
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Import a file" }))
+    const box = await within(dialog).findByRole("textbox")
+    fireEvent.change(box, { target: { value: '"Smith, Jr.",a@x.com,Lead,Ops\nRiver Lee' } })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add members" }))
+    await waitFor(() => expect(addBulkMutateAsync).toHaveBeenCalled())
+    expect(addBulkMutateAsync.mock.calls[0][0]).toStrictEqual([
+      { name: "Smith, Jr.", email: "a@x.com", title: "Lead", department: "Ops" },
+      { name: "River Lee", email: undefined, title: undefined, department: undefined },
+    ])
   })
 })

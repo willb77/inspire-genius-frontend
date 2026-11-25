@@ -29,10 +29,10 @@ import {
   useDevelopmentText,
 } from "@/hooks/manager/development"
 import { MemberCard } from "@/components/manager/development/MemberCard"
-import { AddMemberDialog } from "@/components/manager/development/AddMemberDialog"
+import { AddMemberDialog, type AddPeopleTab } from "@/components/manager/development/AddMemberDialog"
 import { OrgChartPanel } from "@/components/manager/development/OrgChartPanel"
 import { MyReportsPanel } from "@/components/manager/development/MyReportsPanel"
-import { LinkRequestsPanel } from "@/components/manager/development/LinkRequestsPanel"
+import { LinkRequestsNotice } from "@/components/manager/development/LinkRequestsNotice"
 import {
   DevSkinProvider,
   DevPageFrame,
@@ -135,6 +135,18 @@ export default function DevelopmentStudio({
   const sk = getDevSkin(v2)
   const navigate = useNavigate()
   const { t } = useDevelopmentText(audience)
+  // U7: the header's "Add people" dialog is controlled here so the page's
+  // join-request notice can open it on the Requests tab.
+  const [addOpen, setAddOpen] = useState(false)
+  const [addTab, setAddTab] = useState<AddPeopleTab>("single")
+  const onAddOpenChange = (next: boolean) => {
+    if (next) setAddTab("single")
+    setAddOpen(next)
+  }
+  const reviewRequests = () => {
+    setAddTab("requests")
+    setAddOpen(true)
+  }
   const { data: roster, isLoading, isError, refetch } = useTeamDevelopmentRoster()
 
   /**
@@ -241,12 +253,19 @@ export default function DevelopmentStudio({
               </Link>
             </Button>
           ) : null}
-          <AddMemberDialog />
+          <AddMemberDialog
+            audience={audience}
+            open={addOpen}
+            onOpenChange={onAddOpenChange}
+            tab={addTab}
+            onTabChange={setAddTab}
+          />
         </div>
       </header>
 
-      {/* MMLR-6 — shown only while a member's request waits on this manager. */}
-      <LinkRequestsPanel audience={audience} />
+      {/* MMLR-6 / U7 — one line while a member's request waits on this manager;
+          the requests are answered in the dialog's Requests tab. */}
+      <LinkRequestsNotice audience={audience} onReview={reviewRequests} />
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
