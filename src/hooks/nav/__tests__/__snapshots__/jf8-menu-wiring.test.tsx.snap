@@ -866,6 +866,7 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
 exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: main menu, every vertical's sidebar and the pill row 1`] = `
 {
   "mainMenu": [
+    "Client Development Studio -> /practitioner/development",
     "Practitioner Home -> /practitioner/home",
     "Chat with Meridian -> /meridian/chat",
     "My Clients -> /practitioner/clients",
@@ -891,6 +892,7 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
     "career-discovery": [
       {
         "items": [
+          "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
           "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
@@ -924,7 +926,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Team Development Studio -> /practitioner/development",
           "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Career Studio -> ",
@@ -941,6 +942,7 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
     "direction-setting": [
       {
         "items": [
+          "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
           "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
@@ -974,7 +976,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Team Development Studio -> /practitioner/development",
           "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Career Studio -> ",
@@ -991,6 +992,7 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
     "grant": [
       {
         "items": [
+          "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
           "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
@@ -1024,7 +1026,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Team Development Studio -> /practitioner/development",
           "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Career Studio -> ",
@@ -1041,6 +1042,7 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
     "honor": [
       {
         "items": [
+          "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
           "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
@@ -1059,7 +1061,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Team Development Studio -> /practitioner/development",
           "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Career Studio -> ",
@@ -1076,6 +1077,7 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
     "job-blueprint": [
       {
         "items": [
+          "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
           "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
@@ -1105,7 +1107,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Team Development Studio -> /practitioner/development",
           "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Career Studio -> ",
@@ -1122,6 +1123,7 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
     "job-fit": [
       {
         "items": [
+          "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
           "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
@@ -1151,7 +1153,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Team Development Studio -> /practitioner/development",
           "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Career Studio -> ",
@@ -1168,6 +1169,7 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
     "knowledge-continuity": [
       {
         "items": [
+          "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
           "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
@@ -1196,7 +1198,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Team Development Studio -> /practitioner/development",
           "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Career Studio -> ",
@@ -1213,6 +1214,7 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
     "lumen": [
       {
         "items": [
+          "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
           "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
@@ -1239,7 +1241,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Team Development Studio -> /practitioner/development",
           "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Career Studio -> ",

@@ -256,7 +256,7 @@ export default function MemberDevelopmentWorkspace({
   const sk = getDevSkin(v2)
   const { memberId } = useParams<{ memberId: string }>()
   const navigate = useNavigate()
-  const { t } = useDevelopmentText()
+  const { t } = useDevelopmentText(audience)
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Standard manager chrome + (flag-gated) HomeV2 cream frame around whichever

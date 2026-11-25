@@ -108,7 +108,7 @@ export default function DevelopmentStudio({
       : ROUTES.MANAGER.DEVELOPMENT_MEMBER
   const sk = getDevSkin(v2)
   const navigate = useNavigate()
-  const { t } = useDevelopmentText()
+  const { t } = useDevelopmentText(audience)
   const { data: roster, isLoading, isError, refetch } = useTeamDevelopmentRoster()
 
   /**

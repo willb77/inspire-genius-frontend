@@ -504,9 +504,9 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
   const UNGATED = ["Interview Studio", "Goals Studio", "Role Blueprint Match", "Character Lab"].sort()
 
   it("gives the practitioner every requested tool, ungated", () => {
-    expect(labelsFor("practitioner")).toEqual(
-      [...UNGATED, "Team Development Studio"].sort(),
-    )
+    // U9: the practitioner's Studio left Tools for the top of the main menu,
+    // as the manager's did on 2026-09-05, so the two tool sets now match.
+    expect(labelsFor("practitioner")).toEqual(UNGATED)
   })
 
   it("gives the manager every requested tool bar the pilot-gated one", () => {
@@ -517,9 +517,8 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
 
   it("differs by AT MOST the pilot-gated entry", () => {
     const only = (a: string[], b: string[]) => a.filter((x) => !b.includes(x))
-    expect(only(labelsFor("practitioner"), labelsFor("manager"))).toEqual([
-      "Team Development Studio",
-    ])
+    // Empty since U9: neither role carries its Studio in Tools any more.
+    expect(only(labelsFor("practitioner"), labelsFor("manager"))).toEqual([])
     expect(only(labelsFor("manager"), labelsFor("practitioner"))).toEqual([])
   })
 
