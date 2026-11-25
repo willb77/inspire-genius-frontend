@@ -1,13 +1,20 @@
 /**
- * AssessmentsSettings — "Other Assessments" tab (G6).
+ * AssessmentsSettings — "Other Assessments" card (G6; TDS A1).
  *
- * Users add prior reports manually. Each framework opens a small modal
- * with a framework-specific form, submits via `useCreateAssessment()`
- * with `raw_payload` shaped so the G4 adapters can parse it.
+ * People add prior results by hand or by uploading a report. Every role sees
+ * the card (A1); the "Replace PRISM data" row stays with the user role, which
+ * is where it was before A1.
  *
- * - DISC      → raw_payload = { D, I, S, C }  (0–100 each)
- * - Big Five  → raw_payload = { O, C, E, A, N } (0–100 each)
- * - MBTI      → raw_payload = { type, clarity } (4-letter type + 0–100 clarity)
+ * Manual entries post to `POST /v1/profile/me/assessments`, whose rows must
+ * carry `category` (the backend's `ScoreIn`) and whose typing is one object
+ * with `type_system` (`TypingIn`):
+ *
+ * - DISC             → rows under category "DISC", dimensions D / I / S / C
+ * - Big Five         → framework "BIG_FIVE", rows under "BigFive", full OCEAN names
+ * - MBTI             → typing { type_system: "MBTI", type_code, clarity }
+ * - CliftonStrengths → `CliftonTopFiveDialog`
+ *
+ * A report upload goes preview → review → confirm (`UploadReportDialog`).
  */
 
 import { useTranslation } from "react-i18next";
@@ -28,16 +35,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Upload } from "lucide-react";
 
 import { ReplacePrismDataButton } from "@/components/prism/ReplacePrismDataButton";
 import { useCreateAssessment } from "@/hooks/profile/useProfile";
-import type {
-  AssessmentScore,
-  AssessmentTyping,
-  CreateAssessmentRequest,
-} from "@/types/profile/profile-types";
+import type { CreateAssessmentRequest } from "@/types/profile/profile-types";
 import { withPrism } from "@/lib/withPrism"
+import { useAuth } from "@/context/useAuth";
+import { ROLES } from "@/constants/routes";
+import CliftonTopFiveDialog from "./CliftonTopFiveDialog";
+import UploadReportDialog from "./UploadReportDialog";
+import { numericScoreRows } from "./assessmentReview";
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -95,14 +103,14 @@ function isoToday(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function buildScores(
-  pairs: Record<string, number>,
-): AssessmentScore[] {
-  return Object.entries(pairs).map(([dimension, score]) => ({
-    dimension,
-    score,
-  }));
-}
+/** The Big Five rows are stored under the adapter's full OCEAN names. */
+const BIG_FIVE_NAMES: Record<string, string> = {
+  O: "Openness",
+  C: "Conscientiousness",
+  E: "Extraversion",
+  A: "Agreeableness",
+  N: "Neuroticism",
+};
 
 // ---------------------------------------------------------------------------
 // DISC dialog
@@ -139,7 +147,7 @@ function DiscDialog({
       assessed_at: new Date(values.assessed_at).toISOString(),
       source: "user_input",
       raw_payload: nums,
-      parsed_scores: buildScores(nums),
+      parsed_scores: numericScoreRows("DISC", nums),
     };
     try {
       await create.mutateAsync(payload);
@@ -241,11 +249,14 @@ function BigFiveDialog({
       N: toNum(values.N),
     };
     const payload: CreateAssessmentRequest = {
-      framework: "BigFive",
+      framework: "BIG_FIVE",
       assessed_at: new Date(values.assessed_at).toISOString(),
       source: "user_input",
       raw_payload: nums,
-      parsed_scores: buildScores(nums),
+      parsed_scores: numericScoreRows(
+        "BigFive",
+        Object.fromEntries(Object.entries(nums).map(([k, v]) => [BIG_FIVE_NAMES[k], v])),
+      ),
     };
     try {
       await create.mutateAsync(payload);
@@ -341,9 +352,11 @@ function MbtiDialog({
 
   const onSubmit = async (values: MbtiForm) => {
     const clarity = toNum(values.clarity);
-    const typing: AssessmentTyping[] = [
-      { type_code: values.type.toUpperCase(), clarity },
-    ];
+    const typing = {
+      type_system: "MBTI",
+      type_code: values.type.toUpperCase(),
+      clarity,
+    };
     const payload: CreateAssessmentRequest = {
       framework: "MBTI",
       assessed_at: new Date(values.assessed_at).toISOString(),
@@ -431,9 +444,15 @@ function MbtiDialog({
 
 export default function AssessmentsSettings() {
   const { t } = useTranslation("shellUi");
+  const { user } = useAuth();
+  // A1: every role sees the card; replacing PRISM data stays with the user
+  // role, the only role that saw it before.
+  const canReplacePrism = user?.role === ROLES.USER;
   const [discOpen, setDiscOpen] = useState(false);
   const [bfOpen, setBfOpen] = useState(false);
   const [mbtiOpen, setMbtiOpen] = useState(false);
+  const [cliftonOpen, setCliftonOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   return (
     <Card className="shadow-sm" data-testid="assessments-settings">
@@ -444,6 +463,7 @@ export default function AssessmentsSettings() {
         </p>
       </CardHeader>
       <CardContent className="space-y-4 text-left">
+        {canReplacePrism && (
         <div
           className="flex flex-col gap-2 rounded-md border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"
           data-testid="prism-data-settings"
@@ -456,6 +476,7 @@ export default function AssessmentsSettings() {
           </div>
           <ReplacePrismDataButton label={withPrism(t("assessments.replacePrism", { defaultValue: "Replace PRISM data" }))} variant="outline" size="sm" />
         </div>
+        )}
 
         <div className="flex flex-wrap gap-2">
           <Button
@@ -482,12 +503,30 @@ export default function AssessmentsSettings() {
           >
             <Plus className="mr-1.5 h-4 w-4" /> {t("assessments.addMbti", { defaultValue: "Add MBTI type" })}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setCliftonOpen(true)}
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> {t("assessments.addClifton", { defaultValue: "Add CliftonStrengths top five" })}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setUploadOpen(true)}
+          >
+            <Upload className="mr-1.5 h-4 w-4" /> {t("assessments.uploadReport", { defaultValue: "Upload a report" })}
+          </Button>
         </div>
       </CardContent>
 
       <DiscDialog open={discOpen} onOpenChange={setDiscOpen} />
       <BigFiveDialog open={bfOpen} onOpenChange={setBfOpen} />
       <MbtiDialog open={mbtiOpen} onOpenChange={setMbtiOpen} />
+      <CliftonTopFiveDialog open={cliftonOpen} onOpenChange={setCliftonOpen} />
+      <UploadReportDialog open={uploadOpen} onOpenChange={setUploadOpen} />
     </Card>
   );
 }

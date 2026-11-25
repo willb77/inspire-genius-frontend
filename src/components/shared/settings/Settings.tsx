@@ -279,13 +279,14 @@ export default function Settings({
           </div>
         )}
 
-        {/* Other Assessments — prior DISC / Big Five / MBTI entries (G6).
-            Sits between Personal Data and Notifications per Option C plan. */}
-        {role === ROLES.USER && (
-          <div data-tour="settings-other-assessments">
-            <AssessmentsSettings />
-          </div>
-        )}
+        {/* Other Assessments — prior DISC / Big Five / MBTI / CliftonStrengths
+            entries and report uploads (G6; TDS A1). Every role: each person
+            records their own results. The PRISM-replace row inside the card
+            stays user-only. Sits between Personal Data and Notifications per
+            Option C plan. */}
+        <div data-tour="settings-other-assessments">
+          <AssessmentsSettings />
+        </div>
 
         {/* Practitioner code (Practitioner Programme PC-1c). A client who signed
             up on their own enters the code their practitioner gave them. User

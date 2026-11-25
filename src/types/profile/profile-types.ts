@@ -123,14 +123,21 @@ export type CreateFactRequest = {
   source?: string;
 };
 
+/**
+ * Body for POST /v1/profile/me/assessments. The rows and the typing use the
+ * backend's `ScoreIn` / `TypingIn` shapes (`category` and `type_system` are
+ * required). Until A1 this said `AssessmentScore[]` / `AssessmentTyping[]`
+ * (the READ shapes), and every manual DISC, Big Five and MBTI save was
+ * refused with a 422.
+ */
 export type CreateAssessmentRequest = {
   framework: string;
   framework_version?: string;
   assessed_at: string;
   source?: string;
   raw_payload?: Record<string, unknown>;
-  parsed_scores?: AssessmentScore[];
-  typing?: AssessmentTyping[];
+  parsed_scores?: ImportScoreRow[];
+  typing?: ImportTypingRow | null;
 };
 
 /** Response from POST /v1/profile/me/assessments (+ /import). */

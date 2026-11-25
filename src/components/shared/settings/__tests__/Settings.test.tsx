@@ -668,6 +668,17 @@ describe("Settings Component", () => {
     }
   });
 
+  // TDS A1: every role records its own prior assessments.
+  it("shows the Other Assessments card to all six roles", () => {
+    const roles = [ROLES.USER, ROLES.MANAGER, ROLES.COMPANY_ADMIN, ROLES.PRACTITIONER, ROLES.DISTRIBUTOR, ROLES.SUPER_ADMIN];
+    for (const role of roles) {
+      mockUseAuth.mockReturnValue({ user: { role }, markFullName: mockMarkFullName } as unknown as ReturnType<typeof useAuth>);
+      const r = render(<Settings />, { wrapper: createWrapper() });
+      expect(screen.getByTestId("assessments-settings")).toBeInTheDocument();
+      r.unmount();
+    }
+  });
+
   // MSCH-2: the default meeting location is for the roles the team scheduler admits.
   it("shows the meeting-location card to manager, company-admin and super-admin only", () => {
     const visibleTo: string[] = [ROLES.MANAGER, ROLES.COMPANY_ADMIN, ROLES.SUPER_ADMIN];
