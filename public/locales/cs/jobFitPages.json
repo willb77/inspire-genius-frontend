@@ -566,5 +566,13 @@
     "line": "Váš vedoucí nebo kouč si dne {{date}} zobrazil vaši shodu s rolí {{role}}.",
     "lineNoDate": "Váš vedoucí nebo kouč si zobrazil vaši shodu s rolí {{role}}.",
     "error": "Nepodařilo se ověřit, zda si vedoucí nebo kouč zobrazil vaši shodu s rolí. Zkuste to prosím za chvíli znovu."
+  },
+  "phaseStrip": {
+    "checkTheFit": "Ověřte shodu",
+    "exploreCareers": "Prozkoumejte profese",
+    "knowYourself": "Poznejte sebe",
+    "label": "Vaše cesta v Careers and Jobs",
+    "planTheRoute": "Naplánujte cestu",
+    "stepOf": "Krok {{n}} z {{total}}"
   }
 }

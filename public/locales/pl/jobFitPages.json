@@ -566,5 +566,13 @@
     "line": "Twój przełożony lub coach sprawdził Twoje dopasowanie do roli {{role}} w dniu {{date}}.",
     "lineNoDate": "Twój przełożony lub coach sprawdził Twoje dopasowanie do roli {{role}}.",
     "error": "Nie udało się sprawdzić, czy przełożony lub coach sprawdzał Twoje dopasowanie do roli. Spróbuj ponownie za chwilę."
+  },
+  "phaseStrip": {
+    "checkTheFit": "Sprawdź dopasowanie",
+    "exploreCareers": "Poznaj zawody",
+    "knowYourself": "Poznaj siebie",
+    "label": "Twoja ścieżka w Careers and Jobs",
+    "planTheRoute": "Zaplanuj drogę",
+    "stepOf": "Krok {{n}} z {{total}}"
   }
 }

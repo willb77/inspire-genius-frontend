@@ -15,6 +15,7 @@ import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import { HouseDiscoveryNav } from "./house/HouseDiscoveryNav"
 import { discoveryMenu } from "@/lib/career-discovery/profileSection"
 import { useProfileMerged } from "@/hooks/career-discovery/useProfileMerged"
+import { CareersJobsPhaseStrip } from "@/pages/job-fit/PhaseStrip"
 
 /**
  * Career & Education Discovery's pathless layout: the in-vertical nav, then
@@ -115,6 +116,9 @@ function Gate() {
 export default function DiscoveryShell() {
   return (
     <div className="p-6">
+      {/* Phase B: outside the Gate, so it shows on every page the shell draws;
+          renders nothing unless careers_jobs_flow is on for this person. */}
+      <CareersJobsPhaseStrip />
       {isHouseStyleOn("career-education") ? <HouseDiscoveryNav /> : <DiscoveryNav />}
       <Gate />
     </div>

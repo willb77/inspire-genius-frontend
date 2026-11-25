@@ -566,5 +566,13 @@
     "line": "Votre responsable ou coach a consulté votre adéquation au poste {{role}} le {{date}}.",
     "lineNoDate": "Votre responsable ou coach a consulté votre adéquation au poste {{role}}.",
     "error": "Nous n'avons pas pu vérifier si un responsable ou un coach a consulté votre adéquation à un poste. Veuillez réessayer dans un instant."
+  },
+  "phaseStrip": {
+    "checkTheFit": "Vérifier l'adéquation",
+    "exploreCareers": "Explorer les métiers",
+    "knowYourself": "Se connaître",
+    "label": "Votre parcours dans Careers and Jobs",
+    "planTheRoute": "Tracer le parcours",
+    "stepOf": "Étape {{n}} sur {{total}}"
   }
 }

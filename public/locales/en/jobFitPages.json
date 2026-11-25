@@ -566,5 +566,13 @@
     "line": "Your manager or coach viewed your fit for {{role}} on {{date}}.",
     "lineNoDate": "Your manager or coach viewed your fit for {{role}}.",
     "error": "We could not check whether a manager or coach has viewed your fit for a role. Please try again in a moment."
+  },
+  "phaseStrip": {
+    "checkTheFit": "Check the fit",
+    "exploreCareers": "Explore careers",
+    "knowYourself": "Know yourself",
+    "label": "Your Careers and Jobs journey",
+    "planTheRoute": "Plan the route",
+    "stepOf": "Step {{n}} of {{total}}"
   }
 }
