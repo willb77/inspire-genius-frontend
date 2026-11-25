@@ -167,6 +167,7 @@
     },
     "finalizeFailed": "Impossibile finalizzare il colloquio. Riprova.",
     "finalizeFailedDetail": "Impossibile finalizzare il colloquio.",
+    "nothingRated": "Valuta almeno una risposta prima di terminare il colloquio.",
     "finishView": "Termina e visualizza i risultati",
     "frame": {
       "description": "Conferma il ruolo per cui stai conducendo il colloquio, così le domande STAR e il punteggio saranno adatti al ruolo effettivo, alla linea di riporto e all'ambito.",

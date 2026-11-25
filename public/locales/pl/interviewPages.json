@@ -52,6 +52,7 @@
     },
     "finalizeFailed": "Nie udało się sfinalizować rozmowy. Spróbuj ponownie.",
     "finalizeFailedDetail": "Nie udało się sfinalizować rozmowy.",
+    "nothingRated": "Oceń co najmniej jedną odpowiedź przed zakończeniem rozmowy.",
     "finishView": "Zakończ i zobacz wyniki",
     "frame": {
       "description": "Potwierdź stanowisko, na które prowadzisz rozmowę, aby pytania STAR i punktacja pasowały do rzeczywistej roli, linii raportowania i zakresu obowiązków.",
