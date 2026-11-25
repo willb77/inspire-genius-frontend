@@ -104,9 +104,16 @@ export const tasksService = {
       .post<TaskAgentResponse>(`${BASE}/job-blueprint`, body)
       .then((r) => r.data),
 
+  /**
+   * Interview prep via Maven, called DIRECTLY on the agent-engine — the same
+   * fix as documentResearch below. `/v1/tasks/interview-prep` is not routed
+   * by the API Gateway (only `/v1/tasks/results*` is), so the "Prepare
+   * questions" flow 404'd. `/v1/agents/maven/run` takes the identical
+   * InterviewPrepRequest body and returns the identical TaskAgentResponse.
+   */
   interviewPrep: (body: InterviewPrepRequest) =>
-    api
-      .post<TaskAgentResponse>(`${BASE}/interview-prep`, body)
+    agentApi
+      .post<TaskAgentResponse>('/v1/agents/maven/run', body)
       .then((r) => r.data),
 
   teamComposition: (body: TeamCompositionRequest) =>
@@ -137,8 +144,8 @@ export const tasksService = {
    * environment. It authenticates off the same `access-token` header that
    * `agentApi` already attaches.
    *
-   * NOTE: the other four task agents on this service (jobBlueprint,
-   * interviewPrep, teamComposition, onboarding) still call `/v1/tasks/<slug>`
+   * NOTE: the other three task agents on this service (jobBlueprint,
+   * teamComposition, onboarding) still call `/v1/tasks/<slug>`
    * and have the same unrouted-prefix defect. They are left alone here
    * deliberately — they belong to surfaces not covered by this change and
    * have not been verified against their own `/v1/agents/<id>/run` handlers.
