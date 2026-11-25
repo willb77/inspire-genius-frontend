@@ -36,12 +36,22 @@
  *    hard-caps at five and forces `is_root`. Trusting a remote loop bound to be
  *    enforced remotely is how an interview becomes an interrogation, so the
  *    client counts too.
+ * 3. **Every answer is safety-screened before the next question (D-08).** The
+ *    questions in a category are fetched up front, so nothing server-side used
+ *    to see an answer before the next question appeared. A discovery answer
+ *    now goes to `screenAnswer` first; the stated goal and the ladder answers
+ *    are screened inside `/why-ladder`, where they go anyway. Each answer is
+ *    screened ONCE — a flag is a recorded event and can alert people. If the
+ *    server returns its crisis reply, that reply is shown, the answer is not
+ *    banked, and the interview pauses until the person chooses to carry on.
+ *    A screen that cannot be reached does not hold the interview.
  */
 import { useCallback, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   askCategory,
   saveDiscovery,
+  screenAnswer,
   synthesizeGoals,
   whyLadder,
 } from "@/services/summit/goals.service"
@@ -50,6 +60,7 @@ import {
   SUMMIT_CATEGORY_KEYS,
   type SummitAnswer,
   type SummitCategoryKey,
+  type SummitCrisis,
   type SummitSession,
   type SummitWhyExchange,
 } from "@/types/summit"
@@ -63,6 +74,8 @@ export type InterviewPhase =
   | "ladder"
   | "synthesizing"
   | "complete"
+  /** D-08: the server's crisis reply is on screen; no question is open. */
+  | "paused"
 
 export type InterviewTurnKind =
   | "intro"
@@ -71,6 +84,8 @@ export type InterviewTurnKind =
   | "root"
   | "note"
   | "error"
+  /** D-08: the platform's fixed crisis reply, shown as the server sent it. */
+  | "crisis"
 
 export type InterviewTurn = {
   id: string
@@ -141,6 +156,8 @@ export function useSummitInterview({
   const statedGoalRef = useRef("")
   const exchangesRef = useRef<SummitWhyExchange[]>([])
   const currentWhyRef = useRef("")
+  // D-08: the step a pause interrupted, so "carry on" can reopen it.
+  const pausedFromRef = useRef<"question" | "stating-goal" | "ladder" | null>(null)
 
   const push = useCallback((turn: Omit<InterviewTurn, "id">) => {
     setTurns((prev) => [...prev, { ...turn, id: nextId(turn.role) }])
@@ -150,6 +167,33 @@ export function useSummitInterview({
     (text: string) => push({ role: "summit", text, kind: "error" }),
     [push]
   )
+
+  /**
+   * D-08: show the server's crisis reply and stop asking. The answer that
+   * raised it is not banked by the caller, so it never reaches synthesis.
+   */
+  const pauseForCrisis = useCallback(
+    (crisis: SummitCrisis, from: "question" | "stating-goal" | "ladder") => {
+      pausedFromRef.current = from
+      push({ role: "summit", text: crisis.content, kind: "crisis" })
+      setPhase("paused")
+    },
+    [push]
+  )
+
+  /**
+   * D-08: screen one discovery answer. Fails OPEN — a screen that errors or
+   * times out resolves to null and the interview carries on, because a safety
+   * call that is down must not strand every person mid-interview. The cost is
+   * that such an answer goes unscreened, as every answer did before this.
+   */
+  const screenDiscoveryAnswer = useCallback(async (text: string) => {
+    try {
+      return await screenAnswer(text)
+    } catch {
+      return null
+    }
+  }, [])
 
   /** Ask the next category, or move to the stated goal when there are none. */
   const openCategory = useCallback(
@@ -222,6 +266,15 @@ export function useSummitInterview({
       try {
         // Client-side bound as well as the server's — see the header note.
         if (exchanges.length >= MAX_LADDER_RUNGS) {
+          // D-08: this last answer never goes to /why-ladder, so it is the one
+          // ladder answer that has to be screened by its own call.
+          const last = exchanges[exchanges.length - 1]?.answer ?? ""
+          const crisis = last ? await screenDiscoveryAnswer(last) : null
+          if (crisis) {
+            exchangesRef.current = exchanges.slice(0, -1)
+            pauseForCrisis(crisis, "ladder")
+            return false
+          }
           push({
             role: "summit",
             text: "That's the root of it. Let me turn what you've told me into goals.",
@@ -231,6 +284,18 @@ export function useSummitInterview({
           return true
         }
         const rung = await whyLadder(statedGoalRef.current, exchanges)
+        if (rung.crisis) {
+          // D-08: the server screened the newest words and its crisis reply
+          // replaces the rung. Un-bank them, and pause.
+          if (exchanges.length === 0) {
+            statedGoalRef.current = ""
+            pauseForCrisis(rung.crisis, "stating-goal")
+          } else {
+            exchangesRef.current = exchanges.slice(0, -1)
+            pauseForCrisis(rung.crisis, "ladder")
+          }
+          return false
+        }
         if (rung.is_root) {
           push({
             role: "summit",
@@ -257,7 +322,7 @@ export function useSummitInterview({
         setBusy(false)
       }
     },
-    [push, pushError, qc]
+    [push, pushError, qc, pauseForCrisis, screenDiscoveryAnswer]
   )
 
   /** Turn everything captured into goals. */
@@ -311,6 +376,14 @@ export function useSummitInterview({
       push({ role: "user", text })
 
       if (phase === "question") {
+        // D-08: screen before the next (already fetched) question is shown.
+        setBusy(true)
+        const crisis = await screenDiscoveryAnswer(text)
+        setBusy(false)
+        if (crisis) {
+          pauseForCrisis(crisis, "question")
+          return
+        }
         answersRef.current = [
           ...answersRef.current,
           { question: questionsRef.current[qIndexRef.current] ?? "", answer: text },
@@ -355,8 +428,44 @@ export function useSummitInterview({
         kind: "note",
       })
     },
-    [busy, phase, push, closeCategory, stepLadder, synthesise]
+    [
+      busy,
+      phase,
+      push,
+      closeCategory,
+      stepLadder,
+      synthesise,
+      pauseForCrisis,
+      screenDiscoveryAnswer,
+    ]
   )
+
+  /**
+   * D-08: the person chose to carry on after a crisis reply. Reopens the step
+   * the pause interrupted by asking its question again; nothing is skipped and
+   * the answer that raised the reply stays un-banked.
+   */
+  const resume = useCallback(() => {
+    if (busy || phase !== "paused") return
+    const from = pausedFromRef.current
+    pausedFromRef.current = null
+    if (from === "question" && questionsRef.current[qIndexRef.current]) {
+      push({
+        role: "summit",
+        text: questionsRef.current[qIndexRef.current],
+        kind: "question",
+      })
+      setPhase("question")
+      return
+    }
+    if (from === "ladder" && currentWhyRef.current) {
+      push({ role: "summit", text: currentWhyRef.current, kind: "why" })
+      setPhase("ladder")
+      return
+    }
+    push({ role: "summit", text: STATED_GOAL_PROMPT, kind: "question" })
+    setPhase("stating-goal")
+  }, [busy, phase, push])
 
   /** Pass on the current category without answering the rest of it. */
   const skipCategory = useCallback(async () => {
@@ -405,6 +514,8 @@ export function useSummitInterview({
     start,
     answer,
     skipCategory,
+    /** D-08: carry on after a crisis reply. A no-op unless paused. */
+    resume,
     /** Draft goals from whatever has been captured so far. */
     synthesise,
   }

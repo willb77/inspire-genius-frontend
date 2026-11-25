@@ -119,6 +119,29 @@ export type SummitWhyResponse = {
   question: string
   /** The underlying motivation. "" until `is_root`. */
   root: string
+  /**
+   * D-08: present only when the answer just given was flagged and the fixed
+   * crisis reply applies to this person. It replaces the rung — there is no
+   * question and no root alongside it.
+   */
+  crisis?: SummitCrisis | null
+}
+
+/**
+ * D-08: the platform's fixed crisis reply, as the Goals routes return it.
+ * The wording is the server's and is shown as given — never composed here.
+ */
+export type SummitCrisis = {
+  /** The reply to show in place of the next question. */
+  content: string
+  tier: string
+  event_id: string | null
+  copy_status: string
+}
+
+/** POST /screen — `crisis` is null for every ordinary answer. */
+export type SummitScreenResponse = {
+  crisis: SummitCrisis | null
 }
 
 /** One rung as the ladder endpoint wants it echoed back. */
