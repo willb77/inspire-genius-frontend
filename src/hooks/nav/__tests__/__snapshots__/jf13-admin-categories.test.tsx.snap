@@ -1319,7 +1319,6 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
       "defaultCollapsed": true,
       "items": [
         "Bio Capture Studio -> /bio",
-        "Team Development Studio -> /practitioner/development",
         "Goals Studio -> /my/goals",
         "Role Blueprint Match -> /practitioner/job-blueprint",
         "Career Studio -> (group)",
@@ -1355,7 +1354,6 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
       "defaultCollapsed": true,
       "items": [
         "Bio Capture Studio -> /bio",
-        "Team Development Studio -> /practitioner/development",
         "Goals Studio -> /my/goals",
         "Role Blueprint Match -> /practitioner/job-blueprint",
         "Career Studio -> (group)",

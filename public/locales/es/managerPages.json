@@ -8,6 +8,19 @@
     "withoutPrismOne": "{{withoutPrism}} miembro del equipo no aparece en la lista: no tiene PRISM registrado. Invítalo desde la lista del equipo.",
     "withoutPrismOther": "{{withoutPrism}} miembros del equipo no aparecen en la lista: no tienen PRISM registrado. Invítalos desde la lista del equipo."
   },
+  "teamStudioView": {
+    "lens": "Comparar y escenarios",
+    "subtitle": "Compara personas y prueba escenarios con las personas de tu lista. Solo se puede elegir a quienes comparten su PRISM contigo.",
+    "earlierRuns": "Las comparaciones y los escenarios guardados en la página de una persona antes de esta vista siguen en la página de esa persona.",
+    "toolLabel": "Herramienta de equipo",
+    "compare": "Comparar",
+    "scenarios": "Escenarios",
+    "notSharedError": "Una de las personas que elegiste no comparte su PRISM contigo, así que no se puede incluir.",
+    "castEmpty": "Nadie de tu lista comparte todavía su PRISM contigo. Aquí solo se puede elegir a quienes lo han compartido. Puedes pedirlo desde la página de cada persona.",
+    "notSharedOne": "{{n}} persona con PRISM registrado no aparece: no ha compartido su PRISM contigo o no se pudo comprobar.",
+    "notSharedOther": "{{n}} personas con PRISM registrado no aparecen: no han compartido su PRISM contigo o no se pudo comprobar.",
+    "savedBlurb": "Solo tú puedes ver lo que guardas aquí. Cada ejecución se archiva con la primera persona que incluye y también aparece en la página de esa persona."
+  },
   "training": {
     "activePrograms": "Programas activos",
     "totalEnrolled": "Total de inscritos",

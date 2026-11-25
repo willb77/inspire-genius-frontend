@@ -123,11 +123,19 @@ function Turn({
           </div>
         )}
         <div
+          // D-08: the crisis reply interrupts the interview, so it is announced,
+          // not left for a screen reader to find in the transcript.
+          role={turn.kind === "crisis" ? "alert" : undefined}
+          data-testid={turn.kind === "crisis" ? "crisis-reply" : undefined}
           className={cn(
             "rounded-lg px-3 py-2 text-sm",
             isUser
               ? "whitespace-pre-wrap bg-muted"
-              : turn.kind === "root"
+              : turn.kind === "crisis"
+                ? // The server's wording, with its line breaks (a list of
+                  // resources), set apart from an ordinary question.
+                  "whitespace-pre-wrap border border-primary/40 bg-primary/5 text-foreground"
+                : turn.kind === "root"
                 ? // The root is what the whole ladder is for. It should not scroll
                   // past looking like one more grey bubble.
                   "border border-amber-300/60 bg-amber-50 font-medium text-foreground"
@@ -170,6 +178,7 @@ export default function GoalInterviewPanel({
     answer,
     skipCategory,
     synthesise,
+    resume,
   } = interview
 
   // Meridian's voice — the only voice the platform speaks in. `useTTS` now
@@ -330,8 +339,15 @@ export default function GoalInterviewPanel({
   const exploredCount = SUMMIT_CATEGORY_KEYS.filter(
     (k) => session?.categories?.[k]?.status === "explored"
   ).length
+  // Not while paused (D-08): a crisis reply is on screen, and "Draft my goals"
+  // beside it would be an invitation to carry on as if nothing had been said.
+  const paused = phase === "paused"
   const canSynthesise =
-    exploredCount > 0 && !busy && phase !== "synthesizing" && phase !== "complete"
+    exploredCount > 0 &&
+    !busy &&
+    !paused &&
+    phase !== "synthesizing" &&
+    phase !== "complete"
   const stalled = phase === "idle" && turns.length > 0 && !busy
 
   const categoryLabel = categoryKey
@@ -422,7 +438,9 @@ export default function GoalInterviewPanel({
                       ? "Drafting your goals…"
                       : phase === "complete"
                         ? "Goals drafted"
-                        : "A conversation, not a form"}
+                        : paused
+                          ? tr("directionSetting.goalInterviewPanel.paused", { defaultValue: "Paused" })
+                          : "A conversation, not a form"}
           </div>
         </div>
 
@@ -518,8 +536,22 @@ export default function GoalInterviewPanel({
               : ""}
       </div>
 
-      {(phase === "question" || canSynthesise || stalled) && (
+      {(phase === "question" || canSynthesise || stalled || paused) && (
         <div className="flex flex-col gap-2 border-t px-3 pt-2">
+          {/* D-08: the interview does not move on by itself after a crisis
+              reply. Carrying on is the person's choice, and an explicit one. */}
+          {paused && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={resume}
+              disabled={busy}
+              data-testid="resume-interview"
+            >
+              {tr("directionSetting.goalInterviewPanel.carryOnWithTheInterview", { defaultValue: "Carry on with the interview" })}
+            </Button>
+          )}
           {stalled && (
             <Button type="button" size="sm" className="h-7 px-2 text-[11px]" onClick={start}>
               {tr("directionSetting.goalInterviewPanel.tryAgain", { defaultValue: "Try again" })}

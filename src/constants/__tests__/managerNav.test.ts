@@ -35,13 +35,13 @@ describe("MANAGER_NAV_ITEMS — the six-item sidebar", () => {
     expect(both).toEqual([])
   })
 
-  it("keeps Team Development Studio in the OTHER roles' tools", () => {
-    // Only the manager's main nav changed. Promoting it for everyone would have
-    // silently restructured the practitioner and super-admin sidebars too.
-    const labels = (role: "practitioner" | "super-admin") =>
-      (TOOL_ITEMS_BY_ROLE[role] ?? []).map((i) => i.label)
-    expect(labels("practitioner")).toContain("Team Development Studio")
-    expect(labels("super-admin")).toContain("Team Development Studio")
+  it("keeps Team Development Studio in the super-admin's tools", () => {
+    // Only the manager's main nav changed on 2026-09-05. Promoting it for
+    // everyone would have silently restructured the super-admin sidebar too.
+    // The practitioner's Studio made the same move later, on its own decision
+    // (U9, D3) — practitionerNav.u9.test.ts covers it.
+    const labels = (TOOL_ITEMS_BY_ROLE["super-admin"] ?? []).map((i) => i.label)
+    expect(labels).toContain("Team Development Studio")
   })
 
   it("routes Join Requests from Team Import rather than the sidebar", () => {

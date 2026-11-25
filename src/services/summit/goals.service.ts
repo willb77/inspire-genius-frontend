@@ -12,6 +12,7 @@ import type {
   SummitSession,
   SummitSynthesizeResponse,
   SummitWhyExchange,
+  SummitScreenResponse,
   SummitWhyResponse,
 } from "@/types/summit"
 
@@ -100,6 +101,31 @@ export async function whyLadder(
     { stated_goal: statedGoal, exchanges }
   )
   return data
+}
+
+/** How long an answer waits on the safety screen before the interview carries on. */
+export const SCREEN_TIMEOUT_MS = 4000
+
+/**
+ * POST /screen — D-08: run the platform's safety screen over one discovery
+ * answer, before the next question is shown.
+ *
+ * Discovery answers are the only ones that need this call: the stated goal and
+ * every ladder answer are screened inside `/why-ladder`, where they arrive
+ * anyway, and each answer must be screened exactly once (a flag is a recorded
+ * event, and where escalation is on it alerts people). So do NOT also call this
+ * for text that is about to go to `whyLadder`.
+ *
+ * Resolves to the fixed crisis reply, or `null` for an ordinary answer. It
+ * rejects on a network error or timeout; the caller decides what that means.
+ */
+export async function screenAnswer(text: string) {
+  const { data } = await getApi().post<SummitScreenResponse>(
+    `${PREFIX}/screen`,
+    { text },
+    { timeout: SCREEN_TIMEOUT_MS }
+  )
+  return data?.crisis ?? null
 }
 
 /**

@@ -416,6 +416,19 @@
     "withoutPrismOne": "{{withoutPrism}} membro del team non è elencato: non ha PRISM registrato. Invitalo dall'elenco.",
     "withoutPrismOther": "{{withoutPrism}} membri del team non sono elencati: non hanno PRISM registrato. Invitali dall'elenco."
   },
+  "teamStudioView": {
+    "lens": "Confronto e scenari",
+    "subtitle": "Confronta persone e prova scenari con le persone del tuo elenco. Si possono scegliere solo le persone che condividono con te il proprio PRISM.",
+    "earlierRuns": "I confronti e gli scenari salvati nella pagina di una persona prima di questa vista restano nella pagina di quella persona.",
+    "toolLabel": "Strumento del team",
+    "compare": "Confronta",
+    "scenarios": "Scenari",
+    "notSharedError": "Una delle persone scelte non condivide con te il proprio PRISM, quindi non può essere inclusa.",
+    "castEmpty": "Nessuno nel tuo elenco condivide ancora con te il proprio PRISM. Qui si possono scegliere solo le persone che l'hanno condiviso. Puoi chiederlo dalla pagina della persona.",
+    "notSharedOne": "{{n}} persona con PRISM registrato non è elencata: non ha condiviso con te il PRISM, oppure non è stato possibile verificarlo.",
+    "notSharedOther": "{{n}} persone con PRISM registrato non sono elencate: non hanno condiviso con te il PRISM, oppure non è stato possibile verificarlo.",
+    "savedBlurb": "Solo tu vedi ciò che salvi qui. Ogni esecuzione è archiviata sotto la prima persona inclusa e compare anche nella pagina di quella persona."
+  },
   "hiring": {
     "hApplied": "Candidature",
     "hPRISMMatch": "Corrispondenza PRISM",

@@ -144,7 +144,6 @@ exports[`JF-13 — job_fit_v2 off: the Tools section is today's practitioner: lo
     "defaultCollapsed": true,
     "items": [
       "Bio Capture Studio -> /bio",
-      "Team Development Studio -> /practitioner/development",
       "Goals Studio -> /my/goals",
       "Role Blueprint Match -> /practitioner/job-blueprint",
       "Career Studio -> (group)",
@@ -163,7 +162,6 @@ exports[`JF-13 — job_fit_v2 off: the Tools section is today's practitioner: lo
     "defaultCollapsed": true,
     "items": [
       "Bio Capture Studio -> /bio",
-      "Team Development Studio -> /practitioner/development",
       "Goals Studio -> /my/goals",
       "Role Blueprint Match -> /practitioner/job-blueprint",
       "Career Studio -> (group)",
@@ -183,7 +181,6 @@ exports[`JF-13 — job_fit_v2 off: the Tools section is today's practitioner: lo
     "defaultCollapsed": true,
     "items": [
       "Bio Capture Studio -> /bio",
-      "Team Development Studio -> /practitioner/development",
       "Goals Studio -> /my/goals",
       "Role Blueprint Match -> /practitioner/job-blueprint",
       "Career Studio -> (group)",
@@ -202,7 +199,6 @@ exports[`JF-13 — job_fit_v2 off: the Tools section is today's practitioner: lo
     "defaultCollapsed": true,
     "items": [
       "Bio Capture Studio -> /bio",
-      "Team Development Studio -> /practitioner/development",
       "Goals Studio -> /my/goals",
       "Role Blueprint Match -> /practitioner/job-blueprint",
       "Career Studio -> (group)",
@@ -222,7 +218,6 @@ exports[`JF-13 — job_fit_v2 off: the Tools section is today's practitioner: lo
     "defaultCollapsed": true,
     "items": [
       "Bio Capture Studio -> /bio",
-      "Team Development Studio -> /practitioner/development",
       "Goals Studio -> /my/goals",
       "Role Blueprint Match -> /practitioner/job-blueprint",
       "Career Studio -> (group)",
@@ -241,7 +236,6 @@ exports[`JF-13 — job_fit_v2 off: the Tools section is today's practitioner: lo
     "defaultCollapsed": true,
     "items": [
       "Bio Capture Studio -> /bio",
-      "Team Development Studio -> /practitioner/development",
       "Goals Studio -> /my/goals",
       "Role Blueprint Match -> /practitioner/job-blueprint",
       "Career Studio -> (group)",
@@ -418,7 +412,6 @@ exports[`JF-13 — job_fit_v2 on: Talent Studio for the three role views the thr
     "defaultCollapsed": true,
     "items": [
       "Bio Capture Studio -> /bio",
-      "Team Development Studio -> /practitioner/development",
       "Goals Studio -> /my/goals",
       "Talent Studio -> (group)",
       "  Overview -> /practitioner/talent-studio",

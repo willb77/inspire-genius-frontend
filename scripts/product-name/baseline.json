@@ -1,0 +1,29 @@
+{
+ "_note": "Older product-name spellings tolerated per file by scripts/product-name/check_product_name.mjs. Numbers may only go down. Do not add or raise an entry to make a PR pass: fix the text. Lower it with: node scripts/product-name/check_product_name.mjs --shrink-baseline",
+ "files": {
+  ".claude/rules/architecture.md": 1,
+  ".claude/rules/code-style.md": 1,
+  ".claude/rules/workflow.md": 1,
+  "CLAUDE.md": 1,
+  "JOB_BLUEPRINT_PROMPT.md": 1,
+  "PRISM_INTEGRATION_PROMPT.md": 1,
+  "database_schema.md": 1,
+  "docs/PRISM_and_Job_Blueprint_Process_Guide.md": 2,
+  "generate_architecture_doc.py": 4,
+  "generate_llm_comparison_doc.py": 7,
+  "generate_new_ui_adoption_doc.py": 4,
+  "generate_phased_implementation_doc.py": 3,
+  "public/locales/cs/shellUi.json": 1,
+  "public/locales/en/shellUi.json": 1,
+  "public/locales/es/shellUi.json": 1,
+  "public/locales/fr/shellUi.json": 1,
+  "public/locales/it/shellUi.json": 1,
+  "public/locales/ko/auth.json": 1,
+  "public/locales/pl/shellUi.json": 1,
+  "public/locales/pt/shellUi.json": 1,
+  "scripts/i18n/glossary.json": 1,
+  "scripts/i18n/translate.mjs": 1,
+  "src/components/talent-studio/TeamFitMemberMatches.tsx": 1,
+  "src/components/talent-studio/__tests__/TeamFitBody.test.tsx": 1
+ }
+}

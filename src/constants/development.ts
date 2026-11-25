@@ -218,6 +218,69 @@ export const DEV_TEXT: Record<string, string> = {
 }
 
 /**
+ * Who the Studio is being shown to. The two pages already take this prop
+ * (it picks the layout and the member links); U9 makes it pick the words too.
+ */
+export type DevAudience = "manager" | "practitioner"
+
+/**
+ * U9 — the practitioner's wording, for every `DEV_TEXT` key where the manager's
+ * says "team" or "member". A practitioner works with clients, so their Studio
+ * is the "Client Development Studio" (decision D3) and the people on it are
+ * clients.
+ *
+ * Only the keys whose wording differs are listed; every other key reads the
+ * manager's line unchanged (see {@link DEV_TEXT_BY_AUDIENCE}).
+ *
+ * Left out on purpose: `dev.linkRequests.*`. The join-request panel renders for
+ * the manager audience only (`LinkRequestsPanel`'s gate), so a practitioner
+ * never sees those lines, and "requests to join your client list" would name a
+ * feature that does not exist.
+ *
+ * Also unchanged: `dev.studio.scope.team`. It is the line a practitioner reads
+ * under the roster, and it says what the server sends them today: everyone on
+ * file for their organisation, plus anyone added here. That stays true until
+ * the roster is the practitioner's clients (TDS consolidation U11); the name
+ * above runs ahead of the list, and this line is what keeps the page honest
+ * about it.
+ *
+ * English only, like `DEV_TEXT`: these strings are not in the locale files.
+ */
+export const DEV_TEXT_PRACTITIONER: Readonly<Record<string, string>> = {
+  "dev.studio.title": "Client Development Studio",
+  "dev.studio.search.placeholder": "Search clients…",
+  "dev.studio.empty.title": "No clients yet",
+  "dev.studio.empty.body":
+    "Invite your clients to build their development dossiers. Start by importing your roster.",
+  "dev.studio.empty.cta": "Import your clients",
+  "dev.studio.error": "Couldn't load your client roster. Try again.",
+
+  "dev.workspace.share": "Share with client",
+  "dev.workspace.error": "Couldn't load this client's dossier.",
+  "dev.workspace.notFound": "Client not found.",
+
+  "dev.goals.prismNeeded.body": "Set this client up with Aura to map their PRISM profile before goal discovery.",
+  "dev.goals.pending.body": "Invite this client to a Goals Studio discovery session to formalize their goals.",
+
+  "dev.notes.private":
+    "Only you can see these notes. They are not shared with the client, with their other coaches, or with anyone who inherits the report.",
+  "dev.notes.empty": "You haven't written any notes about this client yet.",
+
+  "dev.meridian.placeholder": "Ask about this client…",
+}
+
+/**
+ * One whole text table per audience. The manager's IS `DEV_TEXT` — the same
+ * object, so the manager's copy cannot drift by a byte. The practitioner's is
+ * `DEV_TEXT` with {@link DEV_TEXT_PRACTITIONER} laid over it. Nothing rewrites
+ * strings at render time.
+ */
+export const DEV_TEXT_BY_AUDIENCE: Readonly<Record<DevAudience, Readonly<Record<string, string>>>> = {
+  manager: DEV_TEXT,
+  practitioner: { ...DEV_TEXT, ...DEV_TEXT_PRACTITIONER },
+}
+
+/**
  * My Reports (TDS-10) — one sentence per state, and every one of them says
  * WHICH fact it is reporting.
  *

@@ -20,6 +20,7 @@ const mockAskCategory = jest.fn()
 const mockWhyLadder = jest.fn()
 const mockSaveDiscovery = jest.fn()
 const mockSynthesizeGoals = jest.fn()
+const mockScreenAnswer = jest.fn()
 
 jest.mock("@/services/summit/goals.service", () => ({
   getGoalSession: () => mockGetGoalSession(),
@@ -29,6 +30,8 @@ jest.mock("@/services/summit/goals.service", () => ({
   whyLadder: (...a: unknown[]) => mockWhyLadder(...a),
   saveDiscovery: (...a: unknown[]) => mockSaveDiscovery(...a),
   synthesizeGoals: () => mockSynthesizeGoals(),
+  // D-08: every discovery answer is screened before the next question.
+  screenAnswer: (...a: unknown[]) => mockScreenAnswer(...a),
 }))
 
 // Voice. Captured rather than stubbed away, so the tests can assert that
@@ -128,6 +131,7 @@ beforeEach(() => {
     root: "",
   })
   mockSynthesizeGoals.mockResolvedValue({ goals: [], session: session() })
+  mockScreenAnswer.mockResolvedValue(null)
 })
 
 async function startIt(user: ReturnType<typeof userEvent.setup>) {

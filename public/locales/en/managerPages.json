@@ -726,6 +726,19 @@
     "withoutPrismOne": "{{withoutPrism}} team member is not listed — they have no PRISM on file. Invite them from the roster.",
     "withoutPrismOther": "{{withoutPrism}} team members are not listed — they have no PRISM on file. Invite them from the roster."
   },
+  "teamStudioView": {
+    "lens": "Compare & scenarios",
+    "subtitle": "Compare people and try scenarios across your roster. Only people who share their PRISM with you can be picked.",
+    "earlierRuns": "Comparisons and scenarios kept on a person's page before this view stay on that person's page.",
+    "toolLabel": "Team tool",
+    "compare": "Compare",
+    "scenarios": "Scenarios",
+    "notSharedError": "One of the people you chose does not share their PRISM with you, so they cannot be included.",
+    "castEmpty": "Nobody on your roster shares their PRISM with you yet. Only people who have shared it can be picked here. You can ask from a person's page.",
+    "notSharedOne": "{{n}} person with PRISM on file is not listed: they have not shared PRISM with you, or their sharing could not be checked.",
+    "notSharedOther": "{{n}} people with PRISM on file are not listed: they have not shared PRISM with you, or their sharing could not be checked.",
+    "savedBlurb": "Only you can see what you keep here. Each run is filed under the first person in it, and also shows on that person's page."
+  },
   "training": {
     "activePrograms": "Active Programs",
     "totalEnrolled": "Total Enrolled",

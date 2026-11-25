@@ -81,6 +81,7 @@ jest.mock("@/services/summit/goals.service", () => ({
   whyLadder: jest.fn(),
   saveDiscovery: jest.fn(),
   synthesizeGoals: jest.fn(),
+  screenAnswer: jest.fn().mockResolvedValue(null),
 }))
 jest.mock("@/hooks/useTTS", () => ({
   useTTS: () => ({
