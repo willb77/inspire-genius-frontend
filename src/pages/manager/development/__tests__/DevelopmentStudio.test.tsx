@@ -256,15 +256,75 @@ describe("DevelopmentStudio — a card carries the response, not the page's inve
 })
 
 describe("DevelopmentStudio — the filters filter, and say when they have hidden everyone", () => {
-  it("coverage: asking for the members with no assessments hides one who has them", () => {
+  /**
+   * U2 (decision D5) — the filter asks only whether a person has taken PRISM.
+   * CliftonStrengths and DISC cannot be collected by the platform, so they
+   * neither qualify someone for "Has PRISM" nor keep them out of "PRISM not
+   * taken".
+   */
+  const prismOnly = member({
+    memberId: "m-prism-only",
+    name: "Tamsin Okonkwo-Reyes",
+    coverage: { prism: true, clifton: false, disc: false },
+  })
+  const othersOnly = member({
+    memberId: "m-others-only",
+    name: "Ilario Vantongeren",
+    coverage: { prism: false, clifton: true, disc: true },
+  })
+  const nothing = member({
+    memberId: "m-nothing",
+    name: "Brisa Halloway-Kemp",
+    coverage: { prism: false, clifton: false, disc: false },
+  })
+
+  it("coverage: the choices are about PRISM only, with no 3/3 nobody can reach and no 'Partial'", () => {
+    rosterState = { data: [prismOnly], isLoading: false, isError: false }
+    renderStudio()
+    expect(screen.getByRole("button", { name: "PRISM: all" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Has PRISM" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "PRISM not taken" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /3\/3/ })).not.toBeInTheDocument()
+    // A member with PRISM alone is not labelled partial anywhere on the roster.
+    expect(screen.queryByText(/partial/i)).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ["manager", renderStudio],
+    ["practitioner", renderPractitionerStudio],
+  ] as const)("coverage (%s roster): 'Has PRISM' returns a PRISM-only member and not one with only CliftonStrengths and DISC", (_audience, render) => {
+    rosterState = { data: [prismOnly, othersOnly, nothing], isLoading: false, isError: false }
+    render()
+    fireEvent.click(screen.getByRole("button", { name: "Has PRISM" }))
+    expect(screen.getByText("Tamsin Okonkwo-Reyes")).toBeInTheDocument()
+    expect(screen.queryByText("Ilario Vantongeren")).not.toBeInTheDocument()
+    expect(screen.queryByText("Brisa Halloway-Kemp")).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ["manager", renderStudio],
+    ["practitioner", renderPractitionerStudio],
+  ] as const)("coverage (%s roster): 'PRISM not taken' returns everyone without PRISM, whatever else they have", (_audience, render) => {
+    rosterState = { data: [prismOnly, othersOnly, nothing], isLoading: false, isError: false }
+    render()
+    fireEvent.click(screen.getByRole("button", { name: "PRISM not taken" }))
+    expect(screen.queryByText("Tamsin Okonkwo-Reyes")).not.toBeInTheDocument()
+    expect(screen.getByText("Ilario Vantongeren")).toBeInTheDocument()
+    expect(screen.getByText("Brisa Halloway-Kemp")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "PRISM: all" }))
+    expect(screen.getByText("Tamsin Okonkwo-Reyes")).toBeInTheDocument()
+    expect(screen.getByText("Ilario Vantongeren")).toBeInTheDocument()
+    expect(screen.getByText("Brisa Halloway-Kemp")).toBeInTheDocument()
+  })
+
+  it("coverage: asking for the members without PRISM hides one who has it", () => {
     rosterState = { data: [member()], isLoading: false, isError: false }
     renderStudio()
-    fireEvent.click(screen.getByRole("button", { name: "No assessments" }))
+    fireEvent.click(screen.getByRole("button", { name: "PRISM not taken" }))
     expect(screen.getByText(NO_MATCH_COPY)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Partial" }))
+    fireEvent.click(screen.getByRole("button", { name: "Has PRISM" }))
     expect(screen.getByText("Dana Whitfield")).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Complete (3/3)" }))
-    expect(screen.getByText(NO_MATCH_COPY)).toBeInTheDocument()
   })
 
   it("plan status: a member on track is not returned by the at-risk filter", () => {
@@ -332,6 +392,50 @@ describe("DevelopmentStudio — the sort", () => {
     fireEvent.click(screen.getByRole("button", { name: "Last activity" }))
     expect(names()[0]).toMatch(/Rowan Escobar/)
     expect(names()[1]).toMatch(/Dana Whitfield/)
+  })
+
+  /**
+   * U2 (decision D5) — readiness no longer rewards CliftonStrengths or DISC.
+   *
+   * Score = (PRISM ? 20 : 0) + milestones / 2 + top-match fit / 4.
+   *   all three, 10% milestones, fit 40  → 20 + 5 + 10 = 35   (was 60 + 5 + 10 = 75)
+   *   PRISM only, 60% milestones, fit 80 → 20 + 30 + 20 = 70  (was 70)
+   *   Clifton + DISC, 50% milestones     →  0 + 25 + 0  = 25  (was 40 + 25 = 65)
+   * New order: PRISM only, all three, Clifton + DISC. Old order: all three first.
+   */
+  it.each([
+    ["manager", renderStudio],
+    ["practitioner", renderPractitionerStudio],
+  ] as const)("readiness (%s roster) counts PRISM, progress and fit, not CliftonStrengths or DISC", (_audience, render) => {
+    const allThree = member({
+      memberId: "m-all-three",
+      name: "Oriel Fenwick-Sato",
+      coverage: { prism: true, clifton: true, disc: true },
+      milestoneProgress: 10,
+      topMatch: { title: "Programme Lead", fitScore: 40 },
+    })
+    const prismAlone = member({
+      memberId: "m-prism-alone",
+      name: "Tamsin Okonkwo-Reyes",
+      coverage: { prism: true, clifton: false, disc: false },
+      milestoneProgress: 60,
+      topMatch: { title: "Programme Lead", fitScore: 80 },
+    })
+    const othersAlone = member({
+      memberId: "m-others-alone",
+      name: "Ilario Vantongeren",
+      coverage: { prism: false, clifton: true, disc: true },
+      milestoneProgress: 50,
+      topMatch: undefined,
+    })
+    // Given in the old order, so the new order cannot be an accident of input.
+    rosterState = { data: [allThree, othersAlone, prismAlone], isLoading: false, isError: false }
+    render()
+    const order = names()
+    expect(order).toHaveLength(3)
+    expect(order[0]).toMatch(/Tamsin Okonkwo-Reyes/)
+    expect(order[1]).toMatch(/Oriel Fenwick-Sato/)
+    expect(order[2]).toMatch(/Ilario Vantongeren/)
   })
 })
 
