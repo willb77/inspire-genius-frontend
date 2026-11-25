@@ -337,7 +337,7 @@ describe("PrismManagement — house style switch", () => {
     localStorage.setItem("house_style_admin", "true")
     mockListState.override = { data: { rows: [], total: 0 }, isLoading: false, isError: false }
     renderPage()
-    expect(screen.getByText("No PRISM scores found")).toBeInTheDocument()
+    expect(screen.getByText(byText("No PRISM scores found"))).toBeInTheDocument()
     expect(screen.getByText("No one has PRISM scores on file yet.")).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText("Search PRISM scores by user ID"), { target: { value: "x" } })
     expect(screen.getByText("No one matches this search.")).toBeInTheDocument()

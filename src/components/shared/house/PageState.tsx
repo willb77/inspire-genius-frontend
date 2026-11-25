@@ -20,9 +20,9 @@ export type PageStateProps =
   | {
       kind: "empty"
       /** e.g. "No clients yet" */
-      title: string
+      title: React.ReactNode
       /** Why it is empty, in one sentence. */
-      message?: string
+      message?: React.ReactNode
       /** One button. */
       action?: React.ReactNode
       className?: string
@@ -30,7 +30,7 @@ export type PageStateProps =
   | {
       kind: "error"
       /** e.g. "We couldn't load your team." */
-      message: string
+      message: React.ReactNode
       onRetry?: () => void
       /** Where "Get help" goes; omit to hide it. */
       helpHref?: string
@@ -39,7 +39,7 @@ export type PageStateProps =
   | {
       kind: "unavailable"
       /** e.g. "Job matches are switched off for now." */
-      message: string
+      message: React.ReactNode
       /** A way back or onward. */
       action?: React.ReactNode
       className?: string

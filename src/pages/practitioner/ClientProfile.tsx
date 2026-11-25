@@ -169,7 +169,10 @@ export default function PractitionerClientProfile() {
         </DataCard>
 
         {/* PRISM */}
-        <DataCard title={t("clientProfile.prismScores", { defaultValue: "PRISM Scores" })}>
+        <DataCard
+          ariaLabel={t("clientProfile.prismScores", { defaultValue: "PRISM Scores" })}
+          title={withPrism(t("clientProfile.prismScores", { defaultValue: "PRISM Scores" }))}
+        >
           <div className="space-y-3">
             {prismQuery.isError ? (
               <p role="alert" className="text-sm text-[#B91C1C]">

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import type { ProfileContent, ProfileSections, Unavailable } from "@/types/careerPathways"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * N-8 — renders a Career Pathways Profile exactly as stored. The candidate's
@@ -26,7 +27,7 @@ function isUnavailable(s: unknown): s is Unavailable {
   return typeof s === "object" && s !== null && (s as { available?: unknown }).available === false
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
     <section className="rounded-lg border border-[#e5e7eb] bg-white p-4">
       <h3 className="mb-2 text-sm font-semibold text-[#1f2937]">{title}</h3>
@@ -57,7 +58,7 @@ export function ProfileView({ content }: { content: ProfileContent }) {
       </div>
 
       {s.prism && (
-        <Section title="PRISM highlights">
+        <Section title={withPrism("PRISM highlights")}>
           {isUnavailable(s.prism) ? (
             <Reason s={s.prism} />
           ) : (

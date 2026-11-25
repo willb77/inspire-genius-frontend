@@ -61,6 +61,7 @@ import type {
   VisibilityCategories,
   VisibilityPerson,
 } from "@/types/consent";
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Where each candidate's claim comes from, said in the member's words.
@@ -854,8 +855,8 @@ export default function SummitSharing() {
     <div className="flex flex-col gap-[18px]">
       <PageHead
         eyebrow={t("sharing.eyebrow", { defaultValue: "Your choice, person by person" })}
-        title={t("sharing.title", { defaultValue: "Who can see my goals and PRISM profile" })}
-        sub={t("sharing.sub", { defaultValue: "Nobody sees your goals or your PRISM profile by rank. You share each with a specific person for a year, can renew, and can take it back at any time. Turning a switch on renews the term for a year. A goal you mark private stays hidden even from them." })}
+        title={withPrism(t("sharing.title", { defaultValue: "Who can see my goals and PRISM profile" }))}
+        sub={withPrism(t("sharing.sub", { defaultValue: "Nobody sees your goals or your PRISM profile by rank. You share each with a specific person for a year, can renew, and can take it back at any time. Turning a switch on renews the term for a year. A goal you mark private stays hidden even from them." }))}
       />
 
       <SharingCore />

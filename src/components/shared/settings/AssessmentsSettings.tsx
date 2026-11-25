@@ -454,7 +454,7 @@ export default function AssessmentsSettings() {
               {withPrism(t("assessments.prismDataHelp", { defaultValue: "Replace your PRISM scores from a raw-data CSV, and optionally your report PDF. This overwrites your current PRISM profile." }))}
             </p>
           </div>
-          <ReplacePrismDataButton label={t("assessments.replacePrism", { defaultValue: "Replace PRISM data" })} variant="outline" size="sm" />
+          <ReplacePrismDataButton label={withPrism(t("assessments.replacePrism", { defaultValue: "Replace PRISM data" }))} variant="outline" size="sm" />
         </div>
 
         <div className="flex flex-wrap gap-2">

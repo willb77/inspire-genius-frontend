@@ -30,6 +30,7 @@ jest.mock("@/hooks/me/useMyDevelopment", () => ({
 }))
 
 import MyGapsSection from "../MyGapsSection"
+import { byText } from "@/test/byText"
 
 const gap = (over: Partial<DevelopmentGap> = {}): DevelopmentGap => ({
   gapId: "g1",
@@ -67,7 +68,7 @@ beforeEach(() => {
 it("names what would put a gap here, and who can", () => {
   render(<MyGapsSection />)
   expect(screen.getByText("No gaps on file yet.")).toBeInTheDocument()
-  expect(screen.getByText(/completing a PRISM assessment/i)).toBeInTheDocument()
+  expect(screen.getByText(byText(/completing a PRISM assessment/i))).toBeInTheDocument()
   expect(screen.getByText(/Your coach can also add one/i)).toBeInTheDocument()
 })
 

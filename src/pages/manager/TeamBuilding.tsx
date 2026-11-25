@@ -56,7 +56,10 @@ export default function ManagerTeamBuilding() {
         </div>
       )}
 
-      <DataCard title={t("teamBuilding.prismColorDistribution", { defaultValue: "PRISM Color Distribution" })}>
+      <DataCard
+        ariaLabel={t("teamBuilding.prismColorDistribution", { defaultValue: "PRISM Color Distribution" })}
+        title={withPrism(t("teamBuilding.prismColorDistribution", { defaultValue: "PRISM Color Distribution" }))}
+      >
         {isLoading ? (
           <div className="space-y-3">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-6 w-full" />)}</div>
         ) : (

@@ -26,6 +26,7 @@ import {
   type JoinT,
   type JoinFormValues,
 } from "./join.schema"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * IN-2c — `/join`, the public "Register your interest" form. No sign-in.
@@ -206,7 +207,7 @@ export default function JoinPage() {
           </Field>
         )}
 
-        <Field name="prism_accredited" label={t("fields.prism", { defaultValue: "Are you PRISM accredited?" })} error={errors.prism_accredited?.message}>
+        <Field name="prism_accredited" label={withPrism(t("fields.prism", { defaultValue: "Are you PRISM accredited?" }))} error={errors.prism_accredited?.message}>
           <select {...register("prism_accredited")} {...ariaFor("prism_accredited")} className={selectClass}>
             <option value="">{t("chooseOne", { defaultValue: "Choose one" })}</option>
             {INTAKE_PRISM_ACCREDITED.map((p) => (
@@ -217,7 +218,7 @@ export default function JoinPage() {
           </select>
         </Field>
         {prism === "yes" && (
-          <Field name="site_id" label={t("fields.siteId", { defaultValue: "PRISM site ID (optional)" })} error={errors.site_id?.message}>
+          <Field name="site_id" label={withPrism(t("fields.siteId", { defaultValue: "PRISM site ID (optional)" }))} error={errors.site_id?.message}>
             <Input {...register("site_id")} {...ariaFor("site_id")} />
           </Field>
         )}

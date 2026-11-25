@@ -14,6 +14,7 @@ import {
   JobDnaLoading,
   JobDnaError,
 } from "./_shared"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Job DNA vertical landing page.
@@ -34,7 +35,7 @@ export default function JobBlueprintDashboardPage() {
       <JobDnaPageHeader
         icon={Dna}
         title={t("dashboard.title", { defaultValue: "Role Blueprints" })}
-        description={t("dashboard.description", { defaultValue: "Role blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it." })}
+        description={withPrism(t("dashboard.description", { defaultValue: "Role blueprints — draft a role's behavioral benchmark, have someone who knows the role review it, then screen and rank candidates' PRISM profiles against it." }))}
         action={
           <JobDnaLinkButton to={ROUTES.JOB_DNA.AUTHORING}>
             <Plus className="h-4 w-4" />

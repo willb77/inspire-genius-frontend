@@ -2,7 +2,7 @@ import React from "react"
 
 type WelcomeBannerProps = {
   title: string
-  subtitle: string
+  subtitle: React.ReactNode
   children?: React.ReactNode
 }
 

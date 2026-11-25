@@ -5,7 +5,7 @@ import WelcomeBanner from "./WelcomeBanner"
 
 type DashboardFrameProps = {
   title: string
-  subtitle: string
+  subtitle: React.ReactNode
   /** Optional KPI strip — typically <DashboardFrame.KpiStrip>...</DashboardFrame.KpiStrip>. */
   kpis?: React.ReactNode
   /** Welcome-banner CTAs / inline children rendered inside the gradient banner. */

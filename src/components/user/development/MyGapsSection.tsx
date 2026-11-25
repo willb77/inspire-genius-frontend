@@ -40,6 +40,7 @@ import type { DevelopmentGap } from "@/types/development"
 import SelfSection from "./SelfSection"
 import { selfGapSchema } from "./myDevelopment.schema"
 import { useTranslation } from "react-i18next"
+import { withPrism } from "@/lib/withPrism"
 
 type GapInput = z.input<typeof selfGapSchema>
 type GapOutput = z.output<typeof selfGapSchema>
@@ -132,7 +133,7 @@ export default function MyGapsSection() {
       onRetry={() => void gaps.refetch()}
       isEmpty={!gaps.isError && rows.length === 0}
       emptyHeadline="No gaps on file yet."
-      emptyBody="Two things put one here: completing a PRISM assessment, which surfaces behavioural gaps automatically, or adding one yourself below. Your coach can also add one from the Team Development Studio."
+      emptyBody={withPrism("Two things put one here: completing a PRISM assessment, which surfaces behavioural gaps automatically, or adding one yourself below. Your coach can also add one from the Team Development Studio.")}
       always={
         <form onSubmit={onSubmit} className="space-y-2 border-t border-border pt-4" noValidate>
           <p className="text-sm font-medium">{t("user.developmentMyGapsSection.addSomethingYouWantTo", { defaultValue: "Add something you want to get better at" })}</p>

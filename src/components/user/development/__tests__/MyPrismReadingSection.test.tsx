@@ -15,6 +15,7 @@ jest.mock("@/hooks/me/useMyDevelopment", () => ({
 }))
 
 import MyPrismReadingSection from "../MyPrismReadingSection"
+import { byText } from "@/test/byText"
 
 function query(over: Record<string, unknown> = {}) {
   return {
@@ -154,7 +155,7 @@ it("labels each score type rather than presenting Adapted as the score", () => {
 it("says there is no assessment when the read succeeded with nothing", () => {
   useMyFullPrism.mockReturnValue(query({ data: null }))
   render(<MyPrismReadingSection />)
-  expect(screen.getByText(/No PRISM assessment on file for you yet/i)).toBeInTheDocument()
+  expect(screen.getByText(byText(/No PRISM assessment on file for you yet/i))).toBeInTheDocument()
   expect(screen.getByText(/nothing here is estimated/i)).toBeInTheDocument()
 })
 

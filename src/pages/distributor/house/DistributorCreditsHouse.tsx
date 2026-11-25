@@ -24,6 +24,7 @@ import {
   transactionLabel,
 } from "./distributorData"
 import { Section, StatTile } from "./parts"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Credits, house style (switch: `distributor`).
@@ -47,7 +48,7 @@ export default function DistributorCreditsHouse({ writeEnabled = CREDITS_WRITE }
     <DistributorLayout>
       <PageHeader
         title={t("credits", { defaultValue: "Credits" })}
-        description={t("creditsDescription", { defaultValue: "Buy PRISM assessment credits and give them to your practitioners." })}
+        description={withPrism(t("creditsDescription", { defaultValue: "Buy PRISM assessment credits and give them to your practitioners." }))}
         action={
           writeEnabled ? (
             <div className="flex items-center gap-2">

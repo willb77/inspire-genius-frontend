@@ -10,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useCohortReadout, useCohortReadoutExport } from "@/hooks/company-admin/useCohortReadout"
 import { useOrgDirectory } from "@/hooks/super-admin/organization-management/useOrganizationManagement"
 import type { CohortCell, CohortExportFormat, CohortMetric, CohortReadoutFull } from "@/types/cohortReadout"
+import { withPrism } from "@/lib/withPrism"
+import type { ReactNode } from "react"
 
 /**
  * N-3 — the cohort read-out: the organisation's PRISM coverage, Job Fit
@@ -165,7 +167,7 @@ function pct(cell: CohortCell): string {
   return cell.suppressed || cell.percent === null ? "" : `${cell.percent.toFixed(1)}%`
 }
 
-function MetricCard({ title, metric, extra }: { title: string; metric: CohortMetric; extra?: string }) {
+function MetricCard({ title, metric, extra }: { title: ReactNode; metric: CohortMetric; extra?: string }) {
   return (
     <div className="rounded-lg border p-4">
       <div className="text-sm font-medium">{title}</div>
@@ -193,7 +195,7 @@ function ReadoutBody({ data }: { data: CohortReadoutFull }) {
         </span>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <MetricCard title={t("cohortPrismCoverage", { defaultValue: "PRISM coverage" })} metric={m.prismCoverage} />
+        <MetricCard title={withPrism(t("cohortPrismCoverage", { defaultValue: "PRISM coverage" }))} metric={m.prismCoverage} />
         <MetricCard title={t("cohortGoalsSet", { defaultValue: "Goals set" })} metric={m.goalsSet} />
         <MetricCard title={t("cohortGoalsProgressed", { defaultValue: "Goals progressed" })} metric={m.goalsProgressed} />
         <MetricCard title={t("cohortPractice", { defaultValue: "Practice" })} metric={m.practice} extra={t("cohortPracticeSessionsTotal", { sessions, defaultValue: "Practice sessions in total: {{sessions}}" })} />

@@ -38,6 +38,7 @@ import {
 } from "./prismGlossary"
 import type { HonorPrismScore } from "@/types/honor"
 import { Prism } from "@/components/shared/Prism"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Honor Coach Workbench — Fellow Profile / Workspace (`/coach/member/{id}`).
@@ -154,7 +155,7 @@ export default function HonorMemberProfile() {
             <HonorSectionTitle>Behavioral snapshot</HonorSectionTitle>
             <AgentTraceRow trace={["Aura", "Meridian"]} />
             <dl className="mt-3 space-y-2 text-sm">
-              <Row label="PRISM">
+              <Row label={withPrism("PRISM")}>
                 {fellow.prism?.quads?.length ? (
                   <PrismDots quads={fellow.prism.quads} label={fellow.prism.label} />
                 ) : (
@@ -189,7 +190,7 @@ export default function HonorMemberProfile() {
             <div className="mt-4">
               <HonorSectionTitle>Quick actions</HonorSectionTitle>
               <div className="flex flex-wrap gap-2">
-                <QuickAction icon={ClipboardList} label="PRISM report" onClick={() => setTab("prism")} />
+                <QuickAction icon={ClipboardList} label={withPrism("PRISM report")} onClick={() => setTab("prism")} />
                 <QuickAction icon={Sparkles} label="Evaluate fellow" onClick={() => setTab("evaluate")} />
                 <QuickAction icon={Target} label="Set goals" onClick={() => setTab("goals")} />
                 <QuickAction icon={GraduationCap} label="Find training" onClick={() => setTab("education")} />
@@ -316,7 +317,7 @@ export default function HonorMemberProfile() {
   )
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-[#f1f3f7] pb-2 last:border-0">
       <dt className="text-[#5b6678]">{label}</dt>
@@ -331,7 +332,7 @@ function QuickAction({
   onClick,
 }: {
   icon: typeof Target
-  label: string
+  label: React.ReactNode
   onClick: () => void
 }) {
   return (

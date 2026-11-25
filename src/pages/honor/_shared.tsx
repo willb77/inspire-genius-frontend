@@ -52,7 +52,7 @@ export function HonorPageHeader({
 }: {
   icon: LucideIcon
   title: string
-  description?: string
+  description?: React.ReactNode
   action?: React.ReactNode
 }) {
   return (

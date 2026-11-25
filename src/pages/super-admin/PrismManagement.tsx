@@ -55,6 +55,7 @@ import { PageState } from "@/components/shared/house/PageState";
 import { AdminHub } from "@/pages/super-admin/house/AdminHub"
 import { PRISM_HUB } from "@/pages/super-admin/house/hubs";
 import { Prism } from "@/components/shared/Prism"
+import { withPrism } from "@/lib/withPrism"
 
 const SCORE_FIELDS = ["gold", "green", "blue", "orange"] as const;
 type ScoreField = (typeof SCORE_FIELDS)[number];
@@ -521,7 +522,7 @@ function HouseScoresTable({
     return (
       <PageState
         kind="error"
-        message="We couldn't load PRISM scores."
+        message={withPrism("We couldn't load PRISM scores.")}
         onRetry={onRetry}
       />
     );
@@ -530,7 +531,7 @@ function HouseScoresTable({
     return (
       <PageState
         kind="empty"
-        title="No PRISM scores found"
+        title={withPrism("No PRISM scores found")}
         message={
           searching
             ? "No one matches this search."

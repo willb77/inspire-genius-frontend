@@ -5,6 +5,7 @@ import {
   usePurchaseCredits,
   useUseCredits,
 } from "@/hooks/credits/useCreditsMutations"
+import { withPrism } from "@/lib/withPrism"
 
 /**
  * Build-time flag. When `false` (the default, and notably on staging-b where the
@@ -44,7 +45,7 @@ export function DistributorPurchaseControl({ className }: { className?: string }
         open={open}
         onOpenChange={setOpen}
         title="Purchase Credits"
-        description="Add PRISM assessment credits to your available pool."
+        description={withPrism("Add PRISM assessment credits to your available pool.")}
         submitLabel="Purchase"
         isPending={mutation.isPending}
         onSubmit={submit}
@@ -116,7 +117,7 @@ export function PractitionerUseControl({ className }: { className?: string }) {
         open={open}
         onOpenChange={setOpen}
         title="Use a Credit"
-        description="Record a PRISM assessment credit used for a client session."
+        description={withPrism("Record a PRISM assessment credit used for a client session.")}
         submitLabel="Use Credit"
         isPending={mutation.isPending}
         onSubmit={submit}

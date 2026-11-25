@@ -23,6 +23,7 @@ import {
 } from "@/hooks/super-admin/useOrgActivity"
 import type { OrgActivityReport as Report } from "@/types/super-admin/orgActivity"
 import { withPrism } from "@/lib/withPrism"
+import type { ReactNode } from "react"
 
 export const ORG_ACTIVITY_NS = "orgActivityUi"
 
@@ -42,7 +43,7 @@ function fold(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({ label, value }: { label: ReactNode; value: string | number }) {
   return (
     <div className="rounded-lg border border-[#e5e7eb] bg-white p-3">
       <div className="text-[11px] uppercase tracking-wide text-[#6b7280]">{label}</div>
@@ -288,7 +289,7 @@ function ReportPreview({ report: r, emptyText }: { report: Report; emptyText: st
         />
         <Stat label={t("statCoachQs", { defaultValue: "Coach questions" })} value={r.chat_total} />
         <Stat
-          label={t("statPrism", { defaultValue: "PRISM requests (completed)" })}
+          label={withPrism(t("statPrism", { defaultValue: "PRISM requests (completed)" }))}
           value={`${r.prism_total} (${r.prism_completed})`}
         />
       </div>
