@@ -16,6 +16,12 @@ import { initiateUpload, uploadToS3 } from "@/services/documents/documentService
 import type { InterviewExchange, InterviewFrame } from "@/services/interview/practice.service"
 import { normalizeSectionScores } from "@/services/interview/live.service"
 import type { FinalizeResult } from "@/services/interview/live.service"
+import {
+  CAP_REASON_NO_RESULT,
+  RESULT_CAP,
+  effectiveScore,
+  isCapped,
+} from "@/services/interview/effectiveScore"
 
 /** Format a score that may arrive as a number, numeric string, or null. */
 function fmtScore(v: number | string | null | undefined): string {
@@ -168,6 +174,17 @@ export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
   lines.push(
     `Overall score: **${fmtScore(result.overall_score)} / 5** · Overall mean: **${fmtScore(result.overall_mean)}**`,
   )
+  // F-W5-1 — the per-answer Final scores below are the interviewer's ratings;
+  // the overall above counts a capped one as 3. Say so here, once, so a reader
+  // outside the platform can reconcile the two without the per-answer notes.
+  const mode = result.session.frame?.mode
+  const cappedRated = result.answers.filter((a) => a.final_source && isCapped(a, mode)).length
+  if (cappedRated > 0) {
+    lines.push(
+      `${cappedRated} rated answer${cappedRated === 1 ? " was" : "s were"} capped at ${RESULT_CAP} ` +
+        "because no measurable Result was observed.",
+    )
+  }
   lines.push("")
 
   // Advisory narrative (Interview Studio + live) — present when synthesized.
@@ -215,7 +232,7 @@ export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
     // the field wrongly. Read `.applied`.
     if (a.final_source) {
       lines.push(
-        `**Final score:** ${a.final_score ?? "—"} / 5${a.capped?.applied ? " (capped)" : ""}` +
+        `**Final score:** ${a.final_score ?? "—"} / 5${capNote(a, mode)}` +
           (a.final_source === "model" ? " (AI suggestion adopted)" : ""),
       )
     } else {
@@ -229,6 +246,14 @@ export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
   })
 
   return lines.join("\n")
+}
+
+/** F-W5-1 — why a capped rating counted as less than it reads; "" when not capped. */
+function capNote(a: FinalizeResult["answers"][number], mode: string | undefined): string {
+  if (!isCapped(a, mode)) return ""
+  return a.capped?.reason === CAP_REASON_NO_RESULT
+    ? ` · counted as ${effectiveScore(a, mode)}: no measurable Result was observed (Result cap)`
+    : ` · counted as ${effectiveScore(a, mode)} (score cap applied)`
 }
 
 function toScoredInput(s: ScoredInterviewExport): TurnExportInput {

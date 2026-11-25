@@ -41,6 +41,7 @@ import type {
   SubmitAnswerResult,
 } from "@/services/interview/live.service"
 import type { StarCompetency } from "@/services/interview/interview.service"
+import { CAP_REASON_NO_RESULT, effectiveScore, isCapped } from "@/services/interview/effectiveScore"
 
 const STAR_KEYS: (keyof StarEvidence)[] = ["S", "T", "A", "R"]
 
@@ -81,6 +82,12 @@ export type AnswerScorePanelProps = {
    * row here must read as description, not as a checklist the person failed.
    */
   developmentMode?: boolean
+  /**
+   * The session's `frame.mode` ("star" when absent). A custom session scores
+   * with the Result cap disabled, so a `capped` stamp on its answer is never
+   * reported as lowering the rating (see `effectiveScore`).
+   */
+  scoringMode?: string
   onSubmitAnswer: (capturedAnswer: string) => void | Promise<void>
   onSaveScore: (finalScore: number, interviewerNotes: string) => void | Promise<void>
 }
@@ -96,6 +103,7 @@ export default function AnswerScorePanel({
   saving = false,
   bankEntry,
   developmentMode = false,
+  scoringMode = "star",
   onSubmitAnswer,
   onSaveScore,
 }: AnswerScorePanelProps) {
@@ -129,7 +137,6 @@ export default function AnswerScorePanel({
     t("answer.suggestedScore", { defaultValue: "Suggested score: {{slot}} / 5", slot: SLOT }),
   )
   const evidence = scored?.star_evidence ?? suggestion?.star_evidence
-  const capped = scored?.capped ?? suggestion?.capped
   const starPresentCount = evidence
     ? STAR_KEYS.filter((k) => evidence[k]?.present).length
     : 0
@@ -223,13 +230,6 @@ export default function AnswerScorePanel({
               {suggestedBefore}
               <span className="font-semibold">{suggestion?.suggested_score ?? "—"}</span>
               {suggestedAfter}
-              {capped?.applied && (
-                <span className="ml-1 text-xs text-amber-600">
-                  {capped.reason === "no_measurable_result"
-                    ? t("answer.cappedNoResult", "(capped at 3 — no measurable result yet)")
-                    : t("answer.cappedSection", "(capped at the section limit)")}
-                </span>
-              )}
             </p>
             {developmentMode && (
               <p className="mt-2 text-xs text-slate-500">
@@ -302,7 +302,20 @@ export default function AnswerScorePanel({
               </p>
             )}
             {scored?.final_source && typeof scored.final_score === "number" && (
-              <p className="text-xs text-slate-500">{t("answer.savedRating", { defaultValue: "Saved rating: {{score}} / 5", score: scored.final_score })}</p>
+              <p className="text-xs text-slate-500">
+                {t("answer.savedRating", { defaultValue: "Saved rating: {{score}} / 5", score: scored.final_score })}
+                {/* F-W5-1 — the cap note belongs to the interviewer's own rating,
+                    which is what the cap lowers. It used to hang off the AI
+                    suggestion line, where it read as a note about the suggestion. */}
+                {isCapped(scored, scoringMode) && (
+                  <span className="text-amber-700">
+                    {" · "}
+                    {scored.capped?.reason === CAP_REASON_NO_RESULT
+                      ? t("answer.countedAsNoResult", { defaultValue: "counted as {{score}}: no measurable Result was observed (Result cap)", score: effectiveScore(scored, scoringMode) })
+                      : t("answer.countedAsCapped", { defaultValue: "counted as {{score}} (score cap applied)", score: effectiveScore(scored, scoringMode) })}
+                  </span>
+                )}
+              </p>
             )}
           </div>
         )}

@@ -234,6 +234,8 @@
     "baseline": "Poziom bazowy (3):",
     "cappedNoResult": "(ograniczono do 3 — brak mierzalnego rezultatu)",
     "cappedSection": "(ograniczono do limitu sekcji)",
+    "countedAsNoResult": "liczone jako {{score}}: nie zaobserwowano mierzalnego Rezultatu (limit za brak Rezultatu)",
+    "countedAsCapped": "liczone jako {{score}} (zastosowano limit punktacji)",
     "captureByVoice": "Nagraj głosem",
     "capturedLabel": "Zapisana odpowiedź",
     "capturedPlaceholder": "Wpisz lub nagraj głosem to, co mówi kandydat…",

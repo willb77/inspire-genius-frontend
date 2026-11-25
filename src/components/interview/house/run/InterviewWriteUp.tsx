@@ -28,6 +28,7 @@ import {
   ScorecardDraftLineCustom,
   ScorecardDraftLineStar,
 } from "./runParts"
+import { CAP_REASON_NO_RESULT, effectiveScore, isCapped } from "@/services/interview/effectiveScore"
 
 export type ExportKind = "word" | "pdf" | "save"
 
@@ -198,6 +199,15 @@ function StarWriteUp(p: InterviewWriteUpProps) {
                   {a.final_source ? (
                     <p className="mt-1 text-sm text-indigo-700">
                       {t("live.results.finalScore", { defaultValue: "Final score: {{score}} / 5", score: a.final_score ?? "—" })}
+                      {/* F-W5-1 — say why a capped rating counted as less than it reads. */}
+                      {isCapped(a, finalizeResult.session.frame?.mode) && (
+                        <span className="text-amber-700">
+                          {" · "}
+                          {a.capped?.reason === CAP_REASON_NO_RESULT
+                            ? t("answer.countedAsNoResult", { defaultValue: "counted as {{score}}: no measurable Result was observed (Result cap)", score: effectiveScore(a, finalizeResult.session.frame?.mode) })
+                            : t("answer.countedAsCapped", { defaultValue: "counted as {{score}} (score cap applied)", score: effectiveScore(a, finalizeResult.session.frame?.mode) })}
+                        </span>
+                      )}
                       {a.final_source === "model" && <span className="text-slate-500"> {t("live.results.aiAdopted", "(AI suggestion adopted)")}</span>}
                       {typeof a.suggested_score === "number" && <span className="text-slate-500"> {t("live.results.aiSuggested", { defaultValue: "(AI suggested {{score}})", score: a.suggested_score })}</span>}
                     </p>

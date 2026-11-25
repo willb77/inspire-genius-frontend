@@ -370,6 +370,8 @@
     "baseline": "Livello base (3):",
     "cappedNoResult": "(limitato a 3: nessun risultato misurabile finora)",
     "cappedSection": "(limitato al massimo della sezione)",
+    "countedAsNoResult": "conteggiato come {{score}}: non è stato osservato alcun Risultato misurabile (limite sul Risultato)",
+    "countedAsCapped": "conteggiato come {{score}} (limite di punteggio applicato)",
     "captureByVoice": "Registra a voce",
     "capturedLabel": "Risposta registrata",
     "capturedPlaceholder": "Scrivi, o registra a voce, ciò che dice il candidato…",

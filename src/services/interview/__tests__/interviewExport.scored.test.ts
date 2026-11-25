@@ -112,13 +112,13 @@ describe("buildScoredInterviewMarkdown", () => {
 
     // Per-question final scores
     expect(md).toContain("**Final score:** 4 / 5")
-    expect(md).toContain("**Final score:** 3 / 5 (capped)")
+    expect(md).toContain("**Final score:** 3 / 5 · counted as 3: no measurable Result was observed (Result cap)")
     // The other side of it, which nothing asserted: an answer that was NOT
     // capped must not be labelled in the transcript. `capped` is an object, so
     // the old truthiness check marked every answer — in the document that gets
     // shared with a candidate or kept as a selection record.
     expect(md).toContain("**Final score:** 4 / 5")
-    expect(md).not.toContain("**Final score:** 4 / 5 (capped)")
+    expect(md).not.toContain("**Final score:** 4 / 5 · counted as")
 
     // Rubric summary table
     expect(md).toContain("## Rubric Summary")
@@ -128,6 +128,75 @@ describe("buildScoredInterviewMarkdown", () => {
     // STAR evidence present-flags
     expect(md).toContain("Situation: Present")
     expect(md).toContain("Result: Not observed")
+  })
+})
+
+// F-W5-1 — the scorecard leaves the platform. A reader must be able to
+// reconcile the printed Final scores with the overall without asking anyone.
+describe("buildScoredInterviewMarkdown — the Result cap is explained", () => {
+  const CAPPED_4 = {
+    ...RESULT.answers[0],
+    suggested_score: 2,
+    final_score: 4,
+    final_source: "human" as const,
+    capped: { applied: true, reason: "no_measurable_result" },
+  }
+  const capped = (over: Partial<FinalizeResult> = {}): ScoredInterviewExport => ({
+    result: { ...RESULT, answers: [CAPPED_4], overall_score: 3, overall_mean: 3, ...over },
+  })
+
+  it("says what a capped rating counted as, and why, instead of a bare '(capped)'", () => {
+    const md = buildScoredInterviewMarkdown(capped())
+    expect(md).toContain(
+      "**Final score:** 4 / 5 · counted as 3: no measurable Result was observed (Result cap)",
+    )
+    expect(md).not.toContain("(capped)")
+  })
+
+  it("adds one line under the overall naming how many rated answers were capped", () => {
+    const md = buildScoredInterviewMarkdown(capped())
+    const overall = md.indexOf("Overall score: **3.00 / 5**")
+    const note = md.indexOf("1 rated answer was capped at 3 because no measurable Result was observed.")
+    expect(overall).toBeGreaterThan(-1)
+    expect(note).toBeGreaterThan(overall)
+    expect(note).toBeLessThan(md.indexOf("## Rubric Summary"))
+  })
+
+  it("pluralises the overall line and counts only RATED capped answers", () => {
+    const md = buildScoredInterviewMarkdown(
+      capped({
+        answers: [
+          CAPPED_4,
+          { ...CAPPED_4, answer_id: "a2", final_score: 5 },
+          // Unrated: never part of the score, so never counted as capped.
+          { ...CAPPED_4, answer_id: "a3", final_source: null },
+        ],
+      }),
+    )
+    expect(md).toContain("2 rated answers were capped at 3 because no measurable Result was observed.")
+    expect(md).toContain("**Final score:** 5 / 5 · counted as 3: no measurable Result was observed (Result cap)")
+  })
+
+  it("prints no cap line when nothing was capped", () => {
+    const md = buildScoredInterviewMarkdown({
+      result: { ...RESULT, answers: [{ ...CAPPED_4, capped: { applied: false, reason: null } }] },
+    })
+    expect(md).not.toMatch(/capped at 3|counted as/)
+  })
+
+  it("prints no cap text for a custom session, which the server scores uncapped", () => {
+    const md = buildScoredInterviewMarkdown(
+      capped({ session: { ...RESULT.session, frame: { ...RESULT.session.frame!, mode: "custom" } } }),
+    )
+    expect(md).toContain("**Final score:** 4 / 5")
+    expect(md).not.toMatch(/capped at 3|counted as/)
+  })
+
+  it("names a generic cap when the server gives another reason", () => {
+    const md = buildScoredInterviewMarkdown({
+      result: { ...RESULT, answers: [{ ...CAPPED_4, capped: { applied: true, reason: "other" } }] },
+    })
+    expect(md).toContain("**Final score:** 4 / 5 · counted as 3 (score cap applied)")
   })
 })
 

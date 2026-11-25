@@ -47,6 +47,7 @@ import {
 } from "@/hooks/interview/useLiveInterview"
 import type { InterviewFrame } from "@/services/interview/practice.service"
 import type { StarCompetency } from "@/services/interview/interview.service"
+import { runningTally } from "@/services/interview/effectiveScore"
 import { liveInterviewService } from "@/services/interview/live.service"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { finalizeResultFromDetail, rehydrateSession } from "@/services/interview/liveSessionResume"
@@ -156,11 +157,9 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
   const isLast = idx === total - 1
   const currentAnswer = current ? answers[current.competency_id] : undefined
 
-  const savedCount = Object.values(answers).filter((a) => a.scored && typeof a.scored.final_score === "number").length
-  const savedAvg =
-    savedCount > 0
-      ? Object.values(answers).reduce((sum, a) => sum + (a.scored?.final_score ?? 0), 0) / savedCount
-      : null
+  // F-W5-1 — average what each rating COUNTS AS (Result cap applied), the
+  // same rule the server scores with at finalize, so the tally and the overall agree.
+  const { count: savedCount, avg: savedAvg } = runningTally(Object.values(answers).map((a) => a.scored), source)
 
   /** JS-12 — never blocks the interview; hiring (star) only, exactly as Live. */
   const recordPipelineStep = async (step: InterviewStep, sid: string) => {
@@ -547,6 +546,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
             saving={scoreAnswer.isPending}
             // Hiring (Live) is always a hiring interview; Studio bands by its frame.
             developmentMode={source === "star" ? false : !isHiringFrame}
+            scoringMode={source}
             bankEntry={source === "star" ? bankByCompetency.get(current.competency_id) : undefined}
             onSubmitAnswer={(text) => handleSubmitAnswer(current.competency_id, current.question, text)}
             onSaveScore={(score, notes) => handleSaveScore(current.competency_id, score, notes)}

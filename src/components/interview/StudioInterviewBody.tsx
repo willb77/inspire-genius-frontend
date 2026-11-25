@@ -68,6 +68,7 @@ import type {
   SubmitAnswerResult,
 } from "@/services/interview/live.service"
 import { downloadScoredInterview, saveScoredInterviewToDocuments } from "@/services/interview/interviewExport"
+import { runningTally } from "@/services/interview/effectiveScore"
 
 /** Format a score that may arrive as a number, a numeric string, or null. */
 function fmtScore(v: number | string | null | undefined): string {
@@ -223,11 +224,9 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
   const currentAnswer = current ? answers[current.competency_id] : undefined
   const isHiring = frame?.kind === "hiring"
 
-  const savedCount = Object.values(answers).filter((a) => a.scored && typeof a.scored.final_score === "number").length
-  const savedAvg =
-    savedCount > 0
-      ? Object.values(answers).reduce((sum, a) => sum + (a.scored?.final_score ?? 0), 0) / savedCount
-      : null
+  // F-W5-1 — average what each rating COUNTS AS (Result cap applied), the
+  // same rule the server scores with at finalize, so the tally and the overall agree.
+  const { count: savedCount, avg: savedAvg } = runningTally(Object.values(answers).map((a) => a.scored), "custom")
 
   // ── Setup handlers ──────────────────────────────────────────────
   const handleConsent = (c: LiveConsent) => {
@@ -771,6 +770,7 @@ export default function StudioInterviewBody({ openSessionId }: StudioInterviewBo
             submitting={submitAnswer.isPending}
             saving={scoreAnswer.isPending}
             developmentMode={!isHiring}
+            scoringMode="custom"
             onSubmitAnswer={(text) => handleSubmitAnswer(current.competency_id, current.question, text)}
             onSaveScore={(score, notes) => handleSaveScore(current.competency_id, score, notes)}
           />

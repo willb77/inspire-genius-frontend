@@ -138,22 +138,58 @@ describe("the Result-cap note", () => {
     onSaveScore: jest.fn(),
   }
 
+  // F-W5-1 — the cap lowers the INTERVIEWER'S rating, so the note sits on the
+  // saved rating, and says what the rating counted as. It used to hang off the
+  // AI-suggestion line, where it read as a note about the suggestion.
+  const SAVED = (capped: unknown) => ({
+    answer_id: "ans-1",
+    competency_id: QUESTION.competency_id,
+    captured_answer: "They led a re-org.",
+    suggested_score: 2,
+    star_evidence: EVIDENCE,
+    capped: capped as never,
+    final_score: 4,
+    final_source: "human" as const,
+  })
+
   it("says nothing when the answer was not capped", () => {
     // The reported defect. `capped` is an object, so the old
     // `{capped && ...}` render showed the amber note on EVERY rated answer —
     // in a hiring interview too, not only a discovery one.
-    render(<AnswerScorePanel {...base} suggestion={{ ...SUGGESTION, capped: NOT_CAPPED }} />)
-    expect(screen.queryByText(/capped/i)).not.toBeInTheDocument()
+    render(<AnswerScorePanel {...base} suggestion={SUGGESTION} scored={SAVED(NOT_CAPPED)} />)
+    expect(screen.getByText(/Saved rating: 4 \/ 5/)).toBeInTheDocument()
+    expect(screen.queryByText(/capped|counted as/i)).not.toBeInTheDocument()
   })
 
-  it("names the rule when the answer WAS capped", () => {
-    render(<AnswerScorePanel {...base} suggestion={{ ...SUGGESTION, capped: CAPPED }} />)
-    expect(screen.getByText(/capped at 3 — no measurable result yet/i)).toBeInTheDocument()
+  it("says the saved rating counted as 3, and why, when the answer WAS capped", () => {
+    render(<AnswerScorePanel {...base} suggestion={SUGGESTION} scored={SAVED(CAPPED)} />)
+    const saved = screen.getByText(/Saved rating: 4 \/ 5/)
+    expect(saved).toHaveTextContent(/counted as 3: no measurable Result was observed \(Result cap\)/)
+  })
+
+  it("keeps the note off the AI-suggestion line", () => {
+    render(<AnswerScorePanel {...base} suggestion={SUGGESTION} scored={SAVED(CAPPED)} />)
+    expect(screen.getByText(/Suggested score:/)).not.toHaveTextContent(/capped|counted as/i)
+  })
+
+  it("names a generic cap when the server gives another reason", () => {
+    render(<AnswerScorePanel {...base} suggestion={SUGGESTION} scored={SAVED({ applied: true, reason: "other" })} />)
+    expect(screen.getByText(/Saved rating: 4 \/ 5/)).toHaveTextContent(/counted as 3 \(score cap applied\)/)
   })
 
   it("says nothing when the server sent no cap information at all", () => {
-    render(<AnswerScorePanel {...base} suggestion={{ ...SUGGESTION, capped: undefined }} />)
-    expect(screen.queryByText(/capped/i)).not.toBeInTheDocument()
+    render(<AnswerScorePanel {...base} suggestion={SUGGESTION} scored={SAVED(undefined)} />)
+    expect(screen.queryByText(/capped|counted as/i)).not.toBeInTheDocument()
+  })
+
+  it("says nothing on a custom session, which the server scores uncapped", () => {
+    render(<AnswerScorePanel {...base} scoringMode="custom" suggestion={SUGGESTION} scored={SAVED(CAPPED)} />)
+    expect(screen.queryByText(/capped|counted as/i)).not.toBeInTheDocument()
+  })
+
+  it("says nothing before the rating is saved, even on an unrated row stamped capped", () => {
+    render(<AnswerScorePanel {...base} suggestion={SUGGESTION} scored={{ ...SAVED(CAPPED), final_source: null }} />)
+    expect(screen.queryByText(/counted as/i)).not.toBeInTheDocument()
   })
 })
 
