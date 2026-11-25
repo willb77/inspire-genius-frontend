@@ -159,6 +159,29 @@ describe("PastInterviewsPanel", () => {
   })
 })
 
+describe("abandon error detail (D-12)", () => {
+  const run = async (err: unknown) => {
+    useLiveSessions.mockReturnValue(result({ sessions: [SESSION({ status: "in_progress" })] }))
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+    abandonMutate.mockRejectedValue(err)
+    renderPanel()
+    await userEvent.click(screen.getByRole("button", { name: /abandon/i }))
+    confirmSpy.mockRestore()
+  }
+
+  it("shows the server's string detail instead of the axios status line", async () => {
+    await run(Object.assign(new Error("Request failed with status code 409"), { response: { data: { detail: "Session already finalized" } } }))
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Session already finalized"))
+  })
+
+  it("renders a FastAPI list-shaped 422 detail as text, not [object Object]", async () => {
+    await run(Object.assign(new Error("Request failed with status code 422"), {
+      response: { data: { detail: [{ loc: ["body", "session_id"], msg: "field required", type: "missing" }] } },
+    }))
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("session_id: field required"))
+  })
+})
+
 describe("candidateLabel", () => {
   it("uses the recorded name when there is one", () => {
     expect(candidateLabel(SESSION())).toBe("Dana Reyes")

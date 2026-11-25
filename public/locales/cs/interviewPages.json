@@ -14,6 +14,7 @@
     },
     "finalizeFailed": "Pohovor se nepodařilo dokončit. Zkuste to prosím znovu.",
     "finalizeFailedDetail": "Pohovor se nepodařilo dokončit.",
+    "nothingRated": "Než pohovor dokončíte, ohodnoťte alespoň jednu odpověď.",
     "finishView": "Dokončit a zobrazit výsledky",
     "frame": {
       "description": "Potvrďte pozici, na kterou pohovor vedete, aby otázky STAR a hodnocení odpovídaly skutečné roli, nadřízenosti a rozsahu odpovědnosti.",

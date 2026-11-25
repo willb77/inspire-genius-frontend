@@ -183,6 +183,14 @@ const BASE_FINALIZE = {
   recommendation: "Advance",
 }
 
+/** D-12: Finish is blocked until something is rated, so tests that finalize rate first. */
+async function rateCurrent(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByText("mock-submit-answer"))
+  await waitFor(() => expect(submitMutate).toHaveBeenCalled())
+  await user.click(screen.getByText("mock-save-score"))
+  await screen.findByRole("button", { name: /next question|finish & view results/i })
+}
+
 async function reachInterview(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByText("mock-consent-proceed"))
   await user.type(screen.getByLabelText(/^name$/i), "Participant A")
@@ -448,6 +456,18 @@ describe("the inherited pipeline still works in the fork", () => {
     confirmSpy.mockRestore()
   })
 
+  it("blocks Finish when nothing is rated, instead of a finalize the server will 409 (D-12)", async () => {
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+    const user = userEvent.setup()
+    render(<StudioInterviewBody />)
+    await reachInterview(user)
+    await screen.findByText("panel 1/1: What drew you here?")
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/rate at least one answer/i)))
+    expect(finalizeMutate).not.toHaveBeenCalled()
+    confirmSpy.mockRestore()
+  })
+
   /**
    * IS-F13 FIXED (package IS-4). Replaces the pin that recorded the defect:
    * `finish()` set the phase to "findings" before awaiting finalize, so a
@@ -466,6 +486,7 @@ describe("the inherited pipeline still works in the fork", () => {
     render(<StudioInterviewBody />)
     await reachInterview(user)
     await screen.findByText("panel 1/1: What drew you here?")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
 
     expect(await screen.findByText(/could not be compiled/i)).toBeInTheDocument()
@@ -487,6 +508,7 @@ describe("the inherited pipeline still works in the fork", () => {
     render(<StudioInterviewBody />)
     await reachInterview(user)
     await screen.findByText("panel 1/1: What drew you here?")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
     await screen.findByText("What the evidence shows")
 
@@ -502,6 +524,7 @@ describe("the inherited pipeline still works in the fork", () => {
     render(<StudioInterviewBody />)
     await reachInterview(user)
     await screen.findByText("panel 1/1: What drew you here?")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
     await screen.findByText("What the evidence shows")
 

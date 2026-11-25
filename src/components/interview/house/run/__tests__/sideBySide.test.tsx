@@ -641,6 +641,42 @@ describe("the one build — failure states", () => {
     confirm.mockRestore()
   })
 
+  it("shows the server's detail, not the axios status line, on a refused finish (D-12)", async () => {
+    const user = userEvent.setup()
+    primeServer(PLAN_CUSTOM, FINALIZE())
+    finalizeMutate.mockRejectedValueOnce(
+      Object.assign(new Error("Request failed with status code 409"), {
+        response: { data: { detail: "Session already finalized" } },
+      }),
+    )
+    renderAt(<InterviewRunBody initialKind="own" />, "/x")
+    await user.click(screen.getByText("mock-consent"))
+    await user.type(screen.getByLabelText(/^name$/i), "Person A")
+    await user.click(screen.getByRole("button", { name: /continue/i }))
+    await user.click(screen.getByText("mock-builder-confirm"))
+    await user.click(await screen.findByText("mock-submit"))
+    await user.click(screen.getByText("mock-save"))
+    await user.click(await screen.findByRole("button", { name: /finish & view results/i }))
+    expect(await screen.findByText("Session already finalized")).toBeInTheDocument()
+    expect(screen.queryByText(/status code 409/i)).not.toBeInTheDocument()
+  })
+
+  it("blocks Finish when nothing is rated (D-12)", async () => {
+    const user = userEvent.setup()
+    primeServer(PLAN_STAR, FINALIZE())
+    const confirm = jest.spyOn(window, "confirm").mockReturnValue(true)
+    renderAt(<InterviewRunBody initialKind="hiring" />, "/x")
+    await user.click(screen.getByText("mock-consent"))
+    await user.type(screen.getByLabelText(/candidate name/i), "Person A")
+    await user.click(screen.getByRole("button", { name: /continue/i }))
+    await user.click(screen.getByText("mock-frame-confirm"))
+    await screen.findByTestId("panel")
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/rate at least one answer/i)))
+    expect(finalizeMutate).not.toHaveBeenCalled()
+    confirm.mockRestore()
+  })
+
   it("resumes an unfinished development conversation in its own kind", async () => {
     getSession.mockResolvedValue({
       ...SHAPES[3].detail,

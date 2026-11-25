@@ -421,6 +421,7 @@
     },
     "finalizeFailed": "Impossible de finaliser l'entretien. Veuillez réessayer.",
     "finalizeFailedDetail": "Impossible de finaliser l'entretien.",
+    "nothingRated": "Notez au moins une réponse avant de terminer l'entretien.",
     "finishView": "Terminer et voir les résultats",
     "frame": {
       "description": "Confirmez le poste pour lequel vous menez l'entretien afin que les questions STAR et la notation correspondent au rôle réel, à la ligne hiérarchique et au périmètre.",

@@ -20,6 +20,7 @@ import { toast } from "sonner"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { useAbandonLiveSession, useLiveSessions } from "@/hooks/interview/useLiveSessions"
 import { candidateLabel, formatWhen } from "@/components/interview/pastInterviewsFormat"
 import { SLOT, slotParts, type TFn } from "@/components/interview/tFallback"
@@ -81,7 +82,7 @@ export default function PastInterviewsPanel({
     } catch (e) {
       // Never a silent failure: the row stays in_progress and the list is
       // refetched either way, so what the interviewer sees matches the server.
-      toast.error(e instanceof Error && e.message ? e.message : t("past.abandonFailed", "Could not abandon that interview."))
+      toast.error(apiErrorMessage(e, t("past.abandonFailed", "Could not abandon that interview.")))
     } finally {
       setAbandoning(null)
     }

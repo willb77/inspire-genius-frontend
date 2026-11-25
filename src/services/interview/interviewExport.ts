@@ -142,7 +142,21 @@ export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
         (candidate.external_id ? ` (ID: ${candidate.external_id})` : ""),
     )
   }
-  lines.push(`**Questions scored:** ${result.answers.length}`)
+  // Rated means a human decided the score (`final_source`). Every answer row is
+  // seeded with `final_score` from the AI suggestion at insert, so `final_score`
+  // alone can never say whether anyone rated it (IS-4; see InterviewWriteUp).
+  const unratedAnswers = result.answers.filter((a) => !a.final_source)
+  const ratedCount =
+    typeof result.rated_count === "number" ? result.rated_count : result.answers.length - unratedAnswers.length
+  lines.push(`**Questions scored:** ${ratedCount} of ${result.answer_count ?? result.answers.length}`)
+  if (unratedAnswers.length > 0) {
+    lines.push(
+      `**Not rated:** ${unratedAnswers.length} answer${unratedAnswers.length === 1 ? " was" : "s were"} never rated and ` +
+        `${unratedAnswers.length === 1 ? "is" : "are"} NOT part of this score: ` +
+        unratedAnswers.map((a) => a.competency_id).join(", ") +
+        ".",
+    )
+  }
   lines.push("")
 
   // "What the evidence shows", not "Recommendation" — the exported document is
@@ -199,7 +213,14 @@ export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
     // and every answer of a development conversation. This is the shared
     // document, so it was the most consequential of the three places that read
     // the field wrongly. Read `.applied`.
-    lines.push(`**Final score:** ${a.final_score ?? "—"} / 5${a.capped?.applied ? " (capped)" : ""}`)
+    if (a.final_source) {
+      lines.push(
+        `**Final score:** ${a.final_score ?? "—"} / 5${a.capped?.applied ? " (capped)" : ""}` +
+          (a.final_source === "model" ? " (AI suggestion adopted)" : ""),
+      )
+    } else {
+      lines.push("**Final score:** Not decided — this answer was not part of the score.")
+    }
     if (typeof a.suggested_score === "number") {
       lines.push(`**AI-suggested score (advisory):** ${a.suggested_score} / 5`)
     }

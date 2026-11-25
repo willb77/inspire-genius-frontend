@@ -290,6 +290,7 @@
     },
     "finalizeFailed": "No se pudo finalizar la entrevista. Inténtalo de nuevo.",
     "finalizeFailedDetail": "No se pudo finalizar la entrevista.",
+    "nothingRated": "Califica al menos una respuesta antes de terminar la entrevista.",
     "finishView": "Finalizar y ver resultados",
     "frame": {
       "description": "Confirma el puesto para el que entrevistas, de modo que las preguntas STAR y la puntuación se ajusten al rol, la línea de reporte y el alcance reales.",

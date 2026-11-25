@@ -272,6 +272,7 @@
     },
     "finalizeFailed": "Não foi possível finalizar a entrevista. Tente novamente.",
     "finalizeFailedDetail": "Não foi possível finalizar a entrevista.",
+    "nothingRated": "Avalie pelo menos uma resposta antes de terminar a entrevista.",
     "finishView": "Finalizar e ver resultados",
     "frame": {
       "description": "Confirme a vaga para a qual você está entrevistando, para que as perguntas STAR e a pontuação se ajustem ao cargo, à linha de subordinação e ao escopo reais.",
