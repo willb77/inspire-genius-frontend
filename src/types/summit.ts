@@ -42,6 +42,19 @@ export type SummitCategory = {
   answers: SummitAnswer[]
   /** Written by POST /discovery/{category}. Often "" — render nothing, not "undefined". */
   summary: string
+  /**
+   * The question thread this category is being asked from, stored with the
+   * thread's first answer. `start` is how many answers the category already
+   * held when the thread began, so the next question to ask is
+   * `answers.length - start`. Absent on categories saved before threads were
+   * stored — those resume through `/ask`.
+   */
+  thread?: SummitThread
+}
+
+export type SummitThread = {
+  questions: string[]
+  start: number
 }
 
 /**
@@ -80,6 +93,12 @@ export type SummitWhyRoot = { stated_goal: string; root: string }
 
 export type SummitSession = {
   version: number
+  /**
+   * Write counter. Every discovery save sends the rev it was based on as
+   * `expected_rev`, and the server answers 409 if the session has moved since.
+   * 0 for a new session or one saved before the counter existed.
+   */
+  rev?: number
   categories: Record<string, SummitCategory>
   goals: SummitGoal[]
   why_roots?: SummitWhyRoot[]

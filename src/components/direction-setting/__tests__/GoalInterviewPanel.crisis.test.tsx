@@ -185,14 +185,12 @@ describe("a discovery answer", () => {
     await say(user, "I row at the weekend")
     await screen.findByText(Q2)
     await say(user, "With my sister")
-    await waitFor(() => expect(mockSaveDiscovery).toHaveBeenCalledTimes(1))
-    expect(mockSaveDiscovery).toHaveBeenCalledWith("personal", {
-      answers: [
-        { question: Q1, answer: "I row at the weekend" },
-        { question: Q2, answer: "With my sister" },
-      ],
-      status: "explored",
-    })
+    // D-16: each answer is saved as it is given — the distress answer never.
+    await waitFor(() => expect(mockSaveDiscovery).toHaveBeenCalledTimes(2))
+    expect(mockSaveDiscovery.mock.calls.map((c) => c[1].answers)).toEqual([
+      [{ question: Q1, answer: "I row at the weekend" }],
+      [{ question: Q2, answer: "With my sister" }],
+    ])
     // One screen per answer given, in order.
     expect(mockScreenAnswer.mock.calls.map((c) => c[0])).toEqual([
       DISTRESS,

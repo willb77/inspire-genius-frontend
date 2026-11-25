@@ -129,15 +129,27 @@ export async function screenAnswer(text: string) {
 }
 
 /**
- * POST /discovery/{category} — bank the answers for a category.
+ * POST /discovery/{category} — bank answers for a category.
  *
- * Answers are appended, so this must be called once per category with the
- * answers gathered in that pass — calling it again with the same payload
- * duplicates them.
+ * Answers are APPENDED. The interview sends one answer per call, so a retry
+ * of a call that already landed would duplicate it — unless `expected_rev`
+ * is sent. With it, the server refuses a write based on a session that has
+ * moved on (409 `goal_session_conflict`), which also refuses the duplicate.
+ * Always send it.
+ *
+ * `questions` is sent with the first answer of a question thread; the server
+ * stores it as `categories[k].thread` so a reload can resume mid-category.
+ * The server accepts at most six.
  */
 export async function saveDiscovery(
   category: SummitCategoryKey | string,
-  body: { answers: SummitAnswer[]; summary?: string; status?: SummitCategoryStatus }
+  body: {
+    answers: SummitAnswer[]
+    summary?: string
+    status?: SummitCategoryStatus
+    expected_rev?: number
+    questions?: string[]
+  }
 ) {
   const { data } = await getApi().post<SummitSession>(
     `${PREFIX}/discovery/${category}`,

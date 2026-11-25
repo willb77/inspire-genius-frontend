@@ -389,3 +389,38 @@ describe("the draft-goals action", () => {
     expect(btn.className).toMatch(/w-full/)
   })
 })
+
+describe("an answer is saved as it is given (D-16)", () => {
+  it("an answer that could not be saved goes back in the box", async () => {
+    mockSaveDiscovery.mockRejectedValueOnce(new Error("Network Error"))
+    const user = userEvent.setup()
+    renderPanel()
+    await startIt(user)
+    await user.click(screen.getByRole("switch", { name: /voice mode/i }))
+
+    await user.type(screen.getByLabelText("Your answer"), "I read a lot")
+    await user.click(screen.getByRole("button", { name: "Send" }))
+
+    await screen.findByText(/couldn't save that answer/i)
+    await waitFor(() =>
+      expect(screen.getByLabelText("Your answer")).toHaveValue("I read a lot")
+    )
+  })
+
+  it("offers to continue when an area is part-way through, not only when one is finished", async () => {
+    const s = session()
+    for (const k of ["history", "job", "workplace", "ambitions"] as const) {
+      s.categories[k] = { ...s.categories[k], status: "todo" }
+    }
+    s.categories.history = {
+      ...s.categories.history,
+      status: "active",
+      answers: [{ question: "Q1", answer: "A1" }],
+    }
+    mockGetGoalSession.mockResolvedValue(s)
+    renderPanel()
+    expect(
+      await screen.findByRole("button", { name: /continue the conversation/i })
+    ).toBeInTheDocument()
+  })
+})

@@ -163,7 +163,12 @@ export default function GoalInterviewPanel({
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const autoSendRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const interview = useSummitInterview({ session, onGoalsSynthesised })
+  // An answer that could not be saved comes back to the box, never lost.
+  const interview = useSummitInterview({
+    session,
+    onGoalsSynthesised,
+    onRestoreAnswer: setInput,
+  })
   const {
     turns,
     phase,
@@ -339,6 +344,10 @@ export default function GoalInterviewPanel({
   const exploredCount = SUMMIT_CATEGORY_KEYS.filter(
     (k) => session?.categories?.[k]?.status === "explored"
   ).length
+  // Answers are saved as they are given, so an area can be part-way through.
+  const anyStarted =
+    exploredCount > 0 ||
+    SUMMIT_CATEGORY_KEYS.some((k) => session?.categories?.[k]?.status === "active")
   // Not while paused (D-08): a crisis reply is on screen, and "Draft my goals"
   // beside it would be an invitation to carry on as if nothing had been said.
   const paused = phase === "paused"
@@ -498,7 +507,7 @@ export default function GoalInterviewPanel({
               </p>
             )}
             <Button type="button" onClick={start} disabled={busy}>
-              {exploredCount > 0 ? tr("directionSetting.goalInterviewPanel.continueTheConversation", { defaultValue: "Continue the conversation" }) : tr("directionSetting.goalInterviewPanel.startTheConversation", { defaultValue: "Start the conversation" })}
+              {anyStarted ? tr("directionSetting.goalInterviewPanel.continueTheConversation", { defaultValue: "Continue the conversation" }) : tr("directionSetting.goalInterviewPanel.startTheConversation", { defaultValue: "Start the conversation" })}
             </Button>
           </div>
         ) : (

@@ -45,11 +45,22 @@
  *    server returns its crisis reply, that reply is shown, the answer is not
  *    banked, and the interview pauses until the person chooses to carry on.
  *    A screen that cannot be reached does not hold the interview.
+ * 4. **Every discovery answer is saved as it is given (D-16).** It used to be
+ *    held in the tab until the category closed, so a reload or a second tab
+ *    lost it silently. Each save carries `expected_rev`, the session revision
+ *    the interview's position was read from; the next question is not shown
+ *    until the save lands. A 409 means the session moved — another window, or
+ *    our own retry that had already landed. Ours is treated as saved. Anyone
+ *    else's is NEVER re-sent automatically: the interview says so, catches up
+ *    from the stored session, and puts the unsent text back in the box.
+ *    Re-sending could bank the answer against the other window's question or
+ *    overwrite its stored thread.
  */
 import { useCallback, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   askCategory,
+  getGoalSession,
   saveDiscovery,
   screenAnswer,
   synthesizeGoals,
@@ -130,15 +141,89 @@ export function nextCategory(
   return null
 }
 
+/** The server stores at most this many questions in a category's thread. */
+export const MAX_THREAD_QUESTIONS = 6
+
+/** Shown when a save is refused because the session moved in another window. */
+export const SESSION_CHANGED_NOTE =
+  "This conversation was updated in another window, so I've caught up with where you are. Your last answer wasn't saved — it's back in the box if you still want to send it."
+
+/** Shown when a second save in a row is refused for the same reason. */
+export const SESSION_CHANGED_AGAIN_ERROR =
+  "This conversation keeps changing in another window, so I couldn't save that answer. Close the other window, then send it again — it's back in the box."
+
+/** Shown when a save fails for any other reason. The answer is not lost. */
+export const ANSWER_NOT_SAVED_ERROR =
+  "I couldn't save that answer — send it again. It's still in the box."
+
+/**
+ * Is this the server refusing a discovery save because the session has moved
+ * on since `expected_rev`? 409 with `detail.code === "goal_session_conflict"`.
+ */
+export function isSessionConflict(err: unknown): boolean {
+  const response = (err as { response?: { status?: number; data?: unknown } } | null)
+    ?.response
+  if (response?.status !== 409) return false
+  const detail = (response.data as { detail?: { code?: unknown } } | undefined)?.detail
+  return detail?.code === "goal_session_conflict"
+}
+
+/**
+ * Where to resume a category from its stored thread, or null to ask afresh.
+ *
+ * The next question is `answers.length - thread.start`. A category with no
+ * stored thread (saved before threads existed) returns null and goes through
+ * `/ask`, which feeds the earlier answers back so it continues rather than
+ * repeats.
+ */
+export function resumePoint(
+  session: SummitSession | undefined,
+  key: SummitCategoryKey
+): { questions: string[]; index: number } | null {
+  const cat = session?.categories?.[key]
+  if (!cat || cat.status !== "active") return null
+  const questions = cat.thread?.questions?.filter(Boolean) ?? []
+  if (questions.length === 0) return null
+  const index = (cat.answers?.length ?? 0) - (cat.thread?.start ?? 0)
+  if (index < 0 || index >= questions.length) return null
+  return { questions, index }
+}
+
+/**
+ * Does `key` read the same in both sessions — same status, same answers, same
+ * stored thread? Used after a 409 to tell "something else in the session
+ * moved" from "this category moved".
+ */
+export function categoryUnchanged(
+  before: SummitSession | undefined,
+  after: SummitSession | undefined,
+  key: SummitCategoryKey
+): boolean {
+  const a = before?.categories?.[key]
+  const b = after?.categories?.[key]
+  if (!a || !b) return false
+  return (
+    a.status === b.status &&
+    JSON.stringify(a.answers ?? []) === JSON.stringify(b.answers ?? []) &&
+    JSON.stringify(a.thread ?? null) === JSON.stringify(b.thread ?? null)
+  )
+}
+
 export type UseSummitInterviewOptions = {
   session: SummitSession | undefined
   /** Called once goals have been synthesised, so the surface can react. */
   onGoalsSynthesised?: (count: number) => void
+  /**
+   * Called with an answer the interview could not save, so the surface can
+   * put it back in the input. Nothing the person typed is dropped.
+   */
+  onRestoreAnswer?: (text: string) => void
 }
 
 export function useSummitInterview({
   session,
   onGoalsSynthesised,
+  onRestoreAnswer,
 }: UseSummitInterviewOptions) {
   const qc = useQueryClient()
 
@@ -152,7 +237,18 @@ export function useSummitInterview({
   const categoryRef = useRef<SummitCategoryKey | null>(null)
   const questionsRef = useRef<string[]>([])
   const qIndexRef = useRef(0)
-  const answersRef = useRef<SummitAnswer[]>([])
+  // D-16: the session revision the position above was read from, sent as
+  // `expected_rev` with every discovery save. Only a save response or a
+  // deliberate re-read moves it — never a background refetch, which would
+  // pair a fresh rev with a stale position and defeat the check.
+  const revRef = useRef(0)
+  // The newest session the interview itself has seen from the server.
+  const knownSessionRef = useRef<SummitSession | undefined>(undefined)
+  // An answer handed back after a failed save. It was screened once already
+  // (D-08), so sending it unchanged does not screen it again.
+  const restoredRef = useRef<string | null>(null)
+  // Consecutive saves refused because the session moved elsewhere.
+  const conflictStreakRef = useRef(0)
   const statedGoalRef = useRef("")
   const exchangesRef = useRef<SummitWhyExchange[]>([])
   const currentWhyRef = useRef("")
@@ -195,9 +291,17 @@ export function useSummitInterview({
     }
   }, [])
 
-  /** Ask the next category, or move to the stated goal when there are none. */
+  /**
+   * Open a category, or move to the stated goal when there are none.
+   *
+   * `base` is the session the position is read from; its `rev` becomes the
+   * `expected_rev` of the next save. A category with a stored thread resumes
+   * at its next unanswered question without calling `/ask` (D-16).
+   */
   const openCategory = useCallback(
-    async (key: SummitCategoryKey | null) => {
+    async (key: SummitCategoryKey | null, base: SummitSession | undefined) => {
+      knownSessionRef.current = base
+      revRef.current = base?.rev ?? 0
       if (!key) {
         // Discovery is done. Ask for the sentence the ladder will work on.
         categoryRef.current = null
@@ -205,19 +309,33 @@ export function useSummitInterview({
         push({ role: "summit", text: STATED_GOAL_PROMPT, kind: "question" })
         return
       }
+      const resumeAt = resumePoint(base, key)
+      if (resumeAt) {
+        categoryRef.current = key
+        questionsRef.current = resumeAt.questions
+        qIndexRef.current = resumeAt.index
+        push({
+          role: "summit",
+          text: resumeAt.questions[resumeAt.index],
+          kind: "question",
+        })
+        setPhase("question")
+        return
+      }
       setPhase("opening")
       setBusy(true)
       try {
         const asked = await askCategory(key)
         categoryRef.current = key
-        questionsRef.current = asked.questions.filter(Boolean)
+        questionsRef.current = asked.questions
+          .filter(Boolean)
+          .slice(0, MAX_THREAD_QUESTIONS)
         qIndexRef.current = 0
-        answersRef.current = []
 
         if (asked.intro) push({ role: "summit", text: asked.intro, kind: "intro" })
         if (questionsRef.current.length === 0) {
           // Nothing to ask — do not strand the person on an empty category.
-          await openCategory(nextCategory(session, key))
+          await openCategory(nextCategory(base, key), base)
           return
         }
         push({
@@ -235,29 +353,150 @@ export function useSummitInterview({
         setBusy(false)
       }
     },
-    [push, pushError, session]
+    [push, pushError]
   )
 
-  /** Bank a finished category, then move on. */
-  const closeCategory = useCallback(async () => {
-    const key = categoryRef.current
-    if (!key) return
-    try {
-      await saveDiscovery(key, {
-        answers: answersRef.current,
-        status: "explored",
-      })
-      await qc.invalidateQueries({ queryKey: summitKeys.session })
-    } catch {
-      // The answers are lost server-side, and saying so is the only honest
-      // option — silently continuing would show "explored" for a category the
-      // backend never received.
-      pushError(
-        "I couldn't save that section. Your answers here may not have been kept — worth revisiting this category later."
+  /** Hand an unsaved answer back to the surface, already screened. */
+  const restoreAnswer = useCallback(
+    (text: string) => {
+      restoredRef.current = text
+      onRestoreAnswer?.(text)
+    },
+    [onRestoreAnswer]
+  )
+
+  /**
+   * An answer is stored. Take the new revision, seed the cache, and only now
+   * show the next question — or open the next category after the last one.
+   */
+  const advanceAfterSave = useCallback(
+    async (saved: SummitSession, key: SummitCategoryKey, expected: number) => {
+      conflictStreakRef.current = 0
+      knownSessionRef.current = saved
+      revRef.current = typeof saved?.rev === "number" ? saved.rev : expected + 1
+      qc.setQueryData(summitKeys.session, saved)
+      const next = qIndexRef.current + 1
+      if (next < questionsRef.current.length) {
+        qIndexRef.current = next
+        push({ role: "summit", text: questionsRef.current[next], kind: "question" })
+        return
+      }
+      await openCategory(nextCategory(saved, key), saved)
+    },
+    [qc, push, openCategory]
+  )
+
+  /**
+   * A save came back 409: the session moved since `expected`. Re-read it.
+   *
+   * If the move is our own retry that already landed — rev is exactly one on
+   * and the newest stored answer is the one just sent — the answer IS saved.
+   * Anything else is another window. Never re-send in that case: say so,
+   * re-derive the position from the stored session (the next area, if the
+   * other window finished this one), and give the text back.
+   */
+  const handleConflict = useCallback(
+    async (key: SummitCategoryKey, sent: SummitAnswer, expected: number) => {
+      let fresh: SummitSession
+      try {
+        fresh = await getGoalSession()
+      } catch {
+        pushError(ANSWER_NOT_SAVED_ERROR)
+        restoreAnswer(sent.answer)
+        return
+      }
+      const answers = fresh?.categories?.[key]?.answers ?? []
+      const newest = answers[answers.length - 1]
+      if (
+        fresh?.rev === expected + 1 &&
+        newest?.answer === sent.answer &&
+        newest?.question === sent.question
+      ) {
+        await advanceAfterSave(fresh, key, expected)
+        return
+      }
+      qc.setQueryData(summitKeys.session, fresh)
+      conflictStreakRef.current += 1
+      if (conflictStreakRef.current >= 2) {
+        pushError(SESSION_CHANGED_AGAIN_ERROR)
+      } else {
+        push({ role: "summit", text: SESSION_CHANGED_NOTE, kind: "note" })
+      }
+      restoreAnswer(sent.answer)
+      // Re-derive the position. When the move was somewhere else entirely — a
+      // goal confirmed, another area — this category reads exactly as it did,
+      // so the position stands: ask the same question again against the new
+      // revision, rather than fetching a differently-worded thread.
+      if (categoryUnchanged(knownSessionRef.current, fresh, key)) {
+        knownSessionRef.current = fresh
+        revRef.current = fresh?.rev ?? 0
+        push({
+          role: "summit",
+          text: questionsRef.current[qIndexRef.current] ?? sent.question,
+          kind: "question",
+        })
+        setPhase("question")
+        return
+      }
+      const stillOpen = fresh?.categories?.[key]?.status !== "explored"
+      await openCategory(
+        stillOpen ? key : nextCategory(fresh, key),
+        fresh
       )
-    }
-    await openCategory(nextCategory(session, key))
-  }, [qc, openCategory, pushError, session])
+    },
+    [qc, push, pushError, restoreAnswer, advanceAfterSave, openCategory]
+  )
+
+  /**
+   * Save one discovery answer (D-16). The next question waits for the save.
+   * `expected_rev` is always sent: without it the server appends blindly, and
+   * a retry of a request that had already landed would bank the answer twice.
+   */
+  const saveAnswer = useCallback(
+    async (text: string) => {
+      const key = categoryRef.current
+      if (!key) return
+      const index = qIndexRef.current
+      const sent: SummitAnswer = {
+        question: questionsRef.current[index] ?? "",
+        answer: text,
+      }
+      const isLast = index + 1 >= questionsRef.current.length
+      const expected = revRef.current
+      setBusy(true)
+      try {
+        let saved: SummitSession
+        try {
+          saved = await saveDiscovery(key, {
+            answers: [sent],
+            status: isLast ? "explored" : "active",
+            expected_rev: expected,
+            // The thread is stored with its first answer, so a reload can
+            // resume at the right question.
+            questions:
+              index === 0
+                ? questionsRef.current.slice(0, MAX_THREAD_QUESTIONS)
+                : undefined,
+          })
+        } catch (err) {
+          if (isSessionConflict(err)) {
+            await handleConflict(key, sent, expected)
+            return
+          }
+          // Not banked, and saying so is the only honest option. The position
+          // does not move, so a retry sends the same `expected_rev` — and if
+          // this one did land after all, the 409 it gets is recognised as ours.
+          pushError(ANSWER_NOT_SAVED_ERROR)
+          restoreAnswer(text)
+          return
+        }
+        await advanceAfterSave(saved, key, expected)
+      } finally {
+        setBusy(false)
+      }
+    },
+    [pushError, restoreAnswer, handleConflict, advanceAfterSave]
+  )
 
   /** One rung of the ladder. */
   const stepLadder = useCallback(
@@ -362,7 +601,7 @@ export function useSummitInterview({
   /** Begin, or resume at the first unexplored category. */
   const start = useCallback(() => {
     if (busy) return
-    void openCategory(nextCategory(session))
+    void openCategory(nextCategory(session), session)
   }, [busy, openCategory, session])
 
   /**
@@ -376,29 +615,22 @@ export function useSummitInterview({
       push({ role: "user", text })
 
       if (phase === "question") {
-        // D-08: screen before the next (already fetched) question is shown.
-        setBusy(true)
-        const crisis = await screenDiscoveryAnswer(text)
-        setBusy(false)
-        if (crisis) {
-          pauseForCrisis(crisis, "question")
-          return
+        // D-08: screen before the next (already fetched) question is shown —
+        // once per answer. An answer handed back after a failed save was
+        // screened already, so sent unchanged it is not screened again.
+        const alreadyScreened = restoredRef.current === text
+        restoredRef.current = null
+        if (!alreadyScreened) {
+          setBusy(true)
+          const crisis = await screenDiscoveryAnswer(text)
+          setBusy(false)
+          if (crisis) {
+            pauseForCrisis(crisis, "question")
+            return
+          }
         }
-        answersRef.current = [
-          ...answersRef.current,
-          { question: questionsRef.current[qIndexRef.current] ?? "", answer: text },
-        ]
-        const next = qIndexRef.current + 1
-        if (next < questionsRef.current.length) {
-          qIndexRef.current = next
-          push({
-            role: "summit",
-            text: questionsRef.current[next],
-            kind: "question",
-          })
-          return
-        }
-        await closeCategory()
+        // D-16: saved now, not when the category closes.
+        await saveAnswer(text)
         return
       }
 
@@ -432,7 +664,7 @@ export function useSummitInterview({
       busy,
       phase,
       push,
-      closeCategory,
+      saveAnswer,
       stepLadder,
       synthesise,
       pauseForCrisis,
@@ -472,18 +704,12 @@ export function useSummitInterview({
     if (busy || phase !== "question") return
     const key = categoryRef.current
     push({ role: "summit", text: "No problem — we can come back to this.", kind: "note" })
-    // Whatever was answered before the skip is still worth keeping, but the
-    // category is not marked explored: it was not.
-    if (key && answersRef.current.length > 0) {
-      try {
-        await saveDiscovery(key, { answers: answersRef.current, status: "active" })
-        await qc.invalidateQueries({ queryKey: summitKeys.session })
-      } catch {
-        /* best effort — the skip must not fail */
-      }
-    }
-    await openCategory(nextCategory(session, key ?? undefined))
-  }, [busy, phase, push, qc, openCategory, session])
+    // Nothing to send: every answer given here was saved as it was given, and
+    // the category is stored as `active`, not explored — it was not. Sending
+    // them again would append every one a second time.
+    const base = knownSessionRef.current ?? session
+    await openCategory(nextCategory(base, key ?? undefined), base)
+  }, [busy, phase, push, openCategory, session])
 
   const categoryKey = categoryRef.current
   // Where this area sits in the run of five, 1-based. 0 when no area is open.
