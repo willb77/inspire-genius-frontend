@@ -325,7 +325,8 @@
     "recorded": "Zapisano {{when}} · {{engine}}",
     "rolesRanked": "Role w rankingu z tamtego dnia",
     "savedReport": "Zapisany raport",
-    "yourRoleMatches": "Twoje dopasowania do ról"
+    "yourRoleMatches": "Twoje dopasowania do ról",
+    "recordedAt": "Zapisano {{when}}"
   },
   "fitHistoryPanel": {
     "empty": "Nie ma jeszcze raportów dopasowania. Każde otwarte dopasowanie do roli i każdy zapisany raport trafia tutaj.",

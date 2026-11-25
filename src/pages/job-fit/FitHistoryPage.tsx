@@ -1,7 +1,9 @@
+import { useContext } from "react"
 import { Link, useParams } from "react-router-dom"
+import { AuthContext } from "@/context/auth-context"
 import { ArrowLeft, History } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { ROUTES } from "@/constants/routes"
+import { ROLES, ROUTES } from "@/constants/routes"
 import { useFitSnapshot } from "@/hooks/job-fit/useFitHistory"
 import { useFitSharedDisplayEnabled } from "@/hooks/switches/useFitSharedDisplayEnabled"
 import type { FitDetail, FitMatch, FitSnapshot } from "@/types/job-fit"
@@ -33,6 +35,10 @@ export default function FitHistoryPage() {
   // FIT-5b (decision 5): PRISM fit only, labelled "as recorded", with the
   // partial-profile note. Off, loading or unreadable = FIT-5a's page exactly.
   const sharedDisplay = useFitSharedDisplayEnabled()
+  // Walk F-W3-3: the scoring engine's id ("ig-blueprint-scoring 0.1.0;
+  // scheme=…") is an internal record for support, not a sentence for the
+  // person. Shown to super-admins only; no auth context reads as not one.
+  const showEngine = useContext(AuthContext)?.hasRole(ROLES.SUPER_ADMIN) === true
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -67,11 +73,18 @@ export default function FitHistoryPage() {
                 ? t("fitHistoryPage.yourRoleMatches", "Your role matches")
                 : t("fitHistoryPage.fitReport", "Fit report"))
             }
-            description={t("fitHistoryPage.recorded", {
-              defaultValue: "Recorded {{when}} · {{engine}}",
-              when: new Date(snap.data.computedAt).toLocaleString(),
-              engine: snap.data.engineVersion,
-            })}
+            description={
+              showEngine
+                ? t("fitHistoryPage.recorded", {
+                    defaultValue: "Recorded {{when}} · {{engine}}",
+                    when: new Date(snap.data.computedAt).toLocaleString(),
+                    engine: snap.data.engineVersion,
+                  })
+                : t("fitHistoryPage.recordedAt", {
+                    defaultValue: "Recorded {{when}}",
+                    when: new Date(snap.data.computedAt).toLocaleString(),
+                  })
+            }
           />
 
           {isFitDetail(snap.data.payload) ? (

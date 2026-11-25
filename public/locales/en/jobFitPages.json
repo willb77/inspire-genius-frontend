@@ -290,7 +290,8 @@
     "recorded": "Recorded {{when}} · {{engine}}",
     "rolesRanked": "Roles as ranked that day",
     "savedReport": "Saved report",
-    "yourRoleMatches": "Your role matches"
+    "yourRoleMatches": "Your role matches",
+    "recordedAt": "Recorded {{when}}"
   },
   "fitHistoryPanel": {
     "empty": "No fit reports yet. Every role fit you open, and every report you save, is kept here.",

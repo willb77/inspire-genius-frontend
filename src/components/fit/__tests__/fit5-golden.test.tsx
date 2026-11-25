@@ -38,6 +38,14 @@
  * JF-1 phrase map over each new golden reproduces the base byte for byte. No
  * *.requests.txt changed. That is the third reviewed update.
  *
+ * Walk finding F-W3-3 (2026-11-25): a reopened fit report showed the scoring
+ * engine's id ("ig-blueprint-scoring 0.1.0; scheme=…") to the person; it is now
+ * shown to super-admins only. The 8 history-*.html goldens (rendered with no
+ * auth context, i.e. not a super-admin) changed in exactly one place each: the
+ * header lost " · <engine id>". Deleting that suffix from each base golden
+ * reproduces the new one byte for byte. No *.requests.txt changed. That is the
+ * fourth reviewed update.
+ *
  * To re-record (only ever on the base, before a source change):
  *   FIT5_GOLDEN_WRITE=1 npx jest src/components/fit/__tests__/fit5-golden.test.tsx
  */

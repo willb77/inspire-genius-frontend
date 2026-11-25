@@ -301,7 +301,8 @@
     "recorded": "Registrado em {{when}} · {{engine}}",
     "rolesRanked": "Cargos classificados naquele dia",
     "savedReport": "Relatório salvo",
-    "yourRoleMatches": "Suas correspondências de cargos"
+    "yourRoleMatches": "Suas correspondências de cargos",
+    "recordedAt": "Registrado em {{when}}"
   },
   "fitHistoryPanel": {
     "empty": "Nenhum relatório de compatibilidade ainda. Cada compatibilidade de cargo que você abre e cada relatório que você salva ficam guardados aqui.",
