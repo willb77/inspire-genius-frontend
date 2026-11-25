@@ -9,7 +9,11 @@
  *
  * PRISM is left out here: it has its own "Replace PRISM data" row and flow.
  */
-import type { ProfileAssessmentView, ProfileMe } from "@/types/profile/profile-types";
+import type {
+  AssessmentHistoryItem,
+  ProfileAssessmentView,
+  ProfileMe,
+} from "@/types/profile/profile-types";
 
 /** Brand names: shown as written in every language. */
 const FRAMEWORK_LABELS: Record<string, string> = {
@@ -98,7 +102,67 @@ export function formatAssessedDate(iso: string, language?: string): string {
   return d.toLocaleDateString(language || undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-/** How many entries for a framework are older than the current one. */
-export function earlierCount(total: number | null | undefined): number {
-  return typeof total === "number" && total > 1 ? total - 1 : 0;
+
+// ── TDS F-W7-1 Part B: the entry behind a line, and whether it can be removed ──
+
+/** Sources the person made themselves: the only ones the server will remove. */
+const OWNER_REMOVABLE_SOURCES = new Set(["user_input", "file_upload"]);
+
+const time = (iso: string): number => {
+  const t = new Date(iso).getTime();
+  return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
+};
+
+/** History rows for one framework that still count (a removed one does not). */
+export function activeEntries(
+  items: AssessmentHistoryItem[] | null | undefined,
+  framework: string,
+): AssessmentHistoryItem[] {
+  const key = frameworkKey(framework);
+  return (items ?? []).filter(
+    (i) => i && frameworkKey(i.framework) === key && i.is_authoritative !== false,
+  );
+}
+
+/**
+ * The history row behind a framework's "On file" line: the latest one that
+ * still counts, which is the row `GET /me` reports. `GET /me` carries no id,
+ * so this is where the id to remove comes from.
+ */
+export function currentEntry(
+  items: AssessmentHistoryItem[] | null | undefined,
+  framework: string,
+): AssessmentHistoryItem | undefined {
+  return [...activeEntries(items, framework)].sort(
+    (a, b) => time(b.assessed_at) - time(a.assessed_at),
+  )[0];
+}
+
+/** Entries that still count, other than the current one. A removed entry is not "earlier". */
+export function activeEarlierCount(
+  items: AssessmentHistoryItem[] | null | undefined,
+  framework: string,
+): number {
+  return Math.max(activeEntries(items, framework).length - 1, 0);
+}
+
+/**
+ * Mirrors the server's guards so the button only shows where it can work:
+ * still counts, entered or uploaded by the person, never PRISM. The server
+ * (DELETE /v1/profile/me/assessments/{id}) is the real gate.
+ */
+export function isRemovable(entry: AssessmentHistoryItem | null | undefined): boolean {
+  if (!entry || !entry.id) return false;
+  if (entry.is_authoritative === false) return false;
+  if (frameworkKey(entry.framework) === "PRISM") return false;
+  return OWNER_REMOVABLE_SOURCES.has(entry.source);
+}
+
+type ErrorShape = { response?: { status?: number; data?: { detail?: unknown } } };
+
+/** The HTTP status and the server's `detail` from a failed remove, when present. */
+export function removeErrorInfo(err: unknown): { status?: number; detail?: string } {
+  const res = (err as ErrorShape | null)?.response;
+  const detail = res?.data?.detail;
+  return { status: res?.status, detail: typeof detail === "string" && detail ? detail : undefined };
 }

@@ -388,6 +388,14 @@
     "sourceEntered": "Zadáno vámi",
     "sourceReport": "Ze zprávy",
     "sourceOther": "Přidáno do vašeho profilu",
+    "remove": "Odebrat",
+    "removeAria": "Odebrat váš výsledek {{framework}}",
+    "removeTitle": "Odebrat tento výsledek {{framework}}?",
+    "removeBody": "Přestane se používat, v Meridianu i všude jinde. Pokud máte starší výsledek {{framework}}, stane se opět vaším aktuálním výsledkem.",
+    "removeConfirm": "Odebrat",
+    "removeDone": "Výsledek {{framework}} odebrán.",
+    "removeAlready": "Tento výsledek už byl odebrán.",
+    "removeFailed": "Tento výsledek se nepodařilo odebrat. Zkuste to znovu.",
     "supersede": "Již máte výsledek {{framework}} ze dne {{date}}. Uložením tohoto se stane aktuálním výsledkem; dřívější zůstane ve vaší historii."
   },
   "audioPlayer": {

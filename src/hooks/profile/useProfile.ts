@@ -25,10 +25,12 @@ import {
   importAssessment,
   listAssessments,
   previewImportAssessment,
+  removeAssessment,
 } from "@/services/profile/profile";
 import type {
   Assessment,
   AssessmentCreated,
+  AssessmentHistoryItem,
   AssessmentHistoryResponse,
   AssessmentImportConfirm,
   AssessmentImportPreview,
@@ -208,6 +210,34 @@ export function useCreateAssessment(
       qc.invalidateQueries({ queryKey: [...profileKeys.root, "history"] });
       qc.invalidateQueries({ queryKey: profileKeys.loadedFrameworks() });
       options?.onSuccess?.(data, vars, ctx);
+    },
+  });
+}
+
+/**
+ * Remove one of your own results (TDS F-W7-1 Part B). Refreshes the snapshot,
+ * the history and the loaded-frameworks chip on success AND on failure: a
+ * 409 means it was already removed elsewhere, and the card must catch up.
+ */
+export function useRemoveAssessment(
+  options?: UseMutationOptions<AssessmentHistoryItem, unknown, string>,
+) {
+  const qc = useQueryClient();
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: profileKeys.me() });
+    qc.invalidateQueries({ queryKey: [...profileKeys.root, "history"] });
+    qc.invalidateQueries({ queryKey: profileKeys.loadedFrameworks() });
+  };
+  return useMutation<AssessmentHistoryItem, unknown, string>({
+    mutationFn: removeAssessment,
+    ...options,
+    onSuccess: (data, vars, ctx) => {
+      refresh();
+      options?.onSuccess?.(data, vars, ctx);
+    },
+    onError: (err, vars, ctx) => {
+      refresh();
+      options?.onError?.(err, vars, ctx);
     },
   });
 }

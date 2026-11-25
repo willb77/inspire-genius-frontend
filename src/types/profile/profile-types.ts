@@ -182,8 +182,29 @@ export type AssessmentCreated = {
   typing_count: number;
 };
 
+/**
+ * One row of `GET /v1/profile/me/assessments` (backend `AssessmentListItem`).
+ * No scores: the history route returns the row only. `is_authoritative` is
+ * false for an entry the person removed (TDS F-W7-1 Part B) or one an admin
+ * set aside; every reader that matters skips those.
+ */
+export type AssessmentHistoryItem = {
+  id: string;
+  framework: string;
+  framework_version?: string | null;
+  assessed_at: string;
+  source: string;
+  is_authoritative: boolean;
+  notes?: string | null;
+};
+
+/**
+ * `GET /v1/profile/me/assessments` (backend `AssessmentListResponse`).
+ * F-W7-1b: this said `assessments`, but the backend sends `items`, so every
+ * reader of the history got an empty list that looked like "nothing yet".
+ */
 export type AssessmentHistoryResponse = {
-  assessments: Assessment[];
+  items: AssessmentHistoryItem[];
   total: number;
   limit: number;
   offset: number;

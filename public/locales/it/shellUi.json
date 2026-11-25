@@ -597,6 +597,14 @@
     "sourceEntered": "Inserito da te",
     "sourceReport": "Da un report",
     "sourceOther": "Aggiunto al tuo profilo",
+    "remove": "Rimuovi",
+    "removeAria": "Rimuovi il tuo risultato {{framework}}",
+    "removeTitle": "Rimuovere questo risultato {{framework}}?",
+    "removeBody": "Non verrà più usato, né da Meridian né altrove. Se hai un risultato {{framework}} precedente, quello torna a essere il tuo risultato attuale.",
+    "removeConfirm": "Rimuovi",
+    "removeDone": "Risultato {{framework}} rimosso.",
+    "removeAlready": "Quel risultato era già stato rimosso.",
+    "removeFailed": "Non è stato possibile rimuovere questo risultato. Riprova.",
     "supersede": "Hai già un risultato {{framework}} del {{date}}. Salvando questo, diventa il risultato attuale; il precedente resta nella tua cronologia."
   },
   "talentStudio": {
