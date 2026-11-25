@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Briefcase, Share2, TrendingUp } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
@@ -16,6 +16,7 @@ import { ConfidenceDot } from "./ConfidenceDot"
 import { useDevSkin } from "./skin"
 import { useTranslation } from "react-i18next"
 import { withPrism } from "@/lib/withPrism"
+import { clientIdOf } from "@/lib/practitionerRoster"
 import {
   cardGatedFields,
   chipContradictsCard,
@@ -194,6 +195,15 @@ export type MemberCardProps = {
    * minted id read "No account"; otherwise it reads "Not known".
    */
   sharingReadWorked?: boolean
+  /**
+   * TDS-U11b — the client-record route, with a `:clientId` segment, passed by
+   * the practitioner mount only. When the card is a linked client's (the
+   * server sent a `clientId`, U11a), the card links to that record: sessions,
+   * documents, follow-ups and PRISM import, keyed on the client id. Absent, or
+   * on a card with no `clientId` (every card while the switch is off), nothing
+   * is added.
+   */
+  clientRoute?: string
 }
 
 /**
@@ -205,8 +215,11 @@ export function MemberCard({
   onInvite,
   memberRoute = ROUTES.MANAGER.DEVELOPMENT_MEMBER,
   sharingReadWorked = false,
+  clientRoute,
 }: MemberCardProps) {
   const { t } = useTranslation("managerPages")
+  const { t: tp } = useTranslation("practitionerPages")
+  const clientId = clientRoute ? clientIdOf(member) : null
   const navigate = useNavigate()
   const sk = useDevSkin()
   const target = memberRoute.replace(":memberId", member.memberId)
@@ -313,6 +326,22 @@ export function MemberCard({
         fitLineAllowed ? <FitTopMatchLine memberId={member.memberId} /> : null
       ) : member.topMatch ? (
         <TopMatchLine title={member.topMatch.title} fitScore={member.topMatch.fitScore} />
+      ) : null}
+
+      {clientRoute && clientId ? (
+        <Link
+          to={clientRoute.replace(":clientId", encodeURIComponent(clientId))}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          className="self-start text-xs font-medium text-[#3B5BFF] hover:underline"
+          data-testid="member-card-client-record"
+          aria-label={tp("studioRoster.clientRecordAria", {
+            defaultValue: "Open the client record for {{name}}: sessions, documents, follow-ups and PRISM import",
+            name: member.name,
+          })}
+        >
+          {tp("studioRoster.clientRecord", { defaultValue: "Client record" })}
+        </Link>
       ) : null}
     </Card>
   )

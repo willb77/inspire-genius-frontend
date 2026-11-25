@@ -367,5 +367,14 @@
       "paused": "In pausa",
       "closed": "Concluso"
     }
+  },
+  "studioRoster": {
+    "notConnected": "Non ancora collegato",
+    "notConnectedHeading": "Clienti che non hanno ancora collegato un account ({{count}})",
+    "notConnectedBody": "{{name}} non ha ancora un account InspiresGenius collegato a te, quindi non c'è una pagina di sviluppo da aprire. Invitalo da I miei clienti.",
+    "openClientRecord": "Apri la scheda cliente",
+    "inviteFromMyClients": "Invita da I miei clienti",
+    "clientRecord": "Scheda cliente",
+    "clientRecordAria": "Apri la scheda cliente di {{name}}: sessioni, documenti, follow-up e importazione PRISM"
   }
 }

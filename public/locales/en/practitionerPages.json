@@ -366,5 +366,14 @@
       "paused": "Paused",
       "closed": "Finished"
     }
+  },
+  "studioRoster": {
+    "notConnected": "Not connected yet",
+    "notConnectedHeading": "Clients who have not connected an account ({{count}})",
+    "notConnectedBody": "{{name}} has no InspiresGenius account linked to you yet, so there is no development page to open. Invite them from My Clients.",
+    "openClientRecord": "Open client record",
+    "inviteFromMyClients": "Invite from My Clients",
+    "clientRecord": "Client record",
+    "clientRecordAria": "Open the client record for {{name}}: sessions, documents, follow-ups and PRISM import"
   }
 }

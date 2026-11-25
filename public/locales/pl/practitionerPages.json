@@ -369,5 +369,14 @@
     "csvFile": "Plik CSV PRISM",
     "cancel": "Anuluj",
     "upload": "Prześlij"
+  },
+  "studioRoster": {
+    "notConnected": "Jeszcze niepołączony",
+    "notConnectedHeading": "Klienci, którzy jeszcze nie połączyli konta ({{count}})",
+    "notConnectedBody": "{{name}} nie ma jeszcze konta InspiresGenius połączonego z Tobą, więc nie ma strony rozwoju do otwarcia. Zaproś tę osobę z sekcji Moi klienci.",
+    "openClientRecord": "Otwórz kartę klienta",
+    "inviteFromMyClients": "Zaproś z sekcji Moi klienci",
+    "clientRecord": "Karta klienta",
+    "clientRecordAria": "Otwórz kartę klienta {{name}}: sesje, dokumenty, działania następcze i import PRISM"
   }
 }

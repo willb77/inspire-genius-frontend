@@ -368,5 +368,14 @@
     "loadError": "Vaši registraci PRISM se teď nepodařilo načíst. Zkuste to prosím později.",
     "dark": "Program pro praktiky zatím není zapnut.",
     "notRegistered": "Průzkumy, které rozešlete, budou vytvořeny na webu PRISM společnosti InspiresGenius, dokud nebude váš účet registrován."
+  },
+  "studioRoster": {
+    "notConnected": "Zatím nepropojeno",
+    "notConnectedHeading": "Klienti, kteří zatím nepropojili účet ({{count}})",
+    "notConnectedBody": "{{name}} zatím nemá s vámi propojený účet InspiresGenius, takže zde není žádná stránka rozvoje. Pozvěte je ze stránky Moji klienti.",
+    "openClientRecord": "Otevřít záznam klienta",
+    "inviteFromMyClients": "Pozvat ze stránky Moji klienti",
+    "clientRecord": "Záznam klienta",
+    "clientRecordAria": "Otevřít záznam klienta {{name}}: sezení, dokumenty, následné kroky a import PRISM"
   }
 }
