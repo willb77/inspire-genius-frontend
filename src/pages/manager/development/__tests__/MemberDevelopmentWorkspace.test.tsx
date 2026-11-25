@@ -75,6 +75,16 @@ jest.mock("@/services/manager/studentRoster.service", () => ({
 }))
 
 jest.mock("@/lib/dossierPdf", () => ({ exportDossierPdf: jest.fn() }))
+
+/* ---- D-15: the coaching-gate probe behind "practitioner: hide" ---- */
+let mockCoachingDenied = false
+const mockProbeEnabled: boolean[] = []
+jest.mock("@/hooks/manager/development/useCoachingAccessDenied", () => ({
+  useCoachingAccessDenied: (_id: string | undefined, enabled: boolean) => {
+    mockProbeEnabled.push(enabled)
+    return enabled && mockCoachingDenied
+  },
+}))
 import { exportDossierPdf } from "@/lib/dossierPdf"
 
 jest.mock("sonner", () => ({
@@ -934,5 +944,67 @@ describe("MemberDevelopmentWorkspace — eleven sections in five groups (U4), St
     await screen.findByTestId("goals-panel")
     expect(screen.getByTestId("location-search")).toHaveTextContent("?tab=goals")
     expect(screen.getByRole("tab", { name: "Goals & Roadmap" })).toHaveAttribute("aria-selected", "true")
+  })
+})
+
+describe("D-15: goal-linked rows withheld, and practitioner: hide", () => {
+  beforeEach(() => {
+    mockCoachingDenied = false
+    mockProbeEnabled.length = 0
+  })
+
+  it("says some items are withheld above each development list", async () => {
+    dossierState = { data: dossier({ goalsNotShared: true, goalLinkedWithheld: true }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=gaps")
+    await screen.findByTestId("gaps-panel")
+    const notices = screen.getAllByTestId("dev-goal-linked-withheld")
+    expect(notices).toHaveLength(2) // gaps + learning share the group
+    expect(notices[0]).toHaveTextContent(
+      "Some items are linked to goals Gary Burnette has not shared with you, so they are not shown.",
+    )
+  })
+
+  it("says nothing extra when nothing was withheld, or when development is withheld wholesale", async () => {
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    const { unmount } = renderAt("/manager/development/m-1?tab=gaps")
+    await screen.findByTestId("gaps-panel")
+    expect(screen.queryByTestId("dev-goal-linked-withheld")).not.toBeInTheDocument()
+    unmount()
+    dossierState = {
+      data: dossier({ goalLinkedWithheld: true, developmentNotShared: true }),
+      isLoading: false,
+      isError: false,
+    }
+    renderAt("/manager/development/m-1?tab=gaps")
+    await screen.findByTestId("gaps-panel")
+    expect(screen.queryByTestId("dev-goal-linked-withheld")).not.toBeInTheDocument()
+  })
+
+  it("a practitioner the coaching gate refuses does not see Notes, Goals or the full profile", async () => {
+    mockCoachingDenied = true
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=notes", { audience: "practitioner" })
+    // ?tab=notes is no longer on offer, so the page falls back to the profile.
+    expect(await screen.findByTestId("profile-panel")).toBeInTheDocument()
+    expect(screen.queryByTestId("notes-panel")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("studio-panel")).not.toBeInTheDocument()
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Goals & Roadmap" }))
+    expect(await screen.findByTestId("roadmap-panel")).toBeInTheDocument()
+    expect(screen.queryByTestId("goals-panel")).not.toBeInTheDocument()
+  })
+
+  it("a practitioner the gate admits keeps every section", async () => {
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=notes", { audience: "practitioner" })
+    expect(await screen.findByTestId("notes-panel")).toBeInTheDocument()
+    expect(mockProbeEnabled).toContain(true)
+  })
+
+  it("a manager is never probed, so nothing is hidden from them", async () => {
+    mockCoachingDenied = true
+    dossierState = { data: dossier(), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=notes")
+    expect(await screen.findByTestId("notes-panel")).toBeInTheDocument()
+    expect(mockProbeEnabled.every((e) => e === false)).toBe(true)
   })
 })

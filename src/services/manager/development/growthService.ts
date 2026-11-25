@@ -627,9 +627,17 @@ export type DossierChatMessage = {
   createdAt?: string
 }
 
-/** GET /members/{id}/chat — persisted Meridian chat so the manager can resume. */
+/** GET /members/{id}/chat — persisted Meridian chat so the manager can resume.
+ *  `hiddenTurns`: stored turns not returned because the member withdrew sharing
+ *  after they were written. Absent when none were hidden (and on an older
+ *  backend). */
+export type DossierChatHistory = {
+  messages: DossierChatMessage[]
+  hiddenTurns?: number
+}
+
 export function getMemberChat(memberId: string) {
-  return getApi().get<BaseApiResponse<{ messages: DossierChatMessage[] }>>(
+  return getApi().get<BaseApiResponse<DossierChatHistory>>(
     `${BASE}/members/${memberId}/chat`,
   )
 }

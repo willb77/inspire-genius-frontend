@@ -47,6 +47,7 @@ import {
   useSharePlan,
   useDevelopmentText,
 } from "@/hooks/manager/development"
+import { useCoachingAccessDenied } from "@/hooks/manager/development/useCoachingAccessDenied"
 import { CoverageChips } from "@/components/manager/development/CoverageChips"
 import { sharePlanToast, SHARE_PLAN_ERROR } from "@/components/manager/development/sharePlanToast"
 import { ConfidenceDot } from "@/components/manager/development/ConfidenceDot"
@@ -207,17 +208,35 @@ const GROUPS: readonly GroupDef[] = [
   { value: "group-scenarios", labelKey: "dev.tab.scenarios", standalone: true },
 ]
 
-const OFFERED_SECTIONS = SECTIONS.filter((s) => !s.studioOnly || TDS_STUDIO_ENABLED)
-const OFFERED_GROUPS = GROUPS.filter((g) => OFFERED_SECTIONS.some((s) => s.group === g.value))
-/** While the dossier computes: the groups with at least one section that works now. */
-const COMPUTING_GROUPS = OFFERED_GROUPS.filter((g) =>
-  OFFERED_SECTIONS.some((s) => s.group === g.value && s.worksWhileComputing),
-)
-const FALLBACK_SECTION = SECTIONS[0]
+/**
+ * D-15 ("practitioner: hide"). The sections behind the server's COACHING gate —
+ * notes, the full PRISM profile and goals — which admits a roster row or a
+ * direct report, not a shared organisation. A practitioner the server refuses
+ * them to does not see them at all, rather than a refusal or an empty state
+ * that reads like "nothing yet". Hiding grants and removes no access.
+ */
+const COACHING_SECTIONS: ReadonlySet<DevSection> = new Set<DevSection>(["notes", "profile-studio", "goals"])
+const NO_HIDDEN: ReadonlySet<DevSection> = new Set<DevSection>()
 
-function sectionsOf(group: DevGroup): readonly SectionDef[] {
-  return OFFERED_SECTIONS.filter((s) => s.group === group)
+type Offered = {
+  sections: readonly SectionDef[]
+  groups: readonly GroupDef[]
+  /** While the dossier computes: the groups with at least one section that works now. */
+  computingGroups: readonly GroupDef[]
 }
+
+function offerSections(hidden: ReadonlySet<DevSection>): Offered {
+  const sections = SECTIONS.filter((s) => (!s.studioOnly || TDS_STUDIO_ENABLED) && !hidden.has(s.value))
+  const groups = GROUPS.filter((g) => sections.some((s) => s.group === g.value))
+  const computingGroups = groups.filter((g) =>
+    sections.some((s) => s.group === g.value && s.worksWhileComputing),
+  )
+  return { sections, groups, computingGroups }
+}
+
+const OFFERED_DEFAULT = offerSections(NO_HIDDEN)
+const OFFERED_COACHING_DENIED = offerSections(COACHING_SECTIONS)
+const FALLBACK_SECTION = SECTIONS[0]
 
 /** Stable element id for a section: what a legacy `?tab=` value scrolls to. */
 function sectionDomId(value: DevSection): string {
@@ -258,6 +277,14 @@ export default function MemberDevelopmentWorkspace({
   const navigate = useNavigate()
   const { t } = useDevelopmentText(audience)
   const [searchParams, setSearchParams] = useSearchParams()
+  // D-15: only a practitioner is probed; every other audience is unchanged.
+  const coachingDenied = useCoachingAccessDenied(memberId, audience === "practitioner")
+  const offered = coachingDenied ? OFFERED_COACHING_DENIED : OFFERED_DEFAULT
+  const offeredSections = offered.sections
+  const offeredGroups = offered.groups
+  const computingGroups = offered.computingGroups
+  const sectionsOf = (group: DevGroup): readonly SectionDef[] =>
+    offeredSections.filter((s) => s.group === group)
 
   // Standard manager chrome + (flag-gated) HomeV2 cream frame around whichever
   // shell state we return below.
@@ -273,7 +300,7 @@ export default function MemberDevelopmentWorkspace({
   // `?tab=` names a SECTION. A value that is not on offer — including a Studio
   // section while the flag is off — falls back to the profile rather than
   // rendering an empty panel that reads like a tab with nothing in it.
-  const activeDef = OFFERED_SECTIONS.find((x) => x.value === tabParam) ?? FALLBACK_SECTION
+  const activeDef = offeredSections.find((x) => x.value === tabParam) ?? FALLBACK_SECTION
   const activeSection: DevSection = activeDef.value
   const activeGroup: DevGroup = activeDef.group
   // A group's first section sits at the top of the group, so opening it needs
@@ -348,7 +375,7 @@ export default function MemberDevelopmentWorkspace({
   // group writes that group's FIRST section, so every link the page produces
   // is still one of the eleven values an older build reads.
   const openGroup = (group: string) => {
-    const first = OFFERED_SECTIONS.find((x) => x.group === group)
+    const first = offeredSections.find((x) => x.group === group)
     if (first) setTab(first.value)
   }
 
@@ -480,7 +507,7 @@ export default function MemberDevelopmentWorkspace({
     // The tabs that need no dossier work now; the rest appear when it lands.
     // U4: the bar offers the groups that hold one; inside a group the section
     // that needs the dossier says so under its own heading.
-    const computingGroup = COMPUTING_GROUPS.some((g) => g.value === activeGroup) ? activeGroup : undefined
+    const computingGroup = computingGroups.some((g) => g.value === activeGroup) ? activeGroup : undefined
     const name = cachedName || tm("memberDevelopmentWorkspace.thisMember", { defaultValue: "This member" })
     return frame(
       <div className="space-y-4">
@@ -497,10 +524,10 @@ export default function MemberDevelopmentWorkspace({
           <p className={cn("mt-1 text-xs", sk.text400)}>{tm("memberDevelopmentWorkspace.goalsAndNotesWorkNow", { defaultValue: "Goals and Notes work now; the other tabs appear when it's ready." })}</p>
         </header>
         <Tabs value={computingGroup ?? ""} onValueChange={openGroup}>
-          {groupTabs(COMPUTING_GROUPS)}
+          {groupTabs(computingGroups)}
           <div className="mt-4">
             {computingGroup && memberId ? (
-              COMPUTING_GROUPS.map((group) =>
+              computingGroups.map((group) =>
                 groupContent(group, (def) => {
                   if (!def.worksWhileComputing) return null
                   switch (def.value) {
@@ -545,6 +572,24 @@ export default function MemberDevelopmentWorkspace({
     coverage: dossier.profile.coverage,
   }
 
+  // D-15: the caller has no goals grant and goal-linked rows were withheld.
+  // Said above each development list, so a shorter list is never read as whole.
+  const goalLinkedNotice =
+    dossier.goalLinkedWithheld && !dossier.developmentNotShared ? (
+      <p data-testid="dev-goal-linked-withheld" className={cn("text-xs", sk.text500)}>
+        {tm("memberDevelopmentWorkspace.goalLinkedWithheld", { defaultValue: "Some items are linked to goals {{name}} has not shared with you, so they are not shown.", name: member.name })}
+      </p>
+    ) : null
+  const withNotice = (panel: ReactNode): ReactNode =>
+    goalLinkedNotice ? (
+      <div className="space-y-3">
+        {goalLinkedNotice}
+        {panel}
+      </div>
+    ) : (
+      panel
+    )
+
   // One panel per section, with the props each had as a tab. Exhaustive over
   // DevSection, so a section added to the union cannot ship without a panel.
   // Which of them mount, and in what order, is the SECTIONS table's business:
@@ -572,7 +617,7 @@ export default function MemberDevelopmentWorkspace({
       />
     ),
     goals: <GoalsPanel memberId={dossier.memberId} memberName={member.name} />,
-    roadmap: (
+    roadmap: withNotice(
       <RoadmapTimeline
         memberId={dossier.memberId}
         memberName={member.name}
@@ -580,9 +625,9 @@ export default function MemberDevelopmentWorkspace({
         goals={dossier.goals}
         trajectory={dossier.trajectory}
         notShared={dossier.developmentNotShared}
-      />
+      />,
     ),
-    gaps: (
+    gaps: withNotice(
       <GapAnalysisPanel
         memberId={dossier.memberId}
         matches={matchesNotShared ? [] : dossier.matches}
@@ -591,16 +636,16 @@ export default function MemberDevelopmentWorkspace({
         notShared={dossier.developmentNotShared}
         gapsState={dossier.gapsState}
         gapsTargetRole={dossier.gapsTargetRole}
-      />
+      />,
     ),
-    learning: (
+    learning: withNotice(
       <LearningPlanPanel
         memberId={dossier.memberId}
         learning={dossier.learning}
         gaps={dossier.gaps}
         goals={dossier.goals}
         notShared={dossier.developmentNotShared}
-      />
+      />,
     ),
     careers: FIT_ENGINE_MATCHES_ENABLED ? (
       <FitEngineMatchPanel
@@ -780,10 +825,10 @@ export default function MemberDevelopmentWorkspace({
       {/* Main + assistant */}
       <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
         <Tabs value={activeGroup} onValueChange={openGroup}>
-          {groupTabs(OFFERED_GROUPS)}
+          {groupTabs(offeredGroups)}
 
           <div className="mt-4">
-            {OFFERED_GROUPS.map((group) => groupContent(group, (def) => panels[def.value]))}
+            {offeredGroups.map((group) => groupContent(group, (def) => panels[def.value]))}
           </div>
         </Tabs>
 
