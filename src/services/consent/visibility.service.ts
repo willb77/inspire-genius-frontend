@@ -1,5 +1,6 @@
 import { agentApi } from "@/lib/agentApi"
 import type {
+  AccessLogPage,
   AccessLogRow,
   CategoriesResponse,
   ExtendResult,
@@ -53,15 +54,22 @@ export async function lookupPerson(email: string): Promise<LookupResult> {
 }
 
 /** POST /offer — grant a person access now, for `termDays` (default a year). */
+/**
+ * `merge: true` ADDS to a live grant: the person keeps every category they
+ * already hold. Without it the offer REPLACES the grant's categories, which is
+ * how a per-person switch takes one away.
+ */
 export async function offerAccess(input: {
   granteeUserId: string
   categories: VisibilityCategories
   termDays?: number
+  merge?: boolean
 }): Promise<OfferResult> {
   const { data } = await agentApi.post<Envelope<OfferResult>>(`${BASE}/offer`, {
     granteeUserId: input.granteeUserId,
     categories: input.categories,
     ...(input.termDays !== undefined ? { termDays: input.termDays } : {}),
+    ...(input.merge ? { merge: true } : {}),
   })
   return unwrap(data)
 }
@@ -106,4 +114,26 @@ export async function respondToRequest(
 export async function getAccessLog(): Promise<AccessLogRow[]> {
   const { data } = await agentApi.get<Envelope<AccessLogRow[]>>(`${BASE}/access-log`)
   return data.data ?? []
+}
+
+/**
+ * GET /access-log/page — one page of the caller's access log, optionally for
+ * one viewer. Unlike /access-log it says whether older rows exist.
+ */
+export async function getAccessLogPage(input: {
+  viewer?: string
+  before?: string | null
+  limit?: number
+} = {}): Promise<AccessLogPage> {
+  const params: Record<string, string | number> = {}
+  if (input.viewer) params.viewer = input.viewer
+  if (input.before) params.before = input.before
+  if (input.limit !== undefined) params.limit = input.limit
+  const { data } = await agentApi.get<Envelope<AccessLogPage>>(`${BASE}/access-log/page`, { params })
+  const page = unwrap(data)
+  return {
+    rows: page?.rows ?? [],
+    hasMore: page?.hasMore === true,
+    nextBefore: page?.nextBefore ?? null,
+  }
 }

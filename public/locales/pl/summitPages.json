@@ -140,6 +140,9 @@
     "seeAccessAria": "Zobacz dostęp: {{who}}",
     "tileBody": "Wybierz, co ta osoba może zobaczyć, na jak długo i kto zaglądał.",
     "personLogEmpty": "Ta osoba jeszcze nie przeglądała Twoich celów. Każde odczytanie jest rejestrowane, także przez administratorów platformy.",
+    "sharedWithHolds": "Udostępniono: {{name}}. Ta osoba widzi teraz: {{what}}.",
+    "logPartial": "Wyświetlono {{n}} najnowszych odczytów. Istnieją starsze odczyty.",
+    "showOlder": "Pokaż starsze",
     "otherReaders": "Odczyty przez osoby niewymienione powyżej",
     "otherReadersBody": "Administratorzy platformy lub osoby, którym odebrano dostęp."
   },

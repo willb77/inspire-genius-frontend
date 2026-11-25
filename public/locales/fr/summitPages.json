@@ -180,6 +180,9 @@
     "seeAccessAria": "Voir l'accès de {{who}}",
     "tileBody": "Choisissez ce que cette personne peut voir, pendant combien de temps, et qui a consulté.",
     "personLogEmpty": "Cette personne n'a pas encore consulté vos objectifs. Chaque lecture est enregistrée, y compris celles des administrateurs de la plateforme.",
+    "sharedWithHolds": "Partagé avec {{name}}. Cette personne peut désormais voir {{what}}.",
+    "logPartial": "Affichage des {{n}} consultations les plus récentes. Il en existe de plus anciennes.",
+    "showOlder": "Voir les plus anciennes",
     "otherReaders": "Consultations par des personnes non listées ci-dessus",
     "otherReadersBody": "Administrateurs de la plateforme, ou personnes dont l'accès a été retiré."
   },

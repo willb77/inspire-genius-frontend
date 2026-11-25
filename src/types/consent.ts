@@ -107,3 +107,13 @@ export type AccessLogRow = {
   surface: string | null
   viewed_at: string | null
 }
+
+/**
+ * One page of GET /access-log/page — the caller's log, optionally one viewer,
+ * newest first. `hasMore` says older rows exist; `nextBefore` fetches them.
+ */
+export type AccessLogPage = {
+  rows: AccessLogRow[]
+  hasMore: boolean
+  nextBefore: string | null
+}

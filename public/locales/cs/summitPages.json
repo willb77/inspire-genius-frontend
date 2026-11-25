@@ -139,6 +139,9 @@
     "seeAccessAria": "Zobrazit přístup: {{who}}",
     "tileBody": "Vyberte, co tato osoba může vidět, na jak dlouho a kdo se díval.",
     "personLogEmpty": "Tato osoba se na vaše cíle zatím nedívala. Každé čtení se zaznamenává, včetně čtení správci platformy.",
+    "sharedWithHolds": "Sdíleno s osobou {{name}}. Nyní vidí {{what}}.",
+    "logPartial": "Zobrazuje se {{n}} nejnovějších čtení. Existují i starší čtení.",
+    "showOlder": "Zobrazit starší",
     "otherReaders": "Čtení osobami, které nejsou uvedeny výše",
     "otherReadersBody": "Správci platformy nebo osoby, kterým byl přístup odebrán."
   },

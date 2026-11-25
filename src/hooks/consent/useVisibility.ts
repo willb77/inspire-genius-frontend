@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import {
   extendGrant,
   getCategories,
   getAccessLog,
+  getAccessLogPage,
   getMyGrants,
   getPeople,
   lookupPerson,
@@ -12,6 +13,7 @@ import {
   revokeGrant,
 } from "@/services/consent/visibility.service"
 import type {
+  AccessLogPage,
   AccessLogRow,
   CategoriesResponse,
   ExtendResult,
@@ -76,7 +78,7 @@ export function useOfferAccess() {
   return useMutation<
     OfferResult,
     AxiosError,
-    { granteeUserId: string; categories: VisibilityCategories; termDays?: number }
+    { granteeUserId: string; categories: VisibilityCategories; termDays?: number; merge?: boolean }
   >({
     mutationFn: offerAccess,
     onSuccess: () => invalidate(),
@@ -121,6 +123,27 @@ export function useAccessLog() {
   return useQuery<AccessLogRow[], AxiosError>({
     queryKey: consentKeys.accessLog,
     queryFn: getAccessLog,
+    staleTime: 30 * 1000,
+  })
+}
+
+/**
+ * The caller's access log one page at a time, optionally for ONE viewer.
+ * `hasNextPage` means older reads exist, so "they haven't looked" is only ever
+ * said on a complete answer. Keyed under `consentKeys.accessLog`.
+ */
+export function useAccessLogPage(viewer?: string) {
+  return useInfiniteQuery<
+    AccessLogPage,
+    AxiosError,
+    { pages: AccessLogPage[]; pageParams: (string | null)[] },
+    readonly unknown[],
+    string | null
+  >({
+    queryKey: [...consentKeys.accessLog, "page", viewer ?? null],
+    queryFn: ({ pageParam }) => getAccessLogPage({ viewer, before: pageParam }),
+    initialPageParam: null,
+    getNextPageParam: (last) => (last.hasMore && last.nextBefore ? last.nextBefore : undefined),
     staleTime: 30 * 1000,
   })
 }
