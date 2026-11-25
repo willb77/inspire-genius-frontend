@@ -99,6 +99,13 @@ export interface SavedTaskResultsList {
 const BASE = '/v1/tasks'
 
 export const tasksService = {
+  /**
+   * NOT moved to `/v1/agents/james/run`, deliberately. That route only admits
+   * company-admin and super-admin, while the one surface that calls this is
+   * mounted for managers and practitioners — moving it would trade the
+   * current failure for a 403 on every use. Needs a decision on who may run
+   * James before the path changes.
+   */
   jobBlueprint: (body: JobBlueprintMatchRequest) =>
     api
       .post<TaskAgentResponse>(`${BASE}/job-blueprint`, body)
@@ -116,14 +123,26 @@ export const tasksService = {
       .post<TaskAgentResponse>('/v1/agents/maven/run', body)
       .then((r) => r.data),
 
+  /**
+   * Team composition via Atlas, called DIRECTLY on the agent-engine — the
+   * same fix as interviewPrep and documentResearch. `/v1/tasks/team-composition`
+   * is not routed by the API Gateway (only `/v1/tasks/results*` is).
+   * `/v1/agents/atlas/run` takes the identical TeamCompositionRequest body,
+   * returns the identical TaskAgentResponse, and is open to every role.
+   */
   teamComposition: (body: TeamCompositionRequest) =>
-    api
-      .post<TaskAgentResponse>(`${BASE}/team-composition`, body)
+    agentApi
+      .post<TaskAgentResponse>('/v1/agents/atlas/run', body)
       .then((r) => r.data),
 
+  /**
+   * Onboarding plan via Forge, called DIRECTLY on the agent-engine — same
+   * fix again. `/v1/agents/forge/run` takes the identical OnboardingFlowRequest
+   * body, returns the identical TaskAgentResponse, and is open to every role.
+   */
   onboarding: (body: OnboardingFlowRequest) =>
-    api
-      .post<TaskAgentResponse>(`${BASE}/onboarding`, body)
+    agentApi
+      .post<TaskAgentResponse>('/v1/agents/forge/run', body)
       .then((r) => r.data),
 
   /**
@@ -144,11 +163,8 @@ export const tasksService = {
    * environment. It authenticates off the same `access-token` header that
    * `agentApi` already attaches.
    *
-   * NOTE: the other three task agents on this service (jobBlueprint,
-   * teamComposition, onboarding) still call `/v1/tasks/<slug>`
-   * and have the same unrouted-prefix defect. They are left alone here
-   * deliberately — they belong to surfaces not covered by this change and
-   * have not been verified against their own `/v1/agents/<id>/run` handlers.
+   * teamComposition and onboarding have since moved the same way;
+   * jobBlueprint has not (see its note above).
    */
   documentResearch: (body: DocumentResearchRequest) =>
     agentApi
