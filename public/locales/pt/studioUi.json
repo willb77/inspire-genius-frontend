@@ -256,7 +256,9 @@
       "candidateNameOptional": "Nome do candidato (opcional)",
       "interviewFocusOptional": "Foco da entrevista (opcional)",
       "runMaven": "Executar Maven",
-      "reset": "Redefinir"
+      "reset": "Redefinir",
+      "prepFailedTitle": "O Maven não conseguiu preparar as perguntas. Nada foi gerado.",
+      "prepFailedHint": "Tente novamente. Se continuar falhando, peça ao seu administrador para verificar se sua conta pode usar a preparação para entrevistas."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Correspondência gerada.",

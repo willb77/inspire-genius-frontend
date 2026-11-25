@@ -113,7 +113,9 @@
       "candidateNameOptional": "Candidate name (optional)",
       "interviewFocusOptional": "Interview focus (optional)",
       "runMaven": "Run Maven",
-      "reset": "Reset"
+      "reset": "Reset",
+      "prepFailedTitle": "Maven could not prepare the questions. Nothing was generated.",
+      "prepFailedHint": "Try again. If it keeps failing, ask your administrator to check that your account can use interview prep."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Match generated.",

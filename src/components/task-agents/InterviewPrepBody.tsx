@@ -35,6 +35,23 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+/**
+ * The reason a run failed, in the server's own words when it gave one.
+ * axios's `err.message` is only "Request failed with status code 403"; the
+ * engine's `detail` says why. FastAPI sends a string on 4xx and a list on 422.
+ */
+function describePrepError(err: unknown): string {
+  const detail = (err as { response?: { data?: { detail?: unknown } } } | null)?.response?.data?.detail
+  if (typeof detail === "string" && detail.trim()) return detail
+  if (Array.isArray(detail)) {
+    const msgs = detail
+      .map((d) => (d && typeof d === "object" && "msg" in d ? String((d as { msg: unknown }).msg) : ""))
+      .filter(Boolean)
+    if (msgs.length) return msgs.join("; ")
+  }
+  return err instanceof Error ? err.message : ""
+}
+
 export default function InterviewPrepBody() {
   const { t } = useTranslation("studioUi")
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
@@ -58,10 +75,12 @@ export default function InterviewPrepBody() {
       toast.success(t("taskAgents.interviewPrepBody.interviewPrepGenerated", { defaultValue: "Interview prep generated." }))
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : "Prep failed"
+      const message = describePrepError(err) || "Prep failed"
       toast.error(t("taskAgents.interviewPrepBody.mavenInterviewagentFailed", { defaultValue: "Maven (InterviewAgent) failed: {{message}}", message }))
     },
   })
+
+  const prepErrorText = mutation.isError ? describePrepError(mutation.error) : ""
 
   const onSubmit = (values: FormValues) => {
     setLastRequest(values as Record<string, unknown>)
@@ -148,12 +167,36 @@ export default function InterviewPrepBody() {
 
             <CostEstimateBanner promptText={JSON.stringify(form.watch())} />
 
+            {/* W6: a failed run must stay on the page, not only in a toast that
+                times out — a manager saw a 403 here and nothing on screen. */}
+            {mutation.isError && (
+              <div
+                role="alert"
+                className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              >
+                <p className="font-medium">
+                  {t("taskAgents.interviewPrepBody.prepFailedTitle", { defaultValue: "Maven could not prepare the questions. Nothing was generated." })}
+                </p>
+                {prepErrorText && <p className="mt-1">{prepErrorText}</p>}
+                <p className="mt-1">
+                  {t("taskAgents.interviewPrepBody.prepFailedHint", { defaultValue: "Try again. If it keeps failing, ask your administrator to check that your account can use interview prep." })}
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t("taskAgents.interviewPrepBody.runMaven", { defaultValue: "Run Maven" })}
               </Button>
-              <Button type="button" variant="outline" onClick={() => form.reset()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.reset()
+                  mutation.reset()
+                }}
+              >
                 {t("taskAgents.interviewPrepBody.reset", { defaultValue: "Reset" })}
               </Button>
             </div>

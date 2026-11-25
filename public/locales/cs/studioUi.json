@@ -412,7 +412,9 @@
       "candidateNameOptional": "Jméno kandidáta (volitelné)",
       "interviewFocusOptional": "Zaměření pohovoru (volitelné)",
       "runMaven": "Spustit Mavena",
-      "reset": "Obnovit"
+      "reset": "Obnovit",
+      "prepFailedTitle": "Maven nemohl připravit otázky. Nic nebylo vytvořeno.",
+      "prepFailedHint": "Zkuste to prosím znovu. Pokud chyba přetrvává, požádejte svého správce, aby ověřil, že váš účet může používat přípravu na pohovor."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Shoda byla vytvořena.",

@@ -141,7 +141,9 @@
       "candidateNameOptional": "Nome del candidato (facoltativo)",
       "interviewFocusOptional": "Focus del colloquio (facoltativo)",
       "runMaven": "Esegui Maven",
-      "reset": "Reimposta"
+      "reset": "Reimposta",
+      "prepFailedTitle": "Maven non è riuscito a preparare le domande. Non è stato generato nulla.",
+      "prepFailedHint": "Riprova. Se continua a non funzionare, chiedi al tuo amministratore di verificare che il tuo account possa usare la preparazione al colloquio."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Corrispondenza generata.",
