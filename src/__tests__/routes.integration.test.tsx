@@ -145,17 +145,10 @@ const pageModules: Record<string, string> = {
   "@/pages/manager/DashboardSwitch": "ManagerDashboardPage",
   "@/pages/manager/Dashboard": "ManagerDashboardClassicPage",
   "@/pages/manager/WorkbenchDashboard": "ManagerWorkbenchPage",
-  "@/pages/manager/Team": "ManagerTeamPage",
-  "@/pages/manager/Hiring": "ManagerHiringPage",
-  "@/pages/manager/Candidates": "ManagerCandidatesPage",
+  // TDS-U8: the nine retired manager routes redirect here.
+  "@/pages/manager/development/DevelopmentStudio": "DevelopmentStudioPage",
   "@/pages/manager/Interviews": "ManagerInterviewsPage",
   "@/pages/manager/JobDna": "ManagerJobDnaPage",
-  "@/pages/manager/Training": "ManagerTrainingPage",
-  "@/pages/manager/CareerManagement": "ManagerCareerManagementPage",
-  "@/pages/manager/TeamBuilding": "ManagerTeamBuildingPage",
-  "@/pages/manager/Leadership": "ManagerLeadershipPage",
-  "@/pages/manager/PrismTeam": "PrismTeamPage",
-  "@/pages/manager/Analytics": "ManagerAnalyticsPage",
   "@/pages/manager/BulkImport": "ManagerBulkImportPage",
   "@/pages/company-admin/Dashboard": "CompanyAdminDashboardPage",
   "@/pages/company-admin/Users": "CompanyAdminUsersPage",
@@ -168,11 +161,9 @@ const pageModules: Record<string, string> = {
   "@/pages/practitioner/Home": "PractitionerHomeClassicPage",
   "@/pages/practitioner/WorkbenchHomePage": "PractitionerWorkbenchPage",
   "@/pages/practitioner/MeridianChat": "PractitionerMeridianChatPage",
-  "@/pages/practitioner/ComingSoon": "PractitionerComingSoonPage",
   "@/pages/practitioner/ClientProfile": "PractitionerClientProfilePage",
   "@/pages/practitioner/Schedule": "PractitionerSchedulePage",
   "@/pages/practitioner/Meeting": "PractitionerMeetingPage",
-  "@/pages/practitioner/Dashboard": "PractitionerDashboardPage",
   "@/pages/practitioner/Clients": "PractitionerClientsPage",
   "@/pages/practitioner/PrismClients": "PrismClientsPage",
   "@/pages/practitioner/Analytics": "PractitionerAnalyticsPage",
@@ -437,8 +428,7 @@ describe("Route Integration Tests", () => {
   describe("Role-based access: manager role", () => {
     const managerAccessible = [
       { path: "/manager/dashboard", testId: "ManagerDashboardPage" },
-      { path: "/manager/team", testId: "ManagerTeamPage" },
-      { path: "/manager/hiring", testId: "ManagerHiringPage" },
+      { path: "/manager/development", testId: "DevelopmentStudioPage" },
       { path: "/manager/character-lab", testId: "ManagerCharacterLabPage" },
     ];
 
@@ -450,6 +440,36 @@ describe("Route Integration Tests", () => {
         renderWithRouter(path, ctx);
         await advancePastBoot();
         expect(await screen.findByTestId(testId)).toBeInTheDocument();
+      },
+    );
+
+    // TDS-U8: one case per retired path. Eight rendered invented people behind
+    // a "Sample data" banner; /manager/team was the old roster. Each is kept as
+    // a redirect so a bookmark lands on the Studio rather than a 404.
+    const retiredManagerPaths = [
+      "/manager/team",
+      "/manager/hiring",
+      "/manager/candidates",
+      "/manager/training",
+      "/manager/career-mgmt",
+      "/manager/team-building",
+      "/manager/leadership",
+      "/manager/analytics",
+      "/manager/prism-team",
+    ];
+
+    it("lists every retired path once", () => {
+      expect(new Set(retiredManagerPaths).size).toBe(9);
+    });
+
+    it.each(retiredManagerPaths)(
+      "manager on %s lands on the Team Development Studio",
+      async (path) => {
+        const user = makeAuthUser({ role: "manager" });
+        const ctx = makeAuthContext({ user });
+        renderWithRouter(path, ctx);
+        await advancePastBoot();
+        expect(await screen.findByTestId("DevelopmentStudioPage")).toBeInTheDocument();
       },
     );
 

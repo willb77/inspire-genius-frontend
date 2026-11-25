@@ -436,7 +436,6 @@
     "h": "{{estHours}} godz.",
     "progress": "Postęp {{progress}}%",
     "quiz": "Quiz: {{quizScore}}%",
-    "assignInTraining": "Przypisz w szkoleniach",
     "saveProgressOn": "Zapisz postęp: {{title}}",
     "percentCompleteFor": "Procent ukończenia: {{title}}",
     "saving": "Zapisywanie…",

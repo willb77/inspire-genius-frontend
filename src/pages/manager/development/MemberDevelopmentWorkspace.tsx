@@ -596,7 +596,6 @@ export default function MemberDevelopmentWorkspace({
         gaps={dossier.gaps}
         goals={dossier.goals}
         notShared={dossier.developmentNotShared}
-        audience={audience}
       />
     ),
     careers: FIT_ENGINE_MATCHES_ENABLED ? (

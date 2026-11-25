@@ -678,7 +678,6 @@
     "h": "{{estHours}} h",
     "progress": "Pokrok {{progress}} %",
     "quiz": "Kvíz: {{quizScore}} %",
-    "assignInTraining": "Přiřadit v Tréninku",
     "saveProgressOn": "Uložit pokrok u položky {{title}}",
     "percentCompleteFor": "Procento dokončení u položky {{title}}",
     "saving": "Ukládání…",

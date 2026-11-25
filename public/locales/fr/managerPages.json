@@ -45,7 +45,6 @@
     "h": "{{estHours}} h",
     "progress": "Progression {{progress}} %",
     "quiz": "Quiz : {{quizScore}} %",
-    "assignInTraining": "Attribuer dans Formation",
     "saveProgressOn": "Enregistrer la progression pour {{title}}",
     "percentCompleteFor": "Pourcentage d'achèvement pour {{title}}",
     "saving": "Enregistrement…",
