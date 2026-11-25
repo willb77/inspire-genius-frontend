@@ -1,7 +1,12 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { fitService } from "@/services/job-fit/fit.service"
-import { normalizeMatches, type MatchesEnvelope, type MatchesResult } from "@/lib/job-fit/matches"
+import {
+  normalizeMatches,
+  type MatchesEmptyReason,
+  type MatchesEnvelope,
+  type MatchesResult,
+} from "@/lib/job-fit/matches"
 import type { FitMatch, FitMethod, FitOrder } from "@/types/job-fit"
 
 /**
@@ -15,6 +20,8 @@ import type { FitMatch, FitMethod, FitOrder } from "@/types/job-fit"
 export type FitMatchesQuery = Omit<UseQueryResult<MatchesResult, AxiosError>, "data"> & {
   data: FitMatch[] | undefined
   gated: boolean
+  /** NP1: `"no_prism"` when the list is empty for want of PRISM; else `null`. */
+  emptyReason: MatchesEmptyReason | null
 }
 
 /**
@@ -52,5 +59,6 @@ export function useFitMatches(
     ...query,
     data: query.data?.matches,
     gated: query.data?.gated === true,
+    emptyReason: query.data?.emptyReason ?? null,
   }
 }

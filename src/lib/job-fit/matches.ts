@@ -17,14 +17,30 @@ import type { FitMatch } from "@/types/job-fit"
  * throwing in the user's face.
  */
 export type MatchesEnvelope = {
-  data?: FitMatch[] | { matches?: FitMatch[]; gated?: boolean }
+  data?: FitMatch[] | { matches?: FitMatch[]; gated?: boolean; emptyReason?: unknown }
   gated?: boolean
+  /** NP1: why `data` is empty. The server sends it only on an empty list. */
+  emptyReason?: unknown
 }
+
+/** NP1: the one reason the server gives for an empty list today. */
+export type MatchesEmptyReason = "no_prism"
 
 export type MatchesResult = {
   matches: FitMatch[]
   /** True when role matching is switched off platform-side, not merely empty. */
   gated: boolean
+  /**
+   * NP1: `"no_prism"` when the list is empty because the person has no PRISM on
+   * file. `null` otherwise — including an older server that sends no field, an
+   * unknown value, and any non-empty list — so every page falls back to today's
+   * text rather than guessing.
+   */
+  emptyReason: MatchesEmptyReason | null
+}
+
+function readEmptyReason(value: unknown, matches: FitMatch[]): MatchesEmptyReason | null {
+  return matches.length === 0 && value === "no_prism" ? "no_prism" : null
 }
 
 /**
@@ -43,10 +59,16 @@ export function hasLocalJobSet(matches: readonly FitMatch[] | undefined): boolea
 export function normalizeMatches(body: MatchesEnvelope | undefined): MatchesResult {
   const payload = body?.data
   if (Array.isArray(payload)) {
-    return { matches: payload, gated: body?.gated === true }
+    return {
+      matches: payload,
+      gated: body?.gated === true,
+      emptyReason: readEmptyReason(body?.emptyReason, payload),
+    }
   }
+  const matches = payload?.matches ?? []
   return {
-    matches: payload?.matches ?? [],
+    matches,
     gated: body?.gated === true || payload?.gated === true,
+    emptyReason: readEmptyReason(body?.emptyReason ?? payload?.emptyReason, matches),
   }
 }

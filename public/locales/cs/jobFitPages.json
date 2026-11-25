@@ -226,7 +226,8 @@
     "chooseRoleFirst": "Nejprve vyberte roli…",
     "customPlaceholder": "Cokoli dalšího, co chcete o této roli probrat…",
     "description": "Projděte si jednu ze svých rolí – shodu, oblasti růstu, jak je rozvíjet, cíle a přípravu na pohovor. Vyberte roli a otázku; odpověď se zobrazí přímo zde.",
-    "error": "Nepodařilo se to – zkuste to prosím za chvíli znovu."
+    "error": "Nepodařilo se to – zkuste to prosím za chvíli znovu.",
+    "degraded": "Kouč teď nedokázal odpovědět. Vaše údaje o shodě se nezměnily. Zeptejte se prosím znovu za minutu."
   },
   "exerciseStep": {
     "text": "Zjistěte, jak se Vám pracuje nejlépe, a poté vyzkoušejte kariéry, které stojí za bližší pohled.",
@@ -476,14 +477,17 @@
     "payHeading": "Plat – {{area}}",
     "scoredAgainst": "Hodnoceno podle blueprintu v{{version}}",
     "unavailable": "Rozbor shody s touto rolí není k dispozici.",
-    "v2Description": "Jak se Váš behaviorální profil srovnává s dimenzemi, které tato role staví na první místo."
+    "v2Description": "Jak se Váš behaviorální profil srovnává s dimenzemi, které tato role staví na první místo.",
+    "notFound": "Tato role pro vás není dostupná. Mohla být stažena nebo nebyla zveřejněna pro vaši organizaci.",
+    "backToCareersJobs": "Zpět na Careers and Jobs"
   },
   "fitFollowUpCard": {
     "ask": "Zeptat se",
     "error": "Nepodařilo se to odeslat – zkuste to prosím za chvíli znovu.",
     "intro": "Zeptejte se na cokoli o této roli a Vašem rozvoji – odpověď se zobrazí přímo tady.",
     "placeholder": "např. Na kterou oblast růstu se mám zaměřit nejdřív a jak?",
-    "title": "Zeptejte se na svou shodu"
+    "title": "Zeptejte se na svou shodu",
+    "degraded": "Kouč teď nedokázal odpovědět. Vaše údaje o shodě se nezměnily. Zeptejte se prosím znovu za minutu."
   },
   "fitHistoryPage": {
     "backToMatches": "Zpět na shody",
@@ -574,5 +578,12 @@
     "label": "Vaše cesta v Careers and Jobs",
     "planTheRoute": "Naplánujte cestu",
     "stepOf": "Krok {{n}} z {{total}}"
+  },
+  "noPrismState": {
+    "matches": "Vaše shody se zobrazí, jakmile bude váš PRISM uložen. Doplňte nebo dokončete svůj PRISM a uvidíte svou shodu s rolemi zveřejněnými pro vás.",
+    "growthAreas": "Oblasti růstu vycházejí z vašeho PRISM. Doplňte nebo dokončete svůj PRISM, abyste je viděli.",
+    "detail": "Abychom vám ukázali vaši shodu s touto rolí, potřebujeme váš PRISM.",
+    "coach": "Koučink vychází z vaší shody s rolí a ta vyžaduje váš PRISM. Doplňte nebo dokončete svůj PRISM a začněte.",
+    "link": "Přejít na PRISM"
   }
 }

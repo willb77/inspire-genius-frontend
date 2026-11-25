@@ -275,6 +275,12 @@ export type ExplainFitResult = {
   /** Echoed back unchanged from the request — authoritative. */
   fitScore: number
   disclaimer: string
+  /**
+   * NP2: true when the model call failed or returned nothing usable. With a
+   * question, `answer` is then `null`, never a canned sentence. Absent on an
+   * older server, which reads as not degraded.
+   */
+  degraded?: boolean
 }
 
 /** One adjacent role the user could grow toward. */

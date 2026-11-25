@@ -252,7 +252,8 @@
     "thinking": "Analizuję Twoje dopasowanie…",
     "title": "Coaching",
     "whatWork": "Nad czym chcesz popracować?",
-    "whichRole": "O jakiej roli rozmawiamy?"
+    "whichRole": "O jakiej roli rozmawiamy?",
+    "degraded": "Coach nie mógł teraz odpowiedzieć. Twoje wyniki dopasowania się nie zmieniły. Zapytaj ponownie za minutę."
   },
   "exerciseStep": {
     "text": "Ustal, jak pracujesz najlepiej, a następnie sprawdź kariery, którym warto się przyjrzeć.",
@@ -300,14 +301,17 @@
     "loadError": "Nie udało się wczytać zestawienia dla tej roli. Spróbuj ponownie za chwilę.",
     "loading": "Wczytywanie Twojego dopasowania do tej roli…",
     "payHeading": "Wynagrodzenie – {{area}}",
-    "scoredAgainst": "Oceniono względem wzorca w wersji {{version}}"
+    "scoredAgainst": "Oceniono względem wzorca w wersji {{version}}",
+    "notFound": "Ta rola nie jest dla Ciebie dostępna. Mogła zostać wycofana albo nie została opublikowana dla Twojej organizacji.",
+    "backToCareersJobs": "Wróć do Careers and Jobs"
   },
   "fitFollowUpCard": {
     "ask": "Zapytaj",
     "error": "Nie udało się — spróbuj ponownie za chwilę.",
     "intro": "Zapytaj o cokolwiek dotyczącego tej roli i Twojego rozwoju — odpowiedź pojawi się właśnie tutaj.",
     "placeholder": "np. Na którym obszarze rozwoju powinienem się skupić najpierw i jak?",
-    "title": "Zapytaj o swoje dopasowanie"
+    "title": "Zapytaj o swoje dopasowanie",
+    "degraded": "Coach nie mógł teraz odpowiedzieć. Twoje wyniki dopasowania się nie zmieniły. Zapytaj ponownie za minutę."
   },
   "fitHistoryPage": {
     "backToMatches": "Wróć do dopasowań",
@@ -574,5 +578,12 @@
     "label": "Twoja ścieżka w Careers and Jobs",
     "planTheRoute": "Zaplanuj drogę",
     "stepOf": "Krok {{n}} z {{total}}"
+  },
+  "noPrismState": {
+    "matches": "Twoje dopasowania pojawią się, gdy Twój PRISM będzie zapisany. Dodaj lub ukończ PRISM, aby zobaczyć swoje dopasowanie do ról opublikowanych dla Ciebie.",
+    "growthAreas": "Obszary rozwoju wynikają z Twojego PRISM. Dodaj lub ukończ PRISM, aby je zobaczyć.",
+    "detail": "Potrzebujemy Twojego PRISM, aby pokazać Twoje dopasowanie do tej roli.",
+    "coach": "Coaching opiera się na Twoim dopasowaniu do roli, a dopasowanie wymaga Twojego PRISM. Dodaj lub ukończ PRISM, aby zacząć.",
+    "link": "Przejdź do PRISM"
   }
 }

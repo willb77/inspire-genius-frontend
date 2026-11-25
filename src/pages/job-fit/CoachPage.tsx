@@ -14,6 +14,7 @@ import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
 import { FitCard, FitEmptyState, FitPageHeader, FitLoading } from "@/components/fit/primitives"
 import { displayFitPercent } from "@/components/fit/fit"
+import { FitNoPrismState } from "./FitNoPrismState"
 
 /**
  * Job-Fit coaching — every question is about **you against one of your matched
@@ -33,6 +34,8 @@ const selectClass = cn(
 )
 
 type QA = { question: string; answer: string }
+/** `failed`: the request threw. `degraded`: it answered, but the model did not. */
+type AskFailure = "failed" | "degraded"
 
 export default function CoachPage() {
   const { t } = useTranslation("jobFitPages")
@@ -44,7 +47,7 @@ export default function CoachPage() {
   const [groupKey, setGroupKey] = useState(JOB_FIT_QUESTION_GROUPS[0].key)
   const [custom, setCustom] = useState("")
   const [history, setHistory] = useState<QA[]>([])
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<AskFailure | null>(null)
 
   const detailQuery = useFitDetail(jobId || undefined)
   const detail = detailQuery.data
@@ -57,15 +60,20 @@ export default function CoachPage() {
   async function ask(raw: string) {
     const q = withRole(raw, roleTitle).trim()
     if (!q || !detail) return
-    setError(false)
+    setError(null)
     const pct = displayFitPercent(detail)
     try {
       const res = await explain.mutateAsync(toExplainBody(detail, pct, q))
+      // NP3 (C2-a): a failed model call is said, never dressed as an answer.
+      if (res.degraded === true) {
+        setError("degraded")
+        return
+      }
       const answer = (res.answer || "").trim() || res.overview
       setHistory((prev) => [...prev, { question: q, answer }])
       setCustom("")
     } catch {
-      setError(true)
+      setError("failed")
     }
   }
 
@@ -88,6 +96,9 @@ export default function CoachPage() {
 
       {matches.isLoading ? (
         <FitLoading label={t("coachPage.loadingRoles", "Loading your roles…")} />
+      ) : roles.length === 0 && matches.emptyReason === "no_prism" ? (
+        // NP3 / walk F-W3-1: no roles because no PRISM — say so, link to PRISM.
+        <FitNoPrismState surface="coach" />
       ) : roles.length === 0 ? (
         <FitEmptyState>
           <p className="mb-3">{t("coachPage.noRoles", "No matched roles yet.")}</p>
@@ -184,11 +195,19 @@ export default function CoachPage() {
                   <Loader2 className="h-4 w-4 animate-spin" /> {t("coachPage.thinking", "Thinking about your fit…")}
                 </div>
               )}
-              {error && (
-                <p className="text-sm text-[#b91c1c]">
+              {error === "failed" && (
+                <p role="alert" className="text-sm text-[#b91c1c]">
                   {t(
                     "coachPage.error",
                     "That didn't go through — please try again in a moment.",
+                  )}
+                </p>
+              )}
+              {error === "degraded" && (
+                <p role="alert" className="text-sm text-[#b91c1c]">
+                  {t(
+                    "coachPage.degraded",
+                    "The coach couldn't answer just now. Your fit figures are unchanged. Please ask again in a minute.",
                   )}
                 </p>
               )}

@@ -14,6 +14,7 @@ import {
 import { partialCoverage } from "@/lib/job-fit/coverage"
 import FitPurpose from "./FitPurpose"
 import { FitHistoryPanel } from "./FitHistoryPanel"
+import { FitNoPrismState } from "./FitNoPrismState"
 import { ManagerFitViewsNotice } from "./ManagerFitViewsNotice"
 import { displayFitPercent } from "@/components/fit/fit"
 import { FitMatchList } from "@/components/fit/FitMatchList"
@@ -131,7 +132,7 @@ function MethodToggle({
 export default function MatchesPage({ careersAndJobs = false }: { careersAndJobs?: boolean } = {}) {
   const { t } = useTranslation("jobFitPages")
   const [method, setMethod] = useState<FitMethod>("gap")
-  const { data, isLoading, isError, gated } = useFitMatches(method)
+  const { data, isLoading, isError, gated, emptyReason } = useFitMatches(method)
   // Feeds Phase 2 — dark unless the server switch is on: no request, no chip,
   // no sort control, today's list exactly.
   const componentsOn = useJobFitComponentsEnabled()
@@ -237,14 +238,18 @@ export default function MatchesPage({ careersAndJobs = false }: { careersAndJobs
               )}
             </p>
           ),
-          empty: (
-            <FitEmptyState>
-              {t(
-                "matchesPage.empty",
-                "No published roles are available to match against yet. Check back once your organization publishes role blueprints.",
-              )}
-            </FitEmptyState>
-          ),
+          // NP3 (N1-a): an empty list for want of PRISM is not "no roles".
+          empty:
+            emptyReason === "no_prism" ? (
+              <FitNoPrismState surface="matches" />
+            ) : (
+              <FitEmptyState>
+                {t(
+                  "matchesPage.empty",
+                  "No published roles are available to match against yet. Check back once your organization publishes role blueprints.",
+                )}
+              </FitEmptyState>
+            ),
           // BP-F5: one explanation for the page, from the first partial row.
           beforeList: <PartialProfileNote coverage={(data ?? []).find((m) => partialCoverage(m))} />,
         }}

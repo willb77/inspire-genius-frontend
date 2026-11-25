@@ -286,7 +286,8 @@
     "ask": "Perguntar",
     "error": "Não deu certo — tente novamente em instantes.",
     "intro": "Pergunte qualquer coisa sobre este cargo e seu desenvolvimento — a resposta aparece aqui mesmo.",
-    "placeholder": "ex.: Em qual área de crescimento devo focar primeiro, e como?"
+    "placeholder": "ex.: Em qual área de crescimento devo focar primeiro, e como?",
+    "degraded": "O coach não conseguiu responder agora. Seus números de compatibilidade não mudaram. Pergunte de novo em um minuto."
   },
   "fitHistoryPage": {
     "backToMatches": "Voltar para as correspondências",
@@ -427,7 +428,9 @@
     "payHeading": "Remuneração — {{area}}",
     "scoredAgainst": "Pontuado com base no blueprint v{{version}}",
     "unavailable": "O detalhamento de fit deste cargo não está disponível.",
-    "v2Description": "Como seu perfil comportamental se compara às dimensões que este cargo coloca em primeiro lugar."
+    "v2Description": "Como seu perfil comportamental se compara às dimensões que este cargo coloca em primeiro lugar.",
+    "notFound": "Este cargo não está disponível para você. Ele pode ter sido retirado ou não ter sido publicado para sua organização.",
+    "backToCareersJobs": "Voltar para Careers and Jobs"
   },
   "careerProfile": {
     "aRecipient": "Um destinatário",
@@ -522,7 +525,8 @@
     "thinking": "Pensando na sua adequação…",
     "title": "Coaching",
     "whatWork": "No que você quer trabalhar?",
-    "whichRole": "De qual função estamos falando?"
+    "whichRole": "De qual função estamos falando?",
+    "degraded": "O coach não conseguiu responder agora. Seus números de compatibilidade não mudaram. Pergunte de novo em um minuto."
   },
   "exerciseStep": {
     "text": "Descubra como você trabalha melhor e depois teste as carreiras que merecem um olhar mais atento.",
@@ -574,5 +578,12 @@
     "label": "Sua jornada no Careers and Jobs",
     "planTheRoute": "Planeje o caminho",
     "stepOf": "Passo {{n}} de {{total}}"
+  },
+  "noPrismState": {
+    "matches": "Suas correspondências aparecem quando o seu PRISM estiver registrado. Adicione ou conclua o seu PRISM para ver sua compatibilidade com os cargos publicados para você.",
+    "growthAreas": "As áreas de crescimento vêm do seu PRISM. Adicione ou conclua o seu PRISM para vê-las.",
+    "detail": "Precisamos do seu PRISM para mostrar sua compatibilidade com este cargo.",
+    "coach": "O coaching parte da sua compatibilidade com um cargo, e essa compatibilidade precisa do seu PRISM. Adicione ou conclua o seu PRISM para começar.",
+    "link": "Ir para o PRISM"
   }
 }
