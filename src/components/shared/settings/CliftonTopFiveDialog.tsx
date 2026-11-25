@@ -22,6 +22,7 @@ import {
 import { CLIFTON_THEMES, CLIFTON_TOP_N } from "@/constants/cliftonThemes";
 import { useCreateAssessment } from "@/hooks/profile/useProfile";
 import { cliftonScoreRows, topFiveProblem } from "./assessmentReview";
+import SupersedeNotice from "./SupersedeNotice";
 
 function isoToday(): string {
   return new Date().toISOString().slice(0, 10);
@@ -83,6 +84,7 @@ export default function CliftonTopFiveDialog({
             {t("assessments.cliftonHelp", { defaultValue: "Pick your five themes in the order your report lists them, strongest first." })}
           </DialogDescription>
         </DialogHeader>
+        <SupersedeNotice framework="CLIFTON" />
         <div className="space-y-3">
           {picks.map((value, i) => (
             <div key={i} className="space-y-1">

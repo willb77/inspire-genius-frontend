@@ -45,6 +45,8 @@ import { useAuth } from "@/context/useAuth";
 import { ROLES } from "@/constants/routes";
 import CliftonTopFiveDialog from "./CliftonTopFiveDialog";
 import UploadReportDialog from "./UploadReportDialog";
+import AssessmentsOnFile from "./AssessmentsOnFile";
+import SupersedeNotice from "./SupersedeNotice";
 import { numericScoreRows } from "./assessmentReview";
 
 // ---------------------------------------------------------------------------
@@ -165,6 +167,7 @@ function DiscDialog({
         <DialogHeader>
           <DialogTitle>{t("assessments.addDisc", { defaultValue: "Add DISC result" })}</DialogTitle>
         </DialogHeader>
+        <SupersedeNotice framework="DISC" />
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           {(["D", "I", "S", "C"] as const).map((k) => (
             <div key={k} className="space-y-1">
@@ -282,6 +285,7 @@ function BigFiveDialog({
         <DialogHeader>
           <DialogTitle>{t("assessments.addBigFive", { defaultValue: "Add Big Five result" })}</DialogTitle>
         </DialogHeader>
+        <SupersedeNotice framework="BIG_FIVE" />
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           {(["O", "C", "E", "A", "N"] as const).map((k) => (
             <div key={k} className="space-y-1">
@@ -383,6 +387,7 @@ function MbtiDialog({
         <DialogHeader>
           <DialogTitle>{t("assessments.addMbti", { defaultValue: "Add MBTI type" })}</DialogTitle>
         </DialogHeader>
+        <SupersedeNotice framework="MBTI" />
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-1">
             <Label htmlFor="mbti-type">{t("assessments.mbtiType", { defaultValue: "Type (e.g. INTJ)" })}</Label>
@@ -477,6 +482,8 @@ export default function AssessmentsSettings() {
           <ReplacePrismDataButton label={withPrism(t("assessments.replacePrism", { defaultValue: "Replace PRISM data" }))} variant="outline" size="sm" />
         </div>
         )}
+
+        <AssessmentsOnFile />
 
         <div className="flex flex-wrap gap-2">
           <Button

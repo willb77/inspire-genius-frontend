@@ -437,7 +437,16 @@
     "uploadReport": "Subir un informe",
     "uploadReviewHelp": "Revisa lo que leímos de tu informe y corrige lo que esté mal. No se guarda nada hasta que pulses Guardar.",
     "uploadSaved": "Informe guardado.",
-    "uploadTooLarge": "Ese archivo es demasiado grande."
+    "uploadTooLarge": "Ese archivo es demasiado grande.",
+    "onFileTitle": "Registrado",
+    "onFileLoading": "Cargando tus resultados…",
+    "onFileError": "No pudimos cargar tus resultados. Vuelve a cargar la página para intentarlo de nuevo.",
+    "onFileEmpty": "Aún no hay nada registrado. Los resultados que añadas aparecerán aquí.",
+    "onFileEarlier": "+{{n}} anteriores",
+    "sourceEntered": "Introducido por ti",
+    "sourceReport": "De un informe",
+    "sourceOther": "Añadido a tu perfil",
+    "supersede": "Ya tienes un resultado de {{framework}} del {{date}}. Al guardar este, pasará a ser el resultado actual; el anterior se conserva en tu historial."
   },
   "audioPlayer": {
     "browseHint": "o haz clic para explorar • Compatible con MP3, WAV, FLAC y más",

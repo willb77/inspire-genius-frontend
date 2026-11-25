@@ -6,12 +6,15 @@ import { render, screen, fireEvent, waitFor, within } from "@testing-library/rea
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import AssessmentsSettings from "@/components/shared/settings/AssessmentsSettings";
-import { createAssessment } from "@/services/profile/profile";
+import { createAssessment, getMyProfile } from "@/services/profile/profile";
 import { useAuth } from "@/context/useAuth";
 import { ROLES } from "@/constants/routes";
 
 jest.mock("@/services/profile/profile", () => ({
   createAssessment: jest.fn(),
+  // F-W7-1: the card and the dialogs read what is on file.
+  getMyProfile: jest.fn().mockResolvedValue({ user_id: "u", facts: [], loaded_frameworks: [], assessments: [] }),
+  listAssessments: jest.fn().mockResolvedValue({ assessments: [], total: 0, limit: 1, offset: 0 }),
   previewImportAssessment: jest.fn(),
   confirmImportAssessment: jest.fn(),
   importAssessment: jest.fn(),
@@ -47,6 +50,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   asRole(ROLES.USER);
   (createAssessment as jest.Mock).mockResolvedValue({ id: "a-1" });
+  (getMyProfile as jest.Mock).mockResolvedValue({ user_id: "u", facts: [], loaded_frameworks: [], assessments: [] });
 });
 
 const ALL_ROLES = [
@@ -194,4 +198,62 @@ test("Clifton save failure says so", async () => {
   ["Strategic", "Learner", "Input", "Ideation", "Woo"].forEach((t, i) => pick(i + 1, t));
   fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/failed to add your cliftonstrengths/i)));
+});
+
+// ── F-W7-1: the card shows what is on file; each Add dialog says when it supersedes ──
+
+const ON_FILE_PROFILE = {
+  user_id: "u",
+  facts: [],
+  loaded_frameworks: ["CLIFTON"],
+  assessments: [
+    {
+      framework: "CLIFTON",
+      assessed_at: "2026-11-25T15:41:00Z",
+      source: "user_input",
+      top_scores: [{ category: "Themes", dimension: "Achiever", rank: 1 }],
+    },
+  ],
+};
+
+test.each(ALL_ROLES)("the card lists what is on file for %s", async (role) => {
+  asRole(role);
+  (getMyProfile as jest.Mock).mockResolvedValueOnce(ON_FILE_PROFILE);
+  renderWithClient();
+  const section = screen.getByTestId("assessments-on-file");
+  expect(await within(section).findByTestId("on-file-CLIFTON")).toHaveTextContent("Achiever");
+});
+
+test.each([
+  [/add cliftonstrengths top five/i, true],
+  [/add disc result/i, false],
+  [/add big five result/i, false],
+  [/add mbti type/i, false],
+])("the %s dialog says it supersedes only when that framework is on file", async (button, expected) => {
+  (getMyProfile as jest.Mock).mockResolvedValue(ON_FILE_PROFILE);
+  renderWithClient();
+  await screen.findByTestId("on-file-CLIFTON");
+  fireEvent.click(screen.getByRole("button", { name: button }));
+  const dialog = await screen.findByRole("dialog");
+  if (expected) {
+    expect(await within(dialog).findByTestId("supersede-notice")).toHaveTextContent(/CliftonStrengths/);
+  } else {
+    expect(within(dialog).queryByTestId("supersede-notice")).not.toBeInTheDocument();
+  }
+});
+
+test.each([
+  ["DISC", /add disc result/i],
+  ["BIG_FIVE", /add big five result/i],
+  ["MBTI", /add mbti type/i],
+])("the %s dialog says it supersedes when %s is on file", async (fw, button) => {
+  (getMyProfile as jest.Mock).mockResolvedValue({
+    ...ON_FILE_PROFILE,
+    assessments: [{ framework: fw, assessed_at: "2026-10-01T00:00:00Z", source: "user_input", top_scores: [] }],
+  });
+  renderWithClient();
+  await screen.findByTestId(`on-file-${fw}`);
+  fireEvent.click(screen.getByRole("button", { name: button }));
+  const dialog = await screen.findByRole("dialog");
+  expect(await within(dialog).findByTestId("supersede-notice")).toBeInTheDocument();
 });

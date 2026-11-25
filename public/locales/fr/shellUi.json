@@ -378,7 +378,16 @@
     "uploadReport": "Importer un rapport",
     "uploadReviewHelp": "Vérifiez ce que nous avons lu dans votre rapport et corrigez les erreurs. Rien n'est enregistré avant que vous cliquiez sur Enregistrer.",
     "uploadSaved": "Rapport enregistré.",
-    "uploadTooLarge": "Ce fichier est trop volumineux."
+    "uploadTooLarge": "Ce fichier est trop volumineux.",
+    "onFileTitle": "Enregistré",
+    "onFileLoading": "Chargement de vos résultats…",
+    "onFileError": "Impossible de charger vos résultats. Rechargez la page pour réessayer.",
+    "onFileEmpty": "Rien d’enregistré pour l’instant. Les résultats que vous ajoutez apparaissent ici.",
+    "onFileEarlier": "+{{n}} antérieur(s)",
+    "sourceEntered": "Saisi par vous",
+    "sourceReport": "Issu d’un rapport",
+    "sourceOther": "Ajouté à votre profil",
+    "supersede": "Vous avez déjà un résultat {{framework}} du {{date}}. En enregistrant celui-ci, il devient le résultat actuel ; l’ancien reste dans votre historique."
   },
   "personalData": {
     "rows": {

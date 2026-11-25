@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import SupersedeNotice from "./SupersedeNotice";
 import {
   useConfirmImportAssessment,
   usePreviewImportAssessment,
@@ -120,28 +121,28 @@ export default function UploadReportDialog({
     );
   };
 
-  const onSave = (): void => {
+  const onSave = async (): Promise<void> => {
     if (!review || reviewProblem(review.framework, review.rows, !!review.typing)) return;
     setError(null);
-    confirmMut.mutate(
-      {
+    // F-W7-1 (O-W7-a): the walk saw no toast after this save. Await the
+    // promise, as the manual Add dialogs do (their toast was seen), rather than
+    // mutate()'s per-call callbacks, which TanStack Query skips once the
+    // observer is gone.
+    try {
+      await confirmMut.mutateAsync({
         framework: review.framework,
         source: review.source,
         scores: toConfirmRows(review.framework, review.rows),
         typing: review.typing,
-      },
-      {
-        onSuccess: () => {
-          toast.success(t("assessments.uploadSaved", { defaultValue: "Report saved." }));
-          close();
-        },
-        onError: (err) => {
-          const msg = failText(err);
-          setError(msg);
-          toast.error(msg);
-        },
-      },
-    );
+      });
+    } catch (err) {
+      const msg = failText(err);
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+    toast.success(t("assessments.uploadSaved", { defaultValue: "Report saved." }));
+    close();
   };
 
   const setRows = (rows: ReviewRow[]): void =>
@@ -165,6 +166,7 @@ export default function UploadReportDialog({
                 })}
           </DialogDescription>
         </DialogHeader>
+        <SupersedeNotice framework={review?.framework ?? framework} />
 
         {!review ? (
           <div className="space-y-3">
@@ -308,7 +310,7 @@ export default function UploadReportDialog({
               <Button type="button" variant="outline" onClick={() => setReview(null)} disabled={busy}>
                 {t("assessments.back", { defaultValue: "Back" })}
               </Button>
-              <Button type="button" onClick={onSave} disabled={busy || problem !== null}>
+              <Button type="button" onClick={() => void onSave()} disabled={busy || problem !== null}>
                 {confirmMut.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
                 {t("assessments.save", { defaultValue: "Save" })}
               </Button>

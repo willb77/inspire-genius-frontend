@@ -588,7 +588,16 @@
     "uploadReport": "Carica un report",
     "uploadReviewHelp": "Controlla ciò che abbiamo letto dal tuo report e correggi gli errori. Nulla viene salvato finché non premi Salva.",
     "uploadSaved": "Report salvato.",
-    "uploadTooLarge": "Quel file è troppo grande."
+    "uploadTooLarge": "Quel file è troppo grande.",
+    "onFileTitle": "Registrati",
+    "onFileLoading": "Caricamento dei tuoi risultati…",
+    "onFileError": "Non è stato possibile caricare i tuoi risultati. Ricarica la pagina per riprovare.",
+    "onFileEmpty": "Ancora nulla di registrato. I risultati che aggiungi compaiono qui.",
+    "onFileEarlier": "+{{n}} precedenti",
+    "sourceEntered": "Inserito da te",
+    "sourceReport": "Da un report",
+    "sourceOther": "Aggiunto al tuo profilo",
+    "supersede": "Hai già un risultato {{framework}} del {{date}}. Salvando questo, diventa il risultato attuale; il precedente resta nella tua cronologia."
   },
   "talentStudio": {
     "intro": "Trova, incontra e trattieni le persone da cui dipende il tuo team. Ogni passaggio apre una pagina che hai già.",

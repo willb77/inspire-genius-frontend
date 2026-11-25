@@ -379,7 +379,16 @@
     "uploadReport": "Nahrát zprávu",
     "uploadReviewHelp": "Zkontrolujte, co jsme ze zprávy načetli, a opravte chyby. Nic se neuloží, dokud nestisknete Uložit.",
     "uploadSaved": "Zpráva uložena.",
-    "uploadTooLarge": "Tento soubor je příliš velký."
+    "uploadTooLarge": "Tento soubor je příliš velký.",
+    "onFileTitle": "Uloženo",
+    "onFileLoading": "Načítání vašich výsledků…",
+    "onFileError": "Vaše výsledky se nepodařilo načíst. Zkuste stránku načíst znovu.",
+    "onFileEmpty": "Zatím nic uloženo. Výsledky, které přidáte, se zobrazí zde.",
+    "onFileEarlier": "+{{n}} starší",
+    "sourceEntered": "Zadáno vámi",
+    "sourceReport": "Ze zprávy",
+    "sourceOther": "Přidáno do vašeho profilu",
+    "supersede": "Již máte výsledek {{framework}} ze dne {{date}}. Uložením tohoto se stane aktuálním výsledkem; dřívější zůstane ve vaší historii."
   },
   "audioPlayer": {
     "browseHint": "nebo kliknutím vyberte soubor • Podporuje MP3, WAV, FLAC a další",

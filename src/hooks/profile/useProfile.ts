@@ -170,6 +170,8 @@ export function useConfirmImportAssessment(
     onSuccess: (data, vars, ctx) => {
       qc.invalidateQueries({ queryKey: profileKeys.loadedFrameworks() });
       qc.invalidateQueries({ queryKey: profileKeys.me() });
+      // F-W7-1: Settings counts the older entries per framework from history.
+      qc.invalidateQueries({ queryKey: [...profileKeys.root, "history"] });
       options?.onSuccess?.(data, vars, ctx);
     },
   });
