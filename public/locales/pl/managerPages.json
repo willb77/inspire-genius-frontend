@@ -366,6 +366,19 @@
     "withoutPrismOne": "{{withoutPrism}} członek zespołu nie jest wyświetlany — brak jego wyniku PRISM. Zaproś go z listy zespołu.",
     "withoutPrismOther": "{{withoutPrism}} członków zespołu nie jest wyświetlanych — brak ich wyników PRISM. Zaproś ich z listy zespołu."
   },
+  "teamStudioView": {
+    "lens": "Porównanie i scenariusze",
+    "subtitle": "Porównuj osoby i sprawdzaj scenariusze dla osób z Twojej listy. Można wybrać tylko osoby, które udostępniły Ci swój PRISM.",
+    "earlierRuns": "Porównania i scenariusze zapisane na stronie danej osoby przed pojawieniem się tego widoku pozostają na stronie tej osoby.",
+    "toolLabel": "Narzędzie zespołu",
+    "compare": "Porównaj",
+    "scenarios": "Scenariusze",
+    "notSharedError": "Jedna z wybranych osób nie udostępnia Ci swojego PRISM, więc nie można jej uwzględnić.",
+    "castEmpty": "Nikt z Twojej listy nie udostępnił Ci jeszcze swojego PRISM. Tutaj można wybrać tylko osoby, które go udostępniły. Możesz o to poprosić na stronie danej osoby.",
+    "notSharedOne": "Liczba osób z wynikiem PRISM, których nie wyświetlono: {{n}}. Ta osoba nie udostępniła Ci PRISM albo nie udało się tego sprawdzić.",
+    "notSharedOther": "Liczba osób z wynikiem PRISM, których nie wyświetlono: {{n}}. Te osoby nie udostępniły Ci PRISM albo nie udało się tego sprawdzić.",
+    "savedBlurb": "Tylko Ty widzisz to, co tu zapisujesz. Każde uruchomienie jest przypisane do pierwszej osoby, której dotyczy, i widać je również na stronie tej osoby."
+  },
   "training": {
     "activePrograms": "Aktywne programy",
     "totalEnrolled": "Łącznie zapisanych",

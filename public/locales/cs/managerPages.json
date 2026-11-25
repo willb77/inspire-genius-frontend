@@ -437,6 +437,19 @@
     "withoutPrismOne": "{{withoutPrism}} člen týmu není uveden – nemá v evidenci žádný PRISM. Pozvěte jej ze seznamu.",
     "withoutPrismOther": "{{withoutPrism}} členů týmu není uvedeno – nemají v evidenci žádný PRISM. Pozvěte je ze seznamu."
   },
+  "teamStudioView": {
+    "lens": "Srovnání a scénáře",
+    "subtitle": "Porovnávejte lidi a zkoušejte scénáře s lidmi ze svého seznamu. Vybrat lze jen ty, kdo s vámi sdílejí svůj PRISM.",
+    "earlierRuns": "Srovnání a scénáře uložené na stránce určité osoby před zavedením tohoto zobrazení zůstávají na stránce této osoby.",
+    "toolLabel": "Týmový nástroj",
+    "compare": "Porovnat",
+    "scenarios": "Scénáře",
+    "notSharedError": "Jedna z vybraných osob s vámi nesdílí svůj PRISM, proto ji nelze zahrnout.",
+    "castEmpty": "Nikdo z vašeho seznamu s vámi zatím nesdílí svůj PRISM. Vybrat zde lze jen ty, kdo ho sdíleli. Můžete o něj požádat na stránce dané osoby.",
+    "notSharedOne": "Počet lidí s PRISM v evidenci, kteří nejsou uvedeni: {{n}}. Tato osoba s vámi PRISM nesdílí, nebo se sdílení nepodařilo ověřit.",
+    "notSharedOther": "Počet lidí s PRISM v evidenci, kteří nejsou uvedeni: {{n}}. Tyto osoby s vámi PRISM nesdílejí, nebo se sdílení nepodařilo ověřit.",
+    "savedBlurb": "To, co si zde uložíte, vidíte jen vy. Každý běh je uložen u první osoby, které se týká, a zobrazuje se také na její stránce."
+  },
   "training": {
     "activePrograms": "Aktivní programy",
     "totalEnrolled": "Celkem přihlášených",

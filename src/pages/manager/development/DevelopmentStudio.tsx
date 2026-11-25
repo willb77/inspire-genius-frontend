@@ -5,9 +5,9 @@
  * degraded (no-assessment) and error states. Rendered inside ManagerLayout →
  * AppShell. Cards navigate to the per-member workspace.
  */
-import { useMemo, useState } from "react"
+import { Suspense, lazy, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Network, Search, UserCheck, Users } from "lucide-react"
+import { Network, Search, UserCheck, Users, UsersRound } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { Input } from "@/components/ui/input"
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
-import { PLAN_STATUS_LABEL } from "@/constants/development"
+import { PLAN_STATUS_LABEL, TDS_STUDIO_ENABLED } from "@/constants/development"
 import type { PlanStatus, RosterMember } from "@/types/development"
 import {
   useTeamDevelopmentRoster,
@@ -42,6 +42,9 @@ import {
 } from "@/components/manager/development/skin"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/context/useAuth"
+
+/** U5 — Compare and Scenarios at Studio level. Loaded only when opened. */
+const TeamStudioView = lazy(() => import("@/components/manager/development/TeamStudioView"))
 
 /**
  * U2 — the "Coverage" filter asks one question: has this person taken PRISM?
@@ -145,7 +148,7 @@ export default function DevelopmentStudio({
    * Local state, not a route: these are lenses on this page, and a URL for each
    * would be three surfaces to keep gated instead of one.
    */
-  const [view, setView] = useState<"grid" | "reports" | "org">("grid")
+  const [view, setView] = useState<"grid" | "reports" | "org" | "team">("grid")
 
   const [search, setSearch] = useState("")
   const [coverage, setCoverage] = useState<CoverageFilter>("all")
@@ -261,6 +264,20 @@ export default function DevelopmentStudio({
               )}
             >
               <Network className="h-3 w-3" aria-hidden />{" "}{tm("developmentStudio.orgChart", { defaultValue: "Org Chart" })}</button>
+            {/* U5 — Compare and Scenarios, picking people from the roster.
+                Behind the same flag that offers them on a person's page. */}
+            {TDS_STUDIO_ENABLED && (
+              <button
+                type="button"
+                onClick={() => setView("team")}
+                aria-pressed={view === "team"}
+                className={cn(
+                  "flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition",
+                  view === "team" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
+                )}
+              >
+                <UsersRound className="h-3 w-3" aria-hidden />{" "}{tm("teamStudioView.lens", { defaultValue: "Compare & scenarios" })}</button>
+            )}
           </div>
           {view === "grid" && (
           <>
@@ -326,7 +343,7 @@ export default function DevelopmentStudio({
         legitimately disagree for them — which is unreadable unless the page
         says what each one counts.
       */}
-      <p className={cn("text-xs", sk.text500)}>
+      {view !== "team" && <p className={cn("text-xs", sk.text500)}>
         {t(
           view === "reports"
             ? "dev.studio.scope.reports"
@@ -336,13 +353,17 @@ export default function DevelopmentStudio({
                 ? "dev.studio.scope.myTeam"
                 : "dev.studio.scope.team",
         )}
-      </p>
+      </p>}
 
       {/* The search box filters the ROSTER, not the org chart — the chart is a
           different dataset with its own scope, and pointing this at it would
           filter people out of a reporting tree, leaving their reports
           reparented under whoever survived. */}
-      {view === "org" ? (
+      {view === "team" ? (
+        <Suspense fallback={<Skeleton className={cn("h-44 w-full", sk.radius)} />}>
+          <TeamStudioView />
+        </Suspense>
+      ) : view === "org" ? (
         <OrgChartPanel memberRoute={memberRoute} />
       ) : view === "reports" ? (
         /* No roster loading/error/empty branch here: this panel owns its own
