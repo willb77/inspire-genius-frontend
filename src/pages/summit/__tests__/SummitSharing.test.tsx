@@ -17,6 +17,7 @@ const svc = {
   getPeople: jest.fn(),
   getMyGrants: jest.fn(),
   getAccessLog: jest.fn(),
+  getAccessLogPage: jest.fn(),
   lookupPerson: jest.fn(),
   offerAccess: jest.fn(),
   extendGrant: jest.fn(),
@@ -28,6 +29,7 @@ jest.mock("@/services/consent/visibility.service", () => ({
   getPeople: () => svc.getPeople(),
   getMyGrants: () => svc.getMyGrants(),
   getAccessLog: () => svc.getAccessLog(),
+  getAccessLogPage: (...a: unknown[]) => svc.getAccessLogPage(...a),
   lookupPerson: (...a: unknown[]) => svc.lookupPerson(...a),
   offerAccess: (...a: unknown[]) => svc.offerAccess(...a),
   extendGrant: (...a: unknown[]) => svc.extendGrant(...a),
@@ -131,6 +133,12 @@ beforeEach(() => {
   svc.getCategories.mockResolvedValue({ categories: [], details: DETAILS, notGrantable: ["safety"] });
   svc.getMyGrants.mockResolvedValue([]);
   svc.getAccessLog.mockResolvedValue([]);
+  // D-14: the paged log, emulated over the same rows: the server filters by viewer.
+  svc.getAccessLogPage.mockImplementation(async (input?: { viewer?: string }) => {
+    const all: { viewer_user_id: string }[] = (await svc.getAccessLog()) ?? [];
+    const rows = input?.viewer ? all.filter((r) => r.viewer_user_id === input.viewer) : all;
+    return { rows, hasMore: false, nextBefore: null };
+  });
   mockGetMyGoals.mockResolvedValue({ memberId: "m1", goals: [], coverage: [] });
 });
 
@@ -467,7 +475,7 @@ describe("add a person", () => {
     fireEvent.click(screen.getByRole("button", { name: /find/i }));
     expect(await screen.findByText("Coach Nine")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /share my goals/i }));
-    await waitFor(() => expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u9", categories: { goals: true } }));
+    await waitFor(() => expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u9", categories: { goals: true }, merge: true }));
     expect(await screen.findByText(/Shared with Coach Nine/)).toBeInTheDocument();
   });
 });
@@ -537,6 +545,92 @@ describe("Preview Activity (was Who has looked, Phase 5) — per person", () => 
     svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
     renderPage();
     expect(await screen.findByTestId("person-activity-empty")).toBeInTheDocument();
+  });
+});
+
+describe("D-14 — adding access keeps what is held; the log says when it is partial", () => {
+  const MO = { userId: "m1", displayName: "Mo Manager", email: "mo@example.com", kinds: ["manager_of_record"], grant: null };
+  const row = (viewer: string, at: string) => ({ viewer_user_id: viewer, categories_viewed: ["goals"], surface: "growth:goals", viewed_at: at });
+
+  it("Add Access sends merge, and names what an existing grantee now holds", async () => {
+    svc.getPeople.mockResolvedValue({ people: [], sources: PEOPLE_OK });
+    svc.lookupPerson.mockResolvedValueOnce({ userId: "u9", displayName: "Coach Nine", email: "nine@example.com" });
+    svc.offerAccess.mockResolvedValue({
+      id: "g9", status: "granted", mode: "refreshed",
+      categories: { goals: true, prism: true, assessments: false },
+    });
+    renderPage();
+    const input = await screen.findByRole("textbox", { name: /email address/i });
+    fireEvent.change(input, { target: { value: "nine@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: /find/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /share my goals/i }));
+    await waitFor(() =>
+      expect(svc.offerAccess).toHaveBeenCalledWith({ granteeUserId: "u9", categories: { goals: true }, merge: true }),
+    );
+    expect(await screen.findByText("Shared with Coach Nine. They can now see your goals and PRISM profile.")).toBeInTheDocument();
+  });
+
+  it("a person's activity asks the server for THAT viewer's reads", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
+    renderPage();
+    await screen.findByTestId("person-activity-m1");
+    await waitFor(() => expect(svc.getAccessLogPage).toHaveBeenCalledWith({ viewer: "m1", before: null }));
+  });
+
+  it("says the list is partial when older reads exist, and Show older fetches them", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
+    svc.getAccessLogPage.mockImplementation(async (input?: { viewer?: string; before?: string | null }) => {
+      if (!input?.viewer) return { rows: [], hasMore: false, nextBefore: null };
+      return input.before
+        ? { rows: [row("m1", "2026-08-01T10:00:00Z")], hasMore: false, nextBefore: null }
+        : { rows: [row("m1", "2026-09-04T14:00:00Z")], hasMore: true, nextBefore: "cursor-1" };
+    });
+    renderPage();
+    const partial = await screen.findByTestId("person-activity-partial-m1");
+    expect(partial).toHaveTextContent("Showing the most recent 1 reads. Older reads exist.");
+    expect(screen.queryByTestId("person-activity-empty")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Preview Activity" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show older" }));
+    await waitFor(() => expect(svc.getAccessLogPage).toHaveBeenCalledWith({ viewer: "m1", before: "cursor-1" }));
+    await waitFor(() => expect(screen.queryByTestId("person-activity-partial-m1")).toBeNull());
+    const list = screen.getByTestId("person-activity-m1").querySelector("ul");
+    expect(list?.querySelectorAll("li").length).toBe(2);
+  });
+
+  it("never says 'hasn't looked' when the paged log cannot be read (an older server 404s)", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
+    svc.getAccessLogPage.mockRejectedValue({ response: { status: 404 } });
+    renderPage();
+    expect(await screen.findByTestId("person-activity-error")).toBeInTheDocument();
+    expect(screen.queryByTestId("person-activity-empty")).toBeNull();
+  });
+
+  it("an older page that fails says the log is unread and offers the retry", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
+    svc.getAccessLogPage.mockImplementation(async (input?: { viewer?: string; before?: string | null }) => {
+      if (!input?.viewer) return { rows: [], hasMore: false, nextBefore: null };
+      if (input.before) throw new Error("down");
+      return { rows: [row("m1", "2026-09-04T14:00:00Z")], hasMore: true, nextBefore: "cursor-1" };
+    });
+    renderPage();
+    await screen.findByTestId("person-activity-partial-m1");
+    fireEvent.click(screen.getByRole("button", { name: "Preview Activity" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show older" }));
+    await waitFor(() =>
+      expect(screen.getByTestId("person-activity-partial-m1")).toHaveTextContent("It is not empty — it is unread."),
+    );
+  });
+
+  it("reads by unlisted people say when older reads exist", async () => {
+    svc.getPeople.mockResolvedValue({ people: [MO], sources: {} });
+    svc.getAccessLogPage.mockImplementation(async (input?: { viewer?: string }) =>
+      input?.viewer
+        ? { rows: [], hasMore: false, nextBefore: null }
+        : { rows: [row("abcdef12-0000-4000-8000-000000000000", "2026-09-04T13:00:00Z")], hasMore: true, nextBefore: "c" },
+    );
+    renderPage();
+    const other = await screen.findByTestId("other-readers");
+    expect(other).toHaveTextContent("Older reads exist.");
   });
 });
 

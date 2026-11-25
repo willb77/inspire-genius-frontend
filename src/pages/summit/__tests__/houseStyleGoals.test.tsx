@@ -34,6 +34,12 @@ jest.mock("@/services/consent/visibility.service", () => ({
   getPeople: () => svc.getPeople(),
   getMyGrants: () => svc.getMyGrants(),
   getAccessLog: () => svc.getAccessLog(),
+  // D-14: the paged log, emulated over the same rows: the server filters by viewer.
+  getAccessLogPage: async (input?: { viewer?: string }) => {
+    const all: { viewer_user_id: string }[] = (await svc.getAccessLog()) ?? [];
+    const rows = input?.viewer ? all.filter((r) => r.viewer_user_id === input.viewer) : all;
+    return { rows, hasMore: false, nextBefore: null };
+  },
   getCategories: () => svc.getCategories(),
   lookupPerson: jest.fn(),
   offerAccess: jest.fn(),

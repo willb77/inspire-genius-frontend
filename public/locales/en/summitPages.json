@@ -411,6 +411,9 @@
     "seeAccessAria": "See access for {{who}}",
     "tileBody": "Choose what this person can see, how long, and who has looked.",
     "personLogEmpty": "This person hasn't looked at your goals yet. Every read is recorded, including reads by platform administrators.",
+    "sharedWithHolds": "Shared with {{name}}. They can now see {{what}}.",
+    "logPartial": "Showing the most recent {{n}} reads. Older reads exist.",
+    "showOlder": "Show older",
     "otherReaders": "Reads by people not listed above",
     "otherReadersBody": "Platform administrators, or people whose access has been removed."
   }

@@ -8,6 +8,7 @@
  */
 import {
   extendGrant,
+  getAccessLogPage,
   getCategories,
   getMyGrants,
   getPeople,
@@ -99,4 +100,43 @@ it("reads the category details from the agent engine", async () => {
 it("an empty categories envelope throws, so the panel falls back to 'not protected yet'", async () => {
   mockGet.mockResolvedValue({ data: {} })
   await expect(getCategories()).rejects.toThrow(/empty envelope/)
+})
+
+// D-14: Add Access ADDS; a switch still replaces.
+it("sends merge only when asked, so a switch's offer still replaces", async () => {
+  mockPost.mockResolvedValue({ data: { status: true, data: { id: "g1", status: "granted", mode: "refreshed" } } })
+  await offerAccess({ granteeUserId: "u2", categories: { goals: true }, merge: true })
+  expect(mockPost).toHaveBeenLastCalledWith("/v1/agents/consent/visibility/offer", {
+    granteeUserId: "u2",
+    categories: { goals: true },
+    merge: true,
+  })
+  await offerAccess({ granteeUserId: "u2", categories: { goals: true }, merge: false })
+  expect(mockPost).toHaveBeenLastCalledWith("/v1/agents/consent/visibility/offer", {
+    granteeUserId: "u2",
+    categories: { goals: true },
+  })
+})
+
+// D-14: the paged access log.
+it("reads one page of the access log, for one viewer, from a cursor", async () => {
+  const rows = [{ viewer_user_id: "m1", categories_viewed: ["goals"], surface: "growth:goals", viewed_at: "2026-09-04T14:00:00Z" }]
+  mockGet.mockResolvedValue({ data: { status: true, data: { rows, hasMore: true, nextBefore: "c1" } } })
+  const out = await getAccessLogPage({ viewer: "m1", before: "c0", limit: 20 })
+  expect(mockGet).toHaveBeenCalledWith("/v1/agents/consent/visibility/access-log/page", {
+    params: { viewer: "m1", before: "c0", limit: 20 },
+  })
+  expect(out).toEqual({ rows, hasMore: true, nextBefore: "c1" })
+})
+
+it("asks for the whole log's first page with no params, and reads a missing hasMore as complete", async () => {
+  mockGet.mockResolvedValue({ data: { status: true, data: { rows: [] } } })
+  const out = await getAccessLogPage()
+  expect(mockGet).toHaveBeenCalledWith("/v1/agents/consent/visibility/access-log/page", { params: {} })
+  expect(out).toEqual({ rows: [], hasMore: false, nextBefore: null })
+})
+
+it("an empty paged-log envelope throws, so the panel says 'unread', not 'hasn't looked'", async () => {
+  mockGet.mockResolvedValue({ data: {} })
+  await expect(getAccessLogPage({ viewer: "m1" })).rejects.toThrow(/empty envelope/)
 })

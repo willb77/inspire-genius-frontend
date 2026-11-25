@@ -207,6 +207,9 @@
     "seeAccessAria": "Vedi l'accesso di {{who}}",
     "tileBody": "Scegli cosa può vedere questa persona, per quanto tempo e chi ha guardato.",
     "personLogEmpty": "Questa persona non ha ancora guardato i tuoi obiettivi. Ogni lettura viene registrata, comprese quelle degli amministratori della piattaforma.",
+    "sharedWithHolds": "Condiviso con {{name}}. Ora può vedere {{what}}.",
+    "logPartial": "Vengono mostrate le {{n}} letture più recenti. Esistono letture precedenti.",
+    "showOlder": "Mostra precedenti",
     "otherReaders": "Letture da persone non elencate sopra",
     "otherReadersBody": "Amministratori della piattaforma o persone il cui accesso è stato rimosso."
   },

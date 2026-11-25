@@ -20,7 +20,9 @@
  *     exactly what was asked. Before TDS-1c every request was approved as
  *     goals, whatever it asked for, and a manager's PRISM request was answered
  *     with a grant that could not satisfy it;
- *   - add a person by exact email;
+ *   - add a person by exact email. That form ADDS (the offer carries
+ *     `merge`): someone already holding PRISM who is given goals keeps PRISM.
+ *     Before D-14 it replaced, and silently took the rest away;
  *   - "what they see": the coach's own goal card, rendered with the coach's
  *     own component, so the preview cannot drift from the real thing.
  *
@@ -43,7 +45,7 @@ import { useMyGoals } from "@/hooks/summit/useMyGoals";
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 import { MemberLinkRequestCard } from "@/components/sharing/MemberLinkRequestCard";
 import {
-  useAccessLog,
+  useAccessLogPage,
   useCategoryDetails,
   useExtendGrant,
   useLookupPerson,
@@ -512,10 +514,13 @@ function ActivityList({ rows, nameById }: { rows: AccessLogRow[]; nameById: Map<
 /** The "Preview Activity" pill inside a person's tile: what THIS person has looked at. */
 function PersonActivity({ person, nameById }: { person: VisibilityPerson; nameById: Map<string, string> }) {
   const { t } = useTranslation("summitPages");
-  const log = useAccessLog();
+  // D-14: this person's reads, filtered by the server and paged. The old read
+  // was the newest 50 across EVERYONE filtered here, so a person whose reads
+  // were older than that was reported as never having looked.
+  const log = useAccessLogPage(person.userId);
   const [open, setOpen] = useState(false);
   const panelId = `activity-${person.userId}`;
-  const rows = (log.data ?? []).filter((r) => r.viewer_user_id === person.userId).slice(0, 50);
+  const rows = (log.data?.pages ?? []).flatMap((p) => p.rows);
   return (
     <div className="flex flex-col gap-2" data-testid={`person-activity-${person.userId}`}>
       <div>
@@ -539,12 +544,13 @@ function PersonActivity({ person, nameById }: { person: VisibilityPerson; nameBy
             {t("sharing.logError", { defaultValue: "We couldn't read the access log just now. It is not empty — it is unread." })}
           </p>
         )}
-        {!log.isLoading && !log.isError && rows.length === 0 && (
+        {log.isSuccess && !log.hasNextPage && rows.length === 0 && (
           <p className="text-[13px] text-[#13294B]/70" data-testid="person-activity-empty">
             {t("sharing.personLogEmpty", { defaultValue: "This person hasn't looked at your goals yet. Every read is recorded, including reads by platform administrators." })}
           </p>
         )}
         {rows.length > 0 && <ActivityList rows={rows} nameById={nameById} />}
+        {rows.length > 0 && <OlderReads log={log} shown={rows.length} testId={`person-activity-partial-${person.userId}`} />}
       </div>
     </div>
   );
@@ -560,9 +566,9 @@ function PersonActivity({ person, nameById }: { person: VisibilityPerson; nameBy
  */
 function OtherReaders({ listedIds, nameById }: { listedIds: Set<string>; nameById: Map<string, string> }) {
   const { t } = useTranslation("summitPages");
-  const log = useAccessLog();
+  const log = useAccessLogPage();
   const [open, setOpen] = useState(false);
-  const rows = (log.data ?? []).filter((r) => !listedIds.has(r.viewer_user_id)).slice(0, 50);
+  const rows = (log.data?.pages ?? []).flatMap((p) => p.rows).filter((r) => !listedIds.has(r.viewer_user_id));
   if (log.isLoading || log.isError || rows.length === 0) return null;
   const title = t("sharing.otherReaders", { defaultValue: "Reads by people not listed above" });
   const body = t("sharing.otherReadersBody", { defaultValue: "Platform administrators, or people whose access has been removed." });
@@ -591,9 +597,47 @@ function OtherReaders({ listedIds, nameById }: { listedIds: Set<string>; nameByI
             <DialogDescription>{body}</DialogDescription>
           </DialogHeader>
           <ActivityList rows={rows} nameById={nameById} />
+          <OlderReads log={log} shown={rows.length} testId="other-readers-partial" />
         </DialogContent>
       </Dialog>
     </li>
+  );
+}
+
+/**
+ * D-14: says when the list above is not the whole log, and fetches the next
+ * page. Renders nothing once every read has been fetched.
+ */
+function OlderReads({
+  log,
+  shown,
+  testId,
+}: {
+  log: ReturnType<typeof useAccessLogPage>;
+  shown: number;
+  testId: string;
+}) {
+  const { t } = useTranslation("summitPages");
+  if (!log.hasNextPage && !log.isFetchNextPageError) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-[#13294B]/75" data-testid={testId}>
+      {log.isFetchNextPageError ? (
+        <span>{t("sharing.logError", { defaultValue: "We couldn't read the access log just now. It is not empty — it is unread." })}</span>
+      ) : (
+        <span>{t("sharing.logPartial", { defaultValue: "Showing the most recent {{n}} reads. Older reads exist.", n: shown })}</span>
+      )}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="h-7 rounded-full"
+        disabled={log.isFetchingNextPage}
+        onClick={() => void log.fetchNextPage()}
+      >
+        {log.isFetchingNextPage ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
+        {t("sharing.showOlder", { defaultValue: "Show older" })}
+      </Button>
+    </div>
   );
 }
 
@@ -673,8 +717,17 @@ function AddPerson() {
     setMessage(null);
     setMessageOk(false);
     try {
-      await offer.mutateAsync({ granteeUserId: found.userId, categories: GOALS_ONLY });
-      setMessage(t("sharing.sharedWith", { defaultValue: "Shared with {{name}}.", name: found.displayName || found.email }));
+      // D-14: `merge` ADDS goals to whatever this person already holds. Without
+      // it the offer replaced their grant and silently took the rest away.
+      const out = await offer.mutateAsync({ granteeUserId: found.userId, categories: GOALS_ONLY, merge: true });
+      const name = found.displayName || found.email;
+      // A refreshed grant already existed: say what it now holds, from the
+      // server's answer, so a person who keeps their PRISM profile is named.
+      setMessage(
+        out?.mode === "refreshed"
+          ? t("sharing.sharedWithHolds", { defaultValue: "Shared with {{name}}. They can now see {{what}}.", name, what: describeCategories(out.categories ?? GOALS_ONLY, t) })
+          : t("sharing.sharedWith", { defaultValue: "Shared with {{name}}.", name })
+      );
       setMessageOk(true);
       setFound(null);
       setEmail("");
