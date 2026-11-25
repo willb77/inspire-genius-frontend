@@ -78,7 +78,16 @@
     "uploadReport": "Upload a report",
     "uploadReviewHelp": "Check what we read from your report and correct anything wrong. Nothing is saved until you press Save.",
     "uploadSaved": "Report saved.",
-    "uploadTooLarge": "That file is too large."
+    "uploadTooLarge": "That file is too large.",
+    "onFileTitle": "On file",
+    "onFileLoading": "Loading your results…",
+    "onFileError": "We could not load your results. Reload the page to try again.",
+    "onFileEmpty": "Nothing on file yet. Results you add appear here.",
+    "onFileEarlier": "+{{n}} earlier",
+    "sourceEntered": "Entered by you",
+    "sourceReport": "From a report",
+    "sourceOther": "Added to your profile",
+    "supersede": "You already have a {{framework}} result from {{date}}. Saving this one makes it the current result; the earlier one stays in your history."
   },
   "audioPlayer": {
     "browseHint": "or click to browse • Supports MP3, WAV, FLAC, and more",

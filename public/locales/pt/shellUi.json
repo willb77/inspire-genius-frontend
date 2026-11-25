@@ -566,7 +566,16 @@
     "uploadReport": "Enviar um relatório",
     "uploadReviewHelp": "Verifique o que lemos do seu relatório e corrija o que estiver errado. Nada é guardado até carregar em Guardar.",
     "uploadSaved": "Relatório guardado.",
-    "uploadTooLarge": "Esse ficheiro é demasiado grande."
+    "uploadTooLarge": "Esse ficheiro é demasiado grande.",
+    "onFileTitle": "Registado",
+    "onFileLoading": "A carregar os seus resultados…",
+    "onFileError": "Não foi possível carregar os seus resultados. Recarregue a página para tentar novamente.",
+    "onFileEmpty": "Ainda não há nada registado. Os resultados que adicionar aparecem aqui.",
+    "onFileEarlier": "+{{n}} anteriores",
+    "sourceEntered": "Introduzido por si",
+    "sourceReport": "De um relatório",
+    "sourceOther": "Adicionado ao seu perfil",
+    "supersede": "Já tem um resultado de {{framework}} de {{date}}. Ao guardar este, passa a ser o resultado atual; o anterior fica no seu histórico."
   },
   "notificationBell": {
     "ariaLabel": "Notificações",

@@ -16,6 +16,9 @@ import {
 
 jest.mock("@/services/profile/profile", () => ({
   createAssessment: jest.fn(),
+  // F-W7-1: the card and the dialogs read what is on file.
+  getMyProfile: jest.fn().mockResolvedValue({ user_id: "u", facts: [], loaded_frameworks: [], assessments: [] }),
+  listAssessments: jest.fn().mockResolvedValue({ assessments: [], total: 0, limit: 1, offset: 0 }),
   previewImportAssessment: jest.fn(),
   confirmImportAssessment: jest.fn(),
   importAssessment: jest.fn(),

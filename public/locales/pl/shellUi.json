@@ -453,7 +453,16 @@
     "uploadReport": "Prześlij raport",
     "uploadReviewHelp": "Sprawdź, co odczytaliśmy z raportu, i popraw błędy. Nic nie zostanie zapisane, dopóki nie naciśniesz Zapisz.",
     "uploadSaved": "Raport zapisany.",
-    "uploadTooLarge": "Ten plik jest za duży."
+    "uploadTooLarge": "Ten plik jest za duży.",
+    "onFileTitle": "Zapisane",
+    "onFileLoading": "Wczytywanie wyników…",
+    "onFileError": "Nie udało się wczytać wyników. Odśwież stronę, aby spróbować ponownie.",
+    "onFileEmpty": "Nic jeszcze nie zapisano. Dodane wyniki pojawią się tutaj.",
+    "onFileEarlier": "+{{n}} wcześniejsze",
+    "sourceEntered": "Wprowadzone przez Ciebie",
+    "sourceReport": "Z raportu",
+    "sourceOther": "Dodane do Twojego profilu",
+    "supersede": "Masz już wynik {{framework}} z {{date}}. Zapisanie tego sprawi, że stanie się bieżącym wynikiem; wcześniejszy pozostanie w historii."
   },
   "audioPlayer": {
     "browseHint": "lub kliknij, aby przeglądać • Obsługuje MP3, WAV, FLAC i inne",

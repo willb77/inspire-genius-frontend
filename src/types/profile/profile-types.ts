@@ -70,6 +70,35 @@ export type ProfileMe = {
   chat_excluded_frameworks?: string[];
   /** Optional summary surface — backend may add convenience fields. */
   latest_assessment_by_framework?: Record<string, Assessment>;
+  /**
+   * The latest AUTHORITATIVE result per framework (agent-engine
+   * `UserProfile.assessments: list[AssessmentView]`). What Meridian and every
+   * other reader treat as the person's current result. Settings → Other
+   * Assessments lists it (TDS F-W7-1).
+   */
+  assessments?: ProfileAssessmentView[];
+};
+
+/** One per-dimension score in a profile assessment (backend `ScoreView`). */
+export type ProfileScoreView = {
+  category: string;
+  dimension: string;
+  sub_dimension?: string | null;
+  score_numeric?: number | null;
+  score_text?: string | null;
+  rank?: number | null;
+};
+
+/** One framework's current result on `GET /v1/profile/me` (backend `AssessmentView`). */
+export type ProfileAssessmentView = {
+  framework: string;
+  framework_version?: string | null;
+  assessed_at: string;
+  source: string;
+  summary?: string;
+  top_scores?: ProfileScoreView[];
+  /** A type code for typed frameworks (MBTI, Enneagram), else null. */
+  typing?: string | null;
 };
 
 /** One parsed score row (backend ScoreIn shape); round-tripped preview→confirm. */
