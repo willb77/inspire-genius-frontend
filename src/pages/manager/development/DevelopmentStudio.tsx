@@ -33,6 +33,7 @@ import { AddMemberDialog, type AddPeopleTab } from "@/components/manager/develop
 import { OrgChartPanel } from "@/components/manager/development/OrgChartPanel"
 import { MyReportsPanel } from "@/components/manager/development/MyReportsPanel"
 import { LinkRequestsNotice } from "@/components/manager/development/LinkRequestsNotice"
+import { UnconnectedClientsSection } from "@/components/manager/development/UnconnectedClientsSection"
 import {
   DevSkinProvider,
   DevPageFrame,
@@ -472,10 +473,25 @@ export default function DevelopmentStudio({
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((m) => (
-            <MemberCard key={m.memberId} member={m} onInvite={handleInvite} memberRoute={memberRoute} sharingReadWorked={readWorked} />
+            <MemberCard
+              key={m.memberId}
+              member={m}
+              onInvite={handleInvite}
+              memberRoute={memberRoute}
+              sharingReadWorked={readWorked}
+              clientRoute={audience === "practitioner" ? ROUTES.PRACTITIONER.CLIENT_DETAIL : undefined}
+            />
           ))}
         </div>
       )}
+
+      {/* TDS-U11b — a practitioner's clients with no account yet (U11a cards
+          with no member id). They are not members, so they sit below the grid,
+          never in it, and open no development page. Practitioner only: no other
+          roster carries them. */}
+      {audience === "practitioner" && view === "grid" && !isLoading && !isError ? (
+        <UnconnectedClientsSection search={search} />
+      ) : null}
         </DevPageFrame>
       </DevSkinProvider>
     </Layout>

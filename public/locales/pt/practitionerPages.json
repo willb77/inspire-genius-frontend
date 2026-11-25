@@ -367,5 +367,14 @@
     "colLastActive": "Última atividade",
     "title": "Análises",
     "subtitle": "Clientes sob gestão e uso por cliente."
+  },
+  "studioRoster": {
+    "notConnected": "Ainda não ligado",
+    "notConnectedHeading": "Clientes que ainda não ligaram uma conta ({{count}})",
+    "notConnectedBody": "{{name}} ainda não tem uma conta InspiresGenius ligada a si, por isso não há página de desenvolvimento para abrir. Convide-o a partir de Os meus clientes.",
+    "openClientRecord": "Abrir ficha do cliente",
+    "inviteFromMyClients": "Convidar a partir de Os meus clientes",
+    "clientRecord": "Ficha do cliente",
+    "clientRecordAria": "Abrir a ficha do cliente de {{name}}: sessões, documentos, acompanhamentos e importação PRISM"
   }
 }

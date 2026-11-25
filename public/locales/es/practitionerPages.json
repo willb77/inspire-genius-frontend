@@ -367,5 +367,14 @@
     "upcoming": "Próximas sesiones",
     "noSessions": "Aún no hay sesiones programadas.",
     "durationMin": "{{min}} min"
+  },
+  "studioRoster": {
+    "notConnected": "Aún sin conectar",
+    "notConnectedHeading": "Clientes que aún no han conectado una cuenta ({{count}})",
+    "notConnectedBody": "{{name}} aún no tiene una cuenta de InspiresGenius vinculada a usted, así que no hay página de desarrollo que abrir. Invítele desde Mis clientes.",
+    "openClientRecord": "Abrir ficha del cliente",
+    "inviteFromMyClients": "Invitar desde Mis clientes",
+    "clientRecord": "Ficha del cliente",
+    "clientRecordAria": "Abrir la ficha del cliente de {{name}}: sesiones, documentos, seguimientos e importación de PRISM"
   }
 }

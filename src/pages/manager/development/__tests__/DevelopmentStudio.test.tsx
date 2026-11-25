@@ -39,6 +39,12 @@ let rosterState: {
 const refetch = jest.fn()
 const addOneMutateAsync = jest.fn()
 const addBulkMutateAsync = jest.fn()
+// TDS-U11b: the practitioner mount also reads unconnected clients from the
+// roster query; that section has its own suite (UnconnectedClientsSection).
+jest.mock("@/components/manager/development/UnconnectedClientsSection", () => ({
+  UnconnectedClientsSection: () => null,
+}))
+
 jest.mock("@/hooks/manager/development", () => {
   const { DEV_TEXT } = jest.requireActual("@/constants/development")
   return {
