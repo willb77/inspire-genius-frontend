@@ -793,11 +793,17 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   TEAM_DEVELOPMENT_ENABLED
     ? TEAM_DEVELOPMENT_ITEM
     : { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  // Kept as a SEPARATE entry rather than merged into anything: Student
-  // Oversight obeys different visibility rules from every other roster surface
-  // — it shows nothing a student has not agreed to share — and a manager needs
-  // to know which set of rules they are reading.
-  { to: ROUTES.MANAGER.STUDENTS, icon: ShieldCheck, label: "Member Oversight" },
+  // Member Oversight (U6c, decision D13, 2026-11-24). The Studio roster now
+  // carries each person's sharing state as a chip and a filter, so the
+  // separate menu row (kept apart on 2026-09-05 because the page "obeys
+  // different visibility rules") is gone from the menu WHEN THE STUDIO IS IN
+  // IT: the page and its route are unchanged and the Studio opens it as
+  // "Engagement" (sign-ins, active days, the attention order). In a build with
+  // the pilot flag off there is no Studio to open it from, so the row stays,
+  // or a manager would lose the only menu path to the page.
+  ...(TEAM_DEVELOPMENT_ENABLED
+    ? []
+    : [{ to: ROUTES.MANAGER.STUDENTS, icon: ShieldCheck, label: "Member Oversight" }]),
   // Team Import is how the roster grows, so the Join Requests queue lives on
   // it now. That queue is pull-only — nothing notifies a manager when a request
   // arrives — so the button carries a count and the page loads it eagerly;

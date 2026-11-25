@@ -376,6 +376,44 @@
     "ofMilestonesComplete": "{{value}}% of milestones complete",
     "inviteToCompletePrismTo": "Invite to complete PRISM to build a profile."
   },
+  "memberSharing": {
+    "ariaLabel": "What {{name}} shares with you: {{state}}",
+    "notAsked": "Not asked",
+    "awaiting": "Awaiting reply",
+    "shared": "Shared: {{what}}",
+    "declined": "Declined",
+    "withdrawn": "Withdrawn",
+    "termEnded": "Term ended",
+    "noAccount": "No account",
+    "notKnown": "Not known",
+    "hintNotAsked": "You have not asked this person to share anything yet.",
+    "hintAwaiting": "You asked. They have not answered yet.",
+    "hintShared": "What they share with you now.",
+    "hintDeclined": "They declined. That costs them nothing.",
+    "hintWithdrawn": "They withdrew what they had shared with you.",
+    "hintTermEnded": "What they shared ran to the end of its term.",
+    "hintNoAccount": "No InspiresGenius account is known for this person, so there is nobody to ask.",
+    "hintNotKnown": "What this person shares with you could not be read.",
+    "filter": "Sharing",
+    "filterAll": "All sharing",
+    "filterShared": "Shared with you",
+    "planWithheld": "Plan withheld",
+    "profileWithheld": "PRISM profile withheld from you.",
+    "category": {
+      "prism": "PRISM",
+      "engagement": "Engagement",
+      "topics": "Topics",
+      "artefacts": "Documents",
+      "goals": "Goals",
+      "assessments": "Assessments",
+      "interviews": "Interviews",
+      "development": "Development",
+      "other": "Other"
+    }
+  },
+  "developmentStudioEngagement": {
+    "label": "Engagement"
+  },
   "memberDevelopmentWorkspace": {
     "askedTheyDecideAndDeclining": "Asked. They decide, and declining costs them nothing.",
     "thatDidnTSendNothing": "That didn't send — nothing was asked. Try again in a moment.",

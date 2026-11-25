@@ -6,8 +6,8 @@
  * AppShell. Cards navigate to the per-member workspace.
  */
 import { Suspense, lazy, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Network, Search, UserCheck, Users, UsersRound } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
+import { Activity, Network, Search, UserCheck, Users, UsersRound } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { Input } from "@/components/ui/input"
@@ -42,6 +42,19 @@ import {
 } from "@/components/manager/development/skin"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/context/useAuth"
+import {
+  sharingDisplay,
+  sharingReadWorked,
+  type SharingDisplay,
+} from "@/components/manager/development/rosterSharing"
+
+/**
+ * U6c, decision D13 (2026-11-24): Member Oversight keeps its page and route
+ * but leaves the main menu, and is opened from here as "Engagement" (sign-ins,
+ * active days, the attention order). Only the manager mount links to it: the
+ * page lives under `/manager`, which ProtectedRoute refuses a practitioner.
+ */
+const ENGAGEMENT_ROUTE = ROUTES.MANAGER.STUDENTS
 
 /** U5 — Compare and Scenarios at Studio level. Loaded only when opened. */
 const TeamStudioView = lazy(() => import("@/components/manager/development/TeamStudioView"))
@@ -65,6 +78,16 @@ const PLAN_ORDER: Record<PlanStatus, number> = {
   draft: 2,
   on_track: 3,
   no_plan: 4,
+}
+
+/**
+ * U6d: `planStatus` is null when the server withheld it. A withheld plan sorts
+ * after every known one (it is not "no plan", and it is not "at risk"), and an
+ * unknown value sorts with it rather than yielding NaN and an arbitrary order.
+ */
+function planOrder(m: RosterMember): number {
+  const s = m.planStatus
+  return s != null && Object.prototype.hasOwnProperty.call(PLAN_ORDER, s) ? PLAN_ORDER[s] : 5
 }
 
 function hasPrism(m: RosterMember): boolean {
@@ -155,6 +178,10 @@ export default function DevelopmentStudio({
   const [plan, setPlan] = useState<PlanStatus | "all">("all")
   const [department, setDepartment] = useState<string>("all")
   const [sort, setSort] = useState<SortKey>("readiness")
+  // U6c — filter on the server's sharing state. It filters by what the server
+  // said; it never changes what a card shows.
+  const [sharingFilter, setSharingFilter] = useState<SharingDisplay | "all">("all")
+  const readWorked = useMemo(() => sharingReadWorked(roster), [roster])
 
   const departments = useMemo(() => {
     const set = new Set<string>()
@@ -176,17 +203,19 @@ export default function DevelopmentStudio({
     if (coverage !== "all") {
       rows = rows.filter((m) => (coverage === "has_prism" ? hasPrism(m) : !hasPrism(m)))
     }
-    if (plan !== "all") rows = rows.filter((m) => m.planStatus === plan)
+    // A withheld plan (null, U6d) matches no plan option: it is not "No plan".
+    if (plan !== "all") rows = rows.filter((m) => m.planStatus != null && m.planStatus === plan)
     if (department !== "all") rows = rows.filter((m) => m.department === department)
+    if (sharingFilter !== "all") rows = rows.filter((m) => sharingDisplay(m, readWorked) === sharingFilter)
 
     const sorted = [...rows]
     if (sort === "readiness") {
-      sorted.sort((a, b) => readinessScore(b) - readinessScore(a) || PLAN_ORDER[a.planStatus] - PLAN_ORDER[b.planStatus])
+      sorted.sort((a, b) => readinessScore(b) - readinessScore(a) || planOrder(a) - planOrder(b))
     } else {
       sorted.sort((a, b) => lastActivity(b) - lastActivity(a))
     }
     return sorted
-  }, [roster, search, coverage, plan, department, sort])
+  }, [roster, search, coverage, plan, department, sort, sharingFilter, readWorked])
 
   const handleInvite = (memberId: string) => {
     // Route to the member's workspace, where the header invite action is
@@ -203,7 +232,17 @@ export default function DevelopmentStudio({
           <h1 className={cn("text-2xl font-semibold", sk.heading)}>{t("dev.studio.title")}</h1>
           <p className={cn("text-sm", sk.text500)}>{t("dev.studio.subtitle")}</p>
         </div>
-        <AddMemberDialog />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {audience === "manager" ? (
+            <Button asChild variant="outline">
+              <Link to={ENGAGEMENT_ROUTE} data-testid="studio-engagement-link">
+                <Activity className="mr-2 h-4 w-4" aria-hidden="true" />
+                {tm("developmentStudioEngagement.label", { defaultValue: "Engagement" })}
+              </Link>
+            </Button>
+          ) : null}
+          <AddMemberDialog />
+        </div>
       </header>
 
       {/* MMLR-6 — shown only while a member's request waits on this manager. */}
@@ -319,6 +358,23 @@ export default function DevelopmentStudio({
               </SelectContent>
             </Select>
           ) : null}
+          <Select value={sharingFilter} onValueChange={(v) => setSharingFilter(v as SharingDisplay | "all")}>
+            <SelectTrigger className="w-[160px]" aria-label={tm("memberSharing.filter", { defaultValue: "Sharing" })}>
+              <SelectValue placeholder={tm("memberSharing.filter", { defaultValue: "Sharing" })} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{tm("memberSharing.filterAll", { defaultValue: "All sharing" })}</SelectItem>
+              {/* Literal calls: the managerPages i18n guard pairs each key with its English. */}
+              <SelectItem value="shared">{tm("memberSharing.filterShared", { defaultValue: "Shared with you" })}</SelectItem>
+              <SelectItem value="not_asked">{tm("memberSharing.notAsked", { defaultValue: "Not asked" })}</SelectItem>
+              <SelectItem value="awaiting">{tm("memberSharing.awaiting", { defaultValue: "Awaiting reply" })}</SelectItem>
+              <SelectItem value="declined">{tm("memberSharing.declined", { defaultValue: "Declined" })}</SelectItem>
+              <SelectItem value="withdrawn">{tm("memberSharing.withdrawn", { defaultValue: "Withdrawn" })}</SelectItem>
+              <SelectItem value="term_ended">{tm("memberSharing.termEnded", { defaultValue: "Term ended" })}</SelectItem>
+              <SelectItem value="no_account">{tm("memberSharing.noAccount", { defaultValue: "No account" })}</SelectItem>
+              <SelectItem value="not_known">{tm("memberSharing.notKnown", { defaultValue: "Not known" })}</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
             <SelectTrigger className="w-[150px]" aria-label={tm("developmentStudio.sortBy", { defaultValue: "Sort by" })}>
               <SelectValue />
@@ -397,7 +453,7 @@ export default function DevelopmentStudio({
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((m) => (
-            <MemberCard key={m.memberId} member={m} onInvite={handleInvite} memberRoute={memberRoute} />
+            <MemberCard key={m.memberId} member={m} onInvite={handleInvite} memberRoute={memberRoute} sharingReadWorked={readWorked} />
           ))}
         </div>
       )}

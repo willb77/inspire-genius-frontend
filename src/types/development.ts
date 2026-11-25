@@ -435,11 +435,49 @@ export type RosterMember = {
   department?: string
   avatarUrl?: string
   coverage: FrameworkCoverage
-  reconciledHeadline?: string
-  headlineConfidence?: ConfidenceLevel
-  planStatus: PlanStatus
-  milestoneProgress?: number
-  topMatch?: Pick<CareerMatch, "title" | "fitScore">
+  reconciledHeadline?: string | null
+  headlineConfidence?: ConfidenceLevel | null
+  /**
+   * `null` when the server withheld it (U6d: `development` is in `withheld`).
+   * Never read it as "no plan": that would be a claim the server did not make.
+   */
+  planStatus: PlanStatus | null
+  milestoneProgress?: number | null
+  topMatch?: Pick<CareerMatch, "title" | "fitScore"> | null
+  /**
+   * U6d: the categories the server withheld from THIS caller on this card
+   * (`prism` → headline, its confidence and top match are null; `development`
+   * → plan status, milestone progress and top match are null). `null` or
+   * absent when the gate did not apply (older backend, or the per-org switch
+   * `tds_roster_consent_gate` off): every field was then sent as before. The
+   * PRISM tick (`coverage`) is never withheld (D12a).
+   */
+  withheld?: string[] | null
+  /**
+   * TDS-11: true when the id names an account in the caller's organisation,
+   * false for a minted roster-local id, null when the server could not tell.
+   * Mirrors growth-service `schemas.RosterMember.identity_resolved`.
+   */
+  identityResolved?: boolean | null
+  /**
+   * TDS-U6b: what this member shares with the CALLER right now. `null` (or
+   * absent, on an older backend) means NOT KNOWN — never "nothing shared";
+   * that answer is `state: "none"`. Mirrors growth-service `RosterSharing`.
+   */
+  sharing?: RosterSharing | null
+}
+
+/** growth-service `SharingState`. The server derives it; the browser never does. */
+export type RosterSharingState = "none" | "pending" | "granted" | "declined" | "revoked" | "expired"
+
+/** growth-service `schemas.RosterSharing` (TDS-U6b). */
+export type RosterSharing = {
+  state: RosterSharingState
+  /** Only categories live at read time (granted, not revoked, not expired). */
+  grantedCategories: string[]
+  expiresAt?: string | null
+  requestedAt?: string | null
+  canRequest: boolean
 }
 
 /** Provenance record for the "who produced what" audit affordance. */

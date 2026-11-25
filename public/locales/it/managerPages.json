@@ -135,6 +135,44 @@
     "inviteToCompletePrismTo": "Invita a completare PRISM per creare un profilo.",
     "text": " · {{department}}"
   },
+  "memberSharing": {
+    "ariaLabel": "Cosa {{name}} condivide con te: {{state}}",
+    "notAsked": "Non richiesto",
+    "awaiting": "In attesa di risposta",
+    "shared": "Condiviso: {{what}}",
+    "declined": "Rifiutato",
+    "withdrawn": "Ritirato",
+    "termEnded": "Periodo terminato",
+    "noAccount": "Nessun account",
+    "notKnown": "Non noto",
+    "hintNotAsked": "Non hai ancora chiesto a questa persona di condividere nulla.",
+    "hintAwaiting": "Hai chiesto. Non ha ancora risposto.",
+    "hintShared": "Ciò che condivide con te adesso.",
+    "hintDeclined": "Ha rifiutato. Per lei non comporta nulla.",
+    "hintWithdrawn": "Ha ritirato ciò che aveva condiviso con te.",
+    "hintTermEnded": "Ciò che ha condiviso è arrivato al termine del periodo.",
+    "hintNoAccount": "Non risulta alcun account InspiresGenius per questa persona, quindi non c'è nessuno a cui chiedere.",
+    "hintNotKnown": "Non è stato possibile leggere cosa questa persona condivide con te.",
+    "filter": "Condivisione",
+    "filterAll": "Tutte le condivisioni",
+    "filterShared": "Condiviso con te",
+    "planWithheld": "Piano non disponibile",
+    "profileWithheld": "Profilo PRISM non disponibile per te.",
+    "category": {
+      "prism": "PRISM",
+      "engagement": "Coinvolgimento",
+      "topics": "Argomenti",
+      "artefacts": "Documenti",
+      "goals": "Obiettivi",
+      "assessments": "Valutazioni",
+      "interviews": "Colloqui",
+      "development": "Sviluppo",
+      "other": "Altro"
+    }
+  },
+  "developmentStudioEngagement": {
+    "label": "Coinvolgimento"
+  },
   "memberDevelopmentWorkspace": {
     "askedTheyDecideAndDeclining": "Richiesta inviata. Decide la persona e rifiutare non ha alcun costo.",
     "thatDidnTSendNothing": "Invio non riuscito — non è stato richiesto nulla. Riprova tra un momento.",

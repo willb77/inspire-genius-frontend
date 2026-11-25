@@ -16,13 +16,20 @@ const STATUS_META: Record<
 }
 
 export type PlanStatusBadgeProps = {
-  status: PlanStatus
+  /**
+   * `null` when the server withheld the plan (U6d). Renders nothing then, and
+   * for any value this build does not know: a badge must never throw, and it
+   * must never turn "withheld" into "No plan".
+   */
+  status: PlanStatus | null | undefined
   className?: string
 }
 
 /** Plan-status badge — icon + label so status is not conveyed by colour alone. */
 export function PlanStatusBadge({ status, className }: PlanStatusBadgeProps) {
-  const { variant, Icon, className: metaClass } = STATUS_META[status]
+  const meta = status != null && Object.prototype.hasOwnProperty.call(STATUS_META, status) ? STATUS_META[status] : undefined
+  if (!meta || status == null) return null
+  const { variant, Icon, className: metaClass } = meta
   return (
     <Badge variant={variant} className={cn("gap-1", metaClass, className)}>
       <Icon className="h-3 w-3" aria-hidden="true" />

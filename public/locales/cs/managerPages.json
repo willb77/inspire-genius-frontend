@@ -718,6 +718,44 @@
     "inviteToCompletePrismTo": "Pozvěte člena k dokončení PRISM, aby se vytvořil profil.",
     "text": " · {{department}}"
   },
+  "memberSharing": {
+    "ariaLabel": "Co s vámi {{name}} sdílí: {{state}}",
+    "notAsked": "Nepožádáno",
+    "awaiting": "Čeká na odpověď",
+    "shared": "Sdíleno: {{what}}",
+    "declined": "Odmítnuto",
+    "withdrawn": "Odvoláno",
+    "termEnded": "Lhůta skončila",
+    "noAccount": "Bez účtu",
+    "notKnown": "Neznámé",
+    "hintNotAsked": "O sdílení jste tuto osobu zatím nepožádali.",
+    "hintAwaiting": "Požádali jste. Zatím neodpověděla.",
+    "hintShared": "Co s vámi tato osoba nyní sdílí.",
+    "hintDeclined": "Odmítla. Nemá to pro ni žádné následky.",
+    "hintWithdrawn": "Odvolala, co s vámi sdílela.",
+    "hintTermEnded": "Sdílení dospělo na konec své lhůty.",
+    "hintNoAccount": "Pro tuto osobu není znám žádný účet InspiresGenius, takže není koho požádat.",
+    "hintNotKnown": "Nepodařilo se zjistit, co s vámi tato osoba sdílí.",
+    "filter": "Sdílení",
+    "filterAll": "Veškeré sdílení",
+    "filterShared": "Sdílí s vámi",
+    "planWithheld": "Plán nedostupný",
+    "profileWithheld": "Profil PRISM je pro vás nedostupný.",
+    "category": {
+      "prism": "PRISM",
+      "engagement": "Zapojení",
+      "topics": "Témata",
+      "artefacts": "Dokumenty",
+      "goals": "Cíle",
+      "assessments": "Hodnocení",
+      "interviews": "Pohovory",
+      "development": "Rozvoj",
+      "other": "Ostatní"
+    }
+  },
+  "developmentStudioEngagement": {
+    "label": "Zapojení"
+  },
   "memberDevelopmentWorkspace": {
     "askedTheyDecideAndDeclining": "Dotaz odeslán. Rozhodnutí je na něm a odmítnutí ho nic nestojí.",
     "thatDidnTSendNothing": "Odeslání se nezdařilo, nic nebylo odesláno. Zkuste to za chvíli znovu.",
