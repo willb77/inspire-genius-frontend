@@ -566,5 +566,13 @@
     "line": "Seu gestor ou coach consultou a sua compatibilidade com {{role}} em {{date}}.",
     "lineNoDate": "Seu gestor ou coach consultou a sua compatibilidade com {{role}}.",
     "error": "Não foi possível verificar se um gestor ou coach consultou a sua compatibilidade com um cargo. Tente novamente em instantes."
+  },
+  "phaseStrip": {
+    "checkTheFit": "Verifique a aderência",
+    "exploreCareers": "Explore carreiras",
+    "knowYourself": "Conheça a si mesmo",
+    "label": "Sua jornada no Careers and Jobs",
+    "planTheRoute": "Planeje o caminho",
+    "stepOf": "Passo {{n}} de {{total}}"
   }
 }

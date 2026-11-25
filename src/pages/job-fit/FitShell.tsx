@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom"
 import FitNav from "./FitNav"
+import { CareersJobsPhaseStrip } from "./PhaseStrip"
 
 /**
  * Pathless layout route that puts `FitNav` above every Job-Fit page.
@@ -13,10 +14,14 @@ import FitNav from "./FitNav"
  *
  * Core's `VerticalShell` still owns the chrome and the entitlement gate; this
  * only adds in-vertical navigation beneath it.
+ *
+ * Careers and Jobs Phase B: the phase strip sits above `FitNav`. It renders
+ * nothing unless the `careers_jobs_flow` switch is on for this person.
  */
 export default function FitShell() {
   return (
     <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6">
+      <CareersJobsPhaseStrip />
       <FitNav />
       <Outlet />
     </div>

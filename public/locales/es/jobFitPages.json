@@ -566,5 +566,13 @@
     "line": "Tu responsable o coach consultó tu compatibilidad con {{role}} el {{date}}.",
     "lineNoDate": "Tu responsable o coach consultó tu compatibilidad con {{role}}.",
     "error": "No pudimos comprobar si un responsable o coach ha consultado tu compatibilidad con un puesto. Inténtalo de nuevo en unos instantes."
+  },
+  "phaseStrip": {
+    "checkTheFit": "Comprueba el encaje",
+    "exploreCareers": "Explora carreras",
+    "knowYourself": "Conócete",
+    "label": "Tu recorrido en Careers and Jobs",
+    "planTheRoute": "Planifica la ruta",
+    "stepOf": "Paso {{n}} de {{total}}"
   }
 }
