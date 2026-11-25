@@ -269,6 +269,7 @@ exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(manager
 
 exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(practitioner) — the menu the role gets 1`] = `
 [
+  "Client Development Studio -> /practitioner/development",
   "Practitioner Home -> /practitioner/home",
   "Chat with Meridian -> /meridian/chat",
   "My Clients -> /practitioner/clients",

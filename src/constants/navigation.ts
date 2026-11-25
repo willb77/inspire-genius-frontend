@@ -304,18 +304,25 @@ const GOALS_STUDIO_ITEM: NavItemDef = {
 }
 
 /**
- * The practitioner's Team Development Studio entry.
+ * The practitioner's Studio entry.
  *
  * A SEPARATE item from {@link TEAM_DEVELOPMENT_ITEM} pointing at
  * /practitioner/development, not a shared one. ProtectedRoute gates by path
  * prefix and `practitioner` has no `/manager` prefix in ROLE_PERMISSIONS, so
  * reusing the manager item here would render a menu entry that silently
  * bounces a practitioner to their home page — live-looking and dead.
+ *
+ * U9 (decision D3): a practitioner's Studio is the "Client Development
+ * Studio", and it leads the practitioner's main menu
+ * ({@link PRACTITIONER_NAV_ITEMS}) instead of sitting in Tools. The page
+ * title says the same (`DEV_TEXT_PRACTITIONER`). Until U11 the roster behind
+ * it is the practitioner's own organisation plus anyone they added, not their
+ * clients; the page's scope line says so.
  */
 const TEAM_DEVELOPMENT_ITEM_PRACTITIONER: NavItemDef = {
   to: ROUTES.PRACTITIONER.DEVELOPMENT,
   icon: Sparkles,
-  label: "Team Development Studio",
+  label: "Client Development Studio",
 }
 
 /** Job Blueprint — role-scoped routes, one item each. Both already routed. */
@@ -457,18 +464,18 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
   manager: [
     // Team Development Studio is NOT here any more — it is the first entry in
     // MANAGER_NAV_ITEMS as of 2026-09-05. Listing it in both places renders it
-    // twice in the same sidebar. Practitioner and super-admin keep theirs in
-    // Tools, because their main nav is unchanged.
+    // twice in the same sidebar. Super-admin keeps theirs in Tools, because
+    // their main nav is unchanged. The practitioner's left Tools in U9.
     GOALS_STUDIO_ITEM,
     JOB_BLUEPRINT_ITEM_MANAGER,
     INTERVIEW_STUDIO_GROUP_MANAGER,
     CHARACTER_LAB_ITEM_MANAGER,
   ],
   practitioner: [
-    // Not gated on TEAM_DEVELOPMENT_ENABLED: that build flag scopes the manager
-    // PILOT cohort, and gating a second role on another role's pilot flag is
-    // what made this entry vanish from super-admin builds once already.
-    TEAM_DEVELOPMENT_ITEM_PRACTITIONER,
+    // The Client Development Studio is NOT here any more — it leads
+    // PRACTITIONER_NAV_ITEMS since U9, the same move the manager's Studio made
+    // on 2026-09-05. Listing it in both places renders it twice in the same
+    // sidebar.
     GOALS_STUDIO_ITEM,
     JOB_BLUEPRINT_ITEM_PRACTITIONER,
     INTERVIEW_STUDIO_GROUP_PRACTITIONER,
@@ -835,6 +842,13 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
  * by ROLE_PERMISSIONS (see src/types/roles.ts).
  */
 export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
+  // U9 (decision D3): the Studio leads, as the manager's does, and is no longer
+  // in the Tools rollup for this role — an item in both places renders twice,
+  // and the sidebar keys rows by label. Not gated on
+  // VITE_FEATURE_TEAM_DEVELOPMENT: that build flag scopes the manager PILOT
+  // cohort, and the practitioner entry has never been behind it.
+  // My Clients stays below until U11 folds it into this Studio.
+  TEAM_DEVELOPMENT_ITEM_PRACTITIONER,
   { to: ROUTES.PRACTITIONER.HOME, icon: Home, label: "Practitioner Home" },
   // Uses the standard My Workspace Meridian chat surface (/meridian/chat — the
   // v2 six-tile-rail experience), not a practitioner-specific copy.
