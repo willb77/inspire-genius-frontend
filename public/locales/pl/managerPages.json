@@ -509,6 +509,42 @@
     "score": "Wynik",
     "status": "Status"
   },
+  "memberSharing": {
+    "ariaLabel": "Co {{name}} Ci udostępnia: {{state}}",
+    "notAsked": "Nie poproszono",
+    "awaiting": "Oczekuje na odpowiedź",
+    "shared": "Udostępnione: {{what}}",
+    "declined": "Odmówiono",
+    "withdrawn": "Wycofano",
+    "termEnded": "Okres zakończony",
+    "noAccount": "Brak konta",
+    "notKnown": "Nieznane",
+    "hintNotAsked": "Nie poproszono jeszcze tej osoby o udostępnienie czegokolwiek.",
+    "hintAwaiting": "Poproszono. Ta osoba jeszcze nie odpowiedziała.",
+    "hintShared": "To, co ta osoba udostępnia Ci teraz.",
+    "hintDeclined": "Ta osoba odmówiła. Nie ponosi z tego powodu żadnych konsekwencji.",
+    "hintWithdrawn": "Ta osoba wycofała to, co Ci udostępniła.",
+    "hintTermEnded": "Udostępnienie dobiegło końca swojego okresu.",
+    "hintNoAccount": "Nie znamy konta InspiresGenius tej osoby, więc nie ma kogo zapytać.",
+    "hintNotKnown": "Nie udało się odczytać, co ta osoba Ci udostępnia.",
+    "filter": "Udostępnianie",
+    "filterAll": "Wszystkie udostępnienia",
+    "filterShared": "Udostępnione Tobie",
+    "category": {
+      "prism": "PRISM",
+      "engagement": "Zaangażowanie",
+      "topics": "Tematy",
+      "artefacts": "Dokumenty",
+      "goals": "Cele",
+      "assessments": "Oceny",
+      "interviews": "Rozmowy",
+      "development": "Rozwój",
+      "other": "Inne"
+    }
+  },
+  "developmentStudioEngagement": {
+    "label": "Zaangażowanie"
+  },
   "memberDevelopmentWorkspace": {
     "askedTheyDecideAndDeclining": "Wysłano prośbę. Decyzja należy do tej osoby, a odmowa nic jej nie kosztuje.",
     "thatDidnTSendNothing": "Nie udało się wysłać — o nic nie poproszono. Spróbuj ponownie za chwilę.",

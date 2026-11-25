@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom"
-import { Briefcase, TrendingUp } from "lucide-react"
+import { Briefcase, Share2, TrendingUp } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -16,6 +16,101 @@ import { ConfidenceDot } from "./ConfidenceDot"
 import { useDevSkin } from "./skin"
 import { useTranslation } from "react-i18next"
 import { withPrism } from "@/lib/withPrism"
+import {
+  chipContradictsCard,
+  gatedFieldsShown,
+  isKnownCategory,
+  sharingDisplay,
+  type SharingDisplay,
+} from "./rosterSharing"
+
+type TFn = ReturnType<typeof useTranslation>["t"]
+
+/*
+ * Literal `t()` calls on purpose: the managerPages i18n guard matches each key
+ * to its English default in the source, so a key built at runtime would read
+ * as an orphan.
+ */
+function sharingLabel(t: TFn, display: SharingDisplay, what: string): string {
+  switch (display) {
+    case "not_asked": return t("memberSharing.notAsked", { defaultValue: "Not asked" })
+    case "awaiting": return t("memberSharing.awaiting", { defaultValue: "Awaiting reply" })
+    case "shared": return t("memberSharing.shared", { defaultValue: "Shared: {{what}}", what })
+    case "declined": return t("memberSharing.declined", { defaultValue: "Declined" })
+    case "withdrawn": return t("memberSharing.withdrawn", { defaultValue: "Withdrawn" })
+    case "term_ended": return t("memberSharing.termEnded", { defaultValue: "Term ended" })
+    case "no_account": return t("memberSharing.noAccount", { defaultValue: "No account" })
+    case "not_known": return t("memberSharing.notKnown", { defaultValue: "Not known" })
+  }
+}
+
+function sharingHint(t: TFn, display: SharingDisplay): string {
+  switch (display) {
+    case "not_asked": return t("memberSharing.hintNotAsked", { defaultValue: "You have not asked this person to share anything yet." })
+    case "awaiting": return t("memberSharing.hintAwaiting", { defaultValue: "You asked. They have not answered yet." })
+    case "shared": return t("memberSharing.hintShared", { defaultValue: "What they share with you now." })
+    case "declined": return t("memberSharing.hintDeclined", { defaultValue: "They declined. That costs them nothing." })
+    case "withdrawn": return t("memberSharing.hintWithdrawn", { defaultValue: "They withdrew what they had shared with you." })
+    case "term_ended": return t("memberSharing.hintTermEnded", { defaultValue: "What they shared ran to the end of its term." })
+    case "no_account": return t("memberSharing.hintNoAccount", { defaultValue: "No InspiresGenius account is known for this person, so there is nobody to ask." })
+    case "not_known": return t("memberSharing.hintNotKnown", { defaultValue: "What this person shares with you could not be read." })
+  }
+}
+
+/** Every grantable category has words; anything else reads "Other", never its key. */
+function categoryLabel(t: TFn, key: string): string {
+  if (!isKnownCategory(key)) return t("memberSharing.category.other", { defaultValue: "Other" })
+  switch (key) {
+    case "prism": return t("memberSharing.category.prism", { defaultValue: "PRISM" })
+    case "engagement": return t("memberSharing.category.engagement", { defaultValue: "Engagement" })
+    case "topics": return t("memberSharing.category.topics", { defaultValue: "Topics" })
+    case "artefacts": return t("memberSharing.category.artefacts", { defaultValue: "Documents" })
+    case "goals": return t("memberSharing.category.goals", { defaultValue: "Goals" })
+    case "assessments": return t("memberSharing.category.assessments", { defaultValue: "Assessments" })
+    case "interviews": return t("memberSharing.category.interviews", { defaultValue: "Interviews" })
+    case "development": return t("memberSharing.category.development", { defaultValue: "Development" })
+  }
+}
+
+/**
+ * U6c — what this person shares with the viewer, from the roster's `sharing`
+ * field and nothing else. See rosterSharing.ts for the state table and the
+ * rule that decides when the chip is left off.
+ */
+function SharingChip({
+  display,
+  categories,
+  name,
+}: {
+  display: SharingDisplay
+  categories: readonly string[]
+  name: string
+}) {
+  const { t } = useTranslation("managerPages")
+  const what = categories
+    .map((c) => categoryLabel(t, c))
+    .filter((v, i, all) => all.indexOf(v) === i)
+    .join(", ")
+  const label = sharingLabel(t, display, what)
+  const tone =
+    display === "shared"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : display === "awaiting"
+        ? "border-amber-200 bg-amber-50 text-amber-800"
+        : "border-slate-200 bg-slate-50 text-slate-700"
+  return (
+    <span
+      className={cn("inline-flex max-w-full items-center gap-1 self-start rounded-full border px-2 py-0.5 text-[11px] font-medium", tone)}
+      title={sharingHint(t, display)}
+      aria-label={t("memberSharing.ariaLabel", { defaultValue: "What {{name}} shares with you: {{state}}", name, state: label })}
+      data-testid="member-card-sharing"
+      data-sharing={display}
+    >
+      <Share2 className="h-3 w-3 shrink-0" aria-hidden="true" />
+      <span className="truncate">{label}</span>
+    </span>
+  )
+}
 
 function initials(name: string): string {
   return name
@@ -92,6 +187,12 @@ export type MemberCardProps = {
    * the main way in, was the one link that did not take it.
    */
   memberRoute?: string
+  /**
+   * U6c — true when the server's grant read worked for this roster (at least
+   * one card carries a `sharing` block). Only then may a `null` block on a
+   * minted id read "No account"; otherwise it reads "Not known".
+   */
+  sharingReadWorked?: boolean
 }
 
 /**
@@ -102,6 +203,7 @@ export function MemberCard({
   member,
   onInvite,
   memberRoute = ROUTES.MANAGER.DEVELOPMENT_MEMBER,
+  sharingReadWorked = false,
 }: MemberCardProps) {
   const { t } = useTranslation("managerPages")
   const navigate = useNavigate()
@@ -111,6 +213,21 @@ export function MemberCard({
 
   const headline = member.reconciledHeadline
   const needsPrism = !member.coverage.prism
+
+  // U6c, task 4. Until U6d (server-side, switch off by default) stops the
+  // server sending a PRISM tick, headline or top match for a person who does
+  // not share them, a chip saying they share nothing would sit beside exactly
+  // those fields. When it would, the card is shown as today with no chip. The
+  // fit-engine line (flag on) is not counted: the server renders it only for
+  // `state: "ok"`, which it refuses unless PRISM and development are shared.
+  const sharing = sharingDisplay(member, sharingReadWorked)
+  const granted = member.sharing?.grantedCategories ?? []
+  const shownGated = gatedFieldsShown(
+    member.coverage,
+    headline,
+    !FIT_ENGINE_MATCHES_ENABLED && Boolean(member.topMatch),
+  )
+  const showSharingChip = !chipContradictsCard(sharing, granted, shownGated)
 
   return (
     <Card
@@ -152,6 +269,10 @@ export function MemberCard({
           ) : null}
         </div>
       </div>
+
+      {showSharingChip ? (
+        <SharingChip display={sharing} categories={sharing === "shared" ? granted : []} name={member.name} />
+      ) : null}
 
       <CoverageChips
         coverage={member.coverage}

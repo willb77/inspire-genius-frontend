@@ -440,6 +440,31 @@ export type RosterMember = {
   planStatus: PlanStatus
   milestoneProgress?: number
   topMatch?: Pick<CareerMatch, "title" | "fitScore">
+  /**
+   * TDS-11: true when the id names an account in the caller's organisation,
+   * false for a minted roster-local id, null when the server could not tell.
+   * Mirrors growth-service `schemas.RosterMember.identity_resolved`.
+   */
+  identityResolved?: boolean | null
+  /**
+   * TDS-U6b: what this member shares with the CALLER right now. `null` (or
+   * absent, on an older backend) means NOT KNOWN — never "nothing shared";
+   * that answer is `state: "none"`. Mirrors growth-service `RosterSharing`.
+   */
+  sharing?: RosterSharing | null
+}
+
+/** growth-service `SharingState`. The server derives it; the browser never does. */
+export type RosterSharingState = "none" | "pending" | "granted" | "declined" | "revoked" | "expired"
+
+/** growth-service `schemas.RosterSharing` (TDS-U6b). */
+export type RosterSharing = {
+  state: RosterSharingState
+  /** Only categories live at read time (granted, not revoked, not expired). */
+  grantedCategories: string[]
+  expiresAt?: string | null
+  requestedAt?: string | null
+  canRequest: boolean
 }
 
 /** Provenance record for the "who produced what" audit affordance. */
