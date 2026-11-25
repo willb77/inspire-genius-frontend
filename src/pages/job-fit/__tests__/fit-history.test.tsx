@@ -123,12 +123,14 @@ describe("FitHistoryPanel", () => {
 })
 
 describe("FitHistoryPage", () => {
-  it("reopens a role breakdown with the shared block and the recorded engine", () => {
+  it("reopens a role breakdown with the shared block and the recorded date", () => {
     mockSnapshot.mockReturnValue({ data: { ...ROWS[0], engineVersion: "ig-blueprint-scoring 0.1.0; scheme=mean-gap", payload: DETAIL }, isLoading: false, isError: false })
     routed(<FitHistoryPage />, "/vertical/job-fit/history/s1")
     expect(mockSnapshot).toHaveBeenCalledWith("s1")
     expect(screen.getByRole("heading", { name: "Ops Lead" })).toBeInTheDocument()
-    expect(screen.getByText(/scheme=mean-gap/)).toBeInTheDocument()
+    // Walk F-W3-3: the engine id is for super-admins only (fit-report-engine-admin-only.test.tsx).
+    expect(screen.getByText(/^Recorded /)).toBeInTheDocument()
+    expect(screen.queryByText(/scheme=mean-gap/)).toBeNull()
     expect(screen.getByText("77")).toBeInTheDocument()
     expect(screen.getByTestId("radar")).toBeInTheDocument()
     expect(screen.getByText("Where you stand, dimension by dimension")).toBeInTheDocument()

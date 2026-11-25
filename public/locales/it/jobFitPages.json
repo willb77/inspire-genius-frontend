@@ -445,7 +445,8 @@
     "recorded": "Registrato {{when}} · {{engine}}",
     "rolesRanked": "Ruoli come classificati quel giorno",
     "savedReport": "Report salvato",
-    "yourRoleMatches": "I tuoi ruoli compatibili"
+    "yourRoleMatches": "I tuoi ruoli compatibili",
+    "recordedAt": "Registrato {{when}}"
   },
   "fitHistoryPanel": {
     "empty": "Ancora nessun report di compatibilità. Ogni compatibilità con un ruolo che apri e ogni report che salvi viene conservato qui.",

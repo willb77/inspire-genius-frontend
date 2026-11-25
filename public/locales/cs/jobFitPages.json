@@ -497,7 +497,8 @@
     "recorded": "Zaznamenáno {{when}} · {{engine}}",
     "rolesRanked": "Role seřazené v ten den",
     "savedReport": "Uložená zpráva",
-    "yourRoleMatches": "Vaše shody s rolemi"
+    "yourRoleMatches": "Vaše shody s rolemi",
+    "recordedAt": "Zaznamenáno {{when}}"
   },
   "pathwayPage": {
     "adjacentRoles": "Související role",

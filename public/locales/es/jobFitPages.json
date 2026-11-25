@@ -325,7 +325,8 @@
     "recorded": "Registrado {{when}} · {{engine}}",
     "rolesRanked": "Roles según su clasificación ese día",
     "savedReport": "Informe guardado",
-    "yourRoleMatches": "Tus coincidencias de roles"
+    "yourRoleMatches": "Tus coincidencias de roles",
+    "recordedAt": "Registrado {{when}}"
   },
   "fitHistoryPanel": {
     "empty": "Aún no hay informes de ajuste. Cada ajuste de rol que abras y cada informe que guardes se conserva aquí.",

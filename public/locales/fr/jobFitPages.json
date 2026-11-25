@@ -421,7 +421,8 @@
     "recorded": "Enregistré {{when}} · {{engine}}",
     "rolesRanked": "Postes classés ce jour-là",
     "savedReport": "Rapport enregistré",
-    "yourRoleMatches": "Vos correspondances de postes"
+    "yourRoleMatches": "Vos correspondances de postes",
+    "recordedAt": "Enregistré {{when}}"
   },
   "fitHistoryPanel": {
     "empty": "Aucun rapport d'adéquation pour l'instant. Chaque adéquation de poste que vous ouvrez et chaque rapport que vous enregistrez sont conservés ici.",
