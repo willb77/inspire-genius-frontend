@@ -2,7 +2,9 @@
  * Memory retention settings card.
  *
  * Renders inside super-admin, manager, and company-admin Settings pages.
- * Each role sees the scopes it can write (gated by the backend):
+ * Each role is offered only the scopes it can write
+ * (RETENTION_WRITE_SCOPES_BY_ROLE, mirroring the backend gate); a role with
+ * none does not see the card:
  *   - super-admin   → all scopes (system, org, manager, user)
  *   - company-admin → org / manager / user
  *   - manager       → user (their direct reports)
@@ -47,7 +49,7 @@ import type {
   RetentionTier,
 } from "@/services/retention/retentionService";
 import { useAuth } from "@/context/useAuth";
-import { ROLES } from "@/constants/routes";
+import { retentionWriteScopes } from "@/constants/retentionScopes";
 import { useTranslation } from "react-i18next";
 
 const ALL_TIERS: { value: RetentionTier; label: string; help: string }[] = [
@@ -74,15 +76,6 @@ const ALL_TIERS: { value: RetentionTier; label: string; help: string }[] = [
   },
 ];
 
-const SCOPE_OPTIONS_BY_ROLE: Record<string, RetentionScope[]> = {
-  "super-admin": ["system", "org", "manager", "user"],
-  "company-admin": ["org", "manager", "user"],
-  manager: ["user"],
-  practitioner: ["user"],
-  user: [],
-  distributor: [],
-};
-
 type Draft = {
   scope: RetentionScope;
   scope_id: string;
@@ -102,17 +95,17 @@ const EMPTY_DRAFT: Draft = {
 export default function RetentionSettings() {
   const { t } = useTranslation("accountUi")
   const { user } = useAuth();
-  const role = (user?.role ?? "user").toLowerCase();
-  const canWriteAnyScope = SCOPE_OPTIONS_BY_ROLE[role]?.length ?? 0;
-  const scopeOptions = useMemo<RetentionScope[]>(
-    () => SCOPE_OPTIONS_BY_ROLE[role] ?? [],
-    [role],
+  const scopeOptions = useMemo<readonly RetentionScope[]>(
+    () => retentionWriteScopes(user?.role),
+    [user?.role],
   );
 
-  const [draft, setDraft] = useState<Draft>(() => ({
-    ...EMPTY_DRAFT,
-    scope: scopeOptions[0] ?? "system",
-  }));
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  // The role can arrive after first render, so never trust a stored scope the
+  // role may not write: fall back to the first scope it may.
+  const effectiveScope: RetentionScope = scopeOptions.includes(draft.scope)
+    ? draft.scope
+    : (scopeOptions[0] ?? draft.scope);
 
   const policiesQuery = useRetentionPolicies();
   const upsert = useUpsertRetentionPolicy();
@@ -121,18 +114,18 @@ export default function RetentionSettings() {
   const policies = policiesQuery.data ?? [];
 
   const handleSave = () => {
-    if (!scopeOptions.includes(draft.scope)) {
-      toast.error(t("retentionSettings.yourRoleCannotWriteAtScope", { defaultValue: "Your role cannot write at scope={{scope}}.", scope: draft.scope }));
+    if (!scopeOptions.includes(effectiveScope)) {
+      toast.error(t("retentionSettings.yourRoleCannotWriteAtScope", { defaultValue: "Your role cannot write at scope={{scope}}.", scope: effectiveScope }));
       return;
     }
-    if (draft.scope !== "system" && !draft.scope_id.trim()) {
+    if (effectiveScope !== "system" && !draft.scope_id.trim()) {
       toast.error(t("retentionSettings.scopeIdIsRequiredForNon", { defaultValue: "Scope ID is required for non-system scopes." }));
       return;
     }
     upsert.mutate(
       {
-        scope: draft.scope,
-        scope_id: draft.scope === "system" ? null : draft.scope_id.trim(),
+        scope: effectiveScope,
+        scope_id: effectiveScope === "system" ? null : draft.scope_id.trim(),
         memory_tier: draft.memory_tier,
         retention_days: draft.retention_days,
         archive_to_s3: draft.archive_to_s3,
@@ -165,8 +158,8 @@ export default function RetentionSettings() {
     });
   };
 
-  if (canWriteAnyScope === 0 && role !== ROLES.USER) {
-    // Roles with zero permitted scopes don't see the card at all.
+  if (scopeOptions.length === 0) {
+    // A role that may write no scope does not see the card at all.
     return null;
   }
 
@@ -252,7 +245,7 @@ export default function RetentionSettings() {
               <div>
                 <Label className="text-xs">{t("retentionSettings.scope", { defaultValue: "Scope" })}</Label>
                 <Select
-                  value={draft.scope}
+                  value={effectiveScope}
                   onValueChange={(v) =>
                     setDraft((d) => ({ ...d, scope: v as RetentionScope }))
                   }
@@ -273,12 +266,12 @@ export default function RetentionSettings() {
               {/* Scope ID */}
               <div>
                 <Label className="text-xs" htmlFor="retention-scope-id">
-                  {t("retentionSettings.scopeId", { defaultValue: "Scope ID" })} {draft.scope === "system" && t("retentionSettings.unusedForSystemScope", { defaultValue: "(unused for system scope)" })}
+                  {t("retentionSettings.scopeId", { defaultValue: "Scope ID" })} {effectiveScope === "system" && t("retentionSettings.unusedForSystemScope", { defaultValue: "(unused for system scope)" })}
                 </Label>
                 <Input
                   id="retention-scope-id"
-                  value={draft.scope === "system" ? "" : draft.scope_id}
-                  disabled={draft.scope === "system"}
+                  value={effectiveScope === "system" ? "" : draft.scope_id}
+                  disabled={effectiveScope === "system"}
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, scope_id: e.target.value }))
                   }
