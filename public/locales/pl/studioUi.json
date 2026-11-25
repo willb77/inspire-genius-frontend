@@ -163,7 +163,9 @@
       "candidateNameOptional": "Imię i nazwisko kandydata (opcjonalnie)",
       "interviewFocusOptional": "Cel rozmowy (opcjonalnie)",
       "runMaven": "Uruchom Maven",
-      "reset": "Resetuj"
+      "reset": "Resetuj",
+      "prepFailedTitle": "Maven nie mógł przygotować pytań. Nic nie zostało wygenerowane.",
+      "prepFailedHint": "Spróbuj ponownie. Jeśli błąd się powtarza, poproś administratora o sprawdzenie, czy Twoje konto może korzystać z przygotowania do rozmowy."
     }
   },
   "lumen": {

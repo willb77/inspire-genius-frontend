@@ -181,7 +181,9 @@
       "candidateNameOptional": "Nom du candidat (facultatif)",
       "interviewFocusOptional": "Axe de l'entretien (facultatif)",
       "runMaven": "Lancer Maven",
-      "reset": "Réinitialiser"
+      "reset": "Réinitialiser",
+      "prepFailedTitle": "Maven n'a pas pu préparer les questions. Rien n'a été généré.",
+      "prepFailedHint": "Réessayez. Si l'échec persiste, demandez à votre administrateur de vérifier que votre compte peut utiliser la préparation d'entretien."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Correspondance générée.",

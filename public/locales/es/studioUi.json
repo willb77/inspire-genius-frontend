@@ -181,7 +181,9 @@
       "candidateNameOptional": "Nombre del candidato (opcional)",
       "interviewFocusOptional": "Enfoque de la entrevista (opcional)",
       "runMaven": "Ejecutar Maven",
-      "reset": "Restablecer"
+      "reset": "Restablecer",
+      "prepFailedTitle": "Maven no pudo preparar las preguntas. No se generó nada.",
+      "prepFailedHint": "Inténtalo de nuevo. Si sigue fallando, pide a tu administrador que compruebe que tu cuenta puede usar la preparación de entrevistas."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Coincidencia generada.",
