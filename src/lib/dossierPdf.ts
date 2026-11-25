@@ -74,7 +74,13 @@ export function exportDossierPdf(dossier: MemberDossier): void {
     dossier.gaps.forEach((g) => line(`• ${g.competency}`, 11, false, 15))
   }
 
-  if (dossier.matches?.length) {
+  // D-06: the matches are PRISM-derived fit scores. A dossier redacted for a
+  // caller without the member's PRISM says so here, and prints none of them
+  // even if an older backend still sent the list.
+  if (dossier.prismNotShared) {
+    heading("Career & job matches")
+    line("Not shared with you.", 10, false, 14)
+  } else if (dossier.matches?.length) {
     heading("Career & job matches")
     dossier.matches.forEach((m) => line(`• ${m.title} — ${Math.round(m.fitScore)}% fit`, 11, false, 15))
   }

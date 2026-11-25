@@ -47,4 +47,11 @@ describe("GapAnalysisPanel", () => {
     ).toBeInTheDocument()
     expect(screen.getByText(/No target roles available yet/i)).toBeInTheDocument()
   })
+
+  it("D-06: with the matches withheld with the PRISM, the picker says 'not shared', not 'none yet'", () => {
+    renderWith(<GapAnalysisPanel memberId="m-1" matches={[]} matchesNotShared />)
+    expect(screen.getByTestId("gap-targets-not-shared")).toHaveTextContent(/haven't been shared with you/i)
+    expect(screen.queryByText(/No target roles available yet/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/James assessment/i)).not.toBeInTheDocument()
+  })
 })

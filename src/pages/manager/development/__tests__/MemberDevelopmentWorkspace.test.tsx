@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import "@testing-library/jest-dom"
 
-import type { MemberDossier } from "@/types/development"
+import type { CareerMatch, MemberDossier } from "@/types/development"
 
 // The workspace is a shell: it loads the dossier, picks a tab from `?tab=`,
 // and hands each panel what it needs. The panels are probes here — what they
@@ -84,7 +84,10 @@ import { toast } from "sonner"
 
 /* ---- panels as probes ---- */
 type Captured = Record<string, unknown>
-const received: { profile?: Captured; studio?: Captured; meridian?: Captured; notes?: Captured } = {}
+const received: {
+  profile?: Captured; studio?: Captured; meridian?: Captured; notes?: Captured
+  careers?: Captured; gaps?: Captured
+} = {}
 
 jest.mock("@/components/manager/development/tabs/BehavioralProfilePanel", () => ({
   BehavioralProfilePanel: (props: Captured) => {
@@ -117,13 +120,19 @@ jest.mock("@/components/manager/development/tabs/GoalsPanel", () => ({
   GoalsPanel: () => <div data-testid="goals-panel" />,
 }))
 jest.mock("@/components/manager/development/tabs/GapAnalysisPanel", () => ({
-  GapAnalysisPanel: () => <div data-testid="gaps-panel" />,
+  GapAnalysisPanel: (props: Captured) => {
+    received.gaps = props
+    return <div data-testid="gaps-panel" />
+  },
 }))
 jest.mock("@/components/manager/development/tabs/LearningPlanPanel", () => ({
   LearningPlanPanel: () => <div data-testid="learning-panel" />,
 }))
 jest.mock("@/components/manager/development/tabs/CareerMatchPanel", () => ({
-  CareerMatchPanel: () => <div data-testid="careers-panel" />,
+  CareerMatchPanel: (props: Captured) => {
+    received.careers = props
+    return <div data-testid="careers-panel" />
+  },
 }))
 jest.mock("@/components/manager/development/tabs/FitEngineMatchPanel", () => ({
   FitEngineMatchPanel: (props: { result?: { state: string } }) => (
@@ -203,6 +212,8 @@ beforeEach(() => {
   received.studio = undefined
   received.meridian = undefined
   received.notes = undefined
+  received.careers = undefined
+  received.gaps = undefined
   dossierState = { data: undefined, isLoading: true, isError: false }
   mockFitEngineFlag = false
   mockFitCalls.length = 0
@@ -254,6 +265,48 @@ describe("MemberDevelopmentWorkspace — shell states", () => {
     expect(screen.getByText("Couldn't load this member's dossier.")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Back to roster" }))
     expect(screen.getByText("manager roster")).toBeInTheDocument()
+  })
+})
+
+describe("MemberDevelopmentWorkspace — career matches go with the PRISM (D-06)", () => {
+  const MATCH: CareerMatch = {
+    matchId: "c1", memberId: "m-1", kind: "internal", title: "LEAK-SENTINEL", fitScore: 91,
+    classification: "strong_fit", rationale: "r", blueprintId: "bp-1",
+  }
+
+  it("PRISM shared: the Careers tab and the gap picker get the matches, unflagged", async () => {
+    dossierState = { data: dossier({ matches: [MATCH] }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=careers")
+    await screen.findByTestId("careers-panel")
+    expect(received.careers?.internal).toEqual([MATCH])
+    expect(received.careers?.notShared).toBeFalsy()
+    renderAt("/manager/development/m-1?tab=gaps")
+    await screen.findByTestId("gaps-panel")
+    expect(received.gaps?.matches).toEqual([MATCH])
+    expect(received.gaps?.matchesNotShared).toBe(false)
+  })
+
+  it("PRISM not shared: the Careers tab is told 'not shared' and handed no match", async () => {
+    // A match left in beside the flag, as an older backend would send it.
+    dossierState = { data: dossier({ prismNotShared: true, matches: [MATCH] }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=careers")
+    await screen.findByTestId("careers-panel")
+    expect(received.careers).toMatchObject({ notShared: true, internal: [], external: [] })
+  })
+
+  it("PRISM not shared: the gap picker is told why it is empty, and its gaps are not flagged", async () => {
+    dossierState = { data: dossier({ prismNotShared: true, matches: [MATCH] }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=gaps")
+    await screen.findByTestId("gaps-panel")
+    expect(received.gaps).toMatchObject({ matches: [], matchesNotShared: true })
+    expect(received.gaps?.notShared).toBeFalsy()
+  })
+
+  it("development not shared still flags the Careers tab, as before", async () => {
+    dossierState = { data: dossier({ developmentNotShared: true }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=careers")
+    await screen.findByTestId("careers-panel")
+    expect(received.careers?.notShared).toBe(true)
   })
 })
 
