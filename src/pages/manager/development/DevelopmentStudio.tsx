@@ -56,7 +56,17 @@ import {
  */
 const ENGAGEMENT_ROUTE = ROUTES.MANAGER.STUDENTS
 
-type CoverageFilter = "all" | "complete" | "partial" | "none"
+/**
+ * U2 — the "Coverage" filter asks one question: has this person taken PRISM?
+ *
+ * It used to count PRISM, CliftonStrengths and DISC and offer "Complete (3/3)",
+ * "Partial" and "No assessments". The platform has no way to invite anyone to
+ * CliftonStrengths or DISC, so 3/3 was a state nobody could reach and every
+ * member with PRISM alone read as "Partial". Decision D5 (2026-11-24): both are
+ * dropped from the Studio's filters, and still shown on a card where a member
+ * has them (CoverageChips is untouched).
+ */
+type CoverageFilter = "all" | "has_prism" | "no_prism"
 type SortKey = "readiness" | "activity"
 
 const PLAN_ORDER: Record<PlanStatus, number> = {
@@ -67,13 +77,16 @@ const PLAN_ORDER: Record<PlanStatus, number> = {
   no_plan: 4,
 }
 
-function coverageCount(m: RosterMember): number {
-  return [m.coverage.prism, m.coverage.clifton, m.coverage.disc].filter(Boolean).length
+function hasPrism(m: RosterMember): boolean {
+  return Boolean(m.coverage.prism)
 }
 
 function readinessScore(m: RosterMember): number {
-  // Simple client-side ordering signal: coverage + milestone progress + top match.
-  return coverageCount(m) * 20 + (m.milestoneProgress ?? 0) / 2 + (m.topMatch?.fitScore ?? 0) / 4
+  // Simple client-side ordering signal: PRISM taken + milestone progress + top
+  // match. CliftonStrengths and DISC no longer add to it (U2, D5): a member who
+  // happens to have them is not "readier" than one with PRISM alone, and no
+  // member can be invited to them here.
+  return (hasPrism(m) ? 20 : 0) + (m.milestoneProgress ?? 0) / 2 + (m.topMatch?.fitScore ?? 0) / 4
 }
 
 function lastActivity(m: RosterMember): number {
@@ -175,12 +188,7 @@ export default function DevelopmentStudio({
       )
     }
     if (coverage !== "all") {
-      rows = rows.filter((m) => {
-        const c = coverageCount(m)
-        if (coverage === "complete") return c === 3
-        if (coverage === "none") return c === 0
-        return c > 0 && c < 3
-      })
+      rows = rows.filter((m) => (coverage === "has_prism" ? hasPrism(m) : !hasPrism(m)))
     }
     if (plan !== "all") rows = rows.filter((m) => m.planStatus === plan)
     if (department !== "all") rows = rows.filter((m) => m.department === department)
@@ -289,10 +297,9 @@ export default function DevelopmentStudio({
               <SelectValue placeholder={t("dev.studio.filter.coverage")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{tm("developmentStudio.allCoverage", { defaultValue: "All coverage" })}</SelectItem>
-              <SelectItem value="complete">{tm("developmentStudio.complete33", { defaultValue: "Complete (3/3)" })}</SelectItem>
-              <SelectItem value="partial">{tm("developmentStudio.partial", { defaultValue: "Partial" })}</SelectItem>
-              <SelectItem value="none">{tm("developmentStudio.noAssessments", { defaultValue: "No assessments" })}</SelectItem>
+              <SelectItem value="all">{tm("developmentStudio.prismAll", { defaultValue: "PRISM: all" })}</SelectItem>
+              <SelectItem value="has_prism">{tm("developmentStudio.hasPrism", { defaultValue: "Has PRISM" })}</SelectItem>
+              <SelectItem value="no_prism">{tm("developmentStudio.prismNotTaken", { defaultValue: "PRISM not taken" })}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={plan} onValueChange={(v) => setPlan(v as PlanStatus | "all")}>

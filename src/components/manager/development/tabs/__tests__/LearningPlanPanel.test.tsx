@@ -1,11 +1,10 @@
 /** @jest-environment jsdom */
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { render, screen } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import "@testing-library/jest-dom"
 
 import { LearningPlanPanel } from "../LearningPlanPanel"
-import { ROUTES } from "@/constants/routes"
 import type { DevelopmentGap, LearningItem, SummitGoal } from "@/types/development"
 
 // Props plus `useNavigate`, plus — since TDS-4a gave the tab a write —
@@ -22,7 +21,6 @@ function renderWith(ui: React.ReactElement) {
       <MemoryRouter initialEntries={["/manager/development/m-1"]}>
         <Routes>
           <Route path="/manager/development/:id" element={ui} />
-          <Route path={ROUTES.MANAGER.TRAINING} element={<div>training surface</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -145,22 +143,14 @@ describe("LearningPlanPanel", () => {
     expect(screen.getByText(/Pacing note:/i)).toBeInTheDocument()
   })
 
-  // TDS-4a: the label was "Assign", which the click never did — it navigates.
-  // The navigation is the behaviour; the word was the only thing that changed.
-  it("Assign in Training navigates to the manager training surface", () => {
-    renderWith(<LearningPlanPanel memberId="m-1" learning={[items[0]]} gaps={gaps} goals={goals} />)
-    const row = screen.getByText("Delegation for new managers").closest("div.rounded-lg") as HTMLElement
-    fireEvent.click(within(row).getByRole("button", { name: "Assign in Training" }))
-    expect(screen.getByText("training surface")).toBeInTheDocument()
+  // TDS-U8 (decision D4): "Assign in Training" opened a sample-data page that
+  // now redirects back to the Studio, so it is gone until a real training
+  // surface exists. The rest of the row — progress, its save, complete — stays.
+  it("offers no Assign in Training, while the row keeps its own controls", () => {
+    renderWith(<LearningPlanPanel memberId="m-1" learning={items} gaps={gaps} goals={goals} />)
+    expect(screen.getByText("Delegation for new managers")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /assign/i })).not.toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: "Save progress" })).toHaveLength(items.length)
   })
 
-  // There is no practitioner training surface, and /manager/training bounces a
-  // practitioner to their home page. The rest of the row must still be there.
-  it("does not offer Assign in Training to a practitioner", () => {
-    renderWith(
-      <LearningPlanPanel memberId="m-1" learning={[items[0]]} gaps={gaps} goals={goals} audience="practitioner" />,
-    )
-    expect(screen.getByText("Delegation for new managers")).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "Assign in Training" })).not.toBeInTheDocument()
-  })
 })

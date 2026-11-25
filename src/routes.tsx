@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { ROUTES } from "@/constants/routes";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { isNewHomeEnabled, isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
 // Eager, not lazy: the shell is the entitlement gate for a vertical route
@@ -132,24 +133,15 @@ const HitlDashboard = React.lazy(() => import("@/pages/super-admin/trainer/HitlD
 
 // ── Manager pages ───────────────────────────────────────────────────────────
 const ManagerDashboard = React.lazy(() => import("@/pages/manager/DashboardSwitch"));
-const ManagerTeam = React.lazy(() => import("@/pages/manager/Team"));
 const ManagerJoinRequests = React.lazy(() => import("@/pages/manager/JoinRequests"));
-const ManagerHiring = React.lazy(() => import("@/pages/manager/Hiring"));
-const ManagerCandidates = React.lazy(() => import("@/pages/manager/Candidates"));
 const ManagerInterviews = React.lazy(() => import("@/pages/manager/Interviews"));
 const ManagerJobDna = React.lazy(() => import("@/pages/manager/JobDna"));
-const ManagerTraining = React.lazy(() => import("@/pages/manager/Training"));
-const ManagerCareerManagement = React.lazy(() => import("@/pages/manager/CareerManagement"));
-const ManagerTeamBuilding = React.lazy(() => import("@/pages/manager/TeamBuilding"));
-const ManagerLeadership = React.lazy(() => import("@/pages/manager/Leadership"));
 // Team Development Studio (behind VITE_FEATURE_TEAM_DEVELOPMENT)
 const DevelopmentStudio = React.lazy(() => import("@/pages/manager/development/DevelopmentStudio"));
 const MemberDevelopmentWorkspace = React.lazy(() => import("@/pages/manager/development/MemberDevelopmentWorkspace"));
-const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
 const StudentRoster = React.lazy(() => import("@/pages/manager/StudentRoster"));
 const ManagerStudentCareerExercise = React.lazy(() => import("@/pages/manager/career-exercise/StudentCareerExercisePage"));
 const WorkspaceSettings = React.lazy(() => import("@/pages/workspace/SettingsPage"));
-const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
 const ManagerBulkImport = React.lazy(() => import("@/pages/manager/BulkImport"));
 const ManagerSchedule = React.lazy(() => import("@/pages/manager/Schedule"));
 // Combined Plan §A.E3.4 — task-agent pages.
@@ -714,10 +706,7 @@ export const routes: RouteObject[] = [
       // permanent escape hatch, matching /manager/development.
       { path: "/manager/dashboard", element: withSuspense(<ManagerDashboard />) },
       { path: "/manager/dashboard/classic", element: withSuspense(<ManagerDashboard variant="classic" />) },
-      { path: "/manager/team", element: withSuspense(<ManagerTeam />) },
       { path: "/manager/join-requests", element: withSuspense(<ManagerJoinRequests />) },
-      { path: "/manager/hiring", element: withSuspense(<ManagerHiring />) },
-      { path: "/manager/candidates", element: withSuspense(<ManagerCandidates />) },
       { path: "/manager/interviews", element: withSuspense(<ManagerInterviews />) },
       { path: "/manager/job-dna", element: withSuspense(<ManagerJobDna />) },
       // Combined Plan §A.E3.4 — task-agent pages
@@ -732,6 +721,22 @@ export const routes: RouteObject[] = [
       { path: "/manager/team-fit", element: withSuspense(<WorkspaceTeamFit audience="manager" />) },
       { path: "/manager/character-lab", element: withSuspense(<WorkspaceCharacterLab audience="manager" />) },
       { path: "/manager/team-composition", element: withSuspense(<WorkspaceTeamComposition audience="manager" />) },
+      // TDS-U8 — the nine retired manager pages. Eight showed invented people
+      // behind a "Sample data" banner and were in no menu; /manager/team was the
+      // old roster the Studio replaced. Kept as redirects so a bookmark or an old
+      // link lands on the Studio instead of a 404. The Studio route renders
+      // whatever VITE_FEATURE_TEAM_DEVELOPMENT says (the flag only decides
+      // whether the menu lists it), so this never sends a manager to a page that
+      // will not render. A test per path: routes.integration.test.tsx.
+      { path: "/manager/team", element: <Navigate to={ROUTES.MANAGER.DEVELOPMENT} replace /> },
+      { path: "/manager/hiring", element: <Navigate to={ROUTES.MANAGER.DEVELOPMENT} replace /> },
+      { path: "/manager/candidates", element: <Navigate to={ROUTES.MANAGER.DEVELOPMENT} replace /> },
+      { path: "/manager/training", element: <Navigate to={ROUTES.MANAGER.DEVELOPMENT} replace /> },
+      { path: "/manager/career-mgmt", element: <Navigate to={ROUTES.MANAGER.DEVELOPMENT} replace /> },
+      { path: "/manager/team-building", element: <Navigate to={ROUTES.MANAGER.DEVELOPMENT} replace /> },
+      { path: "/manager/leadership", element: <Navigate to={ROUTES.MANAGER.DEVELOPMENT} replace /> },
+      { path: "/manager/prism-team", element: <Navigate to={ROUTES.MANAGER.DEVELOPMENT} replace /> },
+      { path: "/manager/analytics", element: <Navigate to={ROUTES.MANAGER.DEVELOPMENT} replace /> },
       // Team Development Studio (roster + per-member workspace)
       // Team Development Studio. The page resolves classic vs the HomeV2 look
       // from the `new_user_surfaces` flag internally; /classic forces the
@@ -741,16 +746,10 @@ export const routes: RouteObject[] = [
       { path: "/manager/development/classic", element: withSuspense(<DevelopmentStudio variant="classic" />) },
       { path: "/manager/development/:memberId", element: withSuspense(<MemberDevelopmentWorkspace />) },
       { path: "/manager/development/:memberId/classic", element: withSuspense(<MemberDevelopmentWorkspace variant="classic" />) },
-      { path: "/manager/training", element: withSuspense(<ManagerTraining />) },
-      { path: "/manager/career-mgmt", element: withSuspense(<ManagerCareerManagement />) },
-      { path: "/manager/team-building", element: withSuspense(<ManagerTeamBuilding />) },
-      { path: "/manager/leadership", element: withSuspense(<ManagerLeadership />) },
-      { path: "/manager/prism-team", element: withSuspense(<PrismTeam />) },
       { path: "/manager/students", element: withSuspense(<StudentRoster />) },
       // CX-6 — ROUTES.MANAGER.CAREER_EXERCISE_STUDENT (a test asserts they agree).
       { path: "/manager/career-exercise/:studentId", element: withSuspense(<ManagerStudentCareerExercise />) },
       { path: "/manager/settings", element: withSuspense(<WorkspaceSettings audience="manager" />) },
-      { path: "/manager/analytics", element: withSuspense(<ManagerAnalytics />) },
       { path: "/manager/bulk-import", element: withSuspense(<ManagerBulkImport />) },
       { path: "/manager/schedule", element: withSuspense(<ManagerSchedule />) },
 

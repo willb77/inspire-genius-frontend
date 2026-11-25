@@ -26,6 +26,12 @@ import { useTranslation } from "react-i18next"
  * So the tile renders `null` — an em dash with "not measured yet" — until
  * something actually measures engagement. PRISM outstanding, by contrast, IS
  * real: `prism_color` is null exactly when no PRISM result exists.
+ *
+ * ## The roster links go to the Studio
+ *
+ * TDS-U8: "View roster", "Open roster" and each PRISM-outstanding row open the
+ * Team Development Studio. They used to open `/manager/team`, which is now a
+ * redirect to the same place; linking direct saves the hop.
  */
 export default function ManagerWorkbenchDashboard() {
   const { t } = useTranslation("managerPages")
@@ -60,7 +66,7 @@ export default function ManagerWorkbenchDashboard() {
       meta: t("workbenchDashboard.noPrismResultOnFile", { defaultValue: "No PRISM result on file" }),
       badge: t("workbenchDashboard.prismOutstanding", { defaultValue: "PRISM outstanding" }),
       badgeTone: "muted" as const,
-      href: ROUTES.MANAGER.TEAM,
+      href: ROUTES.MANAGER.DEVELOPMENT,
     }))
 
     // Distinguish "this manager owns nobody" from "the load failed" — the
@@ -77,7 +83,7 @@ export default function ManagerWorkbenchDashboard() {
       greeting: t("workbenchDashboard.goodMorning", { defaultValue: "Good morning, {{firstName}}", firstName }),
       subtitle: t("workbenchDashboard.onYourRosterWithoutA", { defaultValue: "{{length}} on your roster · {{length2}} without a PRISM result.", length: members.length, length2: prismOutstanding.length }),
       actions: [
-        { label: t("workbenchDashboard.viewRoster", { defaultValue: "View roster" }), to: ROUTES.MANAGER.TEAM, variant: "primary" },
+        { label: t("workbenchDashboard.viewRoster", { defaultValue: "View roster" }), to: ROUTES.MANAGER.DEVELOPMENT, variant: "primary" },
         { label: t("workbenchDashboard.teamImport", { defaultValue: "Team import" }), to: ROUTES.MANAGER.BULK_IMPORT, variant: "secondary" },
       ],
       stats: [
@@ -105,7 +111,7 @@ export default function ManagerWorkbenchDashboard() {
       ],
       upcoming: {
         title: t("workbenchDashboard.upcomingCheckIns", { defaultValue: "Upcoming check-ins" }),
-        action: { label: t("workbenchDashboard.openRoster", { defaultValue: "Open roster" }), to: ROUTES.MANAGER.TEAM },
+        action: { label: t("workbenchDashboard.openRoster", { defaultValue: "Open roster" }), to: ROUTES.MANAGER.DEVELOPMENT },
         rows: upcoming,
         emptyMessage: t("workbenchDashboard.nothingIsScheduled", { defaultValue: "Nothing is scheduled." }),
       },
