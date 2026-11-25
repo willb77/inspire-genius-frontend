@@ -33,6 +33,7 @@ import {
   useCreateMilestone,
   useGoalSession,
   useDossierChat,
+  useDossierChatHiddenTurns,
   useSaveChatMessage,
 } from "@/hooks/manager/development"
 import type { Milestone, SummitGoal, DevelopmentGap } from "@/types/development"
@@ -198,6 +199,9 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
 
   // Persisted history so the manager can leave and resume the conversation.
   const { data: history } = useDossierChat(memberId)
+  // D-15: stored turns the server held back because the member withdrew
+  // sharing after they were written. Said, not silently missing.
+  const { data: hiddenTurns } = useDossierChatHiddenTurns(memberId)
   const saveChat = useSaveChatMessage(memberId)
   const saveRef = useRef(saveChat.mutate)
   saveRef.current = saveChat.mutate
@@ -254,6 +258,11 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
   const prismNotSharedLine = prismNotShared
     ? t("meridianDevelopmentPanel.prismNotShared", { defaultValue: "{{name}} has not shared their PRISM profile with you, so Meridian is not grounded in it.", name: memberName || t("meridianDevelopmentPanel.thisMember", { defaultValue: "This member" }) })
     : null
+
+  const historyHiddenLine =
+    hiddenTurns && hiddenTurns > 0
+      ? t("meridianDevelopmentPanel.historyHidden", { defaultValue: "Earlier messages are hidden because {{name}} has since stopped sharing with you. They may quote what was shared then.", name: memberName || t("meridianDevelopmentPanel.thisMember", { defaultValue: "This member" }) })
+      : null
 
   const memberNameRef = useRef(memberName)
   memberNameRef.current = memberName
@@ -350,6 +359,11 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
       {prismNotSharedLine ? (
         <p className={cn("px-3 pt-2 text-xs", sk.text500)} data-testid="meridian-prism-not-shared">
           {prismNotSharedLine}
+        </p>
+      ) : null}
+      {historyHiddenLine ? (
+        <p className={cn("px-3 pt-2 text-xs", sk.text500)} data-testid="meridian-history-hidden">
+          {historyHiddenLine}
         </p>
       ) : null}
       {goalsNotSharedLine ? (

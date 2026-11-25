@@ -46,11 +46,13 @@ jest.mock("@/hooks/agents/useMeridianChat", () => ({
 const mockSaveChat = jest.fn()
 const mockGoalSession = jest.fn()
 let mockHistory: Array<{ role: "user" | "assistant"; content: string }> = []
+let mockHiddenTurns = 0
 jest.mock("@/hooks/manager/development", () => ({
   useLearningPlan: () => ({ mutate: jest.fn() }),
   useCreateMilestone: () => ({ mutate: jest.fn() }),
   useGoalSession: () => ({ mutate: mockGoalSession, isPending: false }),
   useDossierChat: () => ({ data: mockHistory }),
+  useDossierChatHiddenTurns: () => ({ data: mockHiddenTurns }),
   useSaveChatMessage: () => ({ mutate: mockSaveChat }),
 }))
 
@@ -79,6 +81,7 @@ function renderPanel() {
 beforeEach(() => {
   jest.clearAllMocks()
   mockHistory = []
+  mockHiddenTurns = 0
   chatState = { isProcessing: false, partial: "", error: null }
   capturedOptions = {}
 })
@@ -298,5 +301,22 @@ describe("Continue session", () => {
     fireEvent.click(btn)
     expect(screen.getByRole("textbox", { name: "Ask Meridian about this member" })).toHaveFocus()
     expect(mockGoalSession).not.toHaveBeenCalled()
+  })
+})
+
+// D-15 history: hide. Turns written before the member withdrew sharing are not
+// returned; the panel says so rather than showing a shorter history as whole.
+describe("history hidden after sharing was withdrawn (D-15)", () => {
+  it("says so when the server held turns back", () => {
+    mockHiddenTurns = 3
+    renderPanel()
+    expect(screen.getByTestId("meridian-history-hidden")).toHaveTextContent(
+      "Earlier messages are hidden because Ben B has since stopped sharing with you.",
+    )
+  })
+
+  it("says nothing when no turn was held back", () => {
+    renderPanel()
+    expect(screen.queryByTestId("meridian-history-hidden")).not.toBeInTheDocument()
   })
 })

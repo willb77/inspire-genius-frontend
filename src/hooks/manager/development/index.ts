@@ -9,6 +9,7 @@ export {
   useUpdateCoachingNote,
   useDeleteCoachingNote,
 } from "./useCoachingNotes"
+export { useCoachingAccessDenied } from "./useCoachingAccessDenied"
 export {
   useMemberAnalyses,
   useSaveAnalysis,
@@ -22,7 +23,7 @@ export { useMilestones, useCreateMilestone, useUpdateMilestone } from "./useMile
 export { useCareerMatches } from "./useCareerMatches"
 export { useMemberFitMatches } from "./useMemberFitMatches"
 export { useSharePlan } from "./useSharePlan"
-export { useDossierChat, useSaveChatMessage } from "./useDossierChat"
+export { useDossierChat, useDossierChatHiddenTurns, useSaveChatMessage } from "./useDossierChat"
 export { useDevelopmentText } from "./useDevelopmentText"
 export {
   useAddTeamMember,

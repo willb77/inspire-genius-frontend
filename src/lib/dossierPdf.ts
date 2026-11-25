@@ -17,6 +17,13 @@ const GOAL_CATEGORY_LABEL: Record<string, string> = {
   personal_goals: "Personal goals",
 }
 
+/** D-15: a goal-linked row the caller may not see. The server already drops
+ *  them; this keeps an older backend's copy off paper too. */
+function withoutGoalLinked<T extends { goalId?: string | null }>(rows: T[] | undefined, goalsNotShared: boolean): T[] {
+  const list = rows ?? []
+  return goalsNotShared ? list.filter((r) => !r.goalId) : list
+}
+
 export function exportDossierPdf(dossier: MemberDossier): void {
   const doc = new jsPDF({ unit: "pt", format: "a4" })
   const marginX = 48
@@ -69,9 +76,18 @@ export function exportDossierPdf(dossier: MemberDossier): void {
     })
   }
 
-  if (dossier.gaps?.length) {
+  // D-15: development data and goal-linked rows withheld from this caller say
+  // so on paper — never a silently missing or silently shorter section.
+  const goalsNotShared = Boolean(dossier.goalsNotShared)
+  const partialLine = `Some items are linked to goals ${name} has not shared with you, so they are not shown.`
+  const gaps = withoutGoalLinked(dossier.gaps, goalsNotShared)
+  if (dossier.developmentNotShared) {
     heading("Development gaps")
-    dossier.gaps.forEach((g) => line(`• ${g.competency}`, 11, false, 15))
+    line("Not shared with you.", 10, false, 14)
+  } else if (gaps.length || dossier.goalLinkedWithheld) {
+    heading("Development gaps")
+    gaps.forEach((g) => line(`• ${g.competency}`, 11, false, 15))
+    if (dossier.goalLinkedWithheld) line(partialLine, 10, false, 14)
   }
 
   // D-06: the matches are PRISM-derived fit scores. A dossier redacted for a
@@ -85,9 +101,14 @@ export function exportDossierPdf(dossier: MemberDossier): void {
     dossier.matches.forEach((m) => line(`• ${m.title} — ${Math.round(m.fitScore)}% fit`, 11, false, 15))
   }
 
-  if (dossier.milestones?.length) {
+  const milestones = withoutGoalLinked(dossier.milestones, goalsNotShared)
+  if (dossier.developmentNotShared) {
     heading("Roadmap")
-    dossier.milestones.forEach((m) => line(`• [${m.horizon}] ${m.title} (${m.status})`, 11, false, 15))
+    line("Not shared with you.", 10, false, 14)
+  } else if (milestones.length || dossier.goalLinkedWithheld) {
+    heading("Roadmap")
+    milestones.forEach((m) => line(`• [${m.horizon}] ${m.title} (${m.status})`, 11, false, 15))
+    if (dossier.goalLinkedWithheld) line(partialLine, 10, false, 14)
   }
 
   const safe = name.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "member"

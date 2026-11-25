@@ -541,6 +541,11 @@ export type MemberDossier = {
    *  caller, so gaps/learning are withheld — an explicit state, never the
    *  "none yet" empty list. Absent until development is enforced. */
   developmentNotShared?: boolean
+  /** D-15: the member has not shared their goals with this caller, and at
+   *  least one gap / learning item / milestone linked to a goal was withheld
+   *  for that reason. The lists hold only the rows with no goal — partial, not
+   *  whole. Absent when nothing was withheld (and on an older backend). */
+  goalLinkedWithheld?: boolean
   gaps: DevelopmentGap[]
   /** TDS-8: the measured-gap state, read live. Absent on an older backend —
    *  the Gaps tab then renders exactly as it did before TDS-8. */

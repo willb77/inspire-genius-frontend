@@ -96,3 +96,55 @@ it("prints 'Not shared with you' for a goals-redacted dossier instead of droppin
   expect(written).toContain("Not shared with you.")
   expect(written).not.toContain("Own a cross-team initiative")
 })
+
+describe("D-15: goal-linked rows and withheld development data say so on paper", () => {
+  const lines = () => text.mock.calls.map((c) => String(c[0]))
+  const linked = {
+    ...dossier,
+    gaps: [
+      { gapId: "gap1", competency: "Delegation" },
+      { gapId: "gap2", competency: "Goal-linked gap", goalId: "g9" },
+    ],
+    milestones: [
+      { milestoneId: "ms1", title: "Shadow lead", horizon: "d90", status: "planned" },
+      { milestoneId: "ms2", title: "Goal-linked step", horizon: "d30", status: "planned", goalId: "g9" },
+    ],
+  } as unknown as MemberDossier
+
+  it("with the goals shared, goal-linked rows print as before", () => {
+    text.mockClear()
+    exportDossierPdf(linked)
+    expect(lines().join("\n")).toContain("Goal-linked gap")
+    expect(lines().join("\n")).toContain("Goal-linked step")
+  })
+
+  it("goalLinkedWithheld prints the partial line under gaps and roadmap", () => {
+    text.mockClear()
+    exportDossierPdf({ ...dossier, goalsNotShared: true, goalLinkedWithheld: true } as unknown as MemberDossier)
+    const partial = "Some items are linked to goals Mark Tully has not shared with you, so they are not shown."
+    expect(lines().filter((l) => l === partial)).toHaveLength(2)
+    expect(lines()).toContain("• Delegation")
+  })
+
+  it("prints no goal-linked row even if an older backend still sent them beside goalsNotShared", () => {
+    text.mockClear()
+    exportDossierPdf({ ...linked, goalsNotShared: true } as unknown as MemberDossier)
+    const all = lines().join("\n")
+    expect(all).not.toContain("Goal-linked gap")
+    expect(all).not.toContain("Goal-linked step")
+    expect(all).toContain("Delegation")
+  })
+
+  it("developmentNotShared says so under both sections and prints no row", () => {
+    text.mockClear()
+    exportDossierPdf({ ...linked, developmentNotShared: true } as unknown as MemberDossier)
+    const l = lines()
+    for (const section of ["Development gaps", "Roadmap"]) {
+      const at = l.indexOf(section)
+      expect(at).toBeGreaterThan(-1)
+      expect(l[at + 1]).toBe("Not shared with you.")
+    }
+    expect(l.join("\n")).not.toContain("Delegation")
+    expect(l.join("\n")).not.toContain("Shadow lead")
+  })
+})
