@@ -559,5 +559,12 @@
     "savedAs": "Zapisano jako \"{{skill}}\"",
     "toBuild": "Do rozwinięcia",
     "youHave": "Masz"
+  },
+  "managerFitViews": {
+    "title": "Kto sprawdzał Twoje dopasowanie",
+    "intro": "Przełożony lub coach, któremu udostępniasz profil PRISM i obszar Rozwój, może ocenić Twoje dopasowanie do roli. Widzi tylko wynik dopasowania. Wynik nie trafia do Twoich raportów dopasowania.",
+    "line": "Twój przełożony lub coach sprawdził Twoje dopasowanie do roli {{role}} w dniu {{date}}.",
+    "lineNoDate": "Twój przełożony lub coach sprawdził Twoje dopasowanie do roli {{role}}.",
+    "error": "Nie udało się sprawdzić, czy przełożony lub coach sprawdzał Twoje dopasowanie do roli. Spróbuj ponownie za chwilę."
   }
 }

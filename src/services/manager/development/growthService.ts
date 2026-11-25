@@ -23,6 +23,8 @@ import type {
   MemberCreateResult,
   MemberDossier,
   MemberFitMatches,
+  MemberFitOnDemand,
+  MemberFitOnDemandRoles,
   OrgChartResponse,
   Milestone,
   RosterMember,
@@ -572,6 +574,28 @@ export function getCareerMatches(memberId: string, kind: "internal" | "external"
 export function getMemberFitMatches(memberId: string) {
   return getApi().get<BaseApiResponse<MemberFitMatches>>(
     `${BASE}/members/${memberId}/fit-matches`,
+  )
+}
+
+/**
+ * TS-4b: GET /members/{id}/fit-on-demand/roles → the roles the caller may score
+ * this member against. Always a `state`; `off` unless the server switch is on
+ * for the member's organisation.
+ */
+export function getMemberFitOnDemandRoles(memberId: string) {
+  return getApi().get<BaseApiResponse<MemberFitOnDemandRoles>>(
+    `${BASE}/members/${memberId}/fit-on-demand/roles`,
+  )
+}
+
+/**
+ * TS-4b: POST /members/{id}/fit-on-demand → score the member against one role,
+ * now. The body is the role only: the server takes the viewer from the token.
+ */
+export function scoreMemberFitOnDemand(memberId: string, jobId: string) {
+  return getApi().post<BaseApiResponse<MemberFitOnDemand>>(
+    `${BASE}/members/${memberId}/fit-on-demand`,
+    { jobId },
   )
 }
 

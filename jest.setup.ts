@@ -24,6 +24,18 @@ jest.mock("@/lib/agentApi", () => {
   };
 });
 
+// Default for the TS-4b member notice ("your manager viewed your fit"): nobody
+// has viewed anything. My fit mounts the notice on every render, and ~16 suites
+// render that page with `fitService` stubbed and no network; without a default
+// each would report a failed notice read it does not exercise. A suite that
+// tests the notice declares its own jest.mock of this module, which replaces
+// this one (src/pages/job-fit/__tests__/ts4b-manager-fit-views.test.tsx).
+jest.mock("@/services/job-fit/managerViews.service", () => ({
+  __esModule: true,
+  // A plain function, not jest.fn(): `resetMocks` must not be able to blank it.
+  getManagerFitViews: () => Promise.resolve({ data: { data: [] } }),
+}));
+
 // Polyfill structuredClone for jsdom (used by @dagrejs/dagre)
 if (typeof globalThis.structuredClone === "undefined") {
   globalThis.structuredClone = <T>(val: T): T => JSON.parse(JSON.stringify(val));

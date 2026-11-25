@@ -559,5 +559,12 @@
     "toward": "Směrem k {{role}}",
     "viewRoadmap": "Zobrazit plán",
     "viewRoadmapLower": "zobrazit plán"
+  },
+  "managerFitViews": {
+    "title": "Kdo si zobrazil vaši shodu",
+    "intro": "Vedoucí nebo kouč, se kterým sdílíte profil PRISM a oblast Rozvoj, může ohodnotit vaši shodu s rolí. Vidí pouze skóre shody. Výsledek se nepřidává do vašich reportů shody.",
+    "line": "Váš vedoucí nebo kouč si dne {{date}} zobrazil vaši shodu s rolí {{role}}.",
+    "lineNoDate": "Váš vedoucí nebo kouč si zobrazil vaši shodu s rolí {{role}}.",
+    "error": "Nepodařilo se ověřit, zda si vedoucí nebo kouč zobrazil vaši shodu s rolí. Zkuste to prosím za chvíli znovu."
   }
 }

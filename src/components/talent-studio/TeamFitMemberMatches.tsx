@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next"
 import { AlertTriangle, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useMemberFitMatches } from "@/hooks/manager/development/useMemberFitMatches"
+import { useMemberFitOnDemandRoles } from "@/hooks/manager/development/useMemberFitOnDemand"
 import type { FitEngineMatch, FitMissingCategory } from "@/types/development"
 
 const K = "talentStudio.teamFit"
@@ -69,6 +70,10 @@ export interface TeamFitMemberMatchesProps {
 export default function TeamFitMemberMatches({ memberId, memberName }: TeamFitMemberMatchesProps) {
   const { t, i18n } = useTranslation("shellUi")
   const { data, isLoading, isError, isFetching, refetch } = useMemberFitMatches(memberId, true)
+  // TS-4b: the same query TeamFitOnDemand makes (one request, shared by key).
+  // Read here only so this block never says "nothing is scored from this page"
+  // beside a control that scores.
+  const onDemandOffered = useMemberFitOnDemandRoles(memberId, true).data?.state === "ok"
   const name = memberName
 
   if (isLoading) {
@@ -175,11 +180,17 @@ export default function TeamFitMemberMatches({ memberId, memberName }: TeamFitMe
   if (data.state === "no_snapshot") {
     return (
       <Notice state="no_matches" title={noMatchesTitle}>
-        {t(`${K}.noMatches.notRun`, {
-          defaultValue:
-            "{{name}} has not opened their own Career Fit matches yet. They appear here after {{name}} does. Nothing is scored from this page.",
-          name,
-        })}
+        {onDemandOffered
+          ? t(`${K}.noMatches.notRunOnDemand`, {
+              defaultValue:
+                "{{name}} has not opened their own Career Fit matches yet. They appear here after {{name}} does.",
+              name,
+            })
+          : t(`${K}.noMatches.notRun`, {
+              defaultValue:
+                "{{name}} has not opened their own Career Fit matches yet. They appear here after {{name}} does. Nothing is scored from this page.",
+              name,
+            })}
       </Notice>
     )
   }

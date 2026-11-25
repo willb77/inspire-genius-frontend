@@ -624,13 +624,31 @@
       "noMatches": {
         "title": "Ainda não há correspondências",
         "notRun": "{{name}} ainda não abriu as próprias correspondências no Career Fit. Elas aparecerão aqui depois que {{name}} fizer isso. Nada é pontuado a partir desta página.",
-        "noRoles": "O Career Fit de {{name}} não tinha cargos publicados para comparar."
+        "noRoles": "O Career Fit de {{name}} não tinha cargos publicados para comparar.",
+        "notRunOnDemand": "{{name}} ainda não abriu as próprias correspondências no Career Fit. Elas aparecerão aqui depois que {{name}} fizer isso."
       },
       "unknownState": "As correspondências de {{name}} não podem ser exibidas no momento.",
       "asOf": "Do Career Fit de {{name}}, em {{date}}.",
       "asOfUnknown": "Do Career Fit de {{name}}.",
       "score": "Pontuação de correspondência: {{score}}%",
-      "coverage": "{{evaluated}} de {{total}} dimensões medidas"
+      "coverage": "{{evaluated}} de {{total}} dimensões medidas",
+      "introOnDemand": "As correspondências com cargos que os membros da sua equipe obtiveram por conta própria, exibidas somente quando eles as compartilharam com você. Onde estiver ativado, você também pode pontuar um membro em relação a um cargo que escolher. Um registro é mantido e o membro é informado.",
+      "onDemand": {
+        "title": "Pontuar em relação a um cargo",
+        "intro": "Pontua {{name}} em relação a um cargo que você escolher, a partir do perfil PRISM. Um registro é mantido, e {{name}} verá na própria página do Career Fit que você consultou a compatibilidade com esse cargo.",
+        "roleLabel": "Cargo em relação ao qual pontuar {{name}}",
+        "choose": "Escolha um cargo…",
+        "score": "Pontuar {{name}} para este cargo",
+        "scoring": "Pontuando…",
+        "noRoles": "Não há nenhum cargo publicado que você e {{name}} possam ver ao mesmo tempo; por isso, não há com o que comparar.",
+        "rolesError": "Não foi possível verificar se você pode pontuar {{name}} em relação a um cargo. É um problema de carregamento.",
+        "scoreError": "Não foi possível pontuar {{name}} agora. Isso não é uma pontuação zero. Tente novamente.",
+        "resultNote": "Pontuado agora, a seu pedido. Não é adicionado aos relatórios de compatibilidade de {{name}}, e {{name}} pode ver que você consultou.",
+        "notShared": "Para pontuar {{name}} em relação a um cargo, {{name}} precisa ter compartilhado com você tanto o perfil PRISM quanto Desenvolvimento.",
+        "roleNotAvailable": "Esse cargo não pode mais ser pontuado para {{name}}. Escolha outro.",
+        "off": "A pontuação em relação a um cargo não está ativada para a organização de {{name}}.",
+        "unknownState": "No momento, não é possível pontuar {{name}} em relação a um cargo."
+      }
     }
   }
 }

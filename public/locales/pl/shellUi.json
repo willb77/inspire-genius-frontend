@@ -624,13 +624,31 @@
       "noMatches": {
         "title": "Brak dopasowań",
         "notRun": "{{name}} nie otwiera jeszcze własnych dopasowań w Career Fit. Pojawią się tutaj, gdy {{name}} to zrobi. Z tej strony nic nie jest oceniane.",
-        "noRoles": "W Career Fit osoby {{name}} nie było opublikowanych ról do porównania."
+        "noRoles": "W Career Fit osoby {{name}} nie było opublikowanych ról do porównania.",
+        "notRunOnDemand": "{{name}} nie otwiera jeszcze własnych dopasowań w Career Fit. Pojawią się tutaj, gdy {{name}} to zrobi."
       },
       "unknownState": "Dopasowań osoby {{name}} nie można teraz pokazać.",
       "asOf": "Z własnego Career Fit osoby {{name}}, stan na {{date}}.",
       "asOfUnknown": "Z własnego Career Fit osoby {{name}}.",
       "score": "Wynik dopasowania: {{score}}%",
-      "coverage": "Zmierzone wymiary: {{evaluated}} z {{total}}"
+      "coverage": "Zmierzone wymiary: {{evaluated}} z {{total}}",
+      "introOnDemand": "Dopasowania do ról, które członkowie zespołu uzyskali samodzielnie, widoczne tylko wtedy, gdy Ci je udostępnili. Tam, gdzie jest to włączone, możesz też ocenić członka zespołu względem wybranej przez siebie roli. Zapisywany jest wpis, a członek zespołu dostaje o tym informację.",
+      "onDemand": {
+        "title": "Oceń względem roli",
+        "intro": "Ocenia osobę {{name}} względem wybranej przez Ciebie roli, na podstawie jej profilu PRISM. Zapisywany jest wpis, a {{name}} zobaczy na swojej stronie Career Fit, że sprawdzono jej dopasowanie do tej roli.",
+        "roleLabel": "Rola, względem której ocenić osobę {{name}}",
+        "choose": "Wybierz rolę…",
+        "score": "Oceń osobę {{name}} dla tej roli",
+        "scoring": "Ocenianie…",
+        "noRoles": "Nie ma opublikowanej roli widocznej jednocześnie dla Ciebie i dla osoby {{name}}, więc nie ma względem czego oceniać.",
+        "rolesError": "Nie udało się sprawdzić, czy możesz ocenić osobę {{name}} względem roli. To problem z wczytywaniem.",
+        "scoreError": "Nie udało się teraz ocenić osoby {{name}}. To nie jest wynik równy zero. Spróbuj ponownie.",
+        "resultNote": "Ocenione przed chwilą na Twoją prośbę. Wynik nie trafia do raportów dopasowania osoby {{name}}, a {{name}} widzi, że został sprawdzony.",
+        "notShared": "Aby ocenić osobę {{name}} względem roli, {{name}} musi udostępnić Ci zarówno profil PRISM, jak i obszar Rozwój.",
+        "roleNotAvailable": "Tej roli nie można już ocenić dla osoby {{name}}. Wybierz inną.",
+        "off": "Ocenianie względem roli nie jest włączone dla organizacji osoby {{name}}.",
+        "unknownState": "Ocenianie osoby {{name}} względem roli nie jest teraz dostępne."
+      }
     }
   }
 }

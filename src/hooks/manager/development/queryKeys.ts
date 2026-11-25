@@ -51,5 +51,8 @@ export const developmentKeys = {
   /** 3.3a — the fit engine's matches for one member (growth `/fit-matches`). */
   fitMatches: (memberId: string) =>
     [...developmentKeys.all, "fit-matches", memberId] as const,
+  /** TS-4b — the roles a member can be scored against on demand. */
+  fitOnDemandRoles: (memberId: string) =>
+    [...developmentKeys.all, "fit-on-demand-roles", memberId] as const,
   chat: (memberId: string) => [...developmentKeys.all, "chat", memberId] as const,
 }

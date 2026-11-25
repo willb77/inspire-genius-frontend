@@ -230,6 +230,16 @@ export type FitSnapshotSummary = {
   computedAt: string
 }
 
+/**
+ * TS-4b — one notice on the person's own page: a manager or coach they share
+ * with scored their fit against this role on demand. Role and time only.
+ */
+export type ManagerFitView = {
+  roleTitle: string
+  jobId: string
+  viewedAt: string
+}
+
 /** One row with the response as it was served — a FitDetail, a FitMatch list, or a saved blob. */
 export type FitSnapshot = FitSnapshotSummary & {
   payload: FitDetail | FitMatch[] | Record<string, unknown>

@@ -624,13 +624,31 @@
       "noMatches": {
         "title": "No matches yet",
         "notRun": "{{name}} has not opened their own Career Fit matches yet. They appear here after {{name}} does. Nothing is scored from this page.",
-        "noRoles": "{{name}}'s own Career Fit had no published roles to compare against."
+        "noRoles": "{{name}}'s own Career Fit had no published roles to compare against.",
+        "notRunOnDemand": "{{name}} has not opened their own Career Fit matches yet. They appear here after {{name}} does."
       },
       "unknownState": "{{name}}'s matches cannot be shown right now.",
       "asOf": "From {{name}}'s own Career Fit, as of {{date}}.",
       "asOfUnknown": "From {{name}}'s own Career Fit.",
       "score": "Match score {{score}}%",
-      "coverage": "{{evaluated}} of {{total}} dimensions measured"
+      "coverage": "{{evaluated}} of {{total}} dimensions measured",
+      "introOnDemand": "The role matches your team members found for themselves, shown only where they have shared them with you. Where it is switched on, you can also score a member against a role you choose. A record is kept and the member is told.",
+      "onDemand": {
+        "title": "Score against a role",
+        "intro": "Scores {{name}} against a role you choose, from their PRISM profile. A record is kept, and {{name}} is told on their own Career Fit page that you viewed their fit for that role.",
+        "roleLabel": "Role to score {{name}} against",
+        "choose": "Choose a role…",
+        "score": "Score {{name}} for this role",
+        "scoring": "Scoring…",
+        "noRoles": "There is no published role that both you and {{name}} can see, so there is nothing to score against.",
+        "rolesError": "We could not check whether you can score {{name}} against a role. This is a loading problem.",
+        "scoreError": "{{name}} could not be scored just now. That is not a score of zero. Try again.",
+        "resultNote": "Scored just now at your request. It is not added to {{name}}'s own fit reports, and {{name}} can see that you viewed it.",
+        "notShared": "Scoring {{name}} against a role needs {{name}} to have shared both their PRISM profile and Development with you.",
+        "roleNotAvailable": "That role can no longer be scored for {{name}}. Choose another.",
+        "off": "Scoring against a role is not switched on for {{name}}'s organization.",
+        "unknownState": "Scoring {{name}} against a role is not available right now."
+      }
     }
   }
 }

@@ -11,9 +11,16 @@
  *      member and there is no roster-wide form of it, so the page does not
  *      fan out: opening the page asks for nobody's matches.
  *
- * What it is not: it scores nobody. A match exists only because the member
- * opened their own Career Fit, and it is shown only when the member's sharing
- * covers it. The server decides both; nothing here widens what it returns.
+ * What it is not: by default it scores nobody. A match exists only because the
+ * member opened their own Career Fit, and it is shown only when the member's
+ * sharing covers it. The server decides both; nothing here widens what it
+ * returns.
+ *
+ * TS-4b adds one exception, off by default: where the server switch
+ * `manager_fit_on_demand` is on for a member's organisation, an opened row also
+ * offers "score against a role" (`TeamFitOnDemand`). With the switch off, or a
+ * backend without the route, that component draws nothing and this page is
+ * exactly TS-4a.
  *
  * `audience` is set by the ROUTE (ROLE-C). The member link must sit under the
  * prefix the page was opened on: ProtectedRoute gates by path prefix, and a
@@ -23,7 +30,7 @@
  * on, the same gate as its menu row. Opened directly with either off, it says
  * so and requests nothing.
  */
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react"
@@ -38,6 +45,7 @@ import { useTeamDevelopmentRoster } from "@/hooks/manager/development/useTeamDev
 import type { WorkspaceAudience } from "@/layouts/WorkspaceLayout"
 import type { RosterMember } from "@/types/development"
 import TeamFitMemberMatches from "./TeamFitMemberMatches"
+import TeamFitOnDemand from "./TeamFitOnDemand"
 
 const K = "talentStudio.teamFit"
 
@@ -48,7 +56,15 @@ function studioRoutes(audience: WorkspaceAudience): { roster: string; member: st
     : { roster: ROUTES.MANAGER.DEVELOPMENT, member: ROUTES.MANAGER.DEVELOPMENT_MEMBER }
 }
 
-function MemberRow({ member, memberRoute }: { member: RosterMember; memberRoute: string }) {
+function MemberRow({
+  member,
+  memberRoute,
+  onOnDemandOffered,
+}: {
+  member: RosterMember
+  memberRoute: string
+  onOnDemandOffered: () => void
+}) {
   const { t } = useTranslation("shellUi")
   const [open, setOpen] = useState(false)
   const name = member.name
@@ -95,12 +111,20 @@ function MemberRow({ member, memberRoute }: { member: RosterMember; memberRoute:
       {/* Mounted only when opened: this is what makes the request. */}
       <div id={panelId} className={open ? "mt-3" : undefined}>
         {open && <TeamFitMemberMatches memberId={member.memberId} memberName={name} />}
+        {/* TS-4b: draws nothing unless the server offers scoring for this member. */}
+        {open && <TeamFitOnDemand memberId={member.memberId} memberName={name} onOffered={onOnDemandOffered} />}
       </div>
     </li>
   )
 }
 
-function TeamFitRoster({ audience }: { audience: WorkspaceAudience }) {
+function TeamFitRoster({
+  audience,
+  onOnDemandOffered,
+}: {
+  audience: WorkspaceAudience
+  onOnDemandOffered: () => void
+}) {
   const { t } = useTranslation("shellUi")
   const routes = studioRoutes(audience)
   const { data: roster, isLoading, isError, isFetching, refetch } = useTeamDevelopmentRoster()
@@ -179,7 +203,12 @@ function TeamFitRoster({ audience }: { audience: WorkspaceAudience }) {
       ) : (
         <ul className="flex flex-col gap-3">
           {visible.map((m) => (
-            <MemberRow key={m.memberId} member={m} memberRoute={routes.member} />
+            <MemberRow
+              key={m.memberId}
+              member={m}
+              memberRoute={routes.member}
+              onOnDemandOffered={onOnDemandOffered}
+            />
           ))}
         </ul>
       )}
@@ -204,15 +233,26 @@ export default function TeamFitBody({ audience }: { audience: WorkspaceAudience 
   const { t } = useTranslation("shellUi")
   const status = useSavedJobsEnabledStatus()
   const on = TEAM_FIT_BUILD_ENABLED && status === "on"
+  // TS-4b: true once the server has offered on-demand scoring for a member the
+  // viewer opened. Until then nothing can be scored here and the intro says so.
+  const [onDemandOffered, setOnDemandOffered] = useState(false)
+  const offered = useCallback(() => setOnDemandOffered(true), [])
 
   return (
     <div className="mx-auto w-full max-w-4xl">
       <PageHeader
         title={translateNavLabel(t, "items", "Team fit")}
-        description={t(`${K}.intro`, {
-          defaultValue:
-            "The role matches your team members found for themselves, shown only where they have shared them with you. Nothing is scored here.",
-        })}
+        description={
+          onDemandOffered
+            ? t(`${K}.introOnDemand`, {
+                defaultValue:
+                  "The role matches your team members found for themselves, shown only where they have shared them with you. Where it is switched on, you can also score a member against a role you choose. A record is kept and the member is told.",
+              })
+            : t(`${K}.intro`, {
+                defaultValue:
+                  "The role matches your team members found for themselves, shown only where they have shared them with you. Nothing is scored here.",
+              })
+        }
       />
       {on ? (
         <>
@@ -222,7 +262,7 @@ export default function TeamFitBody({ audience }: { audience: WorkspaceAudience 
                 "A match score is one input for a development conversation. It is not a hiring, pay or performance decision.",
             })}
           </p>
-          <TeamFitRoster audience={audience} />
+          <TeamFitRoster audience={audience} onOnDemandOffered={offered} />
         </>
       ) : TEAM_FIT_BUILD_ENABLED && status === "loading" ? (
         <p role="status" className="text-sm text-muted-foreground">

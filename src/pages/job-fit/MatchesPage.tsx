@@ -14,6 +14,7 @@ import {
 import { partialCoverage } from "@/lib/job-fit/coverage"
 import FitPurpose from "./FitPurpose"
 import { FitHistoryPanel } from "./FitHistoryPanel"
+import { ManagerFitViewsNotice } from "./ManagerFitViewsNotice"
 import { displayFitPercent } from "@/components/fit/fit"
 import { FitMatchList } from "@/components/fit/FitMatchList"
 import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponentsEnabled"
@@ -176,6 +177,9 @@ export default function MatchesPage({ careersAndJobs = false }: { careersAndJobs
       />
 
       <FitPurpose careersAndJobs={careersAndJobs} />
+
+      {/* TS-4b: draws nothing unless a manager or coach scored this person on demand. */}
+      <ManagerFitViewsNotice />
 
       <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
         {componentsOn && (
