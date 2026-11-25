@@ -290,6 +290,7 @@
     },
     "finalizeFailed": "Could not finalize the interview. Please try again.",
     "finalizeFailedDetail": "Could not finalize the interview.",
+    "nothingRated": "Rate at least one answer before finishing the interview.",
     "finishView": "Finish & view results",
     "frame": {
       "description": "Confirm the seat you're interviewing for so the STAR questions and scoring fit the actual role, reporting line, and scope.",

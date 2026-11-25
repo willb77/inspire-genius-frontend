@@ -24,9 +24,9 @@ export type RehydratedAnswer = {
 export type RehydratedSession = {
   plan: LivePlanQuestion[]
   answers: Record<string, RehydratedAnswer>
-  /** Where to continue: the first planned question with no answer row. */
+  /** Where to continue: the first planned question with no answer row or no rating. */
   startIndex: number
-  /** True when every planned question already has an answer. */
+  /** True when every planned question already has an answer AND a rating. */
   complete: boolean
 }
 
@@ -60,7 +60,10 @@ export function rehydrateSession(detail: GetSessionResult): RehydratedSession {
     }
   }
   const plan = detail.plan
-  const firstUnanswered = plan.findIndex((q) => !answers[q.competency_id])
+  // Resume at the first question with no answer OR no human rating. An answer
+  // that was submitted but never rated still needs the interviewer's decision;
+  // skipping past it left it unrated forever with no way back to it.
+  const firstUnanswered = plan.findIndex((q) => !answers[q.competency_id]?.scored)
   return {
     plan,
     answers,

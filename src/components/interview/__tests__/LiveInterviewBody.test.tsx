@@ -183,6 +183,14 @@ function renderBody(path = "/manager/interview-live") {
 }
 
 /** Walk consent -> candidate -> frame, which starts the session. */
+/** D-12: Finish is blocked until something is rated, so tests that finalize rate first. */
+async function rateCurrent(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByText("mock-submit-answer"))
+  await waitFor(() => expect(submitMutate).toHaveBeenCalled())
+  await user.click(screen.getByText("mock-save-score"))
+  await screen.findByRole("button", { name: /next question/i })
+}
+
 async function reachInterview(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByText("mock-consent-proceed"))
   await user.type(screen.getByLabelText(/candidate name/i), "Candidate A")
@@ -277,6 +285,7 @@ describe("Job DNA candidate link (IS-11c2 front door)", () => {
       }),
     )
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
     expect(await screen.findByTestId("scorecard-draft-line")).toHaveTextContent(/draft written .*9 dimensions/i)
     confirmSpy.mockRestore()
@@ -292,6 +301,7 @@ describe("Job DNA candidate link (IS-11c2 front door)", () => {
     await user.click(screen.getByRole("button", { name: /continue/i }))
     await user.click(screen.getByText("mock-frame-confirm"))
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
     expect(await screen.findByTestId("scorecard-draft-line")).toHaveTextContent(/no scorecard draft .*flag_off/i)
     confirmSpy.mockRestore()
@@ -306,6 +316,7 @@ describe("Job DNA candidate link (IS-11c2 front door)", () => {
     expect(payload.candidate_id).toBeUndefined()
     expect(payload.blueprint_id).toBeUndefined()
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
     await screen.findByRole("heading", { name: /interview results/i })
     expect(screen.queryByTestId("scorecard-draft-line")).not.toBeInTheDocument()
@@ -420,6 +431,42 @@ describe("ending the interview", () => {
   })
 })
 
+describe("ending with nothing rated (D-12)", () => {
+  it("blocks Finish client-side instead of sending a finalize the server will 409", async () => {
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+    const user = userEvent.setup()
+    renderBody()
+    await reachInterview(user)
+    await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/rate at least one answer/i)))
+    expect(finalizeMutate).not.toHaveBeenCalled()
+    expect(screen.getByText("panel 1/2: Tell me about a turnaround.")).toBeInTheDocument()
+    confirmSpy.mockRestore()
+  })
+
+  it("shows the server's detail, not the axios status line, when finalize is refused", async () => {
+    finalizeMutate.mockRejectedValueOnce(
+      Object.assign(new Error("Request failed with status code 409"), {
+        response: { data: { detail: "Session already finalized" } },
+      }),
+    )
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+    const user = userEvent.setup()
+    renderBody()
+    await reachInterview(user)
+    await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await user.click(screen.getByText("mock-submit-answer"))
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled())
+    await user.click(screen.getByText("mock-save-score"))
+    await screen.findByRole("button", { name: /next question/i })
+    await user.click(screen.getByRole("button", { name: /end interview/i }))
+    expect(await screen.findByText("Session already finalized")).toBeInTheDocument()
+    expect(screen.queryByText(/status code 409/i)).not.toBeInTheDocument()
+    confirmSpy.mockRestore()
+  })
+})
+
 describe("findings", () => {
   it("renders the scored write-up and the export controls", async () => {
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
@@ -427,6 +474,7 @@ describe("findings", () => {
     renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
 
     expect(await screen.findByRole("heading", { name: /interview results/i })).toBeInTheDocument()
@@ -445,6 +493,7 @@ describe("findings", () => {
     renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
     await screen.findByText("Advance to final round")
 
@@ -464,6 +513,7 @@ describe("findings", () => {
     renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
     await screen.findByText("Advance to final round")
 
@@ -489,6 +539,10 @@ describe("findings", () => {
     renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await user.click(screen.getByText("mock-submit-answer"))
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled())
+    await user.click(screen.getByText("mock-save-score"))
+    await screen.findByRole("button", { name: /next question/i })
     await user.click(screen.getByRole("button", { name: /end interview/i }))
 
     expect(await screen.findByText(/could not be compiled/i)).toBeInTheDocument()
@@ -845,6 +899,7 @@ describe("JS-12 — the pipeline step follows the interview, never a verdict", (
       expect(stepMutate).toHaveBeenCalledWith({ candidateId: "cand-1", step: "interview-scheduled", interviewSessionId: "s1" }),
     )
     expect(await screen.findByTestId("pipeline-step-lines")).toHaveTextContent(/set to interview scheduled/i)
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
     await screen.findByRole("heading", { name: /interview results/i })
     await waitFor(() =>
@@ -863,6 +918,7 @@ describe("JS-12 — the pipeline step follows the interview, never a verdict", (
     renderBody()
     await reachInterview(user)
     await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await rateCurrent(user)
     await user.click(screen.getByRole("button", { name: /end interview/i }))
     await screen.findByRole("heading", { name: /interview results/i })
     expect(stepMutate).not.toHaveBeenCalled()

@@ -22,6 +22,7 @@
  *     scores, overall score, and a banded recommendation — not a coaching
  *     summary.
  */
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, useSearchParams } from "react-router-dom"
@@ -451,6 +452,11 @@ export default function LiveInterviewBody() {
     // it is recorded here as UNCOVERED rather than left looking tested. The
     // enforcing guard is the backend's 409, which has its own test.
     if (readOnly) return
+    // Nothing rated means nothing to score; the server would answer 409.
+    if (!Object.values(answers).some((a) => a.scored)) {
+      toast.error(t("live.nothingRated", "Rate at least one answer before finishing the interview."))
+      return
+    }
     setPhase("findings")
     setFinalizeError(null)
     try {
@@ -466,8 +472,7 @@ export default function LiveInterviewBody() {
       // screen, no way back but "New interview". A toast that vanishes is not
       // a state. This is pinned by a test in BOTH bodies; it was forked
       // verbatim, so fixing only one leaves the other stuck and green.
-      const detail =
-        e instanceof Error && e.message ? e.message : t("live.finalizeFailedDetail", "Could not finalize the interview.")
+      const detail = apiErrorMessage(e, t("live.finalizeFailedDetail", "Could not finalize the interview."))
       setFinalizeError(detail)
       toast.error(t("live.finalizeFailed", "Could not finalize the interview. Please try again."))
     }
@@ -551,7 +556,7 @@ export default function LiveInterviewBody() {
       }
     } catch (e) {
       toast.error(
-        e instanceof Error && e.message ? e.message : t("live.openFailed", "Could not open that interview."),
+        apiErrorMessage(e, t("live.openFailed", "Could not open that interview.")),
       )
     } finally {
       setOpeningSessionId(null)

@@ -110,10 +110,18 @@ describe("normalizeSessionDetail", () => {
 })
 
 describe("rehydrateSession", () => {
-  it("continues at the first question with no answer", () => {
+  it("continues at the first question with no answer OR no rating", () => {
+    // c1 rated, c2 answered but never rated, c3 unanswered: resume at c2, not c3.
     const r = rehydrateSession(normalizeSessionDetail(WIRE()))
-    expect(r.startIndex).toBe(2)
+    expect(r.startIndex).toBe(1)
     expect(r.complete).toBe(false)
+  })
+
+  it("continues at the first unanswered question once every answer is rated", () => {
+    const wire = WIRE()
+    wire.answers = (wire.answers ?? []).map((a) => ({ ...a, final_source: "human" })) as never
+    const r = rehydrateSession(normalizeSessionDetail(wire))
+    expect(r.startIndex).toBe(2)
   })
 
   it("keeps the answer id so a resumed rating can be saved", () => {
@@ -130,7 +138,14 @@ describe("rehydrateSession", () => {
     expect(r.answers.c2.scored).toBeNull()
   })
 
-  it("reports complete when every planned question has an answer", () => {
+  it("is not complete while an answered question is still unrated", () => {
+    const wire = WIRE({ plan: { items: [{ competency_id: "c2", section: "v", question: "Q2" }] } })
+    const r = rehydrateSession(normalizeSessionDetail(wire))
+    expect(r.complete).toBe(false)
+    expect(r.startIndex).toBe(0)
+  })
+
+  it("reports complete when every planned question has an answer and a rating", () => {
     const wire = WIRE({ plan: { items: [{ competency_id: "c1", section: "v", question: "Q1" }] } })
     const r = rehydrateSession(normalizeSessionDetail(wire))
     expect(r.complete).toBe(true)

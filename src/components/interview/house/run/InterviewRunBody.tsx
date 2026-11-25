@@ -48,6 +48,7 @@ import {
 import type { InterviewFrame } from "@/services/interview/practice.service"
 import type { StarCompetency } from "@/services/interview/interview.service"
 import { liveInterviewService } from "@/services/interview/live.service"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { finalizeResultFromDetail, rehydrateSession } from "@/services/interview/liveSessionResume"
 import type {
   FinalizeResult,
@@ -278,6 +279,12 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
     // (no control calls finish() once a result is shown); kept as defence. The
     // enforcing guard is the server's 409.
     if (readOnly) return
+    // Nothing rated means nothing to score: the server answers 409, which used to
+    // surface as an opaque failure. Say so before the round trip.
+    if (!Object.values(answers).some((a) => a.scored)) {
+      toast.error(t("live.nothingRated", "Rate at least one answer before finishing the interview."))
+      return
+    }
     setPhase("findings")
     setFinalizeError(null)
     try {
@@ -287,8 +294,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
       await recordPipelineStep("interview-completed", sessionId)
     } catch (e) {
       // IS-F13 — a failed finalize is a state on screen, never a forever-spinner.
-      const detail =
-        e instanceof Error && e.message ? e.message : t("live.finalizeFailedDetail", "Could not finalize the interview.")
+      const detail = apiErrorMessage(e, t("live.finalizeFailedDetail", "Could not finalize the interview."))
       setFinalizeError(detail)
       toast.error(t("live.finalizeFailed", "Could not finalize the interview. Please try again."))
     }
@@ -359,9 +365,7 @@ export default function InterviewRunBody({ initialKind }: InterviewRunBodyProps)
         toast.info(t("live.allAnswered", "Every question in this interview has been answered — review and finish it."))
       }
     } catch (e) {
-      toast.error(
-        e instanceof Error && e.message ? e.message : t("live.openFailed", "Could not open that interview."),
-      )
+      toast.error(apiErrorMessage(e, t("live.openFailed", "Could not open that interview.")))
     } finally {
       setOpeningSessionId(null)
     }
