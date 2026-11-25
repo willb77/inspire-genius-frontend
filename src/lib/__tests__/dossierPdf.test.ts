@@ -54,6 +54,40 @@ describe("exportDossierPdf", () => {
   })
 })
 
+describe("D-06: career matches go with the PRISM", () => {
+  const written = () => text.mock.calls.map((c) => String(c[0])).join("\n")
+
+  it("with PRISM shared, the matches print with their fit, as before", () => {
+    text.mockClear()
+    exportDossierPdf(dossier)
+    expect(written()).toContain("Career & job matches")
+    expect(written()).toContain("Program Manager — 82% fit")
+  })
+
+  it("with PRISM not shared, the section says so and prints no match", () => {
+    text.mockClear()
+    exportDossierPdf({ ...dossier, matches: [], prismNotShared: true } as unknown as MemberDossier)
+    const lines = text.mock.calls.map((c) => String(c[0]))
+    const at = lines.indexOf("Career & job matches")
+    expect(at).toBeGreaterThan(-1)
+    expect(lines[at + 1]).toBe("Not shared with you.")
+    expect(written()).not.toContain("% fit")
+  })
+
+  it("prints no match even if a backend still sent them beside prismNotShared", () => {
+    text.mockClear()
+    exportDossierPdf({ ...dossier, prismNotShared: true } as unknown as MemberDossier)
+    expect(written()).not.toContain("Program Manager")
+    expect(written()).not.toContain("% fit")
+  })
+
+  it("with no matches and PRISM shared, there is no section (not a false 'not shared')", () => {
+    text.mockClear()
+    exportDossierPdf({ ...dossier, matches: [] } as unknown as MemberDossier)
+    expect(written()).not.toContain("Career & job matches")
+  })
+})
+
 it("prints 'Not shared with you' for a goals-redacted dossier instead of dropping the section", () => {
   text.mockClear()
   exportDossierPdf({ ...dossier, goals: [], goalsNotShared: true } as unknown as MemberDossier)

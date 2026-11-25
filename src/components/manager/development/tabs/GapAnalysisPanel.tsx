@@ -117,6 +117,12 @@ export type GapAnalysisPanelProps = {
   initialTargetId?: string
   /** S-7: the dossier says the member has not shared `development` with you. */
   notShared?: boolean
+  /**
+   * D-06: the target roles come from the career matches, which go with the
+   * member's PRISM. True when that is why the list is empty, so the picker
+   * says "not shared" and not "none yet".
+   */
+  matchesNotShared?: boolean
   /** TDS-8: the dossier's measured-gap state. Absent → pre-TDS-8 rendering. */
   gapsState?: GapsState
   /** TDS-8: the role measured against (only when `gapsState === "ok"`). */
@@ -128,6 +134,7 @@ export function GapAnalysisPanel({
   matches,
   initialTargetId,
   notShared,
+  matchesNotShared,
   gapsState,
   gapsTargetRole,
 }: GapAnalysisPanelProps) {
@@ -205,6 +212,8 @@ export function GapAnalysisPanel({
               ))}
             </SelectContent>
           </Select>
+        ) : matchesNotShared ? (
+          <span className={cn("text-xs", sk.text400)} data-testid="gap-targets-not-shared">{t("careerMatchPanel.theseCareerMatchesHavenT", { defaultValue: "These career matches haven't been shared with you. That isn't the same as having none." })}</span>
         ) : (
           <span className={cn("text-xs", sk.text400)}>{t("gapAnalysisPanel.noTargetRolesAvailableYet", { defaultValue: "No target roles available yet." })}</span>
         )}

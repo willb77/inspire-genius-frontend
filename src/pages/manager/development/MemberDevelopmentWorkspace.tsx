@@ -327,13 +327,16 @@ export default function MemberDevelopmentWorkspace({
       ),
   })
 
+  // D-06: career matches are PRISM-derived. With the PRISM withheld the server
+  // sends none; nothing an older backend still sent is shown either.
+  const matchesNotShared = Boolean(dossier?.prismNotShared)
   const { internal, external } = useMemo(() => {
-    const matches = dossier?.matches ?? []
+    const matches = matchesNotShared ? [] : (dossier?.matches ?? [])
     return {
       internal: matches.filter((m) => m.kind === "internal"),
       external: matches.filter((m) => m.kind === "external"),
     }
-  }, [dossier?.matches])
+  }, [dossier?.matches, matchesNotShared])
 
   const setTab = (value: DevSection) => {
     const next = new URLSearchParams(searchParams)
@@ -582,7 +585,8 @@ export default function MemberDevelopmentWorkspace({
     gaps: (
       <GapAnalysisPanel
         memberId={dossier.memberId}
-        matches={dossier.matches}
+        matches={matchesNotShared ? [] : dossier.matches}
+        matchesNotShared={matchesNotShared}
         initialTargetId={targetFromQuery}
         notShared={dossier.developmentNotShared}
         gapsState={dossier.gapsState}
@@ -611,7 +615,7 @@ export default function MemberDevelopmentWorkspace({
         external={external}
         onSetTarget={goToGapsFor}
         onViewGaps={goToGapsFor}
-        notShared={dossier.developmentNotShared}
+        notShared={dossier.developmentNotShared || matchesNotShared}
       />
     ),
     notes: (
