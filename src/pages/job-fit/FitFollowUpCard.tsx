@@ -8,6 +8,8 @@ import { FitCard, FitSectionTitle } from "@/components/fit/primitives"
 import { displayFitPercent } from "@/components/fit/fit"
 
 type QA = { question: string; answer: string }
+/** `failed`: the request threw. `degraded`: it answered, but the model did not. */
+type AskFailure = "failed" | "degraded"
 
 /**
  * Ask a follow-up about your fit — and see the answer INLINE, right here in Job
@@ -20,20 +22,26 @@ export function FitFollowUpCard({ data }: { data: FitDetail }) {
   const explain = useExplainFit()
   const [question, setQuestion] = useState("")
   const [history, setHistory] = useState<QA[]>([])
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<AskFailure | null>(null)
   const pct = displayFitPercent(data)
 
   async function ask() {
     const q = question.trim()
     if (!q || explain.isPending) return
-    setError(false)
+    setError(null)
     try {
       const res = await explain.mutateAsync(toExplainBody(data, pct, q))
+      // NP3 (C2-a): a failed model call is said, never dressed as an answer.
+      // The question stays in the box so it can be asked again.
+      if (res.degraded === true) {
+        setError("degraded")
+        return
+      }
       const answer = (res.answer || "").trim() || res.overview
       setHistory((prev) => [...prev, { question: q, answer }])
       setQuestion("")
     } catch {
-      setError(true)
+      setError("failed")
     }
   }
 
@@ -87,11 +95,19 @@ export function FitFollowUpCard({ data }: { data: FitDetail }) {
         </button>
       </div>
 
-      {error && (
-        <p className="mt-2 text-sm text-[#b91c1c]">
+      {error === "failed" && (
+        <p role="alert" className="mt-2 text-sm text-[#b91c1c]">
           {t(
             "fitFollowUpCard.error",
             "That didn't go through — please try again in a moment.",
+          )}
+        </p>
+      )}
+      {error === "degraded" && (
+        <p role="alert" className="mt-2 text-sm text-[#b91c1c]">
+          {t(
+            "fitFollowUpCard.degraded",
+            "The coach couldn't answer just now. Your fit figures are unchanged. Please ask again in a minute.",
           )}
         </p>
       )}

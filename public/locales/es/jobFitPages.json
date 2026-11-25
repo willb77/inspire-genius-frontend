@@ -247,7 +247,8 @@
     "thinking": "Pensando en tu encaje…",
     "title": "Coaching",
     "whatWork": "¿En qué quieres trabajar?",
-    "whichRole": "¿De qué puesto hablamos?"
+    "whichRole": "¿De qué puesto hablamos?",
+    "degraded": "El coach no ha podido responder ahora mismo. Tus cifras de ajuste no han cambiado. Vuelve a preguntar en un minuto."
   },
   "exerciseStep": {
     "text": "Descubre cómo trabajas mejor y luego pon a prueba las carreras que merecen una mirada más atenta.",
@@ -551,14 +552,17 @@
     "payHeading": "Salario — {{area}}",
     "scoredAgainst": "Puntuado según el blueprint v{{version}}",
     "unavailable": "El desglose de ajuste de este puesto no está disponible.",
-    "v2Description": "Cómo se compara tu perfil de comportamiento con las dimensiones que este puesto prioriza."
+    "v2Description": "Cómo se compara tu perfil de comportamiento con las dimensiones que este puesto prioriza.",
+    "notFound": "Este puesto no está disponible para ti. Puede que se haya retirado o que no se haya publicado para tu organización.",
+    "backToCareersJobs": "Volver a Careers and Jobs"
   },
   "fitFollowUpCard": {
     "ask": "Preguntar",
     "error": "No se pudo enviar. Inténtalo de nuevo en un momento.",
     "intro": "Pregunta lo que quieras sobre este puesto y tu desarrollo: la respuesta aparece aquí mismo.",
     "placeholder": "p. ej., ¿En qué área de crecimiento debería centrarme primero y cómo?",
-    "title": "Pregunta sobre tu ajuste"
+    "title": "Pregunta sobre tu ajuste",
+    "degraded": "El coach no ha podido responder ahora mismo. Tus cifras de ajuste no han cambiado. Vuelve a preguntar en un minuto."
   },
   "managerFitViews": {
     "title": "Quién consultó tu compatibilidad",
@@ -574,5 +578,12 @@
     "label": "Tu recorrido en Careers and Jobs",
     "planTheRoute": "Planifica la ruta",
     "stepOf": "Paso {{n}} de {{total}}"
+  },
+  "noPrismState": {
+    "matches": "Tus coincidencias aparecerán cuando tu PRISM esté registrado. Añade o completa tu PRISM para ver tu ajuste con los puestos publicados para ti.",
+    "growthAreas": "Las áreas de crecimiento salen de tu PRISM. Añade o completa tu PRISM para verlas.",
+    "detail": "Necesitamos tu PRISM para mostrar tu ajuste con este puesto.",
+    "coach": "El coaching parte de tu ajuste con un puesto, y tu ajuste necesita tu PRISM. Añade o completa tu PRISM para empezar.",
+    "link": "Ir a PRISM"
   }
 }

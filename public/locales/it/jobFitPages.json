@@ -162,7 +162,8 @@
     "thinking": "Sto valutando la tua compatibilità…",
     "title": "Coaching",
     "whatWork": "Su cosa vuoi lavorare?",
-    "whichRole": "Di quale ruolo parliamo?"
+    "whichRole": "Di quale ruolo parliamo?",
+    "degraded": "Il coach non è riuscito a rispondere in questo momento. I tuoi dati di compatibilità non sono cambiati. Riprova tra un minuto."
   },
   "exerciseStep": {
     "text": "Scopri come lavori al meglio, poi metti alla prova le carriere che meritano uno sguardo più attento.",
@@ -424,14 +425,17 @@
     "payHeading": "Retribuzione — {{area}}",
     "scoredAgainst": "Valutato rispetto al blueprint v{{version}}",
     "unavailable": "Il dettaglio della compatibilità per questo ruolo non è disponibile.",
-    "v2Description": "Come si confronta il tuo profilo comportamentale con le dimensioni che questo ruolo mette al primo posto."
+    "v2Description": "Come si confronta il tuo profilo comportamentale con le dimensioni che questo ruolo mette al primo posto.",
+    "notFound": "Questo ruolo non è disponibile per te. Potrebbe essere stato ritirato o non essere stato pubblicato per la tua organizzazione.",
+    "backToCareersJobs": "Torna a Careers and Jobs"
   },
   "fitFollowUpCard": {
     "ask": "Chiedi",
     "error": "Non è andato a buon fine: riprova tra un momento.",
     "intro": "Chiedi qualsiasi cosa su questo ruolo e sul tuo sviluppo: la risposta appare proprio qui.",
     "placeholder": "es. Su quale area di crescita dovrei concentrarmi per prima e come?",
-    "title": "Chiedi della tua compatibilità"
+    "title": "Chiedi della tua compatibilità",
+    "degraded": "Il coach non è riuscito a rispondere in questo momento. I tuoi dati di compatibilità non sono cambiati. Riprova tra un minuto."
   },
   "fitHistoryPage": {
     "backToMatches": "Torna alle corrispondenze",
@@ -574,5 +578,12 @@
     "label": "Il tuo percorso in Careers and Jobs",
     "planTheRoute": "Pianifica il percorso",
     "stepOf": "Passo {{n}} di {{total}}"
+  },
+  "noPrismState": {
+    "matches": "Le tue corrispondenze compaiono quando il tuo PRISM è registrato. Aggiungi o completa il tuo PRISM per vedere la tua compatibilità con i ruoli pubblicati per te.",
+    "growthAreas": "Le aree di crescita derivano dal tuo PRISM. Aggiungi o completa il tuo PRISM per vederle.",
+    "detail": "Ci serve il tuo PRISM per mostrarti la tua compatibilità con questo ruolo.",
+    "coach": "Il coaching parte dalla tua compatibilità con un ruolo, e la compatibilità richiede il tuo PRISM. Aggiungi o completa il tuo PRISM per iniziare.",
+    "link": "Vai a PRISM"
   }
 }

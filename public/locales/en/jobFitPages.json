@@ -162,7 +162,8 @@
     "thinking": "Thinking about your fit…",
     "title": "Coaching",
     "whatWork": "What do you want to work on?",
-    "whichRole": "Which role are we talking about?"
+    "whichRole": "Which role are we talking about?",
+    "degraded": "The coach couldn't answer just now. Your fit figures are unchanged. Please ask again in a minute."
   },
   "exerciseStep": {
     "text": "Work out how you work best, then test the careers worth a closer look.",
@@ -265,14 +266,17 @@
     "payHeading": "Pay — {{area}}",
     "scoredAgainst": "Scored against blueprint v{{version}}",
     "unavailable": "This role's fit breakdown isn't available.",
-    "v2Description": "How your behavioral profile compares with the dimensions this role puts first."
+    "v2Description": "How your behavioral profile compares with the dimensions this role puts first.",
+    "notFound": "This job isn't available to you. It may have been withdrawn or not published to your organization.",
+    "backToCareersJobs": "Back to Careers and Jobs"
   },
   "fitFollowUpCard": {
     "ask": "Ask",
     "error": "That didn't go through — please try again in a moment.",
     "intro": "Ask anything about this role and your development — the answer appears right here.",
     "placeholder": "e.g. Which growth area should I focus on first, and how?",
-    "title": "Ask about your fit"
+    "title": "Ask about your fit",
+    "degraded": "The coach couldn't answer just now. Your fit figures are unchanged. Please ask again in a minute."
   },
   "fitHistoryPage": {
     "backToMatches": "Back to matches",
@@ -574,5 +578,12 @@
     "label": "Your Careers and Jobs journey",
     "planTheRoute": "Plan the route",
     "stepOf": "Step {{n}} of {{total}}"
+  },
+  "noPrismState": {
+    "matches": "Your matches appear once your PRISM is on file. Add or complete your PRISM to see how you fit the jobs published to you.",
+    "growthAreas": "Growth areas come from your PRISM. Add or complete your PRISM to see them.",
+    "detail": "We need your PRISM to show your fit for this job.",
+    "coach": "Coaching works from your fit against a job, and your fit needs your PRISM. Add or complete your PRISM to start.",
+    "link": "Go to PRISM"
   }
 }

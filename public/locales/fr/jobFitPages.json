@@ -195,7 +195,9 @@
     "payHeading": "Rémunération — {{area}}",
     "scoredAgainst": "Évalué selon le blueprint v{{version}}",
     "unavailable": "Le détail de l'adéquation pour ce poste n'est pas disponible.",
-    "v2Description": "Comment votre profil comportemental se compare aux dimensions que ce poste place en priorité."
+    "v2Description": "Comment votre profil comportemental se compare aux dimensions que ce poste place en priorité.",
+    "notFound": "Ce poste ne vous est pas accessible. Il a peut-être été retiré ou n'a pas été publié pour votre organisation.",
+    "backToCareersJobs": "Retour à Careers and Jobs"
   },
   "gapsPage": {
     "topDomainLead": "Parmi vos correspondances, votre plus grand écart moyen se situe dans le domaine suivant :",
@@ -377,7 +379,8 @@
     "thinking": "Analyse de votre adéquation…",
     "title": "Coaching",
     "whatWork": "Sur quoi souhaitez-vous travailler?",
-    "whichRole": "De quel rôle parlons-nous?"
+    "whichRole": "De quel rôle parlons-nous?",
+    "degraded": "Le coach n'a pas pu répondre pour le moment. Vos chiffres d'adéquation n'ont pas changé. Veuillez reposer votre question dans une minute."
   },
   "exerciseStep": {
     "text": "Découvrez comment vous travaillez le mieux, puis testez les carrières qui méritent un examen plus attentif.",
@@ -407,7 +410,8 @@
     "error": "Cela n'a pas abouti. Veuillez réessayer dans un instant.",
     "intro": "Posez toutes vos questions sur ce poste et votre développement : la réponse s'affiche ici même.",
     "placeholder": "p. ex. Sur quel axe de progression dois-je me concentrer en premier, et comment ?",
-    "title": "Posez vos questions sur votre adéquation"
+    "title": "Posez vos questions sur votre adéquation",
+    "degraded": "Le coach n'a pas pu répondre pour le moment. Vos chiffres d'adéquation n'ont pas changé. Veuillez reposer votre question dans une minute."
   },
   "fitHistoryPage": {
     "backToMatches": "Retour aux correspondances",
@@ -574,5 +578,12 @@
     "label": "Votre parcours dans Careers and Jobs",
     "planTheRoute": "Tracer le parcours",
     "stepOf": "Étape {{n}} sur {{total}}"
+  },
+  "noPrismState": {
+    "matches": "Vos correspondances apparaîtront dès que votre PRISM sera enregistré. Ajoutez ou complétez votre PRISM pour voir votre adéquation avec les postes publiés pour vous.",
+    "growthAreas": "Les axes de progression viennent de votre PRISM. Ajoutez ou complétez votre PRISM pour les voir.",
+    "detail": "Nous avons besoin de votre PRISM pour afficher votre adéquation avec ce poste.",
+    "coach": "Le coaching part de votre adéquation avec un poste, et cette adéquation nécessite votre PRISM. Ajoutez ou complétez votre PRISM pour commencer.",
+    "link": "Aller à PRISM"
   }
 }

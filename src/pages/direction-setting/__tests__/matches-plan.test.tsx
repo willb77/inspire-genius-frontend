@@ -164,16 +164,18 @@ beforeEach(() => {
 
 describe("normalizeMatches", () => {
   test("reads a bare array payload and an envelope-level gate", () => {
-    expect(normalizeMatches({ data: [MATCH] })).toEqual({ matches: [MATCH], gated: false })
-    expect(normalizeMatches({ data: [], gated: true })).toEqual({ matches: [], gated: true })
+    // NP3 added `emptyReason` (null unless the server says "no_prism").
+    expect(normalizeMatches({ data: [MATCH] })).toEqual({ matches: [MATCH], gated: false, emptyReason: null })
+    expect(normalizeMatches({ data: [], gated: true })).toEqual({ matches: [], gated: true, emptyReason: null })
   })
 
   test("reads a wrapped payload, and survives an empty body", () => {
     expect(normalizeMatches({ data: { matches: [MATCH], gated: true } })).toEqual({
       matches: [MATCH],
       gated: true,
+      emptyReason: null,
     })
-    expect(normalizeMatches(undefined)).toEqual({ matches: [], gated: false })
+    expect(normalizeMatches(undefined)).toEqual({ matches: [], gated: false, emptyReason: null })
   })
 })
 
@@ -195,7 +197,7 @@ describe("MatchesPage — states before any match exists", () => {
   describe("no roles to match against (the shared library is still empty)", () => {
     beforeEach(() => {
       mockUseMatches.mockReturnValue(
-        matchesState({ data: { matches: [], gated: false } })
+        matchesState({ data: { matches: [], gated: false, emptyReason: null } })
       )
       renderRouted(<MatchesPage />)
     })
@@ -234,7 +236,7 @@ describe("MatchesPage — states before any match exists", () => {
   })
 
   test("matching switched off is its own state, worded differently from empty", () => {
-    mockUseMatches.mockReturnValue(matchesState({ data: { matches: [], gated: true } }))
+    mockUseMatches.mockReturnValue(matchesState({ data: { matches: [], gated: true, emptyReason: null } }))
     renderRouted(<MatchesPage />)
     expect(screen.getByText(/role matching is switched off for now/i)).toBeInTheDocument()
     expect(screen.getByText(/deliberate hold, not a fault at your end/i)).toBeInTheDocument()
@@ -249,7 +251,7 @@ describe("MatchesPage — with matches", () => {
   beforeEach(() => {
     mockAdvance.mockClear()
     mockUseMatches.mockReturnValue(
-      matchesState({ data: { matches: [MATCH, MATCH_2], gated: false } })
+      matchesState({ data: { matches: [MATCH, MATCH_2], gated: false, emptyReason: null } })
     )
     mockUseFitDetail.mockReturnValue({ data: DETAIL, isLoading: false, isError: false })
   })
@@ -294,7 +296,7 @@ describe("MatchesPage — with matches", () => {
 
     test("records nothing while matching is on hold", () => {
       mockUseMatches.mockReturnValue(
-        matchesState({ data: { matches: [MATCH], gated: true } })
+        matchesState({ data: { matches: [MATCH], gated: true, emptyReason: null } })
       )
       renderRouted(<MatchesPage />)
       expect(mockAdvance).not.toHaveBeenCalled()

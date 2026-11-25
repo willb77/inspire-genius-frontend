@@ -15,6 +15,7 @@ import {
   FitError,
 } from "@/components/fit/primitives"
 import { aggregateDomains, domainLabel, hasFullDomainSplit, meterTone, perDimensionMean } from "./_gaps"
+import { FitNoPrismState } from "./FitNoPrismState"
 
 /**
  * Aggregate view of where the user's profile diverges from role benchmarks,
@@ -23,7 +24,7 @@ import { aggregateDomains, domainLabel, hasFullDomainSplit, meterTone, perDimens
  */
 export default function GapsPage() {
   const { t } = useTranslation("jobFitPages")
-  const { data, isLoading, isError, error } = useFitMatches()
+  const { data, isLoading, isError, error, emptyReason } = useFitMatches()
 
   const matches = useMemo(() => data ?? [], [data])
   const domains = useMemo(() => aggregateDomains(matches), [matches])
@@ -67,7 +68,11 @@ export default function GapsPage() {
         </FitError>
       )}
 
-      {!isLoading && !isError && matches.length === 0 && (
+      {!isLoading && !isError && matches.length === 0 && emptyReason === "no_prism" && (
+        <FitNoPrismState surface="growthAreas" />
+      )}
+
+      {!isLoading && !isError && matches.length === 0 && emptyReason !== "no_prism" && (
         <FitEmptyState>
           {t(
             "gapsPage.empty",

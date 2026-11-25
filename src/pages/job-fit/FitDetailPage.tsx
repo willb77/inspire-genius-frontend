@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next"
 import { ArrowLeft, Route as RouteIcon, Target } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
+import { fitDetailErrorCode } from "@/lib/job-fit/fitDetailError"
+import { FitNoPrismState } from "./FitNoPrismState"
 import {
   FitPageHeader,
   FitPill,
@@ -222,7 +224,9 @@ export default function FitDetailPage() {
   // this page show the same %. No/unknown param = the backend default (gap).
   const [searchParams] = useSearchParams()
   const method = parseFitMethod(searchParams.get("method"))
-  const { data, isLoading, isError } = useFitDetail(jobId, method)
+  const { data, isLoading, isError, error } = useFitDetail(jobId, method)
+  // NP3 (N2-a): a coded 404 is an answer — say which, instead of "try again".
+  const errorCode = isError ? fitDetailErrorCode(error) : null
   const narrative = jobFitNarrativeEnabled()
   // Feeds Phase 2 — the components beside the fit. Idle (no request, no card)
   // unless the server switch is on, so the page is today's page by default.
@@ -308,7 +312,23 @@ export default function FitDetailPage() {
 
       {isLoading && <FitLoading label={t("fitDetailPage.loading", "Loading your fit for this role…")} />}
 
-      {isError && (
+      {isError && errorCode === "no_prism" && <FitNoPrismState surface="detail" />}
+
+      {isError && errorCode === "not_found" && (
+        <FitEmptyState>
+          <p className="mb-3 text-[#6b7280]">
+            {t(
+              "fitDetailPage.notFound",
+              "This job isn't available to you. It may have been withdrawn or not published to your organization.",
+            )}
+          </p>
+          <Link to={ROUTES.JOB_FIT.MATCHES} className="font-medium text-[#0D9488] underline">
+            {t("fitDetailPage.backToCareersJobs", "Back to Careers and Jobs")}
+          </Link>
+        </FitEmptyState>
+      )}
+
+      {isError && errorCode === null && (
         <FitError>
           {t(
             "fitDetailPage.loadError",
