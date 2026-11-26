@@ -105,6 +105,18 @@ jest.mock("lucide-react", () => ({
   BookOpenText: () => null,
 }));
 
+// RM-1: manager, company-admin, practitioner and distributor render
+// UnifiedLayout (their own menu). The real one is covered by
+// UserLayout.toolsByRole.test.tsx; here a probe records what it was given.
+const mockUnifiedLayout = jest.fn();
+jest.mock("@/layouts/UnifiedLayout", () => ({
+  __esModule: true,
+  default: (props: { children?: React.ReactNode }) => {
+    mockUnifiedLayout(props);
+    return <div data-testid="unified-layout">{props.children}</div>;
+  },
+}));
+
 import UserLayout from "../UserLayout";
 
 describe("UserLayout", () => {
@@ -243,5 +255,48 @@ describe("UserLayout", () => {
       (s: { label: string }) => s.label === "My Workspace",
     );
     expect(workspace.items.map((i: { label: string }) => i.label)).toContain("Lumen");
+  });
+
+  describe("RM-1 — the signed-in role's own chrome", () => {
+    test.each(["manager", "company-admin", "practitioner", "distributor"])(
+      "%s renders UnifiedLayout with its own role and the same props",
+      (role) => {
+        mockUseAuth.mockReturnValue({ user: { role } });
+        render(
+          <UserLayout className="custom" collapseSidebarOnMount>
+            <div data-testid="child" />
+          </UserLayout>,
+        );
+        expect(mockUnifiedLayout).toHaveBeenCalledTimes(1);
+        const props = mockUnifiedLayout.mock.calls[0][0];
+        expect(props.role).toBe(role);
+        expect(props.className).toBe("custom");
+        expect(props.collapseSidebarOnMount).toBe(true);
+        expect(screen.getByTestId("child")).toBeInTheDocument();
+        // The user chrome is not rendered underneath it.
+        expect(mockSidebarScaffold).not.toHaveBeenCalled();
+      },
+    );
+
+    test.each(["user", "super-admin", "manager-admin", undefined])(
+      "%s keeps the user-page chrome",
+      (role) => {
+        mockUseAuth.mockReturnValue({ user: role === undefined ? null : { role } });
+        render(<UserLayout><div /></UserLayout>);
+        expect(mockUnifiedLayout).not.toHaveBeenCalled();
+        expect(mockSidebarScaffold).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    test("a role change on the same mounted tree swaps chrome without a hook-order error", () => {
+      mockUseAuth.mockReturnValue({ user: { role: "user" } });
+      const { rerender } = render(<UserLayout><div /></UserLayout>);
+      mockUseAuth.mockReturnValue({ user: { role: "manager" } });
+      rerender(<UserLayout><div /></UserLayout>);
+      mockUseAuth.mockReturnValue({ user: { role: "super-admin" } });
+      rerender(<UserLayout><div /></UserLayout>);
+      expect(mockUnifiedLayout).toHaveBeenCalledTimes(1);
+      expect(mockSidebarScaffold).toHaveBeenCalledTimes(2);
+    });
   });
 });

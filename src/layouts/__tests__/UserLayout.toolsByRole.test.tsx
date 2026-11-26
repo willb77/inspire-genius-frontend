@@ -38,6 +38,15 @@ jest.mock("@/hooks/job-fit/useSavedJobs", () => ({ useSavedJobsEnabled: () => fa
 jest.mock("@/hooks/super-admin/useBroadcast", () => ({
   useBroadcastAccess: () => ({ data: { authorized: false } }),
 }));
+// RM-1: manager, company-admin, practitioner and distributor now render
+// UnifiedLayout on a UserLayout page. Its data hooks need a router and a
+// QueryClient this suite does not have; stub them to "not granted / off", the
+// same state a role sees before the reads return.
+jest.mock("@/hooks/audit/usePageViewAudit", () => ({ usePageViewAudit: () => undefined }));
+jest.mock("@/hooks/super-admin/usePrismExam", () => ({ useExamAccess: () => ({ data: undefined }) }));
+jest.mock("@/hooks/company-admin/useCohortReadout", () => ({
+  useCohortReadoutEnabled: () => ({ data: undefined }),
+}));
 
 // The vertical catalogue as an account entitled to job-fit sees it since
 // 2026-10-18 (request): job-fit is in WORKSPACE_VERTICALS, so the launcher
@@ -62,6 +71,9 @@ jest.mock("@/components/layout/useVerticalLauncher", () => {
 });
 
 import UserLayout from "../UserLayout";
+import UnifiedLayout from "../UnifiedLayout";
+import { NAV_ITEMS_BY_ROLE } from "@/constants/navigation";
+import type { UserRole } from "@/types/roles";
 
 type Props = { navItems: NavItemDef[]; navSections?: NavSectionDef[] };
 
@@ -86,8 +98,52 @@ function renderedRows(props: Props): NavItemDef[] {
 
 const dupes = (values: string[]) => values.filter((v, i) => v && values.indexOf(v) !== i);
 
+/** The same role rendered through its own layout (what /manager/* etc. show). */
+function renderOwnLayout(role: UserRole): Props {
+  mockUseAuth.mockReturnValue({ user: { role } });
+  mockSidebarScaffold.mockClear();
+  render(
+    <UnifiedLayout role={role}>
+      <div />
+    </UnifiedLayout>,
+  );
+  return mockSidebarScaffold.mock.calls[0][0] as Props;
+}
+
 const WITH_TOOLS = ["manager", "practitioner", "super-admin"] as const;
 const WITHOUT_TOOLS = ["user", "company-admin", "distributor"] as const;
+/** RM-1: the roles whose own menu now shows on every UserLayout page. */
+const OWN_MENU_ROLES = ["manager", "company-admin", "practitioner", "distributor"] as const;
+/** Destinations only the user menu carries; none is in these roles' own menus. */
+const USER_ONLY_DESTINATIONS = ["/home", "/documents", "/my/development"];
+
+describe("RM-1 — a UserLayout page shows the signed-in role's own menu", () => {
+  test.each(OWN_MENU_ROLES)("%s: every label of its own menu is in the sidebar", (role) => {
+    const labels = renderedRows(renderAs(role)).map((r) => r.label);
+    for (const item of NAV_ITEMS_BY_ROLE[role]) expect(labels).toContain(item.label);
+  });
+
+  test.each(OWN_MENU_ROLES)("%s: none of the user menu's own destinations is in the sidebar", (role) => {
+    const destinations = renderedRows(renderAs(role)).map((r) => r.to);
+    for (const to of USER_ONLY_DESTINATIONS) expect(destinations).not.toContain(to);
+  });
+
+  test.each(OWN_MENU_ROLES)("%s: the sidebar equals the one on the role's own pages", (role) => {
+    const onUserPage = renderedRows(renderAs(role)).map((r) => `${r.label} -> ${r.to}`);
+    const onOwnPage = renderedRows(renderOwnLayout(role)).map((r) => `${r.label} -> ${r.to}`);
+    expect(onUserPage).toEqual(onOwnPage);
+  });
+
+  test.each(["user", "super-admin"] as const)("%s keeps the user-page chrome (My Workspace rows present)", (role) => {
+    const destinations = renderedRows(renderAs(role)).map((r) => r.to);
+    for (const to of USER_ONLY_DESTINATIONS) expect(destinations).toContain(to);
+  });
+
+  test("a role label outside the six (legacy) keeps the user menu", () => {
+    const destinations = renderedRows(renderAs("manager-admin")).map((r) => r.to);
+    for (const to of USER_ONLY_DESTINATIONS) expect(destinations).toContain(to);
+  });
+});
 
 describe("UserLayout — Tools on workspace pages, by role", () => {
   test.each(WITH_TOOLS)("%s sees the Tools section", (role) => {
@@ -96,10 +152,13 @@ describe("UserLayout — Tools on workspace pages, by role", () => {
     expect(labels).toContain("Tools");
   });
 
-  test.each(WITHOUT_TOOLS)("%s sees no Tools section — the flat menu, unchanged", (role) => {
+  test.each(WITHOUT_TOOLS)("%s sees no Tools section — a flat menu", (role) => {
     const props = renderAs(role);
     expect(props.navSections).toBeUndefined();
-    expect(props.navItems.map((i) => i.label)).toContain("Goals Studio");
+  });
+
+  test("user: the flat menu is the user menu, Goals Studio included", () => {
+    expect(renderAs("user").navItems.map((i) => i.label)).toContain("Goals Studio");
   });
 
   test.each(["manager", "practitioner", ...WITHOUT_TOOLS] as const)(
@@ -126,9 +185,9 @@ describe("UserLayout — Tools on workspace pages, by role", () => {
         expect(toolRows.map((r) => r.to)).not.toContain(to);
       }
       expect(workspace.items.find((i) => i.to === "/interview-practice")?.label).toBe("Role Play");
-      // The rest of the workspace menu survives the de-duplication.
+      // RM-1: the first half is the role's own menu, not the user menu.
       expect(workspace.items.map((i) => i.label)).toEqual(
-        expect.arrayContaining(["Home", "Chat with Meridian", "Settings"]),
+        expect.arrayContaining(NAV_ITEMS_BY_ROLE[role].map((i) => i.label)),
       );
     },
   );
