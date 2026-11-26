@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { KCE_MAX_CONTEXT, KCE_MAX_ROLE_TITLE } from "@/services/knowledge-continuity/llmGuards"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
@@ -184,8 +185,20 @@ function NodeRow({
 
 function makeFormSchema(t: TFunction) {
   return z.object({
-    role_title: z.string().min(1, t("blueprint.form.roleTitleRequired", "Name the role to blueprint")),
-    context: z.string().optional(),
+    role_title: z
+      .string()
+      .min(1, t("blueprint.form.roleTitleRequired", "Name the role to blueprint"))
+      .max(
+        KCE_MAX_ROLE_TITLE,
+        t("llmGuards.roleTitleTooLong", { max: KCE_MAX_ROLE_TITLE })
+      ),
+    context: z
+      .string()
+      .max(
+        KCE_MAX_CONTEXT,
+        t("llmGuards.contextTooLong", { max: KCE_MAX_CONTEXT.toLocaleString() })
+      )
+      .optional(),
     archetype: z.enum(["", "operational", "managerial", "executive"]),
   })
 }
@@ -447,6 +460,7 @@ function FormStep({
             <Input
               id="role_title"
               placeholder={t("blueprint.form.roleTitlePlaceholder", "e.g. Senior Wastewater Treatment Operator, or CIO")}
+              maxLength={KCE_MAX_ROLE_TITLE}
               {...register("role_title")}
             />
             {errors.role_title && (
@@ -466,8 +480,12 @@ function FormStep({
                 "blueprint.form.contextPlaceholder",
                 "Paste a job description, or a few lines on what makes this role hard to hand over. (An uploaded file fills this in.)"
               )}
+              maxLength={KCE_MAX_CONTEXT}
               {...register("context")}
             />
+            {errors.context && (
+              <p className="text-sm text-destructive">{errors.context.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">

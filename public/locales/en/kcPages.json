@@ -83,6 +83,14 @@
     "title": "Blueprint a role",
     "subtitle": "Auto-draft the knowledge map for a role, edit it, and save it — then run a capture against it. This replaces hand-authoring taxonomy nodes one by one."
   },
+  "llmGuards": {
+    "noAccess": "You don't have access to this Knowledge Continuity tool. Ask your administrator to turn it on for your account.",
+    "tooMany": "Too many requests in a short time. Please wait a few minutes, then try again.",
+    "tooLong": "That's too long to send. Shorten your text and try again.",
+    "areaFull": "This area's interview has reached its length limit. Save this area to keep what you have, then carry on in another area.",
+    "roleTitleTooLong": "Keep the role title to {{max}} characters or fewer.",
+    "contextTooLong": "Keep this to {{max}} characters or fewer. Shorten the text or upload a shorter file."
+  },
   "capture": {
     "how": {
       "interview": "Interview",

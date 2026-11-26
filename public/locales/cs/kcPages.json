@@ -1,4 +1,12 @@
 {
+  "llmGuards": {
+    "noAccess": "K tomuto nástroji Knowledge Continuity nemáte přístup. Požádejte svého správce, aby vám ho zapnul.",
+    "tooMany": "Příliš mnoho požadavků v krátkém čase. Počkejte prosím několik minut a zkuste to znovu.",
+    "tooLong": "Text je na odeslání příliš dlouhý. Zkraťte ho a zkuste to znovu.",
+    "areaFull": "Rozhovor k této oblasti dosáhl limitu délky. Uložte tuto oblast, aby vám zůstalo, co máte, a pokračujte v jiné oblasti.",
+    "roleTitleTooLong": "Název role může mít nejvýše {{max}} znaků.",
+    "contextTooLong": "Tento text může mít nejvýše {{max}} znaků. Zkraťte ho nebo nahrajte kratší soubor."
+  },
   "capture": {
     "plan": {
       "whoDescription": "Nastavte to jednou — platí to pro všechny oblasti, které v této relaci zaznamenáte.",

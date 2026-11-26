@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { KCE_MAX_CONTEXT, KCE_MAX_ROLE_TITLE } from "@/services/knowledge-continuity/llmGuards"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
@@ -216,8 +217,18 @@ function makeFormSchema(t: TFunction) {
   return z.object({
     role_title: z
       .string()
-      .min(1, t("blueprintStudio.roleTitleRequired", "Name the role you want to be measured against")),
-    context: z.string().optional(),
+      .min(1, t("blueprintStudio.roleTitleRequired", "Name the role you want to be measured against"))
+      .max(
+        KCE_MAX_ROLE_TITLE,
+        t("kcPages:llmGuards.roleTitleTooLong", { max: KCE_MAX_ROLE_TITLE })
+      ),
+    context: z
+      .string()
+      .max(
+        KCE_MAX_CONTEXT,
+        t("kcPages:llmGuards.contextTooLong", { max: KCE_MAX_CONTEXT.toLocaleString() })
+      )
+      .optional(),
     archetype: z.enum(["", "operational", "managerial", "executive"]),
   })
 }
@@ -502,6 +513,7 @@ function FormStep({
                 "blueprintStudio.roleTitlePlaceholder",
                 "e.g. Director of Operations, or Senior Product Manager",
               )}
+              maxLength={KCE_MAX_ROLE_TITLE}
               {...register("role_title")}
             />
             {errors.role_title && (
@@ -521,8 +533,12 @@ function FormStep({
                 "blueprintStudio.contextPlaceholder",
                 "Paste the job posting, or describe what the role actually involves. (An uploaded file fills this in.)",
               )}
+              maxLength={KCE_MAX_CONTEXT}
               {...register("context")}
             />
+            {errors.context && (
+              <p className="text-sm text-destructive">{errors.context.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">

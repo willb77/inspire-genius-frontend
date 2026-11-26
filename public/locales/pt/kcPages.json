@@ -257,6 +257,14 @@
     "title": "Criar o blueprint de um cargo",
     "subtitle": "Elabore automaticamente o mapa de conhecimento de um cargo, edite e salve — depois execute uma captura com base nele. Isso substitui a criação manual de nós de taxonomia, um por um."
   },
+  "llmGuards": {
+    "noAccess": "Você não tem acesso a esta ferramenta Knowledge Continuity. Peça ao seu administrador para ativá-la na sua conta.",
+    "tooMany": "Muitas solicitações em pouco tempo. Aguarde alguns minutos e tente novamente.",
+    "tooLong": "Isso é longo demais para enviar. Encurte o texto e tente novamente.",
+    "areaFull": "A entrevista desta área atingiu o limite de tamanho. Salve esta área para manter o que você já tem e continue em outra área.",
+    "roleTitleTooLong": "O título do cargo deve ter no máximo {{max}} caracteres.",
+    "contextTooLong": "Este texto deve ter no máximo {{max}} caracteres. Encurte-o ou envie um arquivo menor."
+  },
   "capture": {
     "how": {
       "transfer": "Transferência",

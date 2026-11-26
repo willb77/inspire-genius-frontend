@@ -189,6 +189,14 @@
       "removeAria": "Eliminar {{name}}"
     }
   },
+  "llmGuards": {
+    "noAccess": "No tienes acceso a esta herramienta Knowledge Continuity. Pide a tu administrador que la active para tu cuenta.",
+    "tooMany": "Demasiadas solicitudes en poco tiempo. Espera unos minutos y vuelve a intentarlo.",
+    "tooLong": "Es demasiado largo para enviarlo. Acorta el texto y vuelve a intentarlo.",
+    "areaFull": "La entrevista de esta área ha alcanzado su límite de extensión. Guarda esta área para conservar lo que tienes y continúa en otra área.",
+    "roleTitleTooLong": "El título del puesto debe tener {{max}} caracteres como máximo.",
+    "contextTooLong": "Este texto debe tener {{max}} caracteres como máximo. Acórtalo o sube un archivo más corto."
+  },
   "capture": {
     "how": {
       "interview": "Entrevista",
