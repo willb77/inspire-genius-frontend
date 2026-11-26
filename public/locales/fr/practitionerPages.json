@@ -335,6 +335,16 @@
     "sessions": "Séances",
     "sessionsBadge": "{{sessions}} séances"
   },
+  "clientPrismImport": {
+    "open": "Importer un rapport PRISM (CSV)",
+    "description": "Le rapport est ajouté au propre profil InspiresGenius de {{name}}, où il devient son PRISM actuel. Seul un fichier CSV peut être importé.",
+    "fileLabel": "Rapport PRISM (fichier CSV)",
+    "chooseFile": "Choisissez d’abord le fichier CSV du rapport PRISM du client.",
+    "csvOnly": "Un rapport PRISM s’importe uniquement en fichier CSV. Choisissez un fichier .csv.",
+    "send": "Importer",
+    "failed": "L’importation a échoué. Rien n’a été ajouté au profil de {{name}}.",
+    "done": "Importé. Ce rapport PRISM figure désormais sur le profil InspiresGenius de {{name}} comme son PRISM actuel."
+  },
   "prismPanel": {
     "assessed": "Évalué le {{date}}",
     "notShared": "{{name}} n’a pas partagé son PRISM avec vous. Cette personne peut le partager depuis sa page Partage.",

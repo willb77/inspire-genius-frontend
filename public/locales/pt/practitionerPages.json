@@ -207,6 +207,16 @@
     "followUpsTopics": "Acompanhamentos e tópicos",
     "followUps": "Acompanhamentos"
   },
+  "clientPrismImport": {
+    "open": "Importar relatório PRISM (CSV)",
+    "description": "Isto adiciona o relatório ao próprio perfil InspiresGenius de {{name}}, onde passa a ser o PRISM atual. Só é possível importar um arquivo CSV.",
+    "fileLabel": "Relatório PRISM (arquivo CSV)",
+    "chooseFile": "Primeiro escolha o CSV do relatório PRISM do cliente.",
+    "csvOnly": "Um relatório PRISM só é importado como arquivo CSV. Escolha um arquivo .csv.",
+    "send": "Importar",
+    "failed": "A importação falhou. Nada foi adicionado ao perfil de {{name}}.",
+    "done": "Importado. Este relatório PRISM agora está no perfil InspiresGenius de {{name}} como o PRISM atual."
+  },
   "clients": {
     "inProgress": "Em andamento",
     "none": "Nenhum",

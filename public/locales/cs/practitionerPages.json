@@ -80,6 +80,16 @@
     "cancel": "Zrušit",
     "upload": "Nahrát"
   },
+  "clientPrismImport": {
+    "open": "Importovat zprávu PRISM (CSV)",
+    "description": "Zpráva se přidá do vlastního profilu InspiresGenius klienta {{name}} a stane se jeho aktuálním PRISM. Importovat lze pouze soubor CSV.",
+    "fileLabel": "Zpráva PRISM (soubor CSV)",
+    "chooseFile": "Nejprve vyberte soubor CSV se zprávou PRISM klienta.",
+    "csvOnly": "Zprávu PRISM lze importovat pouze jako soubor CSV. Vyberte soubor .csv.",
+    "send": "Importovat",
+    "failed": "Import se nezdařil. Do profilu klienta {{name}} nebylo nic přidáno.",
+    "done": "Importováno. Tato zpráva PRISM je nyní v profilu InspiresGenius klienta {{name}} jako jeho aktuální PRISM."
+  },
   "matrix": {
     "chooseFile": "Vyberte soubor k nahrání.",
     "enterText": "Zadejte text k uložení.",

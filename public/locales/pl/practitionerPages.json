@@ -370,6 +370,16 @@
     "cancel": "Anuluj",
     "upload": "Prześlij"
   },
+  "clientPrismImport": {
+    "open": "Importuj raport PRISM (CSV)",
+    "description": "Raport zostanie dodany do własnego profilu InspiresGenius klienta {{name}} i stanie się jego bieżącym PRISM. Można zaimportować tylko plik CSV.",
+    "fileLabel": "Raport PRISM (plik CSV)",
+    "chooseFile": "Najpierw wybierz plik CSV z raportem PRISM klienta.",
+    "csvOnly": "Raport PRISM można zaimportować tylko jako plik CSV. Wybierz plik .csv.",
+    "send": "Importuj",
+    "failed": "Import nie powiódł się. Do profilu klienta {{name}} nic nie dodano.",
+    "done": "Zaimportowano. Ten raport PRISM jest teraz w profilu InspiresGenius klienta {{name}} jako jego bieżący PRISM."
+  },
   "studioRoster": {
     "notConnected": "Jeszcze niepołączony",
     "notConnectedHeading": "Klienci, którzy jeszcze nie połączyli konta ({{count}})",

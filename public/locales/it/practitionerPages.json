@@ -28,6 +28,16 @@
     "noTopics": "Nessun argomento registrato.",
     "pastConversations": "Conversazioni passate"
   },
+  "clientPrismImport": {
+    "open": "Importa report PRISM (CSV)",
+    "description": "Il report viene aggiunto al profilo InspiresGenius di {{name}}, dove diventa il suo PRISM attuale. Si può importare solo un file CSV.",
+    "fileLabel": "Report PRISM (documento CSV)",
+    "chooseFile": "Scegli prima il CSV del report PRISM del cliente.",
+    "csvOnly": "Un report PRISM si importa solo come documento CSV. Scegli un documento .csv.",
+    "send": "Importa",
+    "failed": "L’importazione non è riuscita. Nulla è stato aggiunto al profilo di {{name}}.",
+    "done": "Importato. Questo report PRISM è ora nel profilo InspiresGenius di {{name}} come suo PRISM attuale."
+  },
   "clients": {
     "inProgress": "In corso",
     "none": "Nessuno",

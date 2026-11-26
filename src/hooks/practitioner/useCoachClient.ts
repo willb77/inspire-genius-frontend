@@ -37,6 +37,22 @@ export function useClientPrism(id: string | undefined) {
   })
 }
 
+/**
+ * TDS U12: import a linked client's PRISM report CSV onto their own profile.
+ * On success the client's record and PRISM reader are refreshed.
+ */
+export function useImportClientPrism() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (args: { clientId: string; file: File }) =>
+      coachClient.importClientPrismCsv(args.clientId, args.file),
+    onSuccess: (_data, args) => {
+      void qc.invalidateQueries({ queryKey: KEYS.clientPrism(args.clientId) })
+      void qc.invalidateQueries({ queryKey: KEYS.client(args.clientId) })
+    },
+  })
+}
+
 export function useAddCoachClient() {
   const qc = useQueryClient()
   return useMutation({
