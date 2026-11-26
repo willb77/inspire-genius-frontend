@@ -328,6 +328,11 @@
       "addedToYourStory": "Added to your story"
     },
     "bioChronicleChatPanel": {
+      "chapterActive": "Chapter: {{chapter}}",
+      "chapterDone": "Chapter done",
+      "markChapterDone": "Mark chapter done",
+      "reopenChapter": "Reopen chapter",
+      "chapterUpdateFailed": "Couldn't update this chapter — please try again.",
       "nothingToSaveYetStart": "Nothing to save yet — start the interview first.",
       "interviewSavedYouCanContinue": "Interview saved — you can continue it any time.",
       "couldnTSaveThisSession": "Couldn't save this session — it's still here in the meantime.",

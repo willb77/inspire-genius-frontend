@@ -225,6 +225,11 @@
       "addedToYourStory": "Dodano do Twojej historii"
     },
     "bioChronicleChatPanel": {
+      "chapterActive": "Rozdział: {{chapter}}",
+      "chapterDone": "Rozdział ukończony",
+      "markChapterDone": "Oznacz rozdział jako ukończony",
+      "reopenChapter": "Otwórz rozdział ponownie",
+      "chapterUpdateFailed": "Nie udało się zaktualizować tego rozdziału — spróbuj ponownie.",
       "nothingToSaveYetStart": "Nie ma jeszcze nic do zapisania — najpierw rozpocznij wywiad.",
       "interviewSavedYouCanContinue": "Wywiad zapisany — możesz go kontynuować w dowolnym momencie.",
       "couldnTSaveThisSession": "Nie udało się zapisać tej sesji — na razie nadal tu jest.",

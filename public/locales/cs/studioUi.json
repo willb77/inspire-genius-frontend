@@ -48,6 +48,11 @@
       "back": "Zpět"
     },
     "bioChronicleChatPanel": {
+      "chapterActive": "Kapitola: {{chapter}}",
+      "chapterDone": "Kapitola dokončena",
+      "markChapterDone": "Označit kapitolu jako dokončenou",
+      "reopenChapter": "Znovu otevřít kapitolu",
+      "chapterUpdateFailed": "Tuto kapitolu se nepodařilo aktualizovat – zkuste to prosím znovu.",
       "couldnTSaveThisSession": "Tuto relaci se nepodařilo uložit – zatím zde zůstává.",
       "resumed": "Relace „{{title}}“ byla obnovena.",
       "couldnTOpenThatSession": "Tuto relaci se nepodařilo otevřít – zkuste to prosím znovu.",

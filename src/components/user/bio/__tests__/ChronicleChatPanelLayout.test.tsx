@@ -28,6 +28,10 @@ jest.mock("@/hooks/useBioSessions", () => ({
   useSaveBioSession: () => ({ mutateAsync: jest.fn(), isPending: false }),
   useLoadBioSession: () => ({ mutateAsync: jest.fn() }),
 }))
+jest.mock("@/hooks/useCompleteBioModule", () => {
+  const m = () => ({ mutate: jest.fn(), reset: jest.fn(), isPending: false, error: null })
+  return { useCompleteBioModule: m, useReopenBioModule: m }
+})
 jest.mock("@/hooks/useTTS", () => ({
   useTTS: () => ({
     speak: jest.fn(),
