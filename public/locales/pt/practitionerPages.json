@@ -386,5 +386,33 @@
     "inviteFromMyClients": "Convidar a partir de Os meus clientes",
     "clientRecord": "Ficha do cliente",
     "clientRecordAria": "Abrir a ficha do cliente de {{name}}: sessões, documentos, acompanhamentos e importação PRISM"
+  },
+  "clientImport": {
+    "cardTitle": "DISC e CliftonStrengths",
+    "help": "Envie a {{name}} um resultado de DISC ou CliftonStrengths de um relatório que você tem. Ele só conta depois que {{name}} o aceitar nas Configurações do InspiresGenius.",
+    "open": "Importar DISC ou CliftonStrengths",
+    "title": "Enviar a {{name}} um resultado de avaliação",
+    "chooseHelp": "Escolha a avaliação e o arquivo (CSV, PDF, Excel ou Word). Você revisará o resultado antes do envio.",
+    "reviewHelp": "Confira o que lemos do arquivo e remova o que estiver errado. Nada é enviado até você clicar em Enviar.",
+    "sentHelp": "Enviado e aguardando o cliente.",
+    "framework": "Avaliação",
+    "chooseFramework": "Escolha uma avaliação",
+    "file": "Arquivo",
+    "reviewEmpty": "Não restam resultados para enviar.",
+    "unknownTheme": "Não é um tema do CliftonStrengths",
+    "moveUp": "Mover {{name}} para cima",
+    "moveDown": "Mover {{name}} para baixo",
+    "removeRow": "Remover {{name}}",
+    "removeUnknown": "Remova os temas marcados acima antes de enviar.",
+    "sent": "Enviado. O resultado de {{framework}} está aguardando {{name}}. Ele não conta até que {{name}} o aceite nas Configurações do InspiresGenius, e {{name}} pode recusá-lo.",
+    "notLinked": "Este cliente ainda não vinculou uma conta do InspiresGenius.",
+    "forbidden": "Você não tem acesso a este cliente.",
+    "tooLarge": "Esse arquivo é grande demais.",
+    "failed": "Não foi possível ler esse arquivo. Verifique o arquivo e a avaliação e tente novamente.",
+    "cancel": "Cancelar",
+    "read": "Ler arquivo",
+    "back": "Voltar",
+    "send": "Enviar a {{name}}",
+    "done": "Concluído"
   }
 }

@@ -28,11 +28,13 @@ jest.mock("@/hooks/audit/usePageViewAudit", () => ({
 // Tools defaults to null — the real hook returns null for every role this
 // layout serves — and individual tests override it.
 const mockTools = jest.fn(() => null as unknown);
-jest.mock("@/hooks/nav/useToolsSection", () => ({
-  useToolsSection: () => mockTools(),
-}));
+// RM-4: UnifiedLayout reads the whole menu from useRoleMenuFrame. Here the frame
+// is a role outside the shared frame (footer null), which keeps this suite on
+// the layout's pass-through wiring; the framed shape is covered in
+// UnifiedLayout.tools.test.tsx and rm4-menu-frame.test.tsx. frameSections is real.
 jest.mock("@/hooks/nav/useGatedNavItems", () => ({
-  useGatedNavItems: (role: string) => {
+  frameSections: jest.requireActual("@/hooks/nav/useGatedNavItems").frameSections,
+  useRoleMenuFrame: (role: string) => {
     const map: Record<string, Array<{ to: string; icon: () => null; label: string }>> = {
       user: [
         { to: "/home", icon: () => null, label: "Home" },
@@ -40,7 +42,7 @@ jest.mock("@/hooks/nav/useGatedNavItems", () => ({
       ],
       manager: [{ to: "/manager/dashboard", icon: () => null, label: "Manager Dashboard" }],
     };
-    return map[role] ?? map.user;
+    return { own: map[role] ?? map.user, workspace: null, tools: mockTools(), footer: null };
   },
 }));
 

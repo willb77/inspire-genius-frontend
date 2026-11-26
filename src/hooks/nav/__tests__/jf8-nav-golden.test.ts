@@ -25,7 +25,7 @@ import {
 import { ROUTES } from "@/constants/routes"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole } from "@/types/roles"
-import { useGatedNavItems } from "../useGatedNavItems"
+import { useRoleMenuFrame } from "../useGatedNavItems"
 
 // JF-8 menu wiring: the menus now read `job_fit_v2` (JF-7's status read). Off
 // here, as today; the on state is covered in jf8-menu-wiring.test.tsx.
@@ -42,6 +42,8 @@ jest.mock("@/verticals/core/useEnabledVerticals", () => ({
 jest.mock("@/hooks/switches/useWorkspaceDirectionSettingEnabled", () => ({
   useWorkspaceDirectionSettingEnabled: () => false,
 }))
+// RM-4: the frame also reads the Tools section, which asks for Platform Alerts access.
+jest.mock("@/hooks/super-admin/useBroadcast", () => ({ useBroadcastAccess: () => ({ data: { authorized: false } }) }))
 jest.mock("@/hooks/super-admin/usePrismExam", () => ({ useExamAccess: () => ({ data: undefined }) }))
 jest.mock("@/hooks/company-admin/useCohortReadout", () => ({
   useCohortReadoutEnabled: () => ({ data: undefined }),
@@ -60,8 +62,13 @@ describe("JF-8 — menus with job_fit_v2 off are today's", () => {
   })
 
   it.each(ROLES)("useGatedNavItems(%s) — the menu the role gets", (role) => {
-    const { result } = renderHook(() => useGatedNavItems(role))
-    const items = show(result.current)
+    // RM-4: the role's main menu is its own list plus, for manager, company
+    // admin and practitioner, the My Workspace section (where Career Fit now
+    // lives). For user, distributor and super-admin this is useGatedNavItems'
+    // list, so their snapshot entries are unchanged. The title keeps the old
+    // name so the snapshot keys do not move.
+    const { result } = renderHook(() => useRoleMenuFrame(role))
+    const items = show([...result.current.own, ...(result.current.workspace ?? [])])
     // The two workspace verticals stay as today: one entry each, today's names and doors.
     expect(items).toContain("Career Fit -> /vertical/job-fit/matches")
     expect(items).toContain("Career & Education Discovery -> /vertical/career-discovery/journey")

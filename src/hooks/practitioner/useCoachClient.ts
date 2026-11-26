@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import * as coachClient from "@/services/practitioner/coachClient.service"
-import type { BulkScheduleInput, ResourceKey } from "@/types/practitioner/coachClient"
+import type {
+  BulkScheduleInput,
+  ClientImportFramework,
+  ClientImportScore,
+  ResourceKey,
+} from "@/types/practitioner/coachClient"
 
 /**
  * React Query hooks over the coachClient stub seam. Server state only — the
@@ -97,3 +102,22 @@ export function useCoachCredits() {
 export function useClientUsage() {
   return useQuery({ queryKey: KEYS.usage, queryFn: coachClient.getClientUsage })
 }
+
+/** TDS A4: parse a client's DISC / CliftonStrengths file. Saves nothing. */
+export function usePreviewClientAssessmentImport() {
+  return useMutation({
+    mutationFn: (args: { clientId: string; framework: ClientImportFramework; file: File }) =>
+      coachClient.previewClientAssessmentImport(args.clientId, args.framework, args.file),
+  })
+}
+
+/** TDS A4: send the reviewed result to the client, held until they accept it. */
+export function useSendClientAssessmentImport() {
+  return useMutation({
+    mutationFn: (args: { clientId: string; framework: ClientImportFramework; scores: ClientImportScore[] }) =>
+      coachClient.sendClientAssessmentImport(args.clientId, { framework: args.framework, scores: args.scores }),
+  })
+}
+
+/** Whether the import is offered here (only where the coach backend is deployed). */
+export const clientImportAvailable = coachClient.clientImportAvailable

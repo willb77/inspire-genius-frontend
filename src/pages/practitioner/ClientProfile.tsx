@@ -15,7 +15,12 @@ import ClientPrismImport from "@/components/practitioner/ClientPrismImport"
 import { prismImportOffered } from "@/components/practitioner/clientPrismImportHelpers"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useClientPrism, useCoachClient } from "@/hooks/practitioner/useCoachClient"
+import {
+  clientImportAvailable,
+  useClientPrism,
+  useCoachClient,
+} from "@/hooks/practitioner/useCoachClient"
+import ClientAssessmentImport from "@/components/practitioner/ClientAssessmentImport"
 import { withPrism } from "@/lib/withPrism"
 
 function formatDate(dateStr: string) {
@@ -175,6 +180,13 @@ export default function PractitionerClientProfile() {
             {prismImportOffered(prismQuery.data) && <ClientPrismImport clientId={data.id} clientName={data.name} />}
           </div>
         </DataCard>
+
+        {/* TDS A4: send the client a DISC or CliftonStrengths result, held until they accept it */}
+        {clientImportAvailable && (
+          <DataCard title={t("clientImport.cardTitle", { defaultValue: "DISC and CliftonStrengths" })}>
+            <ClientAssessmentImport clientId={data.id} clientName={data.name} />
+          </DataCard>
+        )}
 
         {/* Resources */}
         <DataCard title={t("clientProfile.resources", { defaultValue: "Resources" })}>

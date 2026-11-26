@@ -215,3 +215,30 @@ export type TrendResponse = {
   dimension: string;
   points: TrendPoint[];
 };
+
+// ── TDS A4: results a practitioner sent, held until the person accepts ──
+
+/** One row of a held result (backend `PendingImportScore`). */
+export type PendingImportScore = {
+  category: string;
+  dimension: string;
+  score_numeric?: number | null;
+  score_text?: string | null;
+  rank?: number | null;
+};
+
+/**
+ * A result a practitioner sent that the person has neither accepted nor
+ * declined (backend `PendingImport`). It counts for nothing until accepted.
+ */
+export type PendingImport = {
+  id: string;
+  framework: string;
+  imported_at: string;
+  imported_by?: string | null;
+  imported_by_name?: string | null;
+  scores: PendingImportScore[];
+};
+
+/** `GET /v1/profile/me/assessments/pending` (backend `PendingImportsResponse`). */
+export type PendingImportsResponse = { items: PendingImport[] };

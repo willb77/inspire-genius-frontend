@@ -1105,11 +1105,26 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "AI Observability -> /company-admin/observability",
         "Culture Docs -> /company-admin/culture",
         "Surveys -> /surveys",
+      ],
+      "label": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
         "Role Play -> /interview-practice",
+        "My development -> /my/development",
         "Résumé Writer -> /my/resume",
-        "Settings -> /company-admin/settings",
+        "Document Library -> /documents",
+      ],
+      "label": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /settings",
+        "Help & Support -> /help",
       ],
       "label": "",
     },
@@ -1125,11 +1140,26 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "AI Observability -> /company-admin/observability",
         "Culture Docs -> /company-admin/culture",
         "Surveys -> /surveys",
+      ],
+      "label": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
         "Role Play -> /interview-practice",
+        "My development -> /my/development",
         "Résumé Writer -> /my/resume",
-        "Settings -> /company-admin/settings",
+        "Document Library -> /documents",
+      ],
+      "label": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /settings",
+        "Help & Support -> /help",
       ],
       "label": "",
     },
@@ -1148,6 +1178,12 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Reports -> /distributor/analytics",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
+      ],
+      "label": "",
+    },
+    {
+      "items": [
+        "Settings -> /distributor/settings",
         "Help & Support -> /help",
       ],
       "label": "",
@@ -1162,6 +1198,12 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Reports -> /distributor/analytics",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
+      ],
+      "label": "",
+    },
+    {
+      "items": [
+        "Settings -> /distributor/settings",
         "Help & Support -> /help",
       ],
       "label": "",
@@ -1179,20 +1221,26 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Member Oversight -> /manager/students",
         "Team Import -> /manager/bulk-import",
         "Schedule -> /manager/schedule",
+      ],
+      "label": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
         "Role Play -> /interview-practice",
+        "My development -> /my/development",
         "Résumé Writer -> /my/resume",
-        "Settings -> /manager/settings",
-        "Help & Support -> /help",
+        "Document Library -> /documents",
       ],
-      "label": "",
+      "label": "My Workspace",
     },
     {
       "defaultCollapsed": true,
       "items": [
         "Bio Capture Studio -> /bio",
-        "Goals Studio -> /my/goals",
         "Role Blueprint Match -> /manager/job-blueprint",
         "Career Studio -> (group)",
         "  Role Blueprints -> /vertical/job-blueprint/dashboard",
@@ -1205,6 +1253,13 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Lumen -> /vertical/lumen/dashboard",
       ],
       "label": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /manager/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
     },
   ],
   "owner": [
@@ -1214,20 +1269,26 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Member Oversight -> /manager/students",
         "Team Import -> /manager/bulk-import",
         "Schedule -> /manager/schedule",
+      ],
+      "label": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
         "Role Play -> /interview-practice",
+        "My development -> /my/development",
         "Résumé Writer -> /my/resume",
-        "Settings -> /manager/settings",
-        "Help & Support -> /help",
+        "Document Library -> /documents",
       ],
-      "label": "",
+      "label": "My Workspace",
     },
     {
       "defaultCollapsed": true,
       "items": [
         "Bio Capture Studio -> /bio",
-        "Goals Studio -> /my/goals",
         "Role Blueprint Match -> /manager/job-blueprint",
         "Career Studio -> (group)",
         "  Role Blueprints -> /vertical/job-blueprint/dashboard",
@@ -1240,6 +1301,13 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Lumen -> /vertical/lumen/dashboard",
       ],
       "label": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /manager/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
     },
   ],
 }
@@ -1252,25 +1320,32 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
       "items": [
         "Client Development Studio -> /practitioner/development",
         "Practitioner Home -> /practitioner/home",
-        "Chat with Meridian -> /meridian/chat",
         "My Clients -> /practitioner/clients",
         "Client PRISM Assessments -> /practitioner/prism-clients",
         "My PRISM Practice -> /practitioner/practice",
         "Schedule -> /practitioner/schedule",
         "Surveys -> /surveys",
         "Analytics -> /practitioner/analytics",
+      ],
+      "label": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
         "Role Play -> /interview-practice",
+        "My development -> /my/development",
         "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
       ],
-      "label": "",
+      "label": "My Workspace",
     },
     {
       "defaultCollapsed": true,
       "items": [
         "Bio Capture Studio -> /bio",
-        "Goals Studio -> /my/goals",
         "Role Blueprint Match -> /practitioner/job-blueprint",
         "Career Studio -> (group)",
         "  Role Blueprints -> /vertical/job-blueprint/dashboard",
@@ -1283,6 +1358,13 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Lumen -> /vertical/lumen/dashboard",
       ],
       "label": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /practitioner/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
     },
   ],
   "owner": [
@@ -1290,25 +1372,32 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
       "items": [
         "Client Development Studio -> /practitioner/development",
         "Practitioner Home -> /practitioner/home",
-        "Chat with Meridian -> /meridian/chat",
         "My Clients -> /practitioner/clients",
         "Client PRISM Assessments -> /practitioner/prism-clients",
         "My PRISM Practice -> /practitioner/practice",
         "Schedule -> /practitioner/schedule",
         "Surveys -> /surveys",
         "Analytics -> /practitioner/analytics",
+      ],
+      "label": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
         "Role Play -> /interview-practice",
+        "My development -> /my/development",
         "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
       ],
-      "label": "",
+      "label": "My Workspace",
     },
     {
       "defaultCollapsed": true,
       "items": [
         "Bio Capture Studio -> /bio",
-        "Goals Studio -> /my/goals",
         "Role Blueprint Match -> /practitioner/job-blueprint",
         "Career Studio -> (group)",
         "  Role Blueprints -> /vertical/job-blueprint/dashboard",
@@ -1321,6 +1410,13 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Lumen -> /vertical/lumen/dashboard",
       ],
       "label": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /practitioner/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
     },
   ],
 }

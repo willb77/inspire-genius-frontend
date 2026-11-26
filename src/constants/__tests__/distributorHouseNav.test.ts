@@ -28,13 +28,13 @@ const HOUSE: [string, string][] = [
   ["My practitioners", "/distributor/network"],
   ["Credits", "/distributor/credits"],
   ["Reports", "/distributor/analytics"],
-  ["Help & Support", "/help"],
+  // Help & Support moved to the footer section in RM-4, beside Settings.
 ]
 
 afterEach(() => localStorage.clear())
 
 describe("distributor menu", () => {
-  it.each([null, "false", "true"] as const)("switch %s: the five-item house menu", (v) => {
+  it.each([null, "false", "true"] as const)("switch %s: the four-item house menu (RM-4: Help in the footer)", (v) => {
     const nav = load(v)
     expect(nav.DISTRIBUTOR_NAV_ITEMS.map((i) => [i.label, i.to])).toEqual(HOUSE)
     expect(nav.NAV_ITEMS_BY_ROLE.distributor).toBe(nav.DISTRIBUTOR_NAV_ITEMS_HOUSE)
@@ -62,5 +62,14 @@ describe("distributor menu", () => {
     expect(nav.HOME_ROUTE_BY_ROLE.distributor).toBe("/distributor/dashboard")
     const roleViews = nav.SUPER_ADMIN_NAV_SECTIONS.find((s) => s.label === "Role Views")
     expect(roleViews?.items.find((i) => i.label === "Distributor")?.to).toBe("/distributor/dashboard")
+  })
+
+  it("RM-4: the footer is Settings (/distributor/settings) then Help & Support; no My Workspace", () => {
+    const nav = load(null)
+    expect(nav.FOOTER_NAV_ITEMS_BY_ROLE.distributor?.map((i) => [i.label, i.to])).toEqual([
+      ["Settings", "/distributor/settings"],
+      ["Help & Support", "/help"],
+    ])
+    expect(nav.WORKSPACE_SECTION_ROLES.has("distributor")).toBe(false)
   })
 })

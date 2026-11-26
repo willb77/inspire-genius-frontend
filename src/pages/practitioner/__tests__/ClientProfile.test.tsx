@@ -16,11 +16,21 @@ jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 
 const mockUseCoachClient = jest.fn()
 const mockUseClientPrism = jest.fn()
+let mockImportAvailable = false
 jest.mock("@/hooks/practitioner/useCoachClient", () => ({
   useCoachClient: () => mockUseCoachClient(),
   useClientPrism: () => mockUseClientPrism(),
   useUploadClientResource: () => ({ mutate: jest.fn(), isPending: false }),
   useImportClientPrism: () => ({ mutate: jest.fn(), reset: jest.fn(), isPending: false }),
+  get clientImportAvailable() {
+    return mockImportAvailable
+  },
+}))
+jest.mock("@/components/practitioner/ClientAssessmentImport", () => ({
+  __esModule: true,
+  default: ({ clientId, clientName }: { clientId: string; clientName: string }) => (
+    <div data-testid="client-import-stub">{`${clientId}|${clientName}`}</div>
+  ),
 }))
 
 const DETAIL = {
@@ -152,5 +162,20 @@ describe("PractitionerClientProfile", () => {
     mockUseCoachClient.mockReturnValue({ data: null, isLoading: false })
     renderPage()
     expect(screen.getByText("Client not found.")).toBeInTheDocument()
+  })
+
+  // TDS A4: the import is offered only where the coach backend is deployed.
+  it("offers the DISC / CliftonStrengths import where the coach backend is deployed", () => {
+    mockImportAvailable = true
+    renderPage()
+    expect(screen.getByRole("region", { name: "DISC and CliftonStrengths" })).toBeInTheDocument()
+    expect(screen.getByTestId("client-import-stub")).toHaveTextContent("cl-1|Marcus Chen")
+  })
+
+  it("does not offer it where the coach backend is not deployed", () => {
+    mockImportAvailable = false
+    renderPage()
+    expect(screen.queryByRole("region", { name: "DISC and CliftonStrengths" })).not.toBeInTheDocument()
+    expect(screen.queryByTestId("client-import-stub")).not.toBeInTheDocument()
   })
 })

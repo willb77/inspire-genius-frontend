@@ -126,3 +126,34 @@ export type BulkScheduleResult = { created: number; emailed: number; entries: Sc
  */
 export type ClientsUnderManagementSummary = { clientsUnderManagement: number | null }
 export type ClientUsageRow = { clientName: string; sessions: number; creditsUsed: number; lastActive: string }
+
+// ── TDS A4: a practitioner sends a linked client's DISC or CliftonStrengths ──
+
+/** The two frameworks the coach import accepts (the server refuses others). */
+export type ClientImportFramework = "DISC" | "CLIFTON"
+
+/** One parsed row from the coach preview (the server's `ScoreIn` fields). */
+export type ClientImportScore = {
+  category: string
+  dimension: string
+  sub_dimension?: string | null
+  score_type?: string | null
+  score_numeric?: number | null
+  score_text?: string | null
+  rank?: number | null
+}
+
+/** `POST /v1/agents/coach/clients/{id}/assessments/import/preview` → data. */
+export type ClientImportPreview = {
+  framework: ClientImportFramework
+  filename?: string | null
+  scores: ClientImportScore[]
+}
+
+/** `POST …/import/confirm` → data. `state` is "sent": held until the client accepts. */
+export type ClientImportSent = {
+  assessmentId: string
+  framework: ClientImportFramework
+  state: string
+  scoreCount: number
+}

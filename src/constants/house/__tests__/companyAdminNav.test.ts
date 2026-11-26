@@ -2,8 +2,13 @@
  * @jest-environment jsdom
  *
  * House-style company-admin menu (area `company-admin`, default OFF).
+ *
+ * RM-4 (2026-11-25): Role Play and Résumé Writer left the company-admin list
+ * for the My Workspace section, and Settings and Help & Support are in the
+ * footer section, so neither list carries them and the house menu no longer
+ * appends Help.
  */
-import { COMPANY_ADMIN_NAV_ITEMS, NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
+import { COMPANY_ADMIN_NAV_ITEMS, FOOTER_NAV_ITEMS_BY_ROLE, NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
 import {
   companyAdminHouseMenu,
   withCompanyAdminHouseMenu,
@@ -26,9 +31,6 @@ describe("company-admin house menu", () => {
       "AI Observability",
       "Culture Docs",
       "Surveys",
-      "Role Play",
-      "Résumé Writer",
-      "Settings",
     ])
   })
 
@@ -37,7 +39,7 @@ describe("company-admin house menu", () => {
     expect(withCompanyAdminHouseMenu("company-admin", COMPANY_ADMIN_NAV_ITEMS)).toBe(COMPANY_ADMIN_NAV_ITEMS)
   })
 
-  it("switch on: People, no Settings or Costs, Help & Support at the end", () => {
+  it("switch on: People, no Settings or Costs, and no Help (it is in the footer)", () => {
     localStorage.setItem(SWITCH, "true")
     const menu = withCompanyAdminHouseMenu("company-admin", COMPANY_ADMIN_NAV_ITEMS)
     expect(menu.map((i) => [i.label, i.to])).toEqual([
@@ -49,21 +51,24 @@ describe("company-admin house menu", () => {
       ["AI Observability", "/company-admin/observability"],
       ["Culture Docs", "/company-admin/culture"],
       ["Surveys", "/surveys"],
-      ["Role Play", "/interview-practice"],
-      ["Résumé Writer", "/my/resume"],
-      ["Help & Support", "/help"],
     ])
-    expect(menu.some((i) => i.to.includes("/settings") || i.to.includes("/costs"))).toBe(false)
-    // The classic list itself is never mutated.
-    expect(COMPANY_ADMIN_NAV_ITEMS.some((i) => i.label === "Settings")).toBe(true)
+    expect(menu.some((i) => i.to.includes("/settings") || i.to.includes("/costs") || i.to === "/help")).toBe(false)
   })
 
-  it("drops a Costs entry too, and does not add a second Help", () => {
+  it("drops a Costs entry and the placeholder Settings page, and adds nothing", () => {
     const menu = companyAdminHouseMenu([
       { to: "/company-admin/costs", icon: () => null, label: "Costs" },
-      { to: "/help", icon: () => null, label: "Help & Support" },
+      { to: "/company-admin/settings", icon: () => null, label: "Settings" },
+      { to: "/surveys", icon: () => null, label: "Surveys" },
     ])
-    expect(labels(menu)).toEqual(["Help & Support"])
+    expect(labels(menu)).toEqual(["Surveys"])
+  })
+
+  it("RM-4: the company-admin footer is Settings → the shared /settings, then Help", () => {
+    expect(FOOTER_NAV_ITEMS_BY_ROLE["company-admin"]?.map((i) => [i.label, i.to])).toEqual([
+      ["Settings", "/settings"],
+      ["Help & Support", "/help"],
+    ])
   })
 
   it("switch on changes no other role's menu", () => {

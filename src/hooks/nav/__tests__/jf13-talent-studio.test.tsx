@@ -341,7 +341,11 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
     // Floors lowered with RM-3 (2026-11-25): unentitled verticals no longer
     // produce greyed rows, so the "none" and "loading" shapes walk fewer
     // destinations. Measured on the RM-3 branch: 1398 pairs, 294 Tools pairs.
-    expect(pairs).toBeGreaterThanOrEqual(1300)
+    // Lowered again with RM-4 (2026-11-25): Role Play, Résumé Writer, Settings
+    // and Help left the role lists this walker reads as the rest of the sidebar
+    // (they are in My Workspace and the footer), and Goals Studio left manager's
+    // and practitioner's Tools. Measured on the RM-4 branch: 1218 pairs.
+    expect(pairs).toBeGreaterThanOrEqual(1150)
     expect(toolPairs).toBeGreaterThanOrEqual(250)
   })
 })

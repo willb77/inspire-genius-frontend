@@ -12,6 +12,7 @@ jest.mock("@/hooks/job-fit/useSavedJobs", () => ({
   useSavedJobsEnabled: () => false,
 }))
 jest.mock("@/constants/navigation", () => ({
+  MY_WORKSPACE_SECTION_LABEL: "My Workspace",
   NAV_ITEMS_BY_ROLE: {
     user: [{ to: "/home", icon: DummyIcon, label: "Home" }],
     manager: [{ to: "/manager/dashboard", icon: DummyIcon, label: "Manager Dashboard" }],
@@ -54,6 +55,20 @@ jest.mock("@/hooks/nav/useToolsSection", () => ({
   useToolsSection: () => mockLauncher(),
 }))
 
+// RM-4: the role menu frame. By default a role outside the frame (footer null),
+// so the cases below keep testing the user / super-admin structure; the
+// framed cases set a footer. `frameSections` is the real one.
+const mockFooter = jest.fn((): unknown[] | null => null)
+jest.mock("@/hooks/nav/useGatedNavItems", () => ({
+  frameSections: jest.requireActual("@/hooks/nav/useGatedNavItems").frameSections,
+  useRoleMenuFrame: () => ({
+    own: [{ to: "/manager/development", icon: () => null, label: "Team Development Studio" }],
+    workspace: mockFooter() ? [{ to: "/my/goals", icon: () => null, label: "Goals Studio" }] : null,
+    tools: mockLauncher(),
+    footer: mockFooter(),
+  }),
+}))
+
 let mockEmail: string | null = "someone@example.com"
 jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { email: mockEmail } }),
@@ -80,6 +95,7 @@ const LAUNCHER = {
 describe("useVerticalPageSections", () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockFooter.mockReturnValue(null)
     mockEmail = "someone@example.com"
     mockWorkspaceNav.mockImplementation((items: unknown) => items)
     mockLauncher.mockReturnValue(LAUNCHER)
@@ -206,6 +222,37 @@ describe("useVerticalPageSections", () => {
       mockMerged.mockReturnValue(true)
       const { result } = renderHook(() => useVerticalPageSections("direction-setting" as never, "user"))
       expect(result.current.find((s) => s.label === "direction-setting")?.items).toHaveLength(2)
+    })
+  })
+
+  describe("RM-4: a framed role (manager, company admin, practitioner, distributor)", () => {
+    const FOOTER = [
+      { to: "/manager/settings", icon: DummyIcon, label: "Settings" },
+      { to: "/help", icon: DummyIcon, label: "Help & Support" },
+    ]
+    beforeEach(() => mockFooter.mockReturnValue(FOOTER))
+
+    it("gets the same frame as every other page, with the vertical between My Workspace and Tools", () => {
+      const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "manager"))
+      expect(result.current.map((s) => s.label)).toEqual(["", "My Workspace", "Lumen", "Tools", ""])
+      expect(result.current[0].items.map((i) => i.label)).toEqual(["Team Development Studio"])
+      expect(result.current.at(-1)!.items).toBe(FOOTER)
+    })
+
+    it("keeps My Workspace a visible plain group and marks the vertical active in Tools", () => {
+      const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "manager"))
+      const ws = result.current.find((s) => s.label === "My Workspace")!
+      expect(ws.defaultCollapsed).toBeUndefined()
+      expect(ws.collapsible).toBeUndefined()
+      const lumen = result.current.find((s) => s.label === "Tools")!.items.find((i) => i.label === "Lumen")
+      expect(lumen?.activePrefix).toBe("/vertical/lumen")
+    })
+
+    it("has no Role Views or Administration, which are super-admin only", () => {
+      const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "manager"))
+      const labels = result.current.map((s) => s.label)
+      expect(labels).not.toContain("Role Views")
+      expect(labels).not.toContain("Administration")
     })
   })
 })

@@ -35,11 +35,11 @@ describe("useGatedNavItems — company-admin house style", () => {
     expect(result.current).toBe(COMPANY_ADMIN_NAV_ITEMS)
   })
 
-  it("switch ON: People, Help, no Settings", () => {
+  it("switch ON: People, no Settings, no Help (RM-4: both are in the footer)", () => {
     localStorage.setItem(SWITCH, "true")
     const l = labels(renderHook(() => useGatedNavItems("company-admin")).result.current)
     expect(l).toContain("People")
-    expect(l).toContain("Help & Support")
+    expect(l).not.toContain("Help & Support")
     expect(l).not.toContain("Settings")
     expect(l).not.toContain("User Management")
   })
@@ -49,15 +49,17 @@ describe("useGatedNavItems — company-admin house style", () => {
     mockCohortOn = true
     const l = labels(renderHook(() => useGatedNavItems("company-admin")).result.current)
     expect(l).toContain("Cohort Read-out")
-    expect(l.indexOf("Cohort Read-out")).toBeLessThan(l.indexOf("Help & Support"))
+    // RM-4: no Help tail any more, so the entry closes the own-work list.
+    expect(l.at(-1)).toBe("Cohort Read-out")
   })
 
   it("is read at render time: flipping the switch and re-rendering changes the menu", () => {
     const { result, rerender } = renderHook(() => useGatedNavItems("company-admin"))
-    expect(labels(result.current)).toContain("Settings")
+    expect(labels(result.current)).toContain("User Management")
     localStorage.setItem(SWITCH, "true")
     rerender()
-    expect(labels(result.current)).not.toContain("Settings")
+    expect(labels(result.current)).toContain("People")
+    expect(labels(result.current)).not.toContain("User Management")
   })
 
   it("switch ON changes no other role's menu", () => {

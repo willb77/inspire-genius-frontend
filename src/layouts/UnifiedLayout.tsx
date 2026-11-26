@@ -1,8 +1,7 @@
-import React from "react"
+import React, { useMemo } from "react"
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold"
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
-import { useGatedNavItems } from "@/hooks/nav/useGatedNavItems"
-import { useToolsSection } from "@/hooks/nav/useToolsSection"
+import { frameSections, useRoleMenuFrame } from "@/hooks/nav/useGatedNavItems"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
 import type { UserRole } from "@/types/roles"
 
@@ -32,25 +31,17 @@ export default function UnifiedLayout({
   const auditLabel = role === "user" ? "user" : role
   usePageViewAudit(auditLabel)
 
-  // The role menu already includes entitled WORKSPACE verticals (Job Fit,
-  // Lumen) — they read as first-person workspace tools, not separate products.
-  const navItems = useGatedNavItems(role)
-
-  // ONE consolidated "Tools" section, super-admin only (2026-08-12, request).
-  //
-  // This layout used to render TWO groups here: a collapsed "Tools" rollup from
-  // TOOL_ITEMS_BY_ROLE and an expanded "Verticals" catalogue. Both are now
-  // folded into useToolsSection, which returns null for manager,
-  // company-admin, practitioner and distributor — the roles this layout serves
-  // — so in practice those roles get the flat role menu and nothing else.
-  // The per-role entries in TOOL_ITEMS_BY_ROLE are deliberately kept: they are
-  // what a future "give managers their tools back" turns on, and deleting them
-  // would make that a rebuild rather than a one-line gate change.
-  const toolsSection = useToolsSection(role)
-
-  const navSections: NavSectionDef[] | undefined = toolsSection
-    ? [{ label: "", items: navItems }, toolsSection]
-    : undefined
+  // RM-4 (2026-11-25): manager, company admin, practitioner and distributor get
+  // the shared frame — own work, My Workspace (not distributor), Tools (manager
+  // and practitioner), and a Settings / Help & Support footer. Any other role
+  // (user, super-admin) keeps the menu it had: its own list, plus Tools when
+  // the role has one.
+  const frame = useRoleMenuFrame(role)
+  const navItems = frame.own
+  const navSections: NavSectionDef[] | undefined = useMemo(
+    () => frameSections(frame) ?? (frame.tools ? [{ label: "", items: navItems }, frame.tools] : undefined),
+    [frame, navItems],
+  )
 
   return (
     <SidebarScaffold

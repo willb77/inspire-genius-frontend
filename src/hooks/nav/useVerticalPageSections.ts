@@ -14,7 +14,7 @@ import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs"
 import { useAgentEngine } from "@/lib/agentApi"
 import { useAuth } from "@/context/useAuth"
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
-import { useToolsSection } from "@/hooks/nav/useToolsSection"
+import { frameSections, useRoleMenuFrame } from "@/hooks/nav/useGatedNavItems"
 import { groupAdministrationItems } from "@/constants/house/administrationCategories"
 import { getVertical, type VerticalKey } from "@/verticals/core"
 import { discoveryMenu } from "@/lib/career-discovery/profileSection"
@@ -55,7 +55,13 @@ export function useVerticalPageSections(
     : withCompanyAdminHouseMenu(role, NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user)
   const workspaceItems = useWorkspaceNavItems(baseItems)
 
-  const toolsSection = useToolsSection(role)
+  // RM-4: manager, company admin, practitioner and distributor get the same
+  // frame here as on every other page (own work, My Workspace, Tools, footer),
+  // with this vertical's own menu between My Workspace and Tools. For user and
+  // super-admin `frame.tools` is exactly `useToolsSection(role)` and the frame
+  // is not used, so their menus here are unchanged.
+  const frame = useRoleMenuFrame(role)
+  const toolsSection = frame.tools
   // JF-11: Career Discovery shows About me + Who I am as one entry when the
   // server says so (read from the cache only; false everywhere else).
   const discoveryMerged = useProfileMerged()
@@ -75,6 +81,36 @@ export function useVerticalPageSections(
   const definition = getVertical(vertical)
 
   return useMemo(() => {
+    // The vertical's own menu, opened on arrival.
+    const subNavSection: NavSectionDef | null = subNav?.items.length
+      ? {
+          // Phase A (Careers/Education merge CSA): with `job_fit_v2` on, the menu entry
+          // is already "Careers and Jobs" (useVerticalLauncher); the section it opens
+          // must carry the same name, not the manifest's "Career Fit". Off (loading,
+          // error, false) this is `definition.title`, exactly as before.
+          label:
+            subNav.label ??
+            (vertical === "job-fit" && jobFitV2 ? CAREERS_AND_JOBS_LABEL : definition?.title) ??
+            "This vertical",
+          items: subNav.items,
+          collapsible: true,
+        }
+      : null
+    // Mark the vertical you are in as active for every page under it, not just
+    // its home page.
+    const markActive = (section: NavSectionDef): NavSectionDef => ({
+      ...section,
+      items: section.items.map((item) =>
+        item.to.startsWith(`/vertical/${vertical}`) ? { ...item, activePrefix: `/vertical/${vertical}` } : item,
+      ),
+    })
+
+    const framed = frameSections(
+      { ...frame, tools: frame.tools ? markActive(frame.tools) : null },
+      subNavSection ? [subNavSection] : [],
+    )
+    if (framed) return framed
+
     const sections: NavSectionDef[] = [
       // Always visible: a plain group, no header toggle (Bill, 2026-10-12).
       { label: "My Workspace", items: workspaceItems },
@@ -94,38 +130,14 @@ export function useVerticalPageSections(
     sections.push(...adminSection("Role Views"))
 
     // The point of the whole hook: the vertical you clicked into opens.
-    if (subNav?.items.length) {
-      sections.push({
-        // Phase A (Careers/Education merge CSA): with `job_fit_v2` on, the menu entry
-        // is already "Careers and Jobs" (useVerticalLauncher); the section it opens
-        // must carry the same name, not the manifest's "Career Fit". Off (loading,
-        // error, false) this is `definition.title`, exactly as before.
-        label:
-          subNav.label ??
-          (vertical === "job-fit" && jobFitV2 ? CAREERS_AND_JOBS_LABEL : definition?.title) ??
-          "This vertical",
-        items: subNav.items,
-        collapsible: true,
-      })
-    }
+    if (subNavSection) sections.push(subNavSection)
 
     // The consolidated Tools section — super-admin only as of 2026-08-12, so a
     // manager inside a vertical now sees My Workspace + that vertical's own
     // sub-nav and nothing more. Its own `defaultCollapsed` is honoured rather
     // than forced here: the section must not expand and collapse as you move
     // between vertical pages and the rest of the app.
-    if (toolsSection) {
-      sections.push({
-        ...toolsSection,
-        // Mark the vertical you are in as active for every page under it, not
-        // just its home page.
-        items: toolsSection.items.map((item) =>
-          item.to.startsWith(`/vertical/${vertical}`)
-            ? { ...item, activePrefix: `/vertical/${vertical}` }
-            : item,
-        ),
-      })
-    }
+    if (toolsSection) sections.push(markActive(toolsSection))
 
     // JF-13 admin: with job_fit_v2 on, the same (owner-gated) entries in the
     // house categories. Off (loading, error, false) the list is today's.
@@ -135,7 +147,7 @@ export function useVerticalPageSections(
       ),
     )
     return sections
-  }, [workspaceItems, toolsSection, subNav, definition, vertical, isSuperAdmin, isOwner, jobFitV2])
+  }, [workspaceItems, frame, toolsSection, subNav, definition, vertical, isSuperAdmin, isOwner, jobFitV2])
 }
 
 export default useVerticalPageSections
