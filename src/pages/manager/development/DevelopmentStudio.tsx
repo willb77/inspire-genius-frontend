@@ -69,8 +69,28 @@ const TeamStudioView = lazy(() => import("@/components/manager/development/TeamS
  * member with PRISM alone read as "Partial". Decision D5 (2026-11-24): both are
  * dropped from the Studio's filters, and still shown on a card where a member
  * has them (CoverageChips is untouched).
+ *
+ * TDS A3 (CSA #2213, option 2): A1 now collects both, and the roster reads
+ * them live, so "Has CliftonStrengths" and "Has DISC" return as FILTERS. They
+ * still add nothing to readiness (D5, unchanged below).
  */
-type CoverageFilter = "all" | "has_prism" | "no_prism"
+type CoverageFilter = "all" | "has_prism" | "no_prism" | "has_clifton" | "has_disc"
+
+/** Whether a roster card passes the Coverage filter. */
+function matchesCoverageFilter(m: RosterMember, filter: CoverageFilter): boolean {
+  switch (filter) {
+    case "has_prism":
+      return hasPrism(m)
+    case "no_prism":
+      return !hasPrism(m)
+    case "has_clifton":
+      return Boolean(m.coverage.clifton)
+    case "has_disc":
+      return Boolean(m.coverage.disc)
+    default:
+      return true
+  }
+}
 type SortKey = "readiness" | "activity"
 
 const PLAN_ORDER: Record<PlanStatus, number> = {
@@ -214,7 +234,7 @@ export default function DevelopmentStudio({
       )
     }
     if (coverage !== "all") {
-      rows = rows.filter((m) => (coverage === "has_prism" ? hasPrism(m) : !hasPrism(m)))
+      rows = rows.filter((m) => matchesCoverageFilter(m, coverage))
     }
     // A withheld plan (null, U6d) matches no plan option: it is not "No plan".
     if (plan !== "all") rows = rows.filter((m) => m.planStatus != null && m.planStatus === plan)
@@ -348,6 +368,8 @@ export default function DevelopmentStudio({
               <SelectItem value="all">{tm("developmentStudio.prismAll", { defaultValue: "PRISM: all" })}</SelectItem>
               <SelectItem value="has_prism">{tm("developmentStudio.hasPrism", { defaultValue: "Has PRISM" })}</SelectItem>
               <SelectItem value="no_prism">{tm("developmentStudio.prismNotTaken", { defaultValue: "PRISM not taken" })}</SelectItem>
+              <SelectItem value="has_clifton">{tm("developmentStudio.hasCliftonStrengths", { defaultValue: "Has CliftonStrengths" })}</SelectItem>
+              <SelectItem value="has_disc">{tm("developmentStudio.hasDisc", { defaultValue: "Has DISC" })}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={plan} onValueChange={(v) => setPlan(v as PlanStatus | "all")}>

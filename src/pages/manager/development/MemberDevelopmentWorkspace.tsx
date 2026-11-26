@@ -354,6 +354,24 @@ export default function MemberDevelopmentWorkspace({
       ),
   })
 
+  // TDS A3 (CSA #2213, option 2): the same ask for the `assessments` category,
+  // which governs CliftonStrengths and DISC (A2). Same route, same reason line,
+  // same success and failure handling as requestPrism above: the server's
+  // `detail` is rendered verbatim, including the one-live-pair 409.
+  const requestAssessments = useMutation({
+    mutationFn: () =>
+      requestStudentAccess({
+        studentUserId: memberId ?? "",
+        categories: { assessments: true },
+        reason: "Requested from the Team Development Studio.",
+      }),
+    onSuccess: () => toast.success(tm("memberDevelopmentWorkspace.askedTheyDecideAndDeclining", { defaultValue: "Asked. They decide, and declining costs them nothing." })),
+    onError: (err) =>
+      toast.error(
+        apiErrorMessage(err, tm("memberDevelopmentWorkspace.thatDidnTSendNothing", { defaultValue: "That didn't send — nothing was asked. Try again in a moment." })),
+      ),
+  })
+
   // D-06: career matches are PRISM-derived. With the PRISM withheld the server
   // sends none; nothing an older backend still sent is shown either.
   const matchesNotShared = Boolean(dossier?.prismNotShared)
@@ -604,6 +622,9 @@ export default function MemberDevelopmentWorkspace({
         onRequestAccess={() => requestPrism.mutate()}
         requestPending={requestPrism.isPending}
         requestSent={requestPrism.isSuccess}
+        onRequestAssessments={() => requestAssessments.mutate()}
+        assessmentsRequestPending={requestAssessments.isPending}
+        assessmentsRequestSent={requestAssessments.isSuccess}
       />
     ),
     // Shares the Profile group with the radar, below it. It reads the member's

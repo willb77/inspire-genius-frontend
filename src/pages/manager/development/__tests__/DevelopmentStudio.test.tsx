@@ -333,6 +333,59 @@ describe("DevelopmentStudio — the filters filter, and say when they have hidde
     expect(screen.getByText("Dana Whitfield")).toBeInTheDocument()
   })
 
+  /**
+   * TDS A3 (CSA #2213, option 2): A1 collects CliftonStrengths and DISC and the
+   * roster reads them live, so each returns as its own filter. Readiness is
+   * untouched (D5; the readiness test below still holds).
+   */
+  const cliftonOnly = member({
+    memberId: "m-clifton-only",
+    name: "Marisol Achterberg",
+    coverage: { prism: false, clifton: true, disc: false },
+  })
+  const discOnly = member({
+    memberId: "m-disc-only",
+    name: "Quentin Abernathy-Lowe",
+    coverage: { prism: false, clifton: false, disc: true },
+  })
+
+  it.each([
+    ["manager", renderStudio],
+    ["practitioner", renderPractitionerStudio],
+  ] as const)("coverage (%s roster): 'Has CliftonStrengths' returns exactly the members with a CliftonStrengths result", (_audience, render) => {
+    rosterState = { data: [prismOnly, othersOnly, nothing, cliftonOnly, discOnly], isLoading: false, isError: false }
+    render()
+    fireEvent.click(screen.getByRole("button", { name: "Has CliftonStrengths" }))
+    expect(screen.getByText("Ilario Vantongeren")).toBeInTheDocument()
+    expect(screen.getByText("Marisol Achterberg")).toBeInTheDocument()
+    expect(screen.queryByText("Tamsin Okonkwo-Reyes")).not.toBeInTheDocument()
+    expect(screen.queryByText("Brisa Halloway-Kemp")).not.toBeInTheDocument()
+    expect(screen.queryByText("Quentin Abernathy-Lowe")).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ["manager", renderStudio],
+    ["practitioner", renderPractitionerStudio],
+  ] as const)("coverage (%s roster): 'Has DISC' returns exactly the members with a DISC result", (_audience, render) => {
+    rosterState = { data: [prismOnly, othersOnly, nothing, cliftonOnly, discOnly], isLoading: false, isError: false }
+    render()
+    fireEvent.click(screen.getByRole("button", { name: "Has DISC" }))
+    expect(screen.getByText("Ilario Vantongeren")).toBeInTheDocument()
+    expect(screen.getByText("Quentin Abernathy-Lowe")).toBeInTheDocument()
+    expect(screen.queryByText("Tamsin Okonkwo-Reyes")).not.toBeInTheDocument()
+    expect(screen.queryByText("Brisa Halloway-Kemp")).not.toBeInTheDocument()
+    expect(screen.queryByText("Marisol Achterberg")).not.toBeInTheDocument()
+  })
+
+  it("coverage: nobody with CliftonStrengths says so, rather than showing an empty grid", () => {
+    rosterState = { data: [prismOnly, nothing], isLoading: false, isError: false }
+    renderStudio()
+    fireEvent.click(screen.getByRole("button", { name: "Has CliftonStrengths" }))
+    expect(screen.getByText(NO_MATCH_COPY)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Has DISC" }))
+    expect(screen.getByText(NO_MATCH_COPY)).toBeInTheDocument()
+  })
+
   it("plan status: a member on track is not returned by the at-risk filter", () => {
     rosterState = { data: [member()], isLoading: false, isError: false }
     renderStudio()

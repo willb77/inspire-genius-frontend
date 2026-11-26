@@ -80,10 +80,14 @@ function InviteToAddCard({ framework, onInvite }: { framework: string; onInvite?
  * TDS A2: the member HAS this result (`coverage.<fw>` is true) but has not
  * shared their `assessments` with this viewer, so the server sent no data.
  * Never the invite card here: "invite to add" at someone who already took the
- * assessment is false and its call to action cannot be met. No ask here — the
- * "Ask to see" for assessments is A3's.
+ * assessment is false and its call to action cannot be met.
+ *
+ * TDS A3: the ask. It mirrors the PRISM ask's honest states (no account →
+ * nobody to ask; asked; the button) and posts the SAME request route for the
+ * `assessments` category. One ask covers both overlays, so the CliftonStrengths
+ * and DISC cards share its state.
  */
-function OverlayNotSharedCard({ framework, who, testKey }: { framework: string; who: string; testKey: string }) {
+function OverlayNotSharedCard({ framework, who, testKey, ask }: { framework: string; who: string; testKey: string; ask?: AssessmentsAsk }) {
   const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   return (
@@ -96,19 +100,37 @@ function OverlayNotSharedCard({ framework, who, testKey }: { framework: string; 
         <p className={cn("text-xs", sk.text500)}>
           {t("behavioralProfilePanel.overlayNotSharedBody", { defaultValue: "{{who}} has a {{framework}} result on file but has not shared their assessments with you.", who, framework })}
         </p>
+        {!ask ? null : ask.noAccount ? (
+          <p className={cn("text-xs", sk.text500)} data-testid={`assessments-no-account-${testKey}`}>{t("behavioralProfilePanel.hasNoInspiresGeniusAccount", { defaultValue: "{{who}} has no InspiresGenius account, so there is nobody to ask. A profile is shared by the person it describes.", who })}</p>
+        ) : ask.sent ? (
+          <p className={cn("text-xs", sk.text500)} data-testid={`assessments-request-sent-${testKey}`}>{t("behavioralProfilePanel.askedDecidesAndDecliningCarries", { defaultValue: "Asked. {{who}} decides, and declining carries no consequence for them.", who })}</p>
+        ) : ask.onRequest ? (
+          <Button size="sm" variant="outline" onClick={ask.onRequest} disabled={ask.pending} data-testid={`assessments-ask-${testKey}`}>
+            {ask.pending ? t("behavioralProfilePanel.asking", { defaultValue: "Asking…" }) : t("behavioralProfilePanel.askToSeeTheirAssessments", { defaultValue: "Ask to see their assessments" })}
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   )
+}
+
+/** TDS A3: the `assessments` ask, shared by the CliftonStrengths and DISC cards. */
+type AssessmentsAsk = {
+  onRequest?: () => void
+  pending?: boolean
+  sent?: boolean
+  noAccount?: boolean
 }
 
 type OverlayCardsProps = {
   profile: BehavioralProfile
   who: string
   onInvite?: (framework: "prism" | "clifton" | "disc") => void
+  ask?: AssessmentsAsk
 }
 
 /** CliftonStrengths + DISC: data, "not shared with you" (A2), or the invite. */
-function OverlayCards({ profile, who, onInvite }: OverlayCardsProps) {
+function OverlayCards({ profile, who, onInvite, ask }: OverlayCardsProps) {
   const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const { clifton, disc, coverage } = profile
@@ -156,7 +178,7 @@ function OverlayCards({ profile, who, onInvite }: OverlayCardsProps) {
                 })}
               </div>
             ) : coverage.clifton ? (
-              <OverlayNotSharedCard framework="CliftonStrengths" who={who} testKey="clifton" />
+              <OverlayNotSharedCard framework="CliftonStrengths" who={who} testKey="clifton" ask={ask} />
             ) : (
               <InviteToAddCard framework="CliftonStrengths" onInvite={onInvite ? () => onInvite("clifton") : undefined} />
             )}
@@ -203,7 +225,7 @@ function OverlayCards({ profile, who, onInvite }: OverlayCardsProps) {
                 <p className={cn("text-[11px]", sk.text400)}>{withPrism(t("behavioralProfilePanel.legendDRedIGreen", { defaultValue: "Legend: D→Red · I→Green · S→Green · C→Blue (PRISM quadrant mapping)" }))}</p>
               </div>
             ) : coverage.disc ? (
-              <OverlayNotSharedCard framework="DISC" who={who} testKey="disc" />
+              <OverlayNotSharedCard framework="DISC" who={who} testKey="disc" ask={ask} />
             ) : (
               <InviteToAddCard framework="DISC" onInvite={onInvite ? () => onInvite("disc") : undefined} />
             )}
@@ -224,16 +246,27 @@ export type BehavioralProfilePanelProps = {
   onRequestAccess?: () => void
   requestPending?: boolean
   requestSent?: boolean
+  /** TDS A3: ask the member for the `assessments` category (CliftonStrengths and DISC). */
+  onRequestAssessments?: () => void
+  assessmentsRequestPending?: boolean
+  assessmentsRequestSent?: boolean
   memberName?: string
 }
 
 export function BehavioralProfilePanel({
-  profile, onInvite, notShared, noAccount, onRequestAccess, requestPending, requestSent, memberName,
+  profile, onInvite, notShared, noAccount, onRequestAccess, requestPending, requestSent,
+  onRequestAssessments, assessmentsRequestPending, assessmentsRequestSent, memberName,
 }: BehavioralProfilePanelProps) {
   const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
   const { prism, reconciliation, coverage } = profile
   const who = memberName?.trim() || t("behavioralProfilePanel.thisMember", { defaultValue: "This member" })
+  const ask: AssessmentsAsk = {
+    onRequest: onRequestAssessments,
+    pending: assessmentsRequestPending,
+    sent: assessmentsRequestSent,
+    noAccount,
+  }
 
   // TDS-1b. FIRST, before every other branch — and that order is the whole
   // point. The redaction empties `prism` while PRESERVING `coverage.prism`,
@@ -291,7 +324,7 @@ export function BehavioralProfilePanel({
             member DID share. Rendered only when one exists, so with no
             overlay on file this branch is exactly what it was. */}
         {coverage.clifton || coverage.disc ? (
-          <OverlayCards profile={profile} who={who} onInvite={onInvite} />
+          <OverlayCards profile={profile} who={who} onInvite={onInvite} ask={ask} />
         ) : null}
       </div>
     )
@@ -384,7 +417,7 @@ export function BehavioralProfilePanel({
         </CardContent>
       </Card>
 
-      <OverlayCards profile={profile} who={who} onInvite={onInvite} />
+      <OverlayCards profile={profile} who={who} onInvite={onInvite} ask={ask} />
 
       {/* Reconciliation */}
       <Card>
