@@ -26,6 +26,8 @@ import {
   listAssessments,
   previewImportAssessment,
   removeAssessment,
+  listPendingImports,
+  acceptPendingImport,
 } from "@/services/profile/profile";
 import type {
   Assessment,
@@ -37,6 +39,7 @@ import type {
   CreateAssessmentRequest,
   CreateFactRequest,
   LoadedFramework,
+  PendingImport,
   ProfileFact,
   ProfileMe,
   TrendResponse,
@@ -50,6 +53,7 @@ export const profileKeys = {
   trend: (framework: string, dimension: string) =>
     [...profileKeys.root, "trend", framework, dimension] as const,
   loadedFrameworks: () => [...profileKeys.root, "loaded-frameworks"] as const,
+  pending: () => [...profileKeys.root, "pending"] as const,
 };
 
 /** Full profile snapshot — short staleTime keeps facts fresh while typing. */
@@ -240,4 +244,59 @@ export function useRemoveAssessment(
       options?.onError?.(err, vars, ctx);
     },
   });
+}
+
+// ── TDS A4: results a practitioner sent, waiting for the person ──
+
+/** Results a practitioner sent that the person has not accepted or declined. */
+export function usePendingImports() {
+  return useQuery<PendingImport[]>({
+    queryKey: profileKeys.pending(),
+    queryFn: listPendingImports,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Accept and decline both change what counts, so both refresh the snapshot,
+ * the history, the chips and the waiting list, on success AND on failure: a
+ * 409 means another tab already answered, and the card must catch up.
+ */
+function usePendingAnswer(
+  mutationFn: (id: string) => Promise<AssessmentHistoryItem>,
+  options?: UseMutationOptions<AssessmentHistoryItem, unknown, string>,
+) {
+  const qc = useQueryClient();
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: profileKeys.pending() });
+    qc.invalidateQueries({ queryKey: profileKeys.me() });
+    qc.invalidateQueries({ queryKey: [...profileKeys.root, "history"] });
+    qc.invalidateQueries({ queryKey: profileKeys.loadedFrameworks() });
+  };
+  return useMutation<AssessmentHistoryItem, unknown, string>({
+    mutationFn,
+    ...options,
+    onSuccess: (data, vars, ctx) => {
+      refresh();
+      options?.onSuccess?.(data, vars, ctx);
+    },
+    onError: (err, vars, ctx) => {
+      refresh();
+      options?.onError?.(err, vars, ctx);
+    },
+  });
+}
+
+/** Accept a result a practitioner sent: it becomes the person's current one. */
+export function useAcceptPendingImport(
+  options?: UseMutationOptions<AssessmentHistoryItem, unknown, string>,
+) {
+  return usePendingAnswer(acceptPendingImport, options);
+}
+
+/** Decline it: the owner remove (DELETE), which the server allows on a held import. */
+export function useDeclinePendingImport(
+  options?: UseMutationOptions<AssessmentHistoryItem, unknown, string>,
+) {
+  return usePendingAnswer(removeAssessment, options);
 }

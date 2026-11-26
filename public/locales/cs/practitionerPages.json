@@ -377,5 +377,33 @@
     "inviteFromMyClients": "Pozvat ze stránky Moji klienti",
     "clientRecord": "Záznam klienta",
     "clientRecordAria": "Otevřít záznam klienta {{name}}: sezení, dokumenty, následné kroky a import PRISM"
+  },
+  "clientImport": {
+    "cardTitle": "DISC a CliftonStrengths",
+    "help": "Pošlete {{name}} výsledek DISC nebo CliftonStrengths ze zprávy, kterou máte. Počítá se až poté, co ho {{name}} přijme v Nastavení InspiresGenius.",
+    "open": "Importovat DISC nebo CliftonStrengths",
+    "title": "Poslat {{name}} výsledek hodnocení",
+    "chooseHelp": "Vyberte hodnocení a soubor (CSV, PDF, Excel nebo Word). Před odesláním výsledek zkontrolujete.",
+    "reviewHelp": "Zkontrolujte, co jsme ze souboru přečetli, a odstraňte chybné položky. Nic se neodešle, dokud nestisknete Odeslat.",
+    "sentHelp": "Odesláno, čeká na klienta.",
+    "framework": "Hodnocení",
+    "chooseFramework": "Vyberte hodnocení",
+    "file": "Soubor",
+    "reviewEmpty": "Nezbývají žádné výsledky k odeslání.",
+    "unknownTheme": "Není to téma CliftonStrengths",
+    "moveUp": "Posunout {{name}} nahoru",
+    "moveDown": "Posunout {{name}} dolů",
+    "removeRow": "Odebrat {{name}}",
+    "removeUnknown": "Před odesláním odeberte výše označená témata.",
+    "sent": "Odesláno. Výsledek {{framework}} čeká na {{name}}. Nepočítá se, dokud ho {{name}} nepřijme v Nastavení InspiresGenius, a {{name}} ho může odmítnout.",
+    "notLinked": "Tento klient zatím nepropojil účet InspiresGenius.",
+    "forbidden": "K tomuto klientovi nemáte přístup.",
+    "tooLarge": "Soubor je příliš velký.",
+    "failed": "Soubor se nepodařilo přečíst. Zkontrolujte soubor a hodnocení a zkuste to znovu.",
+    "cancel": "Zrušit",
+    "read": "Přečíst soubor",
+    "back": "Zpět",
+    "send": "Odeslat {{name}}",
+    "done": "Hotovo"
   }
 }

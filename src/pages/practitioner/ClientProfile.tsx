@@ -25,7 +25,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useClientPrism, useCoachClient } from "@/hooks/practitioner/useCoachClient"
+import {
+  clientImportAvailable,
+  useClientPrism,
+  useCoachClient,
+} from "@/hooks/practitioner/useCoachClient"
+import ClientAssessmentImport from "@/components/practitioner/ClientAssessmentImport"
 import { usePrismImport } from "@/hooks/prism/usePrismImport"
 import { withPrism } from "@/lib/withPrism"
 
@@ -211,6 +216,13 @@ export default function PractitionerClientProfile() {
             </Button>
           </div>
         </DataCard>
+
+        {/* TDS A4: send the client a DISC or CliftonStrengths result, held until they accept it */}
+        {clientImportAvailable && (
+          <DataCard title={t("clientImport.cardTitle", { defaultValue: "DISC and CliftonStrengths" })}>
+            <ClientAssessmentImport clientId={data.id} clientName={data.name} />
+          </DataCard>
+        )}
 
         {/* Resources */}
         <DataCard title={t("clientProfile.resources", { defaultValue: "Resources" })}>

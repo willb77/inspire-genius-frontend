@@ -375,5 +375,33 @@
     "inviteFromMyClients": "Invite from My Clients",
     "clientRecord": "Client record",
     "clientRecordAria": "Open the client record for {{name}}: sessions, documents, follow-ups and PRISM import"
+  },
+  "clientImport": {
+    "cardTitle": "DISC and CliftonStrengths",
+    "help": "Send {{name}} a DISC or CliftonStrengths result from a report you hold. It counts only after {{name}} accepts it in their InspiresGenius Settings.",
+    "open": "Import DISC or CliftonStrengths",
+    "title": "Send {{name}} an assessment result",
+    "chooseHelp": "Choose the assessment and the file (CSV, PDF, Excel or Word). You will review the result before it is sent.",
+    "reviewHelp": "Check what we read from the file and remove anything wrong. Nothing is sent until you press Send.",
+    "sentHelp": "Sent and waiting for the client.",
+    "framework": "Assessment",
+    "chooseFramework": "Choose an assessment",
+    "file": "File",
+    "reviewEmpty": "No results are left to send.",
+    "unknownTheme": "Not a CliftonStrengths theme",
+    "moveUp": "Move {{name}} up",
+    "moveDown": "Move {{name}} down",
+    "removeRow": "Remove {{name}}",
+    "removeUnknown": "Remove the themes marked above before sending.",
+    "sent": "Sent. The {{framework}} result is waiting for {{name}}. It does not count until {{name}} accepts it in their InspiresGenius Settings, and {{name}} can decline it.",
+    "notLinked": "This client has not linked an InspiresGenius account yet.",
+    "forbidden": "You do not have access to this client.",
+    "tooLarge": "That file is too large.",
+    "failed": "We could not read that file. Check the file and the assessment, then try again.",
+    "cancel": "Cancel",
+    "read": "Read file",
+    "back": "Back",
+    "send": "Send to {{name}}",
+    "done": "Done"
   }
 }

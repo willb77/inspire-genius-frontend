@@ -454,7 +454,21 @@
     "removeDone": "Resultado de {{framework}} quitado.",
     "removeAlready": "Ese resultado ya se había quitado.",
     "removeFailed": "No pudimos quitar este resultado. Inténtalo de nuevo.",
-    "supersede": "Ya tienes un resultado de {{framework}} del {{date}}. Al guardar este, pasará a ser el resultado actual; el anterior se conserva en tu historial."
+    "supersede": "Ya tienes un resultado de {{framework}} del {{date}}. Al guardar este, pasará a ser el resultado actual; el anterior se conserva en tu historial.",
+    "pendingTitle": "Pendiente de tu respuesta",
+    "pendingSomeone": "Tu profesional",
+    "pendingLine": "{{name}} te envió un resultado de {{framework}} el {{date}}.",
+    "pendingHelp": "No se usa hasta que lo aceptes. Al aceptarlo pasa a ser tu resultado actual de {{framework}}.",
+    "pendingAccept": "Aceptar",
+    "pendingDecline": "Rechazar",
+    "pendingAccepted": "Aceptado. Ahora es tu resultado actual de {{framework}}.",
+    "pendingDeclined": "Rechazado. El resultado de {{framework}} no se añadió.",
+    "pendingAlready": "Ese resultado ya tiene respuesta.",
+    "pendingAcceptFailed": "No pudimos aceptar este resultado. Inténtalo de nuevo.",
+    "pendingDeclineFailed": "No pudimos rechazar este resultado. Inténtalo de nuevo.",
+    "pendingDeclineTitle": "¿Rechazar este resultado de {{framework}}?",
+    "pendingDeclineBody": "No se añadirá a tu perfil y no podrás aceptarlo más tarde. No se avisa a {{name}}.",
+    "pendingError": "No pudimos comprobar si te enviaron resultados. Recarga la página para intentarlo de nuevo."
   },
   "audioPlayer": {
     "browseHint": "o haz clic para explorar • Compatible con MP3, WAV, FLAC y más",
