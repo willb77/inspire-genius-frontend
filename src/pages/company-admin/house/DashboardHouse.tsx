@@ -21,7 +21,7 @@ const COMPANY_ADMIN_SHORTCUTS: { label: string; path: string }[] = [
   { label: "Organization", path: ROUTES.COMPANY_ADMIN.ORGANIZATION },
   { label: "Culture Docs", path: ROUTES.COMPANY_ADMIN.CULTURE },
   { label: "Observability", path: ROUTES.COMPANY_ADMIN.OBSERVABILITY },
-  { label: "Analytics", path: ROUTES.COMPANY_ADMIN.ANALYTICS },
+  { label: "Reports", path: ROUTES.COMPANY_ADMIN.ANALYTICS },
   { label: "Bulk Import", path: ROUTES.COMPANY_ADMIN.BULK_IMPORT },
   { label: "Help & Support", path: ROUTES.HELP },
 ]

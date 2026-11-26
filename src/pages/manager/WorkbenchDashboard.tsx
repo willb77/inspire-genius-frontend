@@ -84,7 +84,7 @@ export default function ManagerWorkbenchDashboard() {
       subtitle: t("workbenchDashboard.onYourRosterWithoutA", { defaultValue: "{{length}} on your roster · {{length2}} without a PRISM result.", length: members.length, length2: prismOutstanding.length }),
       actions: [
         { label: t("workbenchDashboard.viewRoster", { defaultValue: "View roster" }), to: ROUTES.MANAGER.DEVELOPMENT, variant: "primary" },
-        { label: t("workbenchDashboard.teamImport", { defaultValue: "Team import" }), to: ROUTES.MANAGER.BULK_IMPORT, variant: "secondary" },
+        { label: t("workbenchDashboard.teamImport", { defaultValue: "Add people" }), to: ROUTES.MANAGER.BULK_IMPORT, variant: "secondary" },
       ],
       stats: [
         { key: "roster", label: t("workbenchDashboard.onYourRoster", { defaultValue: "On your roster" }), value: members.length, hint: t("workbenchDashboard.directReports", { defaultValue: "direct reports" }) },

@@ -715,7 +715,7 @@ export default function UserManagement() {
     <SuperAdminLayout>
       <div className="space-y-6">
         <ManagementHeader
-          title="User Management"
+          title="People"
           addLabel="Add User"
           onAdd={openAdd}
           extraActions={

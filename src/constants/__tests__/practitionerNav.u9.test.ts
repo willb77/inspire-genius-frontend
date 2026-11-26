@@ -31,7 +31,7 @@ describe("practitioner menu (U9)", () => {
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
-          "Analytics -> /practitioner/analytics",
+          "Reports -> /practitioner/analytics",
         ],
         "tools": [
           "Role Blueprint Match -> /practitioner/job-blueprint",

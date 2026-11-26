@@ -187,7 +187,7 @@ export default function ManagerSchedule() {
                     // The honest empty state. Nobody reports to this manager
                     // yet, and saying so — with the fix — beats an empty box
                     // that reads identically to a failed request.
-                    <div className="p-3 text-sm text-[#6b7280]">{t("schedule.nobodyReportsToYouYet", { defaultValue: "Nobody reports to you yet. Add your team under" })}{" "}<span className="font-medium text-[#111827]">{t("schedule.teamImport", { defaultValue: "Team Import" })}</span>{" "}{t("schedule.withA", { defaultValue: "with a" })}{" "}<span className="font-mono text-xs">{t("schedule.manager", { defaultValue: "Manager" })}</span>{" "}{t("schedule.columnNamingYourEmailAddress", { defaultValue: "column naming your email address." })}</div>
+                    <div className="p-3 text-sm text-[#6b7280]">{t("schedule.nobodyReportsToYouYet", { defaultValue: "Nobody reports to you yet. Add your team under" })}{" "}<span className="font-medium text-[#111827]">{t("schedule.teamImport", { defaultValue: "Add people" })}</span>{" "}{t("schedule.withA", { defaultValue: "with a" })}{" "}<span className="font-mono text-xs">{t("schedule.manager", { defaultValue: "Manager" })}</span>{" "}{t("schedule.columnNamingYourEmailAddress", { defaultValue: "column naming your email address." })}</div>
                   ) : (
                     members.map((member) => {
                       const checked = selectedIds.has(member.user_id)

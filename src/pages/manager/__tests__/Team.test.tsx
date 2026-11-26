@@ -173,7 +173,7 @@ describe("ManagerTeam", () => {
     it("names the fix — a Manager column on the import", () => {
       renderPage();
       expect(screen.getByText(/Manager/)).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /team import/i })).toHaveAttribute(
+      expect(screen.getByRole("link", { name: /add people/i })).toHaveAttribute(
         "href",
         "/manager/bulk-import",
       );

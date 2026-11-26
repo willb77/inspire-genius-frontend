@@ -258,7 +258,7 @@ exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(manager
 [
   "Dashboard -> /manager/dashboard",
   "Member Oversight -> /manager/students",
-  "Team Import -> /manager/bulk-import",
+  "Add people -> /manager/bulk-import",
   "Schedule -> /manager/schedule",
   "Chat with Meridian -> /meridian/chat",
   "Goals Studio -> /my/goals",
@@ -279,7 +279,7 @@ exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(practit
   "My PRISM Practice -> /practitioner/practice",
   "Schedule -> /practitioner/schedule",
   "Surveys -> /surveys",
-  "Analytics -> /practitioner/analytics",
+  "Reports -> /practitioner/analytics",
   "Chat with Meridian -> /meridian/chat",
   "Goals Studio -> /my/goals",
   "Career & Education Discovery -> /vertical/career-discovery/journey",

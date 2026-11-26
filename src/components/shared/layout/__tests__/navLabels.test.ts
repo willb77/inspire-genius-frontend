@@ -13,6 +13,11 @@ import * as houseCompanyAdmin from "@/constants/house/companyAdminNav"
 import * as adminCategories from "@/constants/house/administrationCategories"
 import * as sidebarSections from "@/constants/sidebar-sections"
 import * as verticalSubnav from "@/constants/vertical-subnav"
+import { CAREERS_AND_JOBS_LABEL } from "@/constants/vertical-subnav"
+import { MY_WORKSPACE_SECTION_LABEL } from "@/constants/navigation"
+import { CAREER_STUDIO_LABEL, TALENT_STUDIO_LABEL, TOOLS_SECTION_LABEL } from "@/hooks/nav/useToolsSection"
+import { listVerticals } from "@/verticals/core"
+import "@/verticals"
 
 const EN = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, "../../../../../public/locales/en/shellUi.json"), "utf8"),
@@ -51,6 +56,53 @@ function harvest(): { items: Set<string>; sections: Set<string> } {
   return { items, sections }
 }
 
+/**
+ * RM-8 — the labels the static walk above cannot see, because they are built
+ * inside hooks (Tools, Talent Studio, Bio Capture, PRISM Exam, My Workspace) or
+ * come from the vertical registry (a launcher row and a vertical page's section
+ * are both the manifest title). Without these, a sidebar row could ship with no
+ * key and paint in English in every language, and nothing would fail.
+ */
+const HOOK_SOURCES = [
+  "src/hooks/nav/useToolsSection.ts",
+  "src/hooks/nav/useGatedNavItems.ts",
+  "src/hooks/nav/useSuperAdminSections.ts",
+  "src/hooks/nav/useVerticalPageSections.ts",
+  "src/components/layout/useVerticalLauncher.ts",
+]
+
+const ROOT = path.resolve(__dirname, "../../../../..")
+
+/** Every `label: "…"` literal in the hook sources (all of them are menu items). */
+function hookItemLabels(): Set<string> {
+  const out = new Set<string>()
+  for (const rel of HOOK_SOURCES) {
+    const src = fs.readFileSync(path.join(ROOT, rel), "utf8")
+    for (const m of src.matchAll(/label:\s*"([^"]+)"/g)) out.add(m[1])
+  }
+  return out
+}
+
+/** Static walk + hook-built labels + vertical titles: everything a sidebar can paint. */
+function declared(): { items: Set<string>; sections: Set<string> } {
+  const { items, sections } = harvest()
+  for (const l of hookItemLabels()) items.add(l)
+  for (const l of [TALENT_STUDIO_LABEL, CAREER_STUDIO_LABEL, CAREERS_AND_JOBS_LABEL]) items.add(l)
+  for (const l of [TOOLS_SECTION_LABEL, MY_WORKSPACE_SECTION_LABEL, CAREERS_AND_JOBS_LABEL]) sections.add(l)
+  for (const v of listVerticals()) {
+    items.add(v.title)
+    sections.add(v.title)
+  }
+  return { items, sections }
+}
+
+/** The shellUi locales (decision D1: en plus the six target languages; the other 15 have no shellUi file). */
+const SHELL_LOCALES = ["en", "es", "fr", "pt", "it", "pl", "cs"] as const
+
+function readLocale(lang: string): { nav: { items: Record<string, string>; sections: Record<string, string> } } {
+  return JSON.parse(fs.readFileSync(path.join(ROOT, "public/locales", lang, "shellUi.json"), "utf8"))
+}
+
 describe("navKeySegment", () => {
   it("replaces runs of non-letters with one underscore and keeps case", () => {
     expect(navKeySegment("Help & Support")).toBe("Help_Support")
@@ -87,11 +139,32 @@ describe("translateNavLabel", () => {
 })
 
 describe("the English nav entries against the live registries", () => {
-  const live = harvest()
+  const live = declared()
 
   it("harvests a real menu (a control: an empty harvest would pass everything below)", () => {
     expect(live.items.size).toBeGreaterThan(80)
     expect(live.sections.has("Administration")).toBe(true)
+    // The hook-built and registry labels are in it too (RM-8).
+    expect(hookItemLabels().has("Bio Capture Studio")).toBe(true)
+    expect(hookItemLabels().has("PRISM Exam")).toBe(true)
+    expect(live.sections.has("Tools")).toBe(true)
+    expect(live.items.has("Talent Studio")).toBe(true)
+    expect(listVerticals().length).toBeGreaterThan(5)
+  })
+
+  it("every declared label has its key in every shellUi locale (a missing key paints English)", () => {
+    const missing: string[] = []
+    for (const lang of SHELL_LOCALES) {
+      const file = readLocale(lang)
+      for (const group of ["items", "sections"] as const) {
+        for (const label of live[group]) {
+          const seg = navKeySegment(label)
+          if (!seg) continue
+          if (typeof file.nav[group][seg] !== "string" || !file.nav[group][seg]) missing.push(`${lang} ${group} ${label}`)
+        }
+      }
+    }
+    expect(missing).toEqual([])
   })
 
   it("no two declared labels share a key", () => {

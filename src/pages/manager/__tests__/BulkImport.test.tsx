@@ -113,7 +113,7 @@ describe("ManagerBulkImport", () => {
 
   it("renders page heading", () => {
     render(<ManagerBulkImport />);
-    expect(screen.getByText("Bulk Team Import")).toBeInTheDocument();
+    expect(screen.getByText("Add people")).toBeInTheDocument();
     expect(
       screen.getByText(
         "Upload a file to import team members and send invitation emails"

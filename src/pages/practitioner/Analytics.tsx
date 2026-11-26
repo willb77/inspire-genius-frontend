@@ -134,7 +134,7 @@ export default function PractitionerAnalytics() {
   const { t } = useTranslation("practitionerPages")
   return (
     <PractitionerLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("analytics.title", { defaultValue: "Analytics" })}</h1>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("analytics.title", { defaultValue: "Reports" })}</h1>
       <p className="text-[13px] text-[#6b7280] mb-1">
         {t("analytics.subtitle", { defaultValue: "Clients under management and per-client usage." })}
       </p>

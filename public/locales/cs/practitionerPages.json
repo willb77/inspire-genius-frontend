@@ -48,7 +48,7 @@
     "colSessions": "Sezení",
     "colCreditsUsed": "Využité kredity",
     "colLastActive": "Naposledy aktivní",
-    "title": "Analytika",
+    "title": "Zprávy",
     "subtitle": "Klienti ve správě a využití podle klientů."
   },
   "clientProfile": {
@@ -286,7 +286,7 @@
     "quick": {
       "client": "Klient",
       "schedule": "Plán",
-      "analytics": "Analytika",
+      "analytics": "Zprávy",
       "addClient": "Přidat klienta",
       "meeting": "Schůzka"
     },

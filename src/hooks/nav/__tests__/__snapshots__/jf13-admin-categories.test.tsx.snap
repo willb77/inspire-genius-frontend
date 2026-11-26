@@ -248,7 +248,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
     {
       "collapsible": true,
       "items": [
-        "Users -> /super-admin/users",
+        "People -> /super-admin/users",
         "Organizations -> /super-admin/organizations",
         "Add people -> /super-admin/bulk-import",
         "Practitioners -> /super-admin/practitioner-registry",
@@ -354,7 +354,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
     {
       "collapsible": true,
       "items": [
-        "Users -> /super-admin/users",
+        "People -> /super-admin/users",
         "Organizations -> /super-admin/organizations",
         "Add people -> /super-admin/bulk-import",
         "Practitioners -> /super-admin/practitioner-registry",
@@ -452,7 +452,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
     {
       "collapsible": true,
       "items": [
-        "Users -> /super-admin/users",
+        "People -> /super-admin/users",
         "Organizations -> /super-admin/organizations",
         "Add people -> /super-admin/bulk-import",
         "Practitioners -> /super-admin/practitioner-registry",
@@ -794,7 +794,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
     {
       "collapsible": true,
       "items": [
-        "Users -> /super-admin/users",
+        "People -> /super-admin/users",
         "Organizations -> /super-admin/organizations",
         "Add people -> /super-admin/bulk-import",
         "Practitioners -> /super-admin/practitioner-registry",
@@ -901,7 +901,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
     {
       "collapsible": true,
       "items": [
-        "Users -> /super-admin/users",
+        "People -> /super-admin/users",
         "Organizations -> /super-admin/organizations",
         "Add people -> /super-admin/bulk-import",
         "Practitioners -> /super-admin/practitioner-registry",
@@ -1000,7 +1000,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
     {
       "collapsible": true,
       "items": [
-        "Users -> /super-admin/users",
+        "People -> /super-admin/users",
         "Organizations -> /super-admin/organizations",
         "Add people -> /super-admin/bulk-import",
         "Practitioners -> /super-admin/practitioner-registry",
@@ -1219,7 +1219,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
       "items": [
         "Dashboard -> /manager/dashboard",
         "Member Oversight -> /manager/students",
-        "Team Import -> /manager/bulk-import",
+        "Add people -> /manager/bulk-import",
         "Schedule -> /manager/schedule",
       ],
       "label": "",
@@ -1267,7 +1267,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
       "items": [
         "Dashboard -> /manager/dashboard",
         "Member Oversight -> /manager/students",
-        "Team Import -> /manager/bulk-import",
+        "Add people -> /manager/bulk-import",
         "Schedule -> /manager/schedule",
       ],
       "label": "",
@@ -1324,7 +1324,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "My PRISM Practice -> /practitioner/practice",
         "Schedule -> /practitioner/schedule",
         "Surveys -> /surveys",
-        "Analytics -> /practitioner/analytics",
+        "Reports -> /practitioner/analytics",
       ],
       "label": "",
     },
@@ -1375,7 +1375,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "My PRISM Practice -> /practitioner/practice",
         "Schedule -> /practitioner/schedule",
         "Surveys -> /surveys",
-        "Analytics -> /practitioner/analytics",
+        "Reports -> /practitioner/analytics",
       ],
       "label": "",
     },

@@ -46,7 +46,7 @@ describe("company-admin house menu", () => {
       ["Dashboard", "/company-admin/dashboard"],
       ["People", "/company-admin/users"],
       ["Organization", "/company-admin/organization"],
-      ["Analytics", "/company-admin/analytics"],
+      ["Reports", "/company-admin/analytics"],
       ["Surveys", "/surveys"],
     ])
     expect(menu.some((i) => i.to.includes("/settings") || i.to.includes("/costs") || i.to === "/help")).toBe(false)
