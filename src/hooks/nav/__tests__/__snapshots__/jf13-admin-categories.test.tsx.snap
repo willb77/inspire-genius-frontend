@@ -1435,7 +1435,6 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Bulk User Import -> /super-admin/bulk-import",
         "Observability -> /super-admin/observability",
         "Explainability -> /super-admin/explainability",
-        "Dev Traffic Report -> /super-admin/dev-traffic-report",
         "Research -> /super-admin/research",
         "Knowledge Base -> /super-admin/knowledge-base",
         "PRISM Management -> /super-admin/prism-management",
