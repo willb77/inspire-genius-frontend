@@ -16,6 +16,7 @@ import { agentApi } from "@/lib/agentApi";
 import type {
   Assessment,
   AssessmentCreated,
+  AssessmentHistoryItem,
   AssessmentHistoryResponse,
   AssessmentImportConfirm,
   AssessmentImportPreview,
@@ -45,6 +46,20 @@ export async function listAssessments(params: {
   const { data } = await agentApi.get<AssessmentHistoryResponse>(
     `${BASE}/assessments`,
     { params: { framework, limit, offset } },
+  );
+  return data;
+}
+
+/**
+ * DELETE /v1/profile/me/assessments/{id} — remove one of your own entered or
+ * uploaded results (TDS F-W7-1 Part B). Soft on the server: the row stays,
+ * stops counting, and the earlier result (if any) becomes current again.
+ * 404 someone else's or missing, 403 PRISM or not yours to remove, 409
+ * already removed.
+ */
+export async function removeAssessment(id: string): Promise<AssessmentHistoryItem> {
+  const { data } = await agentApi.delete<AssessmentHistoryItem>(
+    `${BASE}/assessments/${encodeURIComponent(id)}`,
   );
   return data;
 }

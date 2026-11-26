@@ -12,7 +12,7 @@ import {
   getMyProfile,
   listAssessments,
 } from "@/services/profile/profile";
-import type { Assessment, ProfileMe } from "@/types/profile/profile-types";
+import type { AssessmentHistoryItem, ProfileMe } from "@/types/profile/profile-types";
 
 jest.mock("@/services/profile/profile", () => ({
   getMyProfile: jest.fn(),
@@ -58,7 +58,7 @@ test("renders the page header and the empty state when no data", async () => {
     loaded_frameworks: [],
   } as ProfileMe);
   (listAssessments as jest.Mock).mockResolvedValueOnce({
-    assessments: [],
+    items: [],
     total: 0,
     limit: 100,
     offset: 0,
@@ -77,51 +77,41 @@ test("renders the page header and the empty state when no data", async () => {
   });
 });
 
-test("renders timeline cards when assessments are present", async () => {
-  (getMyProfile as jest.Mock).mockResolvedValueOnce({
-    user_id: "u-1",
-    facts: [
-      {
-        id: "f-1",
-        category: "bio",
-        key: "summary",
-        value: "I run product.",
-      },
-    ],
-    loaded_frameworks: ["PRISM"],
-  } as ProfileMe);
+// F-W7-1b: the history route returns `items` (backend AssessmentListResponse),
+// with no scores. The page read `assessments`, so this list was always empty
+// and showed "No assessments yet" to everyone who had some.
+const ROWS: AssessmentHistoryItem[] = [
+  { id: "a-1", framework: "DISC", assessed_at: "2026-05-10T00:00:00Z", source: "user_input", is_authoritative: true },
+  { id: "a-2", framework: "CLIFTON", assessed_at: "2026-05-12T00:00:00Z", source: "file_upload", is_authoritative: false, notes: "removed by owner 2026-11-25T23:40:00+00:00" },
+];
 
-  const assessments: Assessment[] = [
-    {
-      id: "a-1",
-      framework: "PRISM",
-      assessed_at: "2026-05-10T00:00:00Z",
-      parsed_scores: [
-        { dimension: "Innovating", score: 88 },
-        { dimension: "Producing", score: 72 },
-        { dimension: "Relating", score: 65 },
-        { dimension: "Analyzing", score: 40 },
-      ],
-    },
-  ];
-  (listAssessments as jest.Mock).mockResolvedValueOnce({
-    assessments,
-    total: 1,
-    limit: 100,
-    offset: 0,
-  });
+function profileWithFact(): ProfileMe {
+  return {
+    user_id: "u-1",
+    facts: [{ id: "f-1", category: "bio", key: "summary", value: "I run product." }],
+    loaded_frameworks: ["DISC"],
+  } as ProfileMe;
+}
+
+test("the history lists the backend's items as timeline cards", async () => {
+  (getMyProfile as jest.Mock).mockResolvedValueOnce(profileWithFact());
+  (listAssessments as jest.Mock).mockResolvedValueOnce({ items: ROWS, total: 2, limit: 100, offset: 0 });
 
   renderProfile();
 
   await waitFor(() => {
     expect(screen.getByText(/i run product\./i)).toBeInTheDocument();
   });
-  await waitFor(() => {
-    expect(screen.getByTestId("assessment-card-a-1")).toBeInTheDocument();
-  });
-  // Top-3 dimensions surface; lowest-score dim does not.
-  expect(screen.getByText(/Innovating: 88/i)).toBeInTheDocument();
-  expect(screen.getByText(/Producing: 72/i)).toBeInTheDocument();
-  expect(screen.getByText(/Relating: 65/i)).toBeInTheDocument();
-  expect(screen.queryByText(/Analyzing: 40/i)).not.toBeInTheDocument();
+  expect(await screen.findByTestId("assessment-card-a-1")).toBeInTheDocument();
+  expect(screen.queryByText(/no assessments yet/i)).not.toBeInTheDocument();
+});
+
+test("an entry the person removed is left out of the history", async () => {
+  (getMyProfile as jest.Mock).mockResolvedValueOnce(profileWithFact());
+  (listAssessments as jest.Mock).mockResolvedValueOnce({ items: ROWS, total: 2, limit: 100, offset: 0 });
+
+  renderProfile();
+
+  expect(await screen.findByTestId("assessment-card-a-1")).toBeInTheDocument();
+  expect(screen.queryByTestId("assessment-card-a-2")).not.toBeInTheDocument();
 });

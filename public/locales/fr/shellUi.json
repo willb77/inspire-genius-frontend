@@ -387,6 +387,14 @@
     "sourceEntered": "Saisi par vous",
     "sourceReport": "Issu d’un rapport",
     "sourceOther": "Ajouté à votre profil",
+    "remove": "Retirer",
+    "removeAria": "Retirer votre résultat {{framework}}",
+    "removeTitle": "Retirer ce résultat {{framework}} ?",
+    "removeBody": "Il ne sera plus utilisé, ni par Meridian ni ailleurs. Si vous avez un résultat {{framework}} antérieur, il redevient votre résultat actuel.",
+    "removeConfirm": "Retirer",
+    "removeDone": "Résultat {{framework}} retiré.",
+    "removeAlready": "Ce résultat avait déjà été retiré.",
+    "removeFailed": "Impossible de retirer ce résultat. Réessayez.",
     "supersede": "Vous avez déjà un résultat {{framework}} du {{date}}. En enregistrant celui-ci, il devient le résultat actuel ; l’ancien reste dans votre historique."
   },
   "personalData": {

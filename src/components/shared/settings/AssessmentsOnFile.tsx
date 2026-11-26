@@ -1,9 +1,11 @@
 /**
  * "On file" — the person's current result per framework, in Settings → Other
- * Assessments (TDS F-W7-1). Reads only: `GET /v1/profile/me` for the current
- * results and `GET /v1/profile/me/assessments?framework=…` for how many older
- * entries sit behind each. A failed read says so; it never reads as "nothing
- * on file", which is the empty state that hid this gap in the first place.
+ * Assessments (TDS F-W7-1). `GET /v1/profile/me` gives the current results;
+ * `GET /v1/profile/me/assessments?framework=…` gives the rows behind each: how
+ * many earlier entries still count, and (Part B) the id of the current one,
+ * so the person can remove what they entered or uploaded. A failed read says
+ * so; it never reads as "nothing on file", which is the empty state that hid
+ * this gap in the first place.
  */
 import type { JSX } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,22 +13,33 @@ import { Loader2 } from "lucide-react";
 
 import { useAssessmentHistory, useMyProfile } from "@/hooks/profile/useProfile";
 import type { ProfileAssessmentView } from "@/types/profile/profile-types";
+import RemoveAssessmentButton from "./RemoveAssessmentButton";
 import {
-  earlierCount,
+  activeEarlierCount,
+  currentEntry,
   formatAssessedDate,
   frameworkKey,
   frameworkLabel,
+  isRemovable,
   onFileAssessments,
   resultText,
   sourceKind,
 } from "./onFileHelpers";
 
+/** `GET /me/assessments` caps `limit` at 200. */
+const HISTORY_LIMIT = 200;
+
 function OnFileRow({ view }: { view: ProfileAssessmentView }): JSX.Element {
   const { t, i18n } = useTranslation("shellUi");
   const key = frameworkKey(view.framework);
-  // limit 1: only `total` is read, so the page size does not matter.
-  const history = useAssessmentHistory(key, { limit: 1, offset: 0 });
-  const earlier = history.isSuccess ? earlierCount(history.data?.total) : 0;
+  // The server's page cap. The rows are read, not just `total`: a removed
+  // entry is still in the history but no longer counts as "earlier", and the
+  // current row's id is what Remove needs (GET /me carries none).
+  const history = useAssessmentHistory(key, { limit: HISTORY_LIMIT, offset: 0 });
+  const items = history.isSuccess ? history.data?.items : undefined;
+  const earlier = activeEarlierCount(items, key);
+  const entry = currentEntry(items, key);
+  const label = frameworkLabel(view.framework);
   const kind = sourceKind(view.source);
   const source =
     kind === "entered"
@@ -39,7 +52,7 @@ function OnFileRow({ view }: { view: ProfileAssessmentView }): JSX.Element {
   return (
     <li className="rounded-md border border-border/60 p-3" data-testid={`on-file-${key}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-        <p className="text-sm font-medium">{frameworkLabel(view.framework)}</p>
+        <p className="text-sm font-medium">{label}</p>
         <p className="text-xs text-muted-foreground">
           {formatAssessedDate(view.assessed_at, i18n.language)} · {source}
           {earlier > 0 && (
@@ -51,6 +64,11 @@ function OnFileRow({ view }: { view: ProfileAssessmentView }): JSX.Element {
         </p>
       </div>
       {result && <p className="mt-1 text-sm">{result}</p>}
+      {entry && isRemovable(entry) && (
+        <div className="mt-1 flex justify-end" data-testid={`on-file-remove-${key}`}>
+          <RemoveAssessmentButton assessmentId={entry.id} frameworkLabel={label} />
+        </div>
+      )}
     </li>
   );
 }

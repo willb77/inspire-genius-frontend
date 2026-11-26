@@ -87,6 +87,14 @@
     "sourceEntered": "Entered by you",
     "sourceReport": "From a report",
     "sourceOther": "Added to your profile",
+    "remove": "Remove",
+    "removeAria": "Remove your {{framework}} result",
+    "removeTitle": "Remove this {{framework}} result?",
+    "removeBody": "It will stop being used, by Meridian and everywhere else. If you have an earlier {{framework}} result, that one becomes your current result again.",
+    "removeConfirm": "Remove",
+    "removeDone": "{{framework}} result removed.",
+    "removeAlready": "That result had already been removed.",
+    "removeFailed": "We could not remove this result. Try again.",
     "supersede": "You already have a {{framework}} result from {{date}}. Saving this one makes it the current result; the earlier one stays in your history."
   },
   "audioPlayer": {

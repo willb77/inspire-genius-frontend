@@ -18,7 +18,7 @@ import AssessmentsOnFile from "@/components/shared/settings/AssessmentsOnFile";
 import SupersedeNotice from "@/components/shared/settings/SupersedeNotice";
 import UploadReportDialog from "@/components/shared/settings/UploadReportDialog";
 import {
-  earlierCount,
+  activeEarlierCount,
   findOnFile,
   onFileAssessments,
   resultText,
@@ -82,6 +82,18 @@ const PRISM: ProfileAssessmentView = {
   top_scores: [{ category: "Behaviour", dimension: "Innovating", score_numeric: 80 }],
 };
 
+/** The backend's `items` shape: W7's two CLIFTON rows, one of everything else. */
+function historyFor(framework?: string) {
+  const row = (id: string, at: string, source = "user_input") => ({
+    id, framework: framework ?? "", assessed_at: at, source, is_authoritative: true, notes: null,
+  });
+  const items =
+    framework === "CLIFTON"
+      ? [row("c-new", "2026-11-25T15:41:00Z", "file_upload"), row("c-old", "2026-11-25T15:40:00Z")]
+      : [row(`${framework}-1`, "2026-10-01T00:00:00Z")];
+  return { items, total: items.length, limit: 200, offset: 0 };
+}
+
 function profile(assessments: ProfileAssessmentView[]): ProfileMe {
   return { user_id: "u", facts: [], loaded_frameworks: [], assessments };
 }
@@ -100,7 +112,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   (getMyProfile as jest.Mock).mockResolvedValue(profile([CLIFTON, PRISM, MBTI, DISC]));
   (listAssessments as jest.Mock).mockImplementation(({ framework }: { framework?: string }) =>
-    Promise.resolve({ assessments: [], total: framework === "CLIFTON" ? 2 : 1, limit: 1, offset: 0 }),
+    Promise.resolve(historyFor(framework)),
   );
 });
 
@@ -127,11 +139,12 @@ test("source labels: entered, report, anything else neutral", () => {
   expect(sourceKind("honor_coach_import")).toBe("other");
 });
 
-test("earlier = everything but the current one", () => {
-  expect(earlierCount(2)).toBe(1);
-  expect(earlierCount(1)).toBe(0);
-  expect(earlierCount(0)).toBe(0);
-  expect(earlierCount(undefined)).toBe(0);
+test("earlier = the entries that still count, but the current one", () => {
+  const items = historyFor("CLIFTON").items;
+  expect(activeEarlierCount(items, "CLIFTON")).toBe(1);
+  expect(activeEarlierCount(items.slice(0, 1), "CLIFTON")).toBe(0);
+  expect(activeEarlierCount([], "CLIFTON")).toBe(0);
+  expect(activeEarlierCount(undefined, "CLIFTON")).toBe(0);
 });
 
 test("findOnFile matches the framework case-insensitively and never finds PRISM", () => {
@@ -158,7 +171,7 @@ test("W7's case: two CliftonStrengths entries read as one line with +1 earlier",
   wrap(<AssessmentsOnFile />);
   expect(await screen.findByTestId("on-file-earlier-CLIFTON")).toHaveTextContent("+1 earlier");
   expect(screen.queryByTestId("on-file-earlier-DISC")).not.toBeInTheDocument();
-  expect(listAssessments).toHaveBeenCalledWith({ framework: "CLIFTON", limit: 1, offset: 0 });
+  expect(listAssessments).toHaveBeenCalledWith({ framework: "CLIFTON", limit: 200, offset: 0 });
 });
 
 test("a failed history read shows no earlier count rather than a wrong one", async () => {

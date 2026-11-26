@@ -462,6 +462,14 @@
     "sourceEntered": "Wprowadzone przez Ciebie",
     "sourceReport": "Z raportu",
     "sourceOther": "Dodane do Twojego profilu",
+    "remove": "Usuń",
+    "removeAria": "Usuń swój wynik {{framework}}",
+    "removeTitle": "Usunąć ten wynik {{framework}}?",
+    "removeBody": "Przestanie być używany, przez Meridian i wszędzie indziej. Jeśli masz wcześniejszy wynik {{framework}}, to on znów stanie się Twoim bieżącym wynikiem.",
+    "removeConfirm": "Usuń",
+    "removeDone": "Usunięto wynik {{framework}}.",
+    "removeAlready": "Ten wynik został już usunięty.",
+    "removeFailed": "Nie udało się usunąć tego wyniku. Spróbuj ponownie.",
     "supersede": "Masz już wynik {{framework}} z {{date}}. Zapisanie tego sprawi, że stanie się bieżącym wynikiem; wcześniejszy pozostanie w historii."
   },
   "audioPlayer": {

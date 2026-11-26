@@ -537,8 +537,10 @@ export default function ProfileV2() {
   const loadedFrameworks = me.data?.loaded_frameworks ?? [];
   // Memoise so the `??` fallback doesn't produce a new array reference on
   // every render (which would make every downstream useMemo dep stale).
-  const assessments = useMemo(
-    () => history.data?.assessments ?? [],
+  const assessments = useMemo<Assessment[]>(
+    // F-W7-1b: the backend sends `items`. A removed entry (not authoritative)
+    // is left out: it no longer counts anywhere else either.
+    () => (history.data?.items ?? []).filter((a) => a.is_authoritative !== false),
     [history.data],
   );
 
