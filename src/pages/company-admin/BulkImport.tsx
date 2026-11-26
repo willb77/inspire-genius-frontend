@@ -1,6 +1,9 @@
-import { useReducer, useCallback, useState } from "react"
+import { useReducer, useCallback, useState, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { CompanyAdminHub } from "./house/CompanyAdminHub"
+import { PEOPLE_HUB } from "./house/hubs"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -121,8 +124,20 @@ function stepIndex(step: BulkImportStep): number {
 }
 
 // ── Component ──
+/** RM-5: with the company-admin house switch on, this page is the Bulk import tab of the People hub. */
+function PeopleHubFrame({ children }: { children: ReactNode }) {
+  return (
+    <CompanyAdminHub hub={PEOPLE_HUB} active="bulk-import">
+      {children}
+    </CompanyAdminHub>
+  )
+}
+
 export default function BulkImport() {
   const { t } = useTranslation("companyAdminPages")
+  // House style (area `company-admin`): display only. Off, the page renders unchanged.
+  const house = isHouseStyleOn("company-admin")
+  const Frame = house ? PeopleHubFrame : CompanyAdminLayout
   const [state, dispatch] = useReducer(reducer, initialState)
   const currentIdx = stepIndex(state.currentStep)
 
@@ -207,16 +222,21 @@ export default function BulkImport() {
   const canGoBack = currentIdx > 0 && state.currentStep !== "track"
 
   return (
-    <CompanyAdminLayout>
+    <Frame>
       <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
+          {house ? (
+            // RM-5: inside the People hub, the hub header names the page.
+            <span />
+          ) : (
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{t("bulkImportTitle", { defaultValue: "Bulk User Import" })}</h1>
             <p className="text-muted-foreground">
               {t("bulkImportSubtitle", { defaultValue: "Upload a file to import users and send invitation emails" })}
             </p>
           </div>
+          )}
           {state.currentStep !== "upload" && (
             <Button variant="outline" size="sm" onClick={() => dispatch({ type: "RESET" })}>
               {t("bulkImportStartOver", { defaultValue: "Start Over" })}
@@ -369,6 +389,6 @@ export default function BulkImport() {
           />
         )}
       </div>
-    </CompanyAdminLayout>
+    </Frame>
   )
 }

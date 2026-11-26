@@ -200,5 +200,19 @@
   "costsUnusedLicenses": "Nevyužité licence",
   "costsPendingActivation": "Čeká na aktivaci",
   "cultureUnsupportedType": "Nepodporovaný typ souboru. Nahrajte prosím soubory PDF, DOCX, TXT nebo CSV.",
-  "peopleColPrism": "PRISM"
+  "peopleColPrism": "PRISM",
+  "hubSectionsLabel": "Sekce: {{title}}",
+  "hubPeopleDescription": "Lidé ve vaší organizaci a způsoby, jak přidat další.",
+  "hubPeopleTabPeople": "Lidé",
+  "hubPeopleTabBulkImport": "Hromadný import",
+  "hubPeopleTabBulkImportDescription": "Importujte soubor s lidmi a pošlete jim pozvánky.",
+  "hubOrganizationDescription": "Oddělení vaší organizace a dokumenty, které popisují její kulturu.",
+  "hubOrganizationTabOrganization": "Organizace",
+  "hubOrganizationTabCulture": "Dokumenty o kultuře",
+  "hubOrganizationTabCultureDescription": "Dokumenty o kultuře a hodnotách vaší organizace.",
+  "hubAnalyticsTitle": "Analytika",
+  "hubAnalyticsDescription": "Jak vaše organizace používá InspiresGenius a co dělají a stojí AI koučové.",
+  "hubAnalyticsTabAnalytics": "Analytika",
+  "hubAnalyticsTabObservability": "Pozorovatelnost AI",
+  "hubAnalyticsTabCohort": "Přehled kohorty"
 }

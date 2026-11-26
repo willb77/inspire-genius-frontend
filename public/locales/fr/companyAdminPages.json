@@ -200,5 +200,19 @@
   "dashboardOpen": "Ouvrir →",
   "dashboardCoverage": "Couverture",
   "dashboardActiveToday": "Actifs aujourd'hui",
-  "peopleColPrism": "PRISM"
+  "peopleColPrism": "PRISM",
+  "hubSectionsLabel": "Sections de {{title}}",
+  "hubPeopleDescription": "Les personnes de votre organisation, et les moyens d'en ajouter.",
+  "hubPeopleTabPeople": "Personnes",
+  "hubPeopleTabBulkImport": "Import groupé",
+  "hubPeopleTabBulkImportDescription": "Importez un fichier de personnes et envoyez-leur des invitations.",
+  "hubOrganizationDescription": "Les départements de votre organisation et les documents qui décrivent sa culture.",
+  "hubOrganizationTabOrganization": "Organisation",
+  "hubOrganizationTabCulture": "Documents de culture",
+  "hubOrganizationTabCultureDescription": "Documents sur la culture et les valeurs de votre organisation.",
+  "hubAnalyticsTitle": "Analyses",
+  "hubAnalyticsDescription": "Comment votre organisation utilise InspiresGenius, et ce que font et coûtent les coachs IA.",
+  "hubAnalyticsTabAnalytics": "Analyses",
+  "hubAnalyticsTabObservability": "Observabilité de l'IA",
+  "hubAnalyticsTabCohort": "Bilan de cohorte"
 }

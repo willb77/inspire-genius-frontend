@@ -200,5 +200,19 @@
   "dashHouseTitle": "Painel",
   "dashHouseDescription": "As pessoas, os departamentos e o uso da sua organização em resumo.",
   "dashHouseDepartments": "Departamentos",
-  "peopleColPrism": "PRISM"
+  "peopleColPrism": "PRISM",
+  "hubSectionsLabel": "Seções de {{title}}",
+  "hubPeopleDescription": "As pessoas da sua organização e as formas de adicionar mais.",
+  "hubPeopleTabPeople": "Pessoas",
+  "hubPeopleTabBulkImport": "Importação em massa",
+  "hubPeopleTabBulkImportDescription": "Importe um arquivo de pessoas e envie convites a elas.",
+  "hubOrganizationDescription": "Os departamentos da sua organização e os documentos que descrevem a cultura dela.",
+  "hubOrganizationTabOrganization": "Organização",
+  "hubOrganizationTabCulture": "Documentos de cultura",
+  "hubOrganizationTabCultureDescription": "Documentos sobre a cultura e os valores da sua organização.",
+  "hubAnalyticsTitle": "Análises",
+  "hubAnalyticsDescription": "Como sua organização usa o InspiresGenius, e o que os coaches de IA fazem e custam.",
+  "hubAnalyticsTabAnalytics": "Análises",
+  "hubAnalyticsTabObservability": "Observabilidade de IA",
+  "hubAnalyticsTabCohort": "Relatório de coorte"
 }

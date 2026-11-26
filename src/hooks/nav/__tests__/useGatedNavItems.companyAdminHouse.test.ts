@@ -44,13 +44,19 @@ describe("useGatedNavItems — company-admin house style", () => {
     expect(l).not.toContain("User Management")
   })
 
-  it("switch ON keeps the Cohort Read-out entry when the org has it", () => {
+  it("switch ON (RM-5): no Cohort Read-out row even when the org has it — it is a tab of the Analytics hub", () => {
     localStorage.setItem(SWITCH, "true")
     mockCohortOn = true
     const l = labels(renderHook(() => useGatedNavItems("company-admin")).result.current)
-    expect(l).toContain("Cohort Read-out")
-    // RM-4: no Help tail any more, so the entry closes the own-work list.
+    expect(l).not.toContain("Cohort Read-out")
+    expect(l).toEqual(["Dashboard", "People", "Organization", "Analytics", "Surveys"])
+  })
+
+  it("switch OFF keeps the Cohort Read-out row when the org has it (unchanged by RM-5)", () => {
+    mockCohortOn = true
+    const l = labels(renderHook(() => useGatedNavItems("company-admin")).result.current)
     expect(l.at(-1)).toBe("Cohort Read-out")
+    expect(l.slice(0, -1)).toEqual(labels(COMPANY_ADMIN_NAV_ITEMS))
   })
 
   it("is read at render time: flipping the switch and re-rendering changes the menu", () => {
