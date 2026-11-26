@@ -1,3 +1,4 @@
+import { VIEW_AS_OPTIONS } from "@/constants/house/superAdminNav"
 /**
  * @jest-environment jsdom
  *
@@ -83,10 +84,8 @@ describe("manager home route", () => {
     ])
   })
 
-  it("the super-admin Manager role view still points at the Dashboard under both values", () => {
-    for (const flag of ["true", null] as const) {
-      const roleViews = load(flag).SUPER_ADMIN_NAV_SECTIONS.find((s) => s.label === "Role Views")
-      expect(roleViews?.items.find((i) => i.label === "Manager")?.to).toBe(DASHBOARD)
-    }
+  // RM-9b: Role Views is gone; the house "View as…" switcher (static, flag-independent) replaced it.
+  it("the super-admin View as… Manager option points at the Dashboard", () => {
+    expect(VIEW_AS_OPTIONS.find((o) => o.label === "Manager")?.to).toBe(DASHBOARD)
   })
 })

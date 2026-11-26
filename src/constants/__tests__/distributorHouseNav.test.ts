@@ -1,3 +1,4 @@
+import { VIEW_AS_OPTIONS } from "@/constants/house/superAdminNav"
 /**
  * @jest-environment jsdom
  *
@@ -57,11 +58,11 @@ describe("distributor menu", () => {
     }
   })
 
-  it("keeps the home route, and super-admin Role Views still reaches the distributor home", () => {
+  // RM-9b: Role Views is gone; the house menu's "View as…" switcher (VIEW_AS_OPTIONS) opens the same role homes.
+  it("keeps the home route, and the super-admin View as… switcher still reaches the distributor home", () => {
     const nav = load(null)
     expect(nav.HOME_ROUTE_BY_ROLE.distributor).toBe("/distributor/dashboard")
-    const roleViews = nav.SUPER_ADMIN_NAV_SECTIONS.find((s) => s.label === "Role Views")
-    expect(roleViews?.items.find((i) => i.label === "Distributor")?.to).toBe("/distributor/dashboard")
+    expect(VIEW_AS_OPTIONS.find((o) => o.label === "Distributor")?.to).toBe("/distributor/dashboard")
   })
 
   it("RM-4: the footer is Settings (/distributor/settings) then Help & Support; no My Workspace", () => {

@@ -15,13 +15,15 @@
 import { renderHook } from "@testing-library/react"
 
 import { useGatedNavItems } from "../useGatedNavItems"
-import { NAV_ITEMS_BY_ROLE, PRACTITIONER_NAV_ITEMS, practitionerFrontPageMenu } from "@/constants/navigation"
+import { PRACTITIONER_NAV_ITEMS, practitionerFrontPageMenu, roleNavItems } from "@/constants/navigation"
 import { ROUTES } from "@/constants/routes"
 
 jest.mock("@/components/layout/useVerticalLauncher", () => ({
   useWorkspaceNavItems: (items: unknown) => items,
   withWorkspaceVerticals: (items: unknown[], extra: unknown[]) => [...items, ...extra],
 }))
+// RM-9b: the user role's list depends on the agent-engine toggle; pin it on.
+jest.mock("@/lib/agentApi", () => ({ useAgentEngine: () => true }))
 jest.mock("@/hooks/super-admin/usePrismExam", () => ({
   useExamAccess: () => ({ data: undefined }),
 }))
@@ -70,7 +72,8 @@ describe("RM-6 B: the practitioner menu follows the client-roster status", () =>
       mockOn = true
       const { result } = renderHook(() => useGatedNavItems(role))
       expect(mockAsked.every((asked) => asked === false)).toBe(true)
-      expect(routesOf(result.current)).toEqual(routesOf(NAV_ITEMS_BY_ROLE[role]).filter((r) => routesOf(result.current).includes(r)))
+      // The role's own list, unfolded (agent engine on, the default).
+      expect(result.current).toEqual(roleNavItems(role, true))
       expect(result.current.length).toBeGreaterThan(0)
     },
   )

@@ -90,8 +90,6 @@ describe("RM-2 — one super-admin menu on user pages and admin pages", () => {
     const onUserPage = sectionsOf("user")
     const onAdminPage = sectionsOf("admin")
     expect(onUserPage).toEqual(withWorkspaceOpen(onAdminPage))
-    // Without house style the two are identical outright.
-    if (!c.house) expect(onUserPage).toEqual(onAdminPage)
   })
 
   it.each(CASES)("%p: Dev Traffic Report is the owner's alone, on both layouts", (c) => {
@@ -112,8 +110,9 @@ describe("RM-2 — one super-admin menu on user pages and admin pages", () => {
       expect(user?.defaultCollapsed).toBeUndefined()
       expect(user?.collapsible).toBeUndefined()
       const admin = sectionsOf("admin").find((s) => s.label === "My Workspace")
-      // Admin pages: collapsed under house style, a plain open group without it.
-      expect(admin?.defaultCollapsed).toBe(house ? true : undefined)
+      // Admin pages: collapsed. RM-9b: the house menu is the only menu, so the
+      // switch no longer gives the classic open group.
+      expect(admin?.defaultCollapsed).toBe(true)
     }
   })
 
@@ -129,9 +128,13 @@ describe("RM-2 — one super-admin menu on user pages and admin pages", () => {
     expect(VIEW_AS_OPTIONS).toHaveLength(5)
   })
 
-  it("house style OFF: Role Views stays, with the five View-as destinations", () => {
+  // RM-9b (2026-11-26): the classic menu is gone, so house_style_admin=false no
+  // longer brings Role Views back — the switch changes nothing.
+  it("house style OFF: the same menu as ON — no Role Views", () => {
     setCase({ who: "other", house: false, jobFitV2: false })
-    const roleViews = sectionsOf("user").find((s) => s.label === "Role Views")
-    expect(roleViews?.items.map((i) => i.to)).toEqual(VIEW_AS_OPTIONS.map((o) => o.to))
+    const off = sectionsOf("user")
+    setCase({ who: "other", house: true, jobFitV2: false })
+    expect(off).toEqual(sectionsOf("user"))
+    expect(off.map((s) => s.label)).not.toContain("Role Views")
   })
 })

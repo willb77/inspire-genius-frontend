@@ -1,4 +1,4 @@
-import { SUPER_ADMIN_NAV_ITEMS, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation"
+import { SUPER_ADMIN_NAV_ITEMS } from "@/constants/navigation"
 import { ROUTES } from "@/constants/routes"
 import {
   ADMIN_HOME_LABEL,
@@ -85,8 +85,14 @@ describe("house-style super-admin menu", () => {
     expect(houseRoutes.has(ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT)).toBe(true)
   })
 
-  it("View as… opens exactly the classic Role Views destinations", () => {
-    const roleViews = SUPER_ADMIN_NAV_SECTIONS.find((s) => s.label === "Role Views")
-    expect(VIEW_AS_OPTIONS.map((o) => o.to)).toEqual(roleViews?.items.map((i) => i.to))
+  // RM-9b: the classic Role Views list is gone; these are the five role homes it opened.
+  it("View as… opens exactly the five role homes the classic Role Views did", () => {
+    expect(VIEW_AS_OPTIONS.map((o) => o.to)).toEqual([
+      ROUTES.HOME,
+      ROUTES.MANAGER.DASHBOARD,
+      ROUTES.COMPANY_ADMIN.DASHBOARD,
+      ROUTES.PRACTITIONER.HOME,
+      ROUTES.DISTRIBUTOR.DASHBOARD,
+    ])
   })
 })

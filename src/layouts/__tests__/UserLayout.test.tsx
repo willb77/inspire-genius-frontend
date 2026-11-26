@@ -37,15 +37,6 @@ jest.mock("@/context/useAuth", () => ({
 jest.mock("@/lib/agentApi", () => ({
   useAgentEngine: () => false,
 }));
-// JF-13 admin: UserLayout reads `job_fit_v2` (useSavedJobsEnabled) and, when it
-// is on, groups Administration through the house menu. This suite has no
-// QueryClient, stubs the routes table and pins today's menu, so the switch is
-// off here and the grouping module is not loaded; the on state is covered in
-// hooks/nav/__tests__/jf13-admin-categories.test.tsx.
-jest.mock("@/hooks/job-fit/useSavedJobs", () => ({ useSavedJobsEnabled: () => false }));
-jest.mock("@/constants/house/administrationCategories", () => ({
-  groupAdministrationItems: (items: unknown[]) => items,
-}));
 
 // My Workspace = the user menu with entitled workspace verticals (Job Fit,
 // Lumen) spliced in. The splice has its own coverage in
@@ -74,21 +65,8 @@ const mockNavItems = [
   { to: "/dashboard", icon: DummyIcon, label: "Dashboard" },
 ];
 jest.mock("@/constants/navigation", () => ({
-  USER_NAV_ITEMS: [
-    { to: "/home", icon: DummyIcon, label: "Home" },
-    { to: "/dashboard", icon: DummyIcon, label: "Dashboard" },
-  ],
+  // RM-9b: one user list (getUserNavItems); the classic super-admin sections are gone.
   getUserNavItems: () => mockNavItems,
-  SUPER_ADMIN_NAV_SECTIONS: [
-    {
-      label: "Administration",
-      items: [{ to: "/super-admin/dashboard", icon: DummyIcon, label: "Dashboard" }],
-    },
-    {
-      label: "Role Views",
-      items: [{ to: "/home", icon: DummyIcon, label: "User Home" }],
-    },
-  ],
   // RM-2: the super-admin branch builds its menu in useSuperAdminSections,
   // which applies the owner-only filter. The real lists and the owner check are
   // covered in superAdminOneMenu.rm2.test.tsx; stubs are enough here.
@@ -155,7 +133,7 @@ describe("UserLayout", () => {
     expect(screen.getByTestId("child")).toBeInTheDocument();
   });
 
-  test("passes USER_NAV_ITEMS when user is regular user", () => {
+  test("passes the user list (getUserNavItems) when user is regular user", () => {
     render(<UserLayout><div /></UserLayout>);
     const props = mockSidebarScaffold.mock.calls[0][0];
     expect(props.navItems).toHaveLength(2);
@@ -239,10 +217,9 @@ describe("UserLayout", () => {
     expect(props.navSections[1].defaultCollapsed).toBe(true);
   });
 
-  test("super-admin order is My Workspace → Role Views → Tools → Administration", () => {
+  test("super-admin order is the house menu: groups → Tools → My Workspace → footer (RM-9b: the only one)", () => {
     // Same order as SuperAdminLayout, so the menu does not reshuffle as a
-    // super-admin moves between user pages and admin pages. "Verticals" became
-    // "Tools" on 2026-08-12 when the two groups were consolidated.
+    // super-admin moves between user pages and admin pages.
     mockUseAuth.mockReturnValue({ user: { role: "super-admin" } });
     mockLauncher.mockReturnValue({
       label: "Tools",
@@ -251,16 +228,11 @@ describe("UserLayout", () => {
     });
     render(<UserLayout><div /></UserLayout>);
     const props = mockSidebarScaffold.mock.calls[0][0];
-    expect(props.navSections.map((s: { label: string }) => s.label)).toEqual([
-      "My Workspace",
-      "Role Views",
-      "Tools",
-      "Administration",
-    ]);
+    expect(props.navSections.map((s: { label: string }) => s.label)).toEqual(["", "Tools", "My Workspace", ""]);
   });
 
-  test("super-admin, house style on: My Workspace stays open on user pages (RM-2)", () => {
-    localStorage.setItem("house_style_admin", "true");
+  test("super-admin: My Workspace stays open on user pages (RM-2), whatever house_style_admin says", () => {
+    localStorage.setItem("house_style_admin", "false");
     try {
       mockUseAuth.mockReturnValue({ user: { role: "super-admin" } });
       render(<UserLayout collapseSidebarOnMount className="custom"><div /></UserLayout>);

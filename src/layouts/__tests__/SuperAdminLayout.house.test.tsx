@@ -60,19 +60,17 @@ describe("SuperAdminLayout — house style switch", () => {
     mockTools.mockReturnValue(null)
   })
 
-  it("switch OFF (default): today's menu — My Workspace, Role Views, Administration", () => {
+  // RM-9b (2026-11-26): the classic menu (My Workspace, Role Views,
+  // Administration) is gone. Both tiers built with the `admin` area on and
+  // nothing in the app turns it off, so the house menu is the only menu; the
+  // switch no longer changes it in either direction.
+  it.each([null, "false", "true"])("house_style_admin = %s: the same house menu", (value) => {
+    if (value !== null) localStorage.setItem("house_style_admin", value)
     renderLayout()
-    expect(sections().map((s) => s.label)).toEqual(["My Workspace", "Role Views", "Administration"])
-    expect(sections()[0].defaultCollapsed).toBeUndefined()
-    const admin = sections().find((s) => s.label === "Administration")
-    expect(admin?.items.map((i) => i.label)).toContain("RLHF Training")
+    expect(sections().map((s) => s.label)).toEqual(["", "People", "Support", "PRISM", "AI coaches", "Reports", "Advanced", "My Workspace", ""])
+    expect(sections().some((s) => s.label === "Role Views")).toBe(false)
+    expect(sections().some((s) => s.label === "Administration")).toBe(false)
     expect(screen.getByText("child")).toBeInTheDocument()
-  })
-
-  it("switch explicitly OFF renders the same classic menu", () => {
-    localStorage.setItem("house_style_admin", "false")
-    renderLayout()
-    expect(sections().map((s) => s.label)).toEqual(["My Workspace", "Role Views", "Administration"])
   })
 
   it("switch ON: six groups plus Advanced, then Tools, then My Workspace collapsed — no Role Views", () => {

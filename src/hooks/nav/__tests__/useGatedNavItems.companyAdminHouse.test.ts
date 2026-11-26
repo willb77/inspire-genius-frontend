@@ -71,11 +71,15 @@ describe("useGatedNavItems — company-admin menu, house style baked in (RM-9a)"
   })
 
   it("no other role's menu depends on the switch", () => {
-    for (const value of ["true", "false"]) {
-      localStorage.setItem(SWITCH, value)
-      for (const role of ["manager", "practitioner", "distributor", "user"] as const) {
-        const { result } = renderHook(() => useGatedNavItems(role))
-        expect(labels(result.current)).toEqual(labels(NAV_ITEMS_BY_ROLE[role]))
+    for (const role of ["manager", "practitioner", "distributor", "user"] as const) {
+      localStorage.removeItem(SWITCH)
+      const absent = labels(renderHook(() => useGatedNavItems(role)).result.current)
+      // RM-9b: the user's list is roleNavItems (toggle-aware), so compare against
+      // the menu with the switch absent rather than the static map.
+      if (role !== "user") expect(absent).toEqual(labels(NAV_ITEMS_BY_ROLE[role]))
+      for (const value of ["true", "false"]) {
+        localStorage.setItem(SWITCH, value)
+        expect(labels(renderHook(() => useGatedNavItems(role)).result.current)).toEqual(absent)
       }
     }
   })

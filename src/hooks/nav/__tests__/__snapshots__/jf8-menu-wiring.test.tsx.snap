@@ -1627,29 +1627,61 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
     "career-discovery": [
       {
         "items": [
-          "Home -> /home",
-          "Chat with Coaches -> /dashboard",
-          "Goals Studio -> /my/goals",
-          "Career & Education Discovery -> /vertical/career-discovery/journey",
-          "Career Fit -> /vertical/job-fit/matches",
-          "Role Play -> /interview-practice",
-          "My development -> /my/development",
-          "Résumé Writer -> /my/resume",
-          "Document Library -> /documents",
-          "Settings -> /settings",
-          "Help & Support -> /help",
+          "Admin home -> /super-admin/dashboard",
         ],
-        "label": "My Workspace",
+        "label": "",
       },
       {
         "items": [
-          "User Home -> /home",
-          "Manager -> /manager/dashboard",
-          "Company Admin -> /company-admin/dashboard",
-          "Practitioner -> /practitioner/home",
-          "Distributor -> /distributor/dashboard",
+          "People -> /super-admin/users",
+          "Organizations -> /super-admin/organizations",
+          "Add people -> /super-admin/bulk-import",
+          "Practitioners -> /super-admin/practitioner-registry",
+          "Client sign-up -> /super-admin/client-signup",
+          "Intake -> /super-admin/intake",
         ],
-        "label": "Role Views",
+        "label": "People",
+      },
+      {
+        "items": [
+          "Help requests -> /super-admin/support",
+          "Surveys -> /surveys",
+        ],
+        "label": "Support",
+      },
+      {
+        "items": [
+          "PRISM tools -> /super-admin/prism-management",
+        ],
+        "label": "PRISM",
+      },
+      {
+        "items": [
+          "Coach setup -> /super-admin/mentor-management",
+          "Coach training -> /super-admin/agent-trainer",
+          "Knowledge -> /super-admin/knowledge-base",
+          "Research -> /super-admin/research",
+          "Coach feedback review -> /super-admin/rlhf-training",
+        ],
+        "label": "AI coaches",
+      },
+      {
+        "items": [
+          "Usage reports -> /super-admin/analytics",
+          "AI usage & health -> /super-admin/observability",
+          "Data deletion requests -> /super-admin/privacy-compliance",
+          "Cohort read-out -> /super-admin/cohort-readout",
+        ],
+        "label": "Reports",
+      },
+      {
+        "items": [
+          "Why the AI answered -> /super-admin/explainability",
+          "Coach trace console -> /super-admin/agent-trace-console",
+          "Asset library -> /super-admin/asset-library",
+          "Curriculum -> /super-admin/curriculum",
+        ],
+        "label": "Advanced",
       },
       {
         "items": [
@@ -1681,40 +1713,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
       },
       {
         "items": [
-          "Dashboard -> /super-admin/dashboard",
-          "User Management -> /super-admin/users",
-          "Organizations -> /super-admin/organizations",
-          "Agent Management -> /super-admin/mentor-management",
-          "RLHF Training -> /super-admin/rlhf-training",
-          "Analytics & Logs -> /super-admin/analytics",
-          "Agent Trainer -> /super-admin/agent-trainer",
-          "Bulk User Import -> /super-admin/bulk-import",
-          "Observability -> /super-admin/observability",
-          "Explainability -> /super-admin/explainability",
-          "Research -> /super-admin/research",
-          "Knowledge Base -> /super-admin/knowledge-base",
-          "PRISM Management -> /super-admin/prism-management",
-          "PRISM CSV Converter -> /super-admin/prism-csv-converter",
-          "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
-          "PRISM Practitioner Exam -> /super-admin/prism-exam",
-          "Practitioner Registry -> /super-admin/practitioner-registry",
-          "Intake -> /super-admin/intake",
-          "Privacy & RTBF -> /super-admin/privacy-compliance",
-          "Cohort Read-out -> /super-admin/cohort-readout",
-          "Client Sign-Up -> /super-admin/client-signup",
-          "Help and Support Management -> /super-admin/support",
-          "Agent Trace Console -> /super-admin/agent-trace-console",
-          "Surveys -> /surveys",
-          "Asset Library -> /super-admin/asset-library",
-          "Curriculum -> /super-admin/curriculum",
-          "Settings -> /super-admin/settings",
-        ],
-        "label": "Administration",
-      },
-    ],
-    "direction-setting": [
-      {
-        "items": [
           "Home -> /home",
           "Chat with Coaches -> /dashboard",
           "Goals Studio -> /my/goals",
@@ -1724,20 +1722,75 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
           "My development -> /my/development",
           "Résumé Writer -> /my/resume",
           "Document Library -> /documents",
-          "Settings -> /settings",
-          "Help & Support -> /help",
         ],
         "label": "My Workspace",
       },
       {
         "items": [
-          "User Home -> /home",
-          "Manager -> /manager/dashboard",
-          "Company Admin -> /company-admin/dashboard",
-          "Practitioner -> /practitioner/home",
-          "Distributor -> /distributor/dashboard",
+          "Settings -> /super-admin/settings",
+          "Help & Support -> /help",
         ],
-        "label": "Role Views",
+        "label": "",
+      },
+    ],
+    "direction-setting": [
+      {
+        "items": [
+          "Admin home -> /super-admin/dashboard",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "People -> /super-admin/users",
+          "Organizations -> /super-admin/organizations",
+          "Add people -> /super-admin/bulk-import",
+          "Practitioners -> /super-admin/practitioner-registry",
+          "Client sign-up -> /super-admin/client-signup",
+          "Intake -> /super-admin/intake",
+        ],
+        "label": "People",
+      },
+      {
+        "items": [
+          "Help requests -> /super-admin/support",
+          "Surveys -> /surveys",
+        ],
+        "label": "Support",
+      },
+      {
+        "items": [
+          "PRISM tools -> /super-admin/prism-management",
+        ],
+        "label": "PRISM",
+      },
+      {
+        "items": [
+          "Coach setup -> /super-admin/mentor-management",
+          "Coach training -> /super-admin/agent-trainer",
+          "Knowledge -> /super-admin/knowledge-base",
+          "Research -> /super-admin/research",
+          "Coach feedback review -> /super-admin/rlhf-training",
+        ],
+        "label": "AI coaches",
+      },
+      {
+        "items": [
+          "Usage reports -> /super-admin/analytics",
+          "AI usage & health -> /super-admin/observability",
+          "Data deletion requests -> /super-admin/privacy-compliance",
+          "Cohort read-out -> /super-admin/cohort-readout",
+        ],
+        "label": "Reports",
+      },
+      {
+        "items": [
+          "Why the AI answered -> /super-admin/explainability",
+          "Coach trace console -> /super-admin/agent-trace-console",
+          "Asset library -> /super-admin/asset-library",
+          "Curriculum -> /super-admin/curriculum",
+        ],
+        "label": "Advanced",
       },
       {
         "items": [
@@ -1769,40 +1822,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
       },
       {
         "items": [
-          "Dashboard -> /super-admin/dashboard",
-          "User Management -> /super-admin/users",
-          "Organizations -> /super-admin/organizations",
-          "Agent Management -> /super-admin/mentor-management",
-          "RLHF Training -> /super-admin/rlhf-training",
-          "Analytics & Logs -> /super-admin/analytics",
-          "Agent Trainer -> /super-admin/agent-trainer",
-          "Bulk User Import -> /super-admin/bulk-import",
-          "Observability -> /super-admin/observability",
-          "Explainability -> /super-admin/explainability",
-          "Research -> /super-admin/research",
-          "Knowledge Base -> /super-admin/knowledge-base",
-          "PRISM Management -> /super-admin/prism-management",
-          "PRISM CSV Converter -> /super-admin/prism-csv-converter",
-          "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
-          "PRISM Practitioner Exam -> /super-admin/prism-exam",
-          "Practitioner Registry -> /super-admin/practitioner-registry",
-          "Intake -> /super-admin/intake",
-          "Privacy & RTBF -> /super-admin/privacy-compliance",
-          "Cohort Read-out -> /super-admin/cohort-readout",
-          "Client Sign-Up -> /super-admin/client-signup",
-          "Help and Support Management -> /super-admin/support",
-          "Agent Trace Console -> /super-admin/agent-trace-console",
-          "Surveys -> /surveys",
-          "Asset Library -> /super-admin/asset-library",
-          "Curriculum -> /super-admin/curriculum",
-          "Settings -> /super-admin/settings",
-        ],
-        "label": "Administration",
-      },
-    ],
-    "grant": [
-      {
-        "items": [
           "Home -> /home",
           "Chat with Coaches -> /dashboard",
           "Goals Studio -> /my/goals",
@@ -1812,20 +1831,75 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
           "My development -> /my/development",
           "Résumé Writer -> /my/resume",
           "Document Library -> /documents",
-          "Settings -> /settings",
-          "Help & Support -> /help",
         ],
         "label": "My Workspace",
       },
       {
         "items": [
-          "User Home -> /home",
-          "Manager -> /manager/dashboard",
-          "Company Admin -> /company-admin/dashboard",
-          "Practitioner -> /practitioner/home",
-          "Distributor -> /distributor/dashboard",
+          "Settings -> /super-admin/settings",
+          "Help & Support -> /help",
         ],
-        "label": "Role Views",
+        "label": "",
+      },
+    ],
+    "grant": [
+      {
+        "items": [
+          "Admin home -> /super-admin/dashboard",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "People -> /super-admin/users",
+          "Organizations -> /super-admin/organizations",
+          "Add people -> /super-admin/bulk-import",
+          "Practitioners -> /super-admin/practitioner-registry",
+          "Client sign-up -> /super-admin/client-signup",
+          "Intake -> /super-admin/intake",
+        ],
+        "label": "People",
+      },
+      {
+        "items": [
+          "Help requests -> /super-admin/support",
+          "Surveys -> /surveys",
+        ],
+        "label": "Support",
+      },
+      {
+        "items": [
+          "PRISM tools -> /super-admin/prism-management",
+        ],
+        "label": "PRISM",
+      },
+      {
+        "items": [
+          "Coach setup -> /super-admin/mentor-management",
+          "Coach training -> /super-admin/agent-trainer",
+          "Knowledge -> /super-admin/knowledge-base",
+          "Research -> /super-admin/research",
+          "Coach feedback review -> /super-admin/rlhf-training",
+        ],
+        "label": "AI coaches",
+      },
+      {
+        "items": [
+          "Usage reports -> /super-admin/analytics",
+          "AI usage & health -> /super-admin/observability",
+          "Data deletion requests -> /super-admin/privacy-compliance",
+          "Cohort read-out -> /super-admin/cohort-readout",
+        ],
+        "label": "Reports",
+      },
+      {
+        "items": [
+          "Why the AI answered -> /super-admin/explainability",
+          "Coach trace console -> /super-admin/agent-trace-console",
+          "Asset library -> /super-admin/asset-library",
+          "Curriculum -> /super-admin/curriculum",
+        ],
+        "label": "Advanced",
       },
       {
         "items": [
@@ -1857,40 +1931,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
       },
       {
         "items": [
-          "Dashboard -> /super-admin/dashboard",
-          "User Management -> /super-admin/users",
-          "Organizations -> /super-admin/organizations",
-          "Agent Management -> /super-admin/mentor-management",
-          "RLHF Training -> /super-admin/rlhf-training",
-          "Analytics & Logs -> /super-admin/analytics",
-          "Agent Trainer -> /super-admin/agent-trainer",
-          "Bulk User Import -> /super-admin/bulk-import",
-          "Observability -> /super-admin/observability",
-          "Explainability -> /super-admin/explainability",
-          "Research -> /super-admin/research",
-          "Knowledge Base -> /super-admin/knowledge-base",
-          "PRISM Management -> /super-admin/prism-management",
-          "PRISM CSV Converter -> /super-admin/prism-csv-converter",
-          "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
-          "PRISM Practitioner Exam -> /super-admin/prism-exam",
-          "Practitioner Registry -> /super-admin/practitioner-registry",
-          "Intake -> /super-admin/intake",
-          "Privacy & RTBF -> /super-admin/privacy-compliance",
-          "Cohort Read-out -> /super-admin/cohort-readout",
-          "Client Sign-Up -> /super-admin/client-signup",
-          "Help and Support Management -> /super-admin/support",
-          "Agent Trace Console -> /super-admin/agent-trace-console",
-          "Surveys -> /surveys",
-          "Asset Library -> /super-admin/asset-library",
-          "Curriculum -> /super-admin/curriculum",
-          "Settings -> /super-admin/settings",
-        ],
-        "label": "Administration",
-      },
-    ],
-    "honor": [
-      {
-        "items": [
           "Home -> /home",
           "Chat with Coaches -> /dashboard",
           "Goals Studio -> /my/goals",
@@ -1900,20 +1940,75 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
           "My development -> /my/development",
           "Résumé Writer -> /my/resume",
           "Document Library -> /documents",
-          "Settings -> /settings",
-          "Help & Support -> /help",
         ],
         "label": "My Workspace",
       },
       {
         "items": [
-          "User Home -> /home",
-          "Manager -> /manager/dashboard",
-          "Company Admin -> /company-admin/dashboard",
-          "Practitioner -> /practitioner/home",
-          "Distributor -> /distributor/dashboard",
+          "Settings -> /super-admin/settings",
+          "Help & Support -> /help",
         ],
-        "label": "Role Views",
+        "label": "",
+      },
+    ],
+    "honor": [
+      {
+        "items": [
+          "Admin home -> /super-admin/dashboard",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "People -> /super-admin/users",
+          "Organizations -> /super-admin/organizations",
+          "Add people -> /super-admin/bulk-import",
+          "Practitioners -> /super-admin/practitioner-registry",
+          "Client sign-up -> /super-admin/client-signup",
+          "Intake -> /super-admin/intake",
+        ],
+        "label": "People",
+      },
+      {
+        "items": [
+          "Help requests -> /super-admin/support",
+          "Surveys -> /surveys",
+        ],
+        "label": "Support",
+      },
+      {
+        "items": [
+          "PRISM tools -> /super-admin/prism-management",
+        ],
+        "label": "PRISM",
+      },
+      {
+        "items": [
+          "Coach setup -> /super-admin/mentor-management",
+          "Coach training -> /super-admin/agent-trainer",
+          "Knowledge -> /super-admin/knowledge-base",
+          "Research -> /super-admin/research",
+          "Coach feedback review -> /super-admin/rlhf-training",
+        ],
+        "label": "AI coaches",
+      },
+      {
+        "items": [
+          "Usage reports -> /super-admin/analytics",
+          "AI usage & health -> /super-admin/observability",
+          "Data deletion requests -> /super-admin/privacy-compliance",
+          "Cohort read-out -> /super-admin/cohort-readout",
+        ],
+        "label": "Reports",
+      },
+      {
+        "items": [
+          "Why the AI answered -> /super-admin/explainability",
+          "Coach trace console -> /super-admin/agent-trace-console",
+          "Asset library -> /super-admin/asset-library",
+          "Curriculum -> /super-admin/curriculum",
+        ],
+        "label": "Advanced",
       },
       {
         "items": [
@@ -1930,40 +2025,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
       },
       {
         "items": [
-          "Dashboard -> /super-admin/dashboard",
-          "User Management -> /super-admin/users",
-          "Organizations -> /super-admin/organizations",
-          "Agent Management -> /super-admin/mentor-management",
-          "RLHF Training -> /super-admin/rlhf-training",
-          "Analytics & Logs -> /super-admin/analytics",
-          "Agent Trainer -> /super-admin/agent-trainer",
-          "Bulk User Import -> /super-admin/bulk-import",
-          "Observability -> /super-admin/observability",
-          "Explainability -> /super-admin/explainability",
-          "Research -> /super-admin/research",
-          "Knowledge Base -> /super-admin/knowledge-base",
-          "PRISM Management -> /super-admin/prism-management",
-          "PRISM CSV Converter -> /super-admin/prism-csv-converter",
-          "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
-          "PRISM Practitioner Exam -> /super-admin/prism-exam",
-          "Practitioner Registry -> /super-admin/practitioner-registry",
-          "Intake -> /super-admin/intake",
-          "Privacy & RTBF -> /super-admin/privacy-compliance",
-          "Cohort Read-out -> /super-admin/cohort-readout",
-          "Client Sign-Up -> /super-admin/client-signup",
-          "Help and Support Management -> /super-admin/support",
-          "Agent Trace Console -> /super-admin/agent-trace-console",
-          "Surveys -> /surveys",
-          "Asset Library -> /super-admin/asset-library",
-          "Curriculum -> /super-admin/curriculum",
-          "Settings -> /super-admin/settings",
-        ],
-        "label": "Administration",
-      },
-    ],
-    "job-blueprint": [
-      {
-        "items": [
           "Home -> /home",
           "Chat with Coaches -> /dashboard",
           "Goals Studio -> /my/goals",
@@ -1973,20 +2034,75 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
           "My development -> /my/development",
           "Résumé Writer -> /my/resume",
           "Document Library -> /documents",
-          "Settings -> /settings",
-          "Help & Support -> /help",
         ],
         "label": "My Workspace",
       },
       {
         "items": [
-          "User Home -> /home",
-          "Manager -> /manager/dashboard",
-          "Company Admin -> /company-admin/dashboard",
-          "Practitioner -> /practitioner/home",
-          "Distributor -> /distributor/dashboard",
+          "Settings -> /super-admin/settings",
+          "Help & Support -> /help",
         ],
-        "label": "Role Views",
+        "label": "",
+      },
+    ],
+    "job-blueprint": [
+      {
+        "items": [
+          "Admin home -> /super-admin/dashboard",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "People -> /super-admin/users",
+          "Organizations -> /super-admin/organizations",
+          "Add people -> /super-admin/bulk-import",
+          "Practitioners -> /super-admin/practitioner-registry",
+          "Client sign-up -> /super-admin/client-signup",
+          "Intake -> /super-admin/intake",
+        ],
+        "label": "People",
+      },
+      {
+        "items": [
+          "Help requests -> /super-admin/support",
+          "Surveys -> /surveys",
+        ],
+        "label": "Support",
+      },
+      {
+        "items": [
+          "PRISM tools -> /super-admin/prism-management",
+        ],
+        "label": "PRISM",
+      },
+      {
+        "items": [
+          "Coach setup -> /super-admin/mentor-management",
+          "Coach training -> /super-admin/agent-trainer",
+          "Knowledge -> /super-admin/knowledge-base",
+          "Research -> /super-admin/research",
+          "Coach feedback review -> /super-admin/rlhf-training",
+        ],
+        "label": "AI coaches",
+      },
+      {
+        "items": [
+          "Usage reports -> /super-admin/analytics",
+          "AI usage & health -> /super-admin/observability",
+          "Data deletion requests -> /super-admin/privacy-compliance",
+          "Cohort read-out -> /super-admin/cohort-readout",
+        ],
+        "label": "Reports",
+      },
+      {
+        "items": [
+          "Why the AI answered -> /super-admin/explainability",
+          "Coach trace console -> /super-admin/agent-trace-console",
+          "Asset library -> /super-admin/asset-library",
+          "Curriculum -> /super-admin/curriculum",
+        ],
+        "label": "Advanced",
       },
       {
         "items": [
@@ -2014,40 +2130,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
       },
       {
         "items": [
-          "Dashboard -> /super-admin/dashboard",
-          "User Management -> /super-admin/users",
-          "Organizations -> /super-admin/organizations",
-          "Agent Management -> /super-admin/mentor-management",
-          "RLHF Training -> /super-admin/rlhf-training",
-          "Analytics & Logs -> /super-admin/analytics",
-          "Agent Trainer -> /super-admin/agent-trainer",
-          "Bulk User Import -> /super-admin/bulk-import",
-          "Observability -> /super-admin/observability",
-          "Explainability -> /super-admin/explainability",
-          "Research -> /super-admin/research",
-          "Knowledge Base -> /super-admin/knowledge-base",
-          "PRISM Management -> /super-admin/prism-management",
-          "PRISM CSV Converter -> /super-admin/prism-csv-converter",
-          "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
-          "PRISM Practitioner Exam -> /super-admin/prism-exam",
-          "Practitioner Registry -> /super-admin/practitioner-registry",
-          "Intake -> /super-admin/intake",
-          "Privacy & RTBF -> /super-admin/privacy-compliance",
-          "Cohort Read-out -> /super-admin/cohort-readout",
-          "Client Sign-Up -> /super-admin/client-signup",
-          "Help and Support Management -> /super-admin/support",
-          "Agent Trace Console -> /super-admin/agent-trace-console",
-          "Surveys -> /surveys",
-          "Asset Library -> /super-admin/asset-library",
-          "Curriculum -> /super-admin/curriculum",
-          "Settings -> /super-admin/settings",
-        ],
-        "label": "Administration",
-      },
-    ],
-    "job-fit": [
-      {
-        "items": [
           "Home -> /home",
           "Chat with Coaches -> /dashboard",
           "Goals Studio -> /my/goals",
@@ -2057,20 +2139,75 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
           "My development -> /my/development",
           "Résumé Writer -> /my/resume",
           "Document Library -> /documents",
-          "Settings -> /settings",
-          "Help & Support -> /help",
         ],
         "label": "My Workspace",
       },
       {
         "items": [
-          "User Home -> /home",
-          "Manager -> /manager/dashboard",
-          "Company Admin -> /company-admin/dashboard",
-          "Practitioner -> /practitioner/home",
-          "Distributor -> /distributor/dashboard",
+          "Settings -> /super-admin/settings",
+          "Help & Support -> /help",
         ],
-        "label": "Role Views",
+        "label": "",
+      },
+    ],
+    "job-fit": [
+      {
+        "items": [
+          "Admin home -> /super-admin/dashboard",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "People -> /super-admin/users",
+          "Organizations -> /super-admin/organizations",
+          "Add people -> /super-admin/bulk-import",
+          "Practitioners -> /super-admin/practitioner-registry",
+          "Client sign-up -> /super-admin/client-signup",
+          "Intake -> /super-admin/intake",
+        ],
+        "label": "People",
+      },
+      {
+        "items": [
+          "Help requests -> /super-admin/support",
+          "Surveys -> /surveys",
+        ],
+        "label": "Support",
+      },
+      {
+        "items": [
+          "PRISM tools -> /super-admin/prism-management",
+        ],
+        "label": "PRISM",
+      },
+      {
+        "items": [
+          "Coach setup -> /super-admin/mentor-management",
+          "Coach training -> /super-admin/agent-trainer",
+          "Knowledge -> /super-admin/knowledge-base",
+          "Research -> /super-admin/research",
+          "Coach feedback review -> /super-admin/rlhf-training",
+        ],
+        "label": "AI coaches",
+      },
+      {
+        "items": [
+          "Usage reports -> /super-admin/analytics",
+          "AI usage & health -> /super-admin/observability",
+          "Data deletion requests -> /super-admin/privacy-compliance",
+          "Cohort read-out -> /super-admin/cohort-readout",
+        ],
+        "label": "Reports",
+      },
+      {
+        "items": [
+          "Why the AI answered -> /super-admin/explainability",
+          "Coach trace console -> /super-admin/agent-trace-console",
+          "Asset library -> /super-admin/asset-library",
+          "Curriculum -> /super-admin/curriculum",
+        ],
+        "label": "Advanced",
       },
       {
         "items": [
@@ -2098,40 +2235,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
       },
       {
         "items": [
-          "Dashboard -> /super-admin/dashboard",
-          "User Management -> /super-admin/users",
-          "Organizations -> /super-admin/organizations",
-          "Agent Management -> /super-admin/mentor-management",
-          "RLHF Training -> /super-admin/rlhf-training",
-          "Analytics & Logs -> /super-admin/analytics",
-          "Agent Trainer -> /super-admin/agent-trainer",
-          "Bulk User Import -> /super-admin/bulk-import",
-          "Observability -> /super-admin/observability",
-          "Explainability -> /super-admin/explainability",
-          "Research -> /super-admin/research",
-          "Knowledge Base -> /super-admin/knowledge-base",
-          "PRISM Management -> /super-admin/prism-management",
-          "PRISM CSV Converter -> /super-admin/prism-csv-converter",
-          "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
-          "PRISM Practitioner Exam -> /super-admin/prism-exam",
-          "Practitioner Registry -> /super-admin/practitioner-registry",
-          "Intake -> /super-admin/intake",
-          "Privacy & RTBF -> /super-admin/privacy-compliance",
-          "Cohort Read-out -> /super-admin/cohort-readout",
-          "Client Sign-Up -> /super-admin/client-signup",
-          "Help and Support Management -> /super-admin/support",
-          "Agent Trace Console -> /super-admin/agent-trace-console",
-          "Surveys -> /surveys",
-          "Asset Library -> /super-admin/asset-library",
-          "Curriculum -> /super-admin/curriculum",
-          "Settings -> /super-admin/settings",
-        ],
-        "label": "Administration",
-      },
-    ],
-    "knowledge-continuity": [
-      {
-        "items": [
           "Home -> /home",
           "Chat with Coaches -> /dashboard",
           "Goals Studio -> /my/goals",
@@ -2141,20 +2244,75 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
           "My development -> /my/development",
           "Résumé Writer -> /my/resume",
           "Document Library -> /documents",
-          "Settings -> /settings",
-          "Help & Support -> /help",
         ],
         "label": "My Workspace",
       },
       {
         "items": [
-          "User Home -> /home",
-          "Manager -> /manager/dashboard",
-          "Company Admin -> /company-admin/dashboard",
-          "Practitioner -> /practitioner/home",
-          "Distributor -> /distributor/dashboard",
+          "Settings -> /super-admin/settings",
+          "Help & Support -> /help",
         ],
-        "label": "Role Views",
+        "label": "",
+      },
+    ],
+    "knowledge-continuity": [
+      {
+        "items": [
+          "Admin home -> /super-admin/dashboard",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "People -> /super-admin/users",
+          "Organizations -> /super-admin/organizations",
+          "Add people -> /super-admin/bulk-import",
+          "Practitioners -> /super-admin/practitioner-registry",
+          "Client sign-up -> /super-admin/client-signup",
+          "Intake -> /super-admin/intake",
+        ],
+        "label": "People",
+      },
+      {
+        "items": [
+          "Help requests -> /super-admin/support",
+          "Surveys -> /surveys",
+        ],
+        "label": "Support",
+      },
+      {
+        "items": [
+          "PRISM tools -> /super-admin/prism-management",
+        ],
+        "label": "PRISM",
+      },
+      {
+        "items": [
+          "Coach setup -> /super-admin/mentor-management",
+          "Coach training -> /super-admin/agent-trainer",
+          "Knowledge -> /super-admin/knowledge-base",
+          "Research -> /super-admin/research",
+          "Coach feedback review -> /super-admin/rlhf-training",
+        ],
+        "label": "AI coaches",
+      },
+      {
+        "items": [
+          "Usage reports -> /super-admin/analytics",
+          "AI usage & health -> /super-admin/observability",
+          "Data deletion requests -> /super-admin/privacy-compliance",
+          "Cohort read-out -> /super-admin/cohort-readout",
+        ],
+        "label": "Reports",
+      },
+      {
+        "items": [
+          "Why the AI answered -> /super-admin/explainability",
+          "Coach trace console -> /super-admin/agent-trace-console",
+          "Asset library -> /super-admin/asset-library",
+          "Curriculum -> /super-admin/curriculum",
+        ],
+        "label": "Advanced",
       },
       {
         "items": [
@@ -2181,40 +2339,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
       },
       {
         "items": [
-          "Dashboard -> /super-admin/dashboard",
-          "User Management -> /super-admin/users",
-          "Organizations -> /super-admin/organizations",
-          "Agent Management -> /super-admin/mentor-management",
-          "RLHF Training -> /super-admin/rlhf-training",
-          "Analytics & Logs -> /super-admin/analytics",
-          "Agent Trainer -> /super-admin/agent-trainer",
-          "Bulk User Import -> /super-admin/bulk-import",
-          "Observability -> /super-admin/observability",
-          "Explainability -> /super-admin/explainability",
-          "Research -> /super-admin/research",
-          "Knowledge Base -> /super-admin/knowledge-base",
-          "PRISM Management -> /super-admin/prism-management",
-          "PRISM CSV Converter -> /super-admin/prism-csv-converter",
-          "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
-          "PRISM Practitioner Exam -> /super-admin/prism-exam",
-          "Practitioner Registry -> /super-admin/practitioner-registry",
-          "Intake -> /super-admin/intake",
-          "Privacy & RTBF -> /super-admin/privacy-compliance",
-          "Cohort Read-out -> /super-admin/cohort-readout",
-          "Client Sign-Up -> /super-admin/client-signup",
-          "Help and Support Management -> /super-admin/support",
-          "Agent Trace Console -> /super-admin/agent-trace-console",
-          "Surveys -> /surveys",
-          "Asset Library -> /super-admin/asset-library",
-          "Curriculum -> /super-admin/curriculum",
-          "Settings -> /super-admin/settings",
-        ],
-        "label": "Administration",
-      },
-    ],
-    "lumen": [
-      {
-        "items": [
           "Home -> /home",
           "Chat with Coaches -> /dashboard",
           "Goals Studio -> /my/goals",
@@ -2224,20 +2348,75 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
           "My development -> /my/development",
           "Résumé Writer -> /my/resume",
           "Document Library -> /documents",
-          "Settings -> /settings",
-          "Help & Support -> /help",
         ],
         "label": "My Workspace",
       },
       {
         "items": [
-          "User Home -> /home",
-          "Manager -> /manager/dashboard",
-          "Company Admin -> /company-admin/dashboard",
-          "Practitioner -> /practitioner/home",
-          "Distributor -> /distributor/dashboard",
+          "Settings -> /super-admin/settings",
+          "Help & Support -> /help",
         ],
-        "label": "Role Views",
+        "label": "",
+      },
+    ],
+    "lumen": [
+      {
+        "items": [
+          "Admin home -> /super-admin/dashboard",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "People -> /super-admin/users",
+          "Organizations -> /super-admin/organizations",
+          "Add people -> /super-admin/bulk-import",
+          "Practitioners -> /super-admin/practitioner-registry",
+          "Client sign-up -> /super-admin/client-signup",
+          "Intake -> /super-admin/intake",
+        ],
+        "label": "People",
+      },
+      {
+        "items": [
+          "Help requests -> /super-admin/support",
+          "Surveys -> /surveys",
+        ],
+        "label": "Support",
+      },
+      {
+        "items": [
+          "PRISM tools -> /super-admin/prism-management",
+        ],
+        "label": "PRISM",
+      },
+      {
+        "items": [
+          "Coach setup -> /super-admin/mentor-management",
+          "Coach training -> /super-admin/agent-trainer",
+          "Knowledge -> /super-admin/knowledge-base",
+          "Research -> /super-admin/research",
+          "Coach feedback review -> /super-admin/rlhf-training",
+        ],
+        "label": "AI coaches",
+      },
+      {
+        "items": [
+          "Usage reports -> /super-admin/analytics",
+          "AI usage & health -> /super-admin/observability",
+          "Data deletion requests -> /super-admin/privacy-compliance",
+          "Cohort read-out -> /super-admin/cohort-readout",
+        ],
+        "label": "Reports",
+      },
+      {
+        "items": [
+          "Why the AI answered -> /super-admin/explainability",
+          "Coach trace console -> /super-admin/agent-trace-console",
+          "Asset library -> /super-admin/asset-library",
+          "Curriculum -> /super-admin/curriculum",
+        ],
+        "label": "Advanced",
       },
       {
         "items": [
@@ -2262,35 +2441,24 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte super-admin: ma
       },
       {
         "items": [
-          "Dashboard -> /super-admin/dashboard",
-          "User Management -> /super-admin/users",
-          "Organizations -> /super-admin/organizations",
-          "Agent Management -> /super-admin/mentor-management",
-          "RLHF Training -> /super-admin/rlhf-training",
-          "Analytics & Logs -> /super-admin/analytics",
-          "Agent Trainer -> /super-admin/agent-trainer",
-          "Bulk User Import -> /super-admin/bulk-import",
-          "Observability -> /super-admin/observability",
-          "Explainability -> /super-admin/explainability",
-          "Research -> /super-admin/research",
-          "Knowledge Base -> /super-admin/knowledge-base",
-          "PRISM Management -> /super-admin/prism-management",
-          "PRISM CSV Converter -> /super-admin/prism-csv-converter",
-          "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
-          "PRISM Practitioner Exam -> /super-admin/prism-exam",
-          "Practitioner Registry -> /super-admin/practitioner-registry",
-          "Intake -> /super-admin/intake",
-          "Privacy & RTBF -> /super-admin/privacy-compliance",
-          "Cohort Read-out -> /super-admin/cohort-readout",
-          "Client Sign-Up -> /super-admin/client-signup",
-          "Help and Support Management -> /super-admin/support",
-          "Agent Trace Console -> /super-admin/agent-trace-console",
-          "Surveys -> /surveys",
-          "Asset Library -> /super-admin/asset-library",
-          "Curriculum -> /super-admin/curriculum",
-          "Settings -> /super-admin/settings",
+          "Home -> /home",
+          "Chat with Coaches -> /dashboard",
+          "Goals Studio -> /my/goals",
+          "Career & Education Discovery -> /vertical/career-discovery/journey",
+          "Career Fit -> /vertical/job-fit/matches",
+          "Role Play -> /interview-practice",
+          "My development -> /my/development",
+          "Résumé Writer -> /my/resume",
+          "Document Library -> /documents",
         ],
-        "label": "Administration",
+        "label": "My Workspace",
+      },
+      {
+        "items": [
+          "Settings -> /super-admin/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
       },
     ],
   },
