@@ -94,6 +94,11 @@ jest.mock("@/constants/navigation", () => ({
   // covered in superAdminOneMenu.rm2.test.tsx; stubs are enough here.
   OWNER_ONLY_NAV_ROUTES: new Set<string>(),
   isPlatformOwner: () => false,
+  // RM-8 (O-1): the house super-admin's pinned footer.
+  SUPER_ADMIN_HOUSE_FOOTER_ITEMS: [
+    { to: "/super-admin/settings", icon: DummyIcon, label: "Settings" },
+    { to: "/help", icon: DummyIcon, label: "Help & Support" },
+  ],
 }));
 jest.mock("@/constants/house/superAdminNav", () => ({
   HOUSE_SUPER_ADMIN_SECTIONS: [
@@ -102,7 +107,14 @@ jest.mock("@/constants/house/superAdminNav", () => ({
 }));
 
 jest.mock("@/constants/routes", () => ({
-  ROUTES: { HOME: "/home", BIO_CAPTURE: "/bio" },
+  ROUTES: {
+    HOME: "/home",
+    BIO_CAPTURE: "/bio",
+    // RM-8 (O-1): read by useSuperAdminSections' house branch.
+    SETTINGS: "/settings",
+    HELP: "/help",
+    SUPER_ADMIN: { SETTINGS: "/super-admin/settings" },
+  },
 }));
 
 jest.mock("lucide-react", () => ({

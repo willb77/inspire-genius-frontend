@@ -30,7 +30,7 @@ jest.mock("@/context/useAuth", () => ({
 }))
 
 type Item = { to: string; label: string }
-type Section = { label: string; items: Item[]; defaultCollapsed?: boolean; collapsible?: boolean }
+type Section = { label: string; items: Item[]; defaultCollapsed?: boolean; collapsible?: boolean; pinned?: boolean }
 const mockScaffold = jest.fn()
 jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
   __esModule: true,
@@ -89,7 +89,12 @@ describe("SuperAdminLayout — house style switch", () => {
       "Advanced",
       "Tools",
       "My Workspace",
+      // RM-8 (O-1): the pinned footer, Settings + Help & Support.
+      "",
     ])
+    const footer = sections()[sections().length - 1]
+    expect(footer.pinned).toBe(true)
+    expect(footer.items.map((i) => i.to)).toEqual(["/super-admin/settings", "/help"])
     const workspace = sections().find((s) => s.label === "My Workspace")
     expect(workspace?.defaultCollapsed).toBe(true)
     expect(workspace?.items.length).toBeGreaterThan(0)

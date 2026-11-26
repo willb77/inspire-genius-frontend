@@ -379,3 +379,40 @@ describe("SidebarScaffold — group state across pages (2026-10-12)", () => {
     expect(toolsHeader()).toHaveAttribute("aria-expanded", "false");
   });
 });
+
+describe("SidebarScaffold — pinned sections (RM-8, O-RM4W-a)", () => {
+  const OWN = { label: "", items: [{ to: "/home", icon: Home, label: "Home" }] };
+  const FOOT = [
+    { to: "/settings", icon: Home, label: "Settings" },
+    { to: "/help", icon: Wallet, label: "Help & Support" },
+  ];
+  const area = (label: string) => {
+    const el = screen.getByText(label);
+    if (el.closest('[data-sidebar="footer"]')) return "footer";
+    if (el.closest('[data-sidebar="content"]')) return "content";
+    return "elsewhere";
+  };
+
+  beforeEach(() => {
+    mockPathname = "/home";
+  });
+
+  it("renders a pinned section in the footer, above Logout, outside the scrolling menu", () => {
+    renderScaffold({ navSections: [OWN, { label: "", items: FOOT, pinned: true }] });
+    expect(area("Settings")).toBe("footer");
+    expect(area("Help & Support")).toBe("footer");
+    expect(area("Home")).toBe("content");
+    expect(screen.getAllByTestId("sidebar-pinned-section")).toHaveLength(1);
+    // Above Logout: the pinned rows come first in the footer.
+    const footer = screen.getByText("Settings").closest('[data-sidebar="footer"]') as HTMLElement;
+    const text = footer.textContent ?? "";
+    expect(text.indexOf("Help & Support")).toBeLessThan(text.indexOf("Logout"));
+  });
+
+  it("without the flag, the same section stays in the scrolling menu, as before", () => {
+    renderScaffold({ navSections: [OWN, { label: "", items: FOOT }] });
+    expect(area("Settings")).toBe("content");
+    expect(area("Help & Support")).toBe("content");
+    expect(screen.queryByTestId("sidebar-pinned-section")).toBeNull();
+  });
+});
