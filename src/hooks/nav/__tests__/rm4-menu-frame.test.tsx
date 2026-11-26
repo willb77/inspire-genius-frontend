@@ -132,7 +132,6 @@ describe("RM-4 — each framed role's sidebar, section by section", () => {
         "Client Development Studio",
         "Practitioner Home",
         "My Clients",
-        "Client PRISM Assessments",
         "My PRISM Practice",
         "Schedule",
         "Surveys",

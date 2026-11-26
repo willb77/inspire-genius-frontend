@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { api } from "@/lib/axios"
-import { getPractitionerClients, getPractitionerSessions, getPractitionerCredits, getPractitionerFollowups } from "../practitioner.service"
+import { getPractitionerSessions, getPractitionerCredits, getPractitionerFollowups } from "../practitioner.service"
 
 jest.mock("@/lib/axios", () => ({
   api: { get: jest.fn() },
@@ -14,7 +14,6 @@ describe("practitioner.service", () => {
   beforeEach(() => jest.clearAllMocks())
 
   it.each([
-    ["getPractitionerClients", getPractitionerClients, "/api/practitioner/clients"],
     ["getPractitionerSessions", getPractitionerSessions, "/api/practitioner/sessions"],
     ["getPractitionerCredits", getPractitionerCredits, "/api/practitioner/credits"],
     ["getPractitionerFollowups", getPractitionerFollowups, "/api/practitioner/followups"],

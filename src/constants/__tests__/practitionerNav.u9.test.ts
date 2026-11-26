@@ -28,7 +28,6 @@ describe("practitioner menu (U9)", () => {
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
           "My Clients -> /practitioner/clients",
-          "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",

@@ -165,7 +165,6 @@ const pageModules: Record<string, string> = {
   "@/pages/practitioner/Schedule": "PractitionerSchedulePage",
   "@/pages/practitioner/Meeting": "PractitionerMeetingPage",
   "@/pages/practitioner/Clients": "PractitionerClientsPage",
-  "@/pages/practitioner/PrismClients": "PrismClientsPage",
   "@/pages/practitioner/Analytics": "PractitionerAnalyticsPage",
   "@/pages/distributor/Dashboard": "DistributorDashboardPage",
   "@/pages/distributor/Practitioners": "DistributorPractitionersPage",
@@ -529,13 +528,14 @@ describe("Route Integration Tests", () => {
       expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
     });
 
-    // X-3 — the PRISM clients page now has a nav door; the door must open.
-    it("practitioner can access /practitioner/prism-clients", async () => {
+    // TDS U12 (CSA #2210): the retired Client PRISM Assessments page. An old
+    // link must still answer: it lands on the practitioner's client list.
+    it("practitioner's old /practitioner/prism-clients link lands on My Clients", async () => {
       const user = makeAuthUser({ role: "practitioner" });
       const ctx = makeAuthContext({ user });
       renderWithRouter("/practitioner/prism-clients", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("PrismClientsPage")).toBeInTheDocument();
+      expect(await screen.findByTestId("PractitionerClientsPage")).toBeInTheDocument();
     });
 
     it("practitioner can access /practitioner/character-lab", async () => {

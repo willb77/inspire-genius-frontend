@@ -1,10 +1,6 @@
 import { api } from "@/lib/axios"
 import type { BaseApiResponse } from "@/types/api"
 
-export function getPractitionerClients() {
-  return api.get<BaseApiResponse<{ clients: unknown[]; total: number }>>("/api/practitioner/clients")
-}
-
 export function getPractitionerSessions() {
   return api.get<BaseApiResponse<{ sessions: unknown[]; total: number }>>("/api/practitioner/sessions")
 }

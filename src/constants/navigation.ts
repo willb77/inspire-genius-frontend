@@ -875,10 +875,8 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   // same row (/meridian/chat, autoLoadPrism): the menu takes it from
   // getUserNavItems, not a practitioner-specific copy.
   { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "My Clients" },
-  // X-3 (Practitioner Programme): the page existed and was routed but sat in
-  // no menu. `/practitioner/*` is in ROLE_PERMISSIONS.practitioner, so this
-  // door is reachable, not a live-looking redirect home.
-  { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "Client PRISM Assessments" },
+  // TDS U12 (CSA #2210): "Client PRISM Assessments" is retired; a client's
+  // PRISM is imported from that client's page under My Clients.
   // PI-2: the practitioner's own client code and PRISM account identifiers.
   { to: ROUTES.PRACTITIONER.PRACTICE, icon: IdCard, label: "My PRISM Practice" },
   { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
