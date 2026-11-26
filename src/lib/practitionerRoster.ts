@@ -60,3 +60,22 @@ export function clientIdOf(member: RosterMember): string | null {
   const id = (member as RosterMember & { clientId?: unknown }).clientId
   return typeof id === "string" && id.length > 0 ? id : null
 }
+
+/**
+ * RM-6 (CSA #2236, finding RM6PRE-a): is this practitioner roster the
+ * practitioner's CLIENTS, so the Studio may say so?
+ *
+ * The server sends clients only while `tds_practitioner_client_roster` is on,
+ * and falls back to the whole organisation when the switch is off or the client
+ * read fails (growth `list_roster`). Its answer is visible only in the cards:
+ * a client card carries a `clientId`, an organisation card never does. So the
+ * list reads as clients when any card is a client, and when there are no cards
+ * (a practitioner with no clients yet, or only clients who have not connected,
+ * which are listed below the grid, never in it). A list of organisation members
+ * with no client among them keeps the organisation wording, never "My clients".
+ */
+export function rosterShowsClients(members: RosterMember[] | null | undefined): boolean {
+  const m = Array.isArray(members) ? members : []
+  if (m.length === 0) return true
+  return m.some((member) => clientIdOf(member) !== null)
+}

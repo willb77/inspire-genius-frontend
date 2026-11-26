@@ -358,7 +358,9 @@
     "openClientRecord": "Abrir ficha do cliente",
     "inviteFromMyClients": "Convidar a partir de Os meus clientes",
     "clientRecord": "Ficha do cliente",
-    "clientRecordAria": "Abrir a ficha do cliente de {{name}}: sessões, documentos, acompanhamentos e importação PRISM"
+    "clientRecordAria": "Abrir a ficha do cliente de {{name}}: sessões, documentos, acompanhamentos e importação PRISM",
+    "lensClients": "Meus clientes",
+    "scopeClients": "Estes são os seus clientes. Um cliente que conectou uma conta InspiresGenius tem um cartão; quem você adicionou e ainda não se conectou aparece abaixo."
   },
   "clientImport": {
     "cardTitle": "DISC e CliftonStrengths",
@@ -387,5 +389,9 @@
     "back": "Voltar",
     "send": "Enviar a {{name}}",
     "done": "Concluído"
+  },
+  "studioHeader": {
+    "clients": "Clientes",
+    "practiceOverview": "Visão geral da prática"
   }
 }

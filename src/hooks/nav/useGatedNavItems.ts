@@ -8,7 +8,9 @@ import {
   NAV_ITEMS_BY_ROLE,
   WORKSPACE_SECTION_ROLES,
   getWorkspaceSectionItems,
+  practitionerFrontPageMenu,
 } from "@/constants/navigation"
+import { usePractitionerClientRosterEnabled } from "@/hooks/switches/usePractitionerClientRosterEnabled"
 import { ROUTES } from "@/constants/routes"
 import { useWorkspaceNavItems, withWorkspaceVerticals } from "@/components/layout/useVerticalLauncher"
 import { useExamAccess } from "@/hooks/super-admin/usePrismExam"
@@ -76,7 +78,15 @@ function useOwnWorkItems(role: UserRole, talentStudio: NavItemDef | null): NavIt
   // (shown there under the same switch), so it is not also a menu row. With
   // house style off, the row is exactly as before.
   const cohortOn = role === "company-admin" && cohort.data === true && !houseOn
-  const base = useMemo(() => (houseOn ? companyAdminHouseMenu(roleBase) : roleBase), [houseOn, roleBase])
+  // RM-6 B: where the Studio lists the practitioner's clients, Practitioner Home
+  // and My Clients leave the menu (both open from the Studio header). Off, a
+  // 404 or an error: the practitioner's rows are exactly as before.
+  const studioIsFrontPage = usePractitionerClientRosterEnabled(role === "practitioner")
+  const folded = role === "practitioner" && studioIsFrontPage
+  const base = useMemo(() => {
+    if (houseOn) return companyAdminHouseMenu(roleBase)
+    return folded ? practitionerFrontPageMenu(roleBase) : roleBase
+  }, [houseOn, folded, roleBase])
   const items = useMemo(() => {
     const withTalent = talentStudio ? [...base, talentStudio] : base
     const extra: NavItemDef[] = []

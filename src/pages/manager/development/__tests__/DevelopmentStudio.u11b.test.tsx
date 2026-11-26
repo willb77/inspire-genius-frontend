@@ -10,6 +10,12 @@ import "@testing-library/jest-dom"
 
 import type { RosterMember } from "@/types/development"
 
+// RM-6 B: the practitioner client-roster status reads OFF here, so the
+// practitioner Studio is today's (the switch-on Studio is DevelopmentStudio.rm6).
+jest.mock("@/hooks/switches/usePractitionerClientRosterEnabled", () => ({
+  usePractitionerClientRosterEnabled: () => false,
+  usePractitionerClientRosterStatus: () => ({ data: false, isLoading: false }),
+}))
 jest.mock("@/layouts/ManagerLayout", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <div data-testid="manager-layout">{children}</div>,

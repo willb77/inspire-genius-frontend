@@ -359,7 +359,9 @@
     "openClientRecord": "Otevřít záznam klienta",
     "inviteFromMyClients": "Pozvat ze stránky Moji klienti",
     "clientRecord": "Záznam klienta",
-    "clientRecordAria": "Otevřít záznam klienta {{name}}: sezení, dokumenty, následné kroky a import PRISM"
+    "clientRecordAria": "Otevřít záznam klienta {{name}}: sezení, dokumenty, následné kroky a import PRISM",
+    "lensClients": "Moji klienti",
+    "scopeClients": "Toto jsou vaši klienti. Klient, který propojil účet InspiresGenius, má kartu; lidé, které jste přidali a kteří se ještě nepropojili, jsou uvedeni níže."
   },
   "clientImport": {
     "cardTitle": "DISC a CliftonStrengths",
@@ -388,5 +390,9 @@
     "back": "Zpět",
     "send": "Odeslat {{name}}",
     "done": "Hotovo"
+  },
+  "studioHeader": {
+    "clients": "Klienti",
+    "practiceOverview": "Přehled praxe"
   }
 }

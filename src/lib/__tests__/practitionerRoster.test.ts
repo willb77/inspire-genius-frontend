@@ -8,6 +8,7 @@
 import {
   clientIdOf,
   connectedMembers,
+  rosterShowsClients,
   unconnectedClients,
   type RosterEntry,
 } from "@/lib/practitionerRoster"
@@ -91,5 +92,25 @@ describe("clientIdOf", () => {
     expect(clientIdOf(member("a") as RosterMember)).toBeNull()
     expect(clientIdOf(member("a", { clientId: "" }) as RosterMember)).toBeNull()
     expect(clientIdOf(member("a", { clientId: 7 as unknown as string }) as RosterMember)).toBeNull()
+  })
+})
+
+describe("rosterShowsClients (RM-6, RM6PRE-a)", () => {
+  it("is true when any card is a linked client", () => {
+    expect(rosterShowsClients([member("a"), member("b", { clientId: "c-b" })] as RosterMember[])).toBe(true)
+  })
+
+  it("is true for an empty list (no clients yet, or only unconnected ones)", () => {
+    expect(rosterShowsClients([])).toBe(true)
+    expect(rosterShowsClients(null)).toBe(true)
+    expect(rosterShowsClients(undefined)).toBe(true)
+  })
+
+  it("is false for an organisation list with no client card", () => {
+    expect(rosterShowsClients([member("a"), member("b")] as RosterMember[])).toBe(false)
+  })
+
+  it("an empty or non-string client id is not a client", () => {
+    expect(rosterShowsClients([member("a", { clientId: "" })] as RosterMember[])).toBe(false)
   })
 })

@@ -887,6 +887,22 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
 ]
 
 /**
+ * RM-6 B (CSA #2236; Bill's "RM-6 B go", 2026-11-26): where the Studio lists the
+ * practitioner's clients (the `practitioner-client-roster` status), the Studio
+ * is their one front page. Practitioner Home and My Clients leave the menu and
+ * are opened from the Studio header; both routes stay. Off, this list is not
+ * applied and the menu is exactly {@link PRACTITIONER_NAV_ITEMS}.
+ */
+const PRACTITIONER_ROWS_FOLDED_INTO_STUDIO: ReadonlySet<string> = new Set([
+  ROUTES.PRACTITIONER.HOME,
+  ROUTES.PRACTITIONER.CLIENTS,
+])
+
+export function practitionerFrontPageMenu(items: NavItemDef[]): NavItemDef[] {
+  return items.filter((item) => !PRACTITIONER_ROWS_FOLDED_INTO_STUDIO.has(item.to))
+}
+
+/**
  * The distributor menu: five items, with Credits — the core of the role — and
  * Help. Settings stays under the profile picture. This is the house-style menu,
  * now the only one: the classic seven-item list was removed with the classic

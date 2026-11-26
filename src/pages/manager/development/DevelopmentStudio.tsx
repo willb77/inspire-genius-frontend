@@ -7,7 +7,7 @@
  */
 import { Suspense, lazy, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Activity, Network, Search, UserCheck, Users, UsersRound } from "lucide-react"
+import { Activity, LayoutDashboard, Network, Search, UserCheck, Users, UsersRound } from "lucide-react"
 import ManagerLayout from "@/layouts/ManagerLayout"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,9 @@ import {
   useTeamDevelopmentRoster,
   useDevelopmentText,
 } from "@/hooks/manager/development"
+import { rosterShowsClients } from "@/lib/practitionerRoster"
+import { PRACTICE_OVERVIEW_PATH } from "@/lib/practitionerFrontPage"
+import { usePractitionerClientRosterEnabled } from "@/hooks/switches/usePractitionerClientRosterEnabled"
 import { MemberCard } from "@/components/manager/development/MemberCard"
 import { AddMemberDialog, type AddPeopleTab } from "@/components/manager/development/AddMemberDialog"
 import { OrgChartPanel } from "@/components/manager/development/OrgChartPanel"
@@ -169,6 +172,16 @@ export default function DevelopmentStudio({
     setAddOpen(true)
   }
   const { data: roster, isLoading, isError, refetch } = useTeamDevelopmentRoster()
+  // RM-6 (CSA #2236): the practitioner's Studio is their front page. When the
+  // roster is their clients, the first lens and its scope line say so
+  // (RM6PRE-a); an organisation roster keeps the organisation wording.
+  const { t: tp } = useTranslation("practitionerPages")
+  // RM-6 B: the header links and the client wording follow the switch that
+  // makes this page the practitioner's front page. Off (or a 404 before the
+  // status route reaches the tier): the practitioner Studio is exactly as before.
+  const studioIsFrontPage = usePractitionerClientRosterEnabled(audience === "practitioner")
+  const frontPage = audience === "practitioner" && studioIsFrontPage
+  const lensIsClients = frontPage && roster !== undefined && rosterShowsClients(roster)
 
   /**
    * U1 — the first lens is named for what the server sends this caller.
@@ -274,6 +287,26 @@ export default function DevelopmentStudio({
               </Link>
             </Button>
           ) : null}
+          {/* RM-6 (CSA #2236): the practitioner's My Clients and Practitioner
+              Home rows left the menu; both pages keep their routes and are
+              opened from here, one click from the Studio. Practitioner mount
+              only: the manager header is unchanged. */}
+          {frontPage ? (
+            <>
+              <Button asChild variant="outline">
+                <Link to={ROUTES.PRACTITIONER.CLIENTS} data-testid="studio-clients-link">
+                  <UserCheck className="mr-2 h-4 w-4" aria-hidden="true" />
+                  {tp("studioHeader.clients", { defaultValue: "Clients" })}
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to={PRACTICE_OVERVIEW_PATH} data-testid="studio-practice-overview-link">
+                  <LayoutDashboard className="mr-2 h-4 w-4" aria-hidden="true" />
+                  {tp("studioHeader.practiceOverview", { defaultValue: "Practice overview" })}
+                </Link>
+              </Button>
+            </>
+          ) : null}
           <AddMemberDialog
             audience={audience}
             open={addOpen}
@@ -317,9 +350,11 @@ export default function DevelopmentStudio({
                 "rounded-full px-3 py-1 text-xs font-medium transition",
                 view === "grid" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
               )}
-            >{listIsOwnTeam
-              ? tm("developmentStudio.myTeam", { defaultValue: "My team" })
-              : tm("developmentStudio.team", { defaultValue: "Whole organisation" })}</button>
+            >{lensIsClients
+              ? tp("studioRoster.lensClients", { defaultValue: "My clients" })
+              : listIsOwnTeam
+                ? tm("developmentStudio.myTeam", { defaultValue: "My team" })
+                : tm("developmentStudio.team", { defaultValue: "Whole organisation" })}</button>
             {/* TDS-10. "My reports" is a narrower set than the first lens, not a
                 filter on it: the ids come from the org chart's surviving edges
                 and the roster only supplies each card. See MyReportsPanel. */}
@@ -442,7 +477,10 @@ export default function DevelopmentStudio({
         says what each one counts.
       */}
       {view !== "team" && <p className={cn("text-xs", sk.text500)}>
-        {t(
+        {view === "grid" && lensIsClients ? tp("studioRoster.scopeClients", {
+          defaultValue:
+            "These are your clients. A client who has connected an InspiresGenius account has a card; anyone you have added who has not connected yet is listed below.",
+        }) : t(
           view === "reports"
             ? "dev.studio.scope.reports"
             : view === "org"

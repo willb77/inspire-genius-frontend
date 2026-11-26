@@ -49,6 +49,12 @@ jest.mock("@/hooks/super-admin/usePrismExam", () => ({
 jest.mock("@/hooks/company-admin/useCohortReadout", () => ({
   useCohortReadoutEnabled: () => ({ data: undefined }),
 }));
+// RM-6 B: the practitioner client-roster status reads OFF here, so every
+// menu below is today's menu (the switch-on menu has its own suite).
+jest.mock("@/hooks/switches/usePractitionerClientRosterEnabled", () => ({
+  usePractitionerClientRosterEnabled: () => false,
+  usePractitionerClientRosterStatus: () => ({ data: false, isLoading: false }),
+}));
 jest.mock("@/verticals/core/useEnabledVerticals", () => ({
   useEnabledVerticals: () => mockUseEnabledVerticals(),
 }));
