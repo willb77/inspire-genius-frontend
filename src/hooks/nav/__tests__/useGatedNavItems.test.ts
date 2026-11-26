@@ -4,11 +4,8 @@
 import { renderHook } from "@testing-library/react"
 import { useGatedNavItems } from "../useGatedNavItems"
 
-jest.mock("@/constants/navigation", () => ({
-  // RM-4: the roles that get a My Workspace section, so their own list is not
-  // spliced with workspace verticals (the section carries them).
-  WORKSPACE_SECTION_ROLES: new Set(["manager", "company-admin", "practitioner"]),
-  NAV_ITEMS_BY_ROLE: {
+jest.mock("@/constants/navigation", () => {
+  const NAV_ITEMS_BY_ROLE: Record<string, unknown[]> = {
     user: [
       { to: "/home", icon: () => null, label: "Home" },
       { to: "/settings", icon: () => null, label: "Settings" },
@@ -21,8 +18,18 @@ jest.mock("@/constants/navigation", () => ({
       { to: "/practitioner/schedule", icon: () => null, label: "Schedule" },
       { to: "/practitioner/analytics", icon: () => null, label: "Analytics" },
     ],
-  },
-}))
+  }
+  return {
+    // RM-4: the roles that get a My Workspace section, so their own list is not
+    // spliced with workspace verticals (the section carries them).
+    WORKSPACE_SECTION_ROLES: new Set(["manager", "company-admin", "practitioner"]),
+    NAV_ITEMS_BY_ROLE,
+    // RM-9b: the role list now comes through roleNavItems (same lookup; the user
+    // and an unknown role get the user list).
+    roleNavItems: (role: string) =>
+      role !== "user" && role in NAV_ITEMS_BY_ROLE ? NAV_ITEMS_BY_ROLE[role] : NAV_ITEMS_BY_ROLE.user,
+  }
+})
 
 // `useWorkspaceNavItems` (the Job Fit / Lumen splice) is covered in
 // `components/layout/__tests__/useVerticalLauncher.test.ts` against the real

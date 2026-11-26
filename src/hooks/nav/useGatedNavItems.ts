@@ -5,13 +5,14 @@ import type { UserRole } from "@/types/roles"
 import {
   FOOTER_NAV_ITEMS_BY_ROLE,
   MY_WORKSPACE_SECTION_LABEL,
-  NAV_ITEMS_BY_ROLE,
   WORKSPACE_SECTION_ROLES,
+  roleNavItems,
   getWorkspaceSectionItems,
 } from "@/constants/navigation"
 import { ROUTES } from "@/constants/routes"
 import { useWorkspaceNavItems, withWorkspaceVerticals } from "@/components/layout/useVerticalLauncher"
 import { useExamAccess } from "@/hooks/super-admin/usePrismExam"
+import { useAgentEngine } from "@/lib/agentApi"
 import { useToolsParts } from "@/hooks/nav/useToolsSection"
 
 /** Roles a super-admin can grant exam access to — the server's rank gate (manager or above). */
@@ -56,7 +57,9 @@ export function useGatedNavItems(role: UserRole): NavItemDef[] {
 function useOwnWorkItems(role: UserRole, talentStudio: NavItemDef | null): NavItemDef[] {
   const examAccess = useExamAccess(EXAM_GRANTABLE_ROLES.has(role))
   const granted = !!examAccess.data?.allowed && !examAccess.data?.super_admin
-  const base = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
+  // RM-9b (D-2): the user role's list is the toggle-aware one Home shows.
+  const agentEngineOn = useAgentEngine()
+  const base = useMemo(() => roleNavItems(role, agentEngineOn), [role, agentEngineOn])
   const items = useMemo(() => {
     const withTalent = talentStudio ? [...base, talentStudio] : base
     const extra: NavItemDef[] = []

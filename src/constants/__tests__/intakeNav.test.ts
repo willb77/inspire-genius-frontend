@@ -1,7 +1,7 @@
+import { HOUSE_SUPER_ADMIN_SECTIONS } from "@/constants/house/superAdminNav"
 import {
   NAV_ITEMS_BY_ROLE,
   SUPER_ADMIN_NAV_ITEMS,
-  SUPER_ADMIN_NAV_SECTIONS,
   TOOL_ITEMS_BY_ROLE,
   getUserNavItems,
 } from "@/constants/navigation"
@@ -24,8 +24,9 @@ describe("Administration → Intake nav (super-admin only)", () => {
     expect(rows[0].to).toBe(ROUTES.SUPER_ADMIN.INTAKE)
     const labels = SUPER_ADMIN_NAV_ITEMS.map((i) => i.label)
     expect(labels.indexOf("Intake")).toBe(labels.indexOf("Practitioner Registry") + 1)
-    const admin = SUPER_ADMIN_NAV_SECTIONS.find((s) => s.label === "Administration")
-    expect(admin?.items.some((i) => i.to === ROUTES.SUPER_ADMIN.INTAKE)).toBe(true)
+    // RM-9b: the super-admin menu is the house menu only (classic Administration section removed).
+    const houseRoutes = HOUSE_SUPER_ADMIN_SECTIONS.flatMap((s) => s.items).flatMap((i) => [i.to, ...(i.children ?? []).map((c) => c.to)])
+    expect(houseRoutes).toContain(ROUTES.SUPER_ADMIN.INTAKE)
   })
 
   it("has the four saved views as children, each with a distinct link (sub-items are keyed by `to`)", () => {

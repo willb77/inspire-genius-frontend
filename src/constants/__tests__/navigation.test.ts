@@ -1,6 +1,6 @@
 import {
   NAV_ITEMS_BY_ROLE,
-  USER_NAV_ITEMS,
+  roleNavItems,
   HOME_ROUTE_BY_ROLE,
   DEFAULT_ROLE_CONFIGS,
   TOOL_ITEMS_BY_ROLE,
@@ -400,14 +400,25 @@ describe("My Workspace menu order + switched-off entries", () => {
     expect(labels(true)).not.toContain("Career Fit")
   })
 
-  it("keeps USER_NAV_ITEMS in step with getUserNavItems", () => {
-    // The two drifted before — USER_NAV_ITEMS carried Request Assessment and
-    // Feedback long after getUserNavItems dropped them — and which one renders
-    // depends on the layout, so a drift means the menu changes as you move
-    // around the app. Compared by ROUTE, since only the chat row's label varies.
-    const staticRoutes = USER_NAV_ITEMS.map((i) => i.to)
-    const liveRoutes = getUserNavItems(false).map((i) => i.to)
-    expect(staticRoutes).toEqual(liveRoutes)
+  // RM-9b (D-2): there is one user list now. The static USER_NAV_ITEMS copy —
+  // whose chat row read "Chat with Coaches" on Surveys, PRISM exam, vertical
+  // pages and Lumen while Home said "Chat with Meridian" — is gone, and every
+  // layout reaches the user's menu through roleNavItems.
+  it("the user's menu is one list everywhere: roleNavItems('user') is getUserNavItems, toggle and all", () => {
+    for (const on of [true, false]) {
+      expect(roleNavItems("user", on).map((i) => [i.label, i.to])).toEqual(
+        getUserNavItems(on).map((i) => [i.label, i.to]),
+      )
+    }
+    expect(NAV_ITEMS_BY_ROLE.user.map((i) => i.to)).toEqual(getUserNavItems(true).map((i) => i.to))
+    expect(NAV_ITEMS_BY_ROLE.user.find((i) => i.to === ROUTES.MERIDIAN_CHAT)?.label).toBe("Chat with Meridian")
+  })
+
+  it("roleNavItems: a role outside the six gets the user list; every other role its own", () => {
+    expect(roleNavItems("not-a-role", true)).toEqual(getUserNavItems(true))
+    for (const role of ["manager", "company-admin", "practitioner", "distributor", "super-admin"] as const) {
+      expect(roleNavItems(role, true)).toBe(NAV_ITEMS_BY_ROLE[role])
+    }
   })
 
   describe("Character Lab lives in Tools", () => {

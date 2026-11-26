@@ -1,7 +1,7 @@
+import { HOUSE_SUPER_ADMIN_SECTIONS } from "@/constants/house/superAdminNav"
 import {
   NAV_ITEMS_BY_ROLE,
   SUPER_ADMIN_NAV_ITEMS,
-  SUPER_ADMIN_NAV_SECTIONS,
   TOOL_ITEMS_BY_ROLE,
   getUserNavItems,
 } from "@/constants/navigation"
@@ -18,8 +18,9 @@ describe("Administration → Curriculum nav (super-admin only)", () => {
     const rows = SUPER_ADMIN_NAV_ITEMS.filter((i) => i.label === "Curriculum")
     expect(rows).toHaveLength(1)
     expect(rows[0].to).toBe(ROUTES.SUPER_ADMIN.CURRICULUM)
-    const admin = SUPER_ADMIN_NAV_SECTIONS.find((s) => s.label === "Administration")
-    expect(admin?.items.some((i) => i.to === ROUTES.SUPER_ADMIN.CURRICULUM)).toBe(true)
+    // RM-9b: the super-admin menu is the house menu only (classic Administration section removed).
+    const houseRoutes = HOUSE_SUPER_ADMIN_SECTIONS.flatMap((s) => s.items).flatMap((i) => [i.to, ...(i.children ?? []).map((c) => c.to)])
+    expect(houseRoutes).toContain(ROUTES.SUPER_ADMIN.CURRICULUM)
   })
 
   it("is in no other role's menu or tools", () => {

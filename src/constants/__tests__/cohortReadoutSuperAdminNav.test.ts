@@ -1,4 +1,5 @@
-import { NAV_ITEMS_BY_ROLE, SUPER_ADMIN_NAV_ITEMS, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation"
+import { HOUSE_SUPER_ADMIN_SECTIONS } from "@/constants/house/superAdminNav"
+import { NAV_ITEMS_BY_ROLE, SUPER_ADMIN_NAV_ITEMS } from "@/constants/navigation"
 import { ROUTES } from "@/constants/routes"
 import { hasAccess } from "@/types/roles"
 
@@ -10,8 +11,9 @@ describe("Administration → Cohort Read-out (super-admin)", () => {
     const rows = SUPER_ADMIN_NAV_ITEMS.filter((i) => i.label === "Cohort Read-out")
     expect(rows).toHaveLength(1)
     expect(rows[0].to).toBe(ROUTES.SUPER_ADMIN.COHORT_READOUT)
-    const admin = SUPER_ADMIN_NAV_SECTIONS.find((s) => s.label === "Administration")
-    expect(admin?.items.some((i) => i.to === ROUTES.SUPER_ADMIN.COHORT_READOUT)).toBe(true)
+    // RM-9b: the super-admin menu is the house menu only (classic Administration section removed).
+    const houseRoutes = HOUSE_SUPER_ADMIN_SECTIONS.flatMap((s) => s.items).flatMap((i) => [i.to, ...(i.children ?? []).map((c) => c.to)])
+    expect(houseRoutes).toContain(ROUTES.SUPER_ADMIN.COHORT_READOUT)
   })
 
   it("adds nothing to the static company-admin menu", () => {
