@@ -100,6 +100,15 @@ export type NavSectionDef = {
    * Ignored when `defaultCollapsed` is true.
    */
   collapsible?: boolean;
+  /**
+   * RM-8 (O-RM4W-a, 2026-11-26): render this section in the sidebar footer,
+   * above Logout, outside the scrolling menu, so it stays in view however long
+   * the menu is (the Settings / Help & Support footer sat below the fold at
+   * 1440×729). Opt-in and off by default: a section without it renders exactly
+   * where and how it did before. A pinned section is a plain group (no header,
+   * no collapse).
+   */
+  pinned?: boolean;
 };
 
 export type SidebarScaffoldProps = {
@@ -353,6 +362,11 @@ export default function SidebarScaffold({ navItems, navSections, children, class
   });
   const { t } = useTranslation("shellUi");
   const { logout, user } = useAuth();
+  // RM-8: pinned sections leave the scrolling menu for the footer. With none
+  // pinned, `scrollingSections` is navSections itself, so the menu renders
+  // exactly as before (same elements, same separators).
+  const pinnedSections = navSections?.filter((s) => s.pinned) ?? [];
+  const scrollingSections = pinnedSections.length && navSections ? navSections.filter((s) => !s.pinned) : navSections;
   const navigate = useNavigate();
   // Toast on newly-arrived broadcast alerts (mounted once, app-wide).
   useNotificationToasts();
@@ -374,9 +388,9 @@ export default function SidebarScaffold({ navItems, navSections, children, class
           <SidebarTrigger className="shrink-0" />
         </SidebarSectionHeader>
         <SidebarContent>
-          {navSections ? (
-            navSections.map((section, si) => {
-              const showSeparator = si < navSections.length - 1;
+          {scrollingSections ? (
+            scrollingSections.map((section, si) => {
+              const showSeparator = si < scrollingSections.length - 1;
               if (section.defaultCollapsed || section.collapsible) {
                 return (
                   <CollapsibleNavSection
@@ -425,6 +439,13 @@ export default function SidebarScaffold({ navItems, navSections, children, class
         </SidebarContent>
         <SidebarSeparator className="!w-[80%]" />
         <SidebarFooter>
+          {pinnedSections.map((section, pi) => (
+            <SidebarMenu key={section.label || `pinned-${pi}`} data-testid="sidebar-pinned-section">
+              {section.items.map((item) => (
+                <NavItem key={item.to || item.label} {...item} expandOnPath={expandOnPath} />
+              ))}
+            </SidebarMenu>
+          ))}
           <SidebarMenu>
             <SidebarMenuItem>
               <ConfirmDialog

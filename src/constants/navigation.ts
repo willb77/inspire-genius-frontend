@@ -965,6 +965,18 @@ export const FOOTER_NAV_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> =
   distributor: [settingsFooterItem(ROUTES.DISTRIBUTOR.SETTINGS), HELP_FOOTER_ITEM],
 }
 
+/**
+ * RM-8 (O-1, 2026-11-26): the super-admin's footer under the house menu only —
+ * Settings (moved out of Advanced) and Help & Support. Deliberately NOT a
+ * `FOOTER_NAV_ITEMS_BY_ROLE` entry: that map switches a role onto the RM-4
+ * menu frame, and the super-admin keeps its own menu. The classic menu is
+ * unchanged.
+ */
+export const SUPER_ADMIN_HOUSE_FOOTER_ITEMS: NavItemDef[] = [
+  settingsFooterItem(ROUTES.SUPER_ADMIN.SETTINGS),
+  HELP_FOOTER_ITEM,
+]
+
 /** Role-view links — lets super-admin jump to any role's dashboard */
 const ROLE_VIEW_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "User Home" },

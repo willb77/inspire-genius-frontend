@@ -304,7 +304,6 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Coach trace console -> /super-admin/agent-trace-console",
         "Asset library -> /super-admin/asset-library",
         "Curriculum -> /super-admin/curriculum",
-        "Settings -> /super-admin/settings",
       ],
       "label": "Advanced",
     },
@@ -338,10 +337,16 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "My development -> /my/development",
         "Résumé Writer -> /my/resume",
         "Document Library -> /documents",
-        "Settings -> /settings",
-        "Help & Support -> /help",
       ],
       "label": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /super-admin/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
+      "pinned": true,
     },
   ],
   "house=true/loading": [
@@ -410,7 +415,6 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Coach trace console -> /super-admin/agent-trace-console",
         "Asset library -> /super-admin/asset-library",
         "Curriculum -> /super-admin/curriculum",
-        "Settings -> /super-admin/settings",
       ],
       "label": "Advanced",
     },
@@ -436,10 +440,16 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "My development -> /my/development",
         "Résumé Writer -> /my/resume",
         "Document Library -> /documents",
-        "Settings -> /settings",
-        "Help & Support -> /help",
       ],
       "label": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /super-admin/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
+      "pinned": true,
     },
   ],
   "house=true/none": [
@@ -508,7 +518,6 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Coach trace console -> /super-admin/agent-trace-console",
         "Asset library -> /super-admin/asset-library",
         "Curriculum -> /super-admin/curriculum",
-        "Settings -> /super-admin/settings",
       ],
       "label": "Advanced",
     },
@@ -534,10 +543,16 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "My development -> /my/development",
         "Résumé Writer -> /my/resume",
         "Document Library -> /documents",
-        "Settings -> /settings",
-        "Help & Support -> /help",
       ],
       "label": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /super-admin/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
+      "pinned": true,
     },
   ],
 }
@@ -851,7 +866,6 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Dev traffic report -> /super-admin/dev-traffic-report",
         "Asset library -> /super-admin/asset-library",
         "Curriculum -> /super-admin/curriculum",
-        "Settings -> /super-admin/settings",
       ],
       "label": "Advanced",
     },
@@ -885,10 +899,16 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "My development -> /my/development",
         "Résumé Writer -> /my/resume",
         "Document Library -> /documents",
-        "Settings -> /settings",
-        "Help & Support -> /help",
       ],
       "label": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /super-admin/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
+      "pinned": true,
     },
   ],
   "house=true/loading": [
@@ -958,7 +978,6 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Dev traffic report -> /super-admin/dev-traffic-report",
         "Asset library -> /super-admin/asset-library",
         "Curriculum -> /super-admin/curriculum",
-        "Settings -> /super-admin/settings",
       ],
       "label": "Advanced",
     },
@@ -984,10 +1003,16 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "My development -> /my/development",
         "Résumé Writer -> /my/resume",
         "Document Library -> /documents",
-        "Settings -> /settings",
-        "Help & Support -> /help",
       ],
       "label": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /super-admin/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
+      "pinned": true,
     },
   ],
   "house=true/none": [
@@ -1057,7 +1082,6 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Dev traffic report -> /super-admin/dev-traffic-report",
         "Asset library -> /super-admin/asset-library",
         "Curriculum -> /super-admin/curriculum",
-        "Settings -> /super-admin/settings",
       ],
       "label": "Advanced",
     },
@@ -1083,10 +1107,16 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "My development -> /my/development",
         "Résumé Writer -> /my/resume",
         "Document Library -> /documents",
-        "Settings -> /settings",
-        "Help & Support -> /help",
       ],
       "label": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /super-admin/settings",
+        "Help & Support -> /help",
+      ],
+      "label": "",
+      "pinned": true,
     },
   ],
 }
@@ -1127,6 +1157,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Help & Support -> /help",
       ],
       "label": "",
+      "pinned": true,
     },
   ],
   "owner": [
@@ -1162,6 +1193,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Help & Support -> /help",
       ],
       "label": "",
+      "pinned": true,
     },
   ],
 }
@@ -1187,6 +1219,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Help & Support -> /help",
       ],
       "label": "",
+      "pinned": true,
     },
   ],
   "owner": [
@@ -1207,6 +1240,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Help & Support -> /help",
       ],
       "label": "",
+      "pinned": true,
     },
   ],
 }
@@ -1260,6 +1294,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Help & Support -> /help",
       ],
       "label": "",
+      "pinned": true,
     },
   ],
   "owner": [
@@ -1308,6 +1343,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Help & Support -> /help",
       ],
       "label": "",
+      "pinned": true,
     },
   ],
 }
@@ -1364,6 +1400,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Help & Support -> /help",
       ],
       "label": "",
+      "pinned": true,
     },
   ],
   "owner": [
@@ -1415,6 +1452,7 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
         "Help & Support -> /help",
       ],
       "label": "",
+      "pinned": true,
     },
   ],
 }

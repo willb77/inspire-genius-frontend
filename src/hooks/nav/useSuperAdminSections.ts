@@ -4,7 +4,9 @@ import {
   getUserNavItems,
   OWNER_ONLY_NAV_ROUTES,
   isPlatformOwner,
+  SUPER_ADMIN_HOUSE_FOOTER_ITEMS,
 } from "@/constants/navigation"
+import { ROUTES } from "@/constants/routes"
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
 import { useAgentEngine } from "@/lib/agentApi"
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
@@ -14,6 +16,9 @@ import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import { HOUSE_SUPER_ADMIN_SECTIONS } from "@/constants/house/superAdminNav"
 import { groupAdministrationItems } from "@/constants/house/administrationCategories"
 import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs"
+
+/** RM-8 (O-1): rows the house footer now holds, dropped from My Workspace there. */
+const HOUSE_FOOTER_DUPLICATES: ReadonlySet<string> = new Set([ROUTES.SETTINGS, ROUTES.HELP])
 
 export type SuperAdminSectionsOptions = {
   /**
@@ -69,11 +74,25 @@ export function useSuperAdminSections(options: SuperAdminSectionsOptions = {}): 
     const openWorkspace: NavSectionDef = { label: "My Workspace", items: userNavItems }
     if (houseStyle) {
       return [
-        ...HOUSE_SUPER_ADMIN_SECTIONS.map((s) => ({ ...s, items: gate(s.items) })),
+        // RM-8 (O-1): Settings leaves Advanced for the pinned footer below.
+        // Filtered here, not in HOUSE_SUPER_ADMIN_SECTIONS, because the classic
+        // menu's job_fit_v2 categories read that constant
+        // (administrationCategories.ts) and must not move.
+        ...HOUSE_SUPER_ADMIN_SECTIONS.map((s) => ({
+          ...s,
+          items: gate(s.items).filter((i) => i.to !== ROUTES.SUPER_ADMIN.SETTINGS),
+        })),
         ...(toolsSection ? [toolsSection] : []),
         // Collapsed on admin pages (wireframe); SidebarScaffold still opens it
         // on any page it holds. UserLayout pages ask for it open.
-        workspaceExpanded ? openWorkspace : { ...openWorkspace, defaultCollapsed: true },
+        // RM-8 (O-1, CSA #2223 A2): /settings and /help leave My Workspace here,
+        // so the footer holds the one Settings and the one Help & Support.
+        // Both routes stay open to the role; nothing else in the group moves.
+        (() => {
+          const ws = { ...openWorkspace, items: openWorkspace.items.filter((i) => !HOUSE_FOOTER_DUPLICATES.has(i.to)) }
+          return workspaceExpanded ? ws : { ...ws, defaultCollapsed: true }
+        })(),
+        { label: "", items: SUPER_ADMIN_HOUSE_FOOTER_ITEMS, pinned: true },
       ]
     }
     return [

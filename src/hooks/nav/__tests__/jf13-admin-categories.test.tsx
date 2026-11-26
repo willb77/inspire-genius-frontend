@@ -160,6 +160,7 @@ const dumpSections = (sections: NavSectionDef[]) =>
     label: s.label,
     ...(s.defaultCollapsed !== undefined ? { defaultCollapsed: s.defaultCollapsed } : {}),
     ...(s.collapsible !== undefined ? { collapsible: s.collapsible } : {}),
+    ...(s.pinned !== undefined ? { pinned: s.pinned } : {}),
     items: dump(s.items),
   }))
 
@@ -368,7 +369,8 @@ describe("JF-13 admin — job_fit_v2 on: Administration in categories", () => {
     // Only the house sections: My Workspace (JF-8) and Tools (JF-13 Talent
     // Studio) change under the same switch and are pinned in their own suites.
     const house = new Set(HOUSE_SUPER_ADMIN_SECTIONS.map((s) => s.label))
-    const houseOnly = (s: ReturnType<typeof dumpSections>) => s.filter((x) => house.has(x.label))
+    // RM-8: the pinned footer is not a house section (its blank label matches the house dashboard group).
+    const houseOnly = (s: ReturnType<typeof dumpSections>) => s.filter((x) => house.has(x.label) && !("pinned" in x))
     expect(houseOnly(off).length).toBe(HOUSE_SUPER_ADMIN_SECTIONS.length)
     expect(houseOnly(on)).toEqual(houseOnly(off))
   })

@@ -148,7 +148,9 @@ export function frameSections(frame: RoleMenuFrame, middle: NavSectionDef[] = []
   if (frame.workspace) sections.push({ label: MY_WORKSPACE_SECTION_LABEL, items: frame.workspace })
   sections.push(...middle)
   if (frame.tools) sections.push(frame.tools)
-  sections.push({ label: "", items: frame.footer })
+  // RM-8 (O-RM4W-a): pinned, so Settings and Help & Support stay in view
+  // above Logout instead of sitting below the fold of a long menu.
+  sections.push({ label: "", items: frame.footer, pinned: true })
   return sections
 }
 
