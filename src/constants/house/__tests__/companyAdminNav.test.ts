@@ -16,6 +16,12 @@ import { renderHook } from "@testing-library/react"
 import { COMPANY_ADMIN_NAV_ITEMS, FOOTER_NAV_ITEMS_BY_ROLE, NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
 import { useGatedNavItems } from "@/hooks/nav/useGatedNavItems"
 
+// RM-6 B: the practitioner client-roster status reads OFF here; the company
+// admin never asks for it (the switch-on menu is rm6-practitioner-menu).
+jest.mock("@/hooks/switches/usePractitionerClientRosterEnabled", () => ({
+  usePractitionerClientRosterEnabled: () => false,
+  usePractitionerClientRosterStatus: () => ({ data: false, isLoading: false }),
+}))
 jest.mock("@/hooks/super-admin/usePrismExam", () => ({ useExamAccess: () => ({ data: undefined }) }))
 jest.mock("@/hooks/job-fit/useSavedJobs", () => ({
   ...jest.requireActual("@/hooks/job-fit/useSavedJobs"),
