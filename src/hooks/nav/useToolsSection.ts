@@ -268,13 +268,15 @@ function withTalentStudio(
   role: UserRole,
   roleTools: NavItemDef[],
   catalogue: NavItemDef[],
-): { roleTools: NavItemDef[]; catalogue: NavItemDef[] } {
+): ToolGrouping {
   // Only reached with `job_fit_v2` on, so the build flags are all that is left.
   const { stages, folded } = talentStudioStages(role, roleTools, catalogue, TEAM_FIT_BUILD_ENABLED)
   // Overview alone is not a group: with nothing to give an overview of, the
   // section stays as it is (the rule before TS-2, kept). Team fit does not
   // make a group by itself either: it is a stage of one, not a reason for one.
-  if (!stages.some((s) => s.key !== "overview" && s.key !== "teamFit")) return { roleTools, catalogue }
+  if (!stages.some((s) => s.key !== "overview" && s.key !== "teamFit")) {
+    return { roleTools, catalogue, talentStudio: null }
+  }
   const children = stages.flatMap((s) => s.rows)
 
   const lifted = new Set(children.map((c) => c.to))
@@ -285,8 +287,13 @@ function withTalentStudio(
   return {
     roleTools: [...keptTools.slice(0, insertAt), group, ...keptTools.slice(insertAt)],
     catalogue: catalogue.filter((i) => !lifted.has(i.to)),
+    talentStudio: group,
   }
 }
+
+/** The role tools and vertical catalogue for Tools, and the Talent Studio group
+ *  inside the role tools when one was built (`null` otherwise). */
+type ToolGrouping = { roleTools: NavItemDef[]; catalogue: NavItemDef[]; talentStudio: NavItemDef | null }
 
 /**
  * TS-2 — the Talent Studio stages for this role: what the Overview page draws.
@@ -322,6 +329,36 @@ export function useTalentStudioStages(role: UserRole): TalentStudioStage[] {
  * holds, and a group the user opens stays open (saved per browser).
  */
 export function useToolsSection(role: UserRole): NavSectionDef | null {
+  return useToolsAssembly(role, false).section
+}
+
+/**
+ * RM-4 (2026-11-25) — roles whose Talent Studio group sits in their MAIN menu
+ * (the role's own work), not in Tools. Hiring is a manager's and a
+ * practitioner's own work. Super-admin keeps it in Tools.
+ */
+export const TALENT_STUDIO_MAIN_MENU_ROLES: ReadonlySet<UserRole> = new Set<UserRole>(["manager", "practitioner"])
+
+export type ToolsParts = {
+  /** The Tools section, without Talent Studio when it was lifted out. */
+  section: NavSectionDef | null
+  /** The Talent Studio group, for a role in {@link TALENT_STUDIO_MAIN_MENU_ROLES}
+   *  when `job_fit_v2` built one; otherwise `null` (and Tools is unchanged). */
+  talentStudio: NavItemDef | null
+}
+
+/**
+ * The Tools section and, for manager and practitioner, the Talent Studio group
+ * lifted OUT of it, for the role's main menu (RM-4). The group is today's
+ * object, rows and all; only where it renders changes. With `job_fit_v2` off
+ * there is no group and Tools is exactly `useToolsSection(role)`. Every other
+ * role gets `useToolsSection(role)` and `null`.
+ */
+export function useToolsParts(role: UserRole): ToolsParts {
+  return useToolsAssembly(role, TALENT_STUDIO_MAIN_MENU_ROLES.has(role))
+}
+
+function useToolsAssembly(role: UserRole, liftTalentStudio: boolean): ToolsParts {
   // Hooks run unconditionally: the role gate is applied to the RESULT, never by
   // skipping a hook, or the hook order would change between roles.
   const launcherSection = useVerticalLauncherSection()
@@ -331,13 +368,16 @@ export function useToolsSection(role: UserRole): NavSectionDef | null {
   const jobFitV2 = useSavedJobsEnabled()
 
   return useMemo(() => {
-    if (!canSeeToolsSection(role)) return null
+    if (!canSeeToolsSection(role)) return { section: null, talentStudio: null }
 
     const baseTools = TOOL_ITEMS_BY_ROLE[role] ?? []
     const launcherItems = launcherSection?.items ?? []
-    const { roleTools, catalogue } = jobFitV2
+    const grouping = jobFitV2
       ? withTalentStudio(role, baseTools, launcherItems)
       : withCareerStudio(baseTools, launcherItems)
+    const talentStudio = liftTalentStudio ? grouping.talentStudio : null
+    const roleTools = talentStudio ? grouping.roleTools.filter((i) => i !== talentStudio) : grouping.roleTools
+    const { catalogue } = grouping
 
     const candidates: NavItemDef[] = [
       BIO_CAPTURE_ITEM,
@@ -360,21 +400,17 @@ export function useToolsSection(role: UserRole): NavSectionDef | null {
       return true
     })
 
-    if (items.length === 0) return null
-
-    return {
-      label: TOOLS_SECTION_LABEL,
-      items,
-      defaultCollapsed: true,
-    }
-  }, [role, launcherSection, broadcastAccess, jobFitV2])
+    const section: NavSectionDef | null =
+      items.length === 0 ? null : { label: TOOLS_SECTION_LABEL, items, defaultCollapsed: true }
+    return { section, talentStudio }
+  }, [role, launcherSection, broadcastAccess, jobFitV2, liftTalentStudio])
 }
 
 /** Today's Tools grouping (switch off): Career Studio just ahead of Interview Studio. */
 function withCareerStudio(
   baseTools: NavItemDef[],
   launcherItems: NavItemDef[],
-): { roleTools: NavItemDef[]; catalogue: NavItemDef[] } {
+): ToolGrouping {
   const { group: careerStudio, rest: catalogue } = splitCareerStudio(launcherItems)
   const roleTools = [...baseTools]
   if (careerStudio) {
@@ -384,7 +420,7 @@ function withCareerStudio(
     const at = roleTools.findIndex((i) => i.label === "Interview Studio")
     roleTools.splice(at === -1 ? roleTools.length : at, 0, careerStudio)
   }
-  return { roleTools, catalogue }
+  return { roleTools, catalogue, talentStudio: null }
 }
 
 export default useToolsSection

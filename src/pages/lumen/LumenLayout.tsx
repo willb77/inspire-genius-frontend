@@ -3,6 +3,7 @@ import LoadingSpinner from "@/components/LoadingSpinner"
 import { NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
 import { withCompanyAdminHouseMenu } from "@/constants/house/companyAdminNav"
 import { useAuth } from "@/context/useAuth"
+import { frameSections, useRoleMenuFrame } from "@/hooks/nav/useGatedNavItems"
 import { isUserRole, type UserRole } from "@/types/roles"
 import { VerticalShell, useVerticalAccess } from "@/verticals/core"
 import LumenRequestAccess from "./LumenRequestAccess"
@@ -35,6 +36,11 @@ export default function LumenLayout() {
   const { user } = useAuth()
   const role: UserRole = isUserRole(user?.role) ? (user?.role as UserRole) : "user"
   const { hasAccess, isLoading } = useVerticalAccess("lumen")
+  // RM-4: the request-access page shows the role's menu frame (own work, My
+  // Workspace, Tools, footer), the same as every other page. Called before the
+  // early returns so the hook order never depends on access. User and
+  // super-admin get null here and keep the flat role list below.
+  const frame = useRoleMenuFrame(role)
 
   // Waiting matters: rendering "not enabled" before entitlement resolves would
   // tell entitled users they have no access, on every single load.
@@ -43,7 +49,7 @@ export default function LumenLayout() {
   if (!hasAccess) {
     const navItems = withCompanyAdminHouseMenu(role, NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user)
     return (
-      <SidebarScaffold navItems={navItems}>
+      <SidebarScaffold navItems={navItems} navSections={frameSections(frame) ?? undefined}>
         <LumenRequestAccess />
       </SidebarScaffold>
     )

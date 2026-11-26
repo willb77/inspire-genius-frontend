@@ -57,7 +57,10 @@ describe("MANAGER_NAV_ITEMS — the six-item sidebar", () => {
     // page. Seven since 2026-10-18 (request), when Role Play joined, and eight
     // since 2026-10-19 when Résumé Writer joined after it; Career Fit
     // is spliced in at render time for entitled accounts and is not counted.
-    expect(MANAGER_NAV_ITEMS).toHaveLength(8)
+    // RM-4 (2026-11-25): Role Play and Résumé Writer moved to the My Workspace
+    // section and Settings and Help & Support to the footer, so this list is the
+    // role's own work only: four with the pilot flag off (this test build).
+    expect(MANAGER_NAV_ITEMS).toHaveLength(4)
     expect([ROUTES.MANAGER.DEVELOPMENT, ROUTES.MANAGER.DASHBOARD]).toContain(
       MANAGER_NAV_ITEMS[0].to,
     )

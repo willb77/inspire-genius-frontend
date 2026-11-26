@@ -466,7 +466,9 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     // MANAGER_NAV_ITEMS as of 2026-09-05. Listing it in both places renders it
     // twice in the same sidebar. Super-admin keeps theirs in Tools, because
     // their main nav is unchanged. The practitioner's left Tools in U9.
-    GOALS_STUDIO_ITEM,
+    // Goals Studio left this list in RM-4 (2026-11-25): it is in the role's My
+    // Workspace section now ({@link getWorkspaceSectionItems}). Super-admin
+    // keeps it in Tools.
     JOB_BLUEPRINT_ITEM_MANAGER,
     INTERVIEW_STUDIO_GROUP_MANAGER,
     CHARACTER_LAB_ITEM_MANAGER,
@@ -475,8 +477,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     // The Client Development Studio is NOT here any more — it leads
     // PRACTITIONER_NAV_ITEMS since U9, the same move the manager's Studio made
     // on 2026-09-05. Listing it in both places renders it twice in the same
-    // sidebar.
-    GOALS_STUDIO_ITEM,
+    // sidebar. Goals Studio moved to My Workspace in RM-4, as for the manager.
     JOB_BLUEPRINT_ITEM_PRACTITIONER,
     INTERVIEW_STUDIO_GROUP_PRACTITIONER,
     CHARACTER_LAB_ITEM_PRACTITIONER,
@@ -811,13 +812,10 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   // entry, not better.
   { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Team Import" },
   { to: ROUTES.MANAGER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
-  // Role Play joined every role's main menu on 2026-10-18 (request), leaving
-  // the Interview Studio group in Tools. Career Fit, for an account entitled to
-  // `job-fit`, is spliced in after it by useWorkspaceNavItems (above Settings).
-  ROLE_PLAY_ITEM,
-  RESUME_WRITER_ITEM,
-  { to: ROUTES.MANAGER.SETTINGS, icon: Settings, label: "Settings" },
-  { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
+  // RM-4 (2026-11-25, RM-D1/RM-D2): Role Play and Résumé Writer moved to the
+  // My Workspace section, and Settings and Help & Support to the footer
+  // section ({@link FOOTER_NAV_ITEMS_BY_ROLE}). This list is the role's own
+  // work only. Talent Studio joins it at render time (useRoleMenuFrame).
 ]
 
 /** Navigation items for the company-admin role */
@@ -830,11 +828,9 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.COMPANY_ADMIN.OBSERVABILITY, icon: Eye, label: "AI Observability" },
   { to: ROUTES.COMPANY_ADMIN.CULTURE, icon: BookHeart, label: "Culture Docs" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
-  // Role Play + entitlement-gated Career Fit (2026-10-18, request) — see
-  // ROLE_PLAY_ITEM. Career Fit is spliced in above Settings when entitled.
-  ROLE_PLAY_ITEM,
-  RESUME_WRITER_ITEM,
-  { to: ROUTES.COMPANY_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
+  // RM-4: Role Play and Résumé Writer are in My Workspace; Settings is in the
+  // footer and points at the shared /settings, NOT /company-admin/settings
+  // (a placeholder page with sample figures; still routed, linked from no menu).
 ]
 
 /**
@@ -856,9 +852,9 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   // My Clients stays below until U11 folds it into this Studio.
   TEAM_DEVELOPMENT_ITEM_PRACTITIONER,
   { to: ROUTES.PRACTITIONER.HOME, icon: Home, label: "Practitioner Home" },
-  // Uses the standard My Workspace Meridian chat surface (/meridian/chat — the
-  // v2 six-tile-rail experience), not a practitioner-specific copy.
-  { to: ROUTES.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian", state: { autoLoadPrism: true } },
+  // Chat with Meridian moved to the My Workspace section in RM-4. It is the
+  // same row (/meridian/chat, autoLoadPrism): the menu takes it from
+  // getUserNavItems, not a practitioner-specific copy.
   { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "My Clients" },
   // X-3 (Practitioner Programme): the page existed and was routed but sat in
   // no menu. `/practitioner/*` is in ROLE_PERMISSIONS.practitioner, so this
@@ -869,10 +865,8 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
-  // Role Play (2026-10-18, request) — see ROLE_PLAY_ITEM. This menu has no
-  // Settings/Help tail, so Career Fit, when entitled, is appended after it.
-  ROLE_PLAY_ITEM,
-  RESUME_WRITER_ITEM,
+  // RM-4: Role Play and Résumé Writer are in My Workspace; Settings
+  // (/practitioner/settings) and Help & Support are in the footer.
 ]
 
 /**
@@ -888,11 +882,71 @@ export const DISTRIBUTOR_NAV_ITEMS_HOUSE: NavItemDef[] = [
   { to: ROUTES.DISTRIBUTOR.NETWORK, icon: Users, label: "My practitioners" },
   { to: ROUTES.DISTRIBUTOR.CREDITS, icon: CreditCard, label: "Credits" },
   { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Reports" },
-  { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
+  // Help & Support moved to the footer section in RM-4, beside Settings.
 ]
 
 /** Navigation items for the distributor role (the house-style list above). */
 export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = DISTRIBUTOR_NAV_ITEMS_HOUSE
+
+/**
+ * RM-4 (2026-11-25) — the shared menu frame for manager, company admin,
+ * practitioner and distributor:
+ *
+ *   role's own work (unlabelled) · My Workspace · Tools · footer (unlabelled)
+ *
+ * User and super-admin menus are NOT built from this frame and do not change.
+ */
+
+/** The My Workspace section's label. */
+export const MY_WORKSPACE_SECTION_LABEL = "My Workspace"
+
+/**
+ * Roles that get the My Workspace section. Not the distributor (RM-D3, owner decision,
+ * 2026-11-25: "distributor stays without My Workspace, footer only").
+ */
+export const WORKSPACE_SECTION_ROLES: ReadonlySet<UserRole> = new Set<UserRole>([
+  "manager",
+  "company-admin",
+  "practitioner",
+])
+
+/** Rows of the user menu that are NOT in the My Workspace section: the role has
+ *  its own home, and Settings and Help & Support are in the footer. */
+const WORKSPACE_SECTION_EXCLUDED_ROUTES: ReadonlySet<string> = new Set<string>([
+  ROUTES.HOME,
+  ROUTES.SETTINGS,
+  ROUTES.HELP,
+])
+
+/**
+ * The My Workspace section's rows: the user menu ({@link getUserNavItems}) less
+ * Home, Settings and Help & Support. Same objects, same order (owner decision, 2026-10-29:
+ * Chat with Meridian, Goals Studio, [Career & Education Discovery], [Career
+ * Fit], Role Play, My development, Résumé Writer, Document Library). The
+ * bracketed rows are spliced in front of Role Play by `useWorkspaceNavItems`.
+ */
+export function getWorkspaceSectionItems(agentEngineEnabled: boolean): NavItemDef[] {
+  return getUserNavItems(agentEngineEnabled).filter((i) => !WORKSPACE_SECTION_EXCLUDED_ROUTES.has(i.to))
+}
+
+const HELP_FOOTER_ITEM: NavItemDef = { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" }
+const settingsFooterItem = (to: string): NavItemDef => ({ to, icon: Settings, label: "Settings" })
+
+/**
+ * The footer section, per role (RM-D2, owner decision, 2026-11-25: "Footer — Settings +
+ * Help & Support for every role"). Each Settings row opens the shared Settings
+ * component under the role's own chrome. Company admin's goes to the shared
+ * `/settings` (the page the profile picture opens), never
+ * `/company-admin/settings`, which is a placeholder with sample figures.
+ *
+ * A role with no entry here keeps its menu as it was (user, super-admin).
+ */
+export const FOOTER_NAV_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
+  manager: [settingsFooterItem(ROUTES.MANAGER.SETTINGS), HELP_FOOTER_ITEM],
+  "company-admin": [settingsFooterItem(ROUTES.SETTINGS), HELP_FOOTER_ITEM],
+  practitioner: [settingsFooterItem(ROUTES.PRACTITIONER.SETTINGS), HELP_FOOTER_ITEM],
+  distributor: [settingsFooterItem(ROUTES.DISTRIBUTOR.SETTINGS), HELP_FOOTER_ITEM],
+}
 
 /** Role-view links — lets super-admin jump to any role's dashboard */
 const ROLE_VIEW_ITEMS: NavItemDef[] = [

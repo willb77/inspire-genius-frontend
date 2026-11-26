@@ -123,9 +123,14 @@ describe("RM-1 — a UserLayout page shows the signed-in role's own menu", () =>
     for (const item of NAV_ITEMS_BY_ROLE[role]) expect(labels).toContain(item.label);
   });
 
-  test.each(OWN_MENU_ROLES)("%s: none of the user menu's own destinations is in the sidebar", (role) => {
+  // RM-4 (2026-11-25): manager, company admin and practitioner now carry
+  // Document Library and My development in their My Workspace section, so the
+  // user's Home is the row that tells the user chrome apart. The distributor
+  // has no My Workspace (RM-D3), so none of the three is in its sidebar.
+  test.each(OWN_MENU_ROLES)("%s: the user menu's Home is not in the sidebar", (role) => {
     const destinations = renderedRows(renderAs(role)).map((r) => r.to);
-    for (const to of USER_ONLY_DESTINATIONS) expect(destinations).not.toContain(to);
+    expect(destinations).not.toContain("/home");
+    if (role === "distributor") for (const to of USER_ONLY_DESTINATIONS) expect(destinations).not.toContain(to);
   });
 
   test.each(OWN_MENU_ROLES)("%s: the sidebar equals the one on the role's own pages", (role) => {
@@ -152,9 +157,16 @@ describe("UserLayout — Tools on workspace pages, by role", () => {
     expect(labels).toContain("Tools");
   });
 
-  test.each(WITHOUT_TOOLS)("%s sees no Tools section — a flat menu", (role) => {
-    const props = renderAs(role);
-    expect(props.navSections).toBeUndefined();
+  test("user sees no Tools section — a flat menu", () => {
+    expect(renderAs("user").navSections).toBeUndefined();
+  });
+
+  // RM-4: company admin and distributor get the shared frame (own work, [My
+  // Workspace,] footer), but still no Tools section.
+  test.each(["company-admin", "distributor"] as const)("%s sees no Tools section", (role) => {
+    const labels = (renderAs(role).navSections ?? []).map((s) => s.label);
+    expect(labels).not.toContain("Tools");
+    expect(labels).toEqual(role === "distributor" ? ["", ""] : ["", "My Workspace", ""]);
   });
 
   test("user: the flat menu is the user menu, Goals Studio included", () => {
@@ -171,22 +183,24 @@ describe("UserLayout — Tools on workspace pages, by role", () => {
   );
 
   test.each(["manager", "practitioner"] as const)(
-    "%s keeps Goals Studio once under Tools, and Role Play + Career Fit once in the workspace half",
+    "%s: Goals Studio, Role Play and Career Fit once each, in My Workspace, and none in Tools (RM-4)",
     (role) => {
       const props = renderAs(role);
-      const [workspace, tools] = props.navSections ?? [];
-      expect(workspace.items.map((i) => i.to)).not.toContain("/my/goals");
+      const sections = props.navSections ?? [];
+      const own = sections[0];
+      const workspace = sections.find((s) => s.label === "My Workspace")!;
+      const tools = sections.find((s) => s.label === "Tools")!;
       const toolRows = renderedRows({ navItems: [], navSections: [tools] });
-      expect(toolRows.map((r) => r.to)).toContain("/my/goals");
-      // 2026-10-18 (request): Role Play and Career Fit are main-menu rows, NOT
-      // Tools rows, so the workspace half keeps them and Tools lists neither.
-      for (const to of ["/interview-practice", "/vertical/job-fit/matches"]) {
+      // RM-4 (RM-D1): Goals Studio left Tools; Role Play and Career Fit left the
+      // role's own list. All three are in My Workspace, once.
+      for (const to of ["/my/goals", "/interview-practice", "/vertical/job-fit/matches"]) {
         expect(workspace.items.filter((i) => i.to === to)).toHaveLength(1);
+        expect(own.items.map((i) => i.to)).not.toContain(to);
         expect(toolRows.map((r) => r.to)).not.toContain(to);
       }
       expect(workspace.items.find((i) => i.to === "/interview-practice")?.label).toBe("Role Play");
-      // RM-1: the first half is the role's own menu, not the user menu.
-      expect(workspace.items.map((i) => i.label)).toEqual(
+      // RM-1: the first section is the role's own menu, not the user menu.
+      expect(own.items.map((i) => i.label)).toEqual(
         expect.arrayContaining(NAV_ITEMS_BY_ROLE[role].map((i) => i.label)),
       );
     },
