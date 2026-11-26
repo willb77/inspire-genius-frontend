@@ -263,6 +263,11 @@
   "planGoalsTitle": "I tuoi obiettivi",
   "planInterests": "Interessi: {{interests}}",
   "planLead": "Ciò che hai scoperto finora e cosa fare dopo.",
+  "planSoFarTitle": "Il tuo piano finora",
+  "planSoFarDegree": "Piano di studi: {{program}}",
+  "planSoFarTermsFinish": "Periodi rimanenti: {{terms}}. Conclusione: {{finish}}.",
+  "planSoFarTerms": "Periodi rimanenti: {{terms}}.",
+  "planSoFarTargets": "I ruoli a cui punti",
   "planLearningPath": "Percorso di apprendimento e istruzione",
   "planLoading": "Stiamo preparando il tuo piano",
   "progComponentLine": "{{label}}: {{text}}"
