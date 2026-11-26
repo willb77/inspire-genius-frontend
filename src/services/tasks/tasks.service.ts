@@ -1,8 +1,9 @@
 /**
- * Task-agent service — wraps the monolith proxy routes from Combined Plan §A.E3.3.
+ * Task-agent service (Combined Plan §A.E3.3).
  *
- * Each function POSTs a structured request to /v1/tasks/<task-slug> and
- * returns the agent-engine TaskAgentResponse.
+ * Each run function POSTs a structured request to the agent-engine's
+ * /v1/agents/<agent>/run on `agentApi` and returns its TaskAgentResponse.
+ * Only the saved-results calls stay on `api` under /v1/tasks/results.
  */
 import { api } from '@/lib/axios'
 import { agentApi } from '@/lib/agentApi'
@@ -100,15 +101,18 @@ const BASE = '/v1/tasks'
 
 export const tasksService = {
   /**
-   * NOT moved to `/v1/agents/james/run`, deliberately. That route only admits
-   * company-admin and super-admin, while the one surface that calls this is
-   * mounted for managers and practitioners — moving it would trade the
-   * current failure for a 403 on every use. Needs a decision on who may run
-   * James before the path changes.
+   * Job blueprint match via James, called DIRECTLY on the agent-engine — the
+   * same fix as interviewPrep below. `/v1/tasks/job-blueprint` went through a
+   * monolith proxy that does not forward the caller's `access-token`, so the
+   * engine answered 401 and the axios interceptor read that as an expired
+   * session and signed the user out. `/v1/agents/james/run` takes the
+   * identical JobBlueprintMatchRequest body, returns the identical
+   * TaskAgentResponse, and admits manager, company-admin, practitioner and
+   * super-admin — every role that can reach the Job Blueprint page.
    */
   jobBlueprint: (body: JobBlueprintMatchRequest) =>
-    api
-      .post<TaskAgentResponse>(`${BASE}/job-blueprint`, body)
+    agentApi
+      .post<TaskAgentResponse>('/v1/agents/james/run', body)
       .then((r) => r.data),
 
   /**
@@ -163,8 +167,8 @@ export const tasksService = {
    * environment. It authenticates off the same `access-token` header that
    * `agentApi` already attaches.
    *
-   * teamComposition and onboarding have since moved the same way;
-   * jobBlueprint has not (see its note above).
+   * interviewPrep, jobBlueprint, teamComposition and onboarding have since
+   * moved the same way.
    */
   documentResearch: (body: DocumentResearchRequest) =>
     agentApi

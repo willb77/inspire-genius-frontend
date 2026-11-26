@@ -113,6 +113,8 @@
     "jobBlueprintBody": {
       "matchGenerated": "Dopasowanie wygenerowane.",
       "jamesAdminagentFailed": "James (AdminAgent) nie powiódł się: {{message}}",
+      "matchFailedTitle": "James nie mógł przygotować dopasowania. Nic nie zostało wygenerowane.",
+      "matchFailedHint": "Spróbuj ponownie. Jeśli błąd się powtarza, poproś administratora o sprawdzenie, czy Twoje konto może korzystać z dopasowania Role Blueprint.",
       "jobBlueprintMatch": "Role Blueprint Match",
       "jobBlueprintMatch2": "Role Blueprint match",
       "matchACandidateAgainstA": "Dopasuj kandydata do Role Blueprint dla danej roli za pomocą Jamesa (AdminAgent).",

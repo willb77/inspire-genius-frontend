@@ -120,6 +120,8 @@
     "jobBlueprintBody": {
       "matchGenerated": "Match generated.",
       "jamesAdminagentFailed": "James (AdminAgent) failed: {{message}}",
+      "matchFailedTitle": "James could not produce the match. Nothing was generated.",
+      "matchFailedHint": "Try again. If it keeps failing, ask your administrator to check that your account can use role blueprint matching.",
       "jobBlueprintMatch": "Role Blueprint Match",
       "jobBlueprintMatch2": "Role blueprint match",
       "matchACandidateAgainstA": "Match a candidate against a role's blueprint via James (AdminAgent).",
