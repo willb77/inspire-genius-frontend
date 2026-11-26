@@ -242,7 +242,18 @@ export type ListSessionsResult = {
    * identical.
    */
   org_scope_applied: boolean
+  /**
+   * ORG-NOTE. WHY the list is, or is not, organisation-wide. Optional: an
+   * engine that predates the field omits it, and the page then says only what
+   * is true for every caller (colleagues' interviews are not included).
+   * - `applied`: the organisation clause ran.
+   * - `role_own_sessions`: the role lists its own interviews by design.
+   * - `no_org_on_sign_in`: an org-list role, but the sign-in carried no organisation.
+   */
+  org_scope_reason?: OrgScopeReason
 }
+
+export type OrgScopeReason = "applied" | "role_own_sessions" | "no_org_on_sign_in"
 
 export type ListSessionsParams = {
   mode?: string

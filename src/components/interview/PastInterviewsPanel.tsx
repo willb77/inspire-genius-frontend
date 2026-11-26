@@ -88,9 +88,19 @@ export default function PastInterviewsPanel({
     }
   }
 
-  const [orgNoteBefore, orgNoteAfter] = slotParts(
-    t("past.orgScopeNote", { defaultValue: "This list is the interviews {{slot}} ran. Your sign-in did not carry an organisation, so colleagues' interviews are not included even if you administer their organisation.", slot: SLOT }),
-  )
+  // ORG-NOTE. The sentence follows the engine's reason. "Your sign-in did not
+  // carry an organisation" is true only for `no_org_on_sign_in`; it used to
+  // be shown to every manager and practitioner, whose list is their own by
+  // role. With no reason (an older engine, or a value this build does not
+  // know) the note says only what is true for everyone.
+  const orgReason = data?.org_scope_reason
+  const orgNoteText =
+    orgReason === "no_org_on_sign_in"
+      ? t("past.orgScopeNote", { defaultValue: "This list is the interviews {{slot}} ran. Your sign-in did not carry an organisation, so colleagues' interviews are not included even if you administer their organisation.", slot: SLOT })
+      : orgReason === "role_own_sessions"
+        ? t("past.orgScopeNoteRole", { defaultValue: "This list is the interviews {{slot}} ran. Your role shows only your own interviews, so colleagues' interviews are not included.", slot: SLOT })
+        : t("past.orgScopeNoteOwn", { defaultValue: "This list is the interviews {{slot}} ran. Colleagues' interviews are not included.", slot: SLOT })
+  const [orgNoteBefore, orgNoteAfter] = slotParts(orgNoteText)
 
   return (
     <Card>

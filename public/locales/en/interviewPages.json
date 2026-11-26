@@ -367,6 +367,8 @@
     "loadFailedTitle": "Your past interviews could not be loaded.",
     "loading": "Loading your past interviews…",
     "orgScopeNote": "This list is the interviews {{slot}} ran. Your sign-in did not carry an organisation, so colleagues' interviews are not included even if you administer their organisation.",
+    "orgScopeNoteRole": "This list is the interviews {{slot}} ran. Your role shows only your own interviews, so colleagues' interviews are not included.",
+    "orgScopeNoteOwn": "This list is the interviews {{slot}} ran. Colleagues' interviews are not included.",
     "orgScopeYou": "you",
     "refresh": "Refresh",
     "reopen": "Reopen",

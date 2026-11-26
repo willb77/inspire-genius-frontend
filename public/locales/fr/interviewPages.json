@@ -449,6 +449,8 @@
     "loadFailedTitle": "Impossible de charger vos entretiens passés.",
     "loading": "Chargement de vos entretiens passés…",
     "orgScopeNote": "Cette liste contient les entretiens menés par {{slot}}. Votre connexion n'était associée à aucune organisation ; les entretiens de vos collègues ne sont donc pas inclus, même si vous administrez leur organisation.",
+    "orgScopeNoteRole": "Cette liste contient les entretiens menés par {{slot}}. Votre rôle n'affiche que vos propres entretiens ; les entretiens de vos collègues ne sont donc pas inclus.",
+    "orgScopeNoteOwn": "Cette liste contient les entretiens menés par {{slot}}. Les entretiens de vos collègues ne sont pas inclus.",
     "orgScopeYou": "vous",
     "refresh": "Actualiser",
     "reopen": "Rouvrir",

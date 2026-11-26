@@ -322,6 +322,8 @@
     "loadFailedTitle": "Não foi possível carregar suas entrevistas anteriores.",
     "loading": "Carregando suas entrevistas anteriores…",
     "orgScopeNote": "Esta lista mostra as entrevistas que {{slot}} realizou. Seu login não incluía uma organização, então as entrevistas de colegas não aparecem, mesmo que você administre a organização deles.",
+    "orgScopeNoteRole": "Esta lista mostra as entrevistas que {{slot}} realizou. Seu perfil mostra apenas as suas próprias entrevistas, então as entrevistas de colegas não aparecem.",
+    "orgScopeNoteOwn": "Esta lista mostra as entrevistas que {{slot}} realizou. As entrevistas de colegas não aparecem.",
     "orgScopeYou": "você",
     "refresh": "Atualizar",
     "reopen": "Reabrir",
