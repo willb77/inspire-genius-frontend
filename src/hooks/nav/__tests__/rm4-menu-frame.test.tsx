@@ -122,7 +122,8 @@ describe("RM-4 — each framed role's sidebar, section by section", () => {
     },
     "company-admin": {
       sections: ["", "My Workspace", ""],
-      own: ["Dashboard", "People", "Organization", "Bulk Import", "Analytics", "AI Observability", "Culture Docs", "Surveys"],
+      // RM-5: Bulk Import, AI Observability and Culture Docs are hub tabs now.
+      own: ["Dashboard", "People", "Organization", "Analytics", "Surveys"],
       workspace: WORKSPACE_ORDER,
     },
     practitioner: {

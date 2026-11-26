@@ -5,6 +5,9 @@ import { AlertCircle, Download, FileText, Users } from "lucide-react"
 import { toast } from "sonner"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { CompanyAdminHub } from "./house/CompanyAdminHub"
+import { ANALYTICS_HUB } from "./house/hubs"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCohortReadout, useCohortReadoutExport } from "@/hooks/company-admin/useCohortReadout"
@@ -26,6 +29,15 @@ import type { ReactNode } from "react"
  */
 export type CohortReadoutAudience = "company-admin" | "super-admin"
 
+/** RM-5: the company-admin read-out as the Cohort Read-out tab of the Analytics hub. */
+function AnalyticsHubFrame({ children }: { children: ReactNode }) {
+  return (
+    <CompanyAdminHub hub={ANALYTICS_HUB} active="cohort-readout">
+      {children}
+    </CompanyAdminHub>
+  )
+}
+
 export default function CohortReadout({ audience = "company-admin" }: { audience?: CohortReadoutAudience }) {
   const { t } = useTranslation("companyAdminPages")
   const isSuperAdmin = audience === "super-admin"
@@ -36,7 +48,10 @@ export default function CohortReadout({ audience = "company-admin" }: { audience
     isSuperAdmin ? { orgId: orgId || undefined } : undefined,
   )
   const exportMutation = useCohortReadoutExport()
-  const Layout = isSuperAdmin ? SuperAdminLayout : CompanyAdminLayout
+  // RM-5: a company-admin with the house switch on sees this as the Cohort
+  // Read-out tab of the Analytics hub. The super-admin audience never does.
+  const inHub = !isSuperAdmin && isHouseStyleOn("company-admin")
+  const Layout = isSuperAdmin ? SuperAdminLayout : inHub ? AnalyticsHubFrame : CompanyAdminLayout
 
   const handleExport = (format: CohortExportFormat) => {
     exportMutation.mutate(
@@ -63,6 +78,10 @@ export default function CohortReadout({ audience = "company-admin" }: { audience
     <Layout>
       <div className="mx-auto max-w-5xl space-y-6 p-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
+          {inHub ? (
+            // RM-5: inside the Analytics hub, the hub header names the page.
+            <span />
+          ) : (
           <div>
             <h1 className="text-2xl font-semibold">{t("cohortTitle", { defaultValue: "Cohort read-out" })}</h1>
             <p className="text-sm text-muted-foreground">
@@ -71,6 +90,7 @@ export default function CohortReadout({ audience = "company-admin" }: { audience
                 : t("cohortIntroOwn", { defaultValue: "Your organisation at a glance — counts and percentages only, never an individual's result." })}
             </p>
           </div>
+          )}
           <div className="flex flex-wrap items-end gap-2">
             {isSuperAdmin && <OrgPicker value={orgId} onChange={setOrgId} />}
             <label className="flex flex-col text-xs text-muted-foreground">

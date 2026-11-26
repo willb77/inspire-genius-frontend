@@ -12,6 +12,9 @@
  *     the footer section beside Settings, for every role (RM-D2). Appending it
  *     here as well would list it twice.
  *
+ *   - Bulk Import, Culture Docs and AI Observability are tabs of the People,
+ *     Organization and Analytics hubs (RM-5, 2026-11-26), not menu rows.
+ *
  * Costs is not in the classic menu either, so there is nothing to remove for it.
  *
  * Display only. Every route still loads by address, and nothing here decides
@@ -26,6 +29,14 @@ import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 export const COMPANY_ADMIN_HOUSE_HIDDEN_ROUTES: ReadonlySet<string> = new Set<string>([
   ROUTES.COMPANY_ADMIN.SETTINGS,
   ROUTES.COMPANY_ADMIN.COSTS,
+  // RM-5 (2026-11-26): each of these is now a tab of a hub, one click from its
+  // hub row and still opened by its own address — Bulk import in People,
+  // Culture Docs in Organization, AI Observability in Analytics (see
+  // src/pages/company-admin/house/hubs.ts). Cohort Read-out, which is added
+  // after this filter, is left out in useGatedNavItems for the same reason.
+  ROUTES.COMPANY_ADMIN.BULK_IMPORT,
+  ROUTES.COMPANY_ADMIN.CULTURE,
+  ROUTES.COMPANY_ADMIN.OBSERVABILITY,
 ])
 
 /** The house-style version of a company-admin menu built from the classic list. */

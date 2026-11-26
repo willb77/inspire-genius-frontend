@@ -1,13 +1,13 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import { Button } from "@/components/ui/button"
-import { PageHeader } from "@/components/shared/house/PageHeader"
 import { PageState } from "@/components/shared/house/PageState"
 import { formatDate } from "@/lib/house/formatDate"
 import { useCompanyUsers } from "@/hooks/company-admin/useCompanyAdmin"
 import { LinkRequestsAdminSection } from "@/components/company-admin/LinkRequestsAdminSection"
 import { AddPeople } from "@/components/company-admin/house/AddPeople"
+import { CompanyAdminHub } from "./CompanyAdminHub"
+import { PEOPLE_HUB } from "./hubs"
 
 /** One row of `GET /api/company/users`, read defensively (any field may be absent). */
 export type CompanyPerson = {
@@ -137,23 +137,25 @@ export default function PeopleHouse() {
     )
   }
 
+  // RM-5: the People tab of the People hub (Bulk import is the other tab). The
+  // header's title and line now come from the hub; "Add people" is unchanged
+  // and still opens the in-place panel (W2b).
   return (
-    <CompanyAdminLayout>
-      <PageHeader
-        title={t("peopleTitle", { defaultValue: "People" })}
-        description={t("peopleDescription", { defaultValue: "Everyone in your organization who uses InspiresGenius." })}
-        action={
-          !adding && (
-            <Button size="sm" onClick={() => setAdding(true)}>
-              {t("peopleAddPeople", { defaultValue: "Add people" })}
-            </Button>
-          )
-        }
-      />
+    <CompanyAdminHub
+      hub={PEOPLE_HUB}
+      active="people"
+      action={
+        !adding && (
+          <Button size="sm" onClick={() => setAdding(true)}>
+            {t("peopleAddPeople", { defaultValue: "Add people" })}
+          </Button>
+        )
+      }
+    >
       {adding && <AddPeople onClose={() => setAdding(false)} />}
       {/* MMLR-6: shown only while a request in this organisation is pending. */}
       <LinkRequestsAdminSection />
       {body}
-    </CompanyAdminLayout>
+    </CompanyAdminHub>
   )
 }

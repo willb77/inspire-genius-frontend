@@ -1,6 +1,9 @@
-import { useCallback } from "react"
+import { useCallback, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { CompanyAdminHub } from "./house/CompanyAdminHub"
+import { ANALYTICS_HUB } from "./house/hubs"
 import {
   EngagementChart,
   GoalsBreakdownChart,
@@ -28,8 +31,20 @@ function download(content: string, name: string, type: string) {
   const a = document.createElement("a"); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u)
 }
 
+/** RM-5: with the company-admin house switch on, this page is the Analytics tab of the Analytics hub. */
+function AnalyticsHubFrame({ children }: { children: ReactNode }) {
+  return (
+    <CompanyAdminHub hub={ANALYTICS_HUB} active="analytics">
+      {children}
+    </CompanyAdminHub>
+  )
+}
+
 export default function CompanyAdminAnalytics() {
   const { t } = useTranslation("companyAdminPages")
+  // House style (area `company-admin`): display only. Off, the page renders unchanged.
+  const house = isHouseStyleOn("company-admin")
+  const Frame = house ? AnalyticsHubFrame : CompanyAdminLayout
   const { data: analyticsData, isLoading, error, refetch } = useCompanyAnalyticsHook()
 
   const ad = analyticsData as {
@@ -50,7 +65,7 @@ export default function CompanyAdminAnalytics() {
   const errorString = error ? t("analyticsLoadFailed", { defaultValue: "Failed to load analytics data." }) : undefined
 
   return (
-    <CompanyAdminLayout>
+    <Frame>
       {/* Placeholder Data Notice */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
         <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
@@ -67,10 +82,15 @@ export default function CompanyAdminAnalytics() {
       )}
 
       <div className="flex items-center justify-between mb-5">
+        {house ? (
+          // RM-5: inside the Analytics hub, the hub header names the page.
+          <span />
+        ) : (
         <div>
           <h1 className="text-xl font-bold text-[#111827]">{t("analyticsTitle", { defaultValue: "Company Analytics" })}</h1>
           <p className="text-[13px] text-[#6b7280]">{t("analyticsSubtitle", { defaultValue: "Organization-level engagement, training, and cost metrics." })}</p>
         </div>
+        )}
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="gap-1" onClick={exportJSON}><FileJson className="w-4 h-4" />JSON</Button>
           <Button variant="outline" size="sm" className="gap-1" onClick={exportCSV}><FileSpreadsheet className="w-4 h-4" />CSV</Button>
@@ -117,6 +137,6 @@ export default function CompanyAdminAnalytics() {
           height={200}
         />
       </div>
-    </CompanyAdminLayout>
+    </Frame>
   )
 }

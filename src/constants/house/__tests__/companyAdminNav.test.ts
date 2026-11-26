@@ -39,17 +39,14 @@ describe("company-admin house menu", () => {
     expect(withCompanyAdminHouseMenu("company-admin", COMPANY_ADMIN_NAV_ITEMS)).toBe(COMPANY_ADMIN_NAV_ITEMS)
   })
 
-  it("switch on: People, no Settings or Costs, and no Help (it is in the footer)", () => {
+  it("switch on (RM-5): five rows — People, Organization and Analytics are hubs; no Settings, Costs or Help", () => {
     localStorage.setItem(SWITCH, "true")
     const menu = withCompanyAdminHouseMenu("company-admin", COMPANY_ADMIN_NAV_ITEMS)
     expect(menu.map((i) => [i.label, i.to])).toEqual([
       ["Dashboard", "/company-admin/dashboard"],
       ["People", "/company-admin/users"],
       ["Organization", "/company-admin/organization"],
-      ["Bulk Import", "/company-admin/bulk-import"],
       ["Analytics", "/company-admin/analytics"],
-      ["AI Observability", "/company-admin/observability"],
-      ["Culture Docs", "/company-admin/culture"],
       ["Surveys", "/surveys"],
     ])
     expect(menu.some((i) => i.to.includes("/settings") || i.to.includes("/costs") || i.to === "/help")).toBe(false)

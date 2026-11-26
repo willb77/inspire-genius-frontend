@@ -200,5 +200,19 @@
   "peopleStatusInactive": "Inactive",
   "peopleTitle": "People",
   "peopleDescription": "Everyone in your organization who uses InspiresGenius.",
-  "peopleAddPeople": "Add people"
+  "peopleAddPeople": "Add people",
+  "hubSectionsLabel": "{{title}} sections",
+  "hubPeopleDescription": "The people in your organization, and the ways to add more.",
+  "hubPeopleTabPeople": "People",
+  "hubPeopleTabBulkImport": "Bulk import",
+  "hubPeopleTabBulkImportDescription": "Import a file of people and send them invitations.",
+  "hubOrganizationDescription": "Your organization's departments and the documents that describe its culture.",
+  "hubOrganizationTabOrganization": "Organization",
+  "hubOrganizationTabCulture": "Culture Docs",
+  "hubOrganizationTabCultureDescription": "Documents about your organization's culture and values.",
+  "hubAnalyticsTitle": "Analytics",
+  "hubAnalyticsDescription": "How your organization uses InspiresGenius, and what the AI coaches do and cost.",
+  "hubAnalyticsTabAnalytics": "Analytics",
+  "hubAnalyticsTabObservability": "AI Observability",
+  "hubAnalyticsTabCohort": "Cohort Read-out"
 }

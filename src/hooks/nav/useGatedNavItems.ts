@@ -52,7 +52,9 @@ const COHORT_READOUT_NAV_ITEM: NavItemDef = {
  *
  * Cohort Read-out (N-3) follows the same rule for a company-admin: the status
  * read runs for that role only, and the item appears only on `true` — with the
- * `cohort_readout` switch off (no row), the menu is exactly as before.
+ * `cohort_readout` switch off (no row), the menu is exactly as before. With the
+ * company-admin house switch on it is not a row at all: it is the Cohort
+ * Read-out tab of the Analytics hub, under the same org switch (RM-5).
  */
 export function useGatedNavItems(role: UserRole): NavItemDef[] {
   return useOwnWorkItems(role, null)
@@ -67,10 +69,13 @@ function useOwnWorkItems(role: UserRole, talentStudio: NavItemDef | null): NavIt
   const examAccess = useExamAccess(EXAM_GRANTABLE_ROLES.has(role))
   const cohort = useCohortReadoutEnabled(role === "company-admin")
   const granted = !!examAccess.data?.allowed && !examAccess.data?.super_admin
-  const cohortOn = role === "company-admin" && cohort.data === true
   // House style (area `company-admin`, default OFF): display-only menu swap.
   const roleBase = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
   const houseOn = role === "company-admin" && isHouseStyleOn("company-admin")
+  // RM-5: with house style on, Cohort Read-out is a tab of the Analytics hub
+  // (shown there under the same switch), so it is not also a menu row. With
+  // house style off, the row is exactly as before.
+  const cohortOn = role === "company-admin" && cohort.data === true && !houseOn
   const base = useMemo(() => (houseOn ? companyAdminHouseMenu(roleBase) : roleBase), [houseOn, roleBase])
   const items = useMemo(() => {
     const withTalent = talentStudio ? [...base, talentStudio] : base

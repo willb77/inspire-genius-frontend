@@ -200,5 +200,19 @@
   "peopleTitle": "Osoby",
   "peopleDescription": "Wszyscy w Twojej organizacji, którzy korzystają z InspiresGenius.",
   "peopleAddPeople": "Dodaj osoby",
-  "peopleColPrism": "PRISM"
+  "peopleColPrism": "PRISM",
+  "hubSectionsLabel": "Sekcje: {{title}}",
+  "hubPeopleDescription": "Osoby w Twojej organizacji i sposoby dodawania kolejnych.",
+  "hubPeopleTabPeople": "Osoby",
+  "hubPeopleTabBulkImport": "Import zbiorczy",
+  "hubPeopleTabBulkImportDescription": "Zaimportuj plik z osobami i wyślij im zaproszenia.",
+  "hubOrganizationDescription": "Działy Twojej organizacji i dokumenty opisujące jej kulturę.",
+  "hubOrganizationTabOrganization": "Organizacja",
+  "hubOrganizationTabCulture": "Dokumenty o kulturze",
+  "hubOrganizationTabCultureDescription": "Dokumenty o kulturze i wartościach Twojej organizacji.",
+  "hubAnalyticsTitle": "Analityka",
+  "hubAnalyticsDescription": "Jak Twoja organizacja korzysta z InspiresGenius oraz co robią i ile kosztują coachowie AI.",
+  "hubAnalyticsTabAnalytics": "Analityka",
+  "hubAnalyticsTabObservability": "Obserwowalność AI",
+  "hubAnalyticsTabCohort": "Raport kohorty"
 }

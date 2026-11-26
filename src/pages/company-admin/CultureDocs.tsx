@@ -1,14 +1,29 @@
-import { useState, useRef } from "react"
+import { useState, useRef, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
+import { isHouseStyleOn } from "@/lib/house/areaSwitch"
+import { CompanyAdminHub } from "./house/CompanyAdminHub"
+import { ORGANIZATION_HUB } from "./house/hubs"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCultureDocs, useUploadCultureDoc, useDeleteCultureDoc } from "@/hooks/culture/useCultureDocs"
 import { Upload, Trash2, FileText, BookHeart, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 
+/** RM-5: with the company-admin house switch on, this page is the Culture Docs tab of the Organization hub. */
+function OrganizationHubFrame({ children }: { children: ReactNode }) {
+  return (
+    <CompanyAdminHub hub={ORGANIZATION_HUB} active="culture">
+      {children}
+    </CompanyAdminHub>
+  )
+}
+
 export default function CultureDocs() {
   const { t } = useTranslation("companyAdminPages")
+  // House style (area `company-admin`): display only. Off, the page renders unchanged.
+  const house = isHouseStyleOn("company-admin")
+  const Frame = house ? OrganizationHubFrame : CompanyAdminLayout
   const { data, isLoading, error, refetch } = useCultureDocs()
   const uploadMutation = useUploadCultureDoc()
   const deleteMutation = useDeleteCultureDoc()
@@ -68,9 +83,14 @@ export default function CultureDocs() {
   }
 
   return (
-    <CompanyAdminLayout>
+    <Frame>
       <div className="flex items-center justify-between mb-1">
+        {house ? (
+          // RM-5: inside the Organization hub, the hub header names the page.
+          <span />
+        ) : (
         <h1 className="text-xl font-bold text-[#111827]">{t("cultureTitle", { defaultValue: "Culture Documents" })}</h1>
+        )}
         <Button
           size="sm"
           onClick={() => fileInputRef.current?.click()}
@@ -234,6 +254,6 @@ export default function CultureDocs() {
           </table>
         )}
       </div>
-    </CompanyAdminLayout>
+    </Frame>
   )
 }

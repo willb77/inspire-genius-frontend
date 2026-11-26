@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
-import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
-import { PageHeader } from "@/components/shared/house/PageHeader"
+import { CompanyAdminHub } from "./CompanyAdminHub"
+import { ORGANIZATION_HUB } from "./hubs"
 import { PageState } from "@/components/shared/house/PageState"
 import { useCompanyDepartments } from "@/hooks/company-admin/useCompanyAdmin"
 
@@ -86,9 +86,9 @@ export default function OrganizationHouse() {
   }
 
   return (
-    <CompanyAdminLayout>
-      <PageHeader title={t("orgHouseTitle", { defaultValue: "Organization" })} description={t("orgHouseDescription", { defaultValue: "Your organization's departments, as recorded in InspiresGenius." })} />
+    // RM-5: the Organization tab of the Organization hub (Culture Docs is the other tab).
+    <CompanyAdminHub hub={ORGANIZATION_HUB} active="organization">
       {body}
-    </CompanyAdminLayout>
+    </CompanyAdminHub>
   )
 }
