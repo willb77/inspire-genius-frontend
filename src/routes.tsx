@@ -193,7 +193,6 @@ const Explainability = React.lazy(() => import("@/pages/super-admin/Explainabili
 // redirects to /practitioner/home (the new landing). Its unbuilt
 // /api/practitioner/sessions call was 500-ing; Home uses the coachClient seam.
 const PractitionerClients = React.lazy(() => import("@/pages/practitioner/Clients"));
-const PrismClients = React.lazy(() => import("@/pages/practitioner/PrismClients"));
 const PractitionerMyPractice = React.lazy(() => import("@/pages/practitioner/MyPractice"));
 const PractitionerWelcome = React.lazy(() => import("@/pages/welcome/PractitionerWelcome"));
 const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Analytics"));
@@ -788,7 +787,11 @@ export const routes: RouteObject[] = [
       // nothing left for a credit to buy. Redirect rather than drop, so an old
       // bookmark lands somewhere real instead of a 404.
       { path: "/practitioner/credits", element: <Navigate to="/practitioner/home" replace /> },
-      { path: "/practitioner/prism-clients", element: withSuspense(<PrismClients />) },
+      // TDS U12 (CSA #2210): "Client PRISM Assessments" is retired. Its import
+      // was refused for every practitioner (U12-F1) and its list read a store
+      // with no rows; the import now lives on each client's page. An old link
+      // lands on the client list instead of a 404.
+      { path: "/practitioner/prism-clients", element: <Navigate to={ROUTES.PRACTITIONER.CLIENTS} replace /> },
       // PI-2: the practitioner's own code and PRISM ids (GET /v1/agents/practitioner-registry/me).
       { path: "/practitioner/practice", element: withSuspense(<PractitionerMyPractice />) },
       { path: "/practitioner/settings", element: withSuspense(<WorkspaceSettings audience="practitioner" />) },

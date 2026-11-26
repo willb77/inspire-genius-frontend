@@ -578,11 +578,16 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
 })
 
 describe("practitioner nav doors (X-3, Practitioner Programme)", () => {
-  it("gives the practitioner a door to Client PRISM Assessments", () => {
-    const item = NAV_ITEMS_BY_ROLE.practitioner.find((i) => i.to === ROUTES.PRACTITIONER.PRISM_CLIENTS)
-    expect(item?.label).toBe("Client PRISM Assessments")
-    // A door the role cannot pass through is worse than no door: ProtectedRoute
-    // gates by prefix and would bounce the practitioner home.
+  // TDS U12 (CSA #2210): "Client PRISM Assessments" is retired. Its import was
+  // refused for every practitioner; a client's PRISM is imported from the
+  // client's page under My Clients, which stays.
+  it("no longer lists Client PRISM Assessments, and keeps My Clients", () => {
+    const rows = NAV_ITEMS_BY_ROLE.practitioner
+    expect(rows.find((i) => i.to === ROUTES.PRACTITIONER.PRISM_CLIENTS)).toBeUndefined()
+    expect(rows.find((i) => i.label === "Client PRISM Assessments")).toBeUndefined()
+    expect(rows.find((i) => i.to === ROUTES.PRACTITIONER.CLIENTS)?.label).toBe("My Clients")
+    // The old path still passes the role gate, so its redirect is reachable
+    // rather than bouncing the practitioner home.
     expect(hasAccess("practitioner", ROUTES.PRACTITIONER.PRISM_CLIENTS)).toBe(true)
   })
 

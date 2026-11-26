@@ -254,33 +254,6 @@
     "dark": "Le programme Praticien n'est pas encore activé.",
     "notRegistered": "Les enquêtes que vous envoyez seront émises sur le site PRISM d'InspiresGenius tant que votre compte n'est pas enregistré."
   },
-  "prismClients": {
-    "title": "Évaluations PRISM des clients",
-    "subtitle": "Consultez et gérez les évaluations PRISM de vos clients",
-    "importReport": "Importer un rapport client",
-    "importTitle": "Importer un rapport PRISM client",
-    "importDescription": "Téléversez un fichier de rapport PRISM existant pour un client. Formats pris en charge : PDF, DOCX, CSV, XLS, XLSX.",
-    "clientId": "ID client",
-    "clientIdPlaceholder": "Saisissez l'ID utilisateur du client",
-    "reportFile": "Fichier du rapport",
-    "importing": "Importation...",
-    "import": "Importer le rapport",
-    "clientReport": "Rapport client",
-    "backToList": "Retour à la liste",
-    "assessments": "Évaluations",
-    "assessmentCountOther": "{{n}} évaluations",
-    "assessmentCountOne": "{{n}} évaluation",
-    "filterStatus": "Filtrer par statut",
-    "allStatuses": "Tous les statuts",
-    "none": "Aucune évaluation trouvée.",
-    "colClient": "Client",
-    "colType": "Type",
-    "colStatus": "Statut",
-    "colInitiated": "Lancée le",
-    "colCompleted": "Terminée le",
-    "colActions": "Actions",
-    "view": "Voir"
-  },
   "invites": {
     "status": {
       "claimed_by_one": "Réclamée par un autre compte",

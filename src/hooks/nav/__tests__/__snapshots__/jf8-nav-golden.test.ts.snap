@@ -276,7 +276,6 @@ exports[`JF-8 — menus with job_fit_v2 off are today's useGatedNavItems(practit
   "Client Development Studio -> /practitioner/development",
   "Practitioner Home -> /practitioner/home",
   "My Clients -> /practitioner/clients",
-  "Client PRISM Assessments -> /practitioner/prism-clients",
   "My PRISM Practice -> /practitioner/practice",
   "Schedule -> /practitioner/schedule",
   "Surveys -> /surveys",

@@ -14,6 +14,7 @@ import { STAGE_ROUTES } from "./stageRoutes"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import { learningOf } from "@/lib/career-discovery/learningSection"
 import { LearningButtons } from "./LearningParts"
+import { PlanSoFar } from "./PlanSoFar"
 
 /** My plan — one page of what the person has found so far. No invented numbers. */
 export default function PlanPage() {
@@ -39,6 +40,8 @@ export default function PlanPage() {
         lead={t("planLead", "What you've found so far, and what to do next.")}
       />
       {learning ? <LearningButtons learning={learning} current="plan" /> : null}
+      {/* Phase C-a/b: renders nothing unless careers_jobs_flow is on and an item applies. */}
+      <PlanSoFar journey={journey} />
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t("planWhereYouAre", "Where you are")}</CardTitle>
