@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { ROUTES } from "@/constants/routes";
 import { getUserNavItems, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation";
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
+import UnifiedLayout from "@/layouts/UnifiedLayout";
 import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 import { isUserRole } from "@/types/roles";
 import type { UserRole } from "@/types/roles";
@@ -30,7 +31,40 @@ function destinations(items: NavItemDef[]): string[] {
   return items.flatMap((item) => [item.to, ...destinations(item.children ?? [])]).filter(Boolean);
 }
 
-export default function UserLayout({
+/**
+ * The roles that see their OWN menu on a UserLayout page (RM-1). A user and a
+ * super-admin keep the chrome below; every other role gets UnifiedLayout with
+ * its own menu, so opening Help, Résumé Writer, Document Library or Meridian
+ * chat no longer swaps the role's sidebar for the user one. Display only: the
+ * route, its guard (ProtectedRoute) and every data call are unchanged.
+ */
+function ownMenuRole(role: string | null | undefined): UserRole | null {
+  if (!isUserRole(role) || role === "user" || role === "super-admin") return null;
+  return role;
+}
+
+export default function UserLayout(props: UserLayoutProps) {
+  const { user } = useAuth();
+  // Branch to a separate component rather than returning early, so neither
+  // tree's hook order depends on the role.
+  const roleWithOwnMenu = ownMenuRole(user?.role);
+  if (roleWithOwnMenu) {
+    return (
+      <UnifiedLayout
+        role={roleWithOwnMenu}
+        className={props.className}
+        expandOnPath={ROUTES.HOME}
+        collapseSidebarOnMount={props.collapseSidebarOnMount}
+      >
+        {props.children}
+      </UnifiedLayout>
+    );
+  }
+  return <UserChrome {...props} />;
+}
+
+/** The user and super-admin chrome, unchanged by RM-1. */
+function UserChrome({
   children,
   className,
   collapseSidebarOnMount,
