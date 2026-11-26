@@ -1,6 +1,9 @@
 jest.mock('@/lib/axios', () => ({ api: { post: jest.fn(), get: jest.fn(), delete: jest.fn() } }))
 jest.mock('@/lib/agentApi', () => ({ agentApi: { post: jest.fn() } }))
 
+import fs from 'fs'
+import path from 'path'
+
 import { api } from '@/lib/axios'
 import { agentApi } from '@/lib/agentApi'
 import { tasksService } from '../tasks.service'
@@ -39,6 +42,30 @@ describe('tasksService routed paths', () => {
     await expect(tasksService.onboarding(body)).resolves.toEqual(resp)
     expect(agentApi.post).toHaveBeenCalledWith('/v1/agents/forge/run', body)
     expect(api.post).not.toHaveBeenCalled()
+  })
+
+  it('jobBlueprint posts to /v1/agents/james/run on agentApi, not the /v1/tasks proxy on api', async () => {
+    // F-JAMES-1: the monolith proxy behind /v1/tasks/job-blueprint forwards no
+    // access-token, the engine answers 401, and the interceptor signs the user out.
+    const body = {
+      role_title: 'Lead',
+      company_name: 'Acme',
+      role_responsibilities: 'Run the team',
+      candidate_summary: 'Ten years of delivery',
+      desired_outcomes: 'Ship on time',
+    }
+    await expect(tasksService.jobBlueprint(body)).resolves.toEqual(resp)
+    expect(agentApi.post).toHaveBeenCalledTimes(1)
+    expect(agentApi.post).toHaveBeenCalledWith('/v1/agents/james/run', body)
+    expect(api.post).not.toHaveBeenCalled()
+  })
+
+  it('no code in the service still calls the /v1/tasks/job-blueprint proxy path', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '..', 'tasks.service.ts'), 'utf8')
+    // Comments may explain the history; only code is checked.
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+    expect(code).not.toMatch(/job-blueprint/)
+    expect(code).toContain("'/v1/agents/james/run'")
   })
 
   it('saveResult stays on the routed /v1/tasks/results path on api', async () => {

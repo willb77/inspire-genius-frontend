@@ -188,6 +188,8 @@
     "jobBlueprintBody": {
       "matchGenerated": "Correspondance générée.",
       "jamesAdminagentFailed": "Échec de James (AdminAgent) : {{message}}",
+      "matchFailedTitle": "James n'a pas pu produire la correspondance. Rien n'a été généré.",
+      "matchFailedHint": "Réessayez. Si l'échec persiste, demandez à votre administrateur de vérifier que votre compte peut utiliser la correspondance Role Blueprint.",
       "jobBlueprintMatch": "Correspondance Role Blueprint",
       "jobBlueprintMatch2": "Correspondance Role Blueprint",
       "matchACandidateAgainstA": "Comparez un candidat au Role Blueprint d'un poste avec James (AdminAgent).",

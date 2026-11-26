@@ -33,6 +33,23 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+/**
+ * The reason a run failed, in the server's own words when it gave one.
+ * axios's `err.message` is only "Request failed with status code 403"; the
+ * engine's `detail` says why. FastAPI sends a string on 4xx and a list on 422.
+ */
+function describeMatchError(err: unknown): string {
+  const detail = (err as { response?: { data?: { detail?: unknown } } } | null)?.response?.data?.detail
+  if (typeof detail === "string" && detail.trim()) return detail
+  if (Array.isArray(detail)) {
+    const msgs = detail
+      .map((d) => (d && typeof d === "object" && "msg" in d ? String((d as { msg: unknown }).msg) : ""))
+      .filter(Boolean)
+    if (msgs.length) return msgs.join("; ")
+  }
+  return err instanceof Error ? err.message : ""
+}
+
 export default function JobBlueprintBody() {
   const { t } = useTranslation("studioUi")
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
@@ -56,10 +73,12 @@ export default function JobBlueprintBody() {
       toast.success(t("taskAgents.jobBlueprintBody.matchGenerated", { defaultValue: "Match generated." }))
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : "Match failed"
+      const message = describeMatchError(err) || "Match failed"
       toast.error(t("taskAgents.jobBlueprintBody.jamesAdminagentFailed", { defaultValue: "James (AdminAgent) failed: {{message}}", message }))
     },
   })
+
+  const matchErrorText = mutation.isError ? describeMatchError(mutation.error) : ""
 
   const onSubmit = (values: FormValues) => {
     setLastRequest(values as Record<string, unknown>)
@@ -139,12 +158,36 @@ export default function JobBlueprintBody() {
 
             <CostEstimateBanner promptText={promptPreview} />
 
+            {/* A failed run must stay on the page, not only in a toast that
+                times out (F-JAMES-1: a manager's run failed with nothing on screen). */}
+            {mutation.isError && (
+              <div
+                role="alert"
+                className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              >
+                <p className="font-medium">
+                  {t("taskAgents.jobBlueprintBody.matchFailedTitle", { defaultValue: "James could not produce the match. Nothing was generated." })}
+                </p>
+                {matchErrorText && <p className="mt-1">{matchErrorText}</p>}
+                <p className="mt-1">
+                  {t("taskAgents.jobBlueprintBody.matchFailedHint", { defaultValue: "Try again. If it keeps failing, ask your administrator to check that your account can use role blueprint matching." })}
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t("taskAgents.jobBlueprintBody.runJames", { defaultValue: "Run James" })}
               </Button>
-              <Button type="button" variant="outline" onClick={() => form.reset()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.reset()
+                  mutation.reset()
+                }}
+              >
                 {t("taskAgents.jobBlueprintBody.reset", { defaultValue: "Reset" })}
               </Button>
             </div>

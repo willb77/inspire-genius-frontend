@@ -419,6 +419,8 @@
     "jobBlueprintBody": {
       "matchGenerated": "Shoda byla vytvořena.",
       "jamesAdminagentFailed": "James (AdminAgent) selhal: {{message}}",
+      "matchFailedTitle": "James nemohl vytvořit shodu. Nic nebylo vytvořeno.",
+      "matchFailedHint": "Zkuste to prosím znovu. Pokud chyba přetrvává, požádejte svého správce, aby ověřil, že váš účet může používat shodu s Role Blueprint.",
       "jobBlueprintMatch": "Role Blueprint Match",
       "jobBlueprintMatch2": "Shoda s Role Blueprint",
       "matchACandidateAgainstA": "Porovnejte kandidáta s plánem role (blueprint) pomocí Jamese (AdminAgent).",

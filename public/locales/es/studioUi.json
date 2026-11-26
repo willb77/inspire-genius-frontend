@@ -188,6 +188,8 @@
     "jobBlueprintBody": {
       "matchGenerated": "Coincidencia generada.",
       "jamesAdminagentFailed": "James (AdminAgent) falló: {{message}}",
+      "matchFailedTitle": "James no pudo generar la coincidencia. No se generó nada.",
+      "matchFailedHint": "Inténtalo de nuevo. Si sigue fallando, pide a tu administrador que compruebe que tu cuenta puede usar la coincidencia Role Blueprint.",
       "jobBlueprintMatch": "Role Blueprint Match",
       "jobBlueprintMatch2": "Role Blueprint match",
       "matchACandidateAgainstA": "Compara a un candidato con el Role Blueprint de un puesto mediante James (AdminAgent).",
