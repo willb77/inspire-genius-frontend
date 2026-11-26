@@ -57,6 +57,7 @@ import {
 import { SLOT, slotParts, slotSplit, type TFn } from "@/components/interview/tFallback"
 import type { InterviewFrame } from "@/services/interview/practice.service"
 import type { StarCompetency } from "@/services/interview/interview.service"
+import { CAP_REASON_NO_RESULT, effectiveScore, isCapped, runningTally } from "@/services/interview/effectiveScore"
 import { liveInterviewService, normalizeSectionScores } from "@/services/interview/live.service"
 import {
   finalizeResultFromDetail,
@@ -354,11 +355,9 @@ export default function LiveInterviewBody() {
   const isLast = idx === total - 1
   const currentAnswer = current ? answers[current.competency_id] : undefined
 
-  const savedCount = Object.values(answers).filter((a) => a.scored && typeof a.scored.final_score === "number").length
-  const savedAvg =
-    savedCount > 0
-      ? Object.values(answers).reduce((sum, a) => sum + (a.scored?.final_score ?? 0), 0) / savedCount
-      : null
+  // F-W5-1 — average what each rating COUNTS AS (Result cap applied), the
+  // same rule the server scores with at finalize, so the tally and the overall agree.
+  const { count: savedCount, avg: savedAvg } = runningTally(Object.values(answers).map((a) => a.scored), frame?.mode)
 
   // ── Setup handlers ──────────────────────────────────────────────
   const handleConsent = (c: LiveConsent) => {
@@ -759,6 +758,15 @@ export default function LiveInterviewBody() {
                     {a.final_source ? (
                       <p className="mt-1 text-sm text-indigo-700">
                         {t("live.results.finalScore", { defaultValue: "Final score: {{score}} / 5", score: a.final_score ?? "—" })}
+                        {/* F-W5-1 — say why a capped rating counted as less than it reads. */}
+                        {isCapped(a, finalizeResult.session.frame?.mode) && (
+                          <span className="text-amber-700">
+                            {" · "}
+                            {a.capped?.reason === CAP_REASON_NO_RESULT
+                              ? t("answer.countedAsNoResult", { defaultValue: "counted as {{score}}: no measurable Result was observed (Result cap)", score: effectiveScore(a, finalizeResult.session.frame?.mode) })
+                              : t("answer.countedAsCapped", { defaultValue: "counted as {{score}} (score cap applied)", score: effectiveScore(a, finalizeResult.session.frame?.mode) })}
+                          </span>
+                        )}
                         {a.final_source === "model" && <span className="text-slate-500"> {t("live.results.aiAdopted", "(AI suggestion adopted)")}</span>}
                         {typeof a.suggested_score === "number" && <span className="text-slate-500"> {t("live.results.aiSuggested", { defaultValue: "(AI suggested {{score}})", score: a.suggested_score })}</span>}
                       </p>

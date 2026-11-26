@@ -5,6 +5,8 @@
     "baseline": "Base (3) :",
     "cappedNoResult": "(plafonné à 3 : aucun résultat mesurable pour l'instant)",
     "cappedSection": "(plafonné à la limite de la section)",
+    "countedAsNoResult": "compté comme {{score}} : aucun Résultat mesurable n'a été observé (plafond lié au Résultat)",
+    "countedAsCapped": "compté comme {{score}} (plafond de score appliqué)",
     "captureByVoice": "Saisir à la voix",
     "capturedLabel": "Réponse saisie",
     "capturedPlaceholder": "Saisissez, ou dictez, ce que dit le candidat…",

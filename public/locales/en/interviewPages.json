@@ -5,6 +5,8 @@
     "baseline": "Baseline (3):",
     "cappedNoResult": "(capped at 3 — no measurable result yet)",
     "cappedSection": "(capped at the section limit)",
+    "countedAsNoResult": "counted as {{score}}: no measurable Result was observed (Result cap)",
+    "countedAsCapped": "counted as {{score}} (score cap applied)",
     "captureByVoice": "Capture by voice",
     "capturedLabel": "Captured answer",
     "capturedPlaceholder": "Type — or capture by voice — what the candidate says…",

@@ -691,3 +691,64 @@ describe("the one build — failure states", () => {
     expect(createMutate).not.toHaveBeenCalled()
   })
 })
+
+// ── F-W5-1 — the Result cap is disclosed, and the tally follows the server ──
+
+describe("F-W5-1 — a capped rating says what it counted as, old and new alike", () => {
+  const CAPPED = { applied: true, reason: "no_measurable_result" }
+  const cappedDetail = {
+    ...SHAPES[0].detail,
+    answers: [
+      answer({ suggested_score: 2, capped: CAPPED }),
+      answer({ answer_id: "a2", competency_id: "c2", final_score: 5, capped: { applied: false, reason: null } }),
+    ],
+    overall_score: 4,
+    recommendation: "Strong alignment",
+  }
+
+  it("on a reopened hiring write-up, identically in both builds", async () => {
+    getSession.mockResolvedValue(cappedDetail)
+    const old = renderAt(<LiveInterviewBody />, sessionUrl("s-star"))
+    await screen.findByText(/reopened for review/i)
+    const oldHtml = old.container.innerHTML
+    expect(screen.getByText(/Final score: 4 \/ 5/)).toHaveTextContent(
+      /counted as 3: no measurable Result was observed \(Result cap\)/,
+    )
+    expect(screen.getAllByText(/counted as/)).toHaveLength(1)
+    cleanup()
+
+    const fresh = renderAt(<InterviewRunBody initialKind="hiring" />, `/manager/interview-studio?session=s-star`)
+    await screen.findByText(/reopened for review/i)
+    expect(screen.getByText(/Final score: 4 \/ 5/)).toHaveTextContent(/counted as 3/)
+    expect(fresh.container.innerHTML).toBe(oldHtml)
+  })
+
+  async function rateOne(ui: ReactElement, builder: boolean) {
+    const user = userEvent.setup()
+    renderAt(ui, "/x")
+    await user.click(screen.getByText("mock-consent"))
+    await user.type(screen.getByLabelText(builder ? /^name$/i : /candidate name/i), "Person A")
+    await user.click(screen.getByRole("button", { name: /continue/i }))
+    await user.click(screen.getByText(builder ? "mock-builder-confirm" : "mock-frame-confirm"))
+    await user.click(await screen.findByText("mock-submit"))
+    await user.click(screen.getByText("mock-save"))
+    await screen.findByRole("button", { name: /next question|finish & view results/i })
+  }
+
+  it("the hiring tally averages the capped score in the one build", async () => {
+    primeServer(PLAN_STAR, FINALIZE())
+    scoreMutate.mockResolvedValue({ answer_id: "a1", final_score: 4, final_source: "human", capped: CAPPED })
+    await rateOne(<InterviewRunBody initialKind="hiring" />, false)
+    expect(screen.getByText(/1\/2 scored · avg 3\.00/i)).toBeInTheDocument()
+  })
+
+  it.each([
+    ["Interview Studio", () => <StudioInterviewBody />],
+    ["the one build, own questions", () => <InterviewRunBody initialKind="own" />],
+  ])("%s: a custom session's tally ignores a cap stamp the server never scores with", async (_n, ui) => {
+    primeServer(PLAN_CUSTOM, FINALIZE())
+    scoreMutate.mockResolvedValue({ answer_id: "a1", final_score: 4, final_source: "human", capped: CAPPED })
+    await rateOne(ui(), true)
+    expect(screen.getByText(/1\/1 scored · avg 4\.00/i)).toBeInTheDocument()
+  })
+})

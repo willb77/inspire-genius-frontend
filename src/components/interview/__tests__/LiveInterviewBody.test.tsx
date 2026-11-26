@@ -367,6 +367,23 @@ describe("interview phase", () => {
     expect(await screen.findByText("panel 2/2: Describe a missed deadline.")).toBeInTheDocument()
   })
 
+  it("averages what a capped rating COUNTS AS, the same rule finalize uses (F-W5-1)", async () => {
+    // A human 4 with no measurable Result observed counts as 3 at finalize. A
+    // tally reading 4.00 here, then 3.00 on the write-up, is the W5 mismatch.
+    scoreMutate.mockResolvedValue({
+      answer_id: "a1",
+      final_score: 4,
+      final_source: "human",
+      capped: { applied: true, reason: "no_measurable_result" },
+    })
+    const user = userEvent.setup()
+    renderBody()
+    await reachInterview(user)
+    await screen.findByText("panel 1/2: Tell me about a turnaround.")
+    await rateCurrent(user)
+    expect(screen.getByText(/1\/2 scored · avg 3\.00/i)).toBeInTheDocument()
+  })
+
   it("keeps the question on screen when submitting the answer fails", async () => {
     submitMutate.mockRejectedValue(new Error("nope"))
     const user = userEvent.setup()
@@ -759,6 +776,50 @@ describe("past interviews — reopen is read only", () => {
     await user.click(screen.getByRole("button", { name: /word/i }))
     await waitFor(() => expect(exportDownload).toHaveBeenCalled())
     expect(finalizeMutate).not.toHaveBeenCalled()
+  })
+
+  it("says why a capped rating counted as 3, from the stored record alone (F-W5-1)", async () => {
+    const user = userEvent.setup()
+    useLiveSessions.mockReturnValue(LIST({ status: "finalized" }))
+    getSession.mockResolvedValue(
+      DETAIL({
+        status: "finalized",
+        overall_score: 3,
+        recommendation: "good-alignment",
+        answers: [
+          {
+            answer_id: "capped-1",
+            competency_id: "c1",
+            question_text: "Tell me about a turnaround.",
+            captured_answer: "…",
+            suggested_score: 2,
+            star_evidence: null,
+            final_score: 4,
+            final_source: "human",
+            capped: { applied: true, reason: "no_measurable_result" },
+          },
+          {
+            answer_id: "plain-2",
+            competency_id: "c2",
+            question_text: "Describe a missed deadline.",
+            captured_answer: "…",
+            suggested_score: 3,
+            star_evidence: null,
+            final_score: 5,
+            final_source: "human",
+            capped: { applied: false, reason: null },
+          },
+        ],
+      }),
+    )
+    renderBody()
+    await user.click(screen.getByRole("button", { name: /reopen/i }))
+
+    const capped = await screen.findByText(/Final score: 4 \/ 5/)
+    expect(capped).toHaveTextContent(/counted as 3: no measurable Result was observed \(Result cap\)/)
+    // The uncapped answer carries no note — `capped` is an object either way.
+    expect(screen.getByText(/Final score: 5 \/ 5/)).not.toHaveTextContent(/counted as/)
+    expect(screen.getAllByText(/counted as/)).toHaveLength(1)
   })
 
   it("labels a pre-IS-4 answer as not decided instead of printing its seed", async () => {

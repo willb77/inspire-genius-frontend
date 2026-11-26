@@ -127,6 +127,8 @@
     "baseline": "Základ (3):",
     "cappedNoResult": "(omezeno na 3 – zatím bez měřitelného výsledku)",
     "cappedSection": "(omezeno limitem sekce)",
+    "countedAsNoResult": "započteno jako {{score}}: nebyl zjištěn žádný měřitelný Výsledek (strop za chybějící Výsledek)",
+    "countedAsCapped": "započteno jako {{score}} (uplatněn strop skóre)",
     "captureByVoice": "Zachytit hlasem",
     "capturedLabel": "Zachycená odpověď",
     "capturedPlaceholder": "Napište – nebo hlasem zachyťte – co kandidát říká…",

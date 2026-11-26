@@ -431,6 +431,8 @@
     "baseline": "Base (3):",
     "cappedNoResult": "(limitada a 3 — ainda sem resultado mensurável)",
     "cappedSection": "(limitada ao máximo da seção)",
+    "countedAsNoResult": "contou como {{score}}: não foi observado nenhum Resultado mensurável (limite por Resultado)",
+    "countedAsCapped": "contou como {{score}} (limite de pontuação aplicado)",
     "captureByVoice": "Capturar por voz",
     "capturedLabel": "Resposta capturada",
     "capturedPlaceholder": "Digite — ou capture por voz — o que o candidato disser…",
