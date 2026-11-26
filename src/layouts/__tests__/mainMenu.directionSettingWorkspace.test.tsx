@@ -164,15 +164,16 @@ describe.each(ALL_ROLES)("%s — switch OFF", (role) => {
   });
 });
 
-describe.each(TOOLS_ROLES)("%s — switch OFF keeps Direction Setting in Tools", (role) => {
+describe.each(TOOLS_ROLES)("%s — switch OFF keeps Direction Setting in Tools (entitled only)", (role) => {
   test("live when entitled", () => {
     const hits = toolsRows(renderAs(role, ALL_THREE, false)).filter((i) => i.to === DS_TO);
     expect(hits.map((i) => [i.label, !!i.disabled])).toEqual([[DS, false]]);
   });
 
-  test("greyed when not entitled", () => {
+  // RM-3 (2026-11-25): hidden, not greyed.
+  test("absent when not entitled", () => {
     const hits = toolsRows(renderAs(role, [], false)).filter((i) => i.to === DS_TO);
-    expect(hits.map((i) => [i.label, !!i.disabled])).toEqual([[DS, true]]);
+    expect(hits).toEqual([]);
   });
 });
 

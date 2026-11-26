@@ -52,11 +52,21 @@ describe("menus without the entitlement are unchanged", () => {
     expect(WORKSPACE_VERTICALS.has("career-discovery")).toBe(true)
   })
 
-  test.each(CASES.map((c) => [c]))("Tools is exactly the pre-DISC-1 catalogue (%p)", (list) => {
+  // Since RM-3 (2026-11-25) Tools lists only ENTITLED verticals, so the
+  // pre-DISC-1 catalogue is filtered to the account's entitlements. Discovery
+  // never joins it, entitled or not.
+  test.each(CASES.map((c) => [c]))("Tools is the pre-DISC-1 catalogue, entitled rows only (%p)", (list) => {
     setEnabled(list)
     const { result } = renderHook(() => useVerticalLauncherSection())
     const tos = (result.current?.items ?? []).map((i) => i.to)
-    expect(tos).toEqual(PRE_DISC1_TOOLS)
+    const entitled = (list ?? []).map((k) => `/vertical/${k}/`)
+    expect(tos).toEqual(PRE_DISC1_TOOLS.filter((to) => entitled.some((p) => to.startsWith(p))))
+  })
+
+  test("Discovery never appears in Tools, even for an entitled account", () => {
+    setEnabled([...EXISTING, "career-discovery"])
+    const { result } = renderHook(() => useVerticalLauncherSection())
+    expect((result.current?.items ?? []).map((i) => i.to)).toEqual(PRE_DISC1_TOOLS)
   })
 
   test.each(CASES.map((c) => [c]))("the workspace menu gains nothing (%p)", (list) => {

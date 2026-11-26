@@ -48,12 +48,14 @@ import { TEAM_FIT_BUILD_ENABLED } from "@/constants/teamFit"
  *
  * ## Entitlement
  *
- * Vertical entries arrive from the launcher already marked `disabled` when the
- * user has no entitlement, and they stay that way for super-admins too.
- * `useVerticalAccess` grants super-admin no bypass — access is the server
- * entitlement list — so un-greying here would produce links that render, invite
- * a click, and then bounce to /home via `VerticalShell`. A greyed entry that
- * explains itself beats a live link that lies.
+ * Vertical entries arrive from the launcher only when the user is entitled
+ * (RM-3, 2026-11-25: hidden, not greyed), for super-admins too —
+ * `useVerticalAccess` grants super-admin no bypass, so a row for an unentitled
+ * vertical would be a link that bounces to /home via `VerticalShell`. The only
+ * greyed vertical entry left is a force-disabled one the user IS entitled to
+ * ("Temporarily unavailable"). The Talent Studio rows taken from a vertical
+ * (Role Blueprints, Job DNA, Candidates, Insights, Retain) follow it: absent
+ * when it is absent, greyed only when it is force-disabled.
  */
 
 /** The single label. Exported so tests and layouts cannot drift from it. */
@@ -195,8 +197,10 @@ function liftVertical(items: NavItemDef[], prefix: string): NavItemDef | null {
 
 /**
  * A page inside the Role Blueprints vertical, as a row. It takes the vertical
- * row's lock and reason, so it is greyed exactly when the vertical is, and it
- * is active on its own page (and the pages under it) only.
+ * row's lock and reason, so it is greyed exactly when the vertical is (since
+ * RM-3 that means force-disabled only: an unentitled vertical has no row, so
+ * its pages have none either), and it is active on its own page (and the pages
+ * under it) only.
  */
 function blueprintPageRow(vertical: NavItemDef, page: NavItemDef): NavItemDef {
   return {

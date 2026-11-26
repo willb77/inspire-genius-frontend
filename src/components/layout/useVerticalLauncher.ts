@@ -29,10 +29,9 @@ import { CAREERS_AND_JOBS_LABEL, CAREERS_AND_JOBS_PATH } from "@/constants/verti
  * a new vertical's manifest surfaces it everywhere the launcher is mounted — no
  * sidebar edit needed.
  *
- * **Every vertical is listed for every user** (2026-07-28). Entitlement decides
- * whether an entry is *usable*, not whether it is *visible*: a vertical the user
- * has no entitlement for renders greyed out and non-navigating (`disabled`), so
- * the catalogue is discoverable and the gate is legible rather than invisible.
+ * **Only entitled verticals are listed** (RM-3, 2026-11-25). From 2026-07-28
+ * until then every vertical was listed for every user and an unentitled one
+ * rendered greyed; now it is left out — see {@link useVerticalLauncherSection}.
  * Financial Aid (GRANT) and Knowledge Continuity are listed here too — their
  * richer sub-nav lives inside their own shell (`VerticalShell`), reached once
  * you enter, exactly like Honor.
@@ -85,17 +84,17 @@ import { CAREERS_AND_JOBS_LABEL, CAREERS_AND_JOBS_PATH } from "@/constants/verti
  * now holds Career Blueprint alone — the same no-duplicate rule that took Role
  * Play out of the Interview Studio group.
  *
- * Unlike every other launcher entry, a workspace vertical is now HIDDEN rather
- * than greyed when the account is not entitled — see
- * {@link useWorkspaceVerticalItems}.
+ * A workspace vertical is HIDDEN rather than greyed when the account is not
+ * entitled — see {@link useWorkspaceVerticalItems}. Since RM-3 (2026-11-25) the
+ * Tools entries follow the same rule.
  */
 export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit", "career-discovery"])
 //
 // "career-discovery" joined 2026-10-20 (DISC-1). Its door is the person's own
 // menu, shown ONLY to an entitled account (see useWorkspaceVerticalItems) —
-// which is also what keeps it OUT of the Tools catalogue, where an unentitled
-// vertical would otherwise appear greyed to every manager, practitioner and
-// super-admin the moment this merged. With no `career-discovery` entitlement
+// which is also what keeps it OUT of the Tools catalogue (where, before RM-3, an
+// unentitled vertical appeared greyed to every manager, practitioner and
+// super-admin). With no `career-discovery` entitlement
 // rows on a tier, no menu anywhere changes.
 //
 // "direction-setting" is NOT in this static set (WS-1, 2026-10-23). It joins the
@@ -142,9 +141,9 @@ export function useEffectiveWorkspaceVerticals(): ReadonlySet<VerticalKey> {
  * Verticals hidden from the Tools section entirely (2026-07-31).
  *
  * Honor Foundation is a client-specific workbench, not something a general user
- * should see listed. Unlike an unentitled vertical — which is deliberately shown
- * greyed so the catalogue stays legible — this one is withheld outright, so it
- * needs its own set rather than an entitlement change.
+ * should see listed. It is withheld even from an ENTITLED account (an
+ * unentitled vertical is left out anyway since RM-3), so it needs its own set
+ * rather than an entitlement change.
  */
 export const HIDDEN_VERTICALS = new Set<VerticalKey>(["honor"])
 
@@ -223,9 +222,22 @@ function toNavItem(
 }
 
 /**
- * The **Tools** sidebar section — every registered vertical except the workspace
- * ones and the explicitly hidden ones, entitled or not. Never null: the
- * catalogue is the point.
+ * The **Tools** sidebar section — the registered verticals the person is
+ * ENTITLED to, except the workspace ones and the explicitly hidden ones.
+ *
+ * **Hidden, not greyed** (RM-3, 2026-11-25). Until then every vertical was
+ * listed for everyone and an unentitled one rendered greyed; that catalogue is
+ * gone, for every role including super-admin. An unentitled vertical produces no
+ * row at all, the same rule {@link useWorkspaceVerticalItems} already follows.
+ * While the entitlement read is loading `data` is undefined, and a failed read
+ * resolves to `[]` (see `useEnabledVerticals`), so both list none. Hiding a row
+ * changes nothing anyone can open: a greyed row never navigated, and
+ * `VerticalShell` still decides access to the routes.
+ *
+ * A force-disabled vertical the person IS entitled to keeps its greyed
+ * "Temporarily unavailable" row — that is a switch-off, not an entitlement.
+ *
+ * `null` when there is nothing to list. Consumers read `section?.items ?? []`.
  *
  * Renamed from "Verticals" on 2026-07-31 — "vertical" is our internal word for
  * how the product is partitioned; "Tools" is what the thing is from the user's
@@ -238,7 +250,10 @@ export function useVerticalLauncherSection(): SidebarSection | null {
   return useMemo(() => {
     const entitlements = enabled ?? []
     const verticals = listVerticals().filter(
-      (v) => !workspace.has(v.key) && !HIDDEN_VERTICALS.has(v.key),
+      (v) =>
+        !workspace.has(v.key) &&
+        !HIDDEN_VERTICALS.has(v.key) &&
+        entitlements.includes(v.key),
     )
     if (verticals.length === 0) return null
     return {
@@ -249,7 +264,8 @@ export function useVerticalLauncherSection(): SidebarSection | null {
       // browser (SidebarScaffold saves it by label).
       defaultCollapsed: true,
       roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
-      items: verticals.map((v) => toNavItem(v, entitlements.includes(v.key))),
+      // Every row here is entitled; only a force-disabled one is greyed.
+      items: verticals.map((v) => toNavItem(v, true)),
     }
   }, [enabled, workspace])
 }
@@ -311,8 +327,7 @@ export function useWorkspaceVerticalLinks(): NavItemDef[] {
  *
  * **Entitled accounts only** (2026-10-18, request: Career Fit shows "ONLY for
  * accounts entitled to the job-fit vertical"). An unentitled vertical is left
- * OUT, not greyed — the opposite of the Tools catalogue, where greying keeps
- * the catalogue legible. This is a person's own menu, not a catalogue. While
+ * OUT, not greyed — the rule the Tools section adopted too in RM-3. While
  * the entitlement read is loading `data` is undefined, and on failure
  * `useEnabledVerticals` resolves to `[]`, so both hide the row: the menu never
  * offers a link that `VerticalShell` would bounce to /home.
