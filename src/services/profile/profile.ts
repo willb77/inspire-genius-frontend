@@ -30,9 +30,18 @@ import type {
 
 const BASE = "/v1/profile/me";
 
-/** GET /v1/profile/me — full profile snapshot (facts + loaded frameworks). */
+/**
+ * GET /v1/profile/me — full profile snapshot (facts + loaded frameworks).
+ *
+ * The server answers with `Cache-Control: private, max-age=30`, so a refetch
+ * after a mutation (remove, add, import, a fact) could be served from the
+ * browser's HTTP cache and show the row that was just removed until a reload
+ * (TDS F-W7R2-1). A fresh `_` param makes every fetch React Query decides to run
+ * reach the server; React Query's own `staleTime` still limits how often that
+ * is. The server ignores the param.
+ */
 export async function getMyProfile(): Promise<ProfileMe> {
-  const { data } = await agentApi.get<ProfileMe>(BASE);
+  const { data } = await agentApi.get<ProfileMe>(BASE, { params: { _: Date.now() } });
   return data;
 }
 
