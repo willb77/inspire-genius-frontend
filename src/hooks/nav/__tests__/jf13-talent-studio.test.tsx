@@ -50,6 +50,16 @@
  * to. The row is present only beside the Role Blueprints row and copies its
  * lock, so it is checked against that row's state (TS5_ADDED). Practitioner
  * and super-admin gain nothing. The off snapshot is untouched.
+ *
+ * RM-7 (2026-11-26, Bill's RM-D5: "Talent Studio becomes 7 stage pages with
+ * tabs") makes the group ONE ROW PER STAGE, with the switch ON only. The rows
+ * the blocks below pinned are now the TABS of their stage, on the stage's
+ * pages. So the walker is EXTENDED, never loosened: a tab of a stage whose row
+ * the sidebar shows counts as reached (live or greyed as the tab), and the
+ * on/off diff must still hold exactly. A floor on the routes reached ONLY
+ * through a tab keeps that arm from being vacuous. The TS-2/3/4a/5 blocks read
+ * the tabs through `talentTabs`, which first asserts that the menu row of every
+ * stage is `talentStudioStageRow` of that stage. The off snapshot is untouched.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -108,7 +118,14 @@ jest.mock("@/constants/teamFit", () => ({
   TEAM_FIT_PAGE_SIZE: 25,
 }))
 
-import { useToolsSection, TALENT_STUDIO_LABEL, TALENT_STUDIO_STAGE_ORDER } from "../useToolsSection"
+import {
+  useToolsSection,
+  useTalentStudioStages,
+  talentStudioStageRow,
+  TALENT_STUDIO_LABEL,
+  TALENT_STUDIO_STAGE_ORDER,
+  type TalentStudioStage,
+} from "../useToolsSection"
 import { hasAccess } from "@/types/roles"
 import { navLabelKey } from "@/components/shared/layout/navLabels"
 import { setHouseStyle } from "@/lib/house/areaSwitch"
@@ -121,6 +138,7 @@ import {
   TALENT_STUDIO_INTERVIEW_ROWS,
   TALENT_STUDIO_INTERVIEW_TOOLS,
   TALENT_STUDIO_JOB_DNA_ROWS,
+  TALENT_STUDIO_STAGE_ROWS,
 } from "@/constants/navigation"
 
 const ROLES: UserRole[] = ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"]
@@ -195,6 +213,40 @@ function reach(items: NavItemDef[], into = new Map<string, boolean>()): Map<stri
   return into
 }
 
+/** The Tools section and the role's Talent Studio stages, read in one render. */
+const toolsAndStages = (role: UserRole, mode: Mode) =>
+  renderWith(mode, () => ({ section: useToolsSection(role), stages: useTalentStudioStages(role) }))
+
+/**
+ * RM-7: what the stage pages add to {@link reach}. For every Talent Studio
+ * group the sidebar shows, each stage row the group holds opens a page whose
+ * tabs are the stage's rows, so every tab of that stage is reached, live or
+ * greyed as the tab itself. A stage whose row is missing adds nothing.
+ */
+function reachTabs(items: NavItemDef[], stages: TalentStudioStage[], into: Map<string, boolean>): Map<string, boolean> {
+  for (const group of items.filter((i) => i.label === TALENT_STUDIO_LABEL && i.to === "")) {
+    for (const stage of stages) {
+      const label = TALENT_STUDIO_STAGE_ROWS[stage.key].label
+      if (!(group.children ?? []).some((c) => c.label === label)) continue
+      for (const tab of stage.rows) into.set(tab.to, (into.get(tab.to) ?? false) || !tab.disabled)
+    }
+  }
+  return into
+}
+
+/**
+ * RM-7: the Talent Studio group expanded into the pages it opens, in order: the
+ * tabs of every stage. First asserts the menu IS the stages: one row per stage,
+ * each `talentStudioStageRow` of it. `[]` when the role has no group.
+ */
+async function talentTabs(role: UserRole, mode: Mode = "true"): Promise<NavItemDef[]> {
+  const { section, stages } = await toolsAndStages(role, mode)
+  const group = section?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
+  if (!group) return []
+  expect(group.children).toEqual(stages.map(talentStudioStageRow))
+  return stages.flatMap((s) => s.rows)
+}
+
 const sorted = (m: Map<string, boolean>) => [...m.entries()].sort(([a], [b]) => a.localeCompare(b))
 
 /**
@@ -267,6 +319,9 @@ describe("JF-13 — job_fit_v2 off: the Tools section is today's", () => {
 describe("JF-13 — role × route reachability, before (off) and after (on)", () => {
   let pairs = 0
   let toolPairs = 0
+  // RM-7: routes reached with the switch on ONLY through a stage page's tabs.
+  let tabOnlyPairs = 0
+  const TAB_ONLY_FLOOR = 84
 
   it.each(ROLES)(
     "%s: every destination reached today is still reached, live or greyed as today",
@@ -280,7 +335,12 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
             const today = (await tools(role, "false"))?.items ?? []
             const before = reach([...rest, ...today])
             for (const mode of ["loading", "error", "true"] as Mode[]) {
-              const after = reach([...rest, ...((await tools(role, mode))?.items ?? [])])
+              const { section, stages } = await toolsAndStages(role, mode)
+              const sidebar = [...rest, ...(section?.items ?? [])]
+              const inMenu = reach(sidebar)
+              // RM-7: plus every tab of every stage whose row the menu shows.
+              const after = reachTabs(sidebar, stages, reach(sidebar))
+              tabOnlyPairs += [...after.keys()].filter((to) => !inMenu.has(to)).length
               // TS-3: with the switch on, exactly the named additions, each
               // live and none of them reached before; then the strict diff.
               const overview = TS2_OVERVIEW[role]
@@ -347,6 +407,10 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
     // and practitioner's Tools. Measured on the RM-4 branch: 1218 pairs.
     expect(pairs).toBeGreaterThanOrEqual(1150)
     expect(toolPairs).toBeGreaterThanOrEqual(250)
+    // RM-7 (2026-11-26): the tab arm of the walker is not vacuous. Measured on
+    // the RM-7 branch: 84. Lowering it needs the same kind of
+    // dated reason as the two floors above.
+    expect(tabOnlyPairs).toBeGreaterThanOrEqual(TAB_ONLY_FLOOR)
   })
 })
 
@@ -361,12 +425,20 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     expect(groups[0].to).toBe("")
     for (const label of TOP_LEVEL_GONE) expect(items.map((i) => i.label)).not.toContain(label)
     const children = groups[0].children ?? []
-    // Blueprint first, interview next, Knowledge Continuity last (as "Retain" since TS-2).
+    // RM-7: one row per stage, at most seven, in the stage order, Retain last.
     const labels = children.map((c) => c.label)
-    expect(labels.indexOf("Role Blueprints")).toBeGreaterThanOrEqual(0)
-    expect(labels.indexOf("Role Blueprints")).toBeLessThan(labels.indexOf("Hiring interview"))
-    expect(labels.indexOf("Hiring interview")).toBeLessThan(labels.indexOf("Own-questions interview"))
-    expect(labels[labels.length - 1]).toBe("Retain: Knowledge Continuity")
+    const stageLabels = TALENT_STUDIO_STAGE_ORDER.map((k) => TALENT_STUDIO_STAGE_ROWS[k].label as string)
+    expect(labels.length).toBeLessThanOrEqual(7)
+    expect(labels).toEqual(stageLabels.filter((l) => labels.includes(l)))
+    expect(labels.indexOf("Roles")).toBeGreaterThanOrEqual(0)
+    expect(labels.indexOf("Roles")).toBeLessThan(labels.indexOf("Interviews"))
+    expect(labels[labels.length - 1]).toBe("Retain")
+    // Blueprint first, interview next, Knowledge Continuity last — now as tabs.
+    const tabs = (await talentTabs(role)).map((c) => c.label)
+    expect(tabs.indexOf("Role Blueprints")).toBeGreaterThanOrEqual(0)
+    expect(tabs.indexOf("Role Blueprints")).toBeLessThan(tabs.indexOf("Hiring interview"))
+    expect(tabs.indexOf("Hiring interview")).toBeLessThan(tabs.indexOf("Own-questions interview"))
+    expect(tabs[tabs.length - 1]).toBe("Retain: Knowledge Continuity")
     // SidebarScaffold renders one level of children; anything deeper is unreachable.
     expect(children.every((c) => !c.children?.length)).toBe(true)
     // Keys are `to || label`: unique across the whole section, children included.
@@ -387,7 +459,10 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     mockEntitled = []
     const group = (await tools("manager", "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
     const byLabel = Object.fromEntries((group?.children ?? []).map((c) => [c.label, !!c.disabled]))
-    expect(byLabel).toEqual({
+    // RM-7: the stage rows — Candidates, Insights and Retain have no tab left.
+    expect(byLabel).toEqual({ Overview: false, Roles: false, Interviews: false, "Team fit": false })
+    const tabs = Object.fromEntries((await talentTabs("manager")).map((c) => [c.label, !!c.disabled]))
+    expect(tabs).toEqual({
       Overview: false,
       "Role Blueprint Match": false,
       "Hiring interview": false,
@@ -400,8 +475,7 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
 
   it("entitled to job-blueprint and knowledge-continuity: their rows are present and live", async () => {
     mockEntitled = ["job-blueprint", "knowledge-continuity"]
-    const group = (await tools("manager", "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
-    const byLabel = Object.fromEntries((group?.children ?? []).map((c) => [c.label, !!c.disabled]))
+    const byLabel = Object.fromEntries((await talentTabs("manager")).map((c) => [c.label, !!c.disabled]))
     for (const label of ["Role Blueprints", "Job DNA", "Candidates", "Insights", "Retain: Knowledge Continuity"]) {
       expect([label, byLabel[label]]).toEqual([label, false])
     }
@@ -411,8 +485,7 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     FORCE_DISABLED_VERTICALS.add("job-blueprint")
     try {
       mockEntitled = ["job-blueprint"]
-      const group = (await tools("manager", "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
-      const rows = (group?.children ?? []).filter((c) =>
+      const rows = (await talentTabs("manager")).filter((c) =>
         ["Role Blueprints", "Job DNA", "Candidates", "Insights"].includes(c.label),
       )
       expect(rows.map((r) => [r.label, r.disabled, r.disabledReason])).toEqual([
@@ -420,6 +493,16 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
         ["Job DNA", true, WORKSPACE_ITEM_UNAVAILABLE_REASON],
         ["Candidates", true, WORKSPACE_ITEM_UNAVAILABLE_REASON],
         ["Insights", true, WORKSPACE_ITEM_UNAVAILABLE_REASON],
+      ])
+      // RM-7: a stage whose every tab is greyed is a greyed row with the same
+      // reason; Roles still has a live tab (Role Blueprint Match), so it stays
+      // live and lands there.
+      const group = (await tools("manager", "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
+      const stageRows = (group?.children ?? []).filter((c) => ["Roles", "Candidates", "Insights"].includes(c.label))
+      expect(stageRows.map((r) => [r.label, r.to, !!r.disabled, r.disabledReason])).toEqual([
+        ["Roles", "/manager/job-blueprint", false, undefined],
+        ["Candidates", "/vertical/job-blueprint/candidates", true, WORKSPACE_ITEM_UNAVAILABLE_REASON],
+        ["Insights", "/vertical/job-blueprint/analytics", true, WORKSPACE_ITEM_UNAVAILABLE_REASON],
       ])
     } finally {
       FORCE_DISABLED_VERTICALS.delete("job-blueprint")
@@ -452,8 +535,8 @@ describe("TS-3 — the interview rows in Talent Studio, named by purpose", () =>
     ],
   }
   const OLD_LABELS = ["Interview Studio", "Live Interview"]
-  const talentChildren = async (role: UserRole) =>
-    (await tools(role, "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
+  // RM-7: the interview rows are the Interviews stage's tabs.
+  const talentChildren = (role: UserRole) => talentTabs(role)
   const isInterviewRoute = (to: string) => /\/interview(s$|-)/.test(to)
 
   it.each(TOOL_ROLES)("%s: one run of rows, in order, each to the role's own page", async (role) => {
@@ -592,8 +675,8 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
       ["Retain: Knowledge Continuity", KC],
     ],
   }
-  const talentChildren = async (role: UserRole, mode: Mode = "true") =>
-    (await tools(role, mode))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
+  // RM-7: the rows of the TS-2 order are the stages' tabs.
+  const talentChildren = (role: UserRole, mode: Mode = "true") => talentTabs(role, mode)
   /** The vertical a row is taken from, or null for a role page that has no vertical lock. */
   const rowVertical = (to: string): string | null =>
     to.startsWith("/vertical/job-blueprint/") || to.endsWith("/job-dna")
@@ -799,8 +882,8 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
 describe("TS-5 — Job DNA in Talent Studio, for the manager only", () => {
   const JOB_DNA = "/manager/job-dna"
   const isJobDna = (c: NavItemDef) => c.label === "Job DNA" || c.to.endsWith("/job-dna")
-  const talentChildren = async (role: UserRole) =>
-    (await tools(role, "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
+  // RM-7: Job DNA is a tab of the Roles stage.
+  const talentChildren = (role: UserRole) => talentTabs(role)
   /** Every row the role's sidebar paints: the main menu, the Tools section, and one level of children. */
   const everyRow = async (role: UserRole, mode: Mode) =>
     [...(await restOfSidebar(role, mode)), ...((await tools(role, mode))?.items ?? [])].flatMap((i) => [
@@ -882,8 +965,11 @@ describe("TS-5 — Job DNA in Talent Studio, for the manager only", () => {
       const rows = await everyRow("manager", "true")
       // Once when the Role Blueprints vertical is entitled; since RM-3, not at all otherwise.
       const want = (list ?? []).includes("job-blueprint") ? 1 : 0
-      expect(rows.filter((r) => r.label === "Job DNA")).toHaveLength(want)
-      expect(rows.filter((r) => r.to === JOB_DNA)).toHaveLength(want)
+      // RM-7: in the sidebar it is the Roles row's landing page (Job DNA is the
+      // Roles stage's first tab that is not a vertical page); the label is a tab.
+      expect(rows.filter((r) => r.label === "Job DNA")).toHaveLength(0)
+      expect(rows.filter((r) => r.to === JOB_DNA).map((r) => r.label)).toEqual(want ? ["Roles"] : [])
+      expect((await talentChildren("manager")).filter((r) => r.label === "Job DNA")).toHaveLength(want)
       // SidebarScaffold keys a row by `to || label`: no other row may share this one's key.
       const keys = rows.map((r) => r.to || r.label)
       expect(keys.filter((k) => k === JOB_DNA || k === "Job DNA")).toHaveLength(want)
@@ -902,6 +988,154 @@ describe("TS-5 — Job DNA in Talent Studio, for the manager only", () => {
       expect({ lang, heading: read(lang, "managerPages").jobDna.jobDna }).toEqual({ lang, heading: "Job DNA" })
       const items = (read(lang, "shellUi").nav as { items: Record<string, string> }).items
       expect({ lang, hasMenuKey: key in items }).toEqual({ lang, hasMenuKey: false })
+    }
+  })
+})
+
+describe("RM-7 — one row per stage; the stage's rows are its tabs", () => {
+  const stageOf = (stages: TalentStudioStage[], row: NavItemDef) =>
+    stages.find((s) => TALENT_STUDIO_STAGE_ROWS[s.key].label === row.label)
+
+  // The brief's guard. Mutation: let talentStudioStages keep a stage with no
+  // rows (or build a row for one) — a row with no tab must fail here.
+  it.each(TOOL_ROLES)("%s: at most 7 rows, one per stage with a tab, none for an empty stage", async (role) => {
+    let rowsSeen = 0
+    for (const [ent, list] of Object.entries(ENTITLEMENTS)) {
+      mockEntitled = list
+      const { section, stages } = await toolsAndStages(role, "true")
+      const rows = section?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
+      rowsSeen += rows.length
+      expect(rows.length).toBeLessThanOrEqual(7)
+      for (const row of rows) {
+        const stage = stageOf(stages, row)
+        expect({ ent, row: row.label, tabs: (stage?.rows.length ?? 0) > 0 }).toEqual({ ent, row: row.label, tabs: true })
+      }
+      for (const stage of stages) {
+        const label = TALENT_STUDIO_STAGE_ROWS[stage.key].label
+        expect({ ent, label, row: rows.some((r) => r.label === label) }).toEqual({ ent, label, row: stage.rows.length > 0 })
+      }
+    }
+    expect(rowsSeen).toBeGreaterThan(0)
+  })
+
+  it.each(TOOL_ROLES)("%s: a row of several tabs lands on a live tab that is not a vertical page, and is lit on every tab", async (role) => {
+    const { section, stages } = await toolsAndStages(role, "true")
+    const rows = section?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
+    let multi = 0
+    for (const row of rows) {
+      const stage = stageOf(stages, row)!
+      if (stage.rows.length < 2) {
+        expect(row.activePaths).toBeUndefined()
+        continue
+      }
+      multi++
+      const landing = stage.rows.find((t) => t.to === row.to)
+      expect({ row: row.label, landing: landing?.label, vertical: row.to.startsWith("/vertical/") }).toEqual({
+        row: row.label,
+        landing: landing?.label,
+        vertical: false,
+      })
+      expect(landing?.disabled).toBeFalsy()
+      expect(row.activePaths).toEqual(stage.rows.map((t) => t.activePrefix ?? t.to))
+    }
+    // Manager and practitioner: Roles and Interviews; super-admin: Interviews.
+    expect(multi).toBe(role === "super-admin" ? 1 : 2)
+  })
+
+  it("the stage rows as rendered, per role", async () => {
+    const views: Record<string, unknown> = {}
+    for (const role of TOOL_ROLES) {
+      const { section, stages } = await toolsAndStages(role, "true")
+      const group = section?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
+      views[role] = (group?.children ?? []).map((row) => ({
+        row: `${row.label} -> ${row.to}`,
+        tabs: stageOf(stages, row)!.rows.map((t) => `${t.label} -> ${t.to}`),
+      }))
+    }
+    expect(views).toEqual({
+      manager: [
+        { row: "Overview -> /manager/talent-studio", tabs: ["Overview -> /manager/talent-studio"] },
+        {
+          row: "Roles -> /manager/job-dna",
+          tabs: [
+            `Role Blueprints -> ${BLUEPRINT_HOME}`,
+            "Job DNA -> /manager/job-dna",
+            "Role Blueprint Match -> /manager/job-blueprint",
+          ],
+        },
+        { row: "Candidates -> /vertical/job-blueprint/candidates", tabs: ["Candidates -> /vertical/job-blueprint/candidates"] },
+        {
+          row: "Interviews -> /manager/interview-live",
+          tabs: [
+            "Hiring interview -> /manager/interview-live",
+            "Own-questions interview -> /manager/interview-studio",
+            "Prepare questions -> /manager/interview-prep",
+            "Past interviews -> /manager/interviews",
+          ],
+        },
+        { row: "Insights -> /vertical/job-blueprint/analytics", tabs: ["Insights -> /vertical/job-blueprint/analytics"] },
+        { row: "Team fit -> /manager/team-fit", tabs: ["Team fit -> /manager/team-fit"] },
+        {
+          row: "Retain -> /vertical/knowledge-continuity/dashboard",
+          tabs: ["Retain: Knowledge Continuity -> /vertical/knowledge-continuity/dashboard"],
+        },
+      ],
+      practitioner: [
+        { row: "Overview -> /practitioner/talent-studio", tabs: ["Overview -> /practitioner/talent-studio"] },
+        {
+          row: "Roles -> /practitioner/job-blueprint",
+          tabs: [`Role Blueprints -> ${BLUEPRINT_HOME}`, "Role Blueprint Match -> /practitioner/job-blueprint"],
+        },
+        { row: "Candidates -> /vertical/job-blueprint/candidates", tabs: ["Candidates -> /vertical/job-blueprint/candidates"] },
+        {
+          row: "Interviews -> /practitioner/interview-live",
+          tabs: [
+            "Hiring interview -> /practitioner/interview-live",
+            "Own-questions interview -> /practitioner/interview-studio",
+            "Prepare questions -> /practitioner/interview-prep",
+          ],
+        },
+        { row: "Insights -> /vertical/job-blueprint/analytics", tabs: ["Insights -> /vertical/job-blueprint/analytics"] },
+        { row: "Team fit -> /practitioner/team-fit", tabs: ["Team fit -> /practitioner/team-fit"] },
+        {
+          row: "Retain -> /vertical/knowledge-continuity/dashboard",
+          tabs: ["Retain: Knowledge Continuity -> /vertical/knowledge-continuity/dashboard"],
+        },
+      ],
+      "super-admin": [
+        { row: "Overview -> /super-admin/talent-studio", tabs: ["Overview -> /super-admin/talent-studio"] },
+        { row: `Roles -> ${BLUEPRINT_HOME}`, tabs: [`Role Blueprints -> ${BLUEPRINT_HOME}`] },
+        { row: "Candidates -> /vertical/job-blueprint/candidates", tabs: ["Candidates -> /vertical/job-blueprint/candidates"] },
+        {
+          row: "Interviews -> /super-admin/interview-live",
+          tabs: [
+            "Hiring interview -> /super-admin/interview-live",
+            "Own-questions interview -> /super-admin/interview-studio",
+          ],
+        },
+        { row: "Insights -> /vertical/job-blueprint/analytics", tabs: ["Insights -> /vertical/job-blueprint/analytics"] },
+        {
+          row: "Retain -> /vertical/knowledge-continuity/dashboard",
+          tabs: ["Retain: Knowledge Continuity -> /vertical/knowledge-continuity/dashboard"],
+        },
+      ],
+    })
+  })
+
+  it("each stage label has a menu translation in en, es, fr, pt, it, pl and cs", () => {
+    const read = (lang: string) =>
+      JSON.parse(readFileSync(join(process.cwd(), `public/locales/${lang}/shellUi.json`), "utf8")) as {
+        nav: { items: Record<string, string> }
+      }
+    const en = read("en").nav.items
+    for (const { label } of Object.values(TALENT_STUDIO_STAGE_ROWS)) {
+      const key = navLabelKey("items", label).replace("nav.items.", "")
+      expect({ key, en: en[key] }).toEqual({ key, en: label })
+      for (const lang of ["es", "fr", "pt", "it", "pl", "cs"]) {
+        const value = read(lang).nav.items[key]
+        expect({ lang, key, present: typeof value === "string" && value.length > 0 }).toEqual({ lang, key, present: true })
+        expect({ lang, key, sameAsEnglish: value === label }).toEqual({ lang, key, sameAsEnglish: false })
+      }
     }
   })
 })

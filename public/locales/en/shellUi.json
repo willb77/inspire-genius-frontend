@@ -350,7 +350,10 @@
       "Overview": "Overview",
       "Insights": "Insights",
       "Retain_Knowledge_Continuity": "Retain: Knowledge Continuity",
-      "Team_fit": "Team fit"
+      "Team_fit": "Team fit",
+      "Roles": "Roles",
+      "Interviews": "Interviews",
+      "Retain": "Retain"
     },
     "sections": {
       "AI_coaches": "AI coaches",
@@ -693,6 +696,10 @@
         "off": "Scoring against a role is not switched on for {{name}}'s organization.",
         "unknownState": "Scoring {{name}} against a role is not available right now."
       }
+    },
+    "tabs": {
+      "aria": "{{stage}} pages",
+      "leaves": "Opens its own page"
     }
   }
 }

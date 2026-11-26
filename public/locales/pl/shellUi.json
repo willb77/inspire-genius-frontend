@@ -149,7 +149,10 @@
       "Overview": "Przegląd",
       "Insights": "Analizy",
       "Retain_Knowledge_Continuity": "Zatrzymaj: Knowledge Continuity",
-      "Team_fit": "Dopasowanie zespołu"
+      "Team_fit": "Dopasowanie zespołu",
+      "Roles": "Stanowiska",
+      "Interviews": "Rozmowy",
+      "Retain": "Zatrzymaj"
     }
   },
   "notificationBell": {
@@ -693,6 +696,10 @@
         "off": "Ocenianie względem roli nie jest włączone dla organizacji osoby {{name}}.",
         "unknownState": "Ocenianie osoby {{name}} względem roli nie jest teraz dostępne."
       }
+    },
+    "tabs": {
+      "aria": "Strony: {{stage}}",
+      "leaves": "Otwiera osobną stronę"
     }
   }
 }

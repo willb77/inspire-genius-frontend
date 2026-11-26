@@ -53,7 +53,8 @@ jest.mock("@/hooks/super-admin/useBroadcast", () => ({
 
 import TalentStudioOverviewBody from "../TalentStudioOverviewBody"
 import { hasAccess } from "@/types/roles"
-import { TALENT_STUDIO_LABEL, useToolsSection } from "@/hooks/nav/useToolsSection"
+import { TALENT_STUDIO_LABEL, useTalentStudioStages, useToolsSection } from "@/hooks/nav/useToolsSection"
+import { TALENT_STUDIO_STAGE_ROWS } from "@/constants/navigation"
 import { FORCE_DISABLED_VERTICALS } from "@/components/layout/useVerticalLauncher"
 
 const TOOL_ROLES: UserRole[] = ["super-admin", "manager", "practitioner"]
@@ -83,13 +84,26 @@ async function page(role: UserRole, switchOn = true): Promise<{ links: string[];
   return { links, locked, headings }
 }
 
-/** The live rows of the sidebar's Talent Studio group (switch on), minus Overview. */
+/**
+ * The live pages the sidebar's Talent Studio group opens (switch on), minus
+ * Overview. Since RM-7 the group is one row per stage and a stage's pages are
+ * its tabs, so this is every live tab of every stage the group has a row for.
+ */
 async function menuLinks(role: UserRole): Promise<string[]> {
-  const { result, unmount } = renderHook(() => useToolsSection(role), { wrapper: await wrapperFor(true) })
+  const { result, unmount } = renderHook(
+    () => ({ section: useToolsSection(role), stages: useTalentStudioStages(role) }),
+    { wrapper: await wrapperFor(true) },
+  )
   await act(async () => {})
-  const group = result.current?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
+  const { section, stages } = result.current
+  const group = section?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
   unmount()
-  return (group?.children ?? []).filter((c) => !c.disabled && c.label !== "Overview").map((c) => c.to)
+  const rows = new Set((group?.children ?? []).map((c) => c.label))
+  return stages
+    .filter((s) => rows.has(TALENT_STUDIO_STAGE_ROWS[s.key].label))
+    .flatMap((s) => s.rows)
+    .filter((c) => !c.disabled && c.label !== "Overview")
+    .map((c) => c.to)
 }
 
 /** Can this role, with these entitlements, open this path? The real gates, not the page's own list. */

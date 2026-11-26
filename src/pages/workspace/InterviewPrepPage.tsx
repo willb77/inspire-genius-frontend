@@ -8,12 +8,17 @@ import WorkspaceLayout, { type WorkspaceAudience } from "@/layouts/WorkspaceLayo
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import InterviewHouseLinks from "@/components/interview/house/InterviewHouseLinks"
 import InterviewPrepBody from "@/components/task-agents/InterviewPrepBody"
+import TalentStudioStageTabs from "@/components/talent-studio/TalentStudioStageTabs"
+import { useTalentStudioStageTabsHere } from "@/hooks/nav/useToolsSection"
 
 export default function WorkspaceInterviewPrepPage({ audience }: { audience: WorkspaceAudience }) {
+  // RM-7: the Interviews stage tabs replace the house link row where they show.
+  const stageTabs = useTalentStudioStageTabsHere(audience) !== null
   return (
     <WorkspaceLayout audience={audience}>
+      <TalentStudioStageTabs role={audience} />
       {/* House style (interview area, OFF by default): links to the sibling pages. */}
-      {isHouseStyleOn("interview") && <InterviewHouseLinks audience={audience} current="prep" />}
+      {isHouseStyleOn("interview") && !stageTabs && <InterviewHouseLinks audience={audience} current="prep" />}
       <InterviewPrepBody />
     </WorkspaceLayout>
   )

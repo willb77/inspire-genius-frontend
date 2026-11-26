@@ -222,7 +222,10 @@
       "Overview": "Přehled",
       "Insights": "Analýzy",
       "Retain_Knowledge_Continuity": "Udržet: Knowledge Continuity",
-      "Team_fit": "Shoda týmu"
+      "Team_fit": "Shoda týmu",
+      "Roles": "Pozice",
+      "Interviews": "Pohovory",
+      "Retain": "Udržet"
     },
     "sections": {
       "AI_coaches": "AI koučové",
@@ -693,6 +696,10 @@
         "off": "Hodnocení vůči roli není pro organizaci uživatele {{name}} zapnuté.",
         "unknownState": "Hodnocení uživatele {{name}} vůči roli teď není k dispozici."
       }
+    },
+    "tabs": {
+      "aria": "Stránky: {{stage}}",
+      "leaves": "Otevře vlastní stránku"
     }
   }
 }

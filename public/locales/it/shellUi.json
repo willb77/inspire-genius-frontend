@@ -136,7 +136,10 @@
       "Overview": "Panoramica",
       "Insights": "Analisi",
       "Retain_Knowledge_Continuity": "Trattenere: Knowledge Continuity",
-      "Team_fit": "Compatibilità del team"
+      "Team_fit": "Compatibilità del team",
+      "Roles": "Ruoli",
+      "Interviews": "Colloqui",
+      "Retain": "Trattenere"
     },
     "sections": {
       "AI_coaches": "Coach IA",
@@ -693,6 +696,10 @@
         "off": "La valutazione rispetto a un ruolo non è attiva per l'organizzazione di {{name}}.",
         "unknownState": "Al momento non è possibile valutare {{name}} rispetto a un ruolo."
       }
+    },
+    "tabs": {
+      "aria": "Pagine di {{stage}}",
+      "leaves": "Apre la sua pagina"
     }
   }
 }

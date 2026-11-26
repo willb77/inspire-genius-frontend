@@ -159,7 +159,10 @@
       "Overview": "Resumen",
       "Insights": "Análisis",
       "Retain_Knowledge_Continuity": "Retener: Knowledge Continuity",
-      "Team_fit": "Compatibilidad del equipo"
+      "Team_fit": "Compatibilidad del equipo",
+      "Roles": "Puestos",
+      "Interviews": "Entrevistas",
+      "Retain": "Retener"
     },
     "sections": {
       "AI_coaches": "Coaches de IA",
@@ -693,6 +696,10 @@
         "off": "La puntuación frente a un puesto no está activada para la organización de {{name}}.",
         "unknownState": "Ahora mismo no es posible puntuar a {{name}} frente a un puesto."
       }
+    },
+    "tabs": {
+      "aria": "Páginas de {{stage}}",
+      "leaves": "Abre su propia página"
     }
   }
 }

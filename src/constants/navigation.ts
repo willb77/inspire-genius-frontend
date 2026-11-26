@@ -651,6 +651,25 @@ export const TALENT_STUDIO_RETAIN_ROW: Pick<NavItemDef, "to" | "label"> = {
   label: "Retain: Knowledge Continuity",
 }
 
+/**
+ * RM-7 (2026-11-26) — the label and icon of each Talent Studio stage ROW. With
+ * `job_fit_v2` on, the group is one row per stage (Bill's RM-D5: "Talent Studio
+ * becomes 7 stage pages with tabs"). The rows listed above become the TABS of
+ * their stage, under their own labels; a stage of one keeps that one page under
+ * the stage's name. Keyed by stage (the keys of `TALENT_STUDIO_STAGE_ORDER` in
+ * `useToolsSection`). Objects with `label` and `icon`, not a Map, so the label
+ * registry test (`navLabels.test.ts`) sees them.
+ */
+export const TALENT_STUDIO_STAGE_ROWS = {
+  overview: { label: "Overview", icon: LayoutDashboard },
+  roles: { label: "Roles", icon: Dna },
+  candidates: { label: "Candidates", icon: Users },
+  interviews: { label: "Interviews", icon: ClipboardCheck },
+  insights: { label: "Insights", icon: BarChart3 },
+  teamFit: { label: "Team fit", icon: UserCheck },
+  retain: { label: "Retain", icon: BookOpen },
+} as const satisfies Record<string, Pick<NavItemDef, "label" | "icon">>
+
 // SUPER_ADMIN_TOOLS_SECTION was removed 2026-08-12. It wrapped
 // TOOL_ITEMS_BY_ROLE["super-admin"] in a section labelled "Tools", which is now
 // assembled — together with the vertical catalogue, Bio Capture and Platform

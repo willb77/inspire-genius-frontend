@@ -5,6 +5,14 @@
 import { render, screen } from "@testing-library/react"
 import type { ReactNode } from "react"
 
+// RM-7: the Talent Studio stage tabs read the router and two queries; they are
+// tested on their own (TalentStudioStageTabs.test.tsx), so this page test stubs
+// them and keeps rendering the page as it did.
+jest.mock("@/components/talent-studio/TalentStudioStageTabs", () => ({ __esModule: true, default: () => null }))
+jest.mock("@/hooks/nav/useToolsSection", () => ({
+  ...jest.requireActual("@/hooks/nav/useToolsSection"),
+  useTalentStudioStageTabsHere: () => null,
+}))
 jest.mock("@/layouts/SuperAdminLayout", () => ({
   __esModule: true,
   default: ({ children }: { children: ReactNode }) => <div data-testid="sa-layout">{children}</div>,
