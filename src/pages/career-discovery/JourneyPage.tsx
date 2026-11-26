@@ -14,7 +14,8 @@ import { discoveryErrorMessage, useRecordAge } from "@/hooks/career-discovery/us
 import { DiscoveryError, StageHeader } from "./DiscoveryParts"
 import { useDiscoveryContext } from "./discoveryContext"
 import { STAGE_ROUTES, stateLabels } from "./stageRoutes"
-import { isProfileMerged, shownStage, visibleStages } from "@/lib/career-discovery/profileSection"
+import { NextCard } from "./NextCard"
+import { isProfileMerged, visibleStages } from "@/lib/career-discovery/profileSection"
 
 const THIS_YEAR = new Date().getFullYear()
 
@@ -74,9 +75,9 @@ export default function JourneyPage() {
   const { journey } = useDiscoveryContext()
   if (!journey.ageBand) return <AgeScreen />
   // JF-11: with Who I am folded into the profile section, it is not its own
-  // entry, and a "next" that points at it points at the section instead.
+  // entry, and a "next" that points at it points at the section instead
+  // (NextCard resolves that the same way).
   const merged = isProfileMerged(journey.stages)
-  const next = merged ? shownStage(journey.nextAction, journey.stages) : journey.nextAction
   const stages = merged ? visibleStages(journey.stages) : journey.stages
   return (
     <div className="space-y-6">
@@ -88,19 +89,7 @@ export default function JourneyPage() {
             : t("journeyLeadTen", "Ten steps from who you are to a plan. Do them in any order and come back any time.")
         }
       />
-      {next.id ? (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("journeyNext", { defaultValue: "Next: {{name}}", name: next.name })}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p className="text-muted-foreground">{next.question}</p>
-            <Button asChild size="sm">
-              <Link to={STAGE_ROUTES[next.id]}>{t("journeyGoTo", { defaultValue: "Go to {{name}}", name: next.name })}</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
+      <NextCard journey={journey} />
       <ol className="grid gap-3 md:grid-cols-2">
         {stages.map((s, i) => (
           <li key={s.id}>

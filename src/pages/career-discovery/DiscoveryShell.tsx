@@ -16,6 +16,9 @@ import { HouseDiscoveryNav } from "./house/HouseDiscoveryNav"
 import { discoveryMenu } from "@/lib/career-discovery/profileSection"
 import { useProfileMerged } from "@/hooks/career-discovery/useProfileMerged"
 import { CareersJobsPhaseStrip } from "@/pages/job-fit/PhaseStrip"
+import { useCareersJobsFlow } from "@/hooks/careers-jobs/useCareersJobsFlow"
+import { NextCard } from "./NextCard"
+import { nextStageRoute } from "@/lib/career-discovery/nextStage"
 
 /**
  * Career & Education Discovery's pathless layout: the in-vertical nav, then
@@ -64,6 +67,8 @@ function Gate() {
   const status = useDiscoveryStatus()
   const enabled = status.data?.enabled === true
   const journey = useDiscoveryJourney(enabled)
+  // Phase C-a: same query as B's strip above, so no extra request.
+  const flowOn = useCareersJobsFlow()
 
   if (status.isLoading) return <DiscoveryLoading label={t("shellChecking", "Checking Discovery")} />
   if (status.isError) return <DiscoveryError message={discoveryErrorMessage(status.error)} />
@@ -110,7 +115,21 @@ function Gate() {
     )
   }
   const context: DiscoveryContext = { journey: j }
-  return <Outlet context={context} />
+  // Phase C-a (CSA 2026-11-25 C-a build): only here, after every refusal above,
+  // the server's Next card above the page. Not on the journey page (it has its
+  // own), not on the page the card links to (D-a); on degree-plan too (D-b).
+  const nextRoute = nextStageRoute(j)
+  const showCard = flowOn && !onJourney && nextRoute !== null && pathname !== nextRoute
+  return (
+    <>
+      {showCard ? (
+        <div className="mb-6">
+          <NextCard journey={j} />
+        </div>
+      ) : null}
+      <Outlet context={context} />
+    </>
+  )
 }
 
 export default function DiscoveryShell() {
