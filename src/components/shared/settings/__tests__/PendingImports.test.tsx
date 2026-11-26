@@ -16,6 +16,7 @@ import PendingImports from "@/components/shared/settings/PendingImports";
 import {
   pendingResultText,
   pendingRouteMissing,
+  resetPendingRouteWarningForTests,
 } from "@/components/shared/settings/onFileHelpers";
 import {
   acceptPendingImport,
@@ -228,5 +229,44 @@ describe("helpers", () => {
 
   it("pendingResultText ranks CliftonStrengths themes", () => {
     expect(pendingResultText(CLIFTON)).toBe("Achiever, Learner");
+  });
+});
+
+describe("a 404 is hidden from the person, but not from us", () => {
+  let warn: jest.SpyInstance;
+  beforeEach(() => {
+    resetPendingRouteWarningForTests();
+    warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => warn.mockRestore());
+
+  const warned = () =>
+    warn.mock.calls.filter((c) => String(c[0]).includes("pending imports route not deployed on this tier"));
+
+  it("warns exactly once, naming the route, across two mounts and a refetch", async () => {
+    (listPendingImports as jest.Mock).mockRejectedValue(httpError(404));
+    const first = wrap(<PendingImports />);
+    await settled(first.client);
+    await waitFor(() => expect(warned()).toHaveLength(1));
+    expect(String(warned()[0][0])).toContain("/v1/profile/me/assessments/pending");
+
+    // A refetch that 404s again.
+    await first.client.refetchQueries({ queryKey: ["profile", "pending"] });
+    first.unmount();
+
+    // A second mount on a fresh cache (Settings opened again).
+    const second = wrap(<PendingImports />);
+    await settled(second.client);
+    await waitFor(() => expect(listPendingImports).toHaveBeenCalledTimes(3));
+    expect(second.container).toBeEmptyDOMElement();
+    expect(warned()).toHaveLength(1);
+  });
+
+  it("any other failed read does not warn and does show its error", async () => {
+    (listPendingImports as jest.Mock).mockRejectedValue(httpError(500));
+    const { client } = wrap(<PendingImports />);
+    await settled(client);
+    expect(await screen.findByTestId("pending-error")).toBeInTheDocument();
+    expect(warned()).toHaveLength(0);
   });
 });

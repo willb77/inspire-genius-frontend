@@ -193,3 +193,23 @@ export const PRACTITIONER_IMPORT_SOURCE = "practitioner_import";
 export function pendingRouteMissing(err: unknown): boolean {
   return removeErrorInfo(err).status === 404;
 }
+
+/** The route the waiting list reads, named in the warning below. */
+export const PENDING_IMPORTS_PATH = "/v1/profile/me/assessments/pending";
+
+let pendingRouteWarned = false;
+
+/**
+ * Hiding the list on a 404 must not hide a missing deploy: say so in the
+ * console, once per page load, naming the route.
+ */
+export function warnPendingRouteMissingOnce(): void {
+  if (pendingRouteWarned) return;
+  pendingRouteWarned = true;
+  console.warn(`pending imports route not deployed on this tier: ${PENDING_IMPORTS_PATH}`);
+}
+
+/** Tests only: forget that the warning was given. */
+export function resetPendingRouteWarningForTests(): void {
+  pendingRouteWarned = false;
+}

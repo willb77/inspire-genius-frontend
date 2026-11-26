@@ -11,9 +11,11 @@
  *
  * Nothing waiting shows nothing: most people never get one. A failed read
  * says so, except a 404, which means this engine has no such route yet
- * (`pendingRouteMissing`).
+ * (`pendingRouteMissing`). That case is hidden from the person but not from
+ * us: it warns in the console once per page load, naming the route
+ * (`warnPendingRouteMissingOnce`).
  */
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -39,6 +41,7 @@ import {
   pendingResultText,
   pendingRouteMissing,
   removeErrorInfo,
+  warnPendingRouteMissingOnce,
 } from "./onFileHelpers";
 
 function PendingRow({ item }: { item: PendingImport }): JSX.Element {
@@ -163,10 +166,14 @@ function PendingRow({ item }: { item: PendingImport }): JSX.Element {
 export default function PendingImports(): JSX.Element | null {
   const { t } = useTranslation("shellUi");
   const pending = usePendingImports();
+  const routeMissing = pending.isError && pendingRouteMissing(pending.error);
+  useEffect(() => {
+    if (routeMissing) warnPendingRouteMissingOnce();
+  }, [routeMissing]);
 
   if (pending.isPending) return null;
   if (pending.isError) {
-    if (pendingRouteMissing(pending.error)) return null;
+    if (routeMissing) return null;
     return (
       <p role="alert" className="text-sm text-destructive" data-testid="pending-error">
         {t("assessments.pendingError", {
