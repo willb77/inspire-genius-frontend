@@ -110,6 +110,9 @@ jest.mock("@/components/manager/development/tabs/BehavioralProfilePanel", () => 
         <button type="button" onClick={() => (props.onInvite as (f: string) => void)?.("prism")}>
           invite
         </button>
+        <button type="button" onClick={() => (props.onRequestAssessments as () => void)?.()}>
+          ask-assessments
+        </button>
       </div>
     )
   },
@@ -405,6 +408,65 @@ describe("MemberDevelopmentWorkspace — the ask", () => {
     await waitFor(() => expect(received.profile?.requestPending).toBe(false))
     expect(received.profile?.requestSent).toBe(false)
     expect(toast.success).not.toHaveBeenCalled()
+  })
+})
+
+describe("MemberDevelopmentWorkspace — the assessments ask (TDS A3)", () => {
+  // CSA #2213 option 2: the same route, reason and handling as the PRISM ask,
+  // for the `assessments` category (CliftonStrengths and DISC, A2).
+  const conflict = (detail: unknown) =>
+    Object.assign(new Error("Request failed with status code 409"), {
+      response: { status: 409, data: { detail, code: "grant_live" } },
+    })
+  const onFile = { prism: true, clifton: true, disc: true }
+
+  it("goes out over the same consent endpoint for the assessments category alone", async () => {
+    requestStudentAccess.mockResolvedValue(undefined)
+    dossierState = { data: dossier({ profile: { ...dossier().profile, coverage: onFile } }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask-assessments" }))
+    await waitFor(() => expect(requestStudentAccess).toHaveBeenCalledTimes(1))
+    expect(requestStudentAccess).toHaveBeenCalledWith({
+      studentUserId: "m-1",
+      categories: { assessments: true },
+      reason: expect.stringMatching(/Team Development Studio/),
+    })
+    await waitFor(() => expect(received.profile?.assessmentsRequestSent).toBe(true))
+    expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/They decide/))
+    // The PRISM ask is a separate request and did not go out.
+    expect(received.profile?.requestSent).toBe(false)
+  })
+
+  it("reports pending while in flight", async () => {
+    let settle: () => void = () => {}
+    requestStudentAccess.mockReturnValue(new Promise<void>((r) => (settle = r)))
+    dossierState = { data: dossier({ profile: { ...dossier().profile, coverage: onFile } }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask-assessments" }))
+    await waitFor(() => expect(received.profile?.assessmentsRequestPending).toBe(true))
+    settle()
+    await waitFor(() => expect(received.profile?.assessmentsRequestSent).toBe(true))
+  })
+
+  it("renders the server's 409 reason verbatim and never claims it was sent", async () => {
+    const primary = "They already share their goals with you. A new request cannot be opened while a grant is live."
+    requestStudentAccess.mockRejectedValue(conflict(primary))
+    dossierState = { data: dossier({ profile: { ...dossier().profile, coverage: onFile } }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask-assessments" }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(primary))
+    expect(toast.success).not.toHaveBeenCalled()
+    await waitFor(() => expect(received.profile?.assessmentsRequestPending).toBe(false))
+    expect(received.profile?.assessmentsRequestSent).not.toBe(true)
+  })
+
+  it("falls back to honest copy when the error carries no detail", async () => {
+    requestStudentAccess.mockRejectedValue(Object.assign(new Error(""), { response: { status: 500, data: {} } }))
+    dossierState = { data: dossier({ profile: { ...dossier().profile, coverage: onFile } }), isLoading: false, isError: false }
+    renderAt("/manager/development/m-1?tab=profile")
+    fireEvent.click(await screen.findByRole("button", { name: "ask-assessments" }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+    expect((toast.error as jest.Mock).mock.calls[0][0]).toMatch(/nothing was asked/i)
   })
 })
 
