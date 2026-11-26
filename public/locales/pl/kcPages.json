@@ -170,7 +170,8 @@
       "validated": "Zweryfikowane",
       "provisional": "Wstępne",
       "needs_review": "W trakcie przeglądu",
-      "deprecated": "Wycofane"
+      "deprecated": "Wycofane",
+      "amend_requested": "Poproszono o poprawki"
     },
     "published": "Opublikowano",
     "publishedBy": "Opublikowane przez: {{name}}",
@@ -228,7 +229,8 @@
       "validated": "Zweryfikowane",
       "provisional": "Wstępne",
       "needs_review": "Wymaga przeglądu",
-      "deprecated": "Wycofane"
+      "deprecated": "Wycofane",
+      "amend_requested": "Poproszono o poprawki"
     },
     "stage": {
       "scheduled": "Zaplanowane",
@@ -257,6 +259,7 @@
       "currencyHint": "przechwyconej wiedzy jest aktualne",
       "reviewBacklog": "Zaległości w przeglądzie",
       "reviewBacklogHint": "Oczekujące: {{pending}}, sprzeczności: {{contradictions}}",
+      "reviewBacklogUnitsHint": "Jednostki do przeglądu: {{units}}, luki do uchwycenia: {{gaps}}, sprzeczności: {{contradictions}}",
       "curricula": "Programy nauczania",
       "curriculaHint": "opublikowane na podstawie przechwyconej wiedzy"
     },

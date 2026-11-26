@@ -164,7 +164,8 @@
       "validated": "Validated",
       "provisional": "Provisional",
       "needs_review": "In review",
-      "deprecated": "Retired"
+      "deprecated": "Retired",
+      "amend_requested": "Amendment requested"
     },
     "published": "Published",
     "publishedBy": "Published by {{name}}",
@@ -218,7 +219,8 @@
       "validated": "Validated",
       "provisional": "Provisional",
       "needs_review": "Needs review",
-      "deprecated": "Deprecated"
+      "deprecated": "Deprecated",
+      "amend_requested": "Amendment requested"
     },
     "stage": {
       "scheduled": "Scheduled",
@@ -247,6 +249,7 @@
       "currencyHint": "of captured knowledge is fresh",
       "reviewBacklog": "Review backlog",
       "reviewBacklogHint": "{{pending}} pending, {{contradictions}} contradictions",
+      "reviewBacklogUnitsHint": "{{units}} units to review, {{gaps}} gaps to capture, {{contradictions}} contradictions",
       "curricula": "Curricula",
       "curriculaHint": "published from captured knowledge"
     },

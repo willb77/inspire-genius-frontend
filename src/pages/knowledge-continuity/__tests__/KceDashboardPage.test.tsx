@@ -149,3 +149,58 @@ describe("KceDashboardPage (refused)", () => {
     expect(screen.queryByText(/No knowledge-capture activity yet/)).not.toBeInTheDocument()
   })
 })
+
+describe("KceDashboardPage (D-10 review backlog + amend_requested)", () => {
+  function backlogValue(): string | null {
+    const label = screen.getByText("Review backlog")
+    const card = label.closest('[data-slot="card"]') as HTMLElement
+    return card.querySelector(".text-2xl")?.textContent ?? null
+  }
+
+  test("the tile counts units to review + gaps + contradictions, not tickets", () => {
+    mockUseContinuityAnalytics.mockReturnValue({
+      data: {
+        ...ANALYTICS,
+        validity_bands: { ...ANALYTICS.validity_bands, amend_requested: 7 },
+        review_queue: {
+          pending_approvals: 3,
+          unresolved_contradictions: 1,
+          needs_review_units: 5,
+          gap_captures: 2,
+        },
+      },
+      isLoading: false,
+      isError: false,
+    })
+    render(<KceDashboardPage />)
+    expect(backlogValue()).toBe("8")
+    expect(
+      screen.getByText("5 units to review, 2 gaps to capture, 1 contradictions")
+    ).toBeInTheDocument()
+    expect(screen.queryByText("3 pending, 1 contradictions")).not.toBeInTheDocument()
+    expect(screen.getByText("Amendment requested")).toBeInTheDocument()
+    expect(screen.getByText("7")).toBeInTheDocument()
+  })
+
+  test("an older backend (no unit counts) keeps the old sum and hint; amend_requested reads 0", () => {
+    mockUseContinuityAnalytics.mockReturnValue({ data: ANALYTICS, isLoading: false, isError: false })
+    render(<KceDashboardPage />)
+    expect(backlogValue()).toBe("4")
+    expect(screen.getByText("3 pending, 1 contradictions")).toBeInTheDocument()
+    const amend = screen.getByText("Amendment requested")
+    expect(amend.parentElement?.textContent).toBe("Amendment requested0")
+  })
+
+  test("only one of the two new fields present -> still the old sum", () => {
+    mockUseContinuityAnalytics.mockReturnValue({
+      data: {
+        ...ANALYTICS,
+        review_queue: { pending_approvals: 3, unresolved_contradictions: 1, needs_review_units: 5 },
+      },
+      isLoading: false,
+      isError: false,
+    })
+    render(<KceDashboardPage />)
+    expect(backlogValue()).toBe("4")
+  })
+})

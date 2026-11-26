@@ -164,7 +164,8 @@
       "validated": "Convalidata",
       "provisional": "Provvisoria",
       "needs_review": "In revisione",
-      "deprecated": "Ritirata"
+      "deprecated": "Ritirata",
+      "amend_requested": "Modifica richiesta"
     },
     "published": "Pubblicato",
     "publishedBy": "Pubblicato da {{name}}",
@@ -286,7 +287,8 @@
       "validated": "Convalidata",
       "provisional": "Provvisoria",
       "needs_review": "Da rivedere",
-      "deprecated": "Obsoleta"
+      "deprecated": "Obsoleta",
+      "amend_requested": "Modifica richiesta"
     },
     "stage": {
       "scheduled": "Pianificata",
@@ -315,6 +317,7 @@
       "currencyHint": "della conoscenza acquisita è aggiornata",
       "reviewBacklog": "Revisioni in arretrato",
       "reviewBacklogHint": "{{pending}} in attesa, {{contradictions}} contraddizioni",
+      "reviewBacklogUnitsHint": "{{units}} unità da rivedere, {{gaps}} lacune da acquisire, {{contradictions}} contraddizioni",
       "curricula": "Percorsi formativi",
       "curriculaHint": "pubblicati dalla conoscenza acquisita"
     },

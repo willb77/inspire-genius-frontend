@@ -18,6 +18,8 @@ export type ValidityBands = {
   provisional: number
   needs_review: number
   deprecated: number
+  /** An SME asked for the unit to be amended (D-10). Absent from an older backend. */
+  amend_requested?: number
 }
 
 /** Taxonomy / knowledge-unit coverage counts. */
@@ -45,8 +47,14 @@ export type CaptureSessionStats = {
 
 /** Review queue backlog counts. */
 export type ReviewQueueStats = {
+  /** Open re-validation tickets. Kept by the backend for older dashboards; the
+   * D-10 tile counts units instead (`needs_review_units`). */
   pending_approvals: number
   unresolved_contradictions: number
+  /** Units in the review queue (band needs_review, no review_state). D-10; absent from an older backend. */
+  needs_review_units?: number
+  /** Pending gap-capture approvals (taxonomy nodes with no knowledge yet). D-10; absent from an older backend. */
+  gap_captures?: number
 }
 
 export type CurriculaStats = {
@@ -176,12 +184,27 @@ export type ValidationRequest = {
 }
 
 /**
- * POST /v1/trainer/continuity/units/{unitId}/validations response payload.
- * The updated unit, plus an optional `note` when a `confirm` is held at
- * `provisional` pending a practitioner + a second confirmation.
+ * The review_state a confirm leaves on a shallow capture: it stays at
+ * needs_review (never citable from a verdict alone) but leaves the queue.
  */
-export type ValidationResponse = KnowledgeUnit & {
-  note?: string
+export const KCE_AWAITING_DEEPER_PROBE = "awaiting_deeper_probe"
+
+/**
+ * POST /v1/trainer/continuity/units/{unitId}/validations response payload.
+ * The unit's new band after the verdict (D-10: reject -> deprecated,
+ * amend -> amend_requested, confirm -> validated/provisional, or held at
+ * needs_review with `review_state = awaiting_deeper_probe`), plus an optional
+ * `note` when a high-criticality confirm is held at `provisional`.
+ */
+export type ValidationResponse = {
+  unit_id: string
+  verdict: ValidationVerdict
+  kvi: number
+  validity_band: string
+  sme_signed_off: boolean
+  note?: string | null
+  review_state?: string | null
+  approvals_resolved?: number
 }
 
 /** POST /v1/trainer/continuity/risk-register request body. */
@@ -363,6 +386,12 @@ export type CreateTaxonomyRequest = {
   /** Optional metadata (e.g. the 8-section `section` + `rationale`) so a saved
    * role's blueprint reloads faithfully. */
   node_metadata?: Record<string, unknown>
+  /**
+   * What the server does when the role title already has nodes in the
+   * caller's scope: "append" (the server default) or "error" (409
+   * `{code: "role_exists"}`). D-10.
+   */
+  if_role_exists?: "append" | "error"
 }
 
 /** A previously-saved role (one entry in the "Role" dropdown). */

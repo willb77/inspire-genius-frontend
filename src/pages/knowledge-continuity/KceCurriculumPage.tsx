@@ -58,6 +58,7 @@ const VALIDITY_BADGE_CLASS: Record<string, string> = {
   provisional: "bg-amber-100 text-amber-700 border-amber-200",
   needs_review: "bg-amber-100 text-amber-700 border-amber-200",
   deprecated: "bg-slate-100 text-slate-500 border-slate-200",
+  amend_requested: "bg-orange-100 text-orange-700 border-orange-200",
 }
 const bandClass = (band: string) =>
   VALIDITY_BADGE_CLASS[band] ?? "bg-slate-100 text-slate-600 border-slate-200"
@@ -71,6 +72,8 @@ function bandLabel(t: TFunction, band: string): string {
       return t("curriculum.band.needs_review", "In review")
     case "deprecated":
       return t("curriculum.band.deprecated", "Retired")
+    case "amend_requested":
+      return t("curriculum.band.amend_requested", "Amendment requested")
     default:
       return band
   }

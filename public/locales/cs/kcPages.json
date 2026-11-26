@@ -83,7 +83,8 @@
       "validated": "Ověřeno",
       "provisional": "Předběžné",
       "needs_review": "V kontrole",
-      "deprecated": "Vyřazeno"
+      "deprecated": "Vyřazeno",
+      "amend_requested": "Vyžádána úprava"
     },
     "published": "Publikováno",
     "publishedBy": "Publikoval(a) {{name}}",
@@ -215,6 +216,7 @@
       "currencyHint": "zachycených znalostí je aktuálních",
       "reviewBacklog": "Nevyřízené kontroly",
       "reviewBacklogHint": "Čeká: {{pending}}, rozporů: {{contradictions}}",
+      "reviewBacklogUnitsHint": "Jednotky ke kontrole: {{units}}, mezery k zachycení: {{gaps}}, rozporů: {{contradictions}}",
       "curricula": "Studijní plány"
     },
     "currencyTitle": "Aktuálnost zachycených znalostí",
@@ -235,7 +237,8 @@
       "validated": "Ověřeno",
       "provisional": "Předběžné",
       "needs_review": "Vyžaduje kontrolu",
-      "deprecated": "Zastaralé"
+      "deprecated": "Zastaralé",
+      "amend_requested": "Vyžádána úprava"
     },
     "stage": {
       "scheduled": "Naplánováno",
