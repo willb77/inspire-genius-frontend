@@ -1122,6 +1122,25 @@ describe("RM-7 — one row per stage; the stage's rows are its tabs", () => {
     })
   })
 
+  // No live menu today has a multi-tab stage whose every tab is greyed, so this
+  // is pinned on the builder itself. Mutation: drop the all-greyed branch.
+  it("a stage of several tabs is greyed, with the first tab's reason, only when every tab is", () => {
+    const icon = TALENT_STUDIO_STAGE_ROWS.roles.icon
+    const greyed = (to: string): NavItemDef => ({ to, icon, label: to, disabled: true, disabledReason: "why" })
+    const allGreyed = talentStudioStageRow({ key: "roles", rows: [greyed("/vertical/a/x"), greyed("/manager/b")] })
+    expect([allGreyed.label, allGreyed.to, allGreyed.disabled, allGreyed.disabledReason]).toEqual([
+      "Roles",
+      "/vertical/a/x",
+      true,
+      "why",
+    ])
+    const oneLive = talentStudioStageRow({
+      key: "roles",
+      rows: [greyed("/manager/b"), { to: "/manager/c", icon, label: "c" }],
+    })
+    expect([oneLive.to, !!oneLive.disabled, oneLive.disabledReason]).toEqual(["/manager/c", false, undefined])
+  })
+
   it("each stage label has a menu translation in en, es, fr, pt, it, pl and cs", () => {
     const read = (lang: string) =>
       JSON.parse(readFileSync(join(process.cwd(), `public/locales/${lang}/shellUi.json`), "utf8")) as {
