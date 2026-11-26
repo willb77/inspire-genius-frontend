@@ -83,6 +83,14 @@
       "another": "Utwórz blueprint innej roli"
     }
   },
+  "llmGuards": {
+    "noAccess": "Nie masz dostępu do tego narzędzia Knowledge Continuity. Poproś administratora o włączenie go dla Twojego konta.",
+    "tooMany": "Zbyt wiele żądań w krótkim czasie. Odczekaj kilka minut i spróbuj ponownie.",
+    "tooLong": "Tekst jest za długi, aby go wysłać. Skróć go i spróbuj ponownie.",
+    "areaFull": "Wywiad dla tego obszaru osiągnął limit długości. Zapisz ten obszar, aby zachować to, co masz, a potem kontynuuj w innym obszarze.",
+    "roleTitleTooLong": "Nazwa roli może mieć najwyżej {{max}} znaków.",
+    "contextTooLong": "Ten tekst może mieć najwyżej {{max}} znaków. Skróć go lub prześlij krótszy plik."
+  },
   "capture": {
     "how": {
       "interview": "Wywiad",

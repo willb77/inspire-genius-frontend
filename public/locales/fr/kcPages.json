@@ -151,6 +151,14 @@
     "title": "Créer le blueprint d'un poste",
     "subtitle": "Générez automatiquement la carte des connaissances d'un poste, modifiez-la et enregistrez-la, puis lancez une capture à partir de celle-ci. Cela remplace la création manuelle des nœuds de taxonomie un par un."
   },
+  "llmGuards": {
+    "noAccess": "Vous n'avez pas accès à cet outil Knowledge Continuity. Demandez à votre administrateur de l'activer pour votre compte.",
+    "tooMany": "Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez.",
+    "tooLong": "C'est trop long pour être envoyé. Raccourcissez votre texte et réessayez.",
+    "areaFull": "L'entretien de ce domaine a atteint sa longueur maximale. Enregistrez ce domaine pour conserver ce que vous avez, puis poursuivez dans un autre domaine.",
+    "roleTitleTooLong": "L'intitulé du poste doit compter {{max}} caractères au maximum.",
+    "contextTooLong": "Ce texte doit compter {{max}} caractères au maximum. Raccourcissez-le ou importez un fichier plus court."
+  },
   "capture": {
     "how": {
       "interview": "Entretien",

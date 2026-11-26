@@ -26,6 +26,12 @@ import { Progress } from "@/components/ui/progress"
 import { ROUTES } from "@/constants/routes"
 import { useSavedRoles } from "@/hooks/knowledge-continuity/useSavedRoles"
 import { isKceAccessDenied } from "@/services/knowledge-continuity/authz"
+import {
+  KCE_MAX_ANSWER,
+  fitsTranscriptBounds,
+  kceGuardMessageKey,
+  kceGuardRefusal,
+} from "@/services/knowledge-continuity/llmGuards"
 import { KceAccessInline } from "./KceAccessNotice"
 import { useSavedRoleBlueprint } from "@/hooks/knowledge-continuity/useSavedRoleBlueprint"
 import { useStartCaptureSession } from "@/hooks/knowledge-continuity/useStartCaptureSession"
@@ -385,6 +391,9 @@ function InterviewStep({
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null)
   const [coverageNote, setCoverageNote] = useState<string | null>(null)
   const [answerText, setAnswerText] = useState("")
+  // Set when one more answer would take this area past the server's size cap:
+  // the answer is kept, nothing is sent, and the user saves the area instead.
+  const [areaFull, setAreaFull] = useState(false)
   const firstRequested = useRef(false)
 
   const captureNode = { name: node.name, node_type: node.node_type }
@@ -410,6 +419,13 @@ function InterviewStep({
 
     const exchange: TranscriptExchange = { question: pendingQuestion, answer }
     const nextTranscript = [...transcript, exchange]
+    // A transcript past the server's bounds would be refused on every retry,
+    // and then by "Save this area" too, so the area would be stuck (D-18).
+    if (!fitsTranscriptBounds(nextTranscript)) {
+      setAreaFull(true)
+      return
+    }
+    const previousTranscript = transcript
     setTranscript(nextTranscript)
     setPendingQuestion(null)
     setCoverageNote(null)
@@ -422,7 +438,18 @@ function InterviewStep({
 
     nextQuestion.mutate(
       { role_title: roleTitle, node: captureNode, transcript: nextTranscript, is_first: false },
-      { onSuccess: applyQuestion }
+      {
+        onSuccess: applyQuestion,
+        onError: (error) => {
+          // Refused as too long: put the answer back so it can be shortened,
+          // rather than leave a transcript every retry would send again.
+          if (kceGuardRefusal(error) === "tooLong") {
+            setTranscript(previousTranscript)
+            setPendingQuestion(exchange.question)
+            setAnswerText(answer)
+          }
+        },
+      }
     )
   }
 
@@ -435,6 +462,7 @@ function InterviewStep({
 
   const waitingForQuestion = nextQuestion.isPending
   const questionFailed = nextQuestion.isError && !pendingQuestion && !waitingForQuestion
+  const refusal = questionFailed ? kceGuardRefusal(nextQuestion.error) : undefined
   const canFinish = transcript.length >= 1 && !isFinishing
 
   return (
@@ -472,8 +500,10 @@ function InterviewStep({
 
           {questionFailed && (
             <div className="space-y-2">
-              <p className="text-sm text-red-600">
-                {t("capture.interview.questionFailed", "Something went wrong getting the next question.")}
+              <p role="alert" className="text-sm text-red-600">
+                {refusal
+                  ? t(kceGuardMessageKey(refusal))
+                  : t("capture.interview.questionFailed", "Something went wrong getting the next question.")}
               </p>
               <Button size="sm" variant="outline" onClick={retryQuestion} className="gap-1.5">
                 <RotateCcw className="h-4 w-4" /> {t("capture.interview.tryAgain", "Try again")}
@@ -500,7 +530,13 @@ function InterviewStep({
                   onChange={(e) => setAnswerText(e.target.value)}
                   placeholder={t("capture.interview.answerPlaceholder", "Type your answer…")}
                   rows={4}
+                  maxLength={KCE_MAX_ANSWER}
                 />
+                {areaFull && (
+                  <p role="alert" className="text-sm text-red-600">
+                    {t("llmGuards.areaFull")}
+                  </p>
+                )}
                 <Button onClick={submitAnswer} disabled={answerText.trim().length === 0} className="gap-1.5">
                   <Send className="h-4 w-4" /> {t("capture.interview.sendAnswer", "Send answer")}
                 </Button>

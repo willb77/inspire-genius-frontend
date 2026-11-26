@@ -1,7 +1,9 @@
 import { useMutation } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { nextQuestion } from "@/services/knowledge-continuity/capture.service"
+import { kceGuardMessageKey, kceGuardRefusal } from "@/services/knowledge-continuity/llmGuards"
 import type { NextQuestionRequest, NextQuestionResponse } from "@/types/knowledge-continuity"
 
 /**
@@ -10,14 +12,18 @@ import type { NextQuestionRequest, NextQuestionResponse } from "@/types/knowledg
  * the question lands in the transcript panel; only failures surface a toast.
  */
 export function useNextQuestion() {
+  const { t } = useTranslation("kcPages")
   return useMutation<NextQuestionResponse, AxiosError, NextQuestionRequest>({
     mutationFn: async (body) => {
       const res = await nextQuestion(body)
       if (!res.data) throw new Error("No question returned from the server")
       return res.data
     },
-    onError: () => {
-      toast.error("Couldn't get the next question. Please try again.")
+    onError: (error) => {
+      // 403 no access, 429 too many calls, 413/422 too long: say which, since
+      // "try again" with the same body fails the same way (D-18).
+      const refusal = kceGuardRefusal(error)
+      toast.error(refusal ? t(kceGuardMessageKey(refusal)) : "Couldn't get the next question. Please try again.")
     },
   })
 }
