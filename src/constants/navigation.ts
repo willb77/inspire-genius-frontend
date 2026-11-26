@@ -837,19 +837,33 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   // work only. Talent Studio joins it at render time (useRoleMenuFrame).
 ]
 
-/** Navigation items for the company-admin role */
+/**
+ * Navigation items for the company-admin role.
+ *
+ * RM-9a (2026-11-26): this IS the house-style menu, baked in. Both tiers built
+ * it with the `company-admin` house switch on, and nothing in the app turns the
+ * switch off, so the transform that derived it from the classic list
+ * (`companyAdminHouseMenu`) is gone. Consequence, by decision: setting
+ * `house_style_company-admin=false` in localStorage no longer brings the
+ * classic menu back (it still switches the PAGES the area owns).
+ *
+ * - "People" and "Reports" are the titles of the pages they open (RM-8).
+ * - Bulk Import, Culture Docs and AI Observability are tabs of the People,
+ *   Organization and Analytics hubs (RM-5), and Cohort Read-out is a tab of
+ *   Analytics; each is still opened by its own address.
+ * - Role Play and Résumé Writer are in My Workspace; Settings and Help & Support
+ *   are in the footer (RM-4). Settings points at the shared /settings, NOT
+ *   /company-admin/settings (a placeholder page with sample figures; still
+ *   routed, linked from no menu). Costs is linked from no menu either.
+ *
+ * CSA: docs/analysis/2026-11-26-rm-9-csa.md (monorepo).
+ */
 export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.COMPANY_ADMIN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.COMPANY_ADMIN.USERS, icon: UsersRound, label: "User Management" },
+  { to: ROUTES.COMPANY_ADMIN.USERS, icon: UsersRound, label: "People" },
   { to: ROUTES.COMPANY_ADMIN.ORGANIZATION, icon: Building2, label: "Organization" },
-  { to: ROUTES.COMPANY_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk Import" },
-  { to: ROUTES.COMPANY_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
-  { to: ROUTES.COMPANY_ADMIN.OBSERVABILITY, icon: Eye, label: "AI Observability" },
-  { to: ROUTES.COMPANY_ADMIN.CULTURE, icon: BookHeart, label: "Culture Docs" },
+  { to: ROUTES.COMPANY_ADMIN.ANALYTICS, icon: BarChart3, label: "Reports" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
-  // RM-4: Role Play and Résumé Writer are in My Workspace; Settings is in the
-  // footer and points at the shared /settings, NOT /company-admin/settings
-  // (a placeholder page with sample figures; still routed, linked from no menu).
 ]
 
 /**

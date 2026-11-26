@@ -134,12 +134,13 @@ describe("interviewer pages — links to the sibling pages", () => {
   })
 })
 
-describe("practice page chrome — each role keeps its own menu", () => {
+// RM-9a: the role's own menu is resolved inside UserLayout since RM-9a; src/hooks/nav/__tests__/rm9a-tier-menus.test.tsx pins the real menu per role.
+describe("practice page chrome — UserLayout for every role (it resolves the role's own menu)", () => {
   it.each([
-    ["manager", "unified-layout-manager"],
-    ["practitioner", "unified-layout-practitioner"],
-    ["company-admin", "unified-layout-company-admin"],
-    ["distributor", "unified-layout-distributor"],
+    ["manager", "user-layout"],
+    ["practitioner", "user-layout"],
+    ["company-admin", "user-layout"],
+    ["distributor", "user-layout"],
     ["user", "user-layout"],
     ["super-admin", "user-layout"],
   ])("%s gets %s", (role, testId) => {

@@ -1128,12 +1128,9 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
     {
       "items": [
         "Dashboard -> /company-admin/dashboard",
-        "User Management -> /company-admin/users",
+        "People -> /company-admin/users",
         "Organization -> /company-admin/organization",
-        "Bulk Import -> /company-admin/bulk-import",
-        "Analytics -> /company-admin/analytics",
-        "AI Observability -> /company-admin/observability",
-        "Culture Docs -> /company-admin/culture",
+        "Reports -> /company-admin/analytics",
         "Surveys -> /surveys",
       ],
       "label": "",
@@ -1164,12 +1161,9 @@ exports[`JF-13 admin — job_fit_v2 off: every sidebar that reads Administration
     {
       "items": [
         "Dashboard -> /company-admin/dashboard",
-        "User Management -> /company-admin/users",
+        "People -> /company-admin/users",
         "Organization -> /company-admin/organization",
-        "Bulk Import -> /company-admin/bulk-import",
-        "Analytics -> /company-admin/analytics",
-        "AI Observability -> /company-admin/observability",
-        "Culture Docs -> /company-admin/culture",
+        "Reports -> /company-admin/analytics",
         "Surveys -> /surveys",
       ],
       "label": "",

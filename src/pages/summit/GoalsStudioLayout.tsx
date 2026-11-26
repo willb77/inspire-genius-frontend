@@ -21,10 +21,7 @@ import type { TFunction } from "i18next";
 import { Compass, Layers, Flag, Mic, Share2, Clock, Target, MessageCircle, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
-import { useAuth } from "@/context/useAuth";
 import UserLayout from "@/layouts/UserLayout";
-import UnifiedLayout from "@/layouts/UnifiedLayout";
-import type { UserRole } from "@/types/roles";
 import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
 import { isHouseStyleOn } from "@/lib/house/areaSwitch";
 import { houseGoalsRedirectFor } from "@/pages/summit/house/goalsHouseRoutes";
@@ -89,25 +86,8 @@ function houseSections(explored: number, total: number, goals: number, t: TFunct
   ];
 }
 
-/**
- * The signed-in role's own chrome.
- *
- * `UserLayout` already knows how to render a super-admin on a user page (My
- * Workspace first, then Role Views, Tools, Administration — the order
- * SuperAdminLayout uses). Every other role gets `UnifiedLayout` with its own
- * menu and its Tools section, so the "Goals Studio" entry the person clicked
- * is the one that lights up. A missing role renders the plain user chrome.
- */
-function RoleChrome({ role, children }: { role: UserRole | undefined; children: React.ReactNode }) {
-  if (!role || role === "user" || role === "super-admin") {
-    return <UserLayout>{children}</UserLayout>;
-  }
-  return <UnifiedLayout role={role}>{children}</UnifiedLayout>;
-}
-
 export default function GoalsStudioLayout() {
   const { t } = useTranslation("summitPages");
-  const { user } = useAuth();
   const { data: session } = useGoalSession();
   const categories = useSummitCategories(session);
 
@@ -118,13 +98,16 @@ export default function GoalsStudioLayout() {
   // and every section renders where it is.
   const house = isHouseStyleOn("goals");
   const SECTIONS = (house ? houseSections : sections)(explored, categories.length, session?.goals?.length ?? 0, t);
-  const role = (user?.role ?? undefined) as UserRole | undefined;
 
   const redirectTo = house ? houseGoalsRedirectFor(pathname) : null;
   if (redirectTo) return <Navigate to={redirectTo} replace />;
 
   return (
-    <RoleChrome role={role}>
+    // The signed-in role's own chrome: UserLayout resolves it (RM-1/RM-2) — a
+    // manager, company admin, practitioner or distributor gets their own menu,
+    // a super-admin the super-admin menu, a user the user menu. This page chose
+    // it itself until RM-9a (CSA docs/analysis/2026-11-26-rm-9-csa.md, monorepo).
+    <UserLayout>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6" data-testid="goals-studio">
         <header className="mb-5 flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -171,6 +154,6 @@ export default function GoalsStudioLayout() {
             the width, and goal-setting stays usable on a phone. */}
         <Outlet />
       </div>
-    </RoleChrome>
+    </UserLayout>
   );
 }

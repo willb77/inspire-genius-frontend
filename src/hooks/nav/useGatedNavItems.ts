@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { ClipboardCheck, PieChart } from "lucide-react"
+import { ClipboardCheck } from "lucide-react"
 import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole } from "@/types/roles"
 import {
@@ -14,9 +14,6 @@ import { usePractitionerClientRosterEnabled } from "@/hooks/switches/usePractiti
 import { ROUTES } from "@/constants/routes"
 import { useWorkspaceNavItems, withWorkspaceVerticals } from "@/components/layout/useVerticalLauncher"
 import { useExamAccess } from "@/hooks/super-admin/usePrismExam"
-import { useCohortReadoutEnabled } from "@/hooks/company-admin/useCohortReadout"
-import { companyAdminHouseMenu } from "@/constants/house/companyAdminNav"
-import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import { useToolsParts } from "@/hooks/nav/useToolsSection"
 
 /** Roles a super-admin can grant exam access to — the server's rank gate (manager or above). */
@@ -30,16 +27,9 @@ const EXAM_GRANTABLE_ROLES: ReadonlySet<UserRole> = new Set<UserRole>([
 /** Label must stay unique: SidebarScaffold keys nav items by label ("PRISM Practitioner Exam" is super-admin's). */
 const EXAM_NAV_ITEM: NavItemDef = { to: ROUTES.PRISM_EXAM, icon: ClipboardCheck, label: "PRISM Exam" }
 
-/** N-3: the company-admin's cohort read-out, present only when the org's switch is on. */
-const COHORT_READOUT_NAV_ITEM: NavItemDef = {
-  to: ROUTES.COMPANY_ADMIN.COHORT_READOUT,
-  icon: PieChart,
-  label: "Cohort Read-out",
-}
-
 /**
- * A role's own menu — its `NAV_ITEMS_BY_ROLE` list, plus PRISM Exam and Cohort
- * Read-out when granted or switched on.
+ * A role's own menu — its `NAV_ITEMS_BY_ROLE` list, plus PRISM Exam when
+ * granted.
  *
  * For a role WITHOUT a My Workspace section (user, distributor, super-admin)
  * the workspace verticals (Career & Education Discovery, Career Fit, Direction
@@ -52,11 +42,10 @@ const COHORT_READOUT_NAV_ITEM: NavItemDef = {
  * Absent while loading or on any error, so the menu never offers a page that
  * would only say "no access".
  *
- * Cohort Read-out (N-3) follows the same rule for a company-admin: the status
- * read runs for that role only, and the item appears only on `true` — with the
- * `cohort_readout` switch off (no row), the menu is exactly as before. With the
- * company-admin house switch on it is not a row at all: it is the Cohort
- * Read-out tab of the Analytics hub, under the same org switch (RM-5).
+ * Cohort Read-out (N-3) is not a menu row: it is the Cohort Read-out tab of the
+ * company-admin Analytics hub, under its org switch (RM-5). The classic
+ * (house-off) menu that carried it as a row was removed with the company-admin
+ * transform in RM-9a (CSA docs/analysis/2026-11-26-rm-9-csa.md, monorepo).
  */
 export function useGatedNavItems(role: UserRole): NavItemDef[] {
   return useOwnWorkItems(role, null)
@@ -64,36 +53,27 @@ export function useGatedNavItems(role: UserRole): NavItemDef[] {
 
 /**
  * The own-work list, with `talentStudio` (RM-4: the manager's and practitioner's
- * Talent Studio group) placed after the role's own rows and before PRISM Exam
- * and Cohort Read-out.
+ * Talent Studio group) placed after the role's own rows and before PRISM Exam.
  */
 function useOwnWorkItems(role: UserRole, talentStudio: NavItemDef | null): NavItemDef[] {
   const examAccess = useExamAccess(EXAM_GRANTABLE_ROLES.has(role))
-  const cohort = useCohortReadoutEnabled(role === "company-admin")
   const granted = !!examAccess.data?.allowed && !examAccess.data?.super_admin
-  // House style (area `company-admin`, default OFF): display-only menu swap.
   const roleBase = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
-  const houseOn = role === "company-admin" && isHouseStyleOn("company-admin")
-  // RM-5: with house style on, Cohort Read-out is a tab of the Analytics hub
-  // (shown there under the same switch), so it is not also a menu row. With
-  // house style off, the row is exactly as before.
-  const cohortOn = role === "company-admin" && cohort.data === true && !houseOn
   // RM-6 B: where the Studio lists the practitioner's clients, Practitioner Home
   // and My Clients leave the menu (both open from the Studio header). Off, a
   // 404 or an error: the practitioner's rows are exactly as before.
   const studioIsFrontPage = usePractitionerClientRosterEnabled(role === "practitioner")
   const folded = role === "practitioner" && studioIsFrontPage
-  const base = useMemo(() => {
-    if (houseOn) return companyAdminHouseMenu(roleBase)
-    return folded ? practitionerFrontPageMenu(roleBase) : roleBase
-  }, [houseOn, folded, roleBase])
+  const base = useMemo(
+    () => (folded ? practitionerFrontPageMenu(roleBase) : roleBase),
+    [folded, roleBase],
+  )
   const items = useMemo(() => {
     const withTalent = talentStudio ? [...base, talentStudio] : base
     const extra: NavItemDef[] = []
     if (granted) extra.push(EXAM_NAV_ITEM)
-    if (cohortOn) extra.push(COHORT_READOUT_NAV_ITEM)
     return extra.length ? withWorkspaceVerticals(withTalent, extra) : withTalent
-  }, [base, talentStudio, granted, cohortOn])
+  }, [base, talentStudio, granted])
   // Called for every role so the hook order never depends on the role.
   const spliced = useWorkspaceNavItems(items)
   return WORKSPACE_SECTION_ROLES.has(role) ? items : spliced

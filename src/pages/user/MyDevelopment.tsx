@@ -41,17 +41,15 @@
  *
  * ## Chrome
  *
- * `RoleChrome` mirrors `pages/summit/GoalsStudioLayout.tsx`: the page is open
- * to every role, so the shell is the signed-in role's own — a manager keeps the
- * manager menu, a user and a super-admin get `UserLayout`. Both routes reach
+ * The page is open to every role, so the shell is the signed-in role's own,
+ * and `UserLayout` resolves it (RM-1/RM-2): a manager keeps the manager menu, a
+ * super-admin the super-admin menu, a user the user menu. Until RM-9a this file
+ * chose the layout itself, the same way. It reaches
  * `SidebarScaffold`, which mounts the once-per-page things (`AppShell` no
  * longer exists; see `.claude/rules/architecture.md` → Layouts).
  */
 import { HeartPulse } from "lucide-react"
 import UserLayout from "@/layouts/UserLayout"
-import UnifiedLayout from "@/layouts/UnifiedLayout"
-import { useAuth } from "@/context/useAuth"
-import type { UserRole } from "@/types/roles"
 import MyGapsSection from "@/components/user/development/MyGapsSection"
 import MyLearningSection from "@/components/user/development/MyLearningSection"
 import MyMilestonesSection from "@/components/user/development/MyMilestonesSection"
@@ -60,21 +58,11 @@ import MyReviewsSection from "@/components/user/development/MyReviewsSection"
 import { useTranslation } from "react-i18next"
 import { withPrism } from "@/lib/withPrism"
 
-/** The signed-in role's own chrome — same resolution as Goals Studio. */
-function RoleChrome({ role, children }: { role: UserRole | undefined; children: React.ReactNode }) {
-  if (!role || role === "user" || role === "super-admin") {
-    return <UserLayout>{children}</UserLayout>
-  }
-  return <UnifiedLayout role={role}>{children}</UnifiedLayout>
-}
-
 export default function MyDevelopment() {
   const { t } = useTranslation("userPages")
-  const { user } = useAuth()
-  const role = (user?.role ?? undefined) as UserRole | undefined
 
   return (
-    <RoleChrome role={role}>
+    <UserLayout>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6" data-testid="my-development">
         <header className="mb-5 flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -99,6 +87,6 @@ export default function MyDevelopment() {
               exist. They are NOT stubbed — see the file note above. */}
         </div>
       </div>
-    </RoleChrome>
+    </UserLayout>
   )
 }

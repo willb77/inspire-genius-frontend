@@ -9,7 +9,6 @@ import path from "node:path"
 import { navKeySegment, navLabelKey, translateNavLabel } from "../navLabels"
 import * as nav from "@/constants/navigation"
 import * as houseSuperAdmin from "@/constants/house/superAdminNav"
-import * as houseCompanyAdmin from "@/constants/house/companyAdminNav"
 import * as adminCategories from "@/constants/house/administrationCategories"
 import * as sidebarSections from "@/constants/sidebar-sections"
 import * as verticalSubnav from "@/constants/vertical-subnav"
@@ -40,7 +39,7 @@ function harvest(): { items: Set<string>; sections: Set<string> } {
     else if (typeof o.label === "string" && ("to" in o || "icon" in o)) items.add(o.label)
     for (const k of Object.keys(o)) walk(o[k])
   }
-  for (const m of [nav, houseSuperAdmin, houseCompanyAdmin, adminCategories, sidebarSections, verticalSubnav]) {
+  for (const m of [nav, houseSuperAdmin, adminCategories, sidebarSections, verticalSubnav]) {
     for (const v of Object.values(m)) {
       if (typeof v === "function") {
         for (const arg of [true, false]) {

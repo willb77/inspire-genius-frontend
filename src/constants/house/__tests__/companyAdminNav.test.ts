@@ -1,77 +1,80 @@
 /**
  * @jest-environment jsdom
  *
- * House-style company-admin menu (area `company-admin`, default OFF).
+ * The company-admin menu (RM-9a, 2026-11-26): the house-style menu, baked into
+ * COMPANY_ADMIN_NAV_ITEMS. Until RM-9a it was derived at render time from a
+ * classic list by `companyAdminHouseMenu` when the `company-admin` house switch
+ * was on — which both tiers' builds always had. These are the assertions the
+ * old suite made about the switch-ON menu, now made of the list itself, plus
+ * the one behaviour RM-9a removes on purpose: the localStorage escape.
+ * CSA: docs/analysis/2026-11-26-rm-9-csa.md (monorepo #2237).
  *
- * RM-4 (2026-11-25): Role Play and Résumé Writer left the company-admin list
- * for the My Workspace section, and Settings and Help & Support are in the
- * footer section, so neither list carries them and the house menu no longer
- * appends Help.
+ * RM-4 (2026-11-25): Role Play and Résumé Writer are in the My Workspace
+ * section, and Settings and Help & Support in the footer section.
  */
+import { renderHook } from "@testing-library/react"
 import { COMPANY_ADMIN_NAV_ITEMS, FOOTER_NAV_ITEMS_BY_ROLE, NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
-import {
-  companyAdminHouseMenu,
-  withCompanyAdminHouseMenu,
-} from "@/constants/house/companyAdminNav"
+import { useGatedNavItems } from "@/hooks/nav/useGatedNavItems"
+
+jest.mock("@/hooks/super-admin/usePrismExam", () => ({ useExamAccess: () => ({ data: undefined }) }))
+jest.mock("@/hooks/job-fit/useSavedJobs", () => ({
+  ...jest.requireActual("@/hooks/job-fit/useSavedJobs"),
+  useSavedJobsEnabled: () => false,
+}))
+jest.mock("@/verticals/core/useEnabledVerticals", () => ({
+  useEnabledVerticals: () => ({ data: [], isLoading: false }),
+}))
+jest.mock("@/hooks/switches/useWorkspaceDirectionSettingEnabled", () => ({
+  useWorkspaceDirectionSettingEnabled: () => false,
+}))
 
 const SWITCH = "house_style_company-admin"
-const labels = (items: { label: string }[]) => items.map((i) => i.label)
+const rows = (items: { label: string; to: string }[]) => items.map((i) => [i.label, i.to])
+
+const BAKED = [
+  ["Dashboard", "/company-admin/dashboard"],
+  ["People", "/company-admin/users"],
+  ["Organization", "/company-admin/organization"],
+  ["Reports", "/company-admin/analytics"],
+  ["Surveys", "/surveys"],
+]
 
 afterEach(() => localStorage.clear())
 
-describe("company-admin house menu", () => {
-  it("switch absent: the classic menu, same array, unchanged", () => {
-    expect(withCompanyAdminHouseMenu("company-admin", COMPANY_ADMIN_NAV_ITEMS)).toBe(COMPANY_ADMIN_NAV_ITEMS)
-    expect(labels(COMPANY_ADMIN_NAV_ITEMS)).toEqual([
-      "Dashboard",
-      "User Management",
-      "Organization",
-      "Bulk Import",
-      "Analytics",
-      "AI Observability",
-      "Culture Docs",
-      "Surveys",
-    ])
+describe("company-admin menu (house style, baked)", () => {
+  it("five rows — People, Organization and Reports are hubs; no Settings, Costs or Help", () => {
+    expect(rows(COMPANY_ADMIN_NAV_ITEMS)).toEqual(BAKED)
+    expect(NAV_ITEMS_BY_ROLE["company-admin"]).toBe(COMPANY_ADMIN_NAV_ITEMS)
+    expect(
+      COMPANY_ADMIN_NAV_ITEMS.some((i) => i.to.includes("/settings") || i.to.includes("/costs") || i.to === "/help"),
+    ).toBe(false)
   })
 
-  it("switch false: the classic menu", () => {
-    localStorage.setItem(SWITCH, "false")
-    expect(withCompanyAdminHouseMenu("company-admin", COMPANY_ADMIN_NAV_ITEMS)).toBe(COMPANY_ADMIN_NAV_ITEMS)
+  it("no hub tab is also a menu row (Bulk Import, Culture Docs, AI Observability, Cohort Read-out)", () => {
+    const tos = COMPANY_ADMIN_NAV_ITEMS.map((i) => i.to)
+    for (const tab of [
+      "/company-admin/bulk-import",
+      "/company-admin/culture",
+      "/company-admin/observability",
+      "/company-admin/cohort-readout",
+    ]) {
+      expect(tos).not.toContain(tab)
+    }
   })
 
-  it("switch on (RM-5): five rows — People, Organization and Analytics are hubs; no Settings, Costs or Help", () => {
-    localStorage.setItem(SWITCH, "true")
-    const menu = withCompanyAdminHouseMenu("company-admin", COMPANY_ADMIN_NAV_ITEMS)
-    expect(menu.map((i) => [i.label, i.to])).toEqual([
-      ["Dashboard", "/company-admin/dashboard"],
-      ["People", "/company-admin/users"],
-      ["Organization", "/company-admin/organization"],
-      ["Reports", "/company-admin/analytics"],
-      ["Surveys", "/surveys"],
-    ])
-    expect(menu.some((i) => i.to.includes("/settings") || i.to.includes("/costs") || i.to === "/help")).toBe(false)
-  })
-
-  it("drops a Costs entry and the placeholder Settings page, and adds nothing", () => {
-    const menu = companyAdminHouseMenu([
-      { to: "/company-admin/costs", icon: () => null, label: "Costs" },
-      { to: "/company-admin/settings", icon: () => null, label: "Settings" },
-      { to: "/surveys", icon: () => null, label: "Surveys" },
-    ])
-    expect(labels(menu)).toEqual(["Surveys"])
-  })
+  it.each([undefined, "true", "false"])(
+    "the menu a company admin gets is the same whatever house_style_company-admin says (%s) — the escape is gone",
+    (value) => {
+      if (value !== undefined) localStorage.setItem(SWITCH, value)
+      const { result } = renderHook(() => useGatedNavItems("company-admin"))
+      expect(rows(result.current)).toEqual(BAKED)
+    },
+  )
 
   it("RM-4: the company-admin footer is Settings → the shared /settings, then Help", () => {
     expect(FOOTER_NAV_ITEMS_BY_ROLE["company-admin"]?.map((i) => [i.label, i.to])).toEqual([
       ["Settings", "/settings"],
       ["Help & Support", "/help"],
     ])
-  })
-
-  it("switch on changes no other role's menu", () => {
-    localStorage.setItem(SWITCH, "true")
-    for (const role of ["user", "manager", "practitioner", "distributor", "super-admin"] as const) {
-      expect(withCompanyAdminHouseMenu(role, NAV_ITEMS_BY_ROLE[role])).toBe(NAV_ITEMS_BY_ROLE[role])
-    }
   })
 })
