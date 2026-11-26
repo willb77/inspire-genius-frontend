@@ -71,6 +71,11 @@ export type ClientPrism = {
   colours: Record<string, number | null> | null
   assessedAt: string | null
 }
+/**
+ * TDS U12: what the coach PRISM import reports back. The server writes the
+ * report onto the client's OWN linked account and never echoes that account id.
+ */
+export type ClientPrismImported = { assessmentId: string; scoreCount: number; typingCount: number }
 export type ConversationRef = { id: string; date: string; preview: string }
 export type FollowUp = { id: string; date: string; note: string }
 

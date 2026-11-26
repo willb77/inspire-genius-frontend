@@ -14,6 +14,7 @@ import {
   triggerProcessing,
 } from "@/services/documents/documentService"
 import { toUtcInstant } from "@/services/manager/teamSchedule.service"
+import type { ClientPrismImported } from "@/types/practitioner/coachClient"
 import {
   CLIENT_RESOURCES,
   type ClientSummary,
@@ -364,6 +365,28 @@ export async function getClientPrism(clientId: string): Promise<ClientPrism | nu
     colours: state === "shared" ? (d?.prism?.colours ?? null) : null,
     assessedAt: state === "shared" ? (d?.prism?.assessedAt ?? null) : null,
   }
+}
+
+/**
+ * TDS U12 (CSA #2210, "link only"): import a linked client's PRISM report CSV.
+ * The page names the client only by its coach-record id; the server resolves
+ * the client's own account from the link, so nothing sent here can choose whose
+ * profile is written. 409 when the client has not linked an account (or the file
+ * is already on file), 403 without access to this client, 422 when the file does
+ * not parse. Failures throw, so the dialog renders the server's own reason.
+ */
+export async function importClientPrismCsv(clientId: string, file: File): Promise<ClientPrismImported> {
+  if (!USE_COACH_BACKEND) throw new Error("PRISM import for a client is not available here")
+  const form = new FormData()
+  form.append("file", file)
+  const r = await agentApi.post<Envelope<Partial<ClientPrismImported>>>(
+    `/v1/agents/coach/clients/${encodeURIComponent(clientId)}/prism/import`,
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  )
+  const d = r.data?.data
+  if (!d?.assessmentId) throw new Error("The server did not confirm the import")
+  return { assessmentId: d.assessmentId, scoreCount: d.scoreCount ?? 0, typingCount: d.typingCount ?? 0 }
 }
 
 export function listSchedule(): Promise<ScheduleEntry[]> {

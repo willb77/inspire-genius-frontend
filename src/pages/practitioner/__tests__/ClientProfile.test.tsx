@@ -13,9 +13,6 @@ jest.mock("@/layouts/PractitionerLayout", () => ({
   ),
 }))
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
-jest.mock("@/hooks/prism/usePrismImport", () => ({
-  usePrismImport: () => ({ mutate: jest.fn(), isPending: false }),
-}))
 
 const mockUseCoachClient = jest.fn()
 const mockUseClientPrism = jest.fn()
@@ -24,6 +21,7 @@ jest.mock("@/hooks/practitioner/useCoachClient", () => ({
   useCoachClient: () => mockUseCoachClient(),
   useClientPrism: () => mockUseClientPrism(),
   useUploadClientResource: () => ({ mutate: jest.fn(), isPending: false }),
+  useImportClientPrism: () => ({ mutate: jest.fn(), reset: jest.fn(), isPending: false }),
   get clientImportAvailable() {
     return mockImportAvailable
   },
@@ -127,6 +125,37 @@ describe("PractitionerClientProfile", () => {
     renderPage()
     expect(screen.getByRole("alert")).toHaveTextContent(/couldn.t be loaded/i)
     expect(screen.queryByText(/No PRISM scores on file/i)).not.toBeInTheDocument()
+  })
+
+  // TDS U12 (CSA #2210): the PRISM import is the coach route, offered only for
+  // a linked client where the coach backend answered.
+  const importButton = () => screen.queryByRole("button", { name: byText("Import PRISM report (CSV)") })
+
+  it("offers the PRISM import for a linked client", () => {
+    mockUseClientPrism.mockReturnValue({
+      data: { state: "not_shared", colours: null, assessedAt: null },
+      isLoading: false,
+      isError: false,
+    })
+    renderPage()
+    expect(importButton()).toBeInTheDocument()
+  })
+
+  it("does not offer the PRISM import for a client with no linked account", () => {
+    mockUseClientPrism.mockReturnValue({
+      data: { state: "not_linked", colours: null, assessedAt: null },
+      isLoading: false,
+      isError: false,
+    })
+    renderPage()
+    expect(importButton()).not.toBeInTheDocument()
+  })
+
+  it("does not offer the PRISM import where the coach backend is not deployed", () => {
+    renderPage()
+    expect(importButton()).not.toBeInTheDocument()
+    // and the old typed-target upload is gone
+    expect(screen.queryByRole("button", { name: byText("Upload PRISM .csv") })).not.toBeInTheDocument()
   })
 
   it("renders a not-found state when no data resolves", () => {

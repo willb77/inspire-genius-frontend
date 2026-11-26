@@ -100,6 +100,16 @@
     "cancel": "Cancel",
     "upload": "Upload"
   },
+  "clientPrismImport": {
+    "open": "Import PRISM report (CSV)",
+    "description": "This adds the report to {{name}}’s own InspiresGenius profile, where it becomes their current PRISM. Only a CSV file can be imported.",
+    "fileLabel": "PRISM report (CSV file)",
+    "chooseFile": "Choose the client’s PRISM report CSV first.",
+    "csvOnly": "A PRISM report imports as a CSV file only. Choose a .csv file.",
+    "send": "Import",
+    "failed": "The import failed. Nothing was added to {{name}}’s profile.",
+    "done": "Imported. This PRISM report is now on {{name}}’s InspiresGenius profile as their current PRISM."
+  },
   "clients": {
     "inProgress": "In progress",
     "none": "None",

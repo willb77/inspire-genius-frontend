@@ -1,4 +1,3 @@
-import { useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import {
@@ -7,31 +6,21 @@ import {
   MessageSquare,
   MessagesSquare,
   Target,
-  Upload,
-  Loader2,
 } from "lucide-react"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import ArtifactStatusMatrix from "@/components/practitioner/ArtifactStatusMatrix"
 import ClientPrismPanel from "@/components/practitioner/ClientPrismPanel"
+import ClientPrismImport from "@/components/practitioner/ClientPrismImport"
+import { prismImportOffered } from "@/components/practitioner/clientPrismImportHelpers"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   clientImportAvailable,
   useClientPrism,
   useCoachClient,
 } from "@/hooks/practitioner/useCoachClient"
 import ClientAssessmentImport from "@/components/practitioner/ClientAssessmentImport"
-import { usePrismImport } from "@/hooks/prism/usePrismImport"
 import { withPrism } from "@/lib/withPrism"
 
 function formatDate(dateStr: string) {
@@ -46,24 +35,6 @@ export default function PractitionerClientProfile() {
   const navigate = useNavigate()
   const { data, isLoading } = useCoachClient(clientId)
   const prismQuery = useClientPrism(clientId)
-  const prismImport = usePrismImport()
-
-  const [prismOpen, setPrismOpen] = useState(false)
-  const prismFileRef = useRef<HTMLInputElement>(null)
-
-  function handlePrismUpload() {
-    const file = prismFileRef.current?.files?.[0]
-    if (!file || !clientId) return
-    prismImport.mutate(
-      { userId: clientId, file },
-      {
-        onSuccess: () => {
-          setPrismOpen(false)
-          if (prismFileRef.current) prismFileRef.current.value = ""
-        },
-      },
-    )
-  }
 
   const backLink = (
     <button
@@ -205,15 +176,8 @@ export default function PractitionerClientProfile() {
             ) : (
               <p className="text-sm text-[#6b7280]">{withPrism(t("clientProfile.noPrism", { defaultValue: "No PRISM scores on file for this client yet." }))}</p>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-[#e5e7eb] text-[#3B5BFF] hover:bg-[#eef1ff] hover:text-[#2A47CC]"
-              onClick={() => setPrismOpen(true)}
-            >
-              <Upload className="mr-1.5 h-4 w-4" />
-              {withPrism(t("clientProfile.uploadPrism", { defaultValue: "Upload PRISM .csv" }))}
-            </Button>
+            {/* TDS U12: the import writes to the linked client's own profile (coach route, CSA #2210). */}
+            {prismImportOffered(prismQuery.data) && <ClientPrismImport clientId={data.id} clientName={data.name} />}
           </div>
         </DataCard>
 
@@ -302,40 +266,6 @@ export default function PractitionerClientProfile() {
         </div>
       </div>
 
-      {/* PRISM upload dialog */}
-      <Dialog open={prismOpen} onOpenChange={setPrismOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{withPrism(t("clientProfile.uploadPrism", { defaultValue: "Upload PRISM .csv" }))}</DialogTitle>
-            <DialogDescription>
-              {withPrism(t("clientProfile.uploadDescription", { name: data.name, defaultValue: "Import a PRISM score export for {{name}}. The parsed scores attach to this client." }))}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 pt-1">
-            <Label htmlFor="prism-csv-file">{withPrism(t("clientProfile.csvFile", { defaultValue: "PRISM CSV file" }))}</Label>
-            <input
-              ref={prismFileRef}
-              id="prism-csv-file"
-              type="file"
-              accept=".csv,.xls,.xlsx"
-              className="block w-full text-sm text-[#6b7280] file:mr-3 file:rounded file:border-0 file:bg-[#3B5BFF] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-[#2A47CC]"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPrismOpen(false)}>
-              {t("clientProfile.cancel", { defaultValue: "Cancel" })}
-            </Button>
-            <Button
-              className="bg-[#3B5BFF] text-white hover:bg-[#2A47CC]"
-              disabled={prismImport.isPending}
-              onClick={handlePrismUpload}
-            >
-              {prismImport.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              {t("clientProfile.upload", { defaultValue: "Upload" })}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </PractitionerLayout>
   )
 }
