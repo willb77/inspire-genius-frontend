@@ -270,3 +270,24 @@ describe("KceCurriculumPage", () => {
     expect(mockUseCurriculum).toHaveBeenCalledWith("tmpl-new")
   })
 })
+
+describe("KceCurriculumPage band label (D-10)", () => {
+  test("an amend_requested unit is labelled, not shown as the raw band key", async () => {
+    const user = userEvent.setup()
+    mockUseCurriculum.mockReturnValue({
+      data: {
+        ...CURRICULUM_DETAIL,
+        units_by_id: {
+          "unit-1": { ...CURRICULUM_DETAIL.units_by_id["unit-1"], validity_band: "amend_requested" },
+        },
+      },
+      isLoading: false,
+      isError: false,
+    })
+    render(<KceCurriculumPage />)
+    await user.click(screen.getByRole("button", { name: /open curriculum/i }))
+    await user.click(screen.getByRole("button", { name: /where this comes from/i }))
+    expect(screen.getByText("Amendment requested")).toBeInTheDocument()
+    expect(screen.queryByText("amend_requested")).not.toBeInTheDocument()
+  })
+})

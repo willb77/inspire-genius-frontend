@@ -118,7 +118,8 @@
       "validated": "Validado",
       "provisional": "Provisório",
       "needs_review": "Em revisão",
-      "deprecated": "Descontinuado"
+      "deprecated": "Descontinuado",
+      "amend_requested": "Alteração solicitada"
     }
   },
   "dashboard": {
@@ -126,7 +127,8 @@
       "validated": "Validado",
       "provisional": "Provisório",
       "needs_review": "Precisa de revisão",
-      "deprecated": "Obsoleto"
+      "deprecated": "Obsoleto",
+      "amend_requested": "Alteração solicitada"
     },
     "stage": {
       "scheduled": "Agendada",
@@ -155,6 +157,7 @@
       "currencyHint": "do conhecimento capturado está atualizado",
       "reviewBacklog": "Fila de revisão",
       "reviewBacklogHint": "{{pending}} pendentes, {{contradictions}} contradições",
+      "reviewBacklogUnitsHint": "{{units}} unidades para revisar, {{gaps}} lacunas para capturar, {{contradictions}} contradições",
       "curricula": "Currículos",
       "curriculaHint": "publicados a partir do conhecimento capturado"
     },

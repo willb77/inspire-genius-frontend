@@ -37,7 +37,9 @@ import { KceAccessNotice } from "./KceAccessNotice"
 import type {
   CapturePriority,
   CaptureSessionStats,
+  ReviewQueueStats,
   TopAtRiskEntry,
+  ValidityBands,
 } from "@/types/knowledge-continuity"
 
 const PRIORITY_BADGE_CLASS: Record<CapturePriority, string> = {
@@ -52,10 +54,41 @@ const VALIDITY_BADGE_CLASS = {
   provisional: "bg-teal-100 text-teal-700 border-teal-200",
   needs_review: "bg-amber-100 text-amber-700 border-amber-200",
   deprecated: "bg-slate-100 text-slate-500 border-slate-200",
+  amend_requested: "bg-orange-100 text-orange-700 border-orange-200",
 } as const
 
 type ValidityBand = keyof typeof VALIDITY_BADGE_CLASS
-const VALIDITY_BANDS: ValidityBand[] = ["validated", "provisional", "needs_review", "deprecated"]
+const VALIDITY_BANDS: ValidityBand[] = [
+  "validated",
+  "provisional",
+  "needs_review",
+  "amend_requested",
+  "deprecated",
+]
+
+/** A band's count; an older backend has no `amend_requested` key, which reads as 0. */
+function bandCount(bands: ValidityBands, band: ValidityBand): number {
+  return bands[band] ?? 0
+}
+
+/**
+ * The review-backlog tile (D-10): units waiting in the review queue + gap
+ * captures + unresolved contradictions — units, not tickets. An older backend
+ * sends only `pending_approvals`; then the tile falls back to the old sum so
+ * the number never disappears while the two deploys are out of step.
+ */
+function reviewBacklog(queue: ReviewQueueStats): {
+  total: number
+  unitCounts: boolean
+} {
+  if (typeof queue.needs_review_units === "number" && typeof queue.gap_captures === "number") {
+    return {
+      total: queue.needs_review_units + queue.gap_captures + queue.unresolved_contradictions,
+      unitCounts: true,
+    }
+  }
+  return { total: queue.pending_approvals + queue.unresolved_contradictions, unitCounts: false }
+}
 
 function validityLabel(t: TFunction, band: ValidityBand): string {
   switch (band) {
@@ -67,6 +100,8 @@ function validityLabel(t: TFunction, band: ValidityBand): string {
       return t("dashboard.validity.needs_review", "Needs review")
     case "deprecated":
       return t("dashboard.validity.deprecated", "Deprecated")
+    case "amend_requested":
+      return t("dashboard.validity.amend_requested", "Amendment requested")
   }
 }
 
@@ -76,6 +111,7 @@ const VALIDITY_FILL: Record<keyof typeof VALIDITY_BADGE_CLASS, string> = {
   provisional: "#127A8A", // teal accent
   needs_review: "#64748b", // slate
   deprecated: "#dc2626", // red
+  amend_requested: "#ea580c", // orange
 }
 
 // The capture pipeline funnel, in flow order.
@@ -163,12 +199,12 @@ function StatCardSkeletons() {
 function ValidityDistributionCard({
   bands,
 }: {
-  bands: Record<ValidityBand, number>
+  bands: ValidityBands
 }) {
   const { t } = useTranslation("kcPages")
   const data = VALIDITY_BANDS.map((band) => ({
     label: validityLabel(t, band),
-    count: bands[band],
+    count: bandCount(bands, band),
     fill: VALIDITY_FILL[band],
   }))
   const total = data.reduce((sum, d) => sum + d.count, 0)
@@ -268,6 +304,7 @@ function CapturePipelineCard({ sessions }: { sessions: CaptureSessionStats }) {
 export default function KceDashboardPage() {
   const { t } = useTranslation("kcPages")
   const { data: analytics, isLoading, isError, error } = useContinuityAnalytics()
+  const backlog = analytics ? reviewBacklog(analytics.review_queue) : null
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -328,14 +365,21 @@ export default function KceDashboardPage() {
             <StatCard
               icon={<Inbox className="h-4 w-4" />}
               label={t("dashboard.stat.reviewBacklog", "Review backlog")}
-              value={
-                analytics.review_queue.pending_approvals +
-                analytics.review_queue.unresolved_contradictions
+              value={backlog?.total ?? 0}
+              hint={
+                backlog?.unitCounts
+                  ? t("dashboard.stat.reviewBacklogUnitsHint", {
+                      defaultValue:
+                        "{{units}} units to review, {{gaps}} gaps to capture, {{contradictions}} contradictions",
+                      units: analytics.review_queue.needs_review_units,
+                      gaps: analytics.review_queue.gap_captures,
+                      contradictions: analytics.review_queue.unresolved_contradictions,
+                    })
+                  : t(
+                      "dashboard.stat.reviewBacklogHint",
+                      { defaultValue: "{{pending}} pending, {{contradictions}} contradictions", pending: analytics.review_queue.pending_approvals, contradictions: analytics.review_queue.unresolved_contradictions }
+                    )
               }
-              hint={t(
-                "dashboard.stat.reviewBacklogHint",
-                { defaultValue: "{{pending}} pending, {{contradictions}} contradictions", pending: analytics.review_queue.pending_approvals, contradictions: analytics.review_queue.unresolved_contradictions }
-              )}
             />
             <StatCard
               icon={<GraduationCap className="h-4 w-4" />}
@@ -372,7 +416,7 @@ export default function KceDashboardPage() {
                       {validityLabel(t, band)}
                     </Badge>
                     <span className="text-sm font-medium text-foreground">
-                      {analytics.validity_bands[band]}
+                      {bandCount(analytics.validity_bands, band)}
                     </span>
                   </div>
                 ))}

@@ -255,6 +255,7 @@
       "currencyHint": "des connaissances capturées sont à jour",
       "reviewBacklog": "Révisions en attente",
       "reviewBacklogHint": "{{pending}} en attente, {{contradictions}} contradictions",
+      "reviewBacklogUnitsHint": "{{units}} unités à réviser, {{gaps}} lacunes à capturer, {{contradictions}} contradictions",
       "curricula": "Cursus",
       "curriculaHint": "publiés à partir des connaissances capturées"
     },
@@ -276,7 +277,8 @@
       "validated": "Validé",
       "provisional": "Provisoire",
       "needs_review": "À réviser",
-      "deprecated": "Obsolète"
+      "deprecated": "Obsolète",
+      "amend_requested": "Modification demandée"
     }
   },
   "curriculum": {
@@ -284,7 +286,8 @@
       "validated": "Validé",
       "provisional": "Provisoire",
       "needs_review": "En cours de révision",
-      "deprecated": "Retiré"
+      "deprecated": "Retiré",
+      "amend_requested": "Modification demandée"
     },
     "published": "Publié",
     "publishedBy": "Publié par {{name}}",
