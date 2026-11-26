@@ -756,7 +756,9 @@
     "auraReconciliation": "Uzgodnienie Aura",
     "discrepancies": "Rozbieżności",
     "howToWorkWithThis": "Jak współpracować z tą osobą",
-    "reconciliationIsAtReducedResolution": "Uzgodnienie ma obniżoną rozdzielczość — brakuje jednej lub więcej nakładek, więc pewność jest odpowiednio niższa."
+    "reconciliationIsAtReducedResolution": "Uzgodnienie ma obniżoną rozdzielczość — brakuje jednej lub więcej nakładek, więc pewność jest odpowiednio niższa.",
+    "overlayNotSharedTitle": "Nie udostępniono Tobie",
+    "overlayNotSharedBody": "{{who}} ma zapisany wynik {{framework}}, ale nie udostępnił(a) Ci swoich ocen."
   },
   "bulkImport": {
     "bulkTeamImport": "Masowy import zespołu",

@@ -280,7 +280,9 @@
     "auraReconciliation": "Reconciliação da Aura",
     "discrepancies": "Discrepâncias",
     "howToWorkWithThis": "Como trabalhar com esta pessoa",
-    "reconciliationIsAtReducedResolution": "A reconciliação está em resolução reduzida: uma ou mais sobreposições estão ausentes, então a confiança é reduzida de acordo."
+    "reconciliationIsAtReducedResolution": "A reconciliação está em resolução reduzida: uma ou mais sobreposições estão ausentes, então a confiança é reduzida de acordo.",
+    "overlayNotSharedTitle": "Não compartilhado com você",
+    "overlayNotSharedBody": "{{who}} tem um resultado de {{framework}} registrado, mas não compartilhou suas avaliações com você."
   },
   "dashboard": {
     "retry": "Tentar novamente",

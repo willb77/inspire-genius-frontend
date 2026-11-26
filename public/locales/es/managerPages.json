@@ -588,7 +588,9 @@
     "asking": "Solicitando…",
     "askToSeeThisProfile": "Pedir ver este perfil",
     "prismBehavioralMap": "Mapa conductual PRISM",
-    "prism8DimensionScoresText": "Puntuaciones PRISM de 8 dimensiones (equivalente en texto del gráfico de radar)."
+    "prism8DimensionScoresText": "Puntuaciones PRISM de 8 dimensiones (equivalente en texto del gráfico de radar).",
+    "overlayNotSharedTitle": "No compartido contigo",
+    "overlayNotSharedBody": "{{who}} tiene un resultado de {{framework}} registrado, pero no ha compartido sus evaluaciones contigo."
   },
   "bulkImport": {
     "bulkTeamImport": "Importación masiva de equipo",

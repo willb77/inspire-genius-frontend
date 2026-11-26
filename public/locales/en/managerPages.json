@@ -75,7 +75,9 @@
     "auraReconciliation": "Aura reconciliation",
     "discrepancies": "Discrepancies",
     "howToWorkWithThis": "How to work with this person",
-    "reconciliationIsAtReducedResolution": "Reconciliation is at reduced resolution — one or more overlays are missing, so confidence is lowered accordingly."
+    "reconciliationIsAtReducedResolution": "Reconciliation is at reduced resolution — one or more overlays are missing, so confidence is lowered accordingly.",
+    "overlayNotSharedTitle": "Not shared with you",
+    "overlayNotSharedBody": "{{who}} has a {{framework}} result on file but has not shared their assessments with you."
   },
   "bulkImport": {
     "bulkTeamImport": "Bulk Team Import",
