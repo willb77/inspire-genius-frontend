@@ -117,13 +117,13 @@ describe("RM-4 — each framed role's sidebar, section by section", () => {
   const EXPECTED: Record<string, { sections: string[]; own: string[]; workspace: string[] | null }> = {
     manager: {
       sections: ["", "My Workspace", "Tools", ""],
-      own: ["Dashboard", "Member Oversight", "Team Import", "Schedule"],
+      own: ["Dashboard", "Member Oversight", "Add people", "Schedule"],
       workspace: WORKSPACE_ORDER,
     },
     "company-admin": {
       sections: ["", "My Workspace", ""],
       // RM-5: Bulk Import, AI Observability and Culture Docs are hub tabs now.
-      own: ["Dashboard", "People", "Organization", "Analytics", "Surveys"],
+      own: ["Dashboard", "People", "Organization", "Reports", "Surveys"],
       workspace: WORKSPACE_ORDER,
     },
     practitioner: {
@@ -135,7 +135,7 @@ describe("RM-4 — each framed role's sidebar, section by section", () => {
         "My PRISM Practice",
         "Schedule",
         "Surveys",
-        "Analytics",
+        "Reports",
       ],
       workspace: WORKSPACE_ORDER,
     },

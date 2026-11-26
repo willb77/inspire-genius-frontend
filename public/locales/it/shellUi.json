@@ -151,7 +151,9 @@
       "Career_Fit": "Affinità professionale",
       "Knowledge_Continuity_Studio": "Knowledge Continuity Studio",
       "Lumen": "Lumen",
-      "People": "Persone"
+      "People": "Persone",
+      "My_Workspace": "Il mio spazio di lavoro",
+      "Tools": "Strumenti"
     },
     "sections": {
       "AI_coaches": "Coach IA",

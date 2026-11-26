@@ -133,9 +133,9 @@ const ROUTE_TABLE: [string, string, string, string, () => ReactNode][] = [
   [ROUTES.COMPANY_ADMIN.BULK_IMPORT, "People", "Bulk import", "Upload", () => <BulkImport />],
   [ROUTES.COMPANY_ADMIN.ORGANIZATION, "Organization", "Organization", "No departments yet", () => <CompanyAdminOrganization />],
   [ROUTES.COMPANY_ADMIN.CULTURE, "Organization", "Culture Docs", "How Culture Context Works", () => <CultureDocs />],
-  [ROUTES.COMPANY_ADMIN.ANALYTICS, "Analytics", "Analytics", "chart", () => <CompanyAdminAnalytics />],
-  [ROUTES.COMPANY_ADMIN.OBSERVABILITY, "Analytics", "AI Observability", "observability-board", () => <CompanyAdminObservability />],
-  [ROUTES.COMPANY_ADMIN.COHORT_READOUT, "Analytics", "Cohort Read-out", "Activity since", () => <CohortReadout />],
+  [ROUTES.COMPANY_ADMIN.ANALYTICS, "Reports", "Analytics", "chart", () => <CompanyAdminAnalytics />],
+  [ROUTES.COMPANY_ADMIN.OBSERVABILITY, "Reports", "AI Observability", "observability-board", () => <CompanyAdminObservability />],
+  [ROUTES.COMPANY_ADMIN.COHORT_READOUT, "Reports", "Cohort Read-out", "Activity since", () => <CohortReadout />],
 ]
 
 describe("RM-5 — every old address opens its page inside its hub, its tab selected", () => {
@@ -163,7 +163,7 @@ describe("RM-5 — every old address opens its page inside its hub, its tab sele
 
   it("each tab that is not open links to its own existing address", () => {
     renderAt(ROUTES.COMPANY_ADMIN.ANALYTICS, <CompanyAdminAnalytics />)
-    const links = within(hubNav("Analytics")).getAllByRole("link")
+    const links = within(hubNav("Reports")).getAllByRole("link")
     expect(links.map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
       ["Analytics", ROUTES.COMPANY_ADMIN.ANALYTICS],
       ["AI Observability", ROUTES.COMPANY_ADMIN.OBSERVABILITY],
@@ -189,22 +189,22 @@ describe("RM-5 — Cohort Read-out tab only when the org's switch is on", () => 
   ] as const)("switch %s: no Cohort Read-out tab on Analytics or AI Observability", (_name, value) => {
     mockCohortOn = value
     const { unmount } = renderAt(ROUTES.COMPANY_ADMIN.ANALYTICS, <CompanyAdminAnalytics />)
-    expect(tabLabels(hubNav("Analytics"))).toEqual(["Analytics", "AI Observability"])
+    expect(tabLabels(hubNav("Reports"))).toEqual(["Analytics", "AI Observability"])
     unmount()
     renderAt(ROUTES.COMPANY_ADMIN.OBSERVABILITY, <CompanyAdminObservability />)
-    expect(tabLabels(hubNav("Analytics"))).toEqual(["Analytics", "AI Observability"])
+    expect(tabLabels(hubNav("Reports"))).toEqual(["Analytics", "AI Observability"])
   })
 
   it("switch on: the Cohort Read-out tab is shown", () => {
     mockCohortOn = true
     renderAt(ROUTES.COMPANY_ADMIN.ANALYTICS, <CompanyAdminAnalytics />)
-    expect(tabLabels(hubNav("Analytics"))).toEqual(["Analytics", "AI Observability", "Cohort Read-out"])
+    expect(tabLabels(hubNav("Reports"))).toEqual(["Analytics", "AI Observability", "Cohort Read-out"])
   })
 
   it("the old address with the switch off: the page renders as before (the server refuses), with no Cohort tab", () => {
     mockCohortOn = false
     renderAt(ROUTES.COMPANY_ADMIN.COHORT_READOUT, <CohortReadout />)
-    expect(tabLabels(hubNav("Analytics"))).toEqual(["Analytics", "AI Observability"])
+    expect(tabLabels(hubNav("Reports"))).toEqual(["Analytics", "AI Observability"])
     expect(screen.getByText("Activity since", { exact: false })).toBeInTheDocument()
   })
 
@@ -226,7 +226,7 @@ describe("RM-5 — the super-admin cohort read-out never gets the company-admin 
     renderAt(ROUTES.SUPER_ADMIN.COHORT_READOUT, <CohortReadout audience="super-admin" />)
     expect(screen.getByTestId("super-admin-layout")).toBeInTheDocument()
     expect(screen.queryByTestId("company-admin-layout")).toBeNull()
-    expect(screen.queryByRole("navigation", { name: "Analytics sections" })).toBeNull()
+    expect(screen.queryByRole("navigation", { name: "Reports sections" })).toBeNull()
     expect(screen.getByRole("heading", { level: 1, name: "Cohort read-out" })).toBeInTheDocument()
   })
 })

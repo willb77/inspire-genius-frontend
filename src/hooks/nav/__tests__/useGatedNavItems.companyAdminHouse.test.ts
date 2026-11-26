@@ -49,7 +49,7 @@ describe("useGatedNavItems — company-admin house style", () => {
     mockCohortOn = true
     const l = labels(renderHook(() => useGatedNavItems("company-admin")).result.current)
     expect(l).not.toContain("Cohort Read-out")
-    expect(l).toEqual(["Dashboard", "People", "Organization", "Analytics", "Surveys"])
+    expect(l).toEqual(["Dashboard", "People", "Organization", "Reports", "Surveys"])
   })
 
   it("switch OFF keeps the Cohort Read-out row when the org has it (unchanged by RM-5)", () => {

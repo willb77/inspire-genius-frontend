@@ -976,7 +976,10 @@ describe("TS-5 — Job DNA in Talent Studio, for the manager only", () => {
     }
   })
 
-  it("the label is the page's own heading, which every language keeps, so the menu has no key for it", () => {
+  // RM-8 (2026-11-26): every declared menu label now has a key (navLabels.test).
+  // Job DNA's key carries the page heading unchanged, so every language still
+  // reads "Job DNA" in the menu, as before.
+  it("the label is the page's own heading, which every language keeps, and the menu key says the same", () => {
     const read = (lang: string, ns: string) =>
       JSON.parse(readFileSync(join(process.cwd(), `public/locales/${lang}/${ns}.json`), "utf8")) as Record<
         string,
@@ -987,7 +990,7 @@ describe("TS-5 — Job DNA in Talent Studio, for the manager only", () => {
     for (const lang of ["en", "es", "fr", "pt", "it", "pl", "cs"]) {
       expect({ lang, heading: read(lang, "managerPages").jobDna.jobDna }).toEqual({ lang, heading: "Job DNA" })
       const items = (read(lang, "shellUi").nav as { items: Record<string, string> }).items
-      expect({ lang, hasMenuKey: key in items }).toEqual({ lang, hasMenuKey: false })
+      expect({ lang, menu: items[key] }).toEqual({ lang, menu: "Job DNA" })
     }
   })
 })

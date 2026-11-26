@@ -67,7 +67,7 @@ describe("constants/navigation", () => {
       expect(labels()[0]).toMatch(/^(Team Development Studio|Dashboard)$/)
       expect(labels().slice(1)).toEqual([
         "Member Oversight",
-        "Team Import",
+        "Add people",
         "Schedule",
         // RM-4 (2026-11-25): Role Play and Résumé Writer moved to My Workspace,
         // Settings and Help & Support to the footer section.
@@ -94,8 +94,8 @@ describe("constants/navigation", () => {
       expect(ROUTES.SURVEYS).toBeTruthy()
     })
 
-    it("keeps Team Import on the existing manager bulk-import route", () => {
-      const item = NAV_ITEMS_BY_ROLE.manager.find((i) => i.label === "Team Import")
+    it("keeps Add people (was Team Import, RM-8) on the existing manager bulk-import route", () => {
+      const item = NAV_ITEMS_BY_ROLE.manager.find((i) => i.label === "Add people")
       expect(item?.to).toBe(ROUTES.MANAGER.BULK_IMPORT)
     })
 
