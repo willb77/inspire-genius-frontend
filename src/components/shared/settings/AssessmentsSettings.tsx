@@ -46,6 +46,7 @@ import { ROLES } from "@/constants/routes";
 import CliftonTopFiveDialog from "./CliftonTopFiveDialog";
 import UploadReportDialog from "./UploadReportDialog";
 import AssessmentsOnFile from "./AssessmentsOnFile";
+import PendingImports from "./PendingImports";
 import SupersedeNotice from "./SupersedeNotice";
 import { numericScoreRows } from "./assessmentReview";
 
@@ -482,6 +483,8 @@ export default function AssessmentsSettings() {
           <ReplacePrismDataButton label={withPrism(t("assessments.replacePrism", { defaultValue: "Replace PRISM data" }))} variant="outline" size="sm" />
         </div>
         )}
+
+        <PendingImports />
 
         <AssessmentsOnFile />
 

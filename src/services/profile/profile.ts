@@ -23,6 +23,8 @@ import type {
   CreateAssessmentRequest,
   CreateFactRequest,
   LoadedFramework,
+  PendingImport,
+  PendingImportsResponse,
   ProfileFact,
   ProfileMe,
   TrendResponse,
@@ -158,6 +160,29 @@ export async function createAssessment(
   const { data } = await agentApi.post<Assessment>(
     `${BASE}/assessments`,
     payload,
+  );
+  return data;
+}
+
+/**
+ * GET /v1/profile/me/assessments/pending — results a practitioner sent you
+ * that you have neither accepted nor declined (TDS A4). They count for
+ * nothing, for Meridian or anyone's view, until accepted.
+ */
+export async function listPendingImports(): Promise<PendingImport[]> {
+  const { data } = await agentApi.get<PendingImportsResponse>(`${BASE}/assessments/pending`);
+  return data?.items ?? [];
+}
+
+/**
+ * POST /v1/profile/me/assessments/{id}/accept — accept a result a
+ * practitioner sent you; it becomes your current result for that framework.
+ * 404 not yours, 403 not a practitioner's import, 409 already accepted or
+ * declined. Declining is `removeAssessment` (the owner remove).
+ */
+export async function acceptPendingImport(id: string): Promise<AssessmentHistoryItem> {
+  const { data } = await agentApi.post<AssessmentHistoryItem>(
+    `${BASE}/assessments/${encodeURIComponent(id)}/accept`,
   );
   return data;
 }

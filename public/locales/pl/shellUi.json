@@ -470,7 +470,21 @@
     "removeDone": "Usunięto wynik {{framework}}.",
     "removeAlready": "Ten wynik został już usunięty.",
     "removeFailed": "Nie udało się usunąć tego wyniku. Spróbuj ponownie.",
-    "supersede": "Masz już wynik {{framework}} z {{date}}. Zapisanie tego sprawi, że stanie się bieżącym wynikiem; wcześniejszy pozostanie w historii."
+    "supersede": "Masz już wynik {{framework}} z {{date}}. Zapisanie tego sprawi, że stanie się bieżącym wynikiem; wcześniejszy pozostanie w historii.",
+    "pendingTitle": "Czeka na Twoją odpowiedź",
+    "pendingSomeone": "Twój praktyk",
+    "pendingLine": "{{name}} wysłał(a) Ci wynik {{framework}} dnia {{date}}.",
+    "pendingHelp": "Nie jest używany, dopóki go nie zaakceptujesz. Po akceptacji stanie się Twoim bieżącym wynikiem {{framework}}.",
+    "pendingAccept": "Akceptuj",
+    "pendingDecline": "Odrzuć",
+    "pendingAccepted": "Zaakceptowano. To jest teraz Twój bieżący wynik {{framework}}.",
+    "pendingDeclined": "Odrzucono. Wynik {{framework}} nie został dodany.",
+    "pendingAlready": "Na ten wynik już odpowiedziano.",
+    "pendingAcceptFailed": "Nie udało się zaakceptować tego wyniku. Spróbuj ponownie.",
+    "pendingDeclineFailed": "Nie udało się odrzucić tego wyniku. Spróbuj ponownie.",
+    "pendingDeclineTitle": "Odrzucić ten wynik {{framework}}?",
+    "pendingDeclineBody": "Nie zostanie dodany do Twojego profilu i nie będzie można go zaakceptować później. {{name}} nie otrzyma powiadomienia.",
+    "pendingError": "Nie udało się sprawdzić wyników wysłanych do Ciebie. Odśwież stronę, aby spróbować ponownie."
   },
   "audioPlayer": {
     "browseHint": "lub kliknij, aby przeglądać • Obsługuje MP3, WAV, FLAC i inne",

@@ -18,6 +18,8 @@ jest.mock("@/services/profile/profile", () => ({
   previewImportAssessment: jest.fn(),
   confirmImportAssessment: jest.fn(),
   importAssessment: jest.fn(),
+  // A4: nothing waiting.
+  listPendingImports: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock("@/context/useAuth");

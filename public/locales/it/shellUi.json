@@ -605,7 +605,21 @@
     "removeDone": "Risultato {{framework}} rimosso.",
     "removeAlready": "Quel risultato era già stato rimosso.",
     "removeFailed": "Non è stato possibile rimuovere questo risultato. Riprova.",
-    "supersede": "Hai già un risultato {{framework}} del {{date}}. Salvando questo, diventa il risultato attuale; il precedente resta nella tua cronologia."
+    "supersede": "Hai già un risultato {{framework}} del {{date}}. Salvando questo, diventa il risultato attuale; il precedente resta nella tua cronologia.",
+    "pendingTitle": "In attesa di una tua risposta",
+    "pendingSomeone": "Il tuo professionista",
+    "pendingLine": "{{name}} ti ha inviato un risultato {{framework}} il {{date}}.",
+    "pendingHelp": "Non viene usato finché non lo accetti. Accettandolo diventa il tuo risultato {{framework}} attuale.",
+    "pendingAccept": "Accetta",
+    "pendingDecline": "Rifiuta",
+    "pendingAccepted": "Accettato. Ora è il tuo risultato {{framework}} attuale.",
+    "pendingDeclined": "Rifiutato. Il risultato {{framework}} non è stato aggiunto.",
+    "pendingAlready": "Quel risultato ha già ricevuto una risposta.",
+    "pendingAcceptFailed": "Non è stato possibile accettare questo risultato. Riprova.",
+    "pendingDeclineFailed": "Non è stato possibile rifiutare questo risultato. Riprova.",
+    "pendingDeclineTitle": "Rifiutare questo risultato {{framework}}?",
+    "pendingDeclineBody": "Non verrà aggiunto al tuo profilo e non potrai accettarlo in seguito. {{name}} non viene avvisato.",
+    "pendingError": "Non è stato possibile verificare i risultati che ti sono stati inviati. Ricarica la pagina per riprovare."
   },
   "talentStudio": {
     "intro": "Trova, incontra e trattieni le persone da cui dipende il tuo team. Ogni passaggio apre una pagina che hai già.",

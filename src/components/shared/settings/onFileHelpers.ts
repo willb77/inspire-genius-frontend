@@ -11,6 +11,7 @@
  */
 import type {
   AssessmentHistoryItem,
+  PendingImport,
   ProfileAssessmentView,
   ProfileMe,
 } from "@/types/profile/profile-types";
@@ -165,4 +166,30 @@ export function removeErrorInfo(err: unknown): { status?: number; detail?: strin
   const res = (err as ErrorShape | null)?.response;
   const detail = res?.data?.detail;
   return { status: res?.status, detail: typeof detail === "string" && detail ? detail : undefined };
+}
+
+// ── TDS A4: results a practitioner sent, waiting for the person ──
+
+/** A held result in the same one-line form as an "On file" line. */
+export function pendingResultText(item: Pick<PendingImport, "framework" | "scores">): string {
+  return resultText({
+    framework: item.framework,
+    assessed_at: "",
+    source: PRACTITIONER_IMPORT_SOURCE,
+    top_scores: item.scores ?? [],
+  });
+}
+
+/** The server's source for a practitioner's import (backend `PRACTITIONER_IMPORT_SOURCE`). */
+export const PRACTITIONER_IMPORT_SOURCE = "practitioner_import";
+
+/**
+ * Whether a failed read of the waiting list means the route is not on this
+ * tier yet. The route itself never answers 404 (it lists the caller's own
+ * rows), so a 404 can only mean an engine without it: the list is then left
+ * out rather than putting an error on everyone's Settings. Any other failure
+ * is shown.
+ */
+export function pendingRouteMissing(err: unknown): boolean {
+  return removeErrorInfo(err).status === 404;
 }

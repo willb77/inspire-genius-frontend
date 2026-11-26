@@ -26,6 +26,10 @@ import {
   type ClientsUnderManagementSummary,
   type ClientUsageRow,
   type ClientPrism,
+  type ClientImportFramework,
+  type ClientImportPreview,
+  type ClientImportScore,
+  type ClientImportSent,
 } from "@/types/practitioner/coachClient"
 
 /** True only where the real coach backend is deployed (dev build). */
@@ -449,4 +453,45 @@ export function getClientUsage(): Promise<ClientUsageRow[]> {
       lastActive: "2026-07-15",
     })),
   )
+}
+
+// ── TDS A4: a practitioner sends a linked client's DISC or CliftonStrengths ──
+//
+// Two steps, both behind the server's client-access check: preview parses the
+// file and saves nothing; confirm sends the reviewed rows to the client's
+// account, HELD — they count for nothing until the client accepts them in
+// Settings. 409 when the client has not linked an account, 403 without access
+// to this client. Failures throw, so the dialog renders the server's reason.
+
+/** True only where the coach backend is deployed; the import is offered only there. */
+export const clientImportAvailable = USE_COACH_BACKEND
+
+export async function previewClientAssessmentImport(
+  clientId: string,
+  framework: ClientImportFramework,
+  file: File,
+): Promise<ClientImportPreview> {
+  const form = new FormData()
+  form.append("framework", framework)
+  form.append("file", file)
+  const r = await agentApi.post<Envelope<ClientImportPreview>>(
+    `/v1/agents/coach/clients/${encodeURIComponent(clientId)}/assessments/import/preview`,
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  )
+  const d = r.data?.data
+  return { framework: d?.framework ?? framework, filename: d?.filename ?? null, scores: d?.scores ?? [] }
+}
+
+export async function sendClientAssessmentImport(
+  clientId: string,
+  body: { framework: ClientImportFramework; scores: ClientImportScore[] },
+): Promise<ClientImportSent> {
+  const r = await agentApi.post<Envelope<ClientImportSent>>(
+    `/v1/agents/coach/clients/${encodeURIComponent(clientId)}/assessments/import/confirm`,
+    body,
+  )
+  const d = r.data?.data
+  if (!d) throw new Error("The server did not confirm the send")
+  return d
 }
