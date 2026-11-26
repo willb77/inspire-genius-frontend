@@ -99,6 +99,22 @@ export interface MemberNarrative {
   nextSuggestedModule: string | null
 }
 
+/**
+ * Response from `POST /v1/agents/bio/{id}/modules/{moduleType}/complete` and
+ * `.../reopen` — the member marking a chapter done, or opening it again.
+ *
+ * "covered" is written ONLY by the member's explicit "Mark chapter done"; no
+ * count or threshold sets it. 403 = not the owner; 422 = `moduleType` is not
+ * one of the six canonical modules (FastAPI `detail` is a string there).
+ */
+export interface BioModuleStatusResponse {
+  memberId: string
+  moduleType: string
+  status: "covered" | "in_progress"
+  startedAt: string | null
+  completedAt: string | null
+}
+
 /** Memoir rendering style. `prose` reads as narrative; `structured` keeps headings. */
 export type MemoirStyle = "prose" | "structured"
 

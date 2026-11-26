@@ -48,6 +48,11 @@
       "back": "Voltar"
     },
     "bioChronicleChatPanel": {
+      "chapterActive": "Capítulo: {{chapter}}",
+      "chapterDone": "Capítulo concluído",
+      "markChapterDone": "Marcar capítulo como concluído",
+      "reopenChapter": "Reabrir capítulo",
+      "chapterUpdateFailed": "Não foi possível atualizar este capítulo. Tente novamente.",
       "resumed": "\"{{title}}\" retomada.",
       "couldnTOpenThatSession": "Não foi possível abrir essa sessão. Tente novamente.",
       "chronicleInterview": "Entrevista do Chronicle",

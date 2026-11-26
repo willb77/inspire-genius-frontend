@@ -1,5 +1,6 @@
 import { getApi } from "@/lib/agentApi"
 import type {
+  BioModuleStatusResponse,
   BioSessionDetail,
   BioSessionSummary,
   CaptureRequest,
@@ -75,6 +76,41 @@ export async function captureBioTurn(
   const { data } = await getApi().post<CaptureResponse>(
     `${PREFIX}/${encodeURIComponent(memberId)}/capture`,
     body,
+  )
+  return data
+}
+
+/**
+ * POST /{memberId}/modules/{moduleType}/complete — the member marks a chapter
+ * done ("covered"). No body. The only writer of "covered": no episode count or
+ * depth threshold sets it, because Chronicle's own method forbids advancing a
+ * member "because some count was satisfied". 403 for another member's id, 422
+ * for a non-canonical module type — both propagate to the caller to render.
+ */
+export async function completeBioModule(
+  memberId: string,
+  moduleType: string,
+): Promise<BioModuleStatusResponse> {
+  const { data } = await getApi().post<BioModuleStatusResponse>(
+    `${PREFIX}/${encodeURIComponent(memberId)}/modules/${encodeURIComponent(
+      moduleType,
+    )}/complete`,
+  )
+  return data
+}
+
+/**
+ * POST /{memberId}/modules/{moduleType}/reopen — the member opens a chapter
+ * they had marked done. Back to "in_progress", `completedAt` cleared. No body.
+ */
+export async function reopenBioModule(
+  memberId: string,
+  moduleType: string,
+): Promise<BioModuleStatusResponse> {
+  const { data } = await getApi().post<BioModuleStatusResponse>(
+    `${PREFIX}/${encodeURIComponent(memberId)}/modules/${encodeURIComponent(
+      moduleType,
+    )}/reopen`,
   )
   return data
 }

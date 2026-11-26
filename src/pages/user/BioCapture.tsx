@@ -111,7 +111,7 @@ export default function BioCapture() {
             {memberId ? (
               <ChronicleChatPanel
                 memberId={memberId}
-                suggestedModule={narrative.nextSuggestedModule}
+                narrative={narrative}
                 onTurnSettled={handleTurnSettled}
                 registerSeed={registerSeed}
                 railFooter={

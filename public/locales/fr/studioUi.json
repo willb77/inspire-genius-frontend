@@ -71,6 +71,11 @@
       "addedToYourStory": "Ajouté à votre histoire"
     },
     "bioChronicleChatPanel": {
+      "chapterActive": "Chapitre : {{chapter}}",
+      "chapterDone": "Chapitre terminé",
+      "markChapterDone": "Marquer le chapitre comme terminé",
+      "reopenChapter": "Rouvrir le chapitre",
+      "chapterUpdateFailed": "Impossible de mettre à jour ce chapitre. Veuillez réessayer.",
       "nothingToSaveYetStart": "Rien à enregistrer pour l'instant : commencez d'abord l'entretien.",
       "interviewSavedYouCanContinue": "Entretien enregistré : vous pouvez le reprendre à tout moment.",
       "couldnTSaveThisSession": "Impossible d'enregistrer cette session : elle reste affichée ici pour le moment.",

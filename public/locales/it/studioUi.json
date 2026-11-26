@@ -268,6 +268,11 @@
   },
   "user": {
     "bioChronicleChatPanel": {
+      "chapterActive": "Capitolo: {{chapter}}",
+      "chapterDone": "Capitolo completato",
+      "markChapterDone": "Segna il capitolo come completato",
+      "reopenChapter": "Riapri il capitolo",
+      "chapterUpdateFailed": "Impossibile aggiornare questo capitolo: riprova.",
       "readyWhenYouAre": "Quando vuoi, sono pronto",
       "audio": "Audio",
       "audioReadChronicleSQuestions": "Audio: leggi ad alta voce le domande di Chronicle e rispondi parlando",

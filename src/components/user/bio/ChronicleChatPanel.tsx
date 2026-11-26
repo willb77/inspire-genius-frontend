@@ -39,10 +39,12 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   AlertTriangle,
   Bot,
+  CheckCircle2,
   FilePlus2,
   History,
   Mic,
   MicOff,
+  RotateCcw,
   Send,
   Square,
   User,
@@ -79,11 +81,15 @@ import {
   useLoadBioSession,
   useSaveBioSession,
 } from "@/hooks/useBioSessions"
+import {
+  useCompleteBioModule,
+  useReopenBioModule,
+} from "@/hooks/useCompleteBioModule"
 import CapturedTurnCard from "@/components/user/bio/CapturedTurnCard"
 import SessionRecapCard, {
   type SessionRecap,
 } from "@/components/user/bio/SessionRecapCard"
-import type { CaptureResponse } from "@/types/bio"
+import type { CaptureResponse, MemberNarrative } from "@/types/bio"
 import { useTranslation } from "react-i18next"
 
 type ChatTurn = { role: "user" | "assistant"; content: string; id: string }
@@ -116,12 +122,18 @@ export type ChronicleChatPanelProps = {
   memberId: string
   /** Called when an assistant turn settles, so the parent can refetch the narrative. */
   onTurnSettled?: () => void
-  /** Which module the viewer is nudging the member toward, forwarded as context. */
-  suggestedModule?: string | null
+  /**
+   * The member's narrative (modules + episodes), read for the chapter the
+   * member is in: "Mark chapter done" appears once that chapter has at least
+   * one memory, "Reopen" once it is covered.
+   */
+  narrative?: Pick<MemberNarrative, "modules" | "episodes"> | null
   /**
    * Lets the parent drive the chat: the panel registers a `seed(moduleType)`
    * function here so the chapters strip's tiles can open that chapter as a sent
-   * message. Registered on mount, cleared on unmount.
+   * message. Registered on mount, cleared on unmount. The seeded chapter
+   * becomes the ACTIVE chapter — the capture hint — until another is chosen,
+   * or New session / Resume clears it.
    */
   registerSeed?: (seed: ((moduleType: string) => void) | null) => void
   className?: string
@@ -132,7 +144,7 @@ export type ChronicleChatPanelProps = {
 export function ChronicleChatPanel({
   memberId,
   onTurnSettled,
-  suggestedModule,
+  narrative,
   registerSeed,
   className,
   railFooter,
@@ -160,6 +172,21 @@ export function ChronicleChatPanel({
   const sessionIdRef = useRef<string | null>(null)
   const lastSavedCount = useRef(0)
   const autosaveInFlight = useRef(false)
+  // Which interview a save belongs to. Bumped by New session and Resume; a save
+  // that started under an older generation must not re-point `sessionIdRef` at
+  // the session it was saving, or the next autosave of the NEW conversation
+  // would overwrite that old session's transcript (D-11).
+  const sessionGenRef = useRef(0)
+  // The chapter the member chose (tile, "Continue", first-run). Sent as the
+  // capture hint; null when nothing was chosen, so the model files the memory
+  // by its content instead of every memory landing in the suggested chapter.
+  // The ref is read by `send`, so a seed's own message carries its chapter.
+  const [activeModule, setActiveModuleState] = useState<string | null>(null)
+  const activeModuleRef = useRef<string | null>(null)
+  const setActiveModule = useCallback((m: string | null) => {
+    activeModuleRef.current = m
+    setActiveModuleState(m)
+  }, [])
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const onTurnSettledRef = useRef(onTurnSettled)
   onTurnSettledRef.current = onTurnSettled
@@ -168,6 +195,8 @@ export function ChronicleChatPanel({
   const { data: savedSessions = [] } = useBioSessions(memberId || null)
   const { mutateAsync: saveSession, isPending: saving } = useSaveBioSession()
   const { mutateAsync: loadSession } = useLoadBioSession()
+  const completeChapter = useCompleteBioModule()
+  const reopenChapter = useReopenBioModule()
 
   const onAssistant = useCallback((content: string) => {
     setTurns((prev) => [...prev, { role: "assistant", content, id: nextId("a") }])
@@ -225,8 +254,9 @@ export function ChronicleChatPanel({
         ...prev,
         { role: "user", content: trimmed, id: userTurnId },
       ])
+      const chapter = activeModuleRef.current
       void sendToMeridian(trimmed, {
-        suggested_module: suggestedModule ?? undefined,
+        suggested_module: chapter ?? undefined,
       })
       setInput("")
 
@@ -235,7 +265,7 @@ export function ChronicleChatPanel({
       // the content-specific followups. It must never block or gate the reply,
       // so it runs in parallel and its failure is swallowed (best-effort).
       captureTurn(
-        { memberId, message: trimmed, moduleHint: suggestedModule ?? null },
+        { memberId, message: trimmed, moduleHint: chapter ?? null },
         {
           onSuccess: (res) => {
             if (res.captured && res.episodes.length > 0) {
@@ -249,17 +279,47 @@ export function ChronicleChatPanel({
         },
       )
     },
-    [sendToMeridian, memberId, suggestedModule, dictation, stopSpeaking, captureTurn],
+    [sendToMeridian, memberId, dictation, stopSpeaking, captureTurn],
   )
 
-  // Expose a seed function so the chapters strip can open a chapter as a message.
+  // Expose a seed function so the chapters strip can open a chapter as a
+  // message. The chosen chapter becomes the active one BEFORE the send, so the
+  // seed's own message is captured under it.
   useEffect(() => {
     if (!registerSeed) return
-    registerSeed((moduleType: string) =>
-      send(`Let's talk about my ${moduleLabel(moduleType).toLowerCase()}.`),
-    )
+    registerSeed((moduleType: string) => {
+      setActiveModule(moduleType)
+      send(`Let's talk about my ${moduleLabel(moduleType).toLowerCase()}.`)
+    })
     return () => registerSeed(null)
-  }, [registerSeed, send])
+  }, [registerSeed, send, setActiveModule])
+
+  // The active chapter's state, from the narrative the page already holds.
+  const activeChapter = useMemo(() => {
+    if (!activeModule) return null
+    const mod = narrative?.modules.find((m) => m.moduleType === activeModule)
+    const episodes = (narrative?.episodes ?? []).filter(
+      (e) => e.moduleType === activeModule,
+    ).length
+    return {
+      moduleType: activeModule,
+      covered: (mod?.status ?? "").toLowerCase() === "covered",
+      episodes,
+    }
+  }, [activeModule, narrative])
+
+  const chapterPending = completeChapter.isPending || reopenChapter.isPending
+  const chapterError = completeChapter.error ?? reopenChapter.error
+  const handleMarkChapterDone = useCallback(() => {
+    if (!activeChapter) return
+    reopenChapter.reset()
+    completeChapter.mutate({ memberId, moduleType: activeChapter.moduleType })
+  }, [activeChapter, completeChapter, reopenChapter, memberId])
+  const handleReopenChapter = useCallback(() => {
+    if (!activeChapter) return
+    completeChapter.reset()
+    reopenChapter.mutate({ memberId, moduleType: activeChapter.moduleType })
+  }, [activeChapter, completeChapter, reopenChapter, memberId])
 
   // "Go deeper" chips: the content-specific followups from the last capture,
   // falling back to a minimal starter set before the first turn returns any.
@@ -317,6 +377,7 @@ export function ChronicleChatPanel({
     if (autosaveInFlight.current || turns.length === lastSavedCount.current) return
     autosaveInFlight.current = true
     const count = turns.length
+    const gen = sessionGenRef.current
     void saveSession({
       memberId,
       sessionId: sessionIdRef.current,
@@ -324,6 +385,10 @@ export function ChronicleChatPanel({
       summary: buildSummary(),
     })
       .then((saved) => {
+        // New session / Resume happened while this save was in flight. The save
+        // itself landed in the session it was for (it carried that transcript);
+        // do not re-point the current interview at it.
+        if (gen !== sessionGenRef.current) return
         sessionIdRef.current = saved.sessionId
         lastSavedCount.current = count
         setCurrentSessionId(saved.sessionId)
@@ -347,6 +412,7 @@ export function ChronicleChatPanel({
     setRecap(built)
     // Best-effort auto-save so ending an interview persists it too.
     if (turns.length > 0) {
+      const gen = sessionGenRef.current
       void saveSession({
         memberId,
         sessionId: sessionIdRef.current,
@@ -354,6 +420,8 @@ export function ChronicleChatPanel({
         summary: built.summary,
       })
         .then((saved) => {
+          // Same generation guard as the autosave above.
+          if (gen !== sessionGenRef.current) return
           sessionIdRef.current = saved.sessionId
           lastSavedCount.current = turns.length
           setCurrentSessionId(saved.sessionId)
@@ -376,8 +444,10 @@ export function ChronicleChatPanel({
   ])
 
   const resetInterview = useCallback(() => {
+    sessionGenRef.current += 1
     dictation.stop()
     stopSpeaking()
+    setActiveModule(null)
     setTurns([])
     setCaptures({})
     setFollowups([])
@@ -387,14 +457,16 @@ export function ChronicleChatPanel({
     lastSavedCount.current = 0
     setInput("")
     spokenRef.current = null
-  }, [dictation, stopSpeaking])
+  }, [dictation, stopSpeaking, setActiveModule])
 
   const handleResumeSession = useCallback(
     async (sessionId: string) => {
       try {
         const detail = await loadSession({ memberId, sessionId })
+        sessionGenRef.current += 1
         dictation.stop()
         stopSpeaking()
+        setActiveModule(null)
         setTurns(
           detail.transcript.map((t) => ({
             role: t.role,
@@ -416,7 +488,7 @@ export function ChronicleChatPanel({
         toast.error(tr("user.bioChronicleChatPanel.couldnTOpenThatSession", { defaultValue: "Couldn't open that session — please try again." }))
       }
     },
-    [loadSession, memberId, dictation, stopSpeaking, tr],
+    [loadSession, memberId, dictation, stopSpeaking, setActiveModule, tr],
   )
 
   return (
@@ -524,6 +596,58 @@ export function ChronicleChatPanel({
         <div className="flex flex-col sm:h-full sm:flex-row">
           {/* Conversation column */}
           <div className="flex h-[28rem] shrink-0 flex-col sm:h-auto sm:min-w-0 sm:flex-1 sm:shrink">
+            {/* The chapter the member chose. "Covered" is written only here, by
+                the member — never by a count (Chronicle's own method). */}
+            {activeChapter && (
+              <div className="border-b px-3 py-1.5">
+                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                  <span className="min-w-0 truncate text-muted-foreground">
+                    {tr("user.bioChronicleChatPanel.chapterActive", {
+                      defaultValue: "Chapter: {{chapter}}",
+                      chapter: moduleLabel(activeChapter.moduleType),
+                    })}
+                  </span>
+                  {activeChapter.covered ? (
+                    <>
+                      <span className="inline-flex items-center gap-1 text-emerald-700">
+                        <CheckCircle2 className="h-3 w-3" aria-hidden />
+                        {tr("user.bioChronicleChatPanel.chapterDone", { defaultValue: "Chapter done" })}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="ml-auto h-6 gap-1 px-2 text-[11px]"
+                        onClick={handleReopenChapter}
+                        disabled={chapterPending}
+                      >
+                        <RotateCcw className="h-3 w-3" aria-hidden />
+                        {tr("user.bioChronicleChatPanel.reopenChapter", { defaultValue: "Reopen chapter" })}
+                      </Button>
+                    </>
+                  ) : activeChapter.episodes > 0 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="ml-auto h-6 gap-1 px-2 text-[11px]"
+                      onClick={handleMarkChapterDone}
+                      disabled={chapterPending}
+                    >
+                      <CheckCircle2 className="h-3 w-3" aria-hidden />
+                      {tr("user.bioChronicleChatPanel.markChapterDone", { defaultValue: "Mark chapter done" })}
+                    </Button>
+                  ) : null}
+                </div>
+                {chapterError ? (
+                  <p role="alert" className="mt-1 text-[11px] text-destructive">
+                    {tr("user.bioChronicleChatPanel.chapterUpdateFailed", {
+                      defaultValue: "Couldn't update this chapter — please try again.",
+                    })}
+                  </p>
+                ) : null}
+              </div>
+            )}
             <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-3">
               {recap && <SessionRecapCard recap={recap} />}
 
