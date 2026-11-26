@@ -89,6 +89,16 @@ jest.mock("@/constants/navigation", () => ({
       items: [{ to: "/home", icon: DummyIcon, label: "User Home" }],
     },
   ],
+  // RM-2: the super-admin branch builds its menu in useSuperAdminSections,
+  // which applies the owner-only filter. The real lists and the owner check are
+  // covered in superAdminOneMenu.rm2.test.tsx; stubs are enough here.
+  OWNER_ONLY_NAV_ROUTES: new Set<string>(),
+  isPlatformOwner: () => false,
+}));
+jest.mock("@/constants/house/superAdminNav", () => ({
+  HOUSE_SUPER_ADMIN_SECTIONS: [
+    { label: "", items: [{ to: "/super-admin/dashboard", label: "Admin home" }] },
+  ],
 }));
 
 jest.mock("@/constants/routes", () => ({
@@ -235,6 +245,28 @@ describe("UserLayout", () => {
       "Tools",
       "Administration",
     ]);
+  });
+
+  test("super-admin, house style on: My Workspace stays open on user pages (RM-2)", () => {
+    localStorage.setItem("house_style_admin", "true");
+    try {
+      mockUseAuth.mockReturnValue({ user: { role: "super-admin" } });
+      render(<UserLayout collapseSidebarOnMount className="custom"><div /></UserLayout>);
+      const props = mockSidebarScaffold.mock.calls[0][0];
+      expect(props.navItems).toEqual([]);
+      expect(props.expandOnPath).toBe("/home");
+      expect(props.collapseOnMount).toBe(true);
+      expect(props.className).toBe("custom");
+      const labels = props.navSections.map((s: { label: string }) => s.label);
+      expect(labels).not.toContain("Role Views");
+      const workspace = props.navSections.find(
+        (s: { label: string }) => s.label === "My Workspace",
+      );
+      expect(workspace.defaultCollapsed).toBeUndefined();
+      expect(workspace.collapsible).toBeUndefined();
+    } finally {
+      localStorage.removeItem("house_style_admin");
+    }
   });
 
   test("forwards collapseSidebarOnMount to the scaffold", () => {
