@@ -95,7 +95,21 @@
     "removeDone": "{{framework}} result removed.",
     "removeAlready": "That result had already been removed.",
     "removeFailed": "We could not remove this result. Try again.",
-    "supersede": "You already have a {{framework}} result from {{date}}. Saving this one makes it the current result; the earlier one stays in your history."
+    "supersede": "You already have a {{framework}} result from {{date}}. Saving this one makes it the current result; the earlier one stays in your history.",
+    "pendingTitle": "Waiting for you",
+    "pendingSomeone": "Your practitioner",
+    "pendingLine": "{{name}} sent you a {{framework}} result on {{date}}.",
+    "pendingHelp": "It is not used until you accept it. Accepting makes it your current {{framework}} result.",
+    "pendingAccept": "Accept",
+    "pendingDecline": "Decline",
+    "pendingAccepted": "Accepted. This is now your current {{framework}} result.",
+    "pendingDeclined": "Declined. The {{framework}} result was not added.",
+    "pendingAlready": "That result has already been answered.",
+    "pendingAcceptFailed": "We could not accept this result. Try again.",
+    "pendingDeclineFailed": "We could not decline this result. Try again.",
+    "pendingDeclineTitle": "Decline this {{framework}} result?",
+    "pendingDeclineBody": "It will not be added to your profile, and you cannot accept it later. {{name}} is not notified.",
+    "pendingError": "We could not check for results sent to you. Reload the page to try again."
   },
   "audioPlayer": {
     "browseHint": "or click to browse • Supports MP3, WAV, FLAC, and more",

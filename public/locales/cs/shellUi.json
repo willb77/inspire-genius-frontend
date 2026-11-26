@@ -399,7 +399,21 @@
     "removeDone": "Výsledek {{framework}} odebrán.",
     "removeAlready": "Tento výsledek už byl odebrán.",
     "removeFailed": "Tento výsledek se nepodařilo odebrat. Zkuste to znovu.",
-    "supersede": "Již máte výsledek {{framework}} ze dne {{date}}. Uložením tohoto se stane aktuálním výsledkem; dřívější zůstane ve vaší historii."
+    "supersede": "Již máte výsledek {{framework}} ze dne {{date}}. Uložením tohoto se stane aktuálním výsledkem; dřívější zůstane ve vaší historii.",
+    "pendingTitle": "Čeká na vaši odpověď",
+    "pendingSomeone": "Váš praktik",
+    "pendingLine": "{{name}} vám poslal(a) výsledek {{framework}} dne {{date}}.",
+    "pendingHelp": "Nepoužívá se, dokud ho nepřijmete. Po přijetí se stane vaším aktuálním výsledkem {{framework}}.",
+    "pendingAccept": "Přijmout",
+    "pendingDecline": "Odmítnout",
+    "pendingAccepted": "Přijato. Toto je nyní váš aktuální výsledek {{framework}}.",
+    "pendingDeclined": "Odmítnuto. Výsledek {{framework}} nebyl přidán.",
+    "pendingAlready": "Na tento výsledek už bylo odpovězeno.",
+    "pendingAcceptFailed": "Tento výsledek se nepodařilo přijmout. Zkuste to znovu.",
+    "pendingDeclineFailed": "Tento výsledek se nepodařilo odmítnout. Zkuste to znovu.",
+    "pendingDeclineTitle": "Odmítnout tento výsledek {{framework}}?",
+    "pendingDeclineBody": "Nebude přidán do vašeho profilu a později ho nebude možné přijmout. {{name}} nedostane upozornění.",
+    "pendingError": "Nepodařilo se zkontrolovat výsledky, které vám byly zaslány. Obnovte stránku a zkuste to znovu."
   },
   "audioPlayer": {
     "browseHint": "nebo kliknutím vyberte soubor • Podporuje MP3, WAV, FLAC a další",

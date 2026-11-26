@@ -586,7 +586,21 @@
     "removeDone": "Resultado de {{framework}} removido.",
     "removeAlready": "Esse resultado já tinha sido removido.",
     "removeFailed": "Não foi possível remover este resultado. Tente novamente.",
-    "supersede": "Já tem um resultado de {{framework}} de {{date}}. Ao guardar este, passa a ser o resultado atual; o anterior fica no seu histórico."
+    "supersede": "Já tem um resultado de {{framework}} de {{date}}. Ao guardar este, passa a ser o resultado atual; o anterior fica no seu histórico.",
+    "pendingTitle": "Aguardando sua resposta",
+    "pendingSomeone": "Seu profissional",
+    "pendingLine": "{{name}} enviou a você um resultado de {{framework}} em {{date}}.",
+    "pendingHelp": "Ele não é usado até você aceitá-lo. Ao aceitar, ele passa a ser seu resultado atual de {{framework}}.",
+    "pendingAccept": "Aceitar",
+    "pendingDecline": "Recusar",
+    "pendingAccepted": "Aceito. Este agora é seu resultado atual de {{framework}}.",
+    "pendingDeclined": "Recusado. O resultado de {{framework}} não foi adicionado.",
+    "pendingAlready": "Esse resultado já foi respondido.",
+    "pendingAcceptFailed": "Não foi possível aceitar este resultado. Tente novamente.",
+    "pendingDeclineFailed": "Não foi possível recusar este resultado. Tente novamente.",
+    "pendingDeclineTitle": "Recusar este resultado de {{framework}}?",
+    "pendingDeclineBody": "Ele não será adicionado ao seu perfil e você não poderá aceitá-lo depois. {{name}} não é avisado.",
+    "pendingError": "Não foi possível verificar os resultados enviados a você. Recarregue a página para tentar novamente."
   },
   "notificationBell": {
     "ariaLabel": "Notificações",
