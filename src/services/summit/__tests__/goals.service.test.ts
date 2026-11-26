@@ -12,6 +12,7 @@ import {
   createGoal,
   getMyGoals,
   publishGoal,
+  saveDiscovery,
   setGoalVisibility,
   unpublishGoal,
 } from "../goals.service"
@@ -88,4 +89,22 @@ it("encodes ids in the path", async () => {
   mockPost.mockResolvedValue({ data: { status: true, data: SHARED } })
   await publishGoal("a b/c")
   expect(mockPost).toHaveBeenCalledWith("/v1/agents/goals/a%20b%2Fc/publish")
+})
+
+it("saves one discovery answer with expected_rev and the thread, unwrapped (D-16)", async () => {
+  const stored = { version: 1, rev: 5, categories: {}, goals: [] }
+  mockPost.mockResolvedValue({ data: stored })
+  const out = await saveDiscovery("job", {
+    answers: [{ question: "Q1", answer: "A1" }],
+    status: "active",
+    expected_rev: 4,
+    questions: ["Q1", "Q2"],
+  })
+  expect(mockPost).toHaveBeenCalledWith("/v1/agents/goals/discovery/job", {
+    answers: [{ question: "Q1", answer: "A1" }],
+    status: "active",
+    expected_rev: 4,
+    questions: ["Q1", "Q2"],
+  })
+  expect(out).toBe(stored)
 })
