@@ -23,6 +23,8 @@
   "meridian": {
     "title": "Meridian",
     "thinking": "Meridian po mendon...",
+    "jobTimedOut": "Meridian-it iu desh shumë kohë për t'u përgjigjur. Ju lutemi provoni përsëri.",
+    "jobLostContact": "U humb lidhja me Meridian-in gjatë përgjigjes. Ju lutemi provoni përsëri.",
     "noResponse": "Nuk ka përgjigje.",
     "consultedAgents": "+ {{agents}}",
     "viaAgent": "përmes {{agent}}",

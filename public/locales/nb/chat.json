@@ -23,6 +23,8 @@
   "meridian": {
     "title": "Meridian",
     "thinking": "Meridian tenker...",
+    "jobTimedOut": "Meridian brukte for lang tid på å svare. Prøv igjen.",
+    "jobLostContact": "Mistet kontakten med Meridian mens den svarte. Prøv igjen.",
     "noResponse": "Ingen respons.",
     "consultedAgents": "+ {{agents}}",
     "viaAgent": "via {{agent}}",

@@ -45,6 +45,15 @@ export type ChatJob = {
   created_at?: string | null;
   updated_at?: string | null;
   completed_at?: string | null;
+  /**
+   * Set only when THIS client settled the job as an error without a
+   * server verdict: ``"deadline"`` (still not terminal after
+   * ``pollTimeoutMs``) or ``"poll_failures"`` (``maxPollFailures``
+   * consecutive failed reads). A job settled this way stays settled: a
+   * late answer, by push or poll, is dropped (settle-once). Absent on
+   * every server-sourced job.
+   */
+  client_settled?: "deadline" | "poll_failures";
 };
 
 type StartJobInput = {
@@ -82,10 +91,21 @@ export type UseMeridianJobOptions = {
    */
   pollIntervalMs?: number;
   /**
-   * Maximum poll duration (ms). Defaults to 5 minutes. After this the
-   * job is left in its last-known state and the hook stops polling.
+   * Maximum poll duration (ms), measured from when this hook starts
+   * polling the job (for a re-hydrated job, from the page load). Defaults
+   * to 5 minutes. A job still not terminal at the deadline is settled
+   * locally as an ``error`` with readable text (``client_settled:
+   * "deadline"``), so ``onJobSettled`` fires and every consumer's error
+   * branch runs, instead of a "thinking" indicator that never ends.
    */
   pollTimeoutMs?: number;
+  /**
+   * Consecutive failed polls (a thrown request or a 404) after which the
+   * job is settled locally as an ``error`` (``client_settled:
+   * "poll_failures"``). Any successful read resets the count. Defaults
+   * to 5 (about 10 s at the default 2 s cadence).
+   */
+  maxPollFailures?: number;
 };
 
 export type UseMeridianJobReturn = {
@@ -151,6 +171,30 @@ function isRetriableStartJobError(err: unknown): boolean {
   return false;
 }
 
+/**
+ * The user-visible text for a client-side settle. Two consumers show
+ * ``job.error`` verbatim (MeridianChat's banner, Interview Practice's
+ * toast), so this must read as a sentence, never a code. Resolved through
+ * the i18next singleton (the ``chat`` namespace loads at init); the
+ * English fallback covers an uninitialised instance, e.g. in unit tests.
+ */
+const CLIENT_SETTLE_TEXT: Record<NonNullable<ChatJob["client_settled"]>, { key: string; en: string }> = {
+  deadline: {
+    key: "meridian.jobTimedOut",
+    en: "Meridian took too long to answer. Please try again.",
+  },
+  poll_failures: {
+    key: "meridian.jobLostContact",
+    en: "Lost contact with Meridian while it was answering. Please try again.",
+  },
+};
+
+function clientSettleText(reason: NonNullable<ChatJob["client_settled"]>): string {
+  const { key, en } = CLIENT_SETTLE_TEXT[reason];
+  const text: unknown = i18n.t(key, { ns: "chat", defaultValue: en });
+  return typeof text === "string" && text && text !== key ? text : en;
+}
+
 function normaliseStatus(raw: unknown): JobStatus {
   return raw === "running" || raw === "complete" || raw === "error"
     ? (raw as JobStatus)
@@ -213,6 +257,7 @@ export function useMeridianJob(
     onJobUpdate,
     pollIntervalMs = 2000,
     pollTimeoutMs = 5 * 60_000,
+    maxPollFailures = 5,
   } = options;
 
   const [jobsById, setJobsById] = useState<Record<string, ChatJob>>({});
@@ -232,6 +277,8 @@ export function useMeridianJob(
   // arrives, and so unmount can clean up.
   const pollTimersRef = useRef<Record<string, ReturnType<typeof setInterval>>>({});
   const pollDeadlinesRef = useRef<Record<string, number>>({});
+  // Consecutive failed polls per job (a throw or a 404); reset on any read.
+  const pollFailuresRef = useRef<Record<string, number>>({});
 
   // -------------------------------------------------------------------
   // State helpers
@@ -242,6 +289,11 @@ export function useMeridianJob(
     // job_id is already tracked in a terminal state — that drives the
     // dedupe guard below.
     const priorEntry = jobsByIdRef.current[job.job_id];
+    // Settle-once: a job this client already settled as an error (deadline
+    // or poll failures) is final. A late push frame, an in-flight poll or a
+    // listActiveJobs replay must neither flip it back to running nor swap
+    // in a late answer next to the error the consumer has already shown.
+    if (priorEntry?.client_settled) return;
     const wasTerminal = priorEntry ? TERMINAL_STATUSES.has(priorEntry.status) : false;
 
     const existing = mergeFromCurrent ? priorEntry : undefined;
@@ -272,7 +324,30 @@ export function useMeridianJob(
       delete pollTimersRef.current[jobId];
     }
     delete pollDeadlinesRef.current[jobId];
+    delete pollFailuresRef.current[jobId];
   }, []);
+
+  /**
+   * Settle a still-in-flight job as an error on this client's own
+   * authority. Fires ``onJobSettled`` through ``upsertJob``, so every
+   * consumer's existing error branch renders it. No-op for a job that is
+   * no longer tracked (removed) or already terminal.
+   */
+  const settleLocally = useCallback(
+    (jobId: string, reason: NonNullable<ChatJob["client_settled"]>) => {
+      cancelPoll(jobId);
+      const prior = jobsByIdRef.current[jobId];
+      if (!prior || TERMINAL_STATUSES.has(prior.status)) return;
+      upsertJob({
+        ...prior,
+        status: "error",
+        error: clientSettleText(reason),
+        completed_at: new Date().toISOString(),
+        client_settled: reason,
+      });
+    },
+    [cancelPoll, upsertJob],
+  );
 
   // -------------------------------------------------------------------
   // Network
@@ -306,12 +381,26 @@ export function useMeridianJob(
       pollDeadlinesRef.current[jobId] = Date.now() + pollTimeoutMs;
 
       const tick = async () => {
-        if (Date.now() > (pollDeadlinesRef.current[jobId] ?? 0)) {
-          cancelPoll(jobId);
+        // Polling was cancelled (push settled it, removeJob, unmount).
+        if (!(jobId in pollDeadlinesRef.current)) return;
+        if (Date.now() > pollDeadlinesRef.current[jobId]) {
+          settleLocally(jobId, "deadline");
           return;
         }
         const job = await pollJob(jobId).catch(() => null);
-        if (job && TERMINAL_STATUSES.has(job.status)) cancelPoll(jobId);
+        // Cancelled while the request was in flight: nothing to count.
+        if (!(jobId in pollDeadlinesRef.current)) return;
+        if (job) {
+          pollFailuresRef.current[jobId] = 0;
+          if (TERMINAL_STATUSES.has(job.status)) cancelPoll(jobId);
+          return;
+        }
+        // A throw or a 404 (pollJob returns null for both a 404 and a body
+        // it cannot parse). A 404 is not transient; a run of throws is a
+        // lost connection. Either way the turn must end visibly.
+        const failures = (pollFailuresRef.current[jobId] ?? 0) + 1;
+        pollFailuresRef.current[jobId] = failures;
+        if (failures >= maxPollFailures) settleLocally(jobId, "poll_failures");
       };
 
       // Fire immediately so a fast complete is reflected without waiting
@@ -321,7 +410,7 @@ export function useMeridianJob(
         void tick();
       }, pollIntervalMs);
     },
-    [cancelPoll, pollIntervalMs, pollJob, pollTimeoutMs],
+    [cancelPoll, maxPollFailures, pollIntervalMs, pollJob, pollTimeoutMs, settleLocally],
   );
 
   const startJob = useCallback(
@@ -403,7 +492,12 @@ export function useMeridianJob(
       const items = Array.isArray(resp.data) ? resp.data : [];
       const jobs = items
         .map((row) => asJobFromGet(row))
-        .filter((j): j is ChatJob => j !== null);
+        .filter((j): j is ChatJob => j !== null)
+        // Settle-once: a job this client already settled as an error is not
+        // "active" here, even while the server row still says running (an
+        // orphan). Returning it would re-render a "thinking" bubble that
+        // nothing would ever clear.
+        .filter((j) => !jobsByIdRef.current[j.job_id]?.client_settled);
       // Hydrate state + ensure polling resumes for anything still in flight.
       for (const job of jobs) {
         upsertJob(job, /* mergeFromCurrent */ false);
