@@ -300,7 +300,10 @@ describe("JF-13 admin — role × route reachability, before (off) and after (on
     // 2 main-menu states (SuperAdminLayout also × house style on/off): 18,004
     // (role, route) pairs per pass, 3,786 of them from Administration, each
     // checked against 3 after-states. Floors sit just under the measured run.
-    expect(pairs).toBeGreaterThanOrEqual(18_000)
+    // RM-3 (2026-11-25): unentitled verticals no longer produce greyed Tools
+    // rows, so the walk is 17,416 pairs, 3,780 from Administration (measured on
+    // the RM-3 branch after RM-2 merged).
+    expect(pairs).toBeGreaterThanOrEqual(17_000)
     expect(adminPairs).toBeGreaterThanOrEqual(3_700)
   })
 })

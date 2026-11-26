@@ -113,8 +113,9 @@ import { hasAccess } from "@/types/roles"
 import { navLabelKey } from "@/components/shared/layout/navLabels"
 import { setHouseStyle } from "@/lib/house/areaSwitch"
 import { useGatedNavItems } from "../useGatedNavItems"
-import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
+import { FORCE_DISABLED_VERTICALS, useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
 import {
+  WORKSPACE_ITEM_UNAVAILABLE_REASON,
   getUserNavItems,
   SUPER_ADMIN_NAV_SECTIONS,
   TALENT_STUDIO_INTERVIEW_ROWS,
@@ -289,9 +290,12 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
                   ? [...(TS3_ADDED[role] ?? []), ...(overview ? [overview] : []), ...(teamFit ? [teamFit] : [])]
                   : []
               // TS-2: the two vertical pages, present only beside the Role
-              // Blueprints row and in the same state as it.
+              // Blueprints row and in the same state as it. Since RM-3 the
+              // row itself exists only for an account entitled to
+              // job-blueprint (hidden, not greyed).
               if (mode === "true" && overview) {
-                expect({ role, ent, home: after.has(BLUEPRINT_HOME) }).toEqual({ role, ent, home: true })
+                const blueprintEntitled = (list ?? []).includes("job-blueprint")
+                expect({ role, ent, home: after.has(BLUEPRINT_HOME) }).toEqual({ role, ent, home: blueprintEntitled })
                 const jobDna = TS5_ADDED[role]
                 for (const route of [...TS2_BLUEPRINT_PAGES, ...(jobDna ? [jobDna] : [])]) {
                   expect({ role, ent, route, before: before.has(route), after: after.get(route) }).toEqual({
@@ -334,8 +338,11 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
   it("walked every role (a walker over nothing proves nothing)", () => {
     // 6 roles × 3 entitlement shapes × 2 main-menu states × 2 alert states;
     // the Tools share is the three roles that have a Tools section.
-    expect(pairs).toBeGreaterThanOrEqual(1500)
-    expect(toolPairs).toBeGreaterThanOrEqual(400)
+    // Floors lowered with RM-3 (2026-11-25): unentitled verticals no longer
+    // produce greyed rows, so the "none" and "loading" shapes walk fewer
+    // destinations. Measured on the RM-3 branch: 1398 pairs, 294 Tools pairs.
+    expect(pairs).toBeGreaterThanOrEqual(1300)
+    expect(toolPairs).toBeGreaterThanOrEqual(250)
   })
 })
 
@@ -370,24 +377,49 @@ describe("JF-13 — job_fit_v2 on: Talent Studio for the three role views", () =
     },
   )
 
-  it("unentitled verticals stay greyed inside Talent Studio", async () => {
+  // RM-3 guard (2026-11-25). Mutation: make blueprintPageRow, or the launcher,
+  // keep an unentitled vertical's rows greyed — this must fail.
+  it("unentitled verticals are left OUT of Talent Studio, not greyed", async () => {
     mockEntitled = []
     const group = (await tools("manager", "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
     const byLabel = Object.fromEntries((group?.children ?? []).map((c) => [c.label, !!c.disabled]))
     expect(byLabel).toEqual({
       Overview: false,
-      "Role Blueprints": true,
-      "Job DNA": true,
       "Role Blueprint Match": false,
-      Candidates: true,
       "Hiring interview": false,
       "Own-questions interview": false,
       "Prepare questions": false,
       "Past interviews": false,
-      Insights: true,
       "Team fit": false,
-      "Retain: Knowledge Continuity": true,
     })
+  })
+
+  it("entitled to job-blueprint and knowledge-continuity: their rows are present and live", async () => {
+    mockEntitled = ["job-blueprint", "knowledge-continuity"]
+    const group = (await tools("manager", "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
+    const byLabel = Object.fromEntries((group?.children ?? []).map((c) => [c.label, !!c.disabled]))
+    for (const label of ["Role Blueprints", "Job DNA", "Candidates", "Insights", "Retain: Knowledge Continuity"]) {
+      expect([label, byLabel[label]]).toEqual([label, false])
+    }
+  })
+
+  it("a force-disabled, entitled job-blueprint keeps its rows greyed 'Temporarily unavailable'", async () => {
+    FORCE_DISABLED_VERTICALS.add("job-blueprint")
+    try {
+      mockEntitled = ["job-blueprint"]
+      const group = (await tools("manager", "true"))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
+      const rows = (group?.children ?? []).filter((c) =>
+        ["Role Blueprints", "Job DNA", "Candidates", "Insights"].includes(c.label),
+      )
+      expect(rows.map((r) => [r.label, r.disabled, r.disabledReason])).toEqual([
+        ["Role Blueprints", true, WORKSPACE_ITEM_UNAVAILABLE_REASON],
+        ["Job DNA", true, WORKSPACE_ITEM_UNAVAILABLE_REASON],
+        ["Candidates", true, WORKSPACE_ITEM_UNAVAILABLE_REASON],
+        ["Insights", true, WORKSPACE_ITEM_UNAVAILABLE_REASON],
+      ])
+    } finally {
+      FORCE_DISABLED_VERTICALS.delete("job-blueprint")
+    }
   })
 
   it("the three role views, as rendered", async () => {
@@ -558,6 +590,23 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
   }
   const talentChildren = async (role: UserRole, mode: Mode = "true") =>
     (await tools(role, mode))?.items.find((i) => i.label === TALENT_STUDIO_LABEL)?.children ?? []
+  /** The vertical a row is taken from, or null for a role page that has no vertical lock. */
+  const rowVertical = (to: string): string | null =>
+    to.startsWith("/vertical/job-blueprint/") || to.endsWith("/job-dna")
+      ? "job-blueprint"
+      : to === KC
+        ? "knowledge-continuity"
+        : null
+  /**
+   * RM-3 (2026-11-25): ORDER as an account with these entitlements sees it —
+   * a row taken from a vertical the account is not entitled to is left out,
+   * not greyed. The order of what remains is unchanged.
+   */
+  const orderFor = (role: UserRole, list: string[] | undefined) =>
+    ORDER[role].filter(([, to]) => {
+      const v = rowVertical(to)
+      return v === null || (list ?? []).includes(v)
+    })
 
   it("the stage order is the lifecycle, with Retain last", () => {
     // TS-4a: Team fit sits between insights and retain.
@@ -572,12 +621,16 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
     ])
   })
 
-  it.each(TOOL_ROLES)("%s: the rows are exactly the lifecycle order, whatever the entitlements", async (role) => {
+  it.each(TOOL_ROLES)("%s: the rows are the lifecycle order, minus unentitled verticals' rows", async (role) => {
     for (const list of Object.values(ENTITLEMENTS)) {
       mockEntitled = list
       const children = await talentChildren(role)
-      expect(children.map((c) => [c.label, c.to])).toEqual(ORDER[role])
+      expect(children.map((c) => [c.label, c.to])).toEqual(orderFor(role, list))
+      // Every row present is live: nothing in the group is greyed for entitlement.
+      expect(children.filter((c) => c.disabled)).toEqual([])
     }
+    // The control: entitled to everything, it is the full ORDER.
+    expect(orderFor(role, ALL_VERTICALS)).toEqual(ORDER[role])
   })
 
   // ── TS-4a ─────────────────────────────────────────────────────────────────
@@ -591,9 +644,17 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
         const children = await talentChildren(role)
         const rows = children.filter(isTeamFit)
         expect(rows.map((c) => [c.label, c.to, !!c.disabled])).toEqual([["Team fit", `/${role}/team-fit`, false]])
+        // Its neighbours in the order this account sees (Insights and Retain
+        // when the verticals are entitled; RM-3 leaves them out otherwise).
+        const order = orderFor(role, list)
+        const want = order.findIndex(([label]) => label === "Team fit")
         const at = children.indexOf(rows[0])
-        expect(children[at - 1].label).toBe("Insights")
-        expect(children[at + 1].label).toBe("Retain: Knowledge Continuity")
+        expect(children[at - 1].label).toBe(order[want - 1][0])
+        expect(children[at + 1]?.label).toBe(order[want + 1]?.[0])
+        if (list === ALL_VERTICALS) {
+          expect(children[at - 1].label).toBe("Insights")
+          expect(children[at + 1].label).toBe("Retain: Knowledge Continuity")
+        }
         expect(hasAccess(role, rows[0].to)).toBe(true)
       }
     },
@@ -649,11 +710,19 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
     }
   })
 
-  it.each(TOOL_ROLES)("%s: Candidates and Insights carry the Role Blueprints lock and reason", async (role) => {
+  it.each(TOOL_ROLES)("%s: Candidates and Insights follow the Role Blueprints row (present, live, absent)", async (role) => {
     for (const [ent, list] of Object.entries(ENTITLEMENTS)) {
       mockEntitled = list
       const children = await talentChildren(role)
       const home = children.find((c) => c.to === BLUEPRINT_HOME)
+      // RM-3: unentitled (or still loading), the row and its pages are absent.
+      if (ent !== "all") {
+        expect({ ent, home: home ?? null }).toEqual({ ent, home: null })
+        for (const to of TS2_BLUEPRINT_PAGES) {
+          expect({ ent, to, row: children.find((c) => c.to === to) ?? null }).toEqual({ ent, to, row: null })
+        }
+        continue
+      }
       expect(home).toBeDefined()
       for (const to of TS2_BLUEPRINT_PAGES) {
         const row = children.find((c) => c.to === to)
@@ -664,9 +733,9 @@ describe("TS-2 — Talent Studio in the order the work runs", () => {
           reason: home?.disabledReason,
         })
       }
-      // The control: with every vertical entitled the rows are live, with none they are not.
-      if (ent === "all") expect(home?.disabled).toBeFalsy()
-      if (ent === "none") expect(home?.disabled).toBe(true)
+      // The control: with every vertical entitled the rows are live (and above,
+      // with none they are absent).
+      expect(home?.disabled).toBeFalsy()
     }
   })
 
@@ -746,6 +815,16 @@ describe("TS-5 — Job DNA in Talent Studio, for the manager only", () => {
       mockEntitled = list
       const children = await talentChildren("manager")
       const rows = children.filter(isJobDna)
+      // RM-3: without the Role Blueprints vertical (or while the read loads)
+      // neither row is there — hidden, not greyed.
+      if (ent !== "all") {
+        expect({ ent, jobDna: rows.length, home: children.some((c) => c.to === BLUEPRINT_HOME) }).toEqual({
+          ent,
+          jobDna: 0,
+          home: false,
+        })
+        continue
+      }
       expect(rows.map((c) => [c.label, c.to])).toEqual([["Job DNA", JOB_DNA]])
       const at = children.indexOf(rows[0])
       const home = children[at - 1]
@@ -757,9 +836,8 @@ describe("TS-5 — Job DNA in Talent Studio, for the manager only", () => {
       })
       // Lit on its own page only, not on the vertical's pages.
       expect(rows[0].activePrefix).toBe(JOB_DNA)
-      // The control: entitled it is a live link, unentitled it is not.
-      if (ent === "all") expect(rows[0].disabled).toBeFalsy()
-      if (ent === "none") expect(rows[0].disabled).toBe(true)
+      // The control: entitled it is a live link (unentitled it is absent, above).
+      expect(rows[0].disabled).toBeFalsy()
     }
   })
 
@@ -794,15 +872,17 @@ describe("TS-5 — Job DNA in Talent Studio, for the manager only", () => {
     expect(rowsSeen).toBeGreaterThan(0)
   })
 
-  it("manager: the label and the destination are each used once in the whole sidebar", async () => {
+  it("manager: the label and the destination are each used at most once in the whole sidebar", async () => {
     for (const list of Object.values(ENTITLEMENTS)) {
       mockEntitled = list
       const rows = await everyRow("manager", "true")
-      expect(rows.filter((r) => r.label === "Job DNA")).toHaveLength(1)
-      expect(rows.filter((r) => r.to === JOB_DNA)).toHaveLength(1)
+      // Once when the Role Blueprints vertical is entitled; since RM-3, not at all otherwise.
+      const want = (list ?? []).includes("job-blueprint") ? 1 : 0
+      expect(rows.filter((r) => r.label === "Job DNA")).toHaveLength(want)
+      expect(rows.filter((r) => r.to === JOB_DNA)).toHaveLength(want)
       // SidebarScaffold keys a row by `to || label`: no other row may share this one's key.
       const keys = rows.map((r) => r.to || r.label)
-      expect(keys.filter((k) => k === JOB_DNA || k === "Job DNA")).toHaveLength(1)
+      expect(keys.filter((k) => k === JOB_DNA || k === "Job DNA")).toHaveLength(want)
     }
   })
 

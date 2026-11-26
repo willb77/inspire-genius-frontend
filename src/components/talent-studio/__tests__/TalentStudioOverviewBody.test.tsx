@@ -54,6 +54,7 @@ jest.mock("@/hooks/super-admin/useBroadcast", () => ({
 import TalentStudioOverviewBody from "../TalentStudioOverviewBody"
 import { hasAccess } from "@/types/roles"
 import { TALENT_STUDIO_LABEL, useToolsSection } from "@/hooks/nav/useToolsSection"
+import { FORCE_DISABLED_VERTICALS } from "@/components/layout/useVerticalLauncher"
 
 const TOOL_ROLES: UserRole[] = ["super-admin", "manager", "practitioner"]
 const ENTITLEMENTS: Record<string, string[] | undefined> = { all: ALL_VERTICALS, none: [], loading: undefined }
@@ -152,16 +153,32 @@ describe("TS-2 — Talent Studio Overview offers only links the role can open", 
     }
   })
 
-  it.each(TOOL_ROLES)("%s: a locked vertical page is text with its reason, never a link", async (role) => {
+  // RM-3 (2026-11-25): an unentitled vertical's pages are left OUT, not shown as
+  // locked text. Stages left with no rows (Candidates, Insights, Retain) go too.
+  it.each(TOOL_ROLES)("%s: an unentitled vertical page is absent — no link, no locked text", async (role) => {
     mockEntitled = []
-    const { links, locked } = await page(role)
+    const { links, locked, headings } = await page(role)
     expect(links.filter((to) => to.startsWith("/vertical/"))).toEqual([])
-    // Role Blueprints, Candidates, Insights and Knowledge Continuity, each with the plan reason;
-    // for the manager also Job DNA (TS-5), which copies the Role Blueprints lock.
-    expect(locked).toHaveLength(role === "manager" ? 5 : 4)
-    for (const text of locked) expect(text).toMatch(/not included in your plan/)
+    expect(locked).toEqual([])
+    for (const stage of ["Candidates", "Insights", "Retain"]) {
+      expect(headings.some((h) => h.includes(stage))).toBe(false)
+    }
     mockEntitled = ALL_VERTICALS
     expect((await page(role)).locked).toEqual([])
+  })
+
+  it.each(TOOL_ROLES)("%s: a force-disabled vertical page is text with 'Temporarily unavailable', never a link", async (role) => {
+    FORCE_DISABLED_VERTICALS.add("job-blueprint")
+    try {
+      mockEntitled = ALL_VERTICALS
+      const { links, locked } = await page(role)
+      expect(links.filter((to) => to.startsWith("/vertical/job-blueprint"))).toEqual([])
+      // Role Blueprints, Candidates and Insights; for the manager also Job DNA.
+      expect(locked).toHaveLength(role === "manager" ? 4 : 3)
+      for (const text of locked) expect(text).toMatch(/Temporarily unavailable/)
+    } finally {
+      FORCE_DISABLED_VERTICALS.delete("job-blueprint")
+    }
   })
 
   // ── TS-5 ──────────────────────────────────────────────────────────────────
@@ -179,15 +196,14 @@ describe("TS-2 — Talent Studio Overview offers only links the role can open", 
     unmount()
   })
 
-  it("manager: without the Role Blueprints vertical, Job DNA is locked text with the reason, not a link", async () => {
+  it("manager: without the Role Blueprints vertical, Job DNA is absent (RM-3: hidden, not locked)", async () => {
     mockEntitled = []
     const { unmount } = render(<TalentStudioOverviewBody role="manager" />, { wrapper: await wrapperFor(true) })
     await act(async () => {})
     const stage = rolesStage()
     expect(within(stage).queryByRole("link", { name: "Job DNA" })).toBeNull()
-    const locked = [...stage.querySelectorAll("span[title]")].map((el) => el.textContent ?? "")
-    expect(locked.filter((text) => text.startsWith("Job DNA"))).toHaveLength(1)
-    expect(locked.find((text) => text.startsWith("Job DNA"))).toMatch(/not included in your plan/)
+    expect(within(stage).queryByText(/Job DNA/)).toBeNull()
+    expect(stage.querySelectorAll("span[title]")).toHaveLength(0)
     unmount()
   })
 

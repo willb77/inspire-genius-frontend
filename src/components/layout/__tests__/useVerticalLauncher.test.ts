@@ -3,7 +3,9 @@
  */
 import { renderHook } from "@testing-library/react"
 import { __resetRegistry, registerVertical } from "@/verticals/core"
+import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation"
 import {
+  FORCE_DISABLED_VERTICALS,
   WORKSPACE_VERTICALS,
   effectiveWorkspaceVerticals,
   useVerticalLauncherSection,
@@ -70,20 +72,19 @@ beforeEach(() => {
   })
 })
 
-// Contract as of 2026-07-31.
+// Contract as of RM-3 (2026-11-25).
 //
-// Two rules, and they are independent:
-//   1. ENTITLEMENT decides whether an entry is USABLE (`disabled`), never
-//      whether it is VISIBLE — an unentitled vertical is listed greyed so the
-//      catalogue stays discoverable and the gate legible.
-//   2. HIDDEN_VERTICALS decides visibility outright. Honor Foundation is
-//      withheld from the list entirely — a different mechanism from (1), and
-//      the tests below pin that the two do not get conflated.
+// Three rules, and they are independent:
+//   1. ENTITLEMENT decides VISIBILITY: an unentitled vertical produces no row
+//      (hidden, not greyed), for every role. Until RM-3 it was listed greyed.
+//      While the read is loading or has failed, no vertical rows appear.
+//   2. HIDDEN_VERTICALS withholds a vertical even from an ENTITLED account
+//      (Honor Foundation).
+//   3. FORCE_DISABLED_VERTICALS greys an entitled vertical with "Temporarily
+//      unavailable" — a switch-off, not an entitlement.
 //
-// The section is now labelled "Tools" and ships rolled up. As of 2026-08-04
-// WORKSPACE_VERTICALS = {job-fit}, so Job Fit is promoted to My Workspace and
-// drops OUT of Tools; Lumen (and the rest) still fall through to Tools.
-// (Emptied 2026-08-12; {job-fit} again since 2026-10-18, request.)
+// The section is labelled "Tools" and ships rolled up. Job Fit is a workspace
+// vertical (main menu), so it never appears here.
 describe("useVerticalLauncherSection", () => {
   test("is labelled Tools and ships rolled up", () => {
     setEnabled(["grant"])
@@ -93,11 +94,8 @@ describe("useVerticalLauncherSection", () => {
     expect(result.current!.defaultCollapsed).toBe(true)
   })
 
-  test("lists every visible vertical and links to homePath", () => {
-    // Job Fit left this catalogue again on 2026-10-18 (request): "job-fit" is
-    // back in WORKSPACE_VERTICALS, so it is a main-menu row ("Career Fit") and
-    // this section filters it out. Registry order.
-    setEnabled(["grant", "job-fit"])
+  test("lists the entitled verticals, in registry order, linking to homePath", () => {
+    setEnabled(["lumen", "grant", "job-fit"])
     const { result } = renderHook(() => useVerticalLauncherSection())
     expect(result.current!.items.map((i) => i.label)).toEqual(["GRANT", "Lumen"])
     expect(result.current!.items.map((i) => i.to)).toEqual([
@@ -106,9 +104,19 @@ describe("useVerticalLauncherSection", () => {
     ])
   })
 
+  // RM-3 guard. Mutation: restore the greyed mapping (drop the entitlement
+  // filter and map with `entitlements.includes(v.key)`) — this must fail.
+  test("an unentitled vertical produces NO row; an entitled one an enabled row", () => {
+    setEnabled(["grant"])
+    const { result } = renderHook(() => useVerticalLauncherSection())
+    const items = result.current!.items
+    expect(items.map((i) => i.label)).toEqual(["GRANT"])
+    expect(items.map((i) => i.to)).not.toContain("/vertical/lumen/dashboard")
+    expect(items[0].disabled).toBe(false)
+    expect(items.some((i) => i.disabled)).toBe(false)
+  })
+
   test("HIDES Honor Foundation even for a user entitled to it", () => {
-    // The distinction that matters: entitlement greys, HIDDEN_VERTICALS omits.
-    // Honor is entitled here and must STILL be absent.
     setEnabled(["honor", "grant"])
     const { result } = renderHook(() => useVerticalLauncherSection())
     expect(result.current!.items.map((i) => i.label)).not.toContain(
@@ -116,7 +124,7 @@ describe("useVerticalLauncherSection", () => {
     )
   })
 
-  test("includes GRANT — financials live under Tools, not their own section", () => {
+  test("includes GRANT when entitled — financials live under Tools", () => {
     setEnabled(["grant"])
     const { result } = renderHook(() => useVerticalLauncherSection())
     const grant = result.current!.items.find((i) => i.label === "GRANT")
@@ -124,35 +132,59 @@ describe("useVerticalLauncherSection", () => {
     expect(grant!.disabled).toBe(false)
   })
 
-  test("greys out (does NOT hide) verticals the user has no entitlement for", () => {
-    setEnabled(["grant"])
-    const { result } = renderHook(() => useVerticalLauncherSection())
-    const byLabel = Object.fromEntries(
-      result.current!.items.map((i) => [i.label, i.disabled]),
-    )
-    expect(byLabel["GRANT"]).toBe(false)
-    expect(byLabel["Lumen"]).toBe(true)
+  test("is null when the user is entitled to nothing it lists", () => {
+    setEnabled([])
+    expect(renderHook(() => useVerticalLauncherSection()).result.current).toBeNull()
+    // Entitled only to hidden or workspace verticals: still nothing to list.
+    setEnabled(["honor", "job-fit"])
+    expect(renderHook(() => useVerticalLauncherSection()).result.current).toBeNull()
   })
 
-  test("still lists the catalogue when the user is entitled to nothing", () => {
-    setEnabled([])
-    const { result } = renderHook(() => useVerticalLauncherSection())
-    expect(result.current!.items.map((i) => i.label)).toEqual(["GRANT", "Lumen"])
-    expect(result.current!.items.every((i) => i.disabled)).toBe(true)
+  // RM-3 guard. Mutation: treat a pending read as "entitled to everything"
+  // (or list the catalogue while `data` is undefined) — this must fail.
+  test("lists no vertical rows while the entitlement read is pending", () => {
+    mockUseEnabledVerticals.mockReturnValue({ data: undefined, isLoading: true })
+    expect(renderHook(() => useVerticalLauncherSection()).result.current).toBeNull()
+  })
+
+  test("lists no vertical rows when the entitlement read failed (resolves to [])", () => {
+    // useEnabledVerticals swallows the error and resolves to [].
+    mockUseEnabledVerticals.mockReturnValue({ data: [], isLoading: false, isError: false })
+    expect(renderHook(() => useVerticalLauncherSection()).result.current).toBeNull()
+    // And if a caller ever surfaced the error with no data, still nothing.
+    mockUseEnabledVerticals.mockReturnValue({ data: undefined, isLoading: false, isError: true })
+    expect(renderHook(() => useVerticalLauncherSection()).result.current).toBeNull()
   })
 
   test("entitlement keys that aren't registered verticals invent nothing", () => {
     setEnabled(["not-a-vertical", "grant"])
     const { result } = renderHook(() => useVerticalLauncherSection())
-    expect(result.current!.items.map((i) => i.label)).toEqual(["GRANT", "Lumen"])
+    expect(result.current!.items.map((i) => i.label)).toEqual(["GRANT"])
+  })
+
+  describe("a force-disabled vertical (switch-off, not entitlement)", () => {
+    beforeEach(() => FORCE_DISABLED_VERTICALS.add("lumen"))
+    afterEach(() => FORCE_DISABLED_VERTICALS.delete("lumen"))
+
+    test("entitled: keeps its greyed 'Temporarily unavailable' row", () => {
+      setEnabled(["grant", "lumen"])
+      const items = renderHook(() => useVerticalLauncherSection()).result.current!.items
+      const lumen = items.find((i) => i.label === "Lumen")
+      expect(lumen).toMatchObject({ disabled: true, disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON })
+      expect(items.find((i) => i.label === "GRANT")!.disabled).toBe(false)
+    })
+
+    test("not entitled: no row, like any unentitled vertical", () => {
+      setEnabled(["grant"])
+      const items = renderHook(() => useVerticalLauncherSection()).result.current!.items
+      expect(items.map((i) => i.label)).toEqual(["GRANT"])
+    })
   })
 
   test("Job Fit is in the main menu, never ALSO in Tools", () => {
     // The two placements are mutually exclusive by construction — this section
     // filters on WORKSPACE_VERTICALS — so a vertical in both would be a bug.
-    // Asserted entitled AND unentitled: an unentitled account sees Job Fit in
-    // neither place (hidden from the menu, filtered from here).
-    for (const ents of [["job-fit", "lumen"], ["lumen"], []]) {
+    for (const ents of [["job-fit", "lumen"], ["lumen"]]) {
       setEnabled(ents)
       const { result } = renderHook(() => useVerticalLauncherSection())
       const tos = result.current!.items.map((i) => i.to)
@@ -347,10 +379,13 @@ describe("WS-1 — the menu and Tools filters share one effective set", () => {
     expect(tools.map((i) => i.to)).not.toContain(DS_TO)
   })
 
-  test("switch off: Direction Setting stays in Tools, greyed when not entitled", () => {
+  test("switch off: Direction Setting is in Tools when entitled, absent when not (RM-3)", () => {
+    setEnabled(["grant", "direction-setting"])
+    const entitled = renderHook(() => useVerticalLauncherSection()).result.current!.items
+    expect(entitled.filter((i) => i.to === DS_TO).map((i) => i.disabled)).toEqual([false])
     setEnabled(["grant"])
-    const tools = renderHook(() => useVerticalLauncherSection()).result.current!.items
-    expect(tools.filter((i) => i.to === DS_TO).map((i) => i.disabled)).toEqual([true])
+    const not = renderHook(() => useVerticalLauncherSection()).result.current!.items
+    expect(not.map((i) => i.to)).not.toContain(DS_TO)
   })
 
   test("the menu row keeps a stable identity with the switch on", () => {

@@ -8,9 +8,10 @@
  *
  * The rows come from `useTalentStudioStages`, the same list the sidebar group
  * is flattened from, so the page cannot offer a page the menu does not: a row
- * the role lacks is absent, and a row that is locked in the menu (a vertical
- * the person is not entitled to) is shown here as plain text with the same
- * reason, never as a link.
+ * the role lacks is absent, and so is a row from a vertical the person is not
+ * entitled to (RM-3, 2026-11-25: hidden, not greyed). A row that is locked in
+ * the menu (a force-disabled vertical the person IS entitled to) is shown here
+ * as plain text with the same reason, never as a link.
  *
  * `role` is set by the ROUTE, like `audience` on the shared workspace pages:
  * the links must sit under the prefix the page was opened on.
