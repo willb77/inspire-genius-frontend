@@ -422,6 +422,52 @@ describe("Analytics", () => {
   })
 })
 
+// ── D-17 PR-B — a failed or in-flight panel read is not "No … yet" ──
+describe("Analytics — failed and loading panels", () => {
+  const failed = () => query(undefined, { isError: true, error: new Error("boom") })
+  const PANELS = [
+    { id: "stats", hook: "useBlueprintStats", empty: "No stats available yet." },
+    { id: "funnel", hook: "useBlueprintFunnel", empty: "No funnel data yet." },
+    { id: "accuracy", hook: "useBlueprintAccuracy", empty: "No accuracy data yet." },
+    { id: "time-to-fill", hook: "useBlueprintTimeToFill", empty: "No time-to-fill data yet." },
+    { id: "hires", hook: "useBlueprintHires", empty: "No hires recorded yet." },
+    { id: "activity", hook: "useBlueprintActivity", empty: "No activity yet." },
+  ] as const
+
+  test.each(PANELS)("$id: a failed read says it failed, with a retry, not '$empty'", ({ id, hook, empty }) => {
+    const q = failed()
+    ;(analyticsHooks[hook] as jest.Mock).mockReturnValue(q)
+    renderPage(<JobBlueprintAnalyticsPage />)
+    const alert = screen.getByTestId(`analytics-error-${id}`)
+    expect(alert).toHaveAttribute("role", "alert")
+    expect(alert).toHaveTextContent(/couldn't be loaded/i)
+    expect(screen.queryByText(empty)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }))
+    expect(q.refetch).toHaveBeenCalledTimes(1)
+  })
+
+  test.each(PANELS.filter((p) => p.id !== "stats"))("$id: still loading shows a spinner, not '$empty'", ({ hook, empty }) => {
+    ;(analyticsHooks[hook] as jest.Mock).mockReturnValue(query(undefined, { isLoading: true }))
+    renderPage(<JobBlueprintAnalyticsPage />)
+    expect(screen.queryByText(empty)).not.toBeInTheDocument()
+    expect(screen.getByText("Loading…")).toBeInTheDocument()
+  })
+
+  test("a failed refetch over data already on screen keeps the data", () => {
+    ;(analyticsHooks.useBlueprintHires as jest.Mock).mockReturnValue(
+      query([{ period: "2026-07", hires: 2, avgFitScore: 70 }], { isError: true })
+    )
+    renderPage(<JobBlueprintAnalyticsPage />)
+    expect(screen.queryByTestId("analytics-error-hires")).not.toBeInTheDocument()
+    expect(screen.queryByText("No hires recorded yet.")).not.toBeInTheDocument()
+  })
+
+  test("every read succeeding shows no error", () => {
+    renderPage(<JobBlueprintAnalyticsPage />)
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+})
+
 // ── JS-4 — candidate detail, scorecard comparison, hires + activity panels ──
 
 describe("Candidate detail", () => {

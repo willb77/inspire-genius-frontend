@@ -21,6 +21,7 @@
 import { useState } from "react"
 import { toast } from "sonner"
 import {
+  AlertTriangle,
   CheckCircle2,
   CircleSlash,
   Lock,
@@ -476,7 +477,7 @@ export type GoalsPanelProps = {
 export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
   const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
-  const { data, isLoading } = useDevelopmentGoals(memberId)
+  const { data, isLoading, isError, refetch, isFetching } = useDevelopmentGoals(memberId)
   const session = useGoalSession(memberId)
   const ratify = useRatifyGoal(memberId)
   const note = useCreateCoachingNote(memberId)
@@ -488,6 +489,27 @@ export function GoalsPanel({ memberId, memberName }: GoalsPanelProps) {
 
   if (isLoading) {
     return <div className={cn("py-10 text-center text-sm", sk.text400)}>{t("goalsPanel.loadingGoals", { defaultValue: "Loading goals…" })}</div>
+  }
+
+  // D-17 PR-B: a failed read is not "no goals". With no data every gate below
+  // is skipped and the list is empty, which used to land on the invite state —
+  // offering to send a real invitation on the strength of a read that failed.
+  // Say it failed, offer a re-read, and offer nothing that acts.
+  if (isError && !data) {
+    return (
+      <div role="alert">
+        <StateCard
+          testId="goals-state-load-failed"
+          icon={<AlertTriangle className={cn("h-5 w-5", sk.text400)} aria-hidden="true" />}
+          title={t("goalsPanel.loadFailedTitle", { defaultValue: "Goals couldn't be loaded" })}
+          body={t("goalsPanel.loadFailedBody", { defaultValue: "This is not the same as having no goals. Nothing has been sent to the member. Try again in a moment." })}
+        >
+          <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+            {t("goalsPanel.loadFailedRetry", { defaultValue: "Try again" })}
+          </Button>
+        </StateCard>
+      </div>
+    )
   }
 
   // No IG account: a roster-only member cannot sign in, cannot offer.

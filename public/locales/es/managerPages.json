@@ -121,7 +121,10 @@
     "whatYouSeeInThis": "Lo que ves en este objetivo y lo que lo haría más sólido. El miembro lo lee.",
     "reviewComment": "Comentario de revisión",
     "sending": "Enviando…",
-    "sendReview": "Enviar revisión"
+    "sendReview": "Enviar revisión",
+    "loadFailedTitle": "No se pudieron cargar los objetivos",
+    "loadFailedBody": "Esto no significa que no haya objetivos. No se ha enviado nada al miembro. Inténtalo de nuevo en un momento.",
+    "loadFailedRetry": "Intentar de nuevo"
   },
   "hiring": {
     "openPositions": "Puestos abiertos",

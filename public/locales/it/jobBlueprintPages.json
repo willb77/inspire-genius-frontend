@@ -110,7 +110,8 @@
     "emptyStats": "Ancora nessuna statistica disponibile.",
     "emptyTimeToFill": "Ancora nessun dato sul tempo di copertura.",
     "loading": "Caricamento analisi…",
-    "title": "Analisi"
+    "title": "Analisi",
+    "loadFailed": "Impossibile caricare questo pannello. Non significa che non ci siano dati."
   },
   "aptitudes": {
     "description": "Classifica le 8 preferenze di attitudine lavorativa in ordine di importanza per questo ruolo, poi valuta ciascuna in base alla sua rilevanza.",

@@ -274,7 +274,8 @@
     "emptyStats": "Aún no hay estadísticas disponibles.",
     "emptyTimeToFill": "Aún no hay datos de tiempo de cobertura.",
     "loading": "Cargando analíticas…",
-    "title": "Analíticas"
+    "title": "Analíticas",
+    "loadFailed": "No se pudo cargar este panel. Eso no significa que no haya datos."
   },
   "aptitudes": {
     "description": "Ordena las 8 preferencias de aptitud laboral por importancia para este puesto y luego valora la relevancia de cada una.",

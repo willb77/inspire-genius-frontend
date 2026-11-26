@@ -63,7 +63,9 @@
       "roleShape": "Profil roli",
       "roleShapeHint": "Profil decyduje, które z 8 sekcji wiedzy będą na początku — drzewo roli zarządczej to osąd i relacje, a nie lista zadań.",
       "draftingAria": "Tworzenie blueprintu",
-      "draftButton": "Utwórz blueprint"
+      "draftButton": "Utwórz blueprint",
+      "savedRolesLoadFailed": "Nie udało się wczytać zapisanych ról, dlatego żadna nie jest tu wymieniona. To nie znaczy, że ich nie masz.",
+      "savedRolesRetry": "Spróbuj ponownie"
     },
     "review": {
       "nothingToSave": "Nie ma czego zapisać — dodaj lub zachowaj co najmniej jeden węzeł.",
@@ -102,7 +104,9 @@
       "loading": "Ładowanie zapisanych ról…",
       "empty": "Brak zapisanych ról. Najpierw zaprojektuj rolę — wyznacza ona obszary wiedzy, przez które przejdzie to przechwytywanie.",
       "blueprintRole": "Zaprojektuj rolę",
-      "areaCount": "Obszary wiedzy: {{areas}}"
+      "areaCount": "Obszary wiedzy: {{areas}}",
+      "loadFailed": "Nie udało się wczytać zapisanych ról. To nie znaczy, że ich nie masz — spróbuj ponownie za chwilę.",
+      "retry": "Spróbuj ponownie"
     },
     "plan": {
       "whoTitle": "Kogo przechwytujemy?",
@@ -219,7 +223,9 @@
       "role": "Rola",
       "loadingRoles": "Ładowanie ról…",
       "selectRole": "Wybierz rolę",
-      "noRoles": "Brak ról — najpierw przygotuj plan roli i przechwyć wiedzę, a potem ją zweryfikuj."
+      "noRoles": "Brak ról — najpierw przygotuj plan roli i przechwyć wiedzę, a potem ją zweryfikuj.",
+      "rolesLoadFailed": "Nie udało się wczytać zapisanych ról. To nie znaczy, że ich nie masz — spróbuj ponownie za chwilę.",
+      "rolesRetry": "Spróbuj ponownie"
     },
     "title": "Program szkoleniowy dla następcy",
     "subtitle": "Poznaj rolę dzięki przechwyconej wiedzy eksperckiej — i zgłoś wszystko, co jest już nieaktualne."

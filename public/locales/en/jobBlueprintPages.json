@@ -43,7 +43,8 @@
     "emptyStats": "No stats available yet.",
     "emptyTimeToFill": "No time-to-fill data yet.",
     "loading": "Loading analytics…",
-    "title": "Analytics"
+    "title": "Analytics",
+    "loadFailed": "This panel couldn't be loaded. That is not the same as having no data."
   },
   "aptitudes": {
     "description": "Rank the 8 work aptitude preferences in order of importance for this role, then rate each on its significance.",

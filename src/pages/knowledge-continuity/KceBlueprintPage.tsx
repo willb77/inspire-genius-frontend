@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Trans, useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 import {
+  AlertTriangle,
   ArrowRight,
   BookOpenCheck,
   CheckCircle2,
@@ -343,6 +344,27 @@ function FormStep({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Load a saved role */}
           {savedRoles.isError && isKceAccessDenied(savedRoles.error) && <KceAccessInline />}
+          {/* D-17 PR-B: any other failure used to hide the saved-role picker with no word. */}
+          {savedRoles.isError && !isKceAccessDenied(savedRoles.error) && roles.length === 0 && (
+            <div role="alert" data-testid="blueprint-roles-load-failed" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                {t(
+                  "blueprint.form.savedRolesLoadFailed",
+                  "Your saved roles couldn't be loaded, so none are listed here. That is not the same as having none."
+                )}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void savedRoles.refetch()}
+                disabled={savedRoles.isFetching}
+              >
+                {t("blueprint.form.savedRolesRetry", "Try again")}
+              </Button>
+            </div>
+          )}
           {roles.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="saved_role">{t("blueprint.form.savedRole", "Role")}</Label>

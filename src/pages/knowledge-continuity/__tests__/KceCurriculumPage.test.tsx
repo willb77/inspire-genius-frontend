@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import type { CurriculumDetail, CurriculumSummary } from "@/types/knowledge-continuity"
 
@@ -206,6 +206,32 @@ describe("KceCurriculumPage", () => {
     render(<KceCurriculumPage />)
     expect(screen.getByText("You don't have access to this organisation's knowledge.")).toBeInTheDocument()
     expect(screen.queryByText(/No roles yet/i)).not.toBeInTheDocument()
+  })
+
+  // D-17 PR-B
+  test("any other role-list failure says it could not be loaded, not 'No roles yet'", () => {
+    const refetch = jest.fn()
+    mockUseSavedRoles.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 500 } },
+      refetch,
+      isFetching: false,
+    })
+    render(<KceCurriculumPage />)
+    expect(screen.getByTestId("curriculum-roles-load-failed")).toHaveAttribute("role", "alert")
+    expect(screen.getByTestId("curriculum-roles-load-failed")).toHaveTextContent(/couldn't be loaded/i)
+    expect(screen.queryByText(/No roles yet/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/don't have access/i)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /Try again/i }))
+    expect(refetch).toHaveBeenCalledTimes(1)
+  })
+
+  test("a 403 on the role list does not also show the load-failed line", () => {
+    mockUseSavedRoles.mockReturnValue({ data: [], isLoading: false, isError: true, error: { response: { status: 403 } } })
+    render(<KceCurriculumPage />)
+    expect(screen.queryByTestId("curriculum-roles-load-failed")).not.toBeInTheDocument()
   })
 
   test("publisher ids are not shown as names", () => {

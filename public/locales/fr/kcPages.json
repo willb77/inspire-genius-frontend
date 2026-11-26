@@ -119,7 +119,9 @@
       "roleShape": "Profil du poste",
       "roleShapeHint": "Le profil détermine lesquelles des 8 sections de connaissances passent en premier : l'arborescence d'un dirigeant repose sur le jugement et les relations, pas sur une liste de tâches.",
       "draftingAria": "Rédaction du blueprint",
-      "draftButton": "Rédiger le blueprint"
+      "draftButton": "Rédiger le blueprint",
+      "savedRolesLoadFailed": "Impossible de charger vos rôles enregistrés ; aucun n'est donc listé ici. Cela ne veut pas dire que vous n'en avez aucun.",
+      "savedRolesRetry": "Réessayer"
     },
     "review": {
       "nothingToSave": "Rien à enregistrer : ajoutez ou conservez au moins un nœud.",
@@ -170,7 +172,9 @@
       "loading": "Chargement de vos postes enregistrés…",
       "empty": "Aucun poste enregistré pour l'instant. Créez d'abord le blueprint d'un poste : il cartographie les domaines de connaissance que cette capture va parcourir.",
       "blueprintRole": "Créer le blueprint d'un poste",
-      "areaCount": "{{areas}} domaines de connaissance"
+      "areaCount": "{{areas}} domaines de connaissance",
+      "loadFailed": "Impossible de charger vos rôles enregistrés. Cela ne veut pas dire que vous n'en avez aucun — réessayez dans un instant.",
+      "retry": "Réessayer"
     },
     "plan": {
       "whoTitle": "Qui capturons-nous ?",
@@ -331,7 +335,9 @@
       "role": "Poste",
       "loadingRoles": "Chargement des postes…",
       "selectRole": "Sélectionner un poste",
-      "noRoles": "Aucun poste pour le moment : élaborez d'abord le Role Blueprint d'un poste et capturez-le, puis validez ses connaissances."
+      "noRoles": "Aucun poste pour le moment : élaborez d'abord le Role Blueprint d'un poste et capturez-le, puis validez ses connaissances.",
+      "rolesLoadFailed": "Impossible de charger vos rôles enregistrés. Cela ne veut pas dire que vous n'en avez aucun — réessayez dans un instant.",
+      "rolesRetry": "Réessayer"
     },
     "title": "Parcours du successeur",
     "subtitle": "Apprenez le poste à partir de l'expertise capturée, et signalez tout ce qui n'est plus exact."

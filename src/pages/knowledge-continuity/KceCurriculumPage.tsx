@@ -3,6 +3,7 @@ import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 import {
+  AlertTriangle,
   ArrowLeft,
   BookText,
   CheckCircle2,
@@ -527,6 +528,8 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
     isLoading: rolesLoading,
     isError: rolesFailed,
     error: rolesError,
+    refetch: refetchRoles,
+    isFetching: rolesFetching,
   } = useSavedRoles(CURRICULUM_ORG_ID)
   const citable = useCitableUnits()
   const build = useBuildCurriculum()
@@ -631,7 +634,22 @@ function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: strin
           </Button>
         </div>
         {rolesFailed && isKceAccessDenied(rolesError) && <KceAccessInline />}
-        {!rolesLoading && !(rolesFailed && isKceAccessDenied(rolesError)) && roles.length === 0 && (
+        {/* D-17 PR-B: a failed read is not "no roles yet". */}
+        {rolesFailed && !isKceAccessDenied(rolesError) && roles.length === 0 && (
+          <div role="alert" data-testid="curriculum-roles-load-failed" className="flex flex-wrap items-center gap-2 text-xs text-destructive">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>
+              {t(
+                "curriculum.build.rolesLoadFailed",
+                "Your saved roles couldn't be loaded. That is not the same as having none — try again in a moment."
+              )}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => void refetchRoles()} disabled={rolesFetching}>
+              {t("curriculum.build.rolesRetry", "Try again")}
+            </Button>
+          </div>
+        )}
+        {!rolesLoading && !rolesFailed && roles.length === 0 && (
           <p className="text-xs text-muted-foreground">
             {t(
               "curriculum.build.noRoles",
