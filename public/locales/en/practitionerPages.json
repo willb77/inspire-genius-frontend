@@ -357,7 +357,9 @@
     "openClientRecord": "Open client record",
     "inviteFromMyClients": "Invite from My Clients",
     "clientRecord": "Client record",
-    "clientRecordAria": "Open the client record for {{name}}: sessions, documents, follow-ups and PRISM import"
+    "clientRecordAria": "Open the client record for {{name}}: sessions, documents, follow-ups and PRISM import",
+    "lensClients": "My clients",
+    "scopeClients": "These are your clients. A client who has connected an InspiresGenius account has a card; anyone you have added who has not connected yet is listed below."
   },
   "clientImport": {
     "cardTitle": "DISC and CliftonStrengths",
@@ -386,5 +388,9 @@
     "back": "Back",
     "send": "Send to {{name}}",
     "done": "Done"
+  },
+  "studioHeader": {
+    "clients": "Clients",
+    "practiceOverview": "Practice overview"
   }
 }

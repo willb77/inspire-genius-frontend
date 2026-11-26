@@ -25,6 +25,12 @@ const mockCohortEnabled = jest.fn((enabled: boolean) => ({ data: enabled ? true 
 jest.mock("@/hooks/company-admin/useCohortReadout", () => ({
   useCohortReadoutEnabled: (enabled: boolean) => mockCohortEnabled(enabled),
 }))
+// RM-6 B: the practitioner client-roster status reads OFF here, so every
+// menu below is today's menu (the switch-on menu has its own suite).
+jest.mock("@/hooks/switches/usePractitionerClientRosterEnabled", () => ({
+  usePractitionerClientRosterEnabled: () => false,
+  usePractitionerClientRosterStatus: () => ({ data: false, isLoading: false }),
+}))
 
 const SWITCH = "house_style_company-admin"
 const labels = (items: { label: string }[]) => items.map((i) => i.label)

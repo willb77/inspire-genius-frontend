@@ -8,7 +8,9 @@ import {
   WORKSPACE_SECTION_ROLES,
   roleNavItems,
   getWorkspaceSectionItems,
+  practitionerFrontPageMenu,
 } from "@/constants/navigation"
+import { usePractitionerClientRosterEnabled } from "@/hooks/switches/usePractitionerClientRosterEnabled"
 import { ROUTES } from "@/constants/routes"
 import { useWorkspaceNavItems, withWorkspaceVerticals } from "@/components/layout/useVerticalLauncher"
 import { useExamAccess } from "@/hooks/super-admin/usePrismExam"
@@ -59,7 +61,16 @@ function useOwnWorkItems(role: UserRole, talentStudio: NavItemDef | null): NavIt
   const granted = !!examAccess.data?.allowed && !examAccess.data?.super_admin
   // RM-9b (D-2): the user role's list is the toggle-aware one Home shows.
   const agentEngineOn = useAgentEngine()
-  const base = useMemo(() => roleNavItems(role, agentEngineOn), [role, agentEngineOn])
+  const roleBase = useMemo(() => roleNavItems(role, agentEngineOn), [role, agentEngineOn])
+  // RM-6 B: where the Studio lists the practitioner's clients, Practitioner Home
+  // and My Clients leave the menu (both open from the Studio header). Off, a
+  // 404 or an error: the practitioner's rows are exactly as before.
+  const studioIsFrontPage = usePractitionerClientRosterEnabled(role === "practitioner")
+  const folded = role === "practitioner" && studioIsFrontPage
+  const base = useMemo(
+    () => (folded ? practitionerFrontPageMenu(roleBase) : roleBase),
+    [folded, roleBase],
+  )
   const items = useMemo(() => {
     const withTalent = talentStudio ? [...base, talentStudio] : base
     const extra: NavItemDef[] = []
