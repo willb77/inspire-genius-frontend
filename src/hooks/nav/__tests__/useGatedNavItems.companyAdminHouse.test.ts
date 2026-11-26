@@ -1,9 +1,14 @@
 /**
  * @jest-environment jsdom
  *
- * The company-admin menu through useGatedNavItems with the REAL role lists:
- * the `company-admin` house-style switch (default OFF) swaps the menu at
- * render time, and the Cohort Read-out item still splices in either way.
+ * The company-admin menu through useGatedNavItems with the REAL role lists.
+ *
+ * RM-9a (2026-11-26): the house-style menu is baked into COMPANY_ADMIN_NAV_ITEMS
+ * and the render-time swap is gone, so the `company-admin` house switch no
+ * longer changes this menu in either direction, and Cohort Read-out is never a
+ * row (it is a tab of the Analytics hub, RM-5) — the classic, switch-off menu
+ * that carried it was the only place it was one. Until RM-9a this file pinned
+ * the swap itself. CSA: docs/analysis/2026-11-26-rm-9-csa.md (monorepo #2237).
  */
 import { renderHook } from "@testing-library/react"
 import { useGatedNavItems } from "../useGatedNavItems"
@@ -16,63 +21,56 @@ jest.mock("@/components/layout/useVerticalLauncher", () => {
 jest.mock("@/hooks/super-admin/usePrismExam", () => ({
   useExamAccess: () => ({ data: undefined }),
 }))
-let mockCohortOn: boolean | undefined
+const mockCohortEnabled = jest.fn((enabled: boolean) => ({ data: enabled ? true : undefined }))
 jest.mock("@/hooks/company-admin/useCohortReadout", () => ({
-  useCohortReadoutEnabled: (enabled: boolean) => ({ data: enabled ? mockCohortOn : undefined }),
+  useCohortReadoutEnabled: (enabled: boolean) => mockCohortEnabled(enabled),
 }))
 
 const SWITCH = "house_style_company-admin"
 const labels = (items: { label: string }[]) => items.map((i) => i.label)
+const BAKED = ["Dashboard", "People", "Organization", "Reports", "Surveys"]
 
 beforeEach(() => {
   localStorage.clear()
-  mockCohortOn = undefined
+  mockCohortEnabled.mockClear()
 })
 
-describe("useGatedNavItems — company-admin house style", () => {
-  it("switch OFF: exactly the classic company-admin menu", () => {
+describe("useGatedNavItems — company-admin menu, house style baked in (RM-9a)", () => {
+  it.each([undefined, "true", "false"])("house_style_company-admin = %s: the same five rows", (value) => {
+    if (value !== undefined) localStorage.setItem(SWITCH, value)
     const { result } = renderHook(() => useGatedNavItems("company-admin"))
     expect(result.current).toBe(COMPANY_ADMIN_NAV_ITEMS)
+    expect(labels(result.current)).toEqual(BAKED)
   })
 
-  it("switch ON: People, no Settings, no Help (RM-4: both are in the footer)", () => {
-    localStorage.setItem(SWITCH, "true")
+  it("no Settings, Help or User Management row (RM-4 footer; RM-8 names)", () => {
     const l = labels(renderHook(() => useGatedNavItems("company-admin")).result.current)
-    expect(l).toContain("People")
     expect(l).not.toContain("Help & Support")
     expect(l).not.toContain("Settings")
     expect(l).not.toContain("User Management")
   })
 
-  it("switch ON (RM-5): no Cohort Read-out row even when the org has it — it is a tab of the Analytics hub", () => {
-    localStorage.setItem(SWITCH, "true")
-    mockCohortOn = true
+  it("no Cohort Read-out row even when the org has it, and the menu no longer asks (it is a hub tab)", () => {
     const l = labels(renderHook(() => useGatedNavItems("company-admin")).result.current)
     expect(l).not.toContain("Cohort Read-out")
-    expect(l).toEqual(["Dashboard", "People", "Organization", "Reports", "Surveys"])
+    expect(mockCohortEnabled).not.toHaveBeenCalled()
   })
 
-  it("switch OFF keeps the Cohort Read-out row when the org has it (unchanged by RM-5)", () => {
-    mockCohortOn = true
-    const l = labels(renderHook(() => useGatedNavItems("company-admin")).result.current)
-    expect(l.at(-1)).toBe("Cohort Read-out")
-    expect(l.slice(0, -1)).toEqual(labels(COMPANY_ADMIN_NAV_ITEMS))
-  })
-
-  it("is read at render time: flipping the switch and re-rendering changes the menu", () => {
+  it("flipping the switch and re-rendering changes nothing", () => {
     const { result, rerender } = renderHook(() => useGatedNavItems("company-admin"))
-    expect(labels(result.current)).toContain("User Management")
-    localStorage.setItem(SWITCH, "true")
+    const before = labels(result.current)
+    localStorage.setItem(SWITCH, "false")
     rerender()
-    expect(labels(result.current)).toContain("People")
-    expect(labels(result.current)).not.toContain("User Management")
+    expect(labels(result.current)).toEqual(before)
   })
 
-  it("switch ON changes no other role's menu", () => {
-    localStorage.setItem(SWITCH, "true")
-    for (const role of ["manager", "practitioner", "distributor", "user"] as const) {
-      const { result } = renderHook(() => useGatedNavItems(role))
-      expect(labels(result.current)).toEqual(labels(NAV_ITEMS_BY_ROLE[role]))
+  it("no other role's menu depends on the switch", () => {
+    for (const value of ["true", "false"]) {
+      localStorage.setItem(SWITCH, value)
+      for (const role of ["manager", "practitioner", "distributor", "user"] as const) {
+        const { result } = renderHook(() => useGatedNavItems(role))
+        expect(labels(result.current)).toEqual(labels(NAV_ITEMS_BY_ROLE[role]))
+      }
     }
   })
 })

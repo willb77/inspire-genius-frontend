@@ -28,7 +28,7 @@ jest.mock("sonner", () => ({
 
 jest.mock("@/layouts/UserLayout", () => ({
   __esModule: true,
-  default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  default: ({ children }: { children: ReactNode }) => <div data-testid="user-layout">{children}</div>,
 }))
 
 jest.mock("react-router-dom", () => ({
@@ -614,11 +614,12 @@ describe("house style (interview area) — the switch", () => {
     expect(screen.queryByText(/no score/i)).not.toBeInTheDocument()
   })
 
-  it("ON: a manager keeps the manager's own menu", () => {
+  // RM-9a: the role's own menu is resolved inside UserLayout since RM-9a; src/hooks/nav/__tests__/rm9a-tier-menus.test.tsx pins the real menu per role.
+  it("ON: a manager's page renders inside UserLayout, which gives the manager their own menu", () => {
     localStorage.setItem("house_style_interview", "true")
     mockAuthRole = "manager"
     render(<InterviewPracticePage />)
-    expect(screen.getByTestId("unified-layout-manager")).toContainElement(
+    expect(screen.getByTestId("user-layout")).toContainElement(
       screen.getByRole("heading", { name: /^role play$/i }),
     )
   })
