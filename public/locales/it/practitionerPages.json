@@ -154,7 +154,7 @@
     "colSessions": "Sessioni",
     "colCreditsUsed": "Crediti utilizzati",
     "colLastActive": "Ultima attività",
-    "title": "Analisi",
+    "title": "Report",
     "subtitle": "Clienti in gestione e utilizzo per cliente."
   },
   "home": {
@@ -162,7 +162,7 @@
     "quick": {
       "client": "Cliente",
       "schedule": "Pianifica",
-      "analytics": "Analisi",
+      "analytics": "Report",
       "addClient": "Aggiungi un cliente",
       "meeting": "Riunione"
     },

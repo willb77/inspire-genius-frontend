@@ -78,7 +78,7 @@ export const HOUSE_SUPER_ADMIN_SECTIONS: NavSectionDef[] = [
     label: "People",
     collapsible: true,
     items: [
-      { to: ROUTES.SUPER_ADMIN.USERS, icon: UsersRound, label: "Users" },
+      { to: ROUTES.SUPER_ADMIN.USERS, icon: UsersRound, label: "People" },
       { to: ROUTES.SUPER_ADMIN.ORGANIZATIONS, icon: Building2, label: "Organizations" },
       { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: plain("bulk user import") },
       { to: ROUTES.SUPER_ADMIN.PRACTITIONER_REGISTRY, icon: IdCard, label: "Practitioners" },

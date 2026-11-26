@@ -44,7 +44,7 @@ export default function PractitionerHome() {
   const QUICK_ACTIONS = [
     { label: t("home.quick.client", { defaultValue: "Client" }), icon: Users, to: ROUTES.PRACTITIONER.CLIENTS, bg: "bg-emerald-100", iconColor: "text-emerald-600" },
     { label: t("home.quick.schedule", { defaultValue: "Schedule" }), icon: CalendarDays, to: ROUTES.PRACTITIONER.SCHEDULE, bg: "bg-violet-100", iconColor: "text-violet-600" },
-    { label: t("home.quick.analytics", { defaultValue: "Analytics" }), icon: Wallet, to: ROUTES.PRACTITIONER.ANALYTICS, bg: "bg-amber-100", iconColor: "text-amber-600" },
+    { label: t("home.quick.analytics", { defaultValue: "Reports" }), icon: Wallet, to: ROUTES.PRACTITIONER.ANALYTICS, bg: "bg-amber-100", iconColor: "text-amber-600" },
     { label: t("home.quick.addClient", { defaultValue: "Add a Client" }), icon: UserPlus, to: ROUTES.PRACTITIONER.CLIENTS, bg: "bg-rose-100", iconColor: "text-rose-600" },
     { label: t("home.quick.meeting", { defaultValue: "Meeting" }), icon: Video, to: ROUTES.PRACTITIONER.MEETING, bg: "bg-teal-100", iconColor: "text-teal-600" },
   ]

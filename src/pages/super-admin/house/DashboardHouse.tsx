@@ -107,7 +107,7 @@ export default function SuperAdminDashboardHouse() {
             label="People"
             state={tileState(users, totalUsers != null ? totalUsers.toLocaleString() : null)}
             linkTo={ROUTES.SUPER_ADMIN.USERS}
-            linkLabel="Users"
+            linkLabel="People"
           />
           <Tile
             label="Active coaches"

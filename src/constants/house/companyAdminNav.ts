@@ -3,7 +3,8 @@
  *
  * With the switch on, the company-admin menu is the classic list with display
  * changes:
- *   - "User Management" reads "People", the title of the page it opens;
+ *   - "User Management" reads "People" and "Analytics" reads "Reports" (RM-8),
+ *     each the title of the page it opens;
  *   - the company-admin Settings page (`/company-admin/settings`, a placeholder
  *     with sample figures) is never listed. Since RM-4 the classic list no
  *     longer carries it either: Settings is in the footer section and opens the
@@ -43,7 +44,20 @@ export const COMPANY_ADMIN_HOUSE_HIDDEN_ROUTES: ReadonlySet<string> = new Set<st
 export function companyAdminHouseMenu(classic: readonly NavItemDef[]): NavItemDef[] {
   return classic
     .filter((i) => !COMPANY_ADMIN_HOUSE_HIDDEN_ROUTES.has(i.to))
-    .map((i) => (i.to === ROUTES.COMPANY_ADMIN.USERS ? { ...i, label: "People" } : i))
+    .map((i) => {
+      const label = COMPANY_ADMIN_HOUSE_LABELS[i.to]
+      return label ? { ...i, label } : i
+    })
+}
+
+/**
+ * House-style names for classic rows, each the title of the page it opens:
+ * "User Management" reads "People", and (RM-8, 2026-11-26, naming table) the
+ * Analytics hub reads "Reports". The classic (switch-off) list keeps its names.
+ */
+export const COMPANY_ADMIN_HOUSE_LABELS: Readonly<Record<string, string>> = {
+  [ROUTES.COMPANY_ADMIN.USERS]: "People",
+  [ROUTES.COMPANY_ADMIN.ANALYTICS]: "Reports",
 }
 
 /**

@@ -331,7 +331,7 @@ export default function OrganizationView() {
             <p className="text-sm text-muted-foreground mb-3">
               To add someone, invite them or set their organization from{" "}
               <Link className="underline" to={ROUTES.SUPER_ADMIN.USERS}>
-                User Management
+                People
               </Link>
               .
               {candidatesTruncated &&

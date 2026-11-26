@@ -312,7 +312,7 @@
     "quick": {
       "client": "Cliente",
       "schedule": "Agenda",
-      "analytics": "Análises",
+      "analytics": "Relatórios",
       "addClient": "Adicionar cliente",
       "meeting": "Reunião"
     },
@@ -375,7 +375,7 @@
     "colSessions": "Sessões",
     "colCreditsUsed": "Créditos usados",
     "colLastActive": "Última atividade",
-    "title": "Análises",
+    "title": "Relatórios",
     "subtitle": "Clientes sob gestão e uso por cliente."
   },
   "studioRoster": {

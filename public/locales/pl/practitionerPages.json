@@ -121,7 +121,7 @@
     "colSessions": "Sesje",
     "colCreditsUsed": "Wykorzystane kredyty",
     "colLastActive": "Ostatnia aktywność",
-    "title": "Analityka",
+    "title": "Raporty",
     "subtitle": "Klienci pod opieką i wykorzystanie w podziale na klientów."
   },
   "clients": {
@@ -197,7 +197,7 @@
     "quick": {
       "client": "Klient",
       "schedule": "Harmonogram",
-      "analytics": "Analityka",
+      "analytics": "Raporty",
       "addClient": "Dodaj klienta",
       "meeting": "Spotkanie"
     },

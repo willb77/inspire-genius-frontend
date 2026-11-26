@@ -212,7 +212,7 @@ export default function ManagerBulkImport() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t("bulkImport.bulkTeamImport", { defaultValue: "Bulk Team Import" })}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t("bulkImport.bulkTeamImport", { defaultValue: "Add people" })}</h1>
             <p className="text-muted-foreground">{t("bulkImport.uploadAFileToImport", { defaultValue: "Upload a file to import team members and send invitation emails" })}</p>
           </div>
           <div className="flex items-center gap-2">

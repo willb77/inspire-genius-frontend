@@ -97,7 +97,7 @@ export const ORGANIZATION_HUB: CompanyAdminHubDef = {
 export const ANALYTICS_HUB: CompanyAdminHubDef = {
   key: "analytics",
   titleKey: "hubAnalyticsTitle",
-  title: "Analytics",
+  title: "Reports",
   descriptionKey: "hubAnalyticsDescription",
   description: "How your organization uses InspiresGenius, and what the AI coaches do and cost.",
   tabs: [

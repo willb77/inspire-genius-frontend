@@ -824,12 +824,12 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   ...(TEAM_DEVELOPMENT_ENABLED
     ? []
     : [{ to: ROUTES.MANAGER.STUDENTS, icon: ShieldCheck, label: "Member Oversight" }]),
-  // Team Import is how the roster grows, so the Join Requests queue lives on
+  // Add people (RM-8, was "Team Import") is how the roster grows, so the Join Requests queue lives on
   // it now. That queue is pull-only — nothing notifies a manager when a request
   // arrives — so the button carries a count and the page loads it eagerly;
   // burying it behind a page nobody opens would be worse than the old sidebar
   // entry, not better.
-  { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Team Import" },
+  { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Add people" },
   { to: ROUTES.MANAGER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
   // RM-4 (2026-11-25, RM-D1/RM-D2): Role Play and Résumé Writer moved to the
   // My Workspace section, and Settings and Help & Support to the footer
@@ -883,7 +883,7 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.PRACTITIONER.PRACTICE, icon: IdCard, label: "My PRISM Practice" },
   { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
-  { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Reports" },
   // RM-4: Role Play and Résumé Writer are in My Workspace; Settings
   // (/practitioner/settings) and Help & Support are in the footer.
 ]

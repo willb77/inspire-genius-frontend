@@ -277,7 +277,7 @@
     "couldNotLoadYourTeam": "Nie udało się wczytać Twojego zespołu.",
     "retry": "Spróbuj ponownie",
     "nobodyReportsToYouYet": "Nikt jeszcze Ci nie podlega. Dodaj swój zespół w sekcji",
-    "teamImport": "Team Import",
+    "teamImport": "Dodaj osoby",
     "withA": "z",
     "manager": "Manager",
     "columnNamingYourEmailAddress": "kolumną zawierającą Twój adres e-mail.",
@@ -315,7 +315,7 @@
     "goodMorning": "Dzień dobry, {{firstName}}",
     "onYourRosterWithoutA": "Na Twojej liście: {{length}} · bez wyniku PRISM: {{length2}}.",
     "viewRoster": "Zobacz listę zespołu",
-    "teamImport": "Import zespołu",
+    "teamImport": "Dodaj osoby",
     "onYourRoster": "Na Twojej liście",
     "directReports": "podwładnych",
     "checkInsBooked": "Zaplanowane spotkania",
@@ -329,7 +329,7 @@
   "team": {
     "manager": "Menedżer",
     "columnContainingYourEmailAddress": "kolumnę z Twoim adresem e-mail, a osoby te pojawią się na tej liście zespołu.",
-    "teamImport": "Import zespołu",
+    "teamImport": "Dodaj osoby",
     "hMember": "Członek zespołu",
     "hPosition": "Stanowisko",
     "hDepartment": "Dział",
@@ -764,7 +764,7 @@
     "overlayNotSharedBody": "{{who}} ma zapisany wynik {{framework}}, ale nie udostępnił(a) Ci swoich ocen."
   },
   "bulkImport": {
-    "bulkTeamImport": "Masowy import zespołu",
+    "bulkTeamImport": "Dodaj osoby",
     "uploadAFileToImport": "Prześlij plik, aby zaimportować członków zespołu i wysłać e-maile z zaproszeniami",
     "startOver": "Zacznij od nowa",
     "back": "Wstecz",

@@ -99,7 +99,7 @@ export default function ManagerTeam() {
             <p className="text-[13px] text-[#6b7280] mt-1 max-w-md mx-auto">{tm("team.aPersonAppearsHereOnce", { defaultValue: "A person appears here once their record names you as their manager. Import your team with a" })}{" "}<span className="font-mono text-xs">{tm("team.manager", { defaultValue: "Manager" })}</span>{" "}{tm("team.columnContainingYourEmailAddress", { defaultValue: "column containing your email address, and they land on this roster." })}</p>
             <Button asChild className="mt-4 bg-[#466BC4] hover:bg-[#3A59A6] text-white gap-2">
               <Link to={ROUTES.MANAGER.BULK_IMPORT}>
-                <UserPlus className="h-4 w-4" />{tm("team.teamImport", { defaultValue: "Team Import" })}</Link>
+                <UserPlus className="h-4 w-4" />{tm("team.teamImport", { defaultValue: "Add people" })}</Link>
             </Button>
           </div>
         )}
