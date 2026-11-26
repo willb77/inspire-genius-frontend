@@ -4,12 +4,9 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
 {
   "mainMenu": [
     "Dashboard -> /company-admin/dashboard",
-    "User Management -> /company-admin/users",
+    "People -> /company-admin/users",
     "Organization -> /company-admin/organization",
-    "Bulk Import -> /company-admin/bulk-import",
-    "Analytics -> /company-admin/analytics",
-    "AI Observability -> /company-admin/observability",
-    "Culture Docs -> /company-admin/culture",
+    "Reports -> /company-admin/analytics",
     "Surveys -> /surveys",
     "Chat with Meridian -> /meridian/chat",
     "Goals Studio -> /my/goals",
@@ -33,12 +30,9 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
       {
         "items": [
           "Dashboard -> /company-admin/dashboard",
-          "User Management -> /company-admin/users",
+          "People -> /company-admin/users",
           "Organization -> /company-admin/organization",
-          "Bulk Import -> /company-admin/bulk-import",
-          "Analytics -> /company-admin/analytics",
-          "AI Observability -> /company-admin/observability",
-          "Culture Docs -> /company-admin/culture",
+          "Reports -> /company-admin/analytics",
           "Surveys -> /surveys",
         ],
         "label": "",
@@ -83,12 +77,9 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
       {
         "items": [
           "Dashboard -> /company-admin/dashboard",
-          "User Management -> /company-admin/users",
+          "People -> /company-admin/users",
           "Organization -> /company-admin/organization",
-          "Bulk Import -> /company-admin/bulk-import",
-          "Analytics -> /company-admin/analytics",
-          "AI Observability -> /company-admin/observability",
-          "Culture Docs -> /company-admin/culture",
+          "Reports -> /company-admin/analytics",
           "Surveys -> /surveys",
         ],
         "label": "",
@@ -133,12 +124,9 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
       {
         "items": [
           "Dashboard -> /company-admin/dashboard",
-          "User Management -> /company-admin/users",
+          "People -> /company-admin/users",
           "Organization -> /company-admin/organization",
-          "Bulk Import -> /company-admin/bulk-import",
-          "Analytics -> /company-admin/analytics",
-          "AI Observability -> /company-admin/observability",
-          "Culture Docs -> /company-admin/culture",
+          "Reports -> /company-admin/analytics",
           "Surveys -> /surveys",
         ],
         "label": "",
@@ -183,12 +171,9 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
       {
         "items": [
           "Dashboard -> /company-admin/dashboard",
-          "User Management -> /company-admin/users",
+          "People -> /company-admin/users",
           "Organization -> /company-admin/organization",
-          "Bulk Import -> /company-admin/bulk-import",
-          "Analytics -> /company-admin/analytics",
-          "AI Observability -> /company-admin/observability",
-          "Culture Docs -> /company-admin/culture",
+          "Reports -> /company-admin/analytics",
           "Surveys -> /surveys",
         ],
         "label": "",
@@ -218,12 +203,9 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
       {
         "items": [
           "Dashboard -> /company-admin/dashboard",
-          "User Management -> /company-admin/users",
+          "People -> /company-admin/users",
           "Organization -> /company-admin/organization",
-          "Bulk Import -> /company-admin/bulk-import",
-          "Analytics -> /company-admin/analytics",
-          "AI Observability -> /company-admin/observability",
-          "Culture Docs -> /company-admin/culture",
+          "Reports -> /company-admin/analytics",
           "Surveys -> /surveys",
         ],
         "label": "",
@@ -264,12 +246,9 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
       {
         "items": [
           "Dashboard -> /company-admin/dashboard",
-          "User Management -> /company-admin/users",
+          "People -> /company-admin/users",
           "Organization -> /company-admin/organization",
-          "Bulk Import -> /company-admin/bulk-import",
-          "Analytics -> /company-admin/analytics",
-          "AI Observability -> /company-admin/observability",
-          "Culture Docs -> /company-admin/culture",
+          "Reports -> /company-admin/analytics",
           "Surveys -> /surveys",
         ],
         "label": "",
@@ -310,12 +289,9 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
       {
         "items": [
           "Dashboard -> /company-admin/dashboard",
-          "User Management -> /company-admin/users",
+          "People -> /company-admin/users",
           "Organization -> /company-admin/organization",
-          "Bulk Import -> /company-admin/bulk-import",
-          "Analytics -> /company-admin/analytics",
-          "AI Observability -> /company-admin/observability",
-          "Culture Docs -> /company-admin/culture",
+          "Reports -> /company-admin/analytics",
           "Surveys -> /surveys",
         ],
         "label": "",
@@ -355,12 +331,9 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
       {
         "items": [
           "Dashboard -> /company-admin/dashboard",
-          "User Management -> /company-admin/users",
+          "People -> /company-admin/users",
           "Organization -> /company-admin/organization",
-          "Bulk Import -> /company-admin/bulk-import",
-          "Analytics -> /company-admin/analytics",
-          "AI Observability -> /company-admin/observability",
-          "Culture Docs -> /company-admin/culture",
+          "Reports -> /company-admin/analytics",
           "Surveys -> /surveys",
         ],
         "label": "",

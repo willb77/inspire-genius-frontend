@@ -101,10 +101,12 @@ it("gives a user and a super-admin the platform user chrome", () => {
   }
 })
 
-it("keeps a manager in the manager chrome", () => {
+// RM-9a: the role's own menu is resolved inside UserLayout since RM-9a; src/hooks/nav/__tests__/rm9a-tier-menus.test.tsx pins the real menu per role.
+it("renders inside UserLayout for a manager too (which resolves the manager's menu)", () => {
   mockUser.role = "manager"
   render(<MyDevelopment />)
-  expect(screen.getByTestId("unified-layout")).toHaveAttribute("data-role", "manager")
+  expect(screen.getByTestId("user-layout")).toBeInTheDocument()
+  expect(screen.queryByTestId("unified-layout")).not.toBeInTheDocument()
 })
 
 it("renders for a signed-in account with no role rather than blanking", () => {

@@ -86,14 +86,17 @@ describe("GoalsStudioLayout", () => {
     expect(screen.queryByTestId("unified-layout")).not.toBeInTheDocument();
   });
 
-  it("keeps a manager inside the manager chrome", () => {
-    mockUser.role = "manager";
-    renderAt("/my/goals/sharing");
-    const chrome = screen.getByTestId("unified-layout");
-    expect(chrome).toHaveAttribute("data-role", "manager");
-    expect(screen.queryByTestId("user-layout")).not.toBeInTheDocument();
-    expect(screen.getByTestId("page")).toHaveTextContent("sharing");
-  });
+  // RM-9a: the role's own menu is resolved inside UserLayout since RM-9a; src/hooks/nav/__tests__/rm9a-tier-menus.test.tsx pins the real menu per role.
+  it.each(["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"])(
+    "renders inside UserLayout for %s (which resolves the role's own menu)",
+    (role) => {
+      mockUser.role = role;
+      renderAt("/my/goals/sharing");
+      expect(screen.getByTestId("user-layout")).toBeInTheDocument();
+      expect(screen.queryByTestId("unified-layout")).not.toBeInTheDocument();
+      expect(screen.getByTestId("page")).toHaveTextContent("sharing");
+    },
+  );
 
   it("badges come from the session, and only when earned", () => {
     renderAt();

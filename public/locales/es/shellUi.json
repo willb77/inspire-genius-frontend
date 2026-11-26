@@ -24,7 +24,6 @@
   },
   "nav": {
     "items": {
-      "AI_Observability": "Observabilidad de IA",
       "AI_usage_health": "Uso y estado de la IA",
       "About_me": "Sobre mí",
       "Add_people": "Añadir personas",
@@ -41,7 +40,6 @@
       "Authoring": "Creación de contenido",
       "Blueprint_a_role": "Definir un puesto con Role Blueprints",
       "Broadcast_Alerts": "Alertas masivas",
-      "Bulk_Import": "Importación masiva",
       "Bulk_User_Import": "Importación masiva de usuarios",
       "Candidates": "Candidatos",
       "Career_areas": "Áreas profesionales",
@@ -64,7 +62,6 @@
       "Compare_Offers": "Comparar ofertas",
       "Cost_and_payback": "Costo y retorno",
       "Credits": "Créditos",
-      "Culture_Docs": "Documentos de cultura",
       "Curriculum": "Currículo",
       "Dashboard": "Panel",
       "Data_deletion_requests": "Solicitudes de eliminación de datos",

@@ -229,7 +229,6 @@
   },
   "nav": {
     "items": {
-      "AI_Observability": "AI Observability",
       "AI_usage_health": "AI usage & health",
       "About_me": "About me",
       "Add_people": "Add people",
@@ -246,7 +245,6 @@
       "Authoring": "Authoring",
       "Blueprint_a_role": "Blueprint a role",
       "Broadcast_Alerts": "Broadcast Alerts",
-      "Bulk_Import": "Bulk Import",
       "Bulk_User_Import": "Bulk User Import",
       "Candidates": "Candidates",
       "Career_areas": "Career areas",
@@ -270,7 +268,6 @@
       "Compare_Offers": "Compare Offers",
       "Cost_and_payback": "Cost and payback",
       "Credits": "Credits",
-      "Culture_Docs": "Culture Docs",
       "Curriculum": "Curriculum",
       "Dashboard": "Dashboard",
       "Data_deletion_requests": "Data deletion requests",

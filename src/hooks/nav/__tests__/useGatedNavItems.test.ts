@@ -65,37 +65,21 @@ describe("useGatedNavItems", () => {
     mockCohortCached = false
   })
 
-  describe("Cohort Read-out item (N-3)", () => {
-    it("is added for a company-admin whose org has the switch on", () => {
-      mockCohortOn = true
-      const { result } = renderHook(() => useGatedNavItems("company-admin"))
-      expect(mockCohortEnabled).toHaveBeenCalledWith(true)
-      expect(result.current.find((i) => i.label === "Cohort Read-out")?.to).toBe("/company-admin/cohort-readout")
-    })
-
-    it("switch off or unanswered: the company-admin menu is unchanged", () => {
-      mockCohortOn = false
-      const off = renderHook(() => useGatedNavItems("company-admin")).result.current
-      mockCohortOn = undefined
-      const pending = renderHook(() => useGatedNavItems("company-admin")).result.current
-      expect(off.some((i) => i.label === "Cohort Read-out")).toBe(false)
-      expect(pending.some((i) => i.label === "Cohort Read-out")).toBe(false)
-      expect(off.map((i) => i.label)).toEqual(["Home", "Settings", "Help & Support"])
-    })
-
-    it("never asks, and never shows it, for any other role", () => {
-      mockCohortOn = true
-      const { result } = renderHook(() => useGatedNavItems("practitioner"))
-      expect(mockCohortEnabled).toHaveBeenCalledWith(false)
-      expect(result.current.some((i) => i.label === "Cohort Read-out")).toBe(false)
-    })
-
-    it("ignores a cached true for any other role", () => {
-      mockCohortOn = true
-      mockCohortCached = true
-      const { result } = renderHook(() => useGatedNavItems("practitioner"))
-      expect(result.current.some((i) => i.label === "Cohort Read-out")).toBe(false)
-    })
+  // RM-9a (2026-11-26): Cohort Read-out is a tab of the company-admin Analytics
+  // hub (RM-5), never a menu row. The row lived only in the classic
+  // (house-off) company-admin menu, which RM-9a removed; the menu no longer
+  // asks for the switch at all. CSA: docs/analysis/2026-11-26-rm-9-csa.md.
+  describe("Cohort Read-out (N-3) is not a menu row (RM-9a)", () => {
+    it.each(["company-admin", "practitioner", "manager", "user"] as const)(
+      "%s: never asked, never shown, even with the org switch on and cached",
+      (role) => {
+        mockCohortOn = true
+        mockCohortCached = true
+        const { result } = renderHook(() => useGatedNavItems(role))
+        expect(mockCohortEnabled).not.toHaveBeenCalled()
+        expect(result.current.some((i) => i.label === "Cohort Read-out")).toBe(false)
+      },
+    )
   })
 
   it("returns exactly the role's nav items (no launcher-vertical appends)", () => {

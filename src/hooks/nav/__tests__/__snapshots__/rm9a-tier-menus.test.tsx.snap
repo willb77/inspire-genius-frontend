@@ -1,0 +1,1952 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`1. role sidebar through UnifiedLayout, tier build company-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /company-admin/dashboard",
+    "People -> /company-admin/users",
+    "Organization -> /company-admin/organization",
+    "Reports -> /company-admin/analytics",
+    "Surveys -> /surveys",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /company-admin/dashboard",
+        "People -> /company-admin/users",
+        "Organization -> /company-admin/organization",
+        "Reports -> /company-admin/analytics",
+        "Surveys -> /surveys",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`1. role sidebar through UnifiedLayout, tier build distributor 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /distributor/dashboard",
+    "My practitioners -> /distributor/network",
+    "Credits -> /distributor/credits",
+    "Reports -> /distributor/analytics",
+    "Career & Education Discovery -> /vertical/career-discovery/journey",
+    "Career Fit -> /vertical/job-fit/matches",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Home -> /distributor/dashboard",
+        "My practitioners -> /distributor/network",
+        "Credits -> /distributor/credits",
+        "Reports -> /distributor/analytics",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Settings -> /distributor/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`1. role sidebar through UnifiedLayout, tier build manager 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /manager/dashboard",
+    "Member Oversight -> /manager/students",
+    "Add people -> /manager/bulk-import",
+    "Schedule -> /manager/schedule",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /manager/dashboard",
+        "Member Oversight -> /manager/students",
+        "Add people -> /manager/bulk-import",
+        "Schedule -> /manager/schedule",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /manager/job-blueprint",
+        {
+          "Interview Studio -> /manager/interview-studio": [
+            "Live Interview -> /manager/interview-live",
+          ],
+        },
+        "Character Lab -> /manager/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /manager/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`1. role sidebar through UnifiedLayout, tier build practitioner 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Client Development Studio -> /practitioner/development",
+    "Practitioner Home -> /practitioner/home",
+    "My Clients -> /practitioner/clients",
+    "My PRISM Practice -> /practitioner/practice",
+    "Schedule -> /practitioner/schedule",
+    "Surveys -> /surveys",
+    "Reports -> /practitioner/analytics",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Client Development Studio -> /practitioner/development",
+        "Practitioner Home -> /practitioner/home",
+        "My Clients -> /practitioner/clients",
+        "My PRISM Practice -> /practitioner/practice",
+        "Schedule -> /practitioner/schedule",
+        "Surveys -> /surveys",
+        "Reports -> /practitioner/analytics",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /practitioner/job-blueprint",
+        {
+          "Interview Studio -> /practitioner/interview-studio": [
+            "Live Interview -> /practitioner/interview-live",
+          ],
+        },
+        "Character Lab -> /practitioner/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /practitioner/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`1. role sidebar through UnifiedLayout, tier build super-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /super-admin/dashboard",
+    "User Management -> /super-admin/users",
+    "Organizations -> /super-admin/organizations",
+    "Agent Management -> /super-admin/mentor-management",
+    "RLHF Training -> /super-admin/rlhf-training",
+    "Analytics & Logs -> /super-admin/analytics",
+    "Agent Trainer -> /super-admin/agent-trainer",
+    "Bulk User Import -> /super-admin/bulk-import",
+    "Observability -> /super-admin/observability",
+    "Explainability -> /super-admin/explainability",
+    "Dev Traffic Report -> /super-admin/dev-traffic-report",
+    "Research -> /super-admin/research",
+    "Knowledge Base -> /super-admin/knowledge-base",
+    "PRISM Management -> /super-admin/prism-management",
+    "PRISM CSV Converter -> /super-admin/prism-csv-converter",
+    "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
+    "PRISM Practitioner Exam -> /super-admin/prism-exam",
+    "Practitioner Registry -> /super-admin/practitioner-registry",
+    {
+      "Intake -> /super-admin/intake": [
+        "HR -> /super-admin/intake?tab=reports&role=hr",
+        "Recruiters -> /super-admin/intake?tab=reports&role=recruiter",
+        "Companies -> /super-admin/intake?tab=reports&segment_context=company",
+        "Coaches -> /super-admin/intake?tab=reports&role=career_coach&role=education_coach",
+      ],
+    },
+    "Privacy & RTBF -> /super-admin/privacy-compliance",
+    "Cohort Read-out -> /super-admin/cohort-readout",
+    "Client Sign-Up -> /super-admin/client-signup",
+    "Help and Support Management -> /super-admin/support",
+    "Agent Trace Console -> /super-admin/agent-trace-console",
+    "Surveys -> /surveys",
+    "Asset Library -> /super-admin/asset-library",
+    "Curriculum -> /super-admin/curriculum",
+    "Career & Education Discovery -> /vertical/career-discovery/journey",
+    "Career Fit -> /vertical/job-fit/matches",
+    "Settings -> /super-admin/settings",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /super-admin/dashboard",
+        "User Management -> /super-admin/users",
+        "Organizations -> /super-admin/organizations",
+        "Agent Management -> /super-admin/mentor-management",
+        "RLHF Training -> /super-admin/rlhf-training",
+        "Analytics & Logs -> /super-admin/analytics",
+        "Agent Trainer -> /super-admin/agent-trainer",
+        "Bulk User Import -> /super-admin/bulk-import",
+        "Observability -> /super-admin/observability",
+        "Explainability -> /super-admin/explainability",
+        "Dev Traffic Report -> /super-admin/dev-traffic-report",
+        "Research -> /super-admin/research",
+        "Knowledge Base -> /super-admin/knowledge-base",
+        "PRISM Management -> /super-admin/prism-management",
+        "PRISM CSV Converter -> /super-admin/prism-csv-converter",
+        "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
+        "PRISM Practitioner Exam -> /super-admin/prism-exam",
+        "Practitioner Registry -> /super-admin/practitioner-registry",
+        {
+          "Intake -> /super-admin/intake": [
+            "HR -> /super-admin/intake?tab=reports&role=hr",
+            "Recruiters -> /super-admin/intake?tab=reports&role=recruiter",
+            "Companies -> /super-admin/intake?tab=reports&segment_context=company",
+            "Coaches -> /super-admin/intake?tab=reports&role=career_coach&role=education_coach",
+          ],
+        },
+        "Privacy & RTBF -> /super-admin/privacy-compliance",
+        "Cohort Read-out -> /super-admin/cohort-readout",
+        "Client Sign-Up -> /super-admin/client-signup",
+        "Help and Support Management -> /super-admin/support",
+        "Agent Trace Console -> /super-admin/agent-trace-console",
+        "Surveys -> /surveys",
+        "Asset Library -> /super-admin/asset-library",
+        "Curriculum -> /super-admin/curriculum",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Settings -> /super-admin/settings",
+      ],
+      "section": "",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Team Development Studio -> /manager/development",
+        "Goals Studio -> /my/goals",
+        {
+          "Interview Studio -> /super-admin/interview-studio": [
+            "Live Interview -> /super-admin/interview-live",
+          ],
+        },
+        "Character Lab -> /super-admin/character-lab",
+      ],
+      "section": "Tools",
+    },
+  ],
+}
+`;
+
+exports[`1. role sidebar through UnifiedLayout, tier build user 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /home",
+    "Chat with Coaches -> /dashboard",
+    "Goals Studio -> /my/goals",
+    "Career & Education Discovery -> /vertical/career-discovery/journey",
+    "Career Fit -> /vertical/job-fit/matches",
+    "Role Play -> /interview-practice",
+    "My development -> /my/development",
+    "Résumé Writer -> /my/resume",
+    "Document Library -> /documents",
+    "Settings -> /settings",
+    "Help & Support -> /help",
+  ],
+  "sections": null,
+}
+`;
+
+exports[`2. a /vertical/* page sidebar, tier build company-admin 1`] = `
+[
+  {
+    "items": [
+      "Dashboard -> /company-admin/dashboard",
+      "People -> /company-admin/users",
+      "Organization -> /company-admin/organization",
+      "Reports -> /company-admin/analytics",
+      "Surveys -> /surveys",
+    ],
+    "section": "",
+  },
+  {
+    "items": [
+      "Chat with Meridian -> /meridian/chat",
+      "Goals Studio -> /my/goals",
+      "Career & Education Discovery -> /vertical/career-discovery/journey",
+      "Career Fit -> /vertical/job-fit/matches",
+      "Role Play -> /interview-practice",
+      "My development -> /my/development",
+      "Résumé Writer -> /my/resume",
+      "Document Library -> /documents",
+    ],
+    "section": "My Workspace",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "My fit -> /vertical/job-fit/matches",
+      "Growth areas -> /vertical/job-fit/gaps",
+      "Pathway -> /vertical/job-fit/pathway",
+      "Blueprint a role -> /vertical/job-fit/blueprint",
+      "Fit a JD -> /vertical/job-fit/target",
+      "Coaching -> /vertical/job-fit/coach",
+    ],
+    "section": "Career Fit",
+  },
+  {
+    "items": [
+      "Settings -> /settings",
+      "Help & Support -> /help",
+    ],
+    "pinned": true,
+    "section": "",
+  },
+]
+`;
+
+exports[`2. a /vertical/* page sidebar, tier build distributor 1`] = `
+[
+  {
+    "items": [
+      "Home -> /distributor/dashboard",
+      "My practitioners -> /distributor/network",
+      "Credits -> /distributor/credits",
+      "Reports -> /distributor/analytics",
+      "Career & Education Discovery -> /vertical/career-discovery/journey",
+      "Career Fit -> /vertical/job-fit/matches",
+    ],
+    "section": "",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "My fit -> /vertical/job-fit/matches",
+      "Growth areas -> /vertical/job-fit/gaps",
+      "Pathway -> /vertical/job-fit/pathway",
+      "Blueprint a role -> /vertical/job-fit/blueprint",
+      "Fit a JD -> /vertical/job-fit/target",
+      "Coaching -> /vertical/job-fit/coach",
+    ],
+    "section": "Career Fit",
+  },
+  {
+    "items": [
+      "Settings -> /distributor/settings",
+      "Help & Support -> /help",
+    ],
+    "pinned": true,
+    "section": "",
+  },
+]
+`;
+
+exports[`2. a /vertical/* page sidebar, tier build manager 1`] = `
+[
+  {
+    "items": [
+      "Dashboard -> /manager/dashboard",
+      "Member Oversight -> /manager/students",
+      "Add people -> /manager/bulk-import",
+      "Schedule -> /manager/schedule",
+    ],
+    "section": "",
+  },
+  {
+    "items": [
+      "Chat with Meridian -> /meridian/chat",
+      "Goals Studio -> /my/goals",
+      "Career & Education Discovery -> /vertical/career-discovery/journey",
+      "Career Fit -> /vertical/job-fit/matches",
+      "Role Play -> /interview-practice",
+      "My development -> /my/development",
+      "Résumé Writer -> /my/resume",
+      "Document Library -> /documents",
+    ],
+    "section": "My Workspace",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "My fit -> /vertical/job-fit/matches",
+      "Growth areas -> /vertical/job-fit/gaps",
+      "Pathway -> /vertical/job-fit/pathway",
+      "Blueprint a role -> /vertical/job-fit/blueprint",
+      "Fit a JD -> /vertical/job-fit/target",
+      "Coaching -> /vertical/job-fit/coach",
+    ],
+    "section": "Career Fit",
+  },
+  {
+    "collapsed": true,
+    "items": [
+      "Bio Capture Studio -> /bio",
+      "Role Blueprint Match -> /manager/job-blueprint",
+      {
+        "Interview Studio -> /manager/interview-studio": [
+          "Live Interview -> /manager/interview-live",
+        ],
+      },
+      "Character Lab -> /manager/character-lab",
+    ],
+    "section": "Tools",
+  },
+  {
+    "items": [
+      "Settings -> /manager/settings",
+      "Help & Support -> /help",
+    ],
+    "pinned": true,
+    "section": "",
+  },
+]
+`;
+
+exports[`2. a /vertical/* page sidebar, tier build practitioner 1`] = `
+[
+  {
+    "items": [
+      "Client Development Studio -> /practitioner/development",
+      "Practitioner Home -> /practitioner/home",
+      "My Clients -> /practitioner/clients",
+      "My PRISM Practice -> /practitioner/practice",
+      "Schedule -> /practitioner/schedule",
+      "Surveys -> /surveys",
+      "Reports -> /practitioner/analytics",
+    ],
+    "section": "",
+  },
+  {
+    "items": [
+      "Chat with Meridian -> /meridian/chat",
+      "Goals Studio -> /my/goals",
+      "Career & Education Discovery -> /vertical/career-discovery/journey",
+      "Career Fit -> /vertical/job-fit/matches",
+      "Role Play -> /interview-practice",
+      "My development -> /my/development",
+      "Résumé Writer -> /my/resume",
+      "Document Library -> /documents",
+    ],
+    "section": "My Workspace",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "My fit -> /vertical/job-fit/matches",
+      "Growth areas -> /vertical/job-fit/gaps",
+      "Pathway -> /vertical/job-fit/pathway",
+      "Blueprint a role -> /vertical/job-fit/blueprint",
+      "Fit a JD -> /vertical/job-fit/target",
+      "Coaching -> /vertical/job-fit/coach",
+    ],
+    "section": "Career Fit",
+  },
+  {
+    "collapsed": true,
+    "items": [
+      "Bio Capture Studio -> /bio",
+      "Role Blueprint Match -> /practitioner/job-blueprint",
+      {
+        "Interview Studio -> /practitioner/interview-studio": [
+          "Live Interview -> /practitioner/interview-live",
+        ],
+      },
+      "Character Lab -> /practitioner/character-lab",
+    ],
+    "section": "Tools",
+  },
+  {
+    "items": [
+      "Settings -> /practitioner/settings",
+      "Help & Support -> /help",
+    ],
+    "pinned": true,
+    "section": "",
+  },
+]
+`;
+
+exports[`2. a /vertical/* page sidebar, tier build super-admin 1`] = `
+[
+  {
+    "items": [
+      "Home -> /home",
+      "Chat with Coaches -> /dashboard",
+      "Goals Studio -> /my/goals",
+      "Career & Education Discovery -> /vertical/career-discovery/journey",
+      "Career Fit -> /vertical/job-fit/matches",
+      "Role Play -> /interview-practice",
+      "My development -> /my/development",
+      "Résumé Writer -> /my/resume",
+      "Document Library -> /documents",
+      "Settings -> /settings",
+      "Help & Support -> /help",
+    ],
+    "section": "My Workspace",
+  },
+  {
+    "collapsed": true,
+    "items": [
+      "User Home -> /home",
+      "Manager -> /manager/dashboard",
+      "Company Admin -> /company-admin/dashboard",
+      "Practitioner -> /practitioner/home",
+      "Distributor -> /distributor/dashboard",
+    ],
+    "section": "Role Views",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "My fit -> /vertical/job-fit/matches",
+      "Growth areas -> /vertical/job-fit/gaps",
+      "Pathway -> /vertical/job-fit/pathway",
+      "Blueprint a role -> /vertical/job-fit/blueprint",
+      "Fit a JD -> /vertical/job-fit/target",
+      "Coaching -> /vertical/job-fit/coach",
+    ],
+    "section": "Career Fit",
+  },
+  {
+    "collapsed": true,
+    "items": [
+      "Bio Capture Studio -> /bio",
+      "Team Development Studio -> /manager/development",
+      "Goals Studio -> /my/goals",
+      {
+        "Interview Studio -> /super-admin/interview-studio": [
+          "Live Interview -> /super-admin/interview-live",
+        ],
+      },
+      "Character Lab -> /super-admin/character-lab",
+    ],
+    "section": "Tools",
+  },
+  {
+    "collapsed": true,
+    "items": [
+      "Dashboard -> /super-admin/dashboard",
+      "User Management -> /super-admin/users",
+      "Organizations -> /super-admin/organizations",
+      "Agent Management -> /super-admin/mentor-management",
+      "RLHF Training -> /super-admin/rlhf-training",
+      "Analytics & Logs -> /super-admin/analytics",
+      "Agent Trainer -> /super-admin/agent-trainer",
+      "Bulk User Import -> /super-admin/bulk-import",
+      "Observability -> /super-admin/observability",
+      "Explainability -> /super-admin/explainability",
+      "Research -> /super-admin/research",
+      "Knowledge Base -> /super-admin/knowledge-base",
+      "PRISM Management -> /super-admin/prism-management",
+      "PRISM CSV Converter -> /super-admin/prism-csv-converter",
+      "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
+      "PRISM Practitioner Exam -> /super-admin/prism-exam",
+      "Practitioner Registry -> /super-admin/practitioner-registry",
+      {
+        "Intake -> /super-admin/intake": [
+          "HR -> /super-admin/intake?tab=reports&role=hr",
+          "Recruiters -> /super-admin/intake?tab=reports&role=recruiter",
+          "Companies -> /super-admin/intake?tab=reports&segment_context=company",
+          "Coaches -> /super-admin/intake?tab=reports&role=career_coach&role=education_coach",
+        ],
+      },
+      "Privacy & RTBF -> /super-admin/privacy-compliance",
+      "Cohort Read-out -> /super-admin/cohort-readout",
+      "Client Sign-Up -> /super-admin/client-signup",
+      "Help and Support Management -> /super-admin/support",
+      "Agent Trace Console -> /super-admin/agent-trace-console",
+      "Surveys -> /surveys",
+      "Asset Library -> /super-admin/asset-library",
+      "Curriculum -> /super-admin/curriculum",
+      "Settings -> /super-admin/settings",
+    ],
+    "section": "Administration",
+  },
+]
+`;
+
+exports[`2. a /vertical/* page sidebar, tier build user 1`] = `
+[
+  {
+    "items": [
+      "Home -> /home",
+      "Chat with Coaches -> /dashboard",
+      "Goals Studio -> /my/goals",
+      "Career & Education Discovery -> /vertical/career-discovery/journey",
+      "Career Fit -> /vertical/job-fit/matches",
+      "Role Play -> /interview-practice",
+      "My development -> /my/development",
+      "Résumé Writer -> /my/resume",
+      "Document Library -> /documents",
+      "Settings -> /settings",
+      "Help & Support -> /help",
+    ],
+    "section": "My Workspace",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "My fit -> /vertical/job-fit/matches",
+      "Growth areas -> /vertical/job-fit/gaps",
+      "Pathway -> /vertical/job-fit/pathway",
+      "Blueprint a role -> /vertical/job-fit/blueprint (greyed)",
+      "Fit a JD -> /vertical/job-fit/target",
+      "Coaching -> /vertical/job-fit/coach",
+    ],
+    "section": "Career Fit",
+  },
+]
+`;
+
+exports[`3. Lumen's no-access page, tier build company-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /company-admin/dashboard",
+    "People -> /company-admin/users",
+    "Organization -> /company-admin/organization",
+    "Reports -> /company-admin/analytics",
+    "Surveys -> /surveys",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /company-admin/dashboard",
+        "People -> /company-admin/users",
+        "Organization -> /company-admin/organization",
+        "Reports -> /company-admin/analytics",
+        "Surveys -> /surveys",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`3. Lumen's no-access page, tier build distributor 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /distributor/dashboard",
+    "My practitioners -> /distributor/network",
+    "Credits -> /distributor/credits",
+    "Reports -> /distributor/analytics",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Home -> /distributor/dashboard",
+        "My practitioners -> /distributor/network",
+        "Credits -> /distributor/credits",
+        "Reports -> /distributor/analytics",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Settings -> /distributor/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`3. Lumen's no-access page, tier build manager 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /manager/dashboard",
+    "Member Oversight -> /manager/students",
+    "Add people -> /manager/bulk-import",
+    "Schedule -> /manager/schedule",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /manager/dashboard",
+        "Member Oversight -> /manager/students",
+        "Add people -> /manager/bulk-import",
+        "Schedule -> /manager/schedule",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /manager/job-blueprint",
+        {
+          "Interview Studio -> /manager/interview-studio": [
+            "Live Interview -> /manager/interview-live",
+          ],
+        },
+        "Character Lab -> /manager/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /manager/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`3. Lumen's no-access page, tier build practitioner 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Client Development Studio -> /practitioner/development",
+    "Practitioner Home -> /practitioner/home",
+    "My Clients -> /practitioner/clients",
+    "My PRISM Practice -> /practitioner/practice",
+    "Schedule -> /practitioner/schedule",
+    "Surveys -> /surveys",
+    "Reports -> /practitioner/analytics",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Client Development Studio -> /practitioner/development",
+        "Practitioner Home -> /practitioner/home",
+        "My Clients -> /practitioner/clients",
+        "My PRISM Practice -> /practitioner/practice",
+        "Schedule -> /practitioner/schedule",
+        "Surveys -> /surveys",
+        "Reports -> /practitioner/analytics",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /practitioner/job-blueprint",
+        {
+          "Interview Studio -> /practitioner/interview-studio": [
+            "Live Interview -> /practitioner/interview-live",
+          ],
+        },
+        "Character Lab -> /practitioner/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /practitioner/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`3. Lumen's no-access page, tier build super-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /super-admin/dashboard",
+    "User Management -> /super-admin/users",
+    "Organizations -> /super-admin/organizations",
+    "Agent Management -> /super-admin/mentor-management",
+    "RLHF Training -> /super-admin/rlhf-training",
+    "Analytics & Logs -> /super-admin/analytics",
+    "Agent Trainer -> /super-admin/agent-trainer",
+    "Bulk User Import -> /super-admin/bulk-import",
+    "Observability -> /super-admin/observability",
+    "Explainability -> /super-admin/explainability",
+    "Dev Traffic Report -> /super-admin/dev-traffic-report",
+    "Research -> /super-admin/research",
+    "Knowledge Base -> /super-admin/knowledge-base",
+    "PRISM Management -> /super-admin/prism-management",
+    "PRISM CSV Converter -> /super-admin/prism-csv-converter",
+    "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
+    "PRISM Practitioner Exam -> /super-admin/prism-exam",
+    "Practitioner Registry -> /super-admin/practitioner-registry",
+    {
+      "Intake -> /super-admin/intake": [
+        "HR -> /super-admin/intake?tab=reports&role=hr",
+        "Recruiters -> /super-admin/intake?tab=reports&role=recruiter",
+        "Companies -> /super-admin/intake?tab=reports&segment_context=company",
+        "Coaches -> /super-admin/intake?tab=reports&role=career_coach&role=education_coach",
+      ],
+    },
+    "Privacy & RTBF -> /super-admin/privacy-compliance",
+    "Cohort Read-out -> /super-admin/cohort-readout",
+    "Client Sign-Up -> /super-admin/client-signup",
+    "Help and Support Management -> /super-admin/support",
+    "Agent Trace Console -> /super-admin/agent-trace-console",
+    "Surveys -> /surveys",
+    "Asset Library -> /super-admin/asset-library",
+    "Curriculum -> /super-admin/curriculum",
+    "Settings -> /super-admin/settings",
+  ],
+  "sections": null,
+}
+`;
+
+exports[`3. Lumen's no-access page, tier build user 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /home",
+    "Chat with Coaches -> /dashboard",
+    "Goals Studio -> /my/goals",
+    "Role Play -> /interview-practice",
+    "My development -> /my/development",
+    "Résumé Writer -> /my/resume",
+    "Document Library -> /documents",
+    "Settings -> /settings",
+    "Help & Support -> /help",
+  ],
+  "sections": null,
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Goals Studio company-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /company-admin/dashboard",
+    "People -> /company-admin/users",
+    "Organization -> /company-admin/organization",
+    "Reports -> /company-admin/analytics",
+    "Surveys -> /surveys",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /company-admin/dashboard",
+        "People -> /company-admin/users",
+        "Organization -> /company-admin/organization",
+        "Reports -> /company-admin/analytics",
+        "Surveys -> /surveys",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Goals Studio distributor 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /distributor/dashboard",
+    "My practitioners -> /distributor/network",
+    "Credits -> /distributor/credits",
+    "Reports -> /distributor/analytics",
+    "Career & Education Discovery -> /vertical/career-discovery/journey",
+    "Career Fit -> /vertical/job-fit/matches",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Home -> /distributor/dashboard",
+        "My practitioners -> /distributor/network",
+        "Credits -> /distributor/credits",
+        "Reports -> /distributor/analytics",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Settings -> /distributor/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Goals Studio manager 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /manager/dashboard",
+    "Member Oversight -> /manager/students",
+    "Add people -> /manager/bulk-import",
+    "Schedule -> /manager/schedule",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /manager/dashboard",
+        "Member Oversight -> /manager/students",
+        "Add people -> /manager/bulk-import",
+        "Schedule -> /manager/schedule",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /manager/job-blueprint",
+        {
+          "Interview Studio -> /manager/interview-studio": [
+            "Live Interview -> /manager/interview-live",
+          ],
+        },
+        "Character Lab -> /manager/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /manager/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Goals Studio practitioner 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Client Development Studio -> /practitioner/development",
+    "Practitioner Home -> /practitioner/home",
+    "My Clients -> /practitioner/clients",
+    "My PRISM Practice -> /practitioner/practice",
+    "Schedule -> /practitioner/schedule",
+    "Surveys -> /surveys",
+    "Reports -> /practitioner/analytics",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Client Development Studio -> /practitioner/development",
+        "Practitioner Home -> /practitioner/home",
+        "My Clients -> /practitioner/clients",
+        "My PRISM Practice -> /practitioner/practice",
+        "Schedule -> /practitioner/schedule",
+        "Surveys -> /surveys",
+        "Reports -> /practitioner/analytics",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /practitioner/job-blueprint",
+        {
+          "Interview Studio -> /practitioner/interview-studio": [
+            "Live Interview -> /practitioner/interview-live",
+          ],
+        },
+        "Character Lab -> /practitioner/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /practitioner/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Goals Studio super-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [],
+  "sections": [
+    {
+      "items": [
+        "Admin home -> /super-admin/dashboard",
+      ],
+      "section": "",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "People -> /super-admin/users",
+        "Organizations -> /super-admin/organizations",
+        "Add people -> /super-admin/bulk-import",
+        "Practitioners -> /super-admin/practitioner-registry",
+        "Client sign-up -> /super-admin/client-signup",
+        {
+          "Intake -> /super-admin/intake": [
+            "HR -> /super-admin/intake?tab=reports&role=hr",
+            "Recruiters -> /super-admin/intake?tab=reports&role=recruiter",
+            "Companies -> /super-admin/intake?tab=reports&segment_context=company",
+            "Coaches -> /super-admin/intake?tab=reports&role=career_coach&role=education_coach",
+          ],
+        },
+      ],
+      "section": "People",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "Help requests -> /super-admin/support",
+        "Surveys -> /surveys",
+      ],
+      "section": "Support",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "PRISM tools -> /super-admin/prism-management",
+      ],
+      "section": "PRISM",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "Coach setup -> /super-admin/mentor-management",
+        "Coach training -> /super-admin/agent-trainer",
+        "Knowledge -> /super-admin/knowledge-base",
+        "Research -> /super-admin/research",
+        "Coach feedback review -> /super-admin/rlhf-training",
+      ],
+      "section": "AI coaches",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "Usage reports -> /super-admin/analytics",
+        "AI usage & health -> /super-admin/observability",
+        "Data deletion requests -> /super-admin/privacy-compliance",
+        "Cohort read-out -> /super-admin/cohort-readout",
+      ],
+      "section": "Reports",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Why the AI answered -> /super-admin/explainability",
+        "Coach trace console -> /super-admin/agent-trace-console",
+        "Asset library -> /super-admin/asset-library",
+        "Curriculum -> /super-admin/curriculum",
+      ],
+      "section": "Advanced",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Team Development Studio -> /manager/development",
+        "Goals Studio -> /my/goals",
+        {
+          "Interview Studio -> /super-admin/interview-studio": [
+            "Live Interview -> /super-admin/interview-live",
+          ],
+        },
+        "Character Lab -> /super-admin/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Home -> /home",
+        "Chat with Coaches -> /dashboard",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /super-admin/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Goals Studio user 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /home",
+    "Chat with Coaches -> /dashboard",
+    "Goals Studio -> /my/goals",
+    "Career & Education Discovery -> /vertical/career-discovery/journey",
+    "Career Fit -> /vertical/job-fit/matches",
+    "Role Play -> /interview-practice",
+    "My development -> /my/development",
+    "Résumé Writer -> /my/resume",
+    "Document Library -> /documents",
+    "Settings -> /settings",
+    "Help & Support -> /help",
+  ],
+  "sections": null,
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build My development company-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /company-admin/dashboard",
+    "People -> /company-admin/users",
+    "Organization -> /company-admin/organization",
+    "Reports -> /company-admin/analytics",
+    "Surveys -> /surveys",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /company-admin/dashboard",
+        "People -> /company-admin/users",
+        "Organization -> /company-admin/organization",
+        "Reports -> /company-admin/analytics",
+        "Surveys -> /surveys",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build My development distributor 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /distributor/dashboard",
+    "My practitioners -> /distributor/network",
+    "Credits -> /distributor/credits",
+    "Reports -> /distributor/analytics",
+    "Career & Education Discovery -> /vertical/career-discovery/journey",
+    "Career Fit -> /vertical/job-fit/matches",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Home -> /distributor/dashboard",
+        "My practitioners -> /distributor/network",
+        "Credits -> /distributor/credits",
+        "Reports -> /distributor/analytics",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Settings -> /distributor/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build My development manager 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /manager/dashboard",
+    "Member Oversight -> /manager/students",
+    "Add people -> /manager/bulk-import",
+    "Schedule -> /manager/schedule",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /manager/dashboard",
+        "Member Oversight -> /manager/students",
+        "Add people -> /manager/bulk-import",
+        "Schedule -> /manager/schedule",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /manager/job-blueprint",
+        {
+          "Interview Studio -> /manager/interview-studio": [
+            "Live Interview -> /manager/interview-live",
+          ],
+        },
+        "Character Lab -> /manager/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /manager/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build My development practitioner 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Client Development Studio -> /practitioner/development",
+    "Practitioner Home -> /practitioner/home",
+    "My Clients -> /practitioner/clients",
+    "My PRISM Practice -> /practitioner/practice",
+    "Schedule -> /practitioner/schedule",
+    "Surveys -> /surveys",
+    "Reports -> /practitioner/analytics",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Client Development Studio -> /practitioner/development",
+        "Practitioner Home -> /practitioner/home",
+        "My Clients -> /practitioner/clients",
+        "My PRISM Practice -> /practitioner/practice",
+        "Schedule -> /practitioner/schedule",
+        "Surveys -> /surveys",
+        "Reports -> /practitioner/analytics",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /practitioner/job-blueprint",
+        {
+          "Interview Studio -> /practitioner/interview-studio": [
+            "Live Interview -> /practitioner/interview-live",
+          ],
+        },
+        "Character Lab -> /practitioner/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /practitioner/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build My development super-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [],
+  "sections": [
+    {
+      "items": [
+        "Admin home -> /super-admin/dashboard",
+      ],
+      "section": "",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "People -> /super-admin/users",
+        "Organizations -> /super-admin/organizations",
+        "Add people -> /super-admin/bulk-import",
+        "Practitioners -> /super-admin/practitioner-registry",
+        "Client sign-up -> /super-admin/client-signup",
+        {
+          "Intake -> /super-admin/intake": [
+            "HR -> /super-admin/intake?tab=reports&role=hr",
+            "Recruiters -> /super-admin/intake?tab=reports&role=recruiter",
+            "Companies -> /super-admin/intake?tab=reports&segment_context=company",
+            "Coaches -> /super-admin/intake?tab=reports&role=career_coach&role=education_coach",
+          ],
+        },
+      ],
+      "section": "People",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "Help requests -> /super-admin/support",
+        "Surveys -> /surveys",
+      ],
+      "section": "Support",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "PRISM tools -> /super-admin/prism-management",
+      ],
+      "section": "PRISM",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "Coach setup -> /super-admin/mentor-management",
+        "Coach training -> /super-admin/agent-trainer",
+        "Knowledge -> /super-admin/knowledge-base",
+        "Research -> /super-admin/research",
+        "Coach feedback review -> /super-admin/rlhf-training",
+      ],
+      "section": "AI coaches",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "Usage reports -> /super-admin/analytics",
+        "AI usage & health -> /super-admin/observability",
+        "Data deletion requests -> /super-admin/privacy-compliance",
+        "Cohort read-out -> /super-admin/cohort-readout",
+      ],
+      "section": "Reports",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Why the AI answered -> /super-admin/explainability",
+        "Coach trace console -> /super-admin/agent-trace-console",
+        "Asset library -> /super-admin/asset-library",
+        "Curriculum -> /super-admin/curriculum",
+      ],
+      "section": "Advanced",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Team Development Studio -> /manager/development",
+        "Goals Studio -> /my/goals",
+        {
+          "Interview Studio -> /super-admin/interview-studio": [
+            "Live Interview -> /super-admin/interview-live",
+          ],
+        },
+        "Character Lab -> /super-admin/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Home -> /home",
+        "Chat with Coaches -> /dashboard",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /super-admin/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build My development user 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /home",
+    "Chat with Coaches -> /dashboard",
+    "Goals Studio -> /my/goals",
+    "Career & Education Discovery -> /vertical/career-discovery/journey",
+    "Career Fit -> /vertical/job-fit/matches",
+    "Role Play -> /interview-practice",
+    "My development -> /my/development",
+    "Résumé Writer -> /my/resume",
+    "Document Library -> /documents",
+    "Settings -> /settings",
+    "Help & Support -> /help",
+  ],
+  "sections": null,
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Role Practice company-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /company-admin/dashboard",
+    "People -> /company-admin/users",
+    "Organization -> /company-admin/organization",
+    "Reports -> /company-admin/analytics",
+    "Surveys -> /surveys",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /company-admin/dashboard",
+        "People -> /company-admin/users",
+        "Organization -> /company-admin/organization",
+        "Reports -> /company-admin/analytics",
+        "Surveys -> /surveys",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Role Practice distributor 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /distributor/dashboard",
+    "My practitioners -> /distributor/network",
+    "Credits -> /distributor/credits",
+    "Reports -> /distributor/analytics",
+    "Career & Education Discovery -> /vertical/career-discovery/journey",
+    "Career Fit -> /vertical/job-fit/matches",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Home -> /distributor/dashboard",
+        "My practitioners -> /distributor/network",
+        "Credits -> /distributor/credits",
+        "Reports -> /distributor/analytics",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Settings -> /distributor/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Role Practice manager 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Dashboard -> /manager/dashboard",
+    "Member Oversight -> /manager/students",
+    "Add people -> /manager/bulk-import",
+    "Schedule -> /manager/schedule",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Dashboard -> /manager/dashboard",
+        "Member Oversight -> /manager/students",
+        "Add people -> /manager/bulk-import",
+        "Schedule -> /manager/schedule",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /manager/job-blueprint",
+        {
+          "Interview Studio -> /manager/interview-studio": [
+            "Live Interview -> /manager/interview-live",
+          ],
+        },
+        "Character Lab -> /manager/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /manager/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Role Practice practitioner 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Client Development Studio -> /practitioner/development",
+    "Practitioner Home -> /practitioner/home",
+    "My Clients -> /practitioner/clients",
+    "My PRISM Practice -> /practitioner/practice",
+    "Schedule -> /practitioner/schedule",
+    "Surveys -> /surveys",
+    "Reports -> /practitioner/analytics",
+  ],
+  "sections": [
+    {
+      "items": [
+        "Client Development Studio -> /practitioner/development",
+        "Practitioner Home -> /practitioner/home",
+        "My Clients -> /practitioner/clients",
+        "My PRISM Practice -> /practitioner/practice",
+        "Schedule -> /practitioner/schedule",
+        "Surveys -> /surveys",
+        "Reports -> /practitioner/analytics",
+      ],
+      "section": "",
+    },
+    {
+      "items": [
+        "Chat with Meridian -> /meridian/chat",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Role Blueprint Match -> /practitioner/job-blueprint",
+        {
+          "Interview Studio -> /practitioner/interview-studio": [
+            "Live Interview -> /practitioner/interview-live",
+          ],
+        },
+        "Character Lab -> /practitioner/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Settings -> /practitioner/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Role Practice super-admin 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [],
+  "sections": [
+    {
+      "items": [
+        "Admin home -> /super-admin/dashboard",
+      ],
+      "section": "",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "People -> /super-admin/users",
+        "Organizations -> /super-admin/organizations",
+        "Add people -> /super-admin/bulk-import",
+        "Practitioners -> /super-admin/practitioner-registry",
+        "Client sign-up -> /super-admin/client-signup",
+        {
+          "Intake -> /super-admin/intake": [
+            "HR -> /super-admin/intake?tab=reports&role=hr",
+            "Recruiters -> /super-admin/intake?tab=reports&role=recruiter",
+            "Companies -> /super-admin/intake?tab=reports&segment_context=company",
+            "Coaches -> /super-admin/intake?tab=reports&role=career_coach&role=education_coach",
+          ],
+        },
+      ],
+      "section": "People",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "Help requests -> /super-admin/support",
+        "Surveys -> /surveys",
+      ],
+      "section": "Support",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "PRISM tools -> /super-admin/prism-management",
+      ],
+      "section": "PRISM",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "Coach setup -> /super-admin/mentor-management",
+        "Coach training -> /super-admin/agent-trainer",
+        "Knowledge -> /super-admin/knowledge-base",
+        "Research -> /super-admin/research",
+        "Coach feedback review -> /super-admin/rlhf-training",
+      ],
+      "section": "AI coaches",
+    },
+    {
+      "collapsible": true,
+      "items": [
+        "Usage reports -> /super-admin/analytics",
+        "AI usage & health -> /super-admin/observability",
+        "Data deletion requests -> /super-admin/privacy-compliance",
+        "Cohort read-out -> /super-admin/cohort-readout",
+      ],
+      "section": "Reports",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Why the AI answered -> /super-admin/explainability",
+        "Coach trace console -> /super-admin/agent-trace-console",
+        "Asset library -> /super-admin/asset-library",
+        "Curriculum -> /super-admin/curriculum",
+      ],
+      "section": "Advanced",
+    },
+    {
+      "collapsed": true,
+      "items": [
+        "Bio Capture Studio -> /bio",
+        "Team Development Studio -> /manager/development",
+        "Goals Studio -> /my/goals",
+        {
+          "Interview Studio -> /super-admin/interview-studio": [
+            "Live Interview -> /super-admin/interview-live",
+          ],
+        },
+        "Character Lab -> /super-admin/character-lab",
+      ],
+      "section": "Tools",
+    },
+    {
+      "items": [
+        "Home -> /home",
+        "Chat with Coaches -> /dashboard",
+        "Goals Studio -> /my/goals",
+        "Career & Education Discovery -> /vertical/career-discovery/journey",
+        "Career Fit -> /vertical/job-fit/matches",
+        "Role Play -> /interview-practice",
+        "My development -> /my/development",
+        "Résumé Writer -> /my/resume",
+        "Document Library -> /documents",
+      ],
+      "section": "My Workspace",
+    },
+    {
+      "items": [
+        "Settings -> /super-admin/settings",
+        "Help & Support -> /help",
+      ],
+      "pinned": true,
+      "section": "",
+    },
+  ],
+}
+`;
+
+exports[`4. the three pages that chose their own chrome, tier build Role Practice user 1`] = `
+{
+  "collapseOnMount": false,
+  "items": [
+    "Home -> /home",
+    "Chat with Coaches -> /dashboard",
+    "Goals Studio -> /my/goals",
+    "Career & Education Discovery -> /vertical/career-discovery/journey",
+    "Career Fit -> /vertical/job-fit/matches",
+    "Role Play -> /interview-practice",
+    "My development -> /my/development",
+    "Résumé Writer -> /my/resume",
+    "Document Library -> /documents",
+    "Settings -> /settings",
+    "Help & Support -> /help",
+  ],
+  "sections": null,
+}
+`;
