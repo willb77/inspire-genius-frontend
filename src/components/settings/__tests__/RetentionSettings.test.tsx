@@ -80,9 +80,48 @@ describe("RetentionSettings", () => {
     expect(screen.getByText(/Memory Retention/i)).toBeInTheDocument();
   });
 
-  test("distributor sees nothing (no permitted scopes)", () => {
-    currentRole = "distributor";
-    const { container } = renderWithQuery(<RetentionSettings />);
-    expect(container).toBeEmptyDOMElement();
+  test.each([
+    ["super-admin", ["system", "org", "manager", "user"]],
+    ["company-admin", ["org", "manager", "user"]],
+    ["manager", ["user"]],
+    ["practitioner", ["user"]],
+  ])("%s is offered exactly its writable scopes", (role, scopes) => {
+    currentRole = role;
+    renderWithQuery(<RetentionSettings />);
+    for (const sc of ["system", "org", "manager", "user"]) {
+      if (scopes.includes(sc)) {
+        expect(screen.getByTestId(`select-item-${sc}`)).toBeInTheDocument();
+      } else {
+        expect(screen.queryByTestId(`select-item-${sc}`)).toBeNull();
+      }
+    }
+  });
+
+  test.each(["distributor", "user", "unknown-role"])(
+    "%s sees no card at all, not even the read-only list",
+    (role) => {
+      currentRole = role;
+      const { container } = renderWithQuery(<RetentionSettings />);
+      expect(container).toBeEmptyDOMElement();
+    },
+  );
+
+  test("role is matched case-insensitively", () => {
+    currentRole = "Manager";
+    renderWithQuery(<RetentionSettings />);
+    expect(screen.queryByTestId("select-item-system")).toBeNull();
+    expect(screen.getByTestId("select-item-user")).toBeInTheDocument();
+  });
+
+  test("a manager never sees a delete control on a system policy", () => {
+    currentRole = "manager";
+    renderWithQuery(<RetentionSettings />);
+    expect(screen.queryByLabelText(/delete policy/i)).toBeNull();
+  });
+
+  test("super-admin gets a delete control on the system policy", () => {
+    currentRole = "super-admin";
+    renderWithQuery(<RetentionSettings />);
+    expect(screen.getByLabelText(/delete policy/i)).toBeInTheDocument();
   });
 });
