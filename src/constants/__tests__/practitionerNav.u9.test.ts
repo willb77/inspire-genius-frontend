@@ -27,18 +27,14 @@ describe("practitioner menu (U9)", () => {
         "main": [
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
-          "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
           "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
           "Analytics -> /practitioner/analytics",
-          "Role Play -> /interview-practice",
-          "Résumé Writer -> /my/resume",
         ],
         "tools": [
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Interview Studio -> /practitioner/interview-studio",
           "Live Interview -> /practitioner/interview-live",

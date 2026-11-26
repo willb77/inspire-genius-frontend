@@ -11,11 +11,14 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
     "AI Observability -> /company-admin/observability",
     "Culture Docs -> /company-admin/culture",
     "Surveys -> /surveys",
+    "Chat with Meridian -> /meridian/chat",
+    "Goals Studio -> /my/goals",
     "Career & Education Discovery -> /vertical/career-discovery/journey",
     "Career Fit -> /vertical/job-fit/matches",
     "Role Play -> /interview-practice",
+    "My development -> /my/development",
     "Résumé Writer -> /my/resume",
-    "Settings -> /company-admin/settings",
+    "Document Library -> /documents",
   ],
   "pillRow": [
     "My fit -> /vertical/job-fit/matches",
@@ -37,11 +40,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
           "AI Observability -> /company-admin/observability",
           "Culture Docs -> /company-admin/culture",
           "Surveys -> /surveys",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /company-admin/settings",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -60,6 +71,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
         ],
         "label": "Career & Education Discovery",
       },
+      {
+        "items": [
+          "Settings -> /settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "direction-setting": [
       {
@@ -72,11 +90,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
           "AI Observability -> /company-admin/observability",
           "Culture Docs -> /company-admin/culture",
           "Surveys -> /surveys",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /company-admin/settings",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -95,6 +121,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
         ],
         "label": "Direction Setting",
       },
+      {
+        "items": [
+          "Settings -> /settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "grant": [
       {
@@ -107,11 +140,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
           "AI Observability -> /company-admin/observability",
           "Culture Docs -> /company-admin/culture",
           "Surveys -> /surveys",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /company-admin/settings",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -130,6 +171,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
         ],
         "label": "Financial Aid",
       },
+      {
+        "items": [
+          "Settings -> /settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "honor": [
       {
@@ -142,13 +190,28 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
           "AI Observability -> /company-admin/observability",
           "Culture Docs -> /company-admin/culture",
           "Surveys -> /surveys",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /company-admin/settings",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
+      },
+      {
+        "items": [
+          "Settings -> /settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
       },
     ],
     "job-blueprint": [
@@ -162,11 +225,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
           "AI Observability -> /company-admin/observability",
           "Culture Docs -> /company-admin/culture",
           "Surveys -> /surveys",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /company-admin/settings",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -181,6 +252,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
         ],
         "label": "Role Blueprints",
       },
+      {
+        "items": [
+          "Settings -> /settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "job-fit": [
       {
@@ -193,11 +271,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
           "AI Observability -> /company-admin/observability",
           "Culture Docs -> /company-admin/culture",
           "Surveys -> /surveys",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /company-admin/settings",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -212,6 +298,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
         ],
         "label": "Career Fit",
       },
+      {
+        "items": [
+          "Settings -> /settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "knowledge-continuity": [
       {
@@ -224,11 +317,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
           "AI Observability -> /company-admin/observability",
           "Culture Docs -> /company-admin/culture",
           "Surveys -> /surveys",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /company-admin/settings",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -242,6 +343,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
         ],
         "label": "Knowledge Continuity Studio",
       },
+      {
+        "items": [
+          "Settings -> /settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "lumen": [
       {
@@ -254,11 +362,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
           "AI Observability -> /company-admin/observability",
           "Culture Docs -> /company-admin/culture",
           "Surveys -> /surveys",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /company-admin/settings",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -269,6 +385,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte company-admin: 
           "Prep Me -> /vertical/lumen/moments",
         ],
         "label": "Lumen",
+      },
+      {
+        "items": [
+          "Settings -> /settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
       },
     ],
   },
@@ -284,7 +407,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
     "Reports -> /distributor/analytics",
     "Career & Education Discovery -> /vertical/career-discovery/journey",
     "Career Fit -> /vertical/job-fit/matches",
-    "Help & Support -> /help",
   ],
   "pillRow": [
     "My fit -> /vertical/job-fit/matches",
@@ -304,9 +426,8 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
           "Reports -> /distributor/analytics",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
-          "Help & Support -> /help",
         ],
-        "label": "My Workspace",
+        "label": "",
       },
       {
         "items": [
@@ -323,6 +444,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
         ],
         "label": "Career & Education Discovery",
       },
+      {
+        "items": [
+          "Settings -> /distributor/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "direction-setting": [
       {
@@ -333,9 +461,8 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
           "Reports -> /distributor/analytics",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
-          "Help & Support -> /help",
         ],
-        "label": "My Workspace",
+        "label": "",
       },
       {
         "items": [
@@ -352,6 +479,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
         ],
         "label": "Direction Setting",
       },
+      {
+        "items": [
+          "Settings -> /distributor/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "grant": [
       {
@@ -362,9 +496,8 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
           "Reports -> /distributor/analytics",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
-          "Help & Support -> /help",
         ],
-        "label": "My Workspace",
+        "label": "",
       },
       {
         "items": [
@@ -380,6 +513,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
         ],
         "label": "Financial Aid",
       },
+      {
+        "items": [
+          "Settings -> /distributor/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "honor": [
       {
@@ -390,9 +530,15 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
           "Reports -> /distributor/analytics",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Settings -> /distributor/settings",
           "Help & Support -> /help",
         ],
-        "label": "My Workspace",
+        "label": "",
       },
     ],
     "job-blueprint": [
@@ -404,9 +550,8 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
           "Reports -> /distributor/analytics",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
-          "Help & Support -> /help",
         ],
-        "label": "My Workspace",
+        "label": "",
       },
       {
         "items": [
@@ -419,6 +564,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
         ],
         "label": "Role Blueprints",
       },
+      {
+        "items": [
+          "Settings -> /distributor/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "job-fit": [
       {
@@ -429,9 +581,8 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
           "Reports -> /distributor/analytics",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
-          "Help & Support -> /help",
         ],
-        "label": "My Workspace",
+        "label": "",
       },
       {
         "items": [
@@ -444,6 +595,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
         ],
         "label": "Career Fit",
       },
+      {
+        "items": [
+          "Settings -> /distributor/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "knowledge-continuity": [
       {
@@ -454,9 +612,8 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
           "Reports -> /distributor/analytics",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
-          "Help & Support -> /help",
         ],
-        "label": "My Workspace",
+        "label": "",
       },
       {
         "items": [
@@ -468,6 +625,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
         ],
         "label": "Knowledge Continuity Studio",
       },
+      {
+        "items": [
+          "Settings -> /distributor/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "lumen": [
       {
@@ -478,9 +642,8 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
           "Reports -> /distributor/analytics",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
-          "Help & Support -> /help",
         ],
-        "label": "My Workspace",
+        "label": "",
       },
       {
         "items": [
@@ -489,6 +652,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte distributor: ma
           "Prep Me -> /vertical/lumen/moments",
         ],
         "label": "Lumen",
+      },
+      {
+        "items": [
+          "Settings -> /distributor/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
       },
     ],
   },
@@ -502,12 +672,14 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
     "Member Oversight -> /manager/students",
     "Team Import -> /manager/bulk-import",
     "Schedule -> /manager/schedule",
+    "Chat with Meridian -> /meridian/chat",
+    "Goals Studio -> /my/goals",
     "Career & Education Discovery -> /vertical/career-discovery/journey",
     "Career Fit -> /vertical/job-fit/matches",
     "Role Play -> /interview-practice",
+    "My development -> /my/development",
     "Résumé Writer -> /my/resume",
-    "Settings -> /manager/settings",
-    "Help & Support -> /help",
+    "Document Library -> /documents",
   ],
   "pillRow": [
     "My fit -> /vertical/job-fit/matches",
@@ -525,12 +697,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Member Oversight -> /manager/students",
           "Team Import -> /manager/bulk-import",
           "Schedule -> /manager/schedule",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /manager/settings",
-          "Help & Support -> /help",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -552,7 +731,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /manager/job-blueprint",
           "Interview Studio -> /manager/interview-studio",
           "Character Lab -> /manager/character-lab",
@@ -562,6 +740,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /manager/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "direction-setting": [
       {
@@ -570,12 +755,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Member Oversight -> /manager/students",
           "Team Import -> /manager/bulk-import",
           "Schedule -> /manager/schedule",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /manager/settings",
-          "Help & Support -> /help",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -597,7 +789,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /manager/job-blueprint",
           "Interview Studio -> /manager/interview-studio",
           "Character Lab -> /manager/character-lab",
@@ -607,6 +798,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /manager/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "grant": [
       {
@@ -615,12 +813,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Member Oversight -> /manager/students",
           "Team Import -> /manager/bulk-import",
           "Schedule -> /manager/schedule",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /manager/settings",
-          "Help & Support -> /help",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -642,7 +847,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /manager/job-blueprint",
           "Interview Studio -> /manager/interview-studio",
           "Character Lab -> /manager/character-lab",
@@ -651,6 +855,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Lumen -> /vertical/lumen/dashboard",
         ],
         "label": "Tools",
+      },
+      {
+        "items": [
+          "Settings -> /manager/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
       },
     ],
     "honor": [
@@ -660,19 +871,25 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Member Oversight -> /manager/students",
           "Team Import -> /manager/bulk-import",
           "Schedule -> /manager/schedule",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /manager/settings",
-          "Help & Support -> /help",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /manager/job-blueprint",
           "Interview Studio -> /manager/interview-studio",
           "Character Lab -> /manager/character-lab",
@@ -682,6 +899,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /manager/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "job-blueprint": [
       {
@@ -690,12 +914,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Member Oversight -> /manager/students",
           "Team Import -> /manager/bulk-import",
           "Schedule -> /manager/schedule",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /manager/settings",
-          "Help & Support -> /help",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -713,7 +944,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /manager/job-blueprint",
           "Interview Studio -> /manager/interview-studio",
           "Character Lab -> /manager/character-lab",
@@ -723,6 +953,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /manager/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "job-fit": [
       {
@@ -731,12 +968,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Member Oversight -> /manager/students",
           "Team Import -> /manager/bulk-import",
           "Schedule -> /manager/schedule",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /manager/settings",
-          "Help & Support -> /help",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -754,7 +998,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /manager/job-blueprint",
           "Interview Studio -> /manager/interview-studio",
           "Character Lab -> /manager/character-lab",
@@ -764,6 +1007,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /manager/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "knowledge-continuity": [
       {
@@ -772,12 +1022,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Member Oversight -> /manager/students",
           "Team Import -> /manager/bulk-import",
           "Schedule -> /manager/schedule",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /manager/settings",
-          "Help & Support -> /help",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -794,7 +1051,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /manager/job-blueprint",
           "Interview Studio -> /manager/interview-studio",
           "Character Lab -> /manager/character-lab",
@@ -804,6 +1060,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /manager/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "lumen": [
       {
@@ -812,12 +1075,19 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Member Oversight -> /manager/students",
           "Team Import -> /manager/bulk-import",
           "Schedule -> /manager/schedule",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
-          "Settings -> /manager/settings",
-          "Help & Support -> /help",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -832,7 +1102,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /manager/job-blueprint",
           "Interview Studio -> /manager/interview-studio",
           "Character Lab -> /manager/character-lab",
@@ -841,6 +1110,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte manager: main m
           "Lumen -> /vertical/lumen/dashboard",
         ],
         "label": "Tools",
+      },
+      {
+        "items": [
+          "Settings -> /manager/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
       },
     ],
   },
@@ -852,17 +1128,20 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
   "mainMenu": [
     "Client Development Studio -> /practitioner/development",
     "Practitioner Home -> /practitioner/home",
-    "Chat with Meridian -> /meridian/chat",
     "My Clients -> /practitioner/clients",
     "Client PRISM Assessments -> /practitioner/prism-clients",
     "My PRISM Practice -> /practitioner/practice",
     "Schedule -> /practitioner/schedule",
     "Surveys -> /surveys",
     "Analytics -> /practitioner/analytics",
+    "Chat with Meridian -> /meridian/chat",
+    "Goals Studio -> /my/goals",
     "Career & Education Discovery -> /vertical/career-discovery/journey",
     "Career Fit -> /vertical/job-fit/matches",
     "Role Play -> /interview-practice",
+    "My development -> /my/development",
     "Résumé Writer -> /my/resume",
+    "Document Library -> /documents",
   ],
   "pillRow": [
     "My fit -> /vertical/job-fit/matches",
@@ -878,17 +1157,25 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
         "items": [
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
-          "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
           "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
           "Analytics -> /practitioner/analytics",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -910,7 +1197,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Interview Studio -> /practitioner/interview-studio",
           "Character Lab -> /practitioner/character-lab",
@@ -920,23 +1206,38 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /practitioner/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "direction-setting": [
       {
         "items": [
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
-          "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
           "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
           "Analytics -> /practitioner/analytics",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -958,7 +1259,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Interview Studio -> /practitioner/interview-studio",
           "Character Lab -> /practitioner/character-lab",
@@ -968,23 +1268,38 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /practitioner/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "grant": [
       {
         "items": [
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
-          "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
           "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
           "Analytics -> /practitioner/analytics",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -1006,7 +1321,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Interview Studio -> /practitioner/interview-studio",
           "Character Lab -> /practitioner/character-lab",
@@ -1015,6 +1329,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
           "Lumen -> /vertical/lumen/dashboard",
         ],
         "label": "Tools",
+      },
+      {
+        "items": [
+          "Settings -> /practitioner/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
       },
     ],
     "honor": [
@@ -1022,24 +1343,31 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
         "items": [
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
-          "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
           "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
           "Analytics -> /practitioner/analytics",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Interview Studio -> /practitioner/interview-studio",
           "Character Lab -> /practitioner/character-lab",
@@ -1049,23 +1377,38 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /practitioner/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "job-blueprint": [
       {
         "items": [
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
-          "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
           "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
           "Analytics -> /practitioner/analytics",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -1083,7 +1426,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Interview Studio -> /practitioner/interview-studio",
           "Character Lab -> /practitioner/character-lab",
@@ -1093,23 +1435,38 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /practitioner/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "job-fit": [
       {
         "items": [
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
-          "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
           "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
           "Analytics -> /practitioner/analytics",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -1127,7 +1484,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Interview Studio -> /practitioner/interview-studio",
           "Character Lab -> /practitioner/character-lab",
@@ -1137,23 +1493,38 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /practitioner/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "knowledge-continuity": [
       {
         "items": [
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
-          "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
           "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
           "Analytics -> /practitioner/analytics",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -1170,7 +1541,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Interview Studio -> /practitioner/interview-studio",
           "Character Lab -> /practitioner/character-lab",
@@ -1180,23 +1550,38 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
         ],
         "label": "Tools",
       },
+      {
+        "items": [
+          "Settings -> /practitioner/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
+      },
     ],
     "lumen": [
       {
         "items": [
           "Client Development Studio -> /practitioner/development",
           "Practitioner Home -> /practitioner/home",
-          "Chat with Meridian -> /meridian/chat",
           "My Clients -> /practitioner/clients",
           "Client PRISM Assessments -> /practitioner/prism-clients",
           "My PRISM Practice -> /practitioner/practice",
           "Schedule -> /practitioner/schedule",
           "Surveys -> /surveys",
           "Analytics -> /practitioner/analytics",
+        ],
+        "label": "",
+      },
+      {
+        "items": [
+          "Chat with Meridian -> /meridian/chat",
+          "Goals Studio -> /my/goals",
           "Career & Education Discovery -> /vertical/career-discovery/journey",
           "Career Fit -> /vertical/job-fit/matches",
           "Role Play -> /interview-practice",
+          "My development -> /my/development",
           "Résumé Writer -> /my/resume",
+          "Document Library -> /documents",
         ],
         "label": "My Workspace",
       },
@@ -1211,7 +1596,6 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
       {
         "items": [
           "Bio Capture Studio -> /bio",
-          "Goals Studio -> /my/goals",
           "Role Blueprint Match -> /practitioner/job-blueprint",
           "Interview Studio -> /practitioner/interview-studio",
           "Character Lab -> /practitioner/character-lab",
@@ -1220,6 +1604,13 @@ exports[`JF-8 menus — job_fit_v2 off is today's, byte for byte practitioner: m
           "Lumen -> /vertical/lumen/dashboard",
         ],
         "label": "Tools",
+      },
+      {
+        "items": [
+          "Settings -> /practitioner/settings",
+          "Help & Support -> /help",
+        ],
+        "label": "",
       },
     ],
   },

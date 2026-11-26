@@ -390,9 +390,12 @@ function workspaceRank(key: VerticalKey): number {
 /**
  * The label workspace verticals are spliced in FRONT of (2026-10-29, request:
  * "Home, Chat with Meridian, Goals Studio, Career & Education Discovery, Career
- * Fit, Role Play, My development, …"). Every role's main menu carries
- * {@link ROLE_PLAY_ITEM}, so this one anchor places them in every menu; a menu
- * without it falls back to the Settings/Help tail.
+ * Fit, Role Play, My development, …"). The user menu and, since RM-4
+ * (2026-11-25), the My Workspace section of manager, company admin and
+ * practitioner carry {@link ROLE_PLAY_ITEM}, so this anchor places them there.
+ * A list without it (a role's own work: PRISM Exam, Cohort Read-out; the
+ * distributor's list) falls back to the Settings/Help tail, or appends at the
+ * end when there is no tail — which is where the frame wants them.
  */
 const WORKSPACE_SPLICE_BEFORE_LABEL = "Role Play"
 

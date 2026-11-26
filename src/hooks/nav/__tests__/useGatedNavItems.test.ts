@@ -5,6 +5,9 @@ import { renderHook } from "@testing-library/react"
 import { useGatedNavItems } from "../useGatedNavItems"
 
 jest.mock("@/constants/navigation", () => ({
+  // RM-4: the roles that get a My Workspace section, so their own list is not
+  // spliced with workspace verticals (the section carries them).
+  WORKSPACE_SECTION_ROLES: new Set(["manager", "company-admin", "practitioner"]),
   NAV_ITEMS_BY_ROLE: {
     user: [
       { to: "/home", icon: () => null, label: "Home" },
@@ -111,7 +114,7 @@ describe("useGatedNavItems", () => {
     expect(result.current.map((i) => i.label)).toEqual(["Home", "Settings", "Help & Support"])
   })
 
-  it("routes the role menu through useWorkspaceNavItems so workspace verticals land in it", () => {
+  it("routes a role with no My Workspace section through useWorkspaceNavItems so workspace verticals land in it", () => {
     mockWorkspaceNav.mockImplementation((items) => [
       ...(items as Array<{ to: string; icon: () => null; label: string }>),
       { to: "/vertical/lumen/dashboard", icon: () => null, label: "Lumen" },
@@ -149,5 +152,17 @@ describe("useGatedNavItems", () => {
       expect(result.current.some((i) => i.label === "PRISM Exam")).toBe(false)
     })
   })
-})
 
+  it("RM-4: a role WITH a My Workspace section keeps workspace verticals out of its own list", () => {
+    // They are in the My Workspace section instead; splicing them here too
+    // would list Career Fit twice in one sidebar.
+    mockWorkspaceNav.mockImplementation((items) => [
+      ...(items as Array<{ to: string; icon: () => null; label: string }>),
+      { to: "/vertical/job-fit", icon: () => null, label: "Career Fit" },
+    ])
+    for (const role of ["practitioner", "company-admin"] as const) {
+      const { result } = renderHook(() => useGatedNavItems(role))
+      expect(result.current.some((i) => i.label === "Career Fit")).toBe(false)
+    }
+  })
+})

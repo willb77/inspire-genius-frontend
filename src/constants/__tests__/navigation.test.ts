@@ -6,6 +6,7 @@ import {
   TOOL_ITEMS_BY_ROLE,
   getUserNavItems,
   HIDDEN_WORKSPACE_ROUTES,
+  FOOTER_NAV_ITEMS_BY_ROLE,
 } from "../navigation"
 import { hasAccess } from "@/types/roles"
 import { ROUTES } from "@/constants/routes"
@@ -68,11 +69,8 @@ describe("constants/navigation", () => {
         "Member Oversight",
         "Team Import",
         "Schedule",
-        // 2026-10-18 (request): Role Play joins every role's main menu.
-        "Role Play",
-        "Résumé Writer",
-        "Settings",
-        "Help & Support",
+        // RM-4 (2026-11-25): Role Play and Résumé Writer moved to My Workspace,
+        // Settings and Help & Support to the footer section.
       ])
     })
 
@@ -87,7 +85,10 @@ describe("constants/navigation", () => {
       // when it IS listed, so it now covers the one that still is; the routes
       // themselves are unchanged and the pages are reachable as before.
       const byLabel = Object.fromEntries(NAV_ITEMS_BY_ROLE.manager.map((i) => [i.label, i.to]))
-      expect(byLabel["Help & Support"]).toBe(ROUTES.HELP)
+      // RM-4: Help & Support is in the footer section now, still at /help.
+      expect(byLabel["Help & Support"]).toBeUndefined()
+      const footer = Object.fromEntries((FOOTER_NAV_ITEMS_BY_ROLE.manager ?? []).map((i) => [i.label, i.to]))
+      expect(footer["Help & Support"]).toBe(ROUTES.HELP)
       expect(ROUTES.MERIDIAN_CHAT).toBeTruthy()
       expect(ROUTES.DOCUMENTS).toBeTruthy()
       expect(ROUTES.SURVEYS).toBeTruthy()
@@ -501,7 +502,8 @@ describe("manager and practitioner tool sets (2026-08-31)", () => {
   // not in the top-level label set. Practice Interview was too, until it became
   // "Role Play" in the main menu on 2026-10-18.
   // Character Lab joined both roles on 2026-10-07 (request).
-  const UNGATED = ["Interview Studio", "Goals Studio", "Role Blueprint Match", "Character Lab"].sort()
+  // Goals Studio left both roles' Tools for My Workspace in RM-4 (2026-11-25).
+  const UNGATED = ["Interview Studio", "Role Blueprint Match", "Character Lab"].sort()
 
   it("gives the practitioner every requested tool, ungated", () => {
     // U9: the practitioner's Studio left Tools for the top of the main menu,

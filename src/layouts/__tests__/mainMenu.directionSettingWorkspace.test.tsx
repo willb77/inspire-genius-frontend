@@ -120,10 +120,12 @@ function renderedLists(props: Props): NavItemDef[][] {
 
 const allRows = (props: Props) => renderedLists(props).flat();
 
-function mainMenu(role: UserRole, props: Props): NavItemDef[] {
-  if (role === "super-admin") {
-    return props.navSections!.find((s) => s.label === "My Workspace")!.items;
-  }
+// The list workspace verticals are spliced into: the "My Workspace" section
+// for super-admin and, since RM-4, for manager, company admin and
+// practitioner; the role's own list (first section) for user and distributor.
+function mainMenu(_role: UserRole, props: Props): NavItemDef[] {
+  const ws = props.navSections?.find((s) => s.label === "My Workspace")
+  if (ws) return ws.items
   return props.navSections ? props.navSections[0].items : props.navItems;
 }
 
@@ -192,24 +194,25 @@ describe.each(ALL_ROLES)("%s — switch ON, entitled", (role) => {
   // so it never splits that pair.
   // The distributor menu has no Role Play since the house-style menu became its
   // only menu (house style W2a, "remove"), so its workspace verticals sit just
-  // above its Help & Support tail instead.
-  const after = role === "distributor" ? "Help & Support" : "Role Play";
+  // above its Help & Support tail — and since RM-4 moved Help to the footer
+  // section, at the end of its own list.
+  const after = role === "distributor" ? null : "Role Play";
 
-  test("it follows Career & Education Discovery and Career Fit, directly in front of Role Play (distributor: Help & Support)", () => {
+  test("it follows Career & Education Discovery and Career Fit, directly in front of Role Play (distributor: end of its own list)", () => {
     const labels = mainMenu(role, renderAs(role, ALL_THREE, true)).map((i) => i.label);
     const at = labels.indexOf(DS);
     expect(labels.slice(at - 2, at + 2)).toEqual([
       "Career & Education Discovery",
       "Career Fit",
       DS,
-      after,
+      ...(after ? [after] : []),
     ]);
   });
 
-  test("with only direction-setting entitled it still sits directly in front of Role Play (distributor: Help & Support)", () => {
+  test("with only direction-setting entitled it still sits directly in front of Role Play (distributor: end of its own list)", () => {
     const labels = mainMenu(role, renderAs(role, ["direction-setting"], true)).map((i) => i.label);
     expect(labels.filter((l) => l === DS)).toHaveLength(1);
-    expect(labels.indexOf(DS)).toBe(labels.indexOf(after) - 1);
+    expect(labels.indexOf(DS)).toBe(after ? labels.indexOf(after) - 1 : labels.length - 1);
   });
 
   test("no list in the sidebar repeats a label", () => {

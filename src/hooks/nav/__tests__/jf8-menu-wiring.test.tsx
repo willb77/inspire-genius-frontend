@@ -5,7 +5,9 @@
  * real `job_fit_v2` signal (JF-7's `useSavedJobsEnabled`, with only the HTTP
  * call stubbed):
  *
- *   - the main menu (`useGatedNavItems` → the workspace splice),
+ *   - the main menu (`useRoleMenuFrame`: the role's own list, then — since RM-4,
+ *     for manager, company admin and practitioner — its My Workspace section,
+ *     where the workspace splice lands),
  *   - the left rail inside every vertical (`useVerticalPageSections`),
  *   - Job Fit's pill row (`FitNav`).
  *
@@ -59,7 +61,7 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { id: "me", role: mockRole, email: "someone@example.com" } }),
 }))
 
-import { useGatedNavItems } from "../useGatedNavItems"
+import { useRoleMenuFrame } from "../useGatedNavItems"
 import { useVerticalPageSections } from "../useVerticalPageSections"
 import FitNav from "@/pages/job-fit/FitNav"
 
@@ -107,13 +109,14 @@ async function dumpFor(role: UserRole, mode: Mode): Promise<Dump> {
   )
   const { result, unmount } = renderHook(
     () => ({
-      mainMenu: useGatedNavItems(role),
+      mainMenu: useRoleMenuFrame(role),
       // Fixed length and order, so the hook order is stable across renders.
       sidebars: VERTICALS.map((v) => useVerticalPageSections(v, role)),
     }),
     { wrapper },
   )
-  const mainMenu = show(result.current.mainMenu)
+  const frame = result.current.mainMenu
+  const mainMenu = show([...frame.own, ...(frame.workspace ?? [])])
   const sidebars = Object.fromEntries(
     VERTICALS.map((v, i) => [v, showSections(result.current.sidebars[i])]),
   )
@@ -158,6 +161,11 @@ describe("JF-8 menus — job_fit_v2 off is today's, byte for byte", () => {
 })
 
 describe("JF-8 menus — job_fit_v2 on", () => {
+  // RM-4: with the switch on, manager's and practitioner's Talent Studio group
+  // (JF-13's, built under the same switch) sits in their own list rather than
+  // in Tools. Its shape is pinned in jf13-talent-studio.test.tsx and
+  // rm4-menu-frame.test.tsx, so it is left out here, as Tools is.
+  const withoutTalentStudio = (lines: string[]) => lines.filter((l) => l !== "Talent Studio -> ")
   const swapMainEntry = (line: string) =>
     line === "Career Fit -> /vertical/job-fit/matches"
       ? `${CAREERS_AND_JOBS_LABEL} -> ${CAREERS_AND_JOBS_PATH}`
@@ -166,7 +174,7 @@ describe("JF-8 menus — job_fit_v2 on", () => {
   it.each(ROLES)("%s: the main menu renames Career Fit in place and changes nothing else", async (role) => {
     const off = await dumpFor(role, "false")
     const on = await dumpFor(role, "true")
-    expect(on.mainMenu).toEqual(off.mainMenu.map(swapMainEntry))
+    expect(withoutTalentStudio(on.mainMenu)).toEqual(off.mainMenu.map(swapMainEntry))
     expect(on.mainMenu.filter((l) => l.startsWith(CAREERS_AND_JOBS_LABEL))).toHaveLength(1)
     expect(on.mainMenu.some((l) => l.startsWith("Career Fit"))).toBe(false)
     // Discovery's own door is untouched.
@@ -197,7 +205,9 @@ describe("JF-8 menus — job_fit_v2 on", () => {
       const notTools = <S extends { label: string }>(sections: S[]) =>
         sections.filter((s) => s.label !== "Tools" && s.label !== "Administration")
       const expected = notTools(off.sidebars[v]).map((section) => {
-        if (section.label === "My Workspace") {
+        // RM-4: the distributor's workspace verticals sit in its own (unlabelled)
+        // list, the other roles' in My Workspace; the swap touches only the one line.
+        if (section.label === "My Workspace" || section.label === "") {
           return { ...section, items: section.items.map(swapMainEntry) }
         }
         // The Job Fit section: Careers and Jobs first, My fit and Growth areas
@@ -216,7 +226,8 @@ describe("JF-8 menus — job_fit_v2 on", () => {
         }
         return section
       })
-      expect({ v, sections: notTools(on.sidebars[v]) }).toEqual({ v, sections: expected })
+      const onSections = notTools(on.sidebars[v]).map((s) => ({ ...s, items: withoutTalentStudio(s.items) }))
+      expect({ v, sections: onSections }).toEqual({ v, sections: expected })
     }
     const jobFitItems = on.sidebars["job-fit"].flatMap((s) => s.items)
     expect(jobFitItems.some((l) => l.startsWith("My fit") || l.startsWith("Growth areas"))).toBe(false)

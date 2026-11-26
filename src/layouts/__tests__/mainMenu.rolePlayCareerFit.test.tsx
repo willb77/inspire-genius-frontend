@@ -116,10 +116,12 @@ function renderedLists(props: Props): NavItemDef[][] {
 const allRows = (props: Props) => renderedLists(props).flat();
 
 /** The role's main menu: "My Workspace" for super-admin, else the first list. */
-function mainMenu(role: UserRole, props: Props): NavItemDef[] {
-  if (role === "super-admin") {
-    return props.navSections!.find((s) => s.label === "My Workspace")!.items;
-  }
+/** The list Role Play and Career Fit live in: the "My Workspace" section for
+ *  super-admin and, since RM-4 (RM-D1), for manager, company admin and
+ *  practitioner; otherwise the first list (user, distributor). */
+function mainMenu(_role: UserRole, props: Props): NavItemDef[] {
+  const ws = props.navSections?.find((s) => s.label === "My Workspace");
+  if (ws) return ws.items;
   return props.navSections ? props.navSections[0].items : props.navItems;
 }
 
@@ -141,7 +143,7 @@ describe("distributor — house-style menu", () => {
     }
   });
 
-  test("Career & Education Discovery, then Career Fit, directly above Help & Support", () => {
+  test("Career & Education Discovery, then Career Fit, at the end of its own list (RM-4: Help is in the footer)", () => {
     const labels = mainMenu("distributor", renderAs("distributor", ["job-fit", "career-discovery"])).map((i) => i.label);
     expect(labels).toEqual([
       "Home",
@@ -150,7 +152,6 @@ describe("distributor — house-style menu", () => {
       "Reports",
       "Career & Education Discovery",
       "Career Fit",
-      "Help & Support",
     ]);
   });
 });
@@ -229,26 +230,32 @@ describe("main-menu order around the new rows", () => {
     expect(labels.slice(at - 2, at + 1)).toEqual(["Career & Education Discovery", "Career Fit", "Role Play"]);
   });
 
-  test.each(["manager", "company-admin"] as const)(
-    "%s: Role Play and Résumé Writer still sit directly above Settings",
+  // RM-4 (2026-11-25): My Workspace is the user menu less Home, Settings and
+  // Help & Support, in the 2026-10-29 order — not the wireframe's.
+  test.each(["manager", "company-admin", "practitioner"] as const)(
+    "%s: My Workspace is the user menu less Home, Settings and Help, in the 2026-10-29 order",
     (role) => {
-      const labels = mainMenu(role, renderAs(role, ["job-fit"])).map((i) => i.label);
-      const at = labels.indexOf("Settings");
-      expect(labels.slice(at - 2, at + 1)).toEqual(["Role Play", "Résumé Writer", "Settings"]);
+      const labels = mainMenu(role, renderAs(role, ["job-fit", "career-discovery"])).map((i) => i.label);
+      expect(labels).toEqual([
+        "Chat with Meridian",
+        "Goals Studio",
+        "Career & Education Discovery",
+        "Career Fit",
+        "Role Play",
+        "My development",
+        "Résumé Writer",
+        "Document Library",
+      ]);
     },
   );
-
-  test("practitioner: Role Play and Résumé Writer close the menu (it has no Settings tail)", () => {
-    const labels = mainMenu("practitioner", renderAs("practitioner", ["job-fit"])).map((i) => i.label);
-    expect(labels.slice(-2)).toEqual(["Role Play", "Résumé Writer"]);
-  });
 });
 
 // ── Résumé Writer (2026-10-19, request) — one row in every role's main menu ──
 describe.each(ROLE_PLAY_MENU_ROLES)("%s — Résumé Writer", (role) => {
-  // Right after Role Play — except in the user's My Workspace (user and
-  // super-admin), where My development sits between them since 2026-10-29.
-  const before = role === "user" || role === "super-admin" ? "My development" : "Role Play";
+  // Right after My development: every role's Résumé Writer is in a My
+  // Workspace list in the 2026-10-29 order (user, super-admin and, since RM-4,
+  // manager, company admin and practitioner).
+  const before = "My development";
   test(`is in the main menu once, right after ${before}, pointing at /my/resume, never greyed`, () => {
     for (const entitlement of [["job-fit"], [], "loading"] as Entitlement[]) {
       const props = renderAs(role, entitlement);

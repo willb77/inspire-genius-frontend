@@ -1,25 +1,33 @@
 /**
  * @jest-environment jsdom
  *
- * UnifiedLayout's Tools wiring after the 2026-08-12 consolidation.
+ * UnifiedLayout's section wiring.
  *
- * This suite used to pin the opposite arrangement: a collapsed "Tools" rollup
- * for managers, plus a separate expanded "Verticals" section, with an assertion
- * that the labels came out as ["", "Tools", "Verticals"]. Both groups are now
- * one section built by `useToolsSection`, and it returns null for every role
- * this layout serves — so what needs pinning is that NO tool section reaches
- * these roles, and that when one does it arrives whole.
+ * Since RM-4 (2026-11-25) the layout takes the whole menu from
+ * `useRoleMenuFrame` and lays it out with `frameSections`: own work, My
+ * Workspace, Tools, footer for manager, company admin, practitioner and
+ * distributor. A role outside the frame (user, super-admin) keeps the earlier
+ * wiring: its own list, plus one Tools section when it has one.
+ *
+ * The frame's contents are covered in hooks/nav/__tests__/rm4-menu-frame.test.tsx;
+ * here the frame is a fixed value and `frameSections` is the real one.
  */
 
 import { render } from "@testing-library/react";
 
 type MockItem = { to: string; icon: () => null; label: string; disabled?: boolean };
 type MockSection = { label: string; defaultCollapsed?: boolean; items: MockItem[] };
+type MockFrame = {
+  own: MockItem[];
+  workspace: MockItem[] | null;
+  tools: MockSection | null;
+  footer: MockItem[] | null;
+};
 
 const mockSidebarScaffold = jest.fn();
 jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
   __esModule: true,
-  default: (props: any) => {
+  default: (props: { children?: React.ReactNode }) => {
     mockSidebarScaffold(props);
     return <div data-testid="sidebar-scaffold">{props.children}</div>;
   },
@@ -29,106 +37,81 @@ jest.mock("@/hooks/audit/usePageViewAudit", () => ({
   usePageViewAudit: jest.fn(),
 }));
 
+const mockFrame = jest.fn();
 jest.mock("@/hooks/nav/useGatedNavItems", () => ({
-  useGatedNavItems: (role: string) =>
-    role === "manager"
-      ? [{ to: "/manager/dashboard", icon: () => null, label: "Manager Dashboard" }]
-      : [{ to: "/home", icon: () => null, label: "Home" }],
-}));
-
-// The real hook is exercised in hooks/nav/__tests__/useToolsSection.test.ts.
-// Here it is mocked so this suite tests UnifiedLayout's wiring alone — but the
-// mock honours the same role gate, or these tests would not be describing the
-// app's actual behaviour.
-const mockToolsSection = jest.fn();
-jest.mock("@/hooks/nav/useToolsSection", () => ({
-  useToolsSection: (role: string) => mockToolsSection(role),
+  frameSections: jest.requireActual("@/hooks/nav/useGatedNavItems").frameSections,
+  useRoleMenuFrame: (role: string) => mockFrame(role),
 }));
 
 import UnifiedLayout from "../UnifiedLayout";
 
-const TOOLS_SECTION = {
+const item = (to: string, label: string): MockItem => ({ to, icon: () => null, label });
+
+const TOOLS_SECTION: MockSection = {
   label: "Tools",
   defaultCollapsed: true,
-  items: [
-    { to: "/manager/development", icon: () => null, label: "Team Development Studio" },
-    { to: "/vertical/grant/dashboard", icon: () => null, label: "Financial Aid" },
-  ],
+  items: [item("/bio-capture", "Bio Capture Studio"), item("/vertical/grant/dashboard", "Financial Aid")],
 };
+const OWN = [item("/manager/development", "Team Development Studio")];
+const WORKSPACE = [item("/meridian/chat", "Chat with Meridian"), item("/my/goals", "Goals Studio")];
+const FOOTER = [item("/manager/settings", "Settings"), item("/help", "Help & Support")];
 
-describe("UnifiedLayout — Tools gating", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockToolsSection.mockReturnValue(null);
-  });
-
-  test.each(["manager", "company-admin", "practitioner", "distributor"] as const)(
-    "%s gets no navSections at all — Tools is super-admin only",
-    (role) => {
-      render(
-        <UnifiedLayout role={role}>
-          <div />
-        </UnifiedLayout>,
-      );
-      const props = mockSidebarScaffold.mock.calls[0][0];
-      expect(props.navSections).toBeUndefined();
-      // The flat role menu still reaches the sidebar — losing Tools must not
-      // cost these roles their own navigation.
-      expect(props.navItems.length).toBeGreaterThan(0);
-    },
+function propsFor(role: string, frame: MockFrame) {
+  mockFrame.mockReturnValue(frame);
+  render(
+    <UnifiedLayout role={role as never}>
+      <div />
+    </UnifiedLayout>,
   );
+  return mockSidebarScaffold.mock.calls.at(-1)![0];
+}
 
-  test("passes the role straight through to the gate", () => {
-    render(
-      <UnifiedLayout role="practitioner">
-        <div />
-      </UnifiedLayout>,
-    );
-    expect(mockToolsSection).toHaveBeenCalledWith("practitioner");
+describe("UnifiedLayout — the RM-4 frame", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  test("passes the role straight through to the frame", () => {
+    propsFor("practitioner", { own: OWN, workspace: null, tools: null, footer: null });
+    expect(mockFrame).toHaveBeenCalledWith("practitioner");
   });
 
-  test("renders exactly ONE Tools section when the hook returns one", () => {
-    // The bug this consolidation fixes was two sections both labelled "Tools",
-    // which collide on SidebarScaffold's key={section.label}. One is the
-    // invariant, so it is asserted by count rather than by lookup.
-    mockToolsSection.mockReturnValue(TOOLS_SECTION);
-    render(
-      <UnifiedLayout role="super-admin">
-        <div />
-      </UnifiedLayout>,
-    );
-    const props = mockSidebarScaffold.mock.calls[0][0];
-    const labels = props.navSections.map((s: MockSection) => s.label);
-    expect(labels).toEqual(["", "Tools"]);
-    expect(labels.filter((l: string) => l === "Tools")).toHaveLength(1);
+  test("a framed role: own work, My Workspace, Tools, footer — in that order", () => {
+    const props = propsFor("manager", { own: OWN, workspace: WORKSPACE, tools: TOOLS_SECTION, footer: FOOTER });
+    expect(props.navSections.map((s: MockSection) => s.label)).toEqual(["", "My Workspace", "Tools", ""]);
+    expect(props.navSections[0].items).toBe(OWN);
+    expect(props.navSections[1].items).toBe(WORKSPACE);
+    expect(props.navSections[3].items).toBe(FOOTER);
   });
 
-  test("keeps the section's default and its items intact", () => {
-    mockToolsSection.mockReturnValue(TOOLS_SECTION);
-    render(
-      <UnifiedLayout role="super-admin">
-        <div />
-      </UnifiedLayout>,
-    );
-    const props = mockSidebarScaffold.mock.calls[0][0];
-    const tools = props.navSections.find((s: MockSection) => s.label === "Tools");
-    expect(tools.defaultCollapsed).toBe(true);
-    expect(tools.items.map((i: MockItem) => i.label)).toEqual([
-      "Team Development Studio",
-      "Financial Aid",
-    ]);
+  test("My Workspace is a visible plain group, not collapsed (owner decision, 2026-10-12)", () => {
+    const props = propsFor("manager", { own: OWN, workspace: WORKSPACE, tools: TOOLS_SECTION, footer: FOOTER });
+    const ws = props.navSections.find((s: MockSection) => s.label === "My Workspace");
+    expect(ws.defaultCollapsed).toBeUndefined();
+    expect(ws.collapsible).toBeUndefined();
   });
 
-  test("no longer emits a separate 'Verticals' section", () => {
-    // Verticals were folded into Tools. A reappearing "Verticals" group would
-    // mean the old two-section shape had crept back.
-    mockToolsSection.mockReturnValue(TOOLS_SECTION);
-    render(
-      <UnifiedLayout role="super-admin">
-        <div />
-      </UnifiedLayout>,
-    );
-    const props = mockSidebarScaffold.mock.calls[0][0];
-    expect(props.navSections.map((s: MockSection) => s.label)).not.toContain("Verticals");
+  test("the distributor: own work and the footer only (RM-D3)", () => {
+    const props = propsFor("distributor", { own: OWN, workspace: null, tools: null, footer: FOOTER });
+    expect(props.navSections.map((s: MockSection) => s.label)).toEqual(["", ""]);
+  });
+
+  test("renders exactly ONE Tools section, whole", () => {
+    // Two sections labelled "Tools" collide on SidebarScaffold's
+    // key={section.label}, so the count is the invariant.
+    const props = propsFor("manager", { own: OWN, workspace: WORKSPACE, tools: TOOLS_SECTION, footer: FOOTER });
+    const tools = props.navSections.filter((s: MockSection) => s.label === "Tools");
+    expect(tools).toHaveLength(1);
+    expect(tools[0]).toBe(TOOLS_SECTION);
+  });
+
+  test("a role outside the frame with Tools (super-admin): own list then Tools, as before", () => {
+    const props = propsFor("super-admin", { own: OWN, workspace: null, tools: TOOLS_SECTION, footer: null });
+    expect(props.navSections.map((s: MockSection) => s.label)).toEqual(["", "Tools"]);
+    expect(props.navSections[0].items).toBe(OWN);
+  });
+
+  test("a role outside the frame with no Tools (user): no sections, the flat list", () => {
+    const props = propsFor("user", { own: OWN, workspace: null, tools: null, footer: null });
+    expect(props.navSections).toBeUndefined();
+    expect(props.navItems).toBe(OWN);
   });
 });
