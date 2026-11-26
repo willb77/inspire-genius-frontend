@@ -30,7 +30,7 @@ jest.mock("@/context/useAuth", () => ({
 }))
 
 type Item = { to: string; label: string }
-type Section = { label: string; items: Item[]; defaultCollapsed?: boolean; collapsible?: boolean }
+type Section = { label: string; items: Item[]; defaultCollapsed?: boolean; collapsible?: boolean; pinned?: boolean }
 const mockScaffold = jest.fn()
 jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
   __esModule: true,
