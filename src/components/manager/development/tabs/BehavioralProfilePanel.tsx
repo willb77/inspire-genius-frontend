@@ -4,7 +4,8 @@
  *
  * PRISM is the source of truth; Clifton & DISC are interpretive overlays.
  * Missing frameworks render as "Invite to add" cards and lower the displayed
- * confidence. No client-side re-scoring — all numbers come from the dossier.
+ * confidence; a Clifton / DISC result that exists but is not shared with the
+ * viewer (TDS A2, the `assessments` grant) renders "Not shared with you". No client-side re-scoring — all numbers come from the dossier.
  */
 import {
   PolarAngleAxis,
@@ -75,6 +76,143 @@ function InviteToAddCard({ framework, onInvite }: { framework: string; onInvite?
   )
 }
 
+/**
+ * TDS A2: the member HAS this result (`coverage.<fw>` is true) but has not
+ * shared their `assessments` with this viewer, so the server sent no data.
+ * Never the invite card here: "invite to add" at someone who already took the
+ * assessment is false and its call to action cannot be met. No ask here — the
+ * "Ask to see" for assessments is A3's.
+ */
+function OverlayNotSharedCard({ framework, who, testKey }: { framework: string; who: string; testKey: string }) {
+  const { t } = useTranslation("managerPages")
+  const sk = useDevSkin()
+  return (
+    <Card className="border-dashed" data-testid={`overlay-not-shared-${testKey}`}>
+      <CardContent className="flex flex-col items-start gap-2 p-4">
+        <div className={cn("flex items-center gap-1.5 text-sm font-medium", sk.text700)}>
+          <Lock className={cn("h-4 w-4", sk.text400)} aria-hidden="true" />
+          {t("behavioralProfilePanel.overlayNotSharedTitle", { defaultValue: "Not shared with you" })}
+        </div>
+        <p className={cn("text-xs", sk.text500)}>
+          {t("behavioralProfilePanel.overlayNotSharedBody", { defaultValue: "{{who}} has a {{framework}} result on file but has not shared their assessments with you.", who, framework })}
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
+type OverlayCardsProps = {
+  profile: BehavioralProfile
+  who: string
+  onInvite?: (framework: "prism" | "clifton" | "disc") => void
+}
+
+/** CliftonStrengths + DISC: data, "not shared with you" (A2), or the invite. */
+function OverlayCards({ profile, who, onInvite }: OverlayCardsProps) {
+  const { t } = useTranslation("managerPages")
+  const sk = useDevSkin()
+  const { clifton, disc, coverage } = profile
+  return (
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* CliftonStrengths */}
+        <Card>
+          <CardHeader>
+            <CardTitle className={cn("text-base", sk.heading)}>{t("behavioralProfilePanel.cliftonstrengths", { defaultValue: "CliftonStrengths" })}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {coverage.clifton && clifton && clifton.length > 0 ? (
+              <div className="space-y-4">
+                {CLIFTON_DOMAINS.map((domain) => {
+                  const themes = clifton
+                    .filter((c) => c.domain === domain)
+                    .sort((a, b) => a.rank - b.rank)
+                  if (themes.length === 0) return null
+                  const cfg = CLIFTON_DOMAIN_CONFIG[domain]
+                  return (
+                    <div key={domain}>
+                      <div className={cn("mb-1.5 flex items-center gap-1.5 text-xs font-semibold", sk.text600)}>
+                        {cfg.label}
+                        <span className={sk.text400}>→</span>
+                        <span
+                          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                          style={{
+                            backgroundColor: `${quadrantColor(cfg.prismQuadrant)}1a`,
+                            color: quadrantColor(cfg.prismQuadrant),
+                          }}
+                        >
+                          {QUADRANT_CONFIG[cfg.prismQuadrant].label}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {themes.map((th) => (
+                          <Badge key={th.name} variant="secondary" className="gap-1">
+                            <span className={cn("tabular-nums", sk.text400)}>{th.rank}</span>
+                            {th.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : coverage.clifton ? (
+              <OverlayNotSharedCard framework="CliftonStrengths" who={who} testKey="clifton" />
+            ) : (
+              <InviteToAddCard framework="CliftonStrengths" onInvite={onInvite ? () => onInvite("clifton") : undefined} />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* DISC */}
+        <Card>
+          <CardHeader>
+            <CardTitle className={cn("text-base", sk.heading)}>{t("behavioralProfilePanel.disc", { defaultValue: "DISC" })}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {coverage.disc && disc ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>{t("behavioralProfilePanel.primary", { defaultValue: "Primary:" })}{" "}<strong>{disc.primaryStyle}</strong>
+                  </span>
+                  {disc.adaptedStyle ? (
+                    <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>{t("behavioralProfilePanel.adapted", { defaultValue: "Adapted:" })}{" "}<strong>{disc.adaptedStyle}</strong>
+                    </span>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  {(["d", "i", "s", "c"] as const).map((k) => {
+                    const legend = DISC_LEGEND[k]
+                    const value = disc[k]
+                    return (
+                      <div key={k} className="flex items-center gap-2">
+                        <span className={cn("w-24 shrink-0 text-xs", sk.text600)}>{legend.label}</span>
+                        <div className={cn("h-2 flex-1 overflow-hidden rounded", sk.bgMuted100)}>
+                          <div
+                            className="h-full rounded"
+                            style={{
+                              width: `${Math.max(0, Math.min(100, value))}%`,
+                              backgroundColor: quadrantColor(legend.prismQuadrant),
+                            }}
+                          />
+                        </div>
+                        <span className={cn("w-8 text-right text-xs tabular-nums", sk.text600)}>{value}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className={cn("text-[11px]", sk.text400)}>{withPrism(t("behavioralProfilePanel.legendDRedIGreen", { defaultValue: "Legend: D→Red · I→Green · S→Green · C→Blue (PRISM quadrant mapping)" }))}</p>
+              </div>
+            ) : coverage.disc ? (
+              <OverlayNotSharedCard framework="DISC" who={who} testKey="disc" />
+            ) : (
+              <InviteToAddCard framework="DISC" onInvite={onInvite ? () => onInvite("disc") : undefined} />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+  )
+}
+
 export type BehavioralProfilePanelProps = {
   profile: BehavioralProfile
   onInvite?: (framework: "prism" | "clifton" | "disc") => void
@@ -94,7 +232,7 @@ export function BehavioralProfilePanel({
 }: BehavioralProfilePanelProps) {
   const { t } = useTranslation("managerPages")
   const sk = useDevSkin()
-  const { prism, clifton, disc, reconciliation, coverage } = profile
+  const { prism, reconciliation, coverage } = profile
   const who = memberName?.trim() || t("behavioralProfilePanel.thisMember", { defaultValue: "This member" })
 
   // TDS-1b. FIRST, before every other branch — and that order is the whole
@@ -148,6 +286,13 @@ export function BehavioralProfilePanel({
             ) : null}
           </CardContent>
         </Card>
+        {/* TDS A2: DISC and CliftonStrengths follow the member's `assessments`
+            grant, not `prism`. A withheld PRISM must not hide overlays the
+            member DID share. Rendered only when one exists, so with no
+            overlay on file this branch is exactly what it was. */}
+        {coverage.clifton || coverage.disc ? (
+          <OverlayCards profile={profile} who={who} onInvite={onInvite} />
+        ) : null}
       </div>
     )
   }
@@ -239,99 +384,7 @@ export function BehavioralProfilePanel({
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* CliftonStrengths */}
-        <Card>
-          <CardHeader>
-            <CardTitle className={cn("text-base", sk.heading)}>{t("behavioralProfilePanel.cliftonstrengths", { defaultValue: "CliftonStrengths" })}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {coverage.clifton && clifton && clifton.length > 0 ? (
-              <div className="space-y-4">
-                {CLIFTON_DOMAINS.map((domain) => {
-                  const themes = clifton
-                    .filter((c) => c.domain === domain)
-                    .sort((a, b) => a.rank - b.rank)
-                  if (themes.length === 0) return null
-                  const cfg = CLIFTON_DOMAIN_CONFIG[domain]
-                  return (
-                    <div key={domain}>
-                      <div className={cn("mb-1.5 flex items-center gap-1.5 text-xs font-semibold", sk.text600)}>
-                        {cfg.label}
-                        <span className={sk.text400}>→</span>
-                        <span
-                          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium"
-                          style={{
-                            backgroundColor: `${quadrantColor(cfg.prismQuadrant)}1a`,
-                            color: quadrantColor(cfg.prismQuadrant),
-                          }}
-                        >
-                          {QUADRANT_CONFIG[cfg.prismQuadrant].label}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {themes.map((th) => (
-                          <Badge key={th.name} variant="secondary" className="gap-1">
-                            <span className={cn("tabular-nums", sk.text400)}>{th.rank}</span>
-                            {th.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <InviteToAddCard framework="CliftonStrengths" onInvite={onInvite ? () => onInvite("clifton") : undefined} />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* DISC */}
-        <Card>
-          <CardHeader>
-            <CardTitle className={cn("text-base", sk.heading)}>{t("behavioralProfilePanel.disc", { defaultValue: "DISC" })}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {coverage.disc && disc ? (
-              <div className="space-y-3">
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>{t("behavioralProfilePanel.primary", { defaultValue: "Primary:" })}{" "}<strong>{disc.primaryStyle}</strong>
-                  </span>
-                  {disc.adaptedStyle ? (
-                    <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>{t("behavioralProfilePanel.adapted", { defaultValue: "Adapted:" })}{" "}<strong>{disc.adaptedStyle}</strong>
-                    </span>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  {(["d", "i", "s", "c"] as const).map((k) => {
-                    const legend = DISC_LEGEND[k]
-                    const value = disc[k]
-                    return (
-                      <div key={k} className="flex items-center gap-2">
-                        <span className={cn("w-24 shrink-0 text-xs", sk.text600)}>{legend.label}</span>
-                        <div className={cn("h-2 flex-1 overflow-hidden rounded", sk.bgMuted100)}>
-                          <div
-                            className="h-full rounded"
-                            style={{
-                              width: `${Math.max(0, Math.min(100, value))}%`,
-                              backgroundColor: quadrantColor(legend.prismQuadrant),
-                            }}
-                          />
-                        </div>
-                        <span className={cn("w-8 text-right text-xs tabular-nums", sk.text600)}>{value}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-                <p className={cn("text-[11px]", sk.text400)}>{withPrism(t("behavioralProfilePanel.legendDRedIGreen", { defaultValue: "Legend: D→Red · I→Green · S→Green · C→Blue (PRISM quadrant mapping)" }))}</p>
-              </div>
-            ) : (
-              <InviteToAddCard framework="DISC" onInvite={onInvite ? () => onInvite("disc") : undefined} />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <OverlayCards profile={profile} who={who} onInvite={onInvite} />
 
       {/* Reconciliation */}
       <Card>

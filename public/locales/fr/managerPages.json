@@ -333,7 +333,9 @@
     "auraReconciliation": "Réconciliation Aura",
     "discrepancies": "Écarts",
     "howToWorkWithThis": "Comment travailler avec cette personne",
-    "reconciliationIsAtReducedResolution": "La réconciliation est à résolution réduite : une ou plusieurs couches sont manquantes, la confiance est donc abaissée en conséquence."
+    "reconciliationIsAtReducedResolution": "La réconciliation est à résolution réduite : une ou plusieurs couches sont manquantes, la confiance est donc abaissée en conséquence.",
+    "overlayNotSharedTitle": "Non partagé avec vous",
+    "overlayNotSharedBody": "{{who}} a un résultat {{framework}} enregistré, mais n'a pas partagé ses évaluations avec vous."
   },
   "studentRoster": {
     "isNotSharedTheStudent": "{{what}} n'est pas partagé. L'étudiant n'a pas accordé cette catégorie : cela ne reflète pas son activité.",

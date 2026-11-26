@@ -539,7 +539,9 @@
     "prism8DimensionScoresText": "Punteggi PRISM su 8 dimensioni (equivalente testuale del grafico radar).",
     "dimension": "Dimensione",
     "quadrant": "Quadrante",
-    "score": "Punteggio"
+    "score": "Punteggio",
+    "overlayNotSharedTitle": "Non condiviso con te",
+    "overlayNotSharedBody": "{{who}} ha un risultato {{framework}} registrato, ma non ha condiviso le sue valutazioni con te."
   },
   "bulkImport": {
     "bulkTeamImport": "Importazione massiva del team",

@@ -28,7 +28,9 @@
     "dimension": "Dimenze",
     "quadrant": "Kvadrant",
     "score": "Skóre",
-    "cliftonstrengths": "CliftonStrengths"
+    "cliftonstrengths": "CliftonStrengths",
+    "overlayNotSharedTitle": "Nesdíleno s vámi",
+    "overlayNotSharedBody": "{{who}} má uložený výsledek {{framework}}, ale nesdílel(a) s vámi svá hodnocení."
   },
   "bulkImport": {
     "bulkTeamImport": "Hromadný import týmu",
