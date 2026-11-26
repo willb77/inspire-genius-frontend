@@ -100,7 +100,18 @@ export function resultText(view: ProfileAssessmentView): string {
 export function formatAssessedDate(iso: string, language?: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(language || undefined, { day: "numeric", month: "short", year: "numeric" });
+  // A date-only value is stored as midnight UTC (the date field sends
+  // "2026-11-25" → "2026-11-25T00:00:00Z"). Read in a zone west of UTC that is
+  // the evening before, so it showed as Nov 24 in EST (TDS O-W7R2-a). Midnight
+  // UTC means "this calendar day": show it in UTC. A real time stays local.
+  const dateOnly =
+    d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
+  return d.toLocaleDateString(language || undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    ...(dateOnly ? { timeZone: "UTC" } : {}),
+  });
 }
 
 
