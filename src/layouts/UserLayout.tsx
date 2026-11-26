@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { ROUTES } from "@/constants/routes";
-import { getUserNavItems, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation";
+import { getUserNavItems } from "@/constants/navigation";
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
 import UnifiedLayout from "@/layouts/UnifiedLayout";
 import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
@@ -13,8 +13,7 @@ import { useAuth } from "@/context/useAuth";
 import { useAgentEngine } from "@/lib/agentApi";
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher";
 import { useToolsSection } from "@/hooks/nav/useToolsSection";
-import { groupAdministrationItems } from "@/constants/house/administrationCategories";
-import { useSavedJobsEnabled } from "@/hooks/job-fit/useSavedJobs";
+import { useSuperAdminSections } from "@/hooks/nav/useSuperAdminSections";
 
 export type UserLayoutProps = {
   children: React.ReactNode;
@@ -45,8 +44,8 @@ function ownMenuRole(role: string | null | undefined): UserRole | null {
 
 export default function UserLayout(props: UserLayoutProps) {
   const { user } = useAuth();
-  // Branch to a separate component rather than returning early, so neither
-  // tree's hook order depends on the role.
+  // Branch to a separate component rather than returning early, so no tree's
+  // hook order depends on the role.
   const roleWithOwnMenu = ownMenuRole(user?.role);
   if (roleWithOwnMenu) {
     return (
@@ -60,34 +59,47 @@ export default function UserLayout(props: UserLayoutProps) {
       </UnifiedLayout>
     );
   }
+  if (user?.role === "super-admin") return <SuperAdminChrome {...props} />;
   return <UserChrome {...props} />;
 }
 
-/** The user and super-admin chrome, unchanged by RM-1. */
+/**
+ * Super-admin on a user page (RM-2): the same menu as on admin pages, from the
+ * same hook, so it no longer reshuffles between Home and an admin page and the
+ * owner-only filter applies here too. My Workspace stays open here — the
+ * workspace is what these pages are.
+ */
+function SuperAdminChrome({ children, className, collapseSidebarOnMount }: UserLayoutProps) {
+  const sections = useSuperAdminSections({ workspaceExpanded: true });
+  return (
+    <SidebarScaffold
+      navItems={[]}
+      navSections={sections}
+      className={className}
+      expandOnPath={ROUTES.HOME}
+      collapseOnMount={collapseSidebarOnMount}
+    >
+      {children}
+    </SidebarScaffold>
+  );
+}
+
+/** The user chrome (and legacy role labels), unchanged by RM-1 and RM-2. */
 function UserChrome({
   children,
   className,
   collapseSidebarOnMount,
 }: UserLayoutProps) {
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super-admin";
   const agentEngineOn = useAgentEngine();
   // My Workspace = the user menu plus the workspace verticals (Career Fit),
   // spliced in above Settings/Help — omitted when unentitled.
   const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
-  // The consolidated Tools section, gated by the SIGNED-IN role. Until
-  // 2026-10-07 this passed "user" for everyone but super-admin, so a manager or
-  // practitioner lost their Tools section the moment they opened Home, My
-  // Workspace or Chat — it existed only on their own role pages (request:
-  // "make it visible at all times"). useToolsSection owns the gate and still
-  // returns null for user, company-admin and distributor, whose sidebars are
-  // unchanged.
+  // The consolidated Tools section, gated by the SIGNED-IN role. useToolsSection
+  // owns the gate and returns null for user, company-admin and distributor.
   const signedInRole = user?.role;
   const role: UserRole = isUserRole(signedInRole) ? signedInRole : "user";
-  const toolsSection = useToolsSection(isSuperAdmin ? "super-admin" : role);
-  // JF-13 admin: `job_fit_v2` shows Administration in the house categories.
-  // Only a server `true` is on; loading, an error and false keep today's list.
-  const jobFitV2 = useSavedJobsEnabled();
+  const toolsSection = useToolsSection(role);
 
   const toolsSections: NavSectionDef[] = useMemo(
     () => (toolsSection ? [toolsSection] : []),
@@ -97,14 +109,9 @@ function UserChrome({
   /** Plain user: the flat workspace menu, with no Tools group beneath it —
    *  `navItems` already carries the same list, so returning undefined here
    *  leaves SidebarScaffold rendering the flat menu rather than an empty
-   *  header-less section wrapper.
-   *
-   *  Manager / practitioner: the workspace menu, then Tools. Any workspace row
-   *  whose destination Tools already lists (Goals Studio) is dropped from the
-   *  workspace half, so each destination appears once. Role Play and Career
-   *  Fit are not in Tools since 2026-10-18, so they stay in this half. Tools
-   *  keeps it because Tools is the one place these roles find it on every page,
-   *  including their own role pages where the workspace menu is not shown. */
+   *  header-less section wrapper. If Tools is ever shown here, any workspace
+   *  row whose destination Tools already lists is dropped from the workspace
+   *  half, so each destination appears once. */
   const userSections: NavSectionDef[] | undefined = useMemo(() => {
     if (!toolsSections.length) return undefined;
     const inTools = new Set(toolsSections.flatMap((s) => destinations(s.items)));
@@ -114,28 +121,10 @@ function UserChrome({
     ];
   }, [userNavItems, toolsSections]);
 
-  /** Super-admin viewing user pages: lead with "My Workspace" (user nav) so the
-   *  simpler user experience is primary, then Role Views → Verticals →
-   *  Administration — the same order SuperAdminLayout uses, so the menu does not
-   *  reshuffle as they move between user and admin pages. */
-  const superAdminSections: NavSectionDef[] = useMemo(() => {
-    const bySection = (label: string) =>
-      SUPER_ADMIN_NAV_SECTIONS.filter((s) => s.label === label);
-    return [
-      { label: "My Workspace", items: userNavItems },
-      ...bySection("Role Views"),
-      ...toolsSections,
-      // JF-13 admin: with job_fit_v2 on, the same entries in categories.
-      ...bySection("Administration").map((s) =>
-        jobFitV2 ? { ...s, items: groupAdministrationItems(s.items) } : s,
-      ),
-    ];
-  }, [userNavItems, toolsSections, jobFitV2]);
-
   return (
     <SidebarScaffold
-      navItems={isSuperAdmin ? [] : userNavItems}
-      navSections={isSuperAdmin ? superAdminSections : userSections}
+      navItems={userNavItems}
+      navSections={userSections}
       className={className}
       expandOnPath={ROUTES.HOME}
       collapseOnMount={collapseSidebarOnMount}
