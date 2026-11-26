@@ -1,9 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { getPractitionerClients, getPractitionerSessions, getPractitionerCredits, getPractitionerFollowups } from "@/services/practitioner/practitioner.service"
-
-export function usePractitionerClients() {
-  return useQuery({ queryKey: ["practitioner-clients"], queryFn: async () => { const r = await getPractitionerClients(); return r.data?.data } })
-}
+import { getPractitionerSessions, getPractitionerCredits, getPractitionerFollowups } from "@/services/practitioner/practitioner.service"
 
 export function usePractitionerSessions() {
   return useQuery({ queryKey: ["practitioner-sessions"], queryFn: async () => { const r = await getPractitionerSessions(); return r.data?.data } })
