@@ -256,7 +256,10 @@
       "Overview": "Visão geral",
       "Insights": "Análises",
       "Retain_Knowledge_Continuity": "Reter: Knowledge Continuity",
-      "Team_fit": "Aderência da equipe"
+      "Team_fit": "Aderência da equipe",
+      "Roles": "Cargos",
+      "Interviews": "Entrevistas",
+      "Retain": "Reter"
     },
     "sections": {
       "AI_coaches": "Coaches de IA",
@@ -707,6 +710,10 @@
         "off": "A pontuação em relação a um cargo não está ativada para a organização de {{name}}.",
         "unknownState": "No momento, não é possível pontuar {{name}} em relação a um cargo."
       }
+    },
+    "tabs": {
+      "aria": "Páginas de {{stage}}",
+      "leaves": "Abre a sua própria página"
     }
   }
 }

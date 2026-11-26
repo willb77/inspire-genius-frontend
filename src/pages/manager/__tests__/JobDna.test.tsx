@@ -6,6 +6,14 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import type { DimensionBenchmark, JobDNA } from "@/types/job-blueprint";
 import ManagerJobDna from "../JobDna";
 
+// RM-7: the Talent Studio stage tabs read the router and two queries; they are
+// tested on their own (TalentStudioStageTabs.test.tsx), so this page test stubs
+// them and keeps rendering the page as it did.
+jest.mock("@/components/talent-studio/TalentStudioStageTabs", () => ({ __esModule: true, default: () => null }))
+jest.mock("@/hooks/nav/useToolsSection", () => ({
+  ...jest.requireActual("@/hooks/nav/useToolsSection"),
+  useTalentStudioStageTabsHere: () => null,
+}))
 jest.mock("@/layouts/ManagerLayout", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => (

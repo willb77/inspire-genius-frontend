@@ -35,6 +35,7 @@ import VoiceDeskWidget from "@/components/shared/VoiceDeskWidget";
 import { SupportAgentProvider } from "@/context/SupportAgentProvider";
 import { BroadcastAlertBanner } from "@/components/shared/BroadcastAlertBanner";
 import { useNotificationToasts } from "@/hooks/useNotificationInbox";
+import { isItemActive } from "./navActive";
 
 export type NavItemDef = {
   to: string;
@@ -68,6 +69,13 @@ export type NavItemDef = {
    * any other page inside that vertical.
    */
   activePrefix?: string;
+  /**
+   * RM-7 (2026-11-26): also active on each of these pages and the pages under
+   * them. For a row that stands for several pages with no common prefix (a
+   * Talent Studio stage, whose tabs are pages under different addresses).
+   * Optional and unset by default: a row without it is active exactly as before.
+   */
+  activePaths?: readonly string[];
   /**
    * Nested entries, rendered indented under this item (2026-09-23, request:
    * "Career Studio" and "Interview Studio" as menu items that hold their own
@@ -110,10 +118,6 @@ export type SidebarScaffoldProps = {
   collapseOnMount?: boolean;
 };
 
-function isItemActive(pathname: string, item: Pick<NavItemDef, "to" | "activePrefix">): boolean {
-  return item.activePrefix ? pathname.startsWith(item.activePrefix) : item.to !== "" && pathname === item.to;
-}
-
 /** True when the current page is one of the section's items, or a child of one. */
 function sectionHoldsActiveRoute(pathname: string, section: Pick<NavSectionDef, "items">): boolean {
   return section.items.some(
@@ -122,12 +126,12 @@ function sectionHoldsActiveRoute(pathname: string, section: Pick<NavSectionDef, 
 }
 
 /** A nested entry: same lock / active semantics as {@link NavItem}, rendered in the sub-menu. */
-function NavSubItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix }: NavItemDef) {
+function NavSubItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix, activePaths }: NavItemDef) {
   const { t } = useTranslation("shellUi");
   const label = translateNavLabel(t, "items", rawLabel);
   const navigate = useNavigate();
   const location = useLocation();
-  const isActive = isItemActive(location.pathname, { to, activePrefix });
+  const isActive = isItemActive(location.pathname, { to, activePrefix, activePaths });
   return (
     <SidebarMenuSubItem>
       <SidebarMenuSubButton
@@ -157,7 +161,7 @@ function NavSubItem({ to, icon: Icon, label: rawLabel, state, disabled, disabled
   );
 }
 
-function NavItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix, children, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
+function NavItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix, activePaths, children, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
   const { t } = useTranslation("shellUi");
   const label = translateNavLabel(t, "items", rawLabel);
   const navigate = useNavigate();
@@ -169,7 +173,7 @@ function NavItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledRea
   React.useEffect(() => {
     if (childActive) setGroupOpen(true);
   }, [childActive]);
-  const isActive = isItemActive(location.pathname, { to, activePrefix });
+  const isActive = isItemActive(location.pathname, { to, activePrefix, activePaths });
   const activeClasses = "cursor-pointer !bg-ig-nav-active !text-ig-nav-active-fg [&>svg]:!text-ig-nav-active-fg";
   const inactiveClasses = "cursor-pointer !bg-transparent !text-ig-nav-fg [&>svg]:!text-ig-nav-fg glow-border-hover";
   // Locked (no entitlement): still listed so the catalogue is discoverable, but

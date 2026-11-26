@@ -25,6 +25,7 @@ import { useLiveSessions } from "@/hooks/interview/useLiveSessions"
 import type { LiveSessionSummary } from "@/services/interview/live.service"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import InterviewsListHouse from "@/components/interview/house/InterviewsListHouse"
+import TalentStudioStageTabs from "@/components/talent-studio/TalentStudioStageTabs"
 import { useTranslation } from "react-i18next"
 
 const fmtDate = (iso?: string | null) =>
@@ -49,6 +50,8 @@ export default function ManagerInterviews() {
   if (isHouseStyleOn("interview")) {
     return (
       <ManagerLayout>
+        {/* RM-7: the Interviews stage tabs (Talent Studio, job_fit_v2 on). */}
+        <TalentStudioStageTabs role="manager" />
         <InterviewsListHouse />
       </ManagerLayout>
     )
@@ -82,6 +85,7 @@ function ClassicManagerInterviews() {
 
   return (
     <ManagerLayout>
+      <TalentStudioStageTabs role="manager" />
       <h1 className="text-xl font-bold text-[#111827] mb-1">{t("interviews.interviews", { defaultValue: "Interviews" })}</h1>
       <p className="text-[13px] text-[#6b7280] mb-5">{t("interviews.interviewsYouHaveRunStart", { defaultValue: "Interviews you have run. Start a new one from" })}{" "}<Link to={ROUTES.MANAGER.INTERVIEW_STUDIO} className="text-[#3B5BFF] underline">{t("interviews.interviewStudio", { defaultValue: "Interview Studio" })}</Link>
         .

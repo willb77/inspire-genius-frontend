@@ -183,7 +183,10 @@
       "Overview": "Vue d'ensemble",
       "Insights": "Analyses",
       "Retain_Knowledge_Continuity": "Fidéliser : Knowledge Continuity",
-      "Team_fit": "Adéquation de l'équipe"
+      "Team_fit": "Adéquation de l'équipe",
+      "Roles": "Postes",
+      "Interviews": "Entretiens",
+      "Retain": "Fidéliser"
     },
     "sections": {
       "AI_coaches": "Coachs IA",
@@ -707,6 +710,10 @@
         "off": "L'évaluation par rapport à un poste n'est pas activée pour l'organisation de {{name}}.",
         "unknownState": "L'évaluation de {{name}} par rapport à un poste n'est pas disponible pour le moment."
       }
+    },
+    "tabs": {
+      "aria": "Pages {{stage}}",
+      "leaves": "Ouvre sa propre page"
     }
   }
 }

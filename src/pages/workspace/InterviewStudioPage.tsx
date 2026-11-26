@@ -10,6 +10,8 @@ import StudioInterviewBody from "@/components/interview/StudioInterviewBody"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import InterviewHouseLinks from "@/components/interview/house/InterviewHouseLinks"
 import InterviewRunBody from "@/components/interview/house/run/InterviewRunBody"
+import TalentStudioStageTabs from "@/components/talent-studio/TalentStudioStageTabs"
+import { useTalentStudioStageTabsHere } from "@/hooks/nav/useToolsSection"
 
 /**
  * House style (interview area, OFF by default): the one interview build,
@@ -18,9 +20,12 @@ import InterviewRunBody from "@/components/interview/house/run/InterviewRunBody"
  */
 export default function WorkspaceInterviewStudioPage({ audience }: { audience: WorkspaceAudience }) {
   const house = isHouseStyleOn("interview")
+  // RM-7: the Interviews stage tabs replace the house link row where they show.
+  const stageTabs = useTalentStudioStageTabsHere(audience) !== null
   return (
     <WorkspaceLayout audience={audience}>
-      {house && <InterviewHouseLinks audience={audience} current="studio" />}
+      <TalentStudioStageTabs role={audience} />
+      {house && !stageTabs && <InterviewHouseLinks audience={audience} current="studio" />}
       {house ? <InterviewRunBody initialKind="own" /> : <StudioInterviewBody />}
     </WorkspaceLayout>
   )

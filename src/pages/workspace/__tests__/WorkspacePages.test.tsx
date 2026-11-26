@@ -14,6 +14,14 @@ import type { WorkspaceAudience } from "@/layouts/WorkspaceLayout"
 // ROLE-C: each screen managers and practitioners share is one component. What
 // matters is that `audience` alone picks the chrome, and that the body is the
 // same for both. WorkspaceLayout is real here; the two role layouts are not.
+// RM-7: the Talent Studio stage tabs read the router and two queries; they are
+// tested on their own (TalentStudioStageTabs.test.tsx), so this page test stubs
+// them and keeps rendering the page as it did.
+jest.mock("@/components/talent-studio/TalentStudioStageTabs", () => ({ __esModule: true, default: () => null }))
+jest.mock("@/hooks/nav/useToolsSection", () => ({
+  ...jest.requireActual("@/hooks/nav/useToolsSection"),
+  useTalentStudioStageTabsHere: () => null,
+}))
 jest.mock("@/layouts/ManagerLayout", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <div data-testid="manager-layout">{children}</div>,

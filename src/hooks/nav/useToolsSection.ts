@@ -1,4 +1,5 @@
 import { useMemo } from "react"
+import { useLocation } from "react-router-dom"
 import { BookOpenText, Briefcase } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
@@ -11,9 +12,11 @@ import {
   TALENT_STUDIO_JOB_DNA_ROWS,
   TALENT_STUDIO_OVERVIEW_ROWS,
   TALENT_STUDIO_RETAIN_ROW,
+  TALENT_STUDIO_STAGE_ROWS,
   TALENT_STUDIO_TEAM_FIT_ROWS,
   TOOL_ITEMS_BY_ROLE,
 } from "@/constants/navigation"
+import { pathIsAt } from "@/components/shared/layout/navActive"
 import { BROADCAST_SIDEBAR_SECTION } from "@/constants/sidebar-sections"
 import { useVerticalLauncherSection } from "@/components/layout/useVerticalLauncher"
 import { useBroadcastAccess } from "@/hooks/super-admin/useBroadcast"
@@ -264,6 +267,91 @@ function talentStudioStages(
   }
 }
 
+/**
+ * Overview alone is not a group: with nothing to give an overview of, the
+ * section stays as it is (the rule before TS-2, kept). Team fit does not make a
+ * group by itself either: it is a stage of one, not a reason for one.
+ */
+function talentStudioGroupBuilt(stages: TalentStudioStage[]): boolean {
+  return stages.some((s) => s.key !== "overview" && s.key !== "teamFit")
+}
+
+/**
+ * RM-7 — a tab that is a page of a vertical. Vertical pages are not edited
+ * (they carry the vertical's own sub-menu and are reached from outside Talent
+ * Studio too), so such a tab LEAVES the stage page, like the Usage hub's "Cost
+ * per coach" tab, and a stage row never lands on one while another tab is live.
+ */
+export function isVerticalTab(tab: Pick<NavItemDef, "to">): boolean {
+  return tab.to.startsWith("/vertical/")
+}
+
+/**
+ * RM-7 (2026-11-26, Bill's RM-D5) — the menu row for one stage.
+ *
+ * A stage of one page is that page's row under the stage's name (route, icon,
+ * lock and active rule unchanged). A stage of several pages is a row that
+ * lands on its first live tab that is not a vertical page, is active on every
+ * one of its tabs (`activePaths`), and is greyed only when every tab is.
+ */
+export function talentStudioStageRow(stage: TalentStudioStage): NavItemDef {
+  const { label, icon } = TALENT_STUDIO_STAGE_ROWS[stage.key]
+  const tabs = stage.rows
+  if (tabs.length === 1) return { ...tabs[0], label, icon }
+  const live = tabs.filter((t) => !t.disabled)
+  const landing = live.find((t) => !isVerticalTab(t)) ?? live[0] ?? tabs[0]
+  return {
+    to: landing.to,
+    icon,
+    label,
+    activePaths: tabs.map((t) => t.activePrefix ?? t.to),
+    ...(live.length === 0 ? { disabled: true } : {}),
+    ...(live.length === 0 && tabs[0].disabledReason ? { disabledReason: tabs[0].disabledReason } : {}),
+  }
+}
+
+/** What a stage page's tab strip shows: the stage, its tabs and the open one. */
+export type TalentStudioStageTabsView = {
+  stage: TalentStudioStageKey
+  label: string
+  tabs: NavItemDef[]
+  current: NavItemDef
+}
+
+/**
+ * The stage whose tabs include `pathname`, when that stage has two or more tabs
+ * and the group exists; `null` otherwise (a stage of one needs no strip).
+ */
+export function talentStudioStageTabs(
+  stages: TalentStudioStage[],
+  pathname: string,
+): TalentStudioStageTabsView | null {
+  if (!talentStudioGroupBuilt(stages)) return null
+  for (const stage of stages) {
+    if (stage.rows.length < 2) continue
+    const current = stage.rows.find((t) => pathIsAt(pathname, t.to))
+    if (current) return { stage: stage.key, label: TALENT_STUDIO_STAGE_ROWS[stage.key].label, tabs: stage.rows, current }
+  }
+  return null
+}
+
+/**
+ * RM-7 — the tab strip for the page at `pathname`, for `role` (the role whose
+ * chrome the page renders). Only with `job_fit_v2` on, exactly as the group:
+ * loading, an error and false give `null`, so every page is today's.
+ */
+export function useTalentStudioStageTabs(role: UserRole, pathname: string): TalentStudioStageTabsView | null {
+  const stages = useTalentStudioStages(role)
+  const jobFitV2 = useSavedJobsEnabled()
+  return useMemo(() => (jobFitV2 ? talentStudioStageTabs(stages, pathname) : null), [stages, jobFitV2, pathname])
+}
+
+/** {@link useTalentStudioStageTabs} for the page being shown. */
+export function useTalentStudioStageTabsHere(role: UserRole): TalentStudioStageTabsView | null {
+  const { pathname } = useLocation()
+  return useTalentStudioStageTabs(role, pathname)
+}
+
 function withTalentStudio(
   role: UserRole,
   roleTools: NavItemDef[],
@@ -274,12 +362,14 @@ function withTalentStudio(
   // Overview alone is not a group: with nothing to give an overview of, the
   // section stays as it is (the rule before TS-2, kept). Team fit does not
   // make a group by itself either: it is a stage of one, not a reason for one.
-  if (!stages.some((s) => s.key !== "overview" && s.key !== "teamFit")) {
+  if (!talentStudioGroupBuilt(stages)) {
     return { roleTools, catalogue, talentStudio: null }
   }
-  const children = stages.flatMap((s) => s.rows)
+  // RM-7: one row per stage; the stage's rows are its tabs.
+  const children = stages.map(talentStudioStageRow)
 
-  const lifted = new Set(children.map((c) => c.to))
+  // Every tab leaves the loose catalogue, not only the rows the menu shows.
+  const lifted = new Set(stages.flatMap((s) => s.rows).map((c) => c.to))
   const at = roleTools.findIndex((i) => folded.has(i))
   const keptTools = roleTools.filter((i) => !folded.has(i))
   const group: NavItemDef = { to: "", icon: Briefcase, label: TALENT_STUDIO_LABEL, children }
