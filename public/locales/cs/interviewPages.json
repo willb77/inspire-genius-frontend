@@ -108,6 +108,8 @@
     "loadFailedTitle": "Vaše dřívější pohovory se nepodařilo načíst.",
     "loading": "Načítání vašich dřívějších pohovorů…",
     "orgScopeNote": "Tento seznam obsahuje pohovory, které vedl {{slot}}. Vaše přihlášení neobsahovalo organizaci, proto nejsou zahrnuty pohovory kolegů, a to ani když jejich organizaci spravujete.",
+    "orgScopeNoteRole": "Tento seznam obsahuje pohovory, které vedl {{slot}}. Vaše role zobrazuje pouze Vaše vlastní pohovory, proto nejsou zahrnuty pohovory kolegů.",
+    "orgScopeNoteOwn": "Tento seznam obsahuje pohovory, které vedl {{slot}}. Pohovory kolegů nejsou zahrnuty.",
     "orgScopeYou": "Vy",
     "refresh": "Obnovit",
     "reopen": "Znovu otevřít",

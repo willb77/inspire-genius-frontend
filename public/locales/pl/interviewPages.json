@@ -287,6 +287,8 @@
     "loadFailedTitle": "Nie udało się wczytać Twoich poprzednich rozmów.",
     "loading": "Wczytywanie Twoich poprzednich rozmów…",
     "orgScopeNote": "Ta lista zawiera rozmowy przeprowadzone przez: {{slot}}. Twoje logowanie nie zawierało organizacji, więc rozmowy współpracowników nie są uwzględnione, nawet jeśli administrujesz ich organizacją.",
+    "orgScopeNoteRole": "Ta lista zawiera rozmowy przeprowadzone przez: {{slot}}. Twoja rola pokazuje tylko Twoje własne rozmowy, więc rozmowy współpracowników nie są uwzględnione.",
+    "orgScopeNoteOwn": "Ta lista zawiera rozmowy przeprowadzone przez: {{slot}}. Rozmowy współpracowników nie są uwzględnione.",
     "orgScopeYou": "Ciebie",
     "refresh": "Odśwież",
     "reopen": "Otwórz ponownie",

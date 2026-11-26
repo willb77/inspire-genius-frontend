@@ -367,6 +367,8 @@
     "loadFailedTitle": "No se pudieron cargar tus entrevistas anteriores.",
     "loading": "Cargando tus entrevistas anteriores…",
     "orgScopeNote": "Esta lista contiene las entrevistas realizadas por {{slot}}. Tu inicio de sesión no incluía una organización, por lo que no se incluyen las entrevistas de tus compañeros aunque administres su organización.",
+    "orgScopeNoteRole": "Esta lista contiene las entrevistas realizadas por {{slot}}. Tu rol solo muestra tus propias entrevistas, por lo que no se incluyen las entrevistas de tus compañeros.",
+    "orgScopeNoteOwn": "Esta lista contiene las entrevistas realizadas por {{slot}}. No se incluyen las entrevistas de tus compañeros.",
     "orgScopeYou": "ti",
     "refresh": "Actualizar",
     "reopen": "Reabrir",

@@ -11,7 +11,7 @@ import userEvent from "@testing-library/user-event"
 
 import PastInterviewsPanel from "../PastInterviewsPanel"
 import { candidateLabel, formatWhen } from "../pastInterviewsFormat"
-import type { LiveSessionSummary } from "@/services/interview/live.service"
+import type { LiveSessionSummary, ListSessionsResult } from "@/services/interview/live.service"
 
 const useLiveSessions = jest.fn()
 const abandonMutate = jest.fn()
@@ -117,14 +117,38 @@ describe("PastInterviewsPanel", () => {
     expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument()
   })
 
-  it("says the list is only your own when the token carried no organisation", () => {
-    useLiveSessions.mockReturnValue(result({ org_scope_applied: false }))
+  it("says the sign-in carried no organisation only when the engine says that is the reason", () => {
+    useLiveSessions.mockReturnValue(result({ org_scope_applied: false, org_scope_reason: "no_org_on_sign_in" }))
     renderPanel()
     expect(screen.getByText(/did not carry an organisation/i)).toBeInTheDocument()
+    expect(screen.queryByText(/your role shows only/i)).not.toBeInTheDocument()
+  })
+
+  // ORG-NOTE. A manager or practitioner lists their own interviews by role
+  // (D-04). Telling them their sign-in lacked an organisation was false.
+  it("gives the role as the reason for an own-sessions-by-role list", () => {
+    useLiveSessions.mockReturnValue(result({ org_scope_applied: false, org_scope_reason: "role_own_sessions" }))
+    renderPanel()
+    expect(screen.getByText(/your role shows only your own interviews/i)).toBeInTheDocument()
+    expect(screen.queryByText(/did not carry an organisation/i)).not.toBeInTheDocument()
+  })
+
+  // An engine that predates the field: say only what is true for every caller.
+  it.each([undefined, "something_new"])("falls back to a neutral note when the reason is %s", (reason) => {
+    useLiveSessions.mockReturnValue(result({
+      org_scope_applied: false,
+      org_scope_reason: reason as ListSessionsResult["org_scope_reason"],
+    }))
+    renderPanel()
+    expect(screen.getByText(/colleagues' interviews are not included/i)).toBeInTheDocument()
+    expect(screen.queryByText(/did not carry an organisation/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/your role shows only/i)).not.toBeInTheDocument()
   })
 
   it("does not add that caveat when an org scope was applied", () => {
+    useLiveSessions.mockReturnValue(result({ org_scope_applied: true, org_scope_reason: "applied" }))
     renderPanel()
+    expect(screen.queryByText(/colleagues' interviews are not included/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/did not carry an organisation/i)).not.toBeInTheDocument()
   })
 

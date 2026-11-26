@@ -423,6 +423,8 @@
     "loadFailedTitle": "Non è stato possibile caricare i tuoi colloqui passati.",
     "loading": "Caricamento dei tuoi colloqui passati…",
     "orgScopeNote": "Questo elenco contiene i colloqui svolti da {{slot}}. Il tuo accesso non includeva un'organizzazione, quindi i colloqui dei colleghi non sono inclusi, anche se amministri la loro organizzazione.",
+    "orgScopeNoteRole": "Questo elenco contiene i colloqui svolti da {{slot}}. Il tuo ruolo mostra solo i tuoi colloqui, quindi i colloqui dei colleghi non sono inclusi.",
+    "orgScopeNoteOwn": "Questo elenco contiene i colloqui svolti da {{slot}}. I colloqui dei colleghi non sono inclusi.",
     "orgScopeYou": "te",
     "refresh": "Aggiorna",
     "reopen": "Riapri",
