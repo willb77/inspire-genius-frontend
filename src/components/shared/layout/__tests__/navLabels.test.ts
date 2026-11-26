@@ -9,7 +9,6 @@ import path from "node:path"
 import { navKeySegment, navLabelKey, translateNavLabel } from "../navLabels"
 import * as nav from "@/constants/navigation"
 import * as houseSuperAdmin from "@/constants/house/superAdminNav"
-import * as adminCategories from "@/constants/house/administrationCategories"
 import * as sidebarSections from "@/constants/sidebar-sections"
 import * as verticalSubnav from "@/constants/vertical-subnav"
 import { CAREERS_AND_JOBS_LABEL } from "@/constants/vertical-subnav"
@@ -39,7 +38,7 @@ function harvest(): { items: Set<string>; sections: Set<string> } {
     else if (typeof o.label === "string" && ("to" in o || "icon" in o)) items.add(o.label)
     for (const k of Object.keys(o)) walk(o[k])
   }
-  for (const m of [nav, houseSuperAdmin, adminCategories, sidebarSections, verticalSubnav]) {
+  for (const m of [nav, houseSuperAdmin, sidebarSections, verticalSubnav]) {
     for (const v of Object.values(m)) {
       if (typeof v === "function") {
         for (const arg of [true, false]) {
@@ -142,7 +141,8 @@ describe("the English nav entries against the live registries", () => {
 
   it("harvests a real menu (a control: an empty harvest would pass everything below)", () => {
     expect(live.items.size).toBeGreaterThan(80)
-    expect(live.sections.has("Administration")).toBe(true)
+    // RM-9b: the classic "Administration" section is gone; the house menu's groups are the control.
+    expect(live.sections.has("Advanced")).toBe(true)
     // The hook-built and registry labels are in it too (RM-8).
     expect(hookItemLabels().has("Bio Capture Studio")).toBe(true)
     expect(hookItemLabels().has("PRISM Exam")).toBe(true)

@@ -130,11 +130,11 @@ import { hasAccess } from "@/types/roles"
 import { navLabelKey } from "@/components/shared/layout/navLabels"
 import { setHouseStyle } from "@/lib/house/areaSwitch"
 import { useGatedNavItems } from "../useGatedNavItems"
+import { HOUSE_SUPER_ADMIN_SECTIONS } from "@/constants/house/superAdminNav"
 import { FORCE_DISABLED_VERTICALS, useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
 import {
   WORKSPACE_ITEM_UNAVAILABLE_REASON,
   getUserNavItems,
-  SUPER_ADMIN_NAV_SECTIONS,
   TALENT_STUDIO_INTERVIEW_ROWS,
   TALENT_STUDIO_INTERVIEW_TOOLS,
   TALENT_STUDIO_JOB_DNA_ROWS,
@@ -183,7 +183,8 @@ const restOfSidebar = (role: UserRole, mode: Mode) =>
     const main = useGatedNavItems(role)
     const workspace = useWorkspaceNavItems(getUserNavItems(true))
     return role === "super-admin"
-      ? [...workspace, ...SUPER_ADMIN_NAV_SECTIONS.flatMap((s) => s.items)]
+      ? // RM-9b: the super-admin's admin rows are the house menu's (the classic sections are gone).
+        [...workspace, ...HOUSE_SUPER_ADMIN_SECTIONS.flatMap((s) => s.items)]
       : main
   })
 
@@ -405,7 +406,11 @@ describe("JF-13 — role × route reachability, before (off) and after (on)", ()
     // and Help left the role lists this walker reads as the rest of the sidebar
     // (they are in My Workspace and the footer), and Goals Studio left manager's
     // and practitioner's Tools. Measured on the RM-4 branch: 1218 pairs.
-    expect(pairs).toBeGreaterThanOrEqual(1150)
+    // Lowered again with RM-9b (2026-11-26): the super-admin's rest of the
+    // sidebar is now the house menu's groups (the classic Administration list
+    // and the five Role Views rows are gone). Measured on the RM-9b branch:
+    // 1086 pairs.
+    expect(pairs).toBeGreaterThanOrEqual(1050)
     expect(toolPairs).toBeGreaterThanOrEqual(250)
     // RM-7 (2026-11-26): the tab arm of the walker is not vacuous. Measured on
     // the RM-7 branch: 84. Lowering it needs the same kind of

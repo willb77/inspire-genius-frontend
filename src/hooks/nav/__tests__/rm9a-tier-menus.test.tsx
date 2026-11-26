@@ -153,6 +153,11 @@ afterAll(() => {
 beforeEach(() => {
   localStorage.clear()
   mockSidebarScaffold.mockClear()
+  // The tiers run with the Agent Engine on (the default: no
+  // `agent_engine_enabled` key). jest.setup.ts mocks the toggle OFF for every
+  // suite, which shows the "Chat with Coaches" fallback everywhere and would hide
+  // a difference in the chat row (RM-9b, D-2), so this suite turns it on.
+  ;(jest.requireMock("@/lib/agentApi").useAgentEngine as jest.Mock).mockReturnValue(true)
 })
 
 it("covers all six roles (a walker over nothing proves nothing)", () => {

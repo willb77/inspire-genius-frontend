@@ -22,18 +22,22 @@ jest.mock("@/constants/navigation", () => ({
     { to: "/home", icon: DummyIcon, label: "Home" },
     { to: "/settings", icon: DummyIcon, label: "Settings" },
   ],
-  SUPER_ADMIN_NAV_SECTIONS: [
-    {
-      label: "Administration",
-      items: [
-        { to: "/super-admin/dashboard", icon: DummyIcon, label: "Dashboard" },
-        { to: "/super-admin/dev-traffic-report", icon: DummyIcon, label: "Dev Traffic Report" },
-      ],
-    },
-    { label: "Role Views", items: [{ to: "/home", icon: DummyIcon, label: "User Home" }] },
-  ],
-  OWNER_ONLY_NAV_ROUTES: new Set(["/super-admin/dev-traffic-report"]),
-  isPlatformOwner: (email?: string | null) => email === "willb77@3pp.com",
+  // RM-9b (D-2): the user's list comes through roleNavItems (getUserNavItems).
+  roleNavItems: (role: string) =>
+    role === "manager"
+      ? [{ to: "/manager/dashboard", icon: DummyIcon, label: "Manager Dashboard" }]
+      : [
+          { to: "/home", icon: DummyIcon, label: "Home" },
+          { to: "/settings", icon: DummyIcon, label: "Settings" },
+        ],
+}))
+
+// RM-9b (D-1): a super-admin's vertical page is the super-admin menu from
+// useSuperAdminSections, with the vertical passed in `beforeTools`. Its own
+// gates (owner-only rows, house groups) are that hook's, tested there.
+const mockSuperAdminSections = jest.fn()
+jest.mock("@/hooks/nav/useSuperAdminSections", () => ({
+  useSuperAdminSections: (options: unknown) => mockSuperAdminSections(options),
 }))
 
 const mockSubNav = jest.fn()
@@ -52,6 +56,7 @@ jest.mock("@/components/layout/useVerticalLauncher", () => ({
 // useToolsSection.test.ts), so tests that exercise the plain-user case set it to
 // null explicitly rather than relying on this mock to enforce the gate.
 jest.mock("@/hooks/nav/useToolsSection", () => ({
+  TOOLS_SECTION_LABEL: "Tools",
   useToolsSection: () => mockLauncher(),
 }))
 
@@ -69,10 +74,6 @@ jest.mock("@/hooks/nav/useGatedNavItems", () => ({
   }),
 }))
 
-let mockEmail: string | null = "someone@example.com"
-jest.mock("@/context/useAuth", () => ({
-  useAuth: () => ({ user: { email: mockEmail } }),
-}))
 jest.mock("@/lib/agentApi", () => ({ useAgentEngine: () => true }))
 // JF-11: whether Discovery folds Who I am into the profile entry (a cache read).
 const mockMerged = jest.fn(() => false)
@@ -96,7 +97,14 @@ describe("useVerticalPageSections", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockFooter.mockReturnValue(null)
-    mockEmail = "someone@example.com"
+    mockSuperAdminSections.mockImplementation((options: { beforeTools?: unknown[] }) => [
+      { label: "People", items: [] },
+      { label: "Advanced", items: [] },
+      ...(options.beforeTools ?? []),
+      LAUNCHER,
+      { label: "My Workspace", items: [] },
+      { label: "", items: [], pinned: true },
+    ])
     mockWorkspaceNav.mockImplementation((items: unknown) => items)
     mockLauncher.mockReturnValue(LAUNCHER)
     mockSubNav.mockReturnValue({
@@ -135,29 +143,30 @@ describe("useVerticalPageSections", () => {
     expect(byLabel["Lumen"].open).toBe(true)
   })
 
-  it("puts Role Views and Administration around it for a super-admin, Administration last", () => {
+  it("RM-9b (D-1): a super-admin gets the house super-admin menu with the vertical directly before Tools", () => {
     const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "super-admin"))
-    expect(result.current.map((s) => s.label)).toEqual([
-      "My Workspace",
-      "Role Views",
-      "Lumen",
-      "Tools",
-      "Administration",
-    ])
-    expect(result.current.at(-1)?.defaultCollapsed).toBe(true)
+    expect(result.current.map((s) => s.label)).toEqual(["People", "Advanced", "Lumen", "Tools", "My Workspace", ""])
+    expect(mockSuperAdminSections).toHaveBeenLastCalledWith(
+      expect.objectContaining({ workspaceExpanded: true, beforeTools: [expect.objectContaining({ label: "Lumen" })] }),
+    )
+    // No classic sections on any vertical page.
+    const labels = result.current.map((s) => s.label)
+    expect(labels).not.toContain("Role Views")
+    expect(labels).not.toContain("Administration")
   })
 
-  it("still hides the owner-only route from a non-owner super-admin", () => {
+  it("RM-9b (D-1): the super-admin's Tools still marks the vertical you are in as active", () => {
     const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "super-admin"))
-    const admin = result.current.find((s) => s.label === "Administration")
-    expect(admin?.items.some((i) => i.label === "Dev Traffic Report")).toBe(false)
+    const tools = result.current.find((s) => s.label === "Tools")
+    expect(tools?.items.find((i) => i.label === "Lumen")?.activePrefix).toBe("/vertical/lumen")
+    expect(tools?.items.find((i) => i.label === "GRANT")?.activePrefix).toBeUndefined()
   })
 
-  it("shows it to the platform owner", () => {
-    mockEmail = "willb77@3pp.com"
-    const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "super-admin"))
-    const admin = result.current.find((s) => s.label === "Administration")
-    expect(admin?.items.some((i) => i.label === "Dev Traffic Report")).toBe(true)
+  it("RM-9b: no other role's vertical page is built from the super-admin menu", () => {
+    for (const role of ["user", "manager"] as const) {
+      const { result } = renderHook(() => useVerticalPageSections("lumen" as never, role))
+      expect(result.current.map((s) => s.label)).not.toContain("People")
+    }
   })
 
   it("marks the vertical you are in as active for every page beneath it", () => {

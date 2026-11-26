@@ -1,6 +1,7 @@
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold"
 import LoadingSpinner from "@/components/LoadingSpinner"
-import { NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
+import { roleNavItems } from "@/constants/navigation"
+import { useAgentEngine } from "@/lib/agentApi"
 import { useAuth } from "@/context/useAuth"
 import { frameSections, useRoleMenuFrame } from "@/hooks/nav/useGatedNavItems"
 import { isUserRole, type UserRole } from "@/types/roles"
@@ -40,13 +41,15 @@ export default function LumenLayout() {
   // early returns so the hook order never depends on access. User and
   // super-admin get null here and keep the flat role list below.
   const frame = useRoleMenuFrame(role)
+  // RM-9b (D-2): the user's list is the toggle-aware one Home shows.
+  const agentEngineOn = useAgentEngine()
 
   // Waiting matters: rendering "not enabled" before entitlement resolves would
   // tell entitled users they have no access, on every single load.
   if (isLoading) return <LoadingSpinner />
 
   if (!hasAccess) {
-    const navItems = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
+    const navItems = roleNavItems(role, agentEngineOn)
     return (
       <SidebarScaffold navItems={navItems} navSections={frameSections(frame) ?? undefined}>
         <LumenRequestAccess />

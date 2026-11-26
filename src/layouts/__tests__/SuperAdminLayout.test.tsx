@@ -83,54 +83,54 @@ jest.mock("@/components/grant/GrantPreviewToggle", () => ({
   default: () => <div data-testid="grant-preview-toggle" />,
 }));
 
-// 🔹 Mock navigation with sections the layout uses
+// 🔹 Mock navigation. RM-9b (2026-11-26): the super-admin menu is the house
+// menu only — six groups + Advanced, Tools, My Workspace, the pinned footer —
+// so the classic SUPER_ADMIN_NAV_SECTIONS (Administration, Role Views) is gone
+// from the code and from this mock.
 jest.mock("@/constants/navigation", () => {
   const DummyIcon = () => null;
   return {
-    SUPER_ADMIN_NAV_SECTIONS: [
-      {
-        label: "Administration",
-        items: [
-          { to: "/super-admin/dashboard", icon: DummyIcon, label: "Dashboard" },
-          { to: "/super-admin/users", icon: DummyIcon, label: "User Management" },
-          { to: "/super-admin/coaches", icon: DummyIcon, label: "Coach Management" },
-          { to: "/super-admin/rlhf-training", icon: DummyIcon, label: "RLHF Training" },
-          { to: "/super-admin/prompt-builder", icon: DummyIcon, label: "Prompt Builder" },
-          { to: "/super-admin/audit-log", icon: DummyIcon, label: "Audit Log" },
-          { to: "/super-admin/analytics", icon: DummyIcon, label: "Analytics" },
-          { to: "/super-admin/settings", icon: DummyIcon, label: "Settings" },
-          { to: "/super-admin/project-log", icon: DummyIcon, label: "Project Log" },
-          // Owner-only item — filtered out for non-owner super-admins.
-          { to: "/super-admin/dev-traffic-report", icon: DummyIcon, label: "Dev Traffic Report" },
-        ],
-        defaultCollapsed: true,
-      },
-      {
-        label: "Role Views",
-        items: [
-          { to: "/home", icon: DummyIcon, label: "User Home" },
-          { to: "/manager/dashboard", icon: DummyIcon, label: "Manager" },
-          { to: "/company-admin/dashboard", icon: DummyIcon, label: "Company Admin" },
-          { to: "/practitioner/dashboard", icon: DummyIcon, label: "Practitioner" },
-          { to: "/distributor/dashboard", icon: DummyIcon, label: "Distributor" },
-        ],
-        defaultCollapsed: true,
-      },
+    SUPER_ADMIN_HOUSE_FOOTER_ITEMS: [
+      { to: "/super-admin/settings", icon: DummyIcon, label: "Settings" },
+      { to: "/help", icon: DummyIcon, label: "Help & Support" },
     ],
     getUserNavItems: () => [
       { to: "/home", icon: DummyIcon, label: "Home" },
       { to: "/meridian/chat", icon: DummyIcon, label: "Chat with Meridian" },
-      { to: "/prism-assessment", icon: DummyIcon, label: "Request Assessment" },
       { to: "/documents", icon: DummyIcon, label: "My Documents" },
-      { to: "/feedback", icon: DummyIcon, label: "Feedback" },
-      { to: "/analytics", icon: DummyIcon, label: "Analytics" },
-      { to: "/onboarding/wizard", icon: DummyIcon, label: "Onboarding Wizard" },
       { to: "/settings", icon: DummyIcon, label: "Settings" },
       { to: "/help", icon: DummyIcon, label: "Help & Support" },
     ],
     OWNER_ONLY_NAV_ROUTES: new Set<string>(["/super-admin/dev-traffic-report"]),
     isPlatformOwner: (email: string | null | undefined) =>
-      (email ?? "").trim().toLowerCase() === "willb77@3pp.com",
+      (email ?? "").trim().toLowerCase() === "owner@example.test",
+  };
+});
+jest.mock("@/constants/house/superAdminNav", () => {
+  const DummyIcon = () => null;
+  return {
+    HOUSE_SUPER_ADMIN_SECTIONS: [
+      {
+        label: "",
+        items: [{ to: "/super-admin/dashboard", icon: DummyIcon, label: "Admin home" }],
+      },
+      {
+        label: "People",
+        collapsible: true,
+        items: [{ to: "/super-admin/users", icon: DummyIcon, label: "People" }],
+      },
+      {
+        label: "Advanced",
+        defaultCollapsed: true,
+        items: [
+          { to: "/super-admin/explainability", icon: DummyIcon, label: "Why the AI answered" },
+          // Filtered: Settings is in the pinned footer (RM-8).
+          { to: "/super-admin/settings", icon: DummyIcon, label: "Settings" },
+          // Owner-only — filtered out for non-owner super-admins.
+          { to: "/super-admin/dev-traffic-report", icon: DummyIcon, label: "Dev Traffic Report" },
+        ],
+      },
+    ],
   };
 });
 
@@ -138,10 +138,6 @@ jest.mock("@/constants/navigation", () => {
 jest.mock("@/lib/agentApi", () => ({
   useAgentEngine: () => true,
 }));
-// JF-13 admin: SuperAdminLayout reads `job_fit_v2` (useSavedJobsEnabled). This
-// suite has no QueryClient and pins today's menu, so the switch is off here;
-// the on state is covered in hooks/nav/__tests__/jf13-admin-categories.test.tsx.
-jest.mock("@/hooks/job-fit/useSavedJobs", () => ({ useSavedJobsEnabled: () => false }));
 
 // 🔹 Mock auth — default to a NON-owner super-admin so the baseline
 // (dev-traffic-report filtered out) assertions hold; owner tests flip mockEmail.
@@ -206,54 +202,36 @@ describe("SuperAdminLayout", () => {
     expect(screen.getByTestId("child")).toBeInTheDocument();
   });
 
-  test("passes navSections to SidebarScaffold", () => {
+  test("passes the house super-admin menu to SidebarScaffold (RM-9b: the only one)", () => {
     render(
       <SuperAdminLayout>
         <div />
       </SuperAdminLayout>,
     );
-
-    expect(mockSidebarScaffold).toHaveBeenCalled();
-
     const props = mockSidebarScaffold.mock.calls[0][0];
-
-    // Order since 2026-07-28: My Workspace → Role Views → [Verticals] →
-    // Administration. Verticals is absent here only because `mockLauncher`
-    // defaults to null in this test's beforeEach.
-    expect(props.navSections).toHaveLength(3);
-    expect(props.navSections[0].label).toBe("My Workspace");
-    // Always visible since 2026-10-12: a plain group, neither closed nor collapsible.
-    expect(props.navSections[0].defaultCollapsed).toBeUndefined();
-    expect(props.navSections[0].collapsible).toBeUndefined();
-    expect(props.navSections[1].label).toBe("Role Views");
-    expect(props.navSections[1].items).toHaveLength(5);
-    expect(props.navSections[1].defaultCollapsed).toBe(true);
-    expect(props.navSections[2].label).toBe("Administration");
-    // 10 mock items minus the owner-only Dev Traffic Report (non-owner default) = 9.
-    expect(props.navSections[2].items).toHaveLength(9);
-    // Closed by default since 2026-10-12; SidebarScaffold opens it on an admin
-    // page because that page is in it.
-    expect(props.navSections[2].defaultCollapsed).toBe(true);
+    // Groups, then (no Tools here: mockLauncher is null), My Workspace, footer.
+    expect(props.navSections.map((s: MockNavSection) => s.label)).toEqual(["", "People", "Advanced", "My Workspace", ""]);
+    // Admin pages keep My Workspace collapsed (SidebarScaffold opens it on a page it holds).
+    expect(props.navSections[3].defaultCollapsed).toBe(true);
+    // No classic sections.
+    expect(screen.queryByTestId("section-Role Views")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("section-Administration")).not.toBeInTheDocument();
   });
 
-  test("renders administration and role view labels", () => {
+  test("renders the group rows, My Workspace and the footer", () => {
     render(
       <SuperAdminLayout>
         <div />
       </SuperAdminLayout>,
     );
-
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("User Management")).toBeInTheDocument();
-    expect(screen.getByText("Prompt Builder")).toBeInTheDocument();
-    expect(screen.getByText("User Home")).toBeInTheDocument();
-    expect(screen.getByText("Manager")).toBeInTheDocument();
-    expect(screen.getByText("Company Admin")).toBeInTheDocument();
-    expect(screen.getByText("Practitioner")).toBeInTheDocument();
-    expect(screen.getByText("Distributor")).toBeInTheDocument();
-    // "My Workspace" surfaces the user nav so super-admin can hop back
+    expect(screen.getByText("Admin home")).toBeInTheDocument();
+    expect(screen.getByText("Why the AI answered")).toBeInTheDocument();
     expect(screen.getByText("My Workspace")).toBeInTheDocument();
     expect(screen.getByText("Chat with Meridian")).toBeInTheDocument();
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    const footer = props.navSections.at(-1);
+    expect(footer.pinned).toBe(true);
+    expect(footer.items.map((i: MockNavItem) => i.label)).toEqual(["Settings", "Help & Support"]);
   });
 
   test("Financial Aid is an entry INSIDE the Tools catalogue, not its own section", () => {
@@ -285,7 +263,7 @@ describe("SuperAdminLayout", () => {
     expect(screen.queryByTestId("grant-preview-toggle")).not.toBeInTheDocument();
   });
 
-  test("Tools sits after Role Views and before Administration", () => {
+  test("Tools sits after the groups and before My Workspace", () => {
     mockLauncher.mockReturnValue({
       label: "Tools",
       items: [{ to: "/vertical/honor/dashboard", icon: () => null, label: "Honor Foundation" }],
@@ -297,13 +275,8 @@ describe("SuperAdminLayout", () => {
     );
 
     const props = mockSidebarScaffold.mock.calls[0][0];
-    expect(props.navSections.map((s: MockNavSection) => s.label)).toEqual([
-      "My Workspace",
-      "Role Views",
-      "Tools",
-      "Administration",
-    ]);
-    expect(props.navSections[2].items[0].label).toBe("Honor Foundation");
+    expect(props.navSections.map((s: MockNavSection) => s.label)).toEqual(["", "People", "Advanced", "Tools", "My Workspace", ""]);
+    expect(props.navSections[3].items[0].label).toBe("Honor Foundation");
   });
 
   test("unentitled verticals are listed greyed, not omitted", () => {
@@ -380,40 +353,37 @@ describe("SuperAdminLayout", () => {
         <div />
       </SuperAdminLayout>,
     );
-
     const props = mockSidebarScaffold.mock.calls[0][0];
-    const admin = props.navSections.find((s: MockNavSection) => s.label === "Administration");
-    expect(admin.items).toHaveLength(9);
-    expect(admin.items.some((i: MockNavItem) => i.label === "Dev Traffic Report")).toBe(false);
+    const advanced = props.navSections.find((s: MockNavSection) => s.label === "Advanced");
+    expect(advanced.items.map((i: MockNavItem) => i.label)).toEqual(["Why the AI answered"]);
     expect(screen.queryByText("Dev Traffic Report")).not.toBeInTheDocument();
   });
 
-  test("keeps the Dev Traffic Report item on Administration for the platform owner", () => {
-    mockEmail = "willb77@3pp.com";
+  test("keeps the Dev Traffic Report item for the platform owner", () => {
+    mockEmail = "owner@example.test";
     render(
       <SuperAdminLayout>
         <div />
       </SuperAdminLayout>,
     );
-
     const props = mockSidebarScaffold.mock.calls[0][0];
-    const admin = props.navSections.find((s: MockNavSection) => s.label === "Administration");
-    expect(admin.items).toHaveLength(10);
-    expect(admin.items.some((i: MockNavItem) => i.label === "Dev Traffic Report")).toBe(true);
+    const advanced = props.navSections.find((s: MockNavSection) => s.label === "Advanced");
+    expect(advanced.items.map((i: MockNavItem) => i.label)).toEqual(["Why the AI answered", "Dev Traffic Report"]);
     expect(screen.getByText("Dev Traffic Report")).toBeInTheDocument();
   });
 
-  test("owner check is case-insensitive", () => {
-    mockEmail = "WillB77@3PP.com";
+  test("Settings is in the footer only, never in a group", () => {
     render(
       <SuperAdminLayout>
         <div />
       </SuperAdminLayout>,
     );
-
     const props = mockSidebarScaffold.mock.calls[0][0];
-    const admin = props.navSections.find((s: MockNavSection) => s.label === "Administration");
-    expect(admin.items.some((i: MockNavItem) => i.label === "Dev Traffic Report")).toBe(true);
+    const inGroups = props.navSections
+      .slice(0, -1)
+      .flatMap((s: MockNavSection) => s.items)
+      .filter((i: MockNavItem) => i.to === "/super-admin/settings");
+    expect(inGroups).toEqual([]);
   });
 
   test("forwards className to SidebarScaffold", () => {

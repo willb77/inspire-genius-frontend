@@ -312,7 +312,7 @@ exports[`1. role sidebar through UnifiedLayout, tier build user 1`] = `
   "collapseOnMount": false,
   "items": [
     "Home -> /home",
-    "Chat with Coaches -> /dashboard",
+    "Chat with Meridian -> /meridian/chat",
     "Goals Studio -> /my/goals",
     "Career & Education Discovery -> /vertical/career-discovery/journey",
     "Career Fit -> /vertical/job-fit/matches",
@@ -540,30 +540,74 @@ exports[`2. a /vertical/* page sidebar, tier build super-admin 1`] = `
 [
   {
     "items": [
-      "Home -> /home",
-      "Chat with Coaches -> /dashboard",
-      "Goals Studio -> /my/goals",
-      "Career & Education Discovery -> /vertical/career-discovery/journey",
-      "Career Fit -> /vertical/job-fit/matches",
-      "Role Play -> /interview-practice",
-      "My development -> /my/development",
-      "Résumé Writer -> /my/resume",
-      "Document Library -> /documents",
-      "Settings -> /settings",
-      "Help & Support -> /help",
+      "Admin home -> /super-admin/dashboard",
     ],
-    "section": "My Workspace",
+    "section": "",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "People -> /super-admin/users",
+      "Organizations -> /super-admin/organizations",
+      "Add people -> /super-admin/bulk-import",
+      "Practitioners -> /super-admin/practitioner-registry",
+      "Client sign-up -> /super-admin/client-signup",
+      {
+        "Intake -> /super-admin/intake": [
+          "HR -> /super-admin/intake?tab=reports&role=hr",
+          "Recruiters -> /super-admin/intake?tab=reports&role=recruiter",
+          "Companies -> /super-admin/intake?tab=reports&segment_context=company",
+          "Coaches -> /super-admin/intake?tab=reports&role=career_coach&role=education_coach",
+        ],
+      },
+    ],
+    "section": "People",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "Help requests -> /super-admin/support",
+      "Surveys -> /surveys",
+    ],
+    "section": "Support",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "PRISM tools -> /super-admin/prism-management",
+    ],
+    "section": "PRISM",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "Coach setup -> /super-admin/mentor-management",
+      "Coach training -> /super-admin/agent-trainer",
+      "Knowledge -> /super-admin/knowledge-base",
+      "Research -> /super-admin/research",
+      "Coach feedback review -> /super-admin/rlhf-training",
+    ],
+    "section": "AI coaches",
+  },
+  {
+    "collapsible": true,
+    "items": [
+      "Usage reports -> /super-admin/analytics",
+      "AI usage & health -> /super-admin/observability",
+      "Data deletion requests -> /super-admin/privacy-compliance",
+      "Cohort read-out -> /super-admin/cohort-readout",
+    ],
+    "section": "Reports",
   },
   {
     "collapsed": true,
     "items": [
-      "User Home -> /home",
-      "Manager -> /manager/dashboard",
-      "Company Admin -> /company-admin/dashboard",
-      "Practitioner -> /practitioner/home",
-      "Distributor -> /distributor/dashboard",
+      "Why the AI answered -> /super-admin/explainability",
+      "Coach trace console -> /super-admin/agent-trace-console",
+      "Asset library -> /super-admin/asset-library",
+      "Curriculum -> /super-admin/curriculum",
     ],
-    "section": "Role Views",
+    "section": "Advanced",
   },
   {
     "collapsible": true,
@@ -593,44 +637,26 @@ exports[`2. a /vertical/* page sidebar, tier build super-admin 1`] = `
     "section": "Tools",
   },
   {
-    "collapsed": true,
     "items": [
-      "Dashboard -> /super-admin/dashboard",
-      "User Management -> /super-admin/users",
-      "Organizations -> /super-admin/organizations",
-      "Agent Management -> /super-admin/mentor-management",
-      "RLHF Training -> /super-admin/rlhf-training",
-      "Analytics & Logs -> /super-admin/analytics",
-      "Agent Trainer -> /super-admin/agent-trainer",
-      "Bulk User Import -> /super-admin/bulk-import",
-      "Observability -> /super-admin/observability",
-      "Explainability -> /super-admin/explainability",
-      "Research -> /super-admin/research",
-      "Knowledge Base -> /super-admin/knowledge-base",
-      "PRISM Management -> /super-admin/prism-management",
-      "PRISM CSV Converter -> /super-admin/prism-csv-converter",
-      "PRISM Accuracy Scorer -> /super-admin/prism-accuracy-scorer",
-      "PRISM Practitioner Exam -> /super-admin/prism-exam",
-      "Practitioner Registry -> /super-admin/practitioner-registry",
-      {
-        "Intake -> /super-admin/intake": [
-          "HR -> /super-admin/intake?tab=reports&role=hr",
-          "Recruiters -> /super-admin/intake?tab=reports&role=recruiter",
-          "Companies -> /super-admin/intake?tab=reports&segment_context=company",
-          "Coaches -> /super-admin/intake?tab=reports&role=career_coach&role=education_coach",
-        ],
-      },
-      "Privacy & RTBF -> /super-admin/privacy-compliance",
-      "Cohort Read-out -> /super-admin/cohort-readout",
-      "Client Sign-Up -> /super-admin/client-signup",
-      "Help and Support Management -> /super-admin/support",
-      "Agent Trace Console -> /super-admin/agent-trace-console",
-      "Surveys -> /surveys",
-      "Asset Library -> /super-admin/asset-library",
-      "Curriculum -> /super-admin/curriculum",
-      "Settings -> /super-admin/settings",
+      "Home -> /home",
+      "Chat with Meridian -> /meridian/chat",
+      "Goals Studio -> /my/goals",
+      "Career & Education Discovery -> /vertical/career-discovery/journey",
+      "Career Fit -> /vertical/job-fit/matches",
+      "Role Play -> /interview-practice",
+      "My development -> /my/development",
+      "Résumé Writer -> /my/resume",
+      "Document Library -> /documents",
     ],
-    "section": "Administration",
+    "section": "My Workspace",
+  },
+  {
+    "items": [
+      "Settings -> /super-admin/settings",
+      "Help & Support -> /help",
+    ],
+    "pinned": true,
+    "section": "",
   },
 ]
 `;
@@ -640,7 +666,7 @@ exports[`2. a /vertical/* page sidebar, tier build user 1`] = `
   {
     "items": [
       "Home -> /home",
-      "Chat with Coaches -> /dashboard",
+      "Chat with Meridian -> /meridian/chat",
       "Goals Studio -> /my/goals",
       "Career & Education Discovery -> /vertical/career-discovery/journey",
       "Career Fit -> /vertical/job-fit/matches",
@@ -918,7 +944,7 @@ exports[`3. Lumen's no-access page, tier build user 1`] = `
   "collapseOnMount": false,
   "items": [
     "Home -> /home",
-    "Chat with Coaches -> /dashboard",
+    "Chat with Meridian -> /meridian/chat",
     "Goals Studio -> /my/goals",
     "Role Play -> /interview-practice",
     "My development -> /my/development",
@@ -1228,7 +1254,7 @@ exports[`4. the three pages that chose their own chrome, tier build Goals Studio
     {
       "items": [
         "Home -> /home",
-        "Chat with Coaches -> /dashboard",
+        "Chat with Meridian -> /meridian/chat",
         "Goals Studio -> /my/goals",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
@@ -1256,7 +1282,7 @@ exports[`4. the three pages that chose their own chrome, tier build Goals Studio
   "collapseOnMount": false,
   "items": [
     "Home -> /home",
-    "Chat with Coaches -> /dashboard",
+    "Chat with Meridian -> /meridian/chat",
     "Goals Studio -> /my/goals",
     "Career & Education Discovery -> /vertical/career-discovery/journey",
     "Career Fit -> /vertical/job-fit/matches",
@@ -1568,7 +1594,7 @@ exports[`4. the three pages that chose their own chrome, tier build My developme
     {
       "items": [
         "Home -> /home",
-        "Chat with Coaches -> /dashboard",
+        "Chat with Meridian -> /meridian/chat",
         "Goals Studio -> /my/goals",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
@@ -1596,7 +1622,7 @@ exports[`4. the three pages that chose their own chrome, tier build My developme
   "collapseOnMount": false,
   "items": [
     "Home -> /home",
-    "Chat with Coaches -> /dashboard",
+    "Chat with Meridian -> /meridian/chat",
     "Goals Studio -> /my/goals",
     "Career & Education Discovery -> /vertical/career-discovery/journey",
     "Career Fit -> /vertical/job-fit/matches",
@@ -1908,7 +1934,7 @@ exports[`4. the three pages that chose their own chrome, tier build Role Practic
     {
       "items": [
         "Home -> /home",
-        "Chat with Coaches -> /dashboard",
+        "Chat with Meridian -> /meridian/chat",
         "Goals Studio -> /my/goals",
         "Career & Education Discovery -> /vertical/career-discovery/journey",
         "Career Fit -> /vertical/job-fit/matches",
@@ -1936,7 +1962,7 @@ exports[`4. the three pages that chose their own chrome, tier build Role Practic
   "collapseOnMount": false,
   "items": [
     "Home -> /home",
-    "Chat with Coaches -> /dashboard",
+    "Chat with Meridian -> /meridian/chat",
     "Goals Studio -> /my/goals",
     "Career & Education Discovery -> /vertical/career-discovery/journey",
     "Career Fit -> /vertical/job-fit/matches",

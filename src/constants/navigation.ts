@@ -1,4 +1,4 @@
-import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
+import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole, RoleConfig } from "@/types/roles"
 import { ROUTES } from "@/constants/routes"
 import { INTAKE_PRESETS, intakePresetHref } from "@/constants/intake"
@@ -21,7 +21,6 @@ import {
   Users,
   Building2,
   UserCheck,
-  Briefcase,
   Brain,
   Sparkles,
   BarChart3,
@@ -99,45 +98,10 @@ export const RESUME_WRITER_ITEM: NavItemDef = {
 }
 
 /**
- * The user role's menu, in order. **Eight fixed entries** as of 2026-09-30,
- * plus Career Fit for accounts entitled to the `job-fit` vertical (2026-10-18,
- * request) — spliced in by `useWorkspaceNavItems`, not listed here, because it
- * depends on the entitlement read. Six were fixed on 2026-08-12 (request: "for
- * all User roles only show these menu items on the left side menu — Home, Chat
- * with Meridian, Interview Practice, Document Library, Settings, Help &
- * Support"); Goals Studio returned on 2026-09-04, My development joined on
- * 2026-09-30 (TDS-4c), and "Interview Practice" became "Role Play" on
- * 2026-10-18 (request).
- *
- * Kept in step with {@link getUserNavItems}, which is the toggle-aware version
- * the layouts actually call. Both must yield the same six labels, because which
- * one renders depends on the layout: `UserLayout` and `SuperAdminLayout` call
- * `getUserNavItems`, while `UnifiedLayout` reads this list through
- * `NAV_ITEMS_BY_ROLE`. They drifted before — this one carried Request
- * Assessment and Feedback long after the other had dropped them — and a menu
- * that changes depending on which page you are on is the bug that creates.
- *
- * Spliced in by `useWorkspaceNavItems`, directly in front of Role Play and only
- * for an entitled account: Career & Education Discovery, then Career Fit
- * (2026-10-29, request — Role Play now sits ahead of My development so the menu
- * reads Home · Chat · Goals Studio · Career & Education Discovery · Career Fit ·
- * Role Play · My development · Résumé Writer · Document Library · Settings ·
- * Help & Support). `WORKSPACE_VERTICAL_LINKS` stays empty.
- */
-export const USER_NAV_ITEMS: NavItemDef[] = [
-  { to: ROUTES.HOME, icon: Home, label: "Home" },
-  { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-  { to: ROUTES.MY_GOALS.BASE, icon: Flag, label: "Goals Studio" },
-  ROLE_PLAY_ITEM,
-  { to: ROUTES.MY_DEVELOPMENT, icon: HeartPulse, label: "My development" },
-  RESUME_WRITER_ITEM,
-  { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
-  { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
-  { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
-]
-
-/**
- * The user role's menu — the toggle-aware version the layouts call.
+ * The user role's menu — the only definition (RM-9b, 2026-11-26: the static
+ * `USER_NAV_ITEMS` copy, whose chat row still read "Chat with Coaches" →
+ * /dashboard on Surveys, PRISM exam, vertical pages and Lumen's no-access page,
+ * is gone; every layout now reaches this through {@link roleNavItems}).
  *
  * **Eight fixed entries** as of 2026-09-30. Six were fixed on 2026-08-12
  * (request: "for all User roles only show these menu items on the left side
@@ -453,7 +417,7 @@ const CHARACTER_LAB_ITEM_PRACTITIONER: NavItemDef = {
  * flag is off, which collapses the section away entirely.
  */
 // NOTE: `user` intentionally omitted — the user role renders UserLayout (flat
-// sidebar) which already carries "Role Play" in USER_NAV_ITEMS; adding it here
+// sidebar) which already carries "Role Play" (getUserNavItems); adding it here
 // would also give the user a UnifiedLayout Tools section it never uses.
 // These roles render UnifiedLayout / SuperAdminLayout, which show the Tools rollup.
 export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
@@ -991,20 +955,6 @@ export const SUPER_ADMIN_HOUSE_FOOTER_ITEMS: NavItemDef[] = [
   HELP_FOOTER_ITEM,
 ]
 
-/** Role-view links — lets super-admin jump to any role's dashboard */
-const ROLE_VIEW_ITEMS: NavItemDef[] = [
-  { to: ROUTES.HOME, icon: Home, label: "User Home" },
-  { to: ROUTES.MANAGER.DASHBOARD, icon: Users, label: "Manager" },
-  { to: ROUTES.COMPANY_ADMIN.DASHBOARD, icon: Building2, label: "Company Admin" },
-  { to: ROUTES.PRACTITIONER.HOME, icon: UserCheck, label: "Practitioner" },
-  { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: Briefcase, label: "Distributor" },
-]
-
-/** Sectioned navigation for super-admin (admin tools + role views) */
-export const SUPER_ADMIN_NAV_SECTIONS: NavSectionDef[] = [
-  { label: "Administration", items: SUPER_ADMIN_NAV_ITEMS, defaultCollapsed: true },
-  { label: "Role Views", items: ROLE_VIEW_ITEMS, defaultCollapsed: true },
-]
 
 /**
  * Platform owner email — mirrors the backend allow-list
@@ -1041,12 +991,27 @@ export const OWNER_ONLY_NAV_ROUTES: ReadonlySet<string> = new Set<string>([
 
 /** Lookup from role to its nav items */
 export const NAV_ITEMS_BY_ROLE: Record<UserRole, NavItemDef[]> = {
-  user: USER_NAV_ITEMS,
+  user: getUserNavItems(true),
   manager: MANAGER_NAV_ITEMS,
   "company-admin": COMPANY_ADMIN_NAV_ITEMS,
   practitioner: PRACTITIONER_NAV_ITEMS,
   distributor: DISTRIBUTOR_NAV_ITEMS,
   "super-admin": SUPER_ADMIN_NAV_ITEMS,
+}
+
+/**
+ * A role's own menu as a layout should render it (RM-9b, 2026-11-26). For the
+ * user role, and any role string outside the six, that is the toggle-aware
+ * {@link getUserNavItems} — "Chat with Meridian" with the Agent Engine on, the
+ * coaches fallback with it off — the same list `UserLayout` shows on Home. Every
+ * other role gets its `NAV_ITEMS_BY_ROLE` list. One source, so the user's menu
+ * no longer changes with the page.
+ */
+export function roleNavItems(role: string, agentEngineEnabled: boolean): NavItemDef[] {
+  if (role !== "user" && Object.prototype.hasOwnProperty.call(NAV_ITEMS_BY_ROLE, role)) {
+    return NAV_ITEMS_BY_ROLE[role as UserRole]
+  }
+  return getUserNavItems(agentEngineEnabled)
 }
 
 /**
@@ -1080,7 +1045,7 @@ export const DEFAULT_ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     label: "User",
     description: "End user receiving AI coaching",
     homeRoute: ROUTES.HOME,
-    navItems: USER_NAV_ITEMS,
+    navItems: getUserNavItems(true),
   },
   manager: {
     role: "manager",
