@@ -198,6 +198,7 @@
   },
   "llmGuards": {
     "noAccess": "No tienes acceso a esta herramienta Knowledge Continuity. Pide a tu administrador que la active para tu cuenta.",
+    "roleNotAllowed": "Tu rol no puede usar esta herramienta. Solo está disponible para profesionales, gerentes, administradores de empresa y superadministradores.",
     "tooMany": "Demasiadas solicitudes en poco tiempo. Espera unos minutos y vuelve a intentarlo.",
     "tooLong": "Es demasiado largo para enviarlo. Acorta el texto y vuelve a intentarlo.",
     "areaFull": "La entrevista de esta área ha alcanzado su límite de extensión. Guarda esta área para conservar lo que tienes y continúa en otra área.",

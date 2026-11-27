@@ -87,6 +87,7 @@
   },
   "llmGuards": {
     "noAccess": "You don't have access to this Knowledge Continuity tool. Ask your administrator to turn it on for your account.",
+    "roleNotAllowed": "Your role can't use this tool. It is available to practitioners, managers, company admins and super admins only.",
     "tooMany": "Too many requests in a short time. Please wait a few minutes, then try again.",
     "tooLong": "That's too long to send. Shorten your text and try again.",
     "areaFull": "This area's interview has reached its length limit. Save this area to keep what you have, then carry on in another area.",

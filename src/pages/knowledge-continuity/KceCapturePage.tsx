@@ -30,8 +30,8 @@ import { isKceAccessDenied } from "@/services/knowledge-continuity/authz"
 import {
   KCE_MAX_ANSWER,
   fitsTranscriptBounds,
-  kceGuardMessageKey,
   kceGuardRefusal,
+  kceGuardText,
 } from "@/services/knowledge-continuity/llmGuards"
 import { KceAccessInline } from "./KceAccessNotice"
 import { useSavedRoleBlueprint } from "@/hooks/knowledge-continuity/useSavedRoleBlueprint"
@@ -479,7 +479,7 @@ function InterviewStep({
 
   const waitingForQuestion = nextQuestion.isPending
   const questionFailed = nextQuestion.isError && !pendingQuestion && !waitingForQuestion
-  const refusal = questionFailed ? kceGuardRefusal(nextQuestion.error) : undefined
+  const refusalText = questionFailed ? kceGuardText(nextQuestion.error, t) : undefined
   const canFinish = transcript.length >= 1 && !isFinishing
 
   return (
@@ -518,9 +518,8 @@ function InterviewStep({
           {questionFailed && (
             <div className="space-y-2">
               <p role="alert" className="text-sm text-red-600">
-                {refusal
-                  ? t(kceGuardMessageKey(refusal))
-                  : t("capture.interview.questionFailed", "Something went wrong getting the next question.")}
+                {refusalText ??
+                  t("capture.interview.questionFailed", "Something went wrong getting the next question.")}
               </p>
               <Button size="sm" variant="outline" onClick={retryQuestion} className="gap-1.5">
                 <RotateCcw className="h-4 w-4" /> {t("capture.interview.tryAgain", "Try again")}

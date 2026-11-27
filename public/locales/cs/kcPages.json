@@ -1,6 +1,7 @@
 {
   "llmGuards": {
     "noAccess": "K tomuto nástroji Knowledge Continuity nemáte přístup. Požádejte svého správce, aby vám ho zapnul.",
+    "roleNotAllowed": "Vaše role tento nástroj používat nemůže. Je dostupný pouze pro praktiky, manažery, správce společnosti a superadministrátory.",
     "tooMany": "Příliš mnoho požadavků v krátkém čase. Počkejte prosím několik minut a zkuste to znovu.",
     "tooLong": "Text je na odeslání příliš dlouhý. Zkraťte ho a zkuste to znovu.",
     "areaFull": "Rozhovor k této oblasti dosáhl limitu délky. Uložte tuto oblast, aby vám zůstalo, co máte, a pokračujte v jiné oblasti.",

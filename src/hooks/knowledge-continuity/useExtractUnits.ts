@@ -3,7 +3,7 @@ import type { AxiosError } from "axios"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { extractUnits } from "@/services/knowledge-continuity/capture.service"
-import { kceGuardMessageKey, kceGuardRefusal } from "@/services/knowledge-continuity/llmGuards"
+import { kceGuardText } from "@/services/knowledge-continuity/llmGuards"
 import type { ExtractRequest, ExtractResponse } from "@/types/knowledge-continuity"
 
 /**
@@ -20,10 +20,10 @@ export function useExtractUnits() {
       return res.data
     },
     onError: (error) => {
-      // 403 no access, 429 too many calls, 413/422 too long: say which, since
+      // 403 no access (entitlement) or role not allowed, 429 too many calls, 413/422 too long: say which, since
       // "try again" with the same body fails the same way (D-18).
-      const refusal = kceGuardRefusal(error)
-      toast.error(refusal ? t(kceGuardMessageKey(refusal)) : "Couldn't synthesize this capture. Please try again.")
+      const refusal = kceGuardText(error, t)
+      toast.error(refusal ?? "Couldn't synthesize this capture. Please try again.")
     },
   })
 }

@@ -155,6 +155,7 @@
   },
   "llmGuards": {
     "noAccess": "Vous n'avez pas accès à cet outil Knowledge Continuity. Demandez à votre administrateur de l'activer pour votre compte.",
+    "roleNotAllowed": "Votre rôle ne permet pas d'utiliser cet outil. Il est réservé aux praticiens, aux responsables, aux administrateurs d'entreprise et aux super-administrateurs.",
     "tooMany": "Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez.",
     "tooLong": "C'est trop long pour être envoyé. Raccourcissez votre texte et réessayez.",
     "areaFull": "L'entretien de ce domaine a atteint sa longueur maximale. Enregistrez ce domaine pour conserver ce que vous avez, puis poursuivez dans un autre domaine.",
