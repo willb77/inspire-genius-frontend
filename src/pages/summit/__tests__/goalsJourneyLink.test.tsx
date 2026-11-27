@@ -115,7 +115,7 @@ describe("Goals Studio — My journey link", () => {
     renderLayout()
     const nav = screen.getByRole("navigation", { name: "Goals Studio sections" })
     expect(within(nav).getAllByRole("link").map((a) => a.textContent?.trim())).toEqual([
-      "My goals", "Talk it through", "Who can see them",
+      "My goals", "Talk it through", "Overview", "Discovery", "Who can see them",
     ])
     expect(within(nav).queryByText("My journey")).not.toBeInTheDocument()
   })

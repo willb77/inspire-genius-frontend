@@ -6,7 +6,7 @@
  *  - switch OFF: the seven pills, and every one of the four folded paths stays
  *    where it is (GoalsStudioLayout.test.tsx pins the seven-pill list as well,
  *    unmodified);
- *  - switch ON: three pills; Overview and Discovery go to the interview,
+ *  - switch ON: five pills; Overview and Discovery render (restored 2026-11-27),
  *    Coaches and Coming soon go to My goals; the interview carries a progress
  *    strip read from the same session query, and a person with progress never
  *    sees what reads as a fresh start.
@@ -56,6 +56,7 @@ jest.mock("@/components/direction-setting/GoalInterviewPanel", () => {
 
 import GoalsStudioLayout from "@/pages/summit/GoalsStudioLayout";
 import SummitInterview from "@/pages/summit/SummitInterview";
+import SummitDiscovery from "@/pages/summit/SummitDiscovery";
 
 type Status = "todo" | "active" | "explored";
 function session(statuses: Status[], goals = 0): SummitSession {
@@ -120,15 +121,13 @@ beforeEach(() => {
 });
 
 describe("houseGoalsRedirectFor", () => {
-  it("maps the four folded sections and nothing else", () => {
-    expect(houseGoalsRedirectFor("/my/goals/overview")).toBe(ROUTES.MY_GOALS.INTERVIEW);
-    expect(houseGoalsRedirectFor("/my/goals/discovery/")).toBe(ROUTES.MY_GOALS.INTERVIEW);
+  it("maps the two folded sections and nothing else", () => {
     expect(houseGoalsRedirectFor("/my/goals/coaches")).toBe(ROUTES.MY_GOALS.BASE);
     expect(houseGoalsRedirectFor("/my/goals/coming-soon")).toBe(ROUTES.MY_GOALS.BASE);
-    for (const stays of ["/my/goals", "/my/goals/interview", "/my/goals/sharing", "/my/goals/g1/roadmap", "/"]) {
+    for (const stays of ["/my/goals", "/my/goals/overview", "/my/goals/discovery", "/my/goals/discovery/", "/my/goals/interview", "/my/goals/sharing", "/my/goals/g1/roadmap", "/"]) {
       expect(houseGoalsRedirectFor(stays)).toBeNull();
     }
-    expect(Object.keys(HOUSE_GOALS_REDIRECTS)).toHaveLength(4);
+    expect(Object.keys(HOUSE_GOALS_REDIRECTS)).toHaveLength(2);
   });
 });
 
@@ -150,9 +149,12 @@ describe("Goals Studio layout — switch OFF (today)", () => {
 describe("Goals Studio layout — switch ON (three tabs)", () => {
   beforeEach(() => setSwitch(true));
 
-  it("shows three pills: My goals · Talk it through · Who can see them", () => {
+  it("shows five pills: My goals · Talk it through · Overview · Discovery · Who can see them", () => {
     renderLayoutAt("/my/goals");
-    expect(pillLabels()).toEqual(["My goals", "Talk it through", "Who can see them"]);
+    expect(pillLabels()).toEqual(["My goals", "Talk it through", "Overview", "Discovery", "Who can see them"]);
+    const pills = screen.getByRole("navigation", { name: "Goals Studio sections" });
+    expect(within(pills).getByRole("link", { name: /Overview/ })).toHaveAttribute("href", ROUTES.MY_GOALS.OVERVIEW);
+    expect(within(pills).getByRole("link", { name: /Discovery/ })).toHaveAttribute("href", ROUTES.MY_GOALS.DISCOVERY);
     const nav = screen.getByRole("navigation", { name: "Goals Studio sections" });
     expect(within(nav).getByRole("link", { name: /Talk it through/ })).toHaveAttribute("href", ROUTES.MY_GOALS.INTERVIEW);
     expect(within(nav).getByRole("link", { name: /Who can see them/ })).toHaveAttribute("href", ROUTES.MY_GOALS.SHARING);
@@ -168,8 +170,6 @@ describe("Goals Studio layout — switch ON (three tabs)", () => {
   });
 
   it.each([
-    ["overview", "interview"],
-    ["discovery", "interview"],
     ["coaches", "goals"],
     ["coming-soon", "goals"],
   ])("sends /my/goals/%s to the %s page", (from, to) => {
@@ -177,7 +177,7 @@ describe("Goals Studio layout — switch ON (three tabs)", () => {
     expect(screen.getByTestId("page")).toHaveTextContent(new RegExp(`^${to}$`));
   });
 
-  it.each(["interview", "sharing"])("leaves /my/goals/%s where it is", (p) => {
+  it.each(["interview", "sharing", "overview", "discovery"])("leaves /my/goals/%s where it is", (p) => {
     renderLayoutAt(`/my/goals/${p}`);
     expect(screen.getByTestId("page")).toHaveTextContent(p);
   });
@@ -293,5 +293,29 @@ describe("Talk it through — progress strip", () => {
       expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
       expect(screen.queryByText(/haven't started/)).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("Discovery page — switch ON renders its content", () => {
+  it("shows Your why, the per-area summaries and the counts", async () => {
+    setSwitch(true);
+    const base = session(["explored", "active", "todo", "todo", "todo"], 0);
+    base.categories.history.summary = "Ten years in logistics.";
+    base.categories.history.answers = [{}, {}] as never;
+    mockGetGoalSession.mockResolvedValue({
+      ...base,
+      why_roots: [{ root: "Being useful to my team", goal_id: "g1" }],
+    });
+    render(
+      <QueryClientProvider client={client()}>
+        <MemoryRouter>
+          <SummitDiscovery />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText("Your why")).toBeInTheDocument();
+    expect(screen.getByText("Being useful to my team")).toBeInTheDocument();
+    expect(screen.getByText("Ten years in logistics.")).toBeInTheDocument();
+    expect(screen.getByText(/2 questions answered/)).toBeInTheDocument();
   });
 });

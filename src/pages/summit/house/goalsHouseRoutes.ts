@@ -5,15 +5,14 @@
  * Display only. Every route stays registered; with the `goals` switch OFF
  * nothing here is consulted and all seven sections render as today. With it
  * ON the layout shows three pills and sends the four folded paths on:
- *   - Overview and Discovery fold into "Talk it through" (the interview, with
- *     the progress strip above it), so they go to the interview;
  *   - Coaches and Coming soon go, so they land on My goals.
+ * Overview and Discovery were folded into the interview here until 2026-11-27,
+ * when they were restored as pills (Discovery carries "Your why" and the
+ * per-area summaries, which the interview does not show).
  */
 import { ROUTES } from "@/constants/routes";
 
 export const HOUSE_GOALS_REDIRECTS: Readonly<Record<string, string>> = {
-  [ROUTES.MY_GOALS.OVERVIEW]: ROUTES.MY_GOALS.INTERVIEW,
-  [ROUTES.MY_GOALS.DISCOVERY]: ROUTES.MY_GOALS.INTERVIEW,
   [ROUTES.MY_GOALS.COACHES]: ROUTES.MY_GOALS.BASE,
   [ROUTES.MY_GOALS.COMING_SOON]: ROUTES.MY_GOALS.BASE,
 };
