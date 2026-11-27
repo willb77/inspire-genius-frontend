@@ -270,7 +270,13 @@
     "thereArenTAnyRoles": "Ainda não há cargos para comparar com você",
     "ifYouReNotAttached": "Se você não estiver vinculado a um empregador aqui, a biblioteca compartilhada é tudo o que existe — e ela ainda está sendo construída. Cada referência nela é lida e verificada por uma pessoa antes de ser publicada, e esse trabalho não terminou, então agora não há nada do outro lado da comparação.",
     "nothingIsMissingFromYour": "Não falta nada no seu perfil, e nada deu errado. Quando as primeiras referências forem publicadas, suas correspondências aparecerão aqui automaticamente — você não precisará refazer nada.",
-    "inTheMeantimeTheseDo": "Enquanto isso, estas opções funcionam:"
+    "inTheMeantimeTheseDo": "Enquanto isso, estas opções funcionam:",
+    "noPrism": {
+      "body": "Esta etapa compara o seu perfil com perfis de referência de funções já publicados, e o seu PRISM é a sua parte dessa comparação. Enquanto não estiver registado, não há nada para comparar.",
+      "button": "Adicione o seu PRISM",
+      "note": "Nada correu mal e nada do que fez se perdeu. Quando adicionar o seu PRISM, as suas correspondências aparecerão aqui.",
+      "title": "O cruzamento precisa primeiro do seu PRISM"
+    }
   },
   "plan": {
     "severity": {

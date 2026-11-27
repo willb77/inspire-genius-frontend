@@ -125,7 +125,13 @@
     "roleMatchingIsSwitchedOff": "La corrispondenza dei ruoli è disattivata per ora",
     "weVePausedThisStep": "Abbiamo messo in pausa questo passaggio mentre la corrispondenza viene verificata. È una sospensione voluta, non un problema da parte tua e non ha nulla a che fare con il tuo profilo: tornerà attiva senza che tu faccia nulla.",
     "everythingElseInYourJourney": "Tutto il resto del tuo percorso non è interessato e ciò che completi ora confluirà subito nelle tue corrispondenze appena torneranno disponibili.",
-    "turningItOn": "Come attivarla"
+    "turningItOn": "Come attivarla",
+    "noPrism": {
+      "body": "Questo passaggio confronta il tuo profilo con profili di riferimento di ruoli già pubblicati, e il tuo PRISM è la tua parte del confronto. Finché non è registrato, non c'è nulla da confrontare.",
+      "button": "Aggiungi il tuo PRISM",
+      "note": "Non è andato storto nulla e nulla di ciò che hai fatto è andato perso. Quando avrai aggiunto il tuo PRISM, le tue corrispondenze compariranno qui.",
+      "title": "L'abbinamento ha prima bisogno del tuo PRISM"
+    }
   },
   "plan": {
     "severity": {

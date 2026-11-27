@@ -331,7 +331,13 @@
     "workingOutWhereYouStand": "Calculando dónde te encuentras respecto a este puesto…",
     "weCouldnTOpenThe": "No pudimos abrir el desglose de este puesto. Elige otro o inténtalo de nuevo en un momento.",
     "stepLinesUpAgainst": "Este paso compara tu perfil con <1>referencias de puestos publicadas</1>: los perfiles detallados de lo que realmente exige un puesto. Provienen de dos lugares: la biblioteca propia de un empleador y una biblioteca compartida abierta a todos.",
-    "turningItOnNote": "El emparejamiento siempre se calcula: este indicador solo controla quién puede verlo. Establece <1>BLUEPRINT_MATCHING_ENABLED=true</1> en la Lambda blueprint-service mediante CDK (<3>-c blueprintMatching=true</3>), no editando la Lambda directamente: una edición directa se revierte en el siguiente despliegue. Pasos completos en <5>docs/runbooks/enable_role_matching.md</5>."
+    "turningItOnNote": "El emparejamiento siempre se calcula: este indicador solo controla quién puede verlo. Establece <1>BLUEPRINT_MATCHING_ENABLED=true</1> en la Lambda blueprint-service mediante CDK (<3>-c blueprintMatching=true</3>), no editando la Lambda directamente: una edición directa se revierte en el siguiente despliegue. Pasos completos en <5>docs/runbooks/enable_role_matching.md</5>.",
+    "noPrism": {
+      "body": "Este paso compara tu perfil con perfiles de referencia de puestos ya publicados, y tu PRISM es tu parte de esa comparación. Hasta que esté registrado, no hay nada que comparar.",
+      "button": "Añade tu PRISM",
+      "note": "No ha salido nada mal y no se ha perdido nada de lo que has hecho. Cuando añadas tu PRISM, tus coincidencias aparecerán aquí.",
+      "title": "Para emparejar primero hace falta tu PRISM"
+    }
   },
   "salary": {
     "months": {

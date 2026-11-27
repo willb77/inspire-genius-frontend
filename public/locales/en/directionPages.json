@@ -274,7 +274,13 @@
     "workingOutWhereYouStand": "Working out where you stand against this role…",
     "weCouldnTOpenThe": "We couldn't open the breakdown for this role. Pick another, or try again in a moment.",
     "stepLinesUpAgainst": "This step lines your profile up against <1>published role benchmarks</1> — the detailed profiles of what a role actually asks for. Those come from two places: an employer's own library, and a shared library that's open to everyone.",
-    "turningItOnNote": "Matching is always computed — this flag only controls who can see it. Set <1>BLUEPRINT_MATCHING_ENABLED=true</1> on the blueprint-service Lambda via CDK (<3>-c blueprintMatching=true</3>), not by editing the Lambda directly — a direct edit is reverted by the next deploy. Full steps in <5>docs/runbooks/enable_role_matching.md</5>."
+    "turningItOnNote": "Matching is always computed — this flag only controls who can see it. Set <1>BLUEPRINT_MATCHING_ENABLED=true</1> on the blueprint-service Lambda via CDK (<3>-c blueprintMatching=true</3>), not by editing the Lambda directly — a direct edit is reverted by the next deploy. Full steps in <5>docs/runbooks/enable_role_matching.md</5>.",
+    "noPrism": {
+      "body": "This step lines your profile up against published role benchmarks, and your PRISM is your side of that comparison. Until it is on file there is nothing to compare.",
+      "button": "Add your PRISM",
+      "note": "Nothing has gone wrong and nothing you've done has been lost. Once your PRISM is added, your matches will appear here.",
+      "title": "Matching needs your PRISM first"
+    }
   },
   "plan": {
     "severity": {

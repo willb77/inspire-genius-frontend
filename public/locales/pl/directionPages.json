@@ -116,7 +116,13 @@
     "workingOutWhereYouStand": "Ustalanie, jak wypadasz na tle tej roli…",
     "weCouldnTOpenThe": "Nie udało się otworzyć szczegółów tej roli. Wybierz inną lub spróbuj ponownie za chwilę.",
     "stepLinesUpAgainst": "Ten krok porównuje Twój profil z <1>opublikowanymi wzorcami ról</1> — szczegółowymi profilami tego, czego rola faktycznie wymaga. Pochodzą one z dwóch źródeł: własnej biblioteki pracodawcy oraz wspólnej biblioteki otwartej dla wszystkich.",
-    "turningItOnNote": "Dopasowanie jest zawsze obliczane — ta flaga określa tylko, kto je widzi. Ustaw <1>BLUEPRINT_MATCHING_ENABLED=true</1> w Lambdzie blueprint-service przez CDK (<3>-c blueprintMatching=true</3>), a nie przez bezpośrednią edycję Lambdy — bezpośrednia zmiana zostanie cofnięta przy następnym wdrożeniu. Pełne kroki w <5>docs/runbooks/enable_role_matching.md</5>."
+    "turningItOnNote": "Dopasowanie jest zawsze obliczane — ta flaga określa tylko, kto je widzi. Ustaw <1>BLUEPRINT_MATCHING_ENABLED=true</1> w Lambdzie blueprint-service przez CDK (<3>-c blueprintMatching=true</3>), a nie przez bezpośrednią edycję Lambdy — bezpośrednia zmiana zostanie cofnięta przy następnym wdrożeniu. Pełne kroki w <5>docs/runbooks/enable_role_matching.md</5>.",
+    "noPrism": {
+      "body": "Ten krok porównuje Twój profil z opublikowanymi wzorcowymi profilami stanowisk, a Twój PRISM to Twoja strona tego porównania. Dopóki go nie ma, nie ma czego porównywać.",
+      "button": "Dodaj swój PRISM",
+      "note": "Nic nie poszło źle i nic z tego, co zrobiłeś(-aś), nie przepadło. Gdy dodasz swój PRISM, Twoje dopasowania pojawią się tutaj.",
+      "title": "Dopasowanie wymaga najpierw Twojego PRISM"
+    }
   },
   "salary": {
     "employment": "Zatrudnienie",
