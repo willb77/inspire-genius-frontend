@@ -179,7 +179,14 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       assetsDir: "assets",
-      sourcemap: "hidden",
+      // D-23: no source maps in the build. "hidden" only drops the
+      // //# sourceMappingURL comment: the .map files are still emitted into
+      // dist/assets and the deploy copies that folder to the bucket, so anyone
+      // who guesses `<chunk>.js.map` reads the original source. Nothing in
+      // this repo's GitHub pipeline uploads them (no Sentry upload step), so
+      // they were public and unused. To use them, upload to the error tracker
+      // in the build job and delete `dist/assets/*.map` before the deploy step.
+      sourcemap: false,
       rollupOptions: {
         output: {
           manualChunks: {

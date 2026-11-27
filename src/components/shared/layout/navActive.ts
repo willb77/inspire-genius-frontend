@@ -9,6 +9,8 @@ export type NavActiveFields = {
   to: string
   activePrefix?: string
   activePaths?: readonly string[]
+  /** Never active on these pages (or under them), whatever else matches. */
+  activeExcept?: readonly string[]
 }
 
 /** `pathname` is `path` itself or a page under it (`path` + "/…"). */
@@ -23,6 +25,7 @@ export function pathIsAt(pathname: string, path: string): boolean {
  * has.
  */
 export function isItemActive(pathname: string, item: NavActiveFields): boolean {
+  if (item.activeExcept?.some((p) => pathIsAt(pathname, p))) return false
   if (item.activePaths?.some((p) => pathIsAt(pathname, p))) return true
   return item.activePrefix ? pathname.startsWith(item.activePrefix) : item.to !== "" && pathname === item.to
 }
