@@ -1,8 +1,14 @@
 import React from "react"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import SuperAdminAnalytics from "../Analytics"
+
+const mermaidRender = jest.fn(async () => ({ svg: "<svg data-testid='fake-sitemap-svg'>fake-sitemap-svg</svg>" }))
+jest.mock("mermaid", () => ({
+  __esModule: true,
+  default: { initialize: jest.fn(), render: () => mermaidRender() },
+}))
 
 jest.mock("@/layouts/SuperAdminLayout", () => ({
   __esModule: true,
@@ -228,35 +234,44 @@ describe("SuperAdminAnalytics — house style switch", () => {
     expect(screen.queryByRole("navigation", { name: "Usage & costs sections" })).not.toBeInTheDocument()
   })
 
-  it("switch ON: the Activity tab of Usage & costs, without the Project Log tab", () => {
+  it("switch ON: the Activity tab of Usage & costs, with the Project Log tab", () => {
     localStorage.setItem("house_style_admin", "true")
     renderWithProviders(<SuperAdminAnalytics />)
     expect(screen.getByRole("heading", { level: 1, name: "Usage & costs" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Activity" })).toHaveAttribute("aria-current", "page")
     expect(screen.getByRole("link", { name: "AI usage & health" })).toHaveAttribute("href", "/super-admin/observability")
     expect(screen.queryByText("Analytics & Logs")).not.toBeInTheDocument()
-    expect(screen.queryByTestId("tab-project")).not.toBeInTheDocument()
-    expect(screen.queryByTestId("tab-content-project")).not.toBeInTheDocument()
+    expect(screen.getByTestId("tab-project")).toBeInTheDocument()
+    expect(screen.getByTestId("tab-content-project")).toBeInTheDocument()
+    expect(screen.getByText("Change Log")).toBeInTheDocument()
+    expect(screen.getByText("Site Map")).toBeInTheDocument()
     expect(screen.getByText("Audit log")).toBeInTheDocument()
     expect(screen.getByText("Total Users")).toBeInTheDocument()
   })
 
-  it("switch ON: ?tab=project falls back to Analytics; ?tab=audit still opens the audit log", () => {
+  it("switch ON: ?tab=project opens the Project Log tab", () => {
     localStorage.setItem("house_style_admin", "true")
     renderWithProviders(<SuperAdminAnalytics />, ["/super-admin/analytics?tab=project"])
-    expect(screen.getByTestId("tabs")).toHaveAttribute("value", "analytics")
+    expect(screen.getAllByTestId("tabs")[0]).toHaveAttribute("value", "project")
+  })
+
+  it("switch ON: the Site Map renders the mermaid diagram", async () => {
+    localStorage.setItem("house_style_admin", "true")
+    renderWithProviders(<SuperAdminAnalytics />, ["/super-admin/analytics?tab=project"])
+    await waitFor(() => expect(mermaidRender).toHaveBeenCalled())
+    await waitFor(() => expect(screen.getByTestId("tab-content-sitemap").innerHTML).toContain("fake-sitemap-svg"))
   })
 
   it("switch ON: the Organization activity tab is present and ?tab=organization opens it", () => {
     localStorage.setItem("house_style_admin", "true")
     renderWithProviders(<SuperAdminAnalytics />, ["/super-admin/analytics?tab=organization"])
     expect(screen.getByTestId("tab-organization")).toBeInTheDocument()
-    expect(screen.getByTestId("tabs")).toHaveAttribute("value", "organization")
+    expect(screen.getAllByTestId("tabs")[0]).toHaveAttribute("value", "organization")
   })
 
   it("switch ON: ?tab=audit opens the audit log", () => {
     localStorage.setItem("house_style_admin", "true")
     renderWithProviders(<SuperAdminAnalytics />, ["/super-admin/analytics?tab=audit"])
-    expect(screen.getByTestId("tabs")).toHaveAttribute("value", "audit")
+    expect(screen.getAllByTestId("tabs")[0]).toHaveAttribute("value", "audit")
   })
 })
