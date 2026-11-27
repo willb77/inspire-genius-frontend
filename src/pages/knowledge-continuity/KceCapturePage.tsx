@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import {
+  AlertTriangle,
   ArrowRight,
   BookOpenCheck,
   CheckCircle2,
@@ -132,7 +133,7 @@ function HowItWorks() {
 function ChooseRoleStep({ onPick }: { onPick: (roleTitle: string) => void }) {
   const { t } = useTranslation("kcPages")
   const navigate = useNavigate()
-  const { data: roles = [], isLoading, isError, error } = useSavedRoles(CAPTURE_ORG_ID)
+  const { data: roles = [], isLoading, isError, error, refetch, isFetching } = useSavedRoles(CAPTURE_ORG_ID)
 
   return (
     <Card>
@@ -152,6 +153,22 @@ function ChooseRoleStep({ onPick }: { onPick: (roleTitle: string) => void }) {
           </div>
         ) : isError && isKceAccessDenied(error) ? (
           <KceAccessInline />
+        ) : isError && roles.length === 0 ? (
+          // D-17 PR-B: a failed read is not "no saved roles" — and the empty
+          // state's "Blueprint a role" would send the user to re-create a role
+          // they may already have.
+          <div role="alert" data-testid="capture-roles-load-failed" className="space-y-3">
+            <p className="flex items-start gap-2 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              {t(
+                "capture.choose.loadFailed",
+                "Your saved roles couldn't be loaded. That is not the same as having none — try again in a moment."
+              )}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
+              {t("capture.choose.retry", "Try again")}
+            </Button>
+          </div>
         ) : roles.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">

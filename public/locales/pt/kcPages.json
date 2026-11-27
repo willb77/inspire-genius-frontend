@@ -110,7 +110,9 @@
       "role": "Cargo",
       "loadingRoles": "Carregando cargos…",
       "selectRole": "Selecione um cargo",
-      "noRoles": "Nenhum cargo ainda — primeiro crie o blueprint e capture um cargo, depois valide o conhecimento dele."
+      "noRoles": "Nenhum cargo ainda — primeiro crie o blueprint e capture um cargo, depois valide o conhecimento dele.",
+      "rolesLoadFailed": "Não foi possível carregar suas funções salvas. Isso não significa que você não tenha nenhuma — tente novamente em instantes.",
+      "rolesRetry": "Tentar novamente"
     },
     "title": "Currículo do sucessor",
     "subtitle": "Aprenda o cargo a partir da experiência capturada — e sinalize o que não estiver mais correto.",
@@ -228,7 +230,9 @@
       "roleShape": "Perfil do cargo",
       "roleShapeHint": "O perfil define quais das 8 seções de conhecimento vêm primeiro — a árvore de um executivo é feita de julgamento e relacionamentos, não de uma lista de tarefas.",
       "draftingAria": "Elaborando o blueprint",
-      "draftButton": "Elaborar o blueprint"
+      "draftButton": "Elaborar o blueprint",
+      "savedRolesLoadFailed": "Não foi possível carregar suas funções salvas, por isso nenhuma aparece aqui. Isso não significa que você não tenha nenhuma.",
+      "savedRolesRetry": "Tentar novamente"
     },
     "review": {
       "nothingToSave": "Nada para salvar — adicione ou mantenha pelo menos um nó.",
@@ -287,7 +291,9 @@
       "loading": "Carregando seus cargos salvos…",
       "empty": "Nenhum cargo salvo ainda. Crie primeiro o blueprint de um cargo — ele mapeia as áreas de conhecimento que esta captura vai percorrer.",
       "blueprintRole": "Criar blueprint de um cargo",
-      "areaCount": "{{areas}} áreas de conhecimento"
+      "areaCount": "{{areas}} áreas de conhecimento",
+      "loadFailed": "Não foi possível carregar suas funções salvas. Isso não significa que você não tenha nenhuma — tente novamente em instantes.",
+      "retry": "Tentar novamente"
     },
     "plan": {
       "whoTitle": "Quem vamos capturar?",

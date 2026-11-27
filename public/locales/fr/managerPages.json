@@ -699,7 +699,10 @@
     "reviewSent": "Évaluation envoyée.",
     "theReviewCouldNotBe": "L'évaluation n'a pas pu être enregistrée.",
     "noteSaved": "Note enregistrée.",
-    "theNoteCouldNotBe": "La note n'a pas pu être enregistrée."
+    "theNoteCouldNotBe": "La note n'a pas pu être enregistrée.",
+    "loadFailedTitle": "Impossible de charger les objectifs",
+    "loadFailedBody": "Cela ne veut pas dire qu'il n'y a aucun objectif. Rien n'a été envoyé au membre. Réessayez dans un instant.",
+    "loadFailedRetry": "Réessayer"
   },
   "bulkImport": {
     "bulkTeamImport": "Ajouter des personnes",

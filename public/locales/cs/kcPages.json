@@ -83,7 +83,9 @@
       "loading": "Načítání uložených rolí…",
       "empty": "Zatím nemáte žádné uložené role. Nejprve vytvořte blueprint role — zmapuje znalostní oblasti, kterými záznam projde.",
       "blueprintRole": "Vytvořit blueprint role",
-      "areaCount": "Počet znalostních oblastí: {{areas}}"
+      "areaCount": "Počet znalostních oblastí: {{areas}}",
+      "loadFailed": "Vaše uložené role se nepodařilo načíst. Neznamená to, že žádné nemáte – zkuste to prosím za chvíli znovu.",
+      "retry": "Zkusit znovu"
     }
   },
   "curriculum": {
@@ -138,7 +140,9 @@
       "role": "Role",
       "loadingRoles": "Načítání rolí…",
       "selectRole": "Vyberte roli",
-      "noRoles": "Zatím žádné role – nejprve vytvořte blueprint a zachyťte roli, poté ověřte její znalosti."
+      "noRoles": "Zatím žádné role – nejprve vytvořte blueprint a zachyťte roli, poté ověřte její znalosti.",
+      "rolesLoadFailed": "Vaše uložené role se nepodařilo načíst. Neznamená to, že žádné nemáte – zkuste to prosím za chvíli znovu.",
+      "rolesRetry": "Zkusit znovu"
     },
     "title": "Studijní plán pro nástupce",
     "subtitle": "Osvojte si roli ze zachycené odbornosti – a označte vše, co již není přesné."
@@ -318,7 +322,9 @@
       "roleShape": "Typ role",
       "roleShapeHint": "Typ určuje, které z 8 znalostních sekcí budou na prvním místě — strom manažera tvoří úsudek a vztahy, ne seznam úkolů.",
       "draftingAria": "Navrhování blueprintu",
-      "draftButton": "Navrhnout blueprint"
+      "draftButton": "Navrhnout blueprint",
+      "savedRolesLoadFailed": "Vaše uložené role se nepodařilo načíst, proto zde žádné nejsou uvedeny. Neznamená to, že žádné nemáte.",
+      "savedRolesRetry": "Zkusit znovu"
     },
     "review": {
       "nothingToSave": "Není co uložit — přidejte nebo ponechte alespoň jeden uzel.",

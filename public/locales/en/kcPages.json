@@ -51,7 +51,9 @@
       "roleShape": "Role shape",
       "roleShapeHint": "The shape decides which of the 8 knowledge sections lead — an executive's tree is judgment and relationships, not a task list.",
       "draftingAria": "Drafting the blueprint",
-      "draftButton": "Draft the blueprint"
+      "draftButton": "Draft the blueprint",
+      "savedRolesLoadFailed": "Your saved roles couldn't be loaded, so none are listed here. That is not the same as having none.",
+      "savedRolesRetry": "Try again"
     },
     "review": {
       "nothingToSave": "Nothing to save — add or keep at least one node.",
@@ -110,7 +112,9 @@
       "loading": "Loading your saved roles…",
       "empty": "No saved roles yet. Blueprint a role first — it maps the knowledge areas this capture will walk through.",
       "blueprintRole": "Blueprint a role",
-      "areaCount": "{{areas}} knowledge areas"
+      "areaCount": "{{areas}} knowledge areas",
+      "loadFailed": "Your saved roles couldn't be loaded. That is not the same as having none — try again in a moment.",
+      "retry": "Try again"
     },
     "plan": {
       "whoTitle": "Who are we capturing?",
@@ -217,7 +221,9 @@
       "role": "Role",
       "loadingRoles": "Loading roles…",
       "selectRole": "Select a role",
-      "noRoles": "No roles yet — blueprint and capture a role first, then validate its knowledge."
+      "noRoles": "No roles yet — blueprint and capture a role first, then validate its knowledge.",
+      "rolesLoadFailed": "Your saved roles couldn't be loaded. That is not the same as having none — try again in a moment.",
+      "rolesRetry": "Try again"
     },
     "title": "Successor curriculum",
     "subtitle": "Learn the role from captured expertise — and flag anything that's no longer accurate."

@@ -193,7 +193,10 @@
     "reviewSent": "Ocena wysłana.",
     "theReviewCouldNotBe": "Nie udało się zapisać oceny.",
     "noteSaved": "Notatka zapisana.",
-    "theNoteCouldNotBe": "Nie udało się zapisać notatki."
+    "theNoteCouldNotBe": "Nie udało się zapisać notatki.",
+    "loadFailedTitle": "Nie udało się wczytać celów",
+    "loadFailedBody": "To nie znaczy, że nie ma żadnych celów. Do członka nic nie zostało wysłane. Spróbuj ponownie za chwilę.",
+    "loadFailedRetry": "Spróbuj ponownie"
   },
   "addMemberDialog": {
     "nameIsRequired": "Imię i nazwisko jest wymagane",

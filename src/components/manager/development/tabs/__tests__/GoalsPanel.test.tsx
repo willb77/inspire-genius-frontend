@@ -11,7 +11,11 @@ import type { SummitGoal } from "@/types/development"
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 import { toast } from "sonner"
 
-const goalsState: { data: unknown; isLoading: boolean } = { data: undefined, isLoading: false }
+const goalsState: { data: unknown; isLoading: boolean; isError?: boolean; isFetching?: boolean; refetch: jest.Mock } = {
+  data: undefined,
+  isLoading: false,
+  refetch: jest.fn(),
+}
 const reviewsState: { data: unknown } = { data: undefined }
 const ratifyMutate = jest.fn()
 const noteMutate = jest.fn()
@@ -53,7 +57,40 @@ beforeEach(() => {
   jest.clearAllMocks()
   goalsState.isLoading = false
   goalsState.data = undefined
+  goalsState.isError = false
+  goalsState.isFetching = false
   reviewsState.data = undefined
+})
+
+// D-17 PR-B: with no data every gate is skipped and the list is empty, which
+// used to land on "No goals discovered yet" + an Invite that sends a real one.
+describe("a failed read", () => {
+  it("says the goals could not be loaded, and offers no invitation", () => {
+    goalsState.isError = true
+    renderAt("/manager/development/m1")
+    const card = screen.getByTestId("goals-state-load-failed")
+    expect(screen.getByRole("alert")).toContainElement(card)
+    expect(card).toHaveTextContent("Goals couldn't be loaded")
+    expect(screen.queryByText(/No goals discovered yet/)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Invite/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Set up with Aura/ })).not.toBeInTheDocument()
+  })
+
+  it("Try again re-reads, and never calls the session mutation", () => {
+    goalsState.isError = true
+    renderAt("/manager/development/m1")
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }))
+    expect(goalsState.refetch).toHaveBeenCalledTimes(1)
+    expect(sessionMutate).not.toHaveBeenCalled()
+  })
+
+  it("a failed refetch over goals already shown keeps the goals", () => {
+    goalsState.isError = true
+    goalsState.data = { goals: [goal], coverage: [] }
+    renderAt("/manager/development/m1")
+    expect(screen.queryByTestId("goals-state-load-failed")).not.toBeInTheDocument()
+    expect(screen.getByText("Run a weekly ops cadence")).toBeInTheDocument()
+  })
 })
 
 describe("the three share states", () => {

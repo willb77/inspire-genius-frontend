@@ -412,7 +412,10 @@
     "reviewSent": "Avaliação enviada.",
     "theReviewCouldNotBe": "Não foi possível salvar a avaliação.",
     "noteSaved": "Nota salva.",
-    "theNoteCouldNotBe": "Não foi possível salvar a nota."
+    "theNoteCouldNotBe": "Não foi possível salvar a nota.",
+    "loadFailedTitle": "Não foi possível carregar os objetivos",
+    "loadFailedBody": "Isso não significa que não haja objetivos. Nada foi enviado ao membro. Tente novamente em instantes.",
+    "loadFailedRetry": "Tentar novamente"
   },
   "orgChartPanel": {
     "openSWorkspace": "Abrir o espaço de trabalho de {{name}}",

@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import type { UserEvent } from "@testing-library/user-event"
 
@@ -198,6 +198,20 @@ describe("KceCapturePage (choosing a role)", () => {
       "You don't have access to this organisation's knowledge."
     )
     expect(screen.queryByText(/No saved roles yet/i)).not.toBeInTheDocument()
+  })
+
+  // D-17 PR-B
+  test("any other failure says the roles could not be loaded, not 'No saved roles yet', and offers no Blueprint button", () => {
+    mockSearch = ""
+    const refetch = jest.fn()
+    mockSavedRoles = { data: undefined, isLoading: false, isError: true, error: { response: { status: 500 } }, refetch }
+    render(<KceCapturePage />)
+    expect(screen.getByTestId("capture-roles-load-failed")).toHaveAttribute("role", "alert")
+    expect(screen.getByRole("alert")).toHaveTextContent(/couldn't be loaded/i)
+    expect(screen.queryByText(/No saved roles yet/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Blueprint a role/i })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /Try again/i }))
+    expect(refetch).toHaveBeenCalledTimes(1)
   })
 
   test("with no roles and no error it still shows the friendly empty state", () => {

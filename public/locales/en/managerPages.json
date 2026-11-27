@@ -259,7 +259,10 @@
     "reviewSent": "Review sent.",
     "theReviewCouldNotBe": "The review could not be saved.",
     "noteSaved": "Note saved.",
-    "theNoteCouldNotBe": "The note could not be saved."
+    "theNoteCouldNotBe": "The note could not be saved.",
+    "loadFailedTitle": "Goals couldn't be loaded",
+    "loadFailedBody": "This is not the same as having no goals. Nothing has been sent to the member. Try again in a moment.",
+    "loadFailedRetry": "Try again"
   },
   "hiring": {
     "openPositions": "Open Positions",

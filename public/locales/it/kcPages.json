@@ -30,7 +30,9 @@
       "draftButton": "Crea il blueprint",
       "roleTitleRequired": "Indica il ruolo per cui creare il blueprint",
       "loadedToast": "Caricato \"{{name}}\" — {{chars}} caratteri di contesto.",
-      "readError": "Impossibile leggere il file."
+      "readError": "Impossibile leggere il file.",
+      "savedRolesLoadFailed": "Impossibile caricare i tuoi ruoli salvati, quindi qui non ne è elencato nessuno. Non significa che tu non ne abbia.",
+      "savedRolesRetry": "Riprova"
     },
     "review": {
       "nothingToSave": "Nulla da salvare — aggiungi o mantieni almeno un nodo.",
@@ -110,7 +112,9 @@
       "loading": "Caricamento dei tuoi ruoli salvati…",
       "empty": "Nessun ruolo salvato per ora. Crea prima il Role Blueprint di un ruolo: mappa le aree di conoscenza che questa acquisizione percorrerà.",
       "blueprintRole": "Crea il Role Blueprint di un ruolo",
-      "areaCount": "{{areas}} aree di conoscenza"
+      "areaCount": "{{areas}} aree di conoscenza",
+      "loadFailed": "Impossibile caricare i tuoi ruoli salvati. Non significa che tu non ne abbia: riprova tra poco.",
+      "retry": "Riprova"
     },
     "plan": {
       "whoTitle": "Di chi stiamo acquisendo la conoscenza?",
@@ -217,7 +221,9 @@
       "role": "Ruolo",
       "loadingRoles": "Caricamento dei ruoli…",
       "selectRole": "Seleziona un ruolo",
-      "noRoles": "Nessun ruolo ancora: crea prima il blueprint e acquisisci un ruolo, poi convalida le sue conoscenze."
+      "noRoles": "Nessun ruolo ancora: crea prima il blueprint e acquisisci un ruolo, poi convalida le sue conoscenze.",
+      "rolesLoadFailed": "Impossibile caricare i tuoi ruoli salvati. Non significa che tu non ne abbia: riprova tra poco.",
+      "rolesRetry": "Riprova"
     },
     "title": "Percorso formativo del successore",
     "subtitle": "Impara il ruolo dalle competenze acquisite e segnala tutto ciò che non è più corretto."

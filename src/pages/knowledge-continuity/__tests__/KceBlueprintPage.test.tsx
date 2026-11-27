@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import type {
   BlueprintGenerateResponse,
@@ -40,12 +40,15 @@ jest.mock("@/hooks/knowledge-continuity/useJobDnaSeed", () => ({
 
 let savedRolesData: SavedRole[] = []
 let mockSavedRolesError: unknown = null
+const mockSavedRolesRefetch = jest.fn()
 jest.mock("@/hooks/knowledge-continuity/useSavedRoles", () => ({
   useSavedRoles: () => ({
     data: savedRolesData,
     isLoading: false,
     isError: mockSavedRolesError != null,
     error: mockSavedRolesError,
+    refetch: mockSavedRolesRefetch,
+    isFetching: false,
   }),
 }))
 
@@ -240,5 +243,22 @@ describe("KceBlueprintPage (saved roles refused)", () => {
     mockSavedRolesError = { response: { status: 500 } }
     render(<KceBlueprintPage />)
     expect(screen.queryByText(/don't have access/i)).not.toBeInTheDocument()
+  })
+
+  // D-17 PR-B: the picker used to vanish with no word on a non-403 failure.
+  test("any other saved-roles failure says the roles could not be loaded, with a retry; the draft form still works", () => {
+    mockSavedRolesError = { response: { status: 500 } }
+    render(<KceBlueprintPage />)
+    expect(screen.getByTestId("blueprint-roles-load-failed")).toHaveAttribute("role", "alert")
+    expect(screen.getByRole("alert")).toHaveTextContent(/couldn't be loaded/i)
+    fireEvent.click(screen.getByRole("button", { name: /Try again/i }))
+    expect(mockSavedRolesRefetch).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole("button", { name: /draft the blueprint/i })).toBeInTheDocument()
+  })
+
+  test("a 403 does not also show the load-failed line", () => {
+    mockSavedRolesError = { response: { status: 403 } }
+    render(<KceBlueprintPage />)
+    expect(screen.queryByTestId("blueprint-roles-load-failed")).not.toBeInTheDocument()
   })
 })

@@ -437,7 +437,8 @@
     "emptyStats": "Ainda não há estatísticas disponíveis.",
     "emptyTimeToFill": "Ainda não há dados de tempo de preenchimento.",
     "loading": "Carregando análises…",
-    "title": "Análises"
+    "title": "Análises",
+    "loadFailed": "Não foi possível carregar este painel. Isso não significa que não haja dados."
   },
   "aptitudes": {
     "description": "Classifique as 8 preferências de aptidão de trabalho em ordem de importância para esta função e, em seguida, avalie cada uma pela sua relevância.",

@@ -673,7 +673,8 @@
     "emptyStats": "Aucune statistique disponible pour le moment.",
     "emptyTimeToFill": "Aucune donnée de délai de recrutement pour le moment.",
     "loading": "Chargement des analyses…",
-    "title": "Analyses"
+    "title": "Analyses",
+    "loadFailed": "Impossible de charger ce panneau. Cela ne veut pas dire qu'il n'y a aucune donnée."
   },
   "aptitudes": {
     "description": "Classez les 8 préférences d'aptitudes professionnelles par ordre d'importance pour ce poste, puis évaluez chacune selon son importance.",

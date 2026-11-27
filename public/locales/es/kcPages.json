@@ -41,7 +41,9 @@
       "role": "Rol",
       "loadingRoles": "Cargando roles…",
       "selectRole": "Selecciona un rol",
-      "noRoles": "Aún no hay roles. Primero crea el blueprint y captura un rol, y luego valida su conocimiento."
+      "noRoles": "Aún no hay roles. Primero crea el blueprint y captura un rol, y luego valida su conocimiento.",
+      "rolesLoadFailed": "No se pudieron cargar tus roles guardados. Eso no significa que no tengas ninguno: inténtalo de nuevo en un momento.",
+      "rolesRetry": "Intentar de nuevo"
     },
     "title": "Currículo del sucesor",
     "subtitle": "Aprende el rol a partir de la experiencia capturada y señala todo lo que ya no sea correcto.",
@@ -139,7 +141,9 @@
       "roleShape": "Perfil del rol",
       "roleShapeHint": "El perfil decide cuáles de las 8 secciones de conocimiento van primero: el árbol de un ejecutivo trata de criterio y relaciones, no de una lista de tareas.",
       "draftingAria": "Redactando el blueprint",
-      "draftButton": "Redactar el blueprint"
+      "draftButton": "Redactar el blueprint",
+      "savedRolesLoadFailed": "No se pudieron cargar tus roles guardados, por eso no aparece ninguno aquí. Eso no significa que no tengas ninguno.",
+      "savedRolesRetry": "Intentar de nuevo"
     },
     "review": {
       "nothingToSave": "No hay nada que guardar: añade o conserva al menos un nodo.",
@@ -219,7 +223,9 @@
       "loading": "Cargando tus puestos guardados…",
       "empty": "Aún no hay puestos guardados. Crea primero el Role Blueprint de un puesto: define las áreas de conocimiento que recorrerá esta captura.",
       "blueprintRole": "Crear Role Blueprint de un puesto",
-      "areaCount": "{{areas}} áreas de conocimiento"
+      "areaCount": "{{areas}} áreas de conocimiento",
+      "loadFailed": "No se pudieron cargar tus roles guardados. Eso no significa que no tengas ninguno: inténtalo de nuevo en un momento.",
+      "retry": "Intentar de nuevo"
     },
     "plan": {
       "whoTitle": "¿A quién vamos a capturar?",

@@ -586,7 +586,8 @@
     "emptyStats": "Zatím nejsou k dispozici žádné statistiky.",
     "emptyTimeToFill": "Zatím žádná data o době do obsazení.",
     "loading": "Načítání analytiky…",
-    "title": "Analytika"
+    "title": "Analytika",
+    "loadFailed": "Tento panel se nepodařilo načíst. Neznamená to, že nejsou k dispozici žádná data."
   },
   "draftFlow": {
     "archetype": {

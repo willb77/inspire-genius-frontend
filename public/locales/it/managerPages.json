@@ -330,7 +330,10 @@
     "reviewSent": "Revisione inviata.",
     "theReviewCouldNotBe": "Impossibile salvare la revisione.",
     "noteSaved": "Nota salvata.",
-    "theNoteCouldNotBe": "Impossibile salvare la nota."
+    "theNoteCouldNotBe": "Impossibile salvare la nota.",
+    "loadFailedTitle": "Impossibile caricare gli obiettivi",
+    "loadFailedBody": "Non significa che non ci siano obiettivi. Al membro non è stato inviato nulla. Riprova tra poco.",
+    "loadFailedRetry": "Riprova"
   },
   "studentRoster": {
     "noActivityRecorded": "Non è stata registrata alcuna attività per questo membro, quindi le visite non possono essere conteggiate. Non significa che il conteggio sia zero.",

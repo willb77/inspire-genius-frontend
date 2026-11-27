@@ -555,7 +555,8 @@
     "emptyStats": "Brak dostępnych statystyk.",
     "emptyTimeToFill": "Brak danych o czasie obsadzenia.",
     "loading": "Ładowanie analityki…",
-    "title": "Analityka"
+    "title": "Analityka",
+    "loadFailed": "Nie udało się wczytać tego panelu. To nie znaczy, że nie ma danych."
   },
   "aptitudes": {
     "description": "Uszereguj 8 preferencji uzdolnień zawodowych według ważności dla tej roli, a następnie oceń znaczenie każdej z nich.",

@@ -258,7 +258,10 @@
     "coachesCoSignTheMember": "Koučové schvalují společně – vlastní schválení člena se nikdy nepřepíše.",
     "noteAboutThisGoal": "Poznámka k tomuto cíli",
     "noteKind": "Typ poznámky",
-    "yourOwnNoteOnlyYou": "Vaše vlastní poznámka. Koučinkové poznámky vidíte jen Vy."
+    "yourOwnNoteOnlyYou": "Vaše vlastní poznámka. Koučinkové poznámky vidíte jen Vy.",
+    "loadFailedTitle": "Cíle se nepodařilo načíst",
+    "loadFailedBody": "Neznamená to, že člen nemá žádné cíle. Členovi nebylo nic odesláno. Zkuste to prosím za chvíli znovu.",
+    "loadFailedRetry": "Zkusit znovu"
   },
   "hiring": {
     "openPositions": "Otevřené pozice",
