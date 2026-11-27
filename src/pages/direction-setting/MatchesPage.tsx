@@ -16,6 +16,7 @@ import { useJobFitComponentsEnabled } from "@/hooks/switches/useJobFitComponents
 import { displayFitPercent } from "@/components/fit/fit"
 import { asOverall } from "@/components/fit/components"
 import { hasLocalJobSet } from "@/lib/job-fit/matches"
+import { withPrism } from "@/lib/withPrism"
 import type { FitMethod, FitOrder } from "@/types/job-fit"
 import { FitMatchList } from "@/components/fit/FitMatchList"
 import { FitResult } from "@/components/fit/FitResult"
@@ -111,7 +112,7 @@ const ordersFor = (
 const TARGET_STAGE = "7"
 
 /** The stages that still work when matching has nothing to show. */
-const elsewhereFor = (t: TFn): { to: string; label: string; blurb: string }[] => [
+const elsewhereFor = (t: TFn, withoutCareers = false): { to: string; label: string; blurb: string }[] => [
   {
     to: ROUTES.DIRECTION_SETTING.CAREERS,
     label: t("matches.elsewhere.careers.label", "Career areas"),
@@ -127,7 +128,7 @@ const elsewhereFor = (t: TFn): { to: string; label: string; blurb: string }[] =>
     label: t("matches.elsewhere.interview.label", "Interview prep"),
     blurb: t("matches.elsewhere.interview.blurb", "Work out what to say about yourself, and practise saying it."),
   },
-]
+].filter((item) => !(withoutCareers && item.to === ROUTES.DIRECTION_SETTING.CAREERS))
 
 /*
  * No fit tier and no Excellent/Good/Moderate/Poor band on this page (4.1,
@@ -192,6 +193,64 @@ function NothingToMatchYet() {
                     className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
                     aria-hidden
                   />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
+ * N1-b-a (2026-11-27). Nothing to match because the person has no PRISM on file.
+ *
+ * The server says so (`emptyReason: "no_prism"`, sent only on an empty list with
+ * no authoritative PRISM). `NothingToMatchYet` tells everyone "nothing is
+ * missing from your profile", which is false here, so this card says what is
+ * missing and sends the person to Establish, Direction Setting's own door to
+ * PRISM. Career areas is left out of "these do work": it needs PRISM too.
+ */
+function NoPrismToMatchYet() {
+  const { t } = useTranslation("directionPages")
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <SearchX className="h-4 w-4 text-muted-foreground" aria-hidden />
+          {withPrism(t("matches.noPrism.title", "Matching needs your PRISM first"))}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            {withPrism(t("matches.noPrism.body", "This step lines your profile up against published role benchmarks, and your PRISM is your side of that comparison. Until it is on file there is nothing to compare."))}
+          </p>
+          <p>
+            {withPrism(t("matches.noPrism.note", "Nothing has gone wrong and nothing you've done has been lost. Once your PRISM is added, your matches will appear here."))}
+          </p>
+        </div>
+        <Button asChild>
+          <Link to={ROUTES.DIRECTION_SETTING.ESTABLISH}>
+            {withPrism(t("matches.noPrism.button", "Add your PRISM"))}
+            <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
+          </Link>
+        </Button>
+        <div>
+          <p className="mb-2 text-sm font-medium">{t("matches.inTheMeantimeTheseDo", "In the meantime, these do work:")}</p>
+          <ul className="space-y-2">
+            {elsewhereFor(t, true).map((item) => (
+              <li key={item.to}>
+                <Link
+                  to={item.to}
+                  className="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:border-primary/50"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium">{item.label}</span>
+                    <span className="block text-xs text-muted-foreground">{item.blurb}</span>
+                  </span>
+                  <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                 </Link>
               </li>
             ))}
@@ -302,7 +361,7 @@ export default function MatchesPage() {
   const sharedQuery = useFitMatches(...sharedArgs)
   const data = shared
     ? sharedQuery.data
-      ? { matches: sharedQuery.data, gated: sharedQuery.gated }
+      ? { matches: sharedQuery.data, gated: sharedQuery.gated, emptyReason: sharedQuery.emptyReason }
       : dsQuery.data
     : dsQuery.data
   const isLoading = shared ? sharedQuery.isLoading && !dsQuery.data : dsQuery.isLoading
@@ -319,6 +378,8 @@ export default function MatchesPage() {
 
   const matches = data?.matches ?? []
   const gated = data?.gated === true
+  // N1-b-a: why the rows shown are empty, read from the query whose rows they are.
+  const emptyReason = data?.emptyReason ?? null
   const inList = (jobId: string | null | undefined): jobId is string =>
     !!jobId && matches.some((m) => m.jobId === jobId)
   // A role picked on this visit, else the role already saved as the target (if
@@ -485,7 +546,7 @@ export default function MatchesPage() {
             </Card>
           ),
           gated: <MatchingPaused />,
-          empty: <NothingToMatchYet />,
+          empty: emptyReason === "no_prism" ? <NoPrismToMatchYet /> : <NothingToMatchYet />,
           wrapList: (list) => (
             <>
               <section aria-labelledby="ds-matches-heading">

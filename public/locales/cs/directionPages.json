@@ -129,7 +129,13 @@
     "show": "Zobrazit",
     "whichJobsComeFirst": "Které pozice budou první",
     "whereYouStand": "Kde se nacházíte",
-    "workingOutWhereYouStand": "Zjišťujeme, jak na tom jste vzhledem k této roli…"
+    "workingOutWhereYouStand": "Zjišťujeme, jak na tom jste vzhledem k této roli…",
+    "noPrism": {
+      "body": "Tento krok porovnává váš profil s vydanými vzorovými profily pozic a vaše PRISM je vaše strana tohoto srovnání. Dokud není uloženo, není co porovnávat.",
+      "button": "Přidejte své PRISM",
+      "note": "Nic se nepokazilo a nic z toho, co jste udělali, se neztratilo. Jakmile přidáte své PRISM, vaše shody se zobrazí zde.",
+      "title": "Párování nejdřív potřebuje vaše PRISM"
+    }
   },
   "plan": {
     "severity": {

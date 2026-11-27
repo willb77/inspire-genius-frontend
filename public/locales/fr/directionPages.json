@@ -66,6 +66,12 @@
         "label": "PRISM : proximité",
         "hint": "Le plus proche du profil du rôle par sa forme"
       }
+    },
+    "noPrism": {
+      "body": "Cette étape compare votre profil à des profils de référence de postes publiés, et votre PRISM est votre côté de cette comparaison. Tant qu'il n'est pas enregistré, il n'y a rien à comparer.",
+      "button": "Ajoutez votre PRISM",
+      "note": "Rien n'a mal tourné et rien de ce que vous avez fait n'est perdu. Une fois votre PRISM ajouté, vos correspondances apparaîtront ici.",
+      "title": "La mise en correspondance a d'abord besoin de votre PRISM"
     }
   },
   "plan": {
