@@ -87,7 +87,7 @@
   "whoUnderneath": "Cosa c'è sotto",
   "planNextSteps": "Prossimi passi",
   "planNoAreas": "Non ancora — prima completa Aree di carriera.",
-  "planNoGoals": "Nessun obiettivo impostato.",
+  "planNoGoals": "Non hai ancora completato il passaggio sugli obiettivi.",
   "planNoInterests": "Nessun interesse aggiunto.",
   "planNoLevel": "Livello scolastico non ancora impostato.",
   "planNotYetDo": "Non ancora — prima completa {{stage}}.",
@@ -260,7 +260,7 @@
   "planComingNext": "Prossimamente: {{names}}.",
   "planEducationPaths": "Percorsi di istruzione",
   "planGoalsSet": "{{goals}} obiettivo/i impostato/i.",
-  "planGoalsTitle": "I tuoi obiettivi",
+  "planGoalsTitle": "Obiettivi di questo percorso",
   "planInterests": "Interessi: {{interests}}",
   "planLead": "Ciò che hai scoperto finora e cosa fare dopo.",
   "planSoFarTitle": "Il tuo piano finora",
@@ -270,5 +270,6 @@
   "planSoFarTargets": "I ruoli a cui punti",
   "planLearningPath": "Percorso di apprendimento e istruzione",
   "planLoading": "Stiamo preparando il tuo piano",
-  "progComponentLine": "{{label}}: {{text}}"
+  "progComponentLine": "{{label}}: {{text}}",
+  "planGoalsStudioLink": "Apri Goals Studio"
 }

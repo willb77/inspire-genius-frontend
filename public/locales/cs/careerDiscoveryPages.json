@@ -1,7 +1,7 @@
 {
   "planNextSteps": "Další kroky",
   "planNoAreas": "Zatím ne – nejdříve projděte Oblasti kariéry.",
-  "planNoGoals": "Zatím nejsou nastaveny žádné cíle.",
+  "planNoGoals": "Krok s cíli jste ještě neudělali.",
   "planNoInterests": "Zatím nejsou přidány žádné zájmy.",
   "planNoLevel": "Úroveň školy zatím není nastavena.",
   "planNotYetDo": "Zatím ne – nejdříve dokončete {{stage}}.",
@@ -174,7 +174,7 @@
   "planComingNext": "Již brzy: {{names}}.",
   "planEducationPaths": "Vzdělávací cesty",
   "planGoalsSet": "Nastavené cíle: {{goals}}.",
-  "planGoalsTitle": "Vaše cíle",
+  "planGoalsTitle": "Cíle z této cesty",
   "planInterests": "Zajímá vás: {{interests}}",
   "planLead": "Co jste zatím zjistili a co dělat dál.",
   "planSoFarTitle": "Tvůj plán zatím",
@@ -270,5 +270,6 @@
   "dpAlsoPlanHelp": "Druhý program nebo vedlejší obor. Společné předměty se plánují jednou.",
   "dpBuilding": "Sestavujeme Váš studijní plán",
   "dpCatalogYear": "Katalog {{year}}",
-  "progComponentLine": "{{label}}: {{text}}"
+  "progComponentLine": "{{label}}: {{text}}",
+  "planGoalsStudioLink": "Otevřít Goals Studio"
 }

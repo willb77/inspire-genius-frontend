@@ -327,3 +327,28 @@ describe("switch on", () => {
     expect(await screen.findByText("Terms left: 2.")).toBeInTheDocument()
   })
 })
+
+// O-CBW-b (2026-11-27, R2): the plan page's goals card counts this journey's
+// goals step, not Goals Studio, and says so — it must not read "no goals" beside
+// the Goals Studio targets listed above it.
+describe("O-CBW-b: the journey goals card names its source", () => {
+  test("no journey goals: the step is named and Goals Studio is one click away", async () => {
+    m.getDiscoveryPlan.mockReturnValue(ok({ ...DISCOVERY_PLAN, goalsCount: 0 }) as never)
+    renderPlan()
+    await pageReady()
+    expect(screen.getByText("Goals from this journey")).toBeInTheDocument()
+    expect(screen.queryByText("Your goals")).toBeNull()
+    expect(screen.queryByText(/No goals set yet/)).toBeNull()
+    expect(screen.getByText(/You haven't done the goals step yet\./)).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Open Goals Studio" })).toHaveAttribute("href", "/my/goals")
+  })
+
+  test("journey goals on file: the count, and no Goals Studio link", async () => {
+    m.getDiscoveryPlan.mockReturnValue(ok({ ...DISCOVERY_PLAN, goalsCount: 2 }) as never)
+    renderPlan()
+    await pageReady()
+    expect(screen.getByText("Goals from this journey")).toBeInTheDocument()
+    expect(screen.getByText("2 goal(s) set.")).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Open Goals Studio" })).toBeNull()
+  })
+})

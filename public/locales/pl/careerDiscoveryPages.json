@@ -1,7 +1,7 @@
 {
   "planNextSteps": "Następne kroki",
   "planNoAreas": "Jeszcze nie — najpierw wybierz obszary kariery.",
-  "planNoGoals": "Nie ustawiono jeszcze celów.",
+  "planNoGoals": "Nie wykonano jeszcze kroku z celami.",
   "planNoInterests": "Nie dodano jeszcze zainteresowań.",
   "planNoLevel": "Poziom szkoły nie jest jeszcze ustawiony.",
   "planNotYetDo": "Jeszcze nie — najpierw wykonaj: {{stage}}.",
@@ -114,7 +114,7 @@
   "planComingNext": "Wkrótce: {{names}}.",
   "planEducationPaths": "Ścieżki edukacji",
   "planGoalsSet": "Ustawione cele: {{goals}}.",
-  "planGoalsTitle": "Twoje cele",
+  "planGoalsTitle": "Cele z tej ścieżki",
   "planInterests": "Zainteresowania: {{interests}}",
   "planLead": "To, co udało Ci się dotąd odkryć, i co robić dalej.",
   "planSoFarTitle": "Twój plan do tej pory",
@@ -270,5 +270,6 @@
   "aboutResumeLink": "Otwórz moje dokumenty",
   "aboutResumeTitle": "CV (opcjonalnie)",
   "aboutSave": "Zapisz",
-  "progComponentLine": "{{label}}: {{text}}"
+  "progComponentLine": "{{label}}: {{text}}",
+  "planGoalsStudioLink": "Otwórz Goals Studio"
 }

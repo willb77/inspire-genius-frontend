@@ -29,6 +29,10 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
   const already = (targets.data ?? []).filter((tg) => tg.jobId === data.jobId)
   const titleOf = (goalId: string) => goals.find((g) => g.goalId === goalId)?.title ?? t("makeTargetCard.aGoal", "A goal")
   const done = make.data
+  // O-CBW-a (2026-11-27): after a make, the targets refetch puts the same goal
+  // in the "already" list while the status line still says it "now targets"
+  // the role. Show it once — in the status line, which screen readers announce.
+  const alreadyShown = done ? already.filter((tg) => tg.goalId !== done.goal.goalId) : already
   // Feeds-F5: once a goal targets this role, the card offers the roadmap, not a
   // second create (which only re-aimed the same goal and rebuilt its roadmap).
   // Held back while the targets list loads so it cannot be clicked first; if
@@ -51,9 +55,9 @@ export function MakeTargetCard({ data }: { data: FitDetail }) {
         )}
       </p>
 
-      {already.length > 0 && (
+      {alreadyShown.length > 0 && (
         <ul className="mt-2 space-y-1 text-sm text-[#0F172A]" aria-label={t("makeTargetCard.alreadyLabel", "Goals already aimed at this role")}>
-          {already.map((tg) => (
+          {alreadyShown.map((tg) => (
             <li key={tg.goalId}>
               {t("makeTargetCard.alreadyTargets", {
                 defaultValue: "“{{title}}” already targets this role —",

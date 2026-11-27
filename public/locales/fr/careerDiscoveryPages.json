@@ -236,7 +236,7 @@
   "planComingNext": "À suivre : {{names}}.",
   "planEducationPaths": "Parcours de formation",
   "planGoalsSet": "{{goals}} objectif(s) défini(s).",
-  "planGoalsTitle": "Vos objectifs",
+  "planGoalsTitle": "Objectifs de ce parcours",
   "planInterests": "Intérêts : {{interests}}",
   "planLead": "Ce que vous avez découvert jusqu'ici, et la suite à donner.",
   "planSoFarTitle": "Votre plan jusqu'ici",
@@ -248,7 +248,7 @@
   "planLoading": "Préparation de votre plan",
   "planNextSteps": "Prochaines étapes",
   "planNoAreas": "Pas encore : commencez par les domaines de carrière.",
-  "planNoGoals": "Aucun objectif défini pour l'instant.",
+  "planNoGoals": "Vous n'avez pas encore fait l'étape des objectifs.",
   "planNoInterests": "Aucun intérêt ajouté pour l'instant.",
   "planNoLevel": "Niveau scolaire non défini pour l'instant.",
   "planNotYetDo": "Pas encore : commencez par {{stage}}.",
@@ -270,5 +270,6 @@
   "progNotAvailable": "non disponible",
   "progOnlyPublished": "Seuls les établissements ayant publié leur catalogue ici sont répertoriés.",
   "progOverallFit": "Adéquation globale",
-  "progComponentLine": "{{label}}: {{text}}"
+  "progComponentLine": "{{label}}: {{text}}",
+  "planGoalsStudioLink": "Ouvrir Goals Studio"
 }

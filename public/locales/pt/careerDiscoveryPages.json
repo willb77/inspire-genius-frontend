@@ -237,7 +237,7 @@
   "planComingNext": "Em breve: {{names}}.",
   "planEducationPaths": "Caminhos de formação",
   "planGoalsSet": "{{goals}} meta(s) definida(s).",
-  "planGoalsTitle": "Suas metas",
+  "planGoalsTitle": "Metas desta jornada",
   "planInterests": "Interesse em: {{interests}}",
   "planLead": "O que você descobriu até agora e o que fazer em seguida.",
   "planSoFarTitle": "Seu plano até agora",
@@ -249,7 +249,7 @@
   "planLoading": "Montando seu plano",
   "planNextSteps": "Próximos passos",
   "planNoAreas": "Ainda não — faça primeiro Áreas de carreira.",
-  "planNoGoals": "Nenhuma meta definida ainda.",
+  "planNoGoals": "Você ainda não fez a etapa de metas.",
   "planNoInterests": "Nenhum interesse adicionado ainda.",
   "planNoLevel": "Nível escolar ainda não definido.",
   "planNotYetDo": "Ainda não — faça primeiro {{stage}}.",
@@ -270,5 +270,6 @@
   "progItsRole": "sua função",
   "progNotAvailable": "indisponível",
   "progOnlyPublished": "Somente escolas que publicaram seu catálogo aqui são listadas.",
-  "progComponentLine": "{{label}}: {{text}}"
+  "progComponentLine": "{{label}}: {{text}}",
+  "planGoalsStudioLink": "Abrir o Goals Studio"
 }
