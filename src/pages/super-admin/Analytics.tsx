@@ -531,12 +531,11 @@ function isAnalyticsTab(value: string | null): value is AnalyticsTab {
   return value !== null && (VALID_TABS as readonly string[]).includes(value)
 }
 
-// House style drops the "Project Log" tab: it only says the log has moved
-// (the usability review marks it for removal). ?tab=project then opens Analytics.
-const HOUSE_TABS: readonly AnalyticsTab[] = ["analytics", "audit", "organization"]
-
-function isShownTab(value: string | null, house: boolean): value is AnalyticsTab {
-  return isAnalyticsTab(value) && (!house || HOUSE_TABS.includes(value))
+// Every tab is shown in house style too. The Project Log tab (Change Log +
+// Site Map) was hidden there and super-admins lost the Site Map; the page is
+// routed under /super-admin/* only, so no role is widened by showing it.
+function isShownTab(value: string | null): value is AnalyticsTab {
+  return isAnalyticsTab(value)
 }
 
 export default function SuperAdminAnalytics() {
@@ -557,7 +556,7 @@ export default function SuperAdminAnalytics() {
 
 function AnalyticsContent({ house = false }: { house?: boolean }) {
   const [searchParams, setSearchParams] = useSearchParams()
-  const isTab = (value: string | null): value is AnalyticsTab => isShownTab(value, house)
+  const isTab = (value: string | null): value is AnalyticsTab => isShownTab(value)
   const initialTab: AnalyticsTab = isTab(searchParams.get("tab"))
     ? (searchParams.get("tab") as AnalyticsTab)
     : "analytics"
@@ -566,10 +565,10 @@ function AnalyticsContent({ house = false }: { house?: boolean }) {
   // Keep ?tab=… in sync if a deep-link arrives after mount (e.g. redirect from /super-admin/audit-log)
   useEffect(() => {
     const param = searchParams.get("tab")
-    if (isShownTab(param, house) && param !== activeTab) {
+    if (isShownTab(param) && param !== activeTab) {
       setActiveTab(param)
     }
-  }, [searchParams, activeTab, house])
+  }, [searchParams, activeTab])
 
   const handleTabChange = (next: string) => {
     if (!isTab(next)) return
@@ -606,12 +605,10 @@ function AnalyticsContent({ house = false }: { house?: boolean }) {
               <Building2 className="h-3.5 w-3.5" />
               Organization activity
             </TabsTrigger>
-            {!house && (
             <TabsTrigger value="project" className="gap-2">
               <FileText className="h-3.5 w-3.5" />
               Project Log
             </TabsTrigger>
-            )}
           </TabsList>
 
           <TabsContent value="analytics" className="flex-1 mt-4 overflow-y-auto">
@@ -626,11 +623,9 @@ function AnalyticsContent({ house = false }: { house?: boolean }) {
             <OrgActivityReport />
           </TabsContent>
 
-          {!house && (
           <TabsContent value="project" className="flex-1 mt-4 flex flex-col">
             <ProjectLogTab />
           </TabsContent>
-          )}
         </Tabs>
       </div>
   )
