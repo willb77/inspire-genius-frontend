@@ -83,6 +83,7 @@
     "whatNext": "Co bude dál"
   },
   "events": {
+    "registeredEmail": "Pokud se na tuto relaci registrujete poprvé, posíláme potvrzení se souborem kalendáře na adresu {{email}}.",
     "loading": "Načítání událostí…",
     "listAria": "Nadcházející události",
     "title": "Nadcházející události",

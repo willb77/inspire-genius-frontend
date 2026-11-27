@@ -147,6 +147,7 @@
     "whatNext": "Cosa succede dopo"
   },
   "events": {
+    "registeredEmail": "Se è la tua prima iscrizione a questa sessione, stiamo inviando una conferma con un file di calendario a {{email}}.",
     "loading": "Caricamento eventi…",
     "listAria": "Prossimi eventi",
     "title": "Prossimi eventi",

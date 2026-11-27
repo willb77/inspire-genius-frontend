@@ -68,7 +68,12 @@ export type PublicRegistrationPayload = {
   website: string | null
 }
 
-export type PublicRegistrationReceived = { status: "received" }
+/**
+ * `confirmation_email` is only on the EVENT registration answer: the server's confirmation-email switch,
+ * the SAME value on every "received" answer (a new seat, a repeat, a limit), so it says nothing about whether
+ * this address was already registered. Absent or false = say nothing about email.
+ */
+export type PublicRegistrationReceived = { status: "received"; confirmation_email?: boolean }
 
 /** One entry of the server's 422 list. `field` may be dotted, e.g. `consents.0.granted`. */
 export type IntakeFieldProblem = { field: string; message: string }

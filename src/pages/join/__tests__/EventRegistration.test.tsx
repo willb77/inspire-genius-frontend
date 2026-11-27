@@ -281,6 +281,71 @@ describe("the registration dialog", () => {
     expect(hp.tabIndex).toBe(-1)
     fireEvent.change(hp, { target: { value: "" } })
   })
+
+  // ─── The confirmation email (monorepo CSA 2026-11-26, #2229; server PRs #2244 and #2251) ───
+
+  async function register(u: ReturnType<typeof userEvent.setup>) {
+    const dialog = await open()
+    await fillManually(u)
+    await u.click(within(dialog).getByRole("button", { name: "Solve the check" }))
+    await u.click(within(dialog).getByRole("button", { name: "Register for this event" }))
+    return dialog
+  }
+  const EMAIL_LINE = /we're emailing a confirmation with a calendar file to/
+
+  it("sends the page language so the server can pick the email's language", async () => {
+    await register(userEvent.setup())
+    await screen.findByText("You're registered")
+    expect(posts[0].body.language).toBe("en")
+  })
+
+  it("sends whatever language the page is in, unchanged (the server normalises it)", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mocked = require("react-i18next") as { useTranslation: (ns?: string) => Record<string, unknown> }
+    const real = mocked.useTranslation
+    const spy = jest.spyOn(mocked, "useTranslation").mockImplementation((ns?: string) => {
+      const r = real(ns) as { i18n: Record<string, unknown> }
+      return { ...r, i18n: { ...r.i18n, language: "pt-BR" } }
+    })
+    try {
+      await register(userEvent.setup())
+      await screen.findByText("You're registered")
+      expect(posts[0].body.language).toBe("pt-BR")
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it("mentions email only when the server says the confirmation is on, and shows the address typed", async () => {
+    overrides = { register: { status: 200, data: { status: "received", confirmation_email: true } } }
+    await register(userEvent.setup())
+    expect(await screen.findByText("You're registered")).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "If this is your first registration for this session, we're emailing a confirmation with a calendar file to ada@example.org.",
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it.each([
+    ["the flag is false", { status: "received", confirmation_email: false }],
+    ["the flag is absent (an older server)", { status: "received" }],
+    ["the flag is not a boolean", { status: "received", confirmation_email: "yes" }],
+    ["the flag is the string true", { status: "received", confirmation_email: "true" }],
+  ])("says nothing about email when %s", async (_n, data) => {
+    overrides = { register: { status: 200, data } }
+    await register(userEvent.setup())
+    expect(await screen.findByText("You're registered")).toBeInTheDocument()
+    expect(screen.queryByText(EMAIL_LINE)).not.toBeInTheDocument()
+  })
+
+  it("never promises an email outright: the line is conditional, so a repeat registration is not misled", async () => {
+    overrides = { register: { status: 200, data: { status: "received", confirmation_email: true } } }
+    await register(userEvent.setup())
+    const line = await screen.findByText(EMAIL_LINE)
+    expect(line.textContent).toMatch(/^If this is your first registration/)
+    expect(line.textContent).not.toMatch(/on its way|check your inbox|has been sent|we have sent/i)
+  })
 })
 
 describe("the service", () => {
