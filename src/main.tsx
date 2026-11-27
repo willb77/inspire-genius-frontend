@@ -1,3 +1,5 @@
+// Must stay the FIRST import: see lib/zodConfig.ts (CSP, no eval).
+import './lib/zodConfig'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
