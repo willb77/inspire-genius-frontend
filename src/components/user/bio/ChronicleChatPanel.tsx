@@ -118,6 +118,11 @@ function nextId(prefix: string): string {
   return `${prefix}-${Date.now()}-${_idSeq}`
 }
 
+/** A key for one Meridian conversation thread (see `threadKey` below). */
+function newThreadKey(): string {
+  return nextId("thread")
+}
+
 export type ChronicleChatPanelProps = {
   memberId: string
   /** Called when an assistant turn settles, so the parent can refetch the narrative. */
@@ -177,6 +182,22 @@ export function ChronicleChatPanel({
   // the session it was saving, or the next autosave of the NEW conversation
   // would overwrite that old session's transcript (D-11).
   const sessionGenRef = useRef(0)
+  // Which Meridian conversation thread this interview talks on (O-D11-a).
+  // `useMeridianChat` keeps one server session id per `sessionKey`, so a key
+  // that only named the member made every Bio session in a mount share one
+  // Meridian thread: after New session Chronicle replayed the previous
+  // interview as live history ("welcome back… we were in the middle of…").
+  // New session mints a fresh key; Resume returns to that Bio session's own
+  // key. The key changes only alongside `sessionGenRef`, never mid-interview.
+  const [threadKey, setThreadKey] = useState(newThreadKey)
+  const threadKeyRef = useRef(threadKey)
+  // Bio session id -> the thread key its interview used in this mount. Filled
+  // when a save returns, because the server mints the Bio session id.
+  const threadKeyByBioSession = useRef<Record<string, string>>({})
+  const startThread = useCallback((key: string) => {
+    threadKeyRef.current = key
+    setThreadKey(key)
+  }, [])
   // The chapter the member chose (tile, "Continue", first-run). Sent as the
   // capture hint; null when nothing was chosen, so the model files the memory
   // by its content instead of every memory landing in the suggested chapter.
@@ -210,7 +231,7 @@ export function ChronicleChatPanel({
     error,
     clearError,
   } = useMeridianChat({
-    sessionKey: memberId || "bio",
+    sessionKey: `${memberId || "bio"}:${threadKey}`,
     accessToken,
     context: { surface: "bio_capture", agent_hint: "chronicle", member_id: memberId },
     onAssistant,
@@ -378,6 +399,7 @@ export function ChronicleChatPanel({
     autosaveInFlight.current = true
     const count = turns.length
     const gen = sessionGenRef.current
+    const thread = threadKeyRef.current
     void saveSession({
       memberId,
       sessionId: sessionIdRef.current,
@@ -389,6 +411,7 @@ export function ChronicleChatPanel({
         // itself landed in the session it was for (it carried that transcript);
         // do not re-point the current interview at it.
         if (gen !== sessionGenRef.current) return
+        threadKeyByBioSession.current[saved.sessionId] = thread
         sessionIdRef.current = saved.sessionId
         lastSavedCount.current = count
         setCurrentSessionId(saved.sessionId)
@@ -413,6 +436,7 @@ export function ChronicleChatPanel({
     // Best-effort auto-save so ending an interview persists it too.
     if (turns.length > 0) {
       const gen = sessionGenRef.current
+      const thread = threadKeyRef.current
       void saveSession({
         memberId,
         sessionId: sessionIdRef.current,
@@ -422,6 +446,7 @@ export function ChronicleChatPanel({
         .then((saved) => {
           // Same generation guard as the autosave above.
           if (gen !== sessionGenRef.current) return
+          threadKeyByBioSession.current[saved.sessionId] = thread
           sessionIdRef.current = saved.sessionId
           lastSavedCount.current = turns.length
           setCurrentSessionId(saved.sessionId)
@@ -445,6 +470,8 @@ export function ChronicleChatPanel({
 
   const resetInterview = useCallback(() => {
     sessionGenRef.current += 1
+    // A new Bio session talks on a new Meridian thread (O-D11-a).
+    startThread(newThreadKey())
     dictation.stop()
     stopSpeaking()
     setActiveModule(null)
@@ -457,13 +484,21 @@ export function ChronicleChatPanel({
     lastSavedCount.current = 0
     setInput("")
     spokenRef.current = null
-  }, [dictation, stopSpeaking, setActiveModule])
+  }, [dictation, stopSpeaking, setActiveModule, startThread])
 
   const handleResumeSession = useCallback(
     async (sessionId: string) => {
       try {
         const detail = await loadSession({ memberId, sessionId })
         sessionGenRef.current += 1
+        // Continue on THAT Bio session's Meridian thread (O-D11-a): the key it
+        // used earlier in this mount, else one derived from its id. After a
+        // page reload the hook mints a fresh server id for that key, so the
+        // resumed thread starts a new Meridian conversation (accepted residual).
+        const resumedThread =
+          threadKeyByBioSession.current[detail.sessionId] ?? `bio-session:${detail.sessionId}`
+        threadKeyByBioSession.current[detail.sessionId] = resumedThread
+        startThread(resumedThread)
         dictation.stop()
         stopSpeaking()
         setActiveModule(null)
@@ -488,7 +523,7 @@ export function ChronicleChatPanel({
         toast.error(tr("user.bioChronicleChatPanel.couldnTOpenThatSession", { defaultValue: "Couldn't open that session — please try again." }))
       }
     },
-    [loadSession, memberId, dictation, stopSpeaking, setActiveModule, tr],
+    [loadSession, memberId, dictation, stopSpeaking, setActiveModule, startThread, tr],
   )
 
   return (
