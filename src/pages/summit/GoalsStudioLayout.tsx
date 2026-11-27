@@ -62,9 +62,8 @@ function sections(explored: number, total: number, goals: number, t: TFunction):
 }
 
 /**
- * House style (goals, S2b): the seven sections as three pills. Overview and
- * Discovery fold into "Talk it through" (the interview, with its progress
- * strip), and Coaches and Coming soon go. Badges keep the same live-session
+ * House style (goals, S2b): the seven sections as five pills. Coaches and Coming
+ * soon go; Overview and Discovery stay (restored 2026-11-27). Badges keep the same live-session
  * rule as above. Display only — the routes all stay registered.
  */
 function houseSections(explored: number, total: number, goals: number, t: TFunction): Section[] {
@@ -80,6 +79,13 @@ function houseSections(explored: number, total: number, goals: number, t: TFunct
       to: ROUTES.MY_GOALS.INTERVIEW,
       label: t("layout.nav.houseTalk", { defaultValue: "Talk it through" }),
       icon: MessageCircle,
+      badge: total ? `${explored}/${total}` : undefined,
+    },
+    { to: ROUTES.MY_GOALS.OVERVIEW, label: t("layout.nav.overview", { defaultValue: "Overview" }), icon: Compass },
+    {
+      to: ROUTES.MY_GOALS.DISCOVERY,
+      label: t("layout.nav.discovery", { defaultValue: "Discovery" }),
+      icon: Layers,
       badge: total ? `${explored}/${total}` : undefined,
     },
     { to: ROUTES.MY_GOALS.SHARING, label: t("layout.nav.houseWho", { defaultValue: "Who can see them" }), icon: Eye },
