@@ -1,5 +1,6 @@
 {
   "events": {
+    "registeredEmail": "Si c'est votre première inscription à cette session, nous envoyons une confirmation avec un fichier de calendrier à {{email}}.",
     "listAria": "Événements à venir",
     "title": "Événements à venir",
     "backToRegister": "← Manifestez votre intérêt",

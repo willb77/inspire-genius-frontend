@@ -1,4 +1,5 @@
 import { useContext, useMemo, useState, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { Controller, useForm, type FieldPath } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
@@ -65,7 +66,9 @@ export function EventRegistrationDialog({ event, onClose }: { event: EventOption
     return { ...JOIN_DEFAULTS, first_name: first, last_name: last, email: user?.email ?? "" }
   }, [user])
 
+  const { t, i18n } = useTranslation("joinPages")
   const registration = useEventRegistration()
+  const [submittedEmail, setSubmittedEmail] = useState("")
   const [failure, setFailure] = useState<EventRegistrationFailure | null>(null)
   const [consentsError, setConsentsError] = useState<string | null>(null)
   const [token, setToken] = useState<string | null>(null)
@@ -89,8 +92,9 @@ export function EventRegistrationDialog({ event, onClose }: { event: EventOption
     if (!token) return
     setFailure(null)
     setConsentsError(null)
+    setSubmittedEmail(values.email)
     registration.mutate(
-      { ...toPayload(values), webinar_id: event.id, turnstile_token: token },
+      { ...toPayload(values), webinar_id: event.id, turnstile_token: token, language: i18n.language },
       {
         onError: (err) => {
           // The token is spent whatever the answer was: a fresh challenge every time.
@@ -123,6 +127,15 @@ export function EventRegistrationDialog({ event, onClose }: { event: EventOption
         <p className="max-w-md text-sm text-muted-foreground">
           We've recorded your registration for {event.title}. Thank you.
         </p>
+        {registration.data?.confirmation_email === true && (
+          <p className="max-w-md text-sm text-muted-foreground">
+            {t("events.registeredEmail", {
+              defaultValue:
+                "If this is your first registration for this session, we're emailing a confirmation with a calendar file to {{email}}.",
+              email: submittedEmail,
+            })}
+          </p>
+        )}
         <Button type="button" onClick={onClose}>
           Close
         </Button>

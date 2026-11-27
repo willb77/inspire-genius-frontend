@@ -83,6 +83,7 @@
     "whatNext": "Qué sucede después"
   },
   "events": {
+    "registeredEmail": "Si es la primera vez que te registras en esta sesión, te enviamos por correo una confirmación con un archivo de calendario a {{email}}.",
     "loading": "Cargando eventos…",
     "listAria": "Próximos eventos",
     "title": "Próximos eventos",

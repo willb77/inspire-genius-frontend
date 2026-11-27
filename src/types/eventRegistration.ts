@@ -18,6 +18,8 @@ export type EventOption = {
 export type EventRegistrationPayload = Omit<PublicRegistrationPayload, "webinar_id"> & {
   webinar_id: string
   turnstile_token: string
+  /** The page language, for the confirmation email only. Advisory: the server falls back to English. */
+  language?: string
 }
 
 export type EventRegistrationFailure =
