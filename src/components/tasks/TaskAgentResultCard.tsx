@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { tasksService, type TaskAgentResponse } from "@/services/tasks/tasks.service"
+import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown"
 import { useTranslation } from "react-i18next"
 
 interface Props {
@@ -22,6 +23,11 @@ interface Props {
   agentId?: string
   requestPayload?: Record<string, unknown>
   title?: string
+  /**
+   * Opt-in: parse `result.content` as Markdown. Off by default so every other
+   * consumer keeps its plain-text rendering exactly as before.
+   */
+  renderMarkdown?: boolean
 }
 
 export default function TaskAgentResultCard({
@@ -31,6 +37,7 @@ export default function TaskAgentResultCard({
   agentId,
   requestPayload,
   title,
+  renderMarkdown = false,
 }: Props) {
   const { t } = useTranslation("studioUi")
   const [saved, setSaved] = useState(false)
@@ -82,9 +89,13 @@ export default function TaskAgentResultCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="prose prose-sm max-w-none whitespace-pre-wrap text-slate-800">
-          {result.content}
-        </div>
+        {renderMarkdown ? (
+          <AssistantMarkdown text={result.content} className="prose prose-sm max-w-none text-slate-800" />
+        ) : (
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-slate-800">
+            {result.content}
+          </div>
+        )}
 
         {result.suggested_next && (
           <div className="rounded-md bg-emerald-100/60 px-3 py-2 text-sm text-emerald-900">

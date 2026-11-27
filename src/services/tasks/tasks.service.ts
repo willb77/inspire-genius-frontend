@@ -27,6 +27,10 @@ export interface InterviewPrepRequest {
   candidate_name?: string
   interview_focus?: string
   session_id?: string
+  // Optional interview frame (engine caps: 255 / 2000 / 255). Omitted when blank.
+  reporting_line?: string
+  scope?: string
+  topic?: string
 }
 
 export interface JobBlueprintMatchRequest {

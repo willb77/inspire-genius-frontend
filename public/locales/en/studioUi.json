@@ -115,7 +115,12 @@
       "runMaven": "Run Maven",
       "reset": "Reset",
       "prepFailedTitle": "Maven could not prepare the questions. Nothing was generated.",
-      "prepFailedHint": "Try again. If it keeps failing, ask your administrator to check that your account can use interview prep."
+      "prepFailedHint": "Try again. If it keeps failing, ask your administrator to check that your account can use interview prep.",
+      "reportingLineOptional": "Reporting line (optional)",
+      "scopeOptional": "Scope (optional)",
+      "topicOptional": "Career or education topic (optional)",
+      "prepTimedOutHint": "This took too long to prepare. Try again, or narrow the scope.",
+      "prepFailedRetryHint": "Try again in a moment."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Match generated.",

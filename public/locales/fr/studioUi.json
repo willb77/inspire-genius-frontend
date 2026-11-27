@@ -188,7 +188,12 @@
       "runMaven": "Lancer Maven",
       "reset": "Réinitialiser",
       "prepFailedTitle": "Maven n'a pas pu préparer les questions. Rien n'a été généré.",
-      "prepFailedHint": "Réessayez. Si l'échec persiste, demandez à votre administrateur de vérifier que votre compte peut utiliser la préparation d'entretien."
+      "prepFailedHint": "Réessayez. Si l'échec persiste, demandez à votre administrateur de vérifier que votre compte peut utiliser la préparation d'entretien.",
+      "reportingLineOptional": "Rattachement hiérarchique (facultatif)",
+      "scopeOptional": "Périmètre (facultatif)",
+      "topicOptional": "Sujet de carrière ou de formation (facultatif)",
+      "prepTimedOutHint": "La préparation a pris trop de temps. Réessayez ou réduisez le périmètre.",
+      "prepFailedRetryHint": "Réessayez dans un instant."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Correspondance générée.",

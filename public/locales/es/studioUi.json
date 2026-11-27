@@ -188,7 +188,12 @@
       "runMaven": "Ejecutar Maven",
       "reset": "Restablecer",
       "prepFailedTitle": "Maven no pudo preparar las preguntas. No se generó nada.",
-      "prepFailedHint": "Inténtalo de nuevo. Si sigue fallando, pide a tu administrador que compruebe que tu cuenta puede usar la preparación de entrevistas."
+      "prepFailedHint": "Inténtalo de nuevo. Si sigue fallando, pide a tu administrador que compruebe que tu cuenta puede usar la preparación de entrevistas.",
+      "reportingLineOptional": "Línea de reporte (opcional)",
+      "scopeOptional": "Alcance (opcional)",
+      "topicOptional": "Tema de carrera o educación (opcional)",
+      "prepTimedOutHint": "La preparación tardó demasiado. Inténtalo de nuevo o acota el alcance.",
+      "prepFailedRetryHint": "Inténtalo de nuevo en un momento."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Coincidencia generada.",

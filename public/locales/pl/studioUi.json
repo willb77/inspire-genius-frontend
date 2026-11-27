@@ -167,7 +167,12 @@
       "runMaven": "Uruchom Maven",
       "reset": "Resetuj",
       "prepFailedTitle": "Maven nie mógł przygotować pytań. Nic nie zostało wygenerowane.",
-      "prepFailedHint": "Spróbuj ponownie. Jeśli błąd się powtarza, poproś administratora o sprawdzenie, czy Twoje konto może korzystać z przygotowania do rozmowy."
+      "prepFailedHint": "Spróbuj ponownie. Jeśli błąd się powtarza, poproś administratora o sprawdzenie, czy Twoje konto może korzystać z przygotowania do rozmowy.",
+      "reportingLineOptional": "Podległość służbowa (opcjonalnie)",
+      "scopeOptional": "Zakres (opcjonalnie)",
+      "topicOptional": "Temat kariery lub edukacji (opcjonalnie)",
+      "prepTimedOutHint": "Przygotowanie trwało zbyt długo. Spróbuj ponownie lub zawęź zakres.",
+      "prepFailedRetryHint": "Spróbuj ponownie za chwilę."
     }
   },
   "lumen": {

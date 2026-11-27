@@ -419,7 +419,12 @@
       "runMaven": "Spustit Mavena",
       "reset": "Obnovit",
       "prepFailedTitle": "Maven nemohl připravit otázky. Nic nebylo vytvořeno.",
-      "prepFailedHint": "Zkuste to prosím znovu. Pokud chyba přetrvává, požádejte svého správce, aby ověřil, že váš účet může používat přípravu na pohovor."
+      "prepFailedHint": "Zkuste to prosím znovu. Pokud chyba přetrvává, požádejte svého správce, aby ověřil, že váš účet může používat přípravu na pohovor.",
+      "reportingLineOptional": "Linie podřízenosti (volitelné)",
+      "scopeOptional": "Rozsah odpovědnosti (volitelné)",
+      "topicOptional": "Téma kariéry nebo vzdělávání (volitelné)",
+      "prepTimedOutHint": "Příprava trvala příliš dlouho. Zkuste to prosím znovu, nebo zužte rozsah.",
+      "prepFailedRetryHint": "Zkuste to prosím za chvíli znovu."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Shoda byla vytvořena.",
