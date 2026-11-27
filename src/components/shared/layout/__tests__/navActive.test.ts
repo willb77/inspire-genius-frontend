@@ -74,4 +74,12 @@ describe("RM-7 — isItemActive", () => {
     expect(pathIsAt("/manager/interview-live", "/manager/interview")).toBe(false)
     expect(pathIsAt("/anything", "")).toBe(false)
   })
+
+  it("D-23: activeExcept removes a page from a row that would otherwise cover it, and only that page", () => {
+    const row = { to: "/v/dash", activePrefix: "/v", activeExcept: ["/v/cands", "/v/stats"] }
+    expect(isItemActive("/v/dash", row)).toBe(true)
+    expect(isItemActive("/v/other/1", row)).toBe(true)
+    for (const page of ["/v/cands", "/v/cands/9", "/v/stats"]) expect({ page, lit: isItemActive(page, row) }).toEqual({ page, lit: false })
+    expect(isItemActive("/v/cands-x", row)).toBe(true)
+  })
 })

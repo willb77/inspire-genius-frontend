@@ -134,6 +134,7 @@ import {
 } from "../useToolsSection"
 import { hasAccess } from "@/types/roles"
 import { navLabelKey } from "@/components/shared/layout/navLabels"
+import { isItemActive } from "@/components/shared/layout/navActive"
 import { setHouseStyle } from "@/lib/house/areaSwitch"
 import { useGatedNavItems } from "../useGatedNavItems"
 import { HOUSE_SUPER_ADMIN_SECTIONS } from "@/constants/house/superAdminNav"
@@ -1153,6 +1154,30 @@ describe("RM-7 — one row per stage; the stage's rows are its tabs", () => {
       rows: [greyed("/manager/b"), { to: "/manager/c", icon, label: "c" }],
     })
     expect([oneLive.to, !!oneLive.disabled, oneLive.disabledReason]).toEqual(["/manager/c", false, undefined])
+  })
+
+  // D-23: the Role Blueprints vertical's prefix covers its Candidates and
+  // Analytics pages, which have their own stage rows. One page, one lit row.
+  // Mutation: drop `activeExcept` from the vertical row in talentStudioStages.
+  it.each(TOOL_ROLES)("%s: every Role Blueprints page lights exactly one Talent Studio row", async (role) => {
+    const { section } = await toolsAndStages(role, "true")
+    const group = section?.items.find((i) => i.label === TALENT_STUDIO_LABEL)
+    expect(group?.children?.length).toBeGreaterThan(3)
+    const rows = group?.children ?? []
+    const pages: Record<string, string> = {
+      "/vertical/job-blueprint/dashboard": "Roles",
+      "/vertical/job-blueprint/authoring": "Roles",
+      "/vertical/job-blueprint/dna/7": "Roles",
+      "/vertical/job-blueprint/pipeline": "Roles",
+      "/vertical/job-blueprint/scorecards": "Roles",
+      "/vertical/job-blueprint/candidates": "Candidates",
+      "/vertical/job-blueprint/candidates/c1": "Candidates",
+      "/vertical/job-blueprint/analytics": "Insights",
+    }
+    for (const [page, owner] of Object.entries(pages)) {
+      const lit = rows.filter((r) => isItemActive(page, r)).map((r) => r.label)
+      expect({ page, lit }).toEqual({ page, lit: [owner] })
+    }
   })
 
   it("each stage label has a menu translation in en, es, fr, pt, it, pl and cs", () => {

@@ -77,6 +77,13 @@ export type NavItemDef = {
    */
   activePaths?: readonly string[];
   /**
+   * D-23: never active on these pages (or under them) even when `activePrefix`
+   * or `activePaths` match. For a row whose prefix covers a page that another
+   * row of the same menu owns (Role Blueprints vs Candidates / Insights), so
+   * one page lights one row. Unset by default: a row without it is unchanged.
+   */
+  activeExcept?: readonly string[];
+  /**
    * Nested entries, rendered indented under this item (2026-09-23, request:
    * "Career Studio" and "Interview Studio" as menu items that hold their own
    * links). A parent with `to` set is itself a link — clicking it navigates
@@ -135,12 +142,12 @@ function sectionHoldsActiveRoute(pathname: string, section: Pick<NavSectionDef, 
 }
 
 /** A nested entry: same lock / active semantics as {@link NavItem}, rendered in the sub-menu. */
-function NavSubItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix, activePaths }: NavItemDef) {
+function NavSubItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix, activePaths, activeExcept }: NavItemDef) {
   const { t } = useTranslation("shellUi");
   const label = translateNavLabel(t, "items", rawLabel);
   const navigate = useNavigate();
   const location = useLocation();
-  const isActive = isItemActive(location.pathname, { to, activePrefix, activePaths });
+  const isActive = isItemActive(location.pathname, { to, activePrefix, activePaths, activeExcept });
   return (
     <SidebarMenuSubItem>
       <SidebarMenuSubButton
@@ -170,7 +177,7 @@ function NavSubItem({ to, icon: Icon, label: rawLabel, state, disabled, disabled
   );
 }
 
-function NavItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix, activePaths, children, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
+function NavItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledReason, activePrefix, activePaths, activeExcept, children, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
   const { t } = useTranslation("shellUi");
   const label = translateNavLabel(t, "items", rawLabel);
   const navigate = useNavigate();
@@ -182,7 +189,7 @@ function NavItem({ to, icon: Icon, label: rawLabel, state, disabled, disabledRea
   React.useEffect(() => {
     if (childActive) setGroupOpen(true);
   }, [childActive]);
-  const isActive = isItemActive(location.pathname, { to, activePrefix, activePaths });
+  const isActive = isItemActive(location.pathname, { to, activePrefix, activePaths, activeExcept });
   const activeClasses = "cursor-pointer !bg-ig-nav-active !text-ig-nav-active-fg [&>svg]:!text-ig-nav-active-fg";
   const inactiveClasses = "cursor-pointer !bg-transparent !text-ig-nav-fg [&>svg]:!text-ig-nav-fg glow-border-hover";
   // Locked (no entitlement): still listed so the catalogue is discoverable, but

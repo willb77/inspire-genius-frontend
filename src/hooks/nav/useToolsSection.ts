@@ -227,9 +227,13 @@ function talentStudioStages(
 ): { stages: TalentStudioStage[]; folded: Set<NavItemDef> } {
   const blueprintRole = roleTools.filter((i) => TALENT_STUDIO_BLUEPRINT_TOOLS.has(i))
   const interviewRole = roleTools.filter((i) => TALENT_STUDIO_INTERVIEW_TOOLS.has(i))
-  const blueprintVerticals = TALENT_STUDIO_BLUEPRINT_PREFIXES.map((p) => liftVertical(catalogue, p)).filter(
-    (i): i is NavItemDef => i !== null,
-  )
+  // D-23: the Role Blueprints vertical's prefix also covers its Candidates and
+  // Analytics pages, which have their own rows (stages) in this group; the
+  // vertical's row must not light on them, or one page lights two rows.
+  const ownedPages = [TALENT_STUDIO_BLUEPRINT_PAGE_ROWS.candidates.to, TALENT_STUDIO_BLUEPRINT_PAGE_ROWS.insights.to]
+  const blueprintVerticals = TALENT_STUDIO_BLUEPRINT_PREFIXES.map((p) => liftVertical(catalogue, p))
+    .filter((i): i is NavItemDef => i !== null)
+    .map((i) => (i.to.startsWith(TALENT_STUDIO_BLUEPRINT_VERTICAL_PREFIX) ? { ...i, activeExcept: ownedPages } : i))
   const blueprintVertical = blueprintVerticals.find((i) => i.to.startsWith(TALENT_STUDIO_BLUEPRINT_VERTICAL_PREFIX))
   // Read here, not at module load: with the switch off this module reads no
   // Talent Studio constant at all, as before TS-2.
@@ -305,6 +309,7 @@ export function talentStudioStageRow(stage: TalentStudioStage): NavItemDef {
     icon,
     label,
     activePaths: tabs.map((t) => t.activePrefix ?? t.to),
+    ...(tabs.some((t) => t.activeExcept?.length) ? { activeExcept: tabs.flatMap((t) => t.activeExcept ?? []) } : {}),
     ...(live.length === 0 ? { disabled: true } : {}),
     ...(live.length === 0 && tabs[0].disabledReason ? { disabledReason: tabs[0].disabledReason } : {}),
   }
