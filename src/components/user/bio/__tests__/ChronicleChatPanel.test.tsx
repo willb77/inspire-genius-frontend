@@ -27,9 +27,34 @@ const mockSendMessage = jest.fn()
 const chatState = { isProcessing: false, partial: "", error: null as string | null }
 const mockClearError = jest.fn()
 let emitAssistant: (content: string) => void = () => {}
+// O-D11-a: the "Meridian thread per Bio session" tests run the REAL
+// `useMeridianChat` (key -> server session id) over a mocked job transport, so
+// they assert the `sessionId` the chat call actually carries.
+let mockUseRealChat = false
+const mockStartJob = jest.fn<
+  Promise<{ job_id: string }>,
+  [{ message: string; sessionId: string }]
+>(async () => ({ job_id: "j-1" }))
+let mockSettleJob: (job: Record<string, unknown>) => void = () => {}
+jest.mock("@/hooks/agents/useMeridianJob", () => ({
+  useMeridianJob: (opts: { onJobSettled: (job: Record<string, unknown>) => void }) => {
+    mockSettleJob = opts.onJobSettled
+    return { startJob: mockStartJob, notifyPushFrame: () => false }
+  },
+}))
+jest.mock("@/hooks/agents/useMeridianWebSocket", () => ({
+  useMeridianWebSocket: () => ({ isConnected: false, connect: jest.fn(), disconnect: jest.fn() }),
+}))
 jest.mock("@/hooks/agents/useMeridianChat", () => ({
-  useMeridianChat: (opts: { onAssistant: (c: string) => void }) => {
-    emitAssistant = opts.onAssistant
+  useMeridianChat: (opts: import("@/hooks/agents/useMeridianChat").MeridianChatOptions) => {
+    emitAssistant = (c: string) => opts.onAssistant?.(c, {} as never)
+    if (mockUseRealChat) {
+      return jest
+        .requireActual<typeof import("@/hooks/agents/useMeridianChat")>(
+          "@/hooks/agents/useMeridianChat",
+        )
+        .useMeridianChat(opts)
+    }
     return {
     send: mockSendMessage,
     isProcessing: chatState.isProcessing,
@@ -373,6 +398,7 @@ describe("D-11 chapter hint, Mark chapter done, and the autosave generation guar
 
   beforeEach(() => {
     mockSessionsList = []
+    mockUseRealChat = false
   })
 
   it("a chapter tile click sends THAT chapter as the capture hint and Meridian context", () => {
@@ -545,5 +571,143 @@ describe("D-11 chapter hint, Mark chapter done, and the autosave generation guar
     const { pick } = renderWithSeed({ modules: [mod("culture", "in_progress")], episodes: [ep("culture")] })
     pick("culture")
     expect(screen.getByRole("alert")).toHaveTextContent(/couldn't update this chapter/i)
+  })
+})
+
+/* ---- O-D11-a: one Meridian thread per Bio session ---- */
+describe("O-D11-a: each Bio session talks on its own Meridian session id", () => {
+  // Send, then settle the turn through the real hook (a complete job), so the
+  // panel is idle again and Chronicle's reply lands as an assistant turn.
+  const sendOne = (text: string, reply = "Tell me more.") => {
+    fireEvent.change(screen.getByRole("textbox", { name: /message chronicle/i }), {
+      target: { value: text },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }))
+    act(() =>
+      mockSettleJob({ job_id: "j-1", session_id: lastSessionId(), status: "complete", content: reply }),
+    )
+  }
+  const lastSessionId = () => {
+    const calls = mockStartJob.mock.calls
+    return calls[calls.length - 1][0].sessionId
+  }
+  const openSessionsMenu = () =>
+    fireEvent.keyDown(screen.getByRole("button", { name: /sessions/i }), { key: "Enter" })
+  // Let a settled turn's autosave resolve inside act.
+  const flushSaves = () => act(async () => {})
+  const newSession = () => {
+    openSessionsMenu()
+    fireEvent.click(screen.getByRole("menuitem", { name: /new session/i }))
+  }
+  const loaded = (sessionId: string, title: string) => ({
+    sessionId,
+    title,
+    turnCount: 1,
+    summary: "",
+    createdAt: null,
+    updatedAt: null,
+    transcript: [
+      { role: "user" as const, content: "Old question" },
+      { role: "assistant" as const, content: `Old answer ${sessionId}` },
+    ],
+  })
+  const resume = async (sessionId: string, title: string) => {
+    mockLoadSession.mockResolvedValueOnce(loaded(sessionId, title))
+    openSessionsMenu()
+    fireEvent.click(screen.getByRole("menuitem", { name: new RegExp(title, "i") }))
+    await waitFor(() => expect(screen.getByText(`Old answer ${sessionId}`)).toBeInTheDocument())
+  }
+
+  const defaultSave = mockSaveSession.getMockImplementation()
+  beforeEach(() => {
+    mockUseRealChat = true
+    mockSessionsList = []
+  })
+  afterEach(() => {
+    if (defaultSave) mockSaveSession.mockImplementation(defaultSave)
+  })
+  afterAll(() => {
+    mockUseRealChat = false
+  })
+
+  it("New session sends a different session_id on the next chat call", () => {
+    render(<ChronicleChatPanel memberId="member-1" />)
+    sendOne("I grew up by the sea.")
+    sendOne("The smell of salt.")
+    const first = lastSessionId()
+    // Within one interview the thread does not re-key.
+    expect(mockStartJob.mock.calls[0][0].sessionId).toBe(first)
+
+    newSession()
+    sendOne("A brand new conversation.")
+    expect(lastSessionId()).not.toBe(first)
+  })
+
+  it("two New sessions give two different session ids", () => {
+    render(<ChronicleChatPanel memberId="member-1" />)
+    sendOne("First.")
+    const a = lastSessionId()
+    newSession()
+    sendOne("Second.")
+    const b = lastSessionId()
+    newSession()
+    sendOne("Third.")
+    const c = lastSessionId()
+    expect(new Set([a, b, c]).size).toBe(3)
+  })
+
+  it("Resume of session X reuses X's session id", async () => {
+    mockSessionsList = [
+      { sessionId: "s-1", title: "Sea talk", turnCount: 1, summary: "", createdAt: null, updatedAt: null },
+    ]
+    // The server mints a new Bio session per interview: "s-1", then "s-2".
+    let minted = 0
+    mockSaveSession.mockImplementation(async (req: unknown) => {
+      const given = (req as { sessionId: string | null }).sessionId
+      const sessionId = given ?? `s-${++minted}`
+      return { sessionId, title: "t", turnCount: 1, summary: "", createdAt: null, updatedAt: null }
+    })
+    render(<ChronicleChatPanel memberId="member-1" />)
+    sendOne("I grew up by the sea.")
+    const x = lastSessionId()
+    // The settled reply autosaves; the server returns Bio session "s-1".
+    await flushSaves()
+    expect(mockSaveSession).toHaveBeenCalledTimes(1)
+
+    newSession()
+    sendOne("Something else.")
+    expect(lastSessionId()).not.toBe(x)
+
+    await flushSaves()
+    // The second interview saved as a NEW Bio session (D-11 guard intact).
+    expect(mockSaveSession.mock.calls[1][0]).toMatchObject({ sessionId: null })
+
+    await resume("s-1", "Sea talk")
+    sendOne("Picking it back up.")
+    expect(lastSessionId()).toBe(x)
+  })
+
+  it("a session not seen in this mount resumes on its own stable thread, not the current one", async () => {
+    mockSessionsList = [
+      { sessionId: "s-9", title: "Older talk", turnCount: 1, summary: "", createdAt: null, updatedAt: null },
+    ]
+    render(<ChronicleChatPanel memberId="member-1" />)
+    sendOne("Today's topic.")
+    await flushSaves()
+    const current = lastSessionId()
+
+    await resume("s-9", "Older talk")
+    sendOne("Back to the older talk.")
+    await flushSaves()
+    const older = lastSessionId()
+    expect(older).not.toBe(current)
+
+    newSession()
+    sendOne("Fresh.")
+    await flushSaves()
+    await resume("s-9", "Older talk")
+    sendOne("Again.")
+    await flushSaves()
+    expect(lastSessionId()).toBe(older)
   })
 })
