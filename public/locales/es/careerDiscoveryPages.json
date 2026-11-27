@@ -137,7 +137,7 @@
   "planComingNext": "A continuación: {{names}}.",
   "planEducationPaths": "Rutas educativas",
   "planGoalsSet": "{{goals}} meta(s) definida(s).",
-  "planGoalsTitle": "Tus metas",
+  "planGoalsTitle": "Metas de este recorrido",
   "planInterests": "Te interesa: {{interests}}",
   "planLead": "Lo que has encontrado hasta ahora y qué hacer a continuación.",
   "planSoFarTitle": "Tu plan hasta ahora",
@@ -149,7 +149,7 @@
   "planLoading": "Preparando tu plan",
   "planNextSteps": "Próximos pasos",
   "planNoAreas": "Aún no: haz primero Áreas profesionales.",
-  "planNoGoals": "Aún no has definido metas.",
+  "planNoGoals": "Todavía no has hecho el paso de metas.",
   "planNoInterests": "Aún no has añadido intereses.",
   "planNoLevel": "Aún no has indicado tu nivel escolar.",
   "planNotYetDo": "Aún no: haz primero {{stage}}.",
@@ -270,5 +270,6 @@
   "journeyAgeTitle": "Descubrimiento de carrera y educación",
   "journeyBirthYearLabel": "Año de nacimiento",
   "journeyComingNext": "Próximamente",
-  "progComponentLine": "{{label}}: {{text}}"
+  "progComponentLine": "{{label}}: {{text}}",
+  "planGoalsStudioLink": "Abrir Goals Studio"
 }

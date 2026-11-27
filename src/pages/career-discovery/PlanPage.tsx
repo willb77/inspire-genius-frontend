@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { Link } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ROUTES } from "@/constants/routes"
 import { SCHOOL_LEVELS } from "@/types/career-discovery"
 import {
   discoveryErrorMessage,
@@ -74,12 +75,23 @@ export default function PlanPage() {
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">{t("planGoalsTitle", "Your goals")}</CardTitle>
+          {/* O-CBW-b (2026-11-27): goalsCount is this journey's goals step
+              (career_discovery.py `artefacts.goals.count`), not Goals Studio.
+              Say so, so it cannot read as "you have no goals" beside a list of
+              Goals Studio targets. */}
+          <CardTitle className="text-base">{t("planGoalsTitle", "Goals from this journey")}</CardTitle>
         </CardHeader>
         <CardContent className="text-sm">
-          <p>{data.goalsCount
-              ? t("planGoalsSet", { defaultValue: "{{goals}} goal(s) set.", goals: data.goalsCount })
-              : t("planNoGoals", "No goals set yet.")}</p>
+          {data.goalsCount ? (
+            <p>{t("planGoalsSet", { defaultValue: "{{goals}} goal(s) set.", goals: data.goalsCount })}</p>
+          ) : (
+            <p>
+              {t("planNoGoals", "You haven't done the goals step yet.")}{" "}
+              <Link className="underline" to={ROUTES.MY_GOALS.BASE}>
+                {t("planGoalsStudioLink", "Open Goals Studio")}
+              </Link>
+            </p>
+          )}
           {data.alignment?.note ? <p className="text-muted-foreground">{data.alignment.note}</p> : null}
         </CardContent>
       </Card>
