@@ -143,7 +143,12 @@
       "runMaven": "Esegui Maven",
       "reset": "Reimposta",
       "prepFailedTitle": "Maven non è riuscito a preparare le domande. Non è stato generato nulla.",
-      "prepFailedHint": "Riprova. Se continua a non funzionare, chiedi al tuo amministratore di verificare che il tuo account possa usare la preparazione al colloquio."
+      "prepFailedHint": "Riprova. Se continua a non funzionare, chiedi al tuo amministratore di verificare che il tuo account possa usare la preparazione al colloquio.",
+      "reportingLineOptional": "Linea di riporto (facoltativo)",
+      "scopeOptional": "Ambito (facoltativo)",
+      "topicOptional": "Tema di carriera o formazione (facoltativo)",
+      "prepTimedOutHint": "La preparazione ha richiesto troppo tempo. Riprova oppure restringi l'ambito.",
+      "prepFailedRetryHint": "Riprova tra un momento."
     },
     "jobBlueprintBody": {
       "matchGenerated": "Corrispondenza generata.",

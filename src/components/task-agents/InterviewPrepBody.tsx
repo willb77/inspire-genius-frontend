@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { tasksService, type TaskAgentResponse } from "@/services/tasks/tasks.service"
+import { tasksService, type InterviewPrepRequest, type TaskAgentResponse } from "@/services/tasks/tasks.service"
 import TaskAgentResultCard from "@/components/tasks/TaskAgentResultCard"
 import CostEstimateBanner from "@/components/tasks/CostEstimateBanner"
 import QuestionBankPanel from "@/components/task-agents/QuestionBankPanel"
@@ -31,6 +31,10 @@ const schema = z.object({
   role_title: z.string().min(1, "Role title is required").max(128),
   candidate_name: z.string().max(255).optional(),
   interview_focus: z.string().max(2000).optional(),
+  // The interview frame. Caps match the engine's InterviewPrepRequest.
+  reporting_line: z.string().max(255).optional(),
+  scope: z.string().max(2000).optional(),
+  topic: z.string().max(255).optional(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -52,6 +56,45 @@ function describePrepError(err: unknown): string {
   return err instanceof Error ? err.message : ""
 }
 
+/** The optional frame fields. Each is sent only when it carries text. */
+const FRAME_FIELDS = ["reporting_line", "scope", "topic"] as const
+
+/**
+ * The request body. The required fields, candidate_name and interview_focus go
+ * as before; a blank frame field is omitted rather than sent as "".
+ */
+function buildPrepRequest(values: FormValues): InterviewPrepRequest {
+  const body: InterviewPrepRequest = {
+    company_name: values.company_name,
+    industry: values.industry,
+    role_title: values.role_title,
+    candidate_name: values.candidate_name,
+    interview_focus: values.interview_focus,
+  }
+  for (const key of FRAME_FIELDS) {
+    const v = values[key]?.trim()
+    if (v) body[key] = v
+  }
+  return body
+}
+
+type PrepFailureKind = "forbidden" | "timeout" | "other"
+
+/**
+ * Why a run failed, for the hint under the alert. Only a 403 is an access
+ * problem. A gateway 502/503/504, or a request that got no response at all
+ * (the gateway's own 503 can arrive without CORS headers, so the browser
+ * reports a bare network error), means the plan took too long to prepare.
+ */
+function prepFailureKind(err: unknown): PrepFailureKind {
+  const response = (err as { response?: { status?: unknown } } | null)?.response
+  const status = response?.status
+  if (status === 403) return "forbidden"
+  if (status === 502 || status === 503 || status === 504) return "timeout"
+  if (!response) return "timeout"
+  return "other"
+}
+
 export default function InterviewPrepBody() {
   const { t } = useTranslation("studioUi")
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
@@ -65,6 +108,9 @@ export default function InterviewPrepBody() {
       role_title: "",
       candidate_name: "",
       interview_focus: "",
+      reporting_line: "",
+      scope: "",
+      topic: "",
     },
   })
 
@@ -81,10 +127,12 @@ export default function InterviewPrepBody() {
   })
 
   const prepErrorText = mutation.isError ? describePrepError(mutation.error) : ""
+  const failureKind = mutation.isError ? prepFailureKind(mutation.error) : null
 
   const onSubmit = (values: FormValues) => {
-    setLastRequest(values as Record<string, unknown>)
-    mutation.mutate(values)
+    const body = buildPrepRequest(values)
+    setLastRequest({ ...body })
+    mutation.mutate(body)
   }
 
   if (result) {
@@ -98,6 +146,7 @@ export default function InterviewPrepBody() {
           agentId="maven"
           requestPayload={lastRequest}
           title={t("taskAgents.interviewPrepBody.interviewPrep2", { defaultValue: "Interview prep" })}
+          renderMarkdown
         />
       </div>
     )
@@ -165,6 +214,31 @@ export default function InterviewPrepBody() {
               <Textarea id="interview_focus" rows={3} {...form.register("interview_focus")} />
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="reporting_line">{t("taskAgents.interviewPrepBody.reportingLineOptional", { defaultValue: "Reporting line (optional)" })}</Label>
+                <Input id="reporting_line" maxLength={255} {...form.register("reporting_line")} />
+                {form.formState.errors.reporting_line && (
+                  <p className="mt-1 text-xs text-red-600">{form.formState.errors.reporting_line.message}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="topic">{t("taskAgents.interviewPrepBody.topicOptional", { defaultValue: "Career or education topic (optional)" })}</Label>
+                <Input id="topic" maxLength={255} {...form.register("topic")} />
+                {form.formState.errors.topic && (
+                  <p className="mt-1 text-xs text-red-600">{form.formState.errors.topic.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="scope">{t("taskAgents.interviewPrepBody.scopeOptional", { defaultValue: "Scope (optional)" })}</Label>
+              <Textarea id="scope" rows={3} maxLength={2000} {...form.register("scope")} />
+              {form.formState.errors.scope && (
+                <p className="mt-1 text-xs text-red-600">{form.formState.errors.scope.message}</p>
+              )}
+            </div>
+
             <CostEstimateBanner promptText={JSON.stringify(form.watch())} />
 
             {/* W6: a failed run must stay on the page, not only in a toast that
@@ -179,7 +253,11 @@ export default function InterviewPrepBody() {
                 </p>
                 {prepErrorText && <p className="mt-1">{prepErrorText}</p>}
                 <p className="mt-1">
-                  {t("taskAgents.interviewPrepBody.prepFailedHint", { defaultValue: "Try again. If it keeps failing, ask your administrator to check that your account can use interview prep." })}
+                  {failureKind === "forbidden"
+                    ? t("taskAgents.interviewPrepBody.prepFailedHint", { defaultValue: "Try again. If it keeps failing, ask your administrator to check that your account can use interview prep." })
+                    : failureKind === "timeout"
+                      ? t("taskAgents.interviewPrepBody.prepTimedOutHint", { defaultValue: "This took too long to prepare. Try again, or narrow the scope." })
+                      : t("taskAgents.interviewPrepBody.prepFailedRetryHint", { defaultValue: "Try again in a moment." })}
                 </p>
               </div>
             )}
