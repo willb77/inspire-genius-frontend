@@ -250,11 +250,15 @@ function FormStep({
   const savedRoles = useSavedRoles(BLUEPRINT_ORG_ID)
   const loadSavedRole = useSavedRoleBlueprint(BLUEPRINT_ORG_ID)
 
-  const { register, handleSubmit, control, setValue, getValues, formState: { errors } } =
+  const { register, handleSubmit, control, setValue, getValues, watch, formState: { errors } } =
     useForm<FormValues>({
       resolver: zodResolver(formSchema),
       defaultValues: { role_title: "", context: "", archetype: "" },
     })
+
+  // A paste past the cap is kept whole (no maxLength clipping) and the message
+  // shows as you paste, not only after a submit; Submit is off until it fits.
+  const contextOver = (watch("context") ?? "").length > KCE_MAX_CONTEXT
 
   const [selectedJobDnaId, setSelectedJobDnaId] = useState("")
   const [seedNodes, setSeedNodes] = useState<BlueprintSeedNode[] | undefined>(undefined)
@@ -533,11 +537,12 @@ function FormStep({
                 "blueprintStudio.contextPlaceholder",
                 "Paste the job posting, or describe what the role actually involves. (An uploaded file fills this in.)",
               )}
-              maxLength={KCE_MAX_CONTEXT}
               {...register("context")}
             />
-            {errors.context && (
-              <p className="text-sm text-destructive">{errors.context.message}</p>
+            {(contextOver || errors.context) && (
+              <p className="text-sm text-destructive">
+                {t("kcPages:llmGuards.contextTooLong", { max: KCE_MAX_CONTEXT.toLocaleString() })}
+              </p>
             )}
           </div>
 
@@ -585,7 +590,7 @@ function FormStep({
               </div>
             </div>
           ) : (
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={contextOver}>
               <Sparkles className="mr-2 h-4 w-4" /> {t("blueprintStudio.draftButton", "Draft the blueprint")}
             </Button>
           )}

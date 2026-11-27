@@ -58,10 +58,10 @@ function fill(roleTitle: string, context: string) {
 }
 
 describe.each(PAGES)("%s generate form caps", (_name, Page) => {
-  test("the inputs carry the server's bounds", () => {
+  test("the title carries the server's bound; the context is not browser-clipped", () => {
     render(<Page />)
     expect(screen.getByLabelText(/role title/i)).toHaveAttribute("maxLength", String(KCE_MAX_ROLE_TITLE))
-    expect(document.getElementById("context")).toHaveAttribute("maxLength", String(KCE_MAX_CONTEXT))
+    expect(document.getElementById("context")).not.toHaveAttribute("maxLength")
   })
 
   test("a body at the bounds is sent", async () => {
@@ -82,5 +82,37 @@ describe.each(PAGES)("%s generate form caps", (_name, Page) => {
     fill("r".repeat(KCE_MAX_ROLE_TITLE + 1), "")
     expect(await screen.findByText(/keep the role title to 200 characters/i)).toBeInTheDocument()
     expect(generateMutate).not.toHaveBeenCalled()
+  })
+})
+
+describe.each(PAGES)("%s context paste past the cap (O-CFD18)", (_name, Page) => {
+  const over = "c".repeat(KCE_MAX_CONTEXT + 5000)
+
+  test("a 25k paste is kept whole, not clipped by the browser", () => {
+    render(<Page />)
+    const box = document.getElementById("context") as HTMLTextAreaElement
+    expect(box).not.toHaveAttribute("maxLength")
+    fireEvent.change(box, { target: { value: over } })
+    expect(box.value).toHaveLength(over.length)
+  })
+
+  test("the message shows as soon as the text is pasted, before any submit", async () => {
+    render(<Page />)
+    fireEvent.change(document.getElementById("context") as HTMLTextAreaElement, { target: { value: over } })
+    expect(await screen.findByText(/characters or fewer/i)).toBeInTheDocument()
+  })
+
+  test("Submit is disabled over the cap and enabled again once it fits", async () => {
+    render(<Page />)
+    const box = document.getElementById("context") as HTMLTextAreaElement
+    const submit = () => screen.getByRole("button", { name: /draft the blueprint/i })
+    fireEvent.change(screen.getByLabelText(/role title/i), { target: { value: "CIO" } })
+    fireEvent.change(box, { target: { value: over } })
+    await waitFor(() => expect(submit()).toBeDisabled())
+    fireEvent.click(submit())
+    expect(generateMutate).not.toHaveBeenCalled()
+    fireEvent.change(box, { target: { value: "c".repeat(KCE_MAX_CONTEXT) } })
+    await waitFor(() => expect(submit()).toBeEnabled())
+    expect(screen.queryByText(/characters or fewer/i)).not.toBeInTheDocument()
   })
 })

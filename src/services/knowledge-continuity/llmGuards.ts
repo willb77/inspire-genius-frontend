@@ -33,13 +33,31 @@ export function fitsTranscriptBounds(transcript: readonly Exchange[]): boolean {
   )
 }
 
-export type KceGuardRefusal = "noAccess" | "tooMany" | "tooLong"
+export type KceGuardRefusal = "noAccess" | "roleNotAllowed" | "tooMany" | "tooLong"
+
+/** The server's explanation on an HTTP error, when it sent a string. */
+function refusalDetail(error: unknown): string {
+  const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail
+  return typeof detail === "string" ? detail : ""
+}
+
+/**
+ * A 403 is one of two refusals. The engine's entitlement gate names the
+ * vertical ("none of the verticals [...] is enabled for this user"); the role
+ * gate says "... is available to practitioners, managers, company admins, and
+ * super admins only." Anything else, or no detail, stays the entitlement copy.
+ */
+function classify403(detail: string): "noAccess" | "roleNotAllowed" {
+  if (/verticals/i.test(detail)) return "noAccess"
+  if (/\bis available to\b.*\bonly\.?\s*$/i.test(detail)) return "roleNotAllowed"
+  return "noAccess"
+}
 
 /** Which guard refused the call, from its HTTP status; undefined for anything else. */
 export function kceGuardRefusal(error: unknown): KceGuardRefusal | undefined {
   if (!error || typeof error !== "object") return undefined
   const status = (error as { response?: { status?: number } }).response?.status
-  if (status === 403) return "noAccess"
+  if (status === 403) return classify403(refusalDetail(error))
   if (status === 429) return "tooMany"
   if (status === 413 || status === 422) return "tooLong"
   return undefined
@@ -48,4 +66,20 @@ export function kceGuardRefusal(error: unknown): KceGuardRefusal | undefined {
 /** The kcPages key for a refusal's message. */
 export function kceGuardMessageKey(refusal: KceGuardRefusal): string {
   return `llmGuards.${refusal}`
+}
+
+/**
+ * The message to show for a refused call, or undefined when no guard refused it.
+ * A role refusal falls back to the server's own sentence if the key is missing.
+ */
+export function kceGuardText(
+  error: unknown,
+  t: (key: string, options?: Record<string, unknown>) => string
+): string | undefined {
+  const refusal = kceGuardRefusal(error)
+  if (!refusal) return undefined
+  if (refusal === "roleNotAllowed") {
+    return t(kceGuardMessageKey(refusal), { defaultValue: refusalDetail(error) })
+  }
+  return t(kceGuardMessageKey(refusal))
 }

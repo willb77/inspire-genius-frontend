@@ -7,6 +7,7 @@ import {
   fitsTranscriptBounds,
   kceGuardMessageKey,
   kceGuardRefusal,
+  kceGuardText,
   transcriptChars,
 } from "../llmGuards"
 
@@ -45,6 +46,35 @@ describe("KCE model-route guards (client mirror)", () => {
     expect(kceGuardRefusal({ response: { status } })).toBe(refusal)
   })
 
+  const ENTITLEMENT = "none of the verticals ['knowledge-continuity'] is enabled for this user"
+  const ROLE_BP = "Blueprinting is available to practitioners, managers, company admins, and super admins only."
+  const ROLE_CAP = "Knowledge capture is available to practitioners, managers, company admins, and super admins only."
+  const e403 = (detail?: unknown) => ({ response: { status: 403, data: { detail } } })
+
+  test("a 403 naming the verticals is the entitlement refusal", () => {
+    expect(kceGuardRefusal(e403(ENTITLEMENT))).toBe("noAccess")
+  })
+
+  test.each([[ROLE_BP], [ROLE_CAP]])("a role 403 (%s) is roleNotAllowed", (detail) => {
+    expect(kceGuardRefusal(e403(detail))).toBe("roleNotAllowed")
+  })
+
+  test.each([[undefined], [""], ["Forbidden"], [{ msg: "x" }], [["a"]]])(
+    "an unknown 403 (%j) keeps noAccess",
+    (detail) => {
+      expect(kceGuardRefusal(e403(detail))).toBe("noAccess")
+      expect(kceGuardRefusal({ response: { status: 403 } })).toBe("noAccess")
+    }
+  )
+
+  test("kceGuardText gives the role copy, falling back to the server sentence", () => {
+    const t = (key: string, o?: Record<string, unknown>) => (o?.defaultValue ? String(o.defaultValue) : key)
+    expect(kceGuardText(e403(ROLE_BP), t)).toBe(ROLE_BP)
+    expect(kceGuardText(e403(ENTITLEMENT), t)).toBe("llmGuards.noAccess")
+    expect(kceGuardText(e403("Forbidden"), t)).toBe("llmGuards.noAccess")
+    expect(kceGuardText({ response: { status: 500 } }, t)).toBeUndefined()
+  })
+
   test("non-HTTP errors map to nothing", () => {
     expect(kceGuardRefusal(undefined)).toBeUndefined()
     expect(kceGuardRefusal(null)).toBeUndefined()
@@ -56,5 +86,6 @@ describe("KCE model-route guards (client mirror)", () => {
     expect(kceGuardMessageKey("noAccess")).toBe("llmGuards.noAccess")
     expect(kceGuardMessageKey("tooMany")).toBe("llmGuards.tooMany")
     expect(kceGuardMessageKey("tooLong")).toBe("llmGuards.tooLong")
+    expect(kceGuardMessageKey("roleNotAllowed")).toBe("llmGuards.roleNotAllowed")
   })
 })

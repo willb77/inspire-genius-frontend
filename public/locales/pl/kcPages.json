@@ -87,6 +87,7 @@
   },
   "llmGuards": {
     "noAccess": "Nie masz dostępu do tego narzędzia Knowledge Continuity. Poproś administratora o włączenie go dla Twojego konta.",
+    "roleNotAllowed": "Twoja rola nie ma dostępu do tego narzędzia. Jest ono dostępne tylko dla praktyków, menedżerów, administratorów firmy i superadministratorów.",
     "tooMany": "Zbyt wiele żądań w krótkim czasie. Odczekaj kilka minut i spróbuj ponownie.",
     "tooLong": "Tekst jest za długi, aby go wysłać. Skróć go i spróbuj ponownie.",
     "areaFull": "Wywiad dla tego obszaru osiągnął limit długości. Zapisz ten obszar, aby zachować to, co masz, a potem kontynuuj w innym obszarze.",
