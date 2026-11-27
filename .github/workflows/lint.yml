@@ -1,0 +1,32 @@
+# D-22: ESLint ratchet. Separate file so no existing job is touched, and PR-only so it never gates a deploy.
+#
+# Runs scripts/lint/check_lint_baseline.mjs: per-file ESLint ERROR counts may only go down against
+# scripts/lint/lint_baseline.json. A rise, errors in a file not in the baseline, or an ESLint crash fails.
+# Warnings are not gated. See the header of check_lint_baseline.mjs.
+# No path filter: a dependency or config change can move the counts as much as a src/ edit can.
+name: lint ratchet
+
+on:
+  pull_request:
+    branches: [development]
+
+jobs:
+  lint-ratchet:
+    name: lint-ratchet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: ESLint error ratchet (against baseline)
+        run: node scripts/lint/check_lint_baseline.mjs
+
+      - name: Ratchet unit tests
+        run: node --test scripts/lint/node-tests/*_test.mjs
