@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import SuperAdminDashboard from "../Dashboard"
 import { tileState } from "../house/dashboardTiles"
+import { AGENT_VOICE_CONFIG } from "@/constants/agentVoiceConfig"
 
 // Reserved example domain (RFC 2606), built at runtime.
 const mockMail = (user: string) => `${user}@example.org`
@@ -18,7 +19,7 @@ jest.mock("@/components/ui/select", () => ({
   SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   SelectItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
-jest.mock("@/components/super-admin/dashboard/UsedCoachesChart", () => ({ __esModule: true, default: () => null }))
+jest.mock("@/components/super-admin/dashboard/UsedCoachesChart", () => ({ __esModule: true, default: () => <div>Most Used Coaches</div> }))
 jest.mock("@/components/super-admin/CostBoard", () => ({ __esModule: true, default: () => null }))
 
 type Q = { data?: unknown; isLoading: boolean; isError: boolean; refetch: jest.Mock }
@@ -37,10 +38,19 @@ const USERS = ok({
 let mockUsers: Q = USERS
 let mockCoaches: Q = ok({ data: { agents: [{ id: "a", status: "active" }, { id: "b", status: "deactivated" }] } })
 let mockFeedback: Q = ok({ data: { total_count: 200, avg_rating: 4.3 } })
-let mockCost: Q = ok({ data: { total_cost: 412 } })
+const COST = ok({ data: { total_cost: 412, cost_per_user: 3.55, total_sessions: 84320 } })
+let mockCost: Q = COST
+const SYSTEM = ok({
+  data: {
+    organization_statistics: { total: 48, active: 42, inactive: 6 },
+    business_statistics: { total: 120, active: 100, inactive: 20, by_type: { corporate: 80, education: 40 } },
+  },
+})
+// The real hook is disabled (its endpoint has no backend), so by default it has no data.
+let mockSystem: Q = ok(undefined)
 
 jest.mock("@/hooks/super-admin/dashboard/useDashboardSystem", () => ({
-  useDashboardSystem: () => ({ data: undefined, isLoading: false }),
+  useDashboardSystem: () => mockSystem,
 }))
 jest.mock("@/hooks/super-admin/user-management/useUserManagement", () => ({
   useUserManagement: () => mockUsers,
@@ -66,7 +76,8 @@ describe("Super-admin dashboard — house style switch", () => {
     mockUsers = USERS
     mockCoaches = ok({ data: { agents: [{ id: "a", status: "active" }, { id: "b", status: "deactivated" }] } })
     mockFeedback = ok({ data: { total_count: 200, avg_rating: 4.3 } })
-    mockCost = ok({ data: { total_cost: 412 } })
+    mockCost = COST
+    mockSystem = ok(undefined)
   })
 
   it("switch OFF (default): the classic dashboard, unchanged", () => {
@@ -76,6 +87,8 @@ describe("Super-admin dashboard — house style switch", () => {
     expect(screen.getByText("Healthy")).toBeInTheDocument()
     expect(screen.queryByText("Admin home")).not.toBeInTheDocument()
     expect(screen.queryByText("View as…")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("panel-agents")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("panel-organizations")).not.toBeInTheDocument()
   })
 
   describe("switch ON", () => {
@@ -143,6 +156,79 @@ describe("Super-admin dashboard — house style switch", () => {
       renderPage()
       expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument()
       expect(within(screen.getByTestId("tile-People")).queryByText("—")).not.toBeInTheDocument()
+    })
+
+    it("restores cost per person, total sessions and cost per session, formatted as the classic page", () => {
+      renderPage()
+      expect(within(screen.getByTestId("tile-Cost per person")).getByText("$3.55")).toBeInTheDocument()
+      expect(within(screen.getByTestId("tile-Total sessions")).getByText("84,320")).toBeInTheDocument()
+      // 412 / 84320, three decimals — the classic page's formula.
+      expect(within(screen.getByTestId("tile-Cost per session")).getByText("$0.005")).toBeInTheDocument()
+    })
+
+    it("a failed cost source shows an error on the restored cost tiles, never zero", () => {
+      mockCost = failed()
+      renderPage()
+      for (const label of ["Cost per person", "Total sessions", "Cost per session"]) {
+        expect(within(screen.getByTestId(`tile-${label}`)).getByText("We couldn't load this.")).toBeInTheDocument()
+      }
+    })
+
+    it("restores the organization counts and the Business units card", () => {
+      mockSystem = SYSTEM
+      renderPage()
+      const panel = screen.getByTestId("panel-organizations")
+      expect(within(within(panel).getByTestId("tile-Organizations")).getByText("48")).toBeInTheDocument()
+      expect(within(within(panel).getByTestId("tile-Active organizations")).getByText("42")).toBeInTheDocument()
+      expect(within(within(panel).getByTestId("tile-Inactive organizations")).getByText("6")).toBeInTheDocument()
+      expect(within(panel).getByText("Business units", { selector: "h3" })).toBeInTheDocument()
+      expect(within(within(panel).getByTestId("tile-Business units")).getByText("120")).toBeInTheDocument()
+      expect(within(within(panel).getByTestId("tile-Active units")).getByText("100")).toBeInTheDocument()
+      expect(within(within(panel).getByTestId("tile-Corporate")).getByText("80")).toBeInTheDocument()
+      expect(within(within(panel).getByTestId("tile-Education")).getByText("40")).toBeInTheDocument()
+      expect(within(panel).getByRole("link", { name: "See all →" })).toHaveAttribute("href", "/super-admin/organizations")
+    })
+
+    it("with no organization data says so instead of showing zeros", () => {
+      renderPage()
+      const panel = screen.getByTestId("panel-organizations")
+      expect(within(panel).getByText("Organization counts aren't available yet.")).toBeInTheDocument()
+      expect(within(panel).queryByText("Business units")).not.toBeInTheDocument()
+    })
+
+    it("a failed organization load shows the error with Try again", async () => {
+      mockSystem = failed()
+      renderPage()
+      const panel = screen.getByTestId("panel-organizations")
+      expect(within(panel).getByText("We couldn't load organization counts.")).toBeInTheDocument()
+      await userEvent.click(within(panel).getByRole("button", { name: "Try again" }))
+      expect(mockSystem.refetch).toHaveBeenCalled()
+    })
+
+    it("restores the All agents table and the coach-usage chart, labelled as sample figures", () => {
+      renderPage()
+      const panel = screen.getByTestId("panel-agents")
+      expect(within(panel).getByText("All agents")).toBeInTheDocument()
+      expect(within(screen.getByTestId("coach-usage-chart")).getByText("Most Used Coaches")).toBeInTheDocument()
+      expect(within(panel).getByText("Sample figures. Coach usage isn't measured yet.")).toBeInTheDocument()
+      for (const agent of AGENT_VOICE_CONFIG) {
+        expect(within(panel).getByText(agent.name)).toBeInTheDocument()
+      }
+      expect(within(panel).getByRole("link", { name: "Coach setup →" })).toHaveAttribute("href", "/super-admin/mentor-management")
+    })
+
+    it("each agent's settings link points where the classic one did", () => {
+      mockCoaches = ok({ data: { agents: [{ id: "aura-001", status: "deactivated" }] } })
+      renderPage()
+      const panel = screen.getByTestId("panel-agents")
+      const hrefs = Array.from(panel.querySelectorAll("a"))
+        .map((a) => a.getAttribute("href"))
+        .filter((h) => h?.includes("tab=settings"))
+      expect(hrefs).toEqual(
+        AGENT_VOICE_CONFIG.map((a) => `/super-admin/mentor-management?agent=${a.id}&tab=settings`),
+      )
+      const auraRow = within(panel).getByText("Aura").closest("tr") as HTMLElement
+      expect(within(auraRow).getByText("Inactive")).toBeInTheDocument()
     })
 
     it("View as… lists the five role home pages as plain links", async () => {

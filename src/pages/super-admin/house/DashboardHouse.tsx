@@ -14,6 +14,14 @@ import {
 import { PageHeader } from "@/components/shared/house/PageHeader"
 import { PageState } from "@/components/shared/house/PageState"
 import { ViewAsSwitcher } from "@/components/super-admin/house/ViewAsSwitcher"
+import UsedCoachesChart from "@/components/super-admin/dashboard/UsedCoachesChart"
+import { PlatformAgentsTable, type PlatformAgentRow } from "@/components/super-admin/dashboard/PlatformAgentsTable"
+import {
+  formatCostPerSession,
+  formatCostPerUser,
+  readCostFigures,
+} from "@/components/super-admin/dashboard/costFigures"
+import { useDashboardSystem } from "@/hooks/super-admin/dashboard/useDashboardSystem"
 import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement"
 import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches"
 import { useFeedbackStats } from "@/hooks/feedback/useFeedback"
@@ -77,21 +85,23 @@ export default function SuperAdminDashboardHouse() {
   const coaches = useCoachesList({ page: 1, limit: 100 })
   const feedback = useFeedbackStats()
   const cost = useCostDashboard()
+  const system = useDashboardSystem()
 
   const totalUsers = users.data?.data?.pagination?.total
   const latestUsers = users.data?.data?.users ?? []
 
   const coachesRaw = coaches.data?.data
-  const coachList: Array<{ status?: string }> = Array.isArray(coachesRaw)
+  const coachList: PlatformAgentRow[] = Array.isArray(coachesRaw)
     ? coachesRaw
-    : ((coachesRaw as { agents?: Array<{ status?: string }> } | undefined)?.agents ?? [])
+    : ((coachesRaw as { agents?: PlatformAgentRow[] } | undefined)?.agents ?? [])
   const activeCoaches = coachList.filter((c) => c.status?.toLowerCase() !== "deactivated").length
 
   const feedbackStats = feedback.data?.data
-  const costDash = (cost.data as Record<string, unknown> | undefined)?.data as
-    | Record<string, unknown>
-    | undefined
-  const totalCost = costDash?.total_cost as number | undefined
+  const costFigures = readCostFigures(cost.data)
+  const { totalCost, totalSessions } = costFigures
+
+  const orgStats = system.data?.data?.organization_statistics
+  const bizStats = system.data?.data?.business_statistics
 
   return (
     <SuperAdminLayout>
@@ -137,6 +147,15 @@ export default function SuperAdminDashboardHouse() {
           />
         </div>
 
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Tile label="Cost per person" state={tileState(cost, formatCostPerUser(costFigures))} />
+          <Tile
+            label="Total sessions"
+            state={tileState(cost, totalSessions != null ? totalSessions.toLocaleString() : null)}
+          />
+          <Tile label="Cost per session" state={tileState(cost, formatCostPerSession(costFigures))} />
+        </div>
+
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-semibold">New people</CardTitle>
@@ -180,6 +199,63 @@ export default function SuperAdminDashboardHouse() {
                 </TableBody>
               </Table>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm" data-testid="panel-organizations">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base font-semibold">Organizations</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to={ROUTES.SUPER_ADMIN.ORGANIZATIONS}>See all →</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {system.isLoading ? (
+              <PageState kind="loading" rows={2} />
+            ) : system.isError ? (
+              <PageState
+                kind="error"
+                message="We couldn't load organization counts."
+                onRetry={() => void system.refetch()}
+              />
+            ) : !orgStats ? (
+              <PageState kind="unavailable" message="Organization counts aren't available yet." />
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Tile label="Organizations" state={{ kind: "value", value: orgStats.total.toLocaleString() }} />
+                <Tile label="Active organizations" state={{ kind: "value", value: orgStats.active.toLocaleString() }} />
+                <Tile label="Inactive organizations" state={{ kind: "value", value: orgStats.inactive.toLocaleString() }} />
+              </div>
+            )}
+            {bizStats && (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-foreground">Business units</h3>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <Tile label="Business units" state={{ kind: "value", value: bizStats.total.toLocaleString() }} />
+                  <Tile label="Active units" state={{ kind: "value", value: bizStats.active.toLocaleString() }} />
+                  <Tile label="Corporate" state={tileState(system, bizStats.by_type?.corporate?.toLocaleString() ?? null)} />
+                  <Tile label="Education" state={tileState(system, bizStats.by_type?.education?.toLocaleString() ?? null)} />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm" data-testid="panel-agents">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base font-semibold">All agents</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to={ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT}>Coach setup →</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div data-testid="coach-usage-chart">
+              <UsedCoachesChart />
+              <p className="px-6 text-xs text-muted-foreground">
+                Sample figures. Coach usage isn't measured yet.
+              </p>
+            </div>
+            <PlatformAgentsTable coaches={coachList} />
           </CardContent>
         </Card>
       </div>

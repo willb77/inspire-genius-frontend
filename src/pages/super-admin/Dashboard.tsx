@@ -43,6 +43,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import UsedCoachesChart from "@/components/super-admin/dashboard/UsedCoachesChart"
 import CostBoard from "@/components/super-admin/CostBoard"
+import { PlatformAgentsTable } from "@/components/super-admin/dashboard/PlatformAgentsTable"
+import {
+  formatCostPerSession,
+  formatCostPerUser,
+  readCostFigures,
+} from "@/components/super-admin/dashboard/costFigures"
 import { useDashboardSystem } from "@/hooks/super-admin/dashboard/useDashboardSystem"
 import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement"
 import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches"
@@ -50,7 +56,6 @@ import { useAuditStats } from "@/hooks/audit/useAudit"
 import { useFeedbackStats } from "@/hooks/feedback/useFeedback"
 import { useCostDashboard } from "@/hooks/trainer/useTrainer"
 import { ROUTES } from "@/constants/routes"
-import { AGENT_VOICE_CONFIG, getDomainColor } from "@/constants/agentVoiceConfig"
 import { isHouseStyleOn } from "@/lib/house/areaSwitch"
 import SuperAdminDashboardHouse from "@/pages/super-admin/house/DashboardHouse"
 
@@ -184,10 +189,8 @@ function ClassicSuperAdminDashboard() {
   const auditStats = auditData?.data
 
   // Cost dashboard data
-  const costDash = (costData as Record<string, unknown>)?.data as Record<string, unknown> | undefined
-  const totalCost = costDash?.total_cost as number | undefined
-  const costPerUser = costDash?.cost_per_user as number | undefined
-  const totalSessions = costDash?.total_sessions as number | undefined
+  const costFigures = readCostFigures(costData)
+  const { totalCost, costPerUser, totalSessions } = costFigures
 
   // Coaches list
   const coachesRaw = coachesData?.data
@@ -268,9 +271,9 @@ function ClassicSuperAdminDashboard() {
         {/* ── Cost Summary (Row 2) ──────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Cost per User", value: costPerUser != null ? `$${costPerUser.toFixed(2)}` : "--" },
+            { label: "Cost per User", value: formatCostPerUser(costFigures) ?? "--" },
             { label: "Total Sessions", value: fmt(totalSessions) },
-            { label: "Cost per Session", value: totalCost != null && totalSessions ? `$${(totalCost / totalSessions).toFixed(3)}` : "--" },
+            { label: "Cost per Session", value: formatCostPerSession(costFigures) ?? "--" },
             { label: "Feedback Score", value: isFeedbackLoading ? "--" : feedbackStats?.avg_rating?.toFixed(1) ?? "--" },
           ].map((item) => (
             <Card key={item.label} className="shadow-sm">
@@ -422,59 +425,7 @@ function ClassicSuperAdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Domain</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Tier</TableHead>
-                      <TableHead>Voice</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      <TableHead className="w-10"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {AGENT_VOICE_CONFIG.map((agent) => {
-                      const backendAgent = coaches.find((c) => c.id === agent.id)
-                      const isActive = backendAgent
-                        ? backendAgent.status?.toLowerCase() !== "deactivated"
-                        : true
-                      return (
-                        <TableRow key={agent.id}>
-                          <TableCell className="font-medium">{agent.name}</TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className={cn("text-xs", getDomainColor(agent.domain))}>
-                              {agent.domain}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-sm max-w-xs truncate">{agent.description}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-xs">{agent.modelTier}</Badge>
-                          </TableCell>
-                          <TableCell className="text-sm font-mono text-muted-foreground">{agent.pollyVoice}</TableCell>
-                          <TableCell className="text-center">
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600",
-                              )}
-                            >
-                              {isActive ? "Active" : "Inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Link to={`${ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT}?agent=${agent.id}&tab=settings`}>
-                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                                <ChevronRight className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
+                <PlatformAgentsTable coaches={coaches} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -562,7 +513,7 @@ function ClassicSuperAdminDashboard() {
             {/* Platform-wide rollup KPIs that aren't part of CostBoard's contract */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: "Cost per User", value: costPerUser != null ? `$${costPerUser.toFixed(2)}` : "--" },
+                { label: "Cost per User", value: formatCostPerUser(costFigures) ?? "--" },
                 { label: "Total Sessions", value: fmt(totalSessions) },
                 { label: "Active Users", value: fmt(totalUsers) },
                 { label: "Active Mentors", value: isCoachesLoading ? "--" : activeCoaches.toLocaleString() },
