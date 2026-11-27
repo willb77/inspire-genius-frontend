@@ -630,3 +630,286 @@ describe("useMeridianJob — context.ui_language (A9 / I18N-6c)", () => {
     expect(await postedContext(undefined)).toBeUndefined();
   });
 });
+
+// ───────────────────────────────────────────────────────────────────
+// D-17 PR-C: a job that never settles is settled as an error
+// ───────────────────────────────────────────────────────────────────
+
+describe("useMeridianJob — client-side settle (D-17 PR-C)", () => {
+  const TIMED_OUT = "Meridian took too long to answer. Please try again.";
+  const LOST = "Lost contact with Meridian while it was answering. Please try again.";
+
+  const running = (id = "job-d") => ({
+    data: { job_id: id, session_id: "s-d", status: "running", message: "hi", content: null },
+  });
+  const networkError = () => Object.assign(new Error("Network Error"), { code: "ERR_NETWORK" });
+  const notFound = () => Object.assign(new Error("404"), { response: { status: 404 } });
+
+  async function start(
+    opts: Parameters<typeof useMeridianJob>[0],
+    id = "job-d",
+  ) {
+    mockAgentApi.post.mockResolvedValueOnce({
+      data: { job_id: id, session_id: "s-d", status: "queued" },
+    });
+    const hook = renderHook(() => useMeridianJob(opts));
+    await act(async () => {
+      await hook.result.current.startJob({ message: "hi", sessionId: "s-d" });
+    });
+    return hook;
+  }
+
+  /** Advance fake time and flush the poll promises each interval queues. */
+  async function advance(ms: number) {
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(ms);
+    });
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers({ doNotFake: ["nextTick"] });
+  });
+
+  it("settles a job that is still running at the deadline as a readable error, once", async () => {
+    mockAgentApi.get.mockResolvedValue(running());
+    const onJobSettled = jest.fn();
+    const { result } = await start({ pollIntervalMs: 1_000, pollTimeoutMs: 3_000, onJobSettled });
+
+    await advance(3_000);
+    expect(result.current.jobsById["job-d"]?.status).toBe("running");
+    expect(onJobSettled).not.toHaveBeenCalled();
+
+    await advance(1_000); // first tick past the deadline
+    const job = result.current.jobsById["job-d"];
+    expect(job?.status).toBe("error");
+    expect(job?.client_settled).toBe("deadline");
+    expect(job?.error).toBe(TIMED_OUT);
+    expect(job?.message).toBe("hi");
+    expect(onJobSettled).toHaveBeenCalledTimes(1);
+    expect(onJobSettled.mock.calls[0][0]).toMatchObject({ status: "error", error: TIMED_OUT });
+
+    // Polling stopped with the settle.
+    const calls = mockAgentApi.get.mock.calls.length;
+    await advance(10_000);
+    expect(mockAgentApi.get.mock.calls.length).toBe(calls);
+    expect(onJobSettled).toHaveBeenCalledTimes(1);
+  });
+
+  it("settles after N consecutive failed polls (network errors)", async () => {
+    mockAgentApi.get.mockRejectedValue(networkError());
+    const onJobSettled = jest.fn();
+    const { result } = await start({
+      pollIntervalMs: 1_000, pollTimeoutMs: 600_000, maxPollFailures: 5, onJobSettled,
+    });
+
+    // Immediate tick + 3 intervals = 4 failures: still in flight.
+    await advance(3_000);
+    expect(mockAgentApi.get).toHaveBeenCalledTimes(4);
+    expect(result.current.jobsById["job-d"]?.status).toBe("queued");
+    expect(onJobSettled).not.toHaveBeenCalled();
+
+    await advance(1_000); // 5th failure
+    const job = result.current.jobsById["job-d"];
+    expect(job?.status).toBe("error");
+    expect(job?.client_settled).toBe("poll_failures");
+    expect(job?.error).toBe(LOST);
+    expect(onJobSettled).toHaveBeenCalledTimes(1);
+
+    await advance(10_000);
+    expect(mockAgentApi.get).toHaveBeenCalledTimes(5);
+  });
+
+  it("defaults N to 5", async () => {
+    mockAgentApi.get.mockRejectedValue(networkError());
+    const { result } = await start({ pollIntervalMs: 1_000 });
+    await advance(3_000);
+    expect(result.current.jobsById["job-d"]?.status).toBe("queued");
+    await advance(1_000);
+    expect(result.current.jobsById["job-d"]?.client_settled).toBe("poll_failures");
+  });
+
+  it("a successful read resets the failure count (N-1 failures, a success, N-1 more: no settle)", async () => {
+    mockAgentApi.get
+      .mockRejectedValueOnce(networkError())
+      .mockRejectedValueOnce(networkError())
+      .mockRejectedValueOnce(networkError())
+      .mockRejectedValueOnce(networkError())
+      .mockResolvedValueOnce(running())
+      .mockRejectedValueOnce(networkError())
+      .mockRejectedValueOnce(networkError())
+      .mockRejectedValueOnce(networkError())
+      .mockRejectedValueOnce(networkError())
+      .mockRejectedValue(networkError());
+    const onJobSettled = jest.fn();
+    const { result } = await start({ pollIntervalMs: 1_000, pollTimeoutMs: 600_000, onJobSettled });
+
+    await advance(8_000); // 9 polls: 4 fail, 1 ok, 4 fail
+    expect(mockAgentApi.get).toHaveBeenCalledTimes(9);
+    expect(result.current.jobsById["job-d"]?.status).toBe("running");
+    expect(onJobSettled).not.toHaveBeenCalled();
+
+    await advance(1_000); // 5th consecutive failure since the success
+    expect(result.current.jobsById["job-d"]?.client_settled).toBe("poll_failures");
+    expect(onJobSettled).toHaveBeenCalledTimes(1);
+  });
+
+  it("a 404 streak settles the same way (a 404 is not transient)", async () => {
+    mockAgentApi.get.mockRejectedValue(notFound());
+    const { result } = await start({ pollIntervalMs: 1_000, pollTimeoutMs: 600_000 });
+    await advance(4_000);
+    expect(result.current.jobsById["job-d"]?.status).toBe("error");
+    expect(result.current.jobsById["job-d"]?.client_settled).toBe("poll_failures");
+  });
+
+  it("settle-once: a late job_complete push after a client settle is dropped", async () => {
+    mockAgentApi.get.mockResolvedValue(running());
+    const onJobSettled = jest.fn();
+    const onJobUpdate = jest.fn();
+    const { result } = await start({
+      pollIntervalMs: 1_000, pollTimeoutMs: 2_000, onJobSettled, onJobUpdate,
+    });
+    await advance(3_000);
+    expect(result.current.jobsById["job-d"]?.client_settled).toBe("deadline");
+    const updatesAtSettle = onJobUpdate.mock.calls.length;
+
+    let consumed = false;
+    act(() => {
+      consumed = result.current.notifyPushFrame({
+        type: "job_complete",
+        job_id: "job-d",
+        session_id: "s-d",
+        content: "the late answer",
+      } as MeridianResponse);
+    });
+    expect(consumed).toBe(true);
+    const job = result.current.jobsById["job-d"];
+    expect(job?.status).toBe("error");
+    expect(job?.content).toBeNull();
+    expect(onJobSettled).toHaveBeenCalledTimes(1);
+    expect(onJobUpdate).toHaveBeenCalledTimes(updatesAtSettle);
+  });
+
+  it("settle-once: a poll answer landing after the deadline settle is dropped", async () => {
+    // The tick that crosses the deadline settles; a request that was already
+    // in flight then resolves with the real answer. It must not replace the error.
+    let resolveLate: (v: unknown) => void = () => undefined;
+    mockAgentApi.get
+      .mockResolvedValueOnce(running())
+      .mockImplementationOnce(() => new Promise((r) => { resolveLate = r; }))
+      .mockResolvedValue(running());
+    const onJobSettled = jest.fn();
+    const { result } = await start({ pollIntervalMs: 1_000, pollTimeoutMs: 1_500, onJobSettled });
+    await advance(1_000); // 2nd poll now hanging
+    await advance(1_000); // past the deadline → settle
+    expect(result.current.jobsById["job-d"]?.client_settled).toBe("deadline");
+
+    await act(async () => {
+      resolveLate({
+        data: {
+          job_id: "job-d", session_id: "s-d", status: "complete", message: "hi",
+          content: "the late answer",
+        },
+      });
+      await Promise.resolve();
+    });
+    expect(result.current.jobsById["job-d"]?.status).toBe("error");
+    expect(result.current.jobsById["job-d"]?.content).toBeNull();
+    expect(onJobSettled).toHaveBeenCalledTimes(1);
+  });
+
+  it("settle-once: listActiveJobs does not re-hydrate (or re-poll) a job this client already settled", async () => {
+    mockAgentApi.get.mockResolvedValue(running());
+    const { result } = await start({ pollIntervalMs: 1_000, pollTimeoutMs: 1_500 });
+    await advance(2_000);
+    expect(result.current.jobsById["job-d"]?.client_settled).toBe("deadline");
+
+    mockAgentApi.get.mockReset();
+    mockAgentApi.get.mockResolvedValueOnce({
+      data: [{ job_id: "job-d", session_id: "s-d", status: "running", message: "hi" }],
+    });
+    let active: unknown[] = [];
+    await act(async () => {
+      active = await result.current.listActiveJobs("s-d");
+    });
+    expect(active).toEqual([]);
+    expect(result.current.jobsById["job-d"]?.status).toBe("error");
+    await advance(5_000);
+    expect(mockAgentApi.get).toHaveBeenCalledTimes(1); // the list call only, no re-poll
+  });
+
+  it("a re-hydrated orphan (listActiveJobs) settles at the deadline instead of spinning", async () => {
+    mockAgentApi.get.mockResolvedValueOnce({
+      data: [{ job_id: "job-o", session_id: "s-d", status: "running", message: "old q" }],
+    });
+    mockAgentApi.get.mockResolvedValue(running("job-o"));
+    const onJobSettled = jest.fn();
+    const { result } = renderHook(() =>
+      useMeridianJob({ pollIntervalMs: 1_000, pollTimeoutMs: 3_000, onJobSettled }),
+    );
+    await act(async () => {
+      await result.current.listActiveJobs("s-d");
+    });
+    await advance(4_000);
+    expect(result.current.jobsById["job-o"]).toMatchObject({
+      status: "error", client_settled: "deadline", session_id: "s-d",
+    });
+    expect(onJobSettled).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not settle a job whose server verdict arrived first", async () => {
+    mockAgentApi.get.mockResolvedValue({
+      data: { job_id: "job-d", session_id: "s-d", status: "complete", message: "hi", content: "ok" },
+    });
+    const onJobSettled = jest.fn();
+    const { result } = await start({ pollIntervalMs: 1_000, pollTimeoutMs: 1_500, onJobSettled });
+    await advance(5_000);
+    expect(result.current.jobsById["job-d"]).toMatchObject({ status: "complete", content: "ok" });
+    expect(result.current.jobsById["job-d"]?.client_settled).toBeUndefined();
+    expect(onJobSettled).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not settle a job the consumer removed while it was polling", async () => {
+    mockAgentApi.get.mockRejectedValue(networkError());
+    const onJobSettled = jest.fn();
+    const { result } = await start({ pollIntervalMs: 1_000, onJobSettled });
+    act(() => {
+      result.current.removeJob("job-d");
+    });
+    await advance(10_000);
+    expect(result.current.jobsById["job-d"]).toBeUndefined();
+    expect(onJobSettled).not.toHaveBeenCalled();
+  });
+
+  it("resolves the error text through i18n (chat namespace) when a translation exists", async () => {
+    const spy = jest
+      .spyOn(i18nForTest, "t")
+      .mockImplementation(((key: string) =>
+        key === "meridian.jobTimedOut" ? "Meridian odpovídal příliš dlouho." : key) as never);
+    try {
+      mockAgentApi.get.mockResolvedValue(running());
+      const { result } = await start({ pollIntervalMs: 1_000, pollTimeoutMs: 1_500 });
+      await advance(2_000);
+      expect(result.current.jobsById["job-d"]?.error).toBe("Meridian odpovídal příliš dlouho.");
+      expect(spy).toHaveBeenCalledWith(
+        "meridian.jobTimedOut",
+        expect.objectContaining({ ns: "chat", defaultValue: TIMED_OUT }),
+      );
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("falls back to the English sentence, never the raw key, when i18n returns the key", async () => {
+    const spy = jest
+      .spyOn(i18nForTest, "t")
+      .mockImplementation(((key: string) => key) as never);
+    try {
+      mockAgentApi.get.mockRejectedValue(networkError());
+      const { result } = await start({ pollIntervalMs: 1_000 });
+      await advance(4_000);
+      expect(result.current.jobsById["job-d"]?.error).toBe(LOST);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});

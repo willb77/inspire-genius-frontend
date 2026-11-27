@@ -23,6 +23,8 @@
   "meridian": {
     "title": "Meridian",
     "thinking": "Meridian이 생각 중입니다...",
+    "jobTimedOut": "Meridian의 응답이 너무 오래 걸렸습니다. 다시 시도해 주세요.",
+    "jobLostContact": "응답 중에 Meridian과의 연결이 끊어졌습니다. 다시 시도해 주세요.",
     "noResponse": "응답이 없습니다.",
     "consultedAgents": "+ {{agents}}",
     "viaAgent": "{{agent}} 경유",

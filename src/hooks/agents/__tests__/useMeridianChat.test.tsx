@@ -21,11 +21,32 @@ let jobHandlers: {
   onJobUpdate?: (j: ChatJob) => void
 } = {}
 
+// D-17 PR-C: the "real job hook" block below runs the actual useMeridianJob
+// (with only the HTTP client mocked) so the deadline / lost-contact settle is
+// exercised end to end through useMeridianChat's error branch.
+let mockUseRealJobHook = false
+
 jest.mock("@/hooks/agents/useMeridianJob", () => ({
   useMeridianJob: (opts: typeof jobHandlers) => {
+    if (mockUseRealJobHook) {
+      return jest.requireActual("@/hooks/agents/useMeridianJob").useMeridianJob(opts)
+    }
     jobHandlers = opts
     return { startJob: mockStartJob, notifyPushFrame: mockNotifyPushFrame }
   },
+}))
+
+const mockAgentApi = {
+  get: jest.fn(),
+  post: jest.fn(),
+  defaults: { headers: { common: {} } },
+}
+
+jest.mock("@/lib/agentApi", () => ({
+  agentApi: mockAgentApi,
+  attachInterceptors: jest.fn(),
+  useAgentEngine: () => true,
+  getApi: () => mockAgentApi,
 }))
 
 const mockWsConnect = jest.fn()
@@ -212,5 +233,82 @@ describe("useMeridianChat", () => {
       await result.current.send("   ")
     })
     expect(mockStartJob).not.toHaveBeenCalled()
+  })
+})
+
+describe("useMeridianChat over the real job hook (D-17 PR-C)", () => {
+  beforeEach(() => {
+    mockUseRealJobHook = true
+    jest.useFakeTimers({ doNotFake: ["nextTick"] })
+    mockAgentApi.get.mockReset()
+    mockAgentApi.post.mockReset()
+    mockAgentApi.post.mockResolvedValue({
+      data: { job_id: "jr", session_id: "s1", status: "queued" },
+    })
+  })
+  afterEach(() => {
+    mockUseRealJobHook = false
+    jest.useRealTimers()
+  })
+
+  async function advance(ms: number) {
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(ms)
+    })
+  }
+
+  it("a turn still running at the 5-minute deadline ends in a rendered error, not 'thinking' forever", async () => {
+    mockAgentApi.get.mockResolvedValue({
+      data: { job_id: "jr", session_id: "s1", status: "running", message: "q", content: null },
+    })
+    const onError = jest.fn()
+    const onAssistant = jest.fn()
+    const { result } = renderHook(() =>
+      useMeridianChat({ sessionKey: "chronicle", onError, onAssistant }),
+    )
+    await act(async () => {
+      await result.current.send("tell me about my first job")
+    })
+    expect(result.current.isProcessing).toBe(true)
+
+    await advance(4 * 60_000)
+    expect(result.current.isProcessing).toBe(true)
+    expect(result.current.error).toBeNull()
+
+    await advance(60_000 + 2_000)
+    expect(result.current.isProcessing).toBe(false)
+    expect(result.current.error).toBe("Meridian took too long to answer. Please try again.")
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onAssistant).not.toHaveBeenCalled()
+  })
+
+  it("a lost connection mid-turn ends in a rendered error after 5 failed polls", async () => {
+    mockAgentApi.get.mockRejectedValue(Object.assign(new Error("Network Error"), { code: "ERR_NETWORK" }))
+    const { result } = renderHook(() => useMeridianChat({ sessionKey: "m1" }))
+    await act(async () => {
+      await result.current.send("q")
+    })
+    await advance(6_000)
+    expect(result.current.isProcessing).toBe(true)
+    await advance(2_000) // 5th consecutive failure at the default 2 s cadence
+    expect(result.current.isProcessing).toBe(false)
+    expect(result.current.error).toBe(
+      "Lost contact with Meridian while it was answering. Please try again.",
+    )
+  })
+
+  it("a normal turn still delivers its answer (the default path)", async () => {
+    mockAgentApi.get.mockResolvedValue({
+      data: { job_id: "jr", session_id: "s1", status: "complete", message: "q", content: "the answer" },
+    })
+    const onAssistant = jest.fn()
+    const { result } = renderHook(() => useMeridianChat({ sessionKey: "m1", onAssistant }))
+    await act(async () => {
+      await result.current.send("q")
+    })
+    await advance(2_000)
+    expect(onAssistant).toHaveBeenCalledWith("the answer", expect.any(Object))
+    expect(result.current.error).toBeNull()
+    expect(result.current.isProcessing).toBe(false)
   })
 })

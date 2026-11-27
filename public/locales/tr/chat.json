@@ -23,6 +23,8 @@
   "meridian": {
     "title": "Meridian",
     "thinking": "Meridian düşünüyor...",
+    "jobTimedOut": "Meridian'ın yanıt vermesi çok uzun sürdü. Lütfen tekrar deneyin.",
+    "jobLostContact": "Meridian yanıt verirken bağlantı kesildi. Lütfen tekrar deneyin.",
     "noResponse": "Yanıt yok.",
     "consultedAgents": "+ {{agents}}",
     "viaAgent": "{{agent}} aracılığıyla",

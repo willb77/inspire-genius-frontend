@@ -23,6 +23,8 @@
   "meridian": {
     "title": "Meridian",
     "thinking": "Meridian sedang berpikir...",
+    "jobTimedOut": "Meridian terlalu lama menjawab. Silakan coba lagi.",
+    "jobLostContact": "Koneksi ke Meridian terputus saat sedang menjawab. Silakan coba lagi.",
     "noResponse": "Tidak ada respons.",
     "consultedAgents": "+ {{agents}}",
     "viaAgent": "melalui {{agent}}",

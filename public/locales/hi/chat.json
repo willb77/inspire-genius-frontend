@@ -23,6 +23,8 @@
   "meridian": {
     "title": "Meridian",
     "thinking": "Meridian सोच रहा है...",
+    "jobTimedOut": "Meridian को जवाब देने में बहुत समय लगा। कृपया फिर से प्रयास करें।",
+    "jobLostContact": "जवाब देते समय Meridian से संपर्क टूट गया। कृपया फिर से प्रयास करें।",
     "noResponse": "कोई प्रतिक्रिया नहीं।",
     "consultedAgents": "+ {{agents}}",
     "viaAgent": "{{agent}} के माध्यम से",

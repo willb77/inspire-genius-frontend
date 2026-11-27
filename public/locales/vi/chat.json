@@ -23,6 +23,8 @@
   "meridian": {
     "title": "Meridian",
     "thinking": "Meridian đang suy nghĩ...",
+    "jobTimedOut": "Meridian mất quá nhiều thời gian để trả lời. Vui lòng thử lại.",
+    "jobLostContact": "Mất kết nối với Meridian trong khi đang trả lời. Vui lòng thử lại.",
     "noResponse": "Không có phản hồi.",
     "consultedAgents": "+ {{agents}}",
     "viaAgent": "qua {{agent}}",
